@@ -1,0 +1,58 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Select temporary reasons" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set back = {
+  href: "./special-appointment/edit",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    {{ pageHeading }}
+  </h1>
+
+  {% set selectedSupportTypes = data.event.specialAppointment.supportTypes %}
+
+  {{ data.event.specialAppointment.supportTypes | log  }}
+    
+  
+  {% set checkboxItems = [] %}
+  {% for supportType in selectedSupportTypes %}
+
+    {% set checkboxItems = checkboxItems | push(
+      {
+          value: supportType,
+          text: supportType
+        }) %}
+
+  {% endfor %}
+
+  {{ checkboxes({
+    name: "event[specialAppointment][temporaryReasonsList]",
+    fieldset: {
+      legend: {
+        text: "Which of these reasons are temporary?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    hint: {
+      text: "Select all that apply"
+    },
+    items: checkboxItems
+  }) }}
+
+  {{ button({
+      text: "Continue"
+  }) }}
+        
+
+
+
+{% endblock %}
