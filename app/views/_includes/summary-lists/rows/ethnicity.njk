@@ -1,0 +1,32 @@
+{# /app/views/_includes/summary-lists/rows/ethnicity.njk #}
+
+{% set ethnicGroup = participant.demographicInformation.ethnicGroup %}
+{% set ethnicBackground = participant.demographicInformation.ethnicBackground %}
+{% set otherEthnicBackgroundDetails = participant.demographicInformation.otherEthnicBackgroundDetails %}
+
+{% if otherEthnicBackgroundDetails and (ethnicBackground | lower | startsWith("other")) -%}
+  {% set ethnicBackground -%}
+    {{- ethnicBackground }} - {{ otherEthnicBackgroundDetails }}
+  {%- endset %}
+{% endif %}
+
+
+{% set ethnicityRow = {
+  key: {
+    text: "Ethnicity"
+  },
+  value: {
+    html: ethnicityHtml if ethnicGroup or ethnicBackground
+  },
+  actions: {
+    items: [
+      {
+        href: eventId + "/personal-details/ethnicity",
+        text: "Change",
+        visuallyHiddenText: "ethnicity"
+      }
+    ]
+  }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(ethnicityRow) }}

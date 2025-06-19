@@ -1,0 +1,21 @@
+{# /app/views/_includes/summary-lists/rows/full-name.njk #}
+
+{% set fullNameRow = {
+  key: {
+    text: "Full name"
+  },
+  value: {
+    text: participant | getFullName
+  },
+  actions: {
+    items: [
+      {
+        href: "#",
+        text: "Change",
+        visuallyHiddenText: "date of birth"
+      } if allowEdits
+    ]
+  }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(fullNameRow) }}

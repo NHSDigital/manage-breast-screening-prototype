@@ -1,0 +1,17 @@
+{# /app/views/_includes/summary-lists/rows/gender.njk #}
+
+
+{% set genderRow = {
+     key: {
+       text: "Gender"
+     },
+     value: {
+       text: "Female"
+     },
+     actions: {
+        items: [
+        ]
+     }
+   } | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(genderRow) }}
