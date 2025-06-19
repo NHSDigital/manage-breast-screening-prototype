@@ -24,16 +24,23 @@
     {{ pageHeading }}
   </h1>
 
-  {% set personalDetailsHtml %}
-    {% include "summary-lists/participant.njk" %}
-  {% endset %}
+  {% call card({
+    heading: "Personal details"
+  }) %}
 
-
-  {{ card({
-    heading: "Personal details",
-    headingLevel: "2",
-    descriptionHtml: personalDetailsHtml
-  }) }}
+    {% call summaryList() %}
+      {% include "_includes/summary-lists/rows/nhs-number.njk" %}
+      {% include "_includes/summary-lists/rows/full-name.njk" %}
+      {% include "_includes/summary-lists/rows/gender.njk" %}
+      {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+      {% include "_includes/summary-lists/rows/address.njk" %}
+      {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+      {% include "_includes/summary-lists/rows/email.njk" %}
+      {% include "_includes/summary-lists/rows/screening-protocol.njk" %}
+      {% include "_includes/summary-lists/rows/last-known-mammogram.njk" %}
+    {% endcall %}
+  {% endcall %}
 
 {% endblock %}
 
