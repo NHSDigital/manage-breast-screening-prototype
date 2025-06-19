@@ -1,0 +1,25 @@
+{% set phoneNumbers = [participant.demographicInformation.mobilePhone, participant.demographicInformation.homePhone] | removeEmpty %}
+
+{% set phoneNumbersHtml %}
+  {{ phoneNumbers | map("formatPhoneNumber") | join("<br>") | safe }}
+{% endset %}
+
+{% set phoneNumbersRow = {
+  key: {
+    text: "Phone" if phoneNumbers | length < 2 else "Phone numbers"
+  },
+  value: {
+    html: phoneNumbersHtml | trim
+  },
+  actions: {
+    items: [
+      {
+        href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain),
+        text: "Change",
+        visuallyHiddenText: "phone number" if phoneNumbers | length < 2 else "phone numbers"
+      } if allowEdits
+     ]
+  }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(phoneNumbersRow) }}

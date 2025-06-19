@@ -45,7 +45,7 @@ const getObjectValues = (obj, options = {}) => {
 
   // Remove empty values if specified
   if (removeEmpty) {
-    values = values.filter(val => val !== null && val !== undefined)
+    values = values.filter(val => Boolean(val))
   }
 
   return values

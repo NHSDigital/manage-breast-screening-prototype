@@ -6,7 +6,7 @@ const generateId = require('../utils/id-generator')
 
 // Updated symptom types to match the form
 const SYMPTOM_TYPES = {
-  'Breast lump': {
+  'Lump': {
     weight: 0.4,
     requiresLocation: true,
     descriptions: [
@@ -61,17 +61,6 @@ const SYMPTOM_TYPES = {
       ]
     }
   },
-  'Persistent pain': {
-    weight: 0.08,
-    requiresLocation: true,
-    descriptions: [
-      'Sharp, shooting pain',
-      'Dull aching pain',
-      'Burning sensation',
-      'Tender to touch',
-      'Pain that worsens with movement'
-    ]
-  },
   'Other': {
     weight: 0.02,
     requiresLocation: true,
@@ -79,10 +68,27 @@ const SYMPTOM_TYPES = {
       'Unusual sensation or tenderness',
       'Heaviness in breast',
       'Tingling sensation',
-      'Unusual firmness'
+      'Unusual firmness',
+      'Persistent pain',
     ]
   }
 }
+
+// const DATE_RANGE_OPTIONS = [
+//   "Less than a week",
+//   "1 week to a month",
+//   "1 to 3 months",
+//   "3 months to a year",
+//   "1 to 3 years",
+//   "Over 3 years"
+// ]
+
+const DATE_RANGE_OPTIONS = [
+  "Less than  3 months",
+  "3 months to a year",
+  "1 to 3 years",
+  "Over 3 years"
+]
 
 const INVESTIGATION_DETAILS = [
   'GP examined and said to monitor for changes',
@@ -110,17 +116,6 @@ const INVESTIGATION_DETAILS = [
   'GP wanted to monitor for three months then review',
   'Community clinic did examination, no immediate concerns',
   'Specialist examined, ordered further tests'
-]
-
-const APPROXIMATE_START_DATES = [
-  '2 weeks ago',
-  '1 month ago',
-  '6 weeks ago',
-  '3 months ago',
-  'Last month',
-  'Few weeks ago',
-  'About 2 months ago',
-  'Several weeks ago'
 ]
 
 const APPROXIMATE_STOP_DATES = [
@@ -178,15 +173,18 @@ const generateSymptom = (options = {}) => {
 
   const typeData = SYMPTOM_TYPES[type]
 
+  // Generate dateType matching the form structure
+  const dateTypeWeights = {
+    ...Object.fromEntries(DATE_RANGE_OPTIONS.map(range => [range, 0.1])), // 60% total for ranges
+    'dateKnown': 0.3,
+    'notSure': 0.1
+  }
+
   // Generate basic symptom data matching form structure
   const symptom = {
     id: generateId(),
     type,
-    dateType: weighted.select({
-      'dateKnown': 0.3,
-      'approximateDate': 0.6,
-      'notSure': 0.1
-    }),
+    dateType: weighted.select(dateTypeWeights),
     hasBeenInvestigated: options.requireInvestigation ?? (Math.random() < 0.3 ? 'yes' : 'no'),
     dateAdded: new Date().toISOString()
   }
@@ -203,14 +201,17 @@ const generateSymptom = (options = {}) => {
 
   // Handle dates based on dateType
   if (symptom.dateType === 'dateKnown') {
-    const startDate = faker.date.past({ years: 1 })
+    const startDate = faker.date.past({ years: 2 })
     symptom.dateStarted = {
       month: startDate.getMonth() + 1,
       year: startDate.getFullYear()
     }
-  } else if (symptom.dateType === 'approximateDate') {
-    symptom.approximateDateStarted = faker.helpers.arrayElement(APPROXIMATE_START_DATES)
   }
+  else if (DATE_RANGE_OPTIONS.includes(symptom.dateType)) {
+    // For range options, store the same value in approximateDuration
+    symptom.approximateDuration = symptom.dateType
+  }
+  // For range options and 'notSure', no additional date fields needed
 
   // 30% chance the symptom has recently stopped
   symptom.hasStopped = Math.random() < 0.3
@@ -218,11 +219,12 @@ const generateSymptom = (options = {}) => {
     symptom.approximateDateStopped = faker.helpers.arrayElement(APPROXIMATE_STOP_DATES)
   }
 
+  // 25% chance the symptom is intermittent
+  symptom.isIntermittent = Math.random() < 0.25
+
   // Handle type-specific fields
   if (type === 'Other') {
-    symptom.otherDescription = faker.helpers.arrayElement(typeData.descriptions)
-  } else if (type === 'Persistent pain') {
-    symptom.persistentPainDescription = faker.helpers.arrayElement(typeData.descriptions)
+    symptom.otherLocationDescription = faker.helpers.arrayElement(typeData.descriptions)
   } else if (type === 'Nipple change') {
     const changeType = faker.helpers.arrayElement(typeData.nippleChangeTypes)
     symptom.nippleChangeType = changeType
@@ -231,11 +233,24 @@ const generateSymptom = (options = {}) => {
       symptom.nippleChangeDescription = faker.helpers.arrayElement(typeData.nippleChangeDescriptions.other)
     }
 
-    symptom.nippleChangeLocation = weighted.select({
-      'right nipple': 0.4,
-      'left nipple': 0.4,
-      'both nipples': 0.2
+    // Generate nipple location as array to match checkboxes
+    const nippleLocationChoice = weighted.select({
+      'right': 0.4,
+      'left': 0.4,
+      'both': 0.2
     })
+
+    switch (nippleLocationChoice) {
+      case 'right':
+        symptom.nippleChangeLocation = ['right nipple']
+        break
+      case 'left':
+        symptom.nippleChangeLocation = ['left nipple']
+        break
+      case 'both':
+        symptom.nippleChangeLocation = ['right nipple', 'left nipple']
+        break
+    }
   } else if (type === 'Skin change') {
     const changeType = faker.helpers.arrayElement(typeData.skinChangeTypes)
     symptom.skinChangeType = changeType

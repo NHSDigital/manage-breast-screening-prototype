@@ -197,7 +197,7 @@ const generateBSUAppropriateAddress = (bsu) => {
   return {
     ...addressLine1,
     line2,
-    city: faker.helpers.arrayElement(nearbyAreas),
+    town: faker.helpers.arrayElement(nearbyAreas),
     postcode: generateNearbyPostcode(bsu.address.postcode),
   }
 }

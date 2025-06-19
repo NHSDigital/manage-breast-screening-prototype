@@ -1,0 +1,56 @@
+
+{% extends 'layout-app.html' %}
+
+
+{# {% set pageHeading = participant | getShortName ~ "’s contact details" %} #}
+{% set pageHeading = "Confirm changes to contact details" %}
+
+
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{# {% set formAction = "../" ~ participantId %} #}
+
+{% set formAction = (participantUrl ~ "/save") | getReturnUrl(referrerChain) %}
+
+
+{% set back = {
+  href: participantUrl,
+  text: "Back to participant"
+} %}
+
+
+{% set allowEdits = true %}
+
+
+{% block pageContent %}
+
+  {{ participant | log("participant") }}
+
+  {{ participantId | log("participantId") }}
+
+
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-m">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {% set showNotProvidedText = true %}
+  {% include "summary-lists/demographic-information/contact-details.njk" %}
+
+  {{ button({
+    text: "Confirm changes"
+  }) }}
+
+  <p>
+    <a href="{{participantUrl}}">Cancel and return to participant</a>
+  </p>
+
+
+{% endblock %}
+

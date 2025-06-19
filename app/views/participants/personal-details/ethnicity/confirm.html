@@ -1,0 +1,37 @@
+
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Confirm changes to ethnicity" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./ethnicity-answer" %}
+
+
+{# {% set back = {
+  href: "/events/" + clinicId,
+  text: "Back"
+} %}
+ #}
+
+
+{% block pageContent %}
+
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-m">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+
+
+  {{ button({
+    text: "Save"
+  }) }}
+
+
+{% endblock %}
+

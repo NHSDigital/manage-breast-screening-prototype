@@ -1,0 +1,25 @@
+{% set addressRow %}
+  {% include "../rows/address.njk" %}
+{% endset %}
+
+{% set phoneNumbersRow %}
+  {% include "../rows/phone-numbers.njk" %}
+{% endset %}
+
+{% set emailRow %}
+  {% include "../rows/email.njk" %}
+{% endset %}
+
+{{ summaryList({
+  rows: [
+    {
+      html: addressRow
+    },
+    {
+      html: phoneNumbersRow
+    },
+    {
+      html: emailRow
+    }
+  ]
+}) }}

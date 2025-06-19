@@ -1,9 +1,15 @@
 // app/routes/participants.js
 
-const { getParticipant, sortBySurname, getParticipantClinicHistory } = require('../lib/utils/participants')
+const { getParticipant, sortBySurname, getParticipantClinicHistory, saveTempParticipantToParticipant } = require('../lib/utils/participants')
 const { findById } = require('../lib/utils/arrays')
+const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
+const { getReturnUrl, urlWithReferrer, appendReferrer } = require('../lib/utils/referrers')
+
 
 module.exports = router => {
+
+
+
 // Set clinics to active in nav for all urls starting with /clinics
   router.use('/participants', (req, res, next) => {
     res.locals.navActive = 'participants'
@@ -56,23 +62,70 @@ module.exports = router => {
     })
   })
 
-  // In the show route:
-  router.get('/participants/:participantId', (req, res) => {
-    const data = req.session.data
+  router.use('/participants/:participantId', (req, res, next) => {
     const participantId = req.params.participantId
-    const participant = getParticipant(data, participantId)
+    const data = req.session.data
 
-    if (!participant) {
+    // console.log(`Looking up participant: ${participantId}`)
+
+    const originalParticipant = getParticipant(data, participantId)
+
+    if (!originalParticipant) {
+      console.log(`No participant ${participantId} found`)
       res.redirect('/participants')
       return
     }
 
-    const clinicHistory = getParticipantClinicHistory(data, participant.id)
+    // console.log(`Found participant: ${originalParticipant.demographicInformation.firstName} ${originalParticipant.demographicInformation.lastName}`)
 
-    res.render('participants/show', {
-      participant,
-      participantId,
-      clinicHistory,
-    })
+    // We store a temporary copy of the participant to session for use by forms
+    // If it doesn't exist, create it now
+    if (!data.participant || (data.participant?.id !== participantId)) {
+      if (!data.participant) {
+        console.log('No temp participant data found, creating new one')
+      }
+      else if (data.participant?.id !== participantId) {
+        console.log(`Temp participant data found, but participantId ${data.participant.id} does not match ${participantId}, creating new one`)
+      }
+      // Copy over the participant data to the temp participant
+      data.participant = { ...originalParticipant }
+    }
+
+    // This will now have any temp participant data that forms have added too
+    // We'll later save this back to the source data using saveTempParticipantToParticipant
+    res.locals.participant = data.participant
+    res.locals.participantId = participantId
+
+    res.locals.participantUrl = `/participants/${participantId}`
+    res.locals.contextUrl = `/participants/${participantId}`
+
+    // Store original participant data for reference if needed
+    res.locals.originalParticipant = originalParticipant
+
+    // Get additional data that participant pages might need
+    const clinicHistory = getParticipantClinicHistory(data, originalParticipant.id)
+    res.locals.clinicHistory = clinicHistory
+
+    next()
   })
+
+  router.get('/participants/:participantId', (req, res) => {
+    res.render('participants/show')
+  })
+
+  router.get('/participants/:participantId/*', createDynamicTemplateRoute({
+    templatePrefix: 'participants'
+  }))
+
+  router.post('/participants/:participantId/save', (req, res) => {
+    const data = req.session.data
+    const participantId = req.params.participantId
+    const referrerChain = req.query.referrerChain
+    saveTempParticipantToParticipant(data)
+
+    // Redirect back to the participant page
+    const returnUrl = getReturnUrl(`/participants/${participantId}`, referrerChain)
+    res.redirect(returnUrl)
+  })
+
 }
