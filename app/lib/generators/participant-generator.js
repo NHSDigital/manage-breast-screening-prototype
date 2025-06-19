@@ -110,21 +110,47 @@ const generateExtraNeeds = (config = { probability: 0.08 }) => {
   })
 }
 
-// Generate a UK phone number
-const generateUKPhoneNumber = () => {
-  const numberTypes = {
-    mobile: 0.8,
-    landline: 0.2,
+// Generate a UK mobile phone number
+const generateUKMobileNumber = () => {
+  const suffix = faker.number.int({ min: 900000, max: 900999 })
+  return `07700${suffix}` // Ofcom reserved range
+}
+
+// Generate a UK landline/home phone number
+const generateUKHomeNumber = () => {
+  const areaCode = faker.helpers.arrayElement(['0118', '01865'])
+  const suffix = faker.number.int({ min: 0, max: 999 }).toString().padStart(3, '0')
+  return `${areaCode}4960${suffix}` // Ofcom reserved range
+}
+
+// Generate phone numbers for a participant
+const generatePhoneNumbers = () => {
+  // Phone number probabilities
+  const phoneConfig = weighted.select({
+    mobile_only: 0.6,    // 60% mobile only
+    both: 0.35,          // 35% both mobile and home
+    home_only: 0.05,     // 5% home only
+  })
+
+  const result = {
+    mobilePhone: null,
+    homePhone: null,
   }
 
-  if (weighted.select(numberTypes) === 'mobile') {
-    const suffix = faker.number.int({ min: 900000, max: 900999 })
-    return `07700${suffix}` // Ofcom reserved range
-  } else {
-    const areaCode = faker.helpers.arrayElement(['0118', '01865'])
-    const suffix = faker.number.int({ min: 0, max: 999 }).toString().padStart(3, '0')
-    return `${areaCode}4960${suffix}` // Ofcom reserved range
+  switch (phoneConfig) {
+    case 'mobile_only':
+      result.mobilePhone = generateUKMobileNumber()
+      break
+    case 'both':
+      result.mobilePhone = generateUKMobileNumber()
+      result.homePhone = generateUKHomeNumber()
+      break
+    case 'home_only':
+      result.homePhone = generateUKHomeNumber()
+      break
   }
+
+  return result
 }
 
 // Function to generate SX number
@@ -272,6 +298,9 @@ const generateParticipant = ({
   // Generate ethnicity data using new function
   const ethnicityData = generateEthnicity(ethnicities)
 
+  // Generate phone numbers
+  const phoneNumbers = generatePhoneNumbers()
+
   // Generate base random participant first
   const baseParticipant = {
     id: id,
@@ -286,7 +315,8 @@ const generateParticipant = ({
       lastName: faker.person.lastName(),
       dateOfBirth: generateDateOfBirth(participantRiskLevel),
       address: generateBSUAppropriateAddress(assignedBSU),
-      phone: generateUKPhoneNumber(),
+      mobilePhone: phoneNumbers.mobilePhone,
+      homePhone: phoneNumbers.homePhone,
       email: `${faker.internet.username().toLowerCase()}@example.com`,
       ethnicGroup: ethnicityData.ethnicGroup,
       ethnicBackground: ethnicityData.ethnicBackground,

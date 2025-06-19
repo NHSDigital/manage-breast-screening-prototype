@@ -58,7 +58,18 @@ const removeEmpty = (items) => {
   }
 
   if (_.isArray(items)) {
-    const filtered = items.filter(item => item && item !== '')
+    const filtered = items.filter(item => {
+      // Filter out falsy values and empty strings
+      if (!item || item === '') return false
+
+      // Filter out empty objects
+      if (_.isObject(item) && !_.isArray(item) && Object.keys(item).length === 0) return false
+
+      // Filter out empty arrays
+      if (_.isArray(item) && item.length === 0) return false
+
+      return true
+    })
     return filtered.length ? filtered : undefined
   }
 }
@@ -107,6 +118,29 @@ const removeWhere = (array, key, compare) => {
   })
 }
 
+/**
+ * Apply a filter to each element in an array
+ * @param {Array} array - Array to map over
+ * @param {string} filterName - Name of the filter to apply to each element
+ * @returns {Array} New array with filter applied to each element
+ */
+const map = function(array, filterName) {
+  if (!array || !Array.isArray(array)) return []
+
+  // In Nunjucks filter context, 'this' gives us access to the environment
+  // and we can access other filters through the environment
+  const env = this.env
+
+  if (!env || !env.filters || !env.filters[filterName]) {
+    console.warn(`Filter '${filterName}' not found`)
+    return array
+  }
+
+  const filterFunction = env.filters[filterName]
+
+  return array.map(item => filterFunction.call(this, item))
+}
+
 module.exports = {
   push,
   includes,
@@ -115,4 +149,5 @@ module.exports = {
   findById,
   where,
   removeWhere,
+  map,
 }

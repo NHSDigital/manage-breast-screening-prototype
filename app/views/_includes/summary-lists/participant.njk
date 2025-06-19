@@ -1,20 +1,10 @@
 {# /app/views/_includes/summary-lists/participant.njk #}
+{% set allowEdits = allowEdits | default(true) %}
 
 {% set dob %}
   {{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
   <span class="nhsuk-hint">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }} old)</span>
 {% endset %}
-
-{% set address %}
-  {{ participant.demographicInformation.address.line1 }}<br>
-  {% if participant.demographicInformation.address.line2 %}
-    {{ participant.demographicInformation.address.line2 }}<br>
-  {% endif %}
-  {{ participant.demographicInformation.address.city }}<br>
-  {{ participant.demographicInformation.address.postcode }}
-{% endset %}
-
-{% set allowEdits = allowEdits | default(true) %}
 
 {% set ethnicGroup = participant.demographicInformation.ethnicGroup %}
 {% set ethnicBackground = participant.demographicInformation.ethnicBackground %}
@@ -33,6 +23,18 @@
     {% elseif ethnicBackground == "Prefer not to say" %}
       {{ ethnicBackground }}
   {% endif %}
+{% endset %}
+
+{% set addressRow %}
+  {% include "_includes/summary-lists/rows/address.njk" %}
+{% endset %}
+
+{% set phoneNumbersRow %}
+  {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+{% endset %}
+
+{% set emailRow %}
+  {% include "_includes/summary-lists/rows/email.njk" %}
 {% endset %}
 
 {% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
@@ -108,11 +110,6 @@
     {% endfor %}
 
   {% endif %}
-
-
-
-
-
 
 {% endset %}
 
@@ -212,38 +209,13 @@
       }
    },
    {
-     key: {
-       text: "Address"
-     },
-     value: {
-       html: address
-     },
-     actions: {
-        items: [
-          {
-            href: "#",
-            text: "Change",
-            visuallyHiddenText: "address"
-          } if allowEdits
-        ]
-      }
+     html: addressRow
    },
    {
-     key: {
-       text: "Phone"
-     },
-     value: {
-       text: participant.demographicInformation.phone | formatPhoneNumber
-     },
-     actions: {
-        items: [
-          {
-            href: "#",
-            text: "Change",
-            visuallyHiddenText: "phone"
-          } if allowEdits
-        ]
-      }
+     html: phoneNumbersRow
+   },
+   {
+     html: emailRow
    },
    {
      key: {
@@ -255,13 +227,13 @@
      actions: {
         items: [
           {
-            href: "#",
+            href: participantId ~ "/personal-details/contact-details",
             text: "Change",
             visuallyHiddenText: "email"
           } if allowEdits
         ]
       }
-   },
+   } if false,
    {
      key: {
        text: "Last known mammogram" if not hasAdditionalMammograms else "Last known mammograms"
@@ -298,4 +270,4 @@
       }
    }
   ]
-} | showMissingInformationLink) }}
+} | handleSummaryListMissingInformation) }}

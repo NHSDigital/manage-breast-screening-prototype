@@ -1,0 +1,21 @@
+
+
+{% set emailRow = {
+  key: {
+    text: "Email"
+  },
+  value: {
+    html: (participant.demographicInformation.email | trim) | safe
+  },
+  actions: {
+     items: [
+       {
+         href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain or currentUrl),
+         text: "Change",
+         visuallyHiddenText: "email"
+       } if allowEdits
+     ]
+   }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(emailRow) }}

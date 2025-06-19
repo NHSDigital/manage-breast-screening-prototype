@@ -1,0 +1,25 @@
+{% set addressLines = participant.demographicInformation.address | getObjectValues({removeEmpty: true }) %}
+
+{% set addressHtml %}
+  {{ addressLines | join("<br>") | safe }}
+{% endset %}
+
+{% set addressRow = {
+  key: {
+    text: "Home address"
+  },
+  value: {
+    html: addressHtml
+  },
+  actions: {
+     items: [
+       {
+        href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain),
+         text: "Change",
+         visuallyHiddenText: "home address"
+       } if allowEdits
+     ]
+   }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(addressRow) }}

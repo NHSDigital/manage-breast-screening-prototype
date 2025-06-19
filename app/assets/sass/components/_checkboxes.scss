@@ -1,0 +1,22 @@
+@use 'nhsuk-frontend/packages/core/settings' as *;
+@use 'nhsuk-frontend/packages/core/tools' as *;
+
+.app-checkboxes--inline {
+  @include nhsuk-media-query($from: tablet) {
+    @include nhsuk-clearfix;
+
+    .nhsuk-checkboxes__item {
+      clear: none;
+      float: left;
+      margin-right: nhsuk-spacing(4);
+    }
+  }
+
+  // &.nhsuk-checkboxes--conditional {
+  //   // [1]
+  //   .nhsuk-checkboxes__item {
+  //     float: none;
+  //     margin-right: 0;
+  //   }
+  // }
+}

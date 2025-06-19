@@ -27,8 +27,9 @@
 {%- from 'label/macro.njk' import label %}
 {%- from 'radios/macro.njk' import radios %}
 {%- from 'select/macro.njk' import select %}
-{%- from 'summary-list/macro.njk' import summaryList %}
-{%- from 'tabs/macro.njk' import tabs %} 
+{# Renamed summary list so we prefer our app one first #}
+{%- from 'summary-list/macro.njk' import summaryList as nativeSummaryList %}
+{%- from 'tabs/macro.njk' import tabs %}
 {%- from 'tag/macro.njk' import tag %}
 {%- from 'task-list/macro.njk' import taskList %}
 {%- from 'textarea/macro.njk' import textarea %}
@@ -72,7 +73,7 @@
     {% endblock %}
 
     {% block head %}{% endblock %}
-    
+
   </head>
 
   <body class="{{ bodyClasses }}">

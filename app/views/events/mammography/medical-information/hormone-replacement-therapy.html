@@ -1,7 +1,6 @@
 
 {% extends 'layout-app.html' %}
 
-
 {% set pageHeading = "Hormone replacement therapy (HRT)" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
@@ -31,11 +30,11 @@
       name: "event[medicalInformation][hrt][hrtDuration]",
       value: event.medicalInformation.hrt.hrtDuration,
       label: {
-        text: "How long have they been taking HRT?"
+        text: "For how long?"
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, 2 years, 6 months"
+        text: "For example, 18 months"
       }
     }) }}
 
@@ -47,11 +46,11 @@
       name: "event[medicalInformation][hrt][hrtDurationSinceStopped]",
       value: event.medicalInformation.hrt.hrtDurationSinceStopped,
       label: {
-        text: "How long since they stopped taking HRT?"
+        text: "Describe when they stopped"
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, 3 months"
+        text: "For example, two weeks ago"
       }
     }) }}
 
@@ -59,7 +58,7 @@
       name: "event[medicalInformation][hrt][hrtDurationBeforeStopping]",
       value: event.medicalInformation.hrt.hrtDurationBeforeStopping,
       label: {
-        text: "How long did they take HRT for?"
+        text: "How long had they been taking HRT for?"
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
@@ -69,13 +68,16 @@
 
   {% endset %}
 
+  <span class="nhsuk-caption-l">
+    {{ participant | getShortName }}
+  </span>
   {{ radios({
     name: "event[medicalInformation][hrt][hrtQuestion]",
     idPrefix: "hrtQuestion",
     value: event.medicalInformation.hrt.hrtQuestion,
     fieldset: {
       legend: {
-        text: pageHeading,
+        text: "Is " + (participant | getShortName) + " currently taking HRT?",
         classes: "nhsuk-fieldset__legend--l",
         isPageHeading: true
       }
@@ -83,14 +85,14 @@
     items: [
     {
       value: "yes",
-      text: "Yes, currently taking HRT",
+      text: "Yes",
       conditional: {
         html: currentlyTakingHtml
       }
     },
     {
       value: "no-recently-stopped",
-      text: "No, but recently stopped taking HRT",
+      text: "No, but stopped recently",
       conditional: {
         html: recentlyStoppedHtml
       }

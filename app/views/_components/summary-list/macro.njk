@@ -1,0 +1,20 @@
+{% macro appSummaryList(params) %}
+  {# Decide whether to use native component or our patched version #}
+  {# Iterates through each row, checking if any are html - if so, we need ours #}
+  {% set canUseNativeComponent = true %}
+  {% for row in params.rows %}
+    {% if row.html %}
+      {% set canUseNativeComponent = false %}
+    {% endif %}
+  {% endfor %}
+  {% if canUseNativeComponent %}
+    {% from "summary-list/macro.njk" import summaryList %}
+    {{ summaryList(params) }}
+  {% else %}
+    {%- include "./summary-list-template.njk" -%}
+  {% endif %}
+{% endmacro %}
+
+{% macro appSummaryListRow(row) %}
+  {%- include "./summary-list-row-template.njk" -%}
+{% endmacro %}

@@ -24,17 +24,40 @@
       {% else %}
         {% set valueLines = valueLines | push("Change type: " + (symptom.skinChangeType)) %}
       {% endif %}
-    {% elseif symptom.type == "Persistent pain" and symptom.persistentPainDescription %}
-      {% set valueLines = valueLines | push("Pain type: " + (symptom.persistentPainDescription)) %}
     {% elseif symptom.type == "Other" and symptom.otherDescription %}
       {% set valueLines = valueLines | push("Description: " + (symptom.otherDescription)) %}
     {% endif %}
 
     {# Location information #}
     {% if symptom.type == "Nipple change" and symptom.nippleChangeLocation %}
-      {% set valueLines = valueLines | push(symptom.nippleChangeLocation | sentenceCase) %}
+      {% if symptom.nippleChangeLocation | length > 1 %}
+        {% set valueLines = valueLines | push("Both nipples") %}
+      {% else %}
+        {% set valueLines = valueLines | push(symptom.nippleChangeLocation[0] | sentenceCase) %}
+      {% endif %}
     {% elseif symptom.location %}
       {% set locationText = symptom.location | sentenceCase %}
+
+      {# {% if symptom.location | includes("right breast") and symptom.location | includes("left breast") %}
+        {% set locationText = "Both breasts" %}
+      {% elseif symptom.location | includes("right breast") %}
+        {% set locationText = "Right breast" %}
+      {% elseif symptom.location | includes("left breast") %}
+        {% set locationText = "Left breast" %}
+      {% endif %}
+
+      {% if symptom.location | includes("other") %}
+        {% set locationText %}
+          {% if locationText %}
+            {{ locationText }} plus
+          {% else %}
+            Location:
+          {% endif %}
+        {% endset %}
+        {% if symptom.otherLocationDescription %}
+          {% set locationText = locationText + " (" + symptom.otherLocationDescription | sentenceCase + ")" %}
+        {% endif %}
+      {% endif %} #}
       {% if symptom.location == "right breast" and symptom.rightBreastDescription %}
         {% set locationText = locationText + ": " + symptom.rightBreastDescription %}
       {% elseif symptom.location == "left breast" and symptom.leftBreastDescription %}
@@ -51,9 +74,9 @@
     {% set startText %}
       Started:
       {% if symptom.dateType == 'dateKnown' and symptom.dateStarted %}
-        {{ symptom.dateStarted.month }}/{{ symptom.dateStarted.year }}
-      {% elseif symptom.dateType == 'approximateDate' and symptom.approximateDateStarted %}
-        {{ symptom.approximateDateStarted }}
+        {{ symptom.dateStarted | formatMonthYear }} ({{ symptom.dateStarted | formatRelativeDate }})
+      {% elseif symptom.approximateDuration %}
+        {{ symptom.approximateDuration }} ago
       {% elseif symptom.dateType == 'notSure' %}
         not sure
       {% else %}
@@ -61,6 +84,11 @@
       {% endif %}
     {% endset %}
     {% set valueLines = valueLines | push(startText) %}
+
+    {# Stop date if applicable #}
+    {% if symptom.isIntermittent %}
+      {% set valueLines = valueLines | push("Symptom is intermittent") %}
+    {% endif %}
 
     {# Stop date if applicable #}
     {% if symptom.hasStopped and symptom.approximateDateStopped %}

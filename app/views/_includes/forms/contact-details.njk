@@ -1,0 +1,108 @@
+{# Home address #}
+{% call fieldset({
+  legend: {
+    text: "Home address",
+    classes: "nhsuk-fieldset__legend--m",
+    isPageHeading: true
+  }
+}) %}
+
+  {{ input({
+    label: {
+      html: 'Building and street <span class="nhsuk-u-visually-hidden">line 1 of 3</span>'
+    },
+    id: "address-line-1",
+    value: participant.demographicInformation.address.line1,
+    name: "participant[demographicInformation][address][line1]",
+    classes: "nhsuk-u-width-two-thirds"
+  }) }}
+
+  {{ input({
+    label: {
+      html: '<span class="nhsuk-u-visually-hidden">Building and street line 2 of 3</span>'
+    },
+    id: "address-line-2",
+    value: participant.demographicInformation.address.line2,
+    name: "participant[demographicInformation][address][line2]",
+    classes: "nhsuk-u-width-two-thirds"
+  }) }}
+
+  {{ input({
+    label: {
+      html: '<span class="nhsuk-u-visually-hidden">Building and street line 3 of 3</span>'
+    },
+    id: "address-line-3",
+    value: participant.demographicInformation.address.line3,
+    name: "participant[demographicInformation][address][line3]",
+    classes: "nhsuk-u-width-two-thirds"
+  }) }}
+
+  {{ input({
+    label: {
+      text: "Town or city"
+    },
+    classes: "nhsuk-u-width-two-thirds",
+    id: "address-town",
+    value: participant.demographicInformation.address.town,
+    name: "participant[demographicInformation][address][town]"
+  }) }}
+
+  {# {{ input({
+    label: {
+      text: "County"
+    },
+    classes: "nhsuk-u-width-two-thirds",
+    id: "address-county",
+    name: "participant[demographicInformation][address][address-county]"
+  }) }} #}
+
+  {{ input({
+    label: {
+      text: "Postcode"
+    },
+    classes: "nhsuk-input--width-10",
+    id: "address-postcode",
+    value: participant.demographicInformation.address.postcode,
+    name: "participant[demographicInformation][address][postcode]"
+  }) }}
+
+{% endcall %}
+
+{# Phone number #}
+
+<h2>Contact numbers</h2>
+
+{{ input({
+  label: {
+    text: "Mobile (optional)",
+    _classes: "nhsuk-label--m"
+  },
+  value: participant.demographicInformation.mobilePhone,
+  id: "mobile-phone-number",
+  name: "participant[demographicInformation][mobilePhone]",
+  classes: "nhsuk-u-width-one-half"
+}) }}
+
+
+{{ input({
+  label: {
+    text: "Home (optional)",
+    _classes: "nhsuk-label--m"
+  },
+  value: participant.demographicInformation.homePhone,
+  id: "home-phone-number",
+  name: "participant[demographicInformation][homePhone]",
+  classes: "nhsuk-u-width-one-half"
+}) }}
+
+{# Email address #}
+{{ input({
+  label: {
+    text: "Email address (optional)",
+    classes: "nhsuk-label--m"
+  },
+  value: participant.demographicInformation.email,
+  id: "email-address",
+  name: "participant[demographicInformation][email]",
+  classes: "nhsuk-u-width-two-thirds"
+}) }}

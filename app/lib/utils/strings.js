@@ -173,6 +173,17 @@ const startsWith = (input, target) => {
 }
 
 /**
+ * Check if string contains substring
+ * @param {string} input - String to search in
+ * @param {string} target - Substring to look for
+ * @returns {boolean} Whether string contains substring
+ */
+const stringIncludes = (input, target) => {
+  if (typeof input !== 'string' || typeof target !== 'string') return false
+  return input.includes(target)
+}
+
+/**
  * Check if value is a string
  * @param {any} input - Value to check
  * @returns {boolean} Whether value is a string
@@ -321,6 +332,7 @@ module.exports = {
   split,
   startLowerCase,
   startsWith,
+  stringIncludes,
   stringLiteral,
   formatPhoneNumber,
   pluralise

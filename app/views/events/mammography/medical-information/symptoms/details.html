@@ -35,125 +35,36 @@
     {{ pageHeading }}
   </h1>
 
+    {# Location #}
 
-  {% if event.symptomTemp.type == "Other" %}
-
-    {{ input({
-      name: "event[symptomTemp][otherDescription]",
-      label: {
-        text: "Describe the symptom",
-        classes: "nhsuk-label--m"
-      },
-      value: event.symptomTemp.otherDescription,
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
-
-  {% elseif event.symptomTemp.type == "Persistent pain" %}
-
-    {{ input({
-      name: "event[symptomTemp][persistentPainDescription]",
-      label: {
-        text: "Describe the type of pain",
-        classes: "nhsuk-label--m"
-      },
-      value: event.symptomTemp.persistentPainDescription,
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
-
-  {% elseif event.symptomTemp.type == "Nipple change" %}
-    {{ radios({
-      idPrefix: "nippleChangeType",
-      name: "event[symptomTemp][nippleChangeType]",
-      value: event.symptomTemp.nippleChangeType,
-      fieldset: {
-        legend: {
-          text: "Describe the change",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
-        }
-      },
-      items: [
-        {
-          value: "discharge",
-          text: "Discharge"
-        },
-        {
-          value: "inversion or shape change",
-          text: "Inversion or shape change"
-        },
-        {
-          value: "rash",
-          text: "Rash"
-        },
-        {
-          value: "colour change",
-          text: "Colour change"
-        },
-        {
-          value: "other",
-          text: "Other",
-          conditional: {
-            html: input({
-              name: "event[symptomTemp][nippleChangeDescription]",
-              label: {
-                text: "Describe the specific area"
-              },
-              value: event.symptomTemp.nippleChangeDescription,
-              classes: "nhsuk-u-width-two-thirds"
-            })
-          }
-        }
-      ]
-    }) }}
-  {% elseif event.symptomTemp.type == "Skin change" %}
-
-    {{ radios({
-      idPrefix: "skinChangeType",
-      name: "event[symptomTemp][skinChangeType]",
-      value: event.symptomTemp.skinChangeType,
-      fieldset: {
-        legend: {
-          text: "How has the skin changed?",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
-        }
-      },
-      items: [
-        {
-          value: "dimples or indentation",
-          text: "Dimples or indentation"
-        },
-        {
-          value: "rash",
-          text: "Rash"
-        },
-        {
-          value: "colour change",
-          text: "Colour change"
-        },
-        {
-          value: "other",
-          text: "Other",
-          conditional: {
-            html: input({
-              name: "event[symptomTemp][skinChangeDescription]",
-              label: {
-                text: "Describe the change"
-              },
-              value: event.symptomTemp.skinChangeDescription,
-              classes: "nhsuk-u-width-two-thirds"
-            })
-          }
-        }
-      ]
-    }) }}
-  {% endif %}
-
-
-
-
+  {# Nipple change location #}
   {% if event.symptomTemp.type == "Nipple change" %}
-    {{ radios({
+
+    {{ checkboxes({
+      idPrefix: "nippleChangeLocation",
+      name: "event[symptomTemp][nippleChangeLocation]",
+      values: event.symptomTemp.nippleChangeLocation,
+      classes: "app-checkboxes--inline",
+      fieldset: {
+        legend: {
+          text: "Which nipple has changed?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "right nipple",
+          text: "Right nipple"
+        },
+        {
+          value: "left nipple",
+          text: "Left nipple"
+        }
+      ]
+    }) }}
+
+    {# {{ radios({
       idPrefix: "nippleChangeLocation",
       name: "event[symptomTemp][nippleChangeLocation]",
       value: event.symptomTemp.nippleChangeLocation,
@@ -178,7 +89,7 @@
           text: "Both nipples"
         }
       ]
-    }) }}
+    }) }} #}
 
   {% else %}
 
@@ -243,6 +154,9 @@
               classes: "nhsuk-u-width-two-thirds"
             })
           }
+        } if event.symptomTemp.type == "Lumps" else {},
+        {
+          divider: "or"
         },
         {
           value: "other",
@@ -252,14 +166,128 @@
           },
           conditional: {
             html: input({
-              name: "event[symptomTemp][otherDescription]",
+              name: "event[symptomTemp][otherLocationDescription]",
               label: {
                 text: "Describe the specific area"
               },
               hint: {
                 text: "For example, the left armpit"
               },
-              value: event.symptomTemp.otherDescription,
+              value: event.symptomTemp.otherLocationDescription,
+              classes: "nhsuk-u-width-two-thirds"
+            })
+          }
+        }
+      ] | removeEmpty
+    }) }}
+
+  {% endif %}
+
+
+  {% if event.symptomTemp.type == "Other" %}
+
+    {{ input({
+      name: "event[symptomTemp][otherDescription]",
+      label: {
+        text: "Describe the symptom",
+        classes: "nhsuk-label--m"
+      },
+      value: event.symptomTemp.otherDescription,
+      classes: "nhsuk-u-width-two-thirds"
+    }) }}
+
+  {# Nipple change type #}
+  {% elseif event.symptomTemp.type == "Nipple change" %}
+    {{ radios({
+      idPrefix: "nippleChangeType",
+      name: "event[symptomTemp][nippleChangeType]",
+      value: event.symptomTemp.nippleChangeType,
+      fieldset: {
+        legend: {
+          text: "Describe the change",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "discharge",
+          text: "Discharge"
+        },
+        {
+          value: "inversion",
+          text: "Inversion"
+        },
+        {
+          value: "rash or eczema",
+          text: "Rash or eczema"
+        },
+        {
+          value: "shape change",
+          text: "Shape change"
+        },
+        {
+          value: "colour change",
+          text: "Colour change"
+        },
+        {
+          value: "other",
+          text: "Other",
+          conditional: {
+            html: input({
+              name: "event[symptomTemp][nippleChangeDescription]",
+              label: {
+                text: "Describe the specific area"
+              },
+              value: event.symptomTemp.nippleChangeDescription,
+              classes: "nhsuk-u-width-two-thirds"
+            })
+          }
+        }
+      ]
+    }) }}
+
+  {# Skin change type #}
+  {% elseif event.symptomTemp.type == "Skin change" %}
+
+    {{ radios({
+      idPrefix: "skinChangeType",
+      name: "event[symptomTemp][skinChangeType]",
+      value: event.symptomTemp.skinChangeType,
+      fieldset: {
+        legend: {
+          text: "How has the skin changed?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "sores or cysts",
+          text: "Sores or cysts"
+        },
+        {
+          value: "dimples or indentation",
+          text: "Dimples or indentation"
+        },
+        {
+          value: "rash",
+          text: "Rash"
+        },
+        {
+          value: "colour change",
+          text: "Colour change"
+        },
+        {
+          value: "other",
+          text: "Other",
+          conditional: {
+            html: input({
+              name: "event[symptomTemp][skinChangeDescription]",
+              label: {
+                text: "Describe the change"
+              },
+              value: event.symptomTemp.skinChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
             })
           }
@@ -268,121 +296,7 @@
     }) }}
   {% endif %}
 
-  {# {% set yesOngoingHtml %}
-    {{ dateInput({
-      id: "ongoingStartDate",
-      namePrefix: "event[symptomTemp][ongoingStartDate]",
-      fieldset: {
-        legend: {
-          text: "Approximate start date",
-          _classes: "nhsuk-label--m",
-          isPageHeading: false
-        }
-      },
-      hint: {
-        text: "For example, " + today() | remove(3, "months") | formatDate("M YYYY")
-      },
-      items: [
-        {
-          name: "month",
-          classes: "nhsuk-input--width-2",
-          value: event.symptomTemp.approxStartDate.month
-        },
-        {
-          name: "year",
-          classes: "nhsuk-input--width-4",
-          value: event.symptomTemp.approxStartDate.year
-        }
-      ]
-    }) }}
-{% endset %}
-
-{% set noOngoingHtml %}
-  {{ dateInput({
-    id: "notOngoingStartDate",
-    namePrefix: "event[symptomTemp][notOngoingStartDate]",
-    fieldset: {
-      legend: {
-        text: "Approximate start date",
-        _classes: "nhsuk-label--m",
-        isPageHeading: false
-      }
-    },
-    hint: {
-      text: "For example, " + today() | remove(9, "months") | formatDate("M YYYY")
-    },
-    items: [
-      {
-        name: "month",
-        classes: "nhsuk-input--width-2",
-        value: event.symptomTemp.approxStartDate.month
-      },
-      {
-        name: "year",
-        classes: "nhsuk-input--width-4",
-        value: event.symptomTemp.approxStartDate.year
-      }
-    ]
-  }) }}
-
-  {{ dateInput({
-    id: "approxEndDate",
-    namePrefix: "event[symptomTemp][approxEndDate]",
-    fieldset: {
-      legend: {
-        text: "Approximate end date",
-        _classes: "nhsuk-label--m",
-        isPageHeading: false
-      }
-    },
-    hint: {
-      text: "For example, " + today() | remove(1, "weeks") | formatDate("M YYYY")
-    },
-    items: [
-      {
-        name: "month",
-        classes: "nhsuk-input--width-2",
-        value: event.symptomTemp.approxEndDate.month
-      },
-      {
-        name: "year",
-        classes: "nhsuk-input--width-4",
-        value: event.symptomTemp.approxEndDate.year
-      }
-    ]
-  }) }}
-{% endset %} #}
-
-{# Is this an ongoing symptom #}
-{# {{ radios({
-  idPrefix: "isOngoing",
-  name: "event[symptomTemp][isOngoing]",
-  value: event.symptomTemp.isOngoing,
-  fieldset: {
-    legend: {
-      text: "Is this an ongoing symptom?",
-      classes: "nhsuk-fieldset__legend--m",
-      isPageHeading: false
-    }
-  },
-  items: [
-    {
-      value: "yes",
-      text: "Yes",
-      conditional: {
-        html: yesOngoingHtml
-      }
-    },
-    {
-      value: "no",
-      text: "No",
-      conditional: {
-        html: noOngoingHtml
-      }
-    }
-  ]
-}) }} #}
-
+  {# Dates #}
   {% set dateKnownHtml %}
       {{ dateInput({
         id: "dateStarted",
@@ -428,38 +342,67 @@
       }) }}
     {% endset %}
 
+    {# {% set dateRangeOptions = [
+      "Less than a week",
+      "1 week to a month",
+      "1 to 3 months",
+      "3 months to a year",
+      "1 to 3 years",
+      "Over 3 years"
+    ] %} #}
+
+    {% set dateRangeOptions = [
+      "Less than 3 months",
+      "3 months to a year",
+      "1 to 3 years",
+      "Over 3 years"
+    ] %}
+
+    {% set dateRadioItems = [] %}
+
+    {% for item in dateRangeOptions %}
+      {% set dateRadioItems = dateRadioItems | push({
+        value: item,
+        text: item
+      }) %}
+    {% endfor %}
+
+    {% set dateRadioItems = dateRadioItems | push({
+      divider: "or"
+    }) %}
+
+    {% set dateRadioItems = dateRadioItems | push({
+      value: "dateKnown",
+      text: "Since a specific date",
+      conditional: {
+        html: dateKnownHtml
+      }
+    }) %}
+
+    {% set dateRadioItems = dateRadioItems | push({
+      divider: "or"
+    }) %}
+
+    {% set dateRadioItems = dateRadioItems | push({
+      value: "notSure",
+      text: "Not sure"
+    }) %}
+
+
+
     {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not sure'  #}
     {{ radios({
       idPrefix: "dateType",
       name: "event[symptomTemp][dateType]",
       fieldset: {
         legend: {
-          text: "When did this symptom start?",
+          text: "How long has this symptom existed?",
           classes: "nhsuk-fieldset__legend--m",
           isPageHeading: false
         }
       },
       value: event.symptomTemp.dateType,
-      items: [
-        {
-          value: "dateKnown",
-          text: "Enter a date",
-          conditional: {
-            html: dateKnownHtml
-          }
-        },
-        {
-          value: "approximateDate",
-          text: "Enter an approximate date",
-          conditional: {
-            html: approximateDateHtml
-          }
-        },
-        {
-          value: "notSure",
-          text: "Not sure"
-        }
-      ]
+      items: dateRadioItems
     }) }}
 
     {% set stymptomStoppedHtml %}
@@ -475,6 +418,20 @@
         classes: "nhsuk-u-width-two-thirds"
       }) }}
     {% endset %}
+
+    {# todo: this is hacky! #}
+    <br>
+
+    {{ checkboxes({
+      idPrefix: "isIntermittent",
+      name: "event[symptomTemp][isIntermittent]",
+      items: [
+        {
+          value: "yes",
+          text: "The symptom is intermittent"
+        }
+      ]
+    }) }}
 
     {{ checkboxes({
       idPrefix: "hasStopped",
@@ -496,7 +453,7 @@
     value: event.symptomTemp.hasBeenInvestigated,
     fieldset: {
       legend: {
-        text: "Has this been investigated by a medical professional?",
+        text: "Has this been investigated?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
