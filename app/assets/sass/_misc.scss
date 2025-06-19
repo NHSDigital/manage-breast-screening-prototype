@@ -48,3 +48,12 @@
 .app-button-full-width {
   width: 100%;
 }
+
+// Reduce space taken by card
+.nhsuk-card {
+  @include nhsuk-responsive-margin(4, "bottom");
+}
+
+.nhsuk-card--feature {
+  @include nhsuk-responsive-margin(5, "top");
+}

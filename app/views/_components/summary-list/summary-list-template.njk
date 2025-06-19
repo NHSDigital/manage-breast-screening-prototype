@@ -15,6 +15,9 @@
 
 {#- Determine if we need 2 or 3 columns #}
 {%- set anyRowHasActions = false %}
+{% if caller %}
+  {% set anyRowHasActions = caller() | stringIncludes("nhsuk-summary-list__actions") %}
+{% endif %}
 {% for row in params.rows %}
   {% if row.html %}
     {# If the row has an actions class, we assume it has actions #}
