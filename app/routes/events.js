@@ -585,6 +585,8 @@ module.exports = router => {
     'personal-details/ethnicity',
     'special-appointments/edit',
     'special-appointments/temporary-reasons',
+    'special-appointments/confirm',
+
 
     // Completed screenings
     'images',
@@ -769,17 +771,21 @@ router.post('/clinics/:clinicId/events/:eventId/special-appointments/edit-answer
   if (temporaryReasons === 'yes') {
     res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointments/temporary-reasons`)
   } else {
-    // If "no", save the data and redirect back to main event page
-    saveTempEventToEvent(data)
-    saveTempParticipantToParticipant(data)
-    
-    req.flash('success', 'Special appointment requirements updated')
-    res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+    // If "no", redirect to confirm page to show what they selected
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointments/confirm`)
   }
 })
 
 // Handle temporary reasons selection form submission
 router.post('/clinics/:clinicId/events/:eventId/special-appointments/temporary-reasons-answer', (req, res) => {
+  console.log('temporary-reasons-answer route hit!') // Add this line
+  const { clinicId, eventId } = req.params
+  
+  // After saving temporary reasons data, redirect to confirm page
+  res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointments/confirm`)
+})
+// Handle special appointment confirmation
+router.post('/clinics/:clinicId/events/:eventId/special-appointments/confirm-answer', (req, res) => {
   const { clinicId, eventId } = req.params
   const data = req.session.data
 
@@ -787,7 +793,8 @@ router.post('/clinics/:clinicId/events/:eventId/special-appointments/temporary-r
   saveTempEventToEvent(data)
   saveTempParticipantToParticipant(data)
   
-  req.flash('success', 'Special appointment requirements updated')
+  req.flash('success', 'Special appointment requirements confirmed')
   res.redirect(`/clinics/${clinicId}/events/${eventId}`)
 })
+
 }
