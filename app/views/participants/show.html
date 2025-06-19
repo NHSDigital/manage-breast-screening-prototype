@@ -43,11 +43,11 @@
   }) }}
 
   {% set screeningHistoryHtml %}
-    {% include "summary-lists/screening-history.njk" %}
+    {% include "summary-lists/screening-appointment-history.njk" %}
   {% endset %}
 
   {{ card({
-    heading: "Screening history",
+    heading: "Appointments",
     headingLevel: "2",
     descriptionHtml: screeningHistoryHtml
   }) }}
