@@ -4,7 +4,6 @@
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 {% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain) %}
 
-
 {% block pageContent %}
 
   {{ participant | log }}
@@ -12,7 +11,7 @@
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">
+    <span class="nhsuk-caption-m">
       {{ participant | getFullName }}
     </span>
     {{ pageHeading }}
@@ -57,75 +56,80 @@
           
           <!-- Popover (initially hidden) -->
           <div class="breast-features-diagram-popover" id="featurePopover">
-            <h2>Add new feature</h2>
+            <span class="nhsuk-caption-m" id="popoverCaption">Add new feature</span>
+            <h2 id="popoverHeading">What is the feature?</h2>
               
-              {{ radios({
-                idPrefix: "feature",
-                name: "feature",
-                fieldset: {
-                  legend: {
-                    text: "What is the feature?",
-                    classes: "nhsuk-fieldset__legend--m",
-                    isPageHeading: false
-                  }
+            {{ radios({
+              idPrefix: "feature",
+              name: "feature",
+              fieldset: {
+                legend: {
+                  text: "Feature type",
+                  classes: "nhsuk-fieldset__legend--s",
+                  isPageHeading: false
+                }
+              },
+              items: [
+                {
+                  value: "scar",
+                  text: "Scar"
                 },
-                items: [
-                  {
-                    value: "scar",
-                    text: "Scar"
-                  },
-                  {
-                    value: "mole", 
-                    text: "Mole"
-                  },
-                  {
-                    value: "wart",
-                    text: "Wart"
-                  },
-                  {
-                    value: "other",
-                    text: "Other",
-                    conditional: {
-                      html: input({
-                        id: "customLabel",
-                        name: "customLabel",
-                        label: {
-                          text: "Enter a custom label"
-                        }
-                      })
-                    }
+                {
+                  value: "breast-reduction-scar",
+                  text: "Breast reduction scar"
+                },
+                {
+                  value: "mole", 
+                  text: "Mole"
+                },
+                {
+                  value: "wart",
+                  text: "Wart"
+                },
+                {
+                  value: "other",
+                  text: "Other",
+                  conditional: {
+                    html: input({
+                      id: "customLabel",
+                      name: "customLabel",
+                      label: {
+                        text: "Enter a custom label"
+                      }
+                    })
                   }
-                ]
-              }) }}
+                }
+              ]
+            }) }}
 
-         <div class="nhsuk-button-group">
-                {{ button({
-                  text: "Add",
-                  id: "addBtn",
-                  attributes: {
-                    type: "button",
-                    "data-action": "add"
-                  }
-                }) }}
-                
-                {{ button({
-                text: "Cancel",
-                classes: "nhsuk-button--secondary",
+            <div class="nhsuk-button-group">
+              {{ button({
+                text: "Add",
+                id: "addBtn",
                 attributes: {
-                 type: "button",
-                 "data-action": "cancel"  
-                 }
-                }) }}
-                
-               {{ button({
-                 text: "Remove",
-                classes: "nhsuk-button--warning",
-                attributes: {
-                 type: "button",
-                 "data-action": "remove"  
-                 }
-                }) }}
-              </div>
+                  type: "button",
+                  "data-action": "add"
+                }
+              }) }}
+              
+              {{ button({
+              text: "Cancel",
+              classes: "nhsuk-button--secondary",
+              attributes: {
+               type: "button",
+               "data-action": "cancel"  
+               }
+              }) }}
+              
+             {{ button({
+               text: "Remove",
+              classes: "nhsuk-button--warning",
+              attributes: {
+               type: "button",
+               "data-action": "remove"  
+               }
+              }) }}
+            </div>
           </div>
       </div>
 
@@ -153,602 +157,629 @@
 
   <script>
   function initializeBreastFeatures() {
-    let diagramContainer; // Initialized on DOMContentLoaded
-    let svg;              // Initialized on DOMContentLoaded
-    let popover;          // Initialized on DOMContentLoaded
-    let addBtn, cancelBtn, removeBtn, saveBtn; // Popover action buttons
-    let featuresListContainer; // Container for the list of features
-    let featuresList;     // UL element for features
-    let statusMessage;    // Status message area
-    let editingFeature = null; // Stores the feature being edited
-    let currentMarker = null;  // Stores the temporary marker element being created
-    let markerCounter = 1;     // Counter for marker numbers and IDs
-    let allFeatures = [];      // Array to store all saved feature data
-    let diagramOffset = { x: 0, y: 0 }; // Stores diagram container's offset from viewport
-    let conditionalDiv; // For 'other' option
-    let customInput;    // For custom 'other' text
+    let diagramContainer
+    let svg
+    let popover
+    let addBtn, cancelBtn, removeBtn, saveBtn
+    let featuresListContainer
+    let featuresList
+    let statusMessage
+    let editingFeature = null
+    let currentMarker = null
+    let markerCounter = 1
+    let allFeatures = []
+    let diagramOffset = { x: 0, y: 0 }
+    let conditionalDiv
+    let customInput
 
     // Prevent multiple initializations in NHS Prototype Kit environment
     if (window.breastFeaturesInitialized) {
-        console.warn('Breast features already initialized. Skipping.');
-        return;
+        console.warn('Breast features already initialized. Skipping.')
+        return
     }
-    window.breastFeaturesInitialized = true; // Set flag
+    window.breastFeaturesInitialized = true
 
     // Get DOM elements
-    diagramContainer = document.querySelector('.breast-features-diagram-diagram-container');
-    svg = document.querySelector('.breast-features-diagram-diagram-svg');
-    popover = document.querySelector('.breast-features-diagram-popover');
-      console.log('DEBUG initializeBreastFeatures: diagramContainer:', diagramContainer);
-    console.log('DEBUG initializeBreastFeatures: svg:', svg);
-    addBtn = popover ? popover.querySelector('.nhsuk-button[data-action="add"]') : null;
-    cancelBtn = popover ? popover.querySelector('.nhsuk-button[data-action="cancel"]') : null;
-    removeBtn = popover ? popover.querySelector('.nhsuk-button[data-action="remove"]') : null;
-    saveBtn = document.querySelector('.nhsuk-button[data-action="save-all"]'); // Main save button
-    featuresListContainer = document.querySelector('#featuresListContainer');
-    featuresList = document.querySelector('#featuresList');
-    statusMessage = document.querySelector('#status-message'); // Assuming an element with this ID
-    conditionalDiv = document.querySelector('.js-conditional-reveal__container');
-    customInput = document.querySelector('.js-conditional-reveal__container #other-feature-text');
+    diagramContainer = document.querySelector('.breast-features-diagram-diagram-container')
+    svg = document.querySelector('.breast-features-diagram-diagram-svg')
+    popover = document.querySelector('.breast-features-diagram-popover')
+    console.log('DEBUG initializeBreastFeatures: diagramContainer:', diagramContainer)
+    console.log('DEBUG initializeBreastFeatures: svg:', svg)
+    addBtn = popover ? popover.querySelector('.nhsuk-button[data-action="add"]') : null
+    cancelBtn = popover ? popover.querySelector('.nhsuk-button[data-action="cancel"]') : null
+    removeBtn = popover ? popover.querySelector('.nhsuk-button[data-action="remove"]') : null
+    saveBtn = document.querySelector('#saveBtn')
+    featuresListContainer = document.querySelector('#featuresListContainer')
+    featuresList = document.querySelector('#featuresList')
+    statusMessage = document.querySelector('#status-message')
+    conditionalDiv = document.querySelector('.js-conditional-reveal__container')
+    customInput = document.querySelector('.js-conditional-reveal__container #other-feature-text')
 
-    console.log('DEBUG: popover element found:', popover);
-    console.log('DEBUG: addBtn element found:', addBtn);
-    console.log('DEBUG: removeBtn element found:', removeBtn);
-    console.log('DEBUG: cancelBtn element found:', cancelBtn);
+    console.log('DEBUG: popover element found:', popover)
+    console.log('DEBUG: addBtn element found:', addBtn)
+    console.log('DEBUG: removeBtn element found:', removeBtn)
+    console.log('DEBUG: cancelBtn element found:', cancelBtn)
 
     if (!svg || !popover || !diagramContainer) {
-        console.error('One or more required elements not found:', { svg, popover, diagramContainer });
-        return;
+        console.error('One or more required elements not found:', { svg, popover, diagramContainer })
+        return
     }
 
     // Event listener for clicking on the SVG diagram
     svg.addEventListener('click', function(e) {
-        console.log('SVG clicked');
-        handleDiagramClick(e);
-    });
+        console.log('SVG clicked')
+        handleDiagramClick(e)
+    })
 
     // Popover action button listeners
-    if (addBtn) addBtn.addEventListener('click', addFeature);
-    if (cancelBtn) cancelBtn.addEventListener('click', closePopover);
-    if (removeBtn) removeBtn.addEventListener('click', removeFeature);
-    if (saveBtn) saveBtn.addEventListener('click', saveAllFeatures); // Listener for main save button
+    if (addBtn) addBtn.addEventListener('click', addFeature)
+    if (cancelBtn) cancelBtn.addEventListener('click', closePopover)
+    if (removeBtn) removeBtn.addEventListener('click', removeFeature)
+    if (saveBtn) saveBtn.addEventListener('click', saveAllFeatures)
 
+    // Setup conditional reveals for radio buttons
+    setupConditionalReveals()
 
     // Close popover if click outside
     document.addEventListener('click', function(e) {
-        // Check if the popover is open and the click is outside of it
         if (popover && popover.style.display === 'block' &&
             !popover.contains(e.target) && !svg.contains(e.target) &&
-            (!currentMarker || !currentMarker.element.contains(e.target))) { // Exclude marker clicks
-            closePopover();
+            (!currentMarker || !currentMarker.element.contains(e.target))) {
+            closePopover()
         }
-    });
+    })
 
     // --- Core Functions ---
 
     function handleDiagramClick(e) {
-        // Calculate click coordinates relative to the SVG element
-        const svgRect = svg.getBoundingClientRect();
-        const containerRect = diagramContainer.getBoundingClientRect();
+        const svgRect = svg.getBoundingClientRect()
+        const containerRect = diagramContainer.getBoundingClientRect()
 
-        const clickX = e.clientX;
-        const clickY = e.clientY;
+        const clickX = e.clientX
+        const clickY = e.clientY
 
-        // Coordinates relative to the SVG element
-        const svgClickX = clickX - svgRect.left;
-        const svgClickY = clickY - svgRect.top;
+        const svgClickX = clickX - svgRect.left
+        const svgClickY = clickY - svgRect.top
 
-        // Convert pixel coordinates to SVG viewBox coordinates (0-793, 0-320)
-        // Ensure SVG dimensions are not zero to prevent division by zero
-        const svgViewBoxX = svgRect.width > 0 ? (svgClickX / svgRect.width) * 793 : 0;
-        const svgViewBoxY = svgRect.height > 0 ? (svgClickY / svgRect.height) * 320 : 0;
+        const svgViewBoxX = svgRect.width > 0 ? (svgClickX / svgRect.width) * 793 : 0
+        const svgViewBoxY = svgRect.height > 0 ? (svgClickY / svgRect.height) * 320 : 0
 
-        // Coordinates relative to the diagramContainer for initial marker placement
-        const containerX = clickX - containerRect.left;
-        const containerY = clickY - containerRect.top;
+        const containerX = clickX - containerRect.left
+        const containerY = clickY - containerRect.top
 
-        console.log('Container click coords:', { containerX, containerY });
-        console.log('SVG click coords:', { svgClickX, svgClickY });
-        console.log('SVG viewBox coords:', { svgViewBoxX, svgViewBoxY });
+        console.log('Container click coords:', { containerX, containerY })
+        console.log('SVG click coords:', { svgClickX, svgClickY })
+        console.log('SVG viewBox coords:', { svgViewBoxX, svgViewBoxY })
 
-        // If editing a marker, click on diagram should not create a new one
         if (currentMarker && currentMarker.element) {
-            console.log('Editing in progress, not creating new marker.');
-            return;
+            console.log('Editing in progress, not creating new marker.')
+            return
         }
 
-        // Basic validation for click within SVG bounds (optional, but good practice)
         if (svgClickX < 0 || svgClickX > svgRect.width || svgClickY < 0 || svgClickY > svgRect.height) {
-            console.warn('Click outside SVG element bounds. Ignoring.');
-            return;
+            console.warn('Click outside SVG element bounds. Ignoring.')
+            return
         }
 
-        // Create a temporary marker to show where the permanent one will appear
-        createTemporaryMarker(containerX, containerY);
+        createTemporaryMarker(containerX, containerY)
+        showPopover(clickX, clickY)
 
-        // Show the popover for feature selection
-        showPopover(clickX, clickY);
+        currentMarker.x = svgViewBoxX
+        currentMarker.y = svgViewBoxY
 
-        // Store the SVG viewBox coordinates for the feature
-        currentMarker.x = svgViewBoxX;
-        currentMarker.y = svgViewBoxY;
-
-        editingFeature = null; // Ensure we are adding a new feature, not editing
+        editingFeature = null
     }
 
     function createTemporaryMarker(containerX, containerY) {
         if (currentMarker && currentMarker.element) {
-            currentMarker.element.remove(); // Remove existing temporary marker
+            currentMarker.element.remove()
         }
 
-        const marker = document.createElement('div');
-        marker.className = 'breast-features-diagram-marker';
-        marker.innerText = '?'; // Placeholder until number is assigned
-        marker.style.left = (containerX - 20) + 'px'; // Center the 40px marker
-        marker.style.top = (containerY - 20) + 'px'; // Center the 40px marker
-        marker.style.zIndex = '102'; // Ensure temporary marker is above others
+        const marker = document.createElement('div')
+        marker.className = 'breast-features-diagram-marker'
+        marker.innerText = '?'
+        marker.style.left = (containerX - 20) + 'px'
+        marker.style.top = (containerY - 20) + 'px'
+        marker.style.zIndex = '102'
 
-        diagramContainer.appendChild(marker);
-        currentMarker = { element: marker }; // Store reference to the temporary marker
-        console.log('Temporary marker created at:', marker.style.left, marker.style.top);
+        diagramContainer.appendChild(marker)
+        currentMarker = { element: marker }
+        console.log('Temporary marker created at:', marker.style.left, marker.style.top)
     }
 
     function showPopover(clickX, clickY) {
-        if (!popover) return;
+        if (!popover) return
 
-        popover.style.display = 'block';
-        resetPopoverForm(); // Clear any previous selection
+        popover.style.display = 'block'
+        resetPopoverForm()
 
-        const popoverRect = popover.getBoundingClientRect();
-        let popoverLeft = clickX + 20; // Offset from click point
-        let popoverTop = clickY - popoverRect.height / 2; // Roughly vertical center with click
+        const popoverRect = popover.getBoundingClientRect()
+        let popoverLeft = clickX + 20
+        let popoverTop = clickY - popoverRect.height / 2
 
-        // Keep popover within viewport bounds
         if (popoverLeft + popoverRect.width > window.innerWidth) {
-            popoverLeft = window.innerWidth - popoverRect.width - 10; // 10px margin
+            popoverLeft = window.innerWidth - popoverRect.width - 10
         }
         if (popoverTop < 0) {
-            popoverTop = 10; // 10px margin
+            popoverTop = 10
         }
         if (popoverTop + popoverRect.height > window.innerHeight) {
-            popoverTop = window.innerHeight - popoverRect.height - 10;
+            popoverTop = window.innerHeight - popoverRect.height - 10
         }
         if (popoverLeft < 0) {
-            popoverLeft = 10;
+            popoverLeft = 10
         }
 
-        popover.style.left = popoverLeft + 'px';
-        popover.style.top = popoverTop + 'px';
-        popover.focus(); // Focus the popover for accessibility
+        popover.style.left = popoverLeft + 'px'
+        popover.style.top = popoverTop + 'px'
+        popover.focus()
     }
 
     function resetPopoverForm() {
-    if (!popover) return;
-    popover.querySelector('h2').innerText = 'Add new feature';
-    addBtn.innerText = 'Add';
-    removeBtn.style.display = 'none';
+        if (!popover) return
+        
+        const popoverCaption = popover.querySelector('#popoverCaption')
+        const popoverHeading = popover.querySelector('#popoverHeading')
+        
+        if (popoverCaption) {
+            popoverCaption.innerText = 'Add new feature'
+        }
+        if (popoverHeading) {
+            popoverHeading.innerText = 'What is the feature?'
+        }
+        
+        addBtn.innerText = 'Add'
+        removeBtn.style.display = 'none'
 
-    // Use the correct name attribute from your HTML
-    const radios = popover.querySelectorAll('input[name="feature"]');
-    radios.forEach(radio => radio.checked = false);
+        const radios = popover.querySelectorAll('input[name="feature"]')
+        radios.forEach(radio => radio.checked = false)
 
-    // Clear custom input
-    const customInput = document.querySelector('#customLabel');
-    if (customInput) {
-        customInput.value = '';
+        const customInput = document.querySelector('#customLabel')
+        if (customInput) {
+            customInput.value = ''
+        }
+        
+        const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+        if (conditionalDiv) {
+            conditionalDiv.classList.remove('nhsuk-radios__conditional--revealed')
+        }
     }
-    
-    // Hide conditional reveal
-    const conditionalDiv = document.querySelector('.nhsuk-radios__conditional');
-    if (conditionalDiv) {
-        conditionalDiv.classList.remove('nhsuk-radios__conditional--revealed');
-    }
-}
+
     function setupConditionalReveals() {
-    const otherRadio = document.getElementById('feature-other');
-    const allRadios = document.querySelectorAll('input[name="feature"]'); // Fixed to use correct name
-    const conditionalDiv = document.querySelector('.nhsuk-radios__conditional');
-    const customInput = document.querySelector('#customLabel');
+        const otherRadio = document.getElementById('feature-other')
+        const allRadios = document.querySelectorAll('input[name="feature"]')
+        const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+        const customInput = document.querySelector('#customLabel')
 
-    if (otherRadio && conditionalDiv) {
-        otherRadio.addEventListener('change', function() {
-            if (this.checked) {
-                conditionalDiv.classList.add('nhsuk-radios__conditional--revealed');
-            }
-        });
-    }
-
-    // Hide conditional reveal if 'other' is not selected
-    allRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (conditionalDiv && this.value !== 'other') {
-                conditionalDiv.classList.remove('nhsuk-radios__conditional--revealed');
-                if (customInput) {
-                    customInput.value = '';
+        if (otherRadio && conditionalDiv) {
+            otherRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
                 }
-            }
-        });
-    });
-}
+            })
+        }
 
-
-    function createPermanentMarker(x, y, text, number) {
-        console.log('--- createPermanentMarker function called ---'); 
-        console.log('Inputs to createPermanentMarker:', {x, y, text, number}); 
-        const marker = document.createElement('div');
-        marker.className = 'breast-features-diagram-marker';
-        marker.innerText = number;
-        marker.setAttribute('data-id', number);
-        marker.setAttribute('data-x', x); // Store SVG viewBox X
-        marker.setAttribute('data-y', y); // Store SVG viewBox Y
-        marker.setAttribute('data-feature-id', allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1); // Assign unique ID
-
-        // Position the marker
-        positionMarkerContainer(marker, x, y);
-
-        diagramContainer.appendChild(marker);
-        setupMarkerInteraction(marker); // Make marker draggable and clickable
-        return marker;
+        allRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (conditionalDiv && this.value !== 'other') {
+                    conditionalDiv.classList.remove('nhsuk-radios__conditional--revealed')
+                    if (customInput) {
+                        customInput.value = ''
+                    }
+                }
+            })
+        })
     }
 
-   function positionMarkerContainer(container, svgX, svgY) {
-     console.log('--- positionMarkerContainer function called ---');
-        const containerRect = diagramContainer.getBoundingClientRect();
-        const svgRect = svg.getBoundingClientRect();
+    function createPermanentMarker(x, y, text, number, featureId) {
+        console.log('=== createPermanentMarker START ===')
+        console.log('Received parameters:', {x, y, text, number, featureId})
+        console.log('featureId type:', typeof featureId, 'value:', featureId)
+        console.log('featureId === undefined:', featureId === undefined)
         
-        // --- ADDED DEBUG LOGS ---
-        console.log('--- positionMarkerContainer debug ---');
-        console.log('Input container element:', container); // Added for more context
-        console.log('Input svgX:', svgX, 'svgY:', svgY);
-        console.log('diagramContainer clientRect:', containerRect.width, 'x', containerRect.height, 'left:', containerRect.left, 'top:', containerRect.top); // Added left/top for parent
-        console.log('svgRect (rendered) dimensions:', svgRect.width, 'x', svgRect.height, 'left:', svgRect.left, 'top:', svgRect.top); // Added left/top for SVG
-        console.log('svgRect offset from container (calculated):', 'left:', svgRect.left - containerRect.left, 'top:', svgRect.top - containerRect.top);
-        // --- END ADDED DEBUG LOGS ---
+        const marker = document.createElement('div')
+        marker.className = 'breast-features-diagram-marker'
+        marker.innerText = number
+        marker.setAttribute('data-id', number)
+        marker.setAttribute('data-x', x)
+        marker.setAttribute('data-y', y)
+        
+        console.log('About to set data-feature-id to:', featureId)
+        marker.setAttribute('data-feature-id', featureId)
+        console.log('data-feature-id actually set to:', marker.getAttribute('data-feature-id'))
 
-        // Calculate SVG offset within the diagram container
-        const svgOffsetX = svgRect.left - containerRect.left;
-        const svgOffsetY = svgRect.top - containerRect.top;
-        
-        // Convert SVG coordinates (0-793, 0-320) to pixel coordinates within the SVG
-        // Note: Assuming SVG viewBox starts at 0,0 and has dimensions 793x320
-        const pixelX = (svgX / 793) * svgRect.width;
-        const pixelY = (svgY / 320) * svgRect.height;
-        
-        // --- ADDED DEBUG LOGS ---
-        console.log('Converted pixelX (within SVG):', pixelX, 'pixelY (within SVG):', pixelY);
-        // --- END ADDED DEBUG LOGS ---
+        positionMarkerContainer(marker, x, y)
 
-        // Position relative to the diagram container, accounting for SVG offset
-        // Adjust for marker size (assuming a 40x40px marker, so -20 for half width/height to center it)
-        const markerSizeOffset = 20; 
-        container.style.left = (svgOffsetX + pixelX - markerSizeOffset) + 'px';
-        container.style.top = (svgOffsetY + pixelY - markerSizeOffset) + 'px';
+        diagramContainer.appendChild(marker)
+        setupMarkerInteraction(marker)
         
-        // CRITICAL: Ensure the marker is absolutely positioned within its relative parent
-        container.style.position = 'absolute'; // <--- ADDED THIS LINE!
+        console.log('=== createPermanentMarker END ===')
+        return marker
+    }
 
-        // --- ADDED DEBUG LOGS ---
-        console.log('Final marker CSS left:', container.style.left, 'top:', container.style.top);
-        console.log('------------------------------------');
-        // --- END ADDED DEBUG LOGS ---
+    function positionMarkerContainer(container, svgX, svgY) {
+        console.log('--- positionMarkerContainer function called ---')
+        const containerRect = diagramContainer.getBoundingClientRect()
+        const svgRect = svg.getBoundingClientRect()
+        
+        console.log('--- positionMarkerContainer debug ---')
+        console.log('Input container element:', container)
+        console.log('Input svgX:', svgX, 'svgY:', svgY)
+        console.log('diagramContainer clientRect:', containerRect.width, 'x', containerRect.height, 'left:', containerRect.left, 'top:', containerRect.top)
+        console.log('svgRect (rendered) dimensions:', svgRect.width, 'x', svgRect.height, 'left:', svgRect.left, 'top:', svgRect.top)
+        console.log('svgRect offset from container (calculated):', 'left:', svgRect.left - containerRect.left, 'top:', svgRect.top - containerRect.top)
+
+        const svgOffsetX = svgRect.left - containerRect.left
+        const svgOffsetY = svgRect.top - containerRect.top
+        
+        const pixelX = (svgX / 793) * svgRect.width
+        const pixelY = (svgY / 320) * svgRect.height
+        
+        console.log('Converted pixelX (within SVG):', pixelX, 'pixelY (within SVG):', pixelY)
+
+        const markerSizeOffset = 20
+        container.style.left = (svgOffsetX + pixelX - markerSizeOffset) + 'px'
+        container.style.top = (svgOffsetY + pixelY - markerSizeOffset) + 'px'
+        container.style.position = 'absolute'
+
+        console.log('Final marker CSS left:', container.style.left, 'top:', container.style.top)
+        console.log('------------------------------------')
     }
 
     function setupMarkerInteraction(containerElement) {
-        let isDragging = false;
-        let dragStartX, dragStartY;
-        let elementStartX, elementStartY;
-        let dragThreshold = 5; // Pixels to drag before it's considered a drag
+        let isDragging = false
+        let dragStartX, dragStartY
+        let elementStartX, elementStartY
+        let dragThreshold = 5
+        
+        console.log('Setting up interaction for marker:', containerElement)
         
         containerElement.addEventListener('mousedown', function(e) {
-            e.preventDefault(); // Prevent default browser drag behavior (e.g., image drag)
-            e.stopPropagation(); // Stop event from bubbling up to SVG click listener
+            console.log('Marker mousedown triggered')
+            e.preventDefault()
+            e.stopPropagation()
             
-            isDragging = false;
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            elementStartX = parseInt(containerElement.style.left) || 0;
-            elementStartY = parseInt(containerElement.style.top) || 0;
+            isDragging = false
+            dragStartX = e.clientX
+            dragStartY = e.clientY
+            elementStartX = parseInt(containerElement.style.left) || 0
+            elementStartY = parseInt(containerElement.style.top) || 0
             
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
 
-            containerElement.classList.add('dragging'); // Add dragging class
-        });
+            containerElement.classList.add('dragging')
+        })
+        
+        // Also add a click event as a backup
+        containerElement.addEventListener('click', function(e) {
+            console.log('Marker click triggered (backup handler)')
+            e.preventDefault()
+            e.stopPropagation()
+            
+            const featureId = parseInt(containerElement.getAttribute('data-feature-id'))
+            console.log('Looking for feature with ID:', featureId)
+            const feature = allFeatures.find(f => f.id === featureId)
+            console.log('Found feature:', feature)
+            if (feature) {
+                editFeature(feature, e.clientX, e.clientY)
+            }
+        })
         
         function handleMouseMove(e) {
-            const currentX = e.clientX;
-            const currentY = e.clientY;
+            const currentX = e.clientX
+            const currentY = e.clientY
             
-            const dx = Math.abs(currentX - dragStartX);
-            const dy = Math.abs(currentY - dragStartY);
+            const dx = Math.abs(currentX - dragStartX)
+            const dy = Math.abs(currentY - dragStartY)
 
             if (!isDragging && (dx > dragThreshold || dy > dragThreshold)) {
-                isDragging = true;
-                // Add any drag start specific logic here if needed
+                isDragging = true
+                console.log('Started dragging')
             }
             
             if (isDragging) {
-                const newLeft = elementStartX + (currentX - dragStartX);
-                const newTop = elementStartY + (currentY - dragStartY);
-                containerElement.style.left = newLeft + 'px';
-                containerElement.style.top = newTop + 'px';
+                const newLeft = elementStartX + (currentX - dragStartX)
+                const newTop = elementStartY + (currentY - dragStartY)
+                containerElement.style.left = newLeft + 'px'
+                containerElement.style.top = newTop + 'px'
             }
         }
         
         function handleMouseUp(e) {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-            containerElement.classList.remove('dragging'); // Remove dragging class
+            console.log('Marker mouseup triggered, isDragging:', isDragging)
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+            containerElement.classList.remove('dragging')
 
             if (isDragging) {
-                // Update the stored x,y in the feature object after drag
-                updateFeaturePosition(containerElement);
+                console.log('Was dragging, updating position')
+                updateFeaturePosition(containerElement)
             } else {
-                // If it was a click (not a drag), open popover for editing
-                const featureId = parseInt(containerElement.getAttribute('data-feature-id'));
-                const feature = allFeatures.find(f => f.id === featureId);
+                console.log('Was clicking, opening edit dialog')
+                const featureId = parseInt(containerElement.getAttribute('data-feature-id'))
+                console.log('Looking for feature with ID:', featureId)
+                const feature = allFeatures.find(f => f.id === featureId)
+                console.log('Found feature:', feature)
                 if (feature) {
-                    editFeature(feature, e.clientX, e.clientY);
+                    editFeature(feature, e.clientX, e.clientY)
                 }
             }
-            isDragging = false;
+            isDragging = false
         }
     }
 
     function updateFeaturePosition(containerElement) {
-        const containerRect = diagramContainer.getBoundingClientRect();
-        const svgRect = svg.getBoundingClientRect();
+        const containerRect = diagramContainer.getBoundingClientRect()
+        const svgRect = svg.getBoundingClientRect()
 
-        const currentMarkerLeft = parseFloat(containerElement.style.left) + 20; // Center of marker in container pixels
-        const currentMarkerTop = parseFloat(containerElement.style.top) + 20;   // Center of marker in container pixels
+        const currentMarkerLeft = parseFloat(containerElement.style.left) + 20
+        const currentMarkerTop = parseFloat(containerElement.style.top) + 20
 
-        // Convert container pixel position back to SVG viewBox coordinates
-        // First, get position relative to SVG element itself
-        const relativeToSvgX = currentMarkerLeft - (svgRect.left - containerRect.left);
-        const relativeToSvgY = currentMarkerTop - (svgRect.top - containerRect.top);
+        const relativeToSvgX = currentMarkerLeft - (svgRect.left - containerRect.left)
+        const relativeToSvgY = currentMarkerTop - (svgRect.top - containerRect.top)
 
-        // Then scale to SVG viewBox
-        const newSvgX = (relativeToSvgX / svgRect.width) * 793;
-        const newSvgY = (relativeToSvgY / svgRect.height) * 320;
+        const newSvgX = (relativeToSvgX / svgRect.width) * 793
+        const newSvgY = (relativeToSvgY / svgRect.height) * 320
 
-        const featureId = parseInt(containerElement.getAttribute('data-feature-id'));
-        const feature = allFeatures.find(f => f.id === featureId);
+        const featureId = parseInt(containerElement.getAttribute('data-feature-id'))
+        const feature = allFeatures.find(f => f.id === featureId)
 
         if (feature) {
-            feature.x = newSvgX;
-            feature.y = newSvgY;
-            updateFeaturesList(); // Update the list with new position
-            console.log(`Feature ${feature.number} position updated to SVG (${newSvgX.toFixed(2)}, ${newSvgY.toFixed(2)})`);
+            feature.x = newSvgX
+            feature.y = newSvgY
+            updateFeaturesList()
+            console.log(`Feature ${feature.number} position updated to SVG (${newSvgX.toFixed(2)}, ${newSvgY.toFixed(2)})`)
         }
     }
 
-   function editFeature(feature, clickX, clickY) {
-    editingFeature = feature;
-    currentMarker = { element: document.querySelector(`.breast-features-diagram-marker[data-feature-id="${feature.id}"]`) };
+    function editFeature(feature, clickX, clickY) {
+        console.log('--- editFeature called for feature:', feature)
+        editingFeature = feature
+        currentMarker = { element: document.querySelector(`.breast-features-diagram-marker[data-feature-id="${feature.id}"]`) }
 
-    if (!popover) return;
-    popover.querySelector('h2').innerText = `Edit feature ${feature.number}`;
-    addBtn.innerText = 'Save changes';
-    removeBtn.style.display = 'inline-block';
-
-    // Use the correct name attribute from your HTML
-    const radios = popover.querySelectorAll('input[name="feature"]');
-    let featureFound = false;
-    
-    radios.forEach(radio => {
-        radio.checked = false; // Clear all first
-        if (radio.value === feature.text.toLowerCase()) {
-            radio.checked = true;
-            featureFound = true;
+        if (!popover) {
+            console.error('Popover not found in editFeature')
+            return
         }
-    });
-
-    // Handle "Other" case
-    if (feature.text && feature.text.startsWith('Other: ')) {
-        const otherRadio = document.getElementById('feature-other');
-        const customInput = document.querySelector('#customLabel');
-        const conditionalDiv = document.querySelector('.nhsuk-radios__conditional');
         
-        if (otherRadio) {
-            otherRadio.checked = true;
-            featureFound = true;
+        // Show popover first
+        showPopover(clickX, clickY)
+        
+        // Then update its content
+        const popoverCaption = popover.querySelector('#popoverCaption')
+        const popoverHeading = popover.querySelector('#popoverHeading')
+        
+        if (popoverCaption) {
+            popoverCaption.innerText = `Editing feature ${feature.number}`
+        }
+        if (popoverHeading) {
+            popoverHeading.innerText = 'What is the feature?'
+        }
+        
+        if (addBtn) addBtn.innerText = 'Save changes'
+        if (removeBtn) removeBtn.style.display = 'inline-block'
+
+        // Clear all radios first
+        const radios = popover.querySelectorAll('input[name="feature"]')
+        radios.forEach(radio => radio.checked = false)
+        
+        let featureFound = false
+        const featureTextLower = feature.text.toLowerCase()
+        
+        console.log('Looking for feature text:', feature.text, 'lowercase:', featureTextLower)
+
+        // Check standard feature types first - including the new breast reduction scar
+        radios.forEach(radio => {
+            if (radio.value === featureTextLower || 
+                (radio.value === 'breast-reduction-scar' && featureTextLower === 'breast reduction scar')) {
+                radio.checked = true
+                featureFound = true
+                console.log('Found matching radio for:', radio.value)
+            }
+        })
+
+        // Handle "Other" cases
+        if (feature.text && feature.text.startsWith('Other: ')) {
+            const otherRadio = document.getElementById('feature-other')
+            const customInput = document.querySelector('#customLabel')
+            const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
             
-            if (conditionalDiv) {
-                conditionalDiv.classList.add('nhsuk-radios__conditional--revealed');
-            }
-            if (customInput) {
-                customInput.value = feature.text.replace('Other: ', '');
-            }
-        }
-    }
-
-    // If no standard match found, treat as "other"
-    if (!featureFound) {
-        const otherRadio = document.getElementById('feature-other');
-        const customInput = document.querySelector('#customLabel');
-        const conditionalDiv = document.querySelector('.nhsuk-radios__conditional');
-        
-        if (otherRadio) {
-            otherRadio.checked = true;
-            if (conditionalDiv) {
-                conditionalDiv.classList.add('nhsuk-radios__conditional--revealed');
-            }
-            if (customInput) {
-                customInput.value = feature.text;
+            console.log('Handling Other case, otherRadio found:', !!otherRadio)
+            
+            if (otherRadio) {
+                otherRadio.checked = true
+                featureFound = true
+                
+                if (conditionalDiv) {
+                    conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
+                }
+                if (customInput) {
+                    customInput.value = feature.text.replace('Other: ', '')
+                }
             }
         }
-    }
 
-    showPopover(clickX, clickY);
-}
+        // If no standard match found and not an "Other:" prefixed text, treat as custom "other"
+        if (!featureFound && !['scar', 'breast reduction scar', 'mole', 'wart'].includes(featureTextLower)) {
+            const otherRadio = document.getElementById('feature-other')
+            const customInput = document.querySelector('#customLabel')
+            const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+            
+            console.log('No match found, defaulting to Other. otherRadio found:', !!otherRadio)
+            
+            if (otherRadio) {
+                otherRadio.checked = true
+                if (conditionalDiv) {
+                    conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
+                }
+                if (customInput) {
+                    customInput.value = feature.text
+                }
+            }
+        }
+
+        console.log('EditFeature setup complete')
+    }
 
     function addFeature() {
-    console.log('--- addFeature function called ---');
-    console.log('DEBUG: currentMarker at start of addFeature:', currentMarker);
+        console.log('--- addFeature function called ---')
+        console.log('DEBUG: currentMarker at start of addFeature:', currentMarker)
 
-    const selectedFeatureRadio = popover.querySelector('input[name="feature"]:checked');
-    let selectedFeature = null;
-    let featureText = '';
+        const selectedFeatureRadio = popover.querySelector('input[name="feature"]:checked')
+        let selectedFeature = null
+        let featureText = ''
 
-    if (!selectedFeatureRadio) {
-        showStatusMessage('Please select a feature type.', 'error');
-        return;
-    }
-
-    console.log('DEBUG: selectedFeatureRadio value:', selectedFeatureRadio.value);
-    
-    selectedFeature = { value: selectedFeatureRadio.value, text: selectedFeatureRadio.value };
-
-    if (selectedFeature.value === 'other') {
-        const customLabel = document.querySelector('#customLabel') ? document.querySelector('#customLabel').value.trim() : '';
-        console.log('DEBUG: customLabel value:', customLabel);
-        if (!customLabel) {
-            showStatusMessage('Please enter text for "Other" feature.', 'error');
-            return;
+        if (!selectedFeatureRadio) {
+            showStatusMessage('Please select a feature type.', 'error')
+            return
         }
-        featureText = `Other: ${customLabel}`;
-    } else {
-        // Capitalize first letter for display
-        featureText = selectedFeature.value.charAt(0).toUpperCase() + selectedFeature.value.slice(1);
-    }
 
-    if (editingFeature) {
-        // Update existing feature
-        editingFeature.text = featureText;
-        updateFeaturesList();
-        showStatusMessage(`Feature ${editingFeature.number} updated.`, 'success');
-        editingFeature = null; // Clear editing state
-    } else if (currentMarker) { // This is the branch for new markers
-        console.log('DEBUG: Entering currentMarker branch in addFeature. currentMarker is:', currentMarker);
+        console.log('DEBUG: selectedFeatureRadio value:', selectedFeatureRadio.value)
         
-        // Remove the temporary marker first
-        if (currentMarker.element) {
-            currentMarker.element.remove();
+        selectedFeature = { value: selectedFeatureRadio.value, text: selectedFeatureRadio.value }
+
+        if (selectedFeature.value === 'other') {
+            const customLabel = document.querySelector('#customLabel') ? document.querySelector('#customLabel').value.trim() : ''
+            console.log('DEBUG: customLabel value:', customLabel)
+            if (!customLabel) {
+                showStatusMessage('Please enter text for "Other" feature.', 'error')
+                return
+            }
+            featureText = `Other: ${customLabel}`
+        } else if (selectedFeature.value === 'breast-reduction-scar') {
+            featureText = 'Breast reduction scar'
+        } else {
+            featureText = selectedFeature.value.charAt(0).toUpperCase() + selectedFeature.value.slice(1)
         }
-        
-        const newFeatureNumber = markerCounter++;
-        const newFeature = {
-            id: allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1,
-            number: newFeatureNumber,
-            text: featureText,
-            x: currentMarker.x, // SVG viewBox X
-            y: currentMarker.y  // SVG viewBox Y
-        };
-        
-        // Add to features array BEFORE creating permanent marker
-        allFeatures.push(newFeature);
 
-        // Create permanent marker element
-        const markerElement = createPermanentMarker(newFeature.x, newFeature.y, newFeature.text, newFeature.number);
-        console.log('DEBUG: markerElement returned by createPermanentMarker:', markerElement);
-        newFeature.element = markerElement; // Store reference to the DOM element
+        if (editingFeature) {
+            editingFeature.text = featureText
+            updateFeaturesList()
+            showStatusMessage(`Feature ${editingFeature.number} updated.`, 'success')
+            editingFeature = null
+        } else if (currentMarker) {
+            console.log('DEBUG: Entering currentMarker branch in addFeature. currentMarker is:', currentMarker)
+            
+            if (currentMarker.element) {
+                currentMarker.element.remove()
+            }
+            
+            const newFeatureNumber = markerCounter++
+            const newFeature = {
+                id: allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1,
+                number: newFeatureNumber,
+                text: featureText,
+                x: currentMarker.x,
+                y: currentMarker.y
+            }
+            
+            allFeatures.push(newFeature)
 
-        updateFeaturesList();
-        showStatusMessage(`Feature ${newFeature.number} added.`, 'success');
-        
-        // Clear currentMarker to prevent it from being removed in closePopover
-        currentMarker = null;
-    } else {
-        console.log('DEBUG: No currentMarker found to add/edit. Showing error message.');
-        showStatusMessage('Error: No marker to add/edit.', 'error');
+            // Pass the newFeature.id as the featureId parameter
+            const markerElement = createPermanentMarker(newFeature.x, newFeature.y, newFeature.text, newFeature.number, newFeature.id)
+            console.log('DEBUG: markerElement returned by createPermanentMarker:', markerElement)
+            newFeature.element = markerElement
+
+            updateFeaturesList()
+            showStatusMessage(`Feature ${newFeature.number} added.`, 'success')
+            
+            currentMarker = null
+        } else {
+            console.log('DEBUG: No currentMarker found to add/edit. Showing error message.')
+            showStatusMessage('Error: No marker to add/edit.', 'error')
+        }
+
+        closePopover()
     }
-
-    closePopover(); // Close popover after adding/editing
-}
 
     function removeFeature() {
-        if (!editingFeature) return;
+        if (!editingFeature) return
 
-        allFeatures = allFeatures.filter(f => f.id !== editingFeature.id);
+        allFeatures = allFeatures.filter(f => f.id !== editingFeature.id)
         if (editingFeature.element) {
-            editingFeature.element.remove();
+            editingFeature.element.remove()
         }
-        updateFeaturesList();
-        showStatusMessage(`Feature ${editingFeature.number} removed.`, 'success');
-        closePopover();
-        editingFeature = null;
+        updateFeaturesList()
+        showStatusMessage(`Feature ${editingFeature.number} removed.`, 'success')
+        closePopover()
+        editingFeature = null
     }
 
     function closePopover() {
-    if (popover) {
-        popover.style.display = 'none';
-    }
-    
-    // Only remove temporary markers that haven't been converted to permanent ones
-    if (currentMarker && currentMarker.element) {
-        // Check if this marker belongs to a saved feature
-        const isTemporary = !allFeatures.some(f => f.element === currentMarker.element);
-        if (isTemporary) {
-            console.log('Removing temporary marker');
-            currentMarker.element.remove();
+        if (popover) {
+            popover.style.display = 'none'
         }
-    }
-    
-    currentMarker = null; // Clear current marker context
-    editingFeature = null; // Clear editing state
-}
-    function updateFeaturesList() {
-    if (!featuresListContainer || !featuresList) {
-        console.warn('Features list container or list element not found.');
-        return;
-    }
-
-    if (allFeatures.length === 0) {
-        featuresListContainer.style.display = 'none';
-        return;
-    }
-
-    featuresListContainer.style.display = 'block';
-    featuresList.innerHTML = ''; // Clear current list
-
-    // Sort features by number
-    allFeatures.sort((a, b) => a.number - b.number);
-
-    // Create a proper unordered list
-    const ul = document.createElement('ul');
-    ul.className = 'nhsuk-list features-list-items';
-
-    allFeatures.forEach(feature => {
-        const listItem = document.createElement('li');
-        listItem.className = 'feature-item';
-        listItem.style.cursor = 'pointer';
-        listItem.setAttribute('data-feature-id', feature.id);
-        listItem.innerHTML = `
-            <div class="feature-left">
-                <div class="feature-number">${feature.number}</div>
-                <div class="feature-label">${feature.text}</div>
-            </div>
-            <div class="feature-position">(${feature.x.toFixed(0)}, ${feature.y.toFixed(0)})</div>
-        `;
         
-        // Add click listener for editing
-        listItem.addEventListener('click', function() {
-            const featureId = parseInt(this.getAttribute('data-feature-id'));
-            const feature = allFeatures.find(f => f.id === featureId);
-            if (feature && feature.element) {
-                // Get the center of the marker for popover positioning
-                const markerRect = feature.element.getBoundingClientRect();
-                const centerX = markerRect.left + markerRect.width / 2;
-                const centerY = markerRect.top + markerRect.height / 2;
-                editFeature(feature, centerX, centerY);
+        if (currentMarker && currentMarker.element) {
+            const isTemporary = !allFeatures.some(f => f.element === currentMarker.element)
+            if (isTemporary) {
+                console.log('Removing temporary marker')
+                currentMarker.element.remove()
             }
-        });
-        
-        ul.appendChild(listItem);
-
-        // Update marker numbers on the diagram
-        if (feature.element) {
-            feature.element.innerText = feature.number;
         }
-    });
-    
-    featuresList.appendChild(ul);
-}
+        
+        currentMarker = null
+        editingFeature = null
+    }
+
+    function updateFeaturesList() {
+        if (!featuresListContainer || !featuresList) {
+            console.warn('Features list container or list element not found.')
+            return
+        }
+
+        if (allFeatures.length === 0) {
+            featuresListContainer.style.display = 'none'
+            return
+        }
+
+        featuresListContainer.style.display = 'block'
+        featuresList.innerHTML = ''
+
+        allFeatures.sort((a, b) => a.number - b.number)
+
+        const ul = document.createElement('ul')
+        ul.className = 'nhsuk-list features-list-items'
+
+        allFeatures.forEach(feature => {
+            const listItem = document.createElement('li')
+            listItem.className = 'feature-item'
+            listItem.style.cursor = 'pointer'
+            listItem.setAttribute('data-feature-id', feature.id)
+            listItem.innerHTML = `
+                <div class="feature-left">
+                    <div class="feature-number">${feature.number}</div>
+                    <div class="feature-label">${feature.text}</div>
+                </div>
+                <div class="feature-position">(${feature.x.toFixed(0)}, ${feature.y.toFixed(0)})</div>
+            `
+            
+            listItem.addEventListener('click', function() {
+                const featureId = parseInt(this.getAttribute('data-feature-id'))
+                const feature = allFeatures.find(f => f.id === featureId)
+                if (feature && feature.element) {
+                    const markerRect = feature.element.getBoundingClientRect()
+                    const centerX = markerRect.left + markerRect.width / 2
+                    const centerY = markerRect.top + markerRect.height / 2
+                    editFeature(feature, centerX, centerY)
+                }
+            })
+            
+            ul.appendChild(listItem)
+
+            if (feature.element) {
+                feature.element.innerText = feature.number
+            }
+        })
+        
+        featuresList.appendChild(ul)
+    }
 
     function saveAllFeatures() {
         if (allFeatures.length === 0) {
-            showStatusMessage('No features to save.', 'error');
-            return;
+            showStatusMessage('No features to save.', 'error')
+            return
         }
 
         try {
@@ -759,122 +790,112 @@
                     text: f.text,
                     x: f.x,
                     y: f.y
-                })) }));
+                })) }))
             }
-            showStatusMessage('Features saved successfully!', 'success');
-            // Simulate navigation to next step after a short delay
+            showStatusMessage('Features saved successfully!', 'success')
             setTimeout(() => {
                 if (confirm('Features saved successfully! Would you like to continue to the next step?')) {
-                    // Replace with actual navigation logic
-                    const returnUrl = "{{ formAction }}"; // Get the return URL from Nunjucks context
+                    const returnUrl = "{{ formAction }}"
                     if (returnUrl) {
-                        window.location.href = returnUrl;
+                        window.location.href = returnUrl
                     } else {
-                        console.warn('No return URL defined for formAction.');
+                        console.warn('No return URL defined for formAction.')
                     }
                 }
-            }, 1000); // 1 second delay
+            }, 1000)
         } catch (error) {
-            console.error('Error saving features:', error);
-            showStatusMessage('Error saving features.', 'error');
+            console.error('Error saving features:', error)
+            showStatusMessage('Error saving features.', 'error')
         }
     }
 
     function showStatusMessage(message, type) {
         if (!statusMessage) {
-            console.warn('Status message element not found.');
-            return;
+            console.warn('Status message element not found.')
+            return
         }
-        statusMessage.innerText = message;
-        statusMessage.classList.remove('nhsuk-u-visually-hidden', 'status-success', 'status-error');
+        statusMessage.innerText = message
+        statusMessage.classList.remove('nhsuk-u-visually-hidden', 'status-success', 'status-error')
         if (type === 'success') {
-            statusMessage.classList.add('status-success');
+            statusMessage.classList.add('status-success')
         } else if (type === 'error') {
-            statusMessage.classList.add('status-error');
+            statusMessage.classList.add('status-error')
         }
-        statusMessage.focus(); // For screen readers
-        // Hide after 5 seconds
+        statusMessage.focus()
         setTimeout(() => {
-            statusMessage.classList.add('nhsuk-u-visually-hidden');
-        }, 5000);
+            statusMessage.classList.add('nhsuk-u-visually-hidden')
+        }, 5000)
     }
-
 
     function loadSavedFeatures() {
         try {
-            const savedData = sessionStorage.getItem('breastFeatures');
+            const savedData = sessionStorage.getItem('breastFeatures')
             if (savedData) {
-                const data = JSON.parse(savedData);
+                const data = JSON.parse(savedData)
                 if (data.features && Array.isArray(data.features)) {
-                    // Filter out features without an element if page reloaded and elements lost
-                    allFeatures = data.features.filter(f => f.x !== undefined && f.y !== undefined);
+                    allFeatures = data.features.filter(f => f.x !== undefined && f.y !== undefined)
 
                     allFeatures.forEach(savedFeature => {
-                        // Create permanent marker element for loaded feature
-                        const markerElement = createPermanentMarker(savedFeature.x, savedFeature.y, savedFeature.text, savedFeature.number);
-                        savedFeature.element = markerElement; // Store reference to the DOM element
-                        // Update marker counter to be higher than any loaded feature ID
+                        // Pass the savedFeature.id as the featureId parameter
+                        const markerElement = createPermanentMarker(savedFeature.x, savedFeature.y, savedFeature.text, savedFeature.number, savedFeature.id)
+                        savedFeature.element = markerElement
                         if (savedFeature.id >= markerCounter) {
-                            markerCounter = savedFeature.id + 1;
+                            markerCounter = savedFeature.id + 1
                         }
-                    });
+                    })
                     if (allFeatures.length > 0) {
-                        updateFeaturesList();
+                        updateFeaturesList()
                     }
                 }
             }
         } catch (error) {
-            console.warn('Could not load saved features:', error);
+            console.warn('Could not load saved features:', error)
         }
     }
 
     // Initialize: Load any saved features
-    loadSavedFeatures();
+    loadSavedFeatures()
 
     // Handle window resize to reposition markers
     window.addEventListener('resize', function() {
         allFeatures.forEach(feature => {
-            positionMarkerContainer(feature.element, feature.x, feature.y);
-        });
-    });
+            positionMarkerContainer(feature.element, feature.x, feature.y)
+        })
+    })
 
     // Prevent form submission on Enter key in popover
     if (popover) {
         popover.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
-                e.preventDefault();
-                addFeature();
+                e.preventDefault()
+                addFeature()
             }
-        });
+        })
     }
 
     // Keyboard accessibility
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && popover && popover.style.display === 'block') {
-            closePopover();
+            closePopover()
         }
-    });
+    })
 
 } // End of initializeBreastFeatures
 
 // Try multiple initialization methods for NHS Prototype Kit compatibility
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeBreastFeatures);
+    document.addEventListener('DOMContentLoaded', initializeBreastFeatures)
 } else {
-    // DOM already loaded
-    initializeBreastFeatures();
+    initializeBreastFeatures()
 }
 
 // Also try after window load in case NHS scripts interfere
 window.addEventListener('load', function() {
-    // Only initialize if not already done
     if (!window.breastFeaturesInitialized) {
-        console.log('Attempting initialization after window load...');
-        initializeBreastFeatures();
+        console.log('Attempting initialization after window load...')
+        initializeBreastFeatures()
     }
-});
+})
 </script>
-
-
 
 {% endblock %}
