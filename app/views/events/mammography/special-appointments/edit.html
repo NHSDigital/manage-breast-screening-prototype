@@ -1,0 +1,189 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Special appointment" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{# Change the form action to go to the special-appointment handler #}
+{% set formAction = "./edit-answer" %}
+
+{% block pageContent %}
+
+  {{ participant | log }}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+
+    {{ checkboxes({
+      name: "event[specialAppointment][supportTypes]",
+      fieldset: {
+        legend: {
+          text: "Why does " + (participant | getFullName) + " need additional support?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "Select type"
+      },
+      values: data.event.specialAppointment.supportTypes,
+      items: [
+        {
+          value: "Implants",
+          text: "Implants",
+          hint: {
+            text: "Including medical and cosmetic"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][implants][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.implants.details
+            })
+          }
+        },
+        {
+          value: "Vision",
+          text: "Vision",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][vision][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.vision.details
+            })
+          }
+        },
+        {
+          value: "Hearing",
+          text: "Hearing",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][hearing][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.hearing.details
+            })
+          }
+        },
+        {
+          value: "Physical restriction",
+          text: "Physical restriction",
+          hint: {
+            text: "For example, mobility or dexterity"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][physicalRestriction][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.physicalRestriction.details
+            })
+          }
+        },
+        {
+          value: "Social, emotional, and mental health",
+          text: "Social, emotional, and mental health",
+          hint: {
+            text: "For example, neurodiversity or agoraphobia"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][socialEmotionalMentalHealth][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.socialEmotionalMentalHealth.details
+            })
+          }
+        },
+        {
+          value: "Language",
+          text: "Language",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][language][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.language.details
+            })
+          }
+        },
+        {
+          value: "Gender identity",
+          text: "Gender identity",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][genderIdentity][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.genderIdentity.details
+            })
+          }
+        },
+        {
+          value: "Other",
+          text: "Other",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][other][details]",
+              label: {
+                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+              },
+              value: data.event.specialAppointment.other.details
+            })
+          }
+        }
+      ]
+    }) }}
+
+    {{ radios({
+      name: "event[specialAppointment][temporaryReasons]",
+      fieldset: {
+        legend: {
+          text: "Are any of these reasons temporary?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "This includes issues that are likely to be resolved by their next mammogram, for example a broken foot or a short-term eye problem."
+      },
+      items: [
+        {
+          value: "yes",
+          text: "Yes"
+        },
+        {
+          value: "no",
+          text: "No"
+        }
+      ]
+    }) }}
+
+    <div class="app-button-group">
+      {{ button({
+        text: "Continue"
+      }) }}
+      
+      <a href="#" class="nhsuk-link">Cancel</a>
+    </div>
+
+
+  {% include "screening-cannot-proceed-link.njk" %}
+
+{% endblock %}
