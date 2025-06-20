@@ -129,6 +129,12 @@ module.exports = router => {
     const selectedEthnicBackground = data.participant?.demographicInformation?.ethnicBackground
 
     if (!selectedEthnicBackground) {
+      req.flash('error', {
+        text: 'Select an ethnic background',
+        name: 'participant[demographicInformation][ethnicBackground]',
+        href: '#ethnicBackgroundWhite-1'
+      })
+
       res.redirect(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`)
       return
     }

@@ -47,6 +47,14 @@
     How does {{ participant | getFullName }} describe their ethnicity?
   {% endset %}
 
+  {% set hasError = flash.error[0].name == "participant[demographicInformation][ethnicBackground]" %}
+
+  {% if hasError %}
+    <div class="nhsuk-form-group nhsuk-form-group--error">
+  {% endif %}
+
+
+
   {% call fieldset({
     legend: {
       text: ethnicityLegend,
@@ -54,6 +62,13 @@
       isPageHeading: false
     }
   }) %}
+
+    {% if hasError %}
+      <span class="nhsuk-error-message" id="example-error-error">
+        <span class="nhsuk-u-visually-hidden">Error:</span> Select an ethnic background
+      </span>
+    {% endif %}
+
 
     {# White ethnic background #}
     <h2 class="nhsuk-fieldset__legend--s">White</h2>
@@ -157,6 +172,10 @@
     }) }}
 
   {% endcall %}
+  {% if hasError %}
+    </div>
+  {% endif %}
+
 
   {{ button({
     text: "Save"
