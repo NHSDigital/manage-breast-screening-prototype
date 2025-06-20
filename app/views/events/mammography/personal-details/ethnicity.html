@@ -60,11 +60,14 @@
       text: ethnicityLegend,
       classes: "nhsuk-fieldset__legend--m",
       isPageHeading: false
-    }
+    },
+    attributes: {
+      "aria-describedby": "ethnic-background-error"
+    } if hasError
   }) %}
 
     {% if hasError %}
-      <span class="nhsuk-error-message" id="example-error-error">
+      <span class="nhsuk-error-message" id="ethnic-background-error">
         <span class="nhsuk-u-visually-hidden">Error:</span> Select an ethnic background
       </span>
     {% endif %}
