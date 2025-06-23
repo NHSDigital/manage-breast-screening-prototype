@@ -1,9 +1,6 @@
 {% set specialAppointmentRows = [] %}
 
 {% if data.event.specialAppointment.supportTypes %}
-  {# Build the consolidated content for all support types #}
-  {% set consolidatedContent = [] %}
-  
   {% for supportType in data.event.specialAppointment.supportTypes %}
     {# Skip the _unchecked form artifact #}
     {% if supportType != '_unchecked' %}
@@ -11,22 +8,22 @@
       {% set isTemporary = false %}
       
       {# Get the details for each support type #}
-      {% if supportType == "Implants" and data.event.specialAppointment.implants.details %}
-        {% set details = data.event.specialAppointment.implants.details %}
-      {% elif supportType == "Vision" and data.event.specialAppointment.vision.details %}
-        {% set details = data.event.specialAppointment.vision.details %}
-      {% elif supportType == "Hearing" and data.event.specialAppointment.hearing.details %}
-        {% set details = data.event.specialAppointment.hearing.details %}
-      {% elif supportType == "Physical restriction" and data.event.specialAppointment.physicalRestriction.details %}
-        {% set details = data.event.specialAppointment.physicalRestriction.details %}
-      {% elif supportType == "Social, emotional, and mental health" and data.event.specialAppointment.socialEmotionalMentalHealth.details %}
-        {% set details = data.event.specialAppointment.socialEmotionalMentalHealth.details %}
-      {% elif supportType == "Language" and data.event.specialAppointment.language.details %}
-        {% set details = data.event.specialAppointment.language.details %}
-      {% elif supportType == "Gender identity" and data.event.specialAppointment.genderIdentity.details %}
-        {% set details = data.event.specialAppointment.genderIdentity.details %}
-      {% elif supportType == "Other" and data.event.specialAppointment.other.details %}
-        {% set details = data.event.specialAppointment.other.details %}
+      {% if supportType == "Breast implants" and data.event.specialAppointment.implantDetails %}
+        {% set details = data.event.specialAppointment.implantDetails %}
+      {% elif supportType == "Vision" and data.event.specialAppointment.visionDetails %}
+        {% set details = data.event.specialAppointment.visionDetails %}
+      {% elif supportType == "Hearing" and data.event.specialAppointment.hearingDetails %}
+        {% set details = data.event.specialAppointment.hearingDetails %}
+      {% elif supportType == "Physical restriction" and data.event.specialAppointment.physicalRestrictionDetails %}
+        {% set details = data.event.specialAppointment.physicalRestrictionDetails %}
+      {% elif supportType == "Social, emotional, and mental health" and data.event.specialAppointment.socialEmotionalMentalHealthDetails %}
+        {% set details = data.event.specialAppointment.socialEmotionalMentalHealthDetails %}
+      {% elif supportType == "Language" and data.event.specialAppointment.languageDetails %}
+        {% set details = data.event.specialAppointment.languageDetails %}
+      {% elif supportType == "Gender identity" and data.event.specialAppointment.genderIdentityDetails %}
+        {% set details = data.event.specialAppointment.genderIdentityDetails %}
+      {% elif supportType == "Other" and data.event.specialAppointment.otherDetails %}
+        {% set details = data.event.specialAppointment.otherDetails %}
       {% endif %}
 
       {# Check if this support type is temporary #}
@@ -38,41 +35,44 @@
         {% endfor %}
       {% endif %}
 
-      {# Build the content line #}
-      {% set contentLine = "<strong>" + supportType + "</strong>" %}
-      {% if details %}
-        {% set contentLine = contentLine + "<br>" + details %}
-      {% endif %}
+      {# Build the key content (support type + temporary tag if applicable) #}
+      {% set keyContent = supportType %}
       {% if isTemporary %}
-        {% set contentLine = contentLine + "<br><span class=\"nhsuk-tag nhsuk-tag--white\">Temporary</span>" %}
+        {% set keyContent = keyContent + "<br><span class=\"nhsuk-tag nhsuk-tag--white\">Temporary</span>" %}
       {% endif %}
-      
-      {% set consolidatedContent = consolidatedContent | push(contentLine) %}
+
+      {# Build the value content (details only) #}
+      {% set valueContent = "" %}
+      {% if details %}
+        {% set valueContent = details %}
+      {% else %}
+        {% set valueContent = "<span style=\"color: var(--nhsuk-secondary-text-color);\">No details provided</span>" %}
+      {% endif %}
+
+      {# Add row for this support type #}
+      {% set specialAppointmentRows = specialAppointmentRows | push({
+        key: {
+          html: keyContent,
+          classes: "nhsuk-summary-list__key--wide"
+        },
+        value: {
+          html: valueContent
+        },
+        actions: {
+          items: [
+            {
+              href: eventUrl + "/special-appointments/edit" + ("?referrerChain=" + referrerChain if referrerChain),
+              text: "Change",
+              visuallyHiddenText: "special appointment requirements"
+            }
+          ]
+        } if allowEdits and loop.first
+      }) %}
     {% endif %}
   {% endfor %}
-
-  {# Create single row with all support types #}
-  {% if consolidatedContent.length > 0 %}
-    {% set specialAppointmentRows = specialAppointmentRows | push({
-      key: {
-        html: "<h2>Appointment needs</h2>"
-      },
-      value: {
-        html: consolidatedContent | join("<br><br>")
-      },
-      actions: {
-        items: [
-          {
-            href: eventUrl + "/special-appointments/edit" + ("?referrerChain=" + referrerChain if referrerChain),
-            text: "Change",
-            visuallyHiddenText: "special appointment requirements"
-          }
-        ]
-      } if allowEdits
-    }) %}
-  {% endif %}
 {% endif %}
 
 {{ summaryList({
-  rows: specialAppointmentRows
+  rows: specialAppointmentRows,
+  classes: "nhsuk-summary-list--no-border"
 }) }}

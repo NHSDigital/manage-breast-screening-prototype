@@ -778,7 +778,6 @@ router.post('/clinics/:clinicId/events/:eventId/special-appointments/edit-answer
 
 // Handle temporary reasons selection form submission
 router.post('/clinics/:clinicId/events/:eventId/special-appointments/temporary-reasons-answer', (req, res) => {
-  console.log('temporary-reasons-answer route hit!') // Add this line
   const { clinicId, eventId } = req.params
   
   // After saving temporary reasons data, redirect to confirm page
