@@ -16,10 +16,12 @@ module.exports = router => {
     next()
   })
 
-  const cleanSearchTerm = (term) => term.toLowerCase().replace(/\s+/g, '')
 
   // Redirect to default tab
   router.get('/participants', (req, res) => {
+
+    const cleanSearchTerm = (term) => term.toLowerCase().replace(/\s+/g, '')
+
     const data = req.session.data
     const searchTerm = req.query.search?.trim() || ''
     const cleanedSearch = cleanSearchTerm(searchTerm)

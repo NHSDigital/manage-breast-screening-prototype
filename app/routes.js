@@ -47,11 +47,13 @@ router.use((req, res, next) => {
   next()
 })
 
+// require('./routes/shared')(router)
 require('./routes/settings')(router)
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
 require('./routes/events')(router)
 require('./routes/reading')(router)
+
 
 // Workaround for Chrome DevTools requesting a specific URL
 router.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
