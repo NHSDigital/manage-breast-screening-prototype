@@ -19,15 +19,13 @@
 
   <div id="status-message" aria-live="polite" class="nhsuk-u-visually-hidden" role="status"></div>
 
-  <h2 class="nhsuk-heading-m">Add a feature</h2>
+  <p class="nhsuk-body">
+Click the diagram to add notable features such as scars, moles, or warts that image readers may need to be aware of. These could be observed by you or reported by the participant.
+</p> 
 
-  <p class="nhsuk-body">Add any non-symptomatic features like scars, moles, or warts observed or reported during the appointment.</p> 
-
-  <p class="nhsuk-body">These features will be used by the radiologists to help inform mammograms.</p>
 
   <div class="breast-features-diagram-header">
       <h2 class="nhsuk-heading-m">Where is the feature?</h2>
-      <p class="nhsuk-body">Click on the diagram to add a point</p>
   </div>
   
   <div class="breast-features-diagram-container">
@@ -64,20 +62,12 @@
               name: "feature",
               fieldset: {
                 legend: {
-                  text: "Feature type",
+                  classes: "nhsuk-fieldset__legend--s nhsuk-u-visually-hidden",
                   classes: "nhsuk-fieldset__legend--s",
                   isPageHeading: false
                 }
               },
               items: [
-                {
-                  value: "scar",
-                  text: "Scar"
-                },
-                {
-                  value: "breast-reduction-scar",
-                  text: "Breast reduction scar"
-                },
                 {
                   value: "mole", 
                   text: "Mole"
@@ -86,9 +76,17 @@
                   value: "wart",
                   text: "Wart"
                 },
+                 {
+                  value: "breast-reduction-scar",
+                  text: "Breast reduction scar"
+                },
                 {
-                  value: "other",
-                  text: "Other",
+                  value: "other-scar",
+                  text: "Other scar"
+                },
+                {
+                  value: "other-feature",
+                  text: "Other feature",
                   conditional: {
                     html: input({
                       id: "customLabel",
@@ -143,7 +141,7 @@
 
   <div class="nhsuk-u-margin-top-6">
       {{ button({
-        text: "Save features and continue",
+        text: "Save",
         id: "saveBtn",
         attributes: {
           type: "button"
