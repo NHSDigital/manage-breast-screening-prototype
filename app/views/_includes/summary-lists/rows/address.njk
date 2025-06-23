@@ -1,3 +1,5 @@
+{# /app/views/_includes/summary-lists/rows/address.njk #}
+
 {% set addressLines = participant.demographicInformation.address | getObjectValues({removeEmpty: true }) %}
 
 {% set addressHtml %}
