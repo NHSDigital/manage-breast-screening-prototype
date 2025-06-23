@@ -1,6 +1,6 @@
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Special appointment" %}
+{% set pageHeading = "Provide special appointment details" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
@@ -31,13 +31,13 @@
         }
       },
       hint: {
-        text: "Select type"
+        text: "Select all that apply. When describing support required, include any special requests made by the participant or their carer."
       },
       values: data.event.specialAppointment.supportTypes,
       items: [
         {
-          value: "Implants",
-          text: "Implants",
+          value: "Breast implants",
+          text: "Breast implants",
           hint: {
             text: "Including medical and cosmetic"
           },
@@ -45,7 +45,7 @@
             html: textarea({
               name: "event[specialAppointment][implants][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.implants.details
             })
@@ -58,7 +58,7 @@
             html: textarea({
               name: "event[specialAppointment][vision][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.vision.details
             })
@@ -71,7 +71,7 @@
             html: textarea({
               name: "event[specialAppointment][hearing][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.hearing.details
             })
@@ -87,7 +87,7 @@
             html: textarea({
               name: "event[specialAppointment][physicalRestriction][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.physicalRestriction.details
             })
@@ -103,7 +103,7 @@
             html: textarea({
               name: "event[specialAppointment][socialEmotionalMentalHealth][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.socialEmotionalMentalHealth.details
             })
@@ -116,7 +116,7 @@
             html: textarea({
               name: "event[specialAppointment][language][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.language.details
             })
@@ -129,7 +129,7 @@
             html: textarea({
               name: "event[specialAppointment][genderIdentity][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.genderIdentity.details
             })
@@ -142,7 +142,7 @@
             html: textarea({
               name: "event[specialAppointment][other][details]",
               label: {
-                text: "What adjustments or support is required? Include any special requests made by the participant or their carer"
+                text: "Describe support required"
               },
               value: data.event.specialAppointment.other.details
             })

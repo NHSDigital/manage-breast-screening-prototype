@@ -1,6 +1,6 @@
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Select temporary reasons" %}
+{% set pageHeading = "Which of these reasons are temporary?" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
@@ -14,10 +14,6 @@
 {% block pageContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-
-  <h1 class="nhsuk-heading-l">
-    {{ pageHeading }}
-  </h1>
 
   {% set selectedSupportTypes = data.event.specialAppointment.supportTypes %}
   
@@ -38,8 +34,8 @@
       fieldset: {
         legend: {
           text: "Which of these reasons are temporary?",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
+          classes: "nhsuk-fieldset__legend--l",
+          isPageHeading: true
         }
       },
       hint: {
