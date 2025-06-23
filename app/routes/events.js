@@ -109,6 +109,24 @@ module.exports = router => {
     })
   })
 
+  // General purpose route for saving data
+  router.post('/clinics/:clinicId/events/:eventId/save', (req, res) => {
+    const data = req.session.data
+    const { clinicId, eventId } = req.params
+    const referrerChain = req.query.referrerChain
+
+    saveTempEventToEvent(data)
+    saveTempParticipantToParticipant(data)
+
+    // Redirect back to the event page
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, referrerChain)
+    res.redirect(returnUrl)
+  })
+
+  // -----------------------------------------------------------------
+  // Ethnicity and demographic information
+  // -----------------------------------------------------------------
+
   router.post('/clinics/:clinicId/events/:eventId/personal-details/ethnicity-answer', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
@@ -169,7 +187,6 @@ module.exports = router => {
     return null // Return null if no match found
   }
 
-  // Handle screening completion
   // Todo - name this route better
   router.post('/clinics/:clinicId/events/:eventId/can-appointment-go-ahead-answer', (req, res) => {
     const { clinicId, eventId } = req.params
@@ -192,6 +209,10 @@ module.exports = router => {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
     }
   })
+
+  // -----------------------------------------------------------------
+  // Previous mammograms
+  // -----------------------------------------------------------------
 
   // Main route in to starting an event - used to clear any temp data
   router.get('/clinics/:clinicId/events/:eventId/previous-mammograms/add', (req, res) => {
@@ -337,6 +358,99 @@ module.exports = router => {
 
     return false
   }
+
+  // Validation for attended not screened reason
+  // Reasonably comprehensive as a demonstration for developers to use
+  router.post('/clinics/:clinicId/events/:eventId/attended-not-screened-answer', (req, res) => {
+    const { clinicId, eventId } = req.params
+
+    const data = req.session.data
+
+    const participantName = getFullName(data.participant)
+    const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+    const notScreenedReason = data.event.appointmentStopped.stoppedReason
+    const needsReschedule = data.event.appointmentStopped.needsReschedule
+    const otherReasonDetails = data.event.appointmentStopped.otherDetails
+    const hasOtherReasonButNoDetails = notScreenedReason?.includes("other") && !otherReasonDetails
+
+    if (!notScreenedReason || !needsReschedule || hasOtherReasonButNoDetails) {
+      if (!notScreenedReason) {
+        req.flash('error', {
+          text: 'A reason for why this appointment cannot continue must be provided',
+          name: 'event[appointmentStopped][stoppedReason]',
+          href: '#stoppedReason-1'
+        })
+
+      }
+      if (hasOtherReasonButNoDetails){
+        req.flash('error', {
+          text: 'Explain why this appointment cannot proceed',
+          name: 'event[appointmentStopped][otherDetails]',
+          href: '#otherDetails'
+        })
+      }
+      if (!needsReschedule) {
+        req.flash('error', {
+          text: 'Select whether the participant needs to be invited for another appointment',
+          name: 'event[appointmentStopped][needsReschedule]',
+          href: '#needsReschedule-1'
+        })
+      }
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
+      return
+    }
+
+    saveTempEventToEvent(data)
+    saveTempParticipantToParticipant(data)
+    updateEventStatus(data, eventId, 'event_attended_not_screened')
+
+    const successMessage = `
+    ${participantName} has been ‘attended not screened’. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+    req.flash('success', { wrapWithHeading: successMessage})
+
+    res.redirect(`/clinics/${clinicId}/`)
+  })
+
+  // -----------------------------------------------------------------
+  // Mammography workflow
+  // -----------------------------------------------------------------
+
+  // Decide whether to show record medical information page
+  router.post('/clinics/:clinicId/events/:eventId/medical-information-answer', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const hasRelevantMedicalInformation = data?.event?.medicalInformation?.hasRelevantMedicalInformation
+
+    if (!hasRelevantMedicalInformation) {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information-check`)
+    }
+    else if (hasRelevantMedicalInformation === 'yes') {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+    else {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
+    }
+  })
+
+  // Handle record medical information answer
+  router.post('/clinics/:clinicId/events/:eventId/record-medical-information-answer', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const imagingCanProceed = data.event.appointment.imagingCanProceed
+
+    if (!imagingCanProceed) {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+    else if (imagingCanProceed === 'yes') {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
+    }
+    else {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
+    }
+  })
+
+  // Symptoms
 
   // Save symptom - handles both 'save' and 'save and add another' with data cleanup
   router.all('/clinics/:clinicId/events/:eventId/medical-information/symptoms/save', (req, res) => {
@@ -554,44 +668,9 @@ module.exports = router => {
     res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain))
   })
 
-  const MAMMOGRAPHY_VIEWS = [
-    // 'medical-information-check',
-    // 'record-medical-information',
-    // 'ready-for-imaging',
-    // 'awaiting-images',
-    // 'confirm',
-    // 'attended-not-screened-reason',
-    // 'previous-mammograms/edit',
-    // 'previous-mammograms/appointment-should-not-proceed',
-    // 'previous-mammograms/proceed-anyway',
-    // 'medical-information/symptoms/type',
-    // 'medical-information/symptoms/details',
-    // 'personal-details/ethnicity',
-    'special-appointments/edit',
-    'special-appointments/temporary-reasons',
-    'special-appointments/confirm',
-    // Completed screenings
-    // 'images',
-    // 'medical-information',
-  ]
+  // Imaging
 
-  // Event within clinic context
-  router.get('/clinics/:clinicId/events/:eventId/*', (req, res, next) => {
-    const view = req.params[0] // Gets the wildcard part
-
-    if (MAMMOGRAPHY_VIEWS.some(viewPath => viewPath === view)) {
-      res.render(`events/mammography/${view}`, {})
-    } else {
-      next()
-    }
-  })
-
-  // Event within clinic context
-  // router.get('/clinics/:clinicId/events/:eventId/medical-information/:view', (req, res, next) => {
-  //   res.render(`events/mammography/medical-information/${req.params.view}`, {})
-  // })
-
-  // Specific route for imaging view
+  // Generate fake images on the fly
   router.get('/clinics/:clinicId/events/:eventId/imaging', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
@@ -613,37 +692,6 @@ module.exports = router => {
     res.render('events/imaging', {})
   })
 
-
-  // Handle medical information answer
-  router.post('/clinics/:clinicId/events/:eventId/medical-information-answer', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const hasRelevantMedicalInformation = data?.event?.medicalInformation?.hasRelevantMedicalInformation
-
-    if (!hasRelevantMedicalInformation) {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information-check`)
-    } else if (hasRelevantMedicalInformation === 'yes') {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    } else {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
-    }
-  })
-
-  // Handle record medical information answer
-  router.post('/clinics/:clinicId/events/:eventId/record-medical-information-answer', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const imagingCanProceed = data.event.appointment.imagingCanProceed
-
-    if (!imagingCanProceed) {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    } else if (imagingCanProceed === 'yes') {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
-    } else {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
-    }
-  })
-
   // Handle screening completion
   router.post('/clinics/:clinicId/events/:eventId/imaging-answer', (req, res) => {
     const { clinicId, eventId } = req.params
@@ -655,58 +703,6 @@ module.exports = router => {
     } else {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/confirm`)
     }
-  })
-
-  // Handle screening completion
-  router.post('/clinics/:clinicId/events/:eventId/attended-not-screened-answer', (req, res) => {
-    const { clinicId, eventId } = req.params
-
-    const data = req.session.data
-
-    const participantName = getFullName(data.participant)
-    const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
-
-    const notScreenedReason = data.event.appointmentStopped.stoppedReason
-    const needsReschedule = data.event.appointmentStopped.needsReschedule
-    const otherReasonDetails = data.event.appointmentStopped.otherDetails
-    const hasOtherReasonButNoDetails = notScreenedReason?.includes("other") && !otherReasonDetails
-
-    if (!notScreenedReason || !needsReschedule || hasOtherReasonButNoDetails) {
-      if (!notScreenedReason) {
-        req.flash('error', {
-          text: 'A reason for why this appointment cannot continue must be provided',
-          name: 'event[appointmentStopped][stoppedReason]',
-          href: '#stoppedReason-1'
-        })
-
-      }
-      if (hasOtherReasonButNoDetails){
-        req.flash('error', {
-          text: 'Explain why this appointment cannot proceed',
-          name: 'event[appointmentStopped][otherDetails]',
-          href: '#otherDetails'
-        })
-      }
-      if (!needsReschedule) {
-        req.flash('error', {
-          text: 'Select whether the participant needs to be invited for another appointment',
-          name: 'event[appointmentStopped][needsReschedule]',
-          href: '#needsReschedule-1'
-        })
-      }
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
-      return
-    }
-
-    saveTempEventToEvent(data)
-    saveTempParticipantToParticipant(data)
-    updateEventStatus(data, eventId, 'event_attended_not_screened')
-
-    const successMessage = `
-    ${participantName} has been ‘attended not screened’. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
-    req.flash('success', { wrapWithHeading: successMessage})
-
-    res.redirect(`/clinics/${clinicId}/`)
   })
 
   // Handle screening completion
@@ -730,7 +726,9 @@ module.exports = router => {
 
   })
 
-  // Add this route handler to your events.js file, in the module.exports = router => { section
+  // -----------------------------------------------------------------
+  // Special appointments - todo: move this section above
+  // -----------------------------------------------------------------
 
   // Handle special appointment form submission
   router.post('/clinics/:clinicId/events/:eventId/special-appointments/edit-answer', (req, res) => {
@@ -778,6 +776,8 @@ module.exports = router => {
     res.redirect(`/clinics/${clinicId}/events/${eventId}`)
   })
 
+  // General purpose dynamic template route for events
+  // This should come after any more specific routes
   router.get('/clinics/:clinicId/events/:eventId/*', createDynamicTemplateRoute({
     templatePrefix: 'events'
   }))
