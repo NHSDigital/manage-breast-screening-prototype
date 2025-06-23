@@ -621,75 +621,79 @@ Click the diagram to add notable features such as scars, moles, or warts that im
     }
 
     function addFeature() {
-        console.log('--- addFeature function called ---')
-        console.log('DEBUG: currentMarker at start of addFeature:', currentMarker)
+    console.log('--- addFeature function called ---')
+    console.log('DEBUG: currentMarker at start of addFeature:', currentMarker)
 
-        const selectedFeatureRadio = popover.querySelector('input[name="feature"]:checked')
-        let selectedFeature = null
-        let featureText = ''
+    const selectedFeatureRadio = popover.querySelector('input[name="feature"]:checked')
+    let selectedFeature = null
+    let featureText = ''
 
-        if (!selectedFeatureRadio) {
-            showStatusMessage('Please select a feature type.', 'error')
+    if (!selectedFeatureRadio) {
+        showStatusMessage('Please select a feature type.', 'error')
+        return
+    }
+
+    console.log('DEBUG: selectedFeatureRadio value:', selectedFeatureRadio.value)
+    
+    selectedFeature = { value: selectedFeatureRadio.value, text: selectedFeatureRadio.value }
+
+    // Fixed feature text formatting to remove hyphens and capitalize properly
+    if (selectedFeature.value === 'other-feature') {
+        const customLabel = document.querySelector('#customLabel') ? document.querySelector('#customLabel').value.trim() : ''
+        console.log('DEBUG: customLabel value:', customLabel)
+        if (!customLabel) {
+            showStatusMessage('Please enter text for "Other" feature.', 'error')
             return
         }
-
-        console.log('DEBUG: selectedFeatureRadio value:', selectedFeatureRadio.value)
-        
-        selectedFeature = { value: selectedFeatureRadio.value, text: selectedFeatureRadio.value }
-
-        if (selectedFeature.value === 'other') {
-            const customLabel = document.querySelector('#customLabel') ? document.querySelector('#customLabel').value.trim() : ''
-            console.log('DEBUG: customLabel value:', customLabel)
-            if (!customLabel) {
-                showStatusMessage('Please enter text for "Other" feature.', 'error')
-                return
-            }
-            featureText = `Other: ${customLabel}`
-        } else if (selectedFeature.value === 'breast-reduction-scar') {
-            featureText = 'Breast reduction scar'
-        } else {
-            featureText = selectedFeature.value.charAt(0).toUpperCase() + selectedFeature.value.slice(1)
-        }
-
-        if (editingFeature) {
-            editingFeature.text = featureText
-            updateFeaturesList()
-            showStatusMessage(`Feature ${editingFeature.number} updated.`, 'success')
-            editingFeature = null
-        } else if (currentMarker) {
-            console.log('DEBUG: Entering currentMarker branch in addFeature. currentMarker is:', currentMarker)
-            
-            if (currentMarker.element) {
-                currentMarker.element.remove()
-            }
-            
-            const newFeatureNumber = markerCounter++
-            const newFeature = {
-                id: allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1,
-                number: newFeatureNumber,
-                text: featureText,
-                x: currentMarker.x,
-                y: currentMarker.y
-            }
-            
-            allFeatures.push(newFeature)
-
-            // Pass the newFeature.id as the featureId parameter
-            const markerElement = createPermanentMarker(newFeature.x, newFeature.y, newFeature.text, newFeature.number, newFeature.id)
-            console.log('DEBUG: markerElement returned by createPermanentMarker:', markerElement)
-            newFeature.element = markerElement
-
-            updateFeaturesList()
-            showStatusMessage(`Feature ${newFeature.number} added.`, 'success')
-            
-            currentMarker = null
-        } else {
-            console.log('DEBUG: No currentMarker found to add/edit. Showing error message.')
-            showStatusMessage('Error: No marker to add/edit.', 'error')
-        }
-
-        closePopover()
+        featureText = `Other: ${customLabel}`
+    } else if (selectedFeature.value === 'breast-reduction-scar') {
+        featureText = 'Breast reduction scar'
+    } else if (selectedFeature.value === 'other-scar') {
+        featureText = 'Other scar'
+    } else {
+        // For standard features like 'mole', 'wart', etc.
+        featureText = selectedFeature.value.charAt(0).toUpperCase() + selectedFeature.value.slice(1)
     }
+
+    if (editingFeature) {
+        editingFeature.text = featureText
+        updateFeaturesList()
+        showStatusMessage(`Feature ${editingFeature.number} updated.`, 'success')
+        editingFeature = null
+    } else if (currentMarker) {
+        console.log('DEBUG: Entering currentMarker branch in addFeature. currentMarker is:', currentMarker)
+        
+        if (currentMarker.element) {
+            currentMarker.element.remove()
+        }
+        
+        const newFeatureNumber = markerCounter++
+        const newFeature = {
+            id: allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1,
+            number: newFeatureNumber,
+            text: featureText,
+            x: currentMarker.x,
+            y: currentMarker.y
+        }
+        
+        allFeatures.push(newFeature)
+
+        // Pass the newFeature.id as the featureId parameter
+        const markerElement = createPermanentMarker(newFeature.x, newFeature.y, newFeature.text, newFeature.number, newFeature.id)
+        console.log('DEBUG: markerElement returned by createPermanentMarker:', markerElement)
+        newFeature.element = markerElement
+
+        updateFeaturesList()
+        showStatusMessage(`Feature ${newFeature.number} added.`, 'success')
+        
+        currentMarker = null
+    } else {
+        console.log('DEBUG: No currentMarker found to add/edit. Showing error message.')
+        showStatusMessage('Error: No marker to add/edit.', 'error')
+    }
+
+    closePopover()
+}
 
     function removeFeature() {
         if (!editingFeature) return
