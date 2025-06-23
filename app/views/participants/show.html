@@ -48,14 +48,11 @@
     {% include "summary-lists/screening-details.njk" %}
   {% endcall %}
 
-  {% set screeningHistoryHtml %}
-    {% include "summary-lists/screening-history.njk" %}
-  {% endset %}
-
-  {{ card({
-    heading: "Screening history",
-    descriptionHtml: screeningHistoryHtml
-  }) }}
-
+  {% call card({
+    heading: "Appointments",
+    headingLevel: "2"
+  }) %}
+    {% include "summary-lists/screening-appointment-history.njk" %}
+  {% endcall %}
 
 {% endblock %}
