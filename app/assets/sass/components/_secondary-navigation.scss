@@ -1,5 +1,5 @@
-@use 'nhsuk-frontend/packages/core/settings' as *;
-@use 'nhsuk-frontend/packages/core/tools' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
 $govuk-spacing1: 5px;
 $govuk-spacing2: 10px;

@@ -1,9 +1,9 @@
 // Button Menu Component
 // Adapted from MOJ Frontend for NHS prototype use
-@use 'nhsuk-frontend/packages/core/settings' as *;
-@use 'nhsuk-frontend/packages/core/tools' as *;
-@use 'nhsuk-frontend/packages/core/objects' as *;
-@use 'nhsuk-frontend/packages/core/styles/typography' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/objects' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/styles/typography' as *;
 
 .app-button-menu {
   display: inline-block;

@@ -1,5 +1,5 @@
-@use 'nhsuk-frontend/packages/core/settings' as *;
-@use 'nhsuk-frontend/packages/core/tools' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
 .app-mammogram-image--placeholder {
   background-color: black;
