@@ -1,6 +1,6 @@
-@use 'nhsuk-frontend/packages/core/settings' as *;
-@use 'nhsuk-frontend/packages/core/styles/typography' as *;
-@use 'nhsuk-frontend/packages/core/tools' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/styles/typography' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
 h1 {
   @extend %nhsuk-heading-l;

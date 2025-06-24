@@ -57,8 +57,6 @@
     {% block customStyles %}
     {% endblock %}
 
-    <script src="/nhsuk-frontend/nhsuk.min.js" defer></script>
-
     {% block headIcons %}
     <link rel="shortcut icon" href="/nhsuk-frontend/assets/favicons/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/nhsuk-frontend/assets/favicons/apple-touch-icon-180x180.png">
@@ -105,6 +103,7 @@
         {{ footer() }}
       {% endblock %}
 
+    <script src="/nhsuk-frontend/nhsuk-frontend.min.js" type="module"></script>
     {% block bodyEnd %}{% endblock %}
 
   </body>

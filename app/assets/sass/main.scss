@@ -1,5 +1,5 @@
 // Import NHS.UK frontend library
-@forward 'nhsuk-frontend/packages/nhsuk';
+@forward 'nhsuk-frontend/dist/nhsuk/nhsuk';
 
 // Components that are not in the NHS.UK frontend library
 @forward 'components/button-menu';
