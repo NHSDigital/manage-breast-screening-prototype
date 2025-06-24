@@ -4,7 +4,7 @@ const { encryptPassword } = require('../lib/utils');
 const allowedPathsWhenUnauthenticated = [
   '/prototype-admin/password',
   '/css/main.css',
-  '/nhsuk-frontend/nhsuk.min.js',
+  '/nhsuk-frontend/nhsuk-frontend.min.js',
   '/js/auto-store-data.js',
   '/js/jquery-3.5.1.min.js',
   '/js/main.js',

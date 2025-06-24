@@ -57,8 +57,10 @@ const appViews = [
   path.join(__dirname, 'app/views/_includes'),
   path.join(__dirname, 'docs/views/'),
   path.join(__dirname, 'lib/prototype-admin/'),
-  path.join(__dirname, 'node_modules/nhsuk-frontend/packages/components'),
-  path.join(__dirname, 'node_modules/nhsuk-frontend/packages/macros'),
+  path.join(__dirname, 'node_modules/nhsuk-frontend/dist/nhsuk/components'),
+  path.join(__dirname, 'node_modules/nhsuk-frontend/dist/nhsuk/macros'),
+  path.join(__dirname, 'node_modules/nhsuk-frontend/dist/nhsuk'),
+  path.join(__dirname, 'node_modules/nhsuk-frontend/dist'),
 ];
 
 const nunjucksConfig = {
@@ -195,8 +197,7 @@ documentationApp.set('view engine', 'html');
 
 // Middleware to serve static assets
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/nhsuk-frontend', express.static(path.join(__dirname, 'node_modules/nhsuk-frontend/packages')));
-app.use('/nhsuk-frontend', express.static(path.join(__dirname, 'node_modules/nhsuk-frontend/dist')));
+app.use('/nhsuk-frontend', express.static(path.join(__dirname, 'node_modules/nhsuk-frontend/dist/nhsuk')));
 
 // Check if the app is documentation only
 if (onlyDocumentation === 'true') {
@@ -222,8 +223,8 @@ if (useDocumentation || onlyDocumentation === 'true') {
   // Nunjucks configuration for documentation
   const docViews = [
     path.join(__dirname, 'docs/views/'),
-    path.join(__dirname, 'node_modules/nhsuk-frontend/packages/components'),
-    path.join(__dirname, 'node_modules/nhsuk-frontend/packages/macros')
+    path.join(__dirname, 'node_modules/nhsuk-frontend/dist/nhsuk/components'),
+    path.join(__dirname, 'node_modules/nhsuk-frontend/dist/nhsuk/macros')
   ];
 
   nunjucksAppEnv = nunjucks.configure(docViews, {

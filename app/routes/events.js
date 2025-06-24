@@ -132,7 +132,7 @@ module.exports = router => {
       req.flash('error', {
         text: 'Select an ethnic background',
         name: 'participant[demographicInformation][ethnicBackground]',
-        href: '#ethnicBackgroundWhite-1'
+        href: '#ethnicBackgroundWhite'
       })
 
       res.redirect(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`)
@@ -703,7 +703,7 @@ module.exports = router => {
         req.flash('error', {
           text: 'A reason for why this appointment cannot continue must be provided',
           name: 'event[appointmentStopped][stoppedReason]',
-          href: '#stoppedReason-1'
+          href: '#stoppedReason'
         })
 
       }
@@ -718,7 +718,7 @@ module.exports = router => {
         req.flash('error', {
           text: 'Select whether the participant needs to be invited for another appointment',
           name: 'event[appointmentStopped][needsReschedule]',
-          href: '#needsReschedule-1'
+          href: '#needsReschedule'
         })
       }
       res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
