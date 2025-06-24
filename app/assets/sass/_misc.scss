@@ -48,3 +48,14 @@
 .app-button-full-width {
   width: 100%;
 }
+
+
+.nhsuk-warning-callout .nhsuk-summary-list__key {
+  width: 22%;
+}
+
+@include nhsuk-media-query($until: tablet) {
+  .nhsuk-warning-callout .nhsuk-summary-list__key {
+    width: auto;
+  }
+}

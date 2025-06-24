@@ -1,4 +1,3 @@
-
 {% extends 'layout-app.html' %}
 
 {% set pageHeading %}
@@ -44,52 +43,41 @@
     {% endif %}
   {% endset %}
 
-
   {% set appointmentTimeHtml -%}
     <p>{{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})</p>
     <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
-
   {% endset %}
 
-  {% set specialAppointmentHtml %}
-    {% if participant.extraNeeds | length > 1 %}
-      <ul>
-        {% for need in participant.extraNeeds %}
-          <li>{{need}}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>{{ participant.extraNeeds }}</p>
-    {% endif %}
-    <p><a href="#">Change</a></p>
-  {% endset %}
-
+  {# Simple special appointment section #}
   {% if event.details.isSpecialAppointment %}
-    {{ warningCallout({
-      heading: "Special appointment",
-      HTML: specialAppointmentHtml
-    }) }}
+    <div class="nhsuk-warning-callout nhsuk-u-margin-bottom-4">
+      <h2 class="nhsuk-warning-callout__label">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Important: </span>
+          Special appointment
+        </span>
+      </h2>
+      <div class="nhsuk-warning-callout__content">
+        <p>This participant requires special appointment support.</p>
+        {% set allowEdits = true %}
+        {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
+        {% set referrerChain = currentUrl %}
+        {% set summaryListClasses = "nhsuk-summary-list" %}
+        {% include "summary-lists/special-appointment/special-appointment.njk" %}
+      </div>
+    </div>
   {% endif %}
 
+  {# Simplified other details section #}
   {% set otherDetailsHtml %}
     {% if event.details.isSpecialAppointment %}
       {{ tag({
         text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
+        classes: "nhsuk-tag--yellow"
       })}}
-      {% if participant.extraNeeds | length > 1 %}
-        <ul>
-          {% for need in participant.extraNeeds %}
-            <li>{{need}}</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>{{ participant.extraNeeds }}</p>
-      {% endif %}
     {% else %}
-     {{ "Not provided" | asHint }}
+      {{ "None" | asHint }}
     {% endif %}
-
   {% endset %}
 
   {% set appointmentHtml %}
@@ -159,25 +147,11 @@
     }) }}
   {% endset %}
 
-  {# {{ card({
-    heading: "Appointment",
-    headingLevel: "2",
-    descriptionHtml: appointmentHtml
-  }) }} #}
-
-  {# {{ card({
-    heading: "Appointment",
-    headingLevel: "2",
-    descriptionHtml: appointmentHtml,
-    feature: true
-  }) }} #}
-
   {% set participantDetailsHtml %}
     {% set isMinimalParticipant = true %}
     {% set allowEdits = false %}
     {% include "summary-lists/participant.njk" %}
   {% endset %}
-
 
   {{ card({
     _heading: "Important details",
@@ -188,9 +162,7 @@
   }) }}
 
   {% set screeningHistoryHtml %}
-
     {% set clinicHistory = data | getParticipantClinicHistory(participant.id) %}
-
     {% set lastMammogram = null %}
 
     {% for record in clinicHistory %}
@@ -234,8 +206,6 @@
       <p>{{ "No details" | asHint }}</p>
     {% endif %}
 
-    {{clinicHistory | log("Clinic history") }}
-
     {{ button({
       text: "Record additional screening history",
       classes: "nhsuk-button--secondary"
@@ -252,51 +222,11 @@
         HTML: detailsHtml
       }) }}
     {% endif %}
-
   {% endset %}
 
-  {# {{ card({
-    heading: "Screening history",
-    headingLevel: "2",
-    descriptionHtml: screeningHistoryHtml
-  }) }} #}
-
-
-{#   {% set preAppointmentQuestionnaireHtml %}
-    {% if participant.questionnaire %}
-      {% set questionnaire = participant.questionnaire %}
-      {% set headingLevel = 'h3' %}
-      {% set allowEdits = false %}
-      {% include "summary-lists/questionnaire.njk" %}
-    {% else %}
-
-      {% set insetHtml %}
-        <p>The pre-appointment questionnaire has not been completed yet.</p>
-      {% endset %}
-      {{ insetText({
-        html: insetHtml,
-        classes: "nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-4"
-      }) }}
-
-      {{ button({
-        text: "Open participant pre-appointment questionnaire",
-        href: "./" + participantId + "/questionnaire"
-      }) }}
-    {% endif %}
-
+  {% set screeningHint %}
+    Before you proceed, check the participant's identity and confirm that their last mammogram was more than 6 months ago.
   {% endset %}
-
-  {{ card({
-    heading: "Pre-appointment questionnaire",
-    headingLevel: "2",
-    descriptionHtml: preAppointmentQuestionnaireHtml
-  }) }} #}
-
-
-
-{% set screeningHint %}
-Before you proceed, check the participant’s identity and confirm that their last mammogram was more than 6 months ago.
-{% endset %}
 
   {% set screeningHtml %}
     <form action="./{{eventId}}/can-appointment-go-ahead-answer" method="post">
@@ -334,20 +264,10 @@ Before you proceed, check the participant’s identity and confirm that their la
         text: "Continue"
       }) }}
     </form>
-
-
-
   {% endset %}
 
   {% if event.status == 'event_checked_in' or event.status == 'event_scheduled' %}
     {{ screeningHtml | safe}}
-    {# {{ card({
-      heading: "Pre-screening checks",
-      headingLevel: "2",
-      descriptionHtml: screeningHtml
-    }) }} #}
   {% endif %}
 
-
 {% endblock %}
-
