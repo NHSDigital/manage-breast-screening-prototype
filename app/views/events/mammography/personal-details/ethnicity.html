@@ -49,135 +49,130 @@
 
   {% set hasError = flash.error[0].name == "participant[demographicInformation][ethnicBackground]" %}
 
-  {% if hasError %}
-    <div class="nhsuk-form-group nhsuk-form-group--error">
-  {% endif %}
+  <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if hasError }}">
+
+    {% call fieldset({
+      legend: {
+        text: ethnicityLegend,
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      },
+      attributes: {
+        "aria-describedby": "ethnic-background-error"
+      } if hasError
+    }) %}
+
+      {% if hasError %}
+        <span class="nhsuk-error-message" id="ethnic-background-error">
+          <span class="nhsuk-u-visually-hidden">Error:</span> Select an ethnic background
+        </span>
+      {% endif %}
 
 
-
-  {% call fieldset({
-    legend: {
-      text: ethnicityLegend,
-      classes: "nhsuk-fieldset__legend--m",
-      isPageHeading: false
-    },
-    attributes: {
-      "aria-describedby": "ethnic-background-error"
-    } if hasError
-  }) %}
-
-    {% if hasError %}
-      <span class="nhsuk-error-message" id="ethnic-background-error">
-        <span class="nhsuk-u-visually-hidden">Error:</span> Select an ethnic background
-      </span>
-    {% endif %}
-
-
-    {# White ethnic background #}
-    <h2 class="nhsuk-fieldset__legend--s">White</h2>
-    {{ radios({
-      idPrefix: "ethnicBackgroundWhite",
-      name: "participant[demographicInformation][ethnicBackground]",
-      value: participant.demographicInformation.ethnicBackground,
-      items: [
-        { value: "English, Welsh, Scottish, Northern Irish or British", text: "English, Welsh, Scottish, Northern Irish or British" },
-        { value: "Irish", text: "Irish" },
-        { value: "Gypsy or Irish Traveller", text: "Gypsy or Irish Traveller" },
-        { value: "Other White background",
-          text: "Other White background",
-          conditional: {
-            html: otherBackground("White")
+      {# White ethnic background #}
+      <h2 class="nhsuk-fieldset__legend--s">White</h2>
+      {{ radios({
+        idPrefix: "ethnicBackgroundWhite",
+        name: "participant[demographicInformation][ethnicBackground]",
+        value: participant.demographicInformation.ethnicBackground,
+        items: [
+          { value: "English, Welsh, Scottish, Northern Irish or British", text: "English, Welsh, Scottish, Northern Irish or British" },
+          { value: "Irish", text: "Irish" },
+          { value: "Gypsy or Irish Traveller", text: "Gypsy or Irish Traveller" },
+          { value: "Other White background",
+            text: "Other White background",
+            conditional: {
+              html: otherBackground("White")
+            }
           }
-        }
-      ]
-    }) }}
+        ]
+      }) }}
 
-    {# Mixed or multiple ethnic groups #}
-    <h2 class="nhsuk-fieldset__legend--s">Mixed or multiple ethnic groups</h2>
-    {{ radios({
-      idPrefix: "ethnicBackgroundMixed",
-      name: "participant[demographicInformation][ethnicBackground]",
-      value: participant.demographicInformation.ethnicBackground,
-      items: [
-        { value: "White and Black Caribbean", text: "White and Black Caribbean" },
-        { value: "White and Black African", text: "White and Black African" },
-        { value: "White and Asian", text: "White and Asian" },
-        { value: "Other mixed or multiple ethnic background",
-          text: "Other mixed or multiple ethnic background",
-          conditional: {
-            html: otherBackground("Mixed")
+      {# Mixed or multiple ethnic groups #}
+      <h2 class="nhsuk-fieldset__legend--s">Mixed or multiple ethnic groups</h2>
+      {{ radios({
+        idPrefix: "ethnicBackgroundMixed",
+        name: "participant[demographicInformation][ethnicBackground]",
+        value: participant.demographicInformation.ethnicBackground,
+        items: [
+          { value: "White and Black Caribbean", text: "White and Black Caribbean" },
+          { value: "White and Black African", text: "White and Black African" },
+          { value: "White and Asian", text: "White and Asian" },
+          { value: "Other mixed or multiple ethnic background",
+            text: "Other mixed or multiple ethnic background",
+            conditional: {
+              html: otherBackground("Mixed")
+            }
           }
-        }
-      ]
-    }) }}
+        ]
+      }) }}
 
-    {# Asian or Asian British #}
-    <h2 class="nhsuk-fieldset__legend--s">Asian or Asian British</h2>
-    {{ radios({
-      idPrefix: "ethnicBackgroundAsian",
-      name: "participant[demographicInformation][ethnicBackground]",
-      value: participant.demographicInformation.ethnicBackground,
-      items: [
-        { value: "Indian", text: "Indian" },
-        { value: "Pakistani", text: "Pakistani" },
-        { value: "Bangladeshi", text: "Bangladeshi" },
-        { value: "Chinese", text: "Chinese" },
-        { value: "Other Asian or Asian British background",
-          text: "Other Asian or Asian British background",
-          conditional: {
-            html: otherBackground("Asian")
+      {# Asian or Asian British #}
+      <h2 class="nhsuk-fieldset__legend--s">Asian or Asian British</h2>
+      {{ radios({
+        idPrefix: "ethnicBackgroundAsian",
+        name: "participant[demographicInformation][ethnicBackground]",
+        value: participant.demographicInformation.ethnicBackground,
+        items: [
+          { value: "Indian", text: "Indian" },
+          { value: "Pakistani", text: "Pakistani" },
+          { value: "Bangladeshi", text: "Bangladeshi" },
+          { value: "Chinese", text: "Chinese" },
+          { value: "Other Asian or Asian British background",
+            text: "Other Asian or Asian British background",
+            conditional: {
+              html: otherBackground("Asian")
+            }
           }
-        }
-      ]
-    }) }}
+        ]
+      }) }}
 
-    {# Black, African, Caribbean or Black British #}
-    <h2 class="nhsuk-fieldset__legend--s">Black, African, Caribbean or Black British</h2>
-    {{ radios({
-      idPrefix: "ethnicBackgroundBlack",
-      name: "participant[demographicInformation][ethnicBackground]",
-      value: participant.demographicInformation.ethnicBackground,
-      items: [
-        { value: "African", text: "African" },
-        { value: "Caribbean", text: "Caribbean" },
-        { value: "Other Black, African, Caribbean or Black British background",
-          text: "Other Black, African, Caribbean or Black British background",
-          conditional: {
-            html: otherBackground("Black")
+      {# Black, African, Caribbean or Black British #}
+      <h2 class="nhsuk-fieldset__legend--s">Black, African, Caribbean or Black British</h2>
+      {{ radios({
+        idPrefix: "ethnicBackgroundBlack",
+        name: "participant[demographicInformation][ethnicBackground]",
+        value: participant.demographicInformation.ethnicBackground,
+        items: [
+          { value: "African", text: "African" },
+          { value: "Caribbean", text: "Caribbean" },
+          { value: "Other Black, African, Caribbean or Black British background",
+            text: "Other Black, African, Caribbean or Black British background",
+            conditional: {
+              html: otherBackground("Black")
+            }
           }
-        }
-      ]
-    }) }}
+        ]
+      }) }}
 
-    {# Other ethnic group #}
-    <h2 class="nhsuk-fieldset__legend--s">Other ethnic group</h2>
-    {{ radios({
-      idPrefix: "ethnicBackgroundOther",
-      name: "participant[demographicInformation][ethnicBackground]",
-      value: participant.demographicInformation.ethnicBackground,
-      items: [
-        { value: "Arab", text: "Arab" },
-        {
-          value: "Other ethnic background",
-          text: "Other ethnic background",
-          conditional: {
-            html: otherBackground("Other")
+      {# Other ethnic group #}
+      <h2 class="nhsuk-fieldset__legend--s">Other ethnic group</h2>
+      {{ radios({
+        idPrefix: "ethnicBackgroundOther",
+        name: "participant[demographicInformation][ethnicBackground]",
+        value: participant.demographicInformation.ethnicBackground,
+        items: [
+          { value: "Arab", text: "Arab" },
+          {
+            value: "Other ethnic background",
+            text: "Other ethnic background",
+            conditional: {
+              html: otherBackground("Other")
+            }
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "Prefer not to say",
+            text: "Prefer not to say"
           }
-        },
-        {
-          divider: "or"
-        },
-        {
-          value: "Prefer not to say",
-          text: "Prefer not to say"
-        }
-      ]
-    }) }}
+        ]
+      }) }}
 
-  {% endcall %}
-  {% if hasError %}
-    </div>
-  {% endif %}
+    {% endcall %}
+  </div>
+
 
 
   {{ button({
