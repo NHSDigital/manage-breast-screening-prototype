@@ -1,9 +1,11 @@
 {% set specialAppointmentRows = [] %}
+{% set showChangeLink = false %}
 
 {% if data.event.specialAppointment.supportTypes %}
   {% for supportType in data.event.specialAppointment.supportTypes %}
     {# Skip the _unchecked form artifact #}
     {% if supportType != '_unchecked' %}
+      {% set showChangeLink = true %}
       {% set details = "" %}
       {% set isTemporary = false %}
       
@@ -49,7 +51,7 @@
         {% set valueContent = "<span style=\"color: var(--nhsuk-secondary-text-color);\">No details provided</span>" %}
       {% endif %}
 
-      {# Add row for this support type #}
+      {# Add row for this support type (without actions) #}
       {% set specialAppointmentRows = specialAppointmentRows | push({
         key: {
           html: keyContent,
@@ -57,22 +59,20 @@
         },
         value: {
           html: valueContent
-        },
-        actions: {
-          items: [
-            {
-              href: eventUrl + "/special-appointments/edit" + ("?referrerChain=" + referrerChain if referrerChain),
-              text: "Change",
-              visuallyHiddenText: "special appointment requirements"
-            }
-          ]
-        } if allowEdits and loop.first
+        }
       }) %}
     {% endif %}
   {% endfor %}
 {% endif %}
 
+{# Display the Change link above the summary list if edits are allowed and there are appointments #}
+{% if allowEdits and showChangeLink %}
+  <div style="text-align: right;">
+    <a href="{{ eventUrl }}/special-appointment/edit{{ ('?referrerChain=' + referrerChain) if referrerChain }}" style="font-size: 19px;">Change<span class="nhsuk-u-visually-hidden"> special appointment requirements</span></a>
+  </div>
+{% endif %}
+
 {{ summaryList({
   rows: specialAppointmentRows,
-  classes: "nhsuk-summary-list--no-border"
+  classes: "nhsuk-summary-list"
 }) }}
