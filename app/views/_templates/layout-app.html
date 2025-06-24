@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block header %}
-  {{ headerNew({
+  {{ header({
     account: {
       items: [
         {
@@ -30,39 +30,41 @@
       ]
     },
     service: {
-      name: serviceName
+      text: serviceName
     },
-    primaryLinks: [
-      {
-        url: "/dashboard",
-        label: "Home",
-        current: true if navActive == "home"
-      },
-      {
-        url: "/clinics",
-        label: "Screening",
-        current: true if navActive == "screening"
-      },
-      {
-        url: "/reading",
-        label: "Image reading",
-        current: true if navActive == "reading"
-      },
-      {
-        url: "/participants",
-        label: "Participants",
-        current: true if navActive == "participants"
-      },
-      {
-        url: "#",
-        label: "Messages",
-        current: true if navActive == "messages"
-      }, {
-        url: "#",
-        label: "Help and support",
-        current: true if navActive == "help"
-      }
-    ]
+    navigation: {
+      items: [
+        {
+          href: "/dashboard",
+          text: "Home",
+          current: true if navActive == "home"
+        },
+        {
+          href: "/clinics",
+          text: "Screening",
+          current: true if navActive == "screening"
+        },
+        {
+          href: "/reading",
+          text: "Image reading",
+          current: true if navActive == "reading"
+        },
+        {
+          href: "/participants",
+          text: "Participants",
+          current: true if navActive == "participants"
+        },
+        {
+          href: "#",
+          text: "Messages",
+          current: true if navActive == "messages"
+        }, {
+          href: "#",
+          text: "Help and support",
+          current: true if navActive == "help"
+        }
+      ]
+    }
   }) }}
  {#  {{ serviceheader({
     service: {

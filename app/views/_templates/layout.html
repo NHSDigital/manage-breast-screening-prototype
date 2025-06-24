@@ -7,7 +7,6 @@
 <!-- Extends the layout from /docs/views/template.html -->
 {% extends "template.html" %}
 
-{%- from '_components/header/macro.njk' import headerNew %}
 {%- from '_components/count/macro.njk' import appCount %}
 {%- from '_components/event-status/macro.njk' import eventStatus %}
 {%- from '_components/forward-link/macro.njk' import appForwardLink %}
@@ -35,14 +34,11 @@
 <!-- Header code examples can be found at https://service-manual.nhs.uk/design-system/components/header -->
 {% block header %}
   {{ header({
-    "service": {
-        "name": serviceName,
-        "href": "/"
-      },
-      "showNav": "false",
-      "showSearch": "false"
-    })
-  }}
+    service: {
+      text: serviceName,
+      href: "/"
+    }
+  }) }}
 {% endblock %}
 
 <!-- Edit the footer -->
