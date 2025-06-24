@@ -75,8 +75,7 @@
   </head>
 
   <body class="{{ bodyClasses }}">
-
-    <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
+    <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' nhsuk-frontend-supported' : '');</script>
     {% block bodyStart %}{% endblock %}
 
       {% block skipLink %}
@@ -104,6 +103,11 @@
       {% endblock %}
 
     <script src="/nhsuk-frontend/nhsuk-frontend.min.js" type="module"></script>
+    <script type="module">
+      import { initAll } from '/nhsuk-frontend/nhsuk-frontend.min.js'
+      initAll()
+    </script>
+
     {% block bodyEnd %}{% endblock %}
 
   </body>
