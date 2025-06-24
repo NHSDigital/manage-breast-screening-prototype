@@ -43,6 +43,11 @@
   {% set showNotProvidedText = true %}
   {% include "summary-lists/demographic-information/contact-details.njk" %}
 
+  {{ appHiddenInput({
+    name: "successMessage",
+    value: "Contact details updated successfully"
+  }) }}
+
   {{ button({
     text: "Confirm changes"
   }) }}
