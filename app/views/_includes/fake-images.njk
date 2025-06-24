@@ -144,6 +144,10 @@
         const imageCards = document.querySelectorAll('.app-image-card')
         const imagingForm = document.getElementById('imaging-form')
 
+        if (!loadingSpinner || !imageCards.length || !imagingForm) {
+          return
+        }
+
         // Hide spinner after initial delay
         setTimeout(() => {
           loadingSpinner.classList.add('app-hidden')
