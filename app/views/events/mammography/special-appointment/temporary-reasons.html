@@ -31,6 +31,7 @@
   {% if checkboxItems | length > 0 %}
     {{ checkboxes({
       name: "event[specialAppointment][temporaryReasonsList]",
+      values: data.event.specialAppointment.temporaryReasonsList, 
       fieldset: {
         legend: {
           text: "Which of these reasons are temporary?",
