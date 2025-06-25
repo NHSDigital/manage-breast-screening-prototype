@@ -119,11 +119,12 @@ Click the diagram to add notable features such as scars, moles, or warts that im
               <!-- Markers will be added here dynamically -->
           </svg>
           
-          <!-- Popover (initially hidden) -->
+     <!-- Popover (initially hidden) -->
+<!-- Popover (initially hidden) -->
           <div class="breast-features-diagram-popover" id="featurePopover">
             <span class="nhsuk-caption-m" id="popoverCaption">Add new feature</span>
-            <div class="region-label" id="regionLabel"></div>
             <h2 id="popoverHeading">What is the feature?</h2>
+            <p>This will be added to <span class="nhsuk-tag nhsuk-tag--white region-label" id="regionLabel"></span></p>
               
             {{ radios({
               idPrefix: "feature",
@@ -907,13 +908,13 @@ Click the diagram to add notable features such as scars, moles, or warts that im
                 locationText = `${feature.side.charAt(0).toUpperCase() + feature.side.slice(1)} ${feature.region}`
             }
             
-            listItem.innerHTML = `
-                <div class="feature-left">
-                    <div class="feature-number">${feature.number}</div>
-                    <div class="feature-label">${feature.text}</div>
-                </div>
-                <div class="feature-position">${locationText}</div>
-            `
+           listItem.innerHTML = `
+            <div class="feature-left">
+                <div class="feature-number">${feature.number}</div>
+                <div class="feature-label">${feature.text}</div>
+            </div>
+            <div class="feature-position"><span class="nhsuk-tag nhsuk-tag--white">${locationText}</span></div>
+        `
             
             listItem.addEventListener('click', function() {
                 const featureId = parseInt(this.getAttribute('data-feature-id'))
