@@ -1,0 +1,25 @@
+{% set riskLevel = participant | getCurrentRiskLevel | sentenceCase %}
+
+{% if riskLevel == "Family history" %}
+  {% set riskLevel = "Family history: moderate risk" %}
+{% endif %}
+
+{% set screeningProtocolRow = {
+  key: {
+    text: "Screening protocol"
+  },
+  value: {
+    text: riskLevel
+  },
+  actions: {
+    items: [
+      {
+        href: "#",
+        text: "View or update screening history",
+        visuallyHiddenText: "screening protocol"
+      } if false
+    ]
+  }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(screeningProtocolRow) }}

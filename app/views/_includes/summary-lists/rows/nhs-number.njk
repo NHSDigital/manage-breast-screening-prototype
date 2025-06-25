@@ -1,0 +1,16 @@
+{# /app/views/_includes/summary-lists/rows/nhs-number.njk #}
+
+{% set nhsNumberRow = {
+     key: {
+       text: "NHS number"
+     },
+     value: {
+       text: participant.medicalInformation.nhsNumber | formatNhsNumber
+     },
+     actions: {
+        items: [
+        ]
+     }
+   } | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(nhsNumberRow) }}
