@@ -6,7 +6,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-
+{% set allowEdits = allowEdits | default(true) %}
 
 {% set back = {
   href: "/participants" | getReturnUrl(referrerChain),
@@ -17,8 +17,6 @@
 
   {{ participant | log("Participant") }}
   {{ event | log("Event") }}
-
-
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
@@ -32,25 +30,29 @@
   {% set tempParticipant = participant %}
   {% set participant = originalParticipant %}
 
-  {% set personalDetailsHtml %}
-    {% include "summary-lists/participant.njk" %}
-  {% endset %}
+  {% call card({
+    heading: "Personal details"
+  }) %}
+    {% include "summary-lists/demographic-information/personal-details.njk" %}
+  {% endcall %}
 
-  {{ card({
-    heading: "Personal details",
-    headingLevel: "2",
-    descriptionHtml: personalDetailsHtml
-  }) }}
+  {% call card({
+    heading: "Contact details"
+  }) %}
+    {% include "summary-lists/demographic-information/contact-details.njk" %}
+  {% endcall %}
 
-  {% set screeningHistoryHtml %}
-    {% include "summary-lists/screening-history.njk" %}
-  {% endset %}
+  {% call card({
+    heading: "Screening details"
+  }) %}
+    {% include "summary-lists/screening-details.njk" %}
+  {% endcall %}
 
-  {{ card({
-    heading: "Screening history",
-    headingLevel: "2",
-    descriptionHtml: screeningHistoryHtml
-  }) }}
-
+  {% call card({
+    heading: "Appointments",
+    headingLevel: "2"
+  }) %}
+    {% include "summary-lists/screening-appointment-history.njk" %}
+  {% endcall %}
 
 {% endblock %}

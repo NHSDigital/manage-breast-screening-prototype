@@ -58,4 +58,13 @@
   .nhsuk-warning-callout .nhsuk-summary-list__key {
     width: auto;
   }
+
+// Reduce space taken by card
+.nhsuk-card {
+  @include nhsuk-responsive-margin(4, "bottom");
+}
+
+.nhsuk-card--feature {
+  @include nhsuk-responsive-margin(5, "top");
+
 }

@@ -121,7 +121,10 @@ module.exports = router => {
     const data = req.session.data
     const participantId = req.params.participantId
     const referrerChain = req.query.referrerChain
+    const successMessage = req.query.successMessage || req.body.successMessage || 'Participant updated successfully'
     saveTempParticipantToParticipant(data)
+
+    req.flash('success', successMessage)
 
     // Redirect back to the participant page
     const returnUrl = getReturnUrl(`/participants/${participantId}`, referrerChain)

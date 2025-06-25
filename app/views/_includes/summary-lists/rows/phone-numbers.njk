@@ -1,3 +1,5 @@
+{# /app/views/_includes/summary-lists/rows/phone-numbers.njk #}
+
 {% set phoneNumbers = [participant.demographicInformation.mobilePhone, participant.demographicInformation.homePhone] | removeEmpty %}
 
 {% set phoneNumbersHtml %}

@@ -1,4 +1,4 @@
-{# /app/views/_includes/summary-lists/screening-history.njk #}
+{# /app/views/_includes/summary-lists/screening-appointment-history.njk #}
 
 {% set today = "" | today %}
 {% set upcomingAppointments = [] %}
@@ -13,7 +13,7 @@
 {% endfor %}
 {% if not hideUpcoming %}
   {% if upcomingAppointments.length > 0 %}
-    <h3>Upcoming appointments</h3>
+    <h3>Upcoming</h3>
     <table class="nhsuk-table">
      <thead>
        <tr>
@@ -53,7 +53,7 @@
 
 
 {% if pastAppointments.length > 0 %}
- <h3>Screening history</h3>
+ <h3>Previous</h3>
  <table class="nhsuk-table">
    <thead>
      <tr>

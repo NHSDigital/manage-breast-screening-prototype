@@ -1,0 +1,23 @@
+{# /app/views/_includes/summary-lists/rows/date-of-birth.njk #}
+
+{% set dob %}
+  {{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
+  <span class="nhsuk-hint">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }} old)</span>
+{% endset %}
+
+{% set dobRow = {
+  key: {
+    text: "Date of birth"
+  },
+  value: {
+    html: dob
+  },
+  actions: {
+    items: [{
+
+    } if allowEdits
+    ]
+  }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(dobRow) }}
