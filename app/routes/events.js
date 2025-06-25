@@ -129,6 +129,12 @@ module.exports = router => {
     const selectedEthnicBackground = data.participant?.demographicInformation?.ethnicBackground
 
     if (!selectedEthnicBackground) {
+      req.flash('error', {
+        text: 'Select an ethnic background',
+        name: 'participant[demographicInformation][ethnicBackground]',
+        href: '#ethnicBackgroundWhite-1'
+      })
+
       res.redirect(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`)
       return
     }
@@ -153,6 +159,7 @@ module.exports = router => {
     // Save the participant data back to the main array
     saveTempParticipantToParticipant(data)
 
+    req.flash('success', 'Ethnicity updated')
     // Redirect back to the event page (or wherever appropriate)
     res.redirect(`/clinics/${clinicId}/events/${eventId}`)
   })
@@ -220,6 +227,8 @@ module.exports = router => {
     const previousMammogram = data.event?.previousMammogramTemp
     const action = req.body.action
 
+    const mammogramAddedMessage = 'Previous mammogram added'
+
     // Check if this is coming from "proceed anyway" page
     if (action === 'proceed-anyway') {
       // Validate that a reason was provided
@@ -241,6 +250,8 @@ module.exports = router => {
         ...previousMammogram,
         warningOverridden: true
       })
+
+      req.flash('success', mammogramAddedMessage)
 
       delete data.event?.previousMammogramTemp
       return res.redirect(`/clinics/${clinicId}/events/${eventId}`)
@@ -309,6 +320,8 @@ module.exports = router => {
 
       return res.redirect(`/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`)
     }
+
+    req.flash('success', mammogramAddedMessage)
 
     res.redirect(`/clinics/${clinicId}/events/${eventId}`)
   })

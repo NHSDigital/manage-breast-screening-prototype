@@ -147,19 +147,27 @@
     }) }}
   {% endset %}
 
-  {% set participantDetailsHtml %}
+
+  {% call card({
+    headingHtml: " "
+  }) %}
     {% set isMinimalParticipant = true %}
     {% set allowEdits = false %}
-    {% include "summary-lists/participant.njk" %}
-  {% endset %}
+    {# {% include "summary-lists/participant.njk" %} #}
 
-  {{ card({
-    _heading: "Important details",
-    headingHtml: " ",
-    _feature: true,
-    headingLevel: "2",
-    descriptionHtml: participantDetailsHtml
-  }) }}
+    {% call summaryList() %}
+      {# {% include "_includes/summary-lists/rows/nhs-number.njk" %} #}
+      {% include "_includes/summary-lists/rows/full-name.njk" %}
+      {# {% include "_includes/summary-lists/rows/gender.njk" %} #}
+      {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+      {% include "_includes/summary-lists/rows/address.njk" %}
+      {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+      {# {% include "_includes/summary-lists/rows/email.njk" %} #}
+      {% include "_includes/summary-lists/rows/screening-protocol.njk" %}
+      {% include "_includes/summary-lists/rows/last-known-mammogram.njk" %}
+    {% endcall %}
+  {% endcall %}
 
   {% set screeningHistoryHtml %}
     {% set clinicHistory = data | getParticipantClinicHistory(participant.id) %}
@@ -213,7 +221,7 @@
 
     {% set detailsHtml %}
       {% set hideUpcoming = true %}
-      {% include "summary-lists/screening-history.njk" %}
+      {% include "summary-lists/screening-appointment-history.njk" %}
     {% endset %}
 
     {% if clinicHistory | length > 1 %}
@@ -224,47 +232,52 @@
     {% endif %}
   {% endset %}
 
-  {% set screeningHint %}
-    Before you proceed, check the participant's identity and confirm that their last mammogram was more than 6 months ago.
-  {% endset %}
 
-  {% set screeningHtml %}
-    <form action="./{{eventId}}/can-appointment-go-ahead-answer" method="post">
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-two-thirds">
-          {{ radios({
-            name: "event[appointment][canAppointmentGoAhead]",
-            idPrefix: "canAppointmentGoAhead",
-            fieldset: {
-              legend: {
-                text: "Can the appointment go ahead?",
-                classes: "nhsuk-fieldset__legend--m",
-                isPageHeading: false
-              }
+
+
+{% set screeningHint %}
+Before you proceed, check the participant’s identity and confirm that their last mammogram was more than 6 months ago.
+{% endset %}
+
+{% set screeningHtml %}
+  <form action="./{{eventId}}/can-appointment-go-ahead-answer" method="post">
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        {{ radios({
+          name: "event[appointment][canAppointmentGoAhead]",
+          idPrefix: "canAppointmentGoAhead",
+          fieldset: {
+            legend: {
+              text: "Can the appointment go ahead?",
+              classes: "nhsuk-fieldset__legend--m",
+              isPageHeading: false
+            }
+          },
+          hint: {
+            text: screeningHint
+          },
+          value: event.appointment.canAppointmentGoAhead,
+          items: [
+            {
+              value: "yes",
+              text: "Yes, go to medical information"
+
             },
-            hint: {
-              text: screeningHint
-            },
-            value: event.appointment.canAppointmentGoAhead,
-            items: [
-              {
-                value: "yes",
-                text: "Yes, go to medical information"
-              },
-              {
-                value: "no",
-                text: "No, screening cannot proceed"
-              }
-            ]
-          }) }}
-        </div>
+            {
+              value: "no",
+              text: "No, screening cannot proceed"
+            }
+          ]
+        }) }}
       </div>
+    </div>
 
-      {{ button({
-        text: "Continue"
-      }) }}
-    </form>
-  {% endset %}
+on({
+      text: "Continue"
+    }) }}
+  </form>
+
+{% endset %}
 
   {% if event.status == 'event_checked_in' or event.status == 'event_scheduled' %}
     {{ screeningHtml | safe}}
