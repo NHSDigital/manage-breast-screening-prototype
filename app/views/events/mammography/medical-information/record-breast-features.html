@@ -276,8 +276,7 @@ Click the diagram to add notable features such as scars, moles, or warts that im
     if (saveBtn) saveBtn.addEventListener('click', saveAllFeatures)
     if (clearAllBtn) clearAllBtn.addEventListener('click', clearAllFeatures)
 
-    // Setup conditional reveals for radio buttons
-    setupConditionalReveals()
+    // Setup conditional reveals - handled by NHS prototype kit automatically
 
     // Close popover if click outside
     document.addEventListener('click', function(e) {
@@ -526,31 +525,7 @@ Click the diagram to add notable features such as scars, moles, or warts that im
         }
     }
 
-    function setupConditionalReveals() {
-        const otherRadio = document.getElementById('feature-other-feature')
-        const allRadios = document.querySelectorAll('input[name="feature"]')
-        const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
-        const customInput = document.querySelector('#customLabel')
-
-        if (otherRadio && conditionalDiv) {
-            otherRadio.addEventListener('change', function() {
-                if (this.checked) {
-                    conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
-                }
-            })
-        }
-
-        allRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (conditionalDiv && this.value !== 'other-feature') {
-                    conditionalDiv.classList.remove('nhsuk-radios__conditional--revealed')
-                    if (customInput) {
-                        customInput.value = ''
-                    }
-                }
-            })
-        })
-    }
+    // Setup conditional reveals for radio buttons - handled by NHS prototype kit
 
     function createPermanentMarker(region, side, text, number, featureId, exactX, exactY) {
         console.log('=== createPermanentMarker START ===')
