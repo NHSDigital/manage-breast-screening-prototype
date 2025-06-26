@@ -225,7 +225,7 @@ Click the diagram to add notable features such as scars, moles, or warts that im
 
   {% include "screening-cannot-proceed-link.njk" %}
 
-  <script>
+<script>
   function initializeBreastFeatures() {
     let diagramContainer
     let svg
@@ -282,7 +282,9 @@ Click the diagram to add notable features such as scars, moles, or warts that im
     // Close popover if click outside
     document.addEventListener('click', function(e) {
         if (popover && popover.style.display === 'block' &&
-            !popover.contains(e.target) && !svg.contains(e.target)) {
+            !popover.contains(e.target) && 
+            !svg.contains(e.target) &&
+            !e.target.classList.contains('breast-features-diagram-marker')) {
             closePopover()
         }
     })
@@ -439,33 +441,48 @@ Click the diagram to add notable features such as scars, moles, or warts that im
     function showPopover(clickX, clickY) {
         if (!popover || !currentRegion) return
 
+        // Force the popover to be visible
         popover.style.display = 'block'
+        popover.style.visibility = 'visible'
+        popover.style.opacity = '1'
+        popover.style.position = 'fixed'
+        popover.style.zIndex = '9999'
+        
         resetPopoverForm()
 
         // Update region label
         updateRegionLabel()
 
-        const popoverRect = popover.getBoundingClientRect()
-        let popoverLeft = clickX + 20
-        let popoverTop = clickY - popoverRect.height / 2
+        // Wait a moment for the popover to render, then position it
+        setTimeout(() => {
+            const popoverRect = popover.getBoundingClientRect()
+            let popoverLeft = clickX + 20
+            let popoverTop = clickY - popoverRect.height / 2
 
-        // Adjust position to stay within viewport
-        if (popoverLeft + popoverRect.width > window.innerWidth) {
-            popoverLeft = window.innerWidth - popoverRect.width - 10
-        }
-        if (popoverTop < 0) {
-            popoverTop = 10
-        }
-        if (popoverTop + popoverRect.height > window.innerHeight) {
-            popoverTop = window.innerHeight - popoverRect.height - 10
-        }
-        if (popoverLeft < 0) {
-            popoverLeft = 10
-        }
+            // Adjust position to stay within viewport
+            if (popoverLeft + popoverRect.width > window.innerWidth) {
+                popoverLeft = window.innerWidth - popoverRect.width - 10
+            }
+            if (popoverTop < 0) {
+                popoverTop = 10
+            }
+            if (popoverTop + popoverRect.height > window.innerHeight) {
+                popoverTop = window.innerHeight - popoverRect.height - 10
+            }
+            if (popoverLeft < 0) {
+                popoverLeft = 10
+            }
 
-        popover.style.left = popoverLeft + 'px'
-        popover.style.top = popoverTop + 'px'
-        popover.focus()
+            popover.style.left = popoverLeft + 'px'
+            popover.style.top = popoverTop + 'px'
+            
+            // Focus the popover to ensure it's accessible
+            popover.focus()
+            
+            console.log('Popover positioned at:', popoverLeft, popoverTop)
+            console.log('Popover display:', popover.style.display)
+            console.log('Popover visibility:', popover.style.visibility)
+        }, 10)
     }
 
     function updateRegionLabel() {
@@ -651,6 +668,10 @@ Click the diagram to add notable features such as scars, moles, or warts that im
             if (isDragging) {
                 updateFeaturePosition(markerElement)
             } else {
+                // Prevent the click from bubbling up to document level
+                e.preventDefault()
+                e.stopPropagation()
+                
                 const featureId = parseInt(markerElement.getAttribute('data-feature-id'))
                 const feature = allFeatures.find(f => f.id === featureId)
                 if (feature) {
@@ -745,14 +766,7 @@ Click the diagram to add notable features such as scars, moles, or warts that im
         let featureFound = false
         const featureTextLower = feature.text.toLowerCase()
 
-        radios.forEach(radio => {
-            if (radio.value === featureTextLower || 
-                (radio.value === 'breast-reduction-scar' && featureTextLower === 'breast reduction scar')) {
-                radio.checked = true
-                featureFound = true
-            }
-        })
-
+        // Handle "Other: " prefixed features first
         if (feature.text && feature.text.startsWith('Other: ')) {
             const otherRadio = document.getElementById('feature-other-feature')
             const customInput = document.querySelector('#customLabel')
@@ -769,20 +783,43 @@ Click the diagram to add notable features such as scars, moles, or warts that im
                     customInput.value = feature.text.replace('Other: ', '')
                 }
             }
-        }
-
-        if (!featureFound && !['scar', 'breast reduction scar', 'mole', 'wart'].includes(featureTextLower)) {
-            const otherRadio = document.getElementById('feature-other-feature')
-            const customInput = document.querySelector('#customLabel')
-            const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
-            
-            if (otherRadio) {
-                otherRadio.checked = true
-                if (conditionalDiv) {
-                    conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
+        } else {
+            // Match standard feature types
+            radios.forEach(radio => {
+                let shouldCheck = false
+                
+                if (radio.value === 'mole' && featureTextLower === 'mole') {
+                    shouldCheck = true
+                } else if (radio.value === 'wart' && featureTextLower === 'wart') {
+                    shouldCheck = true
+                } else if (radio.value === 'breast-reduction-scar' && featureTextLower === 'breast reduction scar') {
+                    shouldCheck = true
+                } else if (radio.value === 'other-scar' && featureTextLower === 'other scar') {
+                    shouldCheck = true
                 }
-                if (customInput) {
-                    customInput.value = feature.text
+                
+                if (shouldCheck) {
+                    radio.checked = true
+                    featureFound = true
+                }
+            })
+
+            // If no standard match found, treat as "other feature"
+            if (!featureFound) {
+                const otherRadio = document.getElementById('feature-other-feature')
+                const customInput = document.querySelector('#customLabel')
+                const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+                
+                if (otherRadio) {
+                    otherRadio.checked = true
+                    featureFound = true
+                    
+                    if (conditionalDiv) {
+                        conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
+                    }
+                    if (customInput) {
+                        customInput.value = feature.text
+                    }
                 }
             }
         }
@@ -808,6 +845,10 @@ Click the diagram to add notable features such as scars, moles, or warts that im
             featureText = 'Breast reduction scar'
         } else if (selectedFeatureRadio.value === 'other-scar') {
             featureText = 'Other scar'
+        } else if (selectedFeatureRadio.value === 'mole') {
+            featureText = 'Mole'
+        } else if (selectedFeatureRadio.value === 'wart') {
+            featureText = 'Wart'
         } else {
             featureText = selectedFeatureRadio.value.charAt(0).toUpperCase() + selectedFeatureRadio.value.slice(1)
         }
@@ -815,7 +856,6 @@ Click the diagram to add notable features such as scars, moles, or warts that im
         if (editingFeature) {
             editingFeature.text = featureText
             updateFeaturesList()
-            showStatusMessage(`Feature ${editingFeature.number} updated.`, 'success')
             editingFeature = null
         } else if (currentRegion) {
             const newFeatureNumber = markerCounter++
@@ -844,11 +884,8 @@ Click the diagram to add notable features such as scars, moles, or warts that im
             newFeature.element = markerElement
 
             updateFeaturesList()
-            showStatusMessage(`Feature ${newFeature.number} added.`, 'success')
             
             currentRegion = null
-        } else {
-            showStatusMessage('Error: No region selected.', 'error')
         }
 
         closePopover()
@@ -862,7 +899,6 @@ Click the diagram to add notable features such as scars, moles, or warts that im
             editingFeature.element.remove()
         }
         updateFeaturesList()
-        showStatusMessage(`Feature ${editingFeature.number} removed.`, 'success')
         closePopover()
         editingFeature = null
     }
@@ -870,6 +906,8 @@ Click the diagram to add notable features such as scars, moles, or warts that im
     function closePopover() {
         if (popover) {
             popover.style.display = 'none'
+            popover.style.visibility = 'hidden'
+            popover.style.opacity = '0'
         }
         
         currentRegion = null
@@ -941,7 +979,6 @@ Click the diagram to add notable features such as scars, moles, or warts that im
         e.preventDefault()
         
         if (allFeatures.length === 0) {
-            showStatusMessage('No features to clear.', 'error')
             return
         }
         
@@ -964,14 +1001,11 @@ Click the diagram to add notable features such as scars, moles, or warts that im
             } catch (error) {
                 console.warn('Could not clear session storage:', error)
             }
-            
-            showStatusMessage('All features cleared.', 'success')
         }
     }
 
     function saveAllFeatures() {
         if (allFeatures.length === 0) {
-            showStatusMessage('No features to save.', 'error')
             return
         }
 
@@ -989,7 +1023,6 @@ Click the diagram to add notable features such as scars, moles, or warts that im
                     })) 
                 }))
             }
-            showStatusMessage('Features saved successfully!', 'success')
             setTimeout(() => {
                 if (confirm('Features saved successfully! Would you like to continue to the next step?')) {
                     const returnUrl = "{{ formAction }}"
@@ -999,10 +1032,9 @@ Click the diagram to add notable features such as scars, moles, or warts that im
                         console.warn('No return URL defined for formAction.')
                     }
                 }
-            }, 1000)
+            }, 100)
         } catch (error) {
             console.error('Error saving features:', error)
-            showStatusMessage('Error saving features.', 'error')
         }
     }
 
