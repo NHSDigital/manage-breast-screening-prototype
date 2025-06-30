@@ -37,9 +37,6 @@
         {
           value: "Breast implants",
           text: "Breast implants",
-          hint: {
-            text: "Including medical and cosmetic"
-          },
           conditional: {
             html: textarea({
               name: "event[specialAppointment][implantDetails]",
@@ -47,6 +44,22 @@
                 text: "Describe support required"
               },
               value: data.event.specialAppointment.implantDetails
+            })
+          }
+        },
+        {
+          value: "Implanted medical devices",
+          text: "Implanted medical devices",
+          hint: {
+            text: "For example, a pacemaker"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][implantedMedicalDevicesDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.implantedMedicalDevicesDetails
             })
           }
         },

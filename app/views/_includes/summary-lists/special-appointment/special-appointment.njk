@@ -14,6 +14,8 @@
       {# Get the details for each support type #}
       {% if supportType == "Breast implants" and specialAppointmentData.implantDetails %}
         {% set details = specialAppointmentData.implantDetails %}
+      {% elif supportType == "Implanted medical devices" and specialAppointmentData.implantedMedicalDevicesDetails %}
+        {% set details = specialAppointmentData.implantedMedicalDevicesDetails %}
       {% elif supportType == "Vision" and specialAppointmentData.visionDetails %}
         {% set details = specialAppointmentData.visionDetails %}
       {% elif supportType == "Hearing" and specialAppointmentData.hearingDetails %}
