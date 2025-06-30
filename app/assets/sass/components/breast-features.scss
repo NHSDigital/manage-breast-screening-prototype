@@ -184,3 +184,18 @@
         padding: 20px;
     }
 }
+
+
+/* Border toggle styles */
+#anatomical-regions .anatomical-region {
+    stroke: #4c6272;
+    stroke-width: 1px;
+    stroke-dasharray: 5,5;
+    fill: none;
+    opacity: 0;
+    pointer-events: all;
+}
+
+#anatomical-regions.show-borders .anatomical-region {
+    opacity: 1 !important;
+}
