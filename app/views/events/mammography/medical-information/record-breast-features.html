@@ -30,6 +30,7 @@ Click the diagram to add notable features such as scars, moles, or warts that im
 <button class="nhsuk-button nhsuk-button--secondary" id="toggleBordersBtn" type="button">
   Show location borders
 </button>
+
 -->
 
   <div class="breast-features-diagram-header">
@@ -561,8 +562,13 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
     }
     
     function showPopover(clickX, clickY) {
-        if (!popover || !currentRegion) return
+        console.log('DEBUG: showPopover called with:', clickX, clickY)
+        if (!popover || !currentRegion) {
+            console.log('DEBUG: Missing popover or currentRegion:', {popover: !!popover, currentRegion: !!currentRegion})
+            return
+        }
 
+        console.log('DEBUG: Setting popover visible')
         // Force the popover to be visible
         popover.style.display = 'block'
         popover.style.visibility = 'visible'
@@ -828,7 +834,8 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
         }
     }
 
-    function editFeature(feature, clickX, clickY) {
+   function editFeature(feature, clickX, clickY) {
+        console.log('DEBUG: editFeature called with:', feature, clickX, clickY)
         editingFeature = feature
         
         currentRegion = {
@@ -837,12 +844,14 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
             centerX: feature.centerX,
             centerY: feature.centerY
         }
+        console.log('DEBUG: Set currentRegion:', currentRegion)
 
         if (!popover) {
             console.error('Popover not found in editFeature')
             return
         }
         
+        console.log('DEBUG: About to call showPopover')
         showPopover(clickX, clickY)
         
         const popoverCaption = popover.querySelector('#popoverCaption')
@@ -1052,13 +1061,39 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
             <div class="feature-position"><span class="nhsuk-tag nhsuk-tag--white">${locationText}</span></div>
         `
             
-            listItem.addEventListener('click', function() {
+            listItem.addEventListener('click', function(e) {
+                console.log('DEBUG: Key item clicked!')
+                e.preventDefault()
+                e.stopPropagation()
+                
                 const featureId = parseInt(this.getAttribute('data-feature-id'))
                 const feature = allFeatures.find(f => f.id === featureId)
-                if (feature && feature.element) {
-                    const markerRect = feature.element.getBoundingClientRect()
-                    const centerX = markerRect.left + markerRect.width / 2
-                    const centerY = markerRect.top + markerRect.height / 2
+                console.log('DEBUG: Found feature:', feature)
+                
+                if (feature) {
+                    let centerX, centerY
+                    
+                    // Try to get marker position, fall back to click position if not available
+                    if (feature.element) {
+                        try {
+                            const markerRect = feature.element.getBoundingClientRect()
+                            centerX = markerRect.left + markerRect.width / 2
+                            centerY = markerRect.top + markerRect.height / 2
+                            console.log('DEBUG: Using marker position:', centerX, centerY)
+                        } catch (error) {
+                            console.warn('Could not get marker position, using fallback')
+                            centerX = e.clientX
+                            centerY = e.clientY
+                            console.log('DEBUG: Using fallback position:', centerX, centerY)
+                        }
+                    } else {
+                        // Use the click position as fallback
+                        centerX = e.clientX
+                        centerY = e.clientY
+                        console.log('DEBUG: No marker element, using click position:', centerX, centerY)
+                    }
+                    
+                    console.log('DEBUG: About to call editFeature')
                     editFeature(feature, centerX, centerY)
                 }
             })
