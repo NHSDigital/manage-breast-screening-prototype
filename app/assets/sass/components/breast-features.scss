@@ -186,7 +186,7 @@
 }
 
 
-/* Border toggle styles */
+/* Border toggle styles - only show borders for axilla regions */
 #anatomical-regions .anatomical-region {
     stroke: #4c6272;
     stroke-width: 1px;
@@ -196,6 +196,7 @@
     pointer-events: all;
 }
 
-#anatomical-regions.show-borders .anatomical-region {
+/* Only show borders for axilla regions when toggled */
+#anatomical-regions.show-borders .anatomical-region[data-region="axilla"] {
     opacity: 1 !important;
 }
