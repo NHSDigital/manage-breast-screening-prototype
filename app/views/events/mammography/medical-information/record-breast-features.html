@@ -289,6 +289,7 @@ Click the diagram to add notable features such as scars, moles, or warts that im
     let currentRegion = null
     let markerCounter = 1
     let allFeatures = []
+    let temporaryMarker = null
 
     // Prevent multiple initializations in NHS Prototype Kit environment
     if (window.breastFeaturesInitialized) {
@@ -405,6 +406,28 @@ if (toggleBordersBtn) {
 
     // --- Core Functions ---
 
+    function createTemporaryMarker(svgX, svgY) {
+        // Remove any existing temporary marker
+        removeTemporaryMarker()
+        
+        temporaryMarker = document.createElement('div')
+        temporaryMarker.className = 'breast-features-diagram-marker breast-features-diagram-marker--temporary'
+        temporaryMarker.innerText = '?'
+        
+        positionMarkerAtSvgCoords(temporaryMarker, svgX, svgY)
+        diagramContainer.appendChild(temporaryMarker)
+        
+        console.log('Temporary marker created at:', svgX, svgY)
+    }
+
+    function removeTemporaryMarker() {
+        if (temporaryMarker) {
+            temporaryMarker.remove()
+            temporaryMarker = null
+            console.log('Temporary marker removed')
+        }
+    }
+
     function handleSvgClick(e) {
         // Allow border toggle to work - don't interfere with anatomical region visibility
         if (e.target.classList.contains('anatomical-region')) {
@@ -450,6 +473,9 @@ if (toggleBordersBtn) {
 
         console.log('Region determined:', regionInfo.region, regionInfo.side)
         console.log('Exact position will be:', svgX, svgY)
+
+        // Create temporary marker
+        createTemporaryMarker(svgX, svgY)
 
         // Show popover at mouse position
         showPopover(e.clientX, e.clientY)
@@ -836,8 +862,11 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
 
    function editFeature(feature, clickX, clickY) {
         console.log('DEBUG: editFeature called with:', feature, clickX, clickY)
-        editingFeature = feature
         
+        // Remove any temporary marker since we're editing an existing feature
+        removeTemporaryMarker()
+        
+        editingFeature = feature
         currentRegion = {
             name: feature.region,
             side: feature.side,
@@ -965,6 +994,9 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
             updateFeaturesList()
             editingFeature = null
         } else if (currentRegion) {
+            // Remove temporary marker before creating permanent one
+            removeTemporaryMarker()
+            
             const newFeatureNumber = markerCounter++
             const newFeature = {
                 id: allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1,
@@ -1016,6 +1048,9 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
             popover.style.visibility = 'hidden'
             popover.style.opacity = '0'
         }
+        
+        // Remove temporary marker when closing popover
+        removeTemporaryMarker()
         
         currentRegion = null
         editingFeature = null
