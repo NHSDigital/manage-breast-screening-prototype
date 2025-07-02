@@ -258,7 +258,7 @@ module.exports = router => {
     }
 
     // Handle the direct cancel action from appointment-should-not-proceed.html
-    if (action === 'cancel-immediately') {
+    if (action === 'end-immediately') {
       // Set stopping reason for the appointment
       if (!data.event.appointmentStopped) {
         data.event.appointmentStopped = {}

@@ -164,7 +164,7 @@ const getStatusTagColour = (status) => {
 const getStatusText = (status) => {
   const statusMap = {
     // Clinic statuses
-    event_scheduled: 'Confirmed', // default blue
+    event_scheduled: 'Scheduled', // default blue
     // Event statuses
     event_checked_in: 'Checked in', // no colour will get solid dark blue
     event_complete: 'Screened',
