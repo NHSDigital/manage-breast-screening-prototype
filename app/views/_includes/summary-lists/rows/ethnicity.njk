@@ -10,6 +10,15 @@
   {%- endset %}
 {% endif %}
 
+{% set ethnicityHtml %}
+  {{ ethnicGroup if ethnicGroup }}
+  {% if ethnicBackground and ethnicBackground != 'Prefer not to say' %}
+    ({{ ethnicBackground | replace('Other', 'other') }})
+    {% elseif ethnicBackground == "Prefer not to say" %}
+      {{ ethnicBackground }}
+  {% endif %}
+{% endset %}
+
 
 {% set ethnicityRow = {
   key: {

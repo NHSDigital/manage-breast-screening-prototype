@@ -43,6 +43,7 @@ const updateEvent = (data, eventId, updatedEvent) => {
 
 /**
  * Update event status and add to history
+ * Also updates the temporary event data if it exists
  * @param {Object} data - Session data
  * @param {string} eventId - Event ID
  * @param {string} newStatus - New status
@@ -66,7 +67,14 @@ const updateEventStatus = (data, eventId, newStatus) => {
     ],
   }
 
+  // Update main data
   data.events[eventIndex] = updatedEvent
+
+  // Also update temp event data if it exists and matches this event
+  if (data.event && data.event.id === eventId) {
+    data.event = { ...updatedEvent }
+  }
+
   return updatedEvent
 }
 

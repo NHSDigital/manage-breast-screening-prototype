@@ -17,10 +17,6 @@
 
 {% block pageContent %}
 
-  {{ participant | log }}
-  {{ data.event | log("Temp event") }}
-
-
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   <h1 class="nhsuk-heading-l">

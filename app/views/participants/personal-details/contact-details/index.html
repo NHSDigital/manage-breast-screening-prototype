@@ -23,12 +23,6 @@
 
 {% block pageContent %}
 
-  {{ participant | log("participant") }}
-
-  {{ participantId | log("participantId") }}
-
-
-
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   <h1 class="nhsuk-heading-l">

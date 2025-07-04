@@ -6,6 +6,8 @@ const { generateMammogramImages } = require('../lib/generators/mammogram-generat
 const { getEvent, saveTempEventToEvent, updateEventStatus } = require('../lib/utils/event-data')
 const generateId = require('../lib/utils/id-generator')
 const { getReturnUrl, urlWithReferrer, appendReferrer } = require('../lib/utils/referrers')
+const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
+
 
 /**
  * Get single event and its related data
@@ -123,6 +125,8 @@ module.exports = router => {
     })
   })
 
+
+
   router.post('/clinics/:clinicId/events/:eventId/personal-details/ethnicity-answer', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
@@ -217,7 +221,7 @@ module.exports = router => {
   // Main route in to starting an event - used to clear any temp data
   router.get('/clinics/:clinicId/events/:eventId/previous-mammograms/add', (req, res) => {
     delete req.session.data?.event?.previousMammogramTemp
-    res.render('events/mammography/previous-mammograms/edit')
+    res.render('events/previous-mammograms/edit')
   })
 
   // Save data about a mammogram
@@ -581,42 +585,6 @@ module.exports = router => {
     res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain))
   })
 
-  const MAMMOGRAPHY_VIEWS = [
-    'medical-information-check',
-    'record-medical-information',
-    'ready-for-imaging',
-    'awaiting-images',
-
-    'confirm',
-    'screening-complete',
-    'attended-not-screened-reason',
-    'previous-mammograms/edit',
-    'previous-mammograms/appointment-should-not-proceed',
-    'previous-mammograms/proceed-anyway',
-    'medical-information/symptoms/type',
-    'medical-information/symptoms/details',
-    'personal-details/ethnicity',
-
-    // Completed screenings
-    'images',
-    'medical-information',
-  ]
-
-  // Event within clinic context
-  router.get('/clinics/:clinicId/events/:eventId/*', (req, res, next) => {
-    const view = req.params[0] // Gets the wildcard part
-
-    if (MAMMOGRAPHY_VIEWS.some(viewPath => viewPath === view)) {
-      res.render(`events/mammography/${view}`, {})
-    } else {
-      next()
-    }
-  })
-
-  // Event within clinic context
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/:view', (req, res, next) => {
-    res.render(`events/mammography/medical-information/${req.params.view}`, {})
-  })
 
   // Specific route for imaging view
   router.get('/clinics/:clinicId/events/:eventId/imaging', (req, res) => {
@@ -637,7 +605,7 @@ module.exports = router => {
       res.locals.event = data.event
     }
 
-    res.render('events/mammography/imaging', {})
+    res.render('events/imaging', {})
   })
 
 
@@ -660,7 +628,7 @@ module.exports = router => {
   router.post('/clinics/:clinicId/events/:eventId/record-medical-information-answer', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
-    const imagingCanProceed = data.event.appointment.imagingCanProceed
+    const imagingCanProceed = data?.event?.appointment?.imagingCanProceed
 
     if (!imagingCanProceed) {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
@@ -757,5 +725,13 @@ module.exports = router => {
 
     // res.redirect(`/clinics/${clinicId}/events/${eventId}/screening-complete`)
   })
+
+  // General purpose dynamic template route for events
+  // This should come after any more specific routes
+  router.get('/clinics/:clinicId/events/:eventId/*',
+    createDynamicTemplateRoute({
+      templatePrefix: 'events'
+    })
+  )
 
 }
