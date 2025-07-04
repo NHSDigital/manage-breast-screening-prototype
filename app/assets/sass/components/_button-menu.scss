@@ -1,9 +1,9 @@
 // Button Menu Component
 // Adapted from MOJ Frontend for NHS prototype use
-@use 'nhsuk-frontend/packages/core/settings' as *;
-@use 'nhsuk-frontend/packages/core/tools' as *;
-@use 'nhsuk-frontend/packages/core/objects' as *;
-@use 'nhsuk-frontend/packages/core/styles/typography' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/objects' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/styles/typography' as *;
 
 .app-button-menu {
   display: inline-block;
@@ -32,8 +32,9 @@
 }
 
 .app-button-menu__wrapper {
+  position: absolute;
   z-index: 10;
-  @include nhsuk-print-hide;
+  width: 300px;
   margin: 5px 0 0; // 2px shadow, 3px gap
   padding: 0;
   list-style: none;
@@ -41,12 +42,7 @@
   border: 1px solid $nhsuk-border-color;
   border-bottom: nhsuk-spacing(1) solid $color_nhsuk-grey-4;
   // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  &,
-  .app-button-group--inline {
-    position: absolute;
-    width: 300px;
-  }
+  @include nhsuk-print-hide;
 
   &--right {
     right: 0;

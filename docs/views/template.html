@@ -57,8 +57,6 @@
     {% block customStyles %}
     {% endblock %}
 
-    <script src="/nhsuk-frontend/nhsuk.min.js" defer></script>
-
     {% block headIcons %}
     <link rel="shortcut icon" href="/nhsuk-frontend/assets/favicons/favicon.ico" type="image/x-icon">
     <link rel="apple-touch-icon" href="/nhsuk-frontend/assets/favicons/apple-touch-icon-180x180.png">
@@ -77,8 +75,7 @@
   </head>
 
   <body class="{{ bodyClasses }}">
-
-    <script>document.body.className = ((document.body.className) ? document.body.className + ' js-enabled' : 'js-enabled');</script>
+    <script>document.body.className += ' js-enabled' + ('noModule' in HTMLScriptElement.prototype ? ' nhsuk-frontend-supported' : '');</script>
     {% block bodyStart %}{% endblock %}
 
       {% block skipLink %}
@@ -104,6 +101,12 @@
       {% block footer %}
         {{ footer() }}
       {% endblock %}
+
+    <script src="/nhsuk-frontend/nhsuk-frontend.min.js" type="module"></script>
+    <script type="module">
+      import { initAll } from '/nhsuk-frontend/nhsuk-frontend.min.js'
+      initAll()
+    </script>
 
     {% block bodyEnd %}{% endblock %}
 

@@ -225,12 +225,11 @@
 
     {% if clinicHistory | length > 1 %}
       {{ details({
-        text: "View full screening history",
-        HTML: detailsHtml
+        summaryText: "View full screening history",
+        html: detailsHtml
       }) }}
     {% endif %}
   {% endset %}
-
 
 
 
