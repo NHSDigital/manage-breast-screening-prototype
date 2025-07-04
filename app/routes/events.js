@@ -221,7 +221,7 @@ module.exports = router => {
   // Main route in to starting an event - used to clear any temp data
   router.get('/clinics/:clinicId/events/:eventId/previous-mammograms/add', (req, res) => {
     delete req.session.data?.event?.previousMammogramTemp
-    res.render('events/mammography/previous-mammograms/edit')
+    res.render('events/previous-mammograms/edit')
   })
 
   // Save data about a mammogram
