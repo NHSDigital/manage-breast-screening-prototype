@@ -1,0 +1,54 @@
+
+{% set modalId = params.id or "app-modal" %}
+{% from 'button/macro.njk' import button %}
+
+<div id="{{ modalId }}" class="app-modal" hidden>
+  <div class="app-modal__overlay" data-modal-overlay></div>
+  <div class="app-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="{{ modalId }}-title" tabindex="-1">
+    <div class="app-modal__content">
+      {% if params.title %}
+        <h2 id="{{ modalId }}-title" class="app-modal__title nhsuk-heading-m">
+          {{ params.title }}
+        </h2>
+      {% endif %}
+
+      {% if params.content %}
+        <div class="app-modal__body">
+          {{ params.content | safe }}
+        </div>
+      {% endif %}
+
+      {% if params.includeTemplate %}
+        <div class="app-modal__body">
+          {% include params.includeTemplate %}
+        </div>
+      {% endif %}
+
+      {% if params.actions %}
+        <div class="app-modal__actions nhsuk-button-group nhsuk-u-margin-bottom-0">
+          {% for action in params.actions %}
+            {% if action.isPrimary %}
+              {{ button({
+                text: action.text,
+                classes: action.classes,
+                attributes: {
+                  'data-modal-action': action.action or 'confirm',
+                  'type': action.type or 'button'
+                }
+              }) }}
+            {% else %}
+            <p>
+              <a href="{{ action.href or '#' }}"
+                  class="nhsuk-link {{ action.classes }}"
+                  data-modal-action="{{ action.action or 'cancel' }}">
+                {{ action.text }}
+              </a>
+            </p>
+
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>

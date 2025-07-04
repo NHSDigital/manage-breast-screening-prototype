@@ -53,6 +53,10 @@ require('./routes/participants')(router)
 require('./routes/events')(router)
 require('./routes/reading')(router)
 
+router.get('/modal-examples', (req, res) => {
+  res.render('_components/modal/examples')
+})
+
 // Workaround for Chrome DevTools requesting a specific URL
 router.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   // Either return an empty JSON object

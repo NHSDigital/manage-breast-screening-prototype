@@ -1,0 +1,65 @@
+{% extends "layout-app.html" %}
+{% set pageHeading = "Modal examples" %}
+
+{% block pageContent %}
+
+<h1>{{ pageHeading }}</h1>
+
+<!-- Basic modal example -->
+{{ appModal({
+  id: "example-modal",
+  title: "Example modal",
+  content: "<p>This is a basic modal with some content.</p>",
+  actions: [
+    {
+      text: "Continue",
+      isPrimary: true,
+      action: "confirm"
+    },
+    {
+      text: "Cancel",
+      action: "cancel"
+    }
+  ]
+}) }}
+
+<!-- Check-in modal example -->
+{{ appModal({
+  id: "check-in-modal",
+  title: "Confirm participant identity",
+  content: "<p>Please confirm the participant's identity before checking them in.</p><p><strong>Name:</strong> Janet Williams<br><strong>Date of birth:</strong> 22 July 1959<br><strong>Address:</strong> 123 Example Street, London, SW1A 1AA</p>",
+  actions: [
+    {
+      text: "Confirm identity and check in",
+      isPrimary: true,
+      action: "confirm-checkin",
+      classes: "nhsuk-button"
+    },
+    {
+      text: "Cancel",
+      action: "cancel"
+    }
+  ]
+}) }}
+
+<!-- Trigger buttons -->
+<p>
+  {{ button({
+    text: "Open basic modal",
+    classes: "nhsuk-button--secondary",
+    attributes: {
+      onclick: "openModal('example-modal')"
+    }
+  }) }}
+</p>
+
+<p>
+  {{ button({
+    text: "Open check-in modal",
+    attributes: {
+      onclick: "openModal('check-in-modal')"
+    }
+  }) }}
+</p>
+
+{% endblock %}
