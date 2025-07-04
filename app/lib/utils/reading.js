@@ -855,8 +855,13 @@ const getPreviousEvent = (events, currentEventId, wrap = true) => {
 // Get read for a specific user
 const getReadForUser = function(event, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-  return event.imageReading?.reads?.[currentUserId] || null;
-};
+
+  if (!currentUserId) {
+    return null
+  }
+
+  return event.imageReading?.reads?.[currentUserId] || null
+}
 
 /**
  * Get first event from an array that a user can read
@@ -865,7 +870,7 @@ const getReadForUser = function(event, userId = null) {
  * @param {Object} options - Additional options for eligibility
  * @returns {Object|null} First event user can read or null if none
  */
-const getFirstUserReadableEvent = (events, userId = null) => {
+const getFirstUserReadableEvent = function(events, userId = null) {
   // Get user ID from context if not provided and we're in a template context
   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id)
 
@@ -886,8 +891,13 @@ const getFirstUserReadableEvent = (events, userId = null) => {
 const userHasReadEvent = function(event, userId) {
   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id)
 
-  return !!getReadForUser(event, currentUserId);
-};
+  if (!currentUserId) {
+    console.warn('userHasReadEvent: No userId provided and no context available')
+    return false
+  }
+
+  return !!getReadForUser(event, currentUserId)
+}
 
 /**
  * Check if current user can read an event
@@ -898,26 +908,30 @@ const userHasReadEvent = function(event, userId) {
  */
 const canUserReadEvent = function(event, userId = null, options = {}) {
   const {
-    maxReadsPerEvent = 2 // Default max reads per event
-  } = options;
+    maxReadsPerEvent = 2
+  } = options
 
   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id)
 
-  const metadata = getReadingMetadata(event);
+  if (!currentUserId) {
+    console.warn('canUserReadEvent: No userId provided and no context available')
+    return false
+  }
+
+  const metadata = getReadingMetadata(event)
 
   // If we already have enough unique readers, no more reads needed
   if (metadata.uniqueReaderCount >= maxReadsPerEvent) {
-    return false;
+    return false
   }
 
   // User can't read if they've already read it
   if (userHasReadEvent(event, currentUserId)) {
-    return false;
+    return false
   }
 
-  // User can read if we haven't reached max readers and they haven't already read it
-  return true;
-};
+  return true
+}
 
 /**
  * Check if an event has any reads
