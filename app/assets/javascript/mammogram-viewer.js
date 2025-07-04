@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const participantName = document.querySelector('meta[name="participant-name"]')?.getAttribute('content');
   const eventId = document.querySelector('meta[name="event-id"]')?.getAttribute('content');
 
-  console.log("Mammogram viewer check:", shouldShowViewer ? "SHOW" : "HIDE", "Event ID:", eventId);
+  // console.log("Mammogram viewer check:", shouldShowViewer ? "SHOW" : "HIDE", "Event ID:", eventId);
 
   // Update our reading context flag
   window.inReadingContext = shouldShowViewer;
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } else if (!shouldShowViewer) {
     // We're on a page that should NOT show the viewer
-    console.log("Page lacks viewer meta tag or has it set to hide - closing viewer");
+    // console.log("Page lacks viewer meta tag or has it set to hide - closing viewer");
     MammogramViewer.close();
     currentEventId = '';
   }
@@ -205,7 +205,7 @@ const MammogramViewer = {
 
   // Close the viewer window - but only if it actually exists
   close: function() {
-    console.log("Attempting to close mammogram viewer");
+    // console.log("Attempting to close mammogram viewer");
 
     // Only close if we're not in the middle of navigation
     if (isNavigating) {

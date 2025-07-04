@@ -5,6 +5,7 @@ const { getFilteredClinics, getClinicEvents } = require('../lib/utils/clinics')
 const { filterEventsByStatus } = require('../lib/utils/status')
 const { getReturnUrl, urlWithReferrer, appendReferrer } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
+const { updateEventStatus } = require('../lib/utils/event-data')
 
 /**
  * Get clinic and its related data from id
@@ -236,17 +237,7 @@ module.exports = router => {
     }
 
     // Update the event
-    data.events[eventIndex] = {
-      ...event,
-      status: 'event_checked_in',
-      statusHistory: [
-        ...event.statusHistory,
-        {
-          status: 'event_checked_in',
-          timestamp: new Date().toISOString(),
-        },
-      ],
-    }
+    updateEventStatus(data, eventId, 'event_checked_in')
 
     // Save back to session
     req.session.data = data

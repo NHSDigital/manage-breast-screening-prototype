@@ -17,45 +17,43 @@
  #}
 
 
- {% block pageContent %}
- {{ participant | log }}
- {{ data.event | log("Temp event") }}
+{% block pageContent %}
 
- {% set previousMammograms = event.previousMammograms %}
+  {% set previousMammograms = event.previousMammograms %}
 
- {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
- <h1 class="nhsuk-heading-l">
-   <span class="nhsuk-caption-l">
-     {{ participant | getFullName }}
-   </span>
-   {{ pageHeading }}
- </h1>
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
 
- {% set previousMammogram = event.previousMammogramTemp %}
-   {% set mammogramDate = previousMammogram.dateTaken %}
-   {% set timeAgo = mammogramDate | arrayOrObjectToDateObject | formatRelativeDate %}
+  {% set previousMammogram = event.previousMammogramTemp %}
+    {% set mammogramDate = previousMammogram.dateTaken %}
+    {% set timeAgo = mammogramDate | arrayOrObjectToDateObject | formatRelativeDate %}
 
-   <p>
+    <p>
     The mammogram added took place {{ timeAgo }}. It is not recommended to take breast x-rays within 6 months of each other.
-   </p>
+    </p>
 
- <p>
-   Advise the participant that they will be invited for their next scheduled mammogram based on the information provided.
- </p>
+  <p>
+    Advise the participant that they will be invited for their next scheduled mammogram based on the information provided.
+  </p>
 
- <form method="post" action="{{ formAction }}">
+  <form method="post" action="{{ formAction }}">
     <input type="hidden" name="action" value="end-immediately">
     {{ button({
       text: "End appointment and return to clinic"
     }) }}
   </form>
 
- <p>
-   <a href="./edit">Edit previous mammogram details</a>
- </p>
+  <p>
+    <a href="./edit">Edit previous mammogram details</a>
+  </p>
 
- <p>
-   <a href="./proceed-anyway" class="app-link--warning">Proceed with this appointment</a>
- </p>
+  <p>
+    <a href="./proceed-anyway" class="app-link--warning">Proceed with this appointment</a>
+  </p>
 {% endblock %}

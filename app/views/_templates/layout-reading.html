@@ -22,8 +22,7 @@
 {# Custom header with image reading stats and participant name #}
 {% block header %}
   {{ super()}}
-  {{ participant | log("Participant") }}
-  {{ event | log("Event") }}
+
   {{ data.imageReadingTemp | log("ImageReadingTemp")}}
   {{ batch | log("Batch")}}
   <div class="app-reading-status">

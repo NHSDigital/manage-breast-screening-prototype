@@ -13,8 +13,6 @@
   {# {% set events = data.events | getClinicEvents(clinicId) %} #}
   {% set events = allEvents %}
 
-  {{ clinic | log("Clinic") }}
-
   {# {% set clinicRiskType %}
     {% if clinic.riskLevels | length == 1 %}
       {{ clinic.riskLevels[0] }}

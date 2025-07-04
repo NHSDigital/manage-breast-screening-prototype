@@ -21,9 +21,6 @@
 
 {% block pageContent %}
 
-  {{ participant | log }}
-  {{ data.event | log("Temp event") }}
-
   {% set previousMammogramCount = data.event.previousMammograms | length %}
 
 
