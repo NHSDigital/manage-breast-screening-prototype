@@ -341,7 +341,7 @@ module.exports = router => {
     if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
       const date = mammogram.dateTaken
       if (date.year && date.month && date.day) {
-        const mammogramDate = dayjs(`${date.year}-${date.month}-${date.day}`)
+        const mammogramDate = dayjs(`${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`)
         return mammogramDate.isAfter(sixMonthsAgo)
       }
     } else if (mammogram.dateType === 'approximateDate' && mammogram.approximateDate) {
@@ -420,7 +420,7 @@ module.exports = router => {
       else if (['Less than 3 months', '3 months to a year', '1 to 3 years', 'Over 3 years'].includes(symptomTemp.dateType)) {
         symptom.approximateDuration = symptomTemp.dateType
       }
-      else if (symptomTemp.dateTtype === 'notSure') {
+      else if (symptomTemp.dateType === 'notSure') {
         delete symptom.approximateDuration
       }
 
