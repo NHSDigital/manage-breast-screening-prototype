@@ -1,13 +1,11 @@
 // Import NHS.UK frontend library
-@forward 'nhsuk-frontend/packages/nhsuk';
+@forward 'nhsuk-frontend/dist/nhsuk/nhsuk';
 
 // Components that are not in the NHS.UK frontend library
 @forward 'components/button-menu';
 @forward 'components/dark-mode';
 @forward 'components/list-border';
 @forward 'components/related-nav';
-@forward 'components/header';
-@forward 'components/header-organisation';
 @forward 'components/secondary-navigation';
 @forward 'components/count';
 @forward 'components/forward-link';
@@ -19,7 +17,6 @@
 @forward 'components/checkboxes';
 
 @forward 'components/annotation';
-@forward 'button-group';
 
 
 @forward 'misc';

@@ -67,7 +67,7 @@
   {% if event.details.isSpecialAppointment %}
     {{ warningCallout({
       heading: "Special appointment",
-      HTML: specialAppointmentHtml
+      html: specialAppointmentHtml
     }) }}
   {% endif %}
 
@@ -241,8 +241,8 @@
 
     {% if clinicHistory | length > 1 %}
       {{ details({
-        text: "View full screening history",
-        HTML: detailsHtml
+        summaryText: "View full screening history",
+        html: detailsHtml
       }) }}
     {% endif %}
 
@@ -304,4 +304,3 @@ Before you proceed, check the participant’s identity and confirm that their la
 
 
 {% endblock %}
-
