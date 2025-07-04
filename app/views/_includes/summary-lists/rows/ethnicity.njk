@@ -1,4 +1,6 @@
 {# /app/views/_includes/summary-lists/rows/ethnicity.njk #}
+{{ participant | log("Hello World") }}
+
 
 {% set ethnicGroup = participant.demographicInformation.ethnicGroup %}
 {% set ethnicBackground = participant.demographicInformation.ethnicBackground %}
@@ -9,6 +11,15 @@
     {{- ethnicBackground }} - {{ otherEthnicBackgroundDetails }}
   {%- endset %}
 {% endif %}
+
+{% set ethnicityHtml %}
+  {{ ethnicGroup if ethnicGroup }}
+  {% if ethnicBackground and ethnicBackground != 'Prefer not to say' %}
+    ({{ ethnicBackground | replace('Other', 'other') }})
+    {% elseif ethnicBackground == "Prefer not to say" %}
+      {{ ethnicBackground }}
+  {% endif %}
+{% endset %}
 
 
 {% set ethnicityRow = {
