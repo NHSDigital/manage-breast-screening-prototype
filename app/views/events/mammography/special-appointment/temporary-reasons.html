@@ -1,0 +1,56 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Which of these reasons are temporary?" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./temporary-reasons-answer" %}
+
+{% set back = {
+  href: "./edit",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  {% set selectedSupportTypes = data.event.specialAppointment.supportTypes %}
+  
+  {% set checkboxItems = [] %}
+  {% for supportType in selectedSupportTypes %}
+    {% if supportType and supportType != '_unchecked' and supportType.trim() %}
+      {% set checkboxItems = checkboxItems | push(
+        {
+            value: supportType,
+            text: supportType
+          }) %}
+    {% endif %}
+  {% endfor %}
+
+  {% if checkboxItems | length > 0 %}
+    {{ checkboxes({
+      name: "event[specialAppointment][temporaryReasonsList]",
+      values: data.event.specialAppointment.temporaryReasonsList, 
+      fieldset: {
+        legend: {
+          text: "Which of these reasons are temporary?",
+          classes: "nhsuk-fieldset__legend--l",
+          isPageHeading: true
+        }
+      },
+      hint: {
+        text: "If any reasons are relevant to this appointment only, mark them as temporary so they are not retained the next time this participant is invited for breast screening"
+      },
+      items: checkboxItems
+    }) }}
+
+    {{ button({
+        text: "Continue"
+    }) }}
+  {% else %}
+    <p>No support types were selected to mark as temporary.</p>
+    <a href="./edit" class="nhsuk-button">Go back</a>
+  {% endif %}
+
+{% endblock %}
