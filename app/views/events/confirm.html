@@ -64,7 +64,7 @@
   {% set otherDetailsCardHtml %}
 
     {% set specialAppointmentHtml %}
-      {% if event.details.isSpecialAppointment %}
+      {% if event | isSpecialAppointment %}
         {{ tag({
           text: "Special appointment",
           classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
