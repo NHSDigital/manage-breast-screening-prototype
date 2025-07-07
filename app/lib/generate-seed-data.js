@@ -147,6 +147,7 @@ const generateClinicsForDay = (date, allParticipants, unit, usedParticipantsInSn
         id: scenario?.participant?.config?.eventId,
         outcomeWeights: config.screening.outcomes[firstClinic.clinicType],
         forceStatus: scenario.participant.config.scheduling.status,
+        specialAppointmentOverride: scenario?.participant?.config?.specialAppointment,
       })
 
       events.push(event)

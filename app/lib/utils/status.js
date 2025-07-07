@@ -194,6 +194,11 @@ const filterEventsByStatus = (events, filter) => {
   }
 }
 
+/**
+ * Check if an event is a special appointment
+ * @param {Object} event - Event object to check
+ * @returns {boolean} Whether the event is a special appointment
+ */
 const isSpecialAppointment = (event) => {
   return event?.specialAppointment?.supportTypes?.length > 0
 }
@@ -206,7 +211,7 @@ module.exports = {
   getStatusTagColour,
   getStatusText,
   filterEventsByStatus,
+  isSpecialAppointment,
   // Export groups for testing/reference
   STATUS_GROUPS,
-  isSpecialAppointment,
 }

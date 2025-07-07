@@ -8,6 +8,7 @@ const config = require('../../config')
 const { STATUS_GROUPS, isCompleted, isFinal } = require('../utils/status')
 const { generateMammogramImages } = require('./mammogram-generator')
 const { generateSymptoms } = require('./symptoms-generator')
+const { generateSpecialAppointment } = require('./special-appointment-generator')
 const { users } = require('../../data/users')
 
 const NOT_SCREENED_REASONS = [
@@ -60,18 +61,19 @@ const determineEventStatus = (slotDateTime, currentDateTime, attendanceWeights) 
   }
 }
 
-const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus = null, id = null }) => {
+const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus = null, id = null, specialAppointmentOverride = null }) => {
   // Parse dates once
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
   const simulatedDateTime = dayjs().hour(parseInt(hours)).minute(parseInt(minutes))
   const slotDateTime = dayjs(slot.dateTime)
   const isPast = slotDateTime.isBefore(simulatedDateTime)
 
-  // Check if this is a special event (participant has extra needs)
-  const isSpecialAppointment = Boolean(participant.extraNeeds?.length)
+  // Generate special appointment requirements for this event
+  const specialAppointment = specialAppointmentOverride || generateSpecialAppointment()
+  const hasSpecialAppointment = Boolean(specialAppointment?.supportTypes?.length)
 
-  // Double the duration for participants with extra needs
-  const duration = isSpecialAppointment ? slot.duration * 2 : slot.duration
+  // Double the duration for special appointments
+  const duration = hasSpecialAppointment ? slot.duration * 2 : slot.duration
   const endDateTime = dayjs(slot.dateTime).add(duration, 'minute')
 
   const attendanceWeights = clinic.clinicType === 'assessment'
@@ -96,8 +98,6 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
     details: {
       screeningType: 'mammogram',
       machineId: generateId(),
-      isSpecialAppointment,
-      extraNeeds: participant.extraNeeds,
     },
     statusHistory: [
       {
@@ -105,6 +105,11 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
         timestamp: dayjs(slot.dateTime).subtract(1, 'day').toISOString(),
       },
     ],
+  }
+
+  // Add special appointment data if present
+  if (specialAppointment) {
+    eventBase.specialAppointment = specialAppointment
   }
 
   if (!isPast) {
@@ -123,12 +128,17 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
       },
     }
 
+    // Add special appointment data if present
+    if (specialAppointment) {
+      event.specialAppointment = specialAppointment
+    }
+
     // Add timing details for completed appointments
     if (isCompleted(eventStatus)) {
 
       // if (eventStatus === 'event_complete' || eventStatus === 'event_partially_screened') {
       const actualStartOffset = faker.number.int({ min: -5, max: 5 })
-      const durationOffset = isSpecialAppointment
+      const durationOffset = hasSpecialAppointment
         ? faker.number.int({ min: -3, max: 10 })
         : faker.number.int({ min: -3, max: 5 })
 
