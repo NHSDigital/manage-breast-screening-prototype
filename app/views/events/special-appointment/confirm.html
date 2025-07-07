@@ -2,6 +2,12 @@
 
 {% set pageHeading = "Confirm special appointment requirements" %}
 
+{% set isNoLongerSpecialAppointment = data.event.specialAppointment.supportTypes | length === 0 %}
+
+{% if isNoLongerSpecialAppointment %}
+  {% set pageHeading = "Confirm " + (participant | getFullName) + " no longer needs additional support" %}
+{% endif %}
+
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {% set formAction = "./confirm-answer" %}
@@ -26,7 +32,16 @@
 
   {{ data.event.specialAppointment | log("specialAppointment data") }}
 
-  {% include "summary-lists/special-appointment/special-appointment.njk" %}
+
+
+  {% if isNoLongerSpecialAppointment %}
+    <p>
+      This appointment and future appointments will no longer be treated as special appointments. This means that the appointment will be the normal length.
+    </p>
+
+  {% else %}
+      {% include "summary-lists/special-appointment/special-appointment.njk" %}
+  {% endif %}
 
   {{ button({
     text: "Confirm"
