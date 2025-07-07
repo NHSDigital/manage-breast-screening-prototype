@@ -1,5 +1,5 @@
 {% set existingRead = event | getReadForUser %}
-{{ event | log("Existing Read")}}
+{{ existingRead | log("Existing Read")}}
 {% set existingResult = existingRead.result %}
 {% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
 

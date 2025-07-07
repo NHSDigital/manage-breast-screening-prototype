@@ -17,8 +17,6 @@
 
 {% block pageContent %}
 
-  {{ participant | log }}
-
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   <h1 class="nhsuk-heading-l">
@@ -40,7 +38,7 @@
     {% if checkedInParticipants | length %}
       <li><a href="/clinics/{{ clinicId }}/events/{{ checkedInParticipants[0].id }}">Open next checked-in participant</a></li>
     {% endif %}
-    
+
     <li><a href="./">View {{ participant | getFullName }}’s appointment</a></li>
   </ul>
 

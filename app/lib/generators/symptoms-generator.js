@@ -32,7 +32,8 @@ const SYMPTOM_TYPES = {
     weight: 0.15,
     requiresLocation: false, // Uses nippleChangeLocation instead
     nippleChangeTypes: [
-      'discharge',
+      'bloody discharge',
+      'other discharge',
       'inversion or shape change',
       'rash',
       'colour change'

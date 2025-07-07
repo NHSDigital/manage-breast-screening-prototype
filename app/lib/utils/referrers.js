@@ -75,7 +75,7 @@ const appendReferrer = (existingReferrerChain, newUrl) => {
   if (!newUrl) return existingReferrerChain
   if (!existingReferrerChain) return newUrl
 
-  const chain = parseReferrerChain(existingReferrer)
+  const chain = parseReferrerChain(existingReferrerChain)
   chain.push(newUrl)
   return chain.join(',')
 }

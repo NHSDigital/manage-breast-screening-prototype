@@ -87,7 +87,7 @@
             </td>
             <td>
               {{ clinic.clinicType | sentenceCase }}
-              <br>
+              {# <br>
               {% set clinicRiskType %}
                 {% if clinic.riskLevels | length == 1 %}
                   {{ clinic.riskLevels[0] }}
@@ -95,7 +95,7 @@
                   Mixed
                 {% endif %}
               {% endset %}
-              <span class="app-text-grey">{{ clinicRiskType | sentenceCase }} risk</span>
+              <span class="app-text-grey">{{ clinicRiskType | sentenceCase }} risk</span> #}
 
             </td>
 

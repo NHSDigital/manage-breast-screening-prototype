@@ -13,21 +13,20 @@
   {# {% set events = data.events | getClinicEvents(clinicId) %} #}
   {% set events = allEvents %}
 
-  {{ clinic | log("Clinic") }}
-
-  {% set clinicRiskType %}
+  {# {% set clinicRiskType %}
     {% if clinic.riskLevels | length == 1 %}
       {{ clinic.riskLevels[0] }}
     {% else %}
       Mixed
     {% endif %}
-  {% endset %}
+  {% endset %} #}
 
   <div class="app-header-with-status">
     <h1 class="nhsuk-heading-l">
       {# "Screening mixed risk clinic" #}
       <span class="nhsuk-caption-l">{{ unit.name }}</span>
-      {{ clinicRiskType | sentenceCase }} risk {{ clinic.clinicType | lower }} clinic
+      {# {{ clinicRiskType | sentenceCase }} risk  #}
+      {{ clinic.clinicType | sentenceCase }} clinic
     </h1>
     <div class="app-header-with-status__status-tag">
       {{ tag({
