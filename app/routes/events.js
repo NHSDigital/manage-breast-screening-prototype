@@ -585,7 +585,6 @@ module.exports = router => {
     res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain))
   })
 
-
   // Specific route for imaging view
   router.get('/clinics/:clinicId/events/:eventId/imaging', (req, res) => {
     const { clinicId, eventId } = req.params
@@ -698,7 +697,7 @@ module.exports = router => {
     updateEventStatus(data, eventId, 'event_attended_not_screened')
 
     const successMessage = `
-    ${participantName} has been ‘attended not screened’. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+    ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
     req.flash('success', { wrapWithHeading: successMessage})
 
     res.redirect(`/clinics/${clinicId}/`)
@@ -726,6 +725,67 @@ module.exports = router => {
     // res.redirect(`/clinics/${clinicId}/events/${eventId}/screening-complete`)
   })
 
+  // Handle special appointment form submission
+  router.post('/clinics/:clinicId/events/:eventId/special-appointment/edit-answer', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const supportTypes = data.event?.specialAppointment?.supportTypes || []
+    const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
+
+    console.log('Support types:', supportTypes)
+
+    // Validate that temporaryReasons was answered
+    if (!temporaryReasons && supportTypes) {
+      req.flash('error', {
+        text: 'Select whether any of these reasons are temporary',
+        name: 'event[specialAppointment][temporaryReasons]',
+        href: '#temporaryReasons'
+      })
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/edit`)
+    }
+
+    // If user selected "yes", redirect to temporary reasons selection page
+    if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`)
+    }
+    else if (temporaryReasons === 'no' || (supportTypes?.length === 0)) {
+      // If "no", redirect to confirm page to show what they selected
+      delete data.event.specialAppointment.temporaryReasonsList
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`)
+    }
+    else {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/edit`)
+    }
+  })
+
+  // Handle temporary reasons selection form submission
+  router.post('/clinics/:clinicId/events/:eventId/special-appointment/temporary-reasons-answer', (req, res) => {
+    const { clinicId, eventId } = req.params
+
+    // After saving temporary reasons data, redirect to confirm page
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`)
+  })
+  // Handle special appointment confirmation
+  router.post('/clinics/:clinicId/events/:eventId/special-appointment/confirm-answer', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    const supportTypes = data.event?.specialAppointment?.supportTypes
+    const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
+    const temporaryReasonsList = data.event?.specialAppointment?.temporaryReasonsList
+
+    if (temporaryReasons === 'no') {
+      delete data.event.specialAppointment.temporaryReasonsList
+    }
+
+    // Save the data and redirect back to main event page
+    saveTempEventToEvent(data)
+    saveTempParticipantToParticipant(data)
+
+    req.flash('success', 'Special appointment requirements confirmed')
+    res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+  })
+
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get('/clinics/:clinicId/events/:eventId/*',
@@ -735,3 +795,4 @@ module.exports = router => {
   )
 
 }
+

@@ -103,7 +103,7 @@
             {# Appointment time #}
             <td class="nhsuk-table__cell">{{ event.statusHistory[0].timestamp | formatTimeString }}
               <br>
-              {% if event.details.isSpecialAppointment %}
+              {% if event | isSpecialAppointment %}
                 {{ tag({
                   text: "Special apppointment",
                   classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2"

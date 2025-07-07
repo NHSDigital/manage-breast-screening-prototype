@@ -62,7 +62,6 @@ const generateEthnicity = (ethnicities) => {
   }
 }
 
-
 // Pick a random risk level based on configured weights
 const pickRiskLevel = () => {
   // Create weights object from risk levels
@@ -74,40 +73,6 @@ const pickRiskLevel = () => {
   })
 
   return weighted.select(weights)
-}
-
-// List of possible extra needs
-const EXTRA_NEEDS = [
-  'Agoraphobia',
-  // 'Breast implants', // needs consent journey that isn't designed yet
-  'Learning difficulties',
-  'Physical restriction',
-  'Registered disabled',
-  'Social reasons',
-  'Wheelchair user',
-  'Transgender',
-  // 'Other' // need to come up with some free text replies before using this
-]
-
-// Generate extra needs for a participant
-const generateExtraNeeds = (config = { probability: 0.08 }) => {
-  // Check if they should have extra needs
-  if (Math.random() > config.probability) {
-    return null
-  }
-
-  // Use weighted to determine how many needs they should have
-  const needCount = weighted.select({
-    1: 0.7, // 70% chance of 1 need
-    2: 0.2, // 20% chance of 2 needs
-    3: 0.1, // 10% chance of 3 needs
-  })
-
-  // Select that many random needs
-  return faker.helpers.arrayElements(EXTRA_NEEDS, {
-    min: needCount,
-    max: needCount,
-  })
 }
 
 // Generate a UK mobile phone number
@@ -280,7 +245,6 @@ const generateNonCancerousProcedures = () => {
 const generateParticipant = ({
   ethnicities,
   breastScreeningUnits,
-  extraNeedsConfig = { probability: 0.08 },
   riskLevel = null,
   overrides = null,
 }) => {
@@ -306,7 +270,6 @@ const generateParticipant = ({
     id: id,
     sxNumber: generateSXNumber(faker.helpers.arrayElement(breastScreeningUnits).abbreviation),
     assignedBSU: assignedBSU.id,
-    extraNeeds: generateExtraNeeds(extraNeedsConfig),
     hasRiskFactors: participantRiskLevel !== 'routine',
     seedRiskLevel: participantRiskLevel,
     demographicInformation: {

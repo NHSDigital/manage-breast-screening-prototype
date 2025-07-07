@@ -64,15 +64,16 @@
   {% set otherDetailsCardHtml %}
 
     {% set specialAppointmentHtml %}
-      {% if event.details.isSpecialAppointment %}
+      {% if event | isSpecialAppointment %}
         {{ tag({
           text: "Special appointment",
           classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
         })}}
         <ul class="nhsuk-list nhsuk-list--bullet">
-          {% for need in participant.extraNeeds %}
+          {# ToDO: pull in special appointment needs here #}
+          {# {% for need in participant.extraNeeds %}
             <li>{{need}}</li>
-          {% endfor %}
+          {% endfor %} #}
         </ul>
       {% else %}
         <p>No</p>

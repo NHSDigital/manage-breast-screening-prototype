@@ -19,12 +19,16 @@ module.exports = [
         ethnicGroup: null,
         ethnicBackground: null,
       },
-      extraNeeds: ['Wheelchair user'],
       config: {
         eventId: '5gpn41oi',
         defaultRiskLevel: 'routine',
         repeatViews: ['RMLO'],
         missingViews: [], // ensure all views are present
+        specialAppointment: {
+          supportTypes: ['Physical restriction'],
+          physicalRestrictionDetails: 'Uses wheelchair, needs accessible positioning and additional time for transfers',
+          temporaryReasons: 'no'
+        },
         scheduling: {
           whenRelativeToToday: 0,
           status: 'event_scheduled',

@@ -1,4 +1,3 @@
-
 {% extends 'layout-app.html' %}
 
 {% set pageHeading %}
@@ -41,52 +40,40 @@
     {% endif %}
   {% endset %}
 
-
   {% set appointmentTimeHtml -%}
     <p>{{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})</p>
     <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
-
   {% endset %}
 
-  {% set specialAppointmentHtml %}
-    {% if participant.extraNeeds | length > 1 %}
-      <ul>
-        {% for need in participant.extraNeeds %}
-          <li>{{need}}</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>{{ participant.extraNeeds }}</p>
-    {% endif %}
-    <p><a href="#">Change</a></p>
-  {% endset %}
-
-  {% if event.details.isSpecialAppointment %}
-    {{ warningCallout({
-      heading: "Special appointment",
-      html: specialAppointmentHtml
-    }) }}
+  {# Simple special appointment section #}
+  {% if event | isSpecialAppointment %}
+    <div class="nhsuk-warning-callout nhsuk-u-margin-bottom-4">
+      <h2 class="nhsuk-warning-callout__label">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Important: </span>
+          Special appointment
+        </span>
+      </h2>
+      <div class="nhsuk-warning-callout__content">
+        {% set allowEdits = true %}
+        {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
+        {% set referrerChain = currentUrl %}
+        {% set summaryListClasses = "nhsuk-summary-list" %}
+        {% include "summary-lists/special-appointment/special-appointment.njk" %}
+      </div>
+    </div>
   {% endif %}
 
+  {# Simplified other details section #}
   {% set otherDetailsHtml %}
-    {% if event.details.isSpecialAppointment %}
+    {% if event | isSpecialAppointment %}
       {{ tag({
         text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
+        classes: "nhsuk-tag--yellow"
       })}}
-      {% if participant.extraNeeds | length > 1 %}
-        <ul>
-          {% for need in participant.extraNeeds %}
-            <li>{{need}}</li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>{{ participant.extraNeeds }}</p>
-      {% endif %}
     {% else %}
-     {{ "Not provided" | asHint }}
+      {{ "None" | asHint }}
     {% endif %}
-
   {% endset %}
 
   {% set appointmentHtml %}
@@ -156,6 +143,7 @@
     }) }}
   {% endset %}
 
+
   {% call card({
     headingHtml: " "
   }) %}
@@ -178,9 +166,7 @@
   {% endcall %}
 
   {% set screeningHistoryHtml %}
-
     {% set clinicHistory = data | getParticipantClinicHistory(participant.id) %}
-
     {% set lastMammogram = null %}
 
     {% for record in clinicHistory %}
@@ -224,8 +210,6 @@
       <p>{{ "No details" | asHint }}</p>
     {% endif %}
 
-    {{ clinicHistory | log("Clinic history") }}
-
     {{ button({
       text: "Record additional screening history",
       classes: "nhsuk-button--secondary"
@@ -242,7 +226,6 @@
         html: detailsHtml
       }) }}
     {% endif %}
-
   {% endset %}
 
 
@@ -273,6 +256,7 @@ Before you proceed, check the participant’s identity and confirm that their la
             {
               value: "yes",
               text: "Yes, go to medical information"
+
             },
             {
               value: "no",
@@ -292,12 +276,6 @@ Before you proceed, check the participant’s identity and confirm that their la
 
   {% if event.status == 'event_checked_in' or event.status == 'event_scheduled' %}
     {{ screeningHtml | safe}}
-    {# {{ card({
-      heading: "Pre-screening checks",
-      headingLevel: "2",
-      descriptionHtml: screeningHtml
-    }) }} #}
   {% endif %}
-
 
 {% endblock %}

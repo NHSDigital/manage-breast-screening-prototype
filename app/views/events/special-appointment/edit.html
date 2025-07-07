@@ -1,0 +1,201 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Provide special appointment details" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{# Change the form action to go to the special-appointment handler #}
+{% set formAction = "./edit-answer" %}
+
+{% block pageContent %}
+
+  {{ participant | log }}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+    {{ checkboxes({
+      name: "event[specialAppointment][supportTypes]",
+      fieldset: {
+        legend: {
+          text: "Why does " + (participant | getFullName) + " need additional support?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "Select all that apply. When describing support required, include any special requests made by the participant or their carer."
+      },
+      values: data.event.specialAppointment.supportTypes,
+      items: [
+        {
+          value: "Breast implants",
+          text: "Breast implants",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][implantDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.implantDetails
+            })
+          }
+        },
+        {
+          value: "Implanted medical devices",
+          text: "Implanted medical devices",
+          hint: {
+            text: "For example, a pacemaker"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][implantedMedicalDevicesDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.implantedMedicalDevicesDetails
+            })
+          }
+        },
+        {
+          value: "Vision",
+          text: "Vision",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][visionDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.visionDetails
+            })
+          }
+        },
+        {
+          value: "Hearing",
+          text: "Hearing",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][hearingDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.hearingDetails
+            })
+          }
+        },
+        {
+          value: "Physical restriction",
+          text: "Physical restriction",
+          hint: {
+            text: "For example, mobility or dexterity"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][physicalRestrictionDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.physicalRestrictionDetails
+            })
+          }
+        },
+        {
+          value: "Social, emotional, and mental health",
+          text: "Social, emotional, and mental health",
+          hint: {
+            text: "For example, neurodiversity or agoraphobia"
+          },
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][socialEmotionalMentalHealthDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.socialEmotionalMentalHealthDetails
+            })
+          }
+        },
+        {
+          value: "Language",
+          text: "Language",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][languageDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.languageDetails
+            })
+          }
+        },
+        {
+          value: "Gender identity",
+          text: "Gender identity",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][genderIdentityDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.genderIdentityDetails
+            })
+          }
+        },
+        {
+          value: "Other",
+          text: "Other",
+          conditional: {
+            html: textarea({
+              name: "event[specialAppointment][otherDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.event.specialAppointment.otherDetails
+            })
+          }
+        }
+      ]
+    }) }}
+
+    {{ radios({
+      name: "event[specialAppointment][temporaryReasons]",
+      value: data.event.specialAppointment.temporaryReasons,
+      fieldset: {
+        legend: {
+          text: "Are any of these reasons temporary?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "This includes issues that are likely to be resolved by their next mammogram, for example a broken foot or a short-term eye problem."
+      },
+      items: [
+        {
+          value: "yes",
+          text: "Yes"
+        },
+        {
+          value: "no",
+          text: "No"
+        }
+      ]
+    } | populateErrors) }}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Continue"
+      }) }}
+
+    </div>
+
+
+  {% include "screening-cannot-proceed-link.njk" %}
+
+{% endblock %}
