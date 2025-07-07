@@ -729,7 +729,7 @@ module.exports = router => {
   router.post('/clinics/:clinicId/events/:eventId/special-appointment/edit-answer', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
-    const supportTypes = data.event?.specialAppointment?.supportTypes
+    const supportTypes = data.event?.specialAppointment?.supportTypes || []
     const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
 
     console.log('Support types:', supportTypes)
@@ -748,7 +748,7 @@ module.exports = router => {
     if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`)
     }
-    else if (temporaryReasons === 'no') {
+    else if (temporaryReasons === 'no' || (supportTypes?.length === 0)) {
       // If "no", redirect to confirm page to show what they selected
       delete data.event.specialAppointment.temporaryReasonsList
       res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`)
