@@ -747,9 +747,14 @@ module.exports = router => {
     // If user selected "yes", redirect to temporary reasons selection page
     if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`)
-    } else {
+    }
+    else if (temporaryReasons === 'no') {
       // If "no", redirect to confirm page to show what they selected
+      delete data.event.specialAppointment.temporaryReasonsList
       res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`)
+    }
+    else {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/edit`)
     }
   })
 
@@ -764,6 +769,14 @@ module.exports = router => {
   router.post('/clinics/:clinicId/events/:eventId/special-appointment/confirm-answer', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
+
+    const supportTypes = data.event?.specialAppointment?.supportTypes
+    const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
+    const temporaryReasonsList = data.event?.specialAppointment?.temporaryReasonsList
+
+    if (temporaryReasons === 'no') {
+      delete data.event.specialAppointment.temporaryReasonsList
+    }
 
     // Save the data and redirect back to main event page
     saveTempEventToEvent(data)
