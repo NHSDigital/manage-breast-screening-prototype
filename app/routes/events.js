@@ -745,7 +745,7 @@ module.exports = router => {
     }
 
     // If user selected "yes", redirect to temporary reasons selection page
-    if (temporaryReasons === 'yes') {
+    if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`)
     } else {
       // If "no", redirect to confirm page to show what they selected

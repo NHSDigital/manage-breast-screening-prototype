@@ -194,6 +194,10 @@ const filterEventsByStatus = (events, filter) => {
   }
 }
 
+const isSpecialAppointment = (event) => {
+  return event?.specialAppointment?.supportTypes?.length > 0
+}
+
 module.exports = {
   isCompleted,
   isFinal,
@@ -204,4 +208,5 @@ module.exports = {
   filterEventsByStatus,
   // Export groups for testing/reference
   STATUS_GROUPS,
+  isSpecialAppointment,
 }

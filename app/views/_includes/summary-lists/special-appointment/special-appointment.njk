@@ -10,7 +10,7 @@
       {% set showChangeLink = true %}
       {% set details = "" %}
       {% set isTemporary = false %}
-      
+
       {# Get the details for each support type #}
       {% if supportType == "Breast implants" and specialAppointmentData.implantDetails %}
         {% set details = specialAppointmentData.implantDetails %}
@@ -48,7 +48,7 @@
       {% else %}
         {% set valueContent = "<span style=\"color: var(--nhsuk-secondary-text-color);\">No details provided</span>" %}
       {% endif %}
-      
+
       {# Add temporary tag to the value content if needed #}
       {% if isTemporary %}
         {% set valueContent = valueContent + "<br><span class=\"nhsuk-tag nhsuk-tag--white nhsuk-u-margin-top-2\">Temporary</span>" %}
@@ -61,6 +61,10 @@
         },
         value: {
           html: valueContent
+        },
+        actions: {
+          items: [
+          ]
         }
       }) %}
     {% endif %}

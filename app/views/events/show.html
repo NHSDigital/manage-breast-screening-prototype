@@ -46,7 +46,7 @@
   {% endset %}
 
   {# Simple special appointment section #}
-  {% if event.details.isSpecialAppointment %}
+  {% if event | isSpecialAppointment %}
     <div class="nhsuk-warning-callout nhsuk-u-margin-bottom-4">
       <h2 class="nhsuk-warning-callout__label">
         <span role="text">

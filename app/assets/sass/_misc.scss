@@ -49,16 +49,6 @@
   width: 100%;
 }
 
-
-.nhsuk-warning-callout .nhsuk-summary-list__key {
-  width: 22%;
-}
-
-@include nhsuk-media-query($until: tablet) {
-  .nhsuk-warning-callout .nhsuk-summary-list__key {
-    width: auto;
-  }
-
 // Reduce space taken by card
 .nhsuk-card {
   @include nhsuk-responsive-margin(4, "bottom");
