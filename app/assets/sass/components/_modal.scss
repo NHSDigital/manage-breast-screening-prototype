@@ -3,10 +3,10 @@
 
 // Prevent background scrolling when modal is open
 body.app-modal-open {
-  height: 100vh;
+  // height: 100vh;
   overflow: hidden;
   width: 100%;
-  position: fixed;
+  // position: fixed;
 }
 
 .app-modal {

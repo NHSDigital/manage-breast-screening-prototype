@@ -4,6 +4,7 @@ class AppModal {
     this.dialog = this.modal.querySelector('.app-modal__dialog')
     this.overlay = this.modal.querySelector('.app-modal__overlay')
     this.previousActiveElement = null
+    this.scrollPosition = 0
     this.isOpen = false
 
     this.bindEvents()
@@ -43,10 +44,19 @@ class AppModal {
 
   open() {
     console.log('Opening modal:', this.modal.id) // Debug log
+
+    // Store current scroll position
+    this.scrollPosition = window.pageYOffset || document.documentElement.scrollTop
+
     this.previousActiveElement = document.activeElement
     this.modal.hidden = false
     this.modal.classList.add('app-modal--open')
+
+    // Prevent body scrolling and maintain scroll position
     document.body.classList.add('app-modal-open')
+    document.body.style.top = `-${this.scrollPosition}px`
+    document.body.style.position = 'fixed'
+    document.body.style.width = '100%'
 
     // Focus the dialog
     this.dialog.focus()
@@ -58,9 +68,18 @@ class AppModal {
 
   close() {
     console.log('Closing modal:', this.modal.id) // Debug log
+
     this.modal.hidden = true
     this.modal.classList.remove('app-modal--open')
+
+    // Restore body scrolling and scroll position
     document.body.classList.remove('app-modal-open')
+    document.body.style.position = ''
+    document.body.style.top = ''
+    document.body.style.width = ''
+
+    // Restore scroll position
+    window.scrollTo(0, this.scrollPosition)
 
     // Restore focus
     if (this.previousActiveElement) {

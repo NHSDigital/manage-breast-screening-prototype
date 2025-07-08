@@ -44,12 +44,14 @@
 
               {{ button({
                 text: action.text,
-                classes: buttonClasses,
+                classes: buttonClasses + ((" " + action.classes) if action.classes else ""),
                 attributes: {
                   'data-modal-action': action.action or 'close',
                   'data-href': action.href,
                   'data-method': action.method,
                   'data-close-on-success': action.closeOnSuccess,
+                  'data-clinic-id': action.attributes['data-clinic-id'] if action.attributes,
+                  'data-event-id': action.attributes['data-event-id'] if action.attributes,
                   'type': 'button'
                 }
               }) }}

@@ -1,4 +1,7 @@
 {% from 'tag/macro.njk' import tag %}
+{% from '_components/modal/macro.njk' import appModal %}
+{% from '_components/summary-list/macro.njk' import appSummaryList as summaryList %}
+{% from '_components/summary-list/macro.njk' import appSummaryListRow %}
 
 {% set tagClasses %}
   {% if params.event.status | getStatusTagColour %}
@@ -8,23 +11,81 @@
 
 {% set tagClasses = tagClasses + " app-nowrap" %}
 
+{# Pre-render identity confirmation content using existing components #}
+{% set identityContent %}
+  <p>Please confirm the participant's identity before checking them in.</p>
+
+  {% set participant = params.participant %}
+
+  {% call summaryList() %}
+    {% include "_includes/summary-lists/rows/full-name.njk" %}
+    {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+    {% include "_includes/summary-lists/rows/address.njk" %}
+    {% if params.participant.extraNeeds %}
+      {% include "_includes/summary-lists/rows/extra-needs.njk" %}
+    {% endif %}
+  {% endcall %}
+{% endset %}
+
+{# Build href for check-in endpoint #}
+{% set checkInHref -%}
+  /clinics/{{ params.clinicId }}/check-in/{{ params.event.id }}
+{%- endset %}
+
+{# Build href for identity doubt flow #}
+{% set identityDoubtHref -%}
+  /clinics/{{ params.clinicId }}/events/{{ params.event.id }}/identity-doubt
+{%- endset %}
+
+{# Create unique modal ID for this event #}
+{% set modalId = "check-in-modal-" + params.event.id %}
+
+{# Render the generic modal with custom check-in button #}
+{{ appModal({
+  id: modalId,
+  title: "Confirm participant identity",
+  content: identityContent,
+  actions: [
+    {
+      text: "Confirm identity and check in",
+      element: "button",
+      classes: "js-check-in-link",
+      action: "custom",
+      href: checkInHref,
+      attributes: {
+        'data-clinic-id': params.clinicId,
+        'data-event-id': params.event.id
+      }
+    },
+    {
+      text: "Identity in doubt",
+      element: "button",
+      classes: "nhsuk-button--secondary",
+      action: "navigate",
+      href: identityDoubtHref
+    },
+    {
+      text: "Cancel",
+      element: "link",
+      classes: "nhsuk-link--no-visited-state",
+      action: "close"
+    }
+  ]
+}) }}
+
 <div data-event-status-container="{{ params.event.id }}">
   {{ tag({
     text: params.event.status | getStatusText,
     classes: tagClasses | trim
   })}}
 
-  {# Build href with optional referrer #}
-  {% set href -%}
-    /clinics/{{ params.clinicId }}/check-in/{{ params.event.id }}
-  {%- endset %}
-
-  {% set href = href | trim | urlWithReferrer(params.referrerChain) %}
-
   {% if params.event.status === 'event_scheduled' %}
+
+    {# Update the check-in link to open modal instead #}
     <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-      <a href="{{ href | trim }}" class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link" data-clinic-id="{{ params.clinicId }}"
-        data-event-id="{{ params.event.id }}">
+      <a href="#"
+         class="nhsuk-link nhsuk-link--no-visited-state"
+         onclick="openModal('{{ modalId }}'); return false;">
         Check in
       </a>
     </p>
