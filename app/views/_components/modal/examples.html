@@ -1,3 +1,5 @@
+{# /app/views/_components/modal/examples.html #}
+
 {% extends "layout-app.html" %}
 {% set pageHeading = "Modal examples" %}
 
@@ -5,61 +7,241 @@
 
 <h1>{{ pageHeading }}</h1>
 
-<!-- Basic modal example -->
-{{ appModal({
-  id: "example-modal",
-  title: "Example modal",
-  content: "<p>This is a basic modal with some content.</p>",
-  actions: [
-    {
-      text: "Continue",
-      isPrimary: true,
-      action: "confirm"
-    },
-    {
-      text: "Cancel",
-      action: "cancel"
-    }
-  ]
-}) }}
-
-<!-- Check-in modal example -->
+<!-- Check-in modal with 3 actions and data attributes -->
 {{ appModal({
   id: "check-in-modal",
   title: "Confirm participant identity",
   content: "<p>Please confirm the participant's identity before checking them in.</p><p><strong>Name:</strong> Janet Williams<br><strong>Date of birth:</strong> 22 July 1959<br><strong>Address:</strong> 123 Example Street, London, SW1A 1AA</p>",
+  data: {
+    eventId: "5gpn41oi",
+    participantId: "bc724e9f",
+    clinicId: "wtrl7jud"
+  },
   actions: [
     {
       text: "Confirm identity and check in",
-      isPrimary: true,
-      action: "confirm-checkin",
-      classes: "nhsuk-button"
+      element: "button",
+      action: "ajax",
+      href: "/api/check-in",
+      method: "POST",
+      closeOnSuccess: true
+    },
+    {
+      text: "Identity in doubt",
+      element: "button",
+      classes: "nhsuk-button--warning",
+      action: "navigate",
+      href: "/check-in/identity-doubt?eventId=5gpn41oi"
     },
     {
       text: "Cancel",
-      action: "cancel"
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
     }
   ]
 }) }}
 
-<!-- Trigger buttons -->
-<p>
-  {{ button({
-    text: "Open basic modal",
-    classes: "nhsuk-button--secondary",
-    attributes: {
-      onclick: "openModal('example-modal')"
+<!-- Navigation modal with POST form -->
+{{ appModal({
+  id: "delete-modal",
+  title: "Delete participant record",
+  content: "<p>Are you sure you want to delete this participant record?</p><p>This action cannot be undone.</p>",
+  actions: [
+    {
+      text: "Yes, delete record",
+      element: "button",
+      classes: "nhsuk-button--warning",
+      action: "navigate",
+      href: "/participants/delete",
+      method: "POST"
+    },
+    {
+      text: "Cancel",
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
     }
-  }) }}
-</p>
+  ]
+}) }}
 
-<p>
-  {{ button({
-    text: "Open check-in modal",
-    attributes: {
-      onclick: "openModal('check-in-modal')"
+<!-- Simple confirmation modal using preset macro -->
+{{ appConfirmationModal({
+  id: "save-confirmation",
+  title: "Save changes",
+  content: "<p>Do you want to save your changes before continuing?</p>",
+  confirmText: "Save and continue",
+  cancelText: "Don't save",
+  confirmAction: "ajax",
+  confirmHref: "/api/save",
+  confirmMethod: "POST",
+  closeOnSuccess: true,
+  data: {
+    formId: "medical-info-form"
+  }
+}) }}
+
+{% set participant = data | getParticipant('bc724e9f') %}
+
+{% set participantDetailsHtml %}
+{% set allowEthnicityEdits = false %}
+  {% include "_includes/summary-lists/demographic-information/personal-details.njk" %}
+{% endset %}
+
+{{ appModal({
+  id: "participant-modal",
+  title: "Participant details",
+  content: participantDetailsHtml,
+  actions: [
+    {
+      text: "Edit details",
+      element: "button",
+      action: "navigate",
+      href: "/participants/edit"
+    },
+    {
+      text: "Close",
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
     }
-  }) }}
-</p>
+  ]
+}) }}
+
+<!-- AJAX loading demo -->
+{{ appModal({
+  id: "loading-demo-modal",
+  title: "Loading demonstration",
+  content: "<p>Click the button below to see the loading state in action.</p>",
+  actions: [
+    {
+      text: "Simulate slow request",
+      element: "button",
+      action: "ajax",
+      href: "/api/slow-endpoint",
+      method: "POST",
+      closeOnSuccess: false
+    },
+    {
+      text: "Close",
+      element: "button",
+      classes: "nhsuk-button--secondary",
+      action: "close"
+    }
+  ]
+}) }}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-two-thirds">
+
+    <h2>Trigger buttons</h2>
+
+    <p>
+      {{ button({
+        text: "Open check-in modal",
+        attributes: {
+          onclick: "openModal('check-in-modal')"
+        }
+      }) }}
+    </p>
+
+    <p>
+      {{ button({
+        text: "Open delete modal",
+        classes: "nhsuk-button--warning",
+        attributes: {
+          onclick: "openModal('delete-modal')"
+        }
+      }) }}
+    </p>
+
+    <p>
+      {{ button({
+        text: "Open save confirmation",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          onclick: "openModal('save-confirmation')"
+        }
+      }) }}
+    </p>
+
+
+    <p>
+      {{ button({
+        text: "Open participant modal",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          onclick: "openModal('participant-modal')"
+        }
+      }) }}
+    </p>
+
+    <p>
+      {{ button({
+        text: "Open loading demo",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          onclick: "openModal('loading-demo-modal')"
+        }
+      }) }}
+    </p>
+
+    <h2>Usage examples</h2>
+
+    <h3>Basic modal with AJAX action</h3>
+    {{ '{{ appModal({
+  id: "example-modal",
+  title: "Confirm action",
+  content: "<p>Are you sure?</p>",
+  data: { itemId: "123" },
+  actions: [
+    {
+      text: "Confirm",
+      element: "button",
+      action: "ajax",
+      href: "/api/action",
+      method: "POST",
+      closeOnSuccess: true
+    },
+    {
+      text: "Cancel",
+      element: "button",
+      classes: "nhsuk-button--secondary",
+      action: "close"
+    }
+  ]
+}) }}' | escape }}
+
+    <h3>Confirmation modal preset</h3>
+    {{ '{{ appConfirmationModal({
+  id: "confirm-modal",
+  title: "Are you sure?",
+  content: "<p>This will delete the item.</p>",
+  confirmText: "Yes, delete",
+  confirmAction: "ajax",
+  confirmHref: "/api/delete",
+  confirmMethod: "POST"
+}) }}' | escape }}
+
+  </div>
+</div>
+
+<!-- Mock participant template for include example -->
+<script>
+// Add some event listeners for demo purposes
+document.addEventListener('modal:ajax:success', (e) => {
+  console.log('AJAX success:', e.detail)
+  alert('AJAX request completed successfully!')
+})
+
+document.addEventListener('modal:ajax:error', (e) => {
+  console.log('AJAX error:', e.detail)
+  alert('AJAX request failed. Check the console for details.')
+})
+
+document.addEventListener('modal:action', (e) => {
+  console.log('Custom modal action:', e.detail)
+})
+</script>
 
 {% endblock %}

@@ -1,5 +1,6 @@
 {# /app/views/_includes/summary-lists/rows/ethnicity.njk #}
 
+
 {% set ethnicGroup = participant.demographicInformation.ethnicGroup %}
 {% set ethnicBackground = participant.demographicInformation.ethnicBackground %}
 {% set otherEthnicBackgroundDetails = participant.demographicInformation.otherEthnicBackgroundDetails %}
@@ -19,7 +20,6 @@
   {% endif %}
 {% endset %}
 
-
 {% set ethnicityRow = {
   key: {
     text: "Ethnicity"
@@ -33,7 +33,7 @@
         href: eventId + "/personal-details/ethnicity",
         text: "Change",
         visuallyHiddenText: "ethnicity"
-      }
+      } if allowEdits
     ]
   }
 } | handleSummaryListMissingInformation(showNotProvidedText) %}

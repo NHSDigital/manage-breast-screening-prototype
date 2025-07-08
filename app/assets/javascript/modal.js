@@ -22,16 +22,27 @@ class AppModal {
       }
     })
 
-    // Handle action buttons
+    // Handle action buttons and links
     this.modal.addEventListener('click', (e) => {
-      const action = e.target.getAttribute('data-modal-action')
+      // Find the element with data-modal-action (might be the target or a parent)
+      let actionElement = e.target
+      let action = actionElement.getAttribute('data-modal-action')
+
+      // If target doesn't have action, check if it's inside an element that does
+      if (!action && actionElement.closest('[data-modal-action]')) {
+        actionElement = actionElement.closest('[data-modal-action]')
+        action = actionElement.getAttribute('data-modal-action')
+      }
+
       if (action) {
-        this.handleAction(action, e)
+        console.log('Modal action triggered:', action, actionElement) // Debug log
+        this.handleAction(action, e, actionElement)
       }
     })
   }
 
   open() {
+    console.log('Opening modal:', this.modal.id) // Debug log
     this.previousActiveElement = document.activeElement
     this.modal.hidden = false
     this.modal.classList.add('app-modal--open')
@@ -46,6 +57,7 @@ class AppModal {
   }
 
   close() {
+    console.log('Closing modal:', this.modal.id) // Debug log
     this.modal.hidden = true
     this.modal.classList.remove('app-modal--open')
     document.body.classList.remove('app-modal-open')
@@ -58,23 +70,125 @@ class AppModal {
     this.isOpen = false
   }
 
-  handleAction(action, event) {
-    // Override this method or listen for custom events
-    const customEvent = new CustomEvent('modal:action', {
-      detail: { action, originalEvent: event }
-    })
+  handleAction(action, event, actionElement) {
+    console.log('Handling action:', action) // Debug log
 
-    this.modal.dispatchEvent(customEvent)
+    switch (action) {
+      case 'close':
+        event.preventDefault()
+        this.close()
+        break
 
-    // Default behaviour for cancel
-    if (action === 'cancel') {
-      event.preventDefault()
-      this.close()
+      case 'navigate':
+        // Let default behavior happen for links
+        if (actionElement.tagName === 'A') {
+          // Handle POST navigation if needed
+          const method = actionElement.getAttribute('data-method')
+          if (method && method.toUpperCase() === 'POST') {
+            event.preventDefault()
+            this.submitForm(actionElement.href, 'POST')
+          }
+        }
+        break
+
+      case 'ajax':
+        event.preventDefault()
+        this.handleAjax(actionElement)
+        break
+
+      default:
+        // Fire custom event for other action types
+        const customEvent = new CustomEvent('modal:action', {
+          detail: {
+            action,
+            target: actionElement,
+            originalEvent: event,
+            modal: this
+          }
+        })
+        this.modal.dispatchEvent(customEvent)
     }
   }
 
+  handleAjax(target) {
+    const href = target.getAttribute('data-href')
+    const method = target.getAttribute('data-method') || 'GET'
+    const closeOnSuccess = target.getAttribute('data-close-on-success') === 'true'
+
+    if (!href) return
+
+    // Show loading state
+    this.setButtonLoading(target, true)
+
+    // Collect any data from modal data attributes
+    const modalData = this.getModalData()
+
+    // Make AJAX request
+    fetch(href, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: method !== 'GET' ? JSON.stringify(modalData) : null
+    })
+    .then(response => {
+      if (response.ok) {
+        if (closeOnSuccess) {
+          this.close()
+        }
+        // Fire success event
+        const successEvent = new CustomEvent('modal:ajax:success', {
+          detail: { response, target, modal: this }
+        })
+        this.modal.dispatchEvent(successEvent)
+      } else {
+        throw new Error('Request failed')
+      }
+    })
+    .catch(error => {
+      // Fire error event
+      const errorEvent = new CustomEvent('modal:ajax:error', {
+        detail: { error, target, modal: this }
+      })
+      this.modal.dispatchEvent(errorEvent)
+    })
+    .finally(() => {
+      this.setButtonLoading(target, false)
+    })
+  }
+
+  setButtonLoading(button, isLoading) {
+    if (isLoading) {
+      button.disabled = true
+      button.textContent = button.textContent + ' ...'
+    } else {
+      button.disabled = false
+      button.textContent = button.textContent.replace(' ...', '')
+    }
+  }
+
+  getModalData() {
+    const data = {}
+    const attributes = this.modal.dataset
+
+    // Copy all data attributes
+    Object.keys(attributes).forEach(key => {
+      data[key] = attributes[key]
+    })
+
+    return data
+  }
+
+  submitForm(url, method) {
+    const form = document.createElement('form')
+    form.method = method
+    form.action = url
+    document.body.appendChild(form)
+    form.submit()
+  }
+
   trapFocus() {
-    // Basic focus trapping - can be enhanced
     const focusableElements = this.dialog.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     )
@@ -104,21 +218,25 @@ class AppModal {
 
 // Initialize modals
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('Initializing modals...') // Debug log
   const modals = document.querySelectorAll('.app-modal')
+  console.log('Found modals:', modals.length) // Debug log
   modals.forEach(modal => {
     modal.appModal = new AppModal(modal)
   })
 })
 
-// Global function to open modal by ID
+// Global functions
 window.openModal = function(modalId) {
+  console.log('Opening modal via global function:', modalId) // Debug log
   const modal = document.getElementById(modalId)
   if (modal && modal.appModal) {
     modal.appModal.open()
+  } else {
+    console.error('Modal not found or not initialized:', modalId)
   }
 }
 
-// Global function to close modal by ID
 window.closeModal = function(modalId) {
   const modal = document.getElementById(modalId)
   if (modal && modal.appModal) {

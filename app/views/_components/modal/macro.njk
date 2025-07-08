@@ -1,3 +1,34 @@
+{# /app/views/_components/modal/macro.njk #}
+
 {% macro appModal(params) %}
+  {%- include "./template.njk" -%}
+{% endmacro %}
+
+{# Preset: Simple confirmation dialog #}
+{% macro appConfirmationModal(params) %}
+  {% set confirmationParams = {
+    id: params.id,
+    title: params.title,
+    content: params.content,
+    includeTemplate: params.includeTemplate,
+    data: params.data,
+    actions: [
+      {
+        text: params.confirmText or "Confirm",
+        element: "button",
+        action: params.confirmAction or "close",
+        href: params.confirmHref,
+        method: params.confirmMethod,
+        closeOnSuccess: params.closeOnSuccess
+      },
+      {
+        text: params.cancelText or "Cancel",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      }
+    ]
+  } %}
+  {% set params = confirmationParams %}
   {%- include "./template.njk" -%}
 {% endmacro %}
