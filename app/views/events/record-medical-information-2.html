@@ -1,0 +1,657 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Medical information" %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain) %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <div class="nhsuk-grid-row">
+    <!-- Medical Information Content - Two thirds width -->
+    <div class="nhsuk-grid-column-two-thirds">
+      <form action="{{ formAction }}" method="post" novalidate>
+
+        <!-- Breast Cancer History -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Breast cancer history
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {% set bcaDetails %}
+              {{ input({
+                name: "event[medicalInformation][breastCancer][diagnosisDate]",
+                value: event.medicalInformation.breastCancer.diagnosisDate,
+                label: {
+                  text: "Date diagnosed"
+                },
+                type: "date",
+                classes: "nhsuk-input--width-10"
+              }) }}
+
+              {{ checkboxes({
+                name: "event[medicalInformation][breastCancer][position]",
+                values: event.medicalInformation.breastCancer.position,
+                fieldset: {
+                  legend: {
+                    text: "Position of breast cancer",
+                    classes: "nhsuk-fieldset__legend--s"
+                  }
+                },
+                items: [
+                  {
+                    value: "left",
+                    text: "Left breast"
+                  },
+                  {
+                    value: "right",
+                    text: "Right breast"
+                  }
+                ]
+              }) }}
+
+              {{ input({
+                name: "event[medicalInformation][breastCancer][treatmentHospital]",
+                value: event.medicalInformation.breastCancer.treatmentHospital,
+                label: {
+                  text: "Treatment hospital"
+                }
+              }) }}
+
+              {{ checkboxes({
+                name: "event[medicalInformation][breastCancer][treatment]",
+                values: event.medicalInformation.breastCancer.treatment,
+                fieldset: {
+                  legend: {
+                    text: "Treatment received",
+                    classes: "nhsuk-fieldset__legend--s"
+                  }
+                },
+                items: [
+                  {
+                    value: "surgery",
+                    text: "Surgery"
+                  },
+                  {
+                    value: "chemotherapy",
+                    text: "Chemotherapy"
+                  },
+                  {
+                    value: "radiotherapy",
+                    text: "Radiotherapy"
+                  }
+                ]
+              }) }}
+            {% endset %}
+
+            {{ radios({
+              name: "event[medicalInformation][breastCancer][diagnosed]",
+              value: event.medicalInformation.breastCancer.diagnosed,
+              fieldset: {
+                legend: {
+                  text: "Has " + (participant | getFullName) + " been diagnosed with breast cancer?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes",
+                  conditional: {
+                    html: bcaDetails
+                  }
+                },
+                {
+                  value: "no",
+                  text: "No"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Family History -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Family history of breast cancer
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {% set familyDetails %}
+              {{ select({
+                name: "event[medicalInformation][familyHistory][relationship]",
+                value: event.medicalInformation.familyHistory.relationship,
+                label: {
+                  text: "Relationship"
+                },
+                items: [
+                  {
+                    value: "",
+                    text: "Select relationship"
+                  },
+                  {
+                    value: "mother",
+                    text: "Mother"
+                  },
+                  {
+                    value: "sister",
+                    text: "Sister"
+                  },
+                  {
+                    value: "daughter",
+                    text: "Daughter"
+                  },
+                  {
+                    value: "grandmother",
+                    text: "Grandmother"
+                  },
+                  {
+                    value: "aunt",
+                    text: "Aunt"
+                  },
+                  {
+                    value: "other",
+                    text: "Other"
+                  }
+                ]
+              }) }}
+
+              {{ input({
+                name: "event[medicalInformation][familyHistory][ageAtDiagnosis]",
+                value: event.medicalInformation.familyHistory.ageAtDiagnosis,
+                label: {
+                  text: "Age at diagnosis"
+                },
+                type: "number",
+                classes: "nhsuk-input--width-5"
+              }) }}
+            {% endset %}
+
+            {{ radios({
+              name: "event[medicalInformation][familyHistory][hasFamily]",
+              value: event.medicalInformation.familyHistory.hasFamily,
+              fieldset: {
+                legend: {
+                  text: "Does " + (participant | getFullName) + " have any relatives with breast cancer?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes",
+                  conditional: {
+                    html: familyDetails
+                  }
+                },
+                {
+                  value: "no",
+                  text: "No"
+                },
+                {
+                  value: "unknown",
+                  text: "Don't know"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Pregnancy & Breastfeeding -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Pregnancy and breastfeeding
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {% set currentlyPregnant %}
+              {{ input({
+                name: "event[medicalInformation][pregnancyAndBreastfeeding][currentlyPregnantDetails]",
+                value: event.medicalInformation.pregnancyAndBreastfeeding.currentlyPregnantDetails,
+                label: {
+                  text: "Provide timeframe"
+                },
+                classes: "nhsuk-u-width-two-thirds",
+                hint: {
+                  text: "For example, due in November"
+                }
+              }) }}
+            {% endset %}
+
+            {% set recentlyPregnant %}
+              {{ input({
+                name: "event[medicalInformation][pregnancyAndBreastfeeding][recentlyPregnantDetails]",
+                value: event.medicalInformation.pregnancyAndBreastfeeding.recentlyPregnantDetails,
+                label: {
+                  text: "Describe when"
+                },
+                classes: "nhsuk-u-width-two-thirds",
+                hint: {
+                  text: "For example, gave birth two weeks ago"
+                }
+              }) }}
+            {% endset %}
+
+            {{ radios({
+              name: "event[medicalInformation][pregnancyAndBreastfeeding][pregnancyStatus]",
+              value: event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus,
+              fieldset: {
+                legend: {
+                  text: "Is " + (participant | getFullName) + " pregnant?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes",
+                  conditional: {
+                    html: currentlyPregnant
+                  }
+                },
+                {
+                  value: "noButRecently",
+                  text: "No, but has been recently",
+                  conditional: {
+                    html: recentlyPregnant
+                  }
+                },
+                {
+                  divider: "or"
+                },
+                {
+                  value: "noNotPregnant",
+                  text: "No"
+                }
+              ]
+            }) }}
+
+            {% set currentlyBreastfeeding %}
+              {{ input({
+                name: "event[medicalInformation][pregnancyAndBreastfeeding][currentlyBreastfeedingDuration]",
+                value: event.medicalInformation.pregnancyAndBreastfeeding.currentlyBreastfeedingDuration,
+                label: {
+                  text: "For how long?"
+                },
+                classes: "nhsuk-u-width-two-thirds",
+                hint: {
+                  text: "For example, since January"
+                }
+              }) }}
+            {% endset %}
+
+            {% set recentlyBreastfeeding %}
+              {{ input({
+                name: "event[medicalInformation][pregnancyAndBreastfeeding][recentlyBreastfeedingDuration]",
+                value: event.medicalInformation.pregnancyAndBreastfeeding.recentlyBreastfeedingDuration,
+                label: {
+                  text: "Describe when"
+                },
+                classes: "nhsuk-u-width-two-thirds",
+                hint: {
+                  text: "For example, two months ago"
+                }
+              }) }}
+            {% endset %}
+
+            {{ radios({
+              name: "event[medicalInformation][pregnancyAndBreastfeeding][breastfeedingStatus]",
+              value: event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus,
+              fieldset: {
+                legend: {
+                  text: "Are they currently breastfeeding?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes",
+                  conditional: {
+                    html: currentlyBreastfeeding
+                  }
+                },
+                {
+                  value: "recentlyStopped",
+                  text: "No, but stopped recently",
+                  conditional: {
+                    html: recentlyBreastfeeding
+                  }
+                },
+                {
+                  divider: "or"
+                },
+                {
+                  value: "no",
+                  text: "No"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Breast Implants -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Breast implants
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {{ radios({
+              name: "event[medicalInformation][implants][hasImplants]",
+              value: event.medicalInformation.implants.hasImplants,
+              fieldset: {
+                legend: {
+                  text: "Does " + (participant | getFullName) + " have breast implants?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes"
+                },
+                {
+                  value: "no",
+                  text: "No"
+                },
+                {
+                  value: "unknown",
+                  text: "Don't know"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Medical Devices -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Medical devices and pacemakers
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {{ radios({
+              name: "event[medicalInformation][devices][hasDevices]",
+              value: event.medicalInformation.devices.hasDevices,
+              fieldset: {
+                legend: {
+                  text: "Does " + (participant | getFullName) + " have any implanted medical devices or pacemakers?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes"
+                },
+                {
+                  value: "no",
+                  text: "No"
+                },
+                {
+                  value: "unknown",
+                  text: "Don't know"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Other Surgery -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Other breast surgery and procedures
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {{ radios({
+              name: "event[medicalInformation][surgery][hasSurgery]",
+              value: event.medicalInformation.surgery.hasSurgery,
+              fieldset: {
+                legend: {
+                  text: "Has " + (participant | getFullName) + " had any other breast surgery or procedures?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes"
+                },
+                {
+                  value: "no",
+                  text: "No"
+                },
+                {
+                  value: "unknown",
+                  text: "Don't know"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Medications -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Medications and hormone therapy
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {{ radios({
+              name: "event[medicalInformation][medications][takingHRT]",
+              value: event.medicalInformation.medications.takingHRT,
+              fieldset: {
+                legend: {
+                  text: "Is " + (participant | getFullName) + " taking hormone replacement therapy (HRT)?",
+                  classes: "nhsuk-fieldset__legend--m"
+                }
+              },
+              items: [
+                {
+                  value: "yes",
+                  text: "Yes"
+                },
+                {
+                  value: "no",
+                  text: "No"
+                },
+                {
+                  value: "unknown",
+                  text: "Don't know"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <!-- Current Symptoms -->
+        <details class="nhsuk-details nhsuk-expander">
+          <summary class="nhsuk-details__summary">
+            <span class="nhsuk-details__summary-text">
+              Current symptoms
+            </span>
+          </summary>
+          <div class="nhsuk-details__text">
+            {{ checkboxes({
+              name: "event[medicalInformation][symptoms][currentSymptoms]",
+              values: event.medicalInformation.symptoms.currentSymptoms,
+              fieldset: {
+                legend: {
+                  text: "Does " + (participant | getFullName) + " have any current symptoms?",
+                  classes: "nhsuk-fieldset__legend--m"
+                },
+                hint: {
+                  text: "Select all that apply"
+                }
+              },
+              items: [
+                {
+                  value: "lump",
+                  text: "Lump or thickening"
+                },
+                {
+                  value: "swelling",
+                  text: "Swelling or shape change"
+                },
+                {
+                  value: "skin-change",
+                  text: "Skin change"
+                },
+                {
+                  value: "nipple-change",
+                  text: "Nipple change"
+                },
+                {
+                  value: "other",
+                  text: "Other symptoms"
+                },
+                {
+                  divider: "or"
+                },
+                {
+                  value: "none",
+                  text: "No current symptoms"
+                }
+              ]
+            }) }}
+          </div>
+        </details>
+
+        <div class="nhsuk-form-group">
+          {{ button({
+            text: "Save and continue"
+          }) }}
+        </div>
+
+      </form>
+
+      {% include "screening-cannot-proceed-link.njk" %}
+    </div>
+
+    <!-- Progress Summary - One third width -->
+    <div class="nhsuk-grid-column-one-third app-sidebar-sticky">
+      <div class="nhsuk-card">
+        <div class="nhsuk-card__content">
+          <h2 class="nhsuk-card__heading nhsuk-heading-s">
+            Overview
+          </h2>
+          <p class="nhsuk-heading-m nhsuk-u-margin-bottom-2">
+            <strong id="progress-complete">0</strong> out of 8
+          </p>
+          <p class="nhsuk-body-s nhsuk-u-margin-bottom-0">
+            questions completed
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const sections = document.querySelectorAll('.nhsuk-details')
+  const completedSections = new Set() // Track which sections have been completed
+  
+  sections.forEach(function(section, index) {
+    const content = section.querySelector('.nhsuk-details__text')
+    if (content) {
+      // Create button container
+      const buttonContainer = document.createElement('div')
+      buttonContainer.className = 'nhsuk-form-group'
+      
+      // Create button
+      const button = document.createElement('button')
+      button.className = 'nhsuk-button nhsuk-button--secondary js-save-and-next'
+      button.textContent = 'Save and next'
+      button.type = 'button'
+      button.setAttribute('data-section-index', index)
+      
+      buttonContainer.appendChild(button)
+      content.appendChild(buttonContainer)
+      
+      // Add click handler
+      button.addEventListener('click', function() {
+        // Mark current section as completed
+        completedSections.add(index)
+        
+        // Close current section
+        section.removeAttribute('open')
+        
+        // Open next section
+        const nextSection = sections[index + 1]
+        if (nextSection) {
+          nextSection.setAttribute('open', 'open')
+          // Scroll to next section
+    // Scroll to the summary element (section header) instead of the entire details
+    const nextSummary = nextSection.querySelector('.nhsuk-details__summary')
+    if (nextSummary) {
+      nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }        }
+        
+        // Update progress counter
+        updateProgress()
+      })
+    }
+  })
+  
+  // Progress counter function
+  function updateProgress() {
+    const totalSections = sections.length
+    const completed = completedSections.size
+    const inProgress = document.querySelectorAll('.nhsuk-details[open]').length
+    const remaining = totalSections - completed - inProgress
+    
+    document.getElementById('progress-complete').textContent = completed
+    document.getElementById('progress-current').textContent = inProgress
+    document.getElementById('progress-remaining').textContent = remaining
+  }
+  
+  // Initialize progress
+  updateProgress()
+})
+</script>
+
+<style>
+.app-progress-summary--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  border-bottom: 1px solid #d8dde0;
+  margin-bottom: 20px;
+}
+
+.app-progress-summary--sticky .app-progress-summary__content {
+  margin-bottom: 0;
+}
+
+.app-sidebar-sticky {
+  position: sticky;
+  top: 20px;
+  z-index: 100;
+  height: fit-content;
+}
+</style>
+
+{% endblock %}
