@@ -26,6 +26,7 @@
   {# Pre-render identity confirmation content using existing components #}
   {% set modalContentHtml %}
     {% set participant = params.participant %}
+    {% set referrerChain = params.referrerChain %}
     {% include "_includes/confirm-identity.njk" %}
   {% endset %}
 

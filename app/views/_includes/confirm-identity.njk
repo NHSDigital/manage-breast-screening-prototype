@@ -3,7 +3,7 @@
 </p>
 
 <p>
-  <a href="/participants/{{ participant.id }}"
+  <a href="{{ '/participants/' + participant.id | urlWithReferrer(referrerChain) }}"
      class="nhsuk-link nhsuk-link--no-visited-state">
     View their full participant record
   </a>
