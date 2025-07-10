@@ -2,8 +2,16 @@
   Please confirm the participant’s identity before checking them in.
 </p>
 
+<p>
+  <a href="/participants/{{ participant.id }}"
+     class="nhsuk-link nhsuk-link--no-visited-state">
+    View their full participant record
+  </a>
+</p>
+
 {% call summaryList() %}
   {% include "_includes/summary-lists/rows/full-name.njk" %}
   {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
   {% include "_includes/summary-lists/rows/address.njk" %}
 {% endcall %}
+
