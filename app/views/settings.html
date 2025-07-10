@@ -46,6 +46,12 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[darkMode]={{'true' if data.settings.darkMode !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.darkMode=='false' else 'Disable'}} dark mode</a>
     </p>
 
+    <h2>Screening</h2>
+    {# Confirm identity on check-in #}
+    <p>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][confirmIdentityOnCheckIn]={{'true' if data.settings.screening.confirmIdentityOnCheckIn !== 'true' else 'false'}}&clearQuery=true">{{ 'Require confirmation for identity on check-in' if data.settings.screening.confirmIdentityOnCheckIn=='false' else 'Do not require confirmation for identity on check-in'}}</a>
+    </p>
+
     <h2>Image reading</h2>
     {# One click normal #}
     <p>

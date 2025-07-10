@@ -57,6 +57,9 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
+  screening: {
+    confirmIdentityOnCheckIn: 'true',
+  },
   reading: {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',

@@ -48,6 +48,10 @@ body.app-modal-open {
 
   @include nhsuk-responsive-padding(5);
 
+  &{
+    padding-bottom: 0; // Removed padding to prevent double spacing
+  }
+
   &:focus {
     outline: $nhsuk-focus-width solid $nhsuk-focus-color;
   }
