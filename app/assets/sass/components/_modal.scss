@@ -48,9 +48,9 @@ body.app-modal-open {
 
   @include nhsuk-responsive-padding(5);
 
-  &{
-    padding-bottom: 0; // Removed padding to prevent double spacing
-  }
+  // &{
+  //   padding-bottom: 0; // Removed padding to prevent double spacing
+  // }
 
   &:focus {
     outline: $nhsuk-focus-width solid $nhsuk-focus-color;
@@ -72,9 +72,16 @@ body.app-modal-open {
   &:last-child {
     margin-bottom: 0;
   }
+
+
 }
 
 // Modal actions
 .app-modal__actions {
   margin-top: nhsuk-spacing(4);
+  margin-bottom: 0;
+
+  .nhsuk-button:last-of-type {
+    margin-bottom: 0;
+  }
 }
