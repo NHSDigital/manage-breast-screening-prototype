@@ -1,7 +1,7 @@
 @use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
-$app-modal-width: 600px !default; // Default width for the modal
+$app-modal-width: 700px !default; // Default width for the modal
 
 // Prevent background scrolling when modal is open
 body.app-modal-open {

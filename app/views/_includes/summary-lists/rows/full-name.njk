@@ -6,15 +6,6 @@
   },
   value: {
     text: participant | getFullName
-  },
-  actions: {
-    items: [
-      {
-        href: "#",
-        text: "Change",
-        visuallyHiddenText: "date of birth"
-      } if allowEdits
-    ]
   }
 } | handleSummaryListMissingInformation(showNotProvidedText) %}
 

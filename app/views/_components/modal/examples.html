@@ -7,42 +7,16 @@
 
 <h1>{{ pageHeading }}</h1>
 
-<!-- Check-in modal with 3 actions and data attributes -->
-{{ appModal({
-  id: "check-in-modal",
-  title: "Confirm participant identity",
-  content: "<p>Please confirm the participant's identity before checking them in.</p><p><strong>Name:</strong> Janet Williams<br><strong>Date of birth:</strong> 22 July 1959<br><strong>Address:</strong> 123 Example Street, London, SW1A 1AA</p>",
-  data: {
-    eventId: "5gpn41oi",
-    participantId: "bc724e9f",
-    clinicId: "wtrl7jud"
-  },
-  actions: [
-    {
-      text: "Confirm identity and check in",
-      element: "button",
-      action: "ajax",
-      href: "/api/check-in",
-      method: "POST",
-      closeOnSuccess: true
-    },
-    {
-      text: "Identity in doubt",
-      element: "button",
-      classes: "nhsuk-button--warning",
-      action: "navigate",
-      href: "/check-in/identity-doubt?eventId=5gpn41oi"
-    },
-    {
-      text: "Cancel",
-      classes: "nhsuk-link--no-visited-state",
-      element: "link",
-      action: "close"
-    }
-  ]
-}) }}
+{# Check-in modal #}
+{% set eventId = "example" %}
+{% set participant = data | getParticipant('bc724e9f') %}
 
-<!-- Navigation modal with POST form -->
+{% set participantUrl = "/participants/bc724e9f" %}
+{% set appointmentUrl = "clinics/wtrl7jud/events/5gpn41oi" %}
+
+{% include "_includes/confirm-identity-modal.njk" %}
+
+{# Navigation modal with POST form #}
 {{ appModal({
   id: "delete-modal",
   title: "Delete participant record",
@@ -81,12 +55,25 @@
   }
 }) }}
 
-{% set participant = data | getParticipant('bc724e9f') %}
 
 {% set participantDetailsHtml %}
-{% set allowEthnicityEdits = false %}
-  {% include "_includes/summary-lists/demographic-information/personal-details.njk" %}
+  {% set allowEthnicityEdits = false %}
+
+  {% set participantDetailsSummaryListHtml %}
+    {% set noLastBorder = true %}
+    {% include "_includes/summary-lists/demographic-information/personal-details.njk" %}
+  {% endset %}
+
+
+  {% from 'card/macro.njk' import card %}
+
+  {{ card({
+    headingHtml: " ",
+    descriptionHtml: participantDetailsSummaryListHtml
+  }) }}
 {% endset %}
+
+
 
 {{ appModal({
   id: "participant-modal",
@@ -140,7 +127,7 @@
       {{ button({
         text: "Open check-in modal",
         attributes: {
-          onclick: "openModal('check-in-modal')"
+          onclick: "openModal('check-in-modal-example')"
         }
       }) }}
     </p>

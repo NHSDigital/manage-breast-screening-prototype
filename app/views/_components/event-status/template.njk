@@ -11,59 +11,18 @@
 
 {% set tagClasses = tagClasses + " app-nowrap" %}
 
-{# Check if identity confirmation is enabled #}
-{% set confirmIdentityEnabled = params.confirmIdentityOnCheckIn %}
-
 {# Build check-in href #}
 {% set checkInHref -%}
   /clinics/{{ params.clinicId }}/check-in/{{ params.event.id }}
 {%- endset %}
 
+{# Check if identity confirmation is enabled #}
+{% set confirmIdentityEnabled = params.confirmIdentityOnCheckIn %}
+
 {% if confirmIdentityEnabled %}
-  {# Create unique modal ID for this event #}
-  {% set modalId = "check-in-modal-" + params.event.id %}
+  {% set modalId = "check-in-modal-" + (eventId or params.event.id) %}
 
-  {# Pre-render identity confirmation content using existing components #}
-  {% set modalContentHtml %}
-    {% set participant = params.participant %}
-    {% set referrerChain = params.referrerChain %}
-    {% set participantUrl = params.participantUrl %}
-    {% set appointmentUrl = params.appointmentUrl %}
-    {% include "_includes/confirm-identity.njk" %}
-  {% endset %}
-
-  {# Render the generic modal with custom check-in button #}
-  {{ appModal({
-    id: modalId,
-    title: "Confirm participant identity",
-    content: modalContentHtml,
-    actions: [
-      {
-        text: "Confirm identity and check in",
-        element: "button",
-        classes: "js-check-in-link",
-        action: "custom",
-        href: checkInHref,
-        attributes: {
-          'data-clinic-id': params.clinicId,
-          'data-event-id': params.event.id
-        }
-      },
-      {
-        text: "Identity in doubt",
-        element: "button",
-        classes: "nhsuk-button--secondary",
-        action: "navigate",
-        href: "/clinics/" + params.clinicId + "/events/" + params.event.id + "/identity-doubt"
-      },
-      {
-        text: "Cancel",
-        element: "link",
-        classes: "nhsuk-link--no-visited-state",
-        action: "close"
-      }
-    ]
-  }) }}
+  {% include "_includes/confirm-identity-modal.njk" %}
 {% endif %}
 
 <div data-event-status-container="{{ params.event.id }}">
