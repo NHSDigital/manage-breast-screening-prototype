@@ -30,7 +30,8 @@
       ]
     },
     service: {
-      text: serviceName
+      text: serviceName,
+      href: "/"
     },
     navigation: {
       items: [
@@ -94,6 +95,7 @@
   {{ clinic | log("Clinic data") }}
 {% endif %}
 
+{% if flash.error or flash.success or flash.info or flash.warning %}
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
 
@@ -145,13 +147,17 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-full">
-    {% block pageNavigation %}
-    {% endblock pageNavigation %}
+{% if pageNavigation %}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      {% block pageNavigation %}
+      {% endblock pageNavigation %}
+    </div>
   </div>
-</div>
+{% endif %}
+
 {% if gridColumn != "none" %}
 <div class="nhsuk-grid-row">
   <div class="{{ gridColumn or 'nhsuk-grid-column-two-thirds' }}">

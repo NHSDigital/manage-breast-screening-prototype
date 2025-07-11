@@ -38,6 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
             </strong>
           `
         }
+
+        // Close any open modal (for modal-based check-ins)
+        const openModal = document.querySelector('.app-modal:not([hidden])')
+        if (openModal && window.closeModal) {
+          window.closeModal(openModal.id)
+        }
+
       } catch (error) {
         console.error('Error checking in participant:', error)
         window.location.href = link.href

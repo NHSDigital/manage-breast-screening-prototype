@@ -254,6 +254,16 @@ const asHint = (input) => {
   return `<span class="app-text-grey">${input}</span>`
 }
 
+/** * Wrap string in a hidden text span
+ * Used for accessibility to provide additional context without displaying it
+ * @param {string} input - String to wrap
+ * @returns {string} HTML string with hidden text class
+ */
+const asVisuallyHiddenText = (input) => {
+  if (!input) return ''
+  return `<span class="nhsuk-u-visually-hidden">${input}</span>`
+}
+
 /**
  * Format phone number for display with spaces
  * @param {string} phoneNumber - Raw phone number string
@@ -325,6 +335,7 @@ module.exports = {
   snakeCase,
   noWrap,
   asHint,
+  asVisuallyHiddenText,
   padDigits,
   possessive,
   sentenceCase,

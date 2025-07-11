@@ -1,0 +1,273 @@
+{# /app/views/_components/modal/examples.html #}
+
+{% extends "layout-app.html" %}
+{% set pageHeading = "Modal examples" %}
+
+{% block pageContent %}
+
+<h1>{{ pageHeading }}</h1>
+
+{# Basic modal #}
+{{ appModal({
+  id: "basic-modal",
+  title: "Example modal",
+  content: "<p>This is a basic modal with some content.</p>",
+  actions: [
+    {
+      text: "Continue",
+      element: "button",
+      action: "navigate",
+      href: "/next-page",
+      method: "GET"
+    },
+    {
+      text: "Cancel",
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
+    }
+  ]
+}) }}
+
+{# Check-in modal #}
+{% set eventId = "example" %}
+{% set participant = data | getParticipant('bc724e9f') %}
+
+{% set participantUrl = "/participants/bc724e9f" %}
+{% set appointmentUrl = "clinics/wtrl7jud/events/5gpn41oi" %}
+
+{% include "_includes/confirm-identity-modal.njk" %}
+
+{# Navigation modal with POST form #}
+{{ appModal({
+  id: "delete-modal",
+  title: "Delete participant record",
+  content: "<p>Are you sure you want to delete this participant record?</p><p>This action cannot be undone.</p>",
+  actions: [
+    {
+      text: "Yes, delete record",
+      element: "button",
+      classes: "nhsuk-button--warning",
+      action: "navigate",
+      href: "/participants/delete",
+      method: "POST"
+    },
+    {
+      text: "Cancel",
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
+    }
+  ]
+}) }}
+
+<!-- Simple confirmation modal using preset macro -->
+{{ appConfirmationModal({
+  id: "save-confirmation",
+  title: "Save changes",
+  content: "<p>Do you want to save your changes before continuing?</p>",
+  confirmText: "Save and continue",
+  cancelText: "Don't save",
+  confirmAction: "ajax",
+  confirmHref: "/api/save",
+  confirmMethod: "POST",
+  closeOnSuccess: true,
+  data: {
+    formId: "medical-info-form"
+  }
+}) }}
+
+
+{% set participantDetailsHtml %}
+  {% set allowEthnicityEdits = false %}
+
+  {% set participantDetailsSummaryListHtml %}
+    {% set noLastBorder = true %}
+    {% include "_includes/summary-lists/demographic-information/personal-details.njk" %}
+  {% endset %}
+
+
+  {% from 'card/macro.njk' import card %}
+
+  {{ card({
+    headingHtml: " ",
+    descriptionHtml: participantDetailsSummaryListHtml
+  }) }}
+{% endset %}
+
+
+
+{{ appModal({
+  id: "participant-modal",
+  title: "Participant details",
+  content: participantDetailsHtml,
+  actions: [
+    {
+      text: "Edit details",
+      element: "button",
+      action: "navigate",
+      href: "/participants/edit"
+    },
+    {
+      text: "Close",
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
+    }
+  ]
+}) }}
+
+<!-- AJAX loading demo -->
+{{ appModal({
+  id: "loading-demo-modal",
+  title: "Loading demonstration",
+  content: "<p>Click the button below to see the loading state in action.</p>",
+  actions: [
+    {
+      text: "Simulate slow request",
+      element: "button",
+      action: "ajax",
+      href: "/api/slow-endpoint",
+      method: "POST",
+      closeOnSuccess: false
+    },
+    {
+      text: "Close",
+      element: "button",
+      classes: "nhsuk-button--secondary",
+      action: "close"
+    }
+  ]
+}) }}
+
+    <h2>Trigger buttons</h2>
+
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open basic modal",
+        attributes: {
+          onclick: "openModal('basic-modal')"
+        }
+      }) }}
+    </div>
+
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open check-in modal",
+        attributes: {
+          onclick: "openModal('check-in-modal-example')"
+        }
+      }) }}
+    </div>
+
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open delete modal",
+        classes: "nhsuk-button--warning",
+        attributes: {
+          onclick: "openModal('delete-modal')"
+        }
+      }) }}
+    </div>
+
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open save confirmation",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          onclick: "openModal('save-confirmation')"
+        }
+      }) }}
+    </div>
+
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open participant modal",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          onclick: "openModal('participant-modal')"
+        }
+      }) }}
+    </div>
+
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open loading demo",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          onclick: "openModal('loading-demo-modal')"
+        }
+      }) }}
+    </div>
+
+    <h2>Usage examples</h2>
+
+    <h3>Basic modal with AJAX action</h3>
+<pre>
+<code>
+{% raw %}
+  {{ appModal({
+    id: "example-modal",
+    title: "Confirm action",
+    content: "<p>Are you sure?</p>",
+    data: { itemId: "123" },
+    actions: [
+      {
+        text: "Confirm",
+        element: "button",
+        action: "ajax",
+        href: "/api/action",
+        method: "POST",
+        closeOnSuccess: true
+      },
+      {
+        text: "Cancel",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      }
+    ]
+  }) }}
+{% endraw %}
+</code>
+    </pre>
+
+    <h3>Confirmation modal preset</h3>
+
+
+<pre>
+<code>
+{% raw %}
+{{ appConfirmationModal({
+  id: "confirm-modal",
+  title: "Are you sure?",
+  content: "<p>This will delete the item.</p>",
+  confirmText: "Yes, delete",
+  confirmAction: "ajax",
+  confirmHref: "/api/delete",
+  confirmMethod: "POST"
+}) }}
+{% endraw %}
+  </code>
+</pre>
+
+
+<!-- Mock participant template for include example -->
+<script>
+// Add some event listeners for demo purposes
+document.addEventListener('modal:ajax:success', (e) => {
+  console.log('AJAX success:', e.detail)
+  alert('AJAX request completed successfully!')
+})
+
+document.addEventListener('modal:ajax:error', (e) => {
+  console.log('AJAX error:', e.detail)
+  alert('AJAX request failed. Check the console for details.')
+})
+
+document.addEventListener('modal:action', (e) => {
+  console.log('Custom modal action:', e.detail)
+})
+</script>
+
+{% endblock %}

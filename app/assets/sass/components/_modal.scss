@@ -1,0 +1,83 @@
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+
+$app-modal-width: 700px !default; // Default width for the modal
+
+// Prevent background scrolling when modal is open
+body.app-modal-open {
+  overflow: hidden;
+  width: 100%;
+}
+
+.app-modal {
+  &[hidden] {
+    display: none;
+  }
+
+  &.app-modal--open {
+    display: block;
+  }
+}
+
+// Modal overlay
+.app-modal__overlay {
+  position: fixed;
+  z-index: 1001;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba($color_nhsuk-black, 0.8);
+}
+
+// Modal dialog container
+.app-modal__dialog {
+  position: fixed;
+  z-index: 1002;
+  top: 50%;
+  left: 50%;
+  width: calc(100vw - #{nhsuk-spacing(4)});
+  max-width: $app-modal-width;
+  max-height: 90vh;
+
+  transform: translate(-50%, -50%);
+  overflow-y: auto;
+
+  // background-color: $color_nhsuk-white;
+  background-color: $color_nhsuk-grey-5;
+  border: $nhsuk-focus-width solid $color_nhsuk-black;
+
+  @include nhsuk-responsive-padding(5);
+
+  &:focus {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-color;
+  }
+
+  @include nhsuk-media-query($from: tablet) {
+    width: $app-modal-width;
+  }
+}
+
+// Modal content
+.app-modal__title {
+  margin-top: 0;
+}
+
+.app-modal__body {
+  margin-bottom: nhsuk-spacing(4);
+
+  // Remove bottom margin for the last child to avoid extra space
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// Modal actions
+.app-modal__actions {
+  margin-top: nhsuk-spacing(4);
+  margin-bottom: 0;
+
+  .nhsuk-button:last-of-type {
+    margin-bottom: 0;
+  }
+}
