@@ -72,22 +72,27 @@
     classes: tagClasses | trim
   })}}
 
+  {# Append the participant’s name to the check-in text for screen readers so that all links have unique text #}
+  {% set checkInText %}
+    Check in {{ params.participant | getShortName | asVisuallyHiddenText }}
+  {% endset %}
+
   {% if params.event.status === 'event_scheduled' %}
     <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
       {% if confirmIdentityEnabled %}
         {# Modal-based check-in #}
-        <a href="#"
+        <a href=""
            class="nhsuk-link nhsuk-link--no-visited-state"
            onclick="openModal('{{ modalId }}'); return false;">
-          Check in
+          {{ checkInText | safe }}
         </a>
       {% else %}
-        {# Direct check-in (original behavior) #}
+        {# Check in without identity check #}
         <a href="{{ checkInHref }}"
            class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
            data-clinic-id="{{ params.clinicId }}"
            data-event-id="{{ params.event.id }}">
-          Check in
+          {{ checkInText | safe }}
         </a>
       {% endif %}
     </p>

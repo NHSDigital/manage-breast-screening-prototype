@@ -43,7 +43,8 @@ body.app-modal-open {
   transform: translate(-50%, -50%);
   overflow-y: auto;
 
-  background-color: $color_nhsuk-white;
+  // background-color: $color_nhsuk-white;
+  background-color: $color_nhsuk-grey-5;
   border: $nhsuk-focus-width solid $color_nhsuk-black;
 
   @include nhsuk-responsive-padding(5);

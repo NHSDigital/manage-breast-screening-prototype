@@ -1,12 +1,30 @@
 <p>
-  Please confirm the participant’s identity before checking them in.
+  To check the participant in for the appointment, ask them to confirm the following information.
 </p>
+
+{% set cardHtml %}
+  {% call summaryList() %}
+    {% include "_includes/summary-lists/rows/full-name.njk" %}
+    {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+    {% set noBorder = true %}
+    {% include "_includes/summary-lists/rows/address.njk" %}
+  {% endcall %}
+{% endset %}
+
+{% from 'card/macro.njk' import card %}
+
+{{ card({
+  headingHtml: " ",
+  descriptionHtml: cardHtml
+}) }}
+
+
 
 {% if participantUrl %}
   <p>
     <a href="{{ participantUrl }}"
        class="nhsuk-link nhsuk-link--no-visited-state">
-      View their full participant record
+      View their participant record
     </a>
   </p>
 {% endif %}
@@ -20,9 +38,4 @@
   </p>
 {% endif %}
 
-{% call summaryList() %}
-  {% include "_includes/summary-lists/rows/full-name.njk" %}
-  {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
-  {% include "_includes/summary-lists/rows/address.njk" %}
-{% endcall %}
 
