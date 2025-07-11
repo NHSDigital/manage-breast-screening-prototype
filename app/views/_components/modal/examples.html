@@ -7,6 +7,28 @@
 
 <h1>{{ pageHeading }}</h1>
 
+{# Basic modal #}
+{{ appModal({
+  id: "basic-modal",
+  title: "Example modal",
+  content: "<p>This is a basic modal with some content.</p>",
+  actions: [
+    {
+      text: "Continue",
+      element: "button",
+      action: "navigate",
+      href: "/next-page",
+      method: "GET"
+    },
+    {
+      text: "Cancel",
+      classes: "nhsuk-link--no-visited-state",
+      element: "link",
+      action: "close"
+    }
+  ]
+}) }}
+
 {# Check-in modal #}
 {% set eventId = "example" %}
 {% set participant = data | getParticipant('bc724e9f') %}
@@ -118,21 +140,27 @@
   ]
 }) }}
 
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-two-thirds">
-
     <h2>Trigger buttons</h2>
 
-    <p>
+    <div class="nhsuk-form-group">
+      {{ button({
+        text: "Open basic modal",
+        attributes: {
+          onclick: "openModal('basic-modal')"
+        }
+      }) }}
+    </div>
+
+    <div class="nhsuk-form-group">
       {{ button({
         text: "Open check-in modal",
         attributes: {
           onclick: "openModal('check-in-modal-example')"
         }
       }) }}
-    </p>
+    </div>
 
-    <p>
+    <div class="nhsuk-form-group">
       {{ button({
         text: "Open delete modal",
         classes: "nhsuk-button--warning",
@@ -140,9 +168,9 @@
           onclick: "openModal('delete-modal')"
         }
       }) }}
-    </p>
+    </div>
 
-    <p>
+    <div class="nhsuk-form-group">
       {{ button({
         text: "Open save confirmation",
         classes: "nhsuk-button--secondary",
@@ -150,10 +178,9 @@
           onclick: "openModal('save-confirmation')"
         }
       }) }}
-    </p>
+    </div>
 
-
-    <p>
+    <div class="nhsuk-form-group">
       {{ button({
         text: "Open participant modal",
         classes: "nhsuk-button--secondary",
@@ -161,9 +188,9 @@
           onclick: "openModal('participant-modal')"
         }
       }) }}
-    </p>
+    </div>
 
-    <p>
+    <div class="nhsuk-form-group">
       {{ button({
         text: "Open loading demo",
         classes: "nhsuk-button--secondary",
@@ -171,36 +198,47 @@
           onclick: "openModal('loading-demo-modal')"
         }
       }) }}
-    </p>
+    </div>
 
     <h2>Usage examples</h2>
 
     <h3>Basic modal with AJAX action</h3>
-    {{ '{{ appModal({
-  id: "example-modal",
-  title: "Confirm action",
-  content: "<p>Are you sure?</p>",
-  data: { itemId: "123" },
-  actions: [
-    {
-      text: "Confirm",
-      element: "button",
-      action: "ajax",
-      href: "/api/action",
-      method: "POST",
-      closeOnSuccess: true
-    },
-    {
-      text: "Cancel",
-      element: "button",
-      classes: "nhsuk-button--secondary",
-      action: "close"
-    }
-  ]
-}) }}' | escape }}
+<pre>
+<code>
+{% raw %}
+  {{ appModal({
+    id: "example-modal",
+    title: "Confirm action",
+    content: "<p>Are you sure?</p>",
+    data: { itemId: "123" },
+    actions: [
+      {
+        text: "Confirm",
+        element: "button",
+        action: "ajax",
+        href: "/api/action",
+        method: "POST",
+        closeOnSuccess: true
+      },
+      {
+        text: "Cancel",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      }
+    ]
+  }) }}
+{% endraw %}
+</code>
+    </pre>
 
     <h3>Confirmation modal preset</h3>
-    {{ '{{ appConfirmationModal({
+
+
+<pre>
+<code>
+{% raw %}
+{{ appConfirmationModal({
   id: "confirm-modal",
   title: "Are you sure?",
   content: "<p>This will delete the item.</p>",
@@ -208,10 +246,11 @@
   confirmAction: "ajax",
   confirmHref: "/api/delete",
   confirmMethod: "POST"
-}) }}' | escape }}
+}) }}
+{% endraw %}
+  </code>
+</pre>
 
-  </div>
-</div>
 
 <!-- Mock participant template for include example -->
 <script>
