@@ -127,6 +127,8 @@
                 clinicId: clinicId,
                 event: event,
                 participant: participant,
+                participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
+                appointmentUrl: "/clinics/" + clinicId + "/events/" + event.id,
                 referrerChain: currentUrl + "#event-row-" + event.id,
                 confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
               })}}

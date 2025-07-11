@@ -1,12 +1,12 @@
 @use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
+$app-modal-width: 600px !default; // Default width for the modal
+
 // Prevent background scrolling when modal is open
 body.app-modal-open {
-  // height: 100vh;
   overflow: hidden;
   width: 100%;
-  // position: fixed;
 }
 
 .app-modal {
@@ -27,7 +27,7 @@ body.app-modal-open {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8); // Use direct color value
+  background-color: rgba($color_nhsuk-black, 0.8);
 }
 
 // Modal dialog container
@@ -37,7 +37,7 @@ body.app-modal-open {
   top: 50%;
   left: 50%;
   width: calc(100vw - #{nhsuk-spacing(4)});
-  max-width: 500px; // Increased from 435px
+  max-width: $app-modal-width;
   max-height: 90vh;
 
   transform: translate(-50%, -50%);
@@ -48,16 +48,12 @@ body.app-modal-open {
 
   @include nhsuk-responsive-padding(5);
 
-  // &{
-  //   padding-bottom: 0; // Removed padding to prevent double spacing
-  // }
-
   &:focus {
     outline: $nhsuk-focus-width solid $nhsuk-focus-color;
   }
 
   @include nhsuk-media-query($from: tablet) {
-    width: 500px; // Increased from 435px
+    width: $app-modal-width;
   }
 }
 
@@ -69,11 +65,10 @@ body.app-modal-open {
 .app-modal__body {
   margin-bottom: nhsuk-spacing(4);
 
+  // Remove bottom margin for the last child to avoid extra space
   &:last-child {
     margin-bottom: 0;
   }
-
-
 }
 
 // Modal actions

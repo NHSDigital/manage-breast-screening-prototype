@@ -2,12 +2,23 @@
   Please confirm the participant’s identity before checking them in.
 </p>
 
-<p>
-  <a href="{{ '/participants/' + participant.id | urlWithReferrer(referrerChain) }}"
-     class="nhsuk-link nhsuk-link--no-visited-state">
-    View their full participant record
-  </a>
-</p>
+{% if participantUrl %}
+  <p>
+    <a href="{{ participantUrl }}"
+       class="nhsuk-link nhsuk-link--no-visited-state">
+      View their full participant record
+    </a>
+  </p>
+{% endif %}
+
+{% if appointmentUrl %}
+  <p>
+    <a href="{{ appointmentUrl }}"
+       class="nhsuk-link nhsuk-link--no-visited-state">
+      View their appointment
+    </a>
+  </p>
+{% endif %}
 
 {% call summaryList() %}
   {% include "_includes/summary-lists/rows/full-name.njk" %}

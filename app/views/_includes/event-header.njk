@@ -6,8 +6,10 @@
   clinicId: clinicId,
   event: event,
   participant: participant,
+  participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
   referrerChain: currentUrl,
   confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
+
 })}}
 {% endset %}
 
