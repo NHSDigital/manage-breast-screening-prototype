@@ -3,6 +3,7 @@
 
 {% set gridColumn = gridColumn or "nhsuk-grid-column-full" %}
 
+
 {% set isClinicContext = batch.clinicId %}
 {% set isBatchContext = not isClinicContext %}
 {# {% for clinic in clinics %}
@@ -168,6 +169,7 @@
 {% endif %}
 
 {% block pageNavigation %}
+
   {% if not hideSecondaryNavigation %}
     {% include "reading/opinion-ui.njk" %}
     {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
