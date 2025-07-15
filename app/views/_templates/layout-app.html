@@ -149,14 +149,17 @@
 </div>
 {% endif %}
 
-{% if pageNavigation %}
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
-      {% block pageNavigation %}
-      {% endblock pageNavigation %}
-    </div>
+
+{# This will output excess divs where pageNavigation is not set. I could not find a way to stop this. You can't test for truthiness of the block, nor can you capture the contents with set.
+
+See related issues:
+https://github.com/mozilla/nunjucks/issues/135
+https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-full">
+    {% block pageNavigation %}{% endblock pageNavigation %}
   </div>
-{% endif %}
+</div>
 
 {% if gridColumn != "none" %}
 <div class="nhsuk-grid-row">
