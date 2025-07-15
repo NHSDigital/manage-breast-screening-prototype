@@ -149,11 +149,13 @@
 </div>
 {% endif %}
 
-{% if pageNavigation %}
+{# You can't test if the block pageNavigation is truthy, so capture to a variable and then test the length #}
+{% set pageNavigationHtml %}{% block pageNavigation %}{% endblock pageNavigation %}{% endset %}
+
+{% if pageNavigationHtml | length > 0 %}
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-      {% block pageNavigation %}
-      {% endblock pageNavigation %}
+      {{ pageNavigationHtml | safe }}
     </div>
   </div>
 {% endif %}
