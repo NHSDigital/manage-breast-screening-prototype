@@ -1,7 +1,7 @@
 
 
 {% set breastFeaturesHtml %}
-  {% if useFakeBreastFeaturesCard %}
+  {# {% if useFakeBreastFeaturesCard %}
     {% set tattooHtml %}
       Tattoo<br>
       {{ "(Manchester united badge)" | asHint }}
@@ -52,7 +52,7 @@
     }) }}
 
     <p><a href="#">Add a feature</a></p>
-  {% else %}
+  {% else %} #}
     {% set insetHtml %}
       <p>No breast features have been recorded for this participant. Add any scars, moles, warts or lumps observed or reported during the appointment.</p>
     {% endset %}
@@ -60,8 +60,12 @@
       html: insetHtml
     }) }}
 
-    <p><a href="./medical-information/record-breast-features">Add a feature</a></p>
-  {% endif %}
+    {% set linkHref %}
+      {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl) }}
+    {% endset %}
+
+    <p><a href="{{ linkHref }}">Add a feature</a></p>
+  {# {% endif %} #}
 {% endset %}
 
 {{ card({
