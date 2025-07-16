@@ -16,6 +16,8 @@
 
 @forward 'components/overrides';
 @forward 'components/checkboxes';
+@forward 'components/breast-features';
+
 
 @forward 'components/annotation';
 
@@ -25,6 +27,7 @@
 
 @forward 'typography';
 @forward 'utils';
+
 
 ///////////////////////////////////////////
 // Add your custom CSS/Sass styles below...
