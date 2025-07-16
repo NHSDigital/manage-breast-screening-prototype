@@ -53,9 +53,23 @@
 
     <p><a href="#">Add a feature</a></p>
   {% else %} #}
-    {% set insetHtml %}
-      <p>No breast features have been recorded for this participant. Add any scars, moles, warts or lumps observed or reported during the appointment.</p>
-    {% endset %}
+
+    {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+
+    {% set hasBreastFeatures = breastFeaturesCount > 0 %}
+
+    {% if hasBreastFeatures %}
+      {% set insetHtml %}
+        <p>
+          {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded.
+        </p>
+      {% endset %}
+    {% else %}
+      {% set insetHtml %}
+        <p>No breast features have been recorded for this participant. Add any scars, moles, warts or lumps observed or reported during the appointment.</p>
+      {% endset %}
+    {% endif %}
+
     {{ insetText({
       html: insetHtml
     }) }}
@@ -64,7 +78,7 @@
       {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl) }}
     {% endset %}
 
-    <p><a href="{{ linkHref }}">Add a feature</a></p>
+    <p><a href="{{ linkHref }}">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a></p>
   {# {% endif %} #}
 {% endset %}
 

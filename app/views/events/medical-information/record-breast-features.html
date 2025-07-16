@@ -8,11 +8,6 @@
 
 {% block pageContent %}
 
-
-  {{ participant | log }}
-
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-m">
       {{ participant | getFullName }}
@@ -23,26 +18,25 @@
   <div id="status-message" aria-live="polite" class="nhsuk-u-visually-hidden" role="status"></div>
 
   <p class="nhsuk-body">
-Click the diagram to add notable features such as scars, moles, or warts that image readers may need to be aware of. These could be observed by you or reported by the participant.
-</p>
+    Click the diagram to add notable features such as scars, moles, or warts that image readers may need to be aware of. These could be observed by you or reported by the participant.
+  </p>
 
-<!--
-<button class="nhsuk-button nhsuk-button--secondary" id="toggleBordersBtn" type="button">
-  Show location borders
-</button>
 
--->
+    {# <button class="nhsuk-button nhsuk-button--secondary" id="toggleBordersBtn" type="button">
+    Show location borders
+    </button> #}
+
 
   <div class="breast-features-diagram-header">
-      <h2 class="nhsuk-heading-m">Where is the feature?</h2>
+    <h2 class="nhsuk-heading-m">Where is the feature?</h2>
   </div>
 
   <div class="breast-features-diagram-container">
 
-      <div class="breast-features-diagram-side-labels">
-          <span>Right</span>
-          <span>Left</span>
-      </div>
+    <div class="breast-features-diagram-side-labels">
+      <span>Right</span>
+      <span>Left</span>
+    </div>
 
       <div class="breast-features-diagram-diagram-container" id="diagramContainer">
           <svg class="breast-features-diagram-diagram-svg" viewBox="0 0 793 320" xmlns="http://www.w3.org/2000/svg" id="breastSvg">
@@ -262,11 +256,18 @@ Click the diagram to add notable features such as scars, moles, or warts that im
   </div>
 
   <div class="nhsuk-u-margin-top-6">
-      {{ button({
-        text: "Save"
-      }) }}
 
-      <div id="statusMessage" class="nhsuk-u-margin-top-3" style="display: none;"></div>
+    {{ appHiddenInput({
+      name: "event[medicalInformation][breastFeaturesCount]",
+      id: "breastFeaturesCount",
+      value: "0"
+    }) }}
+
+    {{ button({
+      text: "Save"
+    }) }}
+
+    <div id="statusMessage" class="nhsuk-u-margin-top-3" style="display: none;"></div>
   </div>
 
   <p class="">
@@ -1011,6 +1012,7 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
             }
 
             allFeatures.push(newFeature)
+            updateFeaturesCount()
 
             // Pass exact coordinates to createPermanentMarker
             const markerElement = createPermanentMarker(
@@ -1036,6 +1038,7 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
         if (!editingFeature) return
 
         allFeatures = allFeatures.filter(f => f.id !== editingFeature.id)
+        updateFeaturesCount()
         if (editingFeature.element) {
             editingFeature.element.remove()
         }
@@ -1161,6 +1164,7 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
 
             allFeatures = []
             markerCounter = 1
+            updateFeaturesCount()
 
             updateFeaturesList()
 
@@ -1226,6 +1230,14 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
         }, 5000)
     }
 
+    function updateFeaturesCount() {
+        const countInput = document.querySelector('#breastFeaturesCount')
+        if (countInput) {
+            countInput.value = allFeatures.length
+            console.log('Updated features count to:', allFeatures.length)
+        }
+    }
+
     function loadSavedFeatures() {
         try {
             const savedData = sessionStorage.getItem('breastFeatures')
@@ -1252,6 +1264,7 @@ if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
                     })
                     if (allFeatures.length > 0) {
                         updateFeaturesList()
+                        updateFeaturesCount()
                     }
                 }
             }
