@@ -102,6 +102,10 @@ const getStatusTagColour = (status) => {
     event_cancelled: 'red',
     event_attended_not_screened: 'orange',
 
+    // Task list
+    incomplete: 'blue',
+    complete: 'green',
+
     // Image reading
     not_started: 'grey',
     not_provided: 'grey',

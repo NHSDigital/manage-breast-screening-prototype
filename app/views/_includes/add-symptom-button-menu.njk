@@ -26,11 +26,14 @@
   }) %}
 {% endfor %}
 
-{{ buttonMenu({
-  items: buttonMenuItems,
-  button: {
-    text: "Add another symptom" if hasSymptoms or (saveSymptomFirst == true) else "Add a symptom",
-    classes: "nhsuk-button--secondary"
-  },
-  alignMenu: "left"
-}) }}
+<div class="nhsuk-form-group">
+  {{ buttonMenu({
+    items: buttonMenuItems,
+    button: {
+      text: "Add another symptom" if hasSymptoms or (saveSymptomFirst == true) else "Add a symptom",
+      classes: "nhsuk-button--secondary"
+    },
+    alignMenu: "left"
+  }) }}
+</div>
+

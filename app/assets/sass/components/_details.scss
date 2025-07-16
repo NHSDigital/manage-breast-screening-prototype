@@ -1,0 +1,20 @@
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+
+.app-details__container {
+  position: relative;
+}
+
+.app-details__status {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 28px 32px 32px;
+}
+
+.app-details__summary-subtitle {
+  display: block;
+  padding-top: 8px;
+  // padding: 4px 4px 4px 38px; // to match the line above
+  color: $nhsuk-text-color;
+}

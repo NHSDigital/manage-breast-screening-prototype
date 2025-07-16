@@ -1,0 +1,34 @@
+{% from "attributes.njk" import nhsukAttributes %}
+
+<div class="app-details__container">
+
+  <details {%- if params.id %} id="{{params.id}}"{% endif %} class="nhsuk-details
+    {%- if params.classes %} {{ params.classes }}{% endif %}"
+    {{- nhsukAttributes(params.attributes) }} {{- " open" if params.open }}>
+    <summary class="nhsuk-details__summary">
+      <span class="nhsuk-details__summary-text">
+        {{ params.summaryHtml | safe | trim | indent(6) if params.summaryHtml else params.summaryText }}
+      </span>
+      {% if params.subtitle %}
+        <span class="app-details__summary-subtitle">
+          {{ params.subtitle | safe | trim | indent(4) }}
+        </span>
+      {% endif %}
+
+    </summary>
+
+    <div class="nhsuk-details__text">
+      {% if caller or params.html -%}
+        {{ caller() if caller else params.html | safe | trim | indent(4) }}
+      {% elif params.text -%}
+        {{ params.text }}
+      {% endif %}
+    </div>
+
+  </details>
+  {% if params.status %}
+    <div class="app-details__status">
+      {{ params.status | toTag }}
+    </div>
+  {% endif %}
+</div>
