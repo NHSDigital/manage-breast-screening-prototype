@@ -105,6 +105,8 @@ const getStatusTagColour = (status) => {
     // Task list
     incomplete: 'blue',
     complete: 'green',
+    to_review: 'blue',
+    reviewed: 'green',
 
     // Image reading
     not_started: 'grey',

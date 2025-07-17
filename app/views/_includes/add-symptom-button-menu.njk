@@ -22,7 +22,7 @@
   {% set buttonMenuItems = buttonMenuItems | push({
     text: symptom,
     href: (methodUrl ~ (symptom | camelCase) ) | urlWithReferrer(referrerChain),
-    classes: "nhsuk-button--secondary"
+    classes: "nhsuk-button--secondary js-expand-parent-section"
   }) %}
 {% endfor %}
 

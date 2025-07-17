@@ -70,6 +70,21 @@
 {% endblock %}
 
 {% block bodyEnd %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Find the clear data link and add click handler
+    const clearDataLinks = document.querySelectorAll('a[href="/clear-data"]')
+    clearDataLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        // Clear expanded states before navigating
+        if (window.clearAllExpandedStates) {
+          window.clearAllExpandedStates()
+          console.log('Cleared expanded states before data clear')
+        }
+      })
+    })
+  })
+  </script>
   {% block scripts %}
     <!-- Custom JavaScript files can be added to this file -->
     {% include "_includes/scripts.html" %}

@@ -18,8 +18,12 @@
           {{ params.subtitle | safe | trim | indent(4) }}
         </span>
       {% endif %}
-      {% if params.contentsSummary %}
+      {% if params.contentsSummaryHtml %}
         <span class="app-details__contents-summary">
+          {{ params.contentsSummaryHtml | safe | trim | indent(4) }}
+        </span>
+      {% elif params.contentsSummary %}
+        <span class="app-details__contents-summary app-details__contents-summary--text">
           {{ params.contentsSummary | safe | trim | indent(4) }}
         </span>
       {% endif %}

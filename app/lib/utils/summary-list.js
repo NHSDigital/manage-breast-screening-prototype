@@ -45,10 +45,12 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
       const keyText = row.actions?.items?.[0]?.visuallyHiddenText || row.key.text.toLowerCase()
       const href = row.actions?.items?.[0]?.href || '#'
 
+      const endText = keyText.endsWith("notes") ? "" : " details"
+
       return {
         ...row,
         value: {
-          html: `<a href="${href}" class="nhsuk-link">Enter ${keyText} details</a>`
+          html: `<a href="${href}" class="nhsuk-link">Enter ${keyText}${endText}</a>`
         },
         actions: {
           items: []

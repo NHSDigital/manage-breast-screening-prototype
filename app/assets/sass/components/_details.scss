@@ -24,8 +24,10 @@
 .app-details__contents-summary {
   display: block;
   padding-top: 16px;
+}
+
+.app-details__contents-summary--text {
   color: $nhsuk-secondary-text-color;
-  // font-size: 16px;
 }
 
 // Hide contents summary when details is expanded
