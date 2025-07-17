@@ -170,23 +170,77 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close current section
         section.removeAttribute('open')
 
-        // Open next section
-        const nextSection = sections[index + 1]
-        if (nextSection) {
-          nextSection.setAttribute('open', 'open')
-          const nextSummary = nextSection.querySelector('.nhsuk-details__summary')
-          if (nextSummary) {
-            nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          } else {
-            nextSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }
-        }
+        // Find and open the next incomplete section after this one
+        openNextIncompleteSection(index)
 
         // Update progress counter
         updateProgress()
       })
     }
   })
+
+  // Function to find and open the next incomplete section after the current one
+  function openNextIncompleteSection(currentIndex) {
+    // First, search from the section after the current one to the end
+    for (let i = currentIndex + 1; i < sections.length; i++) {
+      if (!completedSections.has(i)) {
+        const nextIncompleteSection = sections[i]
+        nextIncompleteSection.setAttribute('open', 'open')
+
+        // Scroll to the section
+        const nextSummary = nextIncompleteSection.querySelector('.nhsuk-details__summary')
+        if (nextSummary) {
+          nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+          nextIncompleteSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+
+        console.log(`Opened next incomplete section: ${nextIncompleteSection.id}`)
+        return // Exit once we've found and opened the next incomplete section
+      }
+    }
+
+    // If no incomplete sections found after current one, loop back to the start
+    for (let i = 0; i < currentIndex; i++) {
+      if (!completedSections.has(i)) {
+        const nextIncompleteSection = sections[i]
+        nextIncompleteSection.setAttribute('open', 'open')
+
+        // Scroll to the section
+        const nextSummary = nextIncompleteSection.querySelector('.nhsuk-details__summary')
+        if (nextSummary) {
+          nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+          nextIncompleteSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+
+        console.log(`Looped back to incomplete section: ${nextIncompleteSection.id}`)
+        return // Exit once we've found and opened the incomplete section
+      }
+    }
+
+    // If we get here, all sections are complete
+    console.log('All sections are now complete!')
+    highlightCompletionButton()
+  }
+
+  // Function to highlight the completion button when all sections are done
+  function highlightCompletionButton() {
+    const completeButton = document.querySelector('button:contains("Complete all and continue")')
+    if (!completeButton) {
+      // Try a more specific selector if the above doesn't work
+      const buttons = document.querySelectorAll('button')
+      buttons.forEach(btn => {
+        if (btn.textContent.includes('Complete all and continue')) {
+          btn.classList.add('nhsuk-button--green') // Highlight in green
+          btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
+        }
+      })
+    } else {
+      completeButton.classList.add('nhsuk-button--green')
+      completeButton.style.animation = 'pulse 2s infinite'
+    }
+  }
 
   // Function to update section status
   function updateSectionStatus(section, statusText) {
@@ -268,13 +322,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const inProgress = document.querySelectorAll('.nhsuk-details[open]').length
     const remaining = totalSections - completed - inProgress
 
-    document.getElementById('progress-complete').textContent = completed
-
+    // Update progress if elements exist
+    const progressComplete = document.getElementById('progress-complete')
     const progressCurrent = document.getElementById('progress-current')
     const progressRemaining = document.getElementById('progress-remaining')
 
+    if (progressComplete) progressComplete.textContent = completed
     if (progressCurrent) progressCurrent.textContent = inProgress
     if (progressRemaining) progressRemaining.textContent = remaining
+
+    console.log(`Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`)
   }
 
   // Initialize progress
