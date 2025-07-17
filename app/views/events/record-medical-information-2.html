@@ -122,11 +122,28 @@
     {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
   {% endset %}
 
+  {% set otherMedicalInformationCount = 0 %}
+
+  {% if event.medicalInformation.hrt.hrtQuestion == 'yes' %}
+    {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% endif %}
+
+  {% if event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
+    {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% endif %}
+
+  {% if otherMedicalInformationCount > 0 %}
+    {% set otherMedicalInformationSummary = otherMedicalInformationCount ~ " other medical information recorded" %}
+  {% else %}
+    {% set otherMedicalInformationSummary = "No other medical information recorded" %}
+  {% endif %}
+
   {{ appDetails({
     id: "other-medical-information",
     classes: "nhsuk-expander",
     summaryText: "Other medical information",
-    subtitle: "Record factors that could affect breast density sich as HRT, pregnancy or breastfeeding, and mammographer notes",
+    subtitle: "Including HRT, pregnancy, breastfeeding and mammographer notes",
+    contentsSummary: otherMedicalInformationSummary,
     html: otherRelevantInformationHtml,
     status: "Incomplete"
   }) }}
