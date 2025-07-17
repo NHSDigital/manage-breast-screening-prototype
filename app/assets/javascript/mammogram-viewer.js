@@ -269,7 +269,7 @@ window.MammogramViewer = MammogramViewer;
 // Set the navigating flag on popstate events
 window.addEventListener('popstate', function() {
   isNavigating = true;
-  console.log("Navigation detected, setting isNavigating flag");
+  // console.log("Navigation detected, setting isNavigating flag");
 
   // If we're leaving reading context, close the viewer
   if (window.inReadingContext && !window.location.pathname.includes('/reading/batch/')) {

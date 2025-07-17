@@ -1,0 +1,81 @@
+{% set participant = participant or params.participant %}
+{% set referrerChain = referrerChain or params.referrerChain %}
+{% set participantUrl = participantUrl or params.participantUrl %}
+{% set appointmentUrl = appointmentUrl or params.appointmentUrl %}
+
+{# Create unique modal ID for this event #}
+{% set modalId = "check-in-modal-" + (eventId or params.event.id) %}
+
+{% set modalContentHtml %}
+  <p>
+    To check the participant in for the appointment, ask them to confirm the following information.
+  </p>
+
+  {% set cardHtml %}
+    {% call summaryList() %}
+      {% include "_includes/summary-lists/rows/full-name.njk" %}
+      {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+      {% set noBorder = true %}
+      {% include "_includes/summary-lists/rows/address.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {% from 'card/macro.njk' import card %}
+
+  {{ card({
+    headingHtml: " ",
+    descriptionHtml: cardHtml
+  }) }}
+
+  {% if participantUrl %}
+    <p>
+      <a href="{{ participantUrl }}"
+        class="nhsuk-link nhsuk-link--no-visited-state">
+        View their participant record
+      </a>
+    </p>
+  {% endif %}
+
+  {% if appointmentUrl %}
+    <p>
+      <a href="{{ appointmentUrl }}"
+        class="nhsuk-link nhsuk-link--no-visited-state">
+        View their appointment
+      </a>
+    </p>
+  {% endif %}
+
+{% endset %}
+
+{# Render the generic modal with custom check-in button #}
+{{ appModal({
+  id: modalId,
+  title: "Confirm participant identity",
+  content: modalContentHtml,
+  actions: [
+    {
+      text: "Confirm identity and check in",
+      element: "button",
+      classes: "js-check-in-link",
+      action: "custom",
+      href: checkInHref,
+      attributes: {
+        'data-clinic-id': params.clinicId,
+        'data-event-id': params.event.id
+      }
+    },
+    {
+      text: "Identity in doubt",
+      element: "button",
+      classes: "nhsuk-button--warning",
+      action: "navigate",
+      href: "/clinics/" + params.clinicId + "/events/" + params.event.id + "/identity-doubt"
+    },
+    {
+      text: "Close",
+      element: "link",
+      classes: "nhsuk-link--no-visited-state",
+      action: "close"
+    }
+  ]
+}) }}

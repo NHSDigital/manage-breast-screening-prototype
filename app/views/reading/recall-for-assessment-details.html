@@ -18,7 +18,56 @@
 
     {% set abnormalDetailsHtml %}
 
-      {% if data.imageReadingTemp[params.side].annotatedCount | int %}
+
+
+      {{ button({
+        text: "Mark an abnormality" if not (data.imageReadingTemp[params.side].annotatedCount | int > 0) else "Mark another abnormality",
+        classes: "nhsuk-button--secondary",
+        href: "./annotation?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
+      }) }}
+
+    {% endset %}
+
+    {{ data.imageReadingTemp | log("Image reading") }}
+
+    {{ radios({
+      fieldset: {
+        legend: {
+          text: "What is your opinion of the " + params.side + " breast?",
+          classes: "nhsuk-fieldset__legend--s",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "normal",
+          text: "Normal"
+        },
+        {
+          value: "clinical",
+          text: "Normal, but symptoms need clinical assessment"
+        } if event.medicalInformation.symptoms | length > 0,
+        {
+          value: "abnormal",
+          text: "Abnormal, recall for assessment",
+          conditional: {
+            html: abnormalDetailsHtml
+          }
+        }
+      ] | removeEmpty
+    } | decorateAttributes(data, "imageReadingTemp." + params.side + ".breastAssessment" )) }}
+
+    {{ input({
+      label: {
+        text: Side + " breast comment (optional)",
+        classes: "nhsuk-label--s"
+      },
+      _classes: "nhsuk-u-width-two-thirds"
+    } | decorateAttributes(data, "imageReadingTemp." + params.side + ".comment")) }}
+
+    {% if data.imageReadingTemp[params.side].annotatedCount | int %}
+
+      <h3>Abnormalities</h3>
 
 
         {% set annotationValueHtml -%}
@@ -75,51 +124,6 @@
         }) }}
       {% endif %}
 
-      {{ button({
-        text: "Mark an abnormality" if not (data.imageReadingTemp[params.side].annotatedCount | int > 0) else "Mark another abnormality",
-        classes: "nhsuk-button--secondary",
-        href: "./annotation?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
-      }) }}
-
-    {% endset %}
-
-    {{ data.imageReadingTemp | log("Image reading") }}
-
-    {{ radios({
-      fieldset: {
-        legend: {
-          text: "What is your opinion of the " + params.side + " breast?",
-          classes: "nhsuk-fieldset__legend--s",
-          isPageHeading: false
-        }
-      },
-      items: [
-        {
-          value: "normal",
-          text: "Normal"
-        },
-        {
-          value: "clinical",
-          text: "Normal, but symptoms need clinical assessment"
-        } if event.currentSymptoms | length > 0,
-        {
-          value: "abnormal",
-          text: "Abnormal, recall for assessment",
-          conditional: {
-            html: abnormalDetailsHtml
-          }
-        }
-      ] | removeEmpty
-    } | decorateAttributes(data, "imageReadingTemp." + params.side + ".breastAssessment" )) }}
-
-    {{ input({
-      label: {
-        text: Side + " breast comment (optional)",
-        classes: "nhsuk-label--s"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    } | decorateAttributes(data, "imageReadingTemp." + params.side + ".comment")) }}
-
 
   {% endset %}
 
@@ -149,18 +153,23 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
 
-      {% set symptoms = event.currentSymptoms %}
+      {% set symptoms = event.medicalInformation.symptoms %}
       {% include "symptomsWarningCard.njk" %}
 
-      {% for breastSide in ["right", "left"] %}
+    </div>
+  </div>
 
+  <div class="nhsuk-grid-row">
+
+
+      {% for breastSide in ["right", "left"] %}
+      <div class="nhsuk-grid-column-one-half">
         {{ breastDetails({
           side: breastSide
         }) }}
-
+      </div>
       {% endfor %}
 
-    </div>
   </div>
 
   <div class="nhsuk-grid-row">

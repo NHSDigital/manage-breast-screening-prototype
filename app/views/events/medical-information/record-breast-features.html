@@ -1,0 +1,1325 @@
+{% extends 'layout-app.html' %}
+
+
+
+{% set pageHeading = "Record breast features" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain) %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-m">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <div id="status-message" aria-live="polite" class="nhsuk-u-visually-hidden" role="status"></div>
+
+  <p class="nhsuk-body">
+    Click the diagram to add notable features such as scars, moles, or warts that image readers may need to be aware of. These could be observed by you or reported by the participant.
+  </p>
+
+
+    {# <button class="nhsuk-button nhsuk-button--secondary" id="toggleBordersBtn" type="button">
+    Show location borders
+    </button> #}
+
+
+  <div class="breast-features-diagram-header">
+    <h2 class="nhsuk-heading-m">Where is the feature?</h2>
+  </div>
+
+  <div class="breast-features-diagram-container">
+
+    <div class="breast-features-diagram-side-labels">
+      <span>Right</span>
+      <span>Left</span>
+    </div>
+
+      <div class="breast-features-diagram-diagram-container" id="diagramContainer">
+          <svg class="breast-features-diagram-diagram-svg" viewBox="0 0 793 320" xmlns="http://www.w3.org/2000/svg" id="breastSvg">
+              <!-- Right breast outline -->
+              <path d="M2 140.1532L57.7845 57.00006C99.1338 64.53851 120.917 75.6557 120.917 140.1532C120.917 204.651 164.733 250.315 165.259 251.008C176.138 263.554 227.136 303.614 297.277 280.234C367.418 256.853 384.953 177.105 384.953 140.1532" stroke="black" stroke-width="3" fill="none"/>
+
+              <!-- Right nipple -->
+              <circle cx="251.386" cy="159.079" r="20.671" stroke="black" stroke-width="3" fill="none"/>
+
+              <!-- Left breast outline -->
+              <path d="M791.598 140.6593L735.813 57.50616C694.464 65.0446 672.681 76.1619 672.681 140.6593C672.681 205.157 628.865 250.821 628.339 251.514C617.459 264.06 566.461 304.12 496.32 280.74C426.179 257.359 408.644 177.611 408.644 140.6593" stroke="black" stroke-width="3" fill="none"/>
+
+              <!-- Left nipple -->
+              <circle cx="542.212" cy="159.585" r="20.671" stroke="black" stroke-width="3" fill="none"/>
+
+
+
+             <!-- Anatomical regions with borders (initially hidden) -->
+              <style>
+                #anatomical-regions {
+                  opacity: 0;
+                  pointer-events: all;
+                }
+                #anatomical-regions.show-borders {
+                  opacity: 1;
+                }
+                .anatomical-region[data-side="right"] {
+                  stroke: red;
+                  stroke-width: 2;
+                  fill: rgba(255,0,0,0.1);
+                }
+                .anatomical-region[data-side="left"] {
+                  stroke: red;
+                  stroke-width: 2;
+                  fill: rgba(255,0,0,0.1);
+                }
+                .anatomical-region[data-side="center"] {
+                  stroke: green;
+                  stroke-width: 2;
+                  fill: rgba(0,255,0,0.1);
+                }
+              </style>
+              <g id="anatomical-regions">
+                  <!-- Right axilla -->
+                  <polygon class="anatomical-region" data-region="axilla" data-side="right" data-center-x="61" data-center-y="51"
+                      points="2,2 120,2 120,100 2,100"/>
+
+                  <!-- Upper regions -->
+                  <polygon class="anatomical-region" data-region="upper outer" data-side="right" data-center-x="170" data-center-y="100"
+                      points="140,50 200,60 185,130 160,135 140,130"/>
+                  <polygon class="anatomical-region" data-region="upper central" data-side="right" data-center-x="245" data-center-y="95"
+                      points="200,60 290,70 275,130 230,135 185,130"/>
+                  <polygon class="anatomical-region" data-region="upper inner" data-side="right" data-center-x="330" data-center-y="100"
+                      points="290,70 385,95 365,130 320,135 275,130"/>
+
+                  <!-- Middle regions -->
+                  <polygon class="anatomical-region" data-region="lateral to nipple" data-side="right" data-center-x="180" data-center-y="159"
+                      points="140,130 195,135 195,185 180,190 140,180"/>
+                  <polygon class="anatomical-region" data-region="central" data-side="right" data-center-x="251" data-center-y="159"
+                      points="195,135 305,135 305,185 195,185"/>
+                  <polygon class="anatomical-region" data-region="medial to nipple" data-side="right" data-center-x="330" data-center-y="159"
+                      points="305,135 365,130 365,185 305,185"/>
+
+                  <!-- Lower regions -->
+                  <polygon class="anatomical-region" data-region="lower lateral" data-side="right" data-center-x="165" data-center-y="220"
+                      points="140,180 195,185 205,245 180,265 140,250 120,220"/>
+                  <polygon class="anatomical-region" data-region="lower outer" data-side="right" data-center-x="220" data-center-y="225"
+                      points="195,185 275,185 280,245 250,265 205,245"/>
+                  <polygon class="anatomical-region" data-region="lower central" data-side="right" data-center-x="285" data-center-y="225"
+                      points="275,185 340,185 340,245 315,265 280,245"/>
+                  <polygon class="anatomical-region" data-region="lower inner" data-side="right" data-center-x="355" data-center-y="220"
+                      points="340,185 365,185 385,220 385,245 340,245"/>
+                  <polygon class="anatomical-region" data-region="inframammary fold" data-side="right" data-center-x="250" data-center-y="280"
+                      points="120,270 180,265 250,265 315,265 385,270 385,295 2,295 2,280"/>
+                  <polygon class="anatomical-region" data-region="upper chest" data-side="right" data-center-x="250" data-center-y="25"
+                      points="2,2 396,2 385,50 290,45 200,40 140,35 2,40"/>
+                  <polygon class="anatomical-region" data-region="lateral chest wall" data-side="right" data-center-x="30" data-center-y="200"
+                      points="2,120 2,310 120,270 140,250 120,220 140,180 140,130 50,130"/>
+
+                  <!-- LEFT breast regions -->
+                  <!-- Left axilla -->
+                  <polygon class="anatomical-region" data-region="axilla" data-side="left" data-center-x="732" data-center-y="51"
+                      points="673,2 791,2 791,100 673,100"/>
+
+                  <!-- Upper regions -->
+                  <polygon class="anatomical-region" data-region="upper outer" data-side="left" data-center-x="623" data-center-y="100"
+                      points="653,130 633,135 608,130 593,60 653,50"/>
+                  <polygon class="anatomical-region" data-region="upper central" data-side="left" data-center-x="548" data-center-y="95"
+                      points="608,130 563,135 518,130 503,70 593,60"/>
+                  <polygon class="anatomical-region" data-region="upper inner" data-side="left" data-center-x="463" data-center-y="100"
+                      points="518,130 473,135 428,130 408,95 503,70"/>
+
+                  <!-- Middle regions -->
+                  <polygon class="anatomical-region" data-region="lateral to nipple" data-side="left" data-center-x="613" data-center-y="159"
+                      points="653,130 653,180 613,190 598,185 598,135"/>
+                  <polygon class="anatomical-region" data-region="central" data-side="left" data-center-x="542" data-center-y="159"
+                      points="598,135 488,135 488,185 598,185"/>
+                  <polygon class="anatomical-region" data-region="medial to nipple" data-side="left" data-center-x="463" data-center-y="159"
+                      points="488,135 428,130 428,185 488,185"/>
+
+                  <!-- Lower regions -->
+                  <polygon class="anatomical-region" data-region="lower lateral" data-side="left" data-center-x="628" data-center-y="220"
+                      points="653,180 673,220 653,250 613,265 588,245 598,185"/>
+                  <polygon class="anatomical-region" data-region="lower outer" data-side="left" data-center-x="573" data-center-y="225"
+                      points="598,185 543,185 513,245 543,265 588,245"/>
+                  <polygon class="anatomical-region" data-region="lower central" data-side="left" data-center-x="508" data-center-y="225"
+                      points="543,185 453,185 453,245 478,265 513,245"/>
+                  <polygon class="anatomical-region" data-region="lower inner" data-side="left" data-center-x="448" data-center-y="220"
+                      points="453,185 428,185 408,220 408,245 453,245"/>
+                  <polygon class="anatomical-region" data-region="inframammary fold" data-side="left" data-center-x="543" data-center-y="280"
+                      points="408,270 453,265 543,265 613,265 673,270 791,280 791,295 408,295"/>
+                  <polygon class="anatomical-region" data-region="upper chest" data-side="left" data-center-x="543" data-center-y="25"
+                      points="396,2 791,2 791,40 653,35 593,40 503,45 408,50 396,45"/>
+                  <polygon class="anatomical-region" data-region="lateral chest wall" data-side="left" data-center-x="763" data-center-y="200"
+                      points="791,120 791,310 673,270 653,250 673,220 653,180 653,130 743,130"/>
+
+                  <!-- CENTER regions -->
+                  <polygon class="anatomical-region" data-region="midline" data-side="center" data-center-x="396" data-center-y="160"
+                      points="385,95 408,95 408,240 385,240"/>
+                  <polygon class="anatomical-region" data-region="lower sternum" data-side="center" data-center-x="396" data-center-y="275"
+                      points="385,240 408,240 408,310 385,310"/>
+              </g>
+
+              <!-- Markers will be added here dynamically -->
+          </svg>
+
+     <!-- Popover (initially hidden) -->
+<!-- Popover (initially hidden) -->
+          <div class="breast-features-diagram-popover" id="featurePopover">
+            <span class="nhsuk-caption-m" id="popoverCaption">Add new feature</span>
+            <h2 id="popoverHeading">What is the feature?</h2>
+            <p>This will be added to <span class="nhsuk-tag nhsuk-tag--white region-label" id="regionLabel"></span></p>
+
+            {{ radios({
+              idPrefix: "feature",
+              name: "feature",
+              fieldset: {
+                legend: {
+                  classes: "nhsuk-fieldset__legend--s nhsuk-u-visually-hidden",
+                  classes: "nhsuk-fieldset__legend--s",
+                  isPageHeading: false
+                }
+              },
+              items: [
+                {
+                  value: "mole",
+                  text: "Mole"
+                },
+                {
+                  value: "wart",
+                  text: "Wart"
+                },
+                 {
+                  value: "breast-reduction-scar",
+                  text: "Breast reduction scar"
+                },
+                {
+                  value: "other-scar",
+                  text: "Other scar"
+                },
+                {
+                  value: "other-feature",
+                  text: "Other feature",
+                  conditional: {
+                    html: input({
+                      id: "customLabel",
+                      name: "customLabel",
+                      label: {
+                        text: "Enter a custom label"
+                      }
+                    })
+                  }
+                }
+              ]
+            }) }}
+
+            <div class="nhsuk-button-group">
+              {{ button({
+                text: "Add",
+                id: "addBtn",
+                attributes: {
+                  type: "button",
+                  "data-action": "add"
+                }
+              }) }}
+
+              {{ button({
+              text: "Cancel",
+              classes: "nhsuk-button--secondary",
+              attributes: {
+               type: "button",
+               "data-action": "cancel"
+               }
+              }) }}
+
+             {{ button({
+               text: "Remove",
+              classes: "nhsuk-button--warning",
+              attributes: {
+               type: "button",
+               "data-action": "remove"
+               }
+              }) }}
+            </div>
+          </div>
+      </div>
+
+  </div>
+
+  <!-- Features list -->
+<div id="featuresListContainer" style="display: none;" class="nhsuk-u-margin-top-4">
+      <div class="features-list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 class="nhsuk-heading-s" style="margin: 0;">Key</h3>
+          <a href="#" id="clearAllFeaturesLink" class="nhsuk-link" style="font-size: 14px;">Clear all features</a>
+      </div>
+      <div class="features-list" id="featuresList"></div>
+  </div>
+
+  <div class="nhsuk-u-margin-top-6">
+
+    {{ appHiddenInput({
+      name: "event[medicalInformation][breastFeaturesCount]",
+      id: "breastFeaturesCount",
+      value: "0"
+    }) }}
+
+    {{ button({
+      text: "Save"
+    }) }}
+
+    <div id="statusMessage" class="nhsuk-u-margin-top-3" style="display: none;"></div>
+  </div>
+
+  <p class="">
+  <a class="nhsuk-link nhsuk-link--no-visited-state" href="./attended-not-screened-reason">Save and stop appointment because it cannot proceed
+  </a>
+</p>
+
+  <!--
+  {% include "screening-cannot-proceed-link.njk" %}
+-->
+
+<script>
+  function initializeBreastFeatures() {
+    let diagramContainer
+    let svg
+    let popover
+    let addBtn, cancelBtn, removeBtn, saveBtn, clearAllBtn, toggleBordersBtn
+    let featuresListContainer
+    let featuresList
+    let statusMessage
+    let editingFeature = null
+    let currentRegion = null
+    let markerCounter = 1
+    let allFeatures = []
+    let temporaryMarker = null
+
+    // Prevent multiple initializations in NHS Prototype Kit environment
+    if (window.breastFeaturesInitialized) {
+        console.warn('Breast features already initialized. Skipping.')
+        return
+    }
+    window.breastFeaturesInitialized = true
+
+    // Get DOM elements
+    diagramContainer = document.querySelector('.breast-features-diagram-diagram-container')
+    svg = document.querySelector('.breast-features-diagram-diagram-svg')
+    popover = document.querySelector('.breast-features-diagram-popover')
+    console.log('DEBUG initializeBreastFeatures: diagramContainer:', diagramContainer)
+    console.log('DEBUG initializeBreastFeatures: svg:', svg)
+    addBtn = popover ? popover.querySelector('.nhsuk-button[data-action="add"]') : null
+    cancelBtn = popover ? popover.querySelector('.nhsuk-button[data-action="cancel"]') : null
+    removeBtn = popover ? popover.querySelector('.nhsuk-button[data-action="remove"]') : null
+    saveBtn = document.querySelector('#saveBtn')
+    toggleBordersBtn = document.querySelector('#toggleBordersBtn')
+    clearAllBtn = document.querySelector('#clearAllFeaturesLink')
+    featuresListContainer = document.querySelector('#featuresListContainer')
+    featuresList = document.querySelector('#featuresList')
+    statusMessage = document.querySelector('#status-message')
+
+    console.log('DEBUG: All elements found:', {
+        toggleBordersBtn: toggleBordersBtn,
+        saveBtn: saveBtn,
+        clearAllBtn: clearAllBtn,
+        featuresListContainer: featuresListContainer,
+        featuresList: featuresList
+    })
+
+    if (!svg || !popover || !diagramContainer) {
+        console.error('One or more required elements not found:', { svg, popover, diagramContainer })
+        return
+    }
+
+    // Debug: Check if the button exists anywhere on the page
+    console.log('DEBUG: All buttons on page:', document.querySelectorAll('button'))
+    console.log('DEBUG: Button with toggleBordersBtn id:', document.getElementById('toggleBordersBtn'))
+
+    // Event listener for SVG clicks (replaces region-based clicking)
+    svg.addEventListener('click', handleSvgClick)
+
+    // Popover action button listeners
+    if (addBtn) addBtn.addEventListener('click', addFeature)
+    if (cancelBtn) cancelBtn.addEventListener('click', closePopover)
+    if (removeBtn) removeBtn.addEventListener('click', removeFeature)
+    if (saveBtn) saveBtn.addEventListener('click', saveAllFeatures)
+    if (clearAllBtn) clearAllBtn.addEventListener('click', clearAllFeatures)
+
+    // Toggle borders button listener
+console.log('DEBUG: toggleBordersBtn found:', toggleBordersBtn)
+if (toggleBordersBtn) {
+    console.log('DEBUG: Adding click listener to borders button')
+    toggleBordersBtn.addEventListener('click', function(e) {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('DEBUG: Borders button clicked!')
+        const anatomicalRegions = document.querySelector('#anatomical-regions')
+        console.log('DEBUG: anatomicalRegions found:', anatomicalRegions)
+        console.log('DEBUG: anatomicalRegions current classes:', anatomicalRegions.className)
+        console.log('DEBUG: anatomicalRegions current style:', anatomicalRegions.style.opacity)
+
+        if (anatomicalRegions.classList.contains('show-borders')) {
+            anatomicalRegions.classList.remove('show-borders')
+            this.textContent = 'Show location borders'
+            console.log('DEBUG: Hiding location borders - removed show-borders class')
+
+            // Force hide all regions by setting style directly
+            const allRegions = anatomicalRegions.querySelectorAll('.anatomical-region')
+            allRegions.forEach(region => {
+                region.style.opacity = '0'
+            })
+        } else {
+            anatomicalRegions.classList.add('show-borders')
+            this.textContent = 'Hide location borders'
+            console.log('DEBUG: Showing location borders - added show-borders class')
+
+            // Force show all regions by setting style directly
+            const allRegions = anatomicalRegions.querySelectorAll('.anatomical-region')
+            allRegions.forEach(region => {
+                region.style.opacity = '1'
+                region.style.strokeDasharray = '5,5'
+                region.style.strokeWidth = '1px'
+                region.style.stroke = '#4c6272'
+                region.style.fill = 'none'
+            })
+        }
+
+        // Force check all individual regions
+        const allRegions = anatomicalRegions.querySelectorAll('.anatomical-region')
+        console.log('DEBUG: Found', allRegions.length, 'anatomical regions')
+        allRegions.forEach((region, index) => {
+            console.log(`DEBUG: Region ${index}:`, region.getAttribute('data-region'), region.getAttribute('data-side'))
+            console.log(`DEBUG: Region ${index} computed style:`, window.getComputedStyle(region).opacity)
+        })
+    })
+} else {
+    console.log('DEBUG: toggleBordersBtn NOT found')
+}
+
+    // Setup conditional reveals - handled by NHS prototype kit automatically
+
+    // Close popover if click outside
+    document.addEventListener('click', function(e) {
+        if (popover && popover.style.display === 'block' &&
+            !popover.contains(e.target) &&
+            !svg.contains(e.target) &&
+            !e.target.classList.contains('breast-features-diagram-marker')) {
+            closePopover()
+        }
+    })
+
+    // --- Core Functions ---
+
+    function createTemporaryMarker(svgX, svgY) {
+        // Remove any existing temporary marker
+        removeTemporaryMarker()
+
+        temporaryMarker = document.createElement('div')
+        temporaryMarker.className = 'breast-features-diagram-marker breast-features-diagram-marker--temporary'
+        temporaryMarker.innerText = '?'
+
+        positionMarkerAtSvgCoords(temporaryMarker, svgX, svgY)
+        diagramContainer.appendChild(temporaryMarker)
+
+        console.log('Temporary marker created at:', svgX, svgY)
+    }
+
+    function removeTemporaryMarker() {
+        if (temporaryMarker) {
+            temporaryMarker.remove()
+            temporaryMarker = null
+            console.log('Temporary marker removed')
+        }
+    }
+
+    function handleSvgClick(e) {
+        // Allow border toggle to work - don't interfere with anatomical region visibility
+        if (e.target.classList.contains('anatomical-region')) {
+            console.log('DEBUG: Clicked on anatomical region:', e.target.getAttribute('data-region'))
+            // Don't return early - let the region click through for adding features
+        }
+
+        // Only handle clicks directly on the SVG or anatomical regions, not on existing markers
+        if (e.target.classList.contains('breast-features-diagram-marker')) {
+            return // Let marker handle its own clicks
+        }
+
+        e.preventDefault()
+        e.stopPropagation()
+
+        // Get the exact click coordinates relative to the SVG
+        const svgRect = svg.getBoundingClientRect()
+        const clickX = e.clientX - svgRect.left
+        const clickY = e.clientY - svgRect.top
+
+        // Convert to SVG coordinate system (793 x 320 viewBox)
+        const svgX = (clickX / svgRect.width) * 793
+        const svgY = (clickY / svgRect.height) * 320
+
+        console.log('SVG clicked at pixel coords:', clickX, clickY)
+        console.log('Converted to SVG coords:', svgX, svgY)
+
+        // Determine which anatomical region this click falls into
+        const regionInfo = determineRegionFromCoordinates(svgX, svgY)
+
+        if (!regionInfo) {
+            console.warn('Click outside valid breast areas')
+            return
+        }
+
+        currentRegion = {
+            name: regionInfo.region,
+            side: regionInfo.side,
+            centerX: svgX,  // Use exact click position
+            centerY: svgY,  // Use exact click position
+            element: null
+        }
+
+        console.log('Region determined:', regionInfo.region, regionInfo.side)
+        console.log('Exact position will be:', svgX, svgY)
+
+        // Create temporary marker
+        createTemporaryMarker(svgX, svgY)
+
+        // Show popover at mouse position
+        showPopover(e.clientX, e.clientY)
+        editingFeature = null
+    }
+
+    function determineRegionFromCoordinates(svgX, svgY) {
+        // Define breast boundaries more accurately
+        const centerLine = 396.5 // Middle of the 793-width SVG
+
+        // Basic boundary checks
+        if (svgY < 2 || svgY > 318) {
+            return null // Outside main diagram
+        }
+
+        // Upper chest area
+        if (svgY <= 50 && svgX > 50 && svgX < 743) {
+            return { region: 'upper chest', side: svgX < centerLine ? 'right' : 'left' }
+        }
+
+        // Determine side first
+        let side = 'center'
+        if (svgX < 385) {
+            side = 'right'
+        } else if (svgX > 408) {
+            side = 'left'
+        } else {
+            // Center region (midline/sternum area)
+            if (svgY < 240) {
+                return { region: 'midline', side: 'center' }
+            } else {
+                return { region: 'lower sternum', side: 'center' }
+            }
+        }
+
+        // For right side
+       if (side === 'right') {
+    // Check lateral chest wall (far left edge)
+    if (svgX < 120 && svgY > 120) {
+        return { region: 'lateral chest wall', side: 'right' }
+    }
+
+ // Check if in axilla area (full rectangular area in upper corner)
+if (svgX >= 2 && svgX <= 120 && svgY >= 2 && svgY <= 100) {
+    return { region: 'axilla', side: 'right' }
+}
+
+            // Upper regions - refined boundaries
+            if (svgY < 135) {
+                if (svgX < 200) return { region: 'upper outer', side: 'right' }
+                if (svgX < 290) return { region: 'upper central', side: 'right' }
+                return { region: 'upper inner', side: 'right' }
+            }
+
+            // Middle regions (around nipple level) - more precise
+            if (svgY >= 135 && svgY <= 185) {
+                if (svgX < 195) return { region: 'lateral to nipple', side: 'right' }
+                if (svgX < 305) return { region: 'central', side: 'right' }
+                return { region: 'medial to nipple', side: 'right' }
+            }
+
+            // Lower regions - refined based on expert boundaries
+            if (svgY > 185 && svgY < 265) {
+                if (svgX < 175) return { region: 'lower lateral', side: 'right' }
+                if (svgX < 275) return { region: 'lower outer', side: 'right' }
+                if (svgX < 340) return { region: 'lower central', side: 'right' }
+                return { region: 'lower inner', side: 'right' }
+            }
+
+            // Inframammary fold
+            if (svgY >= 265 && svgY < 295) {
+                return { region: 'inframammary fold', side: 'right' }
+            }
+        }
+
+        // For left side, mirror the right side logic
+        if (side === 'left') {
+    // Check lateral chest wall (far right edge)
+    if (svgX > 673 && svgY > 120) {
+        return { region: 'lateral chest wall', side: 'left' }
+    }
+
+  // Check if in axilla area (full rectangular area in upper corner)
+if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100) {
+    return { region: 'axilla', side: 'left' }
+}
+
+            // Middle regions (around nipple level) - mirrored precision
+            if (svgY >= 135 && svgY <= 185) {
+                if (svgX > 598) return { region: 'lateral to nipple', side: 'left' }
+                if (svgX > 488) return { region: 'central', side: 'left' }
+                return { region: 'medial to nipple', side: 'left' }
+            }
+
+            // Lower regions - mirrored refinements
+            if (svgY > 185 && svgY < 265) {
+                if (svgX > 588) return { region: 'lower lateral', side: 'left' }
+                if (svgX > 513) return { region: 'lower outer', side: 'left' }
+                if (svgX > 453) return { region: 'lower central', side: 'left' }
+                return { region: 'lower inner', side: 'left' }
+            }
+
+            // Inframammary fold
+            if (svgY >= 265 && svgY < 295) {
+                return { region: 'inframammary fold', side: 'left' }
+            }
+        }
+
+        return null
+    }
+
+    function showPopover(clickX, clickY) {
+        console.log('DEBUG: showPopover called with:', clickX, clickY)
+        if (!popover || !currentRegion) {
+            console.log('DEBUG: Missing popover or currentRegion:', {popover: !!popover, currentRegion: !!currentRegion})
+            return
+        }
+
+        console.log('DEBUG: Setting popover visible')
+        // Force the popover to be visible
+        popover.style.display = 'block'
+        popover.style.visibility = 'visible'
+        popover.style.opacity = '1'
+        popover.style.position = 'fixed'
+        popover.style.zIndex = '9999'
+
+        resetPopoverForm()
+
+        // Update region label
+        updateRegionLabel()
+
+        // Wait a moment for the popover to render, then position it
+        setTimeout(() => {
+            const popoverRect = popover.getBoundingClientRect()
+            let popoverLeft = clickX + 20
+            let popoverTop = clickY - popoverRect.height / 2
+
+            // Adjust position to stay within viewport
+            if (popoverLeft + popoverRect.width > window.innerWidth) {
+                popoverLeft = window.innerWidth - popoverRect.width - 10
+            }
+            if (popoverTop < 0) {
+                popoverTop = 10
+            }
+            if (popoverTop + popoverRect.height > window.innerHeight) {
+                popoverTop = window.innerHeight - popoverRect.height - 10
+            }
+            if (popoverLeft < 0) {
+                popoverLeft = 10
+            }
+
+            popover.style.left = popoverLeft + 'px'
+            popover.style.top = popoverTop + 'px'
+
+            // Focus the popover to ensure it's accessible
+            popover.focus()
+
+            console.log('Popover positioned at:', popoverLeft, popoverTop)
+            console.log('Popover display:', popover.style.display)
+            console.log('Popover visibility:', popover.style.visibility)
+        }, 10)
+    }
+
+    function updateRegionLabel() {
+        const regionLabel = document.querySelector('#regionLabel')
+        if (!regionLabel || !currentRegion) return
+
+        if (currentRegion.side === 'center') {
+            regionLabel.textContent = currentRegion.name.charAt(0).toUpperCase() + currentRegion.name.slice(1)
+        } else {
+            regionLabel.textContent = `${currentRegion.side.charAt(0).toUpperCase() + currentRegion.side.slice(1)} ${currentRegion.name}`
+        }
+    }
+
+    function resetPopoverForm() {
+        if (!popover) return
+
+        const popoverCaption = popover.querySelector('#popoverCaption')
+        const popoverHeading = popover.querySelector('#popoverHeading')
+
+        if (popoverCaption) {
+            popoverCaption.innerText = 'Add new feature'
+        }
+        if (popoverHeading) {
+            popoverHeading.innerText = 'What is the feature?'
+        }
+
+        addBtn.innerText = 'Add'
+        removeBtn.style.display = 'none'
+
+        const radios = popover.querySelectorAll('input[name="feature"]')
+        radios.forEach(radio => radio.checked = false)
+
+        const customInput = document.querySelector('#customLabel')
+        if (customInput) {
+            customInput.value = ''
+        }
+
+        const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+        if (conditionalDiv) {
+            conditionalDiv.classList.remove('nhsuk-radios__conditional--revealed')
+        }
+    }
+
+    // Setup conditional reveals for radio buttons - handled by NHS prototype kit
+
+    function createPermanentMarker(region, side, text, number, featureId, exactX, exactY) {
+        console.log('=== createPermanentMarker START ===')
+        console.log('Received parameters:', {region, side, text, number, featureId, exactX, exactY})
+
+        const marker = document.createElement('div')
+        marker.className = 'breast-features-diagram-marker'
+        marker.innerText = number
+        marker.setAttribute('data-id', number)
+        marker.setAttribute('data-region', region)
+        marker.setAttribute('data-side', side)
+        marker.setAttribute('data-feature-id', featureId)
+
+        // Use exact coordinates if provided, otherwise fall back to region center
+        if (exactX !== undefined && exactY !== undefined) {
+            positionMarkerAtSvgCoords(marker, exactX, exactY)
+        } else {
+            positionMarkerInRegion(marker, region, side)
+        }
+
+        diagramContainer.appendChild(marker)
+        setupMarkerInteraction(marker)
+
+        console.log('=== createPermanentMarker END ===')
+        return marker
+    }
+
+    function positionMarkerInRegion(marker, regionName, side) {
+        // Find the corresponding region element (fallback for old data)
+        const regionElement = svg.querySelector(`[data-region="${regionName}"][data-side="${side}"]`)
+        if (!regionElement) {
+            console.warn('Region element not found:', regionName, side)
+            return
+        }
+
+        const centerX = parseFloat(regionElement.getAttribute('data-center-x'))
+        const centerY = parseFloat(regionElement.getAttribute('data-center-y'))
+
+        console.log(`Positioning marker for ${side} ${regionName} at SVG coords:`, centerX, centerY)
+
+        positionMarkerAtSvgCoords(marker, centerX, centerY)
+    }
+
+    function positionMarkerAtSvgCoords(marker, svgX, svgY) {
+        console.log('--- positionMarkerAtSvgCoords function called ---')
+        const containerRect = diagramContainer.getBoundingClientRect()
+        const svgRect = svg.getBoundingClientRect()
+
+        console.log('Input svgX:', svgX, 'svgY:', svgY)
+
+        const svgOffsetX = svgRect.left - containerRect.left
+        const svgOffsetY = svgRect.top - containerRect.top
+
+        const pixelX = (svgX / 793) * svgRect.width
+        const pixelY = (svgY / 320) * svgRect.height
+
+        const markerSizeOffset = 20
+        const finalLeft = svgOffsetX + pixelX - markerSizeOffset
+        const finalTop = svgOffsetY + pixelY - markerSizeOffset
+
+        marker.style.left = finalLeft + 'px'
+        marker.style.top = finalTop + 'px'
+        marker.style.position = 'absolute'
+        marker.style.zIndex = '102'
+
+        console.log('Final marker position:', marker.style.left, marker.style.top)
+    }
+
+    function setupMarkerInteraction(markerElement) {
+        let isDragging = false
+        let dragStartX, dragStartY
+        let elementStartX, elementStartY
+        let dragThreshold = 5
+
+        markerElement.addEventListener('mousedown', function(e) {
+            e.preventDefault()
+            e.stopPropagation()
+
+            isDragging = false
+            dragStartX = e.clientX
+            dragStartY = e.clientY
+            elementStartX = parseInt(markerElement.style.left) || 0
+            elementStartY = parseInt(markerElement.style.top) || 0
+
+            document.addEventListener('mousemove', handleMouseMove)
+            document.addEventListener('mouseup', handleMouseUp)
+
+            markerElement.classList.add('dragging')
+        })
+
+        function handleMouseMove(e) {
+            const currentX = e.clientX
+            const currentY = e.clientY
+
+            const dx = Math.abs(currentX - dragStartX)
+            const dy = Math.abs(currentY - dragStartY)
+
+            if (!isDragging && (dx > dragThreshold || dy > dragThreshold)) {
+                isDragging = true
+            }
+
+            if (isDragging) {
+                const newLeft = elementStartX + (currentX - dragStartX)
+                const newTop = elementStartY + (currentY - dragStartY)
+                markerElement.style.left = newLeft + 'px'
+                markerElement.style.top = newTop + 'px'
+            }
+        }
+
+        function handleMouseUp(e) {
+            document.removeEventListener('mousemove', handleMouseMove)
+            document.removeEventListener('mouseup', handleMouseUp)
+            markerElement.classList.remove('dragging')
+
+            if (isDragging) {
+                updateFeaturePosition(markerElement)
+            } else {
+                // Prevent the click from bubbling up to document level
+                e.preventDefault()
+                e.stopPropagation()
+
+                const featureId = parseInt(markerElement.getAttribute('data-feature-id'))
+                const feature = allFeatures.find(f => f.id === featureId)
+                if (feature) {
+                    editFeature(feature, e.clientX, e.clientY)
+                }
+            }
+            isDragging = false
+        }
+    }
+
+    function updateFeaturePosition(markerElement) {
+        // Convert marker position back to SVG coordinates
+        const containerRect = diagramContainer.getBoundingClientRect()
+        const svgRect = svg.getBoundingClientRect()
+        const markerRect = markerElement.getBoundingClientRect()
+
+        // Get marker center position relative to container
+        const markerCenterX = markerRect.left + markerRect.width / 2 - containerRect.left
+        const markerCenterY = markerRect.top + markerRect.height / 2 - containerRect.top
+
+        // Convert to SVG coordinates
+        const svgOffsetX = svgRect.left - containerRect.left
+        const svgOffsetY = svgRect.top - containerRect.top
+
+        const relativeX = markerCenterX - svgOffsetX
+        const relativeY = markerCenterY - svgOffsetY
+
+        const svgX = (relativeX / svgRect.width) * 793
+        const svgY = (relativeY / svgRect.height) * 320
+
+        // Determine new region
+        const regionInfo = determineRegionFromCoordinates(svgX, svgY)
+
+        if (regionInfo) {
+            const featureId = parseInt(markerElement.getAttribute('data-feature-id'))
+            const feature = allFeatures.find(f => f.id === featureId)
+
+            if (feature) {
+                feature.region = regionInfo.region
+                feature.side = regionInfo.side
+                feature.centerX = svgX
+                feature.centerY = svgY
+
+                // Snap to exact position
+                positionMarkerAtSvgCoords(markerElement, svgX, svgY)
+                updateFeaturesList()
+                console.log(`Feature ${feature.number} moved to ${regionInfo.side} ${regionInfo.region}`)
+            }
+        } else {
+            console.log('Marker dragged outside valid area - reverting to original position')
+            const featureId = parseInt(markerElement.getAttribute('data-feature-id'))
+            const feature = allFeatures.find(f => f.id === featureId)
+            if (feature) {
+                positionMarkerAtSvgCoords(markerElement, feature.centerX, feature.centerY)
+            }
+        }
+    }
+
+   function editFeature(feature, clickX, clickY) {
+        console.log('DEBUG: editFeature called with:', feature, clickX, clickY)
+
+        // Remove any temporary marker since we're editing an existing feature
+        removeTemporaryMarker()
+
+        editingFeature = feature
+        currentRegion = {
+            name: feature.region,
+            side: feature.side,
+            centerX: feature.centerX,
+            centerY: feature.centerY
+        }
+        console.log('DEBUG: Set currentRegion:', currentRegion)
+
+        if (!popover) {
+            console.error('Popover not found in editFeature')
+            return
+        }
+
+        console.log('DEBUG: About to call showPopover')
+        showPopover(clickX, clickY)
+
+        const popoverCaption = popover.querySelector('#popoverCaption')
+        const popoverHeading = popover.querySelector('#popoverHeading')
+
+        if (popoverCaption) {
+            popoverCaption.innerText = `Editing feature ${feature.number}`
+        }
+        if (popoverHeading) {
+            popoverHeading.innerText = 'What is the feature?'
+        }
+
+        if (addBtn) addBtn.innerText = 'Save changes'
+        if (removeBtn) removeBtn.style.display = 'inline-block'
+
+        const radios = popover.querySelectorAll('input[name="feature"]')
+        radios.forEach(radio => radio.checked = false)
+
+        let featureFound = false
+        const featureTextLower = feature.text.toLowerCase()
+
+        // Handle "Other: " prefixed features first
+        if (feature.text && feature.text.startsWith('Other: ')) {
+            const otherRadio = document.getElementById('feature-other-feature')
+            const customInput = document.querySelector('#customLabel')
+            const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+
+            if (otherRadio) {
+                otherRadio.checked = true
+                featureFound = true
+
+                if (conditionalDiv) {
+                    conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
+                }
+                if (customInput) {
+                    customInput.value = feature.text.replace('Other: ', '')
+                }
+            }
+        } else {
+            // Match standard feature types
+            radios.forEach(radio => {
+                let shouldCheck = false
+
+                if (radio.value === 'mole' && featureTextLower === 'mole') {
+                    shouldCheck = true
+                } else if (radio.value === 'wart' && featureTextLower === 'wart') {
+                    shouldCheck = true
+                } else if (radio.value === 'breast-reduction-scar' && featureTextLower === 'breast reduction scar') {
+                    shouldCheck = true
+                } else if (radio.value === 'other-scar' && featureTextLower === 'other scar') {
+                    shouldCheck = true
+                }
+
+                if (shouldCheck) {
+                    radio.checked = true
+                    featureFound = true
+                }
+            })
+
+            // If no standard match found, treat as "other feature"
+            if (!featureFound) {
+                const otherRadio = document.getElementById('feature-other-feature')
+                const customInput = document.querySelector('#customLabel')
+                const conditionalDiv = document.querySelector('.nhsuk-radios__conditional')
+
+                if (otherRadio) {
+                    otherRadio.checked = true
+                    featureFound = true
+
+                    if (conditionalDiv) {
+                        conditionalDiv.classList.add('nhsuk-radios__conditional--revealed')
+                    }
+                    if (customInput) {
+                        customInput.value = feature.text
+                    }
+                }
+            }
+        }
+    }
+
+    function addFeature() {
+        const selectedFeatureRadio = popover.querySelector('input[name="feature"]:checked')
+        let featureText = ''
+
+        if (!selectedFeatureRadio) {
+            showStatusMessage('Please select a feature type.', 'error')
+            return
+        }
+
+        if (selectedFeatureRadio.value === 'other-feature') {
+            const customLabel = document.querySelector('#customLabel') ? document.querySelector('#customLabel').value.trim() : ''
+            if (!customLabel) {
+                showStatusMessage('Please enter text for "Other" feature.', 'error')
+                return
+            }
+            featureText = `Other: ${customLabel}`
+        } else if (selectedFeatureRadio.value === 'breast-reduction-scar') {
+            featureText = 'Breast reduction scar'
+        } else if (selectedFeatureRadio.value === 'other-scar') {
+            featureText = 'Other scar'
+        } else if (selectedFeatureRadio.value === 'mole') {
+            featureText = 'Mole'
+        } else if (selectedFeatureRadio.value === 'wart') {
+            featureText = 'Wart'
+        } else {
+            featureText = selectedFeatureRadio.value.charAt(0).toUpperCase() + selectedFeatureRadio.value.slice(1)
+        }
+
+        if (editingFeature) {
+            editingFeature.text = featureText
+            updateFeaturesList()
+            editingFeature = null
+        } else if (currentRegion) {
+            // Remove temporary marker before creating permanent one
+            removeTemporaryMarker()
+
+            const newFeatureNumber = markerCounter++
+            const newFeature = {
+                id: allFeatures.length > 0 ? Math.max(...allFeatures.map(f => f.id)) + 1 : 1,
+                number: newFeatureNumber,
+                text: featureText,
+                region: currentRegion.name,
+                side: currentRegion.side,
+                centerX: currentRegion.centerX,  // Exact click coordinates
+                centerY: currentRegion.centerY   // Exact click coordinates
+            }
+
+            allFeatures.push(newFeature)
+            updateFeaturesCount()
+
+            // Pass exact coordinates to createPermanentMarker
+            const markerElement = createPermanentMarker(
+                newFeature.region,
+                newFeature.side,
+                newFeature.text,
+                newFeature.number,
+                newFeature.id,
+                newFeature.centerX,  // exact X coordinate
+                newFeature.centerY   // exact Y coordinate
+            )
+            newFeature.element = markerElement
+
+            updateFeaturesList()
+
+            currentRegion = null
+        }
+
+        closePopover()
+    }
+
+    function removeFeature() {
+        if (!editingFeature) return
+
+        allFeatures = allFeatures.filter(f => f.id !== editingFeature.id)
+        updateFeaturesCount()
+        if (editingFeature.element) {
+            editingFeature.element.remove()
+        }
+        updateFeaturesList()
+        closePopover()
+        editingFeature = null
+    }
+
+    function closePopover() {
+        if (popover) {
+            popover.style.display = 'none'
+            popover.style.visibility = 'hidden'
+            popover.style.opacity = '0'
+        }
+
+        // Remove temporary marker when closing popover
+        removeTemporaryMarker()
+
+        currentRegion = null
+        editingFeature = null
+    }
+
+    function updateFeaturesList() {
+        if (!featuresListContainer || !featuresList) {
+            console.warn('Features list container or list element not found.')
+            return
+        }
+
+        if (allFeatures.length === 0) {
+            featuresListContainer.style.display = 'none'
+            return
+        }
+
+        featuresListContainer.style.display = 'block'
+        featuresList.innerHTML = ''
+
+        allFeatures.sort((a, b) => a.number - b.number)
+
+        const ul = document.createElement('ul')
+        ul.className = 'nhsuk-list features-list-items'
+
+        allFeatures.forEach(feature => {
+            const listItem = document.createElement('li')
+            listItem.className = 'feature-item'
+            listItem.style.cursor = 'pointer'
+            listItem.setAttribute('data-feature-id', feature.id)
+
+            let locationText = ''
+            if (feature.side === 'center') {
+                locationText = feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
+            } else {
+                locationText = `${feature.side.charAt(0).toUpperCase() + feature.side.slice(1)} ${feature.region}`
+            }
+
+           listItem.innerHTML = `
+            <div class="feature-left">
+                <div class="feature-number">${feature.number}</div>
+                <div class="feature-label">${feature.text}</div>
+            </div>
+            <div class="feature-position"><span class="nhsuk-tag nhsuk-tag--white">${locationText}</span></div>
+        `
+
+            listItem.addEventListener('click', function(e) {
+                console.log('DEBUG: Key item clicked!')
+                e.preventDefault()
+                e.stopPropagation()
+
+                const featureId = parseInt(this.getAttribute('data-feature-id'))
+                const feature = allFeatures.find(f => f.id === featureId)
+                console.log('DEBUG: Found feature:', feature)
+
+                if (feature) {
+                    let centerX, centerY
+
+                    // Try to get marker position, fall back to click position if not available
+                    if (feature.element) {
+                        try {
+                            const markerRect = feature.element.getBoundingClientRect()
+                            centerX = markerRect.left + markerRect.width / 2
+                            centerY = markerRect.top + markerRect.height / 2
+                            console.log('DEBUG: Using marker position:', centerX, centerY)
+                        } catch (error) {
+                            console.warn('Could not get marker position, using fallback')
+                            centerX = e.clientX
+                            centerY = e.clientY
+                            console.log('DEBUG: Using fallback position:', centerX, centerY)
+                        }
+                    } else {
+                        // Use the click position as fallback
+                        centerX = e.clientX
+                        centerY = e.clientY
+                        console.log('DEBUG: No marker element, using click position:', centerX, centerY)
+                    }
+
+                    console.log('DEBUG: About to call editFeature')
+                    editFeature(feature, centerX, centerY)
+                }
+            })
+
+            ul.appendChild(listItem)
+
+            if (feature.element) {
+                feature.element.innerText = feature.number
+            }
+        })
+
+        featuresList.appendChild(ul)
+    }
+
+    function clearAllFeatures(e) {
+        e.preventDefault()
+
+        if (allFeatures.length === 0) {
+            return
+        }
+
+        if (confirm(`Are you sure you want to remove all ${allFeatures.length} features? This cannot be undone.`)) {
+            allFeatures.forEach(feature => {
+                if (feature.element) {
+                    feature.element.remove()
+                }
+            })
+
+            allFeatures = []
+            markerCounter = 1
+            updateFeaturesCount()
+
+            updateFeaturesList()
+
+            try {
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.removeItem('breastFeatures')
+                }
+            } catch (error) {
+                console.warn('Could not clear session storage:', error)
+            }
+        }
+    }
+
+    function saveAllFeatures() {
+        if (allFeatures.length === 0) {
+            return
+        }
+
+        try {
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('breastFeatures', JSON.stringify({
+                    features: allFeatures.map(f => ({
+                        id: f.id,
+                        number: f.number,
+                        text: f.text,
+                        region: f.region,
+                        side: f.side,
+                        centerX: f.centerX,
+                        centerY: f.centerY
+                    }))
+                }))
+            }
+            setTimeout(() => {
+                if (confirm('Features saved successfully! Would you like to continue to the next step?')) {
+                    const returnUrl = "{{ formAction }}"
+                    if (returnUrl) {
+                        window.location.href = returnUrl
+                    } else {
+                        console.warn('No return URL defined for formAction.')
+                    }
+                }
+            }, 100)
+        } catch (error) {
+            console.error('Error saving features:', error)
+        }
+    }
+
+    function showStatusMessage(message, type) {
+        if (!statusMessage) {
+            console.warn('Status message element not found.')
+            return
+        }
+        statusMessage.innerText = message
+        statusMessage.classList.remove('nhsuk-u-visually-hidden', 'status-success', 'status-error')
+        if (type === 'success') {
+            statusMessage.classList.add('status-success')
+        } else if (type === 'error') {
+            statusMessage.classList.add('status-error')
+        }
+        statusMessage.focus()
+        setTimeout(() => {
+            statusMessage.classList.add('nhsuk-u-visually-hidden')
+        }, 5000)
+    }
+
+    function updateFeaturesCount() {
+        const countInput = document.querySelector('#breastFeaturesCount')
+        if (countInput) {
+            countInput.value = allFeatures.length
+            console.log('Updated features count to:', allFeatures.length)
+        }
+    }
+
+    function loadSavedFeatures() {
+        try {
+            const savedData = sessionStorage.getItem('breastFeatures')
+            if (savedData) {
+                const data = JSON.parse(savedData)
+                if (data.features && Array.isArray(data.features)) {
+                    allFeatures = data.features.filter(f => f.region !== undefined && f.side !== undefined)
+
+                    allFeatures.forEach(savedFeature => {
+                        // Use exact coordinates if available, otherwise fall back to region centers
+                        const markerElement = createPermanentMarker(
+                            savedFeature.region,
+                            savedFeature.side,
+                            savedFeature.text,
+                            savedFeature.number,
+                            savedFeature.id,
+                            savedFeature.centerX,  // exact coordinates
+                            savedFeature.centerY
+                        )
+                        savedFeature.element = markerElement
+                        if (savedFeature.id >= markerCounter) {
+                            markerCounter = savedFeature.id + 1
+                        }
+                    })
+                    if (allFeatures.length > 0) {
+                        updateFeaturesList()
+                        updateFeaturesCount()
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('Could not load saved features:', error)
+        }
+    }
+
+    // Initialize: Load any saved features
+    loadSavedFeatures()
+
+    // Handle window resize to reposition markers
+    window.addEventListener('resize', function() {
+        allFeatures.forEach(feature => {
+            if (feature.element && feature.centerX !== undefined && feature.centerY !== undefined) {
+                positionMarkerAtSvgCoords(feature.element, feature.centerX, feature.centerY)
+            }
+        })
+    })
+
+    // Prevent form submission on Enter key in popover
+    if (popover) {
+        popover.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault()
+                addFeature()
+            }
+        })
+    }
+
+    // Keyboard accessibility
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && popover && popover.style.display === 'block') {
+            closePopover()
+        }
+    })
+
+} // End of initializeBreastFeatures
+
+// Try multiple initialization methods for NHS Prototype Kit compatibility
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeBreastFeatures)
+} else {
+    initializeBreastFeatures()
+}
+
+// Also try after window load in case NHS scripts interfere
+window.addEventListener('load', function() {
+    if (!window.breastFeaturesInitialized) {
+        console.log('Attempting initialization after window load...')
+        initializeBreastFeatures()
+    }
+})
+</script>
+
+
+
+{% endblock %}

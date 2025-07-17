@@ -8,9 +8,22 @@
 
 {% set allowEdits = allowEdits | default(true) %}
 
+{% set backText %}
+  {% if referrerChain %}
+    {% if referrerChain | stringIncludes("/events/") %}
+      Back to appointment
+    {% else %}
+      Back to clinic
+    {% endif %}
+  {% else %}
+    Back to participants
+  {% endif %}
+
+{% endset %}
+
 {% set back = {
   href: "/participants" | getReturnUrl(referrerChain),
-  text: "Back to participants" if not referrerChain else "Back to appointment"
+  text: backText
 } %}
 
 {% block pageContent %}

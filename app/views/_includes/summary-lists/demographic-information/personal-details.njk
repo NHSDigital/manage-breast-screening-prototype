@@ -4,5 +4,8 @@
   {% include "_includes/summary-lists/rows/full-name.njk" %}
   {% include "_includes/summary-lists/rows/gender.njk" %}
   {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+  {% if noLastBorder %}
+    {% set noBorder = true %}
+  {% endif %}
   {% include "_includes/summary-lists/rows/ethnicity.njk" %}
 {% endcall %}

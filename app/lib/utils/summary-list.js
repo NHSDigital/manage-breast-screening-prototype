@@ -26,21 +26,21 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
   // Helper function to process a single row
   const processRow = (row) => {
     const value = row.value?.text || row.value?.html
-    const hasAction = row.actions && row.actions.items && row.actions.items.length > 0
 
-    // If value is not empty or there are no existing actions, return row as is
-    if (!isEmpty(value) || !hasAction) return row
+    // Check for valid actions - action items should be objects with href or other meaningful properties
+    const hasAction = row.actions &&
+                     row.actions.items &&
+                     row.actions.items.filter(item =>
+                       item &&
+                       typeof item === 'object' &&
+                       (item.href || item.text)
+                     ).length > 0
 
-    if (showNotProvidedText) {
-      // Show "Not provided" in grey and keep actions
-      return {
-        ...row,
-        value: {
-          html: `<span class="app-text-grey">Not provided</span>`
-        }
-        // Keep existing actions
-      }
-    } else {
+    // If value is not empty, return row as-is
+    if (!isEmpty(value)) return row
+
+    // Value is empty - always show something
+    if (hasAction && !showNotProvidedText) {
       // Default behavior - show "Enter X" link and remove actions
       const keyText = row.actions?.items?.[0]?.visuallyHiddenText || row.key.text.toLowerCase()
       const href = row.actions?.items?.[0]?.href || '#'
@@ -53,6 +53,15 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
         actions: {
           items: []
         }
+      }
+    } else {
+      // Show "Not provided" - either because showNotProvidedText is true OR there are no actions
+      return {
+        ...row,
+        value: {
+          html: `<span class="app-text-grey">Not provided</span>`
+        }
+        // Keep existing actions if they exist (for showNotProvidedText case)
       }
     }
   }
@@ -70,7 +79,6 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
   // Otherwise treat as single row object
   return processRow(input)
 }
-
 
 module.exports = {
   handleSummaryListMissingInformation

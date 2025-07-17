@@ -30,7 +30,8 @@
       ]
     },
     service: {
-      text: serviceName
+      text: serviceName,
+      href: "/"
     },
     navigation: {
       items: [
@@ -94,6 +95,7 @@
   {{ clinic | log("Clinic data") }}
 {% endif %}
 
+{% if flash.error or flash.success or flash.info or flash.warning %}
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
 
@@ -145,13 +147,26 @@
     {% endif %}
   </div>
 </div>
+{% endif %}
 
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-full">
-    {% block pageNavigation %}
-    {% endblock pageNavigation %}
-  </div>
-</div>
+{# Awkwardly test if pageNavigation is set. This is a workaround for Nunjucks
+   not having a way to check if a block is defined or not.
+
+See related issues:
+https://github.com/mozilla/nunjucks/issues/135
+https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
+
+{% macro pageNavigationWrapper() %}
+  {% if caller() | length > 0 %}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {{ caller() }}
+      </div>
+    </div>
+  {% endif %}
+{% endmacro %}
+{% call pageNavigationWrapper() %}{% block pageNavigation %}{% endblock pageNavigation %}{% endcall %}
+
 {% if gridColumn != "none" %}
 <div class="nhsuk-grid-row">
   <div class="{{ gridColumn or 'nhsuk-grid-column-two-thirds' }}">
