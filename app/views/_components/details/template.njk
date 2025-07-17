@@ -1,3 +1,7 @@
+{# app/views/_components/details/template.njk #}
+
+{# Expanded from the NHS design system to support subtitle, contents summary, and status tag #}
+
 {% from "attributes.njk" import nhsukAttributes %}
 
 <div class="app-details__container">
@@ -14,7 +18,11 @@
           {{ params.subtitle | safe | trim | indent(4) }}
         </span>
       {% endif %}
-
+      {% if params.contentsSummary %}
+        <span class="app-details__contents-summary">
+          {{ params.contentsSummary | safe | trim | indent(4) }}
+        </span>
+      {% endif %}
     </summary>
 
     <div class="nhsuk-details__text">

@@ -22,10 +22,14 @@
   </p>
 
 
-    {# <button class="nhsuk-button nhsuk-button--secondary" id="toggleBordersBtn" type="button">
-    Show location borders
-    </button> #}
-
+  {{ button({
+    text: "Show location borders",
+    classes: "nhsuk-button--secondary",
+    attributes: {
+      id: "toggleBordersBtn"
+    },
+    type: "button"
+  }) }}
 
   <div class="breast-features-diagram-header">
     <h2 class="nhsuk-heading-m">Where is the feature?</h2>

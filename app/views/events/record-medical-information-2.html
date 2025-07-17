@@ -42,36 +42,45 @@
     id: "medical-information",
     classes: "nhsuk-expander",
     summaryText: "Medical history",
+    contentsSummary: "No information added",
     subtitle: "Including breast cancer, implants, prior proceedures and treatments",
     html: medicalHistoryHtml,
     status: "Incomplete"
   }) }}
 
+  {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+
+  {% set hasSymptoms = symptomsCount > 0 %}
+
+  {% if hasSymptoms %}
+    {% set symptomsContentsSummary = symptomsCount ~ (" symptom" | pluralise(symptomsCount)) ~ " recorded" %}
+  {% else %}
+    {% set symptomsContentsSummary = "No symptoms recorded" %}
+  {% endif %}
+
   {% set currentSymptomsHtml %}
     {% include "summary-lists/medical-information/symptoms/summary.njk" %}
 
-      {% set hasSymptoms = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-
-      {% if not hasSymptoms %}
-        {% set insetHtml %}
-          <p>No symptoms have been recorded for this participant.</p>
-        {% endset %}
-        {{ insetText({
-          html: insetHtml
-        }) }}
-      {% endif %}
-
-      {% set linkHref %}
-        {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl) }}
+    {% if not hasSymptoms %}
+      {% set insetHtml %}
+        <p>No symptoms have been recorded for this participant.</p>
       {% endset %}
+      {{ insetText({
+        html: insetHtml
+      }) }}
+    {% endif %}
 
-      {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
-        <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
-      </p> #}
+    {% set linkHref %}
+      {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl) }}
+    {% endset %}
 
-      {# Explicitly set referrer chain to the current url #}
-      {% set referrerChain = currentUrl %}
-      {% include "add-symptom-button-menu.njk" %}
+    {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
+      <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
+    </p> #}
+
+    {# Explicitly set referrer chain to the current url #}
+    {% set referrerChain = currentUrl %}
+    {% include "add-symptom-button-menu.njk" %}
   {% endset %}
 
 
@@ -80,9 +89,20 @@
     classes: "nhsuk-expander",
     summaryText: "Current symptoms",
     subtitle: "Details of any lumps, swelling, rashes or nipple changes",
+    contentsSummary: symptomsContentsSummary,
     html: currentSymptomsHtml,
     status: "Incomplete"
   }) }}
+
+  {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+
+  {% set hasBreastFeatures = breastFeaturesCount > 0 %}
+
+  {% if hasBreastFeatures %}
+    {% set breastFeaturesContentsSummary = breastFeaturesCount ~ (" breast feature" | pluralise(breastFeaturesCount)) ~ " recorded" %}
+  {% else %}
+    {% set breastFeaturesContentsSummary = "No breast features recorded" %}
+  {% endif %}
 
   {% set breastFeaturesHtml %}
     {% include "_includes/medical-information/breast-features.njk" %}
@@ -94,6 +114,7 @@
     summaryText: "Breast features",
     subtitle: "Significant scars, moles or warts that may appear on mammogram images",
     html: breastFeaturesHtml,
+    contentsSummary: breastFeaturesContentsSummary,
     status: "Incomplete"
   }) }}
 

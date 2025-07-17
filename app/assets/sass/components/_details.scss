@@ -1,3 +1,5 @@
+// app/assets/sass/components/_details.scss
+
 @use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
@@ -17,4 +19,16 @@
   padding-top: 8px;
   // padding: 4px 4px 4px 38px; // to match the line above
   color: $nhsuk-text-color;
+}
+
+.app-details__contents-summary {
+  display: block;
+  padding-top: 16px;
+  color: $nhsuk-secondary-text-color;
+  // font-size: 16px;
+}
+
+// Hide contents summary when details is expanded
+details[open] .app-details__contents-summary {
+  display: none;
 }
