@@ -17,137 +17,106 @@
     {{ pageHeading }}
   </h1>
 
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      {{ button({
+        text: "Nothing further to add",
+        classes: "nhsuk-u-margin-bottom-0"
+      }) }}
 
-      {% set medicalInformationHtml %}
-        {{ summaryList({
-          rows: [
-            {
-              key: {
-                text: "Breast cancer history"
-              },
-              value: {
-                html: valueHtml
-              },
-              actions: {
-                items: [
-                  {
-                    href: "#",
-                    text: "Change",
-                    visuallyHiddenText: "breast cancer history"
-                  }
-                ]
-              }
-            },
-            {
-              key: {
-                text: "Non-cancerous lump disagnoses"
-              },
-              value: {
-                html: valueHtml
-              },
-              actions: {
-                items: [
-                  {
-                    href: "#",
-                    text: "Change",
-                    visuallyHiddenText: "non-cancerous lump disagnoses"
-                  }
-                ]
-              }
-            },
-            {
-              key: {
-                text: "Other breast or chest proceedures"
-              },
-              value: {
-                html: valueHtml
-              },
-              actions: {
-                items: [
-                  {
-                    href: "#",
-                    text: "Change",
-                    visuallyHiddenText: "other breast or chest proceedures"
-                  }
-                ]
-              }
-            }
-          ]
-        } | handleSummaryListMissingInformation) }}
+      {# <p>
+        Selecting this confirms there is nothing further to record for the 4 remaining medical information sections
+      </p> #}
+    </div>
+  </div>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+  {% set medicalHistoryHtml %}
+    {% include "summary-lists/medical-information/medical-history.njk" %}
+  {% endset %}
+
+  {{ appDetails({
+    id: "medical-information",
+    classes: "nhsuk-expander",
+    summaryText: "Medical history",
+    subtitle: "Including breast cancer, implants, prior proceedures and treatments",
+    html: medicalHistoryHtml,
+    status: "Incomplete"
+  }) }}
+
+  {% set currentSymptomsHtml %}
+    {% include "summary-lists/medical-information/symptoms/summary.njk" %}
+
+      {% set hasSymptoms = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+
+      {% if not hasSymptoms %}
+        {% set insetHtml %}
+          <p>No symptoms have been recorded for this participant.</p>
+        {% endset %}
+        {{ insetText({
+          html: insetHtml
+        }) }}
+      {% endif %}
+
+      {% set linkHref %}
+        {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl) }}
       {% endset %}
 
-      {{ appDetails({
-        id: "medical-information",
-        classes: "nhsuk-expander",
-        summaryText: "Medical information",
-        subtitle: "Including breast cancer, implants, prior proceedures and treatments",
-        html: medicalInformationHtml,
-        status: "Incomplete"
-      }) }}
+      {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
+        <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
+      </p> #}
 
-      {% set currentHealthStatusHtml %}
-        {% include "summary-lists/medical-information/symptoms/summary.njk" %}
-
-          {% set hasSymptoms = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-
-          {% if not hasSymptoms %}
-            {% set insetHtml %}
-              <p>No symptoms have been recorded for this participant.</p>
-            {% endset %}
-            {{ insetText({
-              html: insetHtml
-            }) }}
-          {% endif %}
-
-          {% set linkHref %}
-            {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl) }}
-          {% endset %}
-
-          {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
-            <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
-          </p> #}
-
-          {# Explicitly set referrer chain to the current url #}
-          {% set referrerChain = currentUrl %}
-          {% include "add-symptom-button-menu.njk" %}
-      {% endset %}
+      {# Explicitly set referrer chain to the current url #}
+      {% set referrerChain = currentUrl %}
+      {% include "add-symptom-button-menu.njk" %}
+  {% endset %}
 
 
-      {{ appDetails({
-        id: "current-health-status",
-        classes: "nhsuk-expander",
-        summaryText: "Current health status",
-        subtitle: "Including symptoms, medications and pregnancy",
-        html: currentHealthStatusHtml,
-        status: "Incomplete"
-      }) }}
+  {{ appDetails({
+    id: "current-symptoms",
+    classes: "nhsuk-expander",
+    summaryText: "Current symptoms",
+    subtitle: "Details of any lumps, swelling, rashes or nipple changes",
+    html: currentSymptomsHtml,
+    status: "Incomplete"
+  }) }}
 
-      {{ appDetails({
-        id: "breast-features",
-        classes: "nhsuk-expander",
-        summaryText: "Breast features",
-        subtitle: "Including scars, moles, warts and lumps",
-        html: "Some content here",
-        status: "Incomplete"
-      }) }}
+  {% set breastFeaturesHtml %}
+    {% include "_includes/medical-information/breast-features.njk" %}
+  {% endset %}
 
-      {{ appDetails({
-        id: "other-medical-information",
-        classes: "nhsuk-expander",
-        summaryText: "Other medical information",
-        subtitle: "Mammographer notes or other relevant information",
-        html: "Some content here",
-        status: "Incomplete"
-      }) }}
+  {{ appDetails({
+    id: "breast-features",
+    classes: "nhsuk-expander",
+    summaryText: "Breast features",
+    subtitle: "Significant scars, moles or warts that may appear on mammogram images",
+    html: breastFeaturesHtml,
+    status: "Incomplete"
+  }) }}
 
-        <div class="nhsuk-form-group">
-          {{ button({
-            text: "Complete all and continue"
-          }) }}
-        </div>
+  {% set otherRelevantInformationHtml %}
+    {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
+  {% endset %}
 
-      {% include "screening-cannot-proceed-link.njk" %}
+  {{ appDetails({
+    id: "other-medical-information",
+    classes: "nhsuk-expander",
+    summaryText: "Other medical information",
+    subtitle: "Record factors that could affect breast density sich as HRT, pregnancy or breastfeeding, and mammographer notes",
+    html: otherRelevantInformationHtml,
+    status: "Incomplete"
+  }) }}
+
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Complete all and continue"
+    }) }}
+  </div>
+
+  {% include "screening-cannot-proceed-link.njk" %}
 
 
     <!-- Progress Summary - One third width -->
@@ -182,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Create button
       const button = document.createElement('button')
-      button.className = 'nhsuk-button nhsuk-button--secondary js-save-and-next'
+      button.className = 'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
       button.textContent = 'Mark as complete'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
