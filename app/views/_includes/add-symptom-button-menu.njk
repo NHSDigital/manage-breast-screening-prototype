@@ -1,6 +1,6 @@
 {% set methodUrl -%}
   /clinics/{{ clinicId }}/events/{{ eventId }}/medical-information/symptoms
-{% endset %}
+{%- endset %}
 
 {% if saveSymptomFirst == true %}
   {% set methodUrl = methodUrl ~ "/save?action=save-and-add&symptomType=" %}
