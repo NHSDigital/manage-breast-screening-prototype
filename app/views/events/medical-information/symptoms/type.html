@@ -7,7 +7,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './details' | urlWithReferrer(referrerChain) %}
+{% set formAction = './details' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {# {% set back = {
   href: "/clinics/" + clinicId,
@@ -36,7 +36,6 @@
       text: symptom
     }) %}
   {% endfor %}
-
 
   {{ radios({
     name: "event[symptomTemp][type]",

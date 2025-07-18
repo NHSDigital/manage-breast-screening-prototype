@@ -1,9 +1,11 @@
+
 {% set secondaryNavItems = [] %}
 
 {% for item in [
-  { id: 'all', label: 'Appointment details' },
-  { id: 'medical-information', label: 'Medical information' },
-  { id: 'images', label: 'Images' }
+  { id: 'identity', label: 'Identity' },
+  { id: 'eligibility', label: 'Eligibility' },
+  { id: 'record-medical-information-2', label: 'Medical info' },
+  { id: 'awaiting-images', label: 'Images' }
 ] %}
   {% set href -%}
     /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}
@@ -16,7 +18,6 @@
   }) %}
 
 {% endfor %}
-
 
 {{ appSecondaryNavigation({
   visuallyHiddenTitle: "Secondary menu",
