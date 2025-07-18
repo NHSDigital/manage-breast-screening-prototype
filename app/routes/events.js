@@ -376,6 +376,7 @@ module.exports = router => {
     const action = req.body.action || req.query.action // 'save' or 'save-and-add'
     const nextSymptomType = req.query.symptomType // camelCase symptom type
     const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
 
     // Save temp symptom to array
     if (data.event?.symptomTemp) {
@@ -491,11 +492,12 @@ module.exports = router => {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/add?symptomType=${nextSymptomType}${referrerChain ? '&referrerChain=' + referrerChain : ''}`)
       } else {
         // Fallback to general add page
-        res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/add`, referrerChain))
+        res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/add`, referrerChain, scrollTo))
       }
     } else {
       // Regular save - redirect back to medical information page
-      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain)
+      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
+      console.log('Redirecting to:', returnUrl, 'scrollTo:', scrollTo)
       res.redirect(returnUrl)
     }
   })
@@ -543,7 +545,7 @@ module.exports = router => {
 
     req.flash('success', 'Symptom deleted')
 
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain)
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain, req.query.scrollTo)
     res.redirect(returnUrl)
   })
 
@@ -577,12 +579,12 @@ module.exports = router => {
         }
 
         // Redirect to details page
-        return res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/details`, req.query.referrerChain))
+        return res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/details`, req.query.referrerChain, req.query.scrollTo))
       }
     }
 
     // No symptomType or invalid type - go to type selection page
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain))
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain, req.query.scrollTo))
   })
 
   // Specific route for imaging view

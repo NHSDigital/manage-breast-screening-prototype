@@ -19,6 +19,8 @@
     {{ pageHeading }}
   </h1>
 
+  <p><a href="/?foo=bar&baz=biz">Test link</a></p>
+
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
   <div class="nhsuk-grid-row">
@@ -36,6 +38,8 @@
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
+  {# Medical history #}
+
   {% set medicalHistoryHtml %}
     {% include "summary-lists/medical-information/medical-history.njk" %}
   {% endset %}
@@ -50,10 +54,14 @@
     status: "To review"
   }) }}
 
+  {# Symptoms #}
+
   {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
 
   {% set hasSymptoms = symptomsCount > 0 %}
+  {% set scrollTo = 'current-symptoms' %}
 
+  {# Show add symptom ui when nothing added and collapsed #}
   {% if hasSymptoms %}
     {% set symptomsContentsSummaryHtml %}
       <span class="nhsuk-u-secondary-text-color">
@@ -65,10 +73,11 @@
       <p class="nhsuk-u-secondary-text-color">
         0 symptoms recorded
       </p>
-      {# <p class="nhsuk-u-margin-bottom-0">
-        <a href="./medical-information/symptoms/add" class="js-expand-parent-section">Add a symptom</a>
-      </p> #}
+      <p class="nhsuk-u-margin-bottom-0">
+        <a href="{{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}" class="js-expand-parent-section">Add a symptom</a>
+      </p>
       {% set referrerChain = currentUrl %}
+
       {% include "add-symptom-button-menu.njk" %}
     {% endset %}
   {% endif %}
@@ -86,7 +95,7 @@
     {% endif %}
 
     {% set linkHref %}
-      {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl) }}
+      {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
     {% endset %}
 
     {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
@@ -109,13 +118,16 @@
     status: "To review"
   }) }}
 
-  {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+  {# Breast features #}
 
-  {{ breastFeaturesCount | log("Breast features count") }}
+  {% set scrollTo = 'breast-features' %}
+
+
+  {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
   {% set hasBreastFeatures = breastFeaturesCount > 0 %}
 
   {% set addBreastFeatureHref %}
-    {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl) }}
+    {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
   {% endset %}
 
   {% if hasBreastFeatures %}
@@ -124,14 +136,17 @@
         {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
       </span>
     {% endset %}
+
   {% else %}
-    {% set breastFeaturesContentsSummary = "No breast features recorded" %}
+
     {% set breastFeaturesContentsSummaryHtml %}
       <p class="nhsuk-u-secondary-text-color">
-        0 breast features recorded
+        No breast features recorded
       </p>
       <p class="nhsuk-u-margin-bottom-0">
-        <a href="{{ addBreastFeatureHref }}" class="js-expand-parent-section nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
+        <a href="{{ addBreastFeatureHref | safe }}" class="js-expand-parent-section nhsuk-link--no-visited-state">
+          Add a feature
+        </a>
       </p>
     {% endset %}
   {% endif %}
@@ -149,6 +164,10 @@
     contentsSummaryHtml: breastFeaturesContentsSummaryHtml,
     status: "To review"
   }) }}
+
+  {# Other relevant information #}
+
+  {% set scrollTo = 'other-relevant-information' %}
 
   {% set otherRelevantInformationHtml %}
     {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
@@ -168,18 +187,18 @@
     {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
   {% endif %}
 
-  {% if otherMedicalInformationCount > 0 %}
-    {% set otherMedicalInformationSummary = otherMedicalInformationCount ~ " other medical information recorded" %}
+  {% if otherRelevantInformationCount > 0 %}
+    {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information recorded" %}
   {% else %}
-    {% set otherMedicalInformationSummary = "No other medical information recorded" %}
+    {% set otherRelevantInformationSummary = "No other relevant information recorded" %}
   {% endif %}
 
   {{ appDetails({
-    id: "other-medical-information",
+    id: "other-relevant-information",
     classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Other medical information",
+    summaryText: "Other relevant information",
     subtitle: "Including HRT, pregnancy, breastfeeding and mammographer notes",
-    contentsSummary: otherMedicalInformationSummary,
+    contentsSummary: otherRelevantInformationSummary,
     html: otherRelevantInformationHtml,
     status: "To review"
   }) }}

@@ -4,7 +4,7 @@
 
 {% set pageHeading = "Record breast features" %}
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
-{% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain) %}
+{% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
 
