@@ -1,0 +1,31 @@
+{# app/views/_includes/medical-information/breast-features.njk #}
+
+{% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+
+{% set hasBreastFeatures = breastFeaturesCount > 0 %}
+
+{% if hasBreastFeatures %}
+  {% set insetHtml %}
+    <p>
+      {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded.
+    </p>
+  {% endset %}
+{% else %}
+  {% set insetHtml %}
+    <p>
+      No breast features have been recorded for this participant.
+    </p>
+  {% endset %}
+{% endif %}
+
+{{ insetText({
+  html: insetHtml
+}) }}
+
+{% set linkHref %}
+  {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
+{% endset %}
+
+<p>
+  <a href="{{ linkHref | safe }}" class="nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
+</p>

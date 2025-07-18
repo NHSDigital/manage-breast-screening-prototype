@@ -75,6 +75,7 @@
 {% endset %}
 
 {% set lastKnwonMammogramRow = {
+  classes: "nhsuk-summary-list__row--no-border" if noBorder,
   key: {
     text: "Last known mammogram" if not hasAdditionalMammograms else "Last known mammograms"
   },

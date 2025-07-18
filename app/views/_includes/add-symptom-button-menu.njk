@@ -1,6 +1,6 @@
 {% set methodUrl -%}
   /clinics/{{ clinicId }}/events/{{ eventId }}/medical-information/symptoms
-{% endset %}
+{%- endset %}
 
 {% if saveSymptomFirst == true %}
   {% set methodUrl = methodUrl ~ "/save?action=save-and-add&symptomType=" %}
@@ -21,16 +21,19 @@
 {% for symptom in symptoms %}
   {% set buttonMenuItems = buttonMenuItems | push({
     text: symptom,
-    href: (methodUrl ~ (symptom | camelCase) ) | urlWithReferrer(referrerChain),
-    classes: "nhsuk-button--secondary"
+    href: (methodUrl ~ (symptom | camelCase) ) | urlWithReferrer(referrerChain, scrollTo),
+    classes: "nhsuk-button--secondary js-expand-parent-section"
   }) %}
 {% endfor %}
 
-{{ buttonMenu({
-  items: buttonMenuItems,
-  button: {
-    text: "Add another symptom" if hasSymptoms or (saveSymptomFirst == true) else "Add a symptom",
-    classes: "nhsuk-button--secondary"
-  },
-  alignMenu: "left"
-}) }}
+<div class="nhsuk-form-group">
+  {{ buttonMenu({
+    items: buttonMenuItems,
+    button: {
+      text: "Add another symptom" if hasSymptoms or (saveSymptomFirst == true) else "Add a symptom",
+      classes: "nhsuk-button--secondary"
+    },
+    alignMenu: "left"
+  }) }}
+</div>
+
