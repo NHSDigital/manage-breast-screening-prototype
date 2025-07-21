@@ -2,25 +2,23 @@
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Review medical information" %}
+{% set pageHeading = "Screening appointment" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{% set formAction = "./awaiting-images" | getReturnUrl(referrerChain) %}
+{% set formAction = "./identity" | getReturnUrl(referrerChain) %}
 
 {% block pageContent %}
 
-  {% set activeTab = 'record-medical-information-2' %}
-
+  {% set activeTab = 'appointment' %}
   {% include "event-workflow.njk" %}
-
 
   {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
-        text: "Confirm medical information",
+        text: "Start appointment",
         classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
       }) }}
 
@@ -32,276 +30,110 @@
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
-  {# Medical history #}
+  {% include "_includes/special-appointment-warning-card.njk" %}
 
-    {% set mammogramHistoryHtml %}
-    {# {% include "summary-lists/medical-information/mammogram-history.njk" %} #}
+  {% set statusHtml %}
+    {# Status tag with check-in link #}
+    {{ eventStatus({
+      clinicId: clinicId,
+      event: event,
+      referrerChain: currentUrl
+    })}}
 
-    {% call summaryList() %}
-      {% set noBorder = true %}
-      {% include "_includes/summary-lists/rows/last-known-mammogram.njk" %}
-    {% endcall %}
+    {% if event.status === "event_attended_not_screened" %}
+      <p class="nhsuk-u-margin-top-2">[Reason for not screened here]</p>
+    {% endif %}
   {% endset %}
 
-  {% set mammogramHistoryContentsSummary %}
-    Last mammogrogram {{ "2022-03-23" | formatDate | formatRelativeDate | asHint }}
+  {% set appointmentTimeHtml -%}
+    <p>{{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})</p>
+    <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
   {% endset %}
 
-  {% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
-
-  {% if hasAdditionalMammograms %}
-    {% set mammogramHistoryContentsSummary = ((event.previousMammograms | length) + 1) ~ " mammograms added" %}
-  {% endif %}
-
-
-  {{ appDetails({
-    id: "mammogram-history",
-    classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Mammogram history",
-    _contentsSummary: mammogramHistoryContentsSummary,
-    subtitle: "The last confirmed mammogram and any added manually since then",
-    html: mammogramHistoryHtml,
-    status: "To review",
-    open: true
-  }) }}
-
-  {% set medicalHistoryHtml %}
-    {% include "summary-lists/medical-information/medical-history.njk" %}
+  {# Simplified other details section #}
+  {% set otherDetailsHtml %}
+    {% if event | isSpecialAppointment %}
+      {{ tag({
+        text: "Special appointment",
+        classes: "nhsuk-tag--yellow"
+      })}}
+    {% else %}
+      {{ "None" | asHint }}
+    {% endif %}
   {% endset %}
 
-  {{ appDetails({
-    id: "medical-information",
-    classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Medical history",
-    contentsSummary: "No information added",
-    subtitle: "Including breast cancer, implants, prior proceedures and treatments",
-    html: medicalHistoryHtml,
-    status: "To review"
-  }) }}
-
-  {% set medicalHistoryHtml %}
-    {% set rows = [
-      "Implanted medical devices",
-      "Breast implants or augmentation",
-      "Breast cancer tests and treatment",
-      "Treatment for non-cancerous breast conditions",
-      "Other breast or chest proceedures"
-      ] %}
-
-    {% set summaryListItems = [] %}
-
-    {% set valueHtml = "" %}
-
-    {% for row in rows %}
-      {% set summaryListItems = summaryListItems | push({
+  {% set appointmentHtml %}
+    {{ summaryList({
+      rows: [
+        {
           key: {
-            text: row
+            text: "Date"
           },
           value: {
-            html: valueHtml
+            html: appointmentTimeHtml
+          },
+          actions: {
+            items: [
+              {
+                href: "#",
+                text: "Reschedule appointment",
+                visuallyHiddenText: "name"
+              } if event.status == "event_scheduled"
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Clinic type"
+          },
+          value: {
+            text: clinic.clinicType | formatWords | sentenceCase
+          },
+          actions: {
+            items: [
+
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Appointment status"
+          },
+          value: {
+            html: statusHtml
+          },
+          actions: {
+            items: [
+
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Other details"
+          },
+          value: {
+            html: otherDetailsHtml
           },
           actions: {
             items: [
               {
                 href: "#",
                 text: "Change",
-                visuallyHiddenText: row | lower
+                visuallyHiddenText: "other details"
               }
             ]
           }
-        }) %}
-    {% endfor %}
-
-    {{ summaryList({
-      rows: summaryListItems
-    } | handleSummaryListMissingInformation) }}
-  {% endset %}
-
-  {{ appDetails({
-    id: "medical-information-alt",
-    classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Medical history",
-    contentsSummary: "No information added",
-    subtitle: "Including breast cancer, implants, prior proceedures and treatments",
-    html: medicalHistoryHtml,
-    status: "To review"
-  }) }}
-
-  {# Symptoms #}
-
-  {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-
-  {% set hasSymptoms = symptomsCount > 0 %}
-  {% set scrollTo = 'current-symptoms' %}
-
-  {# Show add symptom ui when nothing added and collapsed #}
-  {# {% if hasSymptoms %} #}
-    {% set symptomsContentsSummaryHtml %}
-      <span class="nhsuk-u-secondary-text-color">
-        {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
-      </span>
-    {% endset %}
-  {# {% else %}
-    {% set symptomsContentsSummaryHtml %}
-      <p class="nhsuk-u-secondary-text-color">
-        0 symptoms recorded
-      </p> #}
-      {# <p class="nhsuk-u-margin-bottom-0">
-        <a href="{{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}" class="js-expand-parent-section">Add a symptom</a>
-      </p> #}
-      {# {% set referrerChain = currentUrl %}
-
-      {% include "add-symptom-button-menu.njk" %}
-    {% endset %}
-  {% endif %} #}
-
-  {% set currentSymptomsHtml %}
-    {% include "summary-lists/medical-information/symptoms/summary.njk" %}
-
-    {% if not hasSymptoms %}
-      {% set insetHtml %}
-        <p>No symptoms have been recorded for this participant.</p>
-      {% endset %}
-      {{ insetText({
-        html: insetHtml
-      }) }}
-    {% endif %}
-
-    {% set linkHref %}
-      {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
-    {% endset %}
-
-    {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
-      <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
-    </p> #}
-
-    {# Explicitly set referrer chain to the current url #}
-    {% set referrerChain = currentUrl %}
-    {% include "add-symptom-button-menu.njk" %}
-  {% endset %}
-
-
-  {{ appDetails({
-    id: "current-symptoms",
-    classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Current symptoms",
-    subtitle: "Details of any lumps, swelling, rashes or nipple changes",
-    contentsSummaryHtml: symptomsContentsSummaryHtml,
-    html: currentSymptomsHtml,
-    status: "To review"
-  }) }}
-
-  {# Breast features #}
-
-  {% set scrollTo = 'breast-features' %}
-
-
-  {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
-  {% set hasBreastFeatures = breastFeaturesCount > 0 %}
-
-  {% set addBreastFeatureHref %}
-    {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
-  {% endset %}
-
-  {# {% if hasBreastFeatures %} #}
-    {% set breastFeaturesContentsSummaryHtml %}
-      <span class="nhsuk-u-secondary-text-color">
-        {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
-      </span>
-    {% endset %}
-
-  {# {% else %}
-
-    {% set breastFeaturesContentsSummaryHtml %}
-      <p class="nhsuk-u-secondary-text-color">
-        No breast features recorded
-      </p>
-      <p class="nhsuk-u-margin-bottom-0">
-        <a href="{{ addBreastFeatureHref | safe }}" class="js-expand-parent-section nhsuk-link--no-visited-state">
-          Add a feature
-        </a>
-      </p>
-    {% endset %}
-  {% endif %} #}
-
-  {% set breastFeaturesHtml %}
-    {% include "_includes/medical-information/breast-features.njk" %}
-  {% endset %}
-
-  {{ appDetails({
-    id: "breast-features",
-    classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Breast features",
-    subtitle: "Significant scars, moles or warts that may appear on mammogram images",
-    html: breastFeaturesHtml,
-    contentsSummaryHtml: breastFeaturesContentsSummaryHtml,
-    status: "To review"
-  }) }}
-
-  {# Other relevant information #}
-
-  {% set scrollTo = 'other-relevant-information' %}
-
-  {% set otherRelevantInformationHtml %}
-    {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
-  {% endset %}
-
-  {% set otherMedicalInformationCount = 0 %}
-
-  {% if event.medicalInformation.hrt.hrtQuestion == 'yes' %}
-    {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
-  {% endif %}
-
-  {% if event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
-    {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
-  {% endif %}
-
-  {% if event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
-    {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
-  {% endif %}
-
-  {% if otherRelevantInformationCount > 0 %}
-    {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information recorded" %}
-  {% else %}
-    {% set otherRelevantInformationSummary = "No other relevant information recorded" %}
-  {% endif %}
-
-  {{ appDetails({
-    id: "other-relevant-information",
-    classes: "nhsuk-expander js-track-expanded",
-    summaryText: "Other relevant information",
-    subtitle: "Including HRT, pregnancy, breastfeeding and mammographer notes",
-    contentsSummary: otherRelevantInformationSummary,
-    html: otherRelevantInformationHtml,
-    status: "To review"
-  }) }}
-
-  <div class="nhsuk-form-group">
-    {{ button({
-      text: "Complete all and continue"
+        }
+      ]
     }) }}
-  </div>
+  {% endset %}
 
-  {% include "screening-cannot-proceed-link.njk" %}
-
-
-    <!-- Progress Summary - One third width -->
-    {# <div class="nhsuk-grid-column-one-third app-sidebar-sticky">
-      <div class="nhsuk-card">
-        <div class="nhsuk-card__content">
-          <h2 class="nhsuk-card__heading nhsuk-heading-s">
-            Overview
-          </h2>
-          <p class="nhsuk-heading-m nhsuk-u-margin-bottom-2">
-            <strong id="progress-complete">0</strong> out of 8
-          </p>
-          <p class="nhsuk-body-s nhsuk-u-margin-bottom-0">
-            Sections completed
-          </p>
-        </div>
-      </div>
-    </div> #}
-
+  {% call card({
+    headingHtml: " "
+  }) %}
+    {{ appointmentHtml | safe }}
+  {% endcall %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
