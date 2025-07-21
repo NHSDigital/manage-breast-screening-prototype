@@ -34,6 +34,17 @@
   </div>
 </div>
 
+{% set appointmentStageCompleted = true if data.event.workflowStatus['appointment'] == 'completed' else false %}
+{% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information-2'] == 'completed' else false %}
+
+{{ appointmentStageCompleted | log("appointmentStageCompleted") }}
+{{ identityStageCompleted | log("identityStageCompleted") }}
+{{ medicalInformationStageCompleted | log("medicalInformationStageCompleted") }}
+
+{% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
+
+
 {% set secondaryNavItems = [] %}
 
 {% for item in [
@@ -41,7 +52,7 @@
   { id: 'identity', label: 'Identity' },
 
   { id: 'record-medical-information-2', label: 'Medical information' },
-  { id: 'awaiting-images', label: 'Images' }
+  { id: 'awaiting-images', label: 'Images' } if not awaitingImagesStageCompleted else { id: 'images', label: 'Images' }
 ] %}
   {% set href -%}
     /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}
@@ -49,10 +60,27 @@
 
     {# { id: 'eligibility', label: 'Eligibility' }, #}
 
+  {% set workflowStatus %}
+    {% if data.event.workflowStatus[item.id] == 'completed' %}
+      ✔
+    {% endif %}
+  {% endset %}
+
+  {% set isDisabled = false %}
+
+  {# Disable images tab until other stages are completed #}
+  {% if item.id == 'awaiting-images' %}
+    {% set isDisabled = true %}
+    {% if appointmentStageCompleted and identityStageCompleted and medicalInformationStageCompleted %}
+      {% set isDisabled = false %}
+    {% endif %}
+  {% endif %}
+
   {% set secondaryNavItems = secondaryNavItems | push({
-    text: item.label,
+    text: workflowStatus ~ item.label,
     href: href | trim,
-    current: true if item.id == activeTab
+    current: true if item.id == activeTab,
+    disabled: isDisabled
   }) %}
 
 {% endfor %}

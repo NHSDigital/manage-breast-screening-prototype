@@ -3,9 +3,15 @@
   {% for item in params.items %}
     {% if item %}
     <li class="app-secondary-navigation__list-item {{ "app-secondary-navigation__list-item--current" if item.current }}{% if item.classes %} {{ item.classes }}{% endif -%}">
-      <a class="app-secondary-navigation__link" href="{{ item.href }}" {{ "aria-current=page" if item.current }}>
-        {{ item.text }}
-      </a>
+      {% if not item.disabled %}
+        <a class="app-secondary-navigation__link" href="{{ item.href }}" {{ "aria-current=page" if item.current }}>
+          {{ item.text | safe }}
+        </a>
+      {% else %}
+        <span class="app-secondary-navigation__link app-secondary-navigation__link--disabled">
+          {{ item.text | safe }}
+        </span>
+      {% endif %}
     </li>
     {% endif %}
   {% endfor %}

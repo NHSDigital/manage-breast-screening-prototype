@@ -13,6 +13,12 @@
   {% set activeTab = 'appointment' %}
   {% include "event-workflow.njk" %}
 
+  {{ appHiddenInput({
+    name: "event[workflowStatus][appointment]",
+    value: "completed"
+  }) }}
+
+
   {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
 
   <div class="nhsuk-grid-row">

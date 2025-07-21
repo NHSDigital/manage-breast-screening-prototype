@@ -14,6 +14,11 @@
 
   {% include "event-workflow.njk" %}
 
+  {{ appHiddenInput({
+    name: "event[workflowStatus][identity]",
+    value: "completed"
+  }) }}
+
   {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
 
   <div class="nhsuk-grid-row">

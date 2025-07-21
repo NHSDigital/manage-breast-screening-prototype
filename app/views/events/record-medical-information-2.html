@@ -14,6 +14,10 @@
 
   {% include "event-workflow.njk" %}
 
+  {{ appHiddenInput({
+    name: "event[workflowStatus][record-medical-information-2]",
+    value: "completed"
+  }) }}
 
   {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
 
