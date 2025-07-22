@@ -37,22 +37,19 @@
 {% set appointmentStageCompleted = true if data.event.workflowStatus['appointment'] == 'completed' else false %}
 {% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
 {% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information-2'] == 'completed' else false %}
-
-{{ appointmentStageCompleted | log("appointmentStageCompleted") }}
-{{ identityStageCompleted | log("identityStageCompleted") }}
-{{ medicalInformationStageCompleted | log("medicalInformationStageCompleted") }}
-
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
+{% set imagesStageCompleted = true if data.event.workflowStatus['images'] == 'completed' else false %}
 
 
 {% set secondaryNavItems = [] %}
 
 {% for item in [
   { id: 'appointment', label: 'Appointment' },
-  { id: 'identity', label: 'Identity' },
+  { id: 'identity', label: 'Participant' },
 
   { id: 'record-medical-information-2', label: 'Medical information' },
-  { id: 'awaiting-images', label: 'Images' } if not awaitingImagesStageCompleted else { id: 'images', label: 'Images' }
+  { id: 'images', label: 'Images' },
+  { id: 'review', label: 'Review' }
 ] %}
   {% set href -%}
     /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}
@@ -69,9 +66,16 @@
   {% set isDisabled = false %}
 
   {# Disable images tab until other stages are completed #}
-  {% if item.id == 'awaiting-images' %}
+  {% if item.id == 'images' %}
     {% set isDisabled = true %}
     {% if appointmentStageCompleted and identityStageCompleted and medicalInformationStageCompleted %}
+      {% set isDisabled = false %}
+    {% endif %}
+  {% endif %}
+
+  {% if item.id == 'review' %}
+    {% set isDisabled = true %}
+    {% if appointmentStageCompleted and identityStageCompleted and medicalInformationStageCompleted and awaitingImagesStageCompleted and imagesStageCompleted %}
       {% set isDisabled = false %}
     {% endif %}
   {% endif %}

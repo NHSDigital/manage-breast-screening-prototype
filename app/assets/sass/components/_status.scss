@@ -1,5 +1,6 @@
 .app-header-with-status {
   position: relative;
+  min-height: 120px; // Make sure there's enough space for the status tags
 }
 
 .app-header-with-status__status-tag {

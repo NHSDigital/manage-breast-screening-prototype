@@ -1,5 +1,6 @@
 // app/routes/events.js
 const dayjs = require('dayjs')
+const _ = require('lodash')
 
 const { getParticipant, getFullName, saveTempParticipantToParticipant } = require('../lib/utils/participants')
 const { generateMammogramImages } = require('../lib/generators/mammogram-generator')
@@ -91,6 +92,10 @@ module.exports = router => {
       data.participant = { ...originalEventData.participant }
     }
 
+    // Deep compare temp participant and saved participant in array
+    const savedParticipant = data.participants.find(p => p.id === data.participant.id)
+    res.locals.participantHasUnsavedChanges = !_.isEqual(data.participant, savedParticipant)
+
     // This will now have any temp event data that forms have added too
     // We'll later save this back to the source data
     res.locals.event = data.event
@@ -99,11 +104,15 @@ module.exports = router => {
     res.locals.clinic = originalEventData.clinic
 
     res.locals.participant = data.participant
+    res.locals.participantId = participantId
     res.locals.eventUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.contextUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.unit = originalEventData.unit
     res.locals.clinicId = clinicId
     res.locals.eventId = eventId
+
+    // Ensure latest session data is available to views
+    res.locals.data = req.session.data
 
     next()
   })
@@ -588,7 +597,7 @@ module.exports = router => {
   })
 
   // Specific route for imaging view
-  router.get('/clinics/:clinicId/events/:eventId/imaging', (req, res) => {
+  router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
     const eventData = getEventData(req.session.data, clinicId, eventId)
@@ -606,7 +615,7 @@ module.exports = router => {
       res.locals.event = data.event
     }
 
-    res.render('events/imaging', {})
+    res.render('events/images', {})
   })
 
 
@@ -649,7 +658,8 @@ module.exports = router => {
     if (!isPartialMammography) {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/imaging`)
     } else {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/confirm`)
+      data.event.workflowStatus.images = 'completed'
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
     }
   })
 

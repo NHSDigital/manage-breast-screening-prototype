@@ -15,6 +15,8 @@
   text: "Back to clinic"
 } %}
 
+{% set referrerChain = currentUrl %}
+
 {% block pageContent %}
 
   {# Event header #}
@@ -131,7 +133,7 @@
     headingHtml: " "
   }) %}
     {% set isMinimalParticipant = true %}
-    {% set allowEdits = false %}
+    {% set allowEdits = true %}
     {# {% include "summary-lists/participant.njk" %} #}
 
     {% call summaryList() %}

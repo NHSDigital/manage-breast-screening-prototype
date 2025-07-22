@@ -1,31 +1,17 @@
+{# app/views/events/images.html #}
 
-{% extends 'layout-app.html' %}
+{% set isCompleted = event | isCompleted %}
 
+{% if isCompleted %}
+  {% include "events/images-completed.html" %}
+{% else %}
 
-{% set pageHeading %}
-  {{ clinic.clinicType | sentenceCase }} for {{ participant | getFullName }}
-{% endset %}
+  {% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %}
 
-{% set gridColumn = "nhsuk-grid-column-full" %}
+  {% if isAwaitingImages %}
+    {% include "events/images-before-mammography.html" %}
+  {% else %}
+      {% include "events/images-during-mammography.html" %}
+  {% endif %}
 
-{% set formAction = './complete' %}
-
-{% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
-
-{% block pageContent %}
-
-  {% include "event-header.njk" %}
-
-  {% set activeTab = 'images' %}
-
-  {% include "event-navigation.njk" %}
-
-
-  {% include "fake-images.njk" %}
-
-
-{% endblock %}
-
+{% endif %}

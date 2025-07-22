@@ -21,7 +21,7 @@
     {{ pageHeading }}
   </h1> #}
 
-  {% set activeTab = 'awaiting-images' %}
+  {% set activeTab = 'images' %}
 
   {% include "event-workflow.njk" %}
 
@@ -33,7 +33,7 @@
   }) }}
 
   <div id="loading-spinner" class="">
-    <p class="app-suppress-link-styles"><a href="./imaging?event[workflowStatus][awaiting-images]=completed"><span class="">Loading images...</span></a></p>
+    <p class="app-suppress-link-styles"><a href="./images?event[workflowStatus][awaiting-images]=completed"><span class="">Loading images...</span></a></p>
   </div>
 
 

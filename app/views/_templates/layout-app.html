@@ -88,7 +88,11 @@
 {% endif %}
 
 {% if participantId and data.participant %}
-  {{ data.participant | log("Participant data") }}
+  {{ data.participant | log("Data.participant") }}
+{% endif %}
+
+{% if participant %}
+  {{ participant | log("Participant") }}
 {% endif %}
 
 {% if clinicId and clinic %}

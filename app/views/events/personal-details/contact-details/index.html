@@ -1,0 +1,24 @@
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Contact details" %}
+
+{% set formAction = "./contact-details/confirm" | urlWithReferrer(referrerChain) %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-m">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {% include "forms/contact-details.njk" %}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}
+
