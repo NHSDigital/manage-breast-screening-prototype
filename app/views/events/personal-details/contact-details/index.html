@@ -3,7 +3,7 @@
 
 {% set pageHeading = "Contact details" %}
 
-{% set formAction = "./contact-details/confirm" | urlWithReferrer(referrerChain) %}
+{% set formAction = "./identity" | getReturnUrl(referrerChain) %}
 
 {% block pageContent %}
 

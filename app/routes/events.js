@@ -96,6 +96,14 @@ module.exports = router => {
     const savedParticipant = data.participants.find(p => p.id === data.participant.id)
     res.locals.participantHasUnsavedChanges = !_.isEqual(data.participant, savedParticipant)
 
+    // Deep compare temp event and saved event in array, excluding workflowStatus
+    const savedEvent = data.events.find(e => e.id === data.event.id)
+    const tempEventForCompare = data.event ? { ...data.event } : undefined
+    const savedEventForCompare = savedEvent ? { ...savedEvent } : undefined
+    if (tempEventForCompare) delete tempEventForCompare.workflowStatus
+    if (savedEventForCompare) delete savedEventForCompare.workflowStatus
+    res.locals.eventHasUnsavedChanges = !_.isEqual(tempEventForCompare, savedEventForCompare)
+
     // This will now have any temp event data that forms have added too
     // We'll later save this back to the source data
     res.locals.event = data.event
@@ -107,6 +115,7 @@ module.exports = router => {
     res.locals.participantId = participantId
     res.locals.eventUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.contextUrl = `/clinics/${clinicId}/events/${eventId}`
+    res.locals.context = 'event'
     res.locals.unit = originalEventData.unit
     res.locals.clinicId = clinicId
     res.locals.eventId = eventId
@@ -148,7 +157,7 @@ module.exports = router => {
         href: '#ethnicBackgroundWhite'
       })
 
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`)
+      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`, req.query.referrerChain))
       return
     }
 
@@ -174,7 +183,9 @@ module.exports = router => {
 
     req.flash('success', 'Ethnicity updated')
     // Redirect back to the event page (or wherever appropriate)
-    res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, req.query.referrerChain)
+    res.redirect(returnUrl)
   })
 
   // Helper function to clean up otherEthnicBackgroundDetails from array to single value

@@ -6,6 +6,8 @@
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
+{% set referrerChain = currentUrl %}
+
 {% set formAction = "./record-medical-information-2" | getReturnUrl(referrerChain) %}
 
 {% block pageContent %}
