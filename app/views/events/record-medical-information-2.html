@@ -36,6 +36,15 @@
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
+  {% switch variableName %}
+    {% case 'value1' %}
+      {# content #}
+    {% case 'value2' %}
+      {# content #}
+    {% default %}
+
+  {% endswitch %}
+
   {# Medical history #}
 
     {% set mammogramHistoryHtml %}
@@ -73,7 +82,7 @@
     {% include "summary-lists/medical-information/medical-history.njk" %}
   {% endset %}
 
-  {{ appDetails({
+  {# {{ appDetails({
     id: "medical-information",
     classes: "nhsuk-expander js-track-expanded",
     summaryText: "Medical history",
@@ -81,7 +90,7 @@
     subtitle: "Including breast cancer, implants, prior proceedures and treatments",
     html: medicalHistoryHtml,
     status: "To review"
-  }) }}
+  }) }} #}
 
   {% set medicalHistoryHtml %}
     {% set rows = [

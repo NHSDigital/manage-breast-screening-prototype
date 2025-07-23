@@ -1,14 +1,16 @@
-{# app/views/events/record-medical-information-2 #}
+{# app/views/events/identity #}
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Confirm identity" %}
+{% set pageHeading = "Participant" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set referrerChain = currentUrl %}
 
-{% set formAction = "./record-medical-information-2" | getReturnUrl(referrerChain) %}
+{% set formAction = "./record-medical-information" | getReturnUrl(referrerChain) %}
+
+{% set showWorkflowNav = true %}
 
 {% block pageContent %}
 

@@ -1,0 +1,74 @@
+{# app/views/_includes/appointment-status-bar.njk #}
+
+{% set firstRowItems = [] %}
+
+  {# Location name #}
+  {# {% set locationName %}
+    {% if location.type === 'mobile_unit' %}
+      {{ location.name }} at {{ clinic.siteName }}
+    {% else %}
+      {{ location.name }}
+    {% endif %}
+  {% endset %}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Location:",
+    value: locationName
+  }) %} #}
+
+  {# Date and time #}
+  {% set appointmentDateTime %}
+    {{ clinic.date | formatDate }} at {{ event.timing.startTime | formatTimeString }}
+  {% endset %}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Appointment:",
+    value: appointmentDateTime
+  }) %}
+
+  {# Appointment type #}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Type:",
+    value: clinic.clinicType | formatWords | sentenceCase
+  }) %}
+
+  {# Appointment status #}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Status:",
+    value: event.status | getStatusText | default(event.status | formatWords | sentenceCase)
+  }) %}
+
+  {# Second row - participant details #}
+  {% set participantRowItems = [] %}
+
+  {# Full name with age #}
+  {% set nameWithAge %}
+    {{ participant | getFullName }}
+
+  {% endset %}
+  {% set participantRowItems = participantRowItems | push({
+    html: "<strong>" + nameWithAge + "</strong>"
+  }) %}
+
+  {% set dobValue %}
+    {{ participant.demographicInformation.dateOfBirth | formatDate }} {% if participant | getAge %}
+      ({{ participant | getAge }} years)
+    {% endif %}
+  {% endset %}
+
+  {# DOB #}
+  {% set participantRowItems = participantRowItems | push({
+    key: "DOB:",
+    value: dobValue
+  }) %}
+
+  {# NHS Number #}
+  {% set participantRowItems = participantRowItems | push({
+    key: "NHS:",
+    value: participant.medicalInformation.nhsNumber | formatNhsNumber
+  }) %}
+
+  {{ appStatusBar({
+    rows: [
+      { items: firstRowItems },
+      { items: participantRowItems }
+    ]
+  }) }}

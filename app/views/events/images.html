@@ -5,7 +5,7 @@
 {% if isCompleted %}
   {% include "events/images-completed.html" %}
 {% else %}
-
+  {% set showWorkflowNav = true %}
   {% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %}
 
   {% if isAwaitingImages %}

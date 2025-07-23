@@ -36,7 +36,7 @@
 
 {% set appointmentStageCompleted = true if data.event.workflowStatus['appointment'] == 'completed' else false %}
 {% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
-{% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information-2'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information'] == 'completed' else false %}
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
 {% set imagesStageCompleted = true if data.event.workflowStatus['images'] == 'completed' else false %}
 
@@ -47,7 +47,7 @@
   { id: 'appointment', label: 'Appointment' },
   { id: 'identity', label: 'Participant' },
 
-  { id: 'record-medical-information-2', label: 'Medical information' },
+  { id: 'record-medical-information', label: 'Medical information' },
   { id: 'images', label: 'Images' },
   { id: 'review', label: 'Review' }
 ] %}

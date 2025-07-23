@@ -15,6 +15,15 @@
 {% endblock %}
 
 {% block header %}
+
+  {% set workflowNavItems = [
+    {
+      href: contextUrl,
+      text: "Leave this appointment"
+    }
+  ]
+  %}
+
   {{ header({
     account: {
       items: [
@@ -34,7 +43,8 @@
       href: "/"
     },
     navigation: {
-      items: [
+      items: workflowNavItems if showWorkflowNav else
+      [
         {
           href: "/dashboard",
           text: "Home",
@@ -78,6 +88,10 @@
     primaryLinks: navigation.primaryLinks if not public,
     account: navigation.account if not public
   }) }} #}
+
+  {% if context == 'event' and showWorkflowNav %}
+    {% include "_includes/appointment-status-bar.njk" %}
+  {% endif %}
 {% endblock %}
 
 
