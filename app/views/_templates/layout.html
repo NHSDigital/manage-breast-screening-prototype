@@ -47,25 +47,27 @@
 <!-- Footer code examples can be found at https://service-manual.nhs.uk/design-system/components/footer -->
 {% block footer %}
   {{ footer({
-    "links": [
-      {
-        "URL": "/",
-        "label": "Home"
-      },
-      {
-        "URL": "/settings",
-        "label": "Settings"
-      },
-      {
-        "URL": "/clear-data",
-        "label": "Clear data"
-      },
-      {
-        "URL": "https://github.com/NHSDigital/manage-screening-events-prototype",
-        "label": "Github"
-      }
-    ]
-  })}}
+    meta: {
+      links: [
+        {
+          href: "/",
+          text: "Home"
+        },
+        {
+          href: "/settings",
+          text: "Settings"
+        },
+        {
+          href: "/clear-data",
+          text: "Clear data"
+        },
+        {
+          href: "https://github.com/NHSDigital/manage-screening-events-prototype",
+          text: "Github"
+        }
+      ]
+    }
+  }) }}
 {% endblock %}
 
 {% block bodyEnd %}
