@@ -1,4 +1,4 @@
-{# /app/views/events/reading/recall-for-assessment-reasons.html #}
+{# /app/views/reading/recall-for-assessment-details.html #}
 
 {% extends 'layout-reading.html' %}
 
@@ -18,19 +18,17 @@
 
     {% set abnormalDetailsHtml %}
 
-
-
       {{ button({
-        text: "Mark an abnormality" if not (data.imageReadingTemp[params.side].annotatedCount | int > 0) else "Mark another abnormality",
+        text: "Mark an abnormality" if not ((data.imageReadingTemp[params.side].annotations | default([])) | length > 0) else "Mark another abnormality",
         classes: "nhsuk-button--secondary",
-        href: "./annotation?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
+        href: "./annotation/add?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
       }) }}
 
     {% endset %}
 
-    {{ data.imageReadingTemp | log("Image reading") }}
-
     {{ radios({
+      name: "imageReadingTemp[" + params.side + "][breastAssessment]",
+      value: data.imageReadingTemp[params.side].breastAssessment,
       fieldset: {
         legend: {
           text: "What is your opinion of the " + params.side + " breast?",
@@ -55,75 +53,68 @@
           }
         }
       ] | removeEmpty
-    } | decorateAttributes(data, "imageReadingTemp." + params.side + ".breastAssessment" )) }}
+    }) }}
 
     {{ input({
+      name: "imageReadingTemp[" + params.side + "][comment]",
+      value: data.imageReadingTemp[params.side].comment,
       label: {
         text: Side + " breast comment (optional)",
         classes: "nhsuk-label--s"
       },
-      _classes: "nhsuk-u-width-two-thirds"
-    } | decorateAttributes(data, "imageReadingTemp." + params.side + ".comment")) }}
+      classes: "nhsuk-u-width-two-thirds"
+    }) }}
 
-    {% if data.imageReadingTemp[params.side].annotatedCount | int %}
+    {% if (data.imageReadingTemp[params.side].annotations | default([])) | length > 0 %}
 
       <h3>Abnormalities</h3>
 
+      {% set summaryItems = [] %}
+
+      {% for annotation in data.imageReadingTemp[params.side].annotations %}
 
         {% set annotationValueHtml -%}
-          {% if params.side == 'right' %}
-            Location: upper right quadrant
-            Level of concern: 4 - Probably cancerous
-          {% else %}
-            Location: Lower left quadrant
-            Level of concern: 3 - Probably benign
+          {% if annotation.location %}
+            Location: {{ annotation.location }}<br>
           {% endif %}
+          Level of concern: {{ annotation.levelOfConcern }} -
+          {%- if annotation.levelOfConcern == "1" %} normal
+          {%- elif annotation.levelOfConcern == "2" %} benign
+          {%- elif annotation.levelOfConcern == "3" %} probably benign
+          {%- elif annotation.levelOfConcern == "4" %} probably cancerous
+          {%- elif annotation.levelOfConcern == "5" %} likely cancerous
+          {%- endif -%}
         {%- endset %}
 
-        {% set summaryItems = [] %}
+        {% set abnormalityTypeText = annotation.abnormalityType | join("<br>") | safe %}
 
-        {% for item in range(0, data.imageReadingTemp[params.side].annotatedCount | int) %}
+        {# {% if annotation.abnormalityType == "Other" and annotation.otherDetails %}
+          {% set abnormalityTypeText = annotation.otherDetails %}
+        {% endif %} #}
 
-          {% set abnormalityList = [
-            "Mass well-defined",
-            "Mass ill-defined",
-            "Architectural distortion",
-            "Asymetric density",
-            "Microcalcification outside a mass",
-            "Clinical abnormality",
-            "Lymph node abnormality"
-          ] %}
-
-          {% set abnormalityType = abnormalityList | randomItem(params.side ~ loop.index0) %}
-
-          {% set summaryItems = summaryItems | push(
-            {
-              key: {
-                text: abnormalityType
-              },
-              value: {
-                html: annotationValueHtml | trim | nl2br
-              },
-              actions: {
-                items: [
-                  {
-                    href: "#",
-                    text: "Change",
-                    visuallyHiddenText: "name"
-                  }
-                ]
+        {% set summaryItems = summaryItems | push({
+          key: {
+            text: abnormalityTypeText
+          },
+          value: {
+            html: annotationValueHtml | trim
+          },
+          actions: {
+            items: [
+              {
+                href: "./annotation/edit/" + annotation.id,
+                text: "Change",
+                visuallyHiddenText: abnormalityTypeText
               }
-            }
-          ) %}
-        {% endfor %}
+            ]
+          }
+        }) %}
+      {% endfor %}
 
-        {{ summaryItems | log("Summary items") }}
-
-        {{ summaryList({
-          rows: summaryItems
-        }) }}
-      {% endif %}
-
+      {{ summaryList({
+        rows: summaryItems
+      }) }}
+    {% endif %}
 
   {% endset %}
 
@@ -161,14 +152,13 @@
 
   <div class="nhsuk-grid-row">
 
-
-      {% for breastSide in ["right", "left"] %}
+    {% for breastSide in ["right", "left"] %}
       <div class="nhsuk-grid-column-one-half">
         {{ breastDetails({
           side: breastSide
         }) }}
       </div>
-      {% endfor %}
+    {% endfor %}
 
   </div>
 
@@ -183,5 +173,3 @@
   </div>
 
 {% endblock %}
-
-
