@@ -18,11 +18,17 @@
 
   {% set workflowNavItems = [
     {
-      href: contextUrl,
+      href: "/clinics/" ~ clinicId,
       text: "Leave this appointment"
+    },
+    {
+      href: "#",
+      text: "Manage appointment"
     }
   ]
   %}
+
+  {% set shouldShowAppointmentNav = (pageContext == 'event') and (event | isAppointmentWorkflow) %}
 
   {{ header({
     account: {
@@ -43,7 +49,7 @@
       href: "/"
     },
     navigation: {
-      items: workflowNavItems if showWorkflowNav else
+      items: workflowNavItems if shouldShowAppointmentNav else
       [
         {
           href: "/dashboard",
@@ -89,11 +95,10 @@
     account: navigation.account if not public
   }) }} #}
 
-  {% if context == 'event' and showWorkflowNav %}
+  {% if shouldShowAppointmentNav %}
     {% include "_includes/appointment-status-bar.njk" %}
   {% endif %}
 {% endblock %}
-
 
 {% block content %}
 

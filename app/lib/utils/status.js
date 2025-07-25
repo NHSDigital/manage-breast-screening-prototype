@@ -69,6 +69,16 @@ const isActive = (input) => {
 }
 
 /**
+ * Check if an event is in the appointment workflow
+ * @param {*} event
+ * @returns {boolean} Whether the event is in the appointment workflow
+ */
+const isAppointmentWorkflow = (event) => {
+  const status = getStatus(event)
+  return status == "event_checked_in"
+}
+
+/**
  * Check if a status indicates reading is eligible
  * @param {string|Object} input - Status string or event object
  * @returns {boolean} Whether reading is needed
@@ -213,6 +223,7 @@ module.exports = {
   isCompleted,
   isFinal,
   isActive,
+  isAppointmentWorkflow,
   eligibleForReading,
   getStatusTagColour,
   getStatusText,

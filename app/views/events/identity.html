@@ -2,13 +2,15 @@
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Participant" %}
+{% set pageHeading = "Confirm identity" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set referrerChain = currentUrl %}
 
 {% set formAction = "./record-medical-information" | getReturnUrl(referrerChain) %}
+
+{% set hideBackLink = true %}
 
 {% set showWorkflowNav = true %}
 
@@ -28,7 +30,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
-        text: "Confirm identity",
+        text: "Confirm identity" if data.event.workflowStatus.identity != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
       }) }}
 
@@ -39,6 +41,8 @@
   </div>
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+  {% include "_includes/special-appointment-warning-card.njk" %}
 
   {% call card({
     headingHtml: " "
@@ -54,6 +58,20 @@
       {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
       {% include "_includes/summary-lists/rows/email.njk" %}
       {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+      {% set nhsNumberRow = {
+        key: {
+          text: "GP"
+        },
+        value: {
+          text: "St. James Street Medical practice"
+        },
+        actions: {
+          items: [
+          ]
+        }
+      } %}
+
+    {{ appSummaryListRow(nhsNumberRow) }}
 
     {% endcall %}
   {% endcall %}

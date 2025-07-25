@@ -1,51 +1,19 @@
 {# app/views/_includes/event-workflow.njk #}
 
-<div class="app-header-with-status">
-  <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span>
-    {{ pageHeading | safe }}
-  </h1>
-
-  {% set statusHtml %}
-    {# Status tag with check-in link #}
-    {{ eventStatus({
-      clinicId: clinicId,
-      event: event,
-      participant: participant,
-      participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
-      referrerChain: currentUrl,
-      confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
-
-    })}}
-  {% endset %}
-
-  <div class="app-header-with-status__status-tag">
-    {{ statusHtml | safe }}
-    {% if event | isSpecialAppointment %}
-    {# <br> #}
-      {{ tag({
-        text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-top-1"
-      })}}
-    {% endif %}
-
-  </div>
-</div>
-
+{# Tracking of status #}
 {% set appointmentStageCompleted = true if data.event.workflowStatus['appointment'] == 'completed' else false %}
 {% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
 {% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information'] == 'completed' else false %}
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
 {% set imagesStageCompleted = true if data.event.workflowStatus['images'] == 'completed' else false %}
 
-
+{# Build secondary nav #}
 {% set secondaryNavItems = [] %}
 
+  {# { id: 'appointment', label: 'Appointment' }, #}
+
 {% for item in [
-  { id: 'appointment', label: 'Appointment' },
-  { id: 'identity', label: 'Participant' },
+  { id: 'identity', label: 'Identity' },
 
   { id: 'record-medical-information', label: 'Medical information' },
   { id: 'images', label: 'Images' },
@@ -88,6 +56,42 @@
   }) %}
 
 {% endfor %}
+
+
+
+<div class="app-header-with-status">
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading | safe }}
+  </h1>
+
+  {% set statusHtml %}
+    {# Status tag with check-in link #}
+    {{ eventStatus({
+      clinicId: clinicId,
+      event: event,
+      participant: participant,
+      participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
+      referrerChain: currentUrl,
+      confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
+
+    })}}
+  {% endset %}
+
+  {# <div class="app-header-with-status__status-tag">
+    {{ statusHtml | safe }}
+    {% if event | isSpecialAppointment %}
+    <br>
+      {{ tag({
+        text: "Special appointment",
+        classes: "nhsuk-tag--yellow nhsuk-u-margin-top-1"
+      })}}
+    {% endif %}
+
+  </div> #}
+</div>
 
 {{ appSecondaryNavigation({
   visuallyHiddenTitle: "Secondary menu",

@@ -8,7 +8,7 @@
 
 {% set formAction = "./images" | getReturnUrl(referrerChain) %}
 
-{% set displayFormat = "card" %}
+{% set displayFormat = "expander" %}
 {% set showWorkflowNav = true %}
 
 {% block pageContent %}
@@ -27,7 +27,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
-        text: "Confirm medical information",
+        text: "Confirm medical information" if data.event.workflowStatus['record-medical-information'] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
       }) }}
 
@@ -83,6 +83,88 @@
         html: mammogramHistoryHtml,
         status: "To review",
         open: true
+      }) }}
+  {% endswitch %}
+
+  {# Symptoms #}
+  {% set sectionHeading = "Symptoms" %}
+  {% set subHeading = "Any problems or symptoms, including lumps, swelling, rashes or nipple changes" %}
+  {% set scrollTo = 'current-symptoms' %}
+
+
+  {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+
+  {% set hasSymptoms = symptomsCount > 0 %}
+  {% set scrollTo = 'current-symptoms' %}
+
+  {# Show add symptom ui when nothing added and collapsed #}
+  {# {% if hasSymptoms %} #}
+    {% set symptomsContentsSummaryHtml %}
+      <span class="nhsuk-u-secondary-text-color">
+        {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
+      </span>
+    {% endset %}
+  {# {% else %}
+    {% set symptomsContentsSummaryHtml %}
+      <p class="nhsuk-u-secondary-text-color">
+        0 symptoms recorded
+      </p> #}
+      {# <p class="nhsuk-u-margin-bottom-0">
+        <a href="{{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}" class="js-expand-parent-section">Add a symptom</a>
+      </p> #}
+      {# {% set referrerChain = currentUrl %}
+
+      {% include "add-symptom-button-menu.njk" %}
+    {% endset %}
+  {% endif %} #}
+
+  {% set currentSymptomsHtml %}
+    {% include "summary-lists/medical-information/symptoms/summary.njk" %}
+
+    {% if not hasSymptoms %}
+      {% set insetHtml %}
+        <p>No symptoms have been recorded for this participant.</p>
+      {% endset %}
+      {{ insetText({
+        html: insetHtml
+      }) }}
+    {% endif %}
+
+    {% set linkHref %}
+      {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
+    {% endset %}
+
+    {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
+      <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
+    </p> #}
+
+    {# Explicitly set referrer chain to the current url #}
+    {% set referrerChain = currentUrl %}
+    {% include "add-symptom-button-menu.njk" %}
+  {% endset %}
+
+  {% switch displayFormat %}
+    {% case 'flat' %}
+      <h2>{{ sectionHeading }}</h2>
+      {{ currentSymptomsHtml | safe }}
+    {% case 'card' %}
+      {% call card({
+        heading: sectionHeading
+      }) %}
+        <p>
+          {{ subHeading }}
+        </p>
+        {{ currentSymptomsHtml | safe }}
+      {% endcall %}
+    {% default %}
+      {{ appDetails({
+        id: "current-symptoms",
+        classes: "nhsuk-expander js-track-expanded",
+        summaryText: "Current symptoms",
+        subtitle: subHeading,
+        contentsSummaryHtml: symptomsContentsSummaryHtml,
+        html: currentSymptomsHtml,
+        status: "To review"
       }) }}
   {% endswitch %}
 
@@ -161,87 +243,7 @@
       }) }}
   {% endswitch %}
 
-  {# Symptoms #}
-  {% set sectionHeading = "Symptoms" %}
-  {% set subHeading = "Details of any lumps, swelling, rashes or nipple changes" %}
-  {% set scrollTo = 'current-symptoms' %}
 
-
-  {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-
-  {% set hasSymptoms = symptomsCount > 0 %}
-  {% set scrollTo = 'current-symptoms' %}
-
-  {# Show add symptom ui when nothing added and collapsed #}
-  {# {% if hasSymptoms %} #}
-    {% set symptomsContentsSummaryHtml %}
-      <span class="nhsuk-u-secondary-text-color">
-        {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
-      </span>
-    {% endset %}
-  {# {% else %}
-    {% set symptomsContentsSummaryHtml %}
-      <p class="nhsuk-u-secondary-text-color">
-        0 symptoms recorded
-      </p> #}
-      {# <p class="nhsuk-u-margin-bottom-0">
-        <a href="{{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}" class="js-expand-parent-section">Add a symptom</a>
-      </p> #}
-      {# {% set referrerChain = currentUrl %}
-
-      {% include "add-symptom-button-menu.njk" %}
-    {% endset %}
-  {% endif %} #}
-
-  {% set currentSymptomsHtml %}
-    {% include "summary-lists/medical-information/symptoms/summary.njk" %}
-
-    {% if not hasSymptoms %}
-      {% set insetHtml %}
-        <p>No symptoms have been recorded for this participant.</p>
-      {% endset %}
-      {{ insetText({
-        html: insetHtml
-      }) }}
-    {% endif %}
-
-    {% set linkHref %}
-      {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
-    {% endset %}
-
-    {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
-      <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
-    </p> #}
-
-    {# Explicitly set referrer chain to the current url #}
-    {% set referrerChain = currentUrl %}
-    {% include "add-symptom-button-menu.njk" %}
-  {% endset %}
-
-  {% switch displayFormat %}
-    {% case 'flat' %}
-      <h2>{{ sectionHeading }}</h2>
-      {{ currentSymptomsHtml | safe }}
-    {% case 'card' %}
-      {% call card({
-        heading: sectionHeading
-      }) %}
-        <p>
-          {{ subHeading }}
-        </p>
-        {{ currentSymptomsHtml | safe }}
-      {% endcall %}
-    {% default %}
-      {{ appDetails({
-        id: "current-symptoms",
-        classes: "nhsuk-expander js-track-expanded",
-        summaryText: "Current symptoms",
-        subtitle: "Details of any lumps, swelling, rashes or nipple changes",
-        contentsSummaryHtml: symptomsContentsSummaryHtml,
-        html: currentSymptomsHtml,
-        status: "To review"
-      }) }}
-  {% endswitch %}
 
   {# Breast features #}
   {% set sectionHeading = "Breast features" %}

@@ -16,12 +16,18 @@
   }) %} #}
 
   {# Date and time #}
-  {% set appointmentDateTime %}
+  {% set appointmentHtml %}
     {{ clinic.date | formatDate }} at {{ event.timing.startTime | formatTimeString }}
+    {% if event | isSpecialAppointment %}
+      {{ tag({
+        text: "Special appointment",
+        classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
+      })}}
+    {% endif %}
   {% endset %}
   {% set firstRowItems = firstRowItems | push({
     key: "Appointment:",
-    value: appointmentDateTime
+    value: appointmentHtml
   }) %}
 
   {# Appointment type #}
@@ -30,11 +36,23 @@
     value: clinic.clinicType | formatWords | sentenceCase
   }) %}
 
+  {% set statusHtml %}
+    {{ event.status | getStatusText | default(event.status | formatWords | sentenceCase) }}
+
+    {% if event | isSpecialAppointment %}
+    {# <br> #}
+      {{ tag({
+        text: "Special appointment",
+        classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
+      })}}
+    {% endif %}
+  {% endset %}
+
   {# Appointment status #}
-  {% set firstRowItems = firstRowItems | push({
+  {# {% set firstRowItems = firstRowItems | push({
     key: "Status:",
-    value: event.status | getStatusText | default(event.status | formatWords | sentenceCase)
-  }) %}
+    value: statusHtml
+  }) %} #}
 
   {# Second row - participant details #}
   {% set participantRowItems = [] %}

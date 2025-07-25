@@ -21,6 +21,11 @@
 
   {% include "event-workflow.njk" %}
 
+  {{ button({
+    text: "Complete screening and return to clinic",
+    classes: "nhsuk-button--secondary"
+  }) }}
+
   {% set valueHtml = "None" %}
 
   {# Scars, moles, warts, lumps #}

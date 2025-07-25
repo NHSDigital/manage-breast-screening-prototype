@@ -115,7 +115,7 @@ module.exports = router => {
     res.locals.participantId = participantId
     res.locals.eventUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.contextUrl = `/clinics/${clinicId}/events/${eventId}`
-    res.locals.context = 'event'
+    res.locals.pageContext = 'event'
     res.locals.unit = originalEventData.unit
     res.locals.clinicId = clinicId
     res.locals.eventId = eventId
@@ -134,7 +134,7 @@ module.exports = router => {
     // On next request this will be recreated from the event array
     delete req.session.data.event
     console.log('Cleared temp event data')
-    res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}`)
+    res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`)
   })
 
   // Event within clinic context

@@ -21,7 +21,7 @@
 
 {% if confirmIdentityEnabled %}
   {% set modalId = "check-in-modal-" + (eventId or params.event.id) %}
-
+  {% set showAppointmentLink = params.showAppointmentLink | default('false') %}
   {% include "_includes/confirm-identity-modal.njk" %}
 {% endif %}
 
@@ -31,7 +31,7 @@
     classes: tagClasses | trim
   })}}
 
-  {# Append the participant’s name to the check-in text for screen readers so that all links have unique text #}
+  {# Append the participant's name to the check-in text for screen readers so that all links have unique text #}
   {% set checkInText %}
     Check in {{ params.participant | getShortName | asVisuallyHiddenText }}
   {% endset %}
@@ -42,6 +42,7 @@
         {# Modal-based check-in #}
         <a href=""
            class="nhsuk-link nhsuk-link--no-visited-state"
+           data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}"
            onclick="openModal('{{ modalId }}'); return false;">
           {{ checkInText | safe }}
         </a>
@@ -50,10 +51,18 @@
         <a href="{{ checkInHref }}"
            class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
            data-clinic-id="{{ params.clinicId }}"
-           data-event-id="{{ params.event.id }}">
+           data-event-id="{{ params.event.id }}"
+           data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}">
           {{ checkInText | safe }}
         </a>
       {% endif %}
+    </p>
+  {% endif %}
+
+  {# Show appointment link for checked-in events when enabled #}
+  {% if params.event.status == 'event_checked_in' and params.showAppointmentLink %}
+    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+      <a href="/clinics/{{ params.clinicId }}/events/{{ params.event.id }}/start?event[workflowStatus][appointment]=started">Start appointment</a>
     </p>
   {% endif %}
 </div>

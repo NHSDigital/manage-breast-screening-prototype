@@ -23,6 +23,13 @@
 
   {% include "event-workflow.njk" %}
 
+  {% if data.event.workflowStatus.images == 'completed' %}
+    {{ button({
+      text: "Next section",
+      classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"
+    }) }}
+  {% endif %}
+
 
   {% set animateImages = true %}
   {% include "fake-images.njk" %}
