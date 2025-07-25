@@ -55,6 +55,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ input({
+        id: "location",
         name: "imageReadingTemp[annotationTemp][location]",
         value: data.imageReadingTemp.annotationTemp.location,
         label: {
@@ -65,7 +66,7 @@
           text: "For example, upper right quadrant"
         },
         classes: "nhsuk-u-width-two-thirds"
-      }) }}
+      } | populateErrors) }}
 
       {% set checkboxItems = [] %}
 
@@ -73,11 +74,12 @@
         {{ input({
           name: "imageReadingTemp[annotationTemp][" + params.value + "Details]",
           value: data.imageReadingTemp.annotationTemp[params.value + "Details"],
+          id: params.value + "Details",
           label: {
             text: "Provide details"
           },
           classes: "nhsuk-u-width-two-thirds"
-        }) }}
+        } | populateErrors) }}
       {% endmacro %}
 
       {% set abnormalityList = [
@@ -104,11 +106,12 @@
         {{ input({
           name: "imageReadingTemp[annotationTemp][otherDetails]",
           value: data.imageReadingTemp.annotationTemp.otherDetails,
+          id: "otherDetails",
           label: {
             text: "Provide details"
           },
           classes: "nhsuk-u-width-two-thirds"
-        }) }}
+        } | populateErrors) }}
       {% endset %}
 
       {% set checkboxItems = checkboxItems | push({
@@ -120,6 +123,8 @@
       }) %}
 
       {{ checkboxes({
+        id: "abnormalityType",
+        idPrefix: "abnormalityType",
         name: "imageReadingTemp[annotationTemp][abnormalityType]",
         values: data.imageReadingTemp.annotationTemp.abnormalityType,
         fieldset: {
@@ -130,9 +135,10 @@
           }
         },
         items: checkboxItems
-      }) }}
+      } | populateErrors) }}
 
       {{ select({
+        id: "levelOfConcern",
         name: "imageReadingTemp[annotationTemp][levelOfConcern]",
         value: data.imageReadingTemp.annotationTemp.levelOfConcern,
         label: {
@@ -144,7 +150,7 @@
             value: "",
             text: "Please select",
             disabled: true,
-            selected: true if not annotationTemp.levelOfConcern
+            selected: true if not data.imageReadingTemp.annotationTemp.levelOfConcern
           },
           {
             value: "1",
@@ -167,7 +173,7 @@
             text: "5 - Likely cancerous"
           }
         ]
-      }) }}
+      } | populateErrors) }}
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({

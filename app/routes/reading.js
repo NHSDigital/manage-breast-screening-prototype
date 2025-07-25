@@ -17,7 +17,7 @@ const {
   skipEventInBatch,
   getReadingMetadata,
 } = require('../lib/utils/reading')
-const { snakeCase } = require('../lib/utils/strings')
+const { camelCase, snakeCase } = require('../lib/utils/strings')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
@@ -384,15 +384,93 @@ module.exports = router => {
     res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
   })
 
-  // Save annotation - handles both 'save' and 'save-and-add'
-  router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res) => {
+// Save annotation - handles both 'save' and 'save-and-add'
+router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res) => {
   const { batchId, eventId } = req.params
   const data = req.session.data
   const action = req.body.action || 'save'
 
-  // Save temp annotation to array
+  // Validation
+  const errors = []
+  const annotationTemp = data.imageReadingTemp?.annotationTemp
+
+  if (!annotationTemp) {
+    return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  }
+
+  // Validate required fields
+  if (!annotationTemp.location || annotationTemp.location.trim() === '') {
+    errors.push({
+      text: 'Enter the location of the abnormality',
+      name: 'imageReadingTemp[annotationTemp][location]',
+      href: '#location'
+    })
+  }
+
+  if (!annotationTemp.abnormalityType || annotationTemp.abnormalityType.length === 0) {
+    errors.push({
+      text: 'Select at least one abnormality type',
+      name: 'imageReadingTemp[annotationTemp][abnormalityType]',
+      href: '#abnormalityType'
+    })
+  }
+
+  if (!annotationTemp.levelOfConcern) {
+    errors.push({
+      text: 'Select a level of concern',
+      name: 'imageReadingTemp[annotationTemp][levelOfConcern]',
+      href: '#levelOfConcern'
+    })
+  }
+
+  // Validate conditional detail fields for selected abnormality types
+    if (annotationTemp.abnormalityType && annotationTemp.abnormalityType.length > 0) {
+    const abnormalityTypes = Array.isArray(annotationTemp.abnormalityType)
+      ? annotationTemp.abnormalityType
+      : [annotationTemp.abnormalityType]
+
+    abnormalityTypes.forEach(type => {
+      if (type === 'Other' && (!annotationTemp.otherDetails || annotationTemp.otherDetails.trim() === '')) {
+        errors.push({
+          text: 'Provide details for other abnormality type',
+          name: 'imageReadingTemp[annotationTemp][otherDetails]',
+          href: '#otherDetails'
+        })
+      }
+
+      // Check other conditional fields using the same camelCase logic as the template
+      const conditionalTypes = [
+        'Mass well-defined',
+        'Mass ill-defined',
+        'Architectural distortion',
+        'Asymetric density',
+        'Microcalcification outside a mass',
+        'Clinical abnormality',
+        'Lymph node abnormality'
+      ]
+
+      if (conditionalTypes.includes(type)) {
+        const detailsFieldName = camelCase(type) + 'Details'
+
+        if (!annotationTemp[detailsFieldName] || annotationTemp[detailsFieldName].trim() === '') {
+          errors.push({
+            text: `Provide details for ${type.toLowerCase()}`,
+            name: `imageReadingTemp[annotationTemp][${detailsFieldName}]`,
+            href: `#${detailsFieldName}`
+          })
+        }
+      }
+    })
+  }
+
+  // If there are validation errors, redirect back with errors
+  if (errors.length > 0) {
+    errors.forEach(error => req.flash('error', error))
+    return res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
+  }
+
+  // Continue with existing save logic...
   if (data.imageReadingTemp?.annotationTemp) {
-    const annotationTemp = data.imageReadingTemp.annotationTemp
     const side = annotationTemp.side
     const isNewAnnotation = !annotationTemp.id
 
@@ -427,7 +505,7 @@ module.exports = router => {
       location: annotationTemp.location,
       abnormalityType: annotationTemp.abnormalityType,
       levelOfConcern: annotationTemp.levelOfConcern,
-      markerPositions: markerPositions, // Save the marker coordinates
+      markerPositions: markerPositions,
       // Include any conditional detail fields
       ...Object.keys(annotationTemp)
         .filter(key => key.endsWith('Details'))
