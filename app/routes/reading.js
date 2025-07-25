@@ -19,6 +19,8 @@ const {
 } = require('../lib/utils/reading')
 const { snakeCase } = require('../lib/utils/strings')
 const dayjs = require('dayjs')
+const generateId = require('../lib/utils/id-generator')
+
 
 module.exports = router => {
 
@@ -327,6 +329,148 @@ module.exports = router => {
 
     res.render(`reading/${step}`)
   })
+
+
+  // Annotations start
+
+
+  // Add annotation - clear temp data and redirect to form
+  router.get('/reading/batch/:batchId/events/:eventId/annotation/add', (req, res) => {
+    const { side } = req.query
+    const data = req.session.data
+
+    // Validate side parameter
+    if (!side || !['left', 'right'].includes(side)) {
+      return res.redirect(`/reading/batch/${req.params.batchId}/events/${req.params.eventId}/recall-for-assessment-details`)
+    }
+
+    // Clear any existing temp annotation data
+    delete data.imageReadingTemp?.annotationTemp
+
+    // Set the side in temp data
+    if (!data.imageReadingTemp) {
+      data.imageReadingTemp = {}
+    }
+
+    data.imageReadingTemp.annotationTemp = {
+      side: side
+    }
+
+    res.redirect(`/reading/batch/${req.params.batchId}/events/${req.params.eventId}/annotation`)
+  })
+
+  // Edit existing annotation
+  router.get('/reading/batch/:batchId/events/:eventId/annotation/edit/:annotationId', (req, res) => {
+    const { batchId, eventId, annotationId } = req.params
+    const data = req.session.data
+
+    // Find the annotation to edit
+    let annotation = null
+    const sides = ['left', 'right']
+
+    for (const side of sides) {
+      const annotations = data.imageReadingTemp?.[side]?.annotations || []
+      annotation = annotations.find(a => a.id === annotationId)
+      if (annotation) {
+        break
+      }
+    }
+
+    if (annotation) {
+      // Copy annotation to temp for editing
+      data.imageReadingTemp.annotationTemp = { ...annotation }
+    }
+
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
+  })
+
+  // Save annotation - handles both 'save' and 'save-and-add'
+  router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res) => {
+    const { batchId, eventId } = req.params
+    const data = req.session.data
+    const action = req.body.action || 'save'
+
+    // Save temp annotation to array
+    if (data.imageReadingTemp?.annotationTemp) {
+      const annotationTemp = data.imageReadingTemp.annotationTemp
+      const side = annotationTemp.side
+      const isNewAnnotation = !annotationTemp.id
+
+      if (!side) {
+        return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+      }
+
+      // Initialize side data if needed
+      if (!data.imageReadingTemp[side]) {
+        data.imageReadingTemp[side] = {}
+      }
+      if (!data.imageReadingTemp[side].annotations) {
+        data.imageReadingTemp[side].annotations = []
+      }
+
+      // Create annotation object
+      const annotation = {
+        id: annotationTemp.id || generateId(),
+        side: side,
+        location: annotationTemp.location,
+        abnormalityType: annotationTemp.abnormalityType,
+        levelOfConcern: annotationTemp.levelOfConcern,
+        // Include any conditional detail fields
+        ...Object.keys(annotationTemp)
+          .filter(key => key.endsWith('Details'))
+          .reduce((acc, key) => {
+            acc[key] = annotationTemp[key]
+            return acc
+          }, {})
+      }
+
+      // Update existing or add new
+      const existingIndex = data.imageReadingTemp[side].annotations.findIndex(a => a.id === annotation.id)
+      if (existingIndex !== -1) {
+        data.imageReadingTemp[side].annotations[existingIndex] = annotation
+      } else {
+        data.imageReadingTemp[side].annotations.push(annotation)
+      }
+
+      // Clear temp data
+      delete data.imageReadingTemp.annotationTemp
+    }
+
+    // Redirect based on action
+    if (action === 'save-and-add') {
+      const side = req.body.side || data.imageReadingTemp?.annotationTemp?.side
+      res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation/add?side=${side}`)
+    } else {
+      res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+    }
+  })
+
+  // Delete annotation
+  router.get('/reading/batch/:batchId/events/:eventId/annotation/delete/:annotationId', (req, res) => {
+    const { batchId, eventId, annotationId } = req.params
+    const data = req.session.data
+
+    // Remove annotation from both sides (we'll find it)
+    const sides = ['left', 'right']
+
+    for (const side of sides) {
+      if (data.imageReadingTemp?.[side]?.annotations) {
+        data.imageReadingTemp[side].annotations = data.imageReadingTemp[side].annotations.filter(a => a.id !== annotationId)
+      }
+    }
+
+    req.flash('success', 'Annotation deleted')
+
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  })
+
+
+
+
+
+
+
+  // Annotations end
 
   // Handle recording a reading result
   router.post('/reading/batch/:batchId/events/:eventId/result-:resultType', (req, res) => {

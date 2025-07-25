@@ -1,19 +1,22 @@
-{# /app/views/events/reading/awaiting-annotations.html #}
+{# /app/views/reading/annotation.html #}
 
 {% extends 'layout-reading.html' %}
 
-{% set pageHeading = "Add " + query.side + " breast abnormality" %}
+{% set annotation = data.imageReadingTemp.annotationTemp %}
+
+{% set side = annotation.side %}
+{% set pageHeading = ("Add" if not annotation.id else "Edit") + " " + side + " breast abnormality" %}
 
 {% set gridColumn = "none" %}
 
-{% set formAction = './result-abnormal' %}
+{% set formAction = './annotation/save' %}
 
 {% set hideSecondaryNavigation = true %}
 
 
 {% block pageContent %}
 
-  {{ progress.skippedEvents | log("progress") }}
+{{ annotation | log("This annotation" )}}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
@@ -31,7 +34,7 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-      {% if query.side == 'right' %}
+      {% if side == 'right' %}
         {% set views = ['RMLO', 'RCC'] %}
       {% else %}
         {% set views = ['LMLO', 'LCC'] %}
@@ -52,6 +55,8 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ input({
+        name: "imageReadingTemp[annotationTemp][location]",
+        value: data.imageReadingTemp.annotationTemp.location,
         label: {
           text: "Location",
           classes: "nhsuk-label--s"
@@ -59,19 +64,19 @@
         hint: {
           text: "For example, upper right quadrant"
         },
-        id: "other text",
-        name: "other text"
+        classes: "nhsuk-u-width-two-thirds"
       }) }}
 
       {% set checkboxItems = [] %}
 
       {% macro makeCheckboxConditionalItem(params) %}
         {{ input({
+          name: "imageReadingTemp[annotationTemp][" + params.value + "Details]",
+          value: data.imageReadingTemp.annotationTemp[params.value + "Details"],
           label: {
             text: "Provide details"
           },
-          id: params.value + "Details",
-          name: params.value + "Details"
+          classes: "nhsuk-u-width-two-thirds"
         }) }}
       {% endmacro %}
 
@@ -87,7 +92,7 @@
 
       {% for abnormality in abnormalityList %}
         {% set checkboxItems = checkboxItems | push({
-          value: abnormality | camelCase,
+          value: abnormality,
           text: abnormality,
           conditional: {
             html: makeCheckboxConditionalItem({value: abnormality | camelCase})
@@ -97,16 +102,17 @@
 
       {% set otherTextInputHtml %}
         {{ input({
+          name: "imageReadingTemp[annotationTemp][otherDetails]",
+          value: data.imageReadingTemp.annotationTemp.otherDetails,
           label: {
             text: "Provide details"
           },
-          id: "other text",
-          name: "other text"
+          classes: "nhsuk-u-width-two-thirds"
         }) }}
       {% endset %}
 
       {% set checkboxItems = checkboxItems | push({
-        value: "other",
+        value: "Other",
         text: "Other",
         conditional: {
           html: otherTextInputHtml
@@ -114,8 +120,8 @@
       }) %}
 
       {{ checkboxes({
-        idPrefix: "example",
-        name: "example",
+        name: "imageReadingTemp[annotationTemp][abnormalityType]",
+        values: data.imageReadingTemp.annotationTemp.abnormalityType,
         fieldset: {
           legend: {
             text: "Select abnormality type",
@@ -127,63 +133,79 @@
       }) }}
 
       {{ select({
-        id: "select-1",
-        name: "select-1",
+        name: "imageReadingTemp[annotationTemp][levelOfConcern]",
+        value: data.imageReadingTemp.annotationTemp.levelOfConcern,
         label: {
           text: "Level of concern",
           classes: "nhsuk-label--s"
         },
         items: [
           {
-            value: 1,
+            value: "",
             text: "Please select",
             disabled: true,
-            selected: true
+            selected: true if not annotationTemp.levelOfConcern
           },
           {
-            value: 1,
+            value: "1",
             text: "1 - Normal"
           },
           {
-            value: 2,
+            value: "2",
             text: "2 - Benign"
           },
           {
-            value: 3,
+            value: "3",
             text: "3 - Probably benign"
           },
           {
-            value: 4,
+            value: "4",
             text: "4 - Probably cancerous"
           },
           {
-            value: 5,
+            value: "5",
             text: "5 - Likely cancerous"
           }
         ]
       }) }}
 
-      {# {{ textarea({
-        label: {
-          text: "Provide additional comments",
-          classes: "nhsuk-label--s"
-        },
-        id: "comment",
-        name: "comment"
-      }) }} #}
-
-      <div class="nhsuk-form-group nhsuk-u-margin-top-7">
+      <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
           text: "Save and close",
-          href: "./recall-for-assessment-details?[imageReadingTemp][" + query.side + "][annotatedCount]=" + (data.imageReadingTemp[query.side].annotatedCount | int | default(0) + 1)
+          attributes: {
+            name: "action",
+            value: "save"
+          }
         }) }}
 
         {{ button({
           text: "Save and add another abnormality",
           classes: "nhsuk-button--secondary",
-          href: "./annotation?[imageReadingTemp][" + query.side + "][annotatedCount]=" + (data.imageReadingTemp[query.side].annotatedCount | int | default(0) + 2)
+          attributes: {
+            name: "action",
+            value: "save-and-add"
+          }
+        }) }}
+
+
+
+        {# Hidden field to preserve the side #}
+        {{ appHiddenInput({
+          name: "side",
+          value: side
         }) }}
       </div>
+      {# Only show link if this is a previously saved symptom #}
+      {% if annotation.id %}
+        {% set deleteHref %}
+          ./annotation/delete/{{ annotation.id }}
+        {% endset %}
+        <p class="nhsuk-u-margin-top-4">
+          <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+            Delete this annotation
+          </a>
+        </p>
+      {% endif %}
     </div>
   </div>
 
