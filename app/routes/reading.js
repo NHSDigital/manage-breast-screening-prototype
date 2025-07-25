@@ -390,12 +390,79 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
   const data = req.session.data
   const action = req.body.action || 'save'
 
+  // Parse marker positions if they came in as a string
+  if (data.imageReadingTemp.annotationTemp.markerPositions &&
+      typeof data.imageReadingTemp.annotationTemp.markerPositions === 'string') {
+    try {
+      data.imageReadingTemp.annotationTemp.markerPositions =
+        JSON.parse(data.imageReadingTemp.annotationTemp.markerPositions)
+    } catch (e) {
+      console.warn('Failed to parse incoming marker positions:', e)
+    }
+  }
+
   // Validation
   const errors = []
   const annotationTemp = data.imageReadingTemp?.annotationTemp
 
   if (!annotationTemp) {
     return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  }
+
+  // Validate that marker positions are set for both views
+  if (!annotationTemp.markerPositions || annotationTemp.markerPositions === '{}' || annotationTemp.markerPositions === '') {
+    errors.push({
+      text: `Mark the location on both ${annotationTemp.side} breast views`,
+      name: 'markerPositions',
+      href: '#mammogram-section'
+    })
+  } else {
+    // Parse and validate marker positions have markers for both views
+    try {
+      const positions = typeof annotationTemp.markerPositions === 'string'
+        ? JSON.parse(annotationTemp.markerPositions)
+        : annotationTemp.markerPositions
+
+      if (!positions || Object.keys(positions).length === 0) {
+        errors.push({
+          text: `Mark the location on both ${annotationTemp.side} breast views`,
+          name: 'markerPositions',
+          href: '#mammogram-section'
+        })
+      } else {
+        // Check we have markers for both image-0 and image-1 (both views)
+        const hasImage0 = positions['image-0']
+        const hasImage1 = positions['image-1']
+
+        if (!hasImage0 && !hasImage1) {
+          errors.push({
+            text: `Mark the location on both ${annotationTemp.side} breast views`,
+            name: 'markerPositions',
+            href: '#mammogram-section'
+          })
+        } else if (!hasImage0) {
+          const viewName = annotationTemp.side === 'right' ? 'RMLO' : 'LMLO'
+          errors.push({
+            text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
+            name: 'markerPositions',
+            href: '#mammogram-section'
+          })
+        } else if (!hasImage1) {
+          const viewName = annotationTemp.side === 'right' ? 'RCC' : 'LCC'
+          errors.push({
+            text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
+            name: 'markerPositions',
+            href: '#mammogram-section'
+          })
+        }
+      }
+    } catch (e) {
+      errors.push({
+        text: `Mark the location on both ${annotationTemp.side} breast views`,
+        name: 'markerPositions',
+        href: '#mammogram-section'
+      })
+    }
   }
 
   // Validate required fields
@@ -424,7 +491,7 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
   }
 
   // Validate conditional detail fields for selected abnormality types
-    if (annotationTemp.abnormalityType && annotationTemp.abnormalityType.length > 0) {
+  if (annotationTemp.abnormalityType && annotationTemp.abnormalityType.length > 0) {
     const abnormalityTypes = Array.isArray(annotationTemp.abnormalityType)
       ? annotationTemp.abnormalityType
       : [annotationTemp.abnormalityType]

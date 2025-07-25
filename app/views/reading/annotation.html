@@ -16,7 +16,7 @@
 
 {% block pageContent %}
 
-{{ annotation | log("This annotation" )}}
+  {{ annotation | log("This annotation" )}}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
@@ -28,26 +28,47 @@
         {{ pageHeading }}
       </h1>
 
-      <h2 class="nhsuk-heading-m">Mark the location</h2>
     </div>
   </div>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-      {% if side == 'right' %}
-        {% set views = ['RMLO', 'RCC'] %}
-      {% else %}
-        {% set views = ['LMLO', 'LCC'] %}
-      {% endif %}
+      {% set mammogramError = flash.error | find('name', 'markerPositions') %}
 
-      <div class="app-image-two-up nhsuk-u-margin-bottom-6">
-        {% for view in views %}
-         <div class="app-mammogram-container">
-           <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="/images/mammogram-diagrams/{{ view | lower }}.png" alt="">
-         </div>
+      <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if mammogramError }}">
+        <h2 class="nhsuk-label nhsuk-label--m" id="mammogram-section">Mark the location</h2>
 
-        {% endfor %}
+        {% if mammogramError %}
+          <span class="nhsuk-error-message" id="mammogram-section-error">
+            <span class="nhsuk-u-visually-hidden">Error:</span> {{ mammogramError.text }}
+          </span>
+        {% endif %}
+
+        {{ mammogramError | log("Mammogram error") }}
+        {% if side == 'right' %}
+          {% set views = ['RMLO', 'RCC'] %}
+        {% else %}
+          {% set views = ['LMLO', 'LCC'] %}
+        {% endif %}
+
+        <div class="app-image-two-up nhsuk-u-margin-bottom-6">
+          {% for view in views %}
+          <div class="app-mammogram-container">
+            <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="/images/mammogram-diagrams/{{ view | lower }}.png" alt="">
+          </div>
+
+          {% endfor %}
+        </div>
+
+
       </div>
+
+
+
+
+
+
+
 
     </div>
   </div>
