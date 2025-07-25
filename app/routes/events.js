@@ -1,5 +1,6 @@
 // app/routes/events.js
 const dayjs = require('dayjs')
+const _ = require('lodash')
 
 const { getParticipant, getFullName, saveTempParticipantToParticipant } = require('../lib/utils/participants')
 const { generateMammogramImages } = require('../lib/generators/mammogram-generator')
@@ -91,6 +92,18 @@ module.exports = router => {
       data.participant = { ...originalEventData.participant }
     }
 
+    // Deep compare temp participant and saved participant in array
+    const savedParticipant = data.participants.find(p => p.id === data.participant.id)
+    res.locals.participantHasUnsavedChanges = !_.isEqual(data.participant, savedParticipant)
+
+    // Deep compare temp event and saved event in array, excluding workflowStatus
+    const savedEvent = data.events.find(e => e.id === data.event.id)
+    const tempEventForCompare = data.event ? { ...data.event } : undefined
+    const savedEventForCompare = savedEvent ? { ...savedEvent } : undefined
+    if (tempEventForCompare) delete tempEventForCompare.workflowStatus
+    if (savedEventForCompare) delete savedEventForCompare.workflowStatus
+    res.locals.eventHasUnsavedChanges = !_.isEqual(tempEventForCompare, savedEventForCompare)
+
     // This will now have any temp event data that forms have added too
     // We'll later save this back to the source data
     res.locals.event = data.event
@@ -99,11 +112,16 @@ module.exports = router => {
     res.locals.clinic = originalEventData.clinic
 
     res.locals.participant = data.participant
+    res.locals.participantId = participantId
     res.locals.eventUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.contextUrl = `/clinics/${clinicId}/events/${eventId}`
+    res.locals.pageContext = 'event'
     res.locals.unit = originalEventData.unit
     res.locals.clinicId = clinicId
     res.locals.eventId = eventId
+
+    // Ensure latest session data is available to views
+    res.locals.data = req.session.data
 
     next()
   })
@@ -116,7 +134,7 @@ module.exports = router => {
     // On next request this will be recreated from the event array
     delete req.session.data.event
     console.log('Cleared temp event data')
-    res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}`)
+    res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`)
   })
 
   // Event within clinic context
@@ -139,7 +157,7 @@ module.exports = router => {
         href: '#ethnicBackgroundWhite'
       })
 
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`)
+      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/personal-details/ethnicity`, req.query.referrerChain))
       return
     }
 
@@ -165,7 +183,9 @@ module.exports = router => {
 
     req.flash('success', 'Ethnicity updated')
     // Redirect back to the event page (or wherever appropriate)
-    res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, req.query.referrerChain)
+    res.redirect(returnUrl)
   })
 
   // Helper function to clean up otherEthnicBackgroundDetails from array to single value
@@ -376,6 +396,7 @@ module.exports = router => {
     const action = req.body.action || req.query.action // 'save' or 'save-and-add'
     const nextSymptomType = req.query.symptomType // camelCase symptom type
     const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
 
     // Save temp symptom to array
     if (data.event?.symptomTemp) {
@@ -491,11 +512,12 @@ module.exports = router => {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/add?symptomType=${nextSymptomType}${referrerChain ? '&referrerChain=' + referrerChain : ''}`)
       } else {
         // Fallback to general add page
-        res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/add`, referrerChain))
+        res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/add`, referrerChain, scrollTo))
       }
     } else {
       // Regular save - redirect back to medical information page
-      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain)
+      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
+      console.log('Redirecting to:', returnUrl, 'scrollTo:', scrollTo)
       res.redirect(returnUrl)
     }
   })
@@ -543,7 +565,7 @@ module.exports = router => {
 
     req.flash('success', 'Symptom deleted')
 
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain)
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain, req.query.scrollTo)
     res.redirect(returnUrl)
   })
 
@@ -577,16 +599,16 @@ module.exports = router => {
         }
 
         // Redirect to details page
-        return res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/details`, req.query.referrerChain))
+        return res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/details`, req.query.referrerChain, req.query.scrollTo))
       }
     }
 
     // No symptomType or invalid type - go to type selection page
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain))
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain, req.query.scrollTo))
   })
 
   // Specific route for imaging view
-  router.get('/clinics/:clinicId/events/:eventId/imaging', (req, res) => {
+  router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
     const eventData = getEventData(req.session.data, clinicId, eventId)
@@ -604,7 +626,7 @@ module.exports = router => {
       res.locals.event = data.event
     }
 
-    res.render('events/imaging', {})
+    res.render('events/images', {})
   })
 
 
@@ -647,7 +669,8 @@ module.exports = router => {
     if (!isPartialMammography) {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/imaging`)
     } else {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/confirm`)
+      data.event.workflowStatus.images = 'completed'
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
     }
   })
 

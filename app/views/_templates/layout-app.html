@@ -15,6 +15,21 @@
 {% endblock %}
 
 {% block header %}
+
+  {% set workflowNavItems = [
+    {
+      href: "/clinics/" ~ clinicId,
+      text: "Leave this appointment"
+    },
+    {
+      href: "#",
+      text: "Manage appointment"
+    }
+  ]
+  %}
+
+  {% set shouldShowAppointmentNav = (pageContext == 'event') and (event | isAppointmentWorkflow) %}
+
   {{ header({
     account: {
       items: [
@@ -34,7 +49,8 @@
       href: "/"
     },
     navigation: {
-      items: [
+      items: workflowNavItems if shouldShowAppointmentNav else
+      [
         {
           href: "/dashboard",
           text: "Home",
@@ -78,8 +94,11 @@
     primaryLinks: navigation.primaryLinks if not public,
     account: navigation.account if not public
   }) }} #}
-{% endblock %}
 
+  {% if shouldShowAppointmentNav %}
+    {% include "_includes/appointment-status-bar.njk" %}
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 
@@ -88,7 +107,11 @@
 {% endif %}
 
 {% if participantId and data.participant %}
-  {{ data.participant | log("Participant data") }}
+  {{ data.participant | log("Data.participant") }}
+{% endif %}
+
+{% if participant %}
+  {{ participant | log("Participant") }}
 {% endif %}
 
 {% if clinicId and clinic %}

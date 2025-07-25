@@ -50,6 +50,18 @@ $govuk-spacing4: 20px;
   }
 }
 
+.app-secondary-navigation__link--disabled {
+  color: $nhsuk-secondary-text-color;
+  cursor: not-allowed;
+  pointer-events: none;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    text-decoration: none;
+  }
+}
+
 .app-secondary-navigation__list {
   @include nhsuk-clearfix;
 

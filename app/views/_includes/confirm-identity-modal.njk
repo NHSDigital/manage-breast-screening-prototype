@@ -1,3 +1,5 @@
+{# app/views/_includes/confirm-identity-modal.njk #}
+
 {% set participant = participant or params.participant %}
 {% set referrerChain = referrerChain or params.referrerChain %}
 {% set participantUrl = participantUrl or params.participantUrl %}
@@ -61,7 +63,8 @@
       href: checkInHref,
       attributes: {
         'data-clinic-id': params.clinicId,
-        'data-event-id': params.event.id
+        'data-event-id': params.event.id,
+        'data-show-appointment-link': true
       }
     },
     {

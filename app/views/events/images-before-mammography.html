@@ -14,12 +14,16 @@
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
-  <span class="nhsuk-caption-l">
+  {# <span class="nhsuk-caption-l">
     {{ participant | getFullName }}
   </span>
   <h1 class="nhsuk-heading-l js-image-count">
     {{ pageHeading }}
-  </h1>
+  </h1> #}
+
+  {% set activeTab = 'images' %}
+
+  {% include "event-workflow.njk" %}
 
   {% set insetHtml %}
     <p>Mammography images will appear here once they have been transmitted by the PACS</p>
@@ -29,7 +33,7 @@
   }) }}
 
   <div id="loading-spinner" class="">
-    <p class="app-suppress-link-styles"><a href="./imaging"><span class="">Loading images...</span></a></p>
+    <p class="app-suppress-link-styles"><a href="./images?event[workflowStatus][awaiting-images]=completed"><span class="">Loading images...</span></a></p>
   </div>
 
 

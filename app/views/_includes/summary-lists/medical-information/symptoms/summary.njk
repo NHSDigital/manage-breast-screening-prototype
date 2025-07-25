@@ -6,7 +6,7 @@
   {% for symptom in event.medicalInformation.symptoms %}
 
     {# Build the key (left column) - just the symptom type #}
-    {% set keyText = symptom.type %}
+    {% set keyText = symptom.type or "" %}
 
     {# Build the value (right column) - all supporting details #}
     {% set valueLines = [] %}

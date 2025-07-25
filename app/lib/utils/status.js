@@ -69,6 +69,16 @@ const isActive = (input) => {
 }
 
 /**
+ * Check if an event is in the appointment workflow
+ * @param {*} event
+ * @returns {boolean} Whether the event is in the appointment workflow
+ */
+const isAppointmentWorkflow = (event) => {
+  const status = getStatus(event)
+  return status == "event_checked_in"
+}
+
+/**
  * Check if a status indicates reading is eligible
  * @param {string|Object} input - Status string or event object
  * @returns {boolean} Whether reading is needed
@@ -101,6 +111,12 @@ const getStatusTagColour = (status) => {
     event_did_not_attend: 'red',
     event_cancelled: 'red',
     event_attended_not_screened: 'orange',
+
+    // Task list
+    incomplete: 'blue',
+    complete: 'green',
+    to_review: 'blue',
+    reviewed: 'green',
 
     // Image reading
     not_started: 'grey',
@@ -207,6 +223,7 @@ module.exports = {
   isCompleted,
   isFinal,
   isActive,
+  isAppointmentWorkflow,
   eligibleForReading,
   getStatusTagColour,
   getStatusText,

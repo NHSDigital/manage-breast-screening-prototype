@@ -26,83 +26,99 @@
 
   {{ data.imageReadingTemp | log("ImageReadingTemp")}}
   {{ batch | log("Batch")}}
-  <div class="app-reading-status">
-    <div class="nhsuk-width-container">
-      <div class="app-reading-status__row">
-        <div class="app-reading-status__col">
-          <strong>
-            {% if isBatchContext %}
-              Batch:
-            {% else %}
-              Clinic:
-            {% endif %}
 
-          </strong>
-          {% if isBatchContext %}
-            {{ batch.name }}
-          {% else %}
-            {% set locationName %}
-              {% if location.type === 'mobile_unit' %}
-                {{ location.name }} at {{ clinic.siteName }}
-              {% else %}
-                {{ location.name }}
-              {% endif %}
-            {% endset %}
-            <span>{{ locationName }} - {{ clinic.date | formatDate |  noWrap }}</span>
-          {% endif %}
+  {% set firstRowItems = [] %}
 
-        </div>
-        <div class="app-reading-status__col">
-          <strong>Progress:</strong>
-          {{ progress | log("Progress") }}
-          {{ data.readingSession | log("Reading session") }}
-
-          <span>{{ progress.userReadCount }} read,
-            {{ progress.userReadableCount }} remaining
-            {%- if progress.skippedEvents | length > 0 -%}
-              , {{ progress.skippedEvents | length }} skipped
-               {# <a href="#">(go to first unread)</a> #}
-            {% endif %}</span>
-        </div>
-
-      </div>
-
-      {% if participant %}
-        <div class="app-reading-status__row">
-          <div class="app-reading-status__participant">
-            <div class="app-reading-status__detail">
-              <strong>{{ participant | getFullName }}</strong>
-              {% if participant | getAge %}
-                <span>({{ participant | getAge }} years)</span>
-              {% endif %}
-            </div>
-
-            <div class="app-reading-status__detail">
-              <strong>DOB:</strong>
-              <span>{{ participant.demographicInformation.dateOfBirth | formatDate }}</span>
-            </div>
-
-            <div class="app-reading-status__detail">
-              <strong>NHS:</strong>
-              <span>{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</span>
-            </div>
-
-            <div class="app-reading-status__detail">
-              <strong>SX:</strong>
-              <span>{{ participant.sxNumber }}</span>
-            </div>
-
-            {% if currentEvent %}
-              <div class="app-reading-status__detail">
-                <strong>Screened:</strong>
-                <span>{{ currentEvent.timing.startTime | formatDate }}</span>
-              </div>
-            {% endif %}
-          </div>
-        </div>
+  {# Context item (Batch or Clinic) #}
+  {% if isBatchContext %}
+    {% set firstRowItems = firstRowItems | push({
+      key: "Batch:",
+      value: batch.name
+    }) %}
+  {% else %}
+    {% set locationName %}
+      {% if location.type === 'mobile_unit' %}
+        {{ location.name }} at {{ clinic.siteName }}
+      {% else %}
+        {{ location.name }}
       {% endif %}
-    </div>
-  </div>
+    {% endset %}
+    {% set firstRowItems = firstRowItems | push({
+      key: "Clinic:",
+      value: (locationName + " - " + (clinic.date | formatDate | noWrap))
+    }) %}
+  {% endif %}
+
+  {# Progress item #}
+  {% set progressText %}
+    {{ progress.userReadCount }} read, {{ progress.userReadableCount }} remaining
+    {%- if progress.skippedEvents | length > 0 -%}
+      , {{ progress.skippedEvents | length }} skipped
+    {% endif %}
+  {% endset %}
+
+  {% set firstRowItems = firstRowItems | push({
+    key: "Progress:",
+    value: progressText | trim
+  }) %}
+
+  {# Build rows array #}
+  {% set statusBarRows = [
+    { items: firstRowItems }
+  ] %}
+
+  {# Add participant row if participant exists #}
+  {% if participant %}
+    {% set participantRowItems = [] %}
+
+    {# Full name with age #}
+    {% set nameWithAge %}
+      {{ participant | getFullName }}
+    {% endset %}
+    {% set participantRowItems = participantRowItems | push({
+      html: "<strong>" + nameWithAge + "</strong>"
+    }) %}
+
+    {% set dobValue %}
+      {{ participant.demographicInformation.dateOfBirth | formatDate }} {% if participant | getAge %}
+        ({{ participant | getAge }} years)
+      {% endif %}
+    {% endset %}
+
+    {# DOB #}
+    {% set participantRowItems = participantRowItems | push({
+      key: "DOB:",
+      value: dobValue
+    }) %}
+
+    {# NHS Number #}
+    {% set participantRowItems = participantRowItems | push({
+      key: "NHS:",
+      value: participant.medicalInformation.nhsNumber | formatNhsNumber
+    }) %}
+
+    {# SX Number #}
+    {% set participantRowItems = participantRowItems | push({
+      key: "SX:",
+      value: participant.sxNumber
+    }) %}
+
+    {# Screened date if current event exists #}
+    {% if currentEvent %}
+      {% set participantRowItems = participantRowItems | push({
+        key: "Screened:",
+        value: currentEvent.timing.startTime | formatDate
+      }) %}
+    {% endif %}
+
+    {% set statusBarRows = statusBarRows | push({
+      items: participantRowItems
+    }) %}
+  {% endif %}
+
+  {{ appStatusBar({
+    rows: statusBarRows
+  }) }}
 {% endblock header %}
 
 {% if not hideSecondaryNavigation %}

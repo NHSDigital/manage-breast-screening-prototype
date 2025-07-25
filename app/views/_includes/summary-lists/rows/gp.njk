@@ -1,0 +1,30 @@
+{# /app/views/_includes/summary-lists/rows/address.njk #}
+{% from 'details/macro.njk' import details %}
+
+{% set gp = participant.medicalInformation.gp %}
+
+{% set addressLines = gp.address | getObjectValues({removeEmpty: true }) %}
+
+
+
+{% set addressHtml %}
+  {{ gp.practiceName}}<br>
+  {{ gp.name }}<br><br>
+  {{ addressLines | join("<br>") | safe }}
+{% endset %}
+
+{% set gpAddressRow = {
+  classes: "nhsuk-summary-list__row--no-border" if noBorder,
+  key: {
+    text: "GP"
+  },
+  value: {
+    html: addressHtml | safe
+  },
+  actions: {
+     items: [
+     ]
+   }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
+
+{{ appSummaryListRow(gpAddressRow) }}

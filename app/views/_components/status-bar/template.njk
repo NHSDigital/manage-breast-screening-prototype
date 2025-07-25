@@ -1,0 +1,22 @@
+{# app/views/_components/status-bar/template.njk #}
+
+<div class="app-status-bar">
+  <div class="nhsuk-width-container">
+    {% for row in params.rows %}
+      <div class="app-status-bar__row">
+        {% for item in row.items %}
+          <div class="app-status-bar__item">
+            {% if item.key and item.value %}
+              <span class="app-status-bar__key">{{ item.key | safe }}</span>
+              <span>{{ item.value | safe }}</span>
+            {% elif item.text %}
+              <span>{{ item.text | safe }}</span>
+            {% elif item.html %}
+              {{ item.html | safe }}
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</div>

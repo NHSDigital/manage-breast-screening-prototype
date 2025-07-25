@@ -19,47 +19,112 @@ const parseReferrerChain = (referrerChain) => {
 
 /**
  * Get destination from referrer chain, falling back to provided URL if no referrer
+ * Automatically converts URL fragments to scrollTo query parameters for server redirects
  * @param {string} url - Default URL to use if no referrer
  * @param {string} referrerChain - Referrer chain
+ * @param {string|false} [scrollToId=false] - Optional element ID to scroll to on return
  * @returns {string} URL to use for back link
  * @example
  * // In templates:
  * <a href="{{ '/default-path' | getReturnUrl(referrerChain) }}">Back</a>
+ *
+ * // In routes with scrollTo:
+ * const scrollTo = req.query.scrollTo
+ * const returnUrl = getReturnUrl('/default-path', referrerChain, scrollTo)
+ *
+ * // URL fragments take precedence over scrollToId parameter:
+ * // If referrer contains '#section1' and scrollToId is 'section2',
+ * // the result will use 'section1'
  */
-const getReturnUrl = function(url, referrerChain) {
+const getReturnUrl = function(url, referrerChain, scrollToId = false) {
   // Get currentUrl from context if available
   const currentUrl = this?.ctx?.currentUrl
 
   const chain = parseReferrerChain(referrerChain)
-    .filter(ref => ref !== currentUrl)
+    .filter(ref => {
+      // Extract base URL without fragment for comparison
+      const refBase = ref.split('#')[0]
+      return refBase !== currentUrl
+    })
 
-  if (!chain.length) return url
+  if (!chain.length) {
+    // No chain - use default URL, but add scrollToId if provided
+    if (scrollToId) {
+      const separator = url.includes('?') ? '&' : '?'
+      return `${url}${separator}scrollTo=${scrollToId}`
+    }
+    return url
+  }
 
-  // For single referrer, return it directly
-  if (chain.length === 1) return chain[0]
+  // Get the destination URL (single referrer or last in chain)
+  let destination
+  let remainingChain = []
 
-  // For multiple referrers, return last one with remaining chain as query param
-  const remainingChain = chain.slice(0, -1)
-  const destination = chain[chain.length - 1]
+  if (chain.length === 1) {
+    destination = chain[0]
+  } else {
+    remainingChain = chain.slice(0, -1)
+    destination = chain[chain.length - 1]
+  }
 
-  return `${destination}?referrerChain=${remainingChain.join(',')}`
+  // Determine which scrollTo to use (fragment takes precedence over parameter)
+  let finalScrollTo = null
+
+  if (destination.includes('#')) {
+    const [baseUrl, fragment] = destination.split('#')
+    destination = baseUrl // Remove fragment from destination
+    finalScrollTo = fragment
+  } else if (scrollToId) {
+    finalScrollTo = scrollToId
+  }
+
+  // Build the final URL
+  let finalUrl = destination
+  const queryParams = []
+
+  // Add remaining chain if needed
+  if (remainingChain.length > 0) {
+    queryParams.push(`referrerChain=${remainingChain.join(',')}`)
+  }
+
+  // Add scrollTo if we have one
+  if (finalScrollTo) {
+    queryParams.push(`scrollTo=${finalScrollTo}`)
+  }
+
+  // Append query params if we have any
+  if (queryParams.length > 0) {
+    const separator = destination.includes('?') ? '&' : '?'
+    finalUrl += `${separator}${queryParams.join('&')}`
+  }
+
+  return finalUrl
 }
 
 /**
- * Add referrer to URL as query parameter
+ * Add referrer to URL as query parameter with optional scroll anchor
  * @param {string} url - Base URL
  * @param {string} referrerChain - Referrer to append
- * @returns {string} URL with referrer query param
+ * @param {string} [scrollToId] - Optional element ID to scroll to on return
+ * @returns {string} URL with referrer query param and optional scrollTo
  * @example
  * // In templates:
  * <a href="{{ '/next-page' | urlWithReferrer(referrer) }}">Continue</a>
+ * <a href="{{ '/next-page' | urlWithReferrer(referrer, 'current-symptoms') }}">Continue</a>
  */
-const urlWithReferrer = (url, referrerChain) => {
+const urlWithReferrer = (url, referrerChain, scrollToId = false) => {
   if (!referrerChain) return url
 
   // Check if URL already has query parameters
   const separator = url.includes('?') ? '&' : '?'
-  return `${url}${separator}referrerChain=${referrerChain}`
+  let resultUrl = `${url}${separator}referrerChain=${referrerChain}`
+
+  // Add scrollTo parameter if provided
+  if (scrollToId) {
+    resultUrl += `&scrollTo=${scrollToId}`
+  }
+
+  return resultUrl
 }
 
 /**

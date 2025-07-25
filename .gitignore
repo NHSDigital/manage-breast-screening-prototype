@@ -6,7 +6,6 @@
 .tmp
 /public
 app/data/generated/
-reference
 
 # Runtime data
 pids
@@ -37,6 +36,11 @@ pids
 .sass-cache
 connect.lock
 typings
+
+# LLMs
+reference
+.github/copilot-instructions.md
+*.instructions.md
 
 # Logs
 logs
