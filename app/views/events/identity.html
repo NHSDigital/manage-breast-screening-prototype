@@ -58,21 +58,7 @@
       {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
       {% include "_includes/summary-lists/rows/email.njk" %}
       {% include "_includes/summary-lists/rows/ethnicity.njk" %}
-      {% set nhsNumberRow = {
-        key: {
-          text: "GP"
-        },
-        value: {
-          text: "St. James Street Medical practice"
-        },
-        actions: {
-          items: [
-          ]
-        }
-      } %}
-
-    {{ appSummaryListRow(nhsNumberRow) }}
-
+      {% include "_includes/summary-lists/rows/gp.njk" %}
     {% endcall %}
   {% endcall %}
 
