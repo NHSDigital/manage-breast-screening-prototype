@@ -187,13 +187,6 @@
           }
         }) }}
 
-
-
-        {# Hidden field to preserve the side #}
-        {{ appHiddenInput({
-          name: "side",
-          value: side
-        }) }}
       </div>
       {# Only show link if this is a previously saved symptom #}
       {% if annotation.id %}
@@ -206,6 +199,19 @@
           </a>
         </p>
       {% endif %}
+
+      {# Hidden field to preserve the side #}
+      {{ appHiddenInput({
+        name: "side",
+        value: side
+      }) }}
+
+      {# Used by js to store marker positions #}
+      {{ appHiddenInput({
+        name: "imageReadingTemp[annotationTemp][markerPositions]",
+        value: (annotation.markerPositions | dump) if annotation.markerPositions,
+        id: "markerPositions"
+      }) }}
     </div>
   </div>
 
@@ -214,17 +220,25 @@
 
 {% block pageScripts %}
   <script type="module">
-// Mammogram annotation functionality with improved dragging
+// Mammogram annotation functionality with coordinate saving
 document.addEventListener('DOMContentLoaded', () => {
   const mammogramImages = document.querySelectorAll('.app-mammogram-image')
+  const markerPositionsInput = document.getElementById('markerPositions')
 
   // Keep track of markers for each image
   const markers = {}
+
+  // Get existing marker positions if editing
+  const existingPositions = getExistingMarkerPositions()
 
   // Track dragging state
   let activeMarker = null
   let isDragging = false
   let activeContainer = null
+
+  // Track loaded images
+  let imagesLoaded = 0
+  const totalImages = mammogramImages.length
 
   // Set up each mammogram image
   mammogramImages.forEach((image, index) => {
@@ -241,6 +255,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply custom cursor
     image.style.cursor = 'crosshair'
 
+    // Wait for image to load before restoring markers
+    if (image.complete) {
+      handleImageLoaded()
+    } else {
+      image.addEventListener('load', () => handleImageLoaded())
+    }
+
     // Add click handler to place/move marker
     image.addEventListener('click', (event) => {
       // Only place marker if we're not currently dragging
@@ -249,6 +270,61 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
   })
+
+  // Handle when an image is loaded
+  function handleImageLoaded() {
+    imagesLoaded++
+
+    // When all images are loaded, restore all existing markers
+    if (imagesLoaded === totalImages && existingPositions) {
+      // Small delay to ensure layout is settled
+      setTimeout(() => {
+        restoreAllMarkers()
+      }, 50)
+    }
+  }
+
+  // Restore all markers that have saved positions
+  function restoreAllMarkers() {
+    Object.entries(existingPositions).forEach(([imageId, position]) => {
+      const image = document.querySelector(`[data-image-id="${imageId}"]`)
+      if (image) {
+        restoreMarker(image, imageId, position)
+      }
+    })
+  }
+
+  // Get existing marker positions from hidden field
+  function getExistingMarkerPositions() {
+    try {
+      const value = markerPositionsInput?.value
+      return value ? JSON.parse(value) : null
+    } catch (e) {
+      return null
+    }
+  }
+
+  // Restore a marker at saved position
+  function restoreMarker(image, imageId, position) {
+    const container = image.parentElement
+
+    // Use the actual container dimensions at restore time
+    const containerRect = container.getBoundingClientRect()
+
+    // Convert percentages back to pixel positions
+    const x = (position.x / 100) * containerRect.width
+    const y = (position.y / 100) * containerRect.height
+
+    console.log(`Restoring marker for ${imageId}:`, {
+      position,
+      containerWidth: containerRect.width,
+      containerHeight: containerRect.height,
+      calculatedX: x,
+      calculatedY: y
+    })
+
+    createMarkerElement(container, imageId, x, y)
+  }
 
   // Place or move a marker
   function placeMarker(event, image, imageId) {
@@ -265,68 +341,106 @@ document.addEventListener('DOMContentLoaded', () => {
       marker.style.top = `${y}px`
     } else {
       // Create new marker
-      const marker = document.createElement('div')
-      marker.className = 'app-mammogram-marker'
-      marker.dataset.imageId = imageId
-      marker.style.position = 'absolute'
-      marker.style.left = `${x}px`
-      marker.style.top = `${y}px`
-      marker.style.width = '30px'
-      marker.style.height = '30px'
-      marker.style.borderRadius = '50%'
-      marker.style.border = '3px solid #d5281b'
-      marker.style.backgroundColor = 'rgba(213, 40, 27, 0.4)'
-      marker.style.transform = 'translate(-50%, -50%)'
-      marker.style.boxShadow = '0 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px rgba(0, 0, 0, 0.5)'
-      marker.style.zIndex = '10'
-      marker.style.cursor = 'grab'
-      marker.style.pointerEvents = 'auto' // Make it interactive for dragging
+      createMarkerElement(container, imageId, x, y)
+    }
 
-      // Add crosshair
-      const horizontal = document.createElement('div')
-      horizontal.style.position = 'absolute'
-      horizontal.style.left = '0'
-      horizontal.style.top = '50%'
-      horizontal.style.width = '100%'
-      horizontal.style.height = '2px'
-      horizontal.style.backgroundColor = '#d5281b'
-      horizontal.style.transform = 'translateY(-50%)'
+    // Save coordinates to hidden field
+    saveMarkerPositions()
+  }
 
-      const vertical = document.createElement('div')
-      vertical.style.position = 'absolute'
-      vertical.style.left = '50%'
-      vertical.style.top = '0'
-      vertical.style.width = '2px'
-      vertical.style.height = '100%'
-      vertical.style.backgroundColor = '#d5281b'
-      vertical.style.transform = 'translateX(-50%)'
+  // Create marker element
+  function createMarkerElement(container, imageId, x, y) {
+    const marker = document.createElement('div')
+    marker.className = 'app-mammogram-marker'
+    marker.dataset.imageId = imageId
+    marker.style.position = 'absolute'
+    marker.style.left = `${x}px`
+    marker.style.top = `${y}px`
+    marker.style.width = '30px'
+    marker.style.height = '30px'
+    marker.style.borderRadius = '50%'
+    marker.style.border = '3px solid #d5281b'
+    marker.style.backgroundColor = 'rgba(213, 40, 27, 0.4)'
+    marker.style.transform = 'translate(-50%, -50%)'
+    marker.style.boxShadow = '0 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px rgba(0, 0, 0, 0.5)'
+    marker.style.zIndex = '10'
+    marker.style.cursor = 'grab'
+    marker.style.pointerEvents = 'auto'
 
-      marker.appendChild(horizontal)
-      marker.appendChild(vertical)
+    // Add crosshair
+    const horizontal = document.createElement('div')
+    horizontal.style.position = 'absolute'
+    horizontal.style.left = '0'
+    horizontal.style.top = '50%'
+    horizontal.style.width = '100%'
+    horizontal.style.height = '2px'
+    horizontal.style.backgroundColor = '#d5281b'
+    horizontal.style.transform = 'translateY(-50%)'
 
-      // Add marker to container
-      container.appendChild(marker)
-      markers[imageId] = marker
+    const vertical = document.createElement('div')
+    vertical.style.position = 'absolute'
+    vertical.style.left = '50%'
+    vertical.style.top = '0'
+    vertical.style.width = '2px'
+    vertical.style.height = '100%'
+    vertical.style.backgroundColor = '#d5281b'
+    vertical.style.transform = 'translateX(-50%)'
 
-      // Add mousedown event for drag start
-      marker.addEventListener('mousedown', startDragging)
+    marker.appendChild(horizontal)
+    marker.appendChild(vertical)
+
+    // Add marker to container
+    container.appendChild(marker)
+    markers[imageId] = marker
+
+    // Add mousedown event for drag start
+    marker.addEventListener('mousedown', startDragging)
+  }
+
+  // Save marker positions as percentages
+  function saveMarkerPositions() {
+    const positions = {}
+
+    Object.entries(markers).forEach(([imageId, marker]) => {
+      const container = marker.parentElement
+      const rect = container.getBoundingClientRect()
+
+      // Get current marker position
+      const markerX = parseFloat(marker.style.left)
+      const markerY = parseFloat(marker.style.top)
+
+      // Convert to percentages
+      const percentX = (markerX / rect.width) * 100
+      const percentY = (markerY / rect.height) * 100
+
+      positions[imageId] = {
+        x: percentX,
+        y: percentY
+      }
+
+      console.log(`Saving marker for ${imageId}:`, {
+        pixelX: markerX,
+        pixelY: markerY,
+        containerWidth: rect.width,
+        containerHeight: rect.height,
+        percentX,
+        percentY
+      })
+    })
+
+    // Update hidden field
+    if (markerPositionsInput) {
+      markerPositionsInput.value = JSON.stringify(positions)
     }
   }
 
   // Start dragging a marker
   function startDragging(event) {
-    // Prevent default to avoid text selection during drag
     event.preventDefault()
-
-    // Get the marker and its container
     activeMarker = event.currentTarget
     activeContainer = activeMarker.parentElement
     isDragging = true
-
-    // Change cursor to indicate dragging
     activeMarker.style.cursor = 'grabbing'
-
-    // Add a class for visual feedback
     activeMarker.classList.add('dragging')
   }
 
@@ -335,30 +449,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isDragging || !activeMarker || !activeContainer) return
 
     const rect = activeContainer.getBoundingClientRect()
-
-    // Calculate position relative to the container
     let x = event.clientX - rect.left
     let y = event.clientY - rect.top
 
     // Constrain to container bounds
-    x = Math.max(0, Math.min(rect.width, x))
-    y = Math.max(0, Math.min(rect.height, y))
+    x = Math.max(15, Math.min(rect.width - 15, x)) // Keep marker center within bounds
+    y = Math.max(15, Math.min(rect.height - 15, y))
 
     // Update marker position
     activeMarker.style.left = `${x}px`
     activeMarker.style.top = `${y}px`
+
+    // Save coordinates during drag
+    saveMarkerPositions()
   })
 
   // End dragging
   document.addEventListener('mouseup', () => {
     if (activeMarker) {
-      // Reset cursor
       activeMarker.style.cursor = 'grab'
-      // Remove dragging class
       activeMarker.classList.remove('dragging')
     }
 
-    // Reset dragging state
     isDragging = false
     activeMarker = null
     activeContainer = null

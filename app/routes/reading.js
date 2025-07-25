@@ -386,64 +386,77 @@ module.exports = router => {
 
   // Save annotation - handles both 'save' and 'save-and-add'
   router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res) => {
-    const { batchId, eventId } = req.params
-    const data = req.session.data
-    const action = req.body.action || 'save'
+  const { batchId, eventId } = req.params
+  const data = req.session.data
+  const action = req.body.action || 'save'
 
-    // Save temp annotation to array
-    if (data.imageReadingTemp?.annotationTemp) {
-      const annotationTemp = data.imageReadingTemp.annotationTemp
-      const side = annotationTemp.side
-      const isNewAnnotation = !annotationTemp.id
+  // Save temp annotation to array
+  if (data.imageReadingTemp?.annotationTemp) {
+    const annotationTemp = data.imageReadingTemp.annotationTemp
+    const side = annotationTemp.side
+    const isNewAnnotation = !annotationTemp.id
 
-      if (!side) {
-        return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
-      }
-
-      // Initialize side data if needed
-      if (!data.imageReadingTemp[side]) {
-        data.imageReadingTemp[side] = {}
-      }
-      if (!data.imageReadingTemp[side].annotations) {
-        data.imageReadingTemp[side].annotations = []
-      }
-
-      // Create annotation object
-      const annotation = {
-        id: annotationTemp.id || generateId(),
-        side: side,
-        location: annotationTemp.location,
-        abnormalityType: annotationTemp.abnormalityType,
-        levelOfConcern: annotationTemp.levelOfConcern,
-        // Include any conditional detail fields
-        ...Object.keys(annotationTemp)
-          .filter(key => key.endsWith('Details'))
-          .reduce((acc, key) => {
-            acc[key] = annotationTemp[key]
-            return acc
-          }, {})
-      }
-
-      // Update existing or add new
-      const existingIndex = data.imageReadingTemp[side].annotations.findIndex(a => a.id === annotation.id)
-      if (existingIndex !== -1) {
-        data.imageReadingTemp[side].annotations[existingIndex] = annotation
-      } else {
-        data.imageReadingTemp[side].annotations.push(annotation)
-      }
-
-      // Clear temp data
-      delete data.imageReadingTemp.annotationTemp
+    if (!side) {
+      return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
     }
 
-    // Redirect based on action
-    if (action === 'save-and-add') {
-      const side = req.body.side || data.imageReadingTemp?.annotationTemp?.side
-      res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation/add?side=${side}`)
+    // Initialize side data if needed
+    if (!data.imageReadingTemp[side]) {
+      data.imageReadingTemp[side] = {}
+    }
+    if (!data.imageReadingTemp[side].annotations) {
+      data.imageReadingTemp[side].annotations = []
+    }
+
+    // Parse marker positions if provided
+    let markerPositions = null
+    if (annotationTemp.markerPositions) {
+      try {
+        markerPositions = typeof annotationTemp.markerPositions === 'string'
+          ? JSON.parse(annotationTemp.markerPositions)
+          : annotationTemp.markerPositions
+      } catch (e) {
+        console.warn('Failed to parse marker positions:', e)
+      }
+    }
+
+    // Create annotation object
+    const annotation = {
+      id: annotationTemp.id || generateId(),
+      side: side,
+      location: annotationTemp.location,
+      abnormalityType: annotationTemp.abnormalityType,
+      levelOfConcern: annotationTemp.levelOfConcern,
+      markerPositions: markerPositions, // Save the marker coordinates
+      // Include any conditional detail fields
+      ...Object.keys(annotationTemp)
+        .filter(key => key.endsWith('Details'))
+        .reduce((acc, key) => {
+          acc[key] = annotationTemp[key]
+          return acc
+        }, {})
+    }
+
+    // Update existing or add new
+    const existingIndex = data.imageReadingTemp[side].annotations.findIndex(a => a.id === annotation.id)
+    if (existingIndex !== -1) {
+      data.imageReadingTemp[side].annotations[existingIndex] = annotation
     } else {
-      res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+      data.imageReadingTemp[side].annotations.push(annotation)
     }
-  })
+
+    // Clear temp data
+    delete data.imageReadingTemp.annotationTemp
+  }
+
+  // Redirect based on action
+  if (action === 'save-and-add') {
+    const side = req.body.side || data.imageReadingTemp?.annotationTemp?.side
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation/add?side=${side}`)
+  } else {
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  }
+})
 
   // Delete annotation
   router.get('/reading/batch/:batchId/events/:eventId/annotation/delete/:annotationId', (req, res) => {

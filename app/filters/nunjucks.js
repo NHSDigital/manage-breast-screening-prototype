@@ -7,6 +7,80 @@ const log = (a, description = null) => {
   return `<script>${description || ''}console.log(${JSON.stringify(a, null, '\t')});</script>`
 }
 
+
+/**
+ * Safely join array elements with proper undefined/null handling
+ * @param {any} input - Array-like input to join
+ * @param {string} [delimiter=''] - String to use as delimiter between elements
+ * @param {string} [attribute] - Optional object property to extract before joining
+ * @param {Object} [options] - Additional options for join behavior
+ * @param {boolean} [options.filterEmpty=true] - Whether to filter out empty/null/undefined values
+ * @param {boolean} [options.toString=true] - Whether to convert values to strings before joining
+ * @returns {string} Joined string or empty string if invalid input
+ *
+ * @example
+ * join(['a', 'b', 'c'], ', ') // 'a, b, c'
+ * join([{name: 'John'}, {name: 'Jane'}], ', ', 'name') // 'John, Jane'
+ * join(['a', null, 'b'], ', ') // 'a, b' (filters nulls by default)
+ * join(null) // ''
+ * join(undefined) // ''
+ */
+const join = (input, delimiter = '', attribute = null, options = {}) => {
+  const {
+    filterEmpty = true,
+    toString = true
+  } = options
+
+  // Handle null, undefined, or non-array inputs
+  if (!input) {
+    return ''
+  }
+
+  // Convert to array if it's array-like but not an array
+  let array
+  if (Array.isArray(input)) {
+    array = input
+  } else if (input.length !== undefined) {
+    // Array-like object (NodeList, etc.)
+    array = Array.from(input)
+  } else {
+    // Single value, wrap in array
+    array = [input]
+  }
+
+  // Extract attribute values if specified
+  if (attribute) {
+    array = array.map(item => {
+      if (!item || typeof item !== 'object') {
+        return undefined
+      }
+      return item[attribute]
+    })
+  }
+
+  // Filter out empty values if requested
+  if (filterEmpty) {
+    array = array.filter(item => {
+      return item !== null &&
+             item !== undefined &&
+             item !== '' &&
+             (!toString || String(item).trim() !== '')
+    })
+  }
+
+  // Convert to strings if requested
+  if (toString) {
+    array = array.map(item => {
+      if (item === null || item === undefined) {
+        return ''
+      }
+      return String(item)
+    })
+  }
+
+  return array.join(delimiter)
+}
+
 /**
  * Get user name by user ID with format options
  * @param {string} userId - ID of the user
@@ -58,6 +132,7 @@ const getContext = function() {
 
 module.exports = {
   log,
+  join,
   getUsername,
   getContext,
 }
