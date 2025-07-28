@@ -8,7 +8,11 @@
 
 {% set formAction = "./images" | getReturnUrl(referrerChain) %}
 
-{% set displayFormat = "expander" %}
+{# One of 'expander', 'card', 'flat' #}
+{# {% set displayFormat = "card" %} #}
+{# {% set displayFormat = "flat" %} #}
+{% set displayFormat = "card" %}
+
 {% set showWorkflowNav = true %}
 
 {% block pageContent %}
