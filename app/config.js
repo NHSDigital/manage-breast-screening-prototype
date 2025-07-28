@@ -34,8 +34,8 @@ module.exports = {
     targetAttendancePercent: 100, // 100% of original capacity (not overbooking)
 
     // Date range for generating data
-    daysToGenerate: 8,
-    daysBeforeToday: 5,
+    daysToGenerate: 13,
+    daysBeforeToday: 11,
     historicPeriodCount: 1, // Number of historic periods to generate
 
     simulatedTime: '10:30', // 24h format

@@ -17,8 +17,10 @@ const {
   skipEventInBatch,
   getReadingMetadata,
 } = require('../lib/utils/reading')
-const { snakeCase } = require('../lib/utils/strings')
+const { camelCase, snakeCase } = require('../lib/utils/strings')
 const dayjs = require('dayjs')
+const generateId = require('../lib/utils/id-generator')
+
 
 module.exports = router => {
 
@@ -327,6 +329,306 @@ module.exports = router => {
 
     res.render(`reading/${step}`)
   })
+
+
+  // Annotations start
+
+
+  // Add annotation - clear temp data and redirect to form
+  router.get('/reading/batch/:batchId/events/:eventId/annotation/add', (req, res) => {
+    const { side } = req.query
+    const data = req.session.data
+
+    // Validate side parameter
+    if (!side || !['left', 'right'].includes(side)) {
+      return res.redirect(`/reading/batch/${req.params.batchId}/events/${req.params.eventId}/recall-for-assessment-details`)
+    }
+
+    // Clear any existing temp annotation data
+    delete data.imageReadingTemp?.annotationTemp
+
+    // Set the side in temp data
+    if (!data.imageReadingTemp) {
+      data.imageReadingTemp = {}
+    }
+
+    data.imageReadingTemp.annotationTemp = {
+      side: side
+    }
+
+    res.redirect(`/reading/batch/${req.params.batchId}/events/${req.params.eventId}/annotation`)
+  })
+
+  // Edit existing annotation
+  router.get('/reading/batch/:batchId/events/:eventId/annotation/edit/:annotationId', (req, res) => {
+    const { batchId, eventId, annotationId } = req.params
+    const data = req.session.data
+
+    // Find the annotation to edit
+    let annotation = null
+    const sides = ['left', 'right']
+
+    for (const side of sides) {
+      const annotations = data.imageReadingTemp?.[side]?.annotations || []
+      annotation = annotations.find(a => a.id === annotationId)
+      if (annotation) {
+        break
+      }
+    }
+
+    if (annotation) {
+      // Copy annotation to temp for editing
+      data.imageReadingTemp.annotationTemp = { ...annotation }
+    }
+
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
+  })
+
+// Save annotation - handles both 'save' and 'save-and-add'
+router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res) => {
+  const { batchId, eventId } = req.params
+  const data = req.session.data
+  const action = req.body.action || 'save'
+
+  // Parse marker positions if they came in as a string
+  if (data.imageReadingTemp.annotationTemp.markerPositions &&
+      typeof data.imageReadingTemp.annotationTemp.markerPositions === 'string') {
+    try {
+      data.imageReadingTemp.annotationTemp.markerPositions =
+        JSON.parse(data.imageReadingTemp.annotationTemp.markerPositions)
+    } catch (e) {
+      console.warn('Failed to parse incoming marker positions:', e)
+    }
+  }
+
+  // Validation
+  const errors = []
+  const annotationTemp = data.imageReadingTemp?.annotationTemp
+
+  if (!annotationTemp) {
+    return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  }
+
+  // Validate that marker positions are set for both views
+  if (!annotationTemp.markerPositions || annotationTemp.markerPositions === '{}' || annotationTemp.markerPositions === '') {
+    errors.push({
+      text: `Mark the location on both ${annotationTemp.side} breast views`,
+      name: 'markerPositions',
+      href: '#mammogram-section'
+    })
+  } else {
+    // Parse and validate marker positions have markers for both views
+    try {
+      const positions = typeof annotationTemp.markerPositions === 'string'
+        ? JSON.parse(annotationTemp.markerPositions)
+        : annotationTemp.markerPositions
+
+      if (!positions || Object.keys(positions).length === 0) {
+        errors.push({
+          text: `Mark the location on both ${annotationTemp.side} breast views`,
+          name: 'markerPositions',
+          href: '#mammogram-section'
+        })
+      } else {
+        // Check we have markers for both image-0 and image-1 (both views)
+        const hasImage0 = positions['image-0']
+        const hasImage1 = positions['image-1']
+
+        if (!hasImage0 && !hasImage1) {
+          errors.push({
+            text: `Mark the location on both ${annotationTemp.side} breast views`,
+            name: 'markerPositions',
+            href: '#mammogram-section'
+          })
+        } else if (!hasImage0) {
+          const viewName = annotationTemp.side === 'right' ? 'RMLO' : 'LMLO'
+          errors.push({
+            text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
+            name: 'markerPositions',
+            href: '#mammogram-section'
+          })
+        } else if (!hasImage1) {
+          const viewName = annotationTemp.side === 'right' ? 'RCC' : 'LCC'
+          errors.push({
+            text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
+            name: 'markerPositions',
+            href: '#mammogram-section'
+          })
+        }
+      }
+    } catch (e) {
+      errors.push({
+        text: `Mark the location on both ${annotationTemp.side} breast views`,
+        name: 'markerPositions',
+        href: '#mammogram-section'
+      })
+    }
+  }
+
+  // Validate required fields
+  if (!annotationTemp.location || annotationTemp.location.trim() === '') {
+    errors.push({
+      text: 'Enter the location of the abnormality',
+      name: 'imageReadingTemp[annotationTemp][location]',
+      href: '#location'
+    })
+  }
+
+  if (!annotationTemp.abnormalityType || annotationTemp.abnormalityType.length === 0) {
+    errors.push({
+      text: 'Select at least one abnormality type',
+      name: 'imageReadingTemp[annotationTemp][abnormalityType]',
+      href: '#abnormalityType'
+    })
+  }
+
+  if (!annotationTemp.levelOfConcern) {
+    errors.push({
+      text: 'Select a level of concern',
+      name: 'imageReadingTemp[annotationTemp][levelOfConcern]',
+      href: '#levelOfConcern'
+    })
+  }
+
+  // Validate conditional detail fields for selected abnormality types
+  if (annotationTemp.abnormalityType && annotationTemp.abnormalityType.length > 0) {
+    const abnormalityTypes = Array.isArray(annotationTemp.abnormalityType)
+      ? annotationTemp.abnormalityType
+      : [annotationTemp.abnormalityType]
+
+    abnormalityTypes.forEach(type => {
+      if (type === 'Other' && (!annotationTemp.otherDetails || annotationTemp.otherDetails.trim() === '')) {
+        errors.push({
+          text: 'Provide details for other abnormality type',
+          name: 'imageReadingTemp[annotationTemp][otherDetails]',
+          href: '#otherDetails'
+        })
+      }
+
+      // Check other conditional fields using the same camelCase logic as the template
+      const conditionalTypes = [
+        'Mass well-defined',
+        'Mass ill-defined',
+        'Architectural distortion',
+        'Asymetric density',
+        'Microcalcification outside a mass',
+        'Clinical abnormality',
+        'Lymph node abnormality'
+      ]
+
+      if (conditionalTypes.includes(type)) {
+        const detailsFieldName = camelCase(type) + 'Details'
+
+        if (!annotationTemp[detailsFieldName] || annotationTemp[detailsFieldName].trim() === '') {
+          errors.push({
+            text: `Provide details for ${type.toLowerCase()}`,
+            name: `imageReadingTemp[annotationTemp][${detailsFieldName}]`,
+            href: `#${detailsFieldName}`
+          })
+        }
+      }
+    })
+  }
+
+  // If there are validation errors, redirect back with errors
+  if (errors.length > 0) {
+    errors.forEach(error => req.flash('error', error))
+    return res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
+  }
+
+  // Continue with existing save logic...
+  if (data.imageReadingTemp?.annotationTemp) {
+    const side = annotationTemp.side
+    const isNewAnnotation = !annotationTemp.id
+
+    if (!side) {
+      return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+    }
+
+    // Initialize side data if needed
+    if (!data.imageReadingTemp[side]) {
+      data.imageReadingTemp[side] = {}
+    }
+    if (!data.imageReadingTemp[side].annotations) {
+      data.imageReadingTemp[side].annotations = []
+    }
+
+    // Parse marker positions if provided
+    let markerPositions = null
+    if (annotationTemp.markerPositions) {
+      try {
+        markerPositions = typeof annotationTemp.markerPositions === 'string'
+          ? JSON.parse(annotationTemp.markerPositions)
+          : annotationTemp.markerPositions
+      } catch (e) {
+        console.warn('Failed to parse marker positions:', e)
+      }
+    }
+
+    // Create annotation object
+    const annotation = {
+      id: annotationTemp.id || generateId(),
+      side: side,
+      location: annotationTemp.location,
+      abnormalityType: annotationTemp.abnormalityType,
+      levelOfConcern: annotationTemp.levelOfConcern,
+      markerPositions: markerPositions,
+      // Include any conditional detail fields
+      ...Object.keys(annotationTemp)
+        .filter(key => key.endsWith('Details'))
+        .reduce((acc, key) => {
+          acc[key] = annotationTemp[key]
+          return acc
+        }, {})
+    }
+
+    // Update existing or add new
+    const existingIndex = data.imageReadingTemp[side].annotations.findIndex(a => a.id === annotation.id)
+    if (existingIndex !== -1) {
+      data.imageReadingTemp[side].annotations[existingIndex] = annotation
+    } else {
+      data.imageReadingTemp[side].annotations.push(annotation)
+    }
+
+    // Clear temp data
+    delete data.imageReadingTemp.annotationTemp
+  }
+
+  // Redirect based on action
+  if (action === 'save-and-add') {
+    const side = req.body.side || data.imageReadingTemp?.annotationTemp?.side
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation/add?side=${side}`)
+  } else {
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  }
+})
+
+  // Delete annotation
+  router.get('/reading/batch/:batchId/events/:eventId/annotation/delete/:annotationId', (req, res) => {
+    const { batchId, eventId, annotationId } = req.params
+    const data = req.session.data
+
+    // Remove annotation from both sides (we'll find it)
+    const sides = ['left', 'right']
+
+    for (const side of sides) {
+      if (data.imageReadingTemp?.[side]?.annotations) {
+        data.imageReadingTemp[side].annotations = data.imageReadingTemp[side].annotations.filter(a => a.id !== annotationId)
+      }
+    }
+
+    req.flash('success', 'Annotation deleted')
+
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
+  })
+
+
+
+
+
+
+
+  // Annotations end
 
   // Handle recording a reading result
   router.post('/reading/batch/:batchId/events/:eventId/result-:resultType', (req, res) => {
