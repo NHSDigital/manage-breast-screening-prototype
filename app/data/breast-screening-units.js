@@ -69,15 +69,15 @@ module.exports = [
         ],
         registration: 'JA1 CP7',
         // Override BSU session patterns for this location
-        sessionPatterns: [
-          {
-            name: 'full_day',
-            type: 'single',
-            sessions: [
-              { startTime: '09:00', endTime: '17:00' },
-            ],
-          },
-        ],
+        // sessionPatterns: [
+        //   {
+        //     name: 'full_day',
+        //     type: 'single',
+        //     sessions: [
+        //       { startTime: '09:00', endTime: '17:00' },
+        //     ],
+        //   },
+        // ],
       },
       // {
       //   id: 'acxcdcnj', // Must be hardcoded so it matches generated data

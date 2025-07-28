@@ -18,9 +18,9 @@
 {# Remove awaiting priors #}
 {% set allReadsEvents = allReadsEventsWithAwaitingPriors | where("hasRequestedImages", "false") %}
 
-{% set recentEvents = allReadsEvents | filterEventsByDayRange(0, data.config.priorityThreshold) %}
+{% set recentEvents = allReadsEvents | filterEventsByDayRange(0, data.config.reading.priorityThreshold) %}
 
-{% set priorityEvents = allReadsEvents | filterEventsByDayRange(data.config.priorityThreshold, 10) %}
+{% set priorityEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) %}
 {% set urgentEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) %}
 
 

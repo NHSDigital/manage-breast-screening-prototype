@@ -146,102 +146,6 @@ const generateNHSNumber = () => {
   return `${baseNumber}${finalCheckDigit}`
 }
 
-// New medical history generators
-const generateMedicalHistorySurvey = () => {
-  // 50% chance of having completed the survey
-  if (Math.random() > 0.5) {
-    return null
-  }
-
-  return {
-    completedAt: faker.date.past({ years: 1 }).toISOString(),
-
-    // Non-cancerous procedures/diagnoses
-    nonCancerousProcedures: generateNonCancerousProcedures(),
-
-    // Current hormone therapy (if they had previous cancer)
-    onHormoneTherapy: Math.random() < 0.3, // 30% of those with cancer history
-
-    // Other medical history
-    otherMedicalHistory: Math.random() < 0.3
-      ? faker.helpers.arrayElements([
-        'Type 2 diabetes - diet controlled',
-        'High blood pressure - medication',
-        'Osteoarthritis',
-        'Previous shoulder surgery',
-        'Rheumatoid arthritis',
-      ], { min: 1, max: 2 })
-      : null,
-  }
-}
-
-const generateNonCancerousProcedures = () => {
-  const procedures = []
-
-  const possibleProcedures = {
-    benign_lump: {
-      probability: 0.15,
-      details: () => ({
-        dateDiscovered: faker.date.past({ years: 5 }).toISOString(),
-        position: faker.helpers.arrayElement(['Left breast', 'Right breast']),
-        wasRemoved: Math.random() < 0.7,
-        pathology: 'Fibroadenoma',
-      }),
-    },
-    cyst_aspiration: {
-      probability: 0.1,
-      details: () => ({
-        date: faker.date.past({ years: 3 }).toISOString(),
-        location: faker.helpers.arrayElement(['Left breast', 'Right breast']),
-        notes: 'Simple cyst, fluid aspirated',
-      }),
-    },
-    non_implant_augmentation: {
-      probability: 0.02,
-      details: () => ({
-        date: faker.date.past({ years: 5 }).toISOString(),
-        procedure: 'Fat transfer procedure',
-        hospital: 'General Hospital',
-      }),
-    },
-    breast_reduction: {
-      probability: 0.03,
-      details: () => ({
-        date: faker.date.past({ years: 5 }).toISOString(),
-        notes: 'Bilateral breast reduction',
-        hospital: 'City Hospital',
-      }),
-    },
-    previous_biopsy: {
-      probability: 0.08,
-      details: () => ({
-        date: faker.date.past({ years: 2 }).toISOString(),
-        result: 'Benign',
-        location: faker.helpers.arrayElement(['Left breast', 'Right breast']),
-      }),
-    },
-    skin_lesion: {
-      probability: 0.05,
-      details: () => ({
-        date: faker.date.past({ years: 3 }).toISOString(),
-        type: faker.helpers.arrayElement(['Seborrheic keratosis', 'Dermatofibroma']),
-        location: faker.helpers.arrayElement(['Left breast', 'Right breast']),
-      }),
-    },
-  }
-
-  Object.entries(possibleProcedures).forEach(([type, config]) => {
-    if (Math.random() < config.probability) {
-      procedures.push({
-        type,
-        ...config.details(),
-      })
-    }
-  })
-
-  return procedures
-}
-
 const generateParticipant = ({
   ethnicities,
   breastScreeningUnits,
@@ -286,17 +190,11 @@ const generateParticipant = ({
     },
     medicalInformation: {
       nhsNumber: generateNHSNumber(),
-      riskFactors: generateRiskFactors(),
-      familyHistory: generateFamilyHistory(),
-      previousCancerHistory: generatePreviousCancerHistory(),
-      medicalHistorySurvey: generateMedicalHistorySurvey(),
     },
     currentHealthInformation: {
       isPregnant: false,
       onHRT: Math.random() < 0.1,
-      hasBreastImplants: Math.random() < 0.05,
       recentBreastSymptoms: generateRecentSymptoms(),
-      medications: generateMedications(),
     },
   }
 
@@ -309,91 +207,6 @@ const generateParticipant = ({
   return _.merge({}, baseParticipant, participantOverrides)
 }
 
-// Modified family history generator to add more detail
-const generateFamilyHistory = () => {
-  if (Math.random() > 0.15) return null // 15% chance of family history
-
-  const affectedRelatives = faker.helpers.arrayElements(
-    [
-      { relation: 'mother', age: faker.number.int({ min: 35, max: 75 }) },
-      { relation: 'sister', age: faker.number.int({ min: 30, max: 70 }) },
-      { relation: 'daughter', age: faker.number.int({ min: 25, max: 45 }) },
-      { relation: 'grandmother', age: faker.number.int({ min: 45, max: 85 }) },
-      { relation: 'aunt', age: faker.number.int({ min: 40, max: 80 }) },
-    ],
-    { min: 1, max: 3 }
-  )
-
-  return {
-    hasFirstDegreeHistory: affectedRelatives.some(r =>
-      ['mother', 'sister', 'daughter'].includes(r.relation)
-    ),
-    affectedRelatives,
-    additionalDetails: Math.random() < 0.3
-      ? 'Multiple occurrences on maternal side'
-      : null,
-  }
-}
-
-const generateRiskFactors = () => {
-  const factors = []
-  const possibleFactors = {
-    family_history: 0.15,
-    dense_breast_tissue: 0.1,
-    previous_radiation_therapy: 0.05,
-    obesity: 0.2,
-    alcohol_consumption: 0.15,
-  }
-
-  Object.entries(possibleFactors).forEach(([factor, probability]) => {
-    if (Math.random() < probability) {
-      factors.push(factor)
-    }
-  })
-
-  return factors
-}
-
-// Modified previous cancer history to include more detail
-const generatePreviousCancerHistory = () => {
-  if (Math.random() > 0.02) return null // 2% chance of previous cancer
-
-  const treatments = faker.helpers.arrayElements(
-    [
-      { type: 'surgery', details: 'Wide local excision' },
-      { type: 'radiotherapy', details: '15 fractions' },
-      { type: 'chemotherapy', details: '6 cycles' },
-      { type: 'hormone_therapy', details: '5 years tamoxifen' },
-    ],
-    { min: 1, max: 3 }
-  )
-
-  return {
-    yearDiagnosed: faker.date.past({ years: 20 }).getFullYear(),
-    type: faker.helpers.arrayElement([
-      'ductal_carcinoma_in_situ',
-      'invasive_ductal_carcinoma',
-      'invasive_lobular_carcinoma',
-    ]),
-    position: faker.helpers.arrayElement([
-      'Left breast - upper outer quadrant',
-      'Right breast - upper outer quadrant',
-      'Left breast - lower inner quadrant',
-      'Right breast - lower inner quadrant',
-    ]),
-    treatments,
-    hospital: faker.helpers.arrayElement([
-      'City General Hospital',
-      'Royal County Hospital',
-      'Memorial Cancer Centre',
-      'University Teaching Hospital',
-    ]),
-    additionalNotes: Math.random() < 0.3
-      ? 'Regular follow-up completed'
-      : null,
-  }
-}
-
 const generateRecentSymptoms = () => {
   if (Math.random() > 0.1) return null // 10% chance of recent symptoms
 
@@ -404,17 +217,6 @@ const generateRecentSymptoms = () => {
     'skin_changes',
     'shape_change',
   ], { min: 1, max: 2 })
-}
-
-const generateMedications = () => {
-  if (Math.random() > 0.3) return [] // 30% chance of medications
-
-  return faker.helpers.arrayElements([
-    'hormone_replacement_therapy',
-    'blood_pressure_medication',
-    'diabetes_medication',
-    'cholesterol_medication',
-  ], { min: 1, max: 3 })
 }
 
 module.exports = {
