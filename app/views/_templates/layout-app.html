@@ -133,7 +133,7 @@
     {% if flash.success %}
       {% set flashSuccess = flash.success[0] %}
       {% if flashSuccess | isString %}
-        {{ appNotificationBanner({
+        {{ notificationBanner({
           text: flashSuccess,
           type: "success"
         }) }}
@@ -141,12 +141,12 @@
         {% set html = flashSuccess.html %}
         {% if flashSuccess.wrapWithHeading %}
           {% set html %}
-            <p class="app-notification-banner__heading">
+            <p class="nhsuk-notification-banner__heading">
               {{ flashSuccess.wrapWithHeading | safe }}
             </p>
           {% endset %}
         {% endif %}
-        {{ appNotificationBanner({
+        {{ notificationBanner({
           title: flashSuccess.title,
           html: html,
           text: flashSuccess.text,
@@ -156,14 +156,14 @@
     {% endif %}
 
     {% if flash.info %}
-      {{ appNotificationBanner({
+      {{ notificationBanner({
         html: flash.info,
         type: "info"
       }) }}
     {% endif %}
 
     {% if flash.warning %}
-      {{ appNotificationBanner({
+      {{ notificationBanner({
         html: flash.warning,
         type: "warning"
       }) }}
