@@ -135,6 +135,12 @@
                 showAppointmentLink: true
               })}}
 
+              {% if event | isFinal %}
+                <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                  <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment</a>
+                </p>
+              {% endif %}
+
             </td>
           </tr>
         {% endfor %}

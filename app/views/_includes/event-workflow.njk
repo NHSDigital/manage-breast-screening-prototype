@@ -1,7 +1,6 @@
 {# app/views/_includes/event-workflow.njk #}
 
 {# Tracking of status #}
-{% set appointmentStageCompleted = true if data.event.workflowStatus['appointment'] == 'completed' else false %}
 {% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
 {% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information'] == 'completed' else false %}
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
@@ -25,9 +24,16 @@
 
     {# { id: 'eligibility', label: 'Eligibility' }, #}
 
+  {# SVG copied from https://service-manual.nhs.uk/design-system/components/do-and-dont-lists #}
+  {% set tickSvg %}
+    <svg class="app-icon app-icon--tick" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" d="M18.4 7.8l-8.5 8.4L5.6 12"></path>
+    </svg>
+  {% endset %}
+
   {% set workflowStatus %}
     {% if data.event.workflowStatus[item.id] == 'completed' %}
-      ✔
+      {{ tickSvg | safe }}
     {% endif %}
   {% endset %}
 
@@ -36,14 +42,14 @@
   {# Disable images tab until other stages are completed #}
   {% if item.id == 'images' %}
     {% set isDisabled = true %}
-    {% if appointmentStageCompleted and identityStageCompleted and medicalInformationStageCompleted %}
+    {% if identityStageCompleted and medicalInformationStageCompleted %}
       {% set isDisabled = false %}
     {% endif %}
   {% endif %}
 
   {% if item.id == 'review' %}
     {% set isDisabled = true %}
-    {% if appointmentStageCompleted and identityStageCompleted and medicalInformationStageCompleted and awaitingImagesStageCompleted and imagesStageCompleted %}
+    {% if identityStageCompleted and medicalInformationStageCompleted and awaitingImagesStageCompleted and imagesStageCompleted %}
       {% set isDisabled = false %}
     {% endif %}
   {% endif %}
