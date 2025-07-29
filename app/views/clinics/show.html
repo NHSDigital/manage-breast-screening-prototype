@@ -137,7 +137,7 @@
 
               {% if event | isFinal %}
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                  <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment</a>
+                  <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
                 </p>
               {% endif %}
 

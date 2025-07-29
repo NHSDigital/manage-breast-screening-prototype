@@ -39,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
             </strong>
           `
 
+          // Todo: this link should include the participant's name in hidden text
+
           // Add appointment link if enabled
           if (showAppointmentLink) {
             html += `
