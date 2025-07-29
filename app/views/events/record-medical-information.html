@@ -31,8 +31,8 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
-        text: "Confirm medical information" if data.event.workflowStatus['record-medical-information'] != 'completed' else "Next section",
-        classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
+        text: "Complete all and continue" if data.event.workflowStatus['record-medical-information'] != 'completed' else "Next section",
+        classes: "nhsuk-u-margin-bottom-0 nhsuk-button"
       }) }}
 
     </div>
@@ -365,11 +365,14 @@
       }) }}
   {% endswitch %}
 
+  <!--
+
   <div class="nhsuk-form-group">
     {{ button({
       text: "Complete all and continue"
     }) }}
   </div>
+  -->
 
   {% include "screening-cannot-proceed-link.njk" %}
 
@@ -663,6 +666,80 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize progress
   updateProgress()
 })
+
+
+// Sticky action button
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Looking for original button...')
+  
+  // Find the original "Complete all and continue" button
+  const originalButton = Array.from(document.querySelectorAll('button')).find(btn => 
+    btn.textContent.trim().includes('Complete all and continue')
+  )
+  
+  console.log('Original button found:', originalButton)
+  
+  if (!originalButton) {
+    console.log('Original complete button not found')
+    console.log('Available buttons:', Array.from(document.querySelectorAll('button')).map(btn => btn.textContent.trim()))
+    return
+  }
+
+  // Create the sticky container and button
+  const stickyContainer = document.createElement('div')
+  stickyContainer.className = 'app-sticky-bottom-container'
+  stickyContainer.style.display = 'none' // Initially hidden
+  
+  stickyContainer.innerHTML = `
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        <div class="nhsuk-form-group">
+          <button class="nhsuk-button app-sticky-bottom-button" type="button">
+            Complete all and continue
+          </button>
+        </div>
+      </div>
+    </div>
+  `
+  
+  const stickyButton = stickyContainer.querySelector('.app-sticky-bottom-button')
+  
+  // Copy click handler from original button
+  stickyButton.addEventListener('click', function() {
+    originalButton.click()
+  })
+  
+  // Add to page
+  document.body.appendChild(stickyContainer)
+  
+  // Scroll listener to show/hide sticky button
+  function handleScroll() {
+    const buttonRect = originalButton.getBoundingClientRect()
+    const isButtonVisible = buttonRect.top < window.innerHeight && buttonRect.bottom > 0
+    
+    if (!isButtonVisible && window.scrollY > 100) {
+      // Original button is out of view and user has scrolled down
+      stickyContainer.style.display = 'block'
+    } else {
+      // Original button is visible or user is at top
+      stickyContainer.style.display = 'none'
+    }
+  }
+  
+  // Throttled scroll listener for performance
+  let scrollTimeout
+  window.addEventListener('scroll', function() {
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout)
+    }
+    scrollTimeout = setTimeout(handleScroll, 10)
+  })
+  
+  // Initial check
+  handleScroll()
+})
 </script>
 
 <style>
@@ -679,12 +756,6 @@ document.addEventListener('DOMContentLoaded', function() {
   margin-bottom: 0;
 }
 
-.app-sidebar-sticky {
-  position: sticky;
-  top: 20px;
-  z-index: 100;
-  height: fit-content;
-}
 </style>
 
 {% endblock %}
