@@ -15,6 +15,8 @@
   text: "Back to clinic"
 } %}
 
+{% set referrerChain = currentUrl %}
+
 {% block pageContent %}
 
   {# Event header #}
@@ -45,24 +47,7 @@
     <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
   {% endset %}
 
-  {# Simple special appointment section #}
-  {% if event | isSpecialAppointment %}
-    <div class="nhsuk-warning-callout nhsuk-u-margin-bottom-4">
-      <h2 class="nhsuk-warning-callout__label">
-        <span role="text">
-          <span class="nhsuk-u-visually-hidden">Important: </span>
-          Special appointment
-        </span>
-      </h2>
-      <div class="nhsuk-warning-callout__content">
-        {% set allowEdits = true %}
-        {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
-        {% set referrerChain = currentUrl %}
-        {% set summaryListClasses = "nhsuk-summary-list" %}
-        {% include "summary-lists/special-appointment/special-appointment.njk" %}
-      </div>
-    </div>
-  {% endif %}
+  {% include "_includes/special-appointment-warning-card.njk" %}
 
   {# Simplified other details section #}
   {% set otherDetailsHtml %}
@@ -148,7 +133,7 @@
     headingHtml: " "
   }) %}
     {% set isMinimalParticipant = true %}
-    {% set allowEdits = false %}
+    {% set allowEdits = true %}
     {# {% include "summary-lists/participant.njk" %} #}
 
     {% call summaryList() %}

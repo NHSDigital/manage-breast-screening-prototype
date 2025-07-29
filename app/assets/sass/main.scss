@@ -3,14 +3,17 @@
 
 // Components that are not in the NHS.UK frontend library
 @forward 'components/button-menu';
+@forward 'components/details';
 @forward 'components/dark-mode';
 @forward 'components/list-border';
 @forward 'components/modal';
 @forward 'components/related-nav';
 @forward 'components/secondary-navigation';
+@forward 'components/secondary-navigation-overrides';
 @forward 'components/count';
 @forward 'components/forward-link';
 @forward 'components/status';
+@forward 'components/status-bar';
 @forward 'components/reading';
 
 @forward 'components/overrides';

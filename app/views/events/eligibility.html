@@ -1,0 +1,407 @@
+{# app/views/events/eligibility #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Check eligibility" %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set formAction = "./record-medical-information" | getReturnUrl(referrerChain) %}
+
+{% block pageContent %}
+
+  {% set activeTab = 'eligibility' %}
+
+  {% include "event-workflow.njk" %}
+
+  {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      {{ button({
+        text: "Confirm eligibility",
+        classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
+      }) }}
+
+      {# <p>
+        Selecting this confirms there is nothing further to record for the 4 remaining medical information sections
+      </p> #}
+    </div>
+  </div>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+  {# Mammogram history #}
+
+  {% set mammogramHistoryHtml %}
+    {# {% include "summary-lists/medical-information/mammogram-history.njk" %} #}
+
+    {% call summaryList() %}
+      {% set noBorder = true %}
+      {% include "_includes/summary-lists/rows/last-known-mammogram.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {% set mammogramHistoryContentsSummary %}
+    Last mammogrogram {{ "2022-03-23" | formatDate | formatRelativeDate | asHint }}
+  {% endset %}
+
+  {% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
+
+  {% if hasAdditionalMammograms %}
+    {% set mammogramHistoryContentsSummary = ((event.previousMammograms | length) + 1) ~ " mammograms added" %}
+  {% endif %}
+
+
+  {{ appDetails({
+    id: "mammogram-history",
+    classes: "nhsuk-expander js-track-expanded",
+    summaryText: "Mammogram history",
+    _contentsSummary: mammogramHistoryContentsSummary,
+    subtitle: "The last confirmed mammogram and any added manually since then",
+    html: mammogramHistoryHtml,
+    status: "To review",
+    open: true
+  }) }}
+
+  {# Breast implants and devices #}
+
+
+  {% set breastImplantsAndDevicesHtml %}
+
+  {% endset %}
+
+
+  {{ appDetails({
+    id: "breast-implants-and-devices",
+    classes: "nhsuk-expander js-track-expanded",
+    summaryText: "Breast implants and devices",
+    subtitle: "Details of any breast implants, devices or prior procedures",
+    contentsSummaryHtml: breastImplantsAndDevicesContentsSummaryHtml,
+    html: breastImplantsAndDevicesHtml,
+    status: "To review"
+  }) }}
+
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Confirm eligibility"
+    }) }}
+  </div>
+
+  {% include "screening-cannot-proceed-link.njk" %}
+
+
+    <!-- Progress Summary - One third width -->
+    {# <div class="nhsuk-grid-column-one-third app-sidebar-sticky">
+      <div class="nhsuk-card">
+        <div class="nhsuk-card__content">
+          <h2 class="nhsuk-card__heading nhsuk-heading-s">
+            Overview
+          </h2>
+          <p class="nhsuk-heading-m nhsuk-u-margin-bottom-2">
+            <strong id="progress-complete">0</strong> out of 8
+          </p>
+          <p class="nhsuk-body-s nhsuk-u-margin-bottom-0">
+            Sections completed
+          </p>
+        </div>
+      </div>
+    </div> #}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const sections = document.querySelectorAll('.nhsuk-details')
+  const completedSections = new Set()
+
+  sections.forEach(function(section, index) {
+    const content = section.querySelector('.nhsuk-details__text')
+    if (content) {
+      // Create HR element
+      const hr = document.createElement('hr')
+      hr.className = 'nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-bottom-2'
+
+      // Create button container
+      const buttonContainer = document.createElement('div')
+      buttonContainer.className = 'nhsuk-form-group'
+
+      // Create button
+      const button = document.createElement('button')
+      button.className = 'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
+      button.textContent = 'Mark as reviewed'
+      button.type = 'button'
+      button.setAttribute('data-section-index', index)
+
+      buttonContainer.appendChild(button)
+
+      // Append HR first, then button container
+      content.appendChild(hr)
+      content.appendChild(buttonContainer)
+
+      // Add click handler
+      button.addEventListener('click', function() {
+        // Mark current section as completed
+        completedSections.add(index)
+
+        // Determine current status and set new status
+        const currentStatus = getCurrentSectionStatus(section)
+        let newStatus
+
+        if (currentStatus === 'Incomplete') {
+          newStatus = 'Complete'
+        } else if (currentStatus === 'To review') {
+          newStatus = 'Reviewed'
+        } else {
+          newStatus = 'Complete' // Default fallback
+        }
+
+        // Update the status for this section
+        updateSectionStatus(section, newStatus)
+
+        // Close current section
+        section.removeAttribute('open')
+
+        // Find and open the next incomplete section after this one
+        openNextIncompleteSection(index)
+
+        // Update progress counter
+        updateProgress()
+      })
+    }
+  })
+
+  // Function to get current section status
+  function getCurrentSectionStatus(section) {
+    const sectionId = section.getAttribute('id')
+    let statusElement = null
+
+    // Use the same strategies as updateSectionStatus to find the status element
+    const parent = section.parentElement
+    if (parent) {
+      statusElement = parent.querySelector('.app-details__status .nhsuk-tag')
+    }
+
+    if (!statusElement && sectionId) {
+      statusElement = document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
+                     document.querySelector(`#${sectionId}-status .nhsuk-tag`)
+    }
+
+    if (!statusElement) {
+      let currentElement = section.previousElementSibling
+      while (currentElement && !statusElement) {
+        statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+        if (!statusElement) {
+          currentElement = currentElement.previousElementSibling
+        }
+      }
+    }
+
+    if (!statusElement) {
+      let currentElement = section.nextElementSibling
+      while (currentElement && !statusElement) {
+        statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+        if (!statusElement) {
+          currentElement = currentElement.nextElementSibling
+        }
+      }
+    }
+
+    if (!statusElement) {
+      const container = section.closest('.nhsuk-grid-column-two-thirds') || section.closest('.nhsuk-grid-row') || document.body
+      const allStatusElements = container.querySelectorAll('.app-details__status .nhsuk-tag')
+      const allSections = container.querySelectorAll('.nhsuk-details')
+      const sectionIndex = Array.from(allSections).indexOf(section)
+      if (allStatusElements[sectionIndex]) {
+        statusElement = allStatusElements[sectionIndex]
+      }
+    }
+
+    return statusElement ? statusElement.textContent.trim() : 'Incomplete'
+  }
+
+  // Function to find and open the next incomplete section after the current one
+  function openNextIncompleteSection(currentIndex) {
+    // First, search from the section after the current one to the end
+    for (let i = currentIndex + 1; i < sections.length; i++) {
+      if (!completedSections.has(i)) {
+        const nextIncompleteSection = sections[i]
+        nextIncompleteSection.setAttribute('open', 'open')
+
+        // Scroll to the section
+        const nextSummary = nextIncompleteSection.querySelector('.nhsuk-details__summary')
+        if (nextSummary) {
+          nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+          nextIncompleteSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+
+        console.log(`Opened next incomplete section: ${nextIncompleteSection.id}`)
+        return // Exit once we've found and opened the next incomplete section
+      }
+    }
+
+    // If no incomplete sections found after current one, loop back to the start
+    for (let i = 0; i < currentIndex; i++) {
+      if (!completedSections.has(i)) {
+        const nextIncompleteSection = sections[i]
+        nextIncompleteSection.setAttribute('open', 'open')
+
+        // Scroll to the section
+        const nextSummary = nextIncompleteSection.querySelector('.nhsuk-details__summary')
+        if (nextSummary) {
+          nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        } else {
+          nextIncompleteSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+
+        console.log(`Looped back to incomplete section: ${nextIncompleteSection.id}`)
+        return // Exit once we've found and opened the incomplete section
+      }
+    }
+
+    // If we get here, all sections are complete
+    console.log('All sections are now complete!')
+    highlightCompletionButton()
+  }
+
+  // Function to highlight the completion button when all sections are done
+  function highlightCompletionButton() {
+    const completeButton = document.querySelector('button:contains("Complete all and continue")')
+    if (!completeButton) {
+      // Try a more specific selector if the above doesn't work
+      const buttons = document.querySelectorAll('button')
+      buttons.forEach(btn => {
+        if (btn.textContent.includes('Complete all and continue')) {
+          btn.classList.add('nhsuk-button--green') // Highlight in green
+          btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
+        }
+      })
+    } else {
+      completeButton.classList.add('nhsuk-button--green')
+      completeButton.style.animation = 'pulse 2s infinite'
+    }
+  }
+
+  // Function to update section status
+  function updateSectionStatus(section, statusText) {
+    const sectionId = section.getAttribute('id')
+    let statusElement = null
+
+    // Try different strategies to find the status element
+    // Strategy 1: Look for status in parent/sibling elements
+    const parent = section.parentElement
+    if (parent) {
+      statusElement = parent.querySelector('.app-details__status .nhsuk-tag')
+    }
+
+    // Strategy 2: Look for status element by section ID (if it follows a pattern)
+    if (!statusElement && sectionId) {
+      // Look for a status element that might be associated with this section
+      statusElement = document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
+                     document.querySelector(`#${sectionId}-status .nhsuk-tag`)
+    }
+
+    // Strategy 3: Look for the closest status element before this section
+    if (!statusElement) {
+      let currentElement = section.previousElementSibling
+      while (currentElement && !statusElement) {
+        statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+        if (!statusElement) {
+          currentElement = currentElement.previousElementSibling
+        }
+      }
+    }
+
+    // Strategy 4: Look for the closest status element after this section
+    if (!statusElement) {
+      let currentElement = section.nextElementSibling
+      while (currentElement && !statusElement) {
+        statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+        if (!statusElement) {
+          currentElement = currentElement.nextElementSibling
+        }
+      }
+    }
+
+    // Strategy 5: Look for any status element in the same container as this section
+    if (!statusElement) {
+      const container = section.closest('.nhsuk-grid-column-two-thirds') || section.closest('.nhsuk-grid-row') || document.body
+      const allStatusElements = container.querySelectorAll('.app-details__status .nhsuk-tag')
+
+      // Try to match by index (assuming they're in the same order)
+      const allSections = container.querySelectorAll('.nhsuk-details')
+      const sectionIndex = Array.from(allSections).indexOf(section)
+      if (allStatusElements[sectionIndex]) {
+        statusElement = allStatusElements[sectionIndex]
+      }
+    }
+
+    if (statusElement) {
+      console.log('Found status element:', statusElement)
+      statusElement.textContent = statusText
+
+      // Update the tag color class based on status
+      // Reset all status classes first
+      statusElement.classList.remove('nhsuk-tag--blue', 'nhsuk-tag--green', 'nhsuk-tag--yellow')
+
+      if (statusText === 'Complete' || statusText === 'Reviewed') {
+        statusElement.classList.add('nhsuk-tag--green')
+      } else if (statusText === 'Incomplete') {
+        statusElement.classList.add('nhsuk-tag--blue')
+      } else if (statusText === 'To review') {
+        statusElement.classList.add('nhsuk-tag--yellow')
+      }
+
+      console.log('Updated status to:', statusText)
+    } else {
+      console.error('Could not find status element for section:', sectionId)
+    }
+  }
+
+  // Progress counter function
+  function updateProgress() {
+    const totalSections = sections.length
+    const completed = completedSections.size
+    const inProgress = document.querySelectorAll('.nhsuk-details[open]').length
+    const remaining = totalSections - completed - inProgress
+
+    // Update progress if elements exist
+    const progressComplete = document.getElementById('progress-complete')
+    const progressCurrent = document.getElementById('progress-current')
+    const progressRemaining = document.getElementById('progress-remaining')
+
+    if (progressComplete) progressComplete.textContent = completed
+    if (progressCurrent) progressCurrent.textContent = inProgress
+    if (progressRemaining) progressRemaining.textContent = remaining
+
+    console.log(`Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`)
+  }
+
+  // Initialize progress
+  updateProgress()
+})
+</script>
+
+<style>
+.app-progress-summary--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  border-bottom: 1px solid #d8dde0;
+  margin-bottom: 20px;
+}
+
+.app-progress-summary--sticky .app-progress-summary__content {
+  margin-bottom: 0;
+}
+
+.app-sidebar-sticky {
+  position: sticky;
+  top: 20px;
+  z-index: 100;
+  height: fit-content;
+}
+</style>
+
+{% endblock %}

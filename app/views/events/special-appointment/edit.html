@@ -5,7 +5,7 @@
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {# Change the form action to go to the special-appointment handler #}
-{% set formAction = "./edit-answer" %}
+{% set formAction = "./edit-answer"  | getReturnUrl(referrerChain)  %}
 
 {% block pageContent %}
 

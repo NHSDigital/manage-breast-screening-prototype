@@ -8,6 +8,7 @@
 {% extends "template.html" %}
 
 {%- from '_components/count/macro.njk' import appCount %}
+{%- from '_components/details/macro.njk' import appDetails %}
 {%- from '_components/event-status/macro.njk' import eventStatus %}
 {%- from '_components/forward-link/macro.njk' import appForwardLink %}
 {%- from '_components/hidden-input/macro.njk' import appHiddenInput %}
@@ -17,6 +18,7 @@
 {%- from '_components/button-menu/macro.njk' import buttonMenu %}
 {%- from '_components/summary-list/macro.njk' import appSummaryListRow %}
 {%- from '_components/summary-list/macro.njk' import appSummaryList as summaryList %}
+{%- from '_components/status-bar/macro.njk' import appStatusBar %}
 
 <!-- Add your custom CSS or Sass in /app/assets/sass/main.scss -->
 {% block headCSS %}
@@ -70,6 +72,21 @@
 {% endblock %}
 
 {% block bodyEnd %}
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Find the clear data link and add click handler
+    const clearDataLinks = document.querySelectorAll('a[href="/clear-data"]')
+    clearDataLinks.forEach(link => {
+      link.addEventListener('click', function() {
+        // Clear expanded states before navigating
+        if (window.clearAllExpandedStates) {
+          window.clearAllExpandedStates()
+          console.log('Cleared expanded states before data clear')
+        }
+      })
+    })
+  })
+  </script>
   {% block scripts %}
     <!-- Custom JavaScript files can be added to this file -->
     {% include "_includes/scripts.html" %}

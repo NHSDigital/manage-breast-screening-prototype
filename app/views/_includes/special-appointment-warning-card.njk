@@ -1,0 +1,19 @@
+{# app/views/_includes/special-appointment-warning-card.njk #}
+
+{% if event | isSpecialAppointment %}
+  <div class="nhsuk-warning-callout nhsuk-u-margin-bottom-4">
+    <h2 class="nhsuk-warning-callout__label">
+      <span role="text">
+        <span class="nhsuk-u-visually-hidden">Important: </span>
+        Special appointment
+      </span>
+    </h2>
+    <div class="nhsuk-warning-callout__content">
+      {% set allowEdits = true %}
+      {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
+      {% set referrerChain = currentUrl %}
+      {% set summaryListClasses = "nhsuk-summary-list" %}
+      {% include "summary-lists/special-appointment/special-appointment.njk" %}
+    </div>
+  </div>
+{% endif %}

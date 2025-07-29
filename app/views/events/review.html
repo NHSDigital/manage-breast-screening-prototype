@@ -1,0 +1,126 @@
+
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Review" %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set formAction = './complete' %}
+
+{# {% set back = {
+  href: "/clinics/" + clinicId,
+  text: "Back to clinic"
+} %}
+ #}
+
+
+{% block pageContent %}
+
+  {% set activeTab = 'review' %}
+
+  {% include "event-workflow.njk" %}
+
+  {{ button({
+    text: "Complete screening and return to clinic",
+    classes: "nhsuk-button--secondary"
+  }) }}
+
+  {% set valueHtml = "None" %}
+
+  {# Scars, moles, warts, lumps #}
+  {# Temporarily hardcode some features for UR #}
+  {% set useFakeBreastFeaturesCard = true %}
+  {% include "cards/medical-information/breast-features.njk" %}
+
+  {% set valueHtml = "No" %}
+
+  {% set imagesCardHtml %}
+    <ul class="nhsuk-list nhsuk-list--bullet">
+      <li>2 right breast images</li>
+      <li>3 left breast images (one repeat)</li>
+    </ul>
+
+    <p><a href="./imaging">View or update imaging information</a></p>
+  {% endset %}
+
+  {{ card({
+    heading: "5 images taken",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: imagesCardHtml
+  }) }}
+
+  {% set otherDetailsCardHtml %}
+
+    {% set specialAppointmentHtml %}
+      {% if event | isSpecialAppointment %}
+        {{ tag({
+          text: "Special appointment",
+          classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
+        })}}
+        <ul class="nhsuk-list nhsuk-list--bullet">
+          {# ToDO: pull in special appointment needs here #}
+          {# {% for need in participant.extraNeeds %}
+            <li>{{need}}</li>
+          {% endfor %} #}
+        </ul>
+      {% else %}
+        <p>No</p>
+      {% endif %}
+    {% endset %}
+
+    {{ summaryList({
+      rows: [
+        {
+          key: {
+            text: "Appointment needs"
+          },
+          value: {
+            html: specialAppointmentHtml
+          },
+          actions: {
+            items: [
+              {
+                href: "#",
+                text: "Change",
+                visuallyHiddenText: "images"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Notes about appointment"
+          },
+          value: {
+            html: "Not provided" | asHint
+          },
+          actions: {
+            items: [
+              {
+                href: "#",
+                text: "Change",
+                visuallyHiddenText: "observations"
+              }
+            ]
+          }
+        }
+      ]
+    }) }}
+  {% endset %}
+
+  {{ card({
+    heading: "Other details",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: otherDetailsCardHtml
+  }) }}
+
+  {{ button({
+    text: "Complete screening and return to clinic"
+  }) }}
+
+  {# <p><a href="./attended-not-screened-reason">Screening cannot proceed</a></p> #}
+
+{% endblock %}

@@ -1,19 +1,19 @@
 {% set sxNumberRow = {
-    key: {
-      text: "SX number"
-    },
-    value: {
-      text: participant.sxNumber
-    },
-    actions: {
-      items: [
-        {
-          href: "#",
-          text: "Change",
-          visuallyHiddenText: "SX number"
-        } if false
-      ]
-    }
-  } | handleSummaryListMissingInformation(showNotProvidedText) %}
+  key: {
+    text: "SX number"
+  },
+  value: {
+    text: participant.sxNumber
+  },
+  actions: {
+    items: [
+      {
+        href: "#",
+        text: "Change",
+        visuallyHiddenText: "SX number"
+      } if false
+    ]
+  }
+} | handleSummaryListMissingInformation(showNotProvidedText) %}
 
 {{ appSummaryListRow(sxNumberRow) }}

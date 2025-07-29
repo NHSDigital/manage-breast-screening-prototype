@@ -10,6 +10,7 @@
 
 {% block pageContent %}
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+  {{ filteredEvents | log("Filtered events")}}
   {# {% set events = data.events | getClinicEvents(clinicId) %} #}
   {% set events = allEvents %}
 
@@ -91,7 +92,7 @@
           <th class="nhsuk-table__header">Time</th>
           <th class="nhsuk-table__header">Details</th>
           <th class="nhsuk-table__header">Date of birth</th>
-          <th class="nhsuk-table__header">Appointment status</th>
+          <th class="nhsuk-table__header">{{ 'Appointment status' if status != "checked-in" else "Appointment" }}</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
@@ -130,8 +131,16 @@
                 participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
                 appointmentUrl: "/clinics/" + clinicId + "/events/" + event.id,
                 referrerChain: currentUrl + "#event-row-" + event.id,
-                confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
+                confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+                showAppointmentLink: true
               })}}
+
+              {% if event | isFinal %}
+                <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                  <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                </p>
+              {% endif %}
+
             </td>
           </tr>
         {% endfor %}

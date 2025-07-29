@@ -11,7 +11,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './save' | urlWithReferrer(referrerChain) %}
+{% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {# {% set back = {
   href: "/clinics/" + clinicId,
@@ -519,7 +519,7 @@
   {# Only show link if this is a previously saved symptom #}
   {% if event.symptomTemp.id %}
     {% set deleteHref %}
-      ./delete/{{ event.symptomTemp.id }}{{ "" | urlWithReferrer(referrerChain) }}
+      ./delete/{{ event.symptomTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
     {% endset %}
     <p class="nhsuk-u-margin-top-4">
       <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">

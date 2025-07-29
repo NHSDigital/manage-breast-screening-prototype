@@ -31,7 +31,7 @@
   actions: {
     items: [
       {
-        href: eventId + "/personal-details/ethnicity",
+        href: contextUrl + "/personal-details/ethnicity" | urlWithReferrer(referrerChain),
         text: "Change",
         visuallyHiddenText: "ethnicity"
       } if allowEdits

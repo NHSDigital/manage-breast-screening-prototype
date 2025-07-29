@@ -13,12 +13,23 @@
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
-  <span class="nhsuk-caption-l">
+  {# <span class="nhsuk-caption-l">
     {{ participant | getFullName }}
   </span>
   <h1 class="nhsuk-heading-l js-image-count">
     {{ pageHeading }}
-  </h1>
+  </h1> #}
+  {% set activeTab = 'images' %}
+
+  {% include "event-workflow.njk" %}
+
+  {% if data.event.workflowStatus.images == 'completed' %}
+    {{ button({
+      text: "Next section",
+      classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"
+    }) }}
+  {% endif %}
+
 
   {% set animateImages = true %}
   {% include "fake-images.njk" %}

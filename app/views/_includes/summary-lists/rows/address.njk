@@ -1,9 +1,24 @@
 {# /app/views/_includes/summary-lists/rows/address.njk #}
+{% from 'details/macro.njk' import details %}
 
 {% set addressLines = participant.demographicInformation.address | getObjectValues({removeEmpty: true }) %}
 
+{% set addressHistoryHtml %}
+  <p>
+    45 High street<br>
+    London<br>
+    SW1A 1AA
+  </p>
+{% endset %}
+
 {% set addressHtml %}
   {{ addressLines | join("<br>") | safe }}
+
+  {{ details({
+    summaryText: "Address history",
+    classes: "nhsuk-u-margin-top-3",
+    html: addressHistoryHtml
+  }) }}
 {% endset %}
 
 {% set addressRow = {
@@ -12,7 +27,7 @@
     text: "Home address"
   },
   value: {
-    html: addressHtml
+    html: addressHtml | safe
   },
   actions: {
      items: [

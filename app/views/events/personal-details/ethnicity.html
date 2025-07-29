@@ -6,7 +6,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./ethnicity-answer" %}
+{% set formAction = "./ethnicity-answer" | urlWithReferrer(referrerChain) %}
 
 
 {# {% set back = {
@@ -174,7 +174,7 @@
 
 
   {{ button({
-    text: "Save"
+    text: "Continue"
   }) }}
 
 

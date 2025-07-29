@@ -1,0 +1,32 @@
+// app/assets/sass/components/_secondary-navigation-overrides.scss
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+
+// Fix for tick SVG in secondary navigation
+.app-secondary-navigation__link {
+  // Ensure proper alignment when SVG is present
+  display: inline-flex;
+  align-items: center;
+  gap: 10px; // 10px spacing between tick and text
+}
+
+// Style the tick SVG specifically
+.app-secondary-navigation__link .app-icon--tick {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;          // Prevent SVG from shrinking
+  margin-right: 0;         // Remove any default margin
+
+  // Style the tick path
+  path {
+    stroke: $color_nhsuk-green;
+    stroke-width: 4;
+    fill: none;            // Stroke only, no fill
+  }
+}
+
+// Maintain layout for items without ticks
+.app-secondary-navigation__list-item {
+  // Ensure float layout still works with flexbox links
+  overflow: hidden;
+}

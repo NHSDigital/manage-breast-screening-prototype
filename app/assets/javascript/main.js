@@ -1,8 +1,8 @@
+// app/assets/javascript/main.js
+
 // ES6 or Vanilla JavaScript
 
-
 document.addEventListener('DOMContentLoaded', () => {
-
 
   // Inline check in without requiring page reload
   const checkInLinks = document.querySelectorAll('.js-check-in-link')
@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const link = e.currentTarget
       const clinicId = link.dataset.clinicId
       const eventId = link.dataset.eventId
+      const showAppointmentLink = link.dataset.showAppointmentLink === 'true'
 
       try {
         const response = await fetch(
@@ -32,11 +33,24 @@ document.addEventListener('DOMContentLoaded', () => {
         // Find the containing element by data attribute
         const container = document.querySelector(`[data-event-status-container="${eventId}"]`)
         if (container) {
-          container.innerHTML = `
+          let html = `
             <strong class="nhsuk-tag">
               Checked in
             </strong>
           `
+
+          // Todo: this link should include the participant's name in hidden text
+
+          // Add appointment link if enabled
+          if (showAppointmentLink) {
+            html += `
+            <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2">
+              <a href="/clinics/${clinicId}/events/${eventId}/start?event[workflowStatus][appointment]=started">Start appointment</a>
+            </p>
+            `
+          }
+
+          container.innerHTML = html
         }
 
         // Close any open modal (for modal-based check-ins)
