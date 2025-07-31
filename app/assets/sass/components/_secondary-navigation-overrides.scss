@@ -11,7 +11,8 @@
 }
 
 // Style the tick SVG specifically
-.app-secondary-navigation__link .app-icon--tick {
+.app-secondary-navigation .app-icon--tick {
+  vertical-align: middle;
   width: 20px;
   height: 20px;
   flex-shrink: 0;          // Prevent SVG from shrinking
