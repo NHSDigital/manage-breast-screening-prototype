@@ -28,6 +28,8 @@
   ]
   %}
 
+  {% set workflowNavItems = [] %}
+
   {% set shouldShowAppointmentNav = (pageContext == 'event') and (event | isAppointmentWorkflow) %}
 
   {{ header({
@@ -96,8 +98,9 @@
   }) }} #}
 
   {% if shouldShowAppointmentNav %}
-    {% include "_includes/appointment-status-bar.njk" %}
+    {% include "_includes/appointment-header.njk" %}
   {% endif %}
+
 {% endblock %}
 
 {% block content %}

@@ -12,6 +12,14 @@
 
 .app-status-bar a {
   color: $color_nhsuk-white;
+
+  &:hover,
+  &:active {
+    color: $color_nhsuk-white;
+  }
+  &:focus {
+    color: $nhsuk-text-color;
+  }
 }
 
 .app-status-bar__row {

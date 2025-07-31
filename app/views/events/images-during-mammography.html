@@ -8,6 +8,7 @@
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set formAction = './imaging-answer' %}
 
+{% set activeTab = 'images' %}
 
 {% block pageContent %}
 
@@ -19,7 +20,7 @@
   <h1 class="nhsuk-heading-l js-image-count">
     {{ pageHeading }}
   </h1> #}
-  {% set activeTab = 'images' %}
+
 
   {% include "event-workflow.njk" %}
 

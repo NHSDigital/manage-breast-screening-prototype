@@ -1,4 +1,4 @@
-{# app/views/_includes/event-workflow.njk #}
+{# app/views/_includes/event-active-tabs.njk #}
 
 {# Tracking of status #}
 {% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
@@ -31,13 +31,19 @@
     </svg>
   {% endset %}
 
-  {% set workflowStatus %}
-    {% if data.event.workflowStatus[item.id] == 'completed' %}
-      {{ tickSvg | safe }}
-    {% endif %}
-  {% endset %}
+  {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
+
+
 
   {% set isDisabled = false %}
+  {# Todo: refactor this be easier to check status #}
+
+  {% if item.id == 'record-medical-information' %}
+    {% set isDisabled = true %}
+    {% if identityStageCompleted %}
+      {% set isDisabled = false %}
+    {% endif %}
+  {% endif %}
 
   {# Disable images tab until other stages are completed #}
   {% if item.id == 'images' %}
@@ -54,52 +60,32 @@
     {% endif %}
   {% endif %}
 
+  {% set linkHtml %}
+    {% if isDisabled %}
+      <span class="app-secondary-navigation__link app-secondary-navigation__link--disabled">
+        {{ item.label | safe }}
+      </span>
+    {% else %}
+      {{ (tickSvg | safe) if isCompleted }}
+      <a class="app-secondary-navigation__link" href="{{ href }}" {{ "aria-current=page" if item.id == activeTab }}>
+        {{ item.label | safe }}
+      </a>
+    {% endif %}
+  {% endset %}
+
   {% set secondaryNavItems = secondaryNavItems | push({
-    text: workflowStatus ~ item.label,
-    href: href | trim,
-    current: true if item.id == activeTab,
-    disabled: isDisabled
+    html: linkHtml,
+    current: true if item.id == activeTab
   }) %}
+
+  {# text: (tickSvg if isCompleted) + item.label,
+  href: href | trim,
+  current: true if item.id == activeTab,
+  disabled: isDisabled #}
 
 {% endfor %}
 
-
-
-<div class="app-header-with-status">
-  <h1 class="nhsuk-heading-l">
-    {# <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span> #}
-    {{ pageHeading | safe }}
-  </h1>
-
-  {% set statusHtml %}
-    {# Status tag with check-in link #}
-    {{ eventStatus({
-      clinicId: clinicId,
-      event: event,
-      participant: participant,
-      participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
-      referrerChain: currentUrl,
-      confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
-
-    })}}
-  {% endset %}
-
-  {# <div class="app-header-with-status__status-tag">
-    {{ statusHtml | safe }}
-    {% if event | isSpecialAppointment %}
-    <br>
-      {{ tag({
-        text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-top-1"
-      })}}
-    {% endif %}
-
-  </div> #}
-</div>
-
-{# {{ appSecondaryNavigation({
+{{ appSecondaryNavigation({
   visuallyHiddenTitle: "Secondary menu",
   items: secondaryNavItems
-}) }} #}
+}) }}

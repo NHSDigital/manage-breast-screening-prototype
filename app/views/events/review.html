@@ -14,16 +14,17 @@
 } %}
  #}
 
+{% set activeTab = 'review' %}
+
 
 {% block pageContent %}
 
-  {% set activeTab = 'review' %}
+
 
   {% include "event-workflow.njk" %}
 
   {{ button({
-    text: "Complete screening and return to clinic",
-    classes: "nhsuk-button--secondary"
+    text: "Complete screening and return to clinic"
   }) }}
 
   {% set valueHtml = "None" %}
