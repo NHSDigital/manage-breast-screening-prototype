@@ -28,6 +28,8 @@
   ]
   %}
 
+  {% set workflowNavItems = [] %}
+
   {% set shouldShowAppointmentNav = (pageContext == 'event') and (event | isAppointmentWorkflow) %}
 
   {{ header({

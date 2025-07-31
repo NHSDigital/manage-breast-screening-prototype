@@ -1,6 +1,24 @@
 {# app/views/_includes/appointment-status-bar.njk #}
 
-{% set firstRowItems = [] %}
+{% set leaveAppointmentLink %}
+  <a href="/clinics/{{ clinicId }}">Leave this appointment</a>
+{% endset %}
+
+
+{% set manageAppointmentLink %}
+  <a href="#">Manage appointment</a>
+{% endset %}
+
+{% set appointmentActionItems = [
+  {
+    html: leaveAppointmentLink
+  },
+  {
+    html: manageAppointmentLink
+  }
+] %}
+
+{% set appointmentRowItems = [] %}
 
   {# Location name #}
   {# {% set locationName %}
@@ -10,7 +28,7 @@
       {{ location.name }}
     {% endif %}
   {% endset %}
-  {% set firstRowItems = firstRowItems | push({
+  {% set appointmentRowItems = appointmentRowItems | push({
     key: "Location:",
     value: locationName
   }) %} #}
@@ -25,13 +43,13 @@
       })}}
     {% endif %}
   {% endset %}
-  {% set firstRowItems = firstRowItems | push({
+  {% set appointmentRowItems = appointmentRowItems | push({
     key: "Appointment:",
     value: appointmentHtml
   }) %}
 
   {# Appointment type #}
-  {% set firstRowItems = firstRowItems | push({
+  {% set appointmentRowItems = appointmentRowItems | push({
     key: "Type:",
     value: clinic.clinicType | formatWords | sentenceCase
   }) %}
@@ -49,7 +67,7 @@
   {% endset %}
 
   {# Appointment status #}
-  {# {% set firstRowItems = firstRowItems | push({
+  {# {% set appointmentRowItems = appointmentRowItems | push({
     key: "Status:",
     value: statusHtml
   }) %} #}
@@ -86,7 +104,8 @@
 
   {{ appStatusBar({
     rows: [
-      { items: firstRowItems },
+      { items: appointmentActionItems },
+      { items: appointmentRowItems },
       { items: participantRowItems }
     ]
   }) }}
