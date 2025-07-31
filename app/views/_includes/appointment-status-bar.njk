@@ -49,10 +49,14 @@
   }) %}
 
   {# Appointment type #}
-  {% set appointmentRowItems = appointmentRowItems | push({
-    key: "Type:",
-    value: clinic.clinicType | formatWords | sentenceCase
-  }) %}
+{% set screeningTagHtml %}
+  <strong class="nhsuk-tag nhsuk-tag--blue">
+    Screening
+  </strong>
+{% endset %}
+{% set appointmentRowItems = appointmentRowItems | push({
+  html: screeningTagHtml
+}) %}
 
   {% set statusHtml %}
     {{ event.status | getStatusText | default(event.status | formatWords | sentenceCase) }}
