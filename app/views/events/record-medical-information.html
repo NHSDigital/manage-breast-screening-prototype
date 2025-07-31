@@ -367,16 +367,15 @@
       }) }}
   {% endswitch %}
 
-  <!--
-
   <div class="nhsuk-form-group">
     {{ button({
       text: "Complete all and continue"
     }) }}
-  </div>
-  -->
 
-  {% include "screening-cannot-proceed-link.njk" %}
+    {% include "screening-cannot-proceed-link.njk" %}
+  </div>
+
+
 
 
     <!-- Progress Summary - One third width -->
@@ -669,95 +668,6 @@ document.addEventListener('DOMContentLoaded', function() {
   updateProgress()
 })
 
-
-// Sticky action button
-
-
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('Looking for original button...')
-
-  // Find the original "Complete all and continue" button
-  const originalButton = Array.from(document.querySelectorAll('button')).find(btn =>
-    btn.textContent.trim().includes('Complete all and continue')
-  )
-
-  console.log('Original button found:', originalButton)
-
-  if (!originalButton) {
-    console.log('Original complete button not found')
-    console.log('Available buttons:', Array.from(document.querySelectorAll('button')).map(btn => btn.textContent.trim()))
-    return
-  }
-
-  // Create the sticky container and button
-  const stickyContainer = document.createElement('div')
-  stickyContainer.className = 'app-sticky-bottom-container'
-  stickyContainer.style.display = 'none' // Initially hidden
-
-  stickyContainer.innerHTML = `
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
-        <div class="nhsuk-form-group">
-          <button class="nhsuk-button app-sticky-bottom-button" type="button">
-            Complete all and continue
-          </button>
-        </div>
-      </div>
-    </div>
-  `
-
-  const stickyButton = stickyContainer.querySelector('.app-sticky-bottom-button')
-
-  // Copy click handler from original button
-  stickyButton.addEventListener('click', function() {
-    originalButton.click()
-  })
-
-  // Add to page
-  document.body.appendChild(stickyContainer)
-
-  // Scroll listener to show/hide sticky button
-  function handleScroll() {
-    const buttonRect = originalButton.getBoundingClientRect()
-    const isButtonVisible = buttonRect.top < window.innerHeight && buttonRect.bottom > 0
-
-    if (!isButtonVisible && window.scrollY > 100) {
-      // Original button is out of view and user has scrolled down
-      stickyContainer.style.display = 'block'
-    } else {
-      // Original button is visible or user is at top
-      stickyContainer.style.display = 'none'
-    }
-  }
-
-  // Throttled scroll listener for performance
-  let scrollTimeout
-  window.addEventListener('scroll', function() {
-    if (scrollTimeout) {
-      clearTimeout(scrollTimeout)
-    }
-    scrollTimeout = setTimeout(handleScroll, 10)
-  })
-
-  // Initial check
-  handleScroll()
-})
 </script>
-
-<style>
-.app-progress-summary--sticky {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: white;
-  border-bottom: 1px solid #d8dde0;
-  margin-bottom: 20px;
-}
-
-.app-progress-summary--sticky .app-progress-summary__content {
-  margin-bottom: 0;
-}
-
-</style>
 
 {% endblock %}
