@@ -20,38 +20,37 @@
   href: "/dashboard"
 }) }}
 
-<h2>Screening appointment</h2>
-{% set exampleParticipant = "/clinics/wtrl7jud/events/5gpn41oi" %}
+<h2>Active screening appointment</h2>
+
+{% set eventId = "5gpn41oi" %}
+
+{% set makeActiveAppointment -%}?event[workflowStatus][appointment]=started{%- endset %}
+
+{% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+
 <ul>
   <li>
-    <a href="{{ exampleParticipant }}">Initial appointment</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/appointment">Alternative appointment start</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/special-appointment/edit">Manage special appointment</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/personal-details/ethnicity">Ethnicity</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/previous-mammograms/add">Add details of a previous mammogram</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/attended-not-screened-reason">Appointment cannot go ahead</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/medical-information">Medical information</a>
-  </li>
-  <li>
-    <a href="{{ exampleParticipant }}/record-medical-information">Record medical information</a>
+    <a href="{{ exampleParticipant }}/identity">Participant</a>
     <ul>
       <li>
-        <a href="{{ exampleParticipant }}/medical-information/record-breast-features">Record breast features</a>
+        <a href="{{ exampleParticipant }}/special-appointment/edit">Manage special appointment</a>
+      </li>
+      <li>
+        <a href="{{ exampleParticipant }}/personal-details/ethnicity">Ethnicity</a>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <a href="{{ exampleParticipant }}/record-medical-information">Review medical information</a>
+    <ul>
+      <li>
+        <a href="{{ exampleParticipant }}/previous-mammograms/add">Add details of a previous mammogram</a>
       </li>
       <li>
         <a href="{{ exampleParticipant }}/medical-information/symptoms/add?referrerChain={{ exampleParticipant }}/record-medical-information">Add a symptom</a>
+      </li>
+      <li>
+        <a href="{{ exampleParticipant }}/medical-information/record-breast-features">Record breast features</a>
       </li>
       <li>
         <a href="{{ exampleParticipant }}/medical-information/hormone-replacement-therapy?referrerChain={{ exampleParticipant }}/record-medical-information">Hormone replacement therapy</a>
@@ -62,13 +61,28 @@
     </ul>
   </li>
   <li>
-    <a href="{{ exampleParticipant }}/awaiting-images">Awaiting images</a>
+    <a href="{{ exampleParticipant }}/images">Images</a>
   </li>
   <li>
-    <a href="{{ exampleParticipant }}/imaging">Imaging</a>
+    <a href="{{ exampleParticipant }}/review">Review</a>
+  </li>
+</ul>
+
+<h2>Completed screening appointment</h2>
+
+{% set eventId = "1fefyh1q" %}
+
+{% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+
+<ul>
+  <li>
+    <a href="{{ exampleParticipant }}">Main appointment page</a>
   </li>
   <li>
-    <a href="{{ exampleParticipant }}/confirm">Confirm</a>
+    <a href="{{ exampleParticipant }}/medical-information">Medical information</a>
+  </li>
+  <li>
+    <a href="{{ exampleParticipant }}/images">Images</a>
   </li>
 </ul>
 

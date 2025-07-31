@@ -31,8 +31,29 @@ module.exports = [
         },
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_scheduled',
+          status: 'event_checked_in',
           approximateTime: '10:30',
+        },
+      },
+    },
+  },
+  {
+    participant: {
+      id: 'v0jt1us8',
+      demographicInformation: {
+        firstName: 'Angelina',
+        middleName: null,
+        lastName: 'Renner',
+        ethnicGroup: null,
+        ethnicBackground: null,
+      },
+      config: {
+        eventId: '1fefyh1q',
+        defaultRiskLevel: 'routine',
+        scheduling: {
+          whenRelativeToToday: 0,
+          status: 'event_complete',
+          approximateTime: '9:45',
         },
       },
     },

@@ -3,7 +3,7 @@
 {% set isCompleted = event | isCompleted %}
 
 {% if isCompleted %}
-  {% include "events/images-completed.html" %}
+  {% include "events/images-completed-mammography.html" %}
 {% else %}
   {% set showWorkflowNav = true %}
   {% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %}
