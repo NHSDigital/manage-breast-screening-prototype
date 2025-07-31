@@ -1,4 +1,4 @@
-{# app/views/_includes/event-workflow.njk #}
+{# app/views/_includes/event-active-tabs.njk #}
 
 {# Tracking of status #}
 {% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
@@ -63,43 +63,7 @@
 
 {% endfor %}
 
-
-
-<div class="app-header-with-status">
-  <h1 class="nhsuk-heading-l">
-    {# <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span> #}
-    {{ pageHeading | safe }}
-  </h1>
-
-  {% set statusHtml %}
-    {# Status tag with check-in link #}
-    {{ eventStatus({
-      clinicId: clinicId,
-      event: event,
-      participant: participant,
-      participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
-      referrerChain: currentUrl,
-      confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false
-
-    })}}
-  {% endset %}
-
-  {# <div class="app-header-with-status__status-tag">
-    {{ statusHtml | safe }}
-    {% if event | isSpecialAppointment %}
-    <br>
-      {{ tag({
-        text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-top-1"
-      })}}
-    {% endif %}
-
-  </div> #}
-</div>
-
-{# {{ appSecondaryNavigation({
+{{ appSecondaryNavigation({
   visuallyHiddenTitle: "Secondary menu",
   items: secondaryNavItems
-}) }} #}
+}) }}

@@ -146,6 +146,34 @@ const generateNHSNumber = () => {
   return `${baseNumber}${finalCheckDigit}`
 }
 
+// Generate GP practice names (common UK naming patterns)
+const generateGPPracticeName = () => {
+  const practiceTypes = [
+    'Medical Centre',
+    'Health Centre',
+    'Surgery',
+    'Medical Practice',
+    'Family Practice'
+  ]
+
+  const nameFormats = [
+    () => `${faker.location.street()} ${faker.helpers.arrayElement(practiceTypes)}`,
+    // () => `${faker.person.lastName()} & ${faker.person.lastName()} ${faker.helpers.arrayElement(practiceTypes)}`,
+    () => `${faker.helpers.arrayElement(['St', 'The', 'Manor', 'Park', 'Grove'])} ${faker.word.adjective()} ${faker.helpers.arrayElement(practiceTypes)}`,
+  ]
+
+  return faker.helpers.arrayElement(nameFormats)()
+}
+
+// Generate GP information
+const generateGPInformation = (bsu) => {
+  return {
+    name: `Dr ${faker.person.fullName()}`,
+    practiceName: generateGPPracticeName(),
+    address: generateBSUAppropriateAddress(bsu)
+  }
+}
+
 const generateParticipant = ({
   ethnicities,
   breastScreeningUnits,
@@ -190,6 +218,7 @@ const generateParticipant = ({
     },
     medicalInformation: {
       nhsNumber: generateNHSNumber(),
+      gp: generateGPInformation(assignedBSU),
     },
     currentHealthInformation: {
       isPregnant: false,
