@@ -53,29 +53,20 @@
 
         <div class="app-image-two-up nhsuk-u-margin-bottom-6">
           {% for view in views %}
-          <div class="app-mammogram-container">
-            <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="/images/mammogram-diagrams/{{ view | lower }}.png" alt="">
-          </div>
-
+            <div class="app-mammogram-container">
+              <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="/images/mammogram-diagrams/{{ view | lower }}.png" alt="">
+            </div>
           {% endfor %}
         </div>
 
-
       </div>
-
-
-
-
-
-
-
 
     </div>
   </div>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
-      {{ input({
+      {# {{ input({
         id: "location",
         name: "imageReadingTemp[annotationTemp][location]",
         value: data.imageReadingTemp.annotationTemp.location,
@@ -87,11 +78,11 @@
           text: "For example, upper right quadrant"
         },
         classes: "nhsuk-u-width-two-thirds"
-      } | populateErrors) }}
+      } | populateErrors) }} #}
 
       {% set checkboxItems = [] %}
 
-      {% macro makeCheckboxConditionalItem(params) %}
+      {# {% macro makeCheckboxConditionalItem(params) %}
         {{ input({
           name: "imageReadingTemp[annotationTemp][" + params.value + "Details]",
           value: data.imageReadingTemp.annotationTemp[params.value + "Details"],
@@ -101,7 +92,7 @@
           },
           classes: "nhsuk-u-width-two-thirds"
         } | populateErrors) }}
-      {% endmacro %}
+      {% endmacro %} #}
 
       {% set abnormalityList = [
         "Mass well-defined",
@@ -116,12 +107,13 @@
       {% for abnormality in abnormalityList %}
         {% set checkboxItems = checkboxItems | push({
           value: abnormality,
-          text: abnormality,
-          conditional: {
-            html: makeCheckboxConditionalItem({value: abnormality | camelCase})
-          }
+          text: abnormality
         }) %}
       {% endfor %}
+
+      {# conditional: {
+            html: makeCheckboxConditionalItem({value: abnormality | camelCase})
+          } #}
 
       {% set otherTextInputHtml %}
         {{ input({
@@ -174,26 +166,37 @@
             selected: true if not data.imageReadingTemp.annotationTemp.levelOfConcern
           },
           {
-            value: "1",
+            value: "Normal",
             text: "1 - Normal"
           },
           {
-            value: "2",
+            value: "Benign",
             text: "2 - Benign"
           },
           {
-            value: "3",
-            text: "3 - Probably benign"
+            value: "Indeterminatef",
+            text: "3 - Indeterminate"
           },
           {
-            value: "4",
-            text: "4 - Probably cancerous"
+            value: "Suspicious",
+            text: "4 - Suspicious"
           },
           {
-            value: "5",
-            text: "5 - Likely cancerous"
+            value: "Highly suspicious",
+            text: "5 - Highly suspicious"
           }
         ]
+      } | populateErrors) }}
+
+      {{ input({
+        id: "comment",
+        name: "imageReadingTemp[annotationTemp][comment]",
+        value: data.imageReadingTemp.annotationTemp.comment,
+        label: {
+          text: "Comment about this abnormality (optional)",
+          classes: "nhsuk-label--s"
+        },
+        classes: "nhsuk-u-width-two-thirds"
       } | populateErrors) }}
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">

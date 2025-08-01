@@ -1,3 +1,6 @@
+
+$nhsuk-page-width: 1260px;
+
 // Import NHS.UK frontend library
 @forward 'nhsuk-frontend/dist/nhsuk/nhsuk';
 
@@ -31,6 +34,8 @@
 
 @forward 'typography';
 @forward 'utils';
+
+$nhsuk-page-width: 1260px;
 
 
 ///////////////////////////////////////////

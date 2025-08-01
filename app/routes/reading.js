@@ -405,6 +405,8 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
   const errors = []
   const annotationTemp = data.imageReadingTemp?.annotationTemp
 
+  console.log(`annotation temp: ${JSON.stringify(annotationTemp)}`)
+
   if (!annotationTemp) {
     return res.redirect(`/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`)
   }
@@ -412,7 +414,7 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
   // Validate that marker positions are set for both views
   if (!annotationTemp.markerPositions || annotationTemp.markerPositions === '{}' || annotationTemp.markerPositions === '') {
     errors.push({
-      text: `Mark the location on both ${annotationTemp.side} breast views`,
+      text: `Mark the location on at least one ${annotationTemp.side} breast view`,
       name: 'markerPositions',
       href: '#mammogram-section'
     })
@@ -425,37 +427,38 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
 
       if (!positions || Object.keys(positions).length === 0) {
         errors.push({
-          text: `Mark the location on both ${annotationTemp.side} breast views`,
+          text: `Mark the location on at least one ${annotationTemp.side} breast view`,
           name: 'markerPositions',
           href: '#mammogram-section'
         })
-      } else {
-        // Check we have markers for both image-0 and image-1 (both views)
-        const hasImage0 = positions['image-0']
-        const hasImage1 = positions['image-1']
-
-        if (!hasImage0 && !hasImage1) {
-          errors.push({
-            text: `Mark the location on both ${annotationTemp.side} breast views`,
-            name: 'markerPositions',
-            href: '#mammogram-section'
-          })
-        } else if (!hasImage0) {
-          const viewName = annotationTemp.side === 'right' ? 'RMLO' : 'LMLO'
-          errors.push({
-            text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
-            name: 'markerPositions',
-            href: '#mammogram-section'
-          })
-        } else if (!hasImage1) {
-          const viewName = annotationTemp.side === 'right' ? 'RCC' : 'LCC'
-          errors.push({
-            text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
-            name: 'markerPositions',
-            href: '#mammogram-section'
-          })
-        }
       }
+      // else {
+      //   // Check we have markers for both image-0 and image-1 (both views)
+      //   const hasImage0 = positions['image-0']
+      //   const hasImage1 = positions['image-1']
+
+      //   if (!hasImage0 && !hasImage1) {
+      //     errors.push({
+      //       text: `Mark the location on both ${annotationTemp.side} breast views`,
+      //       name: 'markerPositions',
+      //       href: '#mammogram-section'
+      //     })
+      //   } else if (!hasImage0) {
+      //     const viewName = annotationTemp.side === 'right' ? 'RMLO' : 'LMLO'
+      //     errors.push({
+      //       text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
+      //       name: 'markerPositions',
+      //       href: '#mammogram-section'
+      //     })
+      //   } else if (!hasImage1) {
+      //     const viewName = annotationTemp.side === 'right' ? 'RCC' : 'LCC'
+      //     errors.push({
+      //       text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
+      //       name: 'markerPositions',
+      //       href: '#mammogram-section'
+      //     })
+      //   }
+      // }
     } catch (e) {
       errors.push({
         text: `Mark the location on both ${annotationTemp.side} breast views`,
@@ -466,13 +469,15 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
   }
 
   // Validate required fields
-  if (!annotationTemp.location || annotationTemp.location.trim() === '') {
-    errors.push({
-      text: 'Enter the location of the abnormality',
-      name: 'imageReadingTemp[annotationTemp][location]',
-      href: '#location'
-    })
-  }
+
+  // Text location not in use
+  // if (!annotationTemp.location || annotationTemp.location.trim() === '') {
+  //   errors.push({
+  //     text: 'Enter the location of the abnormality',
+  //     name: 'imageReadingTemp[annotationTemp][location]',
+  //     href: '#location'
+  //   })
+  // }
 
   if (!annotationTemp.abnormalityType || annotationTemp.abnormalityType.length === 0) {
     errors.push({
@@ -506,27 +511,27 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
       }
 
       // Check other conditional fields using the same camelCase logic as the template
-      const conditionalTypes = [
-        'Mass well-defined',
-        'Mass ill-defined',
-        'Architectural distortion',
-        'Asymetric density',
-        'Microcalcification outside a mass',
-        'Clinical abnormality',
-        'Lymph node abnormality'
-      ]
+      // const conditionalTypes = [
+      //   'Mass well-defined',
+      //   'Mass ill-defined',
+      //   'Architectural distortion',
+      //   'Asymetric density',
+      //   'Microcalcification outside a mass',
+      //   'Clinical abnormality',
+      //   'Lymph node abnormality'
+      // ]
 
-      if (conditionalTypes.includes(type)) {
-        const detailsFieldName = camelCase(type) + 'Details'
+      // if (conditionalTypes.includes(type)) {
+      //   const detailsFieldName = camelCase(type) + 'Details'
 
-        if (!annotationTemp[detailsFieldName] || annotationTemp[detailsFieldName].trim() === '') {
-          errors.push({
-            text: `Provide details for ${type.toLowerCase()}`,
-            name: `imageReadingTemp[annotationTemp][${detailsFieldName}]`,
-            href: `#${detailsFieldName}`
-          })
-        }
-      }
+      //   if (!annotationTemp[detailsFieldName] || annotationTemp[detailsFieldName].trim() === '') {
+      //     errors.push({
+      //       text: `Provide details for ${type.toLowerCase()}`,
+      //       name: `imageReadingTemp[annotationTemp][${detailsFieldName}]`,
+      //       href: `#${detailsFieldName}`
+      //     })
+      //   }
+      // }
     })
   }
 
@@ -539,6 +544,7 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
   // Continue with existing save logic...
   if (data.imageReadingTemp?.annotationTemp) {
     const side = annotationTemp.side
+    const comment = annotationTemp.comment
     const isNewAnnotation = !annotationTemp.id
 
     if (!side) {
@@ -569,6 +575,7 @@ router.post('/reading/batch/:batchId/events/:eventId/annotation/save', (req, res
     const annotation = {
       id: annotationTemp.id || generateId(),
       side: side,
+      comment: comment,
       location: annotationTemp.location,
       abnormalityType: annotationTemp.abnormalityType,
       levelOfConcern: annotationTemp.levelOfConcern,
