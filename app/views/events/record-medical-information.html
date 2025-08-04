@@ -182,9 +182,34 @@
   {% set scrollTo = 'medical-history' %}
 
 
-  {# {% set medicalHistoryHtml %}
+  {% set medicalHistoryHtml %}
     {% include "summary-lists/medical-information/medical-history.njk" %}
-  {% endset %} #}
+  {% endset %}
+
+  {% switch displayFormat %}
+    {% case 'flat' %}
+      <h2>{{ sectionHeading }}</h2>
+      {{ medicalHistoryHtml | safe }}
+    {% case 'card' %}
+      {% call card({
+        heading: sectionHeading
+      }) %}
+        <p>
+          {{ subHeading }}
+        </p>
+        {{ medicalHistoryHtml | safe }}
+      {% endcall %}
+    {% default %}
+      {{ appDetails({
+        id: "medical-history",
+        classes: "nhsuk-expander js-track-expanded",
+        summaryText: "Medical history",
+        contentsSummary: "No information added",
+        subtitle: "Including breast cancer, implants, prior proceedures and treatments",
+        html: medicalHistoryHtml,
+        status: "To review"
+      }) }}
+  {% endswitch %}
 
   {% set medicalHistoryHtml %}
     {% set rows = [
