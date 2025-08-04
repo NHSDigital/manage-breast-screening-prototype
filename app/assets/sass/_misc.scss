@@ -58,3 +58,8 @@
   @include nhsuk-responsive-margin(5, "top");
 
 }
+
+
+.app-page-width--wide .nhsuk-width-container {
+  max-width: 1200px;
+}
