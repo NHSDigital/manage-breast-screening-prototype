@@ -1,0 +1,45 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Consent" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>We need your consent to continue.</p>
+
+  {{ radios({
+    name: "consentGiven",
+    fieldset: {
+      legend: {
+        text: "Do you consent?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no",
+        text: "No"
+      }
+    ]
+  }) }}
+
+  <div class="app-button-group">
+    <a href="./implanted-medical-devices" class="nhsuk-button">Continue</a>
+  </div>
+
+{% endblock %}

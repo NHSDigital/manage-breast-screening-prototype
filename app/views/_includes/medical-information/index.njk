@@ -135,13 +135,17 @@
 {# -------------------------------------------------------------- #}
 {# Medical history #}
 
-{% set sectionHeading = "Medical history" %}
+{% set sectionHeading = "Medical history [button]" %}
 {% set subHeading = "Including breast cancer, implants, prior proceedures and treatments" %}
 {% set scrollTo = 'medical-history' %}
 
-
 {% set medicalHistoryHtml %}
+{#
   {% include "summary-lists/medical-information/medical-history.njk" %}
+  #}
+  
+  {% set referrerChain = currentUrl %}
+  {% include "summary-lists/medical-information/medical-history/medical-history-menu.njk" %}
 {% endset %}
 
 {% switch displayFormat %}
@@ -169,42 +173,14 @@
     }) }}
 {% endswitch %}
 
+{# Medical history – experiment 2 #}
+
+{% set sectionHeading = "Medical history [list]" %}
+{% set subHeading = "Including breast cancer, implants, prior proceedures and treatments" %}
+{% set scrollTo = 'medical-history-list' %}
+
 {% set medicalHistoryHtml %}
-  {% set rows = [
-    "Implanted medical devices",
-    "Breast implants or augmentation",
-    "Breast cancer tests and treatment",
-    "Treatment for non-cancerous breast conditions",
-    "Other breast or chest proceedures"
-    ] %}
-
-  {% set summaryListItems = [] %}
-
-  {% set valueHtml = "" %}
-
-  {% for row in rows %}
-    {% set summaryListItems = summaryListItems | push({
-        key: {
-          text: row
-        },
-        value: {
-          html: valueHtml
-        },
-        actions: {
-          items: [
-            {
-              href: "#",
-              text: "Change",
-              visuallyHiddenText: row | lower
-            }
-          ]
-        }
-      }) %}
-  {% endfor %}
-  {{ summaryList({
-    rows: summaryListItems
-  } | handleSummaryListMissingInformation) }}
-
+  {% include "summary-lists/medical-information/medical-history.njk" %}
 {% endset %}
 
 {% switch displayFormat %}
@@ -222,7 +198,7 @@
     {% endcall %}
   {% default %}
     {{ appDetails({
-      id: "medical-history",
+      id: "medical-history-list",
       classes: "nhsuk-expander js-expandable-section",
       summaryText: sectionHeading,
       contentsSummary: "No information added",

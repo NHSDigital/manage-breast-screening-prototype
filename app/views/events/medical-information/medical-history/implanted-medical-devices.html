@@ -1,0 +1,173 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Implanted medical devices" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain) %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {% set otherDeviceType %}
+    {{ input({
+      name: "event[medicalInformation][implantedDevices][otherDeviceType]",
+      value: event.medicalInformation.implantedDevices.otherDeviceType,
+      label: {
+        text: "Describe what"
+      },
+      classes: "nhsuk-u-width-two-thirds"
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    name: "event[medicalInformation][implantedDevices][deviceType]",
+    value: event.medicalInformation.implantedDevices.deviceType,
+    fieldset: {
+      legend: {
+        text: "What is the device type?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "cardiacDevice",
+        text: "Cardiac device"
+      },
+      {
+        value: "hickmanLines",
+        text: "Hickman lines"
+      },
+      {
+        value: "other",
+        text: "Other",
+        conditional: {
+          html: otherDeviceType
+        }
+      }
+    ]
+  }) }}
+
+  {% set specificDate %}
+    {{ dateInput({
+      name: "event[medicalInformation][implantedDevices][procedureDate]",
+      value: event.medicalInformation.implantedDevices.procedureDate,
+      fieldset: {
+        legend: {
+          text: "Enter the date",
+          classes: "nhsuk-fieldset__legend--s"
+        }
+      },
+      hint: {
+        text: "For example, 15 3 2019"
+      }
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    name: "event[medicalInformation][implantedDevices][procedureTiming]",
+    value: event.medicalInformation.implantedDevices.procedureTiming,
+    fieldset: {
+      legend: {
+        text: "When was the procedure?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "underSixMonths",
+        text: "Under six months ago"
+      },
+      {
+        value: "overSixMonths",
+        text: "Over six months ago"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "specificDate",
+        text: "Specific date",
+        conditional: {
+          html: specificDate
+        }
+      }
+    ]
+  }) }}
+
+  {% set otherLocation %}
+    {{ input({
+      name: "event[medicalInformation][implantedDevices][otherLocationDetails]",
+      value: event.medicalInformation.implantedDevices.otherLocationDetails,
+      label: {
+        text: "Describe where"
+      },
+      classes: "nhsuk-u-width-two-thirds"
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    name: "event[medicalInformation][implantedDevices][deviceLocation]",
+    value: event.medicalInformation.implantedDevices.deviceLocation,
+    fieldset: {
+      legend: {
+        text: "Where is the device implanted?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "rightBreast",
+        text: "Right breast"
+      },
+      {
+        value: "leftBreast",
+        text: "Left breast"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "other",
+        text: "Other",
+        conditional: {
+          html: otherLocation
+        }
+      }
+    ]
+  }) }}
+
+  {{ textarea({
+    name: "event[medicalInformation][implantedDevices][additionalDetails]",
+    value: event.medicalInformation.implantedDevices.additionalDetails,
+    label: {
+      text: "Additional details"
+    },
+    hint: {
+      text: "Include any other relevant information about the device or procedure"
+    },
+    rows: 4
+  }) }}
+
+  <div class="app-button-group">
+    {{ button({
+      text: "Save"
+    }) }}
+
+
+  </div>
+
+  {% include "screening-cannot-proceed-link.njk" %}
+
+{% endblock %}

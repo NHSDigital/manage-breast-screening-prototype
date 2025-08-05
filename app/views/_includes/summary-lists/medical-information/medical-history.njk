@@ -2,11 +2,10 @@
   'Breast cancer',
   'Implanted medical devices',
   'Breast implants or augmentation',
-  'Breast reduction',
+  'Breast reduction or mastectomy',
   'Cyst drainage',
   'Lump removal or biopsy',
   'Lymph node surgery',
-  'Mastectomy',
   'Other breast or chest procedures'
   ] %}
 
@@ -15,6 +14,12 @@
 {% set valueHtml = "" %}
 
 {% for row in rows %}
+  {% if row == 'Implanted medical devices' %}
+    {% set changeHref = "./medical-information/medical-history/consent" | urlWithReferrer(currentUrl) %}
+  {% else %}
+    {% set changeHref = "#" %}
+  {% endif %}
+
   {% set summaryListItems = summaryListItems | push({
       key: {
         text: row
@@ -25,7 +30,7 @@
       actions: {
         items: [
           {
-            href: "#",
+            href: changeHref,
             text: "Change",
             visuallyHiddenText: row | lower
           }
