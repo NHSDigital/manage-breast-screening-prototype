@@ -1,5 +1,7 @@
 {# app/views/_includes/medical-information/index.njk #}
 
+{# Calling template sets variable `displayFormat` to one of card / expander / flat #}
+
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
 {% set subHeading = "The last confirmed mammogram and any added manually since then" %}
@@ -50,16 +52,14 @@
     }) }}
 {% endswitch %}
 
+{# -------------------------------------------------------------- #}
 {# Symptoms #}
 {% set sectionHeading = "Symptoms" %}
 {% set subHeading = "Any problems or symptoms, including lumps, swelling, rashes or nipple changes" %}
 {% set scrollTo = 'current-symptoms' %}
 
-
 {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-
 {% set hasSymptoms = symptomsCount > 0 %}
-{% set scrollTo = 'current-symptoms' %}
 
 {# Show add symptom ui when nothing added and collapsed #}
 {# {% if hasSymptoms %} #}
@@ -124,7 +124,7 @@
     {{ appDetails({
       id: "current-symptoms",
       classes: "nhsuk-expander js-expandable-section",
-      summaryText: "Current symptoms",
+      summaryText: sectionHeading,
       subtitle: subHeading,
       contentsSummaryHtml: symptomsContentsSummaryHtml,
       html: currentSymptomsHtml,
@@ -132,7 +132,7 @@
     }) }}
 {% endswitch %}
 
-
+{# -------------------------------------------------------------- #}
 {# Medical history #}
 
 {% set sectionHeading = "Medical history" %}
@@ -161,9 +161,9 @@
     {{ appDetails({
       id: "medical-history",
       classes: "nhsuk-expander js-expandable-section",
-      summaryText: "Medical history",
+      summaryText: sectionHeading,
       contentsSummary: "No information added",
-      subtitle: "Including breast cancer, implants, prior proceedures and treatments",
+      subtitle: subHeading,
       html: medicalHistoryHtml,
       status: "To review"
     }) }}
@@ -224,16 +224,16 @@
     {{ appDetails({
       id: "medical-history",
       classes: "nhsuk-expander js-expandable-section",
-      summaryText: "Medical history",
+      summaryText: sectionHeading,
       contentsSummary: "No information added",
-      subtitle: "Including breast cancer, implants, prior proceedures and treatments",
+      subtitle: subHeading,
       html: medicalHistoryHtml,
       status: "To review"
     }) }}
 {% endswitch %}
 
 
-
+{# -------------------------------------------------------------- #}
 {# Breast features #}
 {% set sectionHeading = "Breast features" %}
 {% set subHeading = "Significant scars, moles or warts that may appear on mammogram images" %}
@@ -288,14 +288,15 @@
     {{ appDetails({
       id: "breast-features",
       classes: "nhsuk-expander js-expandable-section",
-      summaryText: "Breast features",
-      subtitle: "Significant scars, moles or warts that may appear on mammogram images",
+      summaryText: sectionHeading,
+      subtitle: subHeading,
       html: breastFeaturesHtml,
       contentsSummaryHtml: breastFeaturesContentsSummaryHtml,
       status: "To review"
     }) }}
 {% endswitch %}
 
+{# -------------------------------------------------------------- #}
 {# Other relevant information #}
 {% set sectionHeading = "Other relevant information" %}
 {% set subHeading = "Including HRT, pregnancy, breastfeeding and mammographer notes" %}
@@ -342,8 +343,8 @@
     {{ appDetails({
       id: "other-relevant-information",
       classes: "nhsuk-expander js-expandable-section",
-      summaryText: "Other relevant information",
-      subtitle: "Including HRT, pregnancy, breastfeeding and mammographer notes",
+      summaryText: sectionHeading,
+      subtitle: subHeading,
       contentsSummary: otherRelevantInformationSummary,
       html: otherRelevantInformationHtml,
       status: "To review"
