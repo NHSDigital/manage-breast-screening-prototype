@@ -59,10 +59,4 @@
     </p>
   {% endif %}
 
-  {# Show appointment link for checked-in events when enabled #}
-  {% if params.event.status == 'event_checked_in' and params.showAppointmentLink %}
-    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-      <a href="/clinics/{{ params.clinicId }}/events/{{ params.event.id }}/start?event[workflowStatus][appointment]=started">Start appointment {{- ((" for " + (params.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
-    </p>
-  {% endif %}
 </div>

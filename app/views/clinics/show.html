@@ -38,6 +38,9 @@
 
   </div>
 
+  {{ currentUser | log("Currenet user")}}
+  {{ currentUser | isClinician | log("is clinician")}}
+
   {# Clinic time and date #}
   {# 9am to midday - 31 December 2024 #}
   <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
@@ -134,6 +137,22 @@
                 confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
                 showAppointmentLink: true
               })}}
+
+              {# Show appointment link for checked-in events when enabled #}
+              {% if event.status == 'event_checked_in' %}
+                {% if currentUser | isClinician %}
+                  <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                    <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/start?event[workflowStatus][appointment]=started">Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                  </p>
+                {% else %}
+                  <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                    <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                  </p>
+                {% endif %}
+
+              {% endif %}
+
+
 
               {% if event | isFinal %}
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
