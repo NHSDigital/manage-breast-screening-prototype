@@ -35,15 +35,18 @@ router.use((req, res, next) => {
     const selectedUser = data.users.find(user => user.id === data.currentUserId)
 
     if (selectedUser) {
+      console.log(`Changing user to user ${selectedUser.firstName} ${selectedUser.lastName}`)
+
       data.currentUser = selectedUser
-      res.data.currentUser = selectedUser
+      res.locals.data.currentUser = selectedUser
+
+      req.flash('success', `Signed in as ${selectedUser.firstName} ${selectedUser.lastName}`)
     }
     else {
       console.log(`Cannot find user ${data.currentUserId} to sign in. Reverting to user 1`)
 
       data.currentUserId = data.currentUser.id
-      res.data.currentUserId = data.currentUser.id
-
+      res.locals.data.currentUserId = data.currentUser.id
     }
   }
 

@@ -26,7 +26,7 @@
     <ul class="nhsuk-list">
       <li>
         <p>
-          <a href="./dashboard?currentUserId={{ user.id }}&">{{ user.firstName }} {{ user.lastName }}</a>
+          <a href="./dashboard?currentUserId={{ user.id }}&clearQuery=true">{{ user.firstName }} {{ user.lastName }}</a>
 
           {% if user.id == data.currentUser.id %}
             {{ "Signed in" | toTag }}
