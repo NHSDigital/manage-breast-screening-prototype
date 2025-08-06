@@ -1,8 +1,10 @@
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Consent" %}
+{% set pageHeading = "Record consent for breast implant imaging" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./../../record-medical-information" | getReturnUrl(referrerChain) %}
 
 {% block pageContent %}
 
@@ -15,13 +17,22 @@
     {{ pageHeading }}
   </h1>
 
-  <p>We need your consent to continue.</p>
+  <h2 class="nhsuk-heading-m">Explain the risks</h2>
+  <p>There is a small risk of rupturing the implants as a result of compressing the breasts for imaging, although there is currently no evidence of this. <strong>This risk is not a reason to avoid screening</strong>.</p>
+  <p>After the appointment, if you suspect an implant rupture or leak, <strong>consult your GP</strong>.</p>
+
+  <h2 class="nhsuk-heading-m">Difficulties taking images</h2>
+  <p>Special techniques are used to minimise the risk of rupture and some additional images may be needed.</p>
+
+  <h2 class="nhsuk-heading-m">Difficulties interpreting images</h2>
+  <p>Mammograms with breast implants can be less effective at detecting breast cancer because the implants can obscure some breast tissue.</p>
 
   {{ radios({
-    name: "consentGiven",
+    name: "event[medicalInformation][implantedDevices][consentGiven]",
+    value: event.medicalInformation.implantedDevices.consentGiven,
     fieldset: {
       legend: {
-        text: "Do you consent?",
+        text: "Does the participant consent?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -39,7 +50,11 @@
   }) }}
 
   <div class="app-button-group">
-    <a href="./implanted-medical-devices" class="nhsuk-button">Continue</a>
+    {{ button({
+      text: "Continue"
+    }) }}
   </div>
+
+  {% include "screening-cannot-proceed-link.njk" %}
 
 {% endblock %}
