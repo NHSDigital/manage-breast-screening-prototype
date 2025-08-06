@@ -1,0 +1,44 @@
+
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Choose user to simulate" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './dashboard' %}
+
+{# {% set back = {
+  href: "/clinics/" + clinicId,
+  text: "Back to clinic"
+} %}
+ #}
+
+
+{% block pageContent %}
+
+
+  <h1 class="nhsuk-heading-l">
+    {{ pageHeading }}
+  </h1>
+
+  {% for user in data.users %}
+    <ul class="nhsuk-list">
+      <li>
+        <p>
+          <a href="./dashboard?currentUserId={{ user.id }}&">{{ user.firstName }} {{ user.lastName }}</a>
+
+          {% if user.id == data.currentUser.id %}
+            {{ "Signed in" | toTag }}
+          {% endif %}
+          <br>
+          {{ user.role | sentenceCase}}
+        </p>
+
+
+      </li>
+    </ul>
+
+  {% endfor %}
+
+{% endblock %}
