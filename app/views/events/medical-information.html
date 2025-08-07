@@ -27,16 +27,19 @@
   {% include "event-navigation.njk" %}
 
   {# Symptoms #}
-  {% include "cards/medical-information/symptoms.njk" %}
+  {# {% include "cards/medical-information/symptoms.njk" %} #}
 
   {# Breast cancer history, non-cancerous lumps, chest procedures #}
-  {% include "cards/medical-information/medical-information.njk" %}
+  {# {% include "cards/medical-information/medical-information.njk" %} #}
 
   {# Scars, moles, warts, lumps #}
-  {% include "cards/medical-information/breast-features.njk" %}
+  {# {% include "cards/medical-information/breast-features.njk" %} #}
 
   {# HRT, pregnancy and breastfeeding #}
-  {% include "cards/medical-information/other-information.njk" %}
+  {# {% include "cards/medical-information/other-information.njk" %} #}
+
+  {% set displayFormat = "card" %}
+  {% include "_includes/medical-information/index.njk" %}
 
 {% endblock %}
 
