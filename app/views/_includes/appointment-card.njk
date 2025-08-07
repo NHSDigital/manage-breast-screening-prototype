@@ -1,6 +1,8 @@
+{% set participantHref = ("/participants/" ~ participant.id) | urlWithReferrer(currentUrl) %}
+
 <p class="nhsuk-u-margin-bottom-1">
   {# <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/start" class="nhsuk-link"> #}
-  <a href="/participants/{{ participant.id }}" class="nhsuk-link">
+  <a href="{{ participantHref }}" class="nhsuk-link">
     {{ participant | getFullName }}
   </a>
 </p>
