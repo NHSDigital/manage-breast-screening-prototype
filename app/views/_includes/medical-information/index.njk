@@ -2,6 +2,10 @@
 
 {# Calling template sets variable `displayFormat` to one of card / expander / flat #}
 
+{% set allowEdits = true if currentUser | isClinician else false %}
+
+{{ allowEdits | log("Allow edits:")}}
+
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
 {% set subHeading = "The last confirmed mammogram and any added manually since then" %}

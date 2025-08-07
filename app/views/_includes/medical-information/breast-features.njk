@@ -26,6 +26,8 @@
   {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
 {% endset %}
 
-<p>
-  <a href="{{ linkHref | safe }}" class="nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
-</p>
+{% if allowEdits %}
+  <p>
+    <a href="{{ linkHref | safe }}" class="nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
+  </p>
+{% endif %}
