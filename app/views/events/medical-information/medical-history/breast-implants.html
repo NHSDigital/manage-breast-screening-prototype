@@ -2,11 +2,11 @@
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Implanted medical devices" %}
+{% set pageHeading = "Breast implants or augmentation" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "../../record-medical-information" %}
+{% set formAction = "./consent" %}
 
 {% block pageContent %}
 
@@ -19,50 +19,36 @@
     {{ pageHeading }}
   </h1>
 
-  {% set otherDeviceType %}
-    {{ input({
-      name: "event[medicalInformation][implantedDevices][otherDeviceType]",
-      value: event.medicalInformation.implantedDevices.otherDeviceType,
-      label: {
-        text: "Describe what"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
-  {% endset %}
-
   {{ radios({
-    name: "event[medicalInformation][implantedDevices][deviceType]",
-    value: event.medicalInformation.implantedDevices.deviceType,
+    name: "event[medicalInformation][breastImplants][implantType]",
+    value: event.medicalInformation.breastImplants.implantType,
     fieldset: {
       legend: {
-        text: "What is the device type?",
+        text: "What type of breast implants or augmentation?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
     },
     items: [
       {
-        value: "cardiacDevice",
-        text: "Cardiac device"
+        value: "saline",
+        text: "Saline"
       },
       {
-        value: "hickmanLines",
-        text: "Hickman lines"
+        value: "silicone",
+        text: "Silicone"
       },
       {
-        value: "other",
-        text: "Other",
-        conditional: {
-          html: otherDeviceType
-        }
+        value: "fatTransfer",
+        text: "Fat transfer"
       }
     ]
   }) }}
 
   {% set specificDate %}
     {{ dateInput({
-      name: "event[medicalInformation][implantedDevices][procedureDate]",
-      value: event.medicalInformation.implantedDevices.procedureDate,
+      name: "event[medicalInformation][breastImplants][procedureDate]",
+      value: event.medicalInformation.breastImplants.procedureDate,
       fieldset: {
         legend: {
           text: "Enter the date",
@@ -76,8 +62,8 @@
   {% endset %}
 
   {{ radios({
-    name: "event[medicalInformation][implantedDevices][procedureTiming]",
-    value: event.medicalInformation.implantedDevices.procedureTiming,
+    name: "event[medicalInformation][breastImplants][procedureTiming]",
+    value: event.medicalInformation.breastImplants.procedureTiming,
     fieldset: {
       legend: {
         text: "When was the procedure?",
@@ -107,23 +93,12 @@
     ]
   }) }}
 
-  {% set otherLocation %}
-    {{ input({
-      name: "event[medicalInformation][implantedDevices][otherLocationDetails]",
-      value: event.medicalInformation.implantedDevices.otherLocationDetails,
-      label: {
-        text: "Describe where"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
-  {% endset %}
-
   {{ radios({
-    name: "event[medicalInformation][implantedDevices][deviceLocation]",
-    value: event.medicalInformation.implantedDevices.deviceLocation,
+    name: "event[medicalInformation][breastImplants][implantLocation]",
+    value: event.medicalInformation.breastImplants.implantLocation,
     fieldset: {
       legend: {
-        text: "Where is the device implanted?",
+        text: "Which breast(s) have implants?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -138,26 +113,20 @@
         text: "Left breast"
       },
       {
-        divider: "or"
-      },
-      {
-        value: "other",
-        text: "Other",
-        conditional: {
-          html: otherLocation
-        }
+        value: "bothBreasts",
+        text: "Both breasts"
       }
     ]
   }) }}
 
   {{ textarea({
-    name: "event[medicalInformation][implantedDevices][additionalDetails]",
-    value: event.medicalInformation.implantedDevices.additionalDetails,
+    name: "event[medicalInformation][breastImplants][additionalDetails]",
+    value: event.medicalInformation.breastImplants.additionalDetails,
     label: {
       text: "Additional details"
     },
     hint: {
-      text: "Include any other relevant information about the device or procedure"
+      text: "Include any other relevant information about the implants or procedure"
     },
     rows: 4
   }) }}

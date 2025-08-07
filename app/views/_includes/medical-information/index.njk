@@ -135,48 +135,8 @@
 {# -------------------------------------------------------------- #}
 {# Medical history #}
 
-{% set sectionHeading = "Medical history [button]" %}
-{% set subHeading = "Including breast cancer, implants, prior proceedures and treatments" %}
-{% set scrollTo = 'medical-history' %}
-
-{% set medicalHistoryHtml %}
-{#
-  {% include "summary-lists/medical-information/medical-history.njk" %}
-  #}
-  
-  {% set referrerChain = currentUrl %}
-  {% include "summary-lists/medical-information/medical-history/medical-history-menu.njk" %}
-{% endset %}
-
-{% switch displayFormat %}
-  {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
-    {{ medicalHistoryHtml | safe }}
-  {% case 'card' %}
-    {% call card({
-      heading: sectionHeading
-    }) %}
-      <p>
-        {{ subHeading }}
-      </p>
-      {{ medicalHistoryHtml | safe }}
-    {% endcall %}
-  {% default %}
-    {{ appDetails({
-      id: "medical-history",
-      classes: "nhsuk-expander js-expandable-section",
-      summaryText: sectionHeading,
-      contentsSummary: "No information added",
-      subtitle: subHeading,
-      html: medicalHistoryHtml,
-      status: "To review"
-    }) }}
-{% endswitch %}
-
-{# Medical history – experiment 2 #}
-
-{% set sectionHeading = "Medical history [list]" %}
-{% set subHeading = "Including breast cancer, implants, prior proceedures and treatments" %}
+{% set sectionHeading = "Medical history" %}
+{% set subHeading = "Including breast cancer, implants, prior procedures and treatments" %}
 {% set scrollTo = 'medical-history-list' %}
 
 {% set medicalHistoryHtml %}
@@ -207,7 +167,6 @@
       status: "To review"
     }) }}
 {% endswitch %}
-
 
 {# -------------------------------------------------------------- #}
 {# Breast features #}

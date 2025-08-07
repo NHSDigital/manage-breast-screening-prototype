@@ -16,6 +16,8 @@
 {% for row in rows %}
   {% if row == 'Implanted medical devices' %}
     {% set changeHref = "./medical-information/medical-history/implanted-medical-devices" | urlWithReferrer(currentUrl) %}
+  {% elseif row == 'Breast implants or augmentation' %}
+    {% set changeHref = "./medical-information/medical-history/breast-implants" | urlWithReferrer(currentUrl) %}
   {% else %}
     {% set changeHref = "#" %}
   {% endif %}
