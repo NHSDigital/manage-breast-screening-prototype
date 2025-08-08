@@ -140,14 +140,14 @@
               })}}
 
               {% if event | isInProgress %}
-                <span class="app-text-grey app-nowrap nhsuk-body-s">with {{ event.sessionDetails.startedBy | getUsername({
+                <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ event.sessionDetails.startedBy | getUsername({
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
 
               {% elseif (event | isFinal) %}
                 {% if event.sessionDetails.startedBy %}
-                  <span class="app-text-grey app-nowrap nhsuk-body-s">by {{ event.sessionDetails.startedBy | getUsername({
+                  <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ event.sessionDetails.startedBy | getUsername({
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
