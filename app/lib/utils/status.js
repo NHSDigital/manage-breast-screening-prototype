@@ -214,6 +214,8 @@ const filterEventsByStatus = (events, filter) => {
       return events.filter(e => e.status === 'event_scheduled')
     case 'checked-in':
       return events.filter(e => e.status === 'event_checked_in')
+    case 'in-progress':
+      return events.filter(e => e.status === 'event_in_progress')
     case 'complete':
       return events.filter(e => isFinal(e))
     case 'remaining':

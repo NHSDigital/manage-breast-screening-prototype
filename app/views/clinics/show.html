@@ -50,6 +50,7 @@
   {% set tabItems = [
     { id: 'remaining', label: 'Remaining' },
     { id: 'checked-in', label: 'Checked in' },
+    { id: 'in-progress', label: 'In progress' },
     { id: 'complete', label: 'Complete' },
     { id: 'all', label: 'All' }
   ] %}
@@ -166,8 +167,11 @@
               {% if event.status != 'event_scheduled' %}
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
                   {% if currentUser | isClinician %}
+
                     {% if (event | isFinal) or ((event | isInProgress) and not event.sessionDetails.startedBy | isCurrentUser) %}
+
                       {{ viewAppointmentLink | safe }}
+
                     {% elseif event | isInProgress %}
                       <a href="{{ eventBaseUrl }}/identity">Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
                     {% else %}
