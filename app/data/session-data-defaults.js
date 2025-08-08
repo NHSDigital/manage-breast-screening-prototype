@@ -65,12 +65,13 @@ const defaultSettings = {
     confirmNormal: 'false',
     showRemaining: 'true',
     showRepeatsTag: 'false',
-    showPacsViewer: 'true',
+    showPacsViewer: 'false',
   },
 }
 
 module.exports = {
   users,
+  currentUserId: users [0].id,
   currentUser: users[0],
   breastScreeningUnits,
   allBreastScreeningUnits,

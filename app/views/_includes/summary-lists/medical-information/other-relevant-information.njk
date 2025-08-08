@@ -98,7 +98,7 @@
             visuallyHiddenText: "hormone replacement therapy (HRT)"
           }
         ]
-      }
+      } if allowEdits
     },
     {
       key: {
@@ -115,7 +115,7 @@
             visuallyHiddenText: "pregnancy and breastfeeding"
           }
         ]
-      }
+      } if allowEdits
     },
     {
       key: {
@@ -132,7 +132,7 @@
             visuallyHiddenText: "mammographer notes"
           }
         ]
-      }
+      } if allowEdits
     }
   ]
 } | handleSummaryListMissingInformation ) }}

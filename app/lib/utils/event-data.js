@@ -79,6 +79,40 @@ const updateEventStatus = (data, eventId, newStatus) => {
 }
 
 /**
+ * Update event with arbitrary data changes
+ * Also updates the temporary event data if it exists and matches
+ * @param {Object} data - Session data
+ * @param {string} eventId - Event ID
+ * @param {Object} updates - Object containing updates to merge into the event
+ * @returns {Object|null} Updated event or null if not found
+ */
+const updateEventData = (data, eventId, updates) => {
+  const eventIndex = data.events.findIndex(e => e.id === eventId)
+  if (eventIndex === -1) return null
+
+  const event = data.events[eventIndex]
+
+  const updatedEvent = {
+    ...event,
+    ...updates
+  }
+
+  // Update main data
+  data.events[eventIndex] = updatedEvent
+
+  // Also update temp event data if it exists and matches this event
+  // Merge updates into existing temp event to preserve any unsaved changes
+  if (data.event && data.event.id === eventId) {
+    data.event = {
+      ...data.event,
+      ...updates
+    }
+  }
+
+  return updatedEvent
+}
+
+/**
  * Save temporary event data back to the main event
  * @param {Object} data - Session data
  * @returns {Object|null} Updated event or null if no temp data
@@ -109,5 +143,6 @@ module.exports = {
   getEventData,
   updateEvent,
   updateEventStatus,
+  updateEventData,
   saveTempEventToEvent,
 }

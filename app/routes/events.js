@@ -4,7 +4,7 @@ const _ = require('lodash')
 
 const { getParticipant, getFullName, saveTempParticipantToParticipant } = require('../lib/utils/participants')
 const { generateMammogramImages } = require('../lib/generators/mammogram-generator')
-const { getEvent, saveTempEventToEvent, updateEventStatus } = require('../lib/utils/event-data')
+const { getEvent, saveTempEventToEvent, updateEventStatus, updateEventData } = require('../lib/utils/event-data')
 const generateId = require('../lib/utils/id-generator')
 const { getReturnUrl, urlWithReferrer, appendReferrer } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
@@ -130,10 +130,28 @@ module.exports = router => {
   // Possibly not needed as if the ID doesn't match our use route would reset this - but this could
   // be used to reset a patient back to defaults
   router.get('/clinics/:clinicId/events/:eventId/start', (req, res) => {
-    // Explicitly delete the temp event data
+    const data = req.session.data
+    const event = getEvent(data, req.params.eventId)
+    const currentUser = data.currentUser
+
+    if (event?.status !== 'event_in_progress') {
+      // Update status
+      updateEventStatus(data, req.params.eventId, 'event_in_progress')
+
+      // Store session details
+      updateEventData(data, req.params.eventId, {
+        sessionDetails: {
+          startedAt: new Date().toISOString(),
+          startedBy: currentUser.id
+        }
+      })
+    }
+
+    // Explicitly delete the temp event data just in case
     // On next request this will be recreated from the event array
-    delete req.session.data.event
+    delete data.event
     console.log('Cleared temp event data')
+
     res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`)
   })
 

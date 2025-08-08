@@ -257,7 +257,7 @@ module.exports = router => {
 
 
   // Single clinic view
-  const VALID_FILTERS = ['remaining', 'scheduled', 'checked-in', 'complete', 'all']
+  const VALID_FILTERS = ['remaining', 'scheduled', 'checked-in', 'in-progress', 'complete', 'all']
 
   // Support both /clinics/:id and /clinics/:id/:filter
   router.get(['/clinics/:id', '/clinics/:id/:filter'], (req, res, next) => {

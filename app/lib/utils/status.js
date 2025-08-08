@@ -9,7 +9,7 @@ const dayjs = require('dayjs')
 const STATUS_GROUPS = {
   completed: ['event_complete', 'event_partially_screened'],
   final: ['event_complete', 'event_partially_screened', 'event_did_not_attend', 'event_attended_not_screened', 'event_cancelled'],
-  active: ['event_scheduled', 'event_checked_in'],
+  active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
   eligible_for_reading: ['event_complete', 'event_partially_screened'],
 }
 
@@ -47,6 +47,17 @@ const isCompleted = (input) => {
 }
 
 /**
+ * Check if a status represents a completed event
+ * @param {string|Object} input - Status string or event object
+ * @returns {boolean} Whether the status is completed
+ */
+const isInProgress = (input) => {
+  const status = getStatus(input)
+  if (!status) return false
+  return status == 'event_in_progress'
+}
+
+/**
  * Check if a status represents a final state
  * @param {string|Object} input - Status string or event object
  * @returns {boolean} Whether the status is final
@@ -69,13 +80,26 @@ const isActive = (input) => {
 }
 
 /**
- * Check if an event is in the appointment workflow
- * @param {*} event
- * @returns {boolean} Whether the event is in the appointment workflow
+ * Check if an event is in the appointment workflow for the current user
+ * @param {Object} event - Event to check
+ * @param {Object|string} currentUser - User object with id property, or user id string directly
+ * @returns {boolean} Whether the event is in the appointment workflow for this user
  */
-const isAppointmentWorkflow = (event) => {
-  const status = getStatus(event)
-  return status == "event_checked_in"
+const isAppointmentWorkflow = function(event, currentUser) {
+  // Get currentUser from context if not provided
+  currentUser = currentUser || this?.ctx?.data?.currentUser
+
+  const startedBy = event?.sessionDetails?.startedBy
+  if (!currentUser || !startedBy) return false
+
+  // Extract user ID whether currentUser is object or string
+  const currentUserId = typeof currentUser === 'string' ? currentUser : currentUser.id
+  if (!currentUserId) return false
+
+  // Check if event is in progress and started by current user
+  const eventInProgress = isInProgress(event)
+
+  return eventInProgress && (startedBy === currentUserId)
 }
 
 /**
@@ -106,6 +130,7 @@ const getStatusTagColour = (status) => {
     // Event statuses
     event_scheduled: 'blue', // default blue
     event_checked_in: '', // no colour will get solid dark blue
+    event_in_progress: 'aqua-green',
     event_complete: 'green',
     event_partially_screened: 'orange',
     event_did_not_attend: 'red',
@@ -183,6 +208,7 @@ const getStatusText = (status) => {
     event_scheduled: 'Scheduled', // default blue
     // Event statuses
     event_checked_in: 'Checked in', // no colour will get solid dark blue
+    event_in_progress: 'In progress',
     event_complete: 'Screened',
     event_partially_screened: 'Partially screened',
     event_did_not_attend: 'Did not attend',
@@ -201,6 +227,8 @@ const filterEventsByStatus = (events, filter) => {
       return events.filter(e => e.status === 'event_scheduled')
     case 'checked-in':
       return events.filter(e => e.status === 'event_checked_in')
+    case 'in-progress':
+      return events.filter(e => e.status === 'event_in_progress')
     case 'complete':
       return events.filter(e => isFinal(e))
     case 'remaining':
@@ -221,6 +249,7 @@ const isSpecialAppointment = (event) => {
 
 module.exports = {
   isCompleted,
+  isInProgress,
   isFinal,
   isActive,
   isAppointmentWorkflow,
