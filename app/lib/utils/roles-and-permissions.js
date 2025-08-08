@@ -81,9 +81,13 @@ const getRolesText = (user, separator = ', ') => {
  * @param {Object} data - Session data containing currentUser
  * @returns {boolean} Whether this user is the current user
  */
-const isCurrentUser = (user, data) => {
+const isCurrentUser = function(user) {
+  const data = this.ctx.data
   if (!user || !data?.currentUser) return false
-  return user.id === data.currentUser.id
+  if (typeof user === 'string') {
+    return user === data.currentUser.id
+  }
+  else return user.id === data.currentUser.id
 }
 
 module.exports = {

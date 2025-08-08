@@ -9,7 +9,7 @@ const { STATUS_GROUPS, isCompleted, isFinal } = require('../utils/status')
 const { generateMammogramImages } = require('./mammogram-generator')
 const { generateSymptoms } = require('./symptoms-generator')
 const { generateSpecialAppointment } = require('./special-appointment-generator')
-const { users } = require('../../data/users')
+const users = require('../../data/users')
 
 const NOT_SCREENED_REASONS = [
   'Recent mammogram at different facility',
@@ -61,7 +61,7 @@ const determineEventStatus = (slotDateTime, currentDateTime, attendanceWeights) 
   }
 }
 
-const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus = null, id = null, specialAppointmentOverride = null }) => {
+const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus = null, id = null, specialAppointmentOverride = null, forceInProgress = false }) => {
   // Parse dates once
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
   const simulatedDateTime = dayjs().hour(parseInt(hours)).minute(parseInt(minutes))
@@ -81,7 +81,12 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
     : [0.70, 0.1, 0.10, 0.05, 0.05]
 
   // We'll use forceStatus if provided, otherwise calculate based on timing
-  const eventStatus = forceStatus || determineEventStatus(slotDateTime, simulatedDateTime, attendanceWeights)
+  let eventStatus = forceStatus || determineEventStatus(slotDateTime, simulatedDateTime, attendanceWeights)
+
+  // Override to in_progress if requested
+  if (forceInProgress) {
+    eventStatus = 'event_in_progress'
+  }
 
   const eventBase = {
     id: id || generateId(),
@@ -112,12 +117,24 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
     eventBase.specialAppointment = specialAppointment
   }
 
-  if (!isPast) {
+  // For in-progress events, add session details with current time
+  if (eventStatus === 'event_in_progress') {
+    // Pick a random clinical user (not the first one)
+    const clinicalUsers = users.filter(user => user.role.includes('clinician'))
+    const randomUser = faker.helpers.arrayElement(clinicalUsers.slice(1)) // Skip first user
+
+    eventBase.sessionDetails = {
+      startedAt: dayjs().subtract(faker.number.int({ min: 5, max: 45 }), 'minutes').toISOString(),
+      startedBy: randomUser.id
+    }
+  }
+
+  if (!isPast && !forceInProgress) {
     return eventBase
   }
 
   // For past or forced statuses, add appropriate extra details
-  if (isPast || forceStatus) {
+  if (isPast || forceStatus || forceInProgress) {
     const event = {
       ...eventBase,
       details: {
@@ -135,8 +152,6 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
 
     // Add timing details for completed appointments
     if (isCompleted(eventStatus)) {
-
-      // if (eventStatus === 'event_complete' || eventStatus === 'event_partially_screened') {
       const actualStartOffset = faker.number.int({ min: -5, max: 5 })
       const durationOffset = hasSpecialAppointment
         ? faker.number.int({ min: -3, max: 10 })
@@ -150,6 +165,16 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
         actualStartTime: actualStartTime.toISOString(),
         actualEndTime: actualEndTime.toISOString(),
         actualDuration: actualEndTime.diff(actualStartTime, 'minute'),
+      }
+
+      // Add session details for completed events
+      const clinicalUsers = users.filter(user => user.role.includes('clinician'))
+      const randomUser = faker.helpers.arrayElement(clinicalUsers)
+
+      event.sessionDetails = {
+        startedAt: actualStartTime.toISOString(),
+        startedBy: randomUser.id,
+        endedAt: actualEndTime.toISOString()
       }
 
       // Add mammogram images for completed events
@@ -174,6 +199,23 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
         event.medicalInformation = {
           symptoms
         }
+      }
+    }
+
+    // Add session details for attended-not-screened events
+    if (eventStatus === 'event_attended_not_screened') {
+      const clinicalUsers = users.filter(user => user.role.includes('clinician'))
+      const randomUser = faker.helpers.arrayElement(clinicalUsers)
+
+      // They would have started the appointment process
+      const actualStartTime = slotDateTime.add(faker.number.int({ min: -5, max: 5 }), 'minute')
+      // But ended it early when determining screening couldn't proceed
+      const actualEndTime = actualStartTime.add(faker.number.int({ min: 5, max: 15 }), 'minute')
+
+      event.sessionDetails = {
+        startedAt: actualStartTime.toISOString(),
+        startedBy: randomUser.id,
+        endedAt: actualEndTime.toISOString()
       }
     }
 

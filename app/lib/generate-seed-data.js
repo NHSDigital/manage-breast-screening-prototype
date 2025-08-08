@@ -106,6 +106,9 @@ const generateClinicsForDay = (date, allParticipants, unit, usedParticipantsInSn
   // Check if this snapshot date is for the recent period (not historical)
   const isRecentSnapshot = dayjs(date).isAfter(dayjs().subtract(1, 'month'))
 
+  // Check if this is today - we want one in-progress event for today only
+  const isToday = dayjs(date).isSame(dayjs(), 'day')
+
   // Only look for test scenarios in recent snapshots
   const testScenariosForDay = isRecentSnapshot
     ? testScenarios.filter(scenario => {
@@ -122,6 +125,9 @@ const generateClinicsForDay = (date, allParticipants, unit, usedParticipantsInSn
     date: date.toDate(),
     breastScreeningUnit: unit,
   })
+
+  // Track if we've created an in-progress event for today
+  let hasCreatedInProgressEvent = false
 
   // For test scenarios, only use first clinic of the day
   if (testScenariosForDay.length > 0 && newClinics.length > 0) {
@@ -179,13 +185,11 @@ const generateClinicsForDay = (date, allParticipants, unit, usedParticipantsInSn
         .filter(p => !usedParticipantsInSnapshot.has(p.id))
 
       if (availableParticipants.length === 0) {
-
         const newParticipant = generateParticipant({
           ethnicities,
           breastScreeningUnits: [unit],
           riskLevel: selectedRiskLevel,
         })
-        // console.log(`Not enough participants, creating a new one ${newParticipant.id}`)
         participants.push(newParticipant)
         availableParticipants.push(newParticipant)
       }
@@ -195,12 +199,21 @@ const generateClinicsForDay = (date, allParticipants, unit, usedParticipantsInSn
         const randomIndex = Math.floor(Math.random() * availableParticipants.length)
         const participant = availableParticipants[randomIndex]
 
+        // For today, create one in-progress event (first participant in first available slot)
+        const shouldBeInProgress = isToday && !hasCreatedInProgressEvent && i === 0
+
         const event = generateEvent({
           slot,
           participant,
           clinic,
           outcomeWeights: config.screening.outcomes[clinic.clinicType],
+          forceInProgress: shouldBeInProgress
         })
+
+        if (shouldBeInProgress) {
+          hasCreatedInProgressEvent = true
+          console.log(`Created in-progress event for participant ${participant.demographicInformation.firstName} ${participant.demographicInformation.lastName}`)
+        }
 
         events.push(event)
         usedParticipantsInSnapshot.add(participant.id)
@@ -217,7 +230,6 @@ const generateClinicsForDay = (date, allParticipants, unit, usedParticipantsInSn
     newParticipants: participants.slice(allParticipants.length),
   }
 }
-
 // Generate array of dates for a snapshot period
 const generateSnapshotPeriod = (startDate, numberOfDays) => {
   return Array.from(

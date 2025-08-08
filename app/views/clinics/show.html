@@ -138,26 +138,48 @@
                 showAppointmentLink: true
               })}}
 
-              {# Show appointment link for checked-in events when enabled #}
-              {% if event.status == 'event_checked_in' %}
-                {% if currentUser | isClinician %}
-                  <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                    <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/start?event[workflowStatus][appointment]=started">Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
-                  </p>
-                {% else %}
-                  <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                    <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
-                  </p>
-                {% endif %}
+              {% if event | isInProgress %}
+                <span class="app-text-grey app-nowrap nhsuk-body-s">with {{ event.sessionDetails.startedBy | getUsername({
+                    format: 'short',
+                    identifyCurrentUser: true
+                  }) }}</span>
 
+              {% elseif (event | isFinal) %}
+                {% if event.sessionDetails.startedBy %}
+                  <span class="app-text-grey app-nowrap nhsuk-body-s">by {{ event.sessionDetails.startedBy | getUsername({
+                    format: 'short',
+                    identifyCurrentUser: true
+                  }) }}</span>
+                {% endif %}
               {% endif %}
 
 
 
-              {% if event | isFinal %}
+              {# Show appointment link for checked-in events when enabled #}
+              {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
+
+              {% set viewAppointmentLink %}
+                <a href="{{ eventBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+              {% endset %}
+
+              {# Scheduled events have dynamic check-in links #}
+              {% if event.status != 'event_scheduled' %}
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                  <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                  {% if currentUser | isClinician %}
+                    {% if (event | isFinal) or ((event | isInProgress) and not event.sessionDetails.startedBy | isCurrentUser) %}
+                      {{ viewAppointmentLink | safe }}
+                    {% elseif event | isInProgress %}
+                      <a href="{{ eventBaseUrl }}/identity">Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                    {% else %}
+                      <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started">Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                    {% endif %}
+
+                  {% else %}
+                    {{ viewAppointmentLink | safe }}
+                  {% endif %}
                 </p>
+
+
               {% endif %}
 
             </td>
