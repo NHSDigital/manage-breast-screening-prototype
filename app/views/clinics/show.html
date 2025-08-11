@@ -38,6 +38,9 @@
 
   </div>
 
+  {{ currentUser | log("Currenet user")}}
+  {{ currentUser | isClinician | log("is clinician")}}
+
   {# Clinic time and date #}
   {# 9am to midday - 31 December 2024 #}
   <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
@@ -47,6 +50,7 @@
   {% set tabItems = [
     { id: 'remaining', label: 'Remaining' },
     { id: 'checked-in', label: 'Checked in' },
+    { id: 'in-progress', label: 'In progress' },
     { id: 'complete', label: 'Complete' },
     { id: 'all', label: 'All' }
   ] %}
@@ -135,10 +139,60 @@
                 showAppointmentLink: true
               })}}
 
-              {% if event | isFinal %}
+              {% if event | isInProgress %}
+                <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ event.sessionDetails.startedBy | getUsername({
+                    format: 'short',
+                    identifyCurrentUser: true
+                  }) }}</span>
+
+              {% elseif (event | isFinal) %}
+                {% if event.sessionDetails.startedBy %}
+                  <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ event.sessionDetails.startedBy | getUsername({
+                    format: 'short',
+                    identifyCurrentUser: true
+                  }) }}</span>
+                {% endif %}
+              {% endif %}
+
+
+
+              {# Show appointment link for checked-in events when enabled #}
+              {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
+
+              {% set viewAppointmentLink %}
+                <a href="{{ eventBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+              {% endset %}
+
+              {# Scheduled events have dynamic check-in links #}
+              {% if event.status != 'event_scheduled' %}
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                  <a href="/clinics/{{ clinicId }}/events/{{ event.id }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                  {% if currentUser | isClinician %}
+
+                    {% if event | isFinal %}
+                      {{ viewAppointmentLink | safe }}
+                    {% elseif event | isInProgress %}
+
+                      {% if event | startedByCurrentUser %}
+
+                        <a href="{{ eventBaseUrl }}/identity">
+                          Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                        </a>
+                      {% else %}
+                        {{ viewAppointmentLink | safe }}
+                      {% endif %}
+
+                    {% else %}
+                      <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started">
+                        Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                      </a>
+                    {% endif %}
+
+                  {% else %}
+                    {{ viewAppointmentLink | safe }}
+                  {% endif %}
                 </p>
+
+
               {% endif %}
 
             </td>
