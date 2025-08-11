@@ -113,6 +113,7 @@ module.exports = router => {
 
     res.locals.participant = data.participant
     res.locals.participantId = participantId
+    res.locals.originalParticipant = savedParticipant
     res.locals.eventUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.contextUrl = `/clinics/${clinicId}/events/${eventId}`
     res.locals.pageContext = 'event'

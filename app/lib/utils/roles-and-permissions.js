@@ -90,6 +90,23 @@ const isCurrentUser = function(user) {
   else return user.id === data.currentUser.id
 }
 
+
+/**
+ * Check if an event was started by the current user
+ * @param {Object} event - Event object to check
+ * @returns {boolean} Whether the event was started by the current user
+ */
+const startedByCurrentUser = function(event) {
+  const data = this.ctx.data
+  if (!event?.sessionDetails?.startedBy || !data?.currentUser) return false
+
+  const currentUserId = typeof data.currentUser === 'string'
+    ? data.currentUser
+    : data.currentUser.id
+
+  return event.sessionDetails.startedBy === currentUserId
+}
+
 module.exports = {
   hasRole,
   hasAnyRole,
@@ -98,5 +115,6 @@ module.exports = {
   isAdministrative,
   isHybridUser,
   getRolesText,
-  isCurrentUser
+  isCurrentUser,
+  startedByCurrentUser,
 }

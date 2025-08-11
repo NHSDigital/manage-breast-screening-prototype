@@ -4,7 +4,6 @@
 
 {% set allowEdits = true if currentUser | isClinician else false %}
 
-{{ allowEdits | log("Allow edits:")}}
 
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}

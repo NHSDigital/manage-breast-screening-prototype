@@ -13,6 +13,23 @@
 })}}
 {% endset %}
 
+{% if (event | isInProgress) and not event | startedByCurrentUser %}
+  {% set notificationBannerHtml %}
+    <p class="nhsuk-notification-banner__heading">
+      This appointment is currently being run by {{ event.sessionDetails.startedBy | getUsername({
+        format: 'short',
+        identifyCurrentUser: true
+      }) }}.
+    </p>
+  {% endset %}
+
+  {{ notificationBanner({
+    html: notificationBannerHtml,
+    type: "information"
+  }) }}
+{% endif %}
+
+
 <div class="app-header-with-status">
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">

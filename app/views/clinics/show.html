@@ -168,7 +168,7 @@
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
                   {% if currentUser | isClinician %}
 
-                    {% if (event | isFinal) or ((event | isInProgress) and not event.sessionDetails.startedBy | isCurrentUser) %}
+                    {% if (event | isFinal) or not (event | startedByCurrentUser) %}
 
                       {{ viewAppointmentLink | safe }}
 
