@@ -168,14 +168,23 @@
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
                   {% if currentUser | isClinician %}
 
-                    {% if (event | isFinal) or not (event | startedByCurrentUser) %}
-
+                    {% if event | isFinal %}
                       {{ viewAppointmentLink | safe }}
-
                     {% elseif event | isInProgress %}
-                      <a href="{{ eventBaseUrl }}/identity">Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+
+                      {% if event | startedByCurrentUser %}
+
+                        <a href="{{ eventBaseUrl }}/identity">
+                          Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                        </a>
+                      {% else %}
+                        {{ viewAppointmentLink | safe }}
+                      {% endif %}
+
                     {% else %}
-                      <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started">Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                      <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started">
+                        Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                      </a>
                     {% endif %}
 
                   {% else %}
