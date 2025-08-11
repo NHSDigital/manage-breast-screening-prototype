@@ -107,49 +107,6 @@
     ]
   }) }}
 
-  {% set otherLocation %}
-    {{ input({
-      name: "event[medicalInformation][implantedDevices][otherLocationDetails]",
-      value: event.medicalInformation.implantedDevices.otherLocationDetails,
-      label: {
-        text: "Describe where"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
-  {% endset %}
-
-  {{ radios({
-    name: "event[medicalInformation][implantedDevices][deviceLocation]",
-    value: event.medicalInformation.implantedDevices.deviceLocation,
-    fieldset: {
-      legend: {
-        text: "Where is the device implanted?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
-      }
-    },
-    items: [
-      {
-        value: "rightBreast",
-        text: "Right breast"
-      },
-      {
-        value: "leftBreast",
-        text: "Left breast"
-      },
-      {
-        divider: "or"
-      },
-      {
-        value: "other",
-        text: "Other",
-        conditional: {
-          html: otherLocation
-        }
-      }
-    ]
-  }) }}
-
   {{ textarea({
     name: "event[medicalInformation][implantedDevices][additionalDetails]",
     value: event.medicalInformation.implantedDevices.additionalDetails,
@@ -162,9 +119,14 @@
     rows: 4
   }) }}
 
+  {{ button({
+    text: "Add another medical device",
+    classes: "nhsuk-button--secondary"
+  }) }}
+
   <div class="app-button-group">
     {{ button({
-      text: "Continue"
+      text: "Save"
     }) }}
   </div>
 
