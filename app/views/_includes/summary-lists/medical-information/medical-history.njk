@@ -3,7 +3,7 @@
   'Implanted medical devices',
   'Breast implants or augmentation',
   'Breast reduction or mastectomy',
-  'Cyst drainage',
+  'Cysts',
   'Lump removal or biopsy',
   'Lymph node surgery',
   'Other breast or chest procedures'
@@ -18,6 +18,10 @@
     {% set changeHref = "./medical-information/medical-history/implanted-medical-devices" | urlWithReferrer(currentUrl) %}
   {% elseif row == 'Breast implants or augmentation' %}
     {% set changeHref = "./medical-information/medical-history/breast-implants" | urlWithReferrer(currentUrl) %}
+  {% elseif row == 'Cysts' %}
+    {% set changeHref = "./medical-information/medical-history/cysts/add" | urlWithReferrer(currentUrl) %}
+  {% elseif row == 'Lump removal or biopsy' %}
+    {% set changeHref = "./medical-information/medical-history/lump-removal-biopsy/add" | urlWithReferrer(currentUrl) %}
   {% else %}
     {% set changeHref = "#" %}
   {% endif %}

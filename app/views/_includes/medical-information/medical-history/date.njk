@@ -2,12 +2,13 @@
 
 {% set specificDate %}
   {{ dateInput({
-    name: "event[medicalHistoryTemp][specificDate]",
-    value: event.medicalHistoryTemp.specificDate,
+    id: "specificDate",
+    namePrefix: "event[medicalHistoryTemp][specificDate]",
+    values: event.medicalHistoryTemp.specificDate,
     fieldset: {
       legend: {
         text: "Enter the date",
-        classes: "nhsuk-fieldset__legend--s"
+        classes: "nhsuk-fieldset__legend--s nhsuk-u-visually-hidden"
       }
     },
     hint: {

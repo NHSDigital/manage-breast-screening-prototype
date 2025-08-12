@@ -607,6 +607,170 @@ module.exports = router => {
     res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain, req.query.scrollTo))
   })
 
+  // Medical history
+
+ // Medical history routes - add these to the events.js file
+
+  const medicalHistoryTypes = require('../data/medical-history-types')
+
+  // Helper function to validate medical history type
+  function isValidMedicalHistoryType(type) {
+    // Check against both camelCase keys and kebab-case slugs
+    return Object.keys(medicalHistoryTypes).includes(type) ||
+           Object.values(medicalHistoryTypes).some(typeObj => typeObj.slug === type)
+  }
+
+  // Helper function to get medical history type object by type (camelCase key or kebab-case slug)
+  function getMedicalHistoryType(type) {
+    // First try to find by camelCase key
+    if (medicalHistoryTypes[type]) {
+      return medicalHistoryTypes[type]
+    }
+    // Then try to find by kebab-case slug
+    return Object.values(medicalHistoryTypes).find(typeObj => typeObj.slug === type)
+  }
+
+  // Add new medical history item - clear temp data and redirect to form
+  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add', (req, res) => {
+    const { clinicId, eventId, type } = req.params
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    // Clear any existing temp medical history data
+    delete req.session.data.event?.medicalHistoryTemp
+
+    // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain))
+  })
+
+  // Save medical history item - handles both 'save' and 'save and add another'
+  router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/save', (req, res) => {
+    const { clinicId, eventId, type } = req.params
+    const data = req.session.data
+    const action = req.body.action || 'save'
+    const referrerChain = req.query.referrerChain
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    const typeConfig = getMedicalHistoryType(type)
+
+    // Save temp medical history to array
+    if (data.event?.medicalHistoryTemp) {
+      // Initialize medicalInformation object if needed
+      if (!data.event.medicalInformation) {
+        data.event.medicalInformation = {}
+      }
+
+      // Initialize medicalHistory object if needed
+      if (!data.event.medicalInformation.medicalHistory) {
+        data.event.medicalInformation.medicalHistory = {}
+      }
+
+      // Initialize array for this type if needed
+      if (!data.event.medicalInformation.medicalHistory[type]) {
+        data.event.medicalInformation.medicalHistory[type] = []
+      }
+
+      const medicalHistoryTemp = data.event.medicalHistoryTemp
+      const isNewItem = !medicalHistoryTemp.id
+
+      // Create medical history item
+      const medicalHistoryItem = {
+        id: medicalHistoryTemp.id || generateId(),
+        ...medicalHistoryTemp
+      }
+
+      // For new items, add the creation timestamp
+      if (isNewItem) {
+        medicalHistoryItem.dateAdded = new Date().toISOString()
+      }
+
+      // Update existing or add new
+      const existingIndex = data.event.medicalInformation.medicalHistory[type].findIndex(item => item.id === medicalHistoryItem.id)
+      if (existingIndex !== -1) {
+        data.event.medicalInformation.medicalHistory[type][existingIndex] = medicalHistoryItem
+      } else {
+        data.event.medicalInformation.medicalHistory[type].push(medicalHistoryItem)
+      }
+
+      // Clear temp data
+      delete data.event.medicalHistoryTemp
+    }
+
+    const itemAddedMessage = `${typeConfig.name} added`
+    req.flash('success', itemAddedMessage)
+
+    // Redirect based on action
+    if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
+      // Redirect to add another of the same type
+      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}/add`, referrerChain))
+    } else {
+      // Regular save - redirect back to medical information page
+      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain)
+      res.redirect(returnUrl)
+    }
+  })
+
+  // Edit existing medical history item
+  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId', (req, res) => {
+    const { clinicId, eventId, type, itemId } = req.params
+    const data = req.session.data
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    // Initialize medicalInformation if needed
+    if (!data.event.medicalInformation) {
+      data.event.medicalInformation = {}
+    }
+
+    // Find the medical history item
+    const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[type]?.find(item => item.id === itemId)
+
+    if (medicalHistoryItem) {
+      // Copy to temp for editing
+      data.event.medicalHistoryTemp = { ...medicalHistoryItem }
+    }
+
+    // Redirect to the form
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain))
+  })
+
+  // Delete medical history item
+  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/delete/:itemId', (req, res) => {
+    const { clinicId, eventId, type, itemId } = req.params
+    const data = req.session.data
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    const typeConfig = getMedicalHistoryType(type)
+
+    // Remove item from array
+    if (data.event?.medicalInformation?.medicalHistory?.[type]) {
+      data.event.medicalInformation.medicalHistory[type] = data.event.medicalInformation.medicalHistory[type].filter(item => item.id !== itemId)
+    }
+
+    req.flash('success', `${typeConfig.name} deleted`)
+
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain)
+    res.redirect(returnUrl)
+  })
+
+
+
+  // Imaging view - this is the main imaging page for the event
+
   // Specific route for imaging view
   router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params
