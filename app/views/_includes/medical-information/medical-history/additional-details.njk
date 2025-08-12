@@ -1,0 +1,16 @@
+{# app/views/_includes/medical-information/medical-history/additonal-details.njk #}
+
+
+{{ textarea({
+  name: "event[medicalHistoryTemp][additionalDetails]",
+  id: "additional-details",
+  value: event.medicalHistoryTemp.additionalDetails,
+  label: {
+    text: additionalDetailsQuestionText or "Additional details (optional)",
+    classes: "nhsuk-label--m"
+  },
+  hint: {
+    text: additionalDetailsHintText or "Include any other relevant information about the device or procedure"
+  },
+  rows: 5
+}) }}
