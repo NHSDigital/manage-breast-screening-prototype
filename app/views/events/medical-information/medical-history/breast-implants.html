@@ -1,25 +1,13 @@
-{# app/views/clinics/[clinicId]/events/[eventId]/medical-information/implanted-medical-devices.html #}
+{# app/views/events/medical-information/breast-implants.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-medical-history-form.html' %}
 
 {% set pageHeading = "Breast implants or augmentation" %}
+{% set medicalHistoryType = "breastImplantsAugmentation" %}
 
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% block formContent %}
 
-{% set formAction = "./consent" %}
-
-{% block pageContent %}
-
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-
-  <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span>
-    {{ pageHeading }}
-  </h1>
-
-  {{ radios({
+{{ radios({
     name: "event[medicalInformation][breastImplants][implantType]",
     value: event.medicalInformation.breastImplants.implantType,
     fieldset: {
@@ -45,98 +33,18 @@
     ]
   }) }}
 
-  {% set specificDate %}
-    {{ dateInput({
-      name: "event[medicalInformation][breastImplants][procedureDate]",
-      value: event.medicalInformation.breastImplants.procedureDate,
-      fieldset: {
-        legend: {
-          text: "Enter the date",
-          classes: "nhsuk-fieldset__legend--s"
-        }
-      },
-      hint: {
-        text: "For example, 15 3 2019"
-      }
-    }) }}
-  {% endset %}
 
-  {{ radios({
-    name: "event[medicalInformation][breastImplants][procedureTiming]",
-    value: event.medicalInformation.breastImplants.procedureTiming,
-    fieldset: {
-      legend: {
-        text: "When was the procedure?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
-      }
-    },
-    items: [
-      {
-        value: "underSixMonths",
-        text: "Under six months ago"
-      },
-      {
-        value: "overSixMonths",
-        text: "Over six months ago"
-      },
-      {
-        divider: "or"
-      },
-      {
-        value: "specificDate",
-        text: "Specific date",
-        conditional: {
-          html: specificDate
-        }
-      }
-    ]
-  }) }}
+  {% set generalLocationText = "Which breast(s) have implants?" %}
+  {% include "_includes/medical-information/medical-history/general-location.njk" %}
 
-  {{ radios({
-    name: "event[medicalInformation][breastImplants][implantLocation]",
-    value: event.medicalInformation.breastImplants.implantLocation,
-    fieldset: {
-      legend: {
-        text: "Which breast(s) have implants?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
-      }
-    },
-    items: [
-      {
-        value: "rightBreast",
-        text: "Right breast"
-      },
-      {
-        value: "leftBreast",
-        text: "Left breast"
-      },
-      {
-        value: "bothBreasts",
-        text: "Both breasts"
-      }
-    ]
-  }) }}
+  {% set dateQuestionText = "When was the procedure?" %}
+  {% include "_includes/medical-information/medical-history/date.njk" %}
 
-  {{ textarea({
-    name: "event[medicalInformation][breastImplants][additionalDetails]",
-    value: event.medicalInformation.breastImplants.additionalDetails,
-    label: {
-      text: "Additional details"
-    },
-    hint: {
-      text: "Include any other relevant information about the implants or procedure"
-    },
-    rows: 4
-  }) }}
+        {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
-  <div class="app-button-group">
-    {{ button({
-      text: "Continue"
-    }) }}
-  </div>
+{% endblock formContent %}
 
-  {% include "screening-cannot-proceed-link.njk" %}
 
-{% endblock %}
+
+

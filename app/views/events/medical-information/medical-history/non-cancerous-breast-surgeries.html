@@ -1,38 +1,39 @@
-{# app/views/events/medical-information/implanted-medical-devices.html #}
+{# app/views/events/medical-information/non-cancerous-breast-surgeries.html #}
 
 {% extends 'layout-medical-history-form.html' %}
 
-{% set pageHeading = "Implanted medical devices" %}
-{% set medicalHistoryType = "implantedMedicalDevices" %}
+{% set pageHeading = "Non-cancerous breast surgeries" %}
+{% set medicalHistoryType = "nonCancerousBreastSurgeries" %}
 
 {% block formContent %}
 
+
 {{ radios({
-  name: "event[medicalHistoryTemp][implantedMedicalDevices]",
-  value: event.medicalHistoryTemp.implantedMedicalDevices,
+  name: "event[medicalHistoryTemp][nonCancerousBreastSurgeries]",
+  value: event.medicalHistoryTemp.nonCancerousBreastSurgeries,
   fieldset: {
     legend: {
-      text: typeQuestionText or "What is the device type?",
+      text: typeQuestionText or "What type of surgery?",
       classes: "nhsuk-fieldset__legend--m"
     }
   },
   items: [
     {
-      value: "cardiac_device",
-      text: "Cardiac device"
+      value: "breast_reduction",
+      text: "Breast reduction"
     },
     {
-      value: "hickman_lines",
-      text: "Hickman lines"
+      value: "breast_implant_removal",
+      text: "Breast implant removal"
     },
     {
       value: "other",
       text: "Other",
       conditional: {
         html: input({
-          name: "event[medicalHistoryTemp][otherDeviceDetails]",
-          value: event.medicalHistoryTemp.otherDeviceDetails,
-          id: "other-device-details",
+          name: "event[medicalHistoryTemp][otherSurgeryDetails]",
+          value: event.medicalHistoryTemp.otherSurgeryDetails,
+          id: "other-surgery-details",
           label: {
             text: "Add details"
           }
@@ -41,7 +42,6 @@
     }
   ]
 }) }}
-
 
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}

@@ -1,38 +1,39 @@
-{# app/views/events/medical-information/implanted-medical-devices.html #}
+{# app/views/events/medical-information/mastectomy.html #}
 
 {% extends 'layout-medical-history-form.html' %}
 
-{% set pageHeading = "Implanted medical devices" %}
-{% set medicalHistoryType = "implantedMedicalDevices" %}
+{% set pageHeading = "Mastectomy" %}
+{% set medicalHistoryType = "mastectomy" %}
 
 {% block formContent %}
 
+
 {{ radios({
-  name: "event[medicalHistoryTemp][implantedMedicalDevices]",
-  value: event.medicalHistoryTemp.implantedMedicalDevices,
+  name: "event[medicalHistoryTemp][mastectomy]",
+  value: event.medicalHistoryTemp.mastectomy,
   fieldset: {
     legend: {
-      text: typeQuestionText or "What is the device type?",
+      text: typeQuestionText or "What type of mastectomy?",
       classes: "nhsuk-fieldset__legend--m"
     }
   },
   items: [
     {
-      value: "cardiac_device",
-      text: "Cardiac device"
+      value: "full_mastectomy",
+      text: "Full mastectomy"
     },
     {
-      value: "hickman_lines",
-      text: "Hickman lines"
+      value: "partial_mastectomy",
+      text: "Partial mastectomy"
     },
     {
       value: "other",
       text: "Other",
       conditional: {
         html: input({
-          name: "event[medicalHistoryTemp][otherDeviceDetails]",
-          value: event.medicalHistoryTemp.otherDeviceDetails,
-          id: "other-device-details",
+          name: "event[medicalHistoryTemp][otherMastectomyDetails]",
+          value: event.medicalHistoryTemp.otherMastectomyDetails,
+          id: "other-mastectomy-details",
           label: {
             text: "Add details"
           }
