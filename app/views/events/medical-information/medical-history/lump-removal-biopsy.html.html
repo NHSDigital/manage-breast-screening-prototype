@@ -1,0 +1,20 @@
+{# app/views/events/medical-information/cyst-drainage.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Lump removal or biopsy" %}
+{% set medicalHistoryType = "lumpRemovalBiopsy" %}
+
+{% block formContent %}
+
+  {% set generalLocationText = "Where was the lump?" %}
+  {% include "_includes/medical-information/medical-history/general-location.njk" %}
+
+  {% set dateQuestionText = "When was the procedure?" %}
+  {% include "_includes/medical-information/medical-history/date.njk" %}
+
+{% endblock formContent %}
+
+
+
+

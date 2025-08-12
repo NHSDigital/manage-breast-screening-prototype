@@ -1,0 +1,28 @@
+{# app/views/_includes/medical-information/medical-history/general-location.njk #}
+
+
+{{ radios({
+  name: "event[medicalHistoryTemp][generalLocation]",
+  value: event.medicalHistoryTemp.generalLocation,
+  fieldset: {
+    legend: {
+      text: generalLocationText or "Where was it?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "rightBreast",
+      text: "Right breast"
+    },
+    {
+      value: "leftBreast",
+      text: "Left breast"
+    },
+    {
+      value: "bothBreasts",
+      text: "Both breasts"
+    }
+  ]
+}) }}
