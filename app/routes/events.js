@@ -611,7 +611,7 @@ module.exports = router => {
 
  // Medical history routes - add these to the events.js file
 
-  const medicalHistoryTypes = require('../data/medical-history-types')
+const medicalHistoryTypes = require('../data/medical-history-types')
 
   // Helper function to validate medical history type
   function isValidMedicalHistoryType(type) {
@@ -628,6 +628,12 @@ module.exports = router => {
     }
     // Then try to find by kebab-case slug
     return Object.values(medicalHistoryTypes).find(typeObj => typeObj.slug === type)
+  }
+
+  // Helper function to get camelCase key from slug
+  function getMedicalHistoryKeyFromSlug(slug) {
+    const entry = Object.entries(medicalHistoryTypes).find(([key, typeObj]) => typeObj.slug === slug)
+    return entry ? entry[0] : null
   }
 
   // Add new medical history item - clear temp data and redirect to form
@@ -659,6 +665,8 @@ module.exports = router => {
     }
 
     const typeConfig = getMedicalHistoryType(type)
+    // Convert slug to camelCase key for data storage
+    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 
     // Save temp medical history to array
     if (data.event?.medicalHistoryTemp) {
@@ -673,8 +681,8 @@ module.exports = router => {
       }
 
       // Initialize array for this type if needed
-      if (!data.event.medicalInformation.medicalHistory[type]) {
-        data.event.medicalInformation.medicalHistory[type] = []
+      if (!data.event.medicalInformation.medicalHistory[dataKey]) {
+        data.event.medicalInformation.medicalHistory[dataKey] = []
       }
 
       const medicalHistoryTemp = data.event.medicalHistoryTemp
@@ -692,11 +700,11 @@ module.exports = router => {
       }
 
       // Update existing or add new
-      const existingIndex = data.event.medicalInformation.medicalHistory[type].findIndex(item => item.id === medicalHistoryItem.id)
+      const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
       if (existingIndex !== -1) {
-        data.event.medicalInformation.medicalHistory[type][existingIndex] = medicalHistoryItem
+        data.event.medicalInformation.medicalHistory[dataKey][existingIndex] = medicalHistoryItem
       } else {
-        data.event.medicalInformation.medicalHistory[type].push(medicalHistoryItem)
+        data.event.medicalInformation.medicalHistory[dataKey].push(medicalHistoryItem)
       }
 
       // Clear temp data
@@ -727,17 +735,22 @@ module.exports = router => {
       return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
     }
 
+    // Convert slug to camelCase key for data lookup
+    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
     // Initialize medicalInformation if needed
     if (!data.event.medicalInformation) {
       data.event.medicalInformation = {}
     }
 
-    // Find the medical history item
-    const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[type]?.find(item => item.id === itemId)
+    // Find the medical history item using the correct data key
+    const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[dataKey]?.find(item => item.id === itemId)
 
     if (medicalHistoryItem) {
       // Copy to temp for editing
       data.event.medicalHistoryTemp = { ...medicalHistoryItem }
+    } else {
+      console.log(`Cannot find item ${itemId} in ${dataKey}`)
     }
 
     // Redirect to the form
@@ -755,10 +768,12 @@ module.exports = router => {
     }
 
     const typeConfig = getMedicalHistoryType(type)
+    // Convert slug to camelCase key for data lookup
+    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 
     // Remove item from array
-    if (data.event?.medicalInformation?.medicalHistory?.[type]) {
-      data.event.medicalInformation.medicalHistory[type] = data.event.medicalInformation.medicalHistory[type].filter(item => item.id !== itemId)
+    if (data.event?.medicalInformation?.medicalHistory?.[dataKey]) {
+      data.event.medicalInformation.medicalHistory[dataKey] = data.event.medicalInformation.medicalHistory[dataKey].filter(item => item.id !== itemId)
     }
 
     req.flash('success', `${typeConfig.name} deleted`)

@@ -8,45 +8,45 @@
 {% block formContent %}
 
 
-{{ radios({
-  name: "event[medicalHistoryTemp][nonCancerousBreastSurgeries]",
-  value: event.medicalHistoryTemp.nonCancerousBreastSurgeries,
-  fieldset: {
-    legend: {
-      text: typeQuestionText or "What type of surgery?",
-      classes: "nhsuk-fieldset__legend--m"
-    }
-  },
-  items: [
-    {
-      value: "breast_reduction",
-      text: "Breast reduction"
-    },
-    {
-      value: "breast_implant_removal",
-      text: "Breast implant removal"
-    },
-    {
-      value: "other",
-      text: "Other",
-      conditional: {
-        html: input({
-          name: "event[medicalHistoryTemp][otherSurgeryDetails]",
-          value: event.medicalHistoryTemp.otherSurgeryDetails,
-          id: "other-surgery-details",
-          label: {
-            text: "Add details"
-          }
-        })
+  {{ radios({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: typeQuestionText or "What type of surgery?",
+        classes: "nhsuk-fieldset__legend--m"
       }
-    }
-  ]
-}) }}
+    },
+    items: [
+      {
+        value: "Breast reduction",
+        text: "Breast reduction"
+      },
+      {
+        value: "Breast implant removal",
+        text: "Breast implant removal"
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][otherSurgeryDetails]",
+            value: event.medicalHistoryTemp.otherSurgeryDetails,
+            id: "other-surgery-details",
+            label: {
+              text: "Add details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
 
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}
 
-        {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% set additionalDetailsHintText = "Include any other relevant information" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

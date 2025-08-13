@@ -1,0 +1,67 @@
+{# app/views/_includes/medical-information/medical-history/index.njk #}
+
+hello world
+
+{{ data.medicalHistoryTypes | log("medical history types")}}
+
+{% for type, typeData in data.medicalHistoryTypes %}
+
+  {% set historyItemArray = data.event.medicalInformation.medicalHistory[type] %}
+
+  <h3>{{ typeData.name }}</h3>
+
+  {% for historyItem in historyItemArray %}
+    {{ summaryList({
+      rows: [
+        {
+          key: {
+            text: "Type"
+          },
+          value: {
+            text: historyItem.type
+          },
+          actions: {
+            items: [
+              {
+                href: "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: historyItem.name | lower
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Date"
+          },
+          value: {
+            text: historyItem.generalDate
+          },
+          actions: {
+            items: [
+              {
+                href: "#",
+                text: "Change",
+                visuallyHiddenText: "name"
+              }
+            ]
+          }
+        }
+      ]
+    }) }}
+  {% endfor %}
+
+
+
+{% endfor %}
+
+<hr>
+
+<h3>Add medical history</h3>
+{% for type, typeData in data.medicalHistoryTypes %}
+  {{ button({
+    text: typeData.name,
+    href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl),
+    classes: "nhsuk-button--secondary"
+  }) }}
+{% endfor %}

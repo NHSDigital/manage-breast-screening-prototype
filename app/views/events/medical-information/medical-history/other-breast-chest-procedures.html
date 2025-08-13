@@ -8,15 +8,15 @@
 {% block formContent %}
 
 
-{{ input({
-  name: "event[medicalHistoryTemp][otherBreastChestProcedures]",
-  value: event.medicalHistoryTemp.otherBreastChestProcedures,
-  id: "procedure-type",
-  label: {
-    text: typeQuestionText or "What was the procedure?",
-    classes: "nhsuk-label--m"
-  }
-}) }}
+  {{ input({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    id: "procedure-type",
+    label: {
+      text: "What was the procedure?",
+      classes: "nhsuk-label--m"
+    }
+  }) }}
 
   {% set generalLocationText = "Where was the procedure?" %}
   {% include "_includes/medical-information/medical-history/general-location.njk" %}
@@ -24,7 +24,7 @@
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}
 
-        {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% set additionalDetailsHintText = "Include any other relevant information" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

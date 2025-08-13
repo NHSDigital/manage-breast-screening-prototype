@@ -8,8 +8,8 @@
 {% block formContent %}
 
 {{ radios({
-    name: "event[medicalInformation][breastImplants][implantType]",
-    value: event.medicalInformation.breastImplants.implantType,
+    name: "event[medicalInformation][breastImplants][type]",
+    value: event.medicalInformation.breastImplants.type,
     fieldset: {
       legend: {
         text: "What type of breast implants or augmentation?",
@@ -19,15 +19,15 @@
     },
     items: [
       {
-        value: "saline",
+        value: "Saline",
         text: "Saline"
       },
       {
-        value: "silicone",
+        value: "Silicone",
         text: "Silicone"
       },
       {
-        value: "fatTransfer",
+        value: "Fat transfer",
         text: "Fat transfer"
       }
     ]
@@ -40,7 +40,7 @@
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}
 
-        {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% set additionalDetailsHintText = "Include any other relevant information" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

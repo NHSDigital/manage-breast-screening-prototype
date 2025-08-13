@@ -9,8 +9,8 @@
 
 
 {{ radios({
-  name: "event[medicalHistoryTemp][mastectomy]",
-  value: event.medicalHistoryTemp.mastectomy,
+  name: "event[medicalHistoryTemp][type]",
+  value: event.medicalHistoryTemp.type,
   fieldset: {
     legend: {
       text: typeQuestionText or "What type of mastectomy?",
@@ -19,15 +19,15 @@
   },
   items: [
     {
-      value: "full_mastectomy",
+      value: "Full mastectomy",
       text: "Full mastectomy"
     },
     {
-      value: "partial_mastectomy",
+      value: "Partial mastectomy",
       text: "Partial mastectomy"
     },
     {
-      value: "other",
+      value: "Other",
       text: "Other",
       conditional: {
         html: input({
@@ -47,7 +47,7 @@
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}
 
-        {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% set additionalDetailsHintText = "Include any other relevant information" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

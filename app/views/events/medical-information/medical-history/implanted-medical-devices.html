@@ -5,48 +5,48 @@
 {% set pageHeading = "Implanted medical devices" %}
 {% set medicalHistoryType = "implantedMedicalDevices" %}
 
+
 {% block formContent %}
 
-{{ radios({
-  name: "event[medicalHistoryTemp][implantedMedicalDevices]",
-  value: event.medicalHistoryTemp.implantedMedicalDevices,
-  fieldset: {
-    legend: {
-      text: typeQuestionText or "What is the device type?",
-      classes: "nhsuk-fieldset__legend--m"
-    }
-  },
-  items: [
-    {
-      value: "cardiac_device",
-      text: "Cardiac device"
-    },
-    {
-      value: "hickman_lines",
-      text: "Hickman lines"
-    },
-    {
-      value: "other",
-      text: "Other",
-      conditional: {
-        html: input({
-          name: "event[medicalHistoryTemp][otherDeviceDetails]",
-          value: event.medicalHistoryTemp.otherDeviceDetails,
-          id: "other-device-details",
-          label: {
-            text: "Add details"
-          }
-        })
+  {{ radios({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: typeQuestionText or "What is the device type?",
+        classes: "nhsuk-fieldset__legend--m"
       }
-    }
-  ]
-}) }}
-
+    },
+    items: [
+      {
+        value: "Cardiac device",
+        text: "Cardiac device"
+      },
+      {
+        value: "Hickman lines",
+        text: "Hickman lines"
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][otherDeviceDetails]",
+            value: event.medicalHistoryTemp.otherDeviceDetails,
+            id: "other-device-details",
+            label: {
+              text: "Add details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
 
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}
 
-        {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% set additionalDetailsHintText = "Include any other relevant information" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}
