@@ -70,7 +70,12 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
 
   // Check if input is a summary list (has rows property)
   if (input.rows && Array.isArray(input.rows)) {
-    const updatedRows = input.rows.map(processRow)
+    // Filter out empty objects and invalid rows before processing
+    const validRows = input.rows.filter(row =>
+      row && typeof row === 'object' && row.key
+    )
+
+    const updatedRows = validRows.map(processRow)
 
     return {
       ...input,

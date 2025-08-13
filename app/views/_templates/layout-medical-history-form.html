@@ -26,14 +26,34 @@
 
   <div class="nhsuk-button-group">
     {{ button({
-      text: "Continue"
+      text: "Save",
+      attributes: {
+        name: "action",
+        value: "save"
+      }
     }) }}
 
     {{ button({
       text: "Save and add another",
-      classes: "nhsuk-button--secondary"
+      classes: "nhsuk-button--secondary",
+      attributes: {
+        name: "action",
+        value: "save-and-add"
+      }
     }) }}
   </div>
+
+  {# Only show link if this is a previously saved symptom #}
+  {% if event.medicalHistoryTemp.id %}
+    {% set deleteHref %}
+      ./{{ data.medicalHistoryTypes[medicalHistoryType].slug}}/delete/{{ event.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+    {% endset %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+        Delete this item
+      </a>
+    </p>
+  {% endif %}
 
   {% include "screening-cannot-proceed-link.njk" %}
 

@@ -697,6 +697,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
       // For new items, add the creation timestamp
       if (isNewItem) {
         medicalHistoryItem.dateAdded = new Date().toISOString()
+        medicalHistoryItem.addedBy = data.currentUser.id
       }
 
       // Update existing or add new

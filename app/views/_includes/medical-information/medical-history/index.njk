@@ -1,55 +1,95 @@
 {# app/views/_includes/medical-information/medical-history/index.njk #}
 
-hello world
-
-{{ data.medicalHistoryTypes | log("medical history types")}}
-
 {% for type, typeData in data.medicalHistoryTypes %}
 
   {% set historyItemArray = data.event.medicalInformation.medicalHistory[type] %}
 
-  <h3>{{ typeData.name }}</h3>
+  {% if historyItemArray and historyItemArray | length %}
+    <h3>{{ typeData.name }}</h3>
 
-  {% for historyItem in historyItemArray %}
-    {{ summaryList({
-      rows: [
-        {
-          key: {
-            text: "Type"
-          },
-          value: {
-            text: historyItem.type
-          },
-          actions: {
-            items: [
-              {
-                href: "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl),
-                text: "Change",
-                visuallyHiddenText: historyItem.name | lower
+    {% for historyItem in historyItemArray %}
+
+      {% set changeHref =  "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl) %}
+
+      <div class="nhsuk-u-margin-bottom-6">
+        {% if historyItemArray | length > 1 %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-2">
+            Item #{{ loop.index }}
+          </p>
+        {% endif %}
+
+        {{ summaryList({
+          classes: "nhsuk-u-margin-bottom-3",
+          rows: [
+            {
+              key: {
+                text: "Type"
+              },
+              value: {
+                text: historyItem.type
+              },
+              actions: {
+                items: [
+                  {
+                    href: changeHref,
+                    text: "Change",
+                    visuallyHiddenText: historyItem.name | lower
+                  }
+                ]
               }
-            ]
-          }
-        },
-        {
-          key: {
-            text: "Date"
-          },
-          value: {
-            text: historyItem.generalDate
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "name"
+            } if historyItem.type,
+            {
+              key: {
+                text: "Date"
+              },
+              value: {
+                text: historyItem.generalDate
+              },
+              actions: {
+                items: [
+                  {
+                    href: changeHref,
+                    text: "Change",
+                    visuallyHiddenText: "date"
+                  }
+                ]
               }
-            ]
-          }
-        }
-      ]
-    }) }}
-  {% endfor %}
+            } if historyItem.generalDate,
+            {
+              key: {
+                text: "Additional details"
+              },
+              value: {
+                text: historyItem.additionalDetails
+              },
+              actions: {
+                items: [
+                  {
+                    href: changeHref,
+                    text: "Change",
+                    visuallyHiddenText: "additional details"
+                  }
+                ]
+              }
+            }
+          ]
+        } | handleSummaryListMissingInformation(true) ) }}
+
+        {% set addedByText %}
+          Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
+        {% endset %}
+        <p>
+          {{ addedByText | asHint }}
+        </p>
+      </div>
+
+
+    {% endfor %}
+
+    {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl) %}
+
+    <p class="nhsuk-u-margin-bottom-4"><a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}</a></p>
+  {% endif %}
 
 
 
