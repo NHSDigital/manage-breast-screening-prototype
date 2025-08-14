@@ -4,10 +4,10 @@
 
 {# {% set gridColumn = "nhsuk-grid-column-full" %} #}
 
-{% set formAction = "./" ~ medicalHistoryType ~ "/save" %}
-
 {# Find the type data object from the array #}
-{% set typeDataObject = (data.medicalHistoryTypes | selectattr("type", "equalto", medicalHistoryType) | first) %}
+{% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}
+
+{% set formAction = "./" ~ typeDataObject.slug ~ "/save" %}
 
 {% block pageContent %}
 

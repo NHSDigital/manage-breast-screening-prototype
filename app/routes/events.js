@@ -667,6 +667,8 @@ const medicalHistoryTypes = require('../data/medical-history-types')
     // Convert slug to camelCase key for data storage
     const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 
+    let isNewItem
+
     // Save temp medical history to array
     if (data.event?.medicalHistoryTemp) {
       // Initialize medicalInformation object if needed
@@ -685,7 +687,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
       }
 
       const medicalHistoryTemp = data.event.medicalHistoryTemp
-      const isNewItem = !medicalHistoryTemp.id
+      isNewItem = !medicalHistoryTemp.id
 
       // Create medical history item
       const medicalHistoryItem = {
@@ -711,13 +713,21 @@ const medicalHistoryTypes = require('../data/medical-history-types')
       delete data.event.medicalHistoryTemp
     }
 
-    const itemAddedMessage = `${typeConfig.name} added`
+    let methodVerb = 'added'
+    if (!isNewItem) {
+      methodVerb = 'updated'
+    }
+
+    const itemAddedMessage = `${typeConfig.name} ${methodVerb}`
     req.flash('success', itemAddedMessage)
 
     // Redirect based on action
     if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
-      // Redirect to add another of the same type
-      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}/add`, referrerChain))
+      // Clear any existing temp medical history data for the new item
+      delete data.event.medicalHistoryTemp
+
+      // Redirect directly to the form instead of going through the add route
+      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, referrerChain))
     } else {
       // Regular save - redirect back to medical information page
       const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain)
