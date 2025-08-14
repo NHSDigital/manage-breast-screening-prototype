@@ -648,7 +648,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
     delete req.session.data.event?.medicalHistoryTemp
 
     // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain))
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
   })
 
   // Save medical history item - handles both 'save' and 'save and add another'
@@ -657,6 +657,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
     const data = req.session.data
     const action = req.body.action || 'save'
     const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
 
     // Validate type
     if (!isValidMedicalHistoryType(type)) {
@@ -727,10 +728,10 @@ const medicalHistoryTypes = require('../data/medical-history-types')
       delete data.event.medicalHistoryTemp
 
       // Redirect directly to the form instead of going through the add route
-      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, referrerChain))
+      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, referrerChain, scrollTo))
     } else {
       // Regular save - redirect back to medical information page
-      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain)
+      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
       res.redirect(returnUrl)
     }
   })
@@ -764,7 +765,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
     }
 
     // Redirect to the form
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain))
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
   })
 
   // Delete medical history item
@@ -788,7 +789,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
 
     req.flash('success', `${typeConfig.name} deleted`)
 
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain)
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain, req.query.scrollTo)
     res.redirect(returnUrl)
   })
 

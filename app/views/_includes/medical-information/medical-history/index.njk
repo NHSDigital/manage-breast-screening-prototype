@@ -3,7 +3,6 @@
 {# Hacky way of testing if there is any medical history data. Can't just test medicalInformation.medicalHistory as once items have been added and then deleted, it would still be truthy. #}
 {% set hasAnyMedicalHistoryData = false %}
 
-
 {% for typeData in data.medicalHistoryTypes %}
 
   {% set historyItemArray = data.event.medicalInformation.medicalHistory[typeData.type] %}
@@ -15,7 +14,7 @@
 
     {% for historyItem in historyItemArray %}
 
-      {% set changeHref =  "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl) %}
+      {% set changeHref =  "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
       <div class="nhsuk-u-margin-bottom-6">
         {% if historyItemArray | length > 1 %}
@@ -116,7 +115,7 @@
 
     {% endfor %}
 
-    {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl) %}
+    {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl, scrollTo) %}
 
     <p class="nhsuk-u-margin-bottom-4"><a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}</a></p>
   {% endif %}
@@ -144,7 +143,7 @@
 {% for typeData in data.medicalHistoryTypes %}
   {{ button({
     text: typeData.name,
-    href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl),
+    href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
     classes: "nhsuk-button--secondary app-button--small"
   }) }}
 {% endfor %}
