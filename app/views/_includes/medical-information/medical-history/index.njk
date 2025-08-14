@@ -98,10 +98,13 @@
 <hr>
 
 <h3>Add medical history</h3>
+<div class="app-button-group">
 {% for type, typeData in data.medicalHistoryTypes %}
   {{ button({
     text: typeData.name,
     href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl),
-    classes: "nhsuk-button--secondary"
+    classes: "nhsuk-button--secondary app-button--small"
   }) }}
 {% endfor %}
+</div>
+
