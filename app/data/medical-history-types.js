@@ -23,7 +23,7 @@ module.exports = [
     type: 'cysts',
     name: 'Cysts',
     slug: 'cysts',
-    canHaveMultiple: true,
+    canHaveMultiple: false,
   },
   {
     type: 'lumpRemovalBiopsy',

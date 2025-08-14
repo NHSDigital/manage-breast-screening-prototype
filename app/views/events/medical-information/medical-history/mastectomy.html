@@ -7,42 +7,43 @@
 
 {% block formContent %}
 
-
-{{ radios({
-  name: "event[medicalHistoryTemp][type]",
-  value: event.medicalHistoryTemp.type,
-  fieldset: {
-    legend: {
-      text: typeQuestionText or "What type of mastectomy?",
-      classes: "nhsuk-fieldset__legend--m"
-    }
-  },
-  items: [
-    {
-      value: "Full mastectomy",
-      text: "Full mastectomy"
-    },
-    {
-      value: "Partial mastectomy",
-      text: "Partial mastectomy"
-    },
-    {
-      value: "Other",
-      text: "Other",
-      conditional: {
-        html: input({
-          name: "event[medicalHistoryTemp][typeOtherDetails]",
-          value: event.medicalHistoryTemp.typeOtherDetails,
-          id: "other-mastectomy-details",
-          label: {
-            text: "Add details"
-          }
-        })
+  {{ radios({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: typeQuestionText or "What type of mastectomy?",
+        classes: "nhsuk-fieldset__legend--m"
       }
-    }
-  ]
-}) }}
+    },
+    items: [
+      {
+        value: "Full mastectomy",
+        text: "Full mastectomy"
+      },
+      {
+        value: "Partial mastectomy",
+        text: "Partial mastectomy"
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][typeOtherDetails]",
+            value: event.medicalHistoryTemp.typeOtherDetails,
+            id: "other-mastectomy-details",
+            label: {
+              text: "Add details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
 
+  {% set generalLocationText = "Which breasts have had a mastectomy?" %}
+  {% include "_includes/medical-information/medical-history/general-location.njk" %}
 
   {% set dateQuestionText = "When was the procedure?" %}
   {% include "_includes/medical-information/medical-history/date.njk" %}

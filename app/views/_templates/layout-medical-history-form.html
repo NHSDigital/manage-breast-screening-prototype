@@ -35,14 +35,18 @@
       }
     }) }}
 
-    {{ button({
-      text: "Save and add another",
-      classes: "nhsuk-button--secondary",
-      attributes: {
-        name: "action",
-        value: "save-and-add"
-      }
-    }) }}
+    {% if typeDataObject.canHaveMultiple %}
+      {{ button({
+        text: "Save and add another",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          name: "action",
+          value: "save-and-add"
+        }
+      }) }}
+    {% endif %}
+
+
   </div>
 
   {# Only show link if this is a previously saved symptom #}
