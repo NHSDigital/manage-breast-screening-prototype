@@ -41,7 +41,7 @@ module.exports = [
     type: 'mastectomy',
     name: 'Mastectomy',
     slug: 'mastectomy',
-    canHaveMultiple: false,
+    canHaveMultiple: true,
   },
   {
     type: 'otherBreastChestProcedures',

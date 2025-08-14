@@ -132,7 +132,17 @@
 
     {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl, scrollTo) %}
 
-    <p class="nhsuk-u-margin-bottom-4"><a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}</a></p>
+    {% set addAnotherLink %}
+      <p class="nhsuk-u-margin-bottom-4">
+        <a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}
+        </a>
+      </p>
+    {% endset %}
+
+    {% if typeData.canHaveMultiple %}
+      {{ addAnotherLink | safe }}
+    {% endif %}
+
   {% endif %}
 
 {% endfor %}
@@ -149,7 +159,7 @@
   }) }}
 {% endif %}
 
-<hr>
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
 <h3>Add medical history</h3>
 <div class="app-button-group">
