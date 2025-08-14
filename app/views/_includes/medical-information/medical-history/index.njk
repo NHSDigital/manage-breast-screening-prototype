@@ -45,8 +45,6 @@
           {% endif %}
         {% endset %}
 
-        {{ historyItem.specificDate | log("Date") | safe}}
-
         {{ summaryList({
           classes: "nhsuk-u-margin-bottom-3",
           rows: [
@@ -67,6 +65,23 @@
                 ]
               }
             } if historyItem.type,
+            {
+              key: {
+                text: "Location"
+              },
+              value: {
+                text: historyItem.generalLocation
+              },
+              actions: {
+                items: [
+                  {
+                    href: changeHref,
+                    text: "Change",
+                    visuallyHiddenText: "generalLocation"
+                  }
+                ]
+              }
+            } if historyItem.generalLocation,
             {
               key: {
                 text: "Date"
@@ -134,17 +149,15 @@
   }) }}
 {% endif %}
 
-
-
 <hr>
 
 <h3>Add medical history</h3>
 <div class="app-button-group">
-{% for typeData in data.medicalHistoryTypes %}
-  {{ button({
-    text: typeData.name,
-    href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
-    classes: "nhsuk-button--secondary app-button--small"
-  }) }}
-{% endfor %}
+  {% for typeData in data.medicalHistoryTypes %}
+    {{ button({
+      text: typeData.name,
+      href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
+      classes: "nhsuk-button--secondary app-button--small"
+    }) }}
+  {% endfor %}
 </div>
