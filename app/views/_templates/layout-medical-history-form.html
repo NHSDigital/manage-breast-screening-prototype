@@ -7,7 +7,7 @@
 {# Find the type data object from the array #}
 {% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}
 
-{% set formAction = "./" ~ typeDataObject.slug ~ "/save" %}
+{% set formAction = "./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 
