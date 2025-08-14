@@ -1,44 +1,52 @@
 // app/data/medical-history-types.js
 
-module.exports = {
-  implantedMedicalDevices: {
+module.exports = [
+  {
+    type: 'implantedMedicalDevices',
     name: 'Implanted medical devices',
     slug: 'implanted-medical-devices',
     canHaveMultiple: true,
   },
-  breastImplantsAugmentation: {
+  {
+    type: 'breastImplantsAugmentation',
     name: 'Breast implants or augmentation',
     slug: 'breast-implants-augmentation',
     canHaveMultiple: true,
   },
-  nonCancerousBreastSurgeries: {
+  {
+    type: 'nonCancerousBreastSurgeries',
     name: 'Non-cancerous breast surgeries',
     slug: 'non-cancerous-breast-surgeries',
     canHaveMultiple: true,
   },
-  cysts: {
+  {
+    type: 'cysts',
     name: 'Cysts',
     slug: 'cysts',
     canHaveMultiple: true,
   },
-  lumpRemovalBiopsy: {
+  {
+    type: 'lumpRemovalBiopsy',
     name: 'Lump removal or biopsy',
     slug: 'lump-removal-biopsy',
     canHaveMultiple: true,
   },
-  lymphNodeSurgery: {
+  {
+    type: 'lymphNodeSurgery',
     name: 'Lymph node surgery',
     slug: 'lymph-node-surgery',
     canHaveMultiple: true,
   },
-  mastectomy: {
+  {
+    type: 'mastectomy',
     name: 'Mastectomy',
     slug: 'mastectomy',
     canHaveMultiple: false,
   },
-  otherBreastChestProcedures: {
+  {
+    type: 'otherBreastChestProcedures',
     name: 'Other breast or chest procedures',
     slug: 'other-breast-chest-procedures',
     canHaveMultiple: true,
   }
-}
+]

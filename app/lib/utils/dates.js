@@ -59,6 +59,29 @@ const arrayOrObjectToDateObject = (input) => {
 }
 
 /**
+ * Check if a date input is valid
+ * @param {string|Array|Object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
+ * @returns {boolean} True if the date is valid
+ */
+const isValidDate = (dateInput) => {
+  if (!dateInput) return false
+
+  let date
+
+  // Handle array or object input
+  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+    date = arrayOrObjectToDateObject(dateInput)
+    if (!date) return false
+  } else {
+    // Handle string input
+    date = dayjs(dateInput)
+  }
+
+  // Check if dayjs created a valid date
+  return date.isValid()
+}
+
+/**
  * Format a date in UK format
  * @param {string|Array|Object} dateString - ISO date string, array [day, month, year], or object {day, month, year}
  * @param {string} format - Optional format string
@@ -200,22 +223,36 @@ const formatDateTime = (dateString, format = 'D MMMM YYYY, HH:mm') => {
 
 /**
  * Format a date as a relative time
- * @param {string} dateString - ISO date string
+ * @param {string|Array|Object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
  * @param {boolean} withoutSuffix - If true, removes the 'ago' suffix
  */
-const formatRelativeDate = (dateString, withoutSuffix = false) => {
-  if (!dateString) return ''
+const formatRelativeDate = (dateInput, withoutSuffix = false) => {
+  if (!dateInput) return ''
+
+  // Validate the input first
+  if (!isValidDate(dateInput)) return ''
+
+  let date
+
+  // Handle array or object input
+  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+    date = arrayOrObjectToDateObject(dateInput)
+    if (!date) return ''
+  } else {
+    // Handle string input
+    date = dayjs(dateInput)
+  }
 
   // Use the same calculation as daysSince for consistency
-  const daysDiff = daysSince(dateString)
+  const daysDiff = daysSince(dateInput)
 
   // Special cases for today, yesterday, tomorrow
-  const date = dayjs(dateString).startOf('day')
+  const dateAtStartOfDay = date.startOf('day')
   const now = dayjs().startOf('day')
 
-  if (date.isToday()) return 'today'
-  if (date.isYesterday()) return 'yesterday'
-  if (date.isTomorrow()) return 'tomorrow'
+  if (dateAtStartOfDay.isToday()) return 'today'
+  if (dateAtStartOfDay.isYesterday()) return 'yesterday'
+  if (dateAtStartOfDay.isTomorrow()) return 'tomorrow'
 
   // Calculate near future/past dates using same logic as daysSince
   if (daysDiff < 0 && daysDiff >= -6) {
@@ -226,23 +263,36 @@ const formatRelativeDate = (dateString, withoutSuffix = false) => {
   }
 
   // Avoiding date.fromNow() as it seems to use the time of day and not just the date
-  return date.from(now, withoutSuffix)
+  return dateAtStartOfDay.from(now, withoutSuffix)
 }
 
 /**
  * Calculate the number of days since a given date
- * @param {string} dateString - ISO date string for past date
+ * @param {string|Array|Object} dateInput - ISO date string, array [day, month, year], or object {day, month, year} for past date
  * @param {string|dayjs} [compareDate=null] - Optional reference date (defaults to today)
  * @returns {number} Number of days since the date (positive integer for past dates)
  */
-const daysSince = (dateString, compareDate = null) => {
-  if (!dateString) return 0
+const daysSince = (dateInput, compareDate = null) => {
+  if (!dateInput) return 0
 
-  const date = dayjs(dateString).startOf('day')
+  // Validate the input first
+  if (!isValidDate(dateInput)) return 0
+
+  let date
+
+  // Handle array or object input
+  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+    date = arrayOrObjectToDateObject(dateInput)
+    if (!date) return 0
+  } else {
+    // Handle string input
+    date = dayjs(dateInput)
+  }
+
   const reference = compareDate ? dayjs(compareDate).startOf('day') : dayjs().startOf('day')
 
   // Return positive number for days in the past
-  return reference.diff(date, 'day')
+  return reference.diff(date.startOf('day'), 'day')
 }
 
 /**
@@ -421,6 +471,7 @@ const remove = (dateInput, amount, unit) => {
 
 module.exports = {
   arrayOrObjectToDateObject,
+  isValidDate,
   formatDate,
   formatDateShort,
   formatMonthYear,

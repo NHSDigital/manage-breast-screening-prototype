@@ -6,6 +6,8 @@
 
 {% set formAction = "./" ~ medicalHistoryType ~ "/save" %}
 
+{# Find the type data object from the array #}
+{% set typeDataObject = (data.medicalHistoryTypes | selectattr("type", "equalto", medicalHistoryType) | first) %}
 
 {% block pageContent %}
 
@@ -46,7 +48,7 @@
   {# Only show link if this is a previously saved symptom #}
   {% if event.medicalHistoryTemp.id %}
     {% set deleteHref %}
-      ./{{ data.medicalHistoryTypes[medicalHistoryType].slug}}/delete/{{ event.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+      ./{{ typeDataObject.slug }}/delete/{{ event.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
     {% endset %}
     <p class="nhsuk-u-margin-top-4">
       <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">

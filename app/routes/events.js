@@ -613,27 +613,26 @@ module.exports = router => {
 
 const medicalHistoryTypes = require('../data/medical-history-types')
 
-  // Helper function to validate medical history type
   function isValidMedicalHistoryType(type) {
-    // Check against both camelCase keys and kebab-case slugs
-    return Object.keys(medicalHistoryTypes).includes(type) ||
-           Object.values(medicalHistoryTypes).some(typeObj => typeObj.slug === type)
+    // Check against both type field and slug field
+    return medicalHistoryTypes.some(item => item.type === type || item.slug === type)
   }
 
-  // Helper function to get medical history type object by type (camelCase key or kebab-case slug)
+  // Helper function to get medical history type object by type (camelCase type or kebab-case slug)
   function getMedicalHistoryType(type) {
-    // First try to find by camelCase key
-    if (medicalHistoryTypes[type]) {
-      return medicalHistoryTypes[type]
+    // First try to find by type field
+    let result = medicalHistoryTypes.find(item => item.type === type)
+    if (result) {
+      return result
     }
-    // Then try to find by kebab-case slug
-    return Object.values(medicalHistoryTypes).find(typeObj => typeObj.slug === type)
+    // Then try to find by slug field
+    return medicalHistoryTypes.find(item => item.slug === type)
   }
 
-  // Helper function to get camelCase key from slug
+  // Helper function to get camelCase type from slug
   function getMedicalHistoryKeyFromSlug(slug) {
-    const entry = Object.entries(medicalHistoryTypes).find(([key, typeObj]) => typeObj.slug === slug)
-    return entry ? entry[0] : null
+    const item = medicalHistoryTypes.find(item => item.slug === slug)
+    return item ? item.type : null
   }
 
   // Add new medical history item - clear temp data and redirect to form

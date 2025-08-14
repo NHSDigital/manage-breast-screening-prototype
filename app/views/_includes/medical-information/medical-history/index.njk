@@ -1,10 +1,16 @@
 {# app/views/_includes/medical-information/medical-history/index.njk #}
 
-{% for type, typeData in data.medicalHistoryTypes %}
+{# Hacky way of testing if there is any medical history data. Can't just test medicalInformation.medicalHistory as once items have been added and then deleted, it would still be truthy. #}
+{% set hasAnyMedicalHistoryData = false %}
 
-  {% set historyItemArray = data.event.medicalInformation.medicalHistory[type] %}
+
+{% for typeData in data.medicalHistoryTypes %}
+
+  {% set historyItemArray = data.event.medicalInformation.medicalHistory[typeData.type] %}
 
   {% if historyItemArray and historyItemArray | length %}
+
+    {% set hasAnyMedicalHistoryData = true %}
     <h3>{{ typeData.name }}</h3>
 
     {% for historyItem in historyItemArray %}
@@ -18,6 +24,30 @@
           </p>
         {% endif %}
 
+        {% set typeText %}
+          {% if historyItem.type %}
+            {% if historyItem.type == 'Other' %}
+              {{ historyItem.typeOtherDetails }}
+            {% else %}
+              {{ historyItem.type }}
+            {% endif %}
+          {% endif %}
+        {% endset %}
+
+        {% set dateText %}
+          {% if historyItem.generalDate %}
+            {% if historyItem.generalDate == "Specific date" %}
+              {% if historyItem.specificDate | isValidDate %}
+                {{ historyItem.specificDate | formatDate }} ({{ historyItem.specificDate | formatRelativeDate }})
+              {% endif %}
+            {% else %}
+              {{ historyItem.generalDate }}
+            {% endif %}
+          {% endif %}
+        {% endset %}
+
+        {{ historyItem.specificDate | log("Date") | safe}}
+
         {{ summaryList({
           classes: "nhsuk-u-margin-bottom-3",
           rows: [
@@ -26,7 +56,7 @@
                 text: "Type"
               },
               value: {
-                text: historyItem.type
+                text: typeText
               },
               actions: {
                 items: [
@@ -43,7 +73,7 @@
                 text: "Date"
               },
               value: {
-                text: historyItem.generalDate
+                text: dateText
               },
               actions: {
                 items: [
@@ -71,7 +101,7 @@
                   }
                 ]
               }
-            }
+            } if historyItem.additionalDetails
           ]
         } | handleSummaryListMissingInformation(true) ) }}
 
@@ -91,15 +121,27 @@
     <p class="nhsuk-u-margin-bottom-4"><a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}</a></p>
   {% endif %}
 
-
-
 {% endfor %}
+
+{% if not hasAnyMedicalHistoryData %}
+  {% set insetTextHtml %}
+    <p>
+      No medical history has been added yet.
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml
+  }) }}
+{% endif %}
+
+
 
 <hr>
 
 <h3>Add medical history</h3>
 <div class="app-button-group">
-{% for type, typeData in data.medicalHistoryTypes %}
+{% for typeData in data.medicalHistoryTypes %}
   {{ button({
     text: typeData.name,
     href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl),
@@ -107,4 +149,3 @@
   }) }}
 {% endfor %}
 </div>
-
