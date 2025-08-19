@@ -235,7 +235,7 @@
               {% endif %}
 
               {% if not (event | isFinal) and (currentUser | isClinician) %}
-                <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                <p class="nhsuk-u-margin-bottom-0">
                   {% if event | hasNotStarted %}
                     <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap">
                       Start appointment

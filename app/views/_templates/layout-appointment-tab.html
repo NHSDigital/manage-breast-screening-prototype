@@ -39,7 +39,10 @@
 
     <div class="app-header-with-status__status-tag">
       {% set statusTagId = "status-tag-" + event.id %}
-      {{ event.status | toTag({ id: statusTagId }) }}
+      {{ event.status | toTag({
+        id: statusTagId,
+        classes: "nhsuk-u-margin-bottom-2"
+      }) }}
 
       {% if event.status == 'event_scheduled' %}
         {{ appCheckIn({
