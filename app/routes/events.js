@@ -127,13 +127,12 @@ module.exports = router => {
     next()
   })
 
-  // Main route in to starting an event - used to clear any temp data
-  // Possibly not needed as if the ID doesn't match our use route would reset this - but this could
-  // be used to reset a patient back to defaults
+  // Main route in to starting an event - used to clear any temp data, set status to in progress and store the user id of the mammographer doing the appointment
   router.get('/clinics/:clinicId/events/:eventId/start', (req, res) => {
     const data = req.session.data
     const event = getEvent(data, req.params.eventId)
     const currentUser = data.currentUser
+    const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
 
     if (event?.status !== 'event_in_progress') {
       // Update status
@@ -153,7 +152,28 @@ module.exports = router => {
     delete data.event
     console.log('Cleared temp event data')
 
-    res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`)
+    // Parse and apply workflow status from query parameters
+    // This lets links in index.njk pre-complete certain sections
+    // Look for parameters like event[workflowStatus][section]=completed
+
+
+    if (req.query.event && req.query.event.workflowStatus) {
+      const workflowUpdates = req.query.event.workflowStatus
+      console.log('Applying workflow status updates:', workflowUpdates)
+
+      updateEventData(data, req.params.eventId, {
+        workflowStatus: workflowUpdates
+      })
+    }
+
+    // Determine redirect destination
+    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`
+
+    const finalDestination = returnTo
+    ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
+    : defaultDestination
+
+    res.redirect(finalDestination)
   })
 
   // Leave appointment - revert status from in_progress back to checked_in
