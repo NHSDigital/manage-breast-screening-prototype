@@ -37,7 +37,7 @@
 
   {# For these summary cards we want to show the authoritative record, not the temp data.
   The temp data only gets saved once going through a confirmation page #}
-  {% set tempParticipant = participant %}
+  {# {% set tempParticipant = participant %}
   {% set participant = originalParticipant %}
 
   {% call card({
@@ -51,6 +51,12 @@
   }) %}
     {% include "summary-lists/demographic-information/contact-details.njk" %}
   {% endcall %}
+
+
+
+   #}
+
+  {% include "_includes/tabs/participant-details.njk" %}
 
   {% call card({
     heading: "Screening details"

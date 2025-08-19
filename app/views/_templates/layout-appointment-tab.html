@@ -1,0 +1,29 @@
+{# app/views/events/appointment #}
+
+{% extends 'layout-app.html' %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageContent %}
+
+  {% include "event-header.njk" %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      {{ appHiddenInput({
+        name: "event[workflowStatus][appointment]",
+        value: "started"
+      }) }}
+      {{ button({
+        text: "Start appointment",
+        classes: "nhsuk-button--secondary"
+      }) }}
+    </div>
+  </div>
+
+  {% include "event-navigation.njk" %}
+
+  {% block tabContent %}
+  {% endblock tabContent %}
+
+{% endblock %}

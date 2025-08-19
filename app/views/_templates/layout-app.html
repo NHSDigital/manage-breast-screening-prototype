@@ -16,21 +16,11 @@
 
 {% block header %}
 
-  {% set workflowNavItems = [
-    {
-      href: "/clinics/" ~ clinicId,
-      text: "Leave this appointment"
-    },
-    {
-      href: "#",
-      text: "Manage appointment"
-    }
-  ]
-  %}
+  {% set useMinimalNav = useMinimalNav | default(false) %}
 
-  {% set workflowNavItems = [] %}
-
-  {% set shouldShowAppointmentNav = (pageContext == 'event') and (event | isAppointmentWorkflow) %}
+  {% if event and event | isAppointmentWorkflow %}
+    {% set useMinimalNav = true %}
+  {% endif %}
 
   {{ header({
     account: {
@@ -51,7 +41,7 @@
       href: "/"
     },
     navigation: {
-      items: workflowNavItems if shouldShowAppointmentNav else
+      items:
       [
         {
           href: "/dashboard",
@@ -82,7 +72,7 @@
           text: "Help and support",
           current: true if navActive == "help"
         }
-      ]
+      ] if not useMinimalNav
     }
   }) }}
  {#  {{ serviceheader({
@@ -97,7 +87,7 @@
     account: navigation.account if not public
   }) }} #}
 
-  {% if shouldShowAppointmentNav %}
+  {% if event and event | isAppointmentWorkflow %}
     {% include "_includes/appointment-header.njk" %}
   {% endif %}
 
@@ -105,12 +95,8 @@
 
 {% block content %}
 
-{% if eventId and data.event %}
-  {{ data.event | log("Event data") }}
-{% endif %}
-
-{% if participantId and data.participant %}
-  {{ data.participant | log("Data.participant") }}
+{% if event %}
+  {{ event | log("Event data") }}
 {% endif %}
 
 {% if participant %}
@@ -206,13 +192,13 @@ https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
       </form>
     {% endif %}
 
+{# This is paired with a matching opening div #}
 {% if gridColumn != "none" %}
   </div>
 </div>
 {% endif %}
 
 {% endblock %}
-
 
 {% block head %}
   {{ super() }}

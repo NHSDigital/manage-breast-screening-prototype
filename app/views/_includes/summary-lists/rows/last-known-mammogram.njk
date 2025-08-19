@@ -85,7 +85,7 @@
   actions: {
     items: [
       {
-        href: eventId + "/previous-mammograms/add",
+        href: './previous-mammograms/add' | urlWithReferrer(currentUrl, scrollTo),
         text: "Add another" if not hasAdditionalMammograms else "View or update",
         text: "Add another",
         visuallyHiddenText: "email"

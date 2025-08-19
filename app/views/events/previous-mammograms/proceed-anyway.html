@@ -4,7 +4,7 @@
 
 {% set pageHeading = "You are continuing despite a recent mammogram" %}
 
-{% set formAction = './../previous-mammograms-answer' %}
+{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, scrollTo) %}
 
 {% block pageContent %}
 

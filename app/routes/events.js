@@ -156,11 +156,50 @@ module.exports = router => {
     res.redirect(`/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`)
   })
 
+  // Leave appointment - revert status from in_progress back to checked_in
+  router.get('/clinics/:clinicId/events/:eventId/leave', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const event = getEvent(data, eventId)
+
+    // Only allow leaving if the event is currently in progress
+    if (event?.status === 'event_in_progress') {
+      // Save any temporary changes before leaving
+      saveTempEventToEvent(data)
+      saveTempParticipantToParticipant(data)
+
+      // Revert status back to checked in
+      updateEventStatus(data, eventId, 'event_checked_in')
+
+      // Clear session details
+      updateEventData(data, eventId, {
+        sessionDetails: {
+          startedAt: null,
+          startedBy: null
+        }
+      })
+
+      // Clear temporary session data (now safe since we've saved changes)
+      delete data.event
+      delete data.participant
+
+      console.log('Left appointment - saved temp data, reverted status to checked_in, and cleared temp data')
+
+      // req.flash('info', 'You have left the appointment. The participant remains checked in.')
+    }
+
+    // Use referrer chain for redirect, fallback to clinic view
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}`, req.query.referrerChain)
+    res.redirect(returnUrl)
+  })
+
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {
     res.render('events/show', {
     })
   })
+
+
 
 
 
@@ -269,6 +308,8 @@ module.exports = router => {
     const data = req.session.data
     const previousMammogram = data.event?.previousMammogramTemp
     const action = req.body.action
+    const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
 
     const mammogramAddedMessage = 'Previous mammogram added'
 
@@ -297,7 +338,11 @@ module.exports = router => {
       req.flash('success', mammogramAddedMessage)
 
       delete data.event?.previousMammogramTemp
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+      // return res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+
+      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, referrerChain, scrollTo)
+
+      res.redirect(returnUrl)
     }
 
     // Handle the direct cancel action from appointment-should-not-proceed.html
@@ -339,7 +384,7 @@ module.exports = router => {
 
     // If recent mammogram detected and not already coming from warning page
     if (isRecentMammogram && action !== 'continue') {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/previous-mammograms/appointment-should-not-proceed`)
+      return res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/previous-mammograms/appointment-should-not-proceed`, referrerChain, scrollTo))
     }
 
     // Normal flow - save the mammogram
@@ -366,7 +411,9 @@ module.exports = router => {
 
     req.flash('success', mammogramAddedMessage)
 
-    res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, referrerChain, scrollTo)
+    res.redirect(returnUrl)
+
   })
 
   // Helper function to check if mammogram was taken within the last 6 months

@@ -1,42 +1,11 @@
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment-tab.html' %}
 
+{% set pageHeading = "Medical information" %}
 
-{% set pageHeading %}
-  {{ clinic.clinicType | sentenceCase }} for {{ participant | getFullName }}
-{% endset %}
+{% set activeTab = 'medical-information' %}
 
-{% set gridColumn = "nhsuk-grid-column-full" %}
-
-{% set formAction = './complete' %}
-
-{% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
-
-{% block pageContent %}
-
-
-  {% set valueHtml = "None" %}
-
-  {% include "event-header.njk" %}
-
-  {% set activeTab = 'medical-information' %}
-
-  {% include "event-navigation.njk" %}
-
-  {# Symptoms #}
-  {# {% include "cards/medical-information/symptoms.njk" %} #}
-
-  {# Breast cancer history, non-cancerous lumps, chest procedures #}
-  {# {% include "cards/medical-information/medical-information.njk" %} #}
-
-  {# Scars, moles, warts, lumps #}
-  {# {% include "cards/medical-information/breast-features.njk" %} #}
-
-  {# HRT, pregnancy and breastfeeding #}
-  {# {% include "cards/medical-information/other-information.njk" %} #}
+{% block tabContent %}
 
   {% set displayFormat = "card" %}
   {% include "_includes/medical-information/index.njk" %}

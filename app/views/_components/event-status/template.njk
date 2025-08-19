@@ -1,3 +1,5 @@
+{# app/views/_components/event-status/template.njk #}
+
 {% from 'tag/macro.njk' import tag %}
 {% from '_components/modal/macro.njk' import appModal %}
 {% from '_components/summary-list/macro.njk' import appSummaryList as summaryList %}
@@ -36,27 +38,30 @@
     Check in {{ params.participant | getShortName | asVisuallyHiddenText }}
   {% endset %}
 
-  {% if params.event.status === 'event_scheduled' %}
-    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-      {% if confirmIdentityEnabled %}
-        {# Modal-based check-in #}
-        <a href=""
-           class="nhsuk-link nhsuk-link--no-visited-state"
-           data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}"
-           onclick="openModal('{{ modalId }}'); return false;">
-          {{ checkInText | safe }}
-        </a>
-      {% else %}
-        {# Check in without identity check #}
-        <a href="{{ checkInHref }}"
-           class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
-           data-clinic-id="{{ params.clinicId }}"
-           data-event-id="{{ params.event.id }}"
-           data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}">
-          {{ checkInText | safe }}
-        </a>
-      {% endif %}
-    </p>
-  {% endif %}
+  {% set foobar %}
+    {% if params.event.status === 'event_scheduled' %}
+      <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+        {% if confirmIdentityEnabled %}
+          {# Modal-based check-in #}
+          <a href=""
+            class="nhsuk-link nhsuk-link--no-visited-state"
+            data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}"
+            onclick="openModal('{{ modalId }}'); return false;">
+            {{ checkInText | safe }}
+          </a>
+        {% else %}
+          {# Check in without identity check #}
+          <a href="{{ checkInHref }}"
+            class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
+            data-clinic-id="{{ params.clinicId }}"
+            data-event-id="{{ params.event.id }}"
+            data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}">
+            {{ checkInText | safe }}
+          </a>
+        {% endif %}
+      </p>
+    {% endif %}
+  {% endset %}
+
 
 </div>

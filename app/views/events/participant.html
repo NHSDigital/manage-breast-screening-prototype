@@ -1,0 +1,16 @@
+{# app/views/events/appointment #}
+
+{% extends 'layout-appointment-tab.html' %}
+
+{% set pageHeading = "Implants" %}
+
+
+{% set activeTab = 'participant' %}
+
+{% set allowEdits = true %}
+
+{% block tabContent %}
+
+  {% include "_includes/tabs/participant-details.njk" %}
+
+{% endblock %}
