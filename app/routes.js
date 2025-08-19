@@ -27,6 +27,32 @@ router.use((req, res, next) => {
   next()
 })
 
+// Support swapping users
+router.use((req, res, next) => {
+  const data = req.session.data
+
+  if (data.currentUserId != data.currentUser.id){
+    const selectedUser = data.users.find(user => user.id === data.currentUserId)
+
+    if (selectedUser) {
+      console.log(`Changing user to user ${selectedUser.firstName} ${selectedUser.lastName}`)
+
+      data.currentUser = selectedUser
+      res.locals.data.currentUser = selectedUser
+
+      req.flash('success', `Signed in as ${selectedUser.firstName} ${selectedUser.lastName}`)
+    }
+    else {
+      console.log(`Cannot find user ${data.currentUserId} to sign in. Reverting to user 1`)
+
+      data.currentUserId = data.currentUser.id
+      res.locals.data.currentUserId = data.currentUser.id
+    }
+  }
+
+  next()
+})
+
 // Clear query string from URL if clearQuery is present
 // This is useful for removing query parameters after processing them
 router.use((req, res, next) => {

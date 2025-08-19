@@ -2,6 +2,8 @@
 
 {# Calling template sets variable `displayFormat` to one of card / expander / flat #}
 
+{% set allowEdits = true if currentUser | isClinician else false %}
+
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
 {% set subHeading = "The last confirmed mammogram and any added manually since then" %}
@@ -144,17 +146,82 @@
 {# Medical history #}
 
 {% set sectionHeading = "Medical history" %}
+
 {% set subHeading = "Including breast cancer, implants, prior procedures and treatments" %}
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
 {% set medicalHistoryHtml %}
-  {% include "medical-information/medical-history/index.njk" %}
-  {# {% include "summary-lists/medical-information/medical-history.njk" %} #}
+  {% include "summary-lists/medical-information/medical-history.njk" %}
 {% endset %}
 
 {% switch displayFormat %}
   {% case 'flat' %}
+    <h2>{{ sectionHeading }}</h2>
+    {{ medicalHistoryHtml | safe }}
+  {% case 'card' %}
+    {% call card({
+      heading: sectionHeading
+    }) %}
+      <p>
+        {{ subHeading }}
+      </p>
+      {{ medicalHistoryHtml | safe }}
+    {% endcall %}
+  {% default %}
+    {{ appDetails({
+      id: "medical-history",
+      classes: "nhsuk-expander js-expandable-section",
+      summaryText: sectionHeading,
+      contentsSummary: "No information added",
+      subtitle: subHeading,
+      html: medicalHistoryHtml,
+      status: "To review"
+    }) }}
+{% endswitch %}
+
+{% set medicalHistoryHtml %}
+  {% set rows = [
+    "Implanted medical devices",
+    "Breast implants or augmentation",
+    "Breast cancer tests and treatment",
+    "Treatment for non-cancerous breast conditions",
+    "Other breast or chest proceedures"
+    ] %}
+
+  {% set summaryListItems = [] %}
+
+  {% set valueHtml = "" %}
+
+  {% for row in rows %}
+    {% set summaryListItems = summaryListItems | push({
+        key: {
+          text: row
+        },
+        value: {
+          html: valueHtml
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Change",
+              visuallyHiddenText: row | lower
+            }
+          ]
+        }
+      }) %}
+  {% endfor %}
+  {{ summaryList({
+    rows: summaryListItems
+  } | handleSummaryListMissingInformation) }}
+
+
+{% endset %}
+
+{% switch displayFormat %}
+  {% case 'flat' %}
+
     <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
     {{ medicalHistoryHtml | safe }}
   {% case 'card' %}
@@ -163,6 +230,7 @@
       attributes: {
         id: sectionId
       }
+
     }) %}
       <p>
         {{ subHeading }}
@@ -180,6 +248,7 @@
       status: "To review"
     }) }}
 {% endswitch %}
+
 
 {# -------------------------------------------------------------- #}
 {# Breast features #}
