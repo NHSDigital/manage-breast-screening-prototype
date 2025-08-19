@@ -195,8 +195,10 @@ module.exports = router => {
 
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {
-    res.render('events/show', {
-    })
+    const { clinicId, eventId } = req.params
+    // res.render('events/show', {
+    // })
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
   })
 
 

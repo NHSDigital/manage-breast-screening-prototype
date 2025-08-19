@@ -96,12 +96,15 @@
           <th class="nhsuk-table__header">Time</th>
           <th class="nhsuk-table__header">Details</th>
           <th class="nhsuk-table__header">Date of birth</th>
-          <th class="nhsuk-table__header">{{ 'Appointment status' if status != "checked-in" else "Appointment" }}</th>
+          <th class="nhsuk-table__header">Appointment</th>
+          <th class="nhsuk-table__header">Actions</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for event in filteredEvents %}
           {% set participant = data.participants | findById(event.participantId) %}
+          {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
+          {% set statusTagId = "status-tag-" + event.id %}
 
           <tr id="event-row-{{event.id}}">
 
@@ -111,24 +114,42 @@
               {% if event | isSpecialAppointment %}
                 {{ tag({
                   text: "Special apppointment",
-                  classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2"
+                  classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
                 })}}
               {% endif %}
             </td>
 
-            {# Appointment details #}
+            {# Appointment details - Name and NHS number #}
             <td class="nhsuk-table__cell">
-              {% include "appointment-card.njk" %}
+
+              {% set participantHref = ("/participants/" ~ participant.id) | urlWithReferrer(currentUrl) %}
+
+              <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
+                {# <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/start" class="nhsuk-link"> #}
+                {# <a href="{{ participantHref }}" class="nhsuk-link">
+                  {{ participant | getFullName }}
+                </a> #}
+                {{ participant | getFullName }}
+              </p>
+              <p class="app-text-grey nhsuk-u-margin-bottom-0">
+                {# DOB: {{ participant.demographicInformation.dateOfBirth | formatDate }} ({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }})
+                <br> #}
+                NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+              {#   <br>
+                SX Number: {{ participant.sxNumber }} #}
+              </p>
+
             </td>
 
             {# Date of birth #}
             <td class="nhsuk-table__cell">{{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
-              <span class="app-text-grey">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }})</span></td>
+              <span class="app-text-grey">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }})</span>
+            </td>
 
-            {# Appointment status and check-in #}
+            {# Appointment status and view appointment link #}
             <td class="nhsuk-table__cell">
               {# Status tag with check-in link #}
-              {{ eventStatus({
+              {# {{ eventStatus({
                 clinicId: clinicId,
                 event: event,
                 participant: participant,
@@ -137,7 +158,9 @@
                 referrerChain: currentUrl + "#event-row-" + event.id,
                 confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
                 showAppointmentLink: true
-              })}}
+              })}} #}
+
+              {{ event.status | toTag({ id: statusTagId }) }}
 
               {% if event | isInProgress %}
                 <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ event.sessionDetails.startedBy | getUsername({
@@ -154,17 +177,18 @@
                 {% endif %}
               {% endif %}
 
-
-
-              {# Show appointment link for checked-in events when enabled #}
-              {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
-
-              {% set viewAppointmentLink %}
+              <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0 app-nowrap">
                 <a href="{{ eventBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
-              {% endset %}
+              </p>
+
+
+              {# {% set viewAppointmentLink %}
+                <a href="{{ eventBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+              {% endset %} #}
 
               {# Scheduled events have dynamic check-in links #}
-              {% if event.status != 'event_scheduled' %}
+
+              {# {% if event.status != 'event_scheduled' %}
                 <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
                   {% if currentUser | isClinician %}
 
@@ -193,6 +217,35 @@
                 </p>
 
 
+              {% endif %} #}
+
+            </td>
+
+            {# Actions - check-in or start appointment #}
+            <td class="nhsuk-table__cell">
+              {% if event.status == 'event_scheduled' %}
+                {{ appCheckIn({
+                  clinicId: clinicId,
+                  event: event,
+                  participant: participant,
+                  confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+                  statusTagId: statusTagId
+                }) }}
+
+              {% endif %}
+
+              {% if not (event | isFinal) and (currentUser | isClinician) %}
+                <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                  {% if event | hasNotStarted %}
+                    <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap">
+                      Start appointment
+                    </a>
+                  {% elseif event | startedByCurrentUser %}
+                    <a href="{{ eventBaseUrl }}/identity">
+                      Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                    </a>
+                  {% endif %}
+                </p>
               {% endif %}
 
             </td>
