@@ -152,7 +152,7 @@
 {% set scrollTo = sectionId %}
 
 {% set medicalHistoryHtml %}
-  {% include "summary-lists/medical-information/medical-history.njk" %}
+  {% include "medical-information/medical-history/index.njk" %}
 {% endset %}
 
 {% switch displayFormat %}
@@ -219,7 +219,7 @@
 
 {% endset %}
 
-{% switch displayFormat %}
+{# {% switch displayFormat %}
   {% case 'flat' %}
 
     <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
@@ -247,7 +247,7 @@
       html: medicalHistoryHtml,
       status: "To review"
     }) }}
-{% endswitch %}
+{% endswitch %} #}
 
 
 {# -------------------------------------------------------------- #}
