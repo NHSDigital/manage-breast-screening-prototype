@@ -31,15 +31,14 @@
     <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
   {% endset %}
 
-  {# Simplified other details section #}
-  {% set otherDetailsHtml %}
+  {% set specialAppointmentHtml %}
     {% if event | isSpecialAppointment %}
       {{ tag({
         text: "Special appointment",
         classes: "nhsuk-tag--yellow"
       })}}
     {% else %}
-      {{ "None" | asHint }}
+      {{ "Not a special appointment" | asHint }}
     {% endif %}
   {% endset %}
 
@@ -85,29 +84,50 @@
           },
           actions: {
             items: [
-
+              {
+                href: "#",
+                text: "Change",
+                visuallyHiddenText: "other details"
+              } if event.status != "event_scheduled"
             ]
           }
         },
         {
           key: {
-            text: "Other details"
+            text: "Special appointment"
           },
           value: {
-            html: otherDetailsHtml
+            html: specialAppointmentHtml
+          },
+          actions: {
+            items: [
+              {
+                href: "./special-appointment/edit" | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "special appointment"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Appointment notes"
+          },
+          value: {
+            html: ''
           },
           actions: {
             items: [
               {
                 href: "#",
                 text: "Change",
-                visuallyHiddenText: "other details"
+                visuallyHiddenText: "appointment notes"
               }
             ]
           }
         }
       ]
-    }) }}
+    } | handleSummaryListMissingInformation) }}
   {% endset %}
 
   {% call card({
