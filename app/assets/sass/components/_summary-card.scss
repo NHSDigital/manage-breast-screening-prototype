@@ -46,21 +46,21 @@
   }
 
   .nhsuk-summary-card__title-wrapper {
-  padding: nhsuk-spacing(3);
+    padding: nhsuk-spacing(3);
 
-  // Ensures the card header appears separate to the summary list in forced
-  // colours mode
-  border-bottom: 1px solid transparent;
-  background-color: $color_nhsuk-grey-5;
+    // Ensures the card header appears separate to the summary list in forced
+    // colours mode
+    border-bottom: 1px solid transparent;
+    background-color: $color_nhsuk-grey-5;
 
-  @include nhsuk-media-query($from: "tablet") {
-    display: flex;
-    // Justify removed because we always want actions on the right
-    // /justify-content: space-between;
-    flex-wrap: nowrap;
-    padding: nhsuk-spacing(3) nhsuk-spacing(4);
+    @include nhsuk-media-query($from: "tablet") {
+      display: flex;
+      // Justify removed because we always want actions on the right
+      // /justify-content: space-between;
+      flex-wrap: nowrap;
+      padding: nhsuk-spacing(3) nhsuk-spacing(4);
+    }
   }
-}
 
   .nhsuk-summary-card__title {
     @include nhsuk-font($size: 19, $weight: bold);
@@ -130,9 +130,37 @@
     }
   }
 
-  .nhsuk-summary-card--no-border .nhsuk-summary-card__title-wrapper {
-    padding-bottom: 0;
-  }
   .nhsuk-summary-card--no-border {
     border: none;
+
+    .nhsuk-summary-card__actions {
+      @include nhsuk-typography-weight-normal;
+    }
+
+    .nhsuk-summary-card__action {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-card__title-wrapper {
+      background-color: inherit;
+    }
+
+    .nhsuk-summary-card__title-wrapper, .nhsuk-summary-card__content {
+      padding: 0;
+    }
+  }
+
+  .nhsuk-summary-card--compact {
+
+    .nhsuk-summary-card__actions {
+      @include nhsuk-typography-weight-normal;
+    }
+
+    .nhsuk-summary-card__action {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-card__title-wrapper, .nhsuk-summary-card__content {
+      padding: nhsuk-spacing(1) nhsuk-spacing(2);
+    }
   }
