@@ -10,43 +10,42 @@
   {% if historyItemArray and historyItemArray | length %}
 
     {% set hasAnyMedicalHistoryData = true %}
-    <h3>{{ typeData.name }}</h3>
+    <h3 class="nhsuk-u-margin-bottom-2">{{ typeData.name }}</h3>
 
     {% for historyItem in historyItemArray %}
 
       {% set changeHref =  "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
-      <div class="nhsuk-u-margin-bottom-6">
-        {% if historyItemArray | length > 1 %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-2">
-            Item #{{ loop.index }}
-          </p>
+      {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
+
+      {% set typeText %}
+        {% if historyItem.type %}
+          {% if historyItem.type == 'Other' %}
+            {{ historyItem.typeOtherDetails }}
+          {% else %}
+            {{ historyItem.type }}
+          {% endif %}
         {% endif %}
+      {% endset %}
 
-        {% set typeText %}
-          {% if historyItem.type %}
-            {% if historyItem.type == 'Other' %}
-              {{ historyItem.typeOtherDetails }}
-            {% else %}
-              {{ historyItem.type }}
+      {% set dateText %}
+        {% if historyItem.generalDate %}
+          {% if historyItem.generalDate == "Specific date" %}
+            {% if historyItem.specificDate | isValidDate %}
+              {{ historyItem.specificDate | formatDate }} ({{ historyItem.specificDate | formatRelativeDate }})
             {% endif %}
+          {% else %}
+            {{ historyItem.generalDate }}
           {% endif %}
-        {% endset %}
+        {% endif %}
+      {% endset %}
 
-        {% set dateText %}
-          {% if historyItem.generalDate %}
-            {% if historyItem.generalDate == "Specific date" %}
-              {% if historyItem.specificDate | isValidDate %}
-                {{ historyItem.specificDate | formatDate }} ({{ historyItem.specificDate | formatRelativeDate }})
-              {% endif %}
-            {% else %}
-              {{ historyItem.generalDate }}
-            {% endif %}
-          {% endif %}
-        {% endset %}
+      {% set addedByText %}
+        Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
+      {% endset %}
 
+      {% set historyItemContents %}
         {{ summaryList({
-          classes: "nhsuk-u-margin-bottom-3",
           rows: [
             {
               key: {
@@ -54,15 +53,6 @@
               },
               value: {
                 text: typeText
-              },
-              actions: {
-                items: [
-                  {
-                    href: changeHref,
-                    text: "Change",
-                    visuallyHiddenText: historyItem.name | lower
-                  }
-                ]
               }
             } if historyItem.type,
             {
@@ -71,15 +61,6 @@
               },
               value: {
                 text: historyItem.generalLocation
-              },
-              actions: {
-                items: [
-                  {
-                    href: changeHref,
-                    text: "Change",
-                    visuallyHiddenText: "generalLocation"
-                  }
-                ]
               }
             } if historyItem.generalLocation,
             {
@@ -88,15 +69,6 @@
               },
               value: {
                 text: dateText
-              },
-              actions: {
-                items: [
-                  {
-                    href: changeHref,
-                    text: "Change",
-                    visuallyHiddenText: "date"
-                  }
-                ]
               }
             } if historyItem.generalDate,
             {
@@ -105,32 +77,56 @@
               },
               value: {
                 text: historyItem.additionalDetails
-              },
-              actions: {
-                items: [
-                  {
-                    href: changeHref,
-                    text: "Change",
-                    visuallyHiddenText: "additional details"
-                  }
-                ]
               }
             } if historyItem.additionalDetails
           ]
         } | handleSummaryListMissingInformation(true) ) }}
 
-        {% set addedByText %}
-          Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
-        {% endset %}
-        <p>
-          {{ addedByText | asHint }}
-        </p>
-      </div>
+        {# Only show attribution if added by someone else, or added by current user before today #}
+        {% if not (historyItem.addedBy | isCurrentUser) or (historyItem.dateAdded | isPast) %}
+          <p class="nhsuk-u-margin-bottom-0">
+            {{ addedByText | asHint }}
+          </p>
+        {% endif %}
+      {% endset %}
 
+      {# Container for history item #}
+      <div class="nhsuk-u-margin-bottom-4">
+
+        {# {% if historyItemArray | length > 1 %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-2">
+            Item #{{ loop.index }}
+          </p>
+        {% endif %} #}
+
+        {% call appSummaryCard({
+          title: {
+            text: "Item " ~ loop.index,
+            headingLevel: 4
+          } if historyItemArray | length > 1,
+          classes: "nhsuk-summary-card--compact nhsuk-u-margin-bottom-2",
+          actions: {
+            items: [
+              {
+                href: deleteHref,
+                text: "Delete",
+                visuallyHiddenText: typeData.name ~ " item " ~ loop.index
+              },
+              {
+                href: changeHref,
+                text: "Change",
+                visuallyHiddenText: typeData.name ~ " item " ~ loop.index
+              }
+            ]
+          }
+        }) %}
+          {{ historyItemContents | safe }}
+        {% endcall %}
+      </div>
 
     {% endfor %}
 
-    {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl, scrollTo) %}
+    {# {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl, scrollTo) %}
 
     {% set addAnotherLink %}
       <p class="nhsuk-u-margin-bottom-4">
@@ -141,7 +137,7 @@
 
     {% if typeData.canHaveMultiple %}
       {{ addAnotherLink | safe }}
-    {% endif %}
+    {% endif %} #}
 
   {% endif %}
 

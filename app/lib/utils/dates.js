@@ -5,7 +5,7 @@ const relativeTime = require('dayjs/plugin/relativeTime')
 const advancedFormat = require('dayjs/plugin/advancedFormat')
 const utc = require('dayjs/plugin/utc')
 const timezone = require('dayjs/plugin/timezone')
-const isToday = require('dayjs/plugin/isToday')
+const isTodayPlugin = require('dayjs/plugin/isToday')
 const isTomorrow = require('dayjs/plugin/isTomorrow')
 const isYesterday = require('dayjs/plugin/isYesterday')
 const customParseFormat = require('dayjs/plugin/customParseFormat')
@@ -15,7 +15,7 @@ dayjs.extend(relativeTime)
 dayjs.extend(advancedFormat)
 dayjs.extend(utc)
 dayjs.extend(timezone)
-dayjs.extend(isToday)
+dayjs.extend(isTodayPlugin)
 dayjs.extend(isTomorrow)
 dayjs.extend(isYesterday)
 dayjs.extend(customParseFormat)
@@ -296,6 +296,31 @@ const daysSince = (dateInput, compareDate = null) => {
 }
 
 /**
+ * Check if a date is today
+ * @param {string|Array|Object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
+ * @returns {boolean} True if the date is today
+ */
+const isToday = (dateInput) => {
+  if (!dateInput) return false
+
+  // Validate the input first
+  if (!isValidDate(dateInput)) return false
+
+  let date
+
+  // Handle array or object input
+  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+    date = arrayOrObjectToDateObject(dateInput)
+    if (!date) return false
+  } else {
+    // Handle string input
+    date = dayjs(dateInput)
+  }
+
+  return date.isToday()
+}
+
+/**
  * Check if date is in the past
  * @param {string} dateString - ISO date string
  */
@@ -481,6 +506,7 @@ module.exports = {
   formatDateTime,
   formatRelativeDate,
   formatDateRange,
+  isToday,
   isPast,
   isFuture,
   isBeforeDate,
