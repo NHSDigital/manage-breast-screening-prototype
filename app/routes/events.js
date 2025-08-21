@@ -147,16 +147,9 @@ module.exports = router => {
       })
     }
 
-    // Explicitly delete the temp event data just in case
-    // On next request this will be recreated from the event array
-    delete data.event
-    console.log('Cleared temp event data')
-
     // Parse and apply workflow status from query parameters
     // This lets links in index.njk pre-complete certain sections
     // Look for parameters like event[workflowStatus][section]=completed
-
-
     if (req.query.event && req.query.event.workflowStatus) {
       const workflowUpdates = req.query.event.workflowStatus
       console.log('Applying workflow status updates:', workflowUpdates)
@@ -167,8 +160,8 @@ module.exports = router => {
     }
 
     // Determine redirect destination
+    // This lets us deep link in to the flow whilst still going through this setup route
     const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`
-
     const finalDestination = returnTo
     ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
     : defaultDestination
