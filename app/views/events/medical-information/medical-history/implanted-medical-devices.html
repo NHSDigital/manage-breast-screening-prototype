@@ -13,29 +13,29 @@
     value: event.medicalHistoryTemp.type,
     fieldset: {
       legend: {
-        text: typeQuestionText or "What is the device type?",
+        text: "What device does " + (participant.firstName or "the participant") + " have?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
     items: [
       {
         value: "Cardiac device",
-        text: "Cardiac device"
+        text: "Cardiac device (such as a pacemaker or ICD)"
       },
       {
-        value: "Hickman lines",
-        text: "Hickman lines"
+        value: "Hickman line",
+        text: "Hickman line"
       },
       {
-        value: "Other",
-        text: "Other",
+        value: "Other medical device",
+        text: "Other medical device (or does not know)",
         conditional: {
           html: input({
-            name: "event[medicalHistoryTemp][typeOtherDetails]",
-            value: event.medicalHistoryTemp.typeOtherDetails,
-            id: "other-device-details",
+            name: "event[medicalHistoryTemp][details]",
+            value: event.medicalHistoryTemp.details,
+            id: "device-details",
             label: {
-              text: "Add details"
+              text: "Provide details"
             }
           })
         }
@@ -43,14 +43,75 @@
     ]
   }) }}
 
-  {% set dateQuestionText = "When was the procedure?" %}
-  {% include "_includes/medical-information/medical-history/date.njk" %}
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][recentProcedure]",
+    value: event.medicalHistoryTemp.recentProcedure,
+    items: [
+      {
+        value: "true",
+        text: "Procedure was within the last six months",
+        checked: event.medicalHistoryTemp.recentProcedure == "true",
+        conditional: {
+          html: dateInput({
+            id: "procedure-date",
+            namePrefix: "event[medicalHistoryTemp][procedureDate]",
+            fieldset: {
+              legend: {
+                text: "Provide date (optional)",
+                classes: "nhsuk-fieldset__legend--m"
+              }
+            },
+            hint: {
+              text: "For example, 3 2019"
+            },
+            items: [
+              {
+                name: "month",
+                classes: "nhsuk-input--width-2",
+                value: event.medicalHistoryTemp.procedureDate.month
+              },
+              {
+                name: "year",
+                classes: "nhsuk-input--width-4",
+                value: event.medicalHistoryTemp.procedureDate.year
+              }
+            ]
+          })
+        }
+      }
+    ]
+  }) }}
 
-  {% set additionalDetailsHintText = "Include any other relevant information" %}
-  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][deviceRemoved]",
+    value: event.medicalHistoryTemp.deviceRemoved,
+    items: [
+      {
+        value: "true",
+        text: "Implanted device has been removed",
+        checked: event.medicalHistoryTemp.deviceRemoved == "true",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][removalDetails]",
+            value: event.medicalHistoryTemp.removalDetails,
+            id: "removal-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
+
+  {{ textarea({
+    name: "event[medicalHistoryTemp][additionalInfo]",
+    value: event.medicalHistoryTemp.additionalInfo,
+    id: "additional-info",
+    label: {
+      text: "Additional info (optional)",
+      classes: "nhsuk-label--m"
+    }
+  }) }}
 
 {% endblock formContent %}
-
-
-
-
