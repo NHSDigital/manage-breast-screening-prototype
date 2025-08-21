@@ -1,0 +1,101 @@
+{# app/views/events/medical-information/breast-cancer.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Breast cancer" %}
+{% set medicalHistoryType = "breastCancer" %}
+
+{% block formContent %}
+
+  {{ radios({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: "What procedure has " + (participant.firstName or "the participant") + " had?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Prophylactic or elective mastectomy",
+        text: "Prophylactic or elective mastectomy",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][mastectomyDetails]",
+            value: event.medicalHistoryTemp.mastectomyDetails,
+            id: "mastectomy-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Breast reduction",
+        text: "Breast reduction",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][reductionDetails]",
+            value: event.medicalHistoryTemp.reductionDetails,
+            id: "reduction-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Nipple correction",
+        text: "Nipple correction",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][nippleDetails]",
+            value: event.medicalHistoryTemp.nippleDetails,
+            id: "nipple-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][otherDetails]",
+            value: event.medicalHistoryTemp.otherDetails,
+            id: "other-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
+
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][recentProcedure]",
+    value: event.medicalHistoryTemp.recentProcedure,
+    items: [
+      {
+        value: "true",
+        text: "Procedure was within the last six months",
+        checked: event.medicalHistoryTemp.recentProcedure == "true"
+      }
+    ]
+  }) }}
+
+  {{ textarea({
+    name: "event[medicalHistoryTemp][additionalInfo]",
+    value: event.medicalHistoryTemp.additionalInfo,
+    id: "additional-info",
+    label: {
+      text: "Additional info (optional)",
+      classes: "nhsuk-label--m"
+    }
+  }) }}
+
+{% endblock formContent %}

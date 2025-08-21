@@ -1,6 +1,12 @@
 // app/data/medical-history-types.js
 
 module.exports = [
+    {
+    type: 'breastCancer',
+    name: 'Breast cancer',
+    slug: 'breast-cancer',
+    canHaveMultiple: true,
+  },
   {
     type: 'implantedMedicalDevices',
     name: 'Implanted medical devices',
@@ -32,21 +38,9 @@ module.exports = [
     canHaveMultiple: true,
   },
   {
-    type: 'lymphNodeSurgery',
-    name: 'Lymph node surgery',
-    slug: 'lymph-node-surgery',
-    canHaveMultiple: true,
-  },
-  {
-    type: 'mastectomy',
-    name: 'Mastectomy',
-    slug: 'mastectomy',
-    canHaveMultiple: true,
-  },
-  {
-    type: 'otherBreastChestProcedures',
-    name: 'Other breast or chest procedures',
-    slug: 'other-breast-chest-procedures',
+    type: 'otherProcedures',
+    name: 'Other procedures',
+    slug: 'other-procedures',
     canHaveMultiple: true,
   }
 ]

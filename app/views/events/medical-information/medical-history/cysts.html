@@ -1,4 +1,4 @@
-{# app/views/events/medical-information/cyst-drainage.html #}
+{# app/views/events/medical-information/cysts.html #}
 
 {% extends 'layout-medical-history-form.html' %}
 
@@ -7,17 +7,65 @@
 
 {% block formContent %}
 
-  {% set generalLocationText = "Where was the cyst?" %}
-  {% include "_includes/medical-information/medical-history/general-location.njk" %}
+  {{ radios({
+    name: "event[medicalHistoryTemp][location]",
+    value: event.medicalHistoryTemp.location,
+    fieldset: {
+      legend: {
+        text: "In which breast(s) has " + (participant.firstName or "the participant") + " had cysts?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Right",
+        text: "Right"
+      },
+      {
+        value: "Left",
+        text: "Left"
+      },
+      {
+        value: "Both",
+        text: "Both"
+      },
+      {
+        value: "Does not know",
+        text: "Does not know"
+      }
+    ]
+  }) }}
 
-  {% set dateQuestionText = "When was the procedure?" %}
-  {% include "_includes/medical-information/medical-history/date.njk" %}
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][cystsDrained]",
+    value: event.medicalHistoryTemp.cystsDrained,
+    items: [
+      {
+        value: "true",
+        text: "Cysts have been drained or removed",
+        checked: event.medicalHistoryTemp.cystsDrained == "true",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][drainageDetails]",
+            value: event.medicalHistoryTemp.drainageDetails,
+            id: "drainage-details",
+            label: {
+              text: "Provide details (optional)"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
 
-  {% set additionalDetailsHintText = "Include any other relevant information" %}
-  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+  {{ textarea({
+    name: "event[medicalHistoryTemp][additionalInfo]",
+    value: event.medicalHistoryTemp.additionalInfo,
+    id: "additional-info",
+    label: {
+      text: "Additional info (optional)",
+      classes: "nhsuk-label--m"
+    }
+  }) }}
 
 {% endblock formContent %}
-
-
-
-

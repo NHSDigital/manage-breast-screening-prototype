@@ -1,4 +1,4 @@
-{# app/views/events/medical-information/breast-implants.html #}
+{# app/views/events/medical-information/breast-implants-augmentation.html #}
 
 {% extends 'layout-medical-history-form.html' %}
 
@@ -7,43 +7,131 @@
 
 {% block formContent %}
 
-{{ radios({
+  {{ radios({
     name: "event[medicalHistoryTemp][type]",
     value: event.medicalHistoryTemp.type,
     fieldset: {
       legend: {
-        text: "What type of breast implants or augmentation?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
+        text: "What procedure(s) has " + (participant.firstName or "the participant") + " had?",
+        classes: "nhsuk-fieldset__legend--m"
       }
     },
     items: [
       {
-        value: "Saline",
-        text: "Saline"
+        value: "Breast implants",
+        text: "Breast implants (silicone or saline)"
       },
       {
-        value: "Silicone",
-        text: "Silicone"
-      },
-      {
-        value: "Fat transfer",
-        text: "Fat transfer"
+        value: "Other augmentation",
+        text: "Other augmentation (such as a fat transfer or breast filler)",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][details]",
+            value: event.medicalHistoryTemp.details,
+            id: "augmentation-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
       }
     ]
   }) }}
 
-  {% set generalLocationText = "Which breasts have implants?" %}
-  {% include "_includes/medical-information/medical-history/general-location.njk" %}
+  {{ radios({
+    name: "event[medicalHistoryTemp][location]",
+    value: event.medicalHistoryTemp.location,
+    fieldset: {
+      legend: {
+        text: "Which breast(s) was this done on?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Right",
+        text: "Right"
+      },
+      {
+        value: "Left",
+        text: "Left"
+      },
+      {
+        value: "Both",
+        text: "Both"
+      }
+    ]
+  }) }}
 
-  {% set dateQuestionText = "When was the procedure?" %}
-  {% include "_includes/medical-information/medical-history/date.njk" %}
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][recentProcedure]",
+    value: event.medicalHistoryTemp.recentProcedure,
+    items: [
+      {
+        value: "true",
+        text: "Procedure was within the last six months",
+        checked: event.medicalHistoryTemp.recentProcedure == "true",
+        conditional: {
+          html: dateInput({
+            id: "procedure-date",
+            namePrefix: "event[medicalHistoryTemp][procedureDate]",
+            fieldset: {
+              legend: {
+                text: "Provide date (optional)",
+                classes: "nhsuk-fieldset__legend--s"
+              }
+            },
+            hint: {
+              text: "For example, 3 2019"
+            },
+            items: [
+              {
+                name: "month",
+                classes: "nhsuk-input--width-2",
+                value: event.medicalHistoryTemp.procedureDate.month
+              },
+              {
+                name: "year",
+                classes: "nhsuk-input--width-4",
+                value: event.medicalHistoryTemp.procedureDate.year
+              }
+            ]
+          })
+        }
+      }
+    ]
+  }) }}
 
-  {% set additionalDetailsHintText = "Include any other relevant information" %}
-  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][implantsRemoved]",
+    value: event.medicalHistoryTemp.implantsRemoved,
+    items: [
+      {
+        value: "true",
+        text: "Implants have been removed",
+        checked: event.medicalHistoryTemp.implantsRemoved == "true",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][removalDetails]",
+            value: event.medicalHistoryTemp.removalDetails,
+            id: "removal-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
+
+  {{ textarea({
+    name: "event[medicalHistoryTemp][additionalInfo]",
+    value: event.medicalHistoryTemp.additionalInfo,
+    id: "additional-info",
+    label: {
+      text: "Additional info (optional)",
+      classes: "nhsuk-label--m"
+    }
+  }) }}
 
 {% endblock formContent %}
-
-
-
-
