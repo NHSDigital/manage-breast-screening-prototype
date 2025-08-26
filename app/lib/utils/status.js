@@ -10,7 +10,7 @@ const STATUS_GROUPS = {
   not_started: ['event_scheduled', 'event_checked_in'],
   completed: ['event_complete', 'event_partially_screened'],
   final: ['event_complete', 'event_partially_screened', 'event_did_not_attend', 'event_attended_not_screened', 'event_cancelled'],
-  active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
+  active: ['event_scheduled', 'event_checked_in'],
   eligible_for_reading: ['event_complete', 'event_partially_screened'],
 }
 
