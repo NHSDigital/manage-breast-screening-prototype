@@ -20,7 +20,20 @@
   href: "/dashboard"
 }) }}
 
-<h2>Active screening appointment</h2>
+<h2>Clinics</h2>
+
+<ul>
+  <li>
+    <a href="/clinics">Clinics</a>
+    <ul>
+      <li><a href="/clinics/wtrl7jud">First clinic today</a></li>
+    </ul>
+  </li>
+
+</ul>
+
+
+<h2>Screening appointment</h2>
 
 {% set eventId = "5gpn41oi" %}
 
@@ -28,6 +41,21 @@
 
 {% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
 {% set startUrl = exampleParticipant + "/start" %}
+
+<h3>Appointment pages</h3>
+<ul>
+  <li>
+    <a href="{{ exampleParticipant }}/appointment">Appointment tab</a>
+  </li>
+  <li>
+    <a href="{{ exampleParticipant }}/participant">Participant tab</a>
+  </li>
+  <li>
+    <a href="{{ exampleParticipant }}/medical-information">Medical information tab</a>
+  </li>
+</ul>
+
+<h3>Appointment during workflow</h3>
 
 <ul>
   <li>
@@ -82,7 +110,7 @@
 
 <ul>
   <li>
-    <a href="{{ exampleParticipant }}">Main appointment page</a>
+    <a href="{{ exampleParticipant }}/appointment">Appointment tab</a>
   </li>
   <li>
     <a href="{{ exampleParticipant }}/medical-information">Medical information</a>
@@ -95,12 +123,6 @@
 <h2>Other sections</h2>
 
 <ul>
-  <li>
-    <a href="/clinics">Clinics</a>
-    <ul>
-      <li><a href="/clinics/wtrl7jud">First clinic today</a></li>
-    </ul>
-  </li>
 
   <li>
     <a href="/reading">Image reading</a>
