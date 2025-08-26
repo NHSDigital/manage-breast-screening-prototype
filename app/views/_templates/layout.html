@@ -7,6 +7,7 @@
 <!-- Extends the layout from /docs/views/template.html -->
 {% extends "template.html" %}
 
+{%- from '_components/check-in/macro.njk' import appCheckIn %}
 {%- from '_components/count/macro.njk' import appCount %}
 {%- from '_components/details/macro.njk' import appDetails %}
 {%- from '_components/event-status/macro.njk' import eventStatus %}

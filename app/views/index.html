@@ -27,44 +27,50 @@
 {% set makeActiveAppointment -%}?event[workflowStatus][appointment]=started{%- endset %}
 
 {% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+{% set startUrl = exampleParticipant + "/start" %}
 
 <ul>
   <li>
-    <a href="{{ exampleParticipant }}/identity">Participant</a>
+    <a href="{{ startUrl }}?returnTo=identity">Participant</a>
     <ul>
       <li>
-        <a href="{{ exampleParticipant }}/special-appointment/edit">Manage special appointment</a>
+        <a href="{{ startUrl }}?returnTo=special-appointment/edit">Manage special appointment</a>
       </li>
       <li>
-        <a href="{{ exampleParticipant }}/personal-details/ethnicity">Ethnicity</a>
+        <a href="{{ startUrl }}?returnTo=personal-details/ethnicity">Ethnicity</a>
       </li>
     </ul>
   </li>
+
+  {% set completedSections = "event[workflowStatus][identity]=completed" %}
+
   <li>
-    <a href="{{ exampleParticipant }}/record-medical-information">Review medical information</a>
+    <a href="{{ startUrl }}?returnTo=record-medical-information&{{ completedSections }}">Review medical information</a>
     <ul>
       <li>
-        <a href="{{ exampleParticipant }}/previous-mammograms/add">Add details of a previous mammogram</a>
+        <a href="{{ startUrl }}?returnTo=/previous-mammograms/add&{{ completedSections }}">Add details of a previous mammogram</a>
       </li>
       <li>
-        <a href="{{ exampleParticipant }}/medical-information/symptoms/add?referrerChain={{ exampleParticipant }}/record-medical-information">Add a symptom</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/symptoms/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Add a symptom</a>
       </li>
       <li>
-        <a href="{{ exampleParticipant }}/medical-information/record-breast-features">Record breast features</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/record-breast-features&{{ completedSections }}">Record breast features</a>
       </li>
       <li>
-        <a href="{{ exampleParticipant }}/medical-information/hormone-replacement-therapy?referrerChain={{ exampleParticipant }}/record-medical-information">Hormone replacement therapy</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/hormone-replacement-therapy?{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Hormone replacement therapy</a>
       </li>
       <li>
-        <a href="{{ exampleParticipant }}/medical-information/pregnancy-and-breastfeeding?referrerChain={{ exampleParticipant }}/record-medical-information">Pregnancy and breastfeeding</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/pregnancy-and-breastfeeding&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Pregnancy and breastfeeding</a>
       </li>
     </ul>
   </li>
+  {% set completedSections = completedSections + "&event[workflowStatus][record-medical-information]=completed" %}
   <li>
-    <a href="{{ exampleParticipant }}/images">Images</a>
+    <a href="{{ startUrl }}?returnTo=images&{{ completedSections }}">Images</a>
   </li>
+  {% set completedSections = completedSections + "&event[workflowStatus][images]=completed" %}
   <li>
-    <a href="{{ exampleParticipant }}/review">Review</a>
+    <a href="{{ startUrl }}?returnTo=review&{{ completedSections }}">Review</a>
   </li>
 </ul>
 

@@ -17,17 +17,18 @@
 
 {% set referrerChain = currentUrl %}
 
+{% set activeTab = 'all' %}
+
+
 {% block pageContent %}
 
   {# Event header #}
   {% include "event-header.njk" %}
 
-  {% set activeTab = 'all' %}
-
   {# Show tabs if we've done mammography #}
-  {% if isCompleted %}
-    {% include "event-navigation.njk" %}
-  {% endif %}
+  {# {% if isCompleted %} #}
+  {% include "event-navigation.njk" %}
+  {# {% endif %} #}
 
   {% set statusHtml %}
     {# Status tag with check-in link #}

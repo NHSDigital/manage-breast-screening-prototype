@@ -1,11 +1,7 @@
 
-{% extends 'layout.html' %}
-
+{% extends 'layout-app.html' %}
 
 {% set pageHeading = "Choose user to simulate" %}
-
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
-
 
 {% block beforeContent %}
   {{ backLink({
@@ -14,38 +10,33 @@
   }) }}
 {% endblock %}
 
+{% set useMinimalNav = true %}
 
-{% block content %}
+{% block pageContent %}
 
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-two-thirds">
+  <h1 class="nhsuk-heading-l">
+    {{ pageHeading }}
+  </h1>
 
-    <h1 class="nhsuk-heading-l">
-      {{ pageHeading }}
-    </h1>
+  {% for user in data.users %}
+    <ul class="nhsuk-list">
+      <li>
+        <p>
+          <a href="{{ referrerChain or "./dashboard" }}?currentUserId={{ user.id }}&clearQuery=true">{{ user.firstName }} {{ user.lastName }}</a>
 
-    {% for user in data.users %}
-      <ul class="nhsuk-list">
-        <li>
-          <p>
-            <a href="{{ referrerChain or "./dashboard" }}?currentUserId={{ user.id }}&clearQuery=true">{{ user.firstName }} {{ user.lastName }}</a>
+          {% if user.id == data.currentUser.id %}
+            {{ "Signed in" | toTag }}
+          {% endif %}
+          <br>
+          {% for role in user.role %}
+            {{ role | sentenceCase -}}
+            {% if not loop.last %}, {% endif %}
+          {% endfor %}
+        </p>
 
-            {% if user.id == data.currentUser.id %}
-              {{ "Signed in" | toTag }}
-            {% endif %}
-            <br>
-            {% for role in user.role %}
-              {{ role | sentenceCase -}}
-              {% if not loop.last %}, {% endif %}
-            {% endfor %}
-          </p>
+      </li>
+    </ul>
 
-        </li>
-      </ul>
-
-    {% endfor %}
-
-  </div>
-</div>
+  {% endfor %}
 
 {% endblock %}
