@@ -7,95 +7,362 @@
 
 {% block formContent %}
 
+  {% call fieldset({
+    legend: {
+      text: "In which breast(s) has " + (participant.firstName or "the participant") + " had a cancer diagnosis?",
+      classes: "nhsuk-fieldset__legend--m"
+    }
+  }) %}
+    
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][breastLocation]",
+          values: event.medicalHistoryTemp.breastLocation,
+          items: [
+            {
+              value: "right",
+              text: "Right breast"
+            }
+          ]
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][breastLocation]",
+          values: event.medicalHistoryTemp.breastLocation,
+          items: [
+            {
+              value: "left",
+              text: "Left breast"
+            }
+          ]
+        }) }}
+      </div>
+    </div>
+
+    {{ checkboxes({
+      name: "event[medicalHistoryTemp][breastLocation]",
+      values: event.medicalHistoryTemp.breastLocation,
+      items: [
+        {
+          value: "does-not-know",
+          text: "Does not know"
+        }
+      ]
+    }) }}
+
+  {% endcall %}
+
+
+  {% call fieldset({
+    legend: {
+      text: "What type of surgery?",
+      classes: "nhsuk-fieldset__legend--m"
+    }
+  }) %}
+    
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Right breast</h3>
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][surgeryRightBreast]",
+          values: event.medicalHistoryTemp.surgeryRightBreast,
+          items: [
+            {
+              value: "full-mastectomy",
+              text: "Full mastectomy"
+            },
+            {
+              value: "lumpectomy",
+              text: "Lumpectomy"
+            },
+            {
+              value: "no-surgery",
+              text: "No surgery"
+            }
+          ]
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Left breast</h3>
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][surgeryLeftBreast]",
+          values: event.medicalHistoryTemp.surgeryLeftBreast,
+          items: [
+            {
+              value: "full-mastectomy",
+              text: "Full mastectomy"
+            },
+            {
+              value: "lumpectomy",
+              text: "Lumpectomy"
+            },
+            {
+              value: "no-surgery",
+              text: "No surgery"
+            }
+          ]
+        }) }}
+      </div>
+    </div>
+
+    <h2>Other surgeries</h2>
+
+    {{ checkboxes({
+      name: "event[medicalHistoryTemp][surgeryOther]",
+      values: event.medicalHistoryTemp.surgeryOther,
+      items: [
+        {
+          value: "had-reconstruction-surgery",
+          text: "Had reconstruction surgery"
+        },
+        {
+          value: "hormone-endocrine-therapy",
+          text: "Had hormone (endocrine) therapy"
+        },
+        {
+          value: "targeted-biological-therapy",
+          text: "Had targeted (biological) therapy"
+        },
+        {
+          value: "had-lymph-node-surgery",
+          text: "Had lymph node surgery"
+        }
+      ]
+    }) }}
+
+  {% endcall %}
+
+  {% call fieldset({
+    legend: {
+      text: "What type of treatment?",
+      classes: "nhsuk-fieldset__legend--m"
+    }
+  }) %}
+    
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Right breast</h3>
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][treatmentRightBreast]",
+          values: event.medicalHistoryTemp.treatmentRightBreast,
+          items: [
+            {
+              value: "whole-breast-radiation",
+              text: "Whole breast radiation"
+            },
+            {
+              value: "partial-breast-radiation",
+              text: "Partial breast radiation"
+            },
+             {
+             value: "lumpectomy-partial-mastectomy",
+             text: "Lumpectomy (partial mastectomy)"
+             },
+            {
+              value: "unknown",
+              text: "Unknown"
+            }
+          ]
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Left breast</h3>
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][treatmentLeftBreast]",
+          values: event.medicalHistoryTemp.treatmentLeftBreast,
+          items: [
+            {
+              value: "whole-breast-radiation",
+              text: "Whole breast radiation"
+            },
+            {
+              value: "partial-breast-radiation",
+              text: "Partial breast radiation"
+            },
+            {
+             value: "lumpectomy-partial-mastectomy",
+             text: "Lumpectomy (partial mastectomy)"
+            },
+            {
+              value: "unknown",
+              text: "Unknown"
+            }
+          ]
+        }) }}
+      </div>
+    </div>
+
+    <h2>Other treatments</h2>
+
+    {{ checkboxes({
+      name: "event[medicalHistoryTemp][treatmentOther]",
+      values: event.medicalHistoryTemp.treatmentOther,
+      items: [
+        {
+          value: "chemotherapy",
+          text: "Chemotherapy"
+        },
+        {
+          value: "hormone-therapy",
+          text: "Hormone therapy"
+        },
+        {
+          value: "targeted-therapy",
+          text: "Targeted therapy"
+        },
+        {
+          value: "bisphosphonates",
+          text: "Bisphosphonates"
+        },
+        {
+          value: "lymph-node-radiotherapy",
+          text: "Lymph node radiotherapy"
+        },
+        {
+          value: "other",
+          text: "Other"
+        },
+        {
+          value: "no-other-treatments",
+          text: "No other treatments"
+        }
+      ]
+    }) }}
+
+  {% endcall %}
+
+  {% call fieldset({
+    legend: {
+      text: "When was this?",
+      classes: "nhsuk-fieldset__legend--m"
+    }
+  }) %}
+    
+    {{ input({
+      name: "event[medicalHistoryTemp][diagnosisDate]",
+      value: event.medicalHistoryTemp.diagnosisDate,
+      id: "diagnosis-date",
+      classes: "nhsuk-input--width-10",
+      label: {
+        text: "Diagnosis date",
+        classes: "nhsuk-label--s"
+      },
+      hint: {
+        text: "For example, YYYY"
+      },
+      pattern: "[0-9]*",
+      inputmode: "numeric"
+    }) }}
+
+    {{ input({
+      name: "event[medicalHistoryTemp][treatmentDate]",
+      value: event.medicalHistoryTemp.treatmentDate,
+      id: "treatment-date",
+      classes: "nhsuk-input--width-10",
+      label: {
+        text: "Treatment date",
+        classes: "nhsuk-label--s"
+      },
+      hint: {
+        text: "For example, YYYY"
+      },
+      pattern: "[0-9]*",
+      inputmode: "numeric"
+    }) }}
+
+  {% endcall %}
+
   {{ radios({
-    name: "event[medicalHistoryTemp][type]",
-    value: event.medicalHistoryTemp.type,
+    name: "event[medicalHistoryTemp][treatmentLocation]",
+    value: event.medicalHistoryTemp.treatmentLocation,
     fieldset: {
       legend: {
-        text: "What procedure has " + (participant.firstName or "the participant") + " had?",
+        text: "Where was treatment?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
     items: [
-      {
-        value: "Prophylactic or elective mastectomy",
-        text: "Prophylactic or elective mastectomy",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][mastectomyDetails]",
-            value: event.medicalHistoryTemp.mastectomyDetails,
-            id: "mastectomy-details",
-            label: {
-              text: "Provide details"
-            }
-          })
+        {
+          value: "nhs-hospital",
+          text: "NHS hospital",
+          conditional: {
+            html: '<div id="nhs-hospital-autocomplete">
+              <label class="nhsuk-label" for="nhs-hospital-search">
+                Type to search locations
+              </label>
+              <input class="nhsuk-input" id="nhs-hospital-search" name="event[medicalHistoryTemp][nhsHospitalName]" type="text" value="' + (event.medicalHistoryTemp.nhsHospitalName or '') + '">
+            </div>'
+          }
+        },
+        {
+          value: "private-hospital",
+          text: "Private hospital",
+          conditional: {
+            html: input({
+              name: "event[medicalHistoryTemp][privateHospitalDetails]",
+              value: event.medicalHistoryTemp.privateHospitalDetails,
+              id: "private-hospital-details",
+              label: {
+                text: "Provide details"
+              }
+            })
+          }
+        },
+        {
+          value: "outside-uk",
+          text: "Outside UK",
+          conditional: {
+            html: input({
+              name: "event[medicalHistoryTemp][outsideUkDetails]",
+              value: event.medicalHistoryTemp.outsideUkDetails,
+              id: "outside-uk-details",
+              label: {
+                text: "Provide details"
+              }
+            })
+          }
+        },
+        {
+          value: "unknown",
+          text: "Unknown"
         }
-      },
-      {
-        value: "Breast reduction",
-        text: "Breast reduction",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][reductionDetails]",
-            value: event.medicalHistoryTemp.reductionDetails,
-            id: "reduction-details",
-            label: {
-              text: "Provide details"
-            }
-          })
-        }
-      },
-      {
-        value: "Nipple correction",
-        text: "Nipple correction",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][nippleDetails]",
-            value: event.medicalHistoryTemp.nippleDetails,
-            id: "nipple-details",
-            label: {
-              text: "Provide details"
-            }
-          })
-        }
-      },
-      {
-        value: "Other",
-        text: "Other",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][otherDetails]",
-            value: event.medicalHistoryTemp.otherDetails,
-            id: "other-details",
-            label: {
-              text: "Provide details"
-            }
-          })
-        }
-      }
-    ]
-  }) }}
-
-  {{ checkboxes({
-    name: "event[medicalHistoryTemp][recentProcedure]",
-    value: event.medicalHistoryTemp.recentProcedure,
-    items: [
-      {
-        value: "true",
-        text: "Procedure was within the last six months",
-        checked: event.medicalHistoryTemp.recentProcedure == "true"
-      }
-    ]
-  }) }}
-
-  {{ textarea({
-    name: "event[medicalHistoryTemp][additionalInfo]",
-    value: event.medicalHistoryTemp.additionalInfo,
-    id: "additional-info",
-    label: {
-      text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
-    }
-  }) }}
+      ]
+    }) }}
 
 {% endblock formContent %}
+
+{% block pageScripts %}
+  <script>
+    // Initialize accessible autocomplete for NHS hospitals when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if accessible autocomplete is available
+      if (typeof accessibleAutocomplete !== 'undefined') {
+        // Sample NHS hospital data - in real implementation this would come from an API
+        const nhsHospitals = [
+          'Royal Free Hospital',
+          'Guy\'s Hospital', 
+          'St Thomas\' Hospital',
+          'King\'s College Hospital',
+          'University College Hospital',
+          'Royal Marsden Hospital',
+          'Barts Health NHS Trust',
+          'Imperial College Healthcare'
+        ]
+
+        const nhsHospitalInput = document.querySelector('#nhs-hospital-search')
+        if (nhsHospitalInput) {
+          accessibleAutocomplete.enhanceSelectElement({
+            selectElement: null,
+            source: nhsHospitals,
+            defaultValue: nhsHospitalInput.value,
+            onConfirm: function(option) {
+              nhsHospitalInput.value = option
+            }
+          })
+        }
+      }
+    })
+  </script>
+{% endblock pageScripts %}
