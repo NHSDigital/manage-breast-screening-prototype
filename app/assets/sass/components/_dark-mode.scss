@@ -127,11 +127,7 @@ $app-dark-mode-link-visited-colour: #89b;
 
 
   .nhsuk-back-link {
-    .nhsuk-icon__chevron-left {
-      fill: $app-dark-mode-link-colour;
-    }
-  }
-  .nhsuk-back-link__link {
+    color: $app-dark-mode-link-colour;
 
     &:visited {
       color: $app-dark-mode-link-colour;
@@ -140,16 +136,6 @@ $app-dark-mode-link-visited-colour: #89b;
     &:hover {
       color: $app-dark-mode-link-hover-colour;
       text-decoration: underline;
-
-      .nhsuk-icon__chevron-left {
-        fill: $app-dark-mode-link-hover-colour;
-      }
-    }
-
-    &:focus {
-      .nhsuk-icon__chevron-left {
-        fill: $nhsuk-focus-text-colour;
-      }
     }
   }
 

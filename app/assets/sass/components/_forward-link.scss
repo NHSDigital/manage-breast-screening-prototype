@@ -2,64 +2,45 @@
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
 ////
-/// Back link component
+/// Forward link component
 ///
-/// 1. Allow space for the arrow.
-/// 2. Align the icon with the start of the back link.
-/// 3. Align the icon with the middle of the text.
-/// 4. Make back link same height as breadcrumb.
+/// 1. Allow space for the chevron.
+/// 2. Hide forward link on print stylesheets.
 ///
-/// @group components
+/// @group components/forward-link
 ////
 
-.app-forward-link {
-  margin-top: nhsuk-spacing(3);
-  line-height: 1; // [5]
+@include nhsuk-exports("nhsuk/components/forward-link") {
+  $_font-size: 16;
 
-  @include nhsuk-media-query($from: tablet) {
-    margin-top: nhsuk-spacing(4);
-  }
-}
+  .nhsuk-forward-link {
+    background: none;
+    border: 0;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0;
+    padding-right: nhsuk-em($_font-size, $nhsuk-base-font-size);
+    position: relative;
 
-.app-forward-link__link {
-  background: none;
-  border: 0;
-  cursor: pointer;
-  display: inline-block;
-  padding: 0 16px 0 0; // [1]
-  position: relative;
-  text-decoration: none;
-  @include nhsuk-link-style-default;
-  @include nhsuk-font-size(16);
+    @include nhsuk-font($_font-size);
+    @include nhsuk-link-style-default;
+    @include nhsuk-link-style-no-visited-state;
+    @include nhsuk-responsive-margin(4, "top");
+    @include nhsuk-print-hide; // [2]
 
-  .nhsuk-icon__chevron-right {
-    height: 24px;
-    right: -8px; // [2]
-    position: absolute;
-    top: -1px; // [3]
-    width: 24px;
+    &::before {
+      bottom: 0;
+      content: "";
+      right: 0;
+      margin: auto;
+      position: absolute;
+      top: 0;
 
-    @include nhsuk-media-query($from: tablet) {
-      top: 0; // [3]
+      @include nhsuk-shape-chevron(right, $colour: currentcolor, $font-size: 19);
     }
   }
 
-  &:visited {
-    color: $nhsuk-link-colour;
-  }
-
-  &:hover {
-    color: $nhsuk-link-hover-colour;
-    text-decoration: underline;
-
-    .nhsuk-icon__chevron-right {
-      fill: $nhsuk-link-hover-colour;
-    }
-  }
-
-  &:focus {
-    .nhsuk-icon__chevron-right {
-      fill: $nhsuk-focus-text-colour;
-    }
+  .nhsuk-forward-link--reverse {
+    @include nhsuk-link-style-white;
   }
 }
