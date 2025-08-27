@@ -54,7 +54,6 @@
 
   {% endcall %}
 
-
   {% call fieldset({
     legend: {
       text: "What type of surgery?",
@@ -75,11 +74,7 @@
             },
             {
               value: "lumpectomy",
-              text: "Lumpectomy"
-            },
-            {
-              value: "no-surgery",
-              text: "No surgery"
+              text: "Lumpectomy (partial mastectomy)"
             }
           ]
         }) }}
@@ -96,16 +91,23 @@
             },
             {
               value: "lumpectomy",
-              text: "Lumpectomy"
-            },
-            {
-              value: "no-surgery",
-              text: "No surgery"
+              text: "Lumpectomy (partial mastectomy)"
             }
           ]
         }) }}
       </div>
     </div>
+
+    {{ checkboxes({
+      name: "event[medicalHistoryTemp][noSurgery]",
+      values: event.medicalHistoryTemp.noSurgery,
+      items: [
+        {
+          value: "no-surgery",
+          text: "No surgery"
+        }
+      ]
+    }) }}
 
     <h2>Other surgeries</h2>
 
@@ -156,17 +158,14 @@
               value: "partial-breast-radiation",
               text: "Partial breast radiation"
             },
-             {
-             value: "lumpectomy-partial-mastectomy",
-             text: "Lumpectomy (partial mastectomy)"
-             },
             {
-              value: "unknown",
-              text: "Unknown"
+              value: "radiotherapy-type-unknown",
+              text: "Radiotherapy (type unknown)"
             }
           ]
         }) }}
       </div>
+
       <div class="nhsuk-grid-column-one-half">
         <h3 class="nhsuk-heading-s">Left breast</h3>
         {{ checkboxes({
@@ -182,17 +181,24 @@
               text: "Partial breast radiation"
             },
             {
-             value: "lumpectomy-partial-mastectomy",
-             text: "Lumpectomy (partial mastectomy)"
-            },
-            {
-              value: "unknown",
-              text: "Unknown"
+              value: "radiotherapy-type-unknown",
+              text: "Radiotherapy (type unknown)"
             }
           ]
         }) }}
       </div>
     </div>
+
+     {{ checkboxes({
+      name: "event[medicalHistoryTemp][breastLocation]",
+      values: event.medicalHistoryTemp.breastLocation,
+      items: [
+        {
+          value: "no-radiotherapy",
+          text: "No radiotherapy treatment"
+        }
+      ]
+    }) }}
 
     <h2>Other treatments</h2>
 
@@ -206,11 +212,11 @@
         },
         {
           value: "hormone-therapy",
-          text: "Hormone therapy"
+          text: "Hormone (endocrine) therapy"
         },
         {
           value: "targeted-therapy",
-          text: "Targeted therapy"
+          text: "Targeted (biological) therapy"
         },
         {
           value: "bisphosphonates",
