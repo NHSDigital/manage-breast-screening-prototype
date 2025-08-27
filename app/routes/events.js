@@ -688,6 +688,196 @@ module.exports = router => {
     res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain, req.query.scrollTo))
   })
 
+  // Medical history
+
+ // Medical history routes - add these to the events.js file
+
+const medicalHistoryTypes = require('../data/medical-history-types')
+
+  function isValidMedicalHistoryType(type) {
+    // Check against both type field and slug field
+    return medicalHistoryTypes.some(item => item.type === type || item.slug === type)
+  }
+
+  // Helper function to get medical history type object by type (camelCase type or kebab-case slug)
+  function getMedicalHistoryType(type) {
+    // First try to find by type field
+    let result = medicalHistoryTypes.find(item => item.type === type)
+    if (result) {
+      return result
+    }
+    // Then try to find by slug field
+    return medicalHistoryTypes.find(item => item.slug === type)
+  }
+
+  // Helper function to get camelCase type from slug
+  function getMedicalHistoryKeyFromSlug(slug) {
+    const item = medicalHistoryTypes.find(item => item.slug === slug)
+    return item ? item.type : null
+  }
+
+  // Add new medical history item - clear temp data and redirect to form
+  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add', (req, res) => {
+    const { clinicId, eventId, type } = req.params
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    // Clear any existing temp medical history data
+    delete req.session.data.event?.medicalHistoryTemp
+
+    // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
+  })
+
+  // Save medical history item - handles both 'save' and 'save and add another'
+  router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/save', (req, res) => {
+    const { clinicId, eventId, type } = req.params
+    const data = req.session.data
+    const action = req.body.action || 'save'
+    const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    const typeConfig = getMedicalHistoryType(type)
+    // Convert slug to camelCase key for data storage
+    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+    let isNewItem
+
+    // Save temp medical history to array
+    if (data.event?.medicalHistoryTemp) {
+      // Initialize medicalInformation object if needed
+      if (!data.event.medicalInformation) {
+        data.event.medicalInformation = {}
+      }
+
+      // Initialize medicalHistory object if needed
+      if (!data.event.medicalInformation.medicalHistory) {
+        data.event.medicalInformation.medicalHistory = {}
+      }
+
+      // Initialize array for this type if needed
+      if (!data.event.medicalInformation.medicalHistory[dataKey]) {
+        data.event.medicalInformation.medicalHistory[dataKey] = []
+      }
+
+      const medicalHistoryTemp = data.event.medicalHistoryTemp
+      isNewItem = !medicalHistoryTemp.id
+
+      // Create medical history item
+      const medicalHistoryItem = {
+        id: medicalHistoryTemp.id || generateId(),
+        ...medicalHistoryTemp
+      }
+
+      // For new items, add the creation timestamp
+      if (isNewItem) {
+        medicalHistoryItem.dateAdded = new Date().toISOString()
+        medicalHistoryItem.addedBy = data.currentUser.id
+      }
+
+      // Update existing or add new
+      const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
+      if (existingIndex !== -1) {
+        data.event.medicalInformation.medicalHistory[dataKey][existingIndex] = medicalHistoryItem
+      } else {
+        data.event.medicalInformation.medicalHistory[dataKey].push(medicalHistoryItem)
+      }
+
+      // Clear temp data
+      delete data.event.medicalHistoryTemp
+    }
+
+    let methodVerb = 'added'
+    if (!isNewItem) {
+      methodVerb = 'updated'
+    }
+
+    const itemAddedMessage = `${typeConfig.name} ${methodVerb}`
+    req.flash('success', itemAddedMessage)
+
+    // Redirect based on action
+    if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
+      // Clear any existing temp medical history data for the new item
+      delete data.event.medicalHistoryTemp
+
+      // Redirect directly to the form instead of going through the add route
+      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, referrerChain, scrollTo))
+    } else {
+      // Regular save - redirect back to medical information page
+      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
+      res.redirect(returnUrl)
+    }
+  })
+
+  // Edit existing medical history item
+  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId', (req, res) => {
+    const { clinicId, eventId, type, itemId } = req.params
+    const data = req.session.data
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    // Convert slug to camelCase key for data lookup
+    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+    // Initialize medicalInformation if needed
+    if (!data.event.medicalInformation) {
+      data.event.medicalInformation = {}
+    }
+
+    // Find the medical history item using the correct data key
+    const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[dataKey]?.find(item => item.id === itemId)
+
+    if (medicalHistoryItem) {
+      // Copy to temp for editing
+      data.event.medicalHistoryTemp = { ...medicalHistoryItem }
+    } else {
+      console.log(`Cannot find item ${itemId} in ${dataKey}`)
+    }
+
+    // Redirect to the form
+    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
+  })
+
+  // Delete medical history item
+  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/delete/:itemId', (req, res) => {
+    const { clinicId, eventId, type, itemId } = req.params
+    const data = req.session.data
+
+    // Validate type
+    if (!isValidMedicalHistoryType(type)) {
+      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+    }
+
+    const typeConfig = getMedicalHistoryType(type)
+    // Convert slug to camelCase key for data lookup
+    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+    // Remove item from array
+    if (data.event?.medicalInformation?.medicalHistory?.[dataKey]) {
+      data.event.medicalInformation.medicalHistory[dataKey] = data.event.medicalInformation.medicalHistory[dataKey].filter(item => item.id !== itemId)
+    }
+
+    req.flash('success', `${typeConfig.name} deleted`)
+
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain, req.query.scrollTo)
+    res.redirect(returnUrl)
+  })
+
+
+
+  // Imaging view - this is the main imaging page for the event
+
   // Specific route for imaging view
   router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params

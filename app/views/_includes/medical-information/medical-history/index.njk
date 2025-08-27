@@ -1,0 +1,169 @@
+{# app/views/_includes/medical-information/medical-history/index.njk #}
+
+{# Hacky way of testing if there is any medical history data. Can't just test medicalInformation.medicalHistory as once items have been added and then deleted, it would still be truthy. #}
+{% set hasAnyMedicalHistoryData = false %}
+
+{% for typeData in data.medicalHistoryTypes %}
+
+  {% set historyItemArray = data.event.medicalInformation.medicalHistory[typeData.type] %}
+
+  {% if historyItemArray and historyItemArray | length %}
+
+    {% set hasAnyMedicalHistoryData = true %}
+    <h3 class="nhsuk-u-margin-bottom-2">{{ typeData.name }}</h3>
+
+    {% for historyItem in historyItemArray %}
+
+      {% set changeHref =  "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
+
+      {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
+
+      {% set typeText %}
+        {% if historyItem.type %}
+          {% if historyItem.type == 'Other' %}
+            {{ historyItem.typeOtherDetails }}
+          {% else %}
+            {{ historyItem.type }}
+          {% endif %}
+        {% endif %}
+      {% endset %}
+
+      {% set dateText %}
+        {% if historyItem.generalDate %}
+          {% if historyItem.generalDate == "Specific date" %}
+            {% if historyItem.specificDate | isValidDate %}
+              {{ historyItem.specificDate | formatDate }} ({{ historyItem.specificDate | formatRelativeDate }})
+            {% endif %}
+          {% else %}
+            {{ historyItem.generalDate }}
+          {% endif %}
+        {% endif %}
+      {% endset %}
+
+      {% set addedByText %}
+        Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
+      {% endset %}
+
+      {% set historyItemContents %}
+        {{ summaryList({
+          rows: [
+            {
+              key: {
+                text: "Type"
+              },
+              value: {
+                text: typeText
+              }
+            } if historyItem.type,
+            {
+              key: {
+                text: "Location"
+              },
+              value: {
+                text: historyItem.generalLocation
+              }
+            } if historyItem.generalLocation,
+            {
+              key: {
+                text: "Date"
+              },
+              value: {
+                text: dateText
+              }
+            } if historyItem.generalDate,
+            {
+              key: {
+                text: "Additional details"
+              },
+              value: {
+                text: historyItem.additionalDetails
+              }
+            } if historyItem.additionalDetails
+          ]
+        } | handleSummaryListMissingInformation(true) ) }}
+
+        {# Only show attribution if added by someone else, or added by current user before today #}
+        {% if not (historyItem.addedBy | isCurrentUser) or (historyItem.dateAdded | isPast) %}
+          <p class="nhsuk-u-margin-bottom-0">
+            {{ addedByText | asHint }}
+          </p>
+        {% endif %}
+      {% endset %}
+
+      {# Container for history item #}
+      <div class="nhsuk-u-margin-bottom-4">
+
+        {# {% if historyItemArray | length > 1 %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-2">
+            Item #{{ loop.index }}
+          </p>
+        {% endif %} #}
+
+        {% call appSummaryCard({
+          title: {
+            text: "Item " ~ loop.index,
+            headingLevel: 4
+          } if historyItemArray | length > 1,
+          classes: "nhsuk-summary-card--compact nhsuk-u-margin-bottom-2",
+          actions: {
+            items: [
+              {
+                href: deleteHref,
+                text: "Delete",
+                visuallyHiddenText: typeData.name ~ " item " ~ loop.index
+              },
+              {
+                href: changeHref,
+                text: "Change",
+                visuallyHiddenText: typeData.name ~ " item " ~ loop.index
+              }
+            ]
+          }
+        }) %}
+          {{ historyItemContents | safe }}
+        {% endcall %}
+      </div>
+
+    {% endfor %}
+
+    {# {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl, scrollTo) %}
+
+    {% set addAnotherLink %}
+      <p class="nhsuk-u-margin-bottom-4">
+        <a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}
+        </a>
+      </p>
+    {% endset %}
+
+    {% if typeData.canHaveMultiple %}
+      {{ addAnotherLink | safe }}
+    {% endif %} #}
+
+  {% endif %}
+
+{% endfor %}
+
+{% if not hasAnyMedicalHistoryData %}
+  {% set insetTextHtml %}
+    <p>
+      No medical history has been added yet.
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml
+  }) }}
+{% endif %}
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Add medical history</h3>
+<div class="app-button-group">
+  {% for typeData in data.medicalHistoryTypes %}
+    {{ button({
+      text: typeData.name,
+      href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
+      classes: "nhsuk-button--secondary app-button--small"
+    }) }}
+  {% endfor %}
+</div>

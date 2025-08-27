@@ -1,0 +1,43 @@
+{# app/views/_components/summary-card/template.njk #}
+{% from "attributes.njk" import nhsukAttributes %}
+
+{%- set headingLevel = params.title.headingLevel if params.title.headingLevel else 2 -%}
+
+{%- macro _link(action) %}
+  <a href="{{ action.href }}">
+    {{ action.html | safe if action.html else action.text }}
+    {%- if action.visuallyHiddenText -%}
+      <span class="nhsuk-u-visually-hidden"> {{ action.visuallyHiddenText }}</span>
+    {% endif -%}
+  </a>
+{% endmacro -%}
+
+<div class="nhsuk-summary-card {%- if params.classes %} {{ params.classes }}{% endif %}"
+  {{- nhsukAttributes(params.attributes) }}>
+  <div class="nhsuk-summary-card__title-wrapper">
+  {% if params.title %}
+    <h{{ headingLevel }} class="nhsuk-summary-card__title {%- if params.title.classes %} {{ params.title.classes }}{% endif %}">
+      {{ params.title.html | safe | trim | indent(6) if params.title.html else params.title.text }}
+    </h{{ headingLevel }}>
+  {% endif %}
+  {% if params.actions.items.length %}
+    {% if params.actions.items.length == 1 %}
+    <div class="nhsuk-summary-card__actions {%- if params.actions.classes %} {{ params.actions.classes }}{% endif %}">
+      {{ _link(params.actions.items[0], params.title) | trim | indent(4) }}
+    </div>
+    {% else %}
+    <ul class="nhsuk-summary-card__actions {%- if params.actions.classes %} {{ params.actions.classes }}{% endif %}">
+      {% for action in params.actions.items %}
+      <li class="nhsuk-summary-card__action">
+        {{ _link(action, params.title) | trim | indent(8) }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  {% endif %}
+  </div>
+
+  <div class="nhsuk-summary-card__content">
+    {{ caller() | trim }}
+  </div>
+</div>

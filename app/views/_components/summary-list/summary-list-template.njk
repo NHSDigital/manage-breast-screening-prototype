@@ -13,6 +13,8 @@
   </a>
 {% endmacro -%}
 
+{% from '_components/summary-card/macro.njk' import appSummaryCard as _summaryCard %}
+
 {#- Determine if we need 2 or 3 columns #}
 {%- set anyRowHasActions = false %}
 {% if caller %}
@@ -28,6 +30,7 @@
 
 {% endfor -%}
 
+{%- set summaryList -%}
 <dl class="nhsuk-summary-list {%- if params.classes %} {{ params.classes }}{% endif %}" {{- nhsukAttributes(params.attributes) }}>
   {% if caller %}
     {{ caller() | safe }}
@@ -67,5 +70,14 @@
       {% endif %}
     {% endfor %}
   {% endif %}
-
 </dl>
+{% endset %}
+
+
+{%- if params.card -%}
+  {% call _summaryCard(params.card) -%}
+    {{ summaryList | safe | trim | indent(4) }}
+  {%- endcall %}
+{%- else -%}
+  {{ summaryList | safe | trim }}
+{%- endif %}

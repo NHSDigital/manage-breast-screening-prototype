@@ -70,8 +70,12 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
 
   // Check if input is a summary list (has rows property)
   if (input.rows && Array.isArray(input.rows)) {
-    // Filter out any falsy/undefined rows that come from failed Nunjucks conditions
-    const validRows = input.rows.filter(row => row && typeof row === 'object')
+
+    // Filter out empty rows before processing
+    const validRows = input.rows.filter(row =>
+      row && typeof row === 'object' && row.key
+    )
+
     const updatedRows = validRows.map(processRow)
 
     return {
