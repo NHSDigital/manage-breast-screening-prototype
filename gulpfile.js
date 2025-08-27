@@ -28,7 +28,7 @@ function cleanPublic() {
 function compileStyles(done) {
   return gulp
     .src(['app/assets/sass/**/*.scss', 'docs/assets/sass/**/*.scss'], {
-      sourcemaps: true,
+      sourcemaps: true
     })
     .pipe(sass({
       loadPaths: ['node_modules'],
@@ -41,15 +41,23 @@ function compileStyles(done) {
         })
       )
     }))
-    .pipe(gulp.dest('public/css'))
+    .pipe(gulp.dest('public/css', {
+      sourcemaps: '.'
+    }))
 }
 
 // Compile JavaScript (with ES6 support)
 function compileScripts() {
   return gulp
-    .src(['app/assets/javascript/**/*.js'])
+    .src(['app/assets/javascript/**/*.js'], {
+      sourcemaps: true
+    })
     .pipe(babel())
-    .pipe(gulp.dest('public/js'));
+    .pipe(
+      gulp.dest('public/js', {
+        sourcemaps: '.'
+      })
+    )
 }
 
 // Compile assets
