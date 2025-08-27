@@ -45,21 +45,21 @@
   }
 
   &:visited {
-    color: $nhsuk-link-color;
+    color: $nhsuk-link-colour;
   }
 
   &:hover {
-    color: $nhsuk-link-hover-color;
+    color: $nhsuk-link-hover-colour;
     text-decoration: underline;
 
     .nhsuk-icon__chevron-right {
-      fill: $nhsuk-link-hover-color;
+      fill: $nhsuk-link-hover-colour;
     }
   }
 
   &:focus {
     .nhsuk-icon__chevron-right {
-      fill: $nhsuk-focus-text-color;
+      fill: $nhsuk-focus-text-colour;
     }
   }
 }
