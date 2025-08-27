@@ -1,0 +1,52 @@
+
+{# app/views/_components/check-in/template.njk #}
+
+{% from '_components/modal/macro.njk' import appModal %}
+{% from '_components/summary-list/macro.njk' import appSummaryList as summaryList %}
+{% from '_components/summary-list/macro.njk' import appSummaryListRow %}
+
+{# Build check-in href #}
+{% set checkInHref -%}
+  /clinics/{{ params.clinicId }}/check-in/{{ params.event.id }}
+{%- endset %}
+
+{# Check if identity confirmation is enabled #}
+{% set confirmIdentityEnabled = params.confirmIdentityOnCheckIn %}
+{% set statusTagId = params.statusTagId %}
+
+{% if confirmIdentityEnabled %}
+  {% set modalId = "check-in-modal-" + params.event.id %}
+   {% set statusTagId = params.statusTagId %}
+   {% set appointmentUrl = "/clinics/" + params.clinicId + "/events/" + params.event.id %}
+  {% include "_includes/confirm-identity-modal.njk" %}
+{% endif %}
+
+{# Only show check-in for scheduled events #}
+{% if params.event.status === 'event_scheduled' %}
+  {% set checkInText %}
+    Check in{{ (" " + (params.participant | getShortName)) | asVisuallyHiddenText if params.participant }}
+  {% endset %}
+
+  <p class="nhsuk-u-margin-bottom-2">
+    {% if confirmIdentityEnabled %}
+      {# Modal-based check-in #}
+      <a href=""
+        class="nhsuk-link nhsuk-link--no-visited-state"
+        data-status-tag-id="{{ statusTagId }}"
+        onclick="openModal('{{ modalId }}'); return false;">
+        {{ checkInText | safe }}
+      </a>
+    {% else %}
+      {# Direct check-in without identity confirmation #}
+      <a href="{{ checkInHref }}"
+        class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
+        data-clinic-id="{{ params.clinicId }}"
+        data-event-id="{{ params.event.id }}"
+        data-status-tag-id="{{ statusTagId }}">
+        {{ checkInText | safe }}
+      </a>
+    {% endif %}
+  </p>
+
+
+{% endif %}

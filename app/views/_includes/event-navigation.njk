@@ -1,9 +1,10 @@
 {% set secondaryNavItems = [] %}
 
 {% for item in [
-  { id: 'all', label: 'Appointment details' },
+  { id: 'appointment', label: 'Appointment' },
+  { id: 'participant', label: 'Participant' },
   { id: 'medical-information', label: 'Medical information' },
-  { id: 'images', label: 'Images' }
+  { id: 'images', label: 'Images' } if event | isCompleted
 ] %}
   {% set href -%}
     /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}

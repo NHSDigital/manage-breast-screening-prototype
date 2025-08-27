@@ -7,9 +7,10 @@ const dayjs = require('dayjs')
  * @type {Object}
  */
 const STATUS_GROUPS = {
+  not_started: ['event_scheduled', 'event_checked_in'],
   completed: ['event_complete', 'event_partially_screened'],
   final: ['event_complete', 'event_partially_screened', 'event_did_not_attend', 'event_attended_not_screened', 'event_cancelled'],
-  active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
+  active: ['event_scheduled', 'event_checked_in'],
   eligible_for_reading: ['event_complete', 'event_partially_screened'],
 }
 
@@ -34,6 +35,18 @@ const getStatus = (input) => {
   if (typeof input === 'string') return input
   return input.status || null
 }
+
+/**
+ * Check if a status represents a not started event
+ * @param {string|Object} input - Status string or event object
+ * @returns {boolean} Whether the status is not started
+ */
+const hasNotStarted = (input) => {
+  const status = getStatus(input)
+  if (!status) return false
+  return isStatusInGroup(status, 'not_started')
+}
+
 
 /**
  * Check if a status represents a completed event
@@ -248,6 +261,7 @@ const isSpecialAppointment = (event) => {
 }
 
 module.exports = {
+  hasNotStarted,
   isCompleted,
   isInProgress,
   isFinal,

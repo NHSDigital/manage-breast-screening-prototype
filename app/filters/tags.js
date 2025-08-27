@@ -30,7 +30,8 @@ const toTag = (status, options = {}) => {
   ].filter(Boolean).join(' ')
 
   // Generate tag HTML
-  return `<strong class="${classes}">${text}</strong>`
+  const idAttr = options.id ? ` id=\"${options.id}\"` : ''
+  return `<strong${idAttr} class="${classes}">${text}</strong>`
 }
 
 module.exports = {

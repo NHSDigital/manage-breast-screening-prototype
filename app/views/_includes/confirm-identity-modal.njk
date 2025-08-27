@@ -4,6 +4,7 @@
 {% set referrerChain = referrerChain or params.referrerChain %}
 {% set participantUrl = participantUrl or params.participantUrl %}
 {% set appointmentUrl = appointmentUrl or params.appointmentUrl %}
+{% set statusTagId = statusTagId or params.statusTagId %}
 
 {# Create unique modal ID for this event #}
 {% set modalId = "check-in-modal-" + (eventId or params.event.id) %}
@@ -49,6 +50,24 @@
 
 {% endset %}
 
+{% set buttonAttributes = {} %}
+
+{# Build the button attributes object conditionally #}
+{% if statusTagId %}
+  {% set buttonAttributes = {
+    'data-clinic-id': params.clinicId,
+    'data-event-id': params.event.id,
+    'data-show-appointment-link': true,
+    'data-status-tag-id': statusTagId
+  } %}
+{% else %}
+  {% set buttonAttributes = {
+    'data-clinic-id': params.clinicId,
+    'data-event-id': params.event.id,
+    'data-show-appointment-link': true
+  } %}
+{% endif %}
+
 {# Render the generic modal with custom check-in button #}
 {{ appModal({
   id: modalId,
@@ -61,11 +80,7 @@
       classes: "js-check-in-link",
       action: "custom",
       href: checkInHref,
-      attributes: {
-        'data-clinic-id': params.clinicId,
-        'data-event-id': params.event.id,
-        'data-show-appointment-link': true
-      }
+      attributes: buttonAttributes
     },
     {
       text: "Identity in doubt",

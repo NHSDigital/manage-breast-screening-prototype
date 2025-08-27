@@ -8,7 +8,7 @@
 
 {# {% set gridColumn = "nhsuk-grid-column-full" %} #}
 
-{% set formAction = './../previous-mammograms-answer' %}
+{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, scrollTo) %}
 
 {# {% set back = {
   href: "/clinics/" + clinicId,

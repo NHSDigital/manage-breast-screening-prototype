@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const link = e.currentTarget
       const clinicId = link.dataset.clinicId
       const eventId = link.dataset.eventId
-      const showAppointmentLink = link.dataset.showAppointmentLink === 'true'
+      const statusTagId = link.dataset.statusTagId
 
       try {
         const response = await fetch(
@@ -30,27 +30,38 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('Failed to check in participant')
         }
 
-        // Find the containing element by data attribute
-        const container = document.querySelector(`[data-event-status-container="${eventId}"]`)
-        if (container) {
-          let html = `
-            <strong class="nhsuk-tag">
-              Checked in
-            </strong>
-          `
-
-          // Todo: this link should include the participant's name in hidden text
-
-          // Add appointment link if enabled
-          if (showAppointmentLink) {
-            html += `
-            <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2">
-              <a href="/clinics/${clinicId}/events/${eventId}/start?event[workflowStatus][appointment]=started">Start appointment</a>
-            </p>
-            `
+        // Update the status tag if we have an ID
+        if (statusTagId) {
+          const statusTag = document.getElementById(statusTagId)
+          if (statusTag) {
+            // Update the existing tag's text and classes
+            statusTag.textContent = 'Checked in'
+            statusTag.className = 'nhsuk-tag app-nowrap'
           }
+        }
 
-          container.innerHTML = html
+        // Remove the check-in link
+        // Check if this is a modal button or a direct link
+        const isModalButton = link.closest('.app-modal')
+
+        if (isModalButton) {
+          // For modal buttons, find the original check-in link on the main page
+          // Look for a link that opens the modal for this specific event
+          const modalId = `check-in-modal-${eventId}`
+          const originalCheckInLink = document.querySelector(`a[onclick*="openModal('${modalId}')"]`)
+
+          if (originalCheckInLink) {
+            const checkInParagraph = originalCheckInLink.closest('p')
+            if (checkInParagraph) {
+              checkInParagraph.remove()
+            }
+          }
+        } else {
+          // For direct links, remove the paragraph containing the link
+          const checkInParagraph = link.closest('p')
+          if (checkInParagraph) {
+            checkInParagraph.remove()
+          }
         }
 
         // Close any open modal (for modal-based check-ins)

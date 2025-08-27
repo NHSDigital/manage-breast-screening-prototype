@@ -1,0 +1,104 @@
+{% include "_includes/special-appointment-warning-card.njk" %}
+
+{% set statusHtml %}
+  {# Status tag with check-in link #}
+  {{ eventStatus({
+    clinicId: clinicId,
+    event: event,
+    referrerChain: currentUrl
+  })}}
+
+  {% if event.status === "event_attended_not_screened" %}
+    <p class="nhsuk-u-margin-top-2">[Reason for not screened here]</p>
+  {% endif %}
+{% endset %}
+
+{% set appointmentTimeHtml -%}
+  <p>{{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})</p>
+  <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
+{% endset %}
+
+{# Simplified other details section #}
+{% set otherDetailsHtml %}
+  {% if event | isSpecialAppointment %}
+    {{ tag({
+      text: "Special appointment",
+      classes: "nhsuk-tag--yellow"
+    })}}
+  {% else %}
+    {{ "None" | asHint }}
+  {% endif %}
+{% endset %}
+
+{% set appointmentHtml %}
+  {{ summaryList({
+    rows: [
+      {
+        key: {
+          text: "Date"
+        },
+        value: {
+          html: appointmentTimeHtml
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Reschedule appointment",
+              visuallyHiddenText: "name"
+            } if event.status == "event_scheduled"
+          ]
+        }
+      },
+      {
+        key: {
+          text: "Clinic type"
+        },
+        value: {
+          text: clinic.clinicType | formatWords | sentenceCase
+        },
+        actions: {
+          items: [
+
+          ]
+        }
+      },
+      {
+        key: {
+          text: "Appointment status"
+        },
+        value: {
+          html: statusHtml
+        },
+        actions: {
+          items: [
+
+          ]
+        }
+      },
+      {
+        key: {
+          text: "Other details"
+        },
+        value: {
+          html: otherDetailsHtml
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Change",
+              visuallyHiddenText: "other details"
+            }
+          ]
+        }
+      }
+    ]
+  }) }}
+{% endset %}
+
+{% call card({
+  headingHtml: " "
+}) %}
+  {{ appointmentHtml | safe }}
+{% endcall %}

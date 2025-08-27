@@ -53,13 +53,14 @@ const updateEventStatus = (data, eventId, newStatus) => {
   const eventIndex = data.events.findIndex(e => e.id === eventId)
   if (eventIndex === -1) return null
 
-  const event = data.events[eventIndex]
+  // Use temp event if it exists and matches, otherwise use the array event
+  const baseEvent = (data.event && data.event.id === eventId) ? data.event : data.events[eventIndex]
 
   const updatedEvent = {
-    ...event,
+    ...baseEvent,
     status: newStatus,
     statusHistory: [
-      ...event.statusHistory,
+      ...baseEvent.statusHistory,
       {
         status: newStatus,
         timestamp: new Date().toISOString(),
@@ -71,8 +72,10 @@ const updateEventStatus = (data, eventId, newStatus) => {
   data.events[eventIndex] = updatedEvent
 
   // Also update temp event data if it exists and matches this event
+  // Only update the status-related fields to preserve other temp changes
   if (data.event && data.event.id === eventId) {
-    data.event = { ...updatedEvent }
+    data.event.status = newStatus
+    data.event.statusHistory = updatedEvent.statusHistory
   }
 
   return updatedEvent
@@ -90,10 +93,11 @@ const updateEventData = (data, eventId, updates) => {
   const eventIndex = data.events.findIndex(e => e.id === eventId)
   if (eventIndex === -1) return null
 
-  const event = data.events[eventIndex]
+  // Use temp event if it exists and matches, otherwise use the array event
+  const baseEvent = (data.event && data.event.id === eventId) ? data.event : data.events[eventIndex]
 
   const updatedEvent = {
-    ...event,
+    ...baseEvent,
     ...updates
   }
 

@@ -1,30 +1,13 @@
 
-{% extends 'layout-app.html' %}
-
-
-{% set pageHeading %}
-  {{ clinic.clinicType | sentenceCase }} for {{ participant | getFullName }}
-{% endset %}
+{% extends 'layout-appointment-tab.html' %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{% set formAction = './complete' %}
+{% set activeTab = 'images' %}
 
-{% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
-
-{% block pageContent %}
-
-  {% include "event-header.njk" %}
-
-  {% set activeTab = 'images' %}
-
-  {% include "event-navigation.njk" %}
+{% block tabContent %}
 
   {% include "fake-images.njk" %}
-
 
 {% endblock %}
 
