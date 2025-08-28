@@ -175,17 +175,6 @@ const getStatusTagColour = (status) => {
     'to_review': 'blue',
     'reviewed': 'green',
 
-    // Image reading
-    'not_started': 'grey',
-    'not_provided': 'grey',
-    'not_read': 'grey',
-    'skipped': 'white',
-
-    // Image reading results
-    'normal': 'green',
-    'recall_for_assessment': 'red',
-    'technical_recall': 'orange',
-
     // Image status
     'available': 'green',
     'requested': 'orange',
@@ -199,10 +188,10 @@ const getStatusTagColour = (status) => {
     // Reading statuses
     'waiting_for_1st_read': 'grey',
     'waiting_for_2nd_read': 'grey',
+    'not_provided': 'grey',
     'not_started': 'grey',
     'skipped': 'grey',
     'not_read': 'grey',
-    'complete': 'green',
     'partial_first_read': 'blue',
     'first_read_complete': 'yellow',
     'partial_second_read': 'blue',
