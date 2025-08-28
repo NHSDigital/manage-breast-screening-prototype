@@ -7,6 +7,8 @@
 
 {% block formContent %}
 
+  <p>This is designed to capture information on prophylactic or elective surgery. <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.</p>
+
   {% call fieldset({
     legend: {
       text: "What surgery has " + (participant.firstName or "the participant") + " had?",
@@ -27,7 +29,7 @@
             },
             {
               value: "lumpectomy",
-              text: "Lumpectomy (partial mastectomy)"
+              text: "Lumpectomy (or partial mastectomy)"
             },
             {
               value: "none",
@@ -48,7 +50,7 @@
             },
             {
               value: "lumpectomy",
-              text: "Lumpectomy (partial mastectomy)"
+              text: "Lumpectomy (or partial mastectomy)"
             },
             {
               value: "none",
@@ -69,6 +71,18 @@
         value: "true",
         text: "Procedure was within the last six months",
         checked: event.medicalHistoryTemp.recentProcedure == "true"
+      }
+    ]
+  }) }}
+
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][hadReconstruction]",
+    value: event.medicalHistoryTemp.hadReconstruction,
+    items: [
+      {
+        value: "true",
+        text: "Has had reconstruction or symmetrisation surgery",
+        checked: event.medicalHistoryTemp.hadReconstruction == "true"
       }
     ]
   }) }}
@@ -104,35 +118,6 @@
             }
           })
         }
-      }
-    ]
-  }) }}
-
-  {{ radios({
-    name: "event[medicalHistoryTemp][reconstruction]",
-    value: event.medicalHistoryTemp.reconstruction,
-    fieldset: {
-      legend: {
-        text: "Has " + (participant.firstName or "the participant") + " had breast reconstruction surgery?",
-        classes: "nhsuk-fieldset__legend--m"
-      }
-    },
-    items: [
-      {
-        value: "Yes, only using fat transfer",
-        text: "Yes, only using fat transfer"
-      },
-      {
-        value: "Yes, including implants",
-        text: "Yes, including implants (silicone or saline)"
-      },
-      {
-        value: "Yes, type unknown",
-        text: "Yes, type unknown"
-      },
-      {
-        value: "No",
-        text: "No"
       }
     ]
   }) }}
