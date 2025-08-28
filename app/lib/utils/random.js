@@ -52,11 +52,10 @@ const seededRandom = (seed) => {
 /**
  * Get seed from context with a named reference for consistency
  */
-const getSeed = function(baseSeed, name) {
+const getSeed = function (baseSeed, name) {
   // Get base seed (URL or explicit seed)
-  const useSeed = baseSeed !== undefined
-    ? baseSeed
-    : (this?.ctx?.currentUrl || 'default-url')
+  const useSeed =
+    baseSeed !== undefined ? baseSeed : this?.ctx?.currentUrl || 'default-url'
 
   // Create a unique seed by combining the base seed and name
   return `${useSeed}-${name}`
@@ -68,7 +67,7 @@ const getSeed = function(baseSeed, name) {
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const randomBool = function(probability = 0.5, name, seed) {
+const randomBool = function (probability = 0.5, name, seed) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.bool = (callSequence.bool || 0) + 1
@@ -85,7 +84,7 @@ const randomBool = function(probability = 0.5, name, seed) {
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const randomItem = function(array, name, seed) {
+const randomItem = function (array, name, seed) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.item = (callSequence.item || 0) + 1
@@ -103,7 +102,7 @@ const randomItem = function(array, name, seed) {
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const randomItems = function(array, count, name, seed) {
+const randomItems = function (array, count, name, seed) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.items = (callSequence.items || 0) + 1
@@ -137,7 +136,13 @@ const randomItems = function(array, count, name, seed) {
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const randomOneOf = function(valueIfTrue, valueIfFalse, probability = 0.5, name, seed) {
+const randomOneOf = function (
+  valueIfTrue,
+  valueIfFalse,
+  probability = 0.5,
+  name,
+  seed
+) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.oneOf = (callSequence.oneOf || 0) + 1
@@ -145,7 +150,9 @@ const randomOneOf = function(valueIfTrue, valueIfFalse, probability = 0.5, name,
   }
 
   const useSeed = getSeed.call(this, seed, name)
-  return seededRandom(useSeed).nextBool(probability) ? valueIfTrue : valueIfFalse
+  return seededRandom(useSeed).nextBool(probability)
+    ? valueIfTrue
+    : valueIfFalse
 }
 
 /**
@@ -155,7 +162,7 @@ const randomOneOf = function(valueIfTrue, valueIfFalse, probability = 0.5, name,
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const randomInt = function(min, max, name, seed) {
+const randomInt = function (min, max, name, seed) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.int = (callSequence.int || 0) + 1
@@ -172,7 +179,7 @@ const randomInt = function(min, max, name, seed) {
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const randomWeighted = function(weights, name, seed) {
+const randomWeighted = function (weights, name, seed) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.weighted = (callSequence.weighted || 0) + 1
@@ -196,8 +203,12 @@ const randomWeighted = function(weights, name, seed) {
     return weighted.select(weights, null, customRandom)
   }
 
-  if (Array.isArray(weights) && weights.length === 2 &&
-      Array.isArray(weights[0]) && Array.isArray(weights[1])) {
+  if (
+    Array.isArray(weights) &&
+    weights.length === 2 &&
+    Array.isArray(weights[0]) &&
+    Array.isArray(weights[1])
+  ) {
     return weighted.select(weights[0], weights[1], customRandom)
   }
 
@@ -209,7 +220,7 @@ const randomWeighted = function(weights, name, seed) {
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
-const seededFaker = function(name, seed) {
+const seededFaker = function (name, seed) {
   // Track unique names for each call in the sequence
   if (!name) {
     callSequence.faker = (callSequence.faker || 0) + 1
@@ -219,9 +230,12 @@ const seededFaker = function(name, seed) {
   const useSeed = getSeed.call(this, seed, name)
 
   // Convert the seed to a number for faker
-  const numericSeed = typeof useSeed === 'string'
-    ? useSeed.split('').reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0)
-    : useSeed
+  const numericSeed =
+    typeof useSeed === 'string'
+      ? useSeed
+          .split('')
+          .reduce((acc, char, i) => acc + char.charCodeAt(0) * (i + 1), 0)
+      : useSeed
 
   // Create a new instance of faker with the seed
   // Need to use localFaker to not affect global faker state

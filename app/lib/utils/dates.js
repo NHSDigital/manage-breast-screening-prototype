@@ -32,8 +32,7 @@ const arrayOrObjectToDateObject = (input) => {
   let day, month, year
 
   if (Array.isArray(input)) {
-    if (input.length !== 3) return null
-    [day, month, year] = input
+    if (input.length !== 3) return (null[(day, month, year)] = input)
   } else if (typeof input === 'object' && input !== null) {
     // Handle object with day, month, year properties
     day = input.day
@@ -55,7 +54,10 @@ const arrayOrObjectToDateObject = (input) => {
   if (isNaN(day) || isNaN(month) || isNaN(year)) return null
 
   // dayjs expects month to be 0-based, so subtract 1
-  return dayjs().year(year).month(month - 1).date(day)
+  return dayjs()
+    .year(year)
+    .month(month - 1)
+    .date(day)
 }
 
 /**
@@ -67,7 +69,12 @@ const formatDate = (dateString, format = 'D MMMM YYYY') => {
   if (!dateString) return ''
 
   // Handle array or object input
-  if (Array.isArray(dateString) || (typeof dateString === 'object' && dateString !== null && !(dateString instanceof Date))) {
+  if (
+    Array.isArray(dateString) ||
+    (typeof dateString === 'object' &&
+      dateString !== null &&
+      !(dateString instanceof Date))
+  ) {
     const dateObj = arrayOrObjectToDateObject(dateString)
     return dateObj ? dateObj.format(format) : ''
   }
@@ -87,7 +94,9 @@ const formatDateShort = (dateString) => {
   if (!dateString) return ''
 
   const date = dayjs(dateString)
-  const monthFormat = ['June', 'July'].includes(date.format('MMMM')) ? 'MMMM' : 'MMM'
+  const monthFormat = ['June', 'July'].includes(date.format('MMMM'))
+    ? 'MMMM'
+    : 'MMM'
 
   return `${date.format('D')} ${date.format(monthFormat)} ${date.format('YYYY')}`
 }
@@ -107,14 +116,18 @@ const formatMonthYear = (input, format = 'MMMM YYYY') => {
   if (Array.isArray(input)) {
     if (input.length === 2) {
       // [month, year] format
-      [month, year] = input
+      ;[month, year] = input
     } else if (input.length === 3) {
       // [day, month, year] format - ignore day
-      [, month, year] = input
+      ;[, month, year] = input
     } else {
       return ''
     }
-  } else if (typeof input === 'object' && input !== null && !(input instanceof Date)) {
+  } else if (
+    typeof input === 'object' &&
+    input !== null &&
+    !(input instanceof Date)
+  ) {
     // Handle {month, year} object
     month = input.month
     year = input.year
@@ -137,7 +150,11 @@ const formatMonthYear = (input, format = 'MMMM YYYY') => {
 
   // Create a dayjs object with the 1st of the month
   // dayjs expects month to be 0-based, so subtract 1
-  return dayjs().year(year).month(month - 1).date(1).format(format)
+  return dayjs()
+    .year(year)
+    .month(month - 1)
+    .date(1)
+    .format(format)
 }
 
 /**
@@ -159,9 +176,8 @@ const formatTimeString = (input) => {
   if (!input) return ''
 
   // If it looks like just a time (contains no date), prefix with dummy date
-  const datetime = input.includes('T') || input.includes('-')
-    ? input
-    : `2000-01-01T${input}`
+  const datetime =
+    input.includes('T') || input.includes('-') ? input : `2000-01-01T${input}`
 
   const time = dayjs(datetime)
   const hour = time.hour()
@@ -239,7 +255,9 @@ const daysSince = (dateString, compareDate = null) => {
   if (!dateString) return 0
 
   const date = dayjs(dateString).startOf('day')
-  const reference = compareDate ? dayjs(compareDate).startOf('day') : dayjs().startOf('day')
+  const reference = compareDate
+    ? dayjs(compareDate).startOf('day')
+    : dayjs().startOf('day')
 
   // Return positive number for days in the past
   return reference.diff(date, 'day')
@@ -264,31 +282,31 @@ const isFuture = (dateString) => {
 }
 
 /**
-* Check if a date is before another date (at day precision)
-* @param {string} inputDate - ISO date string to check
-* @param {string|dayjs} compareDate - Optional date to compare against (defaults to today)
-* @returns {boolean} True if inputDate is before compareDate
-*/
+ * Check if a date is before another date (at day precision)
+ * @param {string} inputDate - ISO date string to check
+ * @param {string|dayjs} compareDate - Optional date to compare against (defaults to today)
+ * @returns {boolean} True if inputDate is before compareDate
+ */
 const isBeforeDate = (inputDate, compareDate = dayjs()) => {
   if (!inputDate) return false
   return dayjs(inputDate).isBefore(dayjs(compareDate), 'day')
 }
 
 /**
-* Check if a date is after another date (at day precision)
-* @param {string} inputDate - ISO date string to check
-* @param {string|dayjs} compareDate - Optional date to compare against (defaults to today)
-* @returns {boolean} True if inputDate is after compareDate
-*/
+ * Check if a date is after another date (at day precision)
+ * @param {string} inputDate - ISO date string to check
+ * @param {string|dayjs} compareDate - Optional date to compare against (defaults to today)
+ * @returns {boolean} True if inputDate is after compareDate
+ */
 const isAfterDate = (inputDate, compareDate = dayjs()) => {
   if (!inputDate) return false
   return dayjs(inputDate).isAfter(dayjs(compareDate), 'day')
 }
 
 /**
-* Get today's date at midnight
-* @returns {string} Today's date as ISO string
-*/
+ * Get today's date at midnight
+ * @returns {string} Today's date as ISO string
+ */
 const today = () => {
   return dayjs().startOf('day').toISOString()
 }
@@ -349,7 +367,7 @@ const getWeekDates = (dateString) => {
       dayNumber: day.format('D'),
       isToday: day.isToday(),
       isPast: day.isBefore(dayjs(), 'day'),
-      isFuture: day.isAfter(dayjs(), 'day'),
+      isFuture: day.isAfter(dayjs(), 'day')
     }
   })
 }
@@ -362,11 +380,18 @@ const getWeekDates = (dateString) => {
  * @param {string|dayjs} [compareDate=null] - Optional reference date (defaults to today)
  * @returns {boolean} True if date is within specified age range
  */
-const isWithinDayRange = (dateString, minDays, maxDays = null, compareDate = null) => {
+const isWithinDayRange = (
+  dateString,
+  minDays,
+  maxDays = null,
+  compareDate = null
+) => {
   if (!dateString) return false
 
   const date = dayjs(dateString).startOf('day')
-  const reference = compareDate ? dayjs(compareDate).startOf('day') : dayjs().startOf('day')
+  const reference = compareDate
+    ? dayjs(compareDate).startOf('day')
+    : dayjs().startOf('day')
 
   // Calculate days difference
   const daysDifference = reference.diff(date, 'day')
@@ -394,7 +419,12 @@ const add = (dateInput, amount, unit) => {
   let date
 
   // Handle array or object input using existing helper
-  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+  if (
+    Array.isArray(dateInput) ||
+    (typeof dateInput === 'object' &&
+      dateInput !== null &&
+      !(dateInput instanceof Date))
+  ) {
     date = arrayOrObjectToDateObject(dateInput)
     if (!date) return ''
   } else {

@@ -5,7 +5,7 @@ const { join, resolve } = require('path')
 const dayjs = require('dayjs')
 const fs = require('fs')
 
-async function regenerateData (req) {
+async function regenerateData(req) {
   const dataDirectory = join(__dirname, '../../data')
   const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
   const generatedDataPath = resolve(dataDirectory, 'generated')
@@ -18,7 +18,7 @@ async function regenerateData (req) {
   delete require.cache[require.resolve(sessionDataPath)]
 
   // Clear cache for the generated JSON files
-  Object.keys(require.cache).forEach(key => {
+  Object.keys(require.cache).forEach((key) => {
     if (key.startsWith(generatedDataPath)) {
       delete require.cache[key]
     }
@@ -27,7 +27,7 @@ async function regenerateData (req) {
   // Read generation info including stats
   let generationInfo = {
     generatedAt: new Date().toISOString(),
-    stats: { participants: 0, clinics: 0, events: 0 },
+    stats: { participants: 0, clinics: 0, events: 0 }
   }
 
   try {
@@ -41,11 +41,11 @@ async function regenerateData (req) {
   // Reload session data defaults with fresh data and updated generation info
   req.session.data = {
     ...require('../../data/session-data-defaults'),
-    generationInfo,
+    generationInfo
   }
 }
 
-function needsRegeneration (generationInfo) {
+function needsRegeneration(generationInfo) {
   if (!generationInfo?.generatedAt) return true
 
   const generatedDate = dayjs(generationInfo.generatedAt).startOf('day')
@@ -55,5 +55,5 @@ function needsRegeneration (generationInfo) {
 
 module.exports = {
   regenerateData,
-  needsRegeneration,
+  needsRegeneration
 }

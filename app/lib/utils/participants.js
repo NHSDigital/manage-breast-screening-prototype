@@ -10,7 +10,7 @@ const riskLevels = require('../../data/risk-levels.js')
  * @returns {Object|null} Participant object or null if not found
  */
 const getParticipant = (data, participantId) => {
-  return data.participants.find(p => p.id === participantId) || null
+  return data.participants.find((p) => p.id === participantId) || null
 }
 
 /**
@@ -20,7 +20,9 @@ const getParticipant = (data, participantId) => {
 const getFullName = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
-  return nunjucksSafe([firstName, middleName, lastName].filter(Boolean).join(' '))
+  return nunjucksSafe(
+    [firstName, middleName, lastName].filter(Boolean).join(' ')
+  )
 }
 
 /**
@@ -49,7 +51,7 @@ const getShortName = (participant) => {
  * @param {string} sxNumber - SX number to search for
  */
 const findBySXNumber = (participants, sxNumber) => {
-  return participants.find(p => p.sxNumber === sxNumber)
+  return participants.find((p) => p.sxNumber === sxNumber)
 }
 
 /**
@@ -63,7 +65,10 @@ const getAge = (participant, referenceDate = new Date()) => {
   const dob = new Date(participant.demographicInformation.dateOfBirth)
   let age = referenceDate.getFullYear() - dob.getFullYear()
   const monthDiff = referenceDate.getMonth() - dob.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && referenceDate.getDate() < dob.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && referenceDate.getDate() < dob.getDate())
+  ) {
     age--
   }
   return age
@@ -100,25 +105,29 @@ const getParticipantClinicHistory = (data, participantId, options = {}) => {
 
   // Get participant events with clinic details
   const history = data.events
-    .filter(event => event.participantId === participantId)
-    .map(event => {
-      const clinic = data.clinics.find(clinic => clinic.id === event.clinicId)
+    .filter((event) => event.participantId === participantId)
+    .map((event) => {
+      const clinic = data.clinics.find((clinic) => clinic.id === event.clinicId)
       if (!clinic) return null
 
-      const unit = data.breastScreeningUnits.find(unit => unit.id === clinic.breastScreeningUnitId)
-      const location = unit.locations.find(location => location.id === clinic.locationId)
+      const unit = data.breastScreeningUnits.find(
+        (unit) => unit.id === clinic.breastScreeningUnitId
+      )
+      const location = unit.locations.find(
+        (location) => location.id === clinic.locationId
+      )
 
       return {
         clinic,
         unit,
         location,
-        event,
+        event
       }
     })
     .filter(Boolean) // Remove null entries
 
   // Apply date filtering
-  const filtered = history.filter(item => {
+  const filtered = history.filter((item) => {
     const clinicDate = new Date(item.clinic.date).setHours(0, 0, 0, 0)
 
     switch (filter) {
@@ -132,8 +141,8 @@ const getParticipantClinicHistory = (data, participantId, options = {}) => {
   })
 
   // Sort by date, most recent first
-  const sorted = filtered.sort((a, b) =>
-    new Date(b.clinic.date) - new Date(a.clinic.date)
+  const sorted = filtered.sort(
+    (a, b) => new Date(b.clinic.date) - new Date(a.clinic.date)
   )
 
   return mostRecent ? sorted[0] || null : sorted
@@ -141,14 +150,19 @@ const getParticipantClinicHistory = (data, participantId, options = {}) => {
 
 // Helper functions for common use cases
 const getParticipantMostRecentClinic = (data, participantId) =>
-  getParticipantClinicHistory(data, participantId, { filter: 'historic', mostRecent: true })
+  getParticipantClinicHistory(data, participantId, {
+    filter: 'historic',
+    mostRecent: true
+  })
 
 const getParticipantMostRecentClinicDate = (data, participantId) => {
-  const clinic = getParticipantClinicHistory(data, participantId, { filter: 'historic', mostRecent: true })
+  const clinic = getParticipantClinicHistory(data, participantId, {
+    filter: 'historic',
+    mostRecent: true
+  })
   if (clinic) {
     return clinic.event.timing.startTime
-  }
-  else return false
+  } else return false
 }
 
 const getParticipantHistoricClinics = (data, participantId) =>
@@ -197,7 +211,9 @@ const getCurrentRiskLevel = (participant, referenceDate = new Date()) => {
  * @returns {Object|null} Updated participant or null if not found
  */
 const updateParticipant = (data, participantId, updatedParticipant) => {
-  const participantIndex = data.participants.findIndex(p => p.id === participantId)
+  const participantIndex = data.participants.findIndex(
+    (p) => p.id === participantId
+  )
   if (participantIndex === -1) return null
 
   // Update in the array
@@ -221,7 +237,11 @@ const saveTempParticipantToParticipant = (data) => {
   const participantId = data.participant.id
 
   // Use updateParticipant to save the temp data
-  const updatedParticipant = updateParticipant(data, participantId, data.participant)
+  const updatedParticipant = updateParticipant(
+    data,
+    participantId,
+    data.participant
+  )
 
   // Clear temp data
   delete data.participant
@@ -244,5 +264,5 @@ module.exports = {
   getParticipantUpcomingClinics,
   getCurrentRiskLevel,
   updateParticipant,
-  saveTempParticipantToParticipant,
+  saveTempParticipantToParticipant
 }

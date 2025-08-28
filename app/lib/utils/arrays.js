@@ -10,7 +10,7 @@ const _ = require('lodash')
  */
 const findById = (array, id) => {
   if (!array || !Array.isArray(array)) return undefined
-  return array.find(item => item.id === id)
+  return array.find((item) => item.id === id)
 }
 
 const push = (array, item) => {
@@ -31,19 +31,19 @@ const includes = (array, value) => {
 }
 
 /**
-* Find first array item where the specified key matches the value
-* @param {Array} array - Array to search
-* @param {string} key - Object key to match against
-* @param {any} value - Value to find
-* @returns {any} First matching item or undefined
-* @example
-* const users = [{id: 1, name: 'Alice'}, {id: 2, name: 'Bob'}]
-* find(users, 'name', 'Bob') // Returns {id: 2, name: 'Bob'}
-*/
+ * Find first array item where the specified key matches the value
+ * @param {Array} array - Array to search
+ * @param {string} key - Object key to match against
+ * @param {any} value - Value to find
+ * @returns {any} First matching item or undefined
+ * @example
+ * const users = [{id: 1, name: 'Alice'}, {id: 2, name: 'Bob'}]
+ * find(users, 'name', 'Bob') // Returns {id: 2, name: 'Bob'}
+ */
 const find = (array, key, value) => {
   if (!array || !Array.isArray(array)) return undefined
-  return array.find(item => item[key] === value)
- }
+  return array.find((item) => item[key] === value)
+}
 
 /**
  * Remove empty items from arrays or strings
@@ -58,12 +58,17 @@ const removeEmpty = (items) => {
   }
 
   if (_.isArray(items)) {
-    const filtered = items.filter(item => {
+    const filtered = items.filter((item) => {
       // Filter out falsy values and empty strings
       if (!item || item === '') return false
 
       // Filter out empty objects
-      if (_.isObject(item) && !_.isArray(item) && Object.keys(item).length === 0) return false
+      if (
+        _.isObject(item) &&
+        !_.isArray(item) &&
+        Object.keys(item).length === 0
+      )
+        return false
 
       // Filter out empty arrays
       if (_.isArray(item) && item.length === 0) return false
@@ -90,7 +95,7 @@ const where = (array, key, compare) => {
   // Force comparison value to array
   const compareValues = Array.isArray(compare) ? compare : [compare]
 
-  return array.filter(item => {
+  return array.filter((item) => {
     const value = _.get(item, key)
     return compareValues.includes(value)
   })
@@ -112,7 +117,7 @@ const removeWhere = (array, key, compare) => {
   // Force comparison value to array
   const compareValues = Array.isArray(compare) ? compare : [compare]
 
-  return array.filter(item => {
+  return array.filter((item) => {
     const value = _.get(item, key)
     return !compareValues.includes(value)
   })
@@ -124,7 +129,7 @@ const removeWhere = (array, key, compare) => {
  * @param {string} filterName - Name of the filter to apply to each element
  * @returns {Array} New array with filter applied to each element
  */
-const map = function(array, filterName) {
+const map = function (array, filterName) {
   if (!array || !Array.isArray(array)) return []
 
   // In Nunjucks filter context, 'this' gives us access to the environment
@@ -138,7 +143,7 @@ const map = function(array, filterName) {
 
   const filterFunction = env.filters[filterName]
 
-  return array.map(item => filterFunction.call(this, item))
+  return array.map((item) => filterFunction.call(this, item))
 }
 
 module.exports = {
@@ -149,5 +154,5 @@ module.exports = {
   findById,
   where,
   removeWhere,
-  map,
+  map
 }

@@ -3,7 +3,6 @@
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const pluralizeLib = require('pluralize')
 
-
 /**
  * Convert string to sentence case, removing leading/trailing whitespace
  * @param {string} input - String to convert
@@ -50,7 +49,10 @@ const camelCase = (input) => {
  */
 const kebabCase = (input) => {
   if (!input) return ''
-  return input.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/\s+/g, '-').toLowerCase()
+  return input
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
 }
 
 /**
@@ -67,13 +69,15 @@ const snakeCase = (input) => {
   if (!input) return ''
   if (typeof input !== 'string') return input
 
-  return input
-    // Handle camelCase
-    .replace(/([a-z])([A-Z])/g, '$1_$2')
-    // Replace spaces and other separators with underscores
-    .replace(/[\s-]+/g, '_')
-    // Convert to lowercase
-    .toLowerCase()
+  return (
+    input
+      // Handle camelCase
+      .replace(/([a-z])([A-Z])/g, '$1_$2')
+      // Replace spaces and other separators with underscores
+      .replace(/[\s-]+/g, '_')
+      // Convert to lowercase
+      .toLowerCase()
+  )
 }
 
 /**
@@ -83,7 +87,8 @@ const snakeCase = (input) => {
  */
 const slugify = (input) => {
   if (!input) return ''
-  return input.toLowerCase()
+  return input
+    .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
 }
@@ -209,13 +214,17 @@ const formatWords = (input, separator = '_') => {
 
   return input
     .split(separator)
-    .map(word => {
+    .map((word) => {
       // Check if word is an acronym:
       // - all uppercase, OR
       // - 2+ chars where any character after first is uppercase (handles IBMs, IBM's etc)
       if (
         word === word.toUpperCase() ||
-        (word.length >= 2 && word.slice(1).split('').some(char => char === char.toUpperCase() && char.match(/[A-Z]/)))
+        (word.length >= 2 &&
+          word
+            .slice(1)
+            .split('')
+            .some((char) => char === char.toUpperCase() && char.match(/[A-Z]/)))
       ) {
         return word
       }
@@ -232,7 +241,7 @@ const formatWords = (input, separator = '_') => {
  */
 const stringLiteral = function (str) {
   // eslint-disable-next-line no-new-func
-  return (new Function('with (this) { return `' + str + '` }')).call(this.ctx)
+  return new Function('with (this) { return `' + str + '` }').call(this.ctx)
 }
 
 /**

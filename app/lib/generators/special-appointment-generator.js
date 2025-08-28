@@ -114,10 +114,7 @@ const SUPPORT_TYPES = {
  * @returns {Object|null} Special appointment object or null if not needed
  */
 const generateSpecialAppointment = (options = {}) => {
-  const {
-    probability = 0.08,
-    maxSupportTypes = 3
-  } = options
+  const { probability = 0.08, maxSupportTypes = 3 } = options
 
   // Check if they need special appointment support
   if (Math.random() > probability) {
@@ -142,10 +139,13 @@ const generateSpecialAppointment = (options = {}) => {
   const availableTypes = Object.keys(SUPPORT_TYPES)
 
   // Select unique support types
-  while (selectedTypes.length < numberOfTypes && selectedTypes.length < maxSupportTypes) {
+  while (
+    selectedTypes.length < numberOfTypes &&
+    selectedTypes.length < maxSupportTypes
+  ) {
     // Create weights for remaining types
     const remainingWeights = {}
-    availableTypes.forEach(typeName => {
+    availableTypes.forEach((typeName) => {
       if (!usedTypes.has(typeName)) {
         remainingWeights[typeName] = typeWeights[typeName]
       }
@@ -165,7 +165,7 @@ const generateSpecialAppointment = (options = {}) => {
   }
 
   // Add detail descriptions for each selected type
-  selectedTypes.forEach(type => {
+  selectedTypes.forEach((type) => {
     const typeConfig = SUPPORT_TYPES[type]
     const description = faker.helpers.arrayElement(typeConfig.descriptions)
 
@@ -201,7 +201,8 @@ const convertToFieldName = (typeName) => {
     'Physical restriction': 'physicalRestrictionDetails',
     'Vision': 'visionDetails',
     'Hearing': 'hearingDetails',
-    'Social, emotional, and mental health': 'socialEmotionalMentalHealthDetails',
+    'Social, emotional, and mental health':
+      'socialEmotionalMentalHealthDetails',
     'Language': 'languageDetails',
     'Breast implants': 'implantDetails',
     'Implanted medical devices': 'implantedMedicalDevicesDetails',

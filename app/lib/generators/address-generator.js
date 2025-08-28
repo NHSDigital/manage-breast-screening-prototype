@@ -18,7 +18,7 @@ const STREET_SUFFIXES = [
   'Green',
   'Park',
   'Walk',
-  'Mews',
+  'Mews'
 ]
 
 // Common UK street name prefixes
@@ -28,8 +28,8 @@ const STREET_PREFIXES = [
   'Station',
   'Victoria',
   'Manor',
-  'Queen\'s',
-  'King\'s',
+  "Queen's",
+  "King's",
   'New',
   'School',
   'Mill',
@@ -45,7 +45,7 @@ const STREET_PREFIXES = [
   'North',
   'South',
   'East',
-  'West',
+  'West'
 ]
 
 // Common house/building names
@@ -64,7 +64,7 @@ const HOUSE_NAMES = [
   'Holly Cottage',
   'The Laurels',
   'The Old Farm',
-  'Sunnyside',
+  'Sunnyside'
 ]
 
 /**
@@ -99,13 +99,14 @@ const generateNearbyPostcode = (referencePostcode) => {
   const nearbyDistrict = faker.helpers.arrayElement([
     districtNum,
     Math.max(1, districtNum - 1),
-    districtNum + 1,
+    districtNum + 1
   ])
 
   // Generate random sector (0-9) and unit (two letters)
   const sector = faker.number.int({ min: 0, max: 9 })
-  const unit = faker.helpers.arrayElement('ABCDEFGHJKLMNPQRSTUWXYZ') +
-               faker.helpers.arrayElement('ABCDEFGHJKLMNPQRSTUWXYZ')
+  const unit =
+    faker.helpers.arrayElement('ABCDEFGHJKLMNPQRSTUWXYZ') +
+    faker.helpers.arrayElement('ABCDEFGHJKLMNPQRSTUWXYZ')
 
   return `${area}${nearbyDistrict} ${sector}${unit}`
 }
@@ -128,7 +129,7 @@ const generateAddressLine1 = () => {
   // 20% chance of using a house name instead of number
   if (Math.random() < 0.2) {
     return {
-      line1: faker.helpers.arrayElement(HOUSE_NAMES),
+      line1: faker.helpers.arrayElement(HOUSE_NAMES)
     }
   }
 
@@ -139,12 +140,12 @@ const generateAddressLine1 = () => {
   if (Math.random() < 0.15) {
     const flatNumber = faker.number.int({ min: 1, max: 20 })
     return {
-      line1: `Flat ${flatNumber}, ${houseNumber} ${streetName}`,
+      line1: `Flat ${flatNumber}, ${houseNumber} ${streetName}`
     }
   }
 
   return {
-    line1: `${houseNumber} ${streetName}`,
+    line1: `${houseNumber} ${streetName}`
   }
 }
 
@@ -155,22 +156,31 @@ const generateAddressLine1 = () => {
  */
 const generateNearbyAreas = (bsu) => {
   // Start with the BSU's own city and any address parts that look like areas
-  const areas = new Set([
-    bsu.address.city,
-    bsu.address.line4,
-    ...bsu.locations
-      .filter(l => l.type === 'hospital')
-      .map(l => l.address.city)
-      .filter(Boolean),
-  ].filter(Boolean))
+  const areas = new Set(
+    [
+      bsu.address.city,
+      bsu.address.line4,
+      ...bsu.locations
+        .filter((l) => l.type === 'hospital')
+        .map((l) => l.address.city)
+        .filter(Boolean)
+    ].filter(Boolean)
+  )
 
   // Add some generated nearby areas
   for (let i = 0; i < 2; i++) {
     // Use UK-style town names
     const suffix = faker.helpers.arrayElement([
-      'on-Sea', 'upon-Thames', 'St Mary', 'St John',
-      'under-Edge', 'on-the-Hill',
-      '', '', '', '', // More weight to no suffix
+      'on-Sea',
+      'upon-Thames',
+      'St Mary',
+      'St John',
+      'under-Edge',
+      'on-the-Hill',
+      '',
+      '',
+      '',
+      '' // More weight to no suffix
     ])
 
     const name = `${faker.location.city()}${suffix ? ` ${suffix}` : ''}`
@@ -190,18 +200,19 @@ const generateBSUAppropriateAddress = (bsu) => {
   const addressLine1 = generateAddressLine1()
 
   // 30% chance of having a line2
-  const line2 = Math.random() < 0.3
-    ? `${faker.word.adjective().charAt(0).toUpperCase() + faker.word.adjective().slice(1)} House`
-    : null
+  const line2 =
+    Math.random() < 0.3
+      ? `${faker.word.adjective().charAt(0).toUpperCase() + faker.word.adjective().slice(1)} House`
+      : null
 
   return {
     ...addressLine1,
     line2,
     town: faker.helpers.arrayElement(nearbyAreas),
-    postcode: generateNearbyPostcode(bsu.address.postcode),
+    postcode: generateNearbyPostcode(bsu.address.postcode)
   }
 }
 
 module.exports = {
-  generateBSUAppropriateAddress,
+  generateBSUAppropriateAddress
 }

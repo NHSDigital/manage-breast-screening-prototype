@@ -26,18 +26,17 @@ const REPEAT_REASONS = [
   'nipple not in profile'
 ]
 
-
 // Default probability settings
 const DEFAULT_PROBABILITIES = {
   viewMissing: 0.05, // 5% chance of a view being missing
-  needsRepeat: 0.10, // 10% chance of needing a repeat
+  needsRepeat: 0.1, // 10% chance of needing a repeat
   repeatsPerRound: [1, 2] // When repeating, how many views to repeat (min, max)
 }
 
-
 const generateViewKey = (side, view) => {
   const prefix = side === 'right' ? 'right' : 'left'
-  const viewName = view === 'mediolateral oblique' ? 'MediolateralOblique' : 'Craniocaudal'
+  const viewName =
+    view === 'mediolateral oblique' ? 'MediolateralOblique' : 'Craniocaudal'
   return `${prefix}${viewName}`
 }
 
@@ -82,7 +81,10 @@ const generateViewImages = ({
   // Generate repeat if needed
   if (needsRepeat) {
     currentIndex++
-    currentTime = currentTime.add(faker.number.int({ min: 25, max: 50 }), 'seconds')
+    currentTime = currentTime.add(
+      faker.number.int({ min: 25, max: 50 }),
+      'seconds'
+    )
 
     images.push({
       timestamp: currentTime.toISOString(),
@@ -98,10 +100,12 @@ const generateViewImages = ({
     viewShortWithSide: `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`,
     images,
     isRepeat: needsRepeat && isSeedData,
-    repeatReason: needsRepeat && isSeedData ? faker.helpers.arrayElement(REPEAT_REASONS) : null
+    repeatReason:
+      needsRepeat && isSeedData
+        ? faker.helpers.arrayElement(REPEAT_REASONS)
+        : null
   }
 }
-
 
 /**
  * Generate a complete set of mammogram images
@@ -120,7 +124,9 @@ const generateMammogramImages = ({
   config = {},
   probabilities = DEFAULT_PROBABILITIES
 } = {}) => {
-  const accessionBase = faker.number.int({ min: 100000000, max: 999999999 }).toString()
+  const accessionBase = faker.number
+    .int({ min: 100000000, max: 999999999 })
+    .toString()
   let currentIndex = 1
   let currentTime = dayjs(startTime)
   const views = {}
@@ -145,8 +151,10 @@ const generateMammogramImages = ({
     const viewShortWithSide = `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`
 
     // Skip if this view is in missingViews config
-    if (config.missingViews?.includes(viewShortWithSide) ||
-        (!config.missingViews && Math.random() < probabilities.viewMissing)) {
+    if (
+      config.missingViews?.includes(viewShortWithSide) ||
+      (!config.missingViews && Math.random() < probabilities.viewMissing)
+    ) {
       return
     }
 
@@ -164,18 +172,24 @@ const generateMammogramImages = ({
 
     // Update counters for next view
     currentIndex += viewData.images.length
-    currentTime = currentTime.add(faker.number.int({ min: 45, max: 70 }), 'seconds')
+    currentTime = currentTime.add(
+      faker.number.int({ min: 45, max: 70 }),
+      'seconds'
+    )
   })
 
   // Calculate metadata
-  const totalImages = Object.values(views).reduce((sum, view) => sum + view.images.length, 0)
+  const totalImages = Object.values(views).reduce(
+    (sum, view) => sum + view.images.length,
+    0
+  )
   const allTimestamps = Object.values(views)
-    .flatMap(view => view.images.map(img => img.timestamp))
+    .flatMap((view) => view.images.map((img) => img.timestamp))
     .sort()
 
   // Check if any views are missing
   const hasMissingViews = Object.keys(views).length < 4
-  const hasRepeat = Object.values(views).some(view => view.isRepeat)
+  const hasRepeat = Object.values(views).some((view) => view.isRepeat)
 
   return {
     accessionBase,

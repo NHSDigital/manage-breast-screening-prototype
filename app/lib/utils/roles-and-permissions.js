@@ -8,7 +8,9 @@
  */
 const hasRole = (user, role) => {
   if (!user || !user.role || !Array.isArray(user.role)) return false
-  return user.role.some(userRole => userRole.toLowerCase() === role.toLowerCase())
+  return user.role.some(
+    (userRole) => userRole.toLowerCase() === role.toLowerCase()
+  )
 }
 
 /**
@@ -21,7 +23,7 @@ const hasAnyRole = (user, roles) => {
   if (!user || !user.role || !Array.isArray(user.role)) return false
   if (!Array.isArray(roles)) return hasRole(user, roles)
 
-  return roles.some(role => hasRole(user, role))
+  return roles.some((role) => hasRole(user, role))
 }
 
 /**
@@ -34,7 +36,7 @@ const hasAllRoles = (user, roles) => {
   if (!user || !user.role || !Array.isArray(user.role)) return false
   if (!Array.isArray(roles)) return hasRole(user, roles)
 
-  return roles.every(role => hasRole(user, role))
+  return roles.every((role) => hasRole(user, role))
 }
 
 /**
@@ -72,7 +74,9 @@ const isHybridUser = (user) => {
  */
 const getRolesText = (user, separator = ', ') => {
   if (!user || !user.role || !Array.isArray(user.role)) return ''
-  return user.role.map(role => role.charAt(0).toUpperCase() + role.slice(1)).join(separator)
+  return user.role
+    .map((role) => role.charAt(0).toUpperCase() + role.slice(1))
+    .join(separator)
 }
 
 /**
@@ -81,28 +85,27 @@ const getRolesText = (user, separator = ', ') => {
  * @param {Object} data - Session data containing currentUser
  * @returns {boolean} Whether this user is the current user
  */
-const isCurrentUser = function(user) {
+const isCurrentUser = function (user) {
   const data = this.ctx.data
   if (!user || !data?.currentUser) return false
   if (typeof user === 'string') {
     return user === data.currentUser.id
-  }
-  else return user.id === data.currentUser.id
+  } else return user.id === data.currentUser.id
 }
-
 
 /**
  * Check if an event was started by the current user
  * @param {Object} event - Event object to check
  * @returns {boolean} Whether the event was started by the current user
  */
-const startedByCurrentUser = function(event) {
+const startedByCurrentUser = function (event) {
   const data = this.ctx.data
   if (!event?.sessionDetails?.startedBy || !data?.currentUser) return false
 
-  const currentUserId = typeof data.currentUser === 'string'
-    ? data.currentUser
-    : data.currentUser.id
+  const currentUserId =
+    typeof data.currentUser === 'string'
+      ? data.currentUser
+      : data.currentUser.id
 
   return event.sessionDetails.startedBy === currentUserId
 }
@@ -116,5 +119,5 @@ module.exports = {
   isHybridUser,
   getRolesText,
   isCurrentUser,
-  startedByCurrentUser,
+  startedByCurrentUser
 }

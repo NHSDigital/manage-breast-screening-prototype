@@ -36,16 +36,15 @@ const parseReferrerChain = (referrerChain) => {
  * // If referrer contains '#section1' and scrollToId is 'section2',
  * // the result will use 'section1'
  */
-const getReturnUrl = function(url, referrerChain, scrollToId = false) {
+const getReturnUrl = function (url, referrerChain, scrollToId = false) {
   // Get currentUrl from context if available
   const currentUrl = this?.ctx?.currentUrl
 
-  const chain = parseReferrerChain(referrerChain)
-    .filter(ref => {
-      // Extract base URL without fragment for comparison
-      const refBase = ref.split('#')[0]
-      return refBase !== currentUrl
-    })
+  const chain = parseReferrerChain(referrerChain).filter((ref) => {
+    // Extract base URL without fragment for comparison
+    const refBase = ref.split('#')[0]
+    return refBase !== currentUrl
+  })
 
   if (!chain.length) {
     // No chain - use default URL, but add scrollToId if provided
@@ -148,5 +147,5 @@ const appendReferrer = (existingReferrerChain, newUrl) => {
 module.exports = {
   getReturnUrl,
   urlWithReferrer,
-  appendReferrer,
+  appendReferrer
 }

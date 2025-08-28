@@ -8,19 +8,23 @@ const { getParticipant } = require('./participants.js')
  * @returns {Object|null} Event object or null if not found
  */
 const getEvent = (data, eventId) => {
-  return data.events.find(e => e.id === eventId) || null
+  return data.events.find((e) => e.id === eventId) || null
 }
 
 const getEventData = (data, clinicId, eventId) => {
-  const clinic = data.clinics.find(c => c.id === clinicId)
+  const clinic = data.clinics.find((c) => c.id === clinicId)
   if (!clinic) return null
 
-  const event = data.events.find(e => e.id === eventId && e.clinicId === clinicId)
+  const event = data.events.find(
+    (e) => e.id === eventId && e.clinicId === clinicId
+  )
   if (!event) return null
 
   const participant = getParticipant(data, event.participantId)
-  const unit = data.breastScreeningUnits.find(u => u.id === clinic.breastScreeningUnitId)
-  const location = unit.locations.find(l => l.id === clinic.locationId)
+  const unit = data.breastScreeningUnits.find(
+    (u) => u.id === clinic.breastScreeningUnitId
+  )
+  const location = unit.locations.find((l) => l.id === clinic.locationId)
 
   return { clinic, event, participant, location, unit }
 }
@@ -33,7 +37,7 @@ const getEventData = (data, clinicId, eventId) => {
  * @returns {Object|null} Updated event or null if not found
  */
 const updateEvent = (data, eventId, updatedEvent) => {
-  const eventIndex = data.events.findIndex(e => e.id === eventId)
+  const eventIndex = data.events.findIndex((e) => e.id === eventId)
   if (eventIndex === -1) return null
 
   // Update in the array
@@ -50,11 +54,14 @@ const updateEvent = (data, eventId, updatedEvent) => {
  * @returns {Object|null} Updated event or null if not found
  */
 const updateEventStatus = (data, eventId, newStatus) => {
-  const eventIndex = data.events.findIndex(e => e.id === eventId)
+  const eventIndex = data.events.findIndex((e) => e.id === eventId)
   if (eventIndex === -1) return null
 
   // Use temp event if it exists and matches, otherwise use the array event
-  const baseEvent = (data.event && data.event.id === eventId) ? data.event : data.events[eventIndex]
+  const baseEvent =
+    data.event && data.event.id === eventId
+      ? data.event
+      : data.events[eventIndex]
 
   const updatedEvent = {
     ...baseEvent,
@@ -63,9 +70,9 @@ const updateEventStatus = (data, eventId, newStatus) => {
       ...baseEvent.statusHistory,
       {
         status: newStatus,
-        timestamp: new Date().toISOString(),
-      },
-    ],
+        timestamp: new Date().toISOString()
+      }
+    ]
   }
 
   // Update main data
@@ -90,11 +97,14 @@ const updateEventStatus = (data, eventId, newStatus) => {
  * @returns {Object|null} Updated event or null if not found
  */
 const updateEventData = (data, eventId, updates) => {
-  const eventIndex = data.events.findIndex(e => e.id === eventId)
+  const eventIndex = data.events.findIndex((e) => e.id === eventId)
   if (eventIndex === -1) return null
 
   // Use temp event if it exists and matches, otherwise use the array event
-  const baseEvent = (data.event && data.event.id === eventId) ? data.event : data.events[eventIndex]
+  const baseEvent =
+    data.event && data.event.id === eventId
+      ? data.event
+      : data.events[eventIndex]
 
   const updatedEvent = {
     ...baseEvent,
@@ -141,12 +151,11 @@ const saveTempEventToEvent = (data) => {
   return updatedEvent
 }
 
-
 module.exports = {
   getEvent,
   getEventData,
   updateEvent,
   updateEventStatus,
   updateEventData,
-  saveTempEventToEvent,
+  saveTempEventToEvent
 }

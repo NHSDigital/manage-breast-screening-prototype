@@ -20,7 +20,7 @@ const formatAnswer = (value, options = {}) => {
     yesValue = null,
     noText = 'No',
     notAnsweredText = 'Not answered',
-    yesPrefix = 'Yes',
+    yesPrefix = 'Yes'
   } = options
 
   // Handle not answered cases
@@ -38,5 +38,5 @@ const formatAnswer = (value, options = {}) => {
 }
 
 module.exports = {
-  formatAnswer,
+  formatAnswer
 }

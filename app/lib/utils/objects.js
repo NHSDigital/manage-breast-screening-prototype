@@ -40,12 +40,12 @@ const getObjectValues = (obj, options = {}) => {
 
   // Handle arrays based on options
   if (!includeArrays) {
-    values = values.filter(val => !Array.isArray(val))
+    values = values.filter((val) => !Array.isArray(val))
   }
 
   // Remove empty values if specified
   if (removeEmpty) {
-    values = values.filter(val => Boolean(val))
+    values = values.filter((val) => Boolean(val))
   }
 
   return values

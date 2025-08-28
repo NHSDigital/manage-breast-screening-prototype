@@ -12,7 +12,9 @@ const falsify = (value) => {
     const normalised = value.trim().toLowerCase()
 
     // Explicit false values
-    if (['false', 'no', 'off', '0', '', 'null', 'undefined'].includes(normalised)) {
+    if (
+      ['false', 'no', 'off', '0', '', 'null', 'undefined'].includes(normalised)
+    ) {
       return false
     }
 
@@ -113,5 +115,5 @@ const limitTo = (input, limit) => {
 module.exports = {
   falsify,
   normaliseString,
-  limitTo,
+  limitTo
 }

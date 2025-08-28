@@ -56,7 +56,7 @@ const decorateAttributes = (originalObject, data, path) => {
   const storedValue = _.get(data, dataPath)
 
   if (obj.items !== undefined) {
-    obj.items = obj.items.map(item => {
+    obj.items = obj.items.map((item) => {
       // Skip dividers
       if (item.divider) return item
 
@@ -113,7 +113,7 @@ const decorateAttributes = (originalObject, data, path) => {
 
   // Set id and name attributes if not already defined
   obj.id = obj.id || pathParts.join('-')
-  obj.name = obj.name || pathParts.map(s => `[${s}]`).join('')
+  obj.name = obj.name || pathParts.map((s) => `[${s}]`).join('')
   return obj
 }
 
