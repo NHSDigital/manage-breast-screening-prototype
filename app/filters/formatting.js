@@ -2,12 +2,13 @@
 
 /**
  * Format a yes/no/not answered response with optional additional details
+ *
  * @param {string|boolean} value - The response value to format
- * @param {Object} [options] - Formatting options
+ * @param {object} [options] - Formatting options
  * @param {string} [options.yesValue] - Additional details to show after "Yes -" for positive responses
- * @param {string} [options.noText="No"] - Text to show for negative responses
- * @param {string} [options.notAnsweredText="Not answered"] - Text to show when no response given
- * @param {string} [options.yesPrefix="Yes"] - Text to show for positive responses (before any yesValue)
+ * @param {string} [options.noText] - Text to show for negative responses
+ * @param {string} [options.notAnsweredText] - Text to show when no response given
+ * @param {string} [options.yesPrefix] - Text to show for positive responses (before any yesValue)
  * @returns {string} Formatted response text
  * @example
  * formatAnswer("yes", { yesValue: "Details here" }) // Returns "Yes - Details here"

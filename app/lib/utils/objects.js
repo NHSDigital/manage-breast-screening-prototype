@@ -4,11 +4,12 @@ const _ = require('lodash')
 
 /**
  * Extract all values from an object into a flat array
- * @param {Object} obj - The object to extract values from
- * @param {Object} [options] - Options for value extraction
- * @param {boolean} [options.recursive=false] - Whether to recursively extract values from nested objects
- * @param {boolean} [options.includeArrays=true] - Whether to include array values
- * @param {boolean} [options.removeEmpty=false] - Whether to remove null/undefined values
+ *
+ * @param {object} obj - The object to extract values from
+ * @param {object} [options] - Options for value extraction
+ * @param {boolean} [options.recursive] - Whether to recursively extract values from nested objects
+ * @param {boolean} [options.includeArrays] - Whether to include array values
+ * @param {boolean} [options.removeEmpty] - Whether to remove null/undefined values
  * @returns {Array} Array of all values from the object
  * @example
  * getObjectValues({ name: 'Jane', age: 30 }) // Returns ['Jane', 30]

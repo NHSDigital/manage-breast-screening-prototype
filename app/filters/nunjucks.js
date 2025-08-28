@@ -14,14 +14,14 @@ const log = (a, description = null) => {
 
 /**
  * Safely join array elements with proper undefined/null handling
- * @param {any} input - Array-like input to join
- * @param {string} [delimiter=''] - String to use as delimiter between elements
- * @param {string} [attribute] - Optional object property to extract before joining
- * @param {Object} [options] - Additional options for join behavior
- * @param {boolean} [options.filterEmpty=true] - Whether to filter out empty/null/undefined values
- * @param {boolean} [options.toString=true] - Whether to convert values to strings before joining
- * @returns {string} Joined string or empty string if invalid input
  *
+ * @param {any} input - Array-like input to join
+ * @param {string} [delimiter] - String to use as delimiter between elements
+ * @param {string | null} [attribute] - Optional object property to extract before joining
+ * @param {object} [options] - Additional options for join behavior
+ * @param {boolean} [options.filterEmpty] - Whether to filter out empty/null/undefined values
+ * @param {boolean} [options.toString] - Whether to convert values to strings before joining
+ * @returns {string} Joined string or empty string if invalid input
  * @example
  * join(['a', 'b', 'c'], ', ') // 'a, b, c'
  * join([{name: 'John'}, {name: 'Jane'}], ', ', 'name') // 'John, Jane'
@@ -86,10 +86,11 @@ const join = (input, delimiter = '', attribute = null, options = {}) => {
 
 /**
  * Get user name by user ID with format options
+ *
  * @param {string} userId - ID of the user
- * @param {Object} options - Display options
- * @param {boolean} [options.identifyCurrentUser=false] - Whether to add "(you)" for current user
- * @param {string} [options.format='full'] - Name format: 'full', 'short', or 'initial'
+ * @param {object} [options] - Display options
+ * @param {boolean} [options.identifyCurrentUser] - Whether to add "(you)" for current user
+ * @param {string} [options.format] - Name format: 'full', 'short', or 'initial'
  * @returns {string} User's name in requested format
  */
 const getUsername = function (userId, options = {}) {
@@ -127,7 +128,7 @@ const getUsername = function (userId, options = {}) {
 
 /**
  *
- * @returns {Object} The context data
+ * @returns {object} The context data
  */
 const getContext = function () {
   return this.ctx

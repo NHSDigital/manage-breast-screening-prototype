@@ -4,6 +4,7 @@ const _ = require('lodash')
 
 /**
  * Check if a value should be considered empty/missing
+ *
  * @param {any} value - Value to check
  * @returns {boolean} True if value should be considered empty
  */
@@ -16,9 +17,10 @@ const isEmpty = (value) => {
 
 /**
  * Convert value object to "Enter X" link if empty, or show "Not provided"
- * @param {Object} input - Summary list object or individual row object
+ *
+ * @param {object} input - Summary list object or individual row object
  * @param {boolean} showNotProvidedText - If true, show "Not provided" and keep actions. If false (default), show "Enter X" link
- * @returns {Object} Modified summary list or row with enter link or "Not provided" if empty
+ * @returns {object} Modified summary list or row with enter link or "Not provided" if empty
  */
 const handleSummaryListMissingInformation = (
   input,

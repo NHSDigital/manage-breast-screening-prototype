@@ -2,7 +2,8 @@
 
 /**
  * Check if a user has a specific role
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @param {string} role - Role to check for
  * @returns {boolean} Whether user has the specified role
  */
@@ -15,7 +16,8 @@ const hasRole = (user, role) => {
 
 /**
  * Check if a user has any of the specified roles
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @param {string[]} roles - Array of roles to check for
  * @returns {boolean} Whether user has any of the specified roles
  */
@@ -28,7 +30,8 @@ const hasAnyRole = (user, roles) => {
 
 /**
  * Check if a user has all of the specified roles
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @param {string[]} roles - Array of roles to check for
  * @returns {boolean} Whether user has all of the specified roles
  */
@@ -41,7 +44,8 @@ const hasAllRoles = (user, roles) => {
 
 /**
  * Check if a user is a clinician
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @returns {boolean} Whether user is a clinician
  */
 const isClinician = (user) => {
@@ -50,7 +54,8 @@ const isClinician = (user) => {
 
 /**
  * Check if a user has an administrative role
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @returns {boolean} Whether user has administrative role
  */
 const isAdministrative = (user) => {
@@ -59,7 +64,8 @@ const isAdministrative = (user) => {
 
 /**
  * Check if a user has both clinical and administrative roles
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @returns {boolean} Whether user has both roles
  */
 const isHybridUser = (user) => {
@@ -68,7 +74,8 @@ const isHybridUser = (user) => {
 
 /**
  * Get all roles for a user as formatted string
- * @param {Object} user - User object
+ *
+ * @param {object} user - User object
  * @param {string} separator - Separator between roles (default: ', ')
  * @returns {string} Formatted roles string
  */
@@ -81,8 +88,8 @@ const getRolesText = (user, separator = ', ') => {
 
 /**
  * Check if a user is the current user
- * @param {Object} user - User object to check
- * @param {Object} data - Session data containing currentUser
+ *
+ * @param {object} user - User object to check
  * @returns {boolean} Whether this user is the current user
  */
 const isCurrentUser = function (user) {
@@ -95,7 +102,8 @@ const isCurrentUser = function (user) {
 
 /**
  * Check if an event was started by the current user
- * @param {Object} event - Event object to check
+ *
+ * @param {object} event - Event object to check
  * @returns {boolean} Whether the event was started by the current user
  */
 const startedByCurrentUser = function (event) {

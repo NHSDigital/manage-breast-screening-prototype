@@ -154,11 +154,12 @@ const LOCATION_DESCRIPTIONS = {
 
 /**
  * Generate a single symptom matching the new form format
- * @param {Object} options - Generation options
+ *
+ * @param {object} [options] - Generation options
  * @param {string} [options.type] - Force specific symptom type
  * @param {boolean} [options.requireInvestigation] - Force investigation status
  * @param {string} [options.addedByUserId] - User ID who added the symptom
- * @returns {Object} Generated symptom
+ * @returns {object} Generated symptom
  */
 const generateSymptom = (options = {}) => {
   // Pick symptom type if not specified
@@ -314,9 +315,10 @@ const generateSymptom = (options = {}) => {
 
 /**
  * Generate a set of symptoms for a person matching new medicalInformation structure
- * @param {Object} options - Generation options
- * @param {number} [options.probabilityOfSymptoms=0.15] - Chance of having any symptoms
- * @param {number} [options.maxSymptoms=3] - Maximum number of symptoms to generate
+ *
+ * @param {object} [options] - Generation options
+ * @param {number} [options.probabilityOfSymptoms] - Chance of having any symptoms
+ * @param {number} [options.maxSymptoms] - Maximum number of symptoms to generate
  * @param {Array} [options.users] - Array of users to pick from for addedByUserId
  * @returns {Array} Array of generated symptoms
  */

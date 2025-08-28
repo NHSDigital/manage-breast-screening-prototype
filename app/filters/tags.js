@@ -6,8 +6,9 @@ const { getStatusTagColour, getStatusText } = require('../lib/utils/status')
 
 /**
  * Convert a status string into an NHS tag
+ *
  * @param {string} status - Status to convert
- * @param {Object} [options] - Optional configuration
+ * @param {object} [options] - Optional configuration
  * @returns {string} HTML for tag component
  */
 const toTag = (status, options = {}) => {

@@ -4,9 +4,10 @@ const _ = require('lodash')
 
 /**
  * Find an object by ID in an array
+ *
  * @param {Array} array - Array to search
  * @param {string} id - ID to find
- * @returns {Object} Found object or undefined
+ * @returns {object} Found object or undefined
  */
 const findById = (array, id) => {
   if (!array || !Array.isArray(array)) return undefined
@@ -21,6 +22,7 @@ const push = (array, item) => {
 
 /**
  * Check if an array includes a value
+ *
  * @param {Array} array - Array to check
  * @param {*} value - Value to look for
  * @returns {boolean} True if array includes value, false otherwise
@@ -32,6 +34,7 @@ const includes = (array, value) => {
 
 /**
  * Find first array item where the specified key matches the value
+ *
  * @param {Array} array - Array to search
  * @param {string} key - Object key to match against
  * @param {any} value - Value to find
@@ -47,6 +50,7 @@ const find = (array, key, value) => {
 
 /**
  * Remove empty items from arrays or strings
+ *
  * @param {Array|string} items - Items to filter
  * @returns {Array|string|undefined} Filtered items or undefined if empty
  */
@@ -81,6 +85,7 @@ const removeEmpty = (items) => {
 
 /**
  * Filter array to items where the specified property matches one of the comparison values
+ *
  * @param {Array} array - Array to filter
  * @param {string} key - Object property path to match against (supports dot notation)
  * @param {*|Array} compare - Value or array of values to match
@@ -103,6 +108,7 @@ const where = (array, key, compare) => {
 
 /**
  * Filter array to remove items where the specified property matches one of the comparison values
+ *
  * @param {Array} array - Array to filter
  * @param {string} key - Object property path to match against (supports dot notation)
  * @param {*|Array} compare - Value or array of values to exclude
@@ -125,6 +131,7 @@ const removeWhere = (array, key, compare) => {
 
 /**
  * Apply a filter to each element in an array
+ *
  * @param {Array} array - Array to map over
  * @param {string} filterName - Name of the filter to apply to each element
  * @returns {Array} New array with filter applied to each element

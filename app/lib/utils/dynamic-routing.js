@@ -3,7 +3,8 @@
 /**
  * Create a simple dynamic route handler that just attempts template rendering
  * Assumes all data is already set up in res.locals by middleware
- * @param {Object} options - Configuration options
+ *
+ * @param {object} options - Configuration options
  * @param {string} options.templatePrefix - Template path prefix (e.g., 'participants')
  * @returns {Function} Express route handler
  */

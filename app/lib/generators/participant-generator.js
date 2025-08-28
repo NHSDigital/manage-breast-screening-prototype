@@ -10,9 +10,9 @@ const dayjs = require('dayjs')
 
 /**
  * Generate a precise date of birth within the specified age range
- * @param {Object} options - Generation options
- * @param {string} options.riskLevel - Risk level to use for age range
- * @param {Date} [options.referenceDate] - Date to calculate age from (defaults to today)
+ *
+ * @param {string} riskLevel - Risk level to use for age range
+ * @param {Date} [referenceDate] - Date to calculate age from (defaults to today)
  * @returns {string} ISO date string for date of birth
  */
 const generateDateOfBirth = (riskLevel, referenceDate = new Date()) => {

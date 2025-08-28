@@ -4,7 +4,8 @@ const dayjs = require('dayjs')
 
 /**
  * Define status groups for easier checking
- * @type {Object}
+ *
+ * @type {object}
  */
 const STATUS_GROUPS = {
   not_started: ['event_scheduled', 'event_checked_in'],
@@ -22,6 +23,7 @@ const STATUS_GROUPS = {
 
 /**
  * Check if a status belongs to a specific group
+ *
  * @param {string} status - The status to check
  * @param {string} group - The group to check against
  * @returns {boolean} Whether the status belongs to the group
@@ -33,7 +35,8 @@ const isStatusInGroup = (status, group) => {
 
 /**
  * Get status from either a status string or event object
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} input - Status string or event object
  * @returns {string|null} The status or null if invalid
  */
 const getStatus = (input) => {
@@ -44,7 +47,8 @@ const getStatus = (input) => {
 
 /**
  * Check if a status represents a not started event
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} input - Status string or event object
  * @returns {boolean} Whether the status is not started
  */
 const hasNotStarted = (input) => {
@@ -55,7 +59,8 @@ const hasNotStarted = (input) => {
 
 /**
  * Check if a status represents a completed event
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} input - Status string or event object
  * @returns {boolean} Whether the status is completed
  */
 const isCompleted = (input) => {
@@ -66,7 +71,8 @@ const isCompleted = (input) => {
 
 /**
  * Check if a status represents a completed event
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} input - Status string or event object
  * @returns {boolean} Whether the status is completed
  */
 const isInProgress = (input) => {
@@ -77,7 +83,8 @@ const isInProgress = (input) => {
 
 /**
  * Check if a status represents a final state
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} input - Status string or event object
  * @returns {boolean} Whether the status is final
  */
 const isFinal = (input) => {
@@ -88,7 +95,8 @@ const isFinal = (input) => {
 
 /**
  * Check if a status represents an active event
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} input - Status string or event object
  * @returns {boolean} Whether the status is active
  */
 const isActive = (input) => {
@@ -99,8 +107,9 @@ const isActive = (input) => {
 
 /**
  * Check if an event is in the appointment workflow for the current user
- * @param {Object} event - Event to check
- * @param {Object|string} currentUser - User object with id property, or user id string directly
+ *
+ * @param {object} event - Event to check
+ * @param {object | string} currentUser - User object with id property, or user id string directly
  * @returns {boolean} Whether the event is in the appointment workflow for this user
  */
 const isAppointmentWorkflow = function (event, currentUser) {
@@ -123,7 +132,8 @@ const isAppointmentWorkflow = function (event, currentUser) {
 
 /**
  * Check if a status indicates reading is eligible
- * @param {string|Object} input - Status string or event object
+ *
+ * @param {string | object} event - Status string or event object
  * @returns {boolean} Whether reading is needed
  */
 const eligibleForReading = (event) => {
@@ -138,6 +148,7 @@ const eligibleForReading = (event) => {
 
 /**
  * Map a status to its corresponding tag colour in NHS.UK frontend
+ *
  * @param {string} status - The status to map
  * @returns {string} The tag colour
  */
@@ -218,6 +229,7 @@ const getStatusTagColour = (status) => {
 
 /**
  * Map a status to its corresponding text
+ *
  * @param {string} status - The status to map
  * @returns {string} The tag text
  */
@@ -259,7 +271,8 @@ const filterEventsByStatus = (events, filter) => {
 
 /**
  * Check if an event is a special appointment
- * @param {Object} event - Event object to check
+ *
+ * @param {object} event - Event object to check
  * @returns {boolean} Whether the event is a special appointment
  */
 const isSpecialAppointment = (event) => {

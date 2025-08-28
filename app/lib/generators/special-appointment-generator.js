@@ -108,10 +108,11 @@ const SUPPORT_TYPES = {
 
 /**
  * Generate special appointment requirements for an event
- * @param {Object} options - Generation options
- * @param {number} [options.probability=0.08] - Probability of needing special appointment
- * @param {number} [options.maxSupportTypes=3] - Maximum number of support types to select
- * @returns {Object|null} Special appointment object or null if not needed
+ *
+ * @param {object} [options] - Generation options
+ * @param {number} [options.probability] - Probability of needing special appointment
+ * @param {number} [options.maxSupportTypes] - Maximum number of support types to select
+ * @returns {object | null} Special appointment object or null if not needed
  */
 const generateSpecialAppointment = (options = {}) => {
   const { probability = 0.08, maxSupportTypes = 3 } = options
@@ -193,6 +194,7 @@ const generateSpecialAppointment = (options = {}) => {
 
 /**
  * Convert support type name to camelCase field name for details
+ *
  * @param {string} typeName - Support type name
  * @returns {string} CamelCase field name with 'Details' suffix
  */

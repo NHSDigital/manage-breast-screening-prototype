@@ -25,7 +25,8 @@ dayjs.tz.setDefault('Europe/London')
 
 /**
  * Convert array [day, month, year] or object {day, month, year} to dayjs object
- * @param {Array|Object} input - Array [day, month, year] or object {day, month, year}
+ *
+ * @param {Array | object} input - Array [day, month, year] or object {day, month, year}
  * @returns {dayjs} dayjs object or null if invalid
  */
 const arrayOrObjectToDateObject = (input) => {
@@ -62,7 +63,8 @@ const arrayOrObjectToDateObject = (input) => {
 
 /**
  * Format a date in UK format
- * @param {string|Array|Object} dateString - ISO date string, array [day, month, year], or object {day, month, year}
+ *
+ * @param {string | Array | object} dateString - ISO date string, array [day, month, year], or object {day, month, year}
  * @param {string} format - Optional format string
  */
 const formatDate = (dateString, format = 'D MMMM YYYY') => {
@@ -87,6 +89,7 @@ const formatDate = (dateString, format = 'D MMMM YYYY') => {
  * Format a date in UK format with special month abbreviations
  * For months with 4 letters (June, July), use the full name
  * For other months, use 3 letter abbreviation
+ *
  * @param {string} dateString - ISO date string
  * @returns {string} Formatted date string
  */
@@ -103,7 +106,8 @@ const formatDateShort = (dateString) => {
 
 /**
  * Format a month/year to a readable string
- * @param {string|Array|Object|Date} input - ISO date string, [month, year] array, {month, year} object, or Date object
+ *
+ * @param {string | Array | object | Date} input - ISO date string, [month, year] array, {month, year} object, or Date object
  * @param {string} format - Optional format string (default: 'MMMM YYYY')
  * @returns {string} Formatted month/year string
  */
@@ -159,6 +163,7 @@ const formatMonthYear = (input, format = 'MMMM YYYY') => {
 
 /**
  * Format a time in UK format
+ *
  * @param {string} dateString - ISO date string
  * @param {string} format - Optional format string
  */
@@ -169,6 +174,7 @@ const formatTime = (dateString, format = 'H:mm') => {
 
 /**
  * Format a time in 12-hour format with special cases for round hours, midday and midnight
+ *
  * @param {string} input - Either a time string (e.g. "17:00") or full date/datetime
  * @returns {string} Formatted time (e.g. "5pm", "5:30pm", "midday", "midnight")
  */
@@ -196,7 +202,8 @@ const formatTimeString = (input) => {
 
 /**
  * Format clinic session times for display
- * @param {Object} sessionTimes - Object containing startTime and endTime
+ *
+ * @param {object} times - Object containing startTime and endTime
  * @returns {string} Formatted time range (e.g. "9:00am - 5:00pm")
  */
 const formatTimeRange = (times) => {
@@ -206,6 +213,7 @@ const formatTimeRange = (times) => {
 
 /**
  * Format a date and time
+ *
  * @param {string} dateString - ISO date string
  * @param {string} format - Optional format string
  */
@@ -216,6 +224,7 @@ const formatDateTime = (dateString, format = 'D MMMM YYYY, HH:mm') => {
 
 /**
  * Format a date as a relative time
+ *
  * @param {string} dateString - ISO date string
  * @param {boolean} withoutSuffix - If true, removes the 'ago' suffix
  */
@@ -247,8 +256,9 @@ const formatRelativeDate = (dateString, withoutSuffix = false) => {
 
 /**
  * Calculate the number of days since a given date
+ *
  * @param {string} dateString - ISO date string for past date
- * @param {string|dayjs} [compareDate=null] - Optional reference date (defaults to today)
+ * @param {string | Dayjs | null} [compareDate] - Optional reference date (defaults to today)
  * @returns {number} Number of days since the date (positive integer for past dates)
  */
 const daysSince = (dateString, compareDate = null) => {
@@ -265,6 +275,7 @@ const daysSince = (dateString, compareDate = null) => {
 
 /**
  * Check if date is in the past
+ *
  * @param {string} dateString - ISO date string
  */
 const isPast = (dateString) => {
@@ -274,6 +285,7 @@ const isPast = (dateString) => {
 
 /**
  * Check if date is in the future
+ *
  * @param {string} dateString - ISO date string
  */
 const isFuture = (dateString) => {
@@ -283,8 +295,9 @@ const isFuture = (dateString) => {
 
 /**
  * Check if a date is before another date (at day precision)
+ *
  * @param {string} inputDate - ISO date string to check
- * @param {string|dayjs} compareDate - Optional date to compare against (defaults to today)
+ * @param {string | Dayjs} compareDate - Optional date to compare against (defaults to today)
  * @returns {boolean} True if inputDate is before compareDate
  */
 const isBeforeDate = (inputDate, compareDate = dayjs()) => {
@@ -294,8 +307,9 @@ const isBeforeDate = (inputDate, compareDate = dayjs()) => {
 
 /**
  * Check if a date is after another date (at day precision)
+ *
  * @param {string} inputDate - ISO date string to check
- * @param {string|dayjs} compareDate - Optional date to compare against (defaults to today)
+ * @param {string | Dayjs} compareDate - Optional date to compare against (defaults to today)
  * @returns {boolean} True if inputDate is after compareDate
  */
 const isAfterDate = (inputDate, compareDate = dayjs()) => {
@@ -305,6 +319,7 @@ const isAfterDate = (inputDate, compareDate = dayjs()) => {
 
 /**
  * Get today's date at midnight
+ *
  * @returns {string} Today's date as ISO string
  */
 const today = () => {
@@ -313,6 +328,7 @@ const today = () => {
 
 /**
  * Get current date and time
+ *
  * @returns {string} Current date/time as ISO string
  */
 const now = () => {
@@ -321,6 +337,7 @@ const now = () => {
 
 /**
  * Format a date range
+ *
  * @param {string} startDate - ISO date string
  * @param {string} endDate - ISO date string
  */
@@ -351,6 +368,7 @@ const formatDateRange = (startDate, endDate) => {
 
 /**
  * Get calendar week dates
+ *
  * @param {string} dateString - ISO date string to center the week on
  * @returns {Array} Array of day objects for the week
  */
@@ -374,10 +392,11 @@ const getWeekDates = (dateString) => {
 
 /**
  * Check if a date is within specified age range
+ *
  * @param {string} dateString - ISO date string to check
  * @param {number} minDays - Minimum days old (inclusive)
- * @param {number} [maxDays=null] - Maximum days old (inclusive), if null, no upper bound
- * @param {string|dayjs} [compareDate=null] - Optional reference date (defaults to today)
+ * @param {number | null} [maxDays] - Maximum days old (inclusive), if null, no upper bound
+ * @param {string | Dayjs | null} [compareDate] - Optional reference date (defaults to today)
  * @returns {boolean} True if date is within specified age range
  */
 const isWithinDayRange = (
@@ -405,7 +424,8 @@ const isWithinDayRange = (
 
 /**
  * Add or subtract time from a date
- * @param {string|Array|Object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
+ *
+ * @param {string | Array | object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
  * @param {number} amount - Amount to add (can be negative to subtract)
  * @param {string} unit - Unit of time ('year', 'years', 'month', 'months', 'week', 'weeks', 'day', 'days', 'hour', 'hours', 'minute', 'minutes', 'second', 'seconds')
  * @returns {string} Modified date as ISO string
@@ -437,7 +457,8 @@ const add = (dateInput, amount, unit) => {
 
 /**
  * Remove time from a date (convenience wrapper for add with negative amount)
- * @param {string|Array|Object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
+ *
+ * @param {string | Array | object} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
  * @param {number} amount - Amount to remove
  * @param {string} unit - Unit of time ('year', 'years', 'month', 'months', 'week', 'weeks', 'day', 'days', 'hour', 'hours', 'minute', 'minutes', 'second', 'seconds')
  * @returns {string} Modified date as ISO string
@@ -474,3 +495,7 @@ module.exports = {
   add,
   remove
 }
+
+/**
+ * @import { Dayjs } from 'dayjs'
+ */

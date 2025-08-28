@@ -7,6 +7,7 @@
 
 /**
  * Parse referrer string into array of URLs
+ *
  * @private
  * @param {string|Array} referrerChain - Referrer string or array
  * @returns {Array} Array of referrer URLs
@@ -20,9 +21,10 @@ const parseReferrerChain = (referrerChain) => {
 /**
  * Get destination from referrer chain, falling back to provided URL if no referrer
  * Automatically converts URL fragments to scrollTo query parameters for server redirects
+ *
  * @param {string} url - Default URL to use if no referrer
  * @param {string} referrerChain - Referrer chain
- * @param {string|false} [scrollToId=false] - Optional element ID to scroll to on return
+ * @param {string|false} [scrollToId] - Optional element ID to scroll to on return
  * @returns {string} URL to use for back link
  * @example
  * // In templates:
@@ -102,6 +104,7 @@ const getReturnUrl = function (url, referrerChain, scrollToId = false) {
 
 /**
  * Add referrer to URL as query parameter with optional scroll anchor
+ *
  * @param {string} url - Base URL
  * @param {string} referrerChain - Referrer to append
  * @param {string} [scrollToId] - Optional element ID to scroll to on return
@@ -128,6 +131,7 @@ const urlWithReferrer = (url, referrerChain, scrollToId = false) => {
 
 /**
  * Append a URL to an existing referrer chain
+ *
  * @param {string|Array} existingReferrerChain - Existing referrer chain
  * @param {string} newUrl - URL to append
  * @returns {string} Combined referrer chain

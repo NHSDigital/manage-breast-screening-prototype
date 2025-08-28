@@ -5,9 +5,10 @@ const riskLevels = require('../../data/risk-levels.js')
 
 /**
  * Get a participant by ID
- * @param {Object} data - Session data containing participants
+ *
+ * @param {object} data - Session data containing participants
  * @param {string} participantId - Participant ID to search for
- * @returns {Object|null} Participant object or null if not found
+ * @returns {object | null} Participant object or null if not found
  */
 const getParticipant = (data, participantId) => {
   return data.participants.find((p) => p.id === participantId) || null
@@ -15,7 +16,8 @@ const getParticipant = (data, participantId) => {
 
 /**
  * Get full name of participant
- * @param {Object} participant - Participant object
+ *
+ * @param {object} participant - Participant object
  */
 const getFullName = (participant) => {
   if (!participant?.demographicInformation) return ''
@@ -27,7 +29,8 @@ const getFullName = (participant) => {
 
 /**
  * Get full name of participant
- * @param {Object} participant - Participant object
+ *
+ * @param {object} participant - Participant object
  */
 const getFullNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
@@ -37,7 +40,8 @@ const getFullNameReversed = (participant) => {
 
 /**
  * Get short name (first + last) of participant
- * @param {Object} participant - Participant object
+ *
+ * @param {object} participant - Participant object
  */
 const getShortName = (participant) => {
   if (!participant?.demographicInformation) return ''
@@ -47,6 +51,7 @@ const getShortName = (participant) => {
 
 /**
  * Find a participant by their SX number
+ *
  * @param {Array} participants - Array of all participants
  * @param {string} sxNumber - SX number to search for
  */
@@ -56,8 +61,9 @@ const findBySXNumber = (participants, sxNumber) => {
 
 /**
  * Get participant's age
- * @param {Object} participant - Participant object
- * @param {Date} [referenceDate=new Date()] - Optional date to calculate age from
+ *
+ * @param {object} participant - Participant object
+ * @param {Date} [referenceDate] - Optional date to calculate age from
  * @returns {number|null} Age in years or null if no date of birth
  */
 const getAge = (participant, referenceDate = new Date()) => {
@@ -76,6 +82,7 @@ const getAge = (participant, referenceDate = new Date()) => {
 
 /**
  * Sort participants by surname
+ *
  * @param {Array} participants - Array of participants to sort
  * @returns {Array} Sorted participants array
  */
@@ -89,12 +96,13 @@ const sortBySurname = (participants) => {
 
 /**
  * Get clinic history for a participant with optional filters
- * @param {Object} data - Session data containing clinics and events
+ *
+ * @param {object} data - Session data containing clinics and events
  * @param {string} participantId - Participant ID to get history for
- * @param {Object} options - Filter options
- * @param {string} options.filter - Filter type: 'historic', 'upcoming', or 'all'
- * @param {boolean} options.mostRecent - If true, returns only the most recent matching clinic
- * @returns {Array|Object} Array of clinic/event pairs, or single most recent pair
+ * @param {object} [options] - Filter options
+ * @param {string} [options.filter] - Filter type: 'historic', 'upcoming', or 'all'
+ * @param {boolean} [options.mostRecent] - If true, returns only the most recent matching clinic
+ * @returns {Array | object} Array of clinic/event pairs, or single most recent pair
  */
 const getParticipantClinicHistory = (data, participantId, options = {}) => {
   const { filter = 'all', mostRecent = false } = options
@@ -173,7 +181,8 @@ const getParticipantUpcomingClinics = (data, participantId) =>
 
 /**
  * Determine a participant's current risk level based on age and risk factors
- * @param {Object} participant - Participant object
+ *
+ * @param {object} participant - Participant object
  * @returns {string} Current risk level (routine, family history, or high)
  */
 const getCurrentRiskLevel = (participant, referenceDate = new Date()) => {
@@ -205,10 +214,11 @@ const getCurrentRiskLevel = (participant, referenceDate = new Date()) => {
 
 /**
  * Find and update a participant in session data
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} participantId - Participant ID
- * @param {Object} updatedParticipant - Updated participant object
- * @returns {Object|null} Updated participant or null if not found
+ * @param {object} updatedParticipant - Updated participant object
+ * @returns {object | null} Updated participant or null if not found
  */
 const updateParticipant = (data, participantId, updatedParticipant) => {
   const participantIndex = data.participants.findIndex(
@@ -223,11 +233,12 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
 
 /**
  * Save temporary participant data back to the main participant
- * @param {Object} data - Session data
- * @returns {Object|null} Updated participant or null if no temp data
  *
  * This function takes the data.participant object and saves it back to the
  * participants array, then clears participant. Similar to saveTempEventToEvent.
+ *
+ * @param {object} data - Session data
+ * @returns {object | null} Updated participant or null if no temp data
  */
 const saveTempParticipantToParticipant = (data) => {
   if (!data.participant || !data.participant.id) {

@@ -3,9 +3,10 @@ const { getParticipant } = require('./participants.js')
 
 /**
  * Get an event by ID
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} eventId - Event ID
- * @returns {Object|null} Event object or null if not found
+ * @returns {object | null} Event object or null if not found
  */
 const getEvent = (data, eventId) => {
   return data.events.find((e) => e.id === eventId) || null
@@ -31,10 +32,11 @@ const getEventData = (data, clinicId, eventId) => {
 
 /**
  * Find and update an event in session data
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} eventId - Event ID
- * @param {Object} updatedEvent - Updated event object
- * @returns {Object|null} Updated event or null if not found
+ * @param {object} updatedEvent - Updated event object
+ * @returns {object | null} Updated event or null if not found
  */
 const updateEvent = (data, eventId, updatedEvent) => {
   const eventIndex = data.events.findIndex((e) => e.id === eventId)
@@ -48,10 +50,11 @@ const updateEvent = (data, eventId, updatedEvent) => {
 /**
  * Update event status and add to history
  * Also updates the temporary event data if it exists
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} eventId - Event ID
  * @param {string} newStatus - New status
- * @returns {Object|null} Updated event or null if not found
+ * @returns {object | null} Updated event or null if not found
  */
 const updateEventStatus = (data, eventId, newStatus) => {
   const eventIndex = data.events.findIndex((e) => e.id === eventId)
@@ -91,10 +94,11 @@ const updateEventStatus = (data, eventId, newStatus) => {
 /**
  * Update event with arbitrary data changes
  * Also updates the temporary event data if it exists and matches
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} eventId - Event ID
- * @param {Object} updates - Object containing updates to merge into the event
- * @returns {Object|null} Updated event or null if not found
+ * @param {object} updates - Object containing updates to merge into the event
+ * @returns {object | null} Updated event or null if not found
  */
 const updateEventData = (data, eventId, updates) => {
   const eventIndex = data.events.findIndex((e) => e.id === eventId)
@@ -128,12 +132,13 @@ const updateEventData = (data, eventId, updates) => {
 
 /**
  * Save temporary event data back to the main event
- * @param {Object} data - Session data
- * @returns {Object|null} Updated event or null if no temp data
  *
  * This function takes the data.event object and saves it back to the
  * events array, then clears event. It's used at the end of a workflow
  * to commit changes made to the temporary event back to the main array.
+ *
+ * @param {object} data - Session data
+ * @returns {object | null} Updated event or null if no temp data
  */
 const saveTempEventToEvent = (data) => {
   if (!data.event || !data.event.id) {

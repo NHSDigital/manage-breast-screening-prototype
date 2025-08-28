@@ -2,9 +2,9 @@
 
 /**
  * Add error messages to form components based on flash messages
- * @param {Object} component - The form component configuration object
- * @param {Object} context - The template context containing flash messages
- * @returns {Object} Updated component configuration with error details if applicable
+ *
+ * @param {object} component - The form component configuration object
+ * @returns {object} Updated component configuration with error details if applicable
  */
 const populateErrors = function (component) {
   // Get flash messages from template context

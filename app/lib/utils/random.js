@@ -63,6 +63,7 @@ const getSeed = function (baseSeed, name) {
 
 /**
  * Generate a random boolean with consistent results
+ *
  * @param {number} probability - Chance of returning true (0-1)
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
@@ -80,6 +81,7 @@ const randomBool = function (probability = 0.5, name, seed) {
 
 /**
  * Select a random item from an array with consistent results
+ *
  * @param {Array} array - Array of items
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
@@ -97,6 +99,7 @@ const randomItem = function (array, name, seed) {
 
 /**
  * Select multiple random items from an array with consistent results
+ *
  * @param {Array} array - Array of items
  * @param {number} count - Number of items to select
  * @param {string} [name] - Unique name for this random call
@@ -130,6 +133,7 @@ const randomItems = function (array, count, name, seed) {
 
 /**
  * Choose between two values based on probability
+ *
  * @param {*} valueIfTrue - Value if random check passes
  * @param {*} valueIfFalse - Value if random check fails
  * @param {number} probability - Chance of returning first value (0-1)
@@ -157,6 +161,7 @@ const randomOneOf = function (
 
 /**
  * Generate a random integer in a range
+ *
  * @param {number} min - Minimum value (inclusive)
  * @param {number} max - Maximum value (inclusive)
  * @param {string} [name] - Unique name for this random call
@@ -175,7 +180,8 @@ const randomInt = function (min, max, name, seed) {
 
 /**
  * Use weighted selection with consistent results
- * @param {Object|Array} weights - Weights object or array
+ *
+ * @param {object | Array} weights - Weights object or array
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */
@@ -217,6 +223,7 @@ const randomWeighted = function (weights, name, seed) {
 
 /**
  * Create a seeded faker instance with consistent results
+ *
  * @param {string} [name] - Unique name for this random call
  * @param {string|number} [seed] - Optional explicit seed
  */

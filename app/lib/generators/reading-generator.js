@@ -6,6 +6,7 @@ const { eligibleForReading } = require('../utils/status')
 
 /**
  * Generate sample image reading data to simulate first and second reads
+ *
  * @param {Array} events - Array of screening events
  * @param {Array} users - Array of system users
  * @returns {Array} Updated events with reading data

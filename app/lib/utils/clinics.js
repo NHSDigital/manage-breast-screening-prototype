@@ -6,6 +6,7 @@ const config = require('../../config')
 
 /**
  * Get today's clinics
+ *
  * @param {Array} clinics - Array of all clinics
  */
 const getTodaysClinics = (clinics) => {
@@ -15,6 +16,7 @@ const getTodaysClinics = (clinics) => {
 
 /**
  * Get events for a specific clinic
+ *
  * @param {Array} events - Array of all events
  * @param {string} clinicId - Clinic ID to filter by
  */
@@ -27,6 +29,7 @@ const getClinicEvents = (events, clinicId) => {
 
 /**
  * Format clinic time slot
+ *
  * @param {string} dateTime - ISO date string
  */
 const formatTimeSlot = (dateTime) => {
@@ -39,6 +42,7 @@ const formatTimeSlot = (dateTime) => {
 
 /**
  * Calculate the end time of a slot
+ *
  * @param {string} slotDateTime - ISO date string
  * @returns {Date} End time of slot
  */
@@ -50,8 +54,9 @@ const getSlotEndTime = (slotDateTime) => {
 
 /**
  * Get clinic opening hours
- * @param {Object} clinic - Clinic object
- * @returns {Object} Start and end times as Date objects
+ *
+ * @param {object} clinic - Clinic object
+ * @returns {object} Start and end times as Date objects
  */
 const getClinicHours = (clinic) => {
   if (!clinic?.slots?.length) return null
@@ -67,6 +72,7 @@ const getClinicHours = (clinic) => {
 
 /**
  * Get clinics filtered by time period
+ *
  * @param {Array} clinics - Array of all clinics
  * @param {string} filter - Filter to apply (today, upcoming, completed, all)
  */

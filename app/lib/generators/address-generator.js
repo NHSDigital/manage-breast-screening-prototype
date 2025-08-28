@@ -69,6 +69,7 @@ const HOUSE_NAMES = [
 
 /**
  * Extract postcode area (first 1-2 letters) from a full postcode
+ *
  * @param {string} postcode - Full UK postcode
  * @returns {string} Postcode area (e.g., 'OX' from 'OX3 7LE')
  */
@@ -78,6 +79,7 @@ const getPostcodeArea = (postcode) => {
 
 /**
  * Get the postcode district (number after area) from a full postcode
+ *
  * @param {string} postcode - Full UK postcode
  * @returns {string} Postcode district number
  */
@@ -87,6 +89,7 @@ const getPostcodeDistrict = (postcode) => {
 
 /**
  * Generate a random postcode in the same area as the reference postcode
+ *
  * @param {string} referencePostcode - Postcode to base the new one on
  * @returns {string} New postcode in same area
  */
@@ -113,6 +116,7 @@ const generateNearbyPostcode = (referencePostcode) => {
 
 /**
  * Generate a random street name
+ *
  * @returns {string} Generated street name
  */
 const generateStreetName = () => {
@@ -123,7 +127,8 @@ const generateStreetName = () => {
 
 /**
  * Generate line 1 of an address
- * @returns {Object} Address line 1 details
+ *
+ * @returns {object} Address line 1 details
  */
 const generateAddressLine1 = () => {
   // 20% chance of using a house name instead of number
@@ -151,7 +156,8 @@ const generateAddressLine1 = () => {
 
 /**
  * Generate list of nearby towns/areas based on BSU location
- * @param {Object} bsu - Breast screening unit object
+ *
+ * @param {object} bsu - Breast screening unit object
  * @returns {Array} List of nearby towns/areas
  */
 const generateNearbyAreas = (bsu) => {
@@ -192,8 +198,9 @@ const generateNearbyAreas = (bsu) => {
 
 /**
  * Generate an address appropriate for the BSU area
- * @param {Object} bsu - Breast screening unit object
- * @returns {Object} Generated address object
+ *
+ * @param {object} bsu - Breast screening unit object
+ * @returns {object} Generated address object
  */
 const generateBSUAppropriateAddress = (bsu) => {
   const nearbyAreas = generateNearbyAreas(bsu)

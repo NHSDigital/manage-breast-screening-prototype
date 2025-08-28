@@ -48,7 +48,8 @@ const generateImageUrl = (side, view, accessionNumber) => {
 
 /**
  * Generate images for a single view
- * @param {Object} params - Parameters for image generation
+ *
+ * @param {object} params - Parameters for image generation
  * @param {string} params.side - Breast side ('right' or 'left')
  * @param {string} params.view - View type ('mediolateral oblique' or 'craniocaudal')
  * @param {string} params.accessionBase - Base accession number
@@ -56,7 +57,7 @@ const generateImageUrl = (side, view, accessionNumber) => {
  * @param {string} params.startTime - Start timestamp
  * @param {boolean} params.isSeedData - Whether generating seed data
  * @param {boolean} [params.needsRepeat] - Force this view to be repeated
- * @returns {Object} View data with images
+ * @returns {object} View data with images
  */
 const generateViewImages = ({
   side,
@@ -109,14 +110,15 @@ const generateViewImages = ({
 
 /**
  * Generate a complete set of mammogram images
- * @param {Object} options - Generation options
+ *
+ * @param {object} [options] - Generation options
  * @param {Date|string} [options.startTime] - Starting timestamp (defaults to now)
- * @param {boolean} [options.isSeedData=false] - Whether generating seed data
- * @param {Object} [options.config] - Optional configuration for specific scenarios
+ * @param {boolean} [options.isSeedData] - Whether generating seed data
+ * @param {object} [options.config] - Optional configuration for specific scenarios
  * @param {string[]} [options.config.repeatViews] - Array of views to repeat (e.g. ['RMLO', 'LCC'])
  * @param {string[]} [options.config.missingViews] - Array of views to omit (e.g. ['RMLO'])
- * @param {Object} [options.probabilities] - Override default probabilities
- * @returns {Object} Complete mammogram data
+ * @param {object} [options.probabilities] - Override default probabilities
+ * @returns {object} Complete mammogram data
  */
 const generateMammogramImages = ({
   startTime = new Date(),

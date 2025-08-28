@@ -63,11 +63,12 @@ const getReadingMetadata = (event) => {
 
 /**
  * Update the writeReading function to also handle removing from skipped events
- * @param {Object} event - The event to update
+ *
+ * @param {object} event - The event to update
  * @param {string} userId - User ID
- * @param {Object} reading - Reading data to save
- * @param {Object} [data] - Session data (needed for batch context)
- * @param {string} [batchId] - Batch ID (if in batch context)
+ * @param {object} reading - Reading data to save
+ * @param {object | null} [data] - Session data (needed for batch context)
+ * @param {string | null} [batchId] - Batch ID (if in batch context)
  */
 const writeReading = (event, userId, reading, data = null, batchId = null) => {
   // Ensure imageReading structure exists
@@ -132,10 +133,11 @@ const enhanceEventsWithReadingData = (events, participants, userId) => {
 
 /**
  * Calculate core reading metrics used for both status and progress tracking
+ *
  * @param {Array} events - Array of events to analyze
- * @param {string} userId - User ID for user-specific metrics
- * @param {Array} skippedEvents - Array of skipped event IDs
- * @returns {Object} Core metrics object
+ * @param {string | null} userId - User ID for user-specific metrics
+ * @param {Array} [skippedEvents] - Array of skipped event IDs
+ * @returns {object} Core metrics object
  */
 const calculateReadingMetrics = function (
   events,
@@ -272,9 +274,10 @@ const calculateReadingMetrics = function (
 
 /**
  * Get detailed reading status for a group of events
+ *
  * @param {Array} events - Array of events to analyze
- * @param {string} [userId=null] - Optional user ID (defaults to current user if available)
- * @returns {Object} Detailed reading status
+ * @param {string | null} [userId] - Optional user ID (defaults to current user if available)
+ * @returns {object} Detailed reading status
  */
 const getReadingStatusForEvents = function (events, userId = null) {
   // Get metrics from base calculation function
@@ -318,11 +321,12 @@ const getReadingStatusForEvents = function (events, userId = null) {
 /**
  * Get progress through reading a set of events
  * Enhanced to include user-specific navigation
+ *
  * @param {Array} events - Array of events to track progress through
  * @param {string} currentEventId - ID of current event
  * @param {Array} skippedEvents - Array of event IDs that have been skipped
- * @param {string} [userId=null] - Optional user ID (defaults to current user if available)
- * @returns {Object} Progress information
+ * @param {string} [userId] - Optional user ID (defaults to current user if available)
+ * @returns {object} Progress information
  */
 const getReadingProgress = function (
   events,
@@ -626,6 +630,7 @@ const getReadingProgress = function (
 
 /**
  * Sort events by screening date (oldest first)
+ *
  * @param {Array} events - Array of events to sort
  * @returns {Array} Sorted events array
  */
@@ -682,7 +687,8 @@ const getReadingClinics = (data, options = {}) => {
 
 /**
  * Get readable events for a clinic with pre-calculated metadata
- * @param {Object} data - Session data containing events, participants, etc.
+ *
+ * @param {object} data - Session data containing events, participants, etc.
  * @param {string} clinicId - ID of the clinic to get events for
  * @returns {Array} Events with enhanced metadata
  */
@@ -721,6 +727,7 @@ const filterEventsByEligibleForReading = (events) => {
 
 /**
  * Filter events that need any read (first or second)
+ *
  * @param {Array} events - Events to filter
  * @param {number} maxReadsPerEvent - Number of reads required to be complete (default: 2)
  * @returns {Array} Events needing any read
@@ -734,6 +741,7 @@ const filterEventsByNeedsAnyRead = (events, maxReadsPerEvent = 2) => {
 
 /**
  * Filter events that need a first read
+ *
  * @param {Array} events - Events to filter
  * @returns {Array} Events needing first read
  */
@@ -743,6 +751,7 @@ const filterEventsByNeedsFirstRead = (events) => {
 
 /**
  * Filter events that need a second read
+ *
  * @param {Array} events - Events to filter
  * @returns {Array} Events needing second read
  */
@@ -752,6 +761,7 @@ const filterEventsByNeedsSecondRead = (events) => {
 
 /**
  * Filter events that are fully read (have all required reads)
+ *
  * @param {Array} events - Events to filter
  * @param {number} requiredReads - Number of required reads (default: 2)
  * @returns {Array} Fully read events
@@ -765,6 +775,7 @@ const filterEventsByFullyRead = (events, requiredReads = 2) => {
 
 /**
  * Filter events that a specific user can read
+ *
  * @param {Array} events - Events to filter
  * @param {string} userId - User ID
  * @returns {Array} Events user can read
@@ -775,12 +786,13 @@ const filterEventsByUserCanRead = (events, userId) => {
 
 /**
  * Filter events that user can read or has already read
+ *
  * @param {Array} events - Array of events to filter
  * @param {string} userId - User ID to check
- * @param {Object} options - Options for determining eligibility
+ * @param {object} [options] - Options for determining eligibility
  * @returns {Array} Events user can read or has read
  *
- * Priarily to support navigating backwards through events
+ *   Priarily to support navigating backwards through events
  */
 const filterEventsByUserCanReadOrHasRead = (events, userId, options = {}) => {
   const { maxReadsPerEvent = 2 } = options
@@ -805,6 +817,7 @@ const filterEventsByUserCanReadOrHasRead = (events, userId, options = {}) => {
 
 /**
  * Filter events for a specific clinic
+ *
  * @param {Array} events - All events
  * @param {string} clinicId - Clinic ID
  * @returns {Array} Events for the clinic
@@ -815,9 +828,10 @@ const filterEventsByClinic = (events, clinicId) => {
 
 /**
  * Filter events that are within a specific day range
+ *
  * @param {Array} events - Events to filter
  * @param {number} minDays - Minimum days old (inclusive)
- * @param {number} [maxDays=null] - Maximum days old (inclusive), if null, no upper bound
+ * @param {number | null} [maxDays] - Maximum days old (inclusive), if null, no upper bound
  * @returns {Array} Events within the specified day range
  */
 const filterEventsByDayRange = (events, minDays, maxDays = null) => {
@@ -843,10 +857,11 @@ const getFirstEvent = (events) => {
 
 /**
  * Get the next event after a specific event
+ *
  * @param {Array} events - Array of events
  * @param {string} currentEventId - Current event ID
  * @param {boolean} wrap - Whether to wrap around to start if at end
- * @returns {Object|null} Next event or null
+ * @returns {object | null} Next event or null
  */
 const getNextEvent = (events, currentEventId, wrap = true) => {
   const currentIndex = events.findIndex((e) => e.id === currentEventId)
@@ -863,10 +878,11 @@ const getNextEvent = (events, currentEventId, wrap = true) => {
 
 /**
  * Get the previous event before a specific event
+ *
  * @param {Array} events - Array of events
  * @param {string} currentEventId - Current event ID
  * @param {boolean} wrap - Whether to wrap around to end if at start
- * @returns {Object|null} Previous event or null
+ * @returns {object | null} Previous event or null
  */
 const getPreviousEvent = (events, currentEventId, wrap = true) => {
   const currentIndex = events.findIndex((e) => e.id === currentEventId)
@@ -898,10 +914,10 @@ const getReadForUser = function (event, userId = null) {
 
 /**
  * Get first event from an array that a user can read
+ *
  * @param {Array} events - Array of events to search
- * @param {string} userId - User ID to check for
- * @param {Object} options - Additional options for eligibility
- * @returns {Object|null} First event user can read or null if none
+ * @param {string | null} userId - User ID to check for
+ * @returns {object | null} First event user can read or null if none
  */
 const getFirstUserReadableEvent = function (events, userId = null) {
   // Get user ID from context if not provided and we're in a template context
@@ -936,9 +952,10 @@ const userHasReadEvent = function (event, userId) {
 
 /**
  * Check if current user can read an event
- * @param {Object} event - The event to check
- * @param {string} userId - Current user ID
- * @param {Object} options - Options for determining eligibility
+ *
+ * @param {object} event - The event to check
+ * @param {string | null} userId - Current user ID
+ * @param {object} [options] - Options for determining eligibility
  * @returns {boolean} Whether the current user can read this event
  */
 const canUserReadEvent = function (event, userId = null, options = {}) {
@@ -970,7 +987,8 @@ const canUserReadEvent = function (event, userId = null, options = {}) {
 
 /**
  * Check if an event has any reads
- * @param {Object} event - The event to check
+ *
+ * @param {object} event - The event to check
  * @returns {boolean} Whether the event has any reads
  */
 const hasReads = (event) => {
@@ -982,7 +1000,8 @@ const hasReads = (event) => {
 
 /**
  * Check if an event needs a first read
- * @param {Object} event - The event to check
+ *
+ * @param {object} event - The event to check
  * @returns {boolean} Whether a first read is needed
  */
 const needsFirstRead = (event) => {
@@ -1126,9 +1145,10 @@ const createReadingBatch = (data, options) => {
 
 /**
  * Generate a default name for a batch based on its type
+ *
  * @param {string} type - Batch type
  * @param {string} clinicId - Clinic ID (for clinic batches)
- * @param {Object} data - Session data
+ * @param {object} data - Session data
  * @returns {string} Default batch name
  */
 const getDefaultBatchName = (type, clinicId, data) => {
@@ -1160,6 +1180,7 @@ const getDefaultBatchName = (type, clinicId, data) => {
 
 /**
  * Generate a unique ID for a batch
+ *
  * @returns {string} Unique batch ID
  */
 const generateBatchId = () => {
@@ -1168,9 +1189,10 @@ const generateBatchId = () => {
 
 /**
  * Get a reading batch by ID
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} batchId - Batch ID to retrieve
- * @returns {Object|null} Batch object or null if not found
+ * @returns {object | null} Batch object or null if not found
  */
 const getReadingBatch = (data, batchId) => {
   if (!data.readingSessionBatches || !data.readingSessionBatches[batchId]) {
@@ -1204,10 +1226,11 @@ const getOrCreateClinicBatch = (data, clinicId) => {
 
 /**
  * Get the first event in a batch that a user can read
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} batchId - Batch ID
- * @param {string} [userId] - User ID (defaults to current user)
- * @returns {Object|null} First readable event or null if none found
+ * @param {string | null} [userId] - User ID (defaults to current user)
+ * @returns {object | null} First readable event or null if none found
  */
 const getFirstReadableEventInBatch = (data, batchId, userId = null) => {
   const batch = getReadingBatch(data, batchId)
@@ -1228,7 +1251,8 @@ const getFirstReadableEventInBatch = (data, batchId, userId = null) => {
 
 /**
  * Mark an event as skipped in a batch
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} batchId - Batch ID
  * @param {string} eventId - Event ID to mark as skipped
  * @returns {boolean} Whether the operation was successful
@@ -1250,11 +1274,12 @@ const skipEventInBatch = (data, batchId, eventId) => {
 
 /**
  * Get reading progress for a batch
- * @param {Object} data - Session data
+ *
+ * @param {object} data - Session data
  * @param {string} batchId - Batch ID
  * @param {string} currentEventId - Current event ID
  * @param {string} [userId] - User ID (defaults to current user)
- * @returns {Object} Reading progress information
+ * @returns {object} Reading progress information
  */
 const getBatchReadingProgress = (
   data,
