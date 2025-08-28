@@ -1,17 +1,32 @@
-<script src="/js/jquery-3.5.1.min.js" type="module"></script>
-<script src="/js/custom-elements/is-sticky.js"></script>
-<script src="/js/main.js" type="module"></script>
+<script src="/js/main.js"></script>
 {% if useAutoStoreData %}
-  <script src="/js/auto-store-data.js" type="module"></script>
+  <script src="/js/auto-store-data.js"></script>
 {% endif %}
-<script src="/js/button-menu.js" type="module"></script>
 
+<!-- Add any custom scripts -->
+<script src="/js/custom-elements/is-sticky.js"></script>
+<script src="/js/button-menu.js"></script>
 <script src="/js/modal.js"></script>
 <script src="/js/scroll-to-section.js"></script>
 <script src="/js/expanded-state-tracker.js"></script>
 <script src="/js/expandable-sections.js"></script>
 
-<!-- Add any custom scripts -->
 {% if data.settings.reading.showPacsViewer | falsify %}
-  <script src="/js/mammogram-viewer.js" type="module"></script>
+  <script src="/js/mammogram-viewer.js"></script>
 {% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Find the clear data link and add click handler
+    const $resetLink = document.querySelector('a[data-reset-session]')
+    if ($resetLink) {
+      $resetLink.addEventListener('click', () => {
+        // Clear expanded states before navigating
+        if (window.clearAllExpandedStates) {
+          window.clearAllExpandedStates()
+          console.log('Cleared expanded states before data clear')
+        }
+      })
+    }
+  })
+</script>
