@@ -30,22 +30,27 @@
     descriptionHtml: cardHtml
   }) }}
 
-  {% if participantUrl %}
+  {# {% if participantUrl %}
     <p>
       <a href="{{ participantUrl }}"
         class="nhsuk-link nhsuk-link--no-visited-state">
         View their participant record
       </a>
     </p>
-  {% endif %}
+  {% endif %} #}
 
   {% if appointmentUrl %}
-    <p>
-      <a href="{{ appointmentUrl }}"
-        class="nhsuk-link nhsuk-link--no-visited-state">
-        View their appointment
-      </a>
-    </p>
+  <div class="nhsuk-button-group">
+    <a href="{{ appointmentUrl }}"
+      class="nhsuk-link nhsuk-link--no-visited-state">
+      View their appointment
+    </a>
+    <a href="{{ appointmentUrl }}/participant"
+      class="nhsuk-link nhsuk-link--no-visited-state">
+      View participant details
+    </a>
+  </div>
+
   {% endif %}
 
 {% endset %}
@@ -82,6 +87,14 @@
       href: checkInHref,
       attributes: buttonAttributes
     },
+    {
+      text: "Confirm identity and start appointment",
+      element: "button",
+      classes: "js-check-in-link nhsuk-button--secondary",
+      action: "custom",
+      href: checkInHref,
+      attributes: buttonAttributes
+    } if currentUser | isClinician and false,
     {
       text: "Identity in doubt",
       element: "button",

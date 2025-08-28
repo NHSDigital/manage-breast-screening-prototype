@@ -1,3 +1,6 @@
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+
 .app-nowrap {
   white-space: nowrap;
 }
@@ -11,4 +14,8 @@
 .app-image-card {
   opacity: 1;
   transition: opacity 0.5s ease-in;
+}
+
+.app-display-none {
+  display: none;
 }

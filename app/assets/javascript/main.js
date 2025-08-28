@@ -40,6 +40,25 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Show the start appointment link by removing the hidden class
+        const eventRow = document.getElementById(`event-row-${eventId}`)
+        if (eventRow) {
+          const startAppointmentLink = eventRow.querySelector('.js-start-appointment-link')
+          if (startAppointmentLink) {
+            startAppointmentLink.classList.remove('app-display-none')
+          }
+
+          // Add dark overlay to the page and highlight the row
+          document.body.classList.add('app-row-spotlight-active')
+          eventRow.classList.add('app-row-highlight')
+
+          // Remove the highlight and overlay after 2 seconds
+          setTimeout(() => {
+            eventRow.classList.remove('app-row-highlight')
+            document.body.classList.remove('app-row-spotlight-active')
+          }, 2000)
+        }
+
         // Remove the check-in link
         // Check if this is a modal button or a direct link
         const isModalButton = link.closest('.app-modal')

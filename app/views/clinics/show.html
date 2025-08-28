@@ -38,7 +38,7 @@
 
   </div>
 
-  {{ currentUser | log("Currenet user")}}
+  {{ currentUser | log("Current user")}}
   {{ currentUser | isClinician | log("is clinician")}}
 
   {# Clinic time and date #}
@@ -229,12 +229,28 @@
                   event: event,
                   participant: participant,
                   confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
-                  statusTagId: statusTagId
+                  statusTagId: statusTagId,
+                  currentUser: currentUser
                 }) }}
 
               {% endif %}
 
-              {% if not (event | isFinal) and (currentUser | isClinician) %}
+              {% if currentUser | isClinician %}
+                {% if event | hasNotStarted %}
+                  {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this class to make the link visible #}
+                  <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap {{ 'app-display-none' if event.status == 'event_scheduled' }} js-start-appointment-link">
+                    Start appointment
+                  </a>
+
+                {% elseif event | startedByCurrentUser %}
+                  <a href="{{ eventBaseUrl }}/identity">
+                    Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                  </a>
+                {% endif %}
+
+              {% endif %}
+
+              {# {% if not (event | isFinal) and (currentUser | isClinician) %}
                 <p class="nhsuk-u-margin-bottom-0">
                   {% if event | hasNotStarted %}
                     <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap">
@@ -246,7 +262,7 @@
                     </a>
                   {% endif %}
                 </p>
-              {% endif %}
+              {% endif %} #}
 
             </td>
           </tr>
