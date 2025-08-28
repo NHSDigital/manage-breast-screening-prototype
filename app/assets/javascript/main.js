@@ -48,15 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
             startAppointmentLink.classList.remove('app-display-none')
           }
 
-          // Add dark overlay to the page and highlight the row
-          document.body.classList.add('app-row-spotlight-active')
-          eventRow.classList.add('app-row-highlight')
-
-          // Remove the highlight and overlay after 2 seconds
-          setTimeout(() => {
-            eventRow.classList.remove('app-row-highlight')
-            document.body.classList.remove('app-row-spotlight-active')
-          }, 2000)
+          // Set focus on the row for accessibility
+          eventRow.setAttribute('tabindex', '-1')
+          eventRow.focus()
         }
 
         // Remove the check-in link

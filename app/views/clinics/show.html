@@ -106,7 +106,7 @@
           {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
           {% set statusTagId = "status-tag-" + event.id %}
 
-          <tr id="event-row-{{event.id}}">
+          <tr class="event-row" id="event-row-{{event.id}}">
 
             {# Appointment time #}
             <td class="nhsuk-table__cell">{{ event.statusHistory[0].timestamp | formatTimeString }}

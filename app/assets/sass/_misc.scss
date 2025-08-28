@@ -1,4 +1,5 @@
 @use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/styles/typography' as *;
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
 .app-mammogram-image--placeholder {
@@ -64,32 +65,11 @@
   max-width: 1200px;
 }
 
-// Highlight a row briefly after an appointment is checked in.
 
-/* Subtle dark overlay over the entire page */
-body.app-row-spotlight-active::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.2);
-  z-index: 500;
-  pointer-events: none;
-  transition: opacity 0.8s ease-out;
-}
-
-/* Highlighted row appears above the overlay with original page background */
-.app-row-highlight {
-  position: relative;
-  z-index: 501;
-  background-color: 	#f0f4f5 !important; // to match page colour
-  outline: 5px solid #005eb8;
-  outline-offset: 1px;
-  transition: outline 0.3s ease-in-out, background-color 0.3s ease-in-out;
-}
-
-.app-row-highlight td {
-  background-color: transparent !important;
+.event-row:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #f0f4f5,
+    0 0 0 calc(2px + $nhsuk-focus-width) $nhsuk-focus-text-color,
+    0 0 0 calc(2px + $nhsuk-focus-width + 4px) $nhsuk-focus-color;
 }
