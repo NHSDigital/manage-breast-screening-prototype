@@ -50,6 +50,9 @@
     values: event.medicalHistoryTemp.breastLocation,
     items: [
       {
+        divider: "or"
+      },
+      {
         value: "does-not-know",
         text: "Does not know"
       }
@@ -70,10 +73,6 @@
       value: event.medicalHistoryTemp.diagnosisDate,
       id: "diagnosis-date",
       classes: "nhsuk-input--width-10",
-      label: {
-        text: "Year of diagnosis",
-        classes: "nhsuk-label--s"
-      },
       hint: {
         text: "For example, 2019"
       },
@@ -214,7 +213,7 @@
       </div>
     </div>
 
-    <h2>Systemic treatments</h2>
+    <h3>Systemic treatments</h3>
 
     {{ checkboxes({
       name: "event[medicalHistoryTemp][systemicTreatments]",
@@ -312,7 +311,17 @@
         },
         {
           value: "unknown",
-          text: "Exact location unknown"
+          text: "Exact location unknown",
+          conditional: {
+            html: input({
+              name: "event[medicalHistoryTemp][unknownLocationDetails]",
+              value: event.medicalHistoryTemp.unknownLocationDetails,
+              id: "unknown-location-details",
+              label: {
+                text: "Provide details"
+              }
+            })
+          }
         }
       ]
     }) }}
@@ -325,7 +334,7 @@
       text: "Additional info (optional)",
       classes: "nhsuk-label--m"
     },
-    rows: 5
+    rows: 4
   }) }}
 
 {% endblock formContent %}
