@@ -45,3 +45,44 @@
   @include nhsuk-typography-weight-bold($important: true);
   opacity: 0.9;
 }
+
+is-sticky {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+// Sass variables for header height calculations
+$nav-height: 48px;
+$status-bar-base-padding: 16px; // 8px top + 8px bottom
+$status-bar-row-height: 32px; // Approximate row height
+$status-bar-row-spacing: 16px; // 8px margin + 8px padding for borders
+
+// Function to calculate header height for given number of rows
+@function calculate-header-height($rows) {
+  $spacing-multiplier: $rows - 1; // Number of border spacings needed
+  @if $spacing-multiplier < 0 {
+    $spacing-multiplier: 0;
+  }
+  @return $nav-height + $status-bar-base-padding + ($rows * $status-bar-row-height) + ($spacing-multiplier * $status-bar-row-spacing);
+}
+
+// Default scroll padding (fallback for 3 rows)
+html {
+  scroll-padding-top: #{calculate-header-height(3)};
+}
+
+// Generate classes for different row counts
+@for $rowCount from 1 through 5 {
+  html:has(.app-status-bar--rows-#{$rowCount}) {
+    scroll-padding-top: #{calculate-header-height($rowCount)};
+  }
+}
+
+// Alternative approach if :has() doesn't work - classes on html element
+@for $rowCount from 1 through 5 {
+  html.sticky-header-rows-#{$rowCount} {
+    scroll-padding-top: #{calculate-header-height($rowCount)};
+  }
+}
