@@ -16,8 +16,9 @@
 
 {% if confirmIdentityEnabled %}
   {% set modalId = "check-in-modal-" + params.event.id %}
-   {% set statusTagId = params.statusTagId %}
-   {% set appointmentUrl = "/clinics/" + params.clinicId + "/events/" + params.event.id %}
+  {% set statusTagId = params.statusTagId %}
+  {% set appointmentUrl = "/clinics/" + params.clinicId + "/events/" + params.event.id %}
+  {% set currentUser = params.currentUser %}
   {% include "_includes/confirm-identity-modal.njk" %}
 {% endif %}
 

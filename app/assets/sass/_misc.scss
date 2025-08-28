@@ -1,4 +1,5 @@
 @use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/styles/typography' as *;
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
 
 .app-mammogram-image--placeholder {
@@ -62,4 +63,13 @@
 
 .app-page-width--wide .nhsuk-width-container {
   max-width: 1200px;
+}
+
+
+.event-row:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #f0f4f5,
+    0 0 0 calc(2px + $nhsuk-focus-width) $nhsuk-focus-text-color,
+    0 0 0 calc(2px + $nhsuk-focus-width + 4px) $nhsuk-focus-color;
 }

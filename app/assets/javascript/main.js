@@ -40,6 +40,19 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Show the start appointment link by removing the hidden class
+        const eventRow = document.getElementById(`event-row-${eventId}`)
+        if (eventRow) {
+          const startAppointmentLink = eventRow.querySelector('.js-start-appointment-link')
+          if (startAppointmentLink) {
+            startAppointmentLink.classList.remove('app-display-none')
+          }
+
+          // Set focus on the row for accessibility
+          eventRow.setAttribute('tabindex', '-1')
+          eventRow.focus()
+        }
+
         // Remove the check-in link
         // Check if this is a modal button or a direct link
         const isModalButton = link.closest('.app-modal')
