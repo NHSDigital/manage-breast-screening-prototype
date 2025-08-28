@@ -2,39 +2,105 @@
 
 {% extends 'layout-medical-history-form.html' %}
 
-{% set pageHeading = "Mastectomy" %}
+{% set pageHeading = "Mastectomy or lumpectomy" %}
 {% set medicalHistoryType = "mastectomy" %}
 
 {% block formContent %}
 
+  {% call fieldset({
+    legend: {
+      text: "What surgery has " + (participant.firstName or "the participant") + " had?",
+      classes: "nhsuk-fieldset__legend--m"
+    }
+  }) %}
+    
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Right breast</h3>
+        {{ radios({
+          name: "event[medicalHistoryTemp][surgeryRightBreast]",
+          value: event.medicalHistoryTemp.surgeryRightBreast,
+          items: [
+            {
+              value: "full-mastectomy",
+              text: "Full mastectomy"
+            },
+            {
+              value: "lumpectomy",
+              text: "Lumpectomy (partial mastectomy)"
+            },
+            {
+              value: "none",
+              text: "None"
+            }
+          ]
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Left breast</h3>
+        {{ radios({
+          name: "event[medicalHistoryTemp][surgeryLeftBreast]",
+          value: event.medicalHistoryTemp.surgeryLeftBreast,
+          items: [
+            {
+              value: "full-mastectomy",
+              text: "Full mastectomy"
+            },
+            {
+              value: "lumpectomy",
+              text: "Lumpectomy (partial mastectomy)"
+            },
+            {
+              value: "none",
+              text: "None"
+            }
+          ]
+        }) }}
+      </div>
+    </div>
+
+  {% endcall %}
+
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][recentProcedure]",
+    value: event.medicalHistoryTemp.recentProcedure,
+    items: [
+      {
+        value: "true",
+        text: "Procedure was within the last six months",
+        checked: event.medicalHistoryTemp.recentProcedure == "true"
+      }
+    ]
+  }) }}
+
   {{ radios({
-    name: "event[medicalHistoryTemp][type]",
-    value: event.medicalHistoryTemp.type,
+    name: "event[medicalHistoryTemp][reason]",
+    value: event.medicalHistoryTemp.reason,
     fieldset: {
       legend: {
-        text: typeQuestionText or "What type of mastectomy?",
+        text: "Why was this surgery done?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
     items: [
       {
-        value: "Full mastectomy",
-        text: "Full mastectomy"
+        value: "Risk reduction",
+        text: "Risk reduction"
       },
       {
-        value: "Partial mastectomy",
-        text: "Partial mastectomy"
+        value: "Gender-affirmation",
+        text: "Gender-affirmation (top surgery)"
       },
       {
         value: "Other",
         text: "Other",
         conditional: {
           html: input({
-            name: "event[medicalHistoryTemp][typeOtherDetails]",
-            value: event.medicalHistoryTemp.typeOtherDetails,
-            id: "other-mastectomy-details",
+            name: "event[medicalHistoryTemp][reasonDetails]",
+            value: event.medicalHistoryTemp.reasonDetails,
+            id: "reason-details",
             label: {
-              text: "Add details"
+              text: "Provide details"
             }
           })
         }
@@ -42,17 +108,43 @@
     ]
   }) }}
 
-  {% set generalLocationText = "Which breasts have had a mastectomy?" %}
-  {% include "_includes/medical-information/medical-history/general-location.njk" %}
+  {{ radios({
+    name: "event[medicalHistoryTemp][reconstruction]",
+    value: event.medicalHistoryTemp.reconstruction,
+    fieldset: {
+      legend: {
+        text: "Has " + (participant.firstName or "the participant") + " had breast reconstruction surgery?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Yes, only using fat transfer",
+        text: "Yes, only using fat transfer"
+      },
+      {
+        value: "Yes, including implants",
+        text: "Yes, including implants (silicone or saline)"
+      },
+      {
+        value: "Yes, type unknown",
+        text: "Yes, type unknown"
+      },
+      {
+        value: "No",
+        text: "No"
+      }
+    ]
+  }) }}
 
-  {% set dateQuestionText = "When was the procedure?" %}
-  {% include "_includes/medical-information/medical-history/date.njk" %}
-
-  {% set additionalDetailsHintText = "Include any other relevant information" %}
-  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+  {{ textarea({
+    name: "event[medicalHistoryTemp][additionalInfo]",
+    value: event.medicalHistoryTemp.additionalInfo,
+    id: "additional-info",
+    label: {
+      text: "Additional info (optional)",
+      classes: "nhsuk-label--m"
+    }
+  }) }}
 
 {% endblock formContent %}
-
-
-
-
