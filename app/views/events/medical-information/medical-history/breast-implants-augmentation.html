@@ -7,61 +7,54 @@
 
 {% block formContent %}
 
-  {{ radios({
-    name: "event[medicalHistoryTemp][type]",
-    value: event.medicalHistoryTemp.type,
-    fieldset: {
-      legend: {
-        text: "What procedure(s) has " + (participant.firstName or "the participant") + " had?",
-        classes: "nhsuk-fieldset__legend--m"
-      }
-    },
-    items: [
-      {
-        value: "Breast implants",
-        text: "Breast implants (silicone or saline)"
-      },
-      {
-        value: "Other augmentation",
-        text: "Other augmentation (such as a fat transfer or breast filler)",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][details]",
-            value: event.medicalHistoryTemp.details,
-            id: "augmentation-details",
-            label: {
-              text: "Provide details"
+  {% call fieldset({
+    legend: {
+      text: "What procedure(s) has " + (participant.firstName or "the participant") + " had?",
+      classes: "nhsuk-fieldset__legend--m"
+    }
+  }) %}
+    
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Right breast</h3>
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][proceduresRightBreast]",
+          values: event.medicalHistoryTemp.proceduresRightBreast,
+          items: [
+            {
+              value: "breast-implants",
+              text: "Breast implants (silicone or saline)"
+            },
+            {
+              value: "other-augmentation",
+              text: "Other augmentation"
             }
-          })
-        }
-      }
-    ]
-  }) }}
+          ]
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">Left breast</h3>
+        {{ checkboxes({
+          name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+          values: event.medicalHistoryTemp.proceduresLeftBreast,
+          items: [
+            {
+              value: "breast-implants",
+              text: "Breast implants (silicone or saline)"
+            },
+            {
+              value: "other-augmentation",
+              text: "Other augmentation"
+            }
+          ]
+        }) }}
+      </div>
+    </div>
 
-  {{ radios({
-    name: "event[medicalHistoryTemp][location]",
-    value: event.medicalHistoryTemp.location,
-    fieldset: {
-      legend: {
-        text: "Which breast(s) was this done on?",
-        classes: "nhsuk-fieldset__legend--m"
-      }
-    },
-    items: [
-      {
-        value: "Right",
-        text: "Right"
-      },
-      {
-        value: "Left",
-        text: "Left"
-      },
-      {
-        value: "Both",
-        text: "Both"
-      }
-    ]
-  }) }}
+  {% endcall %}
+
+    <div class="nhsuk-u-padding-bottom-4"></div>
+
 
   {{ checkboxes({
     name: "event[medicalHistoryTemp][recentProcedure]",
@@ -102,6 +95,8 @@
     ]
   }) }}
 
+
+
   {{ checkboxes({
     name: "event[medicalHistoryTemp][implantsRemoved]",
     value: event.medicalHistoryTemp.implantsRemoved,
@@ -123,6 +118,9 @@
       }
     ]
   }) }}
+
+      <div class="nhsuk-u-padding-bottom-4"></div>
+
 
   {{ textarea({
     name: "event[medicalHistoryTemp][additionalInfo]",
