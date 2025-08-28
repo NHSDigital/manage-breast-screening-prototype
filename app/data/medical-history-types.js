@@ -26,6 +26,12 @@ module.exports = [
     canHaveMultiple: true,
   },
   {
+    type: 'mastectomy',
+    name: 'mastectomy',
+    slug: 'mastectomy',
+    canHaveMultiple: true,
+  },
+  {
     type: 'cysts',
     name: 'Cysts',
     slug: 'cysts',
