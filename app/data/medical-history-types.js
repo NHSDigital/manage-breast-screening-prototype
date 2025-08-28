@@ -20,15 +20,9 @@ module.exports = [
     canHaveMultiple: true,
   },
   {
-    type: 'nonCancerousBreastSurgeries',
-    name: 'Non-cancerous breast surgeries',
-    slug: 'non-cancerous-breast-surgeries',
-    canHaveMultiple: true,
-  },
-  {
-    type: 'mastectomy',
-    name: 'mastectomy',
-    slug: 'mastectomy',
+    type: 'mastectomy-lumpectomy',
+    name: 'Mastectomy or lumpectomy',
+    slug: 'mastectomy-lumpectomy',
     canHaveMultiple: true,
   },
   {
