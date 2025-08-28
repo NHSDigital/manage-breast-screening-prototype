@@ -1,9 +1,9 @@
 {# app/views/_includes/event-active-header.njk #}
 
-<div class="app-appointment-header app-appointment-header--sticky" data-stuck="true">
+<is-sticky class="app-appointment-header app-appointment-header--sticky">
   {% include "_includes/appointment-status-bar.njk" %}
 
   <div class="nhsuk-width-container">
     {% include "_includes/event-active-tabs.njk" %}
   </div>
-</div>
+</is-sticky>

@@ -46,6 +46,13 @@
   opacity: 0.9;
 }
 
+is-sticky {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
 // Sass variables for header height calculations
 $nav-height: 48px;
 $status-bar-base-padding: 16px; // 8px top + 8px bottom
