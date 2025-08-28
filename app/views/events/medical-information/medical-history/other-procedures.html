@@ -18,20 +18,6 @@
     },
     items: [
       {
-        value: "Prophylactic or elective mastectomy",
-        text: "Prophylactic or elective mastectomy",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][mastectomyDetails]",
-            value: event.medicalHistoryTemp.mastectomyDetails,
-            id: "mastectomy-details",
-            label: {
-              text: "Provide details"
-            }
-          })
-        }
-      },
-      {
         value: "Breast reduction",
         text: "Breast reduction",
         conditional: {
@@ -39,6 +25,20 @@
             name: "event[medicalHistoryTemp][reductionDetails]",
             value: event.medicalHistoryTemp.reductionDetails,
             id: "reduction-details",
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Breast symmetrisation",
+        text: "Breast symmetrisation",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][symmetrisationDetails]",
+            value: event.medicalHistoryTemp.symmetrisationDetails,
+            id: "symmetrisation-details",
             label: {
               text: "Provide details"
             }
