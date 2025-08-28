@@ -178,77 +178,7 @@
       html: medicalHistoryHtml,
       status: "To review"
     }) }}
-{% endswitch %} #}
-
-{% set medicalHistoryHtml %}
-  {% set rows = [
-    "Implanted medical devices",
-    "Breast implants or augmentation",
-    "Breast cancer tests and treatment",
-    "Treatment for non-cancerous breast conditions",
-    "Other procedures"
-    ] %}
-
-  {% set summaryListItems = [] %}
-
-  {% set valueHtml = "" %}
-
-  {% for row in rows %}
-    {% set summaryListItems = summaryListItems | push({
-        key: {
-          text: row
-        },
-        value: {
-          html: valueHtml
-        },
-        actions: {
-          items: [
-            {
-              href: "#",
-              text: "Change",
-              visuallyHiddenText: row | lower
-            }
-          ]
-        }
-      }) %}
-  {% endfor %}
-  {{ summaryList({
-    rows: summaryListItems
-  } | handleSummaryListMissingInformation) }}
-
-
-{% endset %}
-
-{# {% switch displayFormat %}
-  {% case 'flat' %}
-
-    <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
-    {{ medicalHistoryHtml | safe }}
-  {% case 'card' %}
-    {% call card({
-      heading: sectionHeading,
-      attributes: {
-        id: sectionId
-      }
-
-    }) %}
-      <p>
-        {{ subHeading }}
-      </p>
-      {{ medicalHistoryHtml | safe }}
-    {% endcall %}
-  {% default %}
-    {{ appDetails({
-      id: sectionId,
-      classes: "nhsuk-expander js-expandable-section",
-      summaryText: sectionHeading,
-      contentsSummary: "No information added",
-      subtitle: subHeading,
-      html: medicalHistoryHtml,
-      status: "To review"
-    }) }}
-{% endswitch %} #}
-
+{% endswitch %}
 
 {# -------------------------------------------------------------- #}
 {# Breast features #}
@@ -328,18 +258,18 @@
   {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
 {% endset %}
 
-{% set otherMedicalInformationCount = 0 %}
+{% set otherRelevantInformationCount = 0 %}
 
 {% if event.medicalInformation.hrt.hrtQuestion == 'yes' %}
-  {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
 {% if event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
-  {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
 {% if event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
-  {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
 {% if otherRelevantInformationCount > 0 %}
