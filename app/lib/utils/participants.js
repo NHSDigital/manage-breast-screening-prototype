@@ -1,4 +1,6 @@
 // app/lib/utils/participants.js
+
+const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const riskLevels = require('../../data/risk-levels.js')
 
 /**
@@ -18,7 +20,7 @@ const getParticipant = (data, participantId) => {
 const getFullName = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
-  return [firstName, middleName, lastName].filter(Boolean).join(' ')
+  return nunjucksSafe([firstName, middleName, lastName].filter(Boolean).join(' '))
 }
 
 /**
@@ -38,7 +40,7 @@ const getFullNameReversed = (participant) => {
 const getShortName = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, lastName } = participant.demographicInformation
-  return `${firstName} ${lastName}`
+  return nunjucksSafe(`${firstName} ${lastName}`)
 }
 
 /**
