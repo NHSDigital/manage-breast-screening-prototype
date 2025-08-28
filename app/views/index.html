@@ -82,6 +82,46 @@
         <a href="{{ startUrl }}?returnTo=medical-information/symptoms/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Add a symptom</a>
       </li>
       <li>
+        {% call details({
+          summaryText: "Medical history"
+        }) %}
+          <ul>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Breast cancer</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-implants-augmentation/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Breast implants or augmentation</a>
+              <ul>
+                <li>
+                  <a href="{{ startUrl }}?returnTo=medical-information/medical-history/consent&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Consent</a>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/cysts/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Cysts</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/implanted-medical-devices/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Implanted medical devices</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/lump-removal-biopsy/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Lump removal or biopsy</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/lymph-node-surgery/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Lymph node surgery</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/mastectomy/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Mastectomy</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/non-cancerous-breast-surgeries/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Non-cancerous breast surgeries</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/other-procedures/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Other procedures</a>
+            </li>
+          </ul>
+        {% endcall %}
+      </li>
+      <li>
         <a href="{{ startUrl }}?returnTo=medical-information/record-breast-features&{{ completedSections }}">Record breast features</a>
       </li>
       <li>
@@ -100,13 +140,17 @@
   <li>
     <a href="{{ startUrl }}?returnTo=review&{{ completedSections }}">Review</a>
   </li>
+  
 </ul>
+
 
 <h3>Medical history</h3>
 
+<!-- http://localhost:2000/clinics/wtrl7jud/events/5gpn41oi/medical-information/medical-history/breast-cancer/add?referrerChain=/clinics/wtrl7jud/events/5gpn41oi/record-medical-information&scrollTo=medical-history -->
+
 <ul>
   <li>
-    <a href="{{ exampleParticipant }}/medical-information/medical-history/breast-cancer">Breast cancer</a>
+    <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add">Breast cancer</a>
   </li>
   <li>
     <a href="{{ exampleParticipant }}/medical-information/medical-history/breast-implants-augmentation">Breast implants or augmentation</a>
