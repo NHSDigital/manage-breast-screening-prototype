@@ -130,9 +130,33 @@ const getContext = function() {
   return this.ctx;
 }
 
+/**
+ * Safely parse a JSON string and return the resulting object or null
+ * @param {*} value - The value to parse
+ * @returns {Object|null} The parsed object or null if parsing failed
+ */
+function fromJSON(value)
+{
+    if (!value || value === '')
+    {
+        return null
+    }
+
+    try
+    {
+        return JSON.parse(value)
+    }
+    catch (error)
+    {
+        console.warn('Failed to parse JSON:', value, error)
+        return null
+    }
+}
+
 module.exports = {
   log,
   join,
   getUsername,
+  fromJSON,
   getContext,
 }
