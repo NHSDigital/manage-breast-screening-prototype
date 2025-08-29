@@ -4,7 +4,6 @@
 module.exports = {
   extends: ['prettier'],
   ignorePatterns: [
-    '**/app/**',
     '**/public/**',
 
     // Enable dotfile linting
@@ -44,6 +43,14 @@ module.exports = {
         'jest-dom'
       ],
       rules: {
+        // Allow unused variables via spread syntax
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          {
+            ignoreRestSiblings: true
+          }
+        ],
+
         // Always import Node.js packages from `node:*`
         'import/enforce-node-protocol-usage': ['error', 'always'],
 
@@ -62,6 +69,14 @@ module.exports = {
           'never',
           {
             wrapIndent: '  '
+          }
+        ],
+
+        // Allow extra nested properties in JSDoc
+        'jsdoc/check-param-names': [
+          'warn',
+          {
+            disableExtraPropertyReporting: true
           }
         ],
 
@@ -89,6 +104,13 @@ module.exports = {
           'never',
           {
             startLines: 1
+          }
+        ],
+
+        'promise/catch-or-return': [
+          'error',
+          {
+            allowFinally: true
           }
         ]
       },

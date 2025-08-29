@@ -116,7 +116,7 @@ class AppModal {
         this.handleAjax(actionElement)
         break
 
-      default:
+      default: {
         // Fire custom event for other action types
         const customEvent = new CustomEvent('modal:action', {
           detail: {
@@ -127,6 +127,7 @@ class AppModal {
           }
         })
         this.modal.dispatchEvent(customEvent)
+      }
     }
   }
 
@@ -154,6 +155,7 @@ class AppModal {
       body: method !== 'GET' ? JSON.stringify(modalData) : null
     })
       .then((response) => {
+        // eslint-disable-next-line promise/always-return
         if (response.ok) {
           if (closeOnSuccess) {
             this.close()

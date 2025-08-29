@@ -1,12 +1,14 @@
 // app/lib/generators/participant-generator.js
 
 const { faker } = require('@faker-js/faker')
-const generateId = require('../utils/id-generator')
-const weighted = require('weighted')
-const { generateBSUAppropriateAddress } = require('./address-generator')
-const _ = require('lodash')
-const riskLevels = require('../../data/risk-levels')
 const dayjs = require('dayjs')
+const _ = require('lodash')
+const weighted = require('weighted')
+
+const riskLevels = require('../../data/risk-levels')
+const generateId = require('../utils/id-generator')
+
+const { generateBSUAppropriateAddress } = require('./address-generator')
 
 /**
  * Generate a precise date of birth within the specified age range

@@ -34,6 +34,7 @@ const IsStickyComponent = class extends HTMLElement {
     let inThrottle
     return function () {
       const args = arguments
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       const context = this
       if (!inThrottle) {
         callback.apply(context, args)

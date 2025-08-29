@@ -1,9 +1,9 @@
 // app/filters.js
 
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 
-module.exports = function (env) {
+module.exports = function () {
   /* eslint-disable-line func-names,no-unused-vars */
   /**
    * Instantiate object used to store the methods registered as a

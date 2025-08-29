@@ -1,14 +1,16 @@
 // app/data/session-data-defaults.js
 
-const users = require('./users')
 // Used to simulate in prototype
-const breastScreeningUnits = require('./breast-screening-units')
 // All breast screening units
-const allBreastScreeningUnits = require('./all-breast-screening-units')
-const path = require('path')
-const fs = require('fs')
-const { needsRegeneration } = require('../lib/utils/regenerate-data')
+const fs = require('node:fs')
+const path = require('node:path')
+
 const config = require('../config')
+const { needsRegeneration } = require('../lib/utils/regenerate-data')
+
+const allBreastScreeningUnits = require('./all-breast-screening-units')
+const breastScreeningUnits = require('./breast-screening-units')
+const users = require('./users')
 
 // Check if generated data folder exists and create if needed
 const generatedDataPath = path.join(__dirname, 'generated')
@@ -48,8 +50,11 @@ if (needsRegeneration(generationInfo)) {
 
 // Load generated data
 try {
+  // eslint-disable-next-line n/no-unpublished-require
   participants = require('./generated/participants.json').participants
+  // eslint-disable-next-line n/no-unpublished-require
   clinics = require('./generated/clinics.json').clinics
+  // eslint-disable-next-line n/no-unpublished-require
   events = require('./generated/events.json').events
 } catch (err) {
   console.warn('Error loading generated data:', err)
