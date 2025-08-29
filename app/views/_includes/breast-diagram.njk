@@ -1,0 +1,145 @@
+{# app/views/_includes/breast-diagram.njk #}
+
+{#
+  Reusable breast diagram SVG component
+
+  Set these variables before including if you want to customise:
+  - showSideLabels (boolean, default true) - whether to show "Right"/"Left" labels
+  - diagramId (string, default "breastSvg") - ID for the SVG element
+  - containerId (string, default "diagramContainer") - ID for the container
+#}
+
+{% set showSideLabels = showSideLabels if showSideLabels is defined else true %}
+{% set diagramId = diagramId or "breastSvg" %}
+{% set containerId = containerId or "diagramContainer" %}
+
+{% if showSideLabels %}
+<div class="breast-features-diagram-side-labels">
+  <span>Right</span>
+  <span>Left</span>
+</div>
+{% endif %}
+
+<div class="breast-features-diagram-diagram-container" id="{{ containerId }}">
+  <svg class="breast-features-diagram-diagram-svg" viewBox="0 0 793 320" xmlns="http://www.w3.org/2000/svg" id="{{ diagramId }}">
+    <!-- Right breast outline -->
+    <path d="M2 140.1532L57.7845 57.00006C99.1338 64.53851 120.917 75.6557 120.917 140.1532C120.917 204.651 164.733 250.315 165.259 251.008C176.138 263.554 227.136 303.614 297.277 280.234C367.418 256.853 384.953 177.105 384.953 140.1532" stroke="black" stroke-width="3" fill="none"/>
+
+    <!-- Right nipple -->
+    <circle cx="251.386" cy="159.079" r="20.671" stroke="black" stroke-width="3" fill="none"/>
+
+    <!-- Left breast outline -->
+    <path d="M791.598 140.6593L735.813 57.50616C694.464 65.0446 672.681 76.1619 672.681 140.6593C672.681 205.157 628.865 250.821 628.339 251.514C617.459 264.06 566.461 304.12 496.32 280.74C426.179 257.359 408.644 177.611 408.644 140.6593" stroke="black" stroke-width="3" fill="none"/>
+
+    <!-- Left nipple -->
+    <circle cx="542.212" cy="159.585" r="20.671" stroke="black" stroke-width="3" fill="none"/>
+
+    <!-- Anatomical regions with borders (initially hidden) -->
+    <style>
+      #anatomical-regions {
+        opacity: 0;
+        pointer-events: all;
+      }
+      #anatomical-regions.show-borders {
+        opacity: 1;
+      }
+      .anatomical-region[data-side="right"] {
+        stroke: red;
+        stroke-width: 2;
+        fill: rgba(255,0,0,0.1);
+      }
+      .anatomical-region[data-side="left"] {
+        stroke: red;
+        stroke-width: 2;
+        fill: rgba(255,0,0,0.1);
+      }
+      .anatomical-region[data-side="center"] {
+        stroke: green;
+        stroke-width: 2;
+        fill: rgba(0,255,0,0.1);
+      }
+    </style>
+    <g id="anatomical-regions">
+      <!-- Right axilla -->
+      <polygon class="anatomical-region" data-region="axilla" data-side="right" data-center-x="61" data-center-y="51"
+          points="2,2 120,2 120,100 2,100"/>
+
+      <!-- Upper regions -->
+      <polygon class="anatomical-region" data-region="upper outer" data-side="right" data-center-x="170" data-center-y="100"
+          points="140,50 200,60 185,130 160,135 140,130"/>
+      <polygon class="anatomical-region" data-region="upper central" data-side="right" data-center-x="245" data-center-y="95"
+          points="200,60 290,70 275,130 230,135 185,130"/>
+      <polygon class="anatomical-region" data-region="upper inner" data-side="right" data-center-x="330" data-center-y="100"
+          points="290,70 385,95 365,130 320,135 275,130"/>
+
+      <!-- Middle regions -->
+      <polygon class="anatomical-region" data-region="lateral to nipple" data-side="right" data-center-x="180" data-center-y="159"
+          points="140,130 195,135 195,185 180,190 140,180"/>
+      <polygon class="anatomical-region" data-region="central" data-side="right" data-center-x="251" data-center-y="159"
+          points="195,135 305,135 305,185 195,185"/>
+      <polygon class="anatomical-region" data-region="medial to nipple" data-side="right" data-center-x="330" data-center-y="159"
+          points="305,135 365,130 365,185 305,185"/>
+
+      <!-- Lower regions -->
+      <polygon class="anatomical-region" data-region="lower lateral" data-side="right" data-center-x="165" data-center-y="220"
+          points="140,180 195,185 205,245 180,265 140,250 120,220"/>
+      <polygon class="anatomical-region" data-region="lower outer" data-side="right" data-center-x="220" data-center-y="225"
+          points="195,185 275,185 280,245 250,265 205,245"/>
+      <polygon class="anatomical-region" data-region="lower central" data-side="right" data-center-x="285" data-center-y="225"
+          points="275,185 340,185 340,245 315,265 280,245"/>
+      <polygon class="anatomical-region" data-region="lower inner" data-side="right" data-center-x="355" data-center-y="220"
+          points="340,185 365,185 385,220 385,245 340,245"/>
+      <polygon class="anatomical-region" data-region="inframammary fold" data-side="right" data-center-x="250" data-center-y="280"
+          points="120,270 180,265 250,265 315,265 385,270 385,295 2,295 2,280"/>
+      <polygon class="anatomical-region" data-region="upper chest" data-side="right" data-center-x="250" data-center-y="25"
+          points="2,2 396,2 385,50 290,45 200,40 140,35 2,40"/>
+      <polygon class="anatomical-region" data-region="lateral chest wall" data-side="right" data-center-x="30" data-center-y="200"
+          points="2,120 2,310 120,270 140,250 120,220 140,180 140,130 50,130"/>
+
+      <!-- LEFT breast regions -->
+      <!-- Left axilla -->
+      <polygon class="anatomical-region" data-region="axilla" data-side="left" data-center-x="732" data-center-y="51"
+          points="673,2 791,2 791,100 673,100"/>
+
+      <!-- Upper regions -->
+      <polygon class="anatomical-region" data-region="upper outer" data-side="left" data-center-x="623" data-center-y="100"
+          points="653,130 633,135 608,130 593,60 653,50"/>
+      <polygon class="anatomical-region" data-region="upper central" data-side="left" data-center-x="548" data-center-y="95"
+          points="608,130 563,135 518,130 503,70 593,60"/>
+      <polygon class="anatomical-region" data-region="upper inner" data-side="left" data-center-x="463" data-center-y="100"
+          points="518,130 473,135 428,130 408,95 503,70"/>
+
+      <!-- Middle regions -->
+      <polygon class="anatomical-region" data-region="lateral to nipple" data-side="left" data-center-x="613" data-center-y="159"
+          points="653,130 653,180 613,190 598,185 598,135"/>
+      <polygon class="anatomical-region" data-region="central" data-side="left" data-center-x="542" data-center-y="159"
+          points="598,135 488,135 488,185 598,185"/>
+      <polygon class="anatomical-region" data-region="medial to nipple" data-side="left" data-center-x="463" data-center-y="159"
+          points="488,135 428,130 428,185 488,185"/>
+
+      <!-- Lower regions -->
+      <polygon class="anatomical-region" data-region="lower lateral" data-side="left" data-center-x="628" data-center-y="220"
+          points="653,180 673,220 653,250 613,265 588,245 598,185"/>
+      <polygon class="anatomical-region" data-region="lower outer" data-side="left" data-center-x="573" data-center-y="225"
+          points="598,185 543,185 513,245 543,265 588,245"/>
+      <polygon class="anatomical-region" data-region="lower central" data-side="left" data-center-x="508" data-center-y="225"
+          points="543,185 453,185 453,245 478,265 513,245"/>
+      <polygon class="anatomical-region" data-region="lower inner" data-side="left" data-center-x="448" data-center-y="220"
+          points="453,185 428,185 408,220 408,245 453,245"/>
+      <polygon class="anatomical-region" data-region="inframammary fold" data-side="left" data-center-x="543" data-center-y="280"
+          points="408,270 453,265 543,265 613,265 673,270 791,280 791,295 408,295"/>
+      <polygon class="anatomical-region" data-region="upper chest" data-side="left" data-center-x="543" data-center-y="25"
+          points="396,2 791,2 791,40 653,35 593,40 503,45 408,50 396,45"/>
+      <polygon class="anatomical-region" data-region="lateral chest wall" data-side="left" data-center-x="763" data-center-y="200"
+          points="791,120 791,310 673,270 653,250 673,220 653,180 653,130 743,130"/>
+
+      <!-- CENTER regions -->
+      <polygon class="anatomical-region" data-region="midline" data-side="center" data-center-x="396" data-center-y="160"
+          points="385,95 408,95 408,240 385,240"/>
+      <polygon class="anatomical-region" data-region="lower sternum" data-side="center" data-center-x="396" data-center-y="275"
+          points="385,240 408,240 408,310 385,310"/>
+    </g>
+
+    <!-- Markers will be added here dynamically -->
+  </svg>
+</div>

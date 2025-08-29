@@ -1,8 +1,19 @@
 {# app/views/_includes/medical-information/breast-features.njk #}
 
-{% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+{# {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %} #}
+
+{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw %}
+{% set breastFeatures = rawBreastFeatures | fromJSON %}
+
+{{ breastFeatures | log("Breast features") }}
+
+{% set breastFeaturesCount = breastFeatures | length %}
+
+{{ breastFeaturesCount | log("Breast features count") }}
 
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
+
+{{ hasBreastFeatures | log("Has breast features") }}
 
 {% if hasBreastFeatures %}
   {% set insetHtml %}
