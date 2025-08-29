@@ -50,8 +50,11 @@ if (needsRegeneration(generationInfo)) {
 
 // Load generated data
 try {
+  // eslint-disable-next-line n/no-unpublished-require
   participants = require('./generated/participants.json').participants
+  // eslint-disable-next-line n/no-unpublished-require
   clinics = require('./generated/clinics.json').clinics
+  // eslint-disable-next-line n/no-unpublished-require
   events = require('./generated/events.json').events
 } catch (err) {
   console.warn('Error loading generated data:', err)

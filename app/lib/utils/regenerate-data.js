@@ -17,11 +17,13 @@ async function regenerateData(req) {
   await generateData()
 
   // Clear the require cache for session data defaults
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
   delete require.cache[require.resolve(sessionDataPath)]
 
   // Clear cache for the generated JSON files
   Object.keys(require.cache).forEach((key) => {
     if (key.startsWith(generatedDataPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete require.cache[key]
     }
   })

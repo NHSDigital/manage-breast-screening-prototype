@@ -155,6 +155,7 @@ class AppModal {
       body: method !== 'GET' ? JSON.stringify(modalData) : null
     })
       .then((response) => {
+        // eslint-disable-next-line promise/always-return
         if (response.ok) {
           if (closeOnSuccess) {
             this.close()
