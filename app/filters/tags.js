@@ -1,5 +1,6 @@
 // app/filters/tags.js
 
+const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const { formatWords, sentenceCase, snakeCase } = require('../lib/utils/strings')
 const { getStatusTagColour, getStatusText } = require('../lib/utils/status')
 
@@ -31,7 +32,7 @@ const toTag = (status, options = {}) => {
 
   // Generate tag HTML
   const idAttr = options.id ? ` id=\"${options.id}\"` : ''
-  return `<strong${idAttr} class="${classes}">${text}</strong>`
+  return nunjucksSafe(`<strong${idAttr} class="${classes}">${text}</strong>`)
 }
 
 module.exports = {

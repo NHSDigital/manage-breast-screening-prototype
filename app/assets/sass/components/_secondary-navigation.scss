@@ -51,7 +51,7 @@ $govuk-spacing4: 20px;
 }
 
 .app-secondary-navigation__link--disabled {
-  color: $nhsuk-secondary-text-color;
+  color: $nhsuk-secondary-text-colour;
   cursor: not-allowed;
   pointer-events: none;
   text-decoration: none;
@@ -68,7 +68,7 @@ $govuk-spacing4: 20px;
   // The list uses box-shadow rather than a border to set a 1px
   // grey line at the bottom, so that border from the current
   // item appears on top of the grey line.
-  box-shadow: inset 0 -1px 0 $nhsuk-border-color;
+  box-shadow: inset 0 -1px 0 $nhsuk-border-colour;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -98,7 +98,7 @@ $govuk-spacing4: 20px;
 }
 
 .app-secondary-navigation__list-item--current {
-  border-bottom: $nhsuk-border-width solid $color_nhsuk-blue;
+  border-bottom: $nhsuk-border-width solid $nhsuk-brand-colour;
   padding-bottom: $govuk-spacing1;
 
   // More generous padding beneath items on wider screens
@@ -109,5 +109,5 @@ $govuk-spacing4: 20px;
 
 .app-secondary-navigation__list-item--current .app-secondary-navigation__link:link,
 .app-secondary-navigation__list-item--current .app-secondary-navigation__link:visited {
-  color: $nhsuk-text-color;
+  color: $nhsuk-text-colour;
 }

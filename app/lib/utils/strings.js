@@ -1,5 +1,6 @@
 // app/lib/utils/strings.js
 
+const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const pluralizeLib = require('pluralize')
 
 
@@ -241,7 +242,7 @@ const stringLiteral = function (str) {
  */
 const noWrap = (input) => {
   if (!input) return ''
-  return `<span class="app-nowrap">${input}</span>`
+  return nunjucksSafe(`<span class="app-nowrap">${input}</span>`)
 }
 
 /**
@@ -251,7 +252,7 @@ const noWrap = (input) => {
  */
 const asHint = (input) => {
   if (!input) return ''
-  return `<span class="app-text-grey">${input}</span>`
+  return nunjucksSafe(`<span class="app-text-grey">${input}</span>`)
 }
 
 /** * Wrap string in a hidden text span
@@ -261,7 +262,7 @@ const asHint = (input) => {
  */
 const asVisuallyHiddenText = (input) => {
   if (!input) return ''
-  return `<span class="nhsuk-u-visually-hidden">${input}</span>`
+  return nunjucksSafe(`<span class="nhsuk-u-visually-hidden">${input}</span>`)
 }
 
 /**

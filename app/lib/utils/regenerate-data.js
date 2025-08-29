@@ -1,20 +1,23 @@
 // app/lib/utils/regenerate-data.js
 
 const generateData = require('../generate-seed-data')
-const path = require('path')
+const { join, resolve } = require('path')
 const dayjs = require('dayjs')
 const fs = require('fs')
 
 async function regenerateData (req) {
+  const dataDirectory = join(__dirname, '../../data')
+  const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
+  const generatedDataPath = resolve(dataDirectory, 'generated')
+  const generationInfoPath = join(generatedDataPath, 'generation-info.json')
+
   // Generate new data
   await generateData()
 
   // Clear the require cache for session data defaults
-  const sessionDataPath = path.resolve(__dirname, '../../data/session-data-defaults.js')
   delete require.cache[require.resolve(sessionDataPath)]
 
   // Clear cache for the generated JSON files
-  const generatedDataPath = path.resolve(__dirname, '../../data/generated')
   Object.keys(require.cache).forEach(key => {
     if (key.startsWith(generatedDataPath)) {
       delete require.cache[key]
@@ -22,7 +25,6 @@ async function regenerateData (req) {
   })
 
   // Read generation info including stats
-  const generationInfoPath = path.join(generatedDataPath, 'generation-info.json')
   let generationInfo = {
     generatedAt: new Date().toISOString(),
     stats: { participants: 0, clinics: 0, events: 0 },

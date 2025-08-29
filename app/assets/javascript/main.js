@@ -90,34 +90,30 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 
-  // Handle clear data link with AJAX
-  const clearDataLinks = document.querySelectorAll('a[href="/clear-data"]')
-  clearDataLinks.forEach(link => {
-    link.addEventListener('click', async (e) => {
+  // Handle reset data in background
+  const $resetLink = document.querySelector('a[data-reset-session]')
+  if ($resetLink) {
+    $resetLink.addEventListener('click', async (e) => {
       e.preventDefault()
+
       try {
-        const response = await fetch('/clear-data', {
+        const response = await fetch('/prototype-admin/reset-session-data', {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
+          redirect: 'error'
         })
 
         if (!response.ok) {
           throw new Error('Failed to clear data')
         }
 
-        const result = await response.json()
-        if (result.success) {
-          // Refresh the page to reflect the cleared data
-          window.location.reload()
-        } else {
-          throw new Error('Failed to clear data')
-        }
+        // Refresh the page to reflect the cleared data
+        window.location.reload()
       } catch (error) {
         console.error('Error clearing data:', error)
-        window.location.href = link.href
+
+        // Fall back to reset confirmation page
+        window.location.href = $resetLink.href
       }
     })
-  })
+  }
 })
