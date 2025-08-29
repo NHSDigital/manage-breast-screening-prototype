@@ -1,9 +1,7 @@
 {% extends 'layout-app.html' %}
 
-
-
 {% set pageHeading = "Record breast features" %}
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
 {% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
@@ -39,64 +37,43 @@
 
     {% include "_includes/breast-diagram.njk" %}
 
-    <!-- Popover (initially hidden) -->
+    {# Popover (initially hidden) #}
     {% include "_includes/feature-popover.njk" %}
 
-
-  <!-- Features list -->
-  <div id="featuresListContainer" style="display: none;" class="nhsuk-u-margin-top-4">
-    <div class="features-list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 class="nhsuk-heading-s" style="margin: 0;">Key</h3>
-        <a href="#" id="clearAllFeaturesLink" class="nhsuk-link" style="font-size: 14px;">Clear all features</a>
-    </div>
-    <div class="features-list" id="featuresList"></div>
-  </div>
+    {# Key for features #}
+    {% include "features-list.njk" %}
 
   <div class="nhsuk-u-margin-top-6">
-
-    {# {{ appHiddenInput({
-      name: "event[medicalInformation][breastFeaturesCount]",
-      id: "breastFeaturesCount",
-      value: "0"
-    }) }} #}
-
-    {# {{ appHiddenInput({
-        name: "event[medicalInformation][breastFeatures]",
-        id: "breastFeaturesData",
-        value: (data.event.medicalInformation.breastFeatures | dump) if data.event.medicalInformation.breastFeatures
-    }) }} #}
 
     {{ button({
       text: "Save"
     }) }}
 
-    <div id="statusMessage" class="nhsuk-u-margin-top-3" style="display: none;"></div>
+    <div id="statusMessage" class="nhsuk-u-margin-top-3" style="display: none;">
+    </div>
   </div>
 
   <p class="">
-  <a class="nhsuk-link nhsuk-link--no-visited-state" href="./attended-not-screened-reason">Save and stop appointment because it cannot proceed
-  </a>
-</p>
+    <a class="nhsuk-link nhsuk-link--no-visited-state" href="./attended-not-screened-reason">
+      Save and stop appointment because it cannot proceed
+    </a>
+  </p>
 
-  <!--
-  {% include "screening-cannot-proceed-link.njk" %}
--->
-
-<script>
-window.breastFeaturesConfig = {
+  <script>
+  window.breastFeaturesConfig = {
     hiddenFieldName: 'event[medicalInformation][breastFeaturesRaw]',
     hiddenFieldId: 'breastFeaturesRaw',
     existingFeatures: {{ (data.event.medicalInformation.breastFeaturesRaw | fromJSON) | dump | safe }} || [],
     featureTypes: [
-        { value: 'mole', text: 'Mole' },
-        { value: 'wart', text: 'Wart' },
-        { value: 'breast-reduction-scar', text: 'Breast reduction scar' },
-        { value: 'other-scar', text: 'Other scar' },
-        { value: 'other-feature', text: 'Other feature' }
+      { value: 'mole', text: 'Mole' },
+      { value: 'wart', text: 'Wart' },
+      { value: 'breast-reduction-scar', text: 'Breast reduction scar' },
+      { value: 'other-scar', text: 'Other scar' },
+      { value: 'other-feature', text: 'Other feature' }
     ]
-}
-</script>
+  }
+  </script>
 
-<script src="/js/breast-features.js"></script>
+  <script src="/js/breast-features.js"></script>
 
 {% endblock %}

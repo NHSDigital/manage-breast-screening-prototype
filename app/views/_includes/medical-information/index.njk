@@ -244,7 +244,9 @@
 {% set subHeading = "Significant scars, moles or warts that may appear on mammogram images" %}
 {% set scrollTo = 'breast-features' %}
 
-{% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | fromJSON %}
+{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set breastFeaturesCount = breastFeatures | length %}
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
 
 {% set addBreastFeatureHref %}
