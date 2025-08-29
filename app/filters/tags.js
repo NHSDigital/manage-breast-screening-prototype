@@ -39,7 +39,7 @@ const toTag = (status, options = {}) => {
     .join(' ')
 
   // Generate tag HTML
-  const idAttr = options.id ? ` id=\"${options.id}\"` : ''
+  const idAttr = options.id ? ` id="${options.id}"` : ''
   return nunjucksSafe(`<strong${idAttr} class="${classes}">${text}</strong>`)
 }
 
