@@ -267,43 +267,6 @@ const generateEvent = ({
   return eventBase
 }
 
-const generateStatusHistory = (finalStatus, dateTime) => {
-  const history = []
-  const baseDate = new Date(dateTime)
-
-  // Always starts with scheduled status
-  history.push({
-    status: 'event_scheduled',
-    timestamp: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000).toISOString() // Day before
-  })
-
-  // Add intermediate statuses based on final status
-  if (isCompleted(finalStatus)) {
-    history.push(
-      {
-        status: 'checked_in',
-        timestamp: new Date(baseDate.getTime() - 10 * 60 * 1000).toISOString() // 10 mins before
-      },
-      // {
-      //   status: 'in_progress',
-      //   timestamp: new Date(baseDate).toISOString()
-      // },
-      {
-        status: finalStatus,
-        timestamp: new Date(baseDate.getTime() + 15 * 60 * 1000).toISOString() // 15 mins after
-      }
-    )
-  } else {
-    // For did_not_attend and attended_not_screened, just add the final status
-    history.push({
-      status: finalStatus,
-      timestamp: new Date(baseDate.getTime() + 15 * 60 * 1000).toISOString()
-    })
-  }
-
-  return history
-}
-
 module.exports = {
   generateEvent
 }
