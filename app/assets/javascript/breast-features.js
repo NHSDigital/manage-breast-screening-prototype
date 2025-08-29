@@ -7,6 +7,7 @@ function initializeBreastFeatures()
 {
     // Get configuration or use defaults
     const config = window.breastFeaturesConfig || {}
+    const readOnly = config.readOnly || false
     const hiddenFieldName = config.hiddenFieldName || 'event[medicalInformation][breastFeaturesRaw]'
     const hiddenFieldId = config.hiddenFieldId || 'breastFeaturesRaw'
     const existingFeatures = config.existingFeatures || []
@@ -55,36 +56,85 @@ function initializeBreastFeatures()
     featuresList = document.querySelector('#featuresList')
     statusMessage = document.querySelector('#status-message')
 
-    console.log('DEBUG: All elements found:', {
-        toggleBordersBtn: toggleBordersBtn,
-        saveBtn: saveBtn,
-        clearAllBtn: clearAllBtn,
-        featuresListContainer: featuresListContainer,
-        featuresList: featuresList
-    })
-
-    if (!svg || !popover || !diagramContainer)
+    // Essential elements check - adjust for read-only mode
+    if (!svg || !diagramContainer)
     {
-        console.error('One or more required elements not found:', { svg, popover, diagramContainer })
+        console.error('Essential elements not found:', { svg: !!svg, diagramContainer: !!diagramContainer })
         return
     }
 
-    // Create hidden input for form data
-    createHiddenInput()
+    // Popover is only required for interactive mode
+    if (!readOnly && !popover)
+    {
+        console.error('Popover required for interactive mode but not found')
+        return
+    }
 
-    // Debug: Check if the button exists anywhere on the page
-    console.log('DEBUG: All buttons on page:', document.querySelectorAll('button'))
-    console.log('DEBUG: Button with toggleBordersBtn id:', document.getElementById('toggleBordersBtn'))
+    // Set appropriate cursor for read-only mode
+    if (readOnly)
+    {
+        svg.style.cursor = 'default'
+        console.log('Read-only mode: set cursor to default')
+    }
+    else
+    {
+        svg.style.cursor = 'crosshair'
+    }
 
-    // Event listener for SVG clicks (replaces region-based clicking)
-    svg.addEventListener('click', handleSvgClick)
+    // Create hidden input for form data (skip in read-only mode)
+    if (!readOnly)
+    {
+        createHiddenInput()
+    }
 
-    // Popover action button listeners
-    if (addBtn) addBtn.addEventListener('click', addFeature)
-    if (cancelBtn) cancelBtn.addEventListener('click', closePopover)
-    if (removeBtn) removeBtn.addEventListener('click', removeFeature)
-    if (saveBtn) saveBtn.addEventListener('click', saveAllFeatures)
-    if (clearAllBtn) clearAllBtn.addEventListener('click', clearAllFeatures)
+    // Setup interactive elements (skip in read-only mode)
+    if (!readOnly)
+    {
+        // Event listener for SVG clicks (replaces region-based clicking)
+        svg.addEventListener('click', handleSvgClick)
+
+        // Popover action button listeners
+        if (addBtn) addBtn.addEventListener('click', addFeature)
+        if (cancelBtn) cancelBtn.addEventListener('click', closePopover)
+        if (removeBtn) removeBtn.addEventListener('click', removeFeature)
+        if (saveBtn) saveBtn.addEventListener('click', saveAllFeatures)
+        if (clearAllBtn) clearAllBtn.addEventListener('click', clearAllFeatures)
+
+        // Close popover if click outside
+        document.addEventListener('click', function(e) {
+            if (popover && popover.style.display === 'block' &&
+                !popover.contains(e.target) &&
+                !svg.contains(e.target) &&
+                !e.target.classList.contains('breast-features-diagram-marker'))
+            {
+                closePopover()
+            }
+        })
+
+        // Prevent form submission on Enter key in popover
+        if (popover)
+        {
+            popover.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter')
+                {
+                    e.preventDefault()
+                    addFeature()
+                }
+            })
+        }
+
+        // Keyboard accessibility
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && popover && popover.style.display === 'block')
+            {
+                closePopover()
+            }
+        })
+    }
+    else
+    {
+        console.log('Read-only mode: skipping interactive setup')
+    }
 
     // Toggle borders button listener
     console.log('DEBUG: toggleBordersBtn found:', toggleBordersBtn)
@@ -464,7 +514,17 @@ function initializeBreastFeatures()
         }
 
         diagramContainer.appendChild(marker)
-        setupMarkerInteraction(marker)
+
+        // Only setup interaction if not in read-only mode
+        if (!readOnly)
+        {
+            setupMarkerInteraction(marker)
+        }
+        else
+        {
+            // In read-only mode, markers are just visual - no interaction
+            marker.style.cursor = 'default'
+        }
 
         console.log('=== createPermanentMarker END ===')
         return marker
@@ -886,8 +946,13 @@ function initializeBreastFeatures()
         allFeatures.forEach(feature => {
             const listItem = document.createElement('li')
             listItem.className = 'feature-item'
-            listItem.style.cursor = 'pointer'
-            listItem.setAttribute('data-feature-id', feature.id)
+
+            // Only add pointer cursor and click handling if not read-only
+            if (!readOnly)
+            {
+                listItem.style.cursor = 'pointer'
+                listItem.setAttribute('data-feature-id', feature.id)
+            }
 
             let locationText = ''
             if (feature.side === 'center')
@@ -907,49 +972,53 @@ function initializeBreastFeatures()
                 <div class="feature-position"><span class="nhsuk-tag nhsuk-tag--white">${locationText}</span></div>
             `
 
-            listItem.addEventListener('click', function(e) {
-                console.log('DEBUG: Key item clicked!')
-                e.preventDefault()
-                e.stopPropagation()
+            // Only add click interaction if not in read-only mode
+            if (!readOnly)
+            {
+                listItem.addEventListener('click', function(e) {
+                    console.log('DEBUG: Key item clicked!')
+                    e.preventDefault()
+                    e.stopPropagation()
 
-                const featureId = parseInt(this.getAttribute('data-feature-id'))
-                const feature = allFeatures.find(f => f.id === featureId)
-                console.log('DEBUG: Found feature:', feature)
+                    const featureId = parseInt(this.getAttribute('data-feature-id'))
+                    const feature = allFeatures.find(f => f.id === featureId)
+                    console.log('DEBUG: Found feature:', feature)
 
-                if (feature)
-                {
-                    let centerX, centerY
-
-                    // Try to get marker position, fall back to click position if not available
-                    if (feature.element)
+                    if (feature)
                     {
-                        try
+                        let centerX, centerY
+
+                        // Try to get marker position, fall back to click position if not available
+                        if (feature.element)
                         {
-                            const markerRect = feature.element.getBoundingClientRect()
-                            centerX = markerRect.left + markerRect.width / 2
-                            centerY = markerRect.top + markerRect.height / 2
-                            console.log('DEBUG: Using marker position:', centerX, centerY)
+                            try
+                            {
+                                const markerRect = feature.element.getBoundingClientRect()
+                                centerX = markerRect.left + markerRect.width / 2
+                                centerY = markerRect.top + markerRect.height / 2
+                                console.log('DEBUG: Using marker position:', centerX, centerY)
+                            }
+                            catch (error)
+                            {
+                                console.warn('Could not get marker position, using fallback')
+                                centerX = e.clientX
+                                centerY = e.clientY
+                                console.log('DEBUG: Using fallback position:', centerX, centerY)
+                            }
                         }
-                        catch (error)
+                        else
                         {
-                            console.warn('Could not get marker position, using fallback')
+                            // Use the click position as fallback
                             centerX = e.clientX
                             centerY = e.clientY
-                            console.log('DEBUG: Using fallback position:', centerX, centerY)
+                            console.log('DEBUG: No marker element, using click position:', centerX, centerY)
                         }
-                    }
-                    else
-                    {
-                        // Use the click position as fallback
-                        centerX = e.clientX
-                        centerY = e.clientY
-                        console.log('DEBUG: No marker element, using click position:', centerX, centerY)
-                    }
 
-                    console.log('DEBUG: About to call editFeature')
-                    editFeature(feature, centerX, centerY)
-                }
-            })
+                        console.log('DEBUG: About to call editFeature')
+                        editFeature(feature, centerX, centerY)
+                    }
+                })
+            }
 
             ul.appendChild(listItem)
 

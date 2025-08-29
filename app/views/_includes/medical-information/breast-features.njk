@@ -8,22 +8,36 @@
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
 
 {% if hasBreastFeatures %}
-  {% set insetHtml %}
-    <p>
-      {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded.
-    </p>
-  {% endset %}
+
+  <p>
+    {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
+  </p>
+
+  <script>
+  window.breastFeaturesConfig = {
+    readOnly: true,
+    existingFeatures: {{ (data.event.medicalInformation.breastFeaturesRaw | fromJSON) | dump | safe }} || []
+  }
+  </script>
+  <script src="/js/breast-features.js"></script>
+
+  {# div with hardcoded max-width, left aligned #}
+  <div style="max-width: 650px; margin: 0 auto 10px 0;">
+    {% include "breast-diagram.njk" %}
+  </div>
+
 {% else %}
   {% set insetHtml %}
     <p>
       No breast features have been recorded for this participant.
     </p>
   {% endset %}
+  {{ insetText({
+    html: insetHtml
+  }) }}
 {% endif %}
 
-{{ insetText({
-  html: insetHtml
-}) }}
+
 
 {% set linkHref %}
   {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}

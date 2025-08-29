@@ -4,8 +4,11 @@
 
 {% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain, query.scrollTo) %}
 
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
 {% block pageContent %}
 
+<div class="nhsuk-u-reading-width">
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-m">
       {{ participant | getFullName }}
@@ -58,6 +61,9 @@
       Save and stop appointment because it cannot proceed
     </a>
   </p>
+
+</div>
+
 
   <script>
   window.breastFeaturesConfig = {
