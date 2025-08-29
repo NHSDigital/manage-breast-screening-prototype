@@ -4,29 +4,31 @@
 {% endif %}
 
 <!-- Add any custom scripts -->
-<script src="/js/custom-elements/is-sticky.js"></script>
-<script src="/js/button-menu.js"></script>
-<script src="/js/modal.js"></script>
-<script src="/js/scroll-to-section.js"></script>
-<script src="/js/expanded-state-tracker.js"></script>
-<script src="/js/expandable-sections.js"></script>
+{% if currentUrl.indexOf("/prototype-admin/") === -1 %}
+  <script src="/js/custom-elements/is-sticky.js"></script>
+  <script src="/js/button-menu.js"></script>
+  <script src="/js/modal.js"></script>
+  <script src="/js/scroll-to-section.js"></script>
+  <script src="/js/expanded-state-tracker.js"></script>
+  <script src="/js/expandable-sections.js"></script>
 
-{% if data.settings.reading.showPacsViewer | falsify %}
-  <script src="/js/mammogram-viewer.js"></script>
+  {% if data.settings.reading.showPacsViewer | falsify %}
+    <script src="/js/mammogram-viewer.js"></script>
+  {% endif %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Find the clear data link and add click handler
+      const $resetLink = document.querySelector('a[data-reset-session]')
+      if ($resetLink) {
+        $resetLink.addEventListener('click', () => {
+          // Clear expanded states before navigating
+          if (window.clearAllExpandedStates) {
+            window.clearAllExpandedStates()
+            console.log('Cleared expanded states before data clear')
+          }
+        })
+      }
+    })
+  </script>
 {% endif %}
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Find the clear data link and add click handler
-    const $resetLink = document.querySelector('a[data-reset-session]')
-    if ($resetLink) {
-      $resetLink.addEventListener('click', () => {
-        // Clear expanded states before navigating
-        if (window.clearAllExpandedStates) {
-          window.clearAllExpandedStates()
-          console.log('Cleared expanded states before data clear')
-        }
-      })
-    }
-  })
-</script>
