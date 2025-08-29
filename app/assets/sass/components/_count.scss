@@ -1,6 +1,6 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/helpers' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 .app-count {
   background-color: rgba(nhsuk-colour("grey-4"), 0.5);

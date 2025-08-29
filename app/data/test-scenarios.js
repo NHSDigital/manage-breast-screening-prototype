@@ -17,7 +17,7 @@ module.exports = [
         lastName: 'Williams',
         dateOfBirth: '1959-07-22',
         ethnicGroup: null,
-        ethnicBackground: null,
+        ethnicBackground: null
       },
       config: {
         eventId: '5gpn41oi',
@@ -26,16 +26,17 @@ module.exports = [
         missingViews: [], // ensure all views are present
         specialAppointment: {
           supportTypes: ['Physical restriction'],
-          physicalRestrictionDetails: 'Uses wheelchair, needs accessible positioning and additional time for transfers',
+          physicalRestrictionDetails:
+            'Uses wheelchair, needs accessible positioning and additional time for transfers',
           temporaryReasons: 'no'
         },
         scheduling: {
           whenRelativeToToday: 0,
           status: 'event_checked_in',
-          approximateTime: '10:30',
-        },
-      },
-    },
+          approximateTime: '10:30'
+        }
+      }
+    }
   },
   {
     participant: {
@@ -45,7 +46,7 @@ module.exports = [
         middleName: null,
         lastName: 'Renner',
         ethnicGroup: null,
-        ethnicBackground: null,
+        ethnicBackground: null
       },
       config: {
         eventId: '1fefyh1q',
@@ -53,10 +54,10 @@ module.exports = [
         scheduling: {
           whenRelativeToToday: 0,
           status: 'event_complete',
-          approximateTime: '9:45',
-        },
-      },
-    },
+          approximateTime: '9:45'
+        }
+      }
+    }
   },
   {
     participant: {
@@ -67,7 +68,7 @@ module.exports = [
         middleName: 'Rose',
         dateOfBirth: '1964-03-15',
         ethnicGroup: null,
-        ethnicBackground: null,
+        ethnicBackground: null
       },
       extraNeeds: null,
       config: {
@@ -77,10 +78,10 @@ module.exports = [
         scheduling: {
           whenRelativeToToday: 0,
           status: 'event_checked_in',
-          approximateTime: '11:30',
+          approximateTime: '11:30'
           // slotIndex: 20,
-        },
-      },
-    },
-  },
+        }
+      }
+    }
+  }
 ]

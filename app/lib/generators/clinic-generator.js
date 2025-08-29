@@ -25,13 +25,13 @@ const determineClinicType = (location, breastScreeningUnit) => {
   // don't doo assessment
   return weighted.select({
     screening: 0.5,
-    assessment: 0.5,
+    assessment: 0.5
   })
 }
 
 const generateClinicCode = () => {
   // Example format: AB123 where AB is one of an array.
-  const prefixOptions = ['CH', 'MU', 'WS',]
+  const prefixOptions = ['CH', 'MU', 'WS']
   const suffix = faker.number.int({ min: 100, max: 999 })
   return `${faker.helpers.arrayElement(prefixOptions)}${suffix}`
 }
@@ -49,14 +49,18 @@ const generateTimeSlots = (date, sessionTimes, clinicType) => {
   const currentTime = new Date(startTime)
 
   // Calculate how many slots should be double-booked
-  const totalSlots = Math.floor((endTime - startTime) / (slotDurationMinutes * 60000))
+  const totalSlots = Math.floor(
+    (endTime - startTime) / (slotDurationMinutes * 60000)
+  )
   let doubleBookedSlotsNeeded = 0
 
   // Screening clinics can be 'smart' - allows for some overbooking
   // Scope to 'today' only to limit the number for prototype performance
   if (isToday && clinicType === 'screening') {
     const targetBookingPercent = config.clinics.targetBookingPercent
-    const extraBookingsNeeded = Math.ceil((targetBookingPercent - 100) * totalSlots / 100)
+    const extraBookingsNeeded = Math.ceil(
+      ((targetBookingPercent - 100) * totalSlots) / 100
+    )
     doubleBookedSlotsNeeded = extraBookingsNeeded
   }
 
@@ -86,7 +90,7 @@ const generateTimeSlots = (date, sessionTimes, clinicType) => {
       type: clinicType,
       capacity,
       bookedCount: 0,
-      period: `${sessionTimes.startTime}-${sessionTimes.endTime}`,
+      period: `${sessionTimes.startTime}-${sessionTimes.endTime}`
     })
     currentTime.setMinutes(currentTime.getMinutes() + slotDurationMinutes)
     slotIndex++
@@ -107,7 +111,6 @@ const determineClinicStatus = (date) => {
   }
 
   return 'scheduled'
-
 }
 
 const generateMobileSiteName = () => {
@@ -121,7 +124,7 @@ const generateMobileSiteName = () => {
     'Wantage Community Hospital',
     'Tesco Faringdon',
     'Didcot Civic Hall',
-    'Chipping Norton Health Centre',
+    'Chipping Norton Health Centre'
   ]
 
   return faker.helpers.arrayElement(sites)
@@ -141,13 +144,23 @@ const determineSessionType = (sessionTimes) => {
   return startHour < 12 ? 'morning' : 'afternoon'
 }
 
-const generateClinic = (date, location, breastScreeningUnit, sessionTimes, overrides = null, id = null) => {
-  const clinicType = overrides?.clinicType || determineClinicType(location, breastScreeningUnit)
+const generateClinic = (
+  date,
+  location,
+  breastScreeningUnit,
+  sessionTimes,
+  overrides = null,
+  id = null
+) => {
+  const clinicType =
+    overrides?.clinicType || determineClinicType(location, breastScreeningUnit)
   const slots = generateTimeSlots(date, sessionTimes, clinicType)
 
   // Get supported risk levels - intersect BSU and location capabilities
   const riskLevels = location.riskLevelHandling
-    ? location.riskLevelHandling.filter(risk => breastScreeningUnit.riskLevelHandling.includes(risk))
+    ? location.riskLevelHandling.filter((risk) =>
+        breastScreeningUnit.riskLevelHandling.includes(risk)
+      )
     : breastScreeningUnit.riskLevelHandling
 
   // Check if clinic is for today
@@ -156,11 +169,14 @@ const generateClinic = (date, location, breastScreeningUnit, sessionTimes, overr
   const isToday = clinicDate.isSame(today, 'day')
 
   if (isToday) {
-    console.log(`Generating clinic for today: ${clinicDate.format('YYYY-MM-DD')}, date: ${date}`)
+    console.log(
+      `Generating clinic for today: ${clinicDate.format('YYYY-MM-DD')}, date: ${date}`
+    )
   }
 
   // Calculate total slots based on capacity
-  const totalSlots = slots.length * (isToday && clinicType !== 'assessment' ? 2 : 1)
+  const totalSlots =
+    slots.length * (isToday && clinicType !== 'assessment' ? 2 : 1)
 
   return {
     id: id || generateId(),
@@ -177,26 +193,31 @@ const generateClinic = (date, location, breastScreeningUnit, sessionTimes, overr
     staffing: {
       mammographers: [],
       radiologists: [],
-      support: [],
+      support: []
     },
     targetCapacity: {
-      bookingPercent: clinicType === 'assessment' ? 100 : config.clinics.targetBookingPercent,
-      attendancePercent: clinicType === 'assessment' ? 95 : config.clinics.targetAttendancePercent,
-      totalSlots,
+      bookingPercent:
+        clinicType === 'assessment' ? 100 : config.clinics.targetBookingPercent,
+      attendancePercent:
+        clinicType === 'assessment'
+          ? 95
+          : config.clinics.targetAttendancePercent,
+      totalSlots
     },
     notes: null,
     sessionTimes,
-    sessionType: determineSessionType(sessionTimes),
+    sessionType: determineSessionType(sessionTimes)
   }
 }
 
 const generateClinicsForBSU = ({ date, breastScreeningUnit }) => {
   // Each location has an 95% chance of running clinics on any given day
-  const selectedLocations = breastScreeningUnit.locations.filter(() => Math.random() < 0.95)
+  const selectedLocations = breastScreeningUnit.locations.filter(
+    () => Math.random() < 0.95
+  )
 
   // Check if this is today's generation
   const isToday = dayjs(date).startOf('day').isSame(dayjs().startOf('day'))
-
 
   // Check if this is the first clinic of today - used to assign a specific ID
   let isFirstClinicOfToday = isToday // Only track this for today
@@ -205,7 +226,8 @@ const generateClinicsForBSU = ({ date, breastScreeningUnit }) => {
   // Generate clinics for each selected location
   return selectedLocations.flatMap((location, locationIndex) => {
     // Use location-specific patterns if available, otherwise use BSU patterns
-    const sessionPatterns = location.sessionPatterns || breastScreeningUnit.sessionPatterns
+    const sessionPatterns =
+      location.sessionPatterns || breastScreeningUnit.sessionPatterns
 
     // Randomly select a pattern
     const selectedPattern = faker.helpers.arrayElement(sessionPatterns)
@@ -241,5 +263,5 @@ const generateClinicsForBSU = ({ date, breastScreeningUnit }) => {
 }
 
 module.exports = {
-  generateClinicsForBSU,
+  generateClinicsForBSU
 }

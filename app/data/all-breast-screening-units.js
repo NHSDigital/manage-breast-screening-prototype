@@ -74,5 +74,5 @@ module.exports = [
   'West Suffolk Breast Screening Service',
   'West Sussex',
   'Wiltshire Breast Screening',
-  'Wirral and Chester',
+  'Wirral and Chester'
 ]

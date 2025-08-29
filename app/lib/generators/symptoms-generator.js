@@ -10,7 +10,7 @@ const SYMPTOM_TYPES = {
     weight: 0.4,
     requiresLocation: true,
     descriptions: [
-      'Hard lump that doesn\'t move',
+      "Hard lump that doesn't move",
       'Soft, moveable lump',
       'Small, pea-sized lump',
       'Several small lumps in the same area',
@@ -22,7 +22,7 @@ const SYMPTOM_TYPES = {
     requiresLocation: true,
     descriptions: [
       'Change in size or shape of breast',
-      'Swelling that doesn\'t go down',
+      "Swelling that doesn't go down",
       'One breast has become larger',
       'Breast feels different to the other one',
       'Visible dent or dimpling'
@@ -49,11 +49,7 @@ const SYMPTOM_TYPES = {
   'Skin change': {
     weight: 0.15,
     requiresLocation: true,
-    skinChangeTypes: [
-      'dimples or indentation',
-      'rash',
-      'colour change'
-    ],
+    skinChangeTypes: ['dimples or indentation', 'rash', 'colour change'],
     skinChangeDescriptions: {
       other: [
         'Orange peel texture',
@@ -70,7 +66,7 @@ const SYMPTOM_TYPES = {
       'Heaviness in breast',
       'Tingling sensation',
       'Unusual firmness',
-      'Persistent pain',
+      'Persistent pain'
     ]
   }
 }
@@ -85,10 +81,10 @@ const SYMPTOM_TYPES = {
 // ]
 
 const DATE_RANGE_OPTIONS = [
-  "Less than  3 months",
-  "3 months to a year",
-  "1 to 3 years",
-  "Over 3 years"
+  'Less than  3 months',
+  '3 months to a year',
+  '1 to 3 years',
+  'Over 3 years'
 ]
 
 const INVESTIGATION_DETAILS = [
@@ -158,27 +154,30 @@ const LOCATION_DESCRIPTIONS = {
 
 /**
  * Generate a single symptom matching the new form format
- * @param {Object} options - Generation options
+ *
+ * @param {object} [options] - Generation options
  * @param {string} [options.type] - Force specific symptom type
  * @param {boolean} [options.requireInvestigation] - Force investigation status
  * @param {string} [options.addedByUserId] - User ID who added the symptom
- * @returns {Object} Generated symptom
+ * @returns {object} Generated symptom
  */
 const generateSymptom = (options = {}) => {
   // Pick symptom type if not specified
-  const type = options.type || weighted.select(
-    Object.fromEntries(
-      Object.entries(SYMPTOM_TYPES).map(([key, data]) => [key, data.weight])
+  const type =
+    options.type ||
+    weighted.select(
+      Object.fromEntries(
+        Object.entries(SYMPTOM_TYPES).map(([key, data]) => [key, data.weight])
+      )
     )
-  )
 
   const typeData = SYMPTOM_TYPES[type]
 
   // Generate dateType matching the form structure
   const dateTypeWeights = {
-    ...Object.fromEntries(DATE_RANGE_OPTIONS.map(range => [range, 0.1])), // 60% total for ranges
-    'dateKnown': 0.3,
-    'notSure': 0.1
+    ...Object.fromEntries(DATE_RANGE_OPTIONS.map((range) => [range, 0.1])), // 60% total for ranges
+    dateKnown: 0.3,
+    notSure: 0.1
   }
 
   // Generate basic symptom data matching form structure
@@ -186,7 +185,8 @@ const generateSymptom = (options = {}) => {
     id: generateId(),
     type,
     dateType: weighted.select(dateTypeWeights),
-    hasBeenInvestigated: options.requireInvestigation ?? (Math.random() < 0.3 ? 'yes' : 'no'),
+    hasBeenInvestigated:
+      options.requireInvestigation ?? (Math.random() < 0.3 ? 'yes' : 'no'),
     dateAdded: new Date().toISOString()
   }
 
@@ -197,7 +197,9 @@ const generateSymptom = (options = {}) => {
 
   // Add investigation details if investigated
   if (symptom.hasBeenInvestigated === 'yes') {
-    symptom.investigatedDescription = faker.helpers.arrayElement(INVESTIGATION_DETAILS)
+    symptom.investigatedDescription = faker.helpers.arrayElement(
+      INVESTIGATION_DETAILS
+    )
   }
 
   // Handle dates based on dateType
@@ -207,8 +209,7 @@ const generateSymptom = (options = {}) => {
       month: startDate.getMonth() + 1,
       year: startDate.getFullYear()
     }
-  }
-  else if (DATE_RANGE_OPTIONS.includes(symptom.dateType)) {
+  } else if (DATE_RANGE_OPTIONS.includes(symptom.dateType)) {
     // For range options, store the same value in approximateDuration
     symptom.approximateDuration = symptom.dateType
   }
@@ -217,7 +218,9 @@ const generateSymptom = (options = {}) => {
   // 30% chance the symptom has recently stopped
   symptom.hasStopped = Math.random() < 0.3
   if (symptom.hasStopped) {
-    symptom.approximateDateStopped = faker.helpers.arrayElement(APPROXIMATE_STOP_DATES)
+    symptom.approximateDateStopped = faker.helpers.arrayElement(
+      APPROXIMATE_STOP_DATES
+    )
   }
 
   // 25% chance the symptom is intermittent
@@ -225,20 +228,24 @@ const generateSymptom = (options = {}) => {
 
   // Handle type-specific fields
   if (type === 'Other') {
-    symptom.otherLocationDescription = faker.helpers.arrayElement(typeData.descriptions)
+    symptom.otherLocationDescription = faker.helpers.arrayElement(
+      typeData.descriptions
+    )
   } else if (type === 'Nipple change') {
     const changeType = faker.helpers.arrayElement(typeData.nippleChangeTypes)
     symptom.nippleChangeType = changeType
 
     if (changeType === 'other') {
-      symptom.nippleChangeDescription = faker.helpers.arrayElement(typeData.nippleChangeDescriptions.other)
+      symptom.nippleChangeDescription = faker.helpers.arrayElement(
+        typeData.nippleChangeDescriptions.other
+      )
     }
 
     // Generate nipple location as array to match checkboxes
     const nippleLocationChoice = weighted.select({
-      'right': 0.4,
-      'left': 0.4,
-      'both': 0.2
+      right: 0.4,
+      left: 0.4,
+      both: 0.2
     })
 
     switch (nippleLocationChoice) {
@@ -257,7 +264,9 @@ const generateSymptom = (options = {}) => {
     symptom.skinChangeType = changeType
 
     if (changeType === 'other') {
-      symptom.skinChangeDescription = faker.helpers.arrayElement(typeData.skinChangeDescriptions.other)
+      symptom.skinChangeDescription = faker.helpers.arrayElement(
+        typeData.skinChangeDescriptions.other
+      )
     }
   }
 
@@ -306,18 +315,15 @@ const generateSymptom = (options = {}) => {
 
 /**
  * Generate a set of symptoms for a person matching new medicalInformation structure
- * @param {Object} options - Generation options
- * @param {number} [options.probabilityOfSymptoms=0.15] - Chance of having any symptoms
- * @param {number} [options.maxSymptoms=3] - Maximum number of symptoms to generate
+ *
+ * @param {object} [options] - Generation options
+ * @param {number} [options.probabilityOfSymptoms] - Chance of having any symptoms
+ * @param {number} [options.maxSymptoms] - Maximum number of symptoms to generate
  * @param {Array} [options.users] - Array of users to pick from for addedByUserId
  * @returns {Array} Array of generated symptoms
  */
 const generateSymptoms = (options = {}) => {
-  const {
-    probabilityOfSymptoms = 0.15,
-    maxSymptoms = 3,
-    users = []
-  } = options
+  const { probabilityOfSymptoms = 0.15, maxSymptoms = 3, users = [] } = options
 
   // Determine if they have any symptoms
   if (Math.random() > probabilityOfSymptoms) {
@@ -332,8 +338,8 @@ const generateSymptoms = (options = {}) => {
   })
 
   // Pick a consistent user for all symptoms for this participant
-  const addedByUserId = users.length > 0 ?
-    faker.helpers.arrayElement(users).id : null
+  const addedByUserId =
+    users.length > 0 ? faker.helpers.arrayElement(users).id : null
 
   // Track used types to avoid duplicates
   const usedTypes = new Set()
@@ -342,15 +348,16 @@ const generateSymptoms = (options = {}) => {
   // Generate symptoms, avoiding duplicate types
   while (symptoms.length < numberOfSymptoms && symptoms.length < maxSymptoms) {
     // Filter to unused types
-    const availableTypes = Object.keys(SYMPTOM_TYPES)
-      .filter(type => !usedTypes.has(type))
+    const availableTypes = Object.keys(SYMPTOM_TYPES).filter(
+      (type) => !usedTypes.has(type)
+    )
 
     // Stop if no types left
     if (availableTypes.length === 0) break
 
     // Generate weights object from remaining types
     const weights = Object.fromEntries(
-      availableTypes.map(type => [type, SYMPTOM_TYPES[type].weight])
+      availableTypes.map((type) => [type, SYMPTOM_TYPES[type].weight])
     )
 
     // Pick a type and generate symptom

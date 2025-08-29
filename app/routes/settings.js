@@ -3,7 +3,7 @@
 const path = require('path')
 const { regenerateData } = require('../lib/utils/regenerate-data')
 
-module.exports = router => {
+module.exports = (router) => {
   // Handle regenerate data action
   router.post('/settings/regenerate', async (req, res) => {
     try {

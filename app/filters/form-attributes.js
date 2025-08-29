@@ -7,11 +7,10 @@ const _ = require('lodash')
  * Add name, value, id, idPrefix and checked attributes to NHSUK form components
  * Generate the attributes based on the application ID and the section they're in
  *
- * @param {Object} originalObject - The original component configuration
- * @param {Object} data - The data object to extract values from
+ * @param {object} originalObject - The original component configuration
+ * @param {object} data - The data object to extract values from
  * @param {string} path - Path to the data property (e.g. "data.nationality")
- * @returns {Object} The decorated component configuration
- *
+ * @returns {object} The decorated component configuration
  * @example
  * {{ nhsukCheckboxes({
  *   fieldset: {
@@ -56,7 +55,7 @@ const decorateAttributes = (originalObject, data, path) => {
   const storedValue = _.get(data, dataPath)
 
   if (obj.items !== undefined) {
-    obj.items = obj.items.map(item => {
+    obj.items = obj.items.map((item) => {
       // Skip dividers
       if (item.divider) return item
 
@@ -113,7 +112,7 @@ const decorateAttributes = (originalObject, data, path) => {
 
   // Set id and name attributes if not already defined
   obj.id = obj.id || pathParts.join('-')
-  obj.name = obj.name || pathParts.map(s => `[${s}]`).join('')
+  obj.name = obj.name || pathParts.map((s) => `[${s}]`).join('')
   return obj
 }
 

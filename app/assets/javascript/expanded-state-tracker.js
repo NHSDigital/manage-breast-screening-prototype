@@ -3,7 +3,7 @@
 // Generic expanded state tracker
 // Tracks open/closed state of elements with .js-track-expanded class
 
-(function() {
+;(function () {
   'use strict'
 
   const STORAGE_KEY_PREFIX = 'expanded-sections-'
@@ -21,7 +21,7 @@
     const trackableElements = document.querySelectorAll('.js-track-expanded')
     const expandedSections = []
 
-    trackableElements.forEach(element => {
+    trackableElements.forEach((element) => {
       if (element.hasAttribute('open')) {
         expandedSections.push(element.id)
       }
@@ -35,7 +35,7 @@
     if (storedState) {
       try {
         const expandedSections = JSON.parse(storedState)
-        expandedSections.forEach(sectionId => {
+        expandedSections.forEach((sectionId) => {
           const element = document.getElementById(sectionId)
           if (element && element.classList.contains('js-track-expanded')) {
             element.setAttribute('open', 'open')
@@ -51,7 +51,7 @@
     if (pendingExpandState) {
       try {
         const sectionsToExpand = JSON.parse(pendingExpandState)
-        sectionsToExpand.forEach(sectionId => {
+        sectionsToExpand.forEach((sectionId) => {
           const element = document.getElementById(sectionId)
           if (element && element.classList.contains('js-track-expanded')) {
             element.setAttribute('open', 'open')
@@ -75,8 +75,11 @@
   }
 
   function clearAllExpandedStates() {
-    Object.keys(sessionStorage).forEach(key => {
-      if (key.startsWith(STORAGE_KEY_PREFIX) || key.startsWith(PENDING_EXPAND_KEY_PREFIX)) {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (
+        key.startsWith(STORAGE_KEY_PREFIX) ||
+        key.startsWith(PENDING_EXPAND_KEY_PREFIX)
+      ) {
         sessionStorage.removeItem(key)
       }
     })
@@ -85,14 +88,16 @@
   function setupEventListeners() {
     const trackableElements = document.querySelectorAll('.js-track-expanded')
 
-    trackableElements.forEach(element => {
+    trackableElements.forEach((element) => {
       element.addEventListener('toggle', saveExpandedState)
     })
 
     // Handle links that should expand their parent section
-    const expandParentLinks = document.querySelectorAll('.js-expand-parent-section')
-    expandParentLinks.forEach(link => {
-      link.addEventListener('click', function() {
+    const expandParentLinks = document.querySelectorAll(
+      '.js-expand-parent-section'
+    )
+    expandParentLinks.forEach((link) => {
+      link.addEventListener('click', function () {
         // Find the parent section (closest .js-track-expanded element)
         const parentSection = this.closest('.js-track-expanded')
         if (parentSection && parentSection.id) {
@@ -103,8 +108,14 @@
             // For now, assume it returns to the current page
             const currentPath = window.location.pathname
             const pendingExpandSections = [parentSection.id]
-            sessionStorage.setItem(PENDING_EXPAND_KEY_PREFIX + currentPath, JSON.stringify(pendingExpandSections))
-            console.log('Marked section for expansion on return:', parentSection.id)
+            sessionStorage.setItem(
+              PENDING_EXPAND_KEY_PREFIX + currentPath,
+              JSON.stringify(pendingExpandSections)
+            )
+            console.log(
+              'Marked section for expansion on return:',
+              parentSection.id
+            )
           }
         }
       })
@@ -112,7 +123,7 @@
   }
 
   // Initialize on page load
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     clearExpandedStateIfNeeded()
     restoreExpandedState()
     setupEventListeners()
@@ -120,5 +131,4 @@
 
   // Expose clear function globally for clear data link
   window.clearAllExpandedStates = clearAllExpandedStates
-
 })()

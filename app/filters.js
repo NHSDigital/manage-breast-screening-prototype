@@ -3,12 +3,14 @@
 const fs = require('fs')
 const path = require('path')
 
-module.exports = function (env) { /* eslint-disable-line func-names,no-unused-vars */
+module.exports = function (env) {
+  /* eslint-disable-line func-names,no-unused-vars */
   /**
    * Instantiate object used to store the methods registered as a
    * 'filter' (of the same name) within nunjucks. You can override
    * gov.uk core filters by creating filter methods of the same name.
-   * @type {Object}
+   *
+   * @type {object}
    */
   const filters = {}
 
@@ -19,10 +21,10 @@ module.exports = function (env) { /* eslint-disable-line func-names,no-unused-va
   const folderPaths = [utilsPath, filtersPath]
 
   try {
-    folderPaths.forEach(folderPath => {
+    folderPaths.forEach((folderPath) => {
       const files = fs.readdirSync(folderPath)
 
-      files.forEach(file => {
+      files.forEach((file) => {
         if (path.extname(file) === '.js') {
           const module = require(path.join(folderPath, file))
 

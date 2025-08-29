@@ -1,6 +1,6 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/styles/typography' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
 
 h1 {
   @extend %nhsuk-heading-l;
@@ -13,7 +13,6 @@ h2 {
 h3 {
   @extend %nhsuk-heading-s;
 }
-
 
 .app-text-grey {
   color: $nhsuk-secondary-text-colour;

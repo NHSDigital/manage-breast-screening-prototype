@@ -8,7 +8,9 @@ const config = require('../../config')
 const { STATUS_GROUPS, isCompleted, isFinal } = require('../utils/status')
 const { generateMammogramImages } = require('./mammogram-generator')
 const { generateSymptoms } = require('./symptoms-generator')
-const { generateSpecialAppointment } = require('./special-appointment-generator')
+const {
+  generateSpecialAppointment
+} = require('./special-appointment-generator')
 const users = require('../../data/users')
 
 const NOT_SCREENED_REASONS = [
@@ -17,10 +19,14 @@ const NOT_SCREENED_REASONS = [
   'Breast implants requiring special imaging',
   'Acute breast symptoms requiring GP referral',
   'Currently pregnant or breastfeeding',
-  'Recent breast surgery',
+  'Recent breast surgery'
 ]
 
-const determineEventStatus = (slotDateTime, currentDateTime, attendanceWeights) => {
+const determineEventStatus = (
+  slotDateTime,
+  currentDateTime,
+  attendanceWeights
+) => {
   slotDateTime = dayjs(slotDateTime)
 
   const simulatedTime = dayjs(currentDateTime)
@@ -31,7 +37,7 @@ const determineEventStatus = (slotDateTime, currentDateTime, attendanceWeights) 
   if (slotDateTime.isAfter(simulatedTime)) {
     return weighted.select({
       event_scheduled: 0.95,
-      event_cancelled: 0.05,
+      event_cancelled: 0.05
     })
   }
 
@@ -49,39 +55,56 @@ const determineEventStatus = (slotDateTime, currentDateTime, attendanceWeights) 
       event_checked_in: 0.6,
       event_complete: 0.1,
       event_attended_not_screened: 0.1,
-      event_scheduled: 0.2,
+      event_scheduled: 0.2
     })
   } else {
     // More than 30 mins after appointment
     return weighted.select({
       event_complete: 0.6,
       event_attended_not_screened: 0.1,
-      event_scheduled: 0.2,
+      event_scheduled: 0.2
     })
   }
 }
 
-const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus = null, id = null, specialAppointmentOverride = null, forceInProgress = false }) => {
+const generateEvent = ({
+  slot,
+  participant,
+  clinic,
+  outcomeWeights,
+  forceStatus = null,
+  id = null,
+  specialAppointmentOverride = null,
+  forceInProgress = false
+}) => {
   // Parse dates once
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
-  const simulatedDateTime = dayjs().hour(parseInt(hours)).minute(parseInt(minutes))
+  const simulatedDateTime = dayjs()
+    .hour(parseInt(hours))
+    .minute(parseInt(minutes))
   const slotDateTime = dayjs(slot.dateTime)
   const isPast = slotDateTime.isBefore(simulatedDateTime)
 
   // Generate special appointment requirements for this event
-  const specialAppointment = specialAppointmentOverride || generateSpecialAppointment()
-  const hasSpecialAppointment = Boolean(specialAppointment?.supportTypes?.length)
+  const specialAppointment =
+    specialAppointmentOverride || generateSpecialAppointment()
+  const hasSpecialAppointment = Boolean(
+    specialAppointment?.supportTypes?.length
+  )
 
   // Double the duration for special appointments
   const duration = hasSpecialAppointment ? slot.duration * 2 : slot.duration
   const endDateTime = dayjs(slot.dateTime).add(duration, 'minute')
 
-  const attendanceWeights = clinic.clinicType === 'assessment'
-    ? [0.85, 0.05, 0.05, 0, 0.05]
-    : [0.70, 0.1, 0.10, 0.05, 0.05]
+  const attendanceWeights =
+    clinic.clinicType === 'assessment'
+      ? [0.85, 0.05, 0.05, 0, 0.05]
+      : [0.7, 0.1, 0.1, 0.05, 0.05]
 
   // We'll use forceStatus if provided, otherwise calculate based on timing
-  let eventStatus = forceStatus || determineEventStatus(slotDateTime, simulatedDateTime, attendanceWeights)
+  let eventStatus =
+    forceStatus ||
+    determineEventStatus(slotDateTime, simulatedDateTime, attendanceWeights)
 
   // Override to in_progress if requested
   if (forceInProgress) {
@@ -97,19 +120,19 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
     timing: {
       startTime: slot.dateTime,
       endTime: endDateTime.toISOString(),
-      duration,
+      duration
     },
     status: eventStatus,
     details: {
       screeningType: 'mammogram',
-      machineId: generateId(),
+      machineId: generateId()
     },
     statusHistory: [
       {
         status: 'event_scheduled',
-        timestamp: dayjs(slot.dateTime).subtract(1, 'day').toISOString(),
-      },
-    ],
+        timestamp: dayjs(slot.dateTime).subtract(1, 'day').toISOString()
+      }
+    ]
   }
 
   // Add special appointment data if present
@@ -120,11 +143,15 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
   // For in-progress events, add session details with current time
   if (eventStatus === 'event_in_progress') {
     // Pick a random clinical user (not the first one)
-    const clinicalUsers = users.filter(user => user.role.includes('clinician'))
+    const clinicalUsers = users.filter((user) =>
+      user.role.includes('clinician')
+    )
     const randomUser = faker.helpers.arrayElement(clinicalUsers.slice(1)) // Skip first user
 
     eventBase.sessionDetails = {
-      startedAt: dayjs().subtract(faker.number.int({ min: 5, max: 45 }), 'minutes').toISOString(),
+      startedAt: dayjs()
+        .subtract(faker.number.int({ min: 5, max: 45 }), 'minutes')
+        .toISOString(),
       startedBy: randomUser.id
     }
   }
@@ -139,10 +166,11 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
       ...eventBase,
       details: {
         ...eventBase.details,
-        notScreenedReason: eventStatus === 'event_attended_not_screened'
-          ? faker.helpers.arrayElement(NOT_SCREENED_REASONS)
-          : null,
-      },
+        notScreenedReason:
+          eventStatus === 'event_attended_not_screened'
+            ? faker.helpers.arrayElement(NOT_SCREENED_REASONS)
+            : null
+      }
     }
 
     // Add special appointment data if present
@@ -158,17 +186,22 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
         : faker.number.int({ min: -3, max: 5 })
 
       const actualStartTime = slotDateTime.add(actualStartOffset, 'minute')
-      const actualEndTime = actualStartTime.add(slot.duration + durationOffset, 'minute')
+      const actualEndTime = actualStartTime.add(
+        slot.duration + durationOffset,
+        'minute'
+      )
 
       event.timing = {
         ...event.timing,
         actualStartTime: actualStartTime.toISOString(),
         actualEndTime: actualEndTime.toISOString(),
-        actualDuration: actualEndTime.diff(actualStartTime, 'minute'),
+        actualDuration: actualEndTime.diff(actualStartTime, 'minute')
       }
 
       // Add session details for completed events
-      const clinicalUsers = users.filter(user => user.role.includes('clinician'))
+      const clinicalUsers = users.filter((user) =>
+        user.role.includes('clinician')
+      )
       const randomUser = faker.helpers.arrayElement(clinicalUsers)
 
       event.sessionDetails = {
@@ -204,13 +237,21 @@ const generateEvent = ({ slot, participant, clinic, outcomeWeights, forceStatus 
 
     // Add session details for attended-not-screened events
     if (eventStatus === 'event_attended_not_screened') {
-      const clinicalUsers = users.filter(user => user.role.includes('clinician'))
+      const clinicalUsers = users.filter((user) =>
+        user.role.includes('clinician')
+      )
       const randomUser = faker.helpers.arrayElement(clinicalUsers)
 
       // They would have started the appointment process
-      const actualStartTime = slotDateTime.add(faker.number.int({ min: -5, max: 5 }), 'minute')
+      const actualStartTime = slotDateTime.add(
+        faker.number.int({ min: -5, max: 5 }),
+        'minute'
+      )
       // But ended it early when determining screening couldn't proceed
-      const actualEndTime = actualStartTime.add(faker.number.int({ min: 5, max: 15 }), 'minute')
+      const actualEndTime = actualStartTime.add(
+        faker.number.int({ min: 5, max: 15 }),
+        'minute'
+      )
 
       event.sessionDetails = {
         startedAt: actualStartTime.toISOString(),
@@ -232,7 +273,7 @@ const generateStatusHistory = (finalStatus, dateTime) => {
   // Always starts with scheduled status
   history.push({
     status: 'event_scheduled',
-    timestamp: new Date(baseDate.getTime() - (24 * 60 * 60 * 1000)).toISOString(), // Day before
+    timestamp: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000).toISOString() // Day before
   })
 
   // Add intermediate statuses based on final status
@@ -240,7 +281,7 @@ const generateStatusHistory = (finalStatus, dateTime) => {
     history.push(
       {
         status: 'checked_in',
-        timestamp: new Date(baseDate.getTime() - (10 * 60 * 1000)).toISOString(), // 10 mins before
+        timestamp: new Date(baseDate.getTime() - 10 * 60 * 1000).toISOString() // 10 mins before
       },
       // {
       //   status: 'in_progress',
@@ -248,14 +289,14 @@ const generateStatusHistory = (finalStatus, dateTime) => {
       // },
       {
         status: finalStatus,
-        timestamp: new Date(baseDate.getTime() + (15 * 60 * 1000)).toISOString(), // 15 mins after
+        timestamp: new Date(baseDate.getTime() + 15 * 60 * 1000).toISOString() // 15 mins after
       }
     )
   } else {
     // For did_not_attend and attended_not_screened, just add the final status
     history.push({
       status: finalStatus,
-      timestamp: new Date(baseDate.getTime() + (15 * 60 * 1000)).toISOString(),
+      timestamp: new Date(baseDate.getTime() + 15 * 60 * 1000).toISOString()
     })
   }
 
@@ -263,5 +304,5 @@ const generateStatusHistory = (finalStatus, dateTime) => {
 }
 
 module.exports = {
-  generateEvent,
+  generateEvent
 }

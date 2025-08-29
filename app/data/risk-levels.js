@@ -1,8 +1,7 @@
 // app/data/risk-levels.js
 
 module.exports = {
-
-  routine: {
+  'routine': {
     weight: 0.7,
     frequency: 36, // months
     ageRange: {
@@ -10,7 +9,7 @@ module.exports = {
       lower: 50
     }
   },
-  "family history": {
+  'family history': {
     weight: 0.25,
     frequency: 12, // months
     ageRange: {
@@ -18,14 +17,14 @@ module.exports = {
       lower: 40
     }
   },
-  high: {
+  'high': {
     weight: 0.05,
     frequency: 12, // months
     ageRange: {
       upper: 70,
       lower: 50
     }
-  },
+  }
   // veryHigh: {
   //   frequency: 12, // months
   //   ageRange: {

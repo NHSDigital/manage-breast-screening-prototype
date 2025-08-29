@@ -2,7 +2,10 @@
 
 // External dependencies
 const express = require('express')
-const { regenerateData, needsRegeneration } = require('./lib/utils/regenerate-data')
+const {
+  regenerateData,
+  needsRegeneration
+} = require('./lib/utils/regenerate-data')
 const { resetCallSequence } = require('./lib/utils/random')
 
 const router = express.Router()
@@ -31,19 +34,27 @@ router.use((req, res, next) => {
 router.use((req, res, next) => {
   const data = req.session.data
 
-  if (data.currentUserId != data.currentUser.id){
-    const selectedUser = data.users.find(user => user.id === data.currentUserId)
+  if (data.currentUserId != data.currentUser.id) {
+    const selectedUser = data.users.find(
+      (user) => user.id === data.currentUserId
+    )
 
     if (selectedUser) {
-      console.log(`Changing user to user ${selectedUser.firstName} ${selectedUser.lastName}`)
+      console.log(
+        `Changing user to user ${selectedUser.firstName} ${selectedUser.lastName}`
+      )
 
       data.currentUser = selectedUser
       res.locals.data.currentUser = selectedUser
 
-      req.flash('success', `Signed in as ${selectedUser.firstName} ${selectedUser.lastName}`)
-    }
-    else {
-      console.log(`Cannot find user ${data.currentUserId} to sign in. Reverting to user 1`)
+      req.flash(
+        'success',
+        `Signed in as ${selectedUser.firstName} ${selectedUser.lastName}`
+      )
+    } else {
+      console.log(
+        `Cannot find user ${data.currentUserId} to sign in. Reverting to user 1`
+      )
 
       data.currentUserId = data.currentUser.id
       res.locals.data.currentUserId = data.currentUser.id
@@ -86,7 +97,7 @@ router.get('/modal-examples', (req, res) => {
 // Workaround for Chrome DevTools requesting a specific URL
 router.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   // Either return an empty JSON object
-  res.json({});
+  res.json({})
   // Or send a 204 No Content response
   // res.status(204).end();
 })

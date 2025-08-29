@@ -10,7 +10,7 @@ class ButtonMenu {
       alignMenu: 'left',
       buttonClasses: '',
       ...this.parseDataAttributes(),
-      ...config,
+      ...config
     }
 
     // If only one button is provided, don't initiate a menu and toggle button
@@ -66,7 +66,10 @@ class ButtonMenu {
     })
 
     document.addEventListener('click', (event) => {
-      if (event.target instanceof Node && !this.element.contains(event.target)) {
+      if (
+        event.target instanceof Node &&
+        !this.element.contains(event.target)
+      ) {
         this.closeMenu(false)
       }
     })
@@ -244,8 +247,11 @@ class ButtonMenu {
 
 // Initialize all button menus when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  const buttonMenus = document.querySelectorAll('[data-module="app-button-menu"]')
-  buttonMenus.forEach(element => {
+  const buttonMenus = document.querySelectorAll(
+    '[data-module="app-button-menu"]'
+  )
+
+  buttonMenus.forEach((element) => {
     new ButtonMenu(element)
   })
 })

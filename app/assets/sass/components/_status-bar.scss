@@ -1,6 +1,6 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/helpers' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 // app/assets/sass/components/_reading.scss
 
@@ -66,7 +66,8 @@ $status-bar-row-spacing: 16px; // 8px margin + 8px padding for borders
   @if $spacing-multiplier < 0 {
     $spacing-multiplier: 0;
   }
-  @return $nav-height + $status-bar-base-padding + ($rows * $status-bar-row-height) + ($spacing-multiplier * $status-bar-row-spacing);
+  @return $nav-height + $status-bar-base-padding + ($rows * $status-bar-row-height) +
+    ($spacing-multiplier * $status-bar-row-spacing);
 }
 
 // Default scroll padding (fallback for 3 rows)
