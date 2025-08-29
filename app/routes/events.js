@@ -3,13 +3,9 @@ const dayjs = require('dayjs')
 const _ = require('lodash')
 
 const {
-  getParticipant,
-  getFullName,
-  saveTempParticipantToParticipant
-} = require('../lib/utils/participants')
-const {
   generateMammogramImages
 } = require('../lib/generators/mammogram-generator')
+const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
   getEvent,
   saveTempEventToEvent,
@@ -18,11 +14,10 @@ const {
 } = require('../lib/utils/event-data')
 const generateId = require('../lib/utils/id-generator')
 const {
-  getReturnUrl,
-  urlWithReferrer,
-  appendReferrer
-} = require('../lib/utils/referrers')
-const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
+  getFullName,
+  saveTempParticipantToParticipant
+} = require('../lib/utils/participants')
+const { getReturnUrl, urlWithReferrer } = require('../lib/utils/referrers')
 
 /**
  * Get single event and its related data
@@ -1062,10 +1057,7 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
 
-      const supportTypes = data.event?.specialAppointment?.supportTypes
       const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
-      const temporaryReasonsList =
-        data.event?.specialAppointment?.temporaryReasonsList
 
       if (temporaryReasons === 'no') {
         delete data.event.specialAppointment.temporaryReasonsList

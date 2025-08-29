@@ -1,15 +1,12 @@
 // app/routes/clinics.js
 
 const dayjs = require('dayjs')
+
 const { getFilteredClinics, getClinicEvents } = require('../lib/utils/clinics')
-const { filterEventsByStatus } = require('../lib/utils/status')
-const {
-  getReturnUrl,
-  urlWithReferrer,
-  appendReferrer
-} = require('../lib/utils/referrers')
-const { getParticipant } = require('../lib/utils/participants')
 const { updateEventStatus } = require('../lib/utils/event-data')
+const { getParticipant } = require('../lib/utils/participants')
+const { getReturnUrl } = require('../lib/utils/referrers')
+const { filterEventsByStatus } = require('../lib/utils/status')
 
 /**
  * Get clinic and its related data from id

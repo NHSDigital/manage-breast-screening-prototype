@@ -3,26 +3,25 @@
 // to run: node app/lib/generate-seed-data.js
 // can also be run from ui at localhost:3000/settings
 
+const fs = require('node:fs')
+const path = require('node:path')
+
 const dayjs = require('dayjs')
-const fs = require('fs')
-const path = require('path')
-const config = require('../config')
 const weighted = require('weighted')
 
-const { generateParticipant } = require('./generators/participant-generator')
-const { generateClinicsForBSU } = require('./generators/clinic-generator')
-const { generateEvent } = require('./generators/event-generator')
-const { getCurrentRiskLevel } = require('./utils/participants')
-const { generateReadingData } = require('./generators/reading-generator')
-
-const riskLevels = require('../data/risk-levels')
-
+const config = require('../config')
 // Load existing data
 const breastScreeningUnits = require('../data/breast-screening-units')
 const ethnicities = require('../data/ethnicities')
-
+const riskLevels = require('../data/risk-levels')
 // Hardcoded scenarios for user research
 const testScenarios = require('../data/test-scenarios')
+
+const { generateClinicsForBSU } = require('./generators/clinic-generator')
+const { generateEvent } = require('./generators/event-generator')
+const { generateParticipant } = require('./generators/participant-generator')
+const { generateReadingData } = require('./generators/reading-generator')
+const { getCurrentRiskLevel } = require('./utils/participants')
 
 // Create an index of participants by risk level for efficient lookup
 // Create an index of participants by risk level for efficient lookup
@@ -128,9 +127,6 @@ const generateClinicsForDay = (
         return targetDate.isSame(dayjs(date).startOf('day'), 'day')
       })
     : []
-
-  // Pre-filter eligible participants once
-  const clinicDate = dayjs(date)
 
   // Generate clinics for this day
   const newClinics = generateClinicsForBSU({

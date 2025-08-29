@@ -1,17 +1,19 @@
 // app/lib/generators/event-generator.js
 
-const generateId = require('../utils/id-generator')
 const { faker } = require('@faker-js/faker')
-const weighted = require('weighted')
 const dayjs = require('dayjs')
+const weighted = require('weighted')
+
 const config = require('../../config')
-const { STATUS_GROUPS, isCompleted, isFinal } = require('../utils/status')
+const users = require('../../data/users')
+const generateId = require('../utils/id-generator')
+const { STATUS_GROUPS, isCompleted } = require('../utils/status')
+
 const { generateMammogramImages } = require('./mammogram-generator')
-const { generateSymptoms } = require('./symptoms-generator')
 const {
   generateSpecialAppointment
 } = require('./special-appointment-generator')
-const users = require('../../data/users')
+const { generateSymptoms } = require('./symptoms-generator')
 
 const NOT_SCREENED_REASONS = [
   'Recent mammogram at different facility',
@@ -71,7 +73,6 @@ const generateEvent = ({
   slot,
   participant,
   clinic,
-  outcomeWeights,
   forceStatus = null,
   id = null,
   specialAppointmentOverride = null,

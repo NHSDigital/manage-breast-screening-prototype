@@ -1,6 +1,5 @@
 // app/routes/settings.js
 
-const path = require('path')
 const { regenerateData } = require('../lib/utils/regenerate-data')
 
 module.exports = (router) => {

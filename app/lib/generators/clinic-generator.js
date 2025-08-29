@@ -1,10 +1,11 @@
 // app/lib/generators/clinic-generator.js
 
 const { faker } = require('@faker-js/faker')
-const generateId = require('../utils/id-generator')
 const dayjs = require('dayjs')
 const weighted = require('weighted')
+
 const config = require('../../config')
+const generateId = require('../utils/id-generator')
 
 const determineClinicType = (location, breastScreeningUnit) => {
   // First check location-specific service types
@@ -246,7 +247,7 @@ const generateClinicsForBSU = ({ date, breastScreeningUnit }) => {
       return [clinic]
     } else {
       // For paired sessions, create two clinics
-      return selectedPattern.sessions.map((sessionTimes, sessionIndex) => {
+      return selectedPattern.sessions.map(() => {
         const clinic = generateClinic(
           date,
           location,

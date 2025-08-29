@@ -2,6 +2,7 @@
 
 const dayjs = require('dayjs')
 const weighted = require('weighted')
+
 const { eligibleForReading } = require('../utils/status')
 
 /**
@@ -151,7 +152,6 @@ const generateReadingData = (events, users) => {
 
   // NEW: Add clinic where both reads are completed, but neither by the current user
   if (clinics.length >= 3) {
-    let count = 0
     // Use the next clinic for this scenario
     const clinic = clinics[2]
     console.log(
@@ -190,7 +190,6 @@ const generateReadingData = (events, users) => {
       }
 
       updatedEventIds.add(event.id)
-      count++
     })
 
     // Add second reads by second user to 60% of events

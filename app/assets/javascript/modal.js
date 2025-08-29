@@ -116,7 +116,7 @@ class AppModal {
         this.handleAjax(actionElement)
         break
 
-      default:
+      default: {
         // Fire custom event for other action types
         const customEvent = new CustomEvent('modal:action', {
           detail: {
@@ -127,6 +127,7 @@ class AppModal {
           }
         })
         this.modal.dispatchEvent(customEvent)
+      }
     }
   }
 

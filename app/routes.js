@@ -2,11 +2,12 @@
 
 // External dependencies
 const express = require('express')
+
+const { resetCallSequence } = require('./lib/utils/random')
 const {
   regenerateData,
   needsRegeneration
 } = require('./lib/utils/regenerate-data')
-const { resetCallSequence } = require('./lib/utils/random')
 
 const router = express.Router()
 

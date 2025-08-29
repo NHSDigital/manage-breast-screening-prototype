@@ -1,8 +1,9 @@
 // app/lib/utils/.js
 
 const dayjs = require('dayjs')
-const { eligibleForReading, getStatusTagColour } = require('./status')
+
 const { isWithinDayRange } = require('./dates')
+const { eligibleForReading, getStatusTagColour } = require('./status')
 
 // /**
 //  * Get first unread event in a clinic
@@ -207,7 +208,6 @@ const calculateReadingMetrics = function (
 
     // Count first/second reads by this user
     events.forEach((event) => {
-      const metadata = getReadingMetadata(event)
       const reads = event.imageReading?.reads
         ? Object.values(event.imageReading.reads)
         : []
@@ -660,9 +660,7 @@ const getFirstAvailableClinic = (data) => {
  * Get all recent clinics that are available for reading
  * Includes completed screening events and reading progress
  */
-const getReadingClinics = (data, options = {}) => {
-  const {} = options
-
+const getReadingClinics = (data) => {
   return data.clinics
     .filter((clinic) =>
       data.events.some((e) => e.clinicId === clinic.id && eligibleForReading(e))

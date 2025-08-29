@@ -1,6 +1,7 @@
 // app/lib/utils/participants.js
 
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
+
 const riskLevels = require('../../data/risk-levels.js')
 
 /**

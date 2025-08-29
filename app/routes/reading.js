@@ -1,13 +1,11 @@
 // app/routes/image-reading.js
-const { getEventData } = require('../lib/utils/event-data')
+const dayjs = require('dayjs')
+
+const generateId = require('../lib/utils/id-generator')
 const {
   getFirstUserReadableEvent,
-  getReadableEventsForClinic,
   getReadingStatusForEvents,
   getReadingClinics,
-  getReadingProgress,
-  hasReads,
-  canUserReadEvent,
   writeReading,
   createReadingBatch,
   getFirstReadableEventInBatch,
@@ -17,9 +15,7 @@ const {
   skipEventInBatch,
   getReadingMetadata
 } = require('../lib/utils/reading')
-const { camelCase, snakeCase } = require('../lib/utils/strings')
-const dayjs = require('dayjs')
-const generateId = require('../lib/utils/id-generator')
+const { snakeCase } = require('../lib/utils/strings')
 
 module.exports = (router) => {
   // Set nav state
@@ -82,7 +78,7 @@ module.exports = (router) => {
 
       // Redirect to the batch view
       res.redirect(`/reading/batch/${batch.id}`)
-    } catch (error) {
+    } catch {
       console.log('Could not load clinic for reading')
       res.redirect('/reading')
     }
@@ -117,7 +113,7 @@ module.exports = (router) => {
         // No readable events, go to batch overview
         res.redirect(`/reading/batch/${batch.id}`)
       }
-    } catch (error) {
+    } catch {
       console.log('Could not start reading clinic')
       res.redirect('/reading')
     }
@@ -347,7 +343,7 @@ module.exports = (router) => {
   router.get(
     '/reading/batch/:batchId/events/:eventId/:step',
     (req, res, next) => {
-      const { batchId, eventId, step } = req.params
+      const { step } = req.params
       const validSteps = [
         'assessment',
         'normal-details',
@@ -520,7 +516,7 @@ module.exports = (router) => {
           //     })
           //   }
           // }
-        } catch (e) {
+        } catch {
           errors.push({
             text: `Mark the location on both ${annotationTemp.side} breast views`,
             name: 'markerPositions',
@@ -618,7 +614,6 @@ module.exports = (router) => {
       if (data.imageReadingTemp?.annotationTemp) {
         const side = annotationTemp.side
         const comment = annotationTemp.comment
-        const isNewAnnotation = !annotationTemp.id
 
         if (!side) {
           return res.redirect(

@@ -1,9 +1,11 @@
 // app/lib/utils/regenerate-data.js
 
-const generateData = require('../generate-seed-data')
-const { join, resolve } = require('path')
+const fs = require('node:fs')
+const { join, resolve } = require('node:path')
+
 const dayjs = require('dayjs')
-const fs = require('fs')
+
+const generateData = require('../generate-seed-data')
 
 async function regenerateData(req) {
   const dataDirectory = join(__dirname, '../../data')

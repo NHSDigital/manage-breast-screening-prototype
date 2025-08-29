@@ -1,7 +1,7 @@
 // app/lib/utils/random.js
 
-const weighted = require('weighted')
 const { faker } = require('@faker-js/faker')
+const weighted = require('weighted')
 
 // Keep track of function calls by name for each page render
 let callSequence = {}
