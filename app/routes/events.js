@@ -177,6 +177,10 @@ module.exports = router => {
 
     // Only allow leaving if the event is currently in progress
     if (event?.status === 'event_in_progress') {
+
+      // Reset workflow status
+      delete data.event.workflowStatus
+
       // Save any temporary changes before leaving
       saveTempEventToEvent(data)
       saveTempParticipantToParticipant(data)
@@ -686,6 +690,59 @@ module.exports = router => {
 
     // No symptomType or invalid type - go to type selection page
     res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/type`, req.query.referrerChain, req.query.scrollTo))
+  })
+
+  // Save breast features (includes converting JSON string to structured data)
+  router.post('/clinics/:clinicId/events/:eventId/medical-information/record-breast-features/save', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
+
+    let conversionsCount = 0
+    let errorCount = 0
+
+    // Convert breast features raw data
+    if (data.event?.medicalInformation?.breastFeaturesRaw) {
+      try {
+        const rawFeatures = data.event.medicalInformation.breastFeaturesRaw
+        if (typeof rawFeatures === 'string') {
+          data.event.medicalInformation.breastFeatures = JSON.parse(rawFeatures)
+          // Delete the raw data once converted
+          delete data.event.medicalInformation.breastFeaturesRaw
+          conversionsCount++
+          console.log('Converted breastFeaturesRaw to structured data and deleted raw data')
+        }
+      } catch (error) {
+        console.warn('Failed to convert breastFeaturesRaw:', error)
+        errorCount++
+      }
+    }
+
+    // Add other JSON string conversions here as needed
+    // Example for symptoms:
+    // if (data.event?.medicalInformation?.symptomsRaw) {
+    //   try {
+    //     const rawSymptoms = data.event.medicalInformation.symptomsRaw
+    //     if (typeof rawSymptoms === 'string') {
+    //       data.event.medicalInformation.symptoms = JSON.parse(rawSymptoms)
+    //       conversionsCount++
+    //       console.log('Converted symptomsRaw to structured data')
+    //     }
+    //   } catch (error) {
+    //     console.warn('Failed to convert symptomsRaw:', error)
+    //     errorCount++
+    //   }
+    // }
+
+    // Flash error message if needed
+    if (errorCount > 0) {
+      req.flash('error', 'Some data could not be converted. Please check the information and try again.')
+    }
+
+    // Redirect back using referrer chain
+    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, referrerChain, scrollTo)
+    res.redirect(returnUrl)
   })
 
   // Specific route for imaging view

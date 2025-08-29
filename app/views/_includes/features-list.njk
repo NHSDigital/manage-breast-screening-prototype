@@ -1,0 +1,28 @@
+{# app/views/_includes/features-list.njk #}
+
+{#
+  Reusable features list component
+
+  Set these variables before including if you want to customise:
+  - listContainerId (string, default "featuresListContainer") - ID for container div
+  - listId (string, default "featuresList") - ID for the list element
+  - clearLinkId (string, default "clearAllFeaturesLink") - ID for clear all link
+  - headerText (string, default "Key") - heading text for the list
+  - showClearLink (boolean, default true) - whether to show "Clear all features" link
+#}
+
+{% set listContainerId = listContainerId or "featuresListContainer" %}
+{% set listId = listId or "featuresList" %}
+{% set clearLinkId = clearLinkId or "clearAllFeaturesLink" %}
+{% set headerText = headerText or "Key" %}
+{% set showClearLink = showClearLink if showClearLink is defined else true %}
+
+<div id="{{ listContainerId }}" style="display: none;" class="nhsuk-u-margin-top-4">
+  <div class="features-list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h3 class="nhsuk-heading-s" style="margin: 0;">{{ headerText }}</h3>
+    {% if showClearLink %}
+    <a href="#" id="{{ clearLinkId }}" class="nhsuk-link" style="font-size: 14px;">Clear all features</a>
+    {% endif %}
+  </div>
+  <div class="features-list" id="{{ listId }}"></div>
+</div>
