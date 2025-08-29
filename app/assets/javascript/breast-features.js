@@ -267,131 +267,69 @@ function initializeBreastFeatures()
 
     function determineRegionFromCoordinates(svgX, svgY)
     {
-        // Define breast boundaries more accurately
-        const centerLine = 396.5 // Middle of the 793-width SVG
+        const regions = svg.querySelectorAll('.anatomical-region')
 
-        // Basic boundary checks
-        if (svgY < 2 || svgY > 318)
+        // First try to find exact region containing the point
+        for (const region of regions)
         {
-            return null // Outside main diagram
-        }
-
-        // Upper chest area
-        if (svgY <= 50 && svgX > 50 && svgX < 743)
-        {
-            return { region: 'upper chest', side: svgX < centerLine ? 'right' : 'left' }
-        }
-
-        // Determine side first
-        let side = 'center'
-        if (svgX < 385)
-        {
-            side = 'right'
-        }
-        else if (svgX > 408)
-        {
-            side = 'left'
-        }
-        else
-        {
-            // Center region (midline/sternum area)
-            if (svgY < 240)
+            if (isPointInPolygon(svgX, svgY, region.getAttribute('points')))
             {
-                return { region: 'midline', side: 'center' }
-            }
-            else
-            {
-                return { region: 'lower sternum', side: 'center' }
+                return {
+                    region: region.getAttribute('data-region'),
+                    side: region.getAttribute('data-side')
+                }
             }
         }
 
-        // For right side
-        if (side === 'right')
+        // Fallback: find closest region by distance to center
+        let closestRegion = null
+        let minDistance = Infinity
+
+        regions.forEach(region => {
+            const centerX = parseFloat(region.getAttribute('data-center-x'))
+            const centerY = parseFloat(region.getAttribute('data-center-y'))
+
+            const distance = Math.sqrt(Math.pow(svgX - centerX, 2) + Math.pow(svgY - centerY, 2))
+
+            if (distance < minDistance)
+            {
+                minDistance = distance
+                closestRegion = {
+                    region: region.getAttribute('data-region'),
+                    side: region.getAttribute('data-side')
+                }
+            }
+        })
+
+        console.log(`No exact region found for (${svgX}, ${svgY}), using closest:`, closestRegion)
+        return closestRegion
+    }
+
+    function isPointInPolygon(x, y, polygonPoints)
+    {
+        const points = polygonPoints.split(' ').map(point => {
+            const coords = point.split(',')
+            return { x: parseFloat(coords[0]), y: parseFloat(coords[1]) }
+        })
+
+        let inside = false
+        let j = points.length - 1
+
+        for (let i = 0; i < points.length; i++)
         {
-            // Check lateral chest wall (far left edge)
-            if (svgX < 120 && svgY > 120)
-            {
-                return { region: 'lateral chest wall', side: 'right' }
-            }
+            const xi = points[i].x
+            const yi = points[i].y
+            const xj = points[j].x
+            const yj = points[j].y
 
-            // Check if in axilla area (full rectangular area in upper corner)
-            if (svgX >= 2 && svgX <= 120 && svgY >= 2 && svgY <= 100)
+            if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi))
             {
-                return { region: 'axilla', side: 'right' }
+                inside = !inside
             }
-
-            // Upper regions - refined boundaries
-            if (svgY < 135)
-            {
-                if (svgX < 200) return { region: 'upper outer', side: 'right' }
-                if (svgX < 290) return { region: 'upper central', side: 'right' }
-                return { region: 'upper inner', side: 'right' }
-            }
-
-            // Middle regions (around nipple level) - more precise
-            if (svgY >= 135 && svgY <= 185)
-            {
-                if (svgX < 195) return { region: 'lateral to nipple', side: 'right' }
-                if (svgX < 305) return { region: 'central', side: 'right' }
-                return { region: 'medial to nipple', side: 'right' }
-            }
-
-            // Lower regions - refined based on expert boundaries
-            if (svgY > 185 && svgY < 265)
-            {
-                if (svgX < 175) return { region: 'lower lateral', side: 'right' }
-                if (svgX < 275) return { region: 'lower outer', side: 'right' }
-                if (svgX < 340) return { region: 'lower central', side: 'right' }
-                return { region: 'lower inner', side: 'right' }
-            }
-
-            // Inframammary fold
-            if (svgY >= 265 && svgY < 295)
-            {
-                return { region: 'inframammary fold', side: 'right' }
-            }
+            j = i
         }
 
-        // For left side, mirror the right side logic
-        if (side === 'left')
-        {
-            // Check lateral chest wall (far right edge)
-            if (svgX > 673 && svgY > 120)
-            {
-                return { region: 'lateral chest wall', side: 'left' }
-            }
-
-            // Check if in axilla area (full rectangular area in upper corner)
-            if (svgX >= 673 && svgX <= 791 && svgY >= 2 && svgY <= 100)
-            {
-                return { region: 'axilla', side: 'left' }
-            }
-
-            // Middle regions (around nipple level) - mirrored precision
-            if (svgY >= 135 && svgY <= 185)
-            {
-                if (svgX > 598) return { region: 'lateral to nipple', side: 'left' }
-                if (svgX > 488) return { region: 'central', side: 'left' }
-                return { region: 'medial to nipple', side: 'left' }
-            }
-
-            // Lower regions - mirrored refinements
-            if (svgY > 185 && svgY < 265)
-            {
-                if (svgX > 588) return { region: 'lower lateral', side: 'left' }
-                if (svgX > 513) return { region: 'lower outer', side: 'left' }
-                if (svgX > 453) return { region: 'lower central', side: 'left' }
-                return { region: 'lower inner', side: 'left' }
-            }
-
-            // Inframammary fold
-            if (svgY >= 265 && svgY < 295)
-            {
-                return { region: 'inframammary fold', side: 'left' }
-            }
-        }
-
-        return null
+        return inside
     }
 
     function showPopover(clickX, clickY)
