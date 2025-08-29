@@ -15,6 +15,18 @@
     font-size: 18px;
     font-weight: bold;
     cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -webkit-touch-callout: none;  // Prevents iOS callout
+    -webkit-tap-highlight-color: transparent;  // Removes tap highlight on mobile
+}
+
+.breast-features-diagram-marker.dragging {
+    cursor: grabbing;
+    opacity: 0.8;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(33, 43, 50, 0.3);
 }
 
 .breast-features-diagram-container {
@@ -44,7 +56,6 @@
     border: 3px solid #000000;
     background: #ffffff;
     margin: 0;
-    padding: 10px 0;
     cursor: crosshair;
     overflow: hidden; /* CRITICAL: Prevent markers from escaping container */
 }

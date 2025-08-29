@@ -280,9 +280,9 @@ function initializeBreastFeatures()
         const clickX = e.clientX - svgRect.left
         const clickY = e.clientY - svgRect.top
 
-        // Convert to SVG coordinate system (793 x 320 viewBox)
-        const svgX = (clickX / svgRect.width) * 793
-        const svgY = (clickY / svgRect.height) * 320
+        // Convert to SVG coordinate system (800 x 400 viewBox - 2:1 aspect ratio)
+        const svgX = (clickX / svgRect.width) * 800
+        const svgY = (clickY / svgRect.height) * 400
 
         console.log('SVG clicked at pixel coords:', clickX, clickY)
         console.log('Converted to SVG coords:', svgX, svgY)
@@ -503,6 +503,14 @@ function initializeBreastFeatures()
         marker.setAttribute('data-side', side)
         marker.setAttribute('data-feature-id', featureId)
 
+        // Prevent text selection when dragging
+        marker.style.userSelect = 'none'
+        marker.style.webkitUserSelect = 'none'
+        marker.style.mozUserSelect = 'none'
+
+        // Ensure no transform is applied (stick to pixel positioning)
+        marker.style.transform = 'none'
+
         // Use exact coordinates if provided, otherwise fall back to region center
         if (exactX !== undefined && exactY !== undefined)
         {
@@ -559,19 +567,21 @@ function initializeBreastFeatures()
         const svgOffsetX = svgRect.left - containerRect.left
         const svgOffsetY = svgRect.top - containerRect.top
 
-        const pixelX = (svgX / 793) * svgRect.width
-        const pixelY = (svgY / 320) * svgRect.height
+        const pixelX = (svgX / 800) * svgRect.width
+        const pixelY = (svgY / 400) * svgRect.height
 
-        const markerSizeOffset = 20
+        // Account for marker size including borders (40px + 2px border each side = 44px total)
+        const markerSizeOffset = 23
         const finalLeft = svgOffsetX + pixelX - markerSizeOffset
         const finalTop = svgOffsetY + pixelY - markerSizeOffset
 
-        marker.style.left = finalLeft + 'px'
-        marker.style.top = finalTop + 'px'
+        // Round to integer pixels to prevent 1-3px drift from floating point precision
+        marker.style.left = Math.round(finalLeft) + 'px'
+        marker.style.top = Math.round(finalTop) + 'px'
         marker.style.position = 'absolute'
         marker.style.zIndex = '102'
 
-        console.log('Final marker position:', marker.style.left, marker.style.top)
+        console.log('Final marker position (rounded):', marker.style.left, marker.style.top)
     }
 
     function setupMarkerInteraction(markerElement)
@@ -584,6 +594,9 @@ function initializeBreastFeatures()
         markerElement.addEventListener('mousedown', function(e) {
             e.preventDefault()
             e.stopPropagation()
+
+            // Prevent text selection during drag
+            document.body.style.userSelect = 'none'
 
             isDragging = false
             dragStartX = e.clientX
@@ -625,6 +638,9 @@ function initializeBreastFeatures()
             document.removeEventListener('mouseup', handleMouseUp)
             markerElement.classList.remove('dragging')
 
+            // Restore text selection
+            document.body.style.userSelect = ''
+
             if (isDragging)
             {
                 updateFeaturePosition(markerElement)
@@ -646,6 +662,7 @@ function initializeBreastFeatures()
         }
     }
 
+
     function updateFeaturePosition(markerElement)
     {
         // Convert marker position back to SVG coordinates
@@ -664,8 +681,8 @@ function initializeBreastFeatures()
         const relativeX = markerCenterX - svgOffsetX
         const relativeY = markerCenterY - svgOffsetY
 
-        const svgX = (relativeX / svgRect.width) * 793
-        const svgY = (relativeY / svgRect.height) * 320
+        const svgX = (relativeX / svgRect.width) * 800
+        const svgY = (relativeY / svgRect.height) * 400
 
         // Determine new region
         const regionInfo = determineRegionFromCoordinates(svgX, svgY)
