@@ -1,11 +1,11 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/helpers' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 $app-dark-mode-blue: #348de0;
-$app-dark-mode-background: #1C1C1C;
+$app-dark-mode-background: #1c1c1c;
 $app-dark-mode-background-secondary: nhsuk-tint($app-dark-mode-background, 10%);
-$app-dark-mode-white: #E8E8E8;
+$app-dark-mode-white: #e8e8e8;
 $app-dark-mode-text-colour: $app-dark-mode-white;
 $app-dark-mode-text-colour-secondary: nhsuk-shade($app-dark-mode-text-colour, 30%);
 
@@ -70,7 +70,6 @@ $app-dark-mode-link-visited-colour: #89b;
 }
 
 .app-dark-mode {
-
   background: $app-dark-mode-background;
   color: $app-dark-mode-text-colour;
 
@@ -90,7 +89,8 @@ $app-dark-mode-link-visited-colour: #89b;
   }
 
   // Links and link type things
-  a, .app-secondary-navigation__link {
+  a,
+  .app-secondary-navigation__link {
     @include app-dark-mode-link-style-default;
 
     &:focus {
@@ -124,8 +124,6 @@ $app-dark-mode-link-visited-colour: #89b;
     }
   }
 
-
-
   .nhsuk-back-link {
     color: $app-dark-mode-link-colour;
 
@@ -140,7 +138,10 @@ $app-dark-mode-link-visited-colour: #89b;
   }
 
   .nhsuk-button {
-    &:link, &:visited, &:active, &:hover {
+    &:link,
+    &:visited,
+    &:active,
+    &:hover {
       color: white;
     }
   }
@@ -155,12 +156,12 @@ $app-dark-mode-link-visited-colour: #89b;
       &:focus {
         @include app-dark-mode-focused-text;
       }
-
     }
     // background: $app-dark-mode-background-secondary;
     color: $app-dark-mode-text-colour;
 
-    .nhsuk-header__account, .nhsuk-header__account-item {
+    .nhsuk-header__account,
+    .nhsuk-header__account-item {
       // background: $app-dark-mode-background;
       outline: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -181,11 +182,13 @@ $app-dark-mode-link-visited-colour: #89b;
     }
   }
 
-  .nhsuk-footer, .nhsuk-footer-container {
+  .nhsuk-footer,
+  .nhsuk-footer-container {
     background: $app-dark-mode-background-secondary;
     color: $app-dark-mode-text-colour;
 
-    .nhsuk-footer__list-item-link, .nhsuk-footer__copyright {
+    .nhsuk-footer__list-item-link,
+    .nhsuk-footer__copyright {
       color: $app-dark-mode-text-colour-secondary;
     }
   }

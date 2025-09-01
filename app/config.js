@@ -21,7 +21,7 @@ module.exports = {
   useDocumentation: true,
 
   paths: {
-    generatedData: path.join(__dirname, 'data/generated'),
+    generatedData: path.join(__dirname, 'data/generated')
   },
 
   // Clinic settings
@@ -38,31 +38,31 @@ module.exports = {
     daysBeforeToday: 11,
     historicPeriodCount: 1, // Number of historic periods to generate
 
-    simulatedTime: '10:30', // 24h format
+    simulatedTime: '10:30' // 24h format
   },
   reading: {
     blindReading: 'true', // Enable blind reading
     urgentThreshold: 10, // 10 days and over
-    priorityThreshold: 7, // 7 days and over
+    priorityThreshold: 7 // 7 days and over
   },
   screening: {
     outcomes: {
       screening: {
         clear: 0.95,
         needs_further_tests: 0.04,
-        cancer_detected: 0.01,
+        cancer_detected: 0.01
       },
       assessment: {
         clear: 0.4,
         needs_further_tests: 0.45,
-        cancer_detected: 0.15,
-      },
-    },
+        cancer_detected: 0.15
+      }
+    }
   },
 
   // Data generation settings
   generation: {
     numberOfParticipants: 1000,
-    bookingProbability: 0.8, // 80% of slots are booked
-  },
+    bookingProbability: 0.8 // 80% of slots are booked
+  }
 }

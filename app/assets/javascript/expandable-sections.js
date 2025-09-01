@@ -1,17 +1,18 @@
 // app/assets/javascript/expandable-sections.js
 
 // Handle expandable sections with completion tracking
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   console.log('Expandable sections script loaded') // Debug log
   const sections = document.querySelectorAll('.js-expandable-section')
   const completedSections = new Set()
 
-  sections.forEach(function(section, index) {
+  sections.forEach(function (section, index) {
     const content = section.querySelector('.nhsuk-details__text')
     if (content) {
       // Create HR element
       const hr = document.createElement('hr')
-      hr.className = 'nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-bottom-2'
+      hr.className =
+        'nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-bottom-2'
 
       // Create button container
       const buttonContainer = document.createElement('div')
@@ -19,7 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Create button
       const button = document.createElement('button')
-      button.className = 'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
+      button.className =
+        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
       button.textContent = 'Mark as reviewed'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
@@ -31,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
       content.appendChild(buttonContainer)
 
       // Add click handler
-      button.addEventListener('click', function() {
+      button.addEventListener('click', function () {
         // Mark current section as completed
         completedSections.add(index)
 
@@ -78,14 +80,18 @@ function getCurrentSectionStatus(section) {
   }
 
   if (!statusElement && sectionId) {
-    statusElement = document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
-                   document.querySelector(`#${sectionId}-status .nhsuk-tag`)
+    statusElement =
+      document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
+      document.querySelector(`#${sectionId}-status .nhsuk-tag`)
   }
 
   if (!statusElement) {
     let currentElement = section.previousElementSibling
     while (currentElement && !statusElement) {
-      statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+      statusElement = currentElement.querySelector(
+        '.app-details__status .nhsuk-tag'
+      )
+
       if (!statusElement) {
         currentElement = currentElement.previousElementSibling
       }
@@ -95,7 +101,10 @@ function getCurrentSectionStatus(section) {
   if (!statusElement) {
     let currentElement = section.nextElementSibling
     while (currentElement && !statusElement) {
-      statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+      statusElement = currentElement.querySelector(
+        '.app-details__status .nhsuk-tag'
+      )
+
       if (!statusElement) {
         currentElement = currentElement.nextElementSibling
       }
@@ -103,10 +112,18 @@ function getCurrentSectionStatus(section) {
   }
 
   if (!statusElement) {
-    const container = section.closest('.nhsuk-grid-column-two-thirds') || section.closest('.nhsuk-grid-row') || document.body
-    const allStatusElements = container.querySelectorAll('.app-details__status .nhsuk-tag')
+    const container =
+      section.closest('.nhsuk-grid-column-two-thirds') ||
+      section.closest('.nhsuk-grid-row') ||
+      document.body
+
+    const allStatusElements = container.querySelectorAll(
+      '.app-details__status .nhsuk-tag'
+    )
+
     const allSections = container.querySelectorAll('.js-expandable-section')
     const sectionIndex = Array.from(allSections).indexOf(section)
+
     if (allStatusElements[sectionIndex]) {
       statusElement = allStatusElements[sectionIndex]
     }
@@ -124,11 +141,17 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
       nextIncompleteSection.setAttribute('open', 'open')
 
       // Scroll to the section
-      const nextSummary = nextIncompleteSection.querySelector('.nhsuk-details__summary')
+      const nextSummary = nextIncompleteSection.querySelector(
+        '.nhsuk-details__summary'
+      )
+
       if (nextSummary) {
         nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
       } else {
-        nextIncompleteSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        nextIncompleteSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
       }
 
       console.log(`Opened next incomplete section: ${nextIncompleteSection.id}`)
@@ -143,14 +166,23 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
       nextIncompleteSection.setAttribute('open', 'open')
 
       // Scroll to the section
-      const nextSummary = nextIncompleteSection.querySelector('.nhsuk-details__summary')
+      const nextSummary = nextIncompleteSection.querySelector(
+        '.nhsuk-details__summary'
+      )
+
       if (nextSummary) {
         nextSummary.scrollIntoView({ behavior: 'smooth', block: 'start' })
       } else {
-        nextIncompleteSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        nextIncompleteSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
       }
 
-      console.log(`Looped back to incomplete section: ${nextIncompleteSection.id}`)
+      console.log(
+        `Looped back to incomplete section: ${nextIncompleteSection.id}`
+      )
+
       return // Exit once we've found and opened the incomplete section
     }
   }
@@ -162,11 +194,15 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
 
 // Function to highlight the completion button when all sections are done
 function highlightCompletionButton() {
-  const completeButton = document.querySelector('button:contains("Complete all and continue")')
+  const completeButton = document.querySelector(
+    'button:contains("Complete all and continue")'
+  )
+
   if (!completeButton) {
     // Try a more specific selector if the above doesn't work
     const buttons = document.querySelectorAll('button')
-    buttons.forEach(btn => {
+
+    buttons.forEach((btn) => {
       if (btn.textContent.includes('Complete all and continue')) {
         btn.classList.add('nhsuk-button--green') // Highlight in green
         btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
@@ -193,15 +229,19 @@ function updateSectionStatus(section, statusText) {
   // Strategy 2: Look for status element by section ID (if it follows a pattern)
   if (!statusElement && sectionId) {
     // Look for a status element that might be associated with this section
-    statusElement = document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
-                   document.querySelector(`#${sectionId}-status .nhsuk-tag`)
+    statusElement =
+      document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
+      document.querySelector(`#${sectionId}-status .nhsuk-tag`)
   }
 
   // Strategy 3: Look for the closest status element before this section
   if (!statusElement) {
     let currentElement = section.previousElementSibling
     while (currentElement && !statusElement) {
-      statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+      statusElement = currentElement.querySelector(
+        '.app-details__status .nhsuk-tag'
+      )
+
       if (!statusElement) {
         currentElement = currentElement.previousElementSibling
       }
@@ -212,7 +252,10 @@ function updateSectionStatus(section, statusText) {
   if (!statusElement) {
     let currentElement = section.nextElementSibling
     while (currentElement && !statusElement) {
-      statusElement = currentElement.querySelector('.app-details__status .nhsuk-tag')
+      statusElement = currentElement.querySelector(
+        '.app-details__status .nhsuk-tag'
+      )
+
       if (!statusElement) {
         currentElement = currentElement.nextElementSibling
       }
@@ -221,12 +264,19 @@ function updateSectionStatus(section, statusText) {
 
   // Strategy 5: Look for any status element in the same container as this section
   if (!statusElement) {
-    const container = section.closest('.nhsuk-grid-column-two-thirds') || section.closest('.nhsuk-grid-row') || document.body
-    const allStatusElements = container.querySelectorAll('.app-details__status .nhsuk-tag')
+    const container =
+      section.closest('.nhsuk-grid-column-two-thirds') ||
+      section.closest('.nhsuk-grid-row') ||
+      document.body
+
+    const allStatusElements = container.querySelectorAll(
+      '.app-details__status .nhsuk-tag'
+    )
 
     // Try to match by index (assuming they're in the same order)
     const allSections = container.querySelectorAll('.js-expandable-section')
     const sectionIndex = Array.from(allSections).indexOf(section)
+
     if (allStatusElements[sectionIndex]) {
       statusElement = allStatusElements[sectionIndex]
     }
@@ -238,7 +288,11 @@ function updateSectionStatus(section, statusText) {
 
     // Update the tag color class based on status
     // Reset all status classes first
-    statusElement.classList.remove('nhsuk-tag--blue', 'nhsuk-tag--green', 'nhsuk-tag--yellow')
+    statusElement.classList.remove(
+      'nhsuk-tag--blue',
+      'nhsuk-tag--green',
+      'nhsuk-tag--yellow'
+    )
 
     if (statusText === 'Complete' || statusText === 'Reviewed') {
       statusElement.classList.add('nhsuk-tag--green')
@@ -258,7 +312,10 @@ function updateSectionStatus(section, statusText) {
 function updateProgress(sections, completedSections) {
   const totalSections = sections.length
   const completed = completedSections.size
-  const inProgress = document.querySelectorAll('.js-expandable-section[open]').length
+  const inProgress = document.querySelectorAll(
+    '.js-expandable-section[open]'
+  ).length
+
   const remaining = totalSections - completed - inProgress
 
   // Update progress if elements exist
@@ -270,5 +327,7 @@ function updateProgress(sections, completedSections) {
   if (progressCurrent) progressCurrent.textContent = inProgress
   if (progressRemaining) progressRemaining.textContent = remaining
 
-  console.log(`Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`)
+  console.log(
+    `Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`
+  )
 }
