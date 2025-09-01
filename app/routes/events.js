@@ -1082,7 +1082,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
 
   // General purpose dynamic template route for events
   // This should come after any more specific routes
-  router.get('/clinics/:clinicId/events/:eventId/*',
+  router.get('/clinics/:clinicId/events/:eventId/*subPaths',
     createDynamicTemplateRoute({
       templatePrefix: 'events'
     })

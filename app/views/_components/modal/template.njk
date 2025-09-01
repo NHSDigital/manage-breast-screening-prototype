@@ -27,37 +27,40 @@
       {% if params.actions %}
         <div class="app-modal__actions nhsuk-button-group">
           {% for action in params.actions %}
-            {% if action.element == "link" %}
-              <p>
-                <a href="{{ action.href or '#' }}"
-                   class="nhsuk-link {{ action.classes }}"
-                   data-modal-action="{{ action.action or 'close' }}"
-                   {% if action.method %}data-method="{{ action.method }}"{% endif %}>
-                  {{ action.text }}
-                </a>
-              </p>
-            {% else %}
-              {% set buttonClasses = "" %}
-              {% if action.classes %}
-                {% set buttonClasses = action.classes %}
-              {% endif %}
+            {% if action %}
+              {% if action.element == "link" %}
+                <p>
+                  <a href="{{ action.href or '#' }}"
+                    class="nhsuk-link {{ action.classes }}"
+                    data-modal-action="{{ action.action or 'close' }}"
+                    {% if action.method %}data-method="{{ action.method }}"{% endif %}>
+                    {{ action.text }}
+                  </a>
+                </p>
+              {% else %}
+                {% set buttonClasses = "" %}
+                {% if action.classes %}
+                  {% set buttonClasses = action.classes %}
+                {% endif %}
 
-              {{ button({
-                text: action.text,
-                classes: buttonClasses + ((" " + action.classes) if action.classes else ""),
-                attributes: {
-                  'data-modal-action': action.action or 'close',
-                  'data-href': action.href,
-                  'data-method': action.method,
-                  'data-close-on-success': action.closeOnSuccess,
-                  'data-clinic-id': action.attributes['data-clinic-id'] if action.attributes,
-                  'data-event-id': action.attributes['data-event-id'] if action.attributes,
-                  'data-status-tag-id': action.attributes['data-status-tag-id'] if action.attributes,
-                  'data-show-appointment-link': action.attributes['data-show-appointment-link'] if action.attributes,
-                  'type': 'button'
-                }
-              }) }}
+                {{ button({
+                  text: action.text,
+                  classes: buttonClasses + ((" " + action.classes) if action.classes else ""),
+                  attributes: {
+                    'data-modal-action': action.action or 'close',
+                    'data-href': action.href,
+                    'data-method': action.method,
+                    'data-close-on-success': action.closeOnSuccess,
+                    'data-clinic-id': action.attributes['data-clinic-id'] if action.attributes,
+                    'data-event-id': action.attributes['data-event-id'] if action.attributes,
+                    'data-status-tag-id': action.attributes['data-status-tag-id'] if action.attributes,
+                    'data-show-appointment-link': action.attributes['data-show-appointment-link'] if action.attributes,
+                    'type': 'button'
+                  }
+                }) }}
+              {% endif %}
             {% endif %}
+
           {% endfor %}
         </div>
       {% endif %}

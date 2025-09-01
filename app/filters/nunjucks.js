@@ -1,10 +1,15 @@
 // app/filters/nunjucks.js
 
+const { safe: nunjucksSafe } = require('nunjucks/src/filters')
+
 const log = (a, description = null) => {
   if (description) {
     description = `console.log("${description}:");`
   }
-  return `<script>${description || ''}console.log(${JSON.stringify(a, null, '\t')});</script>`
+  
+  return nunjucksSafe(
+    `<script>${description || ''}console.log(${JSON.stringify(a, null, '\t')});</script>`
+  )
 }
 
 

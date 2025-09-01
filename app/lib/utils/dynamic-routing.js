@@ -11,7 +11,8 @@ const createDynamicTemplateRoute = (options) => {
   const { templatePrefix } = options
 
   return (req, res, next) => {
-    const subPath = req.params[0] // Get the wildcard path
+    const { subPaths } = req.params // Get the wildcard paths
+    const subPath = subPaths?.join('/') ?? ''
 
     // console.log(`Dynamic route attempting to render: ${templatePrefix}/${subPath}`)
 

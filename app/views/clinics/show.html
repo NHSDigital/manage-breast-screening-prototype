@@ -38,7 +38,7 @@
 
   </div>
 
-  {{ currentUser | log("Currenet user")}}
+  {{ currentUser | log("Current user")}}
   {{ currentUser | isClinician | log("is clinician")}}
 
   {# Clinic time and date #}
@@ -106,7 +106,7 @@
           {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
           {% set statusTagId = "status-tag-" + event.id %}
 
-          <tr id="event-row-{{event.id}}">
+          <tr class="event-row" id="event-row-{{event.id}}">
 
             {# Appointment time #}
             <td class="nhsuk-table__cell">{{ event.statusHistory[0].timestamp | formatTimeString }}
@@ -229,12 +229,28 @@
                   event: event,
                   participant: participant,
                   confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
-                  statusTagId: statusTagId
+                  statusTagId: statusTagId,
+                  currentUser: currentUser
                 }) }}
 
               {% endif %}
 
-              {% if not (event | isFinal) and (currentUser | isClinician) %}
+              {% if currentUser | isClinician %}
+                {% if event | hasNotStarted %}
+                  {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this class to make the link visible #}
+                  <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap {{ 'app-display-none' if event.status == 'event_scheduled' }} js-start-appointment-link">
+                    Start appointment
+                  </a>
+
+                {% elseif event | startedByCurrentUser %}
+                  <a href="{{ eventBaseUrl }}/identity">
+                    Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                  </a>
+                {% endif %}
+
+              {% endif %}
+
+              {# {% if not (event | isFinal) and (currentUser | isClinician) %}
                 <p class="nhsuk-u-margin-bottom-0">
                   {% if event | hasNotStarted %}
                     <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap">
@@ -246,7 +262,7 @@
                     </a>
                   {% endif %}
                 </p>
-              {% endif %}
+              {% endif %} #}
 
             </td>
           </tr>
@@ -255,38 +271,5 @@
     </table>
   {% endif %}
 
-  <h2 class="nhsuk-heading-m">Details</h2>
-
-  <dl class="nhsuk-summary-list">
-    <div class="nhsuk-summary-list__row">
-      <dt class="nhsuk-summary-list__key">Location</dt>
-      <dd class="nhsuk-summary-list__value">
-        {{ unit.name }}<br>
-        {% for item, line in unit.address %}
-          {{ line }}{% if not loop.last %}<br>{% endif %}
-        {% endfor %}
-      </dd>
-    </div>
-
-    <div class="nhsuk-summary-list__row">
-      <dt class="nhsuk-summary-list__key">Phone</dt>
-      <dd class="nhsuk-summary-list__value">{{ unit.phoneNumber }}</dd>
-    </div>
-
-    <div class="nhsuk-summary-list__row">
-      <dt class="nhsuk-summary-list__key">Date</dt>
-      <dd class="nhsuk-summary-list__value">{{ clinic.date | formatDate }}</dd>
-    </div>
-
-    <div class="nhsuk-summary-list__row">
-      <dt class="nhsuk-summary-list__key">Location</dt>
-      <dd class="nhsuk-summary-list__value">{{ clinic.locationType | formatWords | sentenceCase }}</dd>
-    </div>
-
-    <div class="nhsuk-summary-list__row">
-      <dt class="nhsuk-summary-list__key">Type</dt>
-      <dd class="nhsuk-summary-list__value">{{ clinic.clinicType | sentenceCase }}</dd>
-    </div>
-  </dl>
 
 {% endblock %}
