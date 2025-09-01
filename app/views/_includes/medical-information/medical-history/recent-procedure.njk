@@ -1,0 +1,37 @@
+{{ checkboxes({
+    name: "event[medicalHistoryTemp][recentProcedure]",
+    value: event.medicalHistoryTemp.recentProcedure,
+    items: [
+      {
+        value: "true",
+        text: "Procedure was within the last six months",
+        values: event.medicalHistoryTemp.recentProcedure,
+        conditional: {
+          html: dateInput({
+            id: "procedure-date",
+            namePrefix: "event[medicalHistoryTemp][procedureDate]",
+            values: event.medicalHistoryTemp.procedureDate,
+            fieldset: {
+              legend: {
+                text: "Provide date (optional)",
+                classes: "nhsuk-fieldset__legend--s"
+              }
+            },
+            hint: {
+              text: "For example, 3 2019"
+            },
+            items: [
+              {
+                name: "month",
+                classes: "nhsuk-input--width-2"
+              },
+              {
+                name: "year",
+                classes: "nhsuk-input--width-4"
+              }
+            ]
+          })
+        }
+      }
+    ]
+  }) }}

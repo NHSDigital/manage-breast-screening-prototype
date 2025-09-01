@@ -58,14 +58,7 @@
     ]
   }) }}
 
-  {{ textarea({
-    name: "event[medicalHistoryTemp][additionalInfo]",
-    value: event.medicalHistoryTemp.additionalInfo,
-    id: "additional-info",
-    label: {
-      text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
-    }
-  }) }}
+{% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
+   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

@@ -20,7 +20,7 @@ module.exports = [
     canHaveMultiple: true,
   },
   {
-    type: 'mastectomy-lumpectomy',
+    type: 'mastectomyLumpectomy',
     name: 'Mastectomy or lumpectomy',
     slug: 'mastectomy-lumpectomy',
     canHaveMultiple: true,

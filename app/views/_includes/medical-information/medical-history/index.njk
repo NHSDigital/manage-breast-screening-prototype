@@ -40,6 +40,18 @@
         {% endif %}
       {% endset %}
 
+   {% set recentProcedureText %}
+        {% if historyItem.recentProcedure %}
+          {% if historyItem.recentProcedure[0] == "true" %}
+            {% if historyItem.procedureDate %}
+           {# {% if historyItem.procedureDate | isValidDate %} #}
+              {{ historyItem.procedureDate | formatMonthYear }} ({{ historyItem.procedureDate | formatRelativeDate }})
+            {% endif %}
+          {% else %}
+          Procedure was not in the last 6 months
+          {% endif %}
+        {% endif %}
+      {% endset %}
       {% set addedByText %}
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
@@ -71,6 +83,14 @@
                 text: dateText
               }
             } if historyItem.generalDate,
+            {
+              key: {
+                text: "Date"
+              },
+              value: {
+                text: recentProcedureText
+              }
+            } if historyItem.recentProcedure,
             {
               key: {
                 text: "Additional details"

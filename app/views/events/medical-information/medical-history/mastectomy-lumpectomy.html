@@ -1,9 +1,9 @@
-{# app/views/events/medical-information/medical-history/mastectomy.html #}
+{# app/views/events/medical-information/medical-history/mastectomy-lumpectomy.html #}
 
 {% extends 'layout-medical-history-form.html' %}
 
 {% set pageHeading = "Mastectomy or lumpectomy" %}
-{% set medicalHistoryType = "mastectomy" %}
+{% set medicalHistoryType = "mastectomyLumpectomy" %}
 
 {% block formContent %}
 
@@ -63,17 +63,8 @@
 
   {% endcall %}
 
-  {{ checkboxes({
-    name: "event[medicalHistoryTemp][recentProcedure]",
-    value: event.medicalHistoryTemp.recentProcedure,
-    items: [
-      {
-        value: "true",
-        text: "Procedure was within the last six months",
-        checked: event.medicalHistoryTemp.recentProcedure == "true"
-      }
-    ]
-  }) }}
+  {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
+
 
   {{ checkboxes({
     name: "event[medicalHistoryTemp][hadReconstruction]",
@@ -122,14 +113,8 @@
     ]
   }) }}
 
-  {{ textarea({
-    name: "event[medicalHistoryTemp][additionalInfo]",
-    value: event.medicalHistoryTemp.additionalInfo,
-    id: "additional-info",
-    label: {
-      text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
-    }
-  }) }}
+{% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
+   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
 
 {% endblock formContent %}

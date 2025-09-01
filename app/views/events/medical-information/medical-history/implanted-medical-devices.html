@@ -43,44 +43,8 @@
     ]
   }) }}
 
-  {{ checkboxes({
-    name: "event[medicalHistoryTemp][recentProcedure]",
-    value: event.medicalHistoryTemp.recentProcedure,
-    items: [
-      {
-        value: "true",
-        text: "Procedure was within the last six months",
-        checked: event.medicalHistoryTemp.recentProcedure == "true",
-        conditional: {
-          html: dateInput({
-            id: "procedure-date",
-            namePrefix: "event[medicalHistoryTemp][procedureDate]",
-            fieldset: {
-              legend: {
-                text: "Provide date (optional)",
-                classes: "nhsuk-fieldset__legend--s"
-              }
-            },
-            hint: {
-              text: "For example, 3 2019"
-            },
-            items: [
-              {
-                name: "month",
-                classes: "nhsuk-input--width-2",
-                value: event.medicalHistoryTemp.procedureDate.month
-              },
-              {
-                name: "year",
-                classes: "nhsuk-input--width-4",
-                value: event.medicalHistoryTemp.procedureDate.year
-              }
-            ]
-          })
-        }
-      }
-    ]
-  }) }}
+  {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
+
 
   {{ checkboxes({
     name: "event[medicalHistoryTemp][deviceRemoved]",
@@ -104,14 +68,7 @@
     ]
   }) }}
 
-  {{ textarea({
-    name: "event[medicalHistoryTemp][additionalInfo]",
-    value: event.medicalHistoryTemp.additionalInfo,
-    id: "additional-info",
-    label: {
-      text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
-    }
-  }) }}
+   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
 
 {% endblock formContent %}
