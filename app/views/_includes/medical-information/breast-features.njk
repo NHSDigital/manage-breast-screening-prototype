@@ -1,7 +1,5 @@
 {# app/views/_includes/medical-information/breast-features.njk #}
 
-{# {% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %} #}
-
 {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
 {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
 {% set breastFeaturesCount = breastFeatures | length %}
@@ -22,7 +20,7 @@
   <script src="/js/breast-features.js"></script>
 
   {# div with hardcoded max-width, left aligned #}
-  <div style="max-width: 650px; margin: 0 auto 10px 0;">
+  <div class="breast-features">
     {% include "breast-diagram.njk" %}
   </div>
 
@@ -36,8 +34,6 @@
     html: insetHtml
   }) }}
 {% endif %}
-
-
 
 {% set linkHref %}
   {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}

@@ -40,10 +40,10 @@ function initializeBreastFeatures()
     }
     window.breastFeaturesInitialized = true
 
-    // Get DOM elements
-    diagramContainer = document.querySelector('.breast-features-diagram-diagram-container')
-    svg = document.querySelector('.breast-features-diagram-diagram-svg')
-    popover = document.querySelector('.breast-features-diagram-popover')
+    // Get DOM elements using new BEM class names
+    diagramContainer = document.querySelector('.breast-features__diagram')
+    svg = document.querySelector('.breast-features__svg')
+    popover = document.querySelector('.breast-features__popover')
     console.log('DEBUG initializeBreastFeatures: diagramContainer:', diagramContainer)
     console.log('DEBUG initializeBreastFeatures: svg:', svg)
     addBtn = popover ? popover.querySelector('.nhsuk-button[data-action="add"]') : null
@@ -70,10 +70,11 @@ function initializeBreastFeatures()
         return
     }
 
-    // Set appropriate cursor for read-only mode
+    // Set appropriate cursor and modifier classes for read-only mode
     if (readOnly)
     {
         svg.style.cursor = 'default'
+        diagramContainer.classList.add('breast-features__diagram--read-only')
         console.log('Read-only mode: set cursor to default')
     }
     else
@@ -105,7 +106,7 @@ function initializeBreastFeatures()
             if (popover && popover.style.display === 'block' &&
                 !popover.contains(e.target) &&
                 !svg.contains(e.target) &&
-                !e.target.classList.contains('breast-features-diagram-marker'))
+                !e.target.classList.contains('breast-features__marker'))
             {
                 closePopover()
             }
@@ -145,31 +146,30 @@ function initializeBreastFeatures()
             e.preventDefault()
             e.stopPropagation()
             console.log('DEBUG: Borders button clicked!')
-            const anatomicalRegions = document.querySelector('#anatomical-regions')
+            const anatomicalRegions = document.querySelector('.breast-features__regions')
             console.log('DEBUG: anatomicalRegions found:', anatomicalRegions)
             console.log('DEBUG: anatomicalRegions current classes:', anatomicalRegions.className)
-            console.log('DEBUG: anatomicalRegions current style:', anatomicalRegions.style.opacity)
 
-            if (anatomicalRegions.classList.contains('show-borders'))
+            if (anatomicalRegions.classList.contains('breast-features__regions--visible'))
             {
-                anatomicalRegions.classList.remove('show-borders')
+                anatomicalRegions.classList.remove('breast-features__regions--visible')
                 this.textContent = 'Show location borders'
-                console.log('DEBUG: Hiding location borders - removed show-borders class')
+                console.log('DEBUG: Hiding location borders - removed visible class')
 
                 // Force hide all regions by setting style directly
-                const allRegions = anatomicalRegions.querySelectorAll('.anatomical-region')
+                const allRegions = anatomicalRegions.querySelectorAll('.breast-features__region')
                 allRegions.forEach(region => {
                     region.style.opacity = '0'
                 })
             }
             else
             {
-                anatomicalRegions.classList.add('show-borders')
+                anatomicalRegions.classList.add('breast-features__regions--visible')
                 this.textContent = 'Hide location borders'
-                console.log('DEBUG: Showing location borders - added show-borders class')
+                console.log('DEBUG: Showing location borders - added visible class')
 
                 // Force show all regions by setting style directly
-                const allRegions = anatomicalRegions.querySelectorAll('.anatomical-region')
+                const allRegions = anatomicalRegions.querySelectorAll('.breast-features__region')
                 allRegions.forEach(region => {
                     region.style.opacity = '1'
                     region.style.strokeDasharray = '5,5'
@@ -180,7 +180,7 @@ function initializeBreastFeatures()
             }
 
             // Force check all individual regions
-            const allRegions = anatomicalRegions.querySelectorAll('.anatomical-region')
+            const allRegions = anatomicalRegions.querySelectorAll('.breast-features__region')
             console.log('DEBUG: Found', allRegions.length, 'anatomical regions')
             allRegions.forEach((region, index) => {
                 console.log(`DEBUG: Region ${index}:`, region.getAttribute('data-region'), region.getAttribute('data-side'))
@@ -192,17 +192,6 @@ function initializeBreastFeatures()
     {
         console.log('DEBUG: toggleBordersBtn NOT found')
     }
-
-    // Close popover if click outside
-    document.addEventListener('click', function(e) {
-        if (popover && popover.style.display === 'block' &&
-            !popover.contains(e.target) &&
-            !svg.contains(e.target) &&
-            !e.target.classList.contains('breast-features-diagram-marker'))
-        {
-            closePopover()
-        }
-    })
 
     // --- Setup Functions ---
 
@@ -238,7 +227,7 @@ function initializeBreastFeatures()
         removeTemporaryMarker()
 
         temporaryMarker = document.createElement('div')
-        temporaryMarker.className = 'breast-features-diagram-marker breast-features-diagram-marker--temporary'
+        temporaryMarker.className = 'breast-features__marker breast-features__marker--temporary'
         temporaryMarker.innerText = '?'
 
         positionMarkerAtSvgCoords(temporaryMarker, svgX, svgY)
@@ -260,14 +249,14 @@ function initializeBreastFeatures()
     function handleSvgClick(e)
     {
         // Allow border toggle to work - don't interfere with anatomical region visibility
-        if (e.target.classList.contains('anatomical-region'))
+        if (e.target.classList.contains('breast-features__region'))
         {
             console.log('DEBUG: Clicked on anatomical region:', e.target.getAttribute('data-region'))
             // Don't return early - let the region click through for adding features
         }
 
         // Only handle clicks directly on the SVG or anatomical regions, not on existing markers
-        if (e.target.classList.contains('breast-features-diagram-marker'))
+        if (e.target.classList.contains('breast-features__marker'))
         {
             return // Let marker handle its own clicks
         }
@@ -317,7 +306,7 @@ function initializeBreastFeatures()
 
     function determineRegionFromCoordinates(svgX, svgY)
     {
-        const regions = svg.querySelectorAll('.anatomical-region')
+        const regions = svg.querySelectorAll('.breast-features__region')
 
         // First try to find exact region containing the point
         for (const region of regions)
@@ -496,7 +485,7 @@ function initializeBreastFeatures()
         console.log('Received parameters:', {region, side, text, number, featureId, exactX, exactY})
 
         const marker = document.createElement('div')
-        marker.className = 'breast-features-diagram-marker'
+        marker.className = 'breast-features__marker'
         marker.innerText = number
         marker.setAttribute('data-id', number)
         marker.setAttribute('data-region', region)
@@ -531,6 +520,7 @@ function initializeBreastFeatures()
         else
         {
             // In read-only mode, markers are just visual - no interaction
+            marker.classList.add('breast-features__marker--read-only')
             marker.style.cursor = 'default'
         }
 
@@ -607,7 +597,7 @@ function initializeBreastFeatures()
             document.addEventListener('mousemove', handleMouseMove)
             document.addEventListener('mouseup', handleMouseUp)
 
-            markerElement.classList.add('dragging')
+            markerElement.classList.add('breast-features__marker--dragging')
         })
 
         function handleMouseMove(e)
@@ -636,7 +626,7 @@ function initializeBreastFeatures()
         {
             document.removeEventListener('mousemove', handleMouseMove)
             document.removeEventListener('mouseup', handleMouseUp)
-            markerElement.classList.remove('dragging')
+            markerElement.classList.remove('breast-features__marker--dragging')
 
             // Restore text selection
             document.body.style.userSelect = ''
@@ -661,7 +651,6 @@ function initializeBreastFeatures()
             isDragging = false
         }
     }
-
 
     function updateFeaturePosition(markerElement)
     {
@@ -958,16 +947,16 @@ function initializeBreastFeatures()
         allFeatures.sort((a, b) => a.number - b.number)
 
         const ul = document.createElement('ul')
-        ul.className = 'nhsuk-list features-list-items'
+        ul.className = 'nhsuk-list breast-features__list-items'
 
         allFeatures.forEach(feature => {
             const listItem = document.createElement('li')
-            listItem.className = 'feature-item'
+            listItem.className = 'breast-features__item'
 
-            // Only add pointer cursor and click handling if not read-only
+            // Only add interactive modifier and click handling if not read-only
             if (!readOnly)
             {
-                listItem.style.cursor = 'pointer'
+                listItem.classList.add('breast-features__item--interactive')
                 listItem.setAttribute('data-feature-id', feature.id)
             }
 
@@ -982,11 +971,11 @@ function initializeBreastFeatures()
             }
 
             listItem.innerHTML = `
-                <div class="feature-left">
-                    <div class="feature-number">${feature.number}</div>
-                    <div class="feature-label">${feature.text}</div>
+                <div class="breast-features__item-left">
+                    <div class="breast-features__item-number">${feature.number}</div>
+                    <div class="breast-features__item-label">${feature.text}</div>
                 </div>
-                <div class="feature-position"><span class="nhsuk-tag nhsuk-tag--white">${locationText}</span></div>
+                <div class="breast-features__item-position"><span class="nhsuk-tag nhsuk-tag--white">${locationText}</span></div>
             `
 
             // Only add click interaction if not in read-only mode

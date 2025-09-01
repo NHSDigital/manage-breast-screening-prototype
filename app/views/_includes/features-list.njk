@@ -17,12 +17,12 @@
 {% set headerText = headerText or "Key" %}
 {% set showClearLink = showClearLink if showClearLink is defined else true %}
 
-<div id="{{ listContainerId }}" style="display: none;" class="nhsuk-u-margin-top-4">
-  <div class="features-list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-    <h3 class="nhsuk-heading-s" style="margin: 0;">{{ headerText }}</h3>
+<div id="{{ listContainerId }}" style="display: none;" class="breast-features__list nhsuk-u-margin-top-4">
+  <div class="breast-features__list-header">
+    <h3 class="nhsuk-heading-s breast-features__list-title">{{ headerText }}</h3>
     {% if showClearLink %}
-    <a href="#" id="{{ clearLinkId }}" class="nhsuk-link" style="font-size: 14px;">Clear all features</a>
+    <a href="#" id="{{ clearLinkId }}" class="nhsuk-link breast-features__list-clear-link">Clear all features</a>
     {% endif %}
   </div>
-  <div class="features-list" id="{{ listId }}"></div>
+  <div class="breast-features__list-items" id="{{ listId }}"></div>
 </div>
