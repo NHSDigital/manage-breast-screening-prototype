@@ -4,6 +4,7 @@ const _ = require('lodash')
 
 /**
  * Check if a value should be considered empty/missing
+ *
  * @param {any} value - Value to check
  * @returns {boolean} True if value should be considered empty
  */
@@ -16,11 +17,15 @@ const isEmpty = (value) => {
 
 /**
  * Convert value object to "Enter X" link if empty, or show "Not provided"
- * @param {Object} input - Summary list object or individual row object
+ *
+ * @param {object} input - Summary list object or individual row object
  * @param {boolean} showNotProvidedText - If true, show "Not provided" and keep actions. If false (default), show "Enter X" link
- * @returns {Object} Modified summary list or row with enter link or "Not provided" if empty
+ * @returns {object} Modified summary list or row with enter link or "Not provided" if empty
  */
-const handleSummaryListMissingInformation = (input, showNotProvidedText = false) => {
+const handleSummaryListMissingInformation = (
+  input,
+  showNotProvidedText = false
+) => {
   if (!input) return input
 
   // Helper function to process a single row
@@ -28,13 +33,12 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
     const value = row.value?.text || row.value?.html
 
     // Check for valid actions - action items should be objects with href or other meaningful properties
-    const hasAction = row.actions &&
-                     row.actions.items &&
-                     row.actions.items.filter(item =>
-                       item &&
-                       typeof item === 'object' &&
-                       (item.href || item.text)
-                     ).length > 0
+    const hasAction =
+      row.actions &&
+      row.actions.items &&
+      row.actions.items.filter(
+        (item) => item && typeof item === 'object' && (item.href || item.text)
+      ).length > 0
 
     // If value is not empty, return row as-is
     if (!isEmpty(value)) return row
@@ -42,10 +46,12 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
     // Value is empty - always show something
     if (hasAction && !showNotProvidedText) {
       // Default behavior - show "Enter X" link and remove actions
-      const keyText = row.actions?.items?.[0]?.visuallyHiddenText || row.key.text.toLowerCase()
+      const keyText =
+        row.actions?.items?.[0]?.visuallyHiddenText ||
+        row.key.text.toLowerCase()
       const href = row.actions?.items?.[0]?.href || '#'
 
-      const endText = keyText.endsWith("notes") ? "" : " details"
+      const endText = keyText.endsWith('notes') ? '' : ' details'
 
       return {
         ...row,
@@ -71,7 +77,7 @@ const handleSummaryListMissingInformation = (input, showNotProvidedText = false)
   // Check if input is a summary list (has rows property)
   if (input.rows && Array.isArray(input.rows)) {
     // Filter out any falsy/undefined rows that come from failed Nunjucks conditions
-    const validRows = input.rows.filter(row => row && typeof row === 'object')
+    const validRows = input.rows.filter((row) => row && typeof row === 'object')
     const updatedRows = validRows.map(processRow)
 
     return {

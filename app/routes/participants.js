@@ -1,16 +1,21 @@
 // app/routes/participants.js
 
-const { getParticipant, sortBySurname, getParticipantClinicHistory, saveTempParticipantToParticipant } = require('../lib/utils/participants')
+const {
+  getParticipant,
+  sortBySurname,
+  getParticipantClinicHistory,
+  saveTempParticipantToParticipant
+} = require('../lib/utils/participants')
 const { findById } = require('../lib/utils/arrays')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
-const { getReturnUrl, urlWithReferrer, appendReferrer } = require('../lib/utils/referrers')
+const {
+  getReturnUrl,
+  urlWithReferrer,
+  appendReferrer
+} = require('../lib/utils/referrers')
 
-
-module.exports = router => {
-
-
-
-// Set clinics to active in nav for all urls starting with /clinics
+module.exports = (router) => {
+  // Set clinics to active in nav for all urls starting with /clinics
   router.use('/participants', (req, res, next) => {
     res.locals.navActive = 'participants'
     next()
@@ -31,26 +36,32 @@ module.exports = router => {
       data.search = searchTerm
       res.locals.data.search = searchTerm
 
-      filteredParticipants = allParticipants.filter(participant => {
+      filteredParticipants = allParticipants.filter((participant) => {
         const info = participant.demographicInformation
 
         const nameVariations = [
-          [info.firstName, info.middleName, info.lastName].filter(Boolean).join(' '),
-           `${info.firstName} ${info.lastName}`,
-        ].map(name => name.toLowerCase())
+          [info.firstName, info.middleName, info.lastName]
+            .filter(Boolean)
+            .join(' '),
+          `${info.firstName} ${info.lastName}`
+        ].map((name) => name.toLowerCase())
 
         const postcode = cleanSearchTerm(info.address.postcode)
-        const nhsNumber = cleanSearchTerm(participant.medicalInformation.nhsNumber)
+        const nhsNumber = cleanSearchTerm(
+          participant.medicalInformation.nhsNumber
+        )
         const sxNumber = cleanSearchTerm(participant.sxNumber)
 
-        const nameMatch = nameVariations.some(name =>
+        const nameMatch = nameVariations.some((name) =>
           name.includes(searchTerm.toLowerCase())
         )
 
-        return nameMatch ||
-                postcode.includes(cleanedSearch) ||
-                nhsNumber.includes(cleanedSearch) ||
-                sxNumber.includes(cleanedSearch)
+        return (
+          nameMatch ||
+          postcode.includes(cleanedSearch) ||
+          nhsNumber.includes(cleanedSearch) ||
+          sxNumber.includes(cleanedSearch)
+        )
       })
     }
 
@@ -58,7 +69,7 @@ module.exports = router => {
       allParticipants,
       filteredParticipants,
       search: searchTerm,
-      isFiltered: searchTerm.length > 0,
+      isFiltered: searchTerm.length > 0
     })
   })
 
@@ -80,12 +91,13 @@ module.exports = router => {
 
     // We store a temporary copy of the participant to session for use by forms
     // If it doesn't exist, create it now
-    if (!data.participant || (data.participant?.id !== participantId)) {
+    if (!data.participant || data.participant?.id !== participantId) {
       if (!data.participant) {
         console.log('No temp participant data found, creating new one')
-      }
-      else if (data.participant?.id !== participantId) {
-        console.log(`Temp participant data found, but participantId ${data.participant.id} does not match ${participantId}, creating new one`)
+      } else if (data.participant?.id !== participantId) {
+        console.log(
+          `Temp participant data found, but participantId ${data.participant.id} does not match ${participantId}, creating new one`
+        )
       }
       // Copy over the participant data to the temp participant
       data.participant = { ...originalParticipant }
@@ -103,7 +115,10 @@ module.exports = router => {
     res.locals.originalParticipant = originalParticipant
 
     // Get additional data that participant pages might need
-    const clinicHistory = getParticipantClinicHistory(data, originalParticipant.id)
+    const clinicHistory = getParticipantClinicHistory(
+      data,
+      originalParticipant.id
+    )
     res.locals.clinicHistory = clinicHistory
 
     next()
@@ -113,22 +128,30 @@ module.exports = router => {
     res.render('participants/show')
   })
 
-  router.get('/participants/:participantId/*', createDynamicTemplateRoute({
-    templatePrefix: 'participants'
-  }))
+  router.get(
+    '/participants/:participantId/*subPaths',
+    createDynamicTemplateRoute({
+      templatePrefix: 'participants'
+    })
+  )
 
   router.post('/participants/:participantId/save', (req, res) => {
     const data = req.session.data
     const participantId = req.params.participantId
     const referrerChain = req.query.referrerChain
-    const successMessage = req.query.successMessage || req.body.successMessage || 'Participant updated successfully'
+    const successMessage =
+      req.query.successMessage ||
+      req.body.successMessage ||
+      'Participant updated successfully'
     saveTempParticipantToParticipant(data)
 
     req.flash('success', successMessage)
 
     // Redirect back to the participant page
-    const returnUrl = getReturnUrl(`/participants/${participantId}`, referrerChain)
+    const returnUrl = getReturnUrl(
+      `/participants/${participantId}`,
+      referrerChain
+    )
     res.redirect(returnUrl)
   })
-
 }

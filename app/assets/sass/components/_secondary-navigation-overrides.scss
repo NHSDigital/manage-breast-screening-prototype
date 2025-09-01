@@ -1,6 +1,6 @@
 // app/assets/sass/components/_secondary-navigation-overrides.scss
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
 
 // Fix for tick SVG in secondary navigation
 .app-secondary-navigation__link {
@@ -15,14 +15,14 @@
   vertical-align: middle;
   width: 20px;
   height: 20px;
-  flex-shrink: 0;          // Prevent SVG from shrinking
-  margin-right: 0;         // Remove any default margin
+  flex-shrink: 0; // Prevent SVG from shrinking
+  margin-right: 0; // Remove any default margin
 
   // Style the tick path
   path {
-    stroke: $color_nhsuk-green;
+    stroke: $nhsuk-success-colour;
     stroke-width: 4;
-    fill: none;            // Stroke only, no fill
+    fill: none; // Stroke only, no fill
   }
 }
 

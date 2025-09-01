@@ -1,24 +1,25 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 // app/assets/sass/components/_reading.scss
 
 .app-status-bar {
-  background-color: nhsuk-shade($color_nhsuk-blue, 40%);
-  color: $color_nhsuk-white;
+  background-color: nhsuk-shade($nhsuk-brand-colour, 40%);
+  color: $nhsuk-reverse-text-colour;
   padding: 8px 0;
   border-bottom: 1px solid #d8dde0;
 }
 
 .app-status-bar a {
-  color: $color_nhsuk-white;
+  color: $nhsuk-reverse-text-colour;
 
   &:hover,
   &:active {
-    color: $color_nhsuk-white;
+    color: $nhsuk-reverse-text-colour;
   }
   &:focus {
-    color: $nhsuk-text-color;
+    color: $nhsuk-text-colour;
   }
 }
 
@@ -65,7 +66,8 @@ $status-bar-row-spacing: 16px; // 8px margin + 8px padding for borders
   @if $spacing-multiplier < 0 {
     $spacing-multiplier: 0;
   }
-  @return $nav-height + $status-bar-base-padding + ($rows * $status-bar-row-height) + ($spacing-multiplier * $status-bar-row-spacing);
+  @return $nav-height + $status-bar-base-padding + ($rows * $status-bar-row-height) +
+    ($spacing-multiplier * $status-bar-row-spacing);
 }
 
 // Default scroll padding (fallback for 3 rows)

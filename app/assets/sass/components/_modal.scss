@@ -1,5 +1,6 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 $app-modal-width: 700px !default; // Default width for the modal
 
@@ -27,7 +28,7 @@ body.app-modal-open {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba($color_nhsuk-black, 0.8);
+  background-color: rgba(nhsuk-colour("black"), 0.8);
 }
 
 // Modal dialog container
@@ -43,14 +44,14 @@ body.app-modal-open {
   transform: translate(-50%, -50%);
   overflow-y: auto;
 
-  // background-color: $color_nhsuk-white;
-  background-color: $color_nhsuk-grey-5;
-  border: $nhsuk-focus-width solid $color_nhsuk-black;
+  // background-color: nhsuk-colour("white");
+  background-color: $nhsuk-body-background-colour;
+  border: $nhsuk-focus-width solid nhsuk-colour("black");
 
   @include nhsuk-responsive-padding(5);
 
   &:focus {
-    outline: $nhsuk-focus-width solid $nhsuk-focus-color;
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
   }
 
   @include nhsuk-media-query($from: tablet) {

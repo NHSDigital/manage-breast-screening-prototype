@@ -1,32 +1,32 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 $app-dark-mode-blue: #348de0;
-$app-dark-mode-background: #1C1C1C;
+$app-dark-mode-background: #1c1c1c;
 $app-dark-mode-background-secondary: nhsuk-tint($app-dark-mode-background, 10%);
-$app-dark-mode-white: #E8E8E8;
+$app-dark-mode-white: #e8e8e8;
 $app-dark-mode-text-colour: $app-dark-mode-white;
 $app-dark-mode-text-colour-secondary: nhsuk-shade($app-dark-mode-text-colour, 30%);
 
 // Links
-$app-dark-mode-link-color: $app-dark-mode-blue;
-$app-dark-mode-link-hover-color: nhsuk-tint($color_nhsuk-dark-pink, 50%);
-$app-dark-mode-link-active-color: nhsuk-shade($app-dark-mode-link-color, 20%);
-$app-dark-mode-link-visited-color: nhsuk-tint($color_nhsuk-purple, 50%);
+$app-dark-mode-link-colour: $app-dark-mode-blue;
+$app-dark-mode-link-hover-colour: nhsuk-tint($nhsuk-link-hover-colour, 50%);
+$app-dark-mode-link-active-color: nhsuk-shade($app-dark-mode-link-colour, 20%);
+$app-dark-mode-link-visited-colour: nhsuk-tint($nhsuk-link-visited-colour, 50%);
 
 // Paul's colours
-$app-dark-mode-link-color: #348de0;
-$app-dark-mode-link-hover-color: #ffeb3b;
-$app-dark-mode-link-active-color: #000;
-$app-dark-mode-link-visited-color: #89b;
-
+$app-dark-mode-link-colour: #348de0;
+$app-dark-mode-link-hover-colour: #ffeb3b;
+$app-dark-mode-link-active-colour: #000;
+$app-dark-mode-link-visited-colour: #89b;
 
 @mixin app-dark-mode-focused-text {
-  background-color: $nhsuk-focus-color;
+  background-color: $nhsuk-focus-colour;
   box-shadow:
-    0 -2px $nhsuk-focus-color,
-    0 $nhsuk-focus-width $nhsuk-focus-text-color;
-  color: $nhsuk-focus-text-color;
+    0 -2px $nhsuk-focus-colour,
+    0 $nhsuk-focus-width $nhsuk-focus-text-colour;
+  color: $nhsuk-focus-text-colour;
   // When colours are overridden, for example when users have a dark mode,
   // backgrounds and box-shadows disappear, so we need to ensure there's a
   // transparent outline which will be set to a visible colour.
@@ -40,11 +40,11 @@ $app-dark-mode-link-visited-color: #89b;
   color: $app-dark-mode-blue;
 
   &:visited {
-    color: $app-dark-mode-link-visited-color;
+    color: $app-dark-mode-link-visited-colour;
   }
 
   &:hover {
-    color: $app-dark-mode-link-hover-color;
+    color: $app-dark-mode-link-hover-colour;
     text-decoration: none;
   }
 
@@ -56,21 +56,20 @@ $app-dark-mode-link-visited-color: #89b;
     }
 
     &:visited {
-      color: $nhsuk-focus-text-color;
+      color: $nhsuk-focus-text-colour;
     }
 
     .nhsuk-icon {
-      fill: $nhsuk-focus-text-color;
+      fill: $nhsuk-focus-text-colour;
     }
   }
 
   &:active {
-    color: $app-dark-mode-link-active-color;
+    color: $app-dark-mode-link-active-colour;
   }
 }
 
 .app-dark-mode {
-
   background: $app-dark-mode-background;
   color: $app-dark-mode-text-colour;
 
@@ -90,7 +89,8 @@ $app-dark-mode-link-visited-color: #89b;
   }
 
   // Links and link type things
-  a, .app-secondary-navigation__link {
+  a,
+  .app-secondary-navigation__link {
     @include app-dark-mode-link-style-default;
 
     &:focus {
@@ -99,7 +99,7 @@ $app-dark-mode-link-visited-color: #89b;
   }
 
   .app-secondary-navigation__link:link {
-    color: $app-dark-mode-link-color;
+    color: $app-dark-mode-link-colour;
     &:focus {
       @include app-dark-mode-focused-text;
     }
@@ -118,43 +118,30 @@ $app-dark-mode-link-visited-color: #89b;
   }
 
   .nhsuk-link--no-visited-state {
-    color: $app-dark-mode-link-color;
+    color: $app-dark-mode-link-colour;
     &:focus {
       @include app-dark-mode-focused-text;
     }
   }
 
-
-
   .nhsuk-back-link {
-    .nhsuk-icon__chevron-left {
-      fill: $app-dark-mode-link-color;
-    }
-  }
-  .nhsuk-back-link__link {
+    color: $app-dark-mode-link-colour;
 
     &:visited {
-      color: $app-dark-mode-link-color;
+      color: $app-dark-mode-link-colour;
     }
 
     &:hover {
-      color: $app-dark-mode-link-hover-color;
+      color: $app-dark-mode-link-hover-colour;
       text-decoration: underline;
-
-      .nhsuk-icon__chevron-left {
-        fill: $app-dark-mode-link-hover-color;
-      }
-    }
-
-    &:focus {
-      .nhsuk-icon__chevron-left {
-        fill: $nhsuk-focus-text-color;
-      }
     }
   }
 
   .nhsuk-button {
-    &:link, &:visited, &:active, &:hover {
+    &:link,
+    &:visited,
+    &:active,
+    &:hover {
       color: white;
     }
   }
@@ -169,12 +156,12 @@ $app-dark-mode-link-visited-color: #89b;
       &:focus {
         @include app-dark-mode-focused-text;
       }
-
     }
     // background: $app-dark-mode-background-secondary;
     color: $app-dark-mode-text-colour;
 
-    .nhsuk-header__account, .nhsuk-header__account-item {
+    .nhsuk-header__account,
+    .nhsuk-header__account-item {
       // background: $app-dark-mode-background;
       outline: 1px solid rgba(255, 255, 255, 0.2);
     }
@@ -195,11 +182,13 @@ $app-dark-mode-link-visited-color: #89b;
     }
   }
 
-  .nhsuk-footer, .nhsuk-footer-container {
+  .nhsuk-footer,
+  .nhsuk-footer-container {
     background: $app-dark-mode-background-secondary;
     color: $app-dark-mode-text-colour;
 
-    .nhsuk-footer__list-item-link, .nhsuk-footer__copyright {
+    .nhsuk-footer__list-item-link,
+    .nhsuk-footer__copyright {
       color: $app-dark-mode-text-colour-secondary;
     }
   }

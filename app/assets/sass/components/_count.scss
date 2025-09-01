@@ -1,8 +1,9 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 .app-count {
-  background-color: rgba($color_nhsuk-grey-4, 0.5);
+  background-color: rgba(nhsuk-colour("grey-4"), 0.5);
   border-radius: nhsuk-spacing(3);
   display: inline-block;
   min-width: nhsuk-spacing(5);

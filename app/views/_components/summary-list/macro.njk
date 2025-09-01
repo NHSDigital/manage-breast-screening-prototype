@@ -12,7 +12,7 @@
     {% endfor %}
   {% endif %}
   {% if canUseNativeComponent %}
-    {% from "summary-list/macro.njk" import summaryList %}
+    {% from "nhsuk/components/summary-list/macro.njk" import summaryList %}
     {{ summaryList(params) }}
   {% else %}
     {%- include "./summary-list-template.njk" -%}

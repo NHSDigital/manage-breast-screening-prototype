@@ -1,12 +1,12 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
 
 // ==========================================================================
 // COMPONENTS / #RELATED-NAV
 // ==========================================================================
 
 .nhsuk-related-nav {
-  border-top: 1px solid $nhsuk-border-color;
+  border-top: 1px solid $nhsuk-border-colour;
 
   @include nhsuk-media-query($until: desktop) {
     margin-top: nhsuk-spacing(7);

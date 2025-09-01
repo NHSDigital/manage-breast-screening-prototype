@@ -1,28 +1,28 @@
 // app/assets/sass/components/_header.scss
 
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 .app-appointment-header--sticky {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid $nhsuk-border-color;
-  background-color: $color_nhsuk-grey-5;
+  border-bottom: 1px solid $nhsuk-border-colour;
+  background-color: $nhsuk-body-background-colour;
 
   // Sticky things
-  // border-bottom-color: $color_nhsuk-grey-3;
+  // border-bottom-color: $nhsuk-border-hover-colour;
   // box-shadow: 0 $nhsuk-border-width 0 red;
 }
 
 .app-appointment-header--sticky[data-stuck="true"] {
-  border-bottom-color: $color_nhsuk-grey-3;
+  border-bottom-color: $nhsuk-border-hover-colour;
   // box-shadow: 0 $nhsuk-border-width 0 red;
-  box-shadow: 0 $nhsuk-border-width 0 rgba($color_nhsuk-grey-3, 50%);
+  box-shadow: 0 $nhsuk-border-width 0 rgba($nhsuk-border-hover-colour, 50%);
 }
 
 .app-appointment-header {
-
   .app-secondary-navigation {
     margin-bottom: 0;
   }

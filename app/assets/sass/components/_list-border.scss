@@ -1,11 +1,11 @@
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
 
 // ==========================================================================
 // COMPONENTS / #LIST-BORDER
 // ==========================================================================
 
 .nhsuk-list--border li {
-  border-bottom: 1px solid $color_nhsuk-grey-4;
+  border-bottom: 1px solid $nhsuk-border-colour;
   padding: 8px 0 16px;
 }

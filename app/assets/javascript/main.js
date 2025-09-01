@@ -3,11 +3,10 @@
 // ES6 or Vanilla JavaScript
 
 document.addEventListener('DOMContentLoaded', () => {
-
   // Inline check in without requiring page reload
   const checkInLinks = document.querySelectorAll('.js-check-in-link')
 
-  checkInLinks.forEach(link => {
+  checkInLinks.forEach((link) => {
     link.addEventListener('click', async (e) => {
       e.preventDefault()
       const link = e.currentTarget
@@ -21,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
           {
             method: 'GET',
             headers: {
-              'Accept': 'application/json'
+              Accept: 'application/json'
             }
           }
         )
@@ -43,7 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show the start appointment link by removing the hidden class
         const eventRow = document.getElementById(`event-row-${eventId}`)
         if (eventRow) {
-          const startAppointmentLink = eventRow.querySelector('.js-start-appointment-link')
+          const startAppointmentLink = eventRow.querySelector(
+            '.js-start-appointment-link'
+          )
           if (startAppointmentLink) {
             startAppointmentLink.classList.remove('app-display-none')
           }
@@ -61,7 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
           // For modal buttons, find the original check-in link on the main page
           // Look for a link that opens the modal for this specific event
           const modalId = `check-in-modal-${eventId}`
-          const originalCheckInLink = document.querySelector(`a[onclick*="openModal('${modalId}')"]`)
+          const originalCheckInLink = document.querySelector(
+            `a[onclick*="openModal('${modalId}')"]`
+          )
 
           if (originalCheckInLink) {
             const checkInParagraph = originalCheckInLink.closest('p')
@@ -82,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (openModal && window.closeModal) {
           window.closeModal(openModal.id)
         }
-
       } catch (error) {
         console.error('Error checking in participant:', error)
         window.location.href = link.href
@@ -90,34 +92,30 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   })
 
-  // Handle clear data link with AJAX
-  const clearDataLinks = document.querySelectorAll('a[href="/clear-data"]')
-  clearDataLinks.forEach(link => {
-    link.addEventListener('click', async (e) => {
+  // Handle reset data in background
+  const $resetLink = document.querySelector('a[data-reset-session]')
+  if ($resetLink) {
+    $resetLink.addEventListener('click', async (e) => {
       e.preventDefault()
+
       try {
-        const response = await fetch('/clear-data', {
+        const response = await fetch('/prototype-admin/reset-session-data', {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
+          redirect: 'error'
         })
 
         if (!response.ok) {
           throw new Error('Failed to clear data')
         }
 
-        const result = await response.json()
-        if (result.success) {
-          // Refresh the page to reflect the cleared data
-          window.location.reload()
-        } else {
-          throw new Error('Failed to clear data')
-        }
+        // Refresh the page to reflect the cleared data
+        window.location.reload()
       } catch (error) {
         console.error('Error clearing data:', error)
-        window.location.href = link.href
+
+        // Fall back to reset confirmation page
+        window.location.href = $resetLink.href
       }
     })
-  })
+  }
 })
