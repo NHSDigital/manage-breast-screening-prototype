@@ -1,12 +1,12 @@
 name: Pull request
 
-on: 
+on:
   pull_request:
     branches:
-    - master
+      - master
   push:
     branches:
-    - master
+      - master
 
 jobs:
   build:
@@ -15,10 +15,10 @@ jobs:
     if: github.repository == 'nhsuk/nhsuk-prototype-kit'
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Install dependencies
-      run: npm install
-    
-    - name: Run linting
-      run: npm run lint:js
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run linting
+        run: npm run lint:js

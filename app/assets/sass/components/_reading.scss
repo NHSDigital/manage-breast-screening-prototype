@@ -1,20 +1,21 @@
 @use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
 @use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/helpers' as *;
 
 // app/assets/sass/components/_reading.scss
 
 .app-reading-status {
-  background-color: nhsuk-shade($color_nhsuk-blue, 40%);
-  color: $color_nhsuk-white;
+  background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
+  color: $nhsuk-reverse-text-colour;
   a {
-    color: $color_nhsuk-white;
+    color: $nhsuk-reverse-text-colour;
   }
   padding: 10px;
 }
 
 .app-reading-status {
-  background-color: nhsuk-shade($color_nhsuk-blue, 40%);
-  color: $color_nhsuk-white;
+  background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
+  color: $nhsuk-reverse-text-colour;
   padding: 8px 0;
   border-bottom: 1px solid #d8dde0;
 
