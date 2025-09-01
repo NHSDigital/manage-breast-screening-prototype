@@ -569,7 +569,7 @@ function initializeBreastFeatures()
         marker.style.left = Math.round(finalLeft) + 'px'
         marker.style.top = Math.round(finalTop) + 'px'
         marker.style.position = 'absolute'
-        marker.style.zIndex = '102'
+        marker.style.zIndex = '50'  // Below sticky nav (999) but above diagram content
 
         console.log('Final marker position (rounded):', marker.style.left, marker.style.top)
     }

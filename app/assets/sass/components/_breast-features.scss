@@ -1,7 +1,4 @@
 // app/assets/sass/components/_breast-features.scss
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 // Custom variables for breast features
 $breast-features-marker-size: 40px;
@@ -13,9 +10,9 @@ $breast-features-border-radius: 2px;
 $breast-features-marker-font-size: 18px;
 $breast-features-popover-min-width: 280px;
 $breast-features-popover-max-width: 400px;
-$breast-features-z-index-marker: 101;
-$breast-features-z-index-popover: 1000;
-$breast-features-z-index-dragging: 200;
+$breast-features-z-index-marker: 50; // Below sticky nav (999)
+$breast-features-z-index-popover: 1000; // Above sticky nav
+$breast-features-z-index-dragging: 60; // Still below sticky nav but above normal markers
 
 // BLOCK: Main breast features component
 .breast-features {
