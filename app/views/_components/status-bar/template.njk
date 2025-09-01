@@ -1,6 +1,9 @@
 {# app/views/_components/status-bar/template.njk #}
 
-<div class="app-status-bar">
+{# Output a class counting the number of rows so that we can work out how tall the sticky nav is #}
+{% set classes = params.classes + (" app-status-bar--rows-" + params.rows | length) %}
+
+<div class="app-status-bar {{ classes }}">
   <div class="nhsuk-width-container">
     {% for row in params.rows %}
       <div class="app-status-bar__row">

@@ -1,0 +1,16 @@
+# Temporary only
+.cache/
+
+# Application
+app/
+
+# Node.js modules
+node_modules/
+
+# Build output
+public/
+
+# Files to ignore
+*.html
+*.min.js
+package-lock.json

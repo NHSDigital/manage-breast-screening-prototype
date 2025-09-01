@@ -18,7 +18,7 @@
   display: block;
   padding-top: 8px;
   // padding: 4px 4px 4px 38px; // to match the line above
-  color: $nhsuk-text-color;
+  color: $nhsuk-text-colour;
 }
 
 .app-details__contents-summary {
@@ -27,7 +27,7 @@
 }
 
 .app-details__contents-summary--text {
-  color: $nhsuk-secondary-text-color;
+  color: $nhsuk-secondary-text-colour;
 }
 
 // Hide contents summary when details is expanded
