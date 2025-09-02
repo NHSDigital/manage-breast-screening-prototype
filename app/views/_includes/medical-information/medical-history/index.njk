@@ -18,13 +18,49 @@
 
       {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
-      {% set typeText %}
+
+      {% set typeHtml %}
         {% if historyItem.type %}
-          {% if historyItem.type == 'Other' %}
-            {{ historyItem.typeOtherDetails }}
+          {% if historyItem.type | isArray %}
+            {% if historyItem.type | length > 1 %}
+              <ul>
+                {% for item in historyItem.type %}
+                  <li>
+                    {% if item | startsWith("Other") %}
+                      {{ item }}: {{ historyItem.typeOtherDetails }}
+                    {% else %}
+                      {{ item }}
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            <p>
+              {% if historyItem.type[0] | startsWith("Other") %}
+                {{ historyItem.type[0] }}: {{ historyItem.typeOtherDetails }}
+              {% else %}
+                {{ historyItem.type[0] }}
+              {% endif %}
+            </p>
           {% else %}
-            {{ historyItem.type }}
+            <p>
+              {% if historyItem.type | startsWith("Other") %}
+                {{ historyItem.type }}: {{ historyItem.typeOtherDetails }}
+              {% else %}
+                {{ historyItem.type }}
+              {% endif %}
+            </p>
           {% endif %}
+        {% endif %}
+
+        {% if historyItem.deviceRemoved %}
+          <p>
+            {{ historyItem.deviceRemoved }}
+            {% if historyItem.removalDetails %}
+              <br>
+              Details: {{ historyItem.removalDetails }}
+            {% endif %}
+          </p>
         {% endif %}
       {% endset %}
 
@@ -98,10 +134,10 @@
             {% if historyItem.procedureDate | isValidDate %}
               {{ historyItem.procedureDate | formatMonthYear }} ({{ historyItem.procedureDate | formatRelativeDate }})
             {% else %}
-              Procedures were within the last 6 months. Date not provided
+              Procedure was within the last 6 months. Date not provided
             {% endif %}
           {% else %}
-            Procedures were not in the last 6 months
+            Procedure was not in the last 6 months
           {% endif %}
         {% endif %}
       {% endset %}
@@ -115,10 +151,10 @@
           rows: [
             {
               key: {
-                text: "Type"
+                text: "Types" if (historyItem.type | isArray and historyItem.type | length > 1) else "Type"
               },
               value: {
-                text: typeText
+                html: typeHtml
               }
             } if historyItem.type,
             {

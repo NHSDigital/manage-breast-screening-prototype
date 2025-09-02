@@ -8,12 +8,23 @@
 
 {% block formContent %}
 
+  {% set conditionalTypeDetails %}
+    {{ input({
+      name: "event[medicalHistoryTemp][typeOtherDetails]",
+      value: event.medicalHistoryTemp.typeOtherDetails,
+      label: {
+        text: "Provide details"
+      }
+    }) }}
+  {% endset %}
+
   {{ radios({
     name: "event[medicalHistoryTemp][type]",
     value: event.medicalHistoryTemp.type,
+    classes: "nhsuk-u-padding-bottom-4",
     fieldset: {
       legend: {
-        text: "What device does " + (participant.firstName or "the participant") + " have?",
+        text: "What device does " + (participant.demographicInformatin.firstName or "the participant") + " have?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
@@ -30,14 +41,7 @@
         value: "Other medical device",
         text: "Other medical device (or does not know)",
         conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][details]",
-            value: event.medicalHistoryTemp.details,
-            id: "device-details",
-            label: {
-              text: "Provide details"
-            }
-          })
+          html: conditionalTypeDetails
         }
       }
     ]
@@ -45,30 +49,30 @@
 
   {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
 
+  {% set conditionalDetails %}
+    {{ input({
+      name: "event[medicalHistoryTemp][removalDetails]",
+      value: event.medicalHistoryTemp.removalDetails,
+      label: {
+        text: "Provide details"
+      }
+    }) }}
+  {% endset %}
 
   {{ checkboxes({
     name: "event[medicalHistoryTemp][deviceRemoved]",
-    value: event.medicalHistoryTemp.deviceRemoved,
+    values: event.medicalHistoryTemp.deviceRemoved,
     items: [
       {
-        value: "true",
+        value: "Implanted device has been removed",
         text: "Implanted device has been removed",
-        checked: event.medicalHistoryTemp.deviceRemoved == "true",
         conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][removalDetails]",
-            value: event.medicalHistoryTemp.removalDetails,
-            id: "removal-details",
-            label: {
-              text: "Provide details"
-            }
-          })
+          html: conditionalDetails
         }
       }
     ]
   }) }}
 
-   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
-
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}
