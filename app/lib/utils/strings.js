@@ -296,6 +296,18 @@ const asVisuallyHiddenText = (input) => {
 }
 
 /**
+ * Wrap string in a span, hiding it from assistive technologies
+ * Used where the visual text should not be made available
+ *
+ * @param {string} input - String to wrap
+ * @returns {string} HTML string with hidden text class
+ */
+const asAriaHiddenText = (input) => {
+  if (!input) return ''
+  return nunjucksSafe(`<span aria-hidden="true">${input}</span>`)
+}
+
+/**
  * Format phone number for display with spaces
  *
  * @param {string} phoneNumber - Raw phone number string
@@ -370,6 +382,7 @@ module.exports = {
   noWrap,
   asHint,
   asVisuallyHiddenText,
+  asAriaHiddenText,
   padDigits,
   possessive,
   sentenceCase,

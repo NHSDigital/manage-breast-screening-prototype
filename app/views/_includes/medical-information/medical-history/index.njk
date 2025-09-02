@@ -28,6 +28,56 @@
         {% endif %}
       {% endset %}
 
+      {% set proceduresHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.proceduresRightBreast %}
+                {% for procedure in historyItem.proceduresRightBreast %}
+                  <li>
+                    {{ procedure }}
+                  </li>
+                {% else %}
+                  No procedures recorded
+                {% endfor %}
+              {% else %}
+                <li>No procedures recorded</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.proceduresLeftBreast %}
+                {% for procedure in historyItem.proceduresLeftBreast %}
+                  <li>
+                    {{ procedure }}
+                  </li>
+                {% else %}
+                  No procedures recorded
+                {% endfor %}
+              {% else %}
+                <li>No procedures recorded</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+        {% if historyItem.implantsRemoved | falsify %}
+          <p>
+            {{ historyItem.implantsRemoved }}
+            {% if historyItem.removalDetails %}
+              <br>
+              Details: {{ historyItem.removalDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
+
+
+      {% endset %}
+
+
       {% set dateText %}
         {% if historyItem.generalDate %}
           {% if historyItem.generalDate == "Specific date" %}
@@ -40,18 +90,21 @@
         {% endif %}
       {% endset %}
 
-   {% set recentProcedureText %}
-        {% if historyItem.recentProcedure %}
+      {% set recentProcedureText %}
+        {% if historyItem.hasRecentProcedureCheckbox %}
           {% if historyItem.recentProcedure[0] == "true" %}
-            {% if historyItem.procedureDate %}
-           {# {% if historyItem.procedureDate | isValidDate %} #}
+            {# {% if historyItem.procedureDate %} #}
+            {% if historyItem.procedureDate | isValidDate %}
               {{ historyItem.procedureDate | formatMonthYear }} ({{ historyItem.procedureDate | formatRelativeDate }})
+            {% else %}
+              Procedures were within the last 6 months. Date not provided
             {% endif %}
           {% else %}
-          Procedure was not in the last 6 months
+            Procedures were not in the last 6 months
           {% endif %}
         {% endif %}
       {% endset %}
+
       {% set addedByText %}
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
@@ -67,6 +120,14 @@
                 text: typeText
               }
             } if historyItem.type,
+            {
+              key: {
+                text: "Procedures"
+              },
+              value: {
+                html: proceduresHtml
+              }
+            } if historyItem.proceduresRightBreast or historyItem.proceduresLeftBreast,
             {
               key: {
                 text: "Location"
@@ -90,7 +151,7 @@
               value: {
                 text: recentProcedureText
               }
-            } if historyItem.recentProcedure,
+            } if historyItem.hasRecentProcedureCheckbox | falsify,
             {
               key: {
                 text: "Additional details"
