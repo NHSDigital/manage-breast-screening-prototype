@@ -10,12 +10,12 @@ const dayjs = require('dayjs')
 
 /**
  * Generate a precise date of birth within the specified age range
- * @param {Object} options - Generation options
- * @param {string} options.riskLevel - Risk level to use for age range
- * @param {Date} [options.referenceDate] - Date to calculate age from (defaults to today)
+ *
+ * @param {string} riskLevel - Risk level to use for age range
+ * @param {Date} [referenceDate] - Date to calculate age from (defaults to today)
  * @returns {string} ISO date string for date of birth
  */
-const generateDateOfBirth = (riskLevel, referenceDate = new Date() ) => {
+const generateDateOfBirth = (riskLevel, referenceDate = new Date()) => {
   const refDate = dayjs(referenceDate)
   let minAge, maxAge
 
@@ -36,7 +36,6 @@ const generateDateOfBirth = (riskLevel, referenceDate = new Date() ) => {
   return faker.date.between({ from, to }).toISOString()
 }
 
-
 const generateEthnicity = (ethnicities) => {
   // 50% chance of having ethnicity data at all
   if (Math.random() > 0.5) {
@@ -46,7 +45,10 @@ const generateEthnicity = (ethnicities) => {
     }
   }
 
-  const ethnicGroup = weighted.select(Object.keys(ethnicities), [0.85, 0.08, 0.03, 0.02, 0.02])
+  const ethnicGroup = weighted.select(
+    Object.keys(ethnicities),
+    [0.85, 0.08, 0.03, 0.02, 0.02]
+  )
 
   // 20% chance of having background set to "Not provided"
   if (Math.random() < 0.2) {
@@ -84,7 +86,10 @@ const generateUKMobileNumber = () => {
 // Generate a UK landline/home phone number
 const generateUKHomeNumber = () => {
   const areaCode = faker.helpers.arrayElement(['0118', '01865'])
-  const suffix = faker.number.int({ min: 0, max: 999 }).toString().padStart(3, '0')
+  const suffix = faker.number
+    .int({ min: 0, max: 999 })
+    .toString()
+    .padStart(3, '0')
   return `${areaCode}4960${suffix}` // Ofcom reserved range
 }
 
@@ -92,14 +97,14 @@ const generateUKHomeNumber = () => {
 const generatePhoneNumbers = () => {
   // Phone number probabilities
   const phoneConfig = weighted.select({
-    mobile_only: 0.6,    // 60% mobile only
-    both: 0.35,          // 35% both mobile and home
-    home_only: 0.05,     // 5% home only
+    mobile_only: 0.6, // 60% mobile only
+    both: 0.35, // 35% both mobile and home
+    home_only: 0.05 // 5% home only
   })
 
   const result = {
     mobilePhone: null,
-    homePhone: null,
+    homePhone: null
   }
 
   switch (phoneConfig) {
@@ -120,9 +125,7 @@ const generatePhoneNumbers = () => {
 
 // Function to generate SX number
 const generateSXNumber = (bsuAbbreviation) => {
-  const digits = Array.from({ length: 6 }, () =>
-    faker.number.int(9)
-  ).join('')
+  const digits = Array.from({ length: 6 }, () => faker.number.int(9)).join('')
   return `${bsuAbbreviation}${digits}`
 }
 
@@ -131,9 +134,8 @@ const generateNHSNumber = () => {
   // Generate 6 random digits
   // NHS numbers starting with 999 are never issued.
   // https://digital.nhs.uk/services/e-referral-service/document-library/synthetic-data-in-live-environments#synthetic-data-naming-convention
-  const baseNumber = '999' + Array.from({ length: 6 }, () =>
-    faker.number.int(9)
-  ).join('')
+  const baseNumber =
+    '999' + Array.from({ length: 6 }, () => faker.number.int(9)).join('')
 
   // Calculate check digit
   let sum = 0
@@ -157,9 +159,11 @@ const generateGPPracticeName = () => {
   ]
 
   const nameFormats = [
-    () => `${faker.location.street()} ${faker.helpers.arrayElement(practiceTypes)}`,
+    () =>
+      `${faker.location.street()} ${faker.helpers.arrayElement(practiceTypes)}`,
     // () => `${faker.person.lastName()} & ${faker.person.lastName()} ${faker.helpers.arrayElement(practiceTypes)}`,
-    () => `${faker.helpers.arrayElement(['St', 'The', 'Manor', 'Park', 'Grove'])} ${faker.word.adjective()} ${faker.helpers.arrayElement(practiceTypes)}`,
+    () =>
+      `${faker.helpers.arrayElement(['St', 'The', 'Manor', 'Park', 'Grove'])} ${faker.word.adjective()} ${faker.helpers.arrayElement(practiceTypes)}`
   ]
 
   return faker.helpers.arrayElement(nameFormats)()
@@ -178,17 +182,17 @@ const generateParticipant = ({
   ethnicities,
   breastScreeningUnits,
   riskLevel = null,
-  overrides = null,
+  overrides = null
 }) => {
-
   const id = generateId()
 
   // Determine risk level first as it affects age generation
-  const participantRiskLevel = overrides?.config?.defaultRiskLevel || riskLevel || pickRiskLevel()
+  const participantRiskLevel =
+    overrides?.config?.defaultRiskLevel || riskLevel || pickRiskLevel()
 
   // First get or generate BSU
   const assignedBSU = overrides?.assignedBSU
-    ? breastScreeningUnits.find(bsu => bsu.id === overrides.assignedBSU)
+    ? breastScreeningUnits.find((bsu) => bsu.id === overrides.assignedBSU)
     : faker.helpers.arrayElement(breastScreeningUnits)
 
   // Generate ethnicity data using new function
@@ -200,7 +204,9 @@ const generateParticipant = ({
   // Generate base random participant first
   const baseParticipant = {
     id: id,
-    sxNumber: generateSXNumber(faker.helpers.arrayElement(breastScreeningUnits).abbreviation),
+    sxNumber: generateSXNumber(
+      faker.helpers.arrayElement(breastScreeningUnits).abbreviation
+    ),
     assignedBSU: assignedBSU.id,
     hasRiskFactors: participantRiskLevel !== 'routine',
     seedRiskLevel: participantRiskLevel,
@@ -214,17 +220,17 @@ const generateParticipant = ({
       homePhone: phoneNumbers.homePhone,
       email: `${faker.internet.username().toLowerCase()}@example.com`,
       ethnicGroup: ethnicityData.ethnicGroup,
-      ethnicBackground: ethnicityData.ethnicBackground,
+      ethnicBackground: ethnicityData.ethnicBackground
     },
     medicalInformation: {
       nhsNumber: generateNHSNumber(),
-      gp: generateGPInformation(assignedBSU),
+      gp: generateGPInformation(assignedBSU)
     },
     currentHealthInformation: {
       isPregnant: false,
       onHRT: Math.random() < 0.1,
-      recentBreastSymptoms: generateRecentSymptoms(),
-    },
+      recentBreastSymptoms: generateRecentSymptoms()
+    }
   }
 
   if (!overrides) {
@@ -239,15 +245,12 @@ const generateParticipant = ({
 const generateRecentSymptoms = () => {
   if (Math.random() > 0.1) return null // 10% chance of recent symptoms
 
-  return faker.helpers.arrayElements([
-    'lump',
-    'pain',
-    'nipple_discharge',
-    'skin_changes',
-    'shape_change',
-  ], { min: 1, max: 2 })
+  return faker.helpers.arrayElements(
+    ['lump', 'pain', 'nipple_discharge', 'skin_changes', 'shape_change'],
+    { min: 1, max: 2 }
+  )
 }
 
 module.exports = {
-  generateParticipant,
+  generateParticipant
 }

@@ -3,29 +3,33 @@
 const dayjs = require('dayjs')
 const { getFilteredClinics, getClinicEvents } = require('../lib/utils/clinics')
 const { filterEventsByStatus } = require('../lib/utils/status')
-const { getReturnUrl, urlWithReferrer, appendReferrer } = require('../lib/utils/referrers')
+const {
+  getReturnUrl,
+  urlWithReferrer,
+  appendReferrer
+} = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
 const { updateEventStatus } = require('../lib/utils/event-data')
 
 /**
  * Get clinic and its related data from id
  */
-function getClinicData (data, clinicId) {
-  const clinic = data.clinics.find(c => c.id === clinicId)
+function getClinicData(data, clinicId) {
+  const clinic = data.clinics.find((c) => c.id === clinicId)
 
   if (!clinic) {
     return null
   }
 
   // Get all events for this clinic
-  const clinicEvents = data.events.filter(e => e.clinicId === clinic.id)
+  const clinicEvents = data.events.filter((e) => e.clinicId === clinic.id)
 
   // Get all participants for these events and add their details to the events
-  const eventsWithParticipants = clinicEvents.map(event => {
+  const eventsWithParticipants = clinicEvents.map((event) => {
     const participant = getParticipant(data, event.participantId)
     return {
       ...event,
-      participant,
+      participant
     }
   })
 
@@ -35,16 +39,18 @@ function getClinicData (data, clinicId) {
   })
 
   // Get screening unit details
-  const unit = data.breastScreeningUnits.find(u => u.id === clinic.breastScreeningUnitId)
+  const unit = data.breastScreeningUnits.find(
+    (u) => u.id === clinic.breastScreeningUnitId
+  )
 
   return {
     clinic,
     events: sortedEvents,
-    unit,
+    unit
   }
 }
 
-module.exports = router => {
+module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics
   router.use('/clinics', (req, res, next) => {
     res.locals.navActive = 'screening'
@@ -57,7 +63,12 @@ module.exports = router => {
   })
 
   // Clinic tab options
-  const clinicViews = ['/clinics/today', '/clinics/upcoming', '/clinics/completed', '/clinics/all']
+  const clinicViews = [
+    '/clinics/today',
+    '/clinics/upcoming',
+    '/clinics/completed',
+    '/clinics/all'
+  ]
 
   router.get(clinicViews, (req, res) => {
     const data = req.session.data
@@ -69,16 +80,18 @@ module.exports = router => {
     filter = filter || req.query.filter || 'all'
 
     // Add additional data needed for each clinic
-    const clinicsWithData = data.clinics.map(clinic => {
-      const unit = data.breastScreeningUnits.find(u => u.id === clinic.breastScreeningUnitId)
-      const location = unit.locations.find(l => l.id === clinic.locationId)
+    const clinicsWithData = data.clinics.map((clinic) => {
+      const unit = data.breastScreeningUnits.find(
+        (u) => u.id === clinic.breastScreeningUnitId
+      )
+      const location = unit.locations.find((l) => l.id === clinic.locationId)
       const events = getClinicEvents(data.events, clinic.id)
 
       return {
         ...clinic,
         unit,
         location,
-        events,
+        events
       }
     })
 
@@ -89,7 +102,7 @@ module.exports = router => {
       filter,
       clinics: clinicsWithData,
       filteredClinics,
-      formatDate: (date) => dayjs(date).format('D MMMM YYYY'),
+      formatDate: (date) => dayjs(date).format('D MMMM YYYY')
     })
   })
 
@@ -213,10 +226,13 @@ module.exports = router => {
     const data = req.session.data
 
     // Get current filter from query param, or default to the current page's filter
-    const currentFilter = req.query.filter || req.query.currentFilter || 'remaining'
+    const currentFilter =
+      req.query.filter || req.query.currentFilter || 'remaining'
 
     // Find the event
-    const eventIndex = data.events.findIndex(e => e.id === eventId && e.clinicId === clinicId)
+    const eventIndex = data.events.findIndex(
+      (e) => e.id === eventId && e.clinicId === clinicId
+    )
 
     if (eventIndex === -1) {
       if (req.headers.accept?.includes('application/json')) {
@@ -250,33 +266,42 @@ module.exports = router => {
       })
     }
 
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/${currentFilter}`, req.query.referrerChain)
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/${currentFilter}`,
+      req.query.referrerChain
+    )
     res.redirect(returnUrl)
-
   })
 
-
   // Single clinic view
-  const VALID_FILTERS = ['remaining', 'scheduled', 'checked-in', 'in-progress', 'complete', 'all']
+  const VALID_FILTERS = [
+    'remaining',
+    'scheduled',
+    'checked-in',
+    'in-progress',
+    'complete',
+    'all'
+  ]
 
   // Support both /clinics/:id and /clinics/:id/:filter
   router.get(['/clinics/:id', '/clinics/:id/:filter'], (req, res, next) => {
-
     // Remaining is our default, so we can redirect to /clinics/:id
-    if (req.params.filter == 'remaining'){
+    if (req.params.filter == 'remaining') {
       res.redirect(`/clinics/${req.params.id}`)
       return
     }
 
     const clinicData = getClinicData(req.session.data, req.params.id)
-    let remainingCount = filterEventsByStatus(clinicData.events, 'remaining').length
+    let remainingCount = filterEventsByStatus(
+      clinicData.events,
+      'remaining'
+    ).length
 
     // Check filter from either URL param or query string
     let defaultFilter = 'remaining'
     if (clinicData.clinic?.status == 'scheduled') {
       defaultFilter = 'all'
-    }
-    else if (clinicData.clinic?.status == 'closed' || remainingCount == 0) {
+    } else if (clinicData.clinic?.status == 'closed' || remainingCount == 0) {
       defaultFilter = 'complete'
     }
 
@@ -292,8 +317,6 @@ module.exports = router => {
       return res.redirect('/clinics')
     }
 
-
-
     const filteredEvents = filterEventsByStatus(clinicData.events, filter)
 
     res.render('clinics/show', {
@@ -305,7 +328,7 @@ module.exports = router => {
       unit: clinicData.unit,
       currentFilter: filter,
       formatDate: (date) => dayjs(date).format('D MMMM YYYY'),
-      formatTime: (date) => dayjs(date).format('HH:mm'),
+      formatTime: (date) => dayjs(date).format('HH:mm')
     })
   })
 }

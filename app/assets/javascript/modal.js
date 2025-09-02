@@ -46,7 +46,8 @@ class AppModal {
     console.log('Opening modal:', this.modal.id) // Debug log
 
     // Store current scroll position
-    this.scrollPosition = window.pageYOffset || document.documentElement.scrollTop
+    this.scrollPosition =
+      window.pageYOffset || document.documentElement.scrollTop
 
     this.previousActiveElement = document.activeElement
     this.modal.hidden = false
@@ -132,7 +133,8 @@ class AppModal {
   handleAjax(target) {
     const href = target.getAttribute('data-href')
     const method = target.getAttribute('data-method') || 'GET'
-    const closeOnSuccess = target.getAttribute('data-close-on-success') === 'true'
+    const closeOnSuccess =
+      target.getAttribute('data-close-on-success') === 'true'
 
     if (!href) return
 
@@ -151,30 +153,30 @@ class AppModal {
       },
       body: method !== 'GET' ? JSON.stringify(modalData) : null
     })
-    .then(response => {
-      if (response.ok) {
-        if (closeOnSuccess) {
-          this.close()
+      .then((response) => {
+        if (response.ok) {
+          if (closeOnSuccess) {
+            this.close()
+          }
+          // Fire success event
+          const successEvent = new CustomEvent('modal:ajax:success', {
+            detail: { response, target, modal: this }
+          })
+          this.modal.dispatchEvent(successEvent)
+        } else {
+          throw new Error('Request failed')
         }
-        // Fire success event
-        const successEvent = new CustomEvent('modal:ajax:success', {
-          detail: { response, target, modal: this }
-        })
-        this.modal.dispatchEvent(successEvent)
-      } else {
-        throw new Error('Request failed')
-      }
-    })
-    .catch(error => {
-      // Fire error event
-      const errorEvent = new CustomEvent('modal:ajax:error', {
-        detail: { error, target, modal: this }
       })
-      this.modal.dispatchEvent(errorEvent)
-    })
-    .finally(() => {
-      this.setButtonLoading(target, false)
-    })
+      .catch((error) => {
+        // Fire error event
+        const errorEvent = new CustomEvent('modal:ajax:error', {
+          detail: { error, target, modal: this }
+        })
+        this.modal.dispatchEvent(errorEvent)
+      })
+      .finally(() => {
+        this.setButtonLoading(target, false)
+      })
   }
 
   setButtonLoading(button, isLoading) {
@@ -192,7 +194,7 @@ class AppModal {
     const attributes = this.modal.dataset
 
     // Copy all data attributes
-    Object.keys(attributes).forEach(key => {
+    Object.keys(attributes).forEach((key) => {
       data[key] = attributes[key]
     })
 
@@ -240,13 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing modals...') // Debug log
   const modals = document.querySelectorAll('.app-modal')
   console.log('Found modals:', modals.length) // Debug log
-  modals.forEach(modal => {
+  modals.forEach((modal) => {
     modal.appModal = new AppModal(modal)
   })
 })
 
 // Global functions
-window.openModal = function(modalId) {
+window.openModal = function (modalId) {
   console.log('Opening modal via global function:', modalId) // Debug log
   const modal = document.getElementById(modalId)
   if (modal && modal.appModal) {
@@ -256,7 +258,7 @@ window.openModal = function(modalId) {
   }
 }
 
-window.closeModal = function(modalId) {
+window.closeModal = function (modalId) {
   const modal = document.getElementById(modalId)
   if (modal && modal.appModal) {
     modal.appModal.close()

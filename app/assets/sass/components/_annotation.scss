@@ -20,7 +20,9 @@
   border: 3px solid #d5281b;
   background-color: rgba(213, 40, 27, 0.4);
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.7),
+    0 0 8px rgba(0, 0, 0, 0.5);
   z-index: 10;
   cursor: grab;
   transition: background-color 0.2s ease;
@@ -28,7 +30,7 @@
 
 /* Horizontal line of the crosshair */
 .app-mammogram-marker::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 50%;
@@ -40,7 +42,7 @@
 
 /* Vertical line of the crosshair */
 .app-mammogram-marker::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 50%;
   top: 0;
@@ -54,15 +56,23 @@
 .app-mammogram-marker.dragging {
   background-color: rgba(213, 40, 27, 0.6);
   cursor: grabbing;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 12px rgba(0, 0, 0, 0.7);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.8),
+    0 0 12px rgba(0, 0, 0, 0.7);
   transform: translate(-50%, -50%) scale(1.1);
 }
 
 /* Animation to make marker more noticeable when placed */
 @keyframes pulse {
-  0% { transform: translate(-50%, -50%) scale(1); }
-  50% { transform: translate(-50%, -50%) scale(1.2); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .app-mammogram-marker {

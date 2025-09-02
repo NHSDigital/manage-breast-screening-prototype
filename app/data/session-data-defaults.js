@@ -22,7 +22,7 @@ let clinics = []
 let events = []
 let generationInfo = {
   generatedAt: 'Never',
-  stats: { participants: 0, clinics: 0, events: 0 },
+  stats: { participants: 0, clinics: 0, events: 0 }
 }
 
 // Load generation info
@@ -59,20 +59,20 @@ try {
 const defaultSettings = {
   darkMode: 'false',
   screening: {
-    confirmIdentityOnCheckIn: 'true',
+    confirmIdentityOnCheckIn: 'true'
   },
   reading: {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     showRemaining: 'true',
     showRepeatsTag: 'false',
-    showPacsViewer: 'false',
-  },
+    showPacsViewer: 'false'
+  }
 }
 
 module.exports = {
   users,
-  currentUserId: users [0].id,
+  currentUserId: users[0].id,
   currentUser: users[0],
   breastScreeningUnits,
   allBreastScreeningUnits,

@@ -1,7 +1,7 @@
 // app/assets/javascript/scroll-to-section.js
 
 // Generic scroll-to handling for all pages
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search)
   const scrollTo = urlParams.get('scrollTo')
 

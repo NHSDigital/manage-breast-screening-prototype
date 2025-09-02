@@ -187,7 +187,9 @@
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
-{% set breastFeaturesCount = event.medicalInformation.breastFeaturesCount | int %}
+{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
+{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set breastFeaturesCount = breastFeatures | length %}
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
 
 {% set addBreastFeatureHref %}

@@ -1,44 +1,40 @@
-
 $nhsuk-page-width: 1260px;
 
 // Import NHS.UK frontend library
-@forward 'nhsuk-frontend/dist/nhsuk/nhsuk';
+@forward "nhsuk-frontend/dist/nhsuk/nhsuk";
 
 // Components that are not in the NHS.UK frontend library
-@forward 'components/button-menu';
-@forward 'components/details';
-@forward 'components/dark-mode';
-@forward 'components/appointment-header';
-@forward 'components/list-border';
-@forward 'components/modal';
-@forward 'components/related-nav';
-@forward 'components/secondary-navigation';
-@forward 'components/secondary-navigation-overrides';
-@forward 'components/count';
-@forward 'components/forward-link';
-@forward 'components/status';
-@forward 'components/status-bar';
+
+@forward "components/button-menu";
+@forward "components/details";
+@forward "components/dark-mode";
+@forward "components/appointment-header";
+@forward "components/list-border";
+@forward "components/modal";
+@forward "components/related-nav";
+@forward "components/secondary-navigation";
+@forward "components/secondary-navigation-overrides";
+@forward "components/count";
+@forward "components/forward-link";
+@forward "components/status";
+@forward "components/status-bar";
 @forward 'components/summary-card';
-@forward 'components/reading';
+@forward "components/reading";
 
-@forward 'components/overrides';
-@forward 'components/checkboxes';
-@forward 'components/breast-features';
-@forward 'components/sticky-appointment-bar';
+@forward "components/overrides";
+@forward "components/checkboxes";
+@forward "components/breast-features";
+@forward "components/sticky-appointment-bar";
 @forward 'components/small-button';
+@forward "components/annotation";
 
+@forward "misc";
 
-@forward 'components/annotation';
+@forward "typography";
+@forward "utils";
 
-
-@forward 'misc';
-
-
-@forward 'typography';
-@forward 'utils';
 
 $nhsuk-page-width: 1260px;
-
 
 ///////////////////////////////////////////
 // Add your custom CSS/Sass styles below...

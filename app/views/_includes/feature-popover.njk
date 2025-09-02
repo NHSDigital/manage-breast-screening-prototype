@@ -1,0 +1,109 @@
+{# app/views/_includes/feature-popover.njk #}
+
+{#
+  Reusable feature selection popover component
+
+  Set these variables before including:
+  - popoverId (string, default "featurePopover") - ID for the popover element
+  - fieldName (string, default "feature") - name for radio button group
+  - fieldPrefix (string, default "feature") - prefix for radio button IDs
+  - featureTypes (array) - array of {value, text} objects for feature options
+  - customInputLabel (string, default "Enter a custom label") - label for custom text input
+  - addButtonText (string, default "Add") - text for primary action button
+  - showRemoveButton (boolean, default true) - whether to show remove button
+#}
+
+{% set popoverId = popoverId or "featurePopover" %}
+{% set fieldName = fieldName or "feature" %}
+{% set fieldPrefix = fieldPrefix or "feature" %}
+{% set customInputLabel = customInputLabel or "Enter a custom label" %}
+{% set addButtonText = addButtonText or "Add" %}
+{% set showRemoveButton = showRemoveButton if showRemoveButton is defined else true %}
+
+{% set defaultFeatureTypes = [
+  { value: "mole", text: "Mole" },
+  { value: "wart", text: "Wart" },
+  { value: "breast-reduction-scar", text: "Breast reduction scar" },
+  { value: "other-scar", text: "Other scar" },
+  { value: "other-feature", text: "Other feature" }
+] %}
+
+{% set featureTypes = featureTypes or defaultFeatureTypes %}
+
+<div class="breast-features__popover" id="{{ popoverId }}">
+  <span class="nhsuk-caption-m" id="popoverCaption">Add new feature</span>
+  <h2 id="popoverHeading">What is the feature?</h2>
+  <p>This will be added to <span class="nhsuk-tag nhsuk-tag--white region-label" id="regionLabel"></span></p>
+
+  {% set radioItems = [] %}
+
+  {% for featureType in featureTypes %}
+    {% if featureType.value == "other-feature" %}
+      {% set otherConditionalHtml %}
+        {{ input({
+          id: "customLabel",
+          name: "customLabel",
+          label: {
+            text: customInputLabel
+          }
+        }) }}
+      {% endset %}
+
+      {% set radioItems = radioItems | push({
+        value: featureType.value,
+        text: featureType.text,
+        conditional: {
+          html: otherConditionalHtml
+        }
+      }) %}
+    {% else %}
+      {% set radioItems = radioItems | push({
+        value: featureType.value,
+        text: featureType.text
+      }) %}
+    {% endif %}
+  {% endfor %}
+
+  {{ radios({
+    idPrefix: fieldPrefix,
+    name: fieldName,
+    fieldset: {
+      legend: {
+        classes: "nhsuk-fieldset__legend--s nhsuk-u-visually-hidden",
+        isPageHeading: false
+      }
+    },
+    items: radioItems
+  }) }}
+
+  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+    {{ button({
+      text: addButtonText,
+      id: "addBtn",
+      attributes: {
+        type: "button",
+        "data-action": "add"
+      }
+    }) }}
+
+    {{ button({
+      text: "Cancel",
+      classes: "nhsuk-button--secondary",
+      attributes: {
+       type: "button",
+       "data-action": "cancel"
+       }
+    }) }}
+
+    {% if showRemoveButton %}
+    {{ button({
+      text: "Remove",
+      classes: "nhsuk-button--warning",
+      attributes: {
+       type: "button",
+       "data-action": "remove"
+       }
+    }) }}
+    {% endif %}
+  </div>
+</div>
