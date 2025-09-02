@@ -70,16 +70,24 @@
             <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
             <ul class="nhsuk-list">
               {% if historyItem.proceduresRightBreast %}
-                {% for procedure in historyItem.proceduresRightBreast %}
+                {# Handle cases where proceduresRightBreast is not an array #}
+                {% if not historyItem.proceduresRightBreast | isArray %}
                   <li>
-                    {{ procedure }}
-                    {%- if (procedure | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
-                     : {{ historyItem.proceduresRightBreastOtherDetails }}
-                    {% endif %}
+                    {{ historyItem.proceduresRightBreast }}
                   </li>
                 {% else %}
-                  No procedure
-                {% endfor %}
+
+                  {% for procedure in historyItem.proceduresRightBreast %}
+                    <li>
+                      {{ procedure }}
+                      {%- if (procedure | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
+                      : {{ historyItem.proceduresRightBreastOtherDetails }}
+                      {% endif %}
+                    </li>
+                  {% else %}
+                    No procedure
+                  {% endfor %}
+                {% endif %}
               {% else %}
                 <li>No procedure</li>
               {% endif %}
@@ -89,13 +97,19 @@
             <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
             <ul class="nhsuk-list">
               {% if historyItem.proceduresLeftBreast %}
-                {% for procedure in historyItem.proceduresLeftBreast %}
+                {% if not historyItem.proceduresLeftBreast | isArray %}
                   <li>
-                    {{ procedure }}
+                    {{ historyItem.proceduresLeftBreast }}
                   </li>
                 {% else %}
-                  No procedures recorded
-                {% endfor %}
+                  {% for procedure in historyItem.proceduresLeftBreast %}
+                    <li>
+                      {{ procedure }}
+                    </li>
+                  {% else %}
+                    No procedures recorded
+                  {% endfor %}
+                {% endif %}
               {% else %}
                 <li>No procedures recorded</li>
               {% endif %}
@@ -113,7 +127,24 @@
           </p>
         {% endif %}
 
+        {% if historyItem.hasHadReconstructionCheckbox | falsify %}
+          <p>
+            {% if historyItem.hadReconstruction %}
+              {{ historyItem.hadReconstruction }}
+            {% else %}
+              Has not had reconstruction or symmetrisation surgery
+            {% endif %}
+          </p>
+        {% endif %}
 
+      {% endset %}
+
+      {% set surgeryReasonHtml %}
+        {{ historyItem.surgeryReason }}
+        {% if historyItem.surgeryReason | startsWith("Other") %}
+          <br>
+          Details: {{ historyItem.surgeryReasonDetails }}
+        {% endif %}
       {% endset %}
 
 
@@ -206,6 +237,14 @@
                 html: proceduresHtml
               }
             } if historyItem.proceduresRightBreast or historyItem.proceduresLeftBreast,
+            {
+              key: {
+                text: "Surgery reason"
+              },
+              value: {
+                html: surgeryReasonHtml
+              }
+            } if historyItem.surgeryReason,
             {
               key: {
                 text: "Location"

@@ -7,80 +7,123 @@
 
 {% block formContent %}
 
-  <p>This is designed to capture information on prophylactic or elective surgery. <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.</p>
+  <p>
+    This is designed to capture information on prophylactic or elective surgery. <a href="#" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.
+  </p>
 
-  {% call fieldset({
+  {# {% call fieldset({
     legend: {
       text: "What surgery has " + (participant.firstName or "the participant") + " had?",
       classes: "nhsuk-fieldset__legend--m"
     }
-  }) %}
-    
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-one-half">
-        <h3 class="nhsuk-heading-s">Right breast</h3>
-        {{ radios({
-          name: "event[medicalHistoryTemp][surgeryRightBreast]",
-          value: event.medicalHistoryTemp.surgeryRightBreast,
-          items: [
-            {
-              value: "full-mastectomy",
-              text: "Full mastectomy"
-            },
-            {
-              value: "lumpectomy",
-              text: "Lumpectomy (or partial mastectomy)"
-            },
-            {
-              value: "none",
-              text: "None"
-            }
-          ]
-        }) }}
-      </div>
-      <div class="nhsuk-grid-column-one-half">
-        <h3 class="nhsuk-heading-s">Left breast</h3>
-        {{ radios({
-          name: "event[medicalHistoryTemp][surgeryLeftBreast]",
-          value: event.medicalHistoryTemp.surgeryLeftBreast,
-          items: [
-            {
-              value: "full-mastectomy",
-              text: "Full mastectomy"
-            },
-            {
-              value: "lumpectomy",
-              text: "Lumpectomy (or partial mastectomy)"
-            },
-            {
-              value: "none",
-              text: "None"
-            }
-          ]
-        }) }}
-      </div>
+  }) %} #}
+
+  {% set proceduresQuestionText %}
+    What surgery has {{ participant.demographicInformation.firstName or "the participant" }} had
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row nhsuk-u-padding-bottom-4">
+    <div class="nhsuk-grid-column-one-half">
+      {{ radios({
+        name: "event[medicalHistoryTemp][proceduresRightBreast]",
+        value: event.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Full mastectomy",
+            text: "Full mastectomy"
+          },
+          {
+            value: "Lumpectomy",
+            text: "Lumpectomy (or partial mastectomy)"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No surgery",
+            text: "No surgery"
+          }
+        ]
+      }) }}
     </div>
 
-  {% endcall %}
+    <div class="nhsuk-grid-column-one-half">
+      {{ radios({
+        name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+        value: event.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Full mastectomy",
+            text: "Full mastectomy"
+          },
+          {
+            value: "Lumpectomy",
+            text: "Lumpectomy (or partial mastectomy)"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No surgery",
+            text: "No surgery"
+          }
+        ]
+      }) }}
+    </div>
+  </div>
 
   {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
 
-
   {{ checkboxes({
     name: "event[medicalHistoryTemp][hadReconstruction]",
-    value: event.medicalHistoryTemp.hadReconstruction,
+    values: event.medicalHistoryTemp.hadReconstruction,
     items: [
       {
-        value: "true",
-        text: "Has had reconstruction or symmetrisation surgery",
-        checked: event.medicalHistoryTemp.hadReconstruction == "true"
+        value: "Has had reconstruction or symmetrisation surgery",
+        text: "Has had reconstruction or symmetrisation surgery"
       }
     ]
   }) }}
+  {# Track if this question is asked by the page #}
+  {{ appHiddenInput({
+    name: "event[medicalHistoryTemp][hasHadReconstructionCheckbox]",
+    value: "true"
+  }) }}
 
+
+  {% set conditionalInputHtml %}
+    {{ input({
+      name: "event[medicalHistoryTemp][surgeryReasonDetails]",
+      value: event.medicalHistoryTemp.surgeryReasonDetails,
+
+      label: {
+        text: "Provide details"
+      }
+    }) }}
+  {% endset %}
   {{ radios({
-    name: "event[medicalHistoryTemp][reason]",
-    value: event.medicalHistoryTemp.reason,
+    name: "event[medicalHistoryTemp][surgeryReason]",
+    value: event.medicalHistoryTemp.surgeryReason,
+    idPrefix: "surgeryReason",
     fieldset: {
       legend: {
         text: "Why was this surgery done?",
@@ -97,24 +140,17 @@
         text: "Gender-affirmation (top surgery)"
       },
       {
-        value: "Other",
-        text: "Other",
+        value: "Other reason",
+        text: "Other reason",
         conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][reasonDetails]",
-            value: event.medicalHistoryTemp.reasonDetails,
-            id: "reason-details",
-            label: {
-              text: "Provide details"
-            }
-          })
+          html: conditionalInputHtml
         }
       }
     ]
   }) }}
 
-{% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
-   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+  {% set additionalDetailsHintText = "Include any other relevant information about the surgery" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 
 {% endblock formContent %}
