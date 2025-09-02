@@ -12,7 +12,7 @@
     value: event.medicalHistoryTemp.type,
     fieldset: {
       legend: {
-        text: "What procedure has " + (participant.firstName or "the participant") + " had?",
+        text: "What procedure has " + (participant.demographicInformation.firstName or "the participant") + " had?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
@@ -22,9 +22,8 @@
         text: "Breast reduction",
         conditional: {
           html: input({
-            name: "event[medicalHistoryTemp][reductionDetails]",
-            value: event.medicalHistoryTemp.reductionDetails,
-            id: "reduction-details",
+            name: "event[medicalHistoryTemp][breastReductionDetails]",
+            value: event.medicalHistoryTemp.breastReductionDetails,
             label: {
               text: "Provide details"
             }
@@ -36,9 +35,8 @@
         text: "Breast symmetrisation",
         conditional: {
           html: input({
-            name: "event[medicalHistoryTemp][symmetrisationDetails]",
-            value: event.medicalHistoryTemp.symmetrisationDetails,
-            id: "symmetrisation-details",
+            name: "event[medicalHistoryTemp][breastSymmetrisationDetails]",
+            value: event.medicalHistoryTemp.breastSymmetrisationDetails,
             label: {
               text: "Provide details"
             }
@@ -50,9 +48,8 @@
         text: "Nipple correction",
         conditional: {
           html: input({
-            name: "event[medicalHistoryTemp][nippleDetails]",
-            value: event.medicalHistoryTemp.nippleDetails,
-            id: "nipple-details",
+            name: "event[medicalHistoryTemp][nippleCorrectionDetails]",
+            value: event.medicalHistoryTemp.nippleCorrectionDetails,
             label: {
               text: "Provide details"
             }
@@ -64,9 +61,8 @@
         text: "Other",
         conditional: {
           html: input({
-            name: "event[medicalHistoryTemp][otherDetails]",
-            value: event.medicalHistoryTemp.otherDetails,
-            id: "other-details",
+            name: "event[medicalHistoryTemp][typeOtherDetails]",
+            value: event.medicalHistoryTemp.typeOtherDetails,
             label: {
               text: "Provide details"
             }
@@ -78,15 +74,6 @@
 
   {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
 
-
-  {{ textarea({
-    name: "event[medicalHistoryTemp][additionalInfo]",
-    value: event.medicalHistoryTemp.additionalInfo,
-    id: "additional-info",
-    label: {
-      text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
-    }
-  }) }}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

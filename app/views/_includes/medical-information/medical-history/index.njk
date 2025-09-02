@@ -48,6 +48,12 @@
                 {{ historyItem.type }}: {{ historyItem.typeOtherDetails }}
               {% else %}
                 {{ historyItem.type }}
+                {# Grab other details used by other procedures #}
+                {% set otherDetails = historyItem[(historyItem.type | camelCase) ~ "Details"] %}
+                {% if otherDetails %}
+                  <br>
+                  Details: {{ otherDetails }}
+                {% endif %}
               {% endif %}
             </p>
           {% endif %}
@@ -146,7 +152,6 @@
           Details: {{ historyItem.surgeryReasonDetails }}
         {% endif %}
       {% endset %}
-
 
       {% set dateText %}
         {% if historyItem.generalDate %}

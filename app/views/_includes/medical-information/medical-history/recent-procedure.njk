@@ -25,9 +25,11 @@
   }) }}
 {% endset %}
 
+{# Has margin override to separate it from the above question #}
 {{ checkboxes({
   name: "event[medicalHistoryTemp][recentProcedure]",
   values: event.medicalHistoryTemp.recentProcedure,
+  classes: "nhsuk-u-margin-top-5",
   items: [
     {
       value: "true",

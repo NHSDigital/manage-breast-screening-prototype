@@ -11,13 +11,6 @@
     This is designed to capture information on prophylactic or elective surgery. <a href="#" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.
   </p>
 
-  {# {% call fieldset({
-    legend: {
-      text: "What surgery has " + (participant.firstName or "the participant") + " had?",
-      classes: "nhsuk-fieldset__legend--m"
-    }
-  }) %} #}
-
   {% set proceduresQuestionText %}
     What surgery has {{ participant.demographicInformation.firstName or "the participant" }} had
   {%- endset %}
@@ -25,7 +18,7 @@
   {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
   <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
 
-  <div class="nhsuk-grid-row nhsuk-u-padding-bottom-4">
+  <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
         name: "event[medicalHistoryTemp][proceduresRightBreast]",
@@ -91,6 +84,7 @@
     </div>
   </div>
 
+  {# Was procedure in last 6 months #}
   {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
 
   {{ checkboxes({
@@ -103,7 +97,7 @@
       }
     ]
   }) }}
-  {# Track if this question is asked by the page #}
+  {# Needed to track if this question is asked by the page so we can show default text #}
   {{ appHiddenInput({
     name: "event[medicalHistoryTemp][hasHadReconstructionCheckbox]",
     value: "true"
@@ -151,6 +145,5 @@
 
   {% set additionalDetailsHintText = "Include any other relevant information about the surgery" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
-
 
 {% endblock formContent %}
