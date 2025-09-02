@@ -7,11 +7,11 @@
 
 {% block formContent %}
 
-  {% set proceeduresQuestionText %}
+  {% set proceduresQuestionText %}
     What procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
   {%- endset %}
 
-  <h2 aria-hidden="true">{{ proceeduresQuestionText }}?</h2>
+  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
@@ -19,10 +19,10 @@
       {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresRightBreast]",
         values: event.medicalHistoryTemp.proceduresRightBreast,
-        idPrefix: "proceeduresRightBreast",
+        idPrefix: "proceduresRightBreast",
         fieldset: {
           legend: {
-            html: ((proceeduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
             classes: "nhsuk-fieldset__legend--s",
             isPageHeading: false
           }
@@ -44,10 +44,10 @@
       {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresLeftBreast]",
         values: event.medicalHistoryTemp.proceduresLeftBreast,
-        idPrefix: "proceeduresLeftBreast",
+        idPrefix: "proceduresLeftBreast",
         fieldset: {
           legend: {
-            html: ((proceeduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
             classes: "nhsuk-fieldset__legend--s",
             isPageHeading: false
           }

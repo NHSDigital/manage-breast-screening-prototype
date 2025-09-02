@@ -90,6 +90,7 @@
         {% endif %}
       {% endset %}
 
+      {# Was procedure in last 6 months #}
       {% set recentProcedureText %}
         {% if historyItem.hasRecentProcedureCheckbox %}
           {% if historyItem.recentProcedure[0] == "true" %}
