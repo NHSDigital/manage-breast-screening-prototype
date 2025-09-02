@@ -17,7 +17,7 @@
   <div class="nhsuk-hint">
     Include any breast cancer diagnosis including initial, recurring or secondary
   </div>
-    
+
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ checkboxes({
@@ -67,7 +67,7 @@
       classes: "nhsuk-fieldset__legend--m"
     }
   }) %}
-    
+
     {{ input({
       name: "event[medicalHistoryTemp][diagnosisDate]",
       value: event.medicalHistoryTemp.diagnosisDate,
@@ -88,7 +88,7 @@
       classes: "nhsuk-fieldset__legend--m"
     }
   }) %}
-    
+
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-one-half">
         <h3 class="nhsuk-heading-s">Right breast (or axilla)</h3>
@@ -166,7 +166,7 @@
       classes: "nhsuk-fieldset__legend--m"
     }
   }) %}
-    
+
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-one-half">
         <h3 class="nhsuk-heading-s">Right breast (or axilla)</h3>
@@ -244,131 +244,11 @@
 
   {% endcall %}
 
-  {{ radios({
-    name: "event[medicalHistoryTemp][treatmentLocation]",
-    value: event.medicalHistoryTemp.treatmentLocation,
-    fieldset: {
-      legend: {
-        text: "Where did surgery and treatment take place?",
-        classes: "nhsuk-fieldset__legend--m"
-      }
-    },
-    items: [
-        {
-          value: "nhs-hospital",
-          text: "At an NHS hospital",
-          conditional: {
-            html: '<div id="nhs-hospital-autocomplete">
-              <label class="nhsuk-label" for="nhs-hospital-search">
-                Type to search locations
-              </label>
-              <input class="nhsuk-input" id="nhs-hospital-search" name="event[medicalHistoryTemp][nhsHospitalName]" type="text" value="' + (event.medicalHistoryTemp.nhsHospitalName or '') + '">
-            </div>'
-          }
-        },
-        {
-          value: "private-hospital",
-          text: "At a private hospital in the UK",
-          conditional: {
-            html: input({
-              name: "event[medicalHistoryTemp][privateHospitalDetails]",
-              value: event.medicalHistoryTemp.privateHospitalDetails,
-              id: "private-hospital-details",
-              label: {
-                text: "Provide details"
-              }
-            })
-          }
-        },
-        {
-          value: "outside-uk",
-          text: "Outside the UK",
-          conditional: {
-            html: input({
-              name: "event[medicalHistoryTemp][outsideUkDetails]",
-              value: event.medicalHistoryTemp.outsideUkDetails,
-              id: "outside-uk-details",
-              label: {
-                text: "Provide details"
-              }
-            })
-          }
-        },
-        {
-          value: "multiple-locations",
-          text: "At more than one location",
-          conditional: {
-            html: textarea({
-              name: "event[medicalHistoryTemp][multipleLocationsDetails]",
-              value: event.medicalHistoryTemp.multipleLocationsDetails,
-              id: "multiple-locations-details",
-              label: {
-                text: "Provide details of locations"
-              },
-              rows: 4
-            })
-          }
-        },
-        {
-          value: "unknown",
-          text: "Exact location unknown",
-          conditional: {
-            html: input({
-              name: "event[medicalHistoryTemp][unknownLocationDetails]",
-              value: event.medicalHistoryTemp.unknownLocationDetails,
-              id: "unknown-location-details",
-              label: {
-                text: "Provide details"
-              }
-            })
-          }
-        }
-      ]
-    }) }}
 
-  {{ textarea({
-    name: "event[medicalHistoryTemp][additionalInfo]",
-    value: event.medicalHistoryTemp.additionalInfo,
-    id: "additional-info",
-    label: {
-      text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
-    },
-    rows: 4
-  }) }}
+  {% set treatmentLocationText = "Where did surgery and treatment take place?" %}
+  {% include "_includes/medical-information/medical-history/location.njk" %}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the treatment" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}
-
-{% block pageScripts %}
-  <script>
-    // Initialize accessible autocomplete for NHS hospitals when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-      // Check if accessible autocomplete is available
-      if (typeof accessibleAutocomplete !== 'undefined') {
-        // Sample NHS hospital data - in real implementation this would come from an API
-        const nhsHospitals = [
-          'Royal Free Hospital',
-          'Guy\'s Hospital', 
-          'St Thomas\' Hospital',
-          'King\'s College Hospital',
-          'University College Hospital',
-          'Royal Marsden Hospital',
-          'Barts Health NHS Trust',
-          'Imperial College Healthcare'
-        ]
-
-        const nhsHospitalInput = document.querySelector('#nhs-hospital-search')
-        if (nhsHospitalInput) {
-          accessibleAutocomplete.enhanceSelectElement({
-            selectElement: null,
-            source: nhsHospitals,
-            defaultValue: nhsHospitalInput.value,
-            onConfirm: function(option) {
-              nhsHospitalInput.value = option
-            }
-          })
-        }
-      }
-    })
-  </script>
-{% endblock pageScripts %}

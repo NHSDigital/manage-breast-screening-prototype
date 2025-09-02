@@ -1,0 +1,104 @@
+
+{# Set blocks for conditional HTML #}
+{% set nhsHospitalConditionalHtml %}
+  {{ input({
+    name: "event[medicalHistoryTemp][locationNhsHospitalDetails]",
+    value: event.medicalHistoryTemp.locationNhsHospitalDetails,
+    label: {
+      text: "Provide details"
+    }
+  }) }}
+{% endset %}
+
+{% set privateClinicConditionalHtml %}
+  {{ input({
+    name: "event[medicalHistoryTemp][locationPrivateClinicDetails]",
+    value: event.medicalHistoryTemp.locationPrivateClinicDetails,
+    label: {
+      text: "Provide details"
+    }
+  }) }}
+{% endset %}
+
+{% set outsideUkConditionalHtml %}
+  {{ input({
+    name: "event[medicalHistoryTemp][locationOutsideUkDetails]",
+    value: event.medicalHistoryTemp.locationOutsideUkDetails,
+    label: {
+      text: "Provide details"
+    }
+  }) }}
+{% endset %}
+
+{% set multipleLocationsConditionalHtml %}
+  {{ textarea({
+    name: "event[medicalHistoryTemp][locationMultipleLocationsDetails]",
+    value: event.medicalHistoryTemp.locationMultipleLocationsDetails,
+    label: {
+      text: "Provide details"
+    },
+    rows: 4
+  }) }}
+{% endset %}
+
+{% set unknownLocationConditionalHtml %}
+  {{ input({
+    name: "event[medicalHistoryTemp][locationUnknownLocationDetails]",
+    value: event.medicalHistoryTemp.locationUnknownLocationDetails,
+    label: {
+      text: "Provide details"
+    }
+  }) }}
+{% endset %}
+
+{{ radios({
+  idPrefix: "location",
+  name: "event[medicalHistoryTemp][location]",
+  value: event.medicalHistoryTemp.location,
+  fieldset: {
+    legend: {
+      text: treatmentLocationText or "What was the location?",
+      classes: "nhsuk-fieldset__legend--m"
+    },
+    hint: {
+      text: treatmentLocationHintText or "Radiologists need this information so they can access pathology reports."
+    }
+  },
+  items: [
+    {
+      value: "At an NHS hospital",
+      text: "At an NHS hospital",
+      conditional: {
+        html: nhsHospitalConditionalHtml
+      }
+    },
+    {
+      value: "At a private clinic in the UK",
+      text: "At a private clinic in the UK",
+      conditional: {
+        html: privateClinicConditionalHtml
+      }
+    },
+    {
+      value: "Outside the UK",
+      text: "Outside the UK",
+      conditional: {
+        html: outsideUkConditionalHtml
+      }
+    },
+    {
+      value: "In multiple locations",
+      text: "In multiple locations",
+      conditional: {
+        html: multipleLocationsConditionalHtml
+      }
+    },
+    {
+      value: "Exact location unknown",
+      text: "Exact location unknown",
+      conditional: {
+        html: unknownLocationConditionalHtml
+      }
+    }
+  ]
+}) }}

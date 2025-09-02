@@ -11,11 +11,11 @@
     What procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
   {%- endset %}
 
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
   <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
 
   <div class="nhsuk-grid-row nhsuk-u-padding-bottom-4">
     <div class="nhsuk-grid-column-one-half">
-      {# <h3 class="nhsuk-heading-s">Right breast</h3> #}
       {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresRightBreast]",
         values: event.medicalHistoryTemp.proceduresRightBreast,

@@ -23,7 +23,7 @@
         {% if historyItem.type %}
           {% if historyItem.type | isArray %}
             {% if historyItem.type | length > 1 %}
-              <ul>
+              <ul class="nhsuk-list">
                 {% for item in historyItem.type %}
                   <li>
                     {% if item | startsWith("Other") %}
@@ -73,12 +73,15 @@
                 {% for procedure in historyItem.proceduresRightBreast %}
                   <li>
                     {{ procedure }}
+                    {%- if (procedure | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
+                     : {{ historyItem.proceduresRightBreastOtherDetails }}
+                    {% endif %}
                   </li>
                 {% else %}
-                  No procedures recorded
+                  No procedure
                 {% endfor %}
               {% else %}
-                <li>No procedures recorded</li>
+                <li>No procedure</li>
               {% endif %}
             </ul>
           </div>
@@ -126,6 +129,18 @@
         {% endif %}
       {% endset %}
 
+      {% set diagnosisDateText %}
+        {% if historyItem.diagnosisDate %}
+          {% if historyItem.diagnosisDate == "Specific date" %}
+            {% if historyItem.diagnosisDateSpecific | isValidDate %}
+              {{ historyItem.diagnosisDateSpecific | formatDate }} ({{ historyItem.diagnosisDateSpecific | formatRelativeDate }})
+            {% endif %}
+          {% else %}
+            {{ historyItem.diagnosisDate }}
+          {% endif %}
+        {% endif %}
+      {% endset %}
+
       {# Was procedure in last 6 months #}
       {% set recentProcedureText %}
         {% if historyItem.hasRecentProcedureCheckbox %}
@@ -140,6 +155,32 @@
             Procedure was not in the last 6 months
           {% endif %}
         {% endif %}
+      {% endset %}
+
+      {% set locationHtml %}
+
+        {% macro otherLocation(item) %}
+          <br>
+          {% if item %}
+            Details: {{ item }}
+          {% else %}
+            Details not provided
+          {% endif %}
+        {% endmacro %}
+
+        {{ historyItem.location }}
+        {% switch historyItem.location %}
+          {% case 'At an NHS hospital' %}
+            {{ otherLocation(historyItem.locationNhsHospitalDetails) }}
+          {% case 'At a private clinic in the UK' %}
+            {{ otherLocation(historyItem.locationPrivateClinicDetails) }}
+          {% case 'Outside the UK' %}
+            {{ otherLocation(historyItem.locationOutsideUkDetails) }}
+          {% case 'In multiple locations' %}
+            {{ otherLocation(historyItem.locationMultipleLocationsDetails) }}
+          {% case 'Exact location unknown' %}
+            {{ otherLocation(historyItem.locationUnknownLocationDetails) }}
+        {% endswitch %}
       {% endset %}
 
       {% set addedByText %}
@@ -183,12 +224,28 @@
             } if historyItem.generalDate,
             {
               key: {
+                text: "Diagnosis date"
+              },
+              value: {
+                text: diagnosisDateText
+              }
+            } if historyItem.diagnosisDate,
+            {
+              key: {
                 text: "Date"
               },
               value: {
                 text: recentProcedureText
               }
             } if historyItem.hasRecentProcedureCheckbox | falsify,
+            {
+              key: {
+                text: "Location"
+              },
+              value: {
+                html: locationHtml
+              }
+            } if historyItem.location | falsify,
             {
               key: {
                 text: "Additional details"
