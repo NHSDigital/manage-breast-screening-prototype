@@ -292,7 +292,7 @@ const formatRelativeDate = (dateInput, withoutSuffix = false) => {
 
 /**
  * Calculate the number of days since a given date
- * @param {string} dateString - ISO date string for past date
+ * @param {string | object | array } dateInput - Input date in one of ISO date string, keyed object, array of [day, month, year]
  * @param {string | Dayjs | null} [compareDate] - Optional reference date (defaults to today)
  * @returns {number} Number of days since the date (positive integer for past dates)
  */
@@ -313,7 +313,7 @@ const daysSince = (dateInput, compareDate = null) => {
     date = dayjs(dateInput)
   }
 
-  const date = dayjs(dateString).startOf('day')
+  date = dayjs(dateInput).startOf('day')
   const reference = compareDate
     ? dayjs(compareDate).startOf('day')
     : dayjs().startOf('day')
