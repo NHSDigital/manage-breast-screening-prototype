@@ -134,9 +134,47 @@ const getContext = function () {
   return this.ctx
 }
 
+/**
+ * Safely parse a JSON string and return the resulting object, or return structured data as-is
+ * @param {*} value - The value to parse (string) or return (object/array)
+ * @returns {*} The parsed object, original structured data, or null if parsing failed
+ */
+function parseJsonString(value)
+{
+  // Handle null, undefined, or empty string
+  if (value === null || value === undefined || value === '')
+  {
+    return null
+  }
+
+  // If it's already structured data (object or array), return it as-is
+  if (typeof value === 'object')
+  {
+    return value
+  }
+
+  // If it's not a string, convert to string first (for numbers, booleans, etc.)
+  if (typeof value !== 'string')
+  {
+    value = String(value)
+  }
+
+  // Only attempt JSON.parse on strings
+  try
+  {
+    return JSON.parse(value)
+  }
+  catch (error)
+  {
+    console.warn('Failed to parse JSON string:', value, error)
+    return null
+  }
+}
+
 module.exports = {
   log,
   join,
   getUsername,
+  parseJsonString,
   getContext
 }
