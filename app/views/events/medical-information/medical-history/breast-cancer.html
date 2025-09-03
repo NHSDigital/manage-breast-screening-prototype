@@ -9,12 +9,15 @@
 
 {% call fieldset({
   legend: {
-    text: "In which breast(s) has " + (participant.firstName or "the participant") + " had a cancer diagnosis?",
+    text: "In which breasts has " + (participant.demographicInformation.firstName or "the participant") + " had a cancer diagnosis?",
     classes: "nhsuk-fieldset__legend--m"
+  },
+  attributes: {
+    "aria-describedby": "breast-location-hint"
   }
 }) %}
 
-  <div class="nhsuk-hint">
+  <div class="nhsuk-hint" id="breast-location-hint">
     Include any breast cancer diagnosis including initial, recurring or secondary
   </div>
 
@@ -23,9 +26,12 @@
       {{ checkboxes({
         name: "event[medicalHistoryTemp][breastLocation]",
         values: event.medicalHistoryTemp.breastLocation,
+        formGroup: {
+          classes: "nhsuk-u-margin-bottom-2"
+        },
         items: [
           {
-            value: "right",
+            value: "Right breast",
             text: "Right breast"
           }
         ]
@@ -35,9 +41,12 @@
       {{ checkboxes({
         name: "event[medicalHistoryTemp][breastLocation]",
         values: event.medicalHistoryTemp.breastLocation,
+        formGroup: {
+          classes: "nhsuk-u-margin-bottom-2"
+        },
         items: [
           {
-            value: "left",
+            value: "Left breast",
             text: "Left breast"
           }
         ]
@@ -61,26 +70,22 @@
 
 {% endcall %}
 
-  {% call fieldset({
-    legend: {
+
+  {{ input({
+    label: {
       text: "In what year was breast cancer first diagnosed?",
-      classes: "nhsuk-fieldset__legend--m"
-    }
-  }) %}
+      classes: "nhsuk-label--m"
+    },
+    name: "event[medicalHistoryTemp][diagnosisYear]",
+    value: event.medicalHistoryTemp.diagnosisYear,
+    id: "diagnosis-year",
+    classes: "nhsuk-input--width-4",
+    hint: {
+      text: "For example, 2019"
+    },
+    inputmode: "numeric"
+  }) }}
 
-    {{ input({
-      name: "event[medicalHistoryTemp][diagnosisDate]",
-      value: event.medicalHistoryTemp.diagnosisDate,
-      id: "diagnosis-date",
-      classes: "nhsuk-input--width-10",
-      hint: {
-        text: "For example, 2019"
-      },
-      pattern: "[0-9]*",
-      inputmode: "numeric"
-    }) }}
-
-  {% endcall %}
 
   {% call fieldset({
     legend: {
@@ -243,7 +248,6 @@
     }) }}
 
   {% endcall %}
-
 
   {% set treatmentLocationText = "Where did surgery and treatment take place?" %}
   {% include "_includes/medical-information/medical-history/location.njk" %}
