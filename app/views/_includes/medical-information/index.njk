@@ -4,11 +4,11 @@
 
 {% set allowEdits = true if currentUser | isClinician else false %}
 
-
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
 {% set subHeading = "The last confirmed mammogram and any added manually since then" %}
-{% set scrollTo = 'mammogram-history' %}
+{% set sectionId = sectionHeading | kebabCase %}
+{% set scrollTo = sectionId %}
 
 {% set mammogramHistoryHtml %}
   {# {% include "summary-lists/medical-information/mammogram-history.njk" %} #}
@@ -31,11 +31,14 @@
 
 {% switch displayFormat %}
   {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
+    <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
     {{ mammogramHistoryHtml | safe }}
   {% case 'card' %}
     {% call card({
-      heading: sectionHeading
+      heading: sectionHeading,
+      attributes: {
+        id: sectionId
+      }
     }) %}
       <p>
         {{ subHeading }}
@@ -44,7 +47,7 @@
     {% endcall %}
   {% default %}
     {{ appDetails({
-      id: "mammogram-history",
+      id: sectionId,
       classes: "nhsuk-expander js-expandable-section",
       summaryText: "Mammogram history",
       _contentsSummary: mammogramHistoryContentsSummary,
@@ -59,7 +62,8 @@
 {# Symptoms #}
 {% set sectionHeading = "Symptoms" %}
 {% set subHeading = "Any problems or symptoms, including lumps, swelling, rashes or nipple changes" %}
-{% set scrollTo = 'current-symptoms' %}
+{% set sectionId = sectionHeading | kebabCase %}
+{% set scrollTo = sectionId %}
 
 {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
 {% set hasSymptoms = symptomsCount > 0 %}
@@ -112,11 +116,14 @@
 
 {% switch displayFormat %}
   {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
+    <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
     {{ currentSymptomsHtml | safe }}
   {% case 'card' %}
     {% call card({
-      heading: sectionHeading
+      heading: sectionHeading,
+      attributes: {
+        id: sectionId
+      }
     }) %}
       <p>
         {{ subHeading }}
@@ -125,7 +132,7 @@
     {% endcall %}
   {% default %}
     {{ appDetails({
-      id: "current-symptoms",
+      id: sectionId,
       classes: "nhsuk-expander js-expandable-section",
       summaryText: sectionHeading,
       subtitle: subHeading,
@@ -139,77 +146,13 @@
 {# Medical history #}
 
 {% set sectionHeading = "Medical history" %}
-{% set subHeading = "Including breast cancer, implants, prior proceedures and treatments" %}
-{% set scrollTo = 'medical-history' %}
 
-{#
-
-
-{% set medicalHistoryHtml %}
-  {% include "summary-lists/medical-information/medical-history.njk" %}
-{% endset %}
-
-{% switch displayFormat %}
-  {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
-    {{ medicalHistoryHtml | safe }}
-  {% case 'card' %}
-    {% call card({
-      heading: sectionHeading
-    }) %}
-      <p>
-        {{ subHeading }}
-      </p>
-      {{ medicalHistoryHtml | safe }}
-    {% endcall %}
-  {% default %}
-    {{ appDetails({
-      id: "medical-history",
-      classes: "nhsuk-expander js-expandable-section",
-      summaryText: sectionHeading,
-      contentsSummary: "No information added",
-      subtitle: subHeading,
-      html: medicalHistoryHtml,
-      status: "To review"
-    }) }}
-{% endswitch %} #}
+{% set subHeading = "Including breast cancer, implants, prior procedures and treatments" %}
+{% set sectionId = sectionHeading | kebabCase %}
+{% set scrollTo = sectionId %}
 
 {% set medicalHistoryHtml %}
-  {% set rows = [
-    "Implanted medical devices",
-    "Breast implants or augmentation",
-    "Breast cancer tests and treatment",
-    "Treatment for non-cancerous breast conditions",
-    "Other breast or chest proceedures"
-    ] %}
-
-  {% set summaryListItems = [] %}
-
-  {% set valueHtml = "" %}
-
-  {% for row in rows %}
-    {% set summaryListItems = summaryListItems | push({
-        key: {
-          text: row
-        },
-        value: {
-          html: valueHtml
-        },
-        actions: {
-          items: [
-            {
-              href: "#",
-              text: "Change",
-              visuallyHiddenText: row | lower
-            }
-          ]
-        }
-      }) %}
-  {% endfor %}
-  {{ summaryList({
-    rows: summaryListItems
-  } | handleSummaryListMissingInformation) }}
-
+  {% include "medical-information/medical-history/index.njk" %}
 {% endset %}
 
 {% switch displayFormat %}
@@ -237,12 +180,12 @@
     }) }}
 {% endswitch %}
 
-
 {# -------------------------------------------------------------- #}
 {# Breast features #}
 {% set sectionHeading = "Breast features" %}
 {% set subHeading = "Significant scars, moles or warts that may appear on mammogram images" %}
-{% set scrollTo = 'breast-features' %}
+{% set sectionId = sectionHeading | kebabCase %}
+{% set scrollTo = sectionId %}
 
 {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
 {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
@@ -280,11 +223,14 @@
 
 {% switch displayFormat %}
   {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
+    <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
     {{ breastFeaturesHtml | safe }}
   {% case 'card' %}
     {% call card({
-      heading: sectionHeading
+      heading: sectionHeading,
+      attributes: {
+        id: sectionId
+      }
     }) %}
       <p>
         {{ subHeading }}
@@ -293,7 +239,7 @@
     {% endcall %}
   {% default %}
     {{ appDetails({
-      id: "breast-features",
+      id: sectionId,
       classes: "nhsuk-expander js-expandable-section",
       summaryText: sectionHeading,
       subtitle: subHeading,
@@ -307,24 +253,25 @@
 {# Other relevant information #}
 {% set sectionHeading = "Other relevant information" %}
 {% set subHeading = "Including HRT, pregnancy, breastfeeding and mammographer notes" %}
-{% set scrollTo = 'other-relevant-information' %}
+{% set sectionId = sectionHeading | kebabCase %}
+{% set scrollTo = sectionId %}
 
 {% set otherRelevantInformationHtml %}
   {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
 {% endset %}
 
-{% set otherMedicalInformationCount = 0 %}
+{% set otherRelevantInformationCount = 0 %}
 
 {% if event.medicalInformation.hrt.hrtQuestion == 'yes' %}
-  {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
 {% if event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
-  {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
 {% if event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
-  {% set otherMedicalInformationCount = otherMedicalInformationCount + 1 %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
 {% if otherRelevantInformationCount > 0 %}
@@ -335,11 +282,14 @@
 
 {% switch displayFormat %}
   {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
+    <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
     {{ otherRelevantInformationHtml | safe }}
   {% case 'card' %}
     {% call card({
-      heading: sectionHeading
+      heading: sectionHeading,
+      attributes: {
+        id: sectionId
+      }
     }) %}
       <p>
         {{ subHeading }}
@@ -348,7 +298,7 @@
     {% endcall %}
   {% default %}
     {{ appDetails({
-      id: "other-relevant-information",
+      id: sectionId,
       classes: "nhsuk-expander js-expandable-section",
       summaryText: sectionHeading,
       subtitle: subHeading,

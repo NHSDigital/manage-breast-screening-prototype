@@ -1,0 +1,156 @@
+{# app/views/events/medical-information/medical-history/mastectomy-lumpectomy.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Mastectomy or lumpectomy" %}
+{% set medicalHistoryType = "mastectomyLumpectomy" %}
+
+{% block formContent %}
+
+  {% set breastCancerUrl = "./breast-cancer/add" | urlWithReferrer(query.referrerChain, query.scrollTo) %}
+
+  <p>
+    This is designed to capture information on prophylactic or elective surgery. <a href="{{ breastCancerUrl }}" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.
+  </p>
+
+  {% set proceduresQuestionText %}
+    What surgery has {{ participant.demographicInformation.firstName or "the participant" }} had
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][proceduresRightBreast]",
+        values: event.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
+
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Full mastectomy",
+            text: "Full mastectomy"
+          },
+          {
+            value: "Lumpectomy",
+            text: "Lumpectomy (or partial mastectomy)"
+          },
+          {
+            value: "Reconstruction",
+            text: "Reconstruction"
+          },
+          {
+            value: "Symmetrisation",
+            text: "Symmetrisation"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No surgery",
+            text: "No surgery",
+            behaviour: "exclusive"
+          }
+        ]
+      }) }}
+    </div>
+
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+        values: event.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
+        classes: "app-checkboxes--exclusive-divider",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Full mastectomy",
+            text: "Full mastectomy"
+          },
+          {
+            value: "Lumpectomy",
+            text: "Lumpectomy (or partial mastectomy)"
+          },
+          {
+            value: "Reconstruction",
+            text: "Reconstruction"
+          },
+          {
+            value: "Symmetrisation",
+            text: "Symmetrisation"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No surgery",
+            text: "No surgery",
+            behaviour: "exclusive"
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+  {# Was procedure in last 6 months #}
+  {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
+
+  {# Remove the reconstruction checkbox since it's now part of the main surgery options #}
+
+  {% set conditionalInputHtml %}
+    {{ input({
+      name: "event[medicalHistoryTemp][mastectomyLumpectomySurgeryReasonDetails]",
+      value: event.medicalHistoryTemp.mastectomyLumpectomySurgeryReasonDetails,
+
+      label: {
+        text: "Provide details"
+      }
+    }) }}
+  {% endset %}
+  {{ radios({
+    name: "event[medicalHistoryTemp][mastectomyLumpectomySurgeryReason]",
+    value: event.medicalHistoryTemp.mastectomyLumpectomySurgeryReason,
+    idPrefix: "mastectomyLumpectomySurgeryReason",
+    fieldset: {
+      legend: {
+        text: "Why was this surgery done?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Risk reduction",
+        text: "Risk reduction"
+      },
+      {
+        value: "Gender-affirmation",
+        text: "Gender-affirmation (top surgery)"
+      },
+      {
+        value: "Other reason",
+        text: "Other reason",
+        conditional: {
+          html: conditionalInputHtml
+        }
+      }
+    ]
+  }) }}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the surgery" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}

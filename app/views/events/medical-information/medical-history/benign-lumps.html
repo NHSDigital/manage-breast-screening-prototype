@@ -1,0 +1,144 @@
+{# app/views/events/medical-information/medical-history/lump-removal-biopsy.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Benign lumps" %}
+{% set medicalHistoryType = "benignLumps" %}
+
+{% block formContent %}
+
+  {% set proceduresQuestionText %}
+    What benign lump procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][proceduresRightBreast]",
+        values: event.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
+
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Biopsy",
+            text: "Biopsy"
+          },
+          {
+            value: "Lump treatment (surgery or therapy)",
+            text: "Lump treatment (surgery or therapy)"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+        values: event.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
+        classes: "app-checkboxes--exclusive-divider",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Biopsy",
+            text: "Biopsy"
+          },
+          {
+            value: "Lump treatment (surgery or therapy)",
+            text: "Lump treatment (surgery or therapy)"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+  {% set conditionalDateHtml %}
+  {{ dateInput({
+      id: "diagnosisDateSpecific",
+      namePrefix: "event[medicalHistoryTemp][diagnosisDateSpecific]",
+      fieldset: {
+        legend: {
+          text: "Date of most recent diagnosis",
+          classes: "nhsuk-fieldset__legend--s"
+        }
+      },
+      hint: {
+        text: "For example, 3 2019"
+      },
+      items: [
+        {
+          name: "month",
+          classes: "nhsuk-input--width-2"
+        },
+        {
+          name: "year",
+          classes: "nhsuk-input--width-4"
+        }
+      ]
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    name: "event[medicalHistoryTemp][diagnosisDate]",
+    value: event.medicalHistoryTemp.diagnosisDate,
+    fieldset: {
+      legend: {
+        text: "When was the most recent diagnosis?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Specific date",
+        text: "Add a date",
+        values: event.medicalHistoryTemp.diagnosisDateSpecific,
+        conditional: {
+          html: conditionalDateHtml
+        }
+      },
+      {
+        value: "Date unknown",
+        text: "Date unknown"
+      }
+    ]
+  }) }}
+
+  {% set treatmentLocationText = "Where were the tests and treatment done?" %}
+  {% include "_includes/medical-information/medical-history/location.njk" %}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}
