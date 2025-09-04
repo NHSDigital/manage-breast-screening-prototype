@@ -32,9 +32,9 @@ module.exports = [
     canHaveMultiple: false,
   },
   {
-    type: 'lumpRemovalBiopsy',
-    name: 'Lump removal or biopsy',
-    slug: 'lump-removal-biopsy',
+    type: 'benignLumps',
+    name: 'Benign lumps',
+    slug: 'benign-lumps',
     canHaveMultiple: true,
   },
   {
