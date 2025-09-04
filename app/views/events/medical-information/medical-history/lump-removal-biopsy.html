@@ -8,7 +8,7 @@
 {% block formContent %}
 
   {% set proceduresQuestionText %}
-    Where has {{ participant.demographicInformation.firstName or "the participant" }} had a benign lump or biopsy
+    What benign lump procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
   {%- endset %}
 
   {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
@@ -16,21 +16,11 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
-
-      {% set otherTreatmentConditionalHtml %}
-        {{ input({
-          name: "event[medicalHistoryTemp][proceduresRightBreastOtherDetails]",
-          value: event.medicalHistoryTemp.proceduresRightBreastOtherDetails,
-          label: {
-            text: "Provide details"
-          }
-        }) }}
-      {% endset %}
-
       {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresRightBreast]",
         values: event.medicalHistoryTemp.proceduresRightBreast,
         idPrefix: "proceduresRightBreast",
+
         fieldset: {
           legend: {
             html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
@@ -40,25 +30,18 @@
         },
         items: [
           {
-            value: "Lumps biopsied",
-            text: "Lumps biopsied"
+            value: "Biopsy",
+            text: "Biopsy"
           },
           {
-            value: "Lumps removed",
-            text: "Lumps removed"
-          },
-          {
-            value: "Other treatment",
-            text: "Other treatment",
-            conditional: {
-              html: otherTreatmentConditionalHtml
-            }
+            value: "Lump treatment (surgery or therapy)",
+            text: "Lump treatment (surgery or therapy)"
           },
           {
             divider: "or"
           },
           {
-            value: "No procedure",
+            value: "No procedures",
             text: "No procedures",
             exclusive: true
           }
@@ -67,20 +50,11 @@
     </div>
 
     <div class="nhsuk-grid-column-one-half">
-      {% set otherTreatmentConditionalHtml %}
-        {{ input({
-          name: "event[medicalHistoryTemp][proceduresLeftBreastOtherDetails]",
-          value: event.medicalHistoryTemp.proceduresLeftBreastOtherDetails,
-          label: {
-            text: "Provide details"
-          }
-        }) }}
-      {% endset %}
-
       {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresLeftBreast]",
         values: event.medicalHistoryTemp.proceduresLeftBreast,
         idPrefix: "proceduresLeftBreast",
+        classes: "app-checkboxes--exclusive-divider",
         fieldset: {
           legend: {
             html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
@@ -90,36 +64,28 @@
         },
         items: [
           {
-            value: "Lumps biopsied",
-            text: "Lumps biopsied"
+            value: "Biopsy",
+            text: "Biopsy"
           },
           {
-            value: "Lumps removed",
-            text: "Lumps removed"
-          },
-          {
-            value: "Other treatment",
-            text: "Other treatment",
-            conditional: {
-              html: otherTreatmentConditionalHtml
-            }
+            value: "Lump treatment (surgery or therapy)",
+            text: "Lump treatment (surgery or therapy)"
           },
           {
             divider: "or"
           },
           {
-            value: "No procedure",
+            value: "No procedures",
             text: "No procedures",
             exclusive: true
           }
         ]
       }) }}
-
     </div>
   </div>
 
   {% set conditionalDateHtml %}
-    {{ dateInput({
+  {{ dateInput({
       id: "diagnosisDateSpecific",
       namePrefix: "event[medicalHistoryTemp][diagnosisDateSpecific]",
       fieldset: {

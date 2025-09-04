@@ -35,6 +35,14 @@
           {
             value: "Other augmentation",
             text: "Other augmentation"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
           }
         ]
       }) }}
@@ -60,6 +68,14 @@
           {
             value: "Other augmentation",
             text: "Other augmentation"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
           }
         ]
       }) }}
@@ -70,7 +86,7 @@
 
   {# Implant removal #}
   {% set conditionalInput %}
-    {{ input({
+  {{ input({
       name: "event[medicalHistoryTemp][removalDetails]",
       value: event.medicalHistoryTemp.removalDetails,
       label: {

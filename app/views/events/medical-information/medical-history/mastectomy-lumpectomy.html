@@ -20,10 +20,11 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
-      {{ radios({
+      {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresRightBreast]",
-        value: event.medicalHistoryTemp.proceduresRightBreast,
+        values: event.medicalHistoryTemp.proceduresRightBreast,
         idPrefix: "proceduresRightBreast",
+
         fieldset: {
           legend: {
             html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
@@ -41,21 +42,31 @@
             text: "Lumpectomy (or partial mastectomy)"
           },
           {
+            value: "Reconstruction",
+            text: "Reconstruction"
+          },
+          {
+            value: "Symmetrisation",
+            text: "Symmetrisation"
+          },
+          {
             divider: "or"
           },
           {
             value: "No surgery",
-            text: "No surgery"
+            text: "No surgery",
+            behaviour: "exclusive"
           }
         ]
       }) }}
     </div>
 
     <div class="nhsuk-grid-column-one-half">
-      {{ radios({
+      {{ checkboxes({
         name: "event[medicalHistoryTemp][proceduresLeftBreast]",
-        value: event.medicalHistoryTemp.proceduresLeftBreast,
+        values: event.medicalHistoryTemp.proceduresLeftBreast,
         idPrefix: "proceduresLeftBreast",
+        classes: "app-checkboxes--exclusive-divider",
         fieldset: {
           legend: {
             html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
@@ -73,11 +84,20 @@
             text: "Lumpectomy (or partial mastectomy)"
           },
           {
+            value: "Reconstruction",
+            text: "Reconstruction"
+          },
+          {
+            value: "Symmetrisation",
+            text: "Symmetrisation"
+          },
+          {
             divider: "or"
           },
           {
             value: "No surgery",
-            text: "No surgery"
+            text: "No surgery",
+            behaviour: "exclusive"
           }
         ]
       }) }}
@@ -87,22 +107,7 @@
   {# Was procedure in last 6 months #}
   {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
 
-  {{ checkboxes({
-    name: "event[medicalHistoryTemp][hadReconstruction]",
-    values: event.medicalHistoryTemp.hadReconstruction,
-    items: [
-      {
-        value: "Has had reconstruction or symmetrisation surgery",
-        text: "Has had reconstruction or symmetrisation surgery"
-      }
-    ]
-  }) }}
-  {# Needed to track if this question is asked by the page so we can show default text #}
-  {{ appHiddenInput({
-    name: "event[medicalHistoryTemp][hasHadReconstructionCheckbox]",
-    value: "true"
-  }) }}
-
+  {# Remove the reconstruction checkbox since it's now part of the main surgery options #}
 
   {% set conditionalInputHtml %}
     {{ input({

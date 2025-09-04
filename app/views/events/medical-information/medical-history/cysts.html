@@ -8,57 +8,31 @@
 {% block formContent %}
 
   {{ radios({
-    name: "event[medicalHistoryTemp][location]",
-    value: event.medicalHistoryTemp.location,
+    name: "event[medicalHistoryTemp][cystsStatus]",
+    value: event.medicalHistoryTemp.cystsStatus,
     fieldset: {
       legend: {
-        text: "In which breast(s) has " + (participant.firstName or "the participant") + " had cysts?",
+        text: "Has " + (participant.demographicInformation.firstName or "the participant") + " had breast cysts?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
     items: [
       {
-        value: "Right",
-        text: "Right"
+        value: "Yes, not treated",
+        text: "Yes, not treated"
       },
       {
-        value: "Left",
-        text: "Left"
+        value: "Yes, drained or removed",
+        text: "Yes, drained or removed"
       },
       {
-        value: "Both",
-        text: "Both"
-      },
-      {
-        value: "Does not know",
-        text: "Does not know"
+        value: "No",
+        text: "No"
       }
     ]
   }) }}
 
-  {{ checkboxes({
-    name: "event[medicalHistoryTemp][cystsDrained]",
-    value: event.medicalHistoryTemp.cystsDrained,
-    items: [
-      {
-        value: "true",
-        text: "Cysts have been drained or removed",
-        checked: event.medicalHistoryTemp.cystsDrained == "true",
-        conditional: {
-          html: input({
-            name: "event[medicalHistoryTemp][drainageDetails]",
-            value: event.medicalHistoryTemp.drainageDetails,
-            id: "drainage-details",
-            label: {
-              text: "Provide details (optional)"
-            }
-          })
-        }
-      }
-    ]
-  }) }}
-
-{% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
-   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+  {% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
 {% endblock formContent %}

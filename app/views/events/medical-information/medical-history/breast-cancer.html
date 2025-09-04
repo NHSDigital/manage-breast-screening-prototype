@@ -17,13 +17,13 @@
     }
   }) %}
 
-    <div class="nhsuk-hint" id="breast-location-hint">
+  <div class="nhsuk-hint" id="breast-location-hint">
       Include any breast cancer diagnosis including initial, recurring or secondary
     </div>
 
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-one-half">
-        {{ checkboxes({
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
           name: "event[medicalHistoryTemp][cancerLocation]",
           values: event.medicalHistoryTemp.cancerLocation,
           idPrefix: "cancerLocationRightBreast",
@@ -37,9 +37,9 @@
             }
           ]
         }) }}
-      </div>
-      <div class="nhsuk-grid-column-one-half">
-        {{ checkboxes({
+    </div>
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
           name: "event[medicalHistoryTemp][cancerLocation]",
           values: event.medicalHistoryTemp.cancerLocation,
           idPrefix: "cancerLocationLeftBreast",
@@ -53,10 +53,10 @@
             }
           ]
         }) }}
-      </div>
     </div>
+  </div>
 
-    {{ checkboxes({
+  {{ checkboxes({
       name: "event[medicalHistoryTemp][cancerLocation]",
       values: event.medicalHistoryTemp.cancerLocation,
       idPrefix: "cancerLocationNotKnown",
@@ -221,7 +221,8 @@
           },
           {
             value: "No radiotherapy",
-            text: "No radiotherapy"
+            text: "No radiotherapy",
+            exclusive: true
           }
         ]
       }) }}
@@ -253,7 +254,8 @@
           },
           {
             value: "No radiotherapy",
-            text: "No radiotherapy"
+            text: "No radiotherapy",
+            exclusive: true
           }
         ]
       }) }}
@@ -261,40 +263,42 @@
   </div>
 
   {{ checkboxes({
-    name: "event[medicalHistoryTemp][systemicTreatments]",
-    values: event.medicalHistoryTemp.systemicTreatments,
-    idPrefix: "systemicTreatments",
-    fieldset: {
-      legend: {
-        html: ((treatmentQuestionText + " that are ") | asVisuallyHiddenText) ~ "Systemic treatments",
-        classes: "nhsuk-fieldset__legend--s",
-        isPageHeading: false
-      }
+  name: "event[medicalHistoryTemp][systemicTreatments]",
+  values: event.medicalHistoryTemp.systemicTreatments,
+  idPrefix: "systemicTreatments",
+  fieldset: {
+    legend: {
+      html: ((treatmentQuestionText + " that are ") | asVisuallyHiddenText) ~ "Systemic treatments",
+      classes: "nhsuk-fieldset__legend--s",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "Chemotherapy",
+      text: "Chemotherapy"
     },
-    items: [
-      {
-        value: "Chemotherapy",
-        text: "Chemotherapy"
-      },
-      {
-        value: "Hormone (endocrine) therapy",
-        text: "Hormone (endocrine) therapy"
-      },
-      {
-        value: "Targeted (biological) therapy",
-        text: "Targeted (biological) therapy"
-      },
-      {
-        value: "Bisphosphonates",
-        text: "Bisphosphonates"
-      },
-      {
-        value: "Other",
-        text: "Other"
+    {
+      value: "Hormone therapy",
+      text: "Hormone therapy"
+    },
+    {
+      value: "Other treatment",
+      text: "Other treatment",
+      conditional: {
+        html: input({
+          label: {
+            text: "Provide details",
+            classes: "nhsuk-label--s"
+          },
+          name: "event[medicalHistoryTemp][otherTreatmentDetails]",
+          value: event.medicalHistoryTemp.otherTreatmentDetails,
+          id: "other-treatment-details"
+        })
       }
-    ]
-  }) }}
-
+    }
+  ]
+}) }}
 
   {% set treatmentLocationText = "Where did surgery and treatment take place?" %}
   {% include "_includes/medical-information/medical-history/location.njk" %}
