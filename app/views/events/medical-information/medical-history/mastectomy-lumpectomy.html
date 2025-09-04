@@ -7,8 +7,10 @@
 
 {% block formContent %}
 
+  {% set breastCancerUrl = "./breast-cancer/add" | urlWithReferrer(query.referrerChain, query.scrollTo) %}
+
   <p>
-    This is designed to capture information on prophylactic or elective surgery. <a href="#" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.
+    This is designed to capture information on prophylactic or elective surgery. <a href="{{ breastCancerUrl }}" class="nhsuk-link">Add breast cancer details</a> if that was the reason for this surgery.
   </p>
 
   {% set proceduresQuestionText %}
