@@ -1,11 +1,11 @@
-
 {# Set blocks for conditional HTML #}
 {% set nhsHospitalConditionalHtml %}
   {{ input({
     name: "event[medicalHistoryTemp][locationNhsHospitalDetails]",
     value: event.medicalHistoryTemp.locationNhsHospitalDetails,
     label: {
-      text: "Provide details"
+      text: "Provide details",
+      classes: "nhsuk-label--s"
     }
   }) }}
 {% endset %}
@@ -15,7 +15,8 @@
     name: "event[medicalHistoryTemp][locationPrivateClinicDetails]",
     value: event.medicalHistoryTemp.locationPrivateClinicDetails,
     label: {
-      text: "Provide details"
+      text: "Provide details",
+      classes: "nhsuk-label--s"
     }
   }) }}
 {% endset %}
@@ -25,7 +26,8 @@
     name: "event[medicalHistoryTemp][locationOutsideUkDetails]",
     value: event.medicalHistoryTemp.locationOutsideUkDetails,
     label: {
-      text: "Provide details"
+      text: "Provide details",
+      classes: "nhsuk-label--s"
     }
   }) }}
 {% endset %}
@@ -35,7 +37,8 @@
     name: "event[medicalHistoryTemp][locationMultipleLocationsDetails]",
     value: event.medicalHistoryTemp.locationMultipleLocationsDetails,
     label: {
-      text: "Provide details"
+      text: "Provide details",
+      classes: "nhsuk-label--s"
     },
     rows: 4
   }) }}
@@ -46,7 +49,8 @@
     name: "event[medicalHistoryTemp][locationUnknownLocationDetails]",
     value: event.medicalHistoryTemp.locationUnknownLocationDetails,
     label: {
-      text: "Provide details"
+      text: "Provide details",
+      classes: "nhsuk-label--s"
     }
   }) }}
 {% endset %}
