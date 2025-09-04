@@ -106,8 +106,8 @@
 
   {% set conditionalInputHtml %}
     {{ input({
-      name: "event[medicalHistoryTemp][surgeryReasonDetails]",
-      value: event.medicalHistoryTemp.surgeryReasonDetails,
+      name: "event[medicalHistoryTemp][mastectomyLumpectomySurgeryReasonDetails]",
+      value: event.medicalHistoryTemp.mastectomyLumpectomySurgeryReasonDetails,
 
       label: {
         text: "Provide details"
@@ -115,9 +115,9 @@
     }) }}
   {% endset %}
   {{ radios({
-    name: "event[medicalHistoryTemp][surgeryReason]",
-    value: event.medicalHistoryTemp.surgeryReason,
-    idPrefix: "surgeryReason",
+    name: "event[medicalHistoryTemp][mastectomyLumpectomySurgeryReason]",
+    value: event.medicalHistoryTemp.mastectomyLumpectomySurgeryReason,
+    idPrefix: "mastectomyLumpectomySurgeryReason",
     fieldset: {
       legend: {
         text: "Why was this surgery done?",

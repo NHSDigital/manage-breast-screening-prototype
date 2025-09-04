@@ -19,6 +19,7 @@
       {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
 
+      {# Type - used by implanted medical devices, other proceedures #}
       {% set typeHtml %}
         {% if historyItem.type %}
           {% if historyItem.type | isArray %}
@@ -70,6 +71,8 @@
         {% endif %}
       {% endset %}
 
+      {# Breast cancer location #}
+      {# Todo: could this be combined in to a generic 'Breast location' row with conditional text? #}
       {% set cancerLocationText %}
         {% if historyItem.cancerLocation | includes("Right breast") and historyItem.cancerLocation | includes("Left breast") %}
           Both breasts
@@ -78,6 +81,119 @@
         {% endif %}
       {% endset %}
 
+      {# Surgery - breast cancer #}
+      {% set surgeryHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.surgeryRightBreast %}
+                {# Handle cases where surgeryRightBreast is not an array #}
+                {% if not historyItem.surgeryRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.surgeryRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for surgery in historyItem.surgeryRightBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.surgeryLeftBreast %}
+                {% if not historyItem.surgeryLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.surgeryLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for surgery in historyItem.surgeryLeftBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+      {% endset %}
+
+      {% set treatmentHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.treatmentRightBreast %}
+                {# Handle cases where treatmentRightBreast is not an array #}
+                {% if not historyItem.treatmentRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.treatmentRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for treatment in historyItem.treatmentRightBreast %}
+                    <li>
+                      {{ treatment }}
+                    </li>
+                  {% else %}
+                    No treatment
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No treatment</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.treatmentLeftBreast %}
+                {% if not historyItem.treatmentLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.treatmentLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for treatment in historyItem.treatmentLeftBreast %}
+                    <li>
+                      {{ treatment }}
+                    </li>
+                  {% else %}
+                    No treatment
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No treatment</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+        {% if historyItem.systemicTreatments %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Systemic treatments</p>
+          {% for treatment in historyItem.systemicTreatments %}
+            <p>{{ treatment }}</p>
+          {% endfor %}
+        {% endif %}
+
+      {% endset %}
+
+      {# Procedures - used by breast implants, lump removal and bopsy, mastectomy lumpectomy #}
       {% set proceduresHtml %}
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
@@ -131,6 +247,7 @@
           </div>
         </div>
 
+        {# Used by breast implants and augmentation only #}
         {% if historyItem.implantsRemoved | falsify %}
           <p>
             {{ historyItem.implantsRemoved }}
@@ -141,6 +258,7 @@
           </p>
         {% endif %}
 
+        {# Used by mastectomy lumpectomy only #}
         {% if historyItem.hasHadReconstructionCheckbox | falsify %}
           <p>
             {% if historyItem.hadReconstruction %}
@@ -153,14 +271,16 @@
 
       {% endset %}
 
-      {% set surgeryReasonHtml %}
-        {{ historyItem.surgeryReason }}
-        {% if historyItem.surgeryReason | startsWith("Other") %}
+      {# Surgery reason - Mastectomy and lumpectomy #}
+      {% set mastectomyLumpectomySurgeryReasonHtml %}
+        {{ historyItem.mastectomyLumpectomySurgeryReason }}
+        {% if historyItem.mastectomyLumpectomySurgeryReason | startsWith("Other") %}
           <br>
-          Details: {{ historyItem.surgeryReasonDetails }}
+          Details: {{ historyItem.mastectomyLumpectomySurgeryReasonDetails }}
         {% endif %}
       {% endset %}
 
+      {# Dates #}
       {% set dateText %}
         {% if historyItem.generalDate %}
           {% if historyItem.generalDate == "Specific date" %}
@@ -201,6 +321,7 @@
         {% endif %}
       {% endset %}
 
+      {# Treatment location #}
       {% set locationHtml %}
 
         {% macro otherLocation(item) %}
@@ -254,6 +375,14 @@
             } if historyItem.cancerLocation,
             {
               key: {
+                text: "Surgery"
+              },
+              value: {
+                html: surgeryHtml
+              }
+            } if historyItem.surgeryRightBreast or historyItem.surgeryLeftBreast,
+            {
+              key: {
                 text: "Procedures"
               },
               value: {
@@ -262,12 +391,20 @@
             } if historyItem.proceduresRightBreast or historyItem.proceduresLeftBreast,
             {
               key: {
+                text: "Treatment"
+              },
+              value: {
+                html: treatmentHtml
+              }
+            } if historyItem.treatmentRightBreast or historyItem.treatmentLeftBreast,
+            {
+              key: {
                 text: "Surgery reason"
               },
               value: {
-                html: surgeryReasonHtml
+                html: mastectomyLumpectomySurgeryReasonHtml
               }
-            } if historyItem.surgeryReason,
+            } if historyItem.mastectomyLumpectomySurgeryReason,
             {
               key: {
                 text: "Date"
