@@ -70,6 +70,14 @@
         {% endif %}
       {% endset %}
 
+      {% set cancerLocationText %}
+        {% if historyItem.cancerLocation | includes("Right breast") and historyItem.cancerLocation | includes("Left breast") %}
+          Both breasts
+        {% else %}
+          {{ historyItem.cancerLocation[0] }}
+        {% endif %}
+      {% endset %}
+
       {% set proceduresHtml %}
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
@@ -223,6 +231,8 @@
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
 
+      {# Contents of history item #}
+
       {% set historyItemContents %}
         {{ summaryList({
           rows: [
@@ -234,6 +244,14 @@
                 html: typeHtml
               }
             } if historyItem.type,
+            {
+              key: {
+                text: "Cancer location"
+              },
+              value: {
+                text: cancerLocationText
+              }
+            } if historyItem.cancerLocation,
             {
               key: {
                 text: "Procedures"
@@ -250,14 +268,6 @@
                 html: surgeryReasonHtml
               }
             } if historyItem.surgeryReason,
-            {
-              key: {
-                text: "Location"
-              },
-              value: {
-                text: historyItem.generalLocation
-              }
-            } if historyItem.generalLocation,
             {
               key: {
                 text: "Date"
@@ -284,7 +294,7 @@
             } if historyItem.hasRecentProcedureCheckbox | falsify,
             {
               key: {
-                text: "Location"
+                text: "Treatment location"
               },
               value: {
                 html: locationHtml
