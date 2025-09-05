@@ -1,9 +1,11 @@
 // app/lib/utils/regenerate-data.js
 
-const generateData = require('../generate-seed-data')
-const { join, resolve } = require('path')
+const fs = require('node:fs')
+const { join, resolve } = require('node:path')
+
 const dayjs = require('dayjs')
-const fs = require('fs')
+
+const generateData = require('../generate-seed-data')
 
 async function regenerateData(req) {
   const dataDirectory = join(__dirname, '../../data')
@@ -15,11 +17,13 @@ async function regenerateData(req) {
   await generateData()
 
   // Clear the require cache for session data defaults
+  // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
   delete require.cache[require.resolve(sessionDataPath)]
 
   // Clear cache for the generated JSON files
   Object.keys(require.cache).forEach((key) => {
     if (key.startsWith(generatedDataPath)) {
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       delete require.cache[key]
     }
   })

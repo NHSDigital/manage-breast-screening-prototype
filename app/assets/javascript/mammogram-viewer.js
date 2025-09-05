@@ -88,7 +88,7 @@ const MammogramViewer = {
         mammogramWindow = null
         localStorage.removeItem(VIEWER_STORAGE_KEY)
       }
-    } catch (e) {
+    } catch {
       mammogramWindow = null
       localStorage.removeItem(VIEWER_STORAGE_KEY)
     }
@@ -207,7 +207,9 @@ const MammogramViewer = {
         if (mammogramWindow) {
           mammogramWindow.close()
         }
-      } catch (err) {}
+      } catch {
+        // Ignore errors
+      }
 
       localStorage.removeItem(VIEWER_STORAGE_KEY)
       this.openNew(participantName)
@@ -273,7 +275,7 @@ const MammogramViewer = {
     // Only check our direct reference, don't try to find windows
     try {
       return mammogramWindow && !mammogramWindow.closed
-    } catch (e) {
+    } catch {
       // If there's an error accessing the window property, it's likely closed
       return false
     }
@@ -307,6 +309,8 @@ window.addEventListener('beforeunload', function () {
   if (window.inReadingContext && mammogramWindow && !mammogramWindow.closed) {
     try {
       localStorage.setItem('wasInReadingContext', 'true')
-    } catch (e) {}
+    } catch {
+      // Ignore errors
+    }
   }
 })

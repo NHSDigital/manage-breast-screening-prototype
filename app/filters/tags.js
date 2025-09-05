@@ -1,8 +1,9 @@
 // app/filters/tags.js
 
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
-const { formatWords, sentenceCase, snakeCase } = require('../lib/utils/strings')
+
 const { getStatusTagColour, getStatusText } = require('../lib/utils/status')
+const { formatWords, sentenceCase, snakeCase } = require('../lib/utils/strings')
 
 /**
  * Convert a status string into an NHS tag
@@ -38,7 +39,7 @@ const toTag = (status, options = {}) => {
     .join(' ')
 
   // Generate tag HTML
-  const idAttr = options.id ? ` id=\"${options.id}\"` : ''
+  const idAttr = options.id ? ` id="${options.id}"` : ''
   return nunjucksSafe(`<strong${idAttr} class="${classes}">${text}</strong>`)
 }
 

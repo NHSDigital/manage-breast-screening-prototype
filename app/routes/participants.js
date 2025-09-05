@@ -1,18 +1,13 @@
 // app/routes/participants.js
 
+const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
   getParticipant,
   sortBySurname,
   getParticipantClinicHistory,
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
-const { findById } = require('../lib/utils/arrays')
-const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
-const {
-  getReturnUrl,
-  urlWithReferrer,
-  appendReferrer
-} = require('../lib/utils/referrers')
+const { getReturnUrl } = require('../lib/utils/referrers')
 
 module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics

@@ -1,9 +1,7 @@
 // app/lib/generators/mammogram-generator.js
 
 const { faker } = require('@faker-js/faker')
-const generateId = require('../utils/id-generator')
 const dayjs = require('dayjs')
-const weighted = require('weighted')
 
 const STANDARD_VIEWS = [
   { side: 'right', view: 'mediolateral oblique' },

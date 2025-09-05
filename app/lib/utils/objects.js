@@ -1,7 +1,5 @@
 // app/lib/utils/objects.js
 
-const _ = require('lodash')
-
 /**
  * Extract all values from an object into a flat array
  *

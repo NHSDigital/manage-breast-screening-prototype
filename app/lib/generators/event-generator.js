@@ -1,17 +1,19 @@
 // app/lib/generators/event-generator.js
 
-const generateId = require('../utils/id-generator')
 const { faker } = require('@faker-js/faker')
-const weighted = require('weighted')
 const dayjs = require('dayjs')
+const weighted = require('weighted')
+
 const config = require('../../config')
-const { STATUS_GROUPS, isCompleted, isFinal } = require('../utils/status')
+const users = require('../../data/users')
+const generateId = require('../utils/id-generator')
+const { STATUS_GROUPS, isCompleted } = require('../utils/status')
+
 const { generateMammogramImages } = require('./mammogram-generator')
-const { generateSymptoms } = require('./symptoms-generator')
 const {
   generateSpecialAppointment
 } = require('./special-appointment-generator')
-const users = require('../../data/users')
+const { generateSymptoms } = require('./symptoms-generator')
 
 const NOT_SCREENED_REASONS = [
   'Recent mammogram at different facility',
@@ -71,7 +73,6 @@ const generateEvent = ({
   slot,
   participant,
   clinic,
-  outcomeWeights,
   forceStatus = null,
   id = null,
   specialAppointmentOverride = null,
@@ -264,43 +265,6 @@ const generateEvent = ({
   }
 
   return eventBase
-}
-
-const generateStatusHistory = (finalStatus, dateTime) => {
-  const history = []
-  const baseDate = new Date(dateTime)
-
-  // Always starts with scheduled status
-  history.push({
-    status: 'event_scheduled',
-    timestamp: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000).toISOString() // Day before
-  })
-
-  // Add intermediate statuses based on final status
-  if (isCompleted(finalStatus)) {
-    history.push(
-      {
-        status: 'checked_in',
-        timestamp: new Date(baseDate.getTime() - 10 * 60 * 1000).toISOString() // 10 mins before
-      },
-      // {
-      //   status: 'in_progress',
-      //   timestamp: new Date(baseDate).toISOString()
-      // },
-      {
-        status: finalStatus,
-        timestamp: new Date(baseDate.getTime() + 15 * 60 * 1000).toISOString() // 15 mins after
-      }
-    )
-  } else {
-    // For did_not_attend and attended_not_screened, just add the final status
-    history.push({
-      status: finalStatus,
-      timestamp: new Date(baseDate.getTime() + 15 * 60 * 1000).toISOString()
-    })
-  }
-
-  return history
 }
 
 module.exports = {

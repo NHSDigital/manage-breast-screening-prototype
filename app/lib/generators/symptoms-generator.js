@@ -2,6 +2,7 @@
 
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
+
 const generateId = require('../utils/id-generator')
 
 // Updated symptom types to match the form
