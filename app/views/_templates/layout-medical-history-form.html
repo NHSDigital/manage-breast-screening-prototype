@@ -9,9 +9,9 @@
 
 {# Set dynamic page heading based on whether editing existing data #}
 {% if event.medicalHistoryTemp.id %}
-  {% set dynamicPageHeading = "Edit " + typeDataObject.name | lower + " details" %}
+  {% set dynamicPageHeading = "Edit details of " + typeDataObject.name | lower %}
 {% else %}
-  {% set dynamicPageHeading = "Add " + typeDataObject.name | lower + " details" %}
+  {% set dynamicPageHeading = "Add details of " + typeDataObject.name | lower %}
 {% endif %}
 
 {% set formAction = "./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo) %}
