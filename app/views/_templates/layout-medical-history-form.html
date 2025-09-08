@@ -7,6 +7,13 @@
 {# Find the type data object from the array #}
 {% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}
 
+{# Set dynamic page heading based on whether editing existing data #}
+{% if event.medicalHistoryTemp.id %}
+  {% set dynamicPageHeading = "Edit " + typeDataObject.name | lower + " details" %}
+{% else %}
+  {% set dynamicPageHeading = "Add " + typeDataObject.name | lower + " details" %}
+{% endif %}
+
 {% set formAction = "./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
@@ -15,7 +22,7 @@
     <span class="nhsuk-caption-l">
       {{ participant | getFullName }}
     </span>
-    {{ pageHeading }}
+    {{ dynamicPageHeading }}
   </h1>
 
   {{ appHiddenInput({

@@ -8,9 +8,9 @@ module.exports = [
     canHaveMultiple: false,
   },
   {
-    type: 'implantedMedicalDevices',
-    name: 'Implanted medical devices',
-    slug: 'implanted-medical-devices',
+    type: 'implantedMedicalDevice',
+    name: 'Implanted medical device',
+    slug: 'implanted-medical-device',
     canHaveMultiple: true,
   },
   {

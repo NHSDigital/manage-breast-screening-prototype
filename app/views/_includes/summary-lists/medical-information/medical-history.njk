@@ -1,6 +1,6 @@
 {% set rows = [
   'Breast cancer',
-  'Implanted medical devices',
+  'Implanted medical device',
   'Breast implants or augmentation',
   'Breast reduction or mastectomy',
   'Cysts',
@@ -14,8 +14,8 @@
 {% set valueHtml = "" %}
 
 {% for row in rows %}
-  {% if row == 'Implanted medical devices' %}
-    {% set changeHref = "./medical-information/medical-history/implanted-medical-devices" | urlWithReferrer(currentUrl) %}
+  {% if row == 'Implanted medical device' %}
+    {% set changeHref = "./medical-information/medical-history/implanted-medical-device" | urlWithReferrer(currentUrl) %}
   {% elseif row == 'Breast implants or augmentation' %}
     {% set changeHref = "./medical-information/medical-history/breast-implants" | urlWithReferrer(currentUrl) %}
   {% elseif row == 'Cysts' %}
