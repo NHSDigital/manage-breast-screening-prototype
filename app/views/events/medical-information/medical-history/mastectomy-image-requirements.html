@@ -1,0 +1,69 @@
+{# app/views/mastectomy-image-requirements.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Review image requirements" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./mastectomy-image-requirements-answer" %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>{{ participant | getFullName }} has had the following surgery:</p>
+
+  <div class="nhsuk-inset-text">
+    <span class="nhsuk-u-visually-hidden">Information: </span>
+    <p><strong>Double mastectomy</strong></p>
+  </div>
+
+  {{ radios({
+    name: "event[medicalInformation][mastectomy][imagingBreasts]",
+    value: event.medicalInformation.mastectomy.imagingBreasts,
+    fieldset: {
+      legend: {
+        text: "Which breasts will you take images of?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "right",
+        text: "Right"
+      },
+      {
+        value: "left",
+        text: "Left"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "neither",
+        text: "Neither"
+      }
+    ]
+  }) }}
+
+
+  {% set additionalDetailsHintText = "Include any other relevant information" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+
+<div class="app-button-group">
+    {{ button({
+      text: "Continue"
+    }) }}
+  </div>
+
+{% endblock %}
