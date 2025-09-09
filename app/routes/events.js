@@ -865,22 +865,6 @@ module.exports = (router) => {
       }
     }
 
-    // Add other JSON string conversions here as needed
-    // Example for symptoms:
-    // if (data.event?.medicalInformation?.symptomsRaw) {
-    //   try {
-    //     const rawSymptoms = data.event.medicalInformation.symptomsRaw
-    //     if (typeof rawSymptoms === 'string') {
-    //       data.event.medicalInformation.symptoms = JSON.parse(rawSymptoms)
-    //       conversionsCount++
-    //       console.log('Converted symptomsRaw to structured data')
-    //     }
-    //   } catch (error) {
-    //     console.warn('Failed to convert symptomsRaw:', error)
-    //     errorCount++
-    //   }
-    // }
-
     // Flash error message if needed
     if (errorCount > 0) {
       req.flash('error', 'Some data could not be converted. Please check the information and try again.')
@@ -893,9 +877,9 @@ module.exports = (router) => {
 
   // Medical history
 
- // Medical history routes - add these to the events.js file
+  // Medical history routes - add these to the events.js file
 
-const medicalHistoryTypes = require('../data/medical-history-types')
+  const medicalHistoryTypes = require('../data/medical-history-types')
 
   function isValidMedicalHistoryType(type) {
     // Check against both type field and slug field
@@ -951,6 +935,23 @@ const medicalHistoryTypes = require('../data/medical-history-types')
     const typeConfig = getMedicalHistoryType(type)
     // Convert slug to camelCase key for data storage
     const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+    // Check if consent is needed for breast implants BEFORE processing the data
+    if (type === 'breast-implants-augmentation' || type === 'breastImplantsAugmentation') {
+      const medicalHistoryTemp = data.event?.medicalHistoryTemp
+      const rightBreastProcedures = medicalHistoryTemp?.proceduresRightBreast || []
+      const leftBreastProcedures = medicalHistoryTemp?.proceduresLeftBreast || []
+      
+      // Check if breast implants were selected in either breast
+      const hasBreastImplants = 
+        rightBreastProcedures.includes('Breast implants') || 
+        leftBreastProcedures.includes('Breast implants')
+      
+      if (hasBreastImplants) {
+        // Redirect to consent page immediately - we'll save the data after consent
+        return res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`)
+      }
+    }
 
     let isNewItem
 
@@ -1077,7 +1078,75 @@ const medicalHistoryTypes = require('../data/medical-history-types')
     res.redirect(returnUrl)
   })
 
+  // Handle breast implants consent form submission  
+router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer', (req, res) => {
+  const { clinicId, eventId } = req.params
+  const data = req.session.data
+  const consentGiven = data.event?.medicalInformation?.implantedDevices?.consentGiven
+  const referrerChain = req.query.referrerChain
+  const scrollTo = req.query.scrollTo
 
+  if (!consentGiven) {
+    req.flash('error', {
+      text: 'Select whether the participant has signed the consent form',
+      name: 'event[medicalInformation][implantedDevices][consentGiven]'
+    })
+    return res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`)
+  }
+
+  if (consentGiven === 'yes') {
+    // Save the breast implants data that was held in temp
+    if (data.event?.medicalHistoryTemp) {
+      // Initialize medicalInformation object if needed
+      if (!data.event.medicalInformation) {
+        data.event.medicalInformation = {}
+      }
+
+      // Initialize medicalHistory object if needed
+      if (!data.event.medicalInformation.medicalHistory) {
+        data.event.medicalInformation.medicalHistory = {}
+      }
+
+      // Initialize array for breast implants if needed
+      if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation) {
+        data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+      }
+
+      const medicalHistoryTemp = data.event.medicalHistoryTemp
+      const isNewItem = !medicalHistoryTemp.id
+
+      // Create medical history item
+      const medicalHistoryItem = {
+        id: medicalHistoryTemp.id || generateId(),
+        ...medicalHistoryTemp
+      }
+
+      // For new items, add the creation timestamp
+      if (isNewItem) {
+        medicalHistoryItem.dateAdded = new Date().toISOString()
+        medicalHistoryItem.addedBy = data.currentUser.id
+      }
+
+      // Add to array
+      data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+
+      // Clear temp data
+      delete data.event.medicalHistoryTemp
+    }
+
+    // Show combined success message
+    req.flash('success', 'Breast implants recorded and consent recorded')
+    
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+      referrerChain,
+      scrollTo
+    )
+    res.redirect(returnUrl)
+  } else {
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`)
+  }
+})
 
   // Imaging view - this is the main imaging page for the event
 
@@ -1302,6 +1371,7 @@ const medicalHistoryTypes = require('../data/medical-history-types')
       )
     }
   )
+  
   // Handle special appointment confirmation
   router.post(
     '/clinics/:clinicId/events/:eventId/special-appointment/confirm-answer',

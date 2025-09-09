@@ -1,10 +1,10 @@
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Record consent for breast implant imaging" %}
+{% set pageHeading = "Request consent to continue" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./appointment-cannot-proceed" %}
+{% set formAction = "./consent-answer" %}
 
 {% block pageContent %}
 
@@ -18,11 +18,22 @@
   </h1>
 
   <h2 class="nhsuk-heading-m">Explain the risks</h2>
-  <p>There is a small risk of rupturing the implants as a result of compressing the breasts for imaging, although there is currently no evidence of this. <strong>This risk is not a reason to avoid screening</strong>.</p>
-  <p>After the appointment, if you suspect an implant rupture or leak, <strong>consult your GP</strong>.</p>
+  <p>You must get the participant’s permission to carry out a mammogram on breasts with implants.</p>
 
-  <h2 class="nhsuk-heading-m">Difficulties taking images</h2>
-  <p>Special techniques are used to minimise the risk of rupture and some additional images may be needed.</p>
+  <p>There is no medical reason for people with breast implants to avoid the procedure. The benefits of early cancer detection outweigh the minor increase in risk.</p>
+
+  <p>Explain to them that:</p>
+
+  <ul class="nhsuk-list nhsuk-list--bullet">
+    <li>very rarely, implants can rupture due to pressure during imaging</li>
+    <li>a special imaging technique will be used to reduce the likelihood of complications</li>
+    <li>implants make it harder to spot signs of cancer as can they obscure breast tissue</li>
+    <li>extra images may be needed to scan enough breast tissue, slightly increasing radiation exposure</li>
+  </ul>
+
+  <p>If the participant notices any problems with their implants after the appointment, they should contact their GP.</p>
+
+  <p>Once you’ve explained the process and the risks, ask them to read and complete your paper consent form.</p>
 
   <h2 class="nhsuk-heading-m">Difficulties interpreting images</h2>
   <p>Mammograms with breast implants can be less effective at detecting breast cancer because the implants can obscure some breast tissue.</p>
@@ -32,7 +43,7 @@
     value: event.medicalInformation.implantedDevices.consentGiven,
     fieldset: {
       legend: {
-        text: "Does the participant consent?",
+        text: "Has " + (participant.demographicInformation.firstName or "the participant") + " signed the consent form?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -44,7 +55,7 @@
       },
       {
         value: "no",
-        text: "No"
+        text: "No, end the appointment"
       }
     ]
   }) }}
