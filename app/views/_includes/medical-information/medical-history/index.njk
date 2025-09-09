@@ -352,6 +352,9 @@
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
 
+      {{ typeData.type | log("Type data type") }}
+      {{ historyItem.consentGiven | log("Consent given value") }}
+
       {# Contents of history item #}
 
       {% set historyItemContents %}
@@ -437,6 +440,14 @@
                 html: locationHtml
               }
             } if historyItem.location | falsify,
+            {
+            key: {
+            text: "Consent for imaging"
+            },
+            value: {
+            text: "Consent given"
+            }
+            } if (typeData.type == 'breastImplantsAugmentation' and historyItem.consentGiven == 'yes'),
             {
               key: {
                 text: "Additional details"
