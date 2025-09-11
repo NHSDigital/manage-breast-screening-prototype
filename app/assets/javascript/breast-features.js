@@ -12,11 +12,11 @@ function initializeBreastFeatures()
     const hiddenFieldId = config.hiddenFieldId || 'breastFeaturesRaw'
     const existingFeatures = config.existingFeatures || []
     const featureTypes = config.featureTypes || [
-        { value: 'mole', text: 'Mole' },
-        { value: 'wart', text: 'Wart' },
-        { value: 'breast-reduction-scar', text: 'Breast reduction scar' },
-        { value: 'other-scar', text: 'Other scar' },
-        { value: 'other-feature', text: 'Other feature' }
+         { value: 'mole', text: 'Mole' },
+         { value: 'wart', text: 'Wart' },
+         { value: 'non-surgical-scar', text: 'Non-surgical scar' },
+         { value: 'bruising-or-trauma', text: 'Bruising or trauma' },
+         { value: 'other-feature', text: 'Other feature' }
     ]
 
     let diagramContainer
