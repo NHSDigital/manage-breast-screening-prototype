@@ -14,9 +14,9 @@ function initializeBreastFeatures()
     const featureTypes = config.featureTypes || [
         { value: 'mole', text: 'Mole' },
         { value: 'wart', text: 'Wart' },
-        { value: 'breast-reduction-scar', text: 'Breast reduction scar' },
-        { value: 'other-scar', text: 'Other scar' },
-        { value: 'other-feature', text: 'Other feature' }
+        { value: 'non-surgical-scar', text: 'Non-surgical scar' },
+        { value: 'bruising-or-trauma', text: 'Bruising or trauma' },
+        { value: 'other-feature', text: 'Other feature', hasDetails: true }
     ]
 
     let diagramContainer
@@ -831,7 +831,10 @@ function initializeBreastFeatures()
             return
         }
 
-        if (selectedFeatureRadio.value === 'other-feature')
+        // Find the feature type configuration for the selected radio
+        const selectedFeatureType = featureTypes.find(ft => ft.value === selectedFeatureRadio.value)
+
+        if (selectedFeatureType && selectedFeatureType.hasDetails)
         {
             const customLabel = document.querySelector('#customLabel') ? document.querySelector('#customLabel').value.trim() : ''
             if (!customLabel)
@@ -843,9 +846,8 @@ function initializeBreastFeatures()
         }
         else
         {
-            // Find the feature type in configuration
-            const featureType = featureTypes.find(ft => ft.value === selectedFeatureRadio.value)
-            featureText = featureType ? featureType.text : selectedFeatureRadio.value.charAt(0).toUpperCase() + selectedFeatureRadio.value.slice(1)
+            // Use the configured text for standard feature types
+            featureText = selectedFeatureType ? selectedFeatureType.text : selectedFeatureRadio.value.charAt(0).toUpperCase() + selectedFeatureRadio.value.slice(1)
         }
 
         if (editingFeature)

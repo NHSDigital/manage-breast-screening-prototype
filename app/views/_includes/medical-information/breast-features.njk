@@ -1,46 +1,109 @@
-{# app/views/_includes/medical-information/breast-features.njk #}
+{# app/views/_includes/feature-popover.njk #}
 
-{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
-{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
-{% set breastFeaturesCount = breastFeatures | length %}
-{% set hasBreastFeatures = breastFeaturesCount > 0 %}
+{#
+  Reusable feature selection popover component
 
-{% if hasBreastFeatures %}
+  Set these variables before including:
+  - popoverId (string, default "featurePopover") - ID for the popover element
+  - fieldName (string, default "feature") - name for radio button group
+  - fieldPrefix (string, default "feature") - prefix for radio button IDs
+  - featureTypes (array) - array of {value, text} objects for feature options
+  - customInputLabel (string, default "Enter a custom label") - label for custom text input
+  - addButtonText (string, default "Add") - text for primary action button
+  - showRemoveButton (boolean, default true) - whether to show remove button
+#}
 
-  <p>
-    {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
-  </p>
+{% set popoverId = popoverId or "featurePopover" %}
+{% set fieldName = fieldName or "feature" %}
+{% set fieldPrefix = fieldPrefix or "feature" %}
+{% set customInputLabel = customInputLabel or "Enter a custom label" %}
+{% set addButtonText = addButtonText or "Add" %}
+{% set showRemoveButton = showRemoveButton if showRemoveButton is defined else true %}
 
-  <script>
-  window.breastFeaturesConfig = {
-    readOnly: true,
-    existingFeatures: {{ breastFeatures | dump | safe }} || []
-  }
-  </script>
-  <script src="/js/breast-features.js"></script>
+{% set defaultFeatureTypes = [
+  { value: "mole", text: "Mole" },
+  { value: "wart", text: "Wart" },
+  { value: "non-surgical-scar", text: "Non-surgical scar" },
+  { value: "bruising-or-trauma", text: "Bruising or trauma" },
+  { value: "other-feature", text: "Other feature", hasDetails: true }
+] %}
 
-  {# div with hardcoded max-width, left aligned #}
-  <div style="max-width: 650px; margin: 0 auto 10px 0;">
-    {% include "breast-diagram.njk" %}
-  </div>
+{% set featureTypes = featureTypes or defaultFeatureTypes %}
 
-{% else %}
-  {% set insetHtml %}
-    <p>
-      No breast features have been recorded for this participant.
-    </p>
-  {% endset %}
-  {{ insetText({
-    html: insetHtml
+<div class="breast-features__popover" id="{{ popoverId }}">
+  <span class="nhsuk-caption-m" id="popoverCaption">Add new feature</span>
+  <h2 id="popoverHeading">What is the feature?</h2>
+  <p>This will be added to <span class="nhsuk-tag nhsuk-tag--white region-label" id="regionLabel"></span></p>
+
+  {% set radioItems = [] %}
+
+  {% for featureType in featureTypes %}
+    {% if featureType.hasDetails %}
+      {% set otherConditionalHtml %}
+        {{ input({
+          id: "customLabel",
+          name: "customLabel",
+          label: {
+            text: "Provide details"
+          }
+        }) }}
+      {% endset %}
+
+      {% set radioItems = radioItems | push({
+        value: featureType.value,
+        text: featureType.text,
+        conditional: {
+          html: otherConditionalHtml
+        }
+      }) %}
+    {% else %}
+      {% set radioItems = radioItems | push({
+        value: featureType.value,
+        text: featureType.text
+      }) %}
+    {% endif %}
+  {% endfor %}
+
+  {{ radios({
+    idPrefix: fieldPrefix,
+    name: fieldName,
+    fieldset: {
+      legend: {
+        classes: "nhsuk-fieldset__legend--s nhsuk-u-visually-hidden",
+        isPageHeading: false
+      }
+    },
+    items: radioItems
   }) }}
-{% endif %}
 
-{% set linkHref %}
-  {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
-{% endset %}
+  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+    {{ button({
+      text: addButtonText,
+      id: "addBtn",
+      attributes: {
+        type: "button",
+        "data-action": "add"
+      }
+    }) }}
 
-{% if allowEdits %}
-  <p>
-    <a href="{{ linkHref | safe }}" class="nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
-  </p>
-{% endif %}
+    {{ button({
+      text: "Cancel",
+      classes: "nhsuk-button--secondary",
+      attributes: {
+       type: "button",
+       "data-action": "cancel"
+       }
+    }) }}
+
+    {% if showRemoveButton %}
+    {{ button({
+      text: "Remove",
+      classes: "nhsuk-button--warning",
+      attributes: {
+       type: "button",
+       "data-action": "remove"
+       }
+    }) }}
+    {% endif %}
+  </div>
+</div>

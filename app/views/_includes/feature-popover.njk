@@ -23,9 +23,9 @@
 {% set defaultFeatureTypes = [
   { value: "mole", text: "Mole" },
   { value: "wart", text: "Wart" },
-  { value: "breast-reduction-scar", text: "Breast reduction scar" },
-  { value: "other-scar", text: "Other scar" },
-  { value: "other-feature", text: "Other feature" }
+  { value: "non-surgical-scar", text: "Non-surgical scar" },
+  { value: "bruising-or-trauma", text: "Bruising or trauma" },
+  { value: "other-feature", text: "Other feature", hasDetails: true }
 ] %}
 
 {% set featureTypes = featureTypes or defaultFeatureTypes %}
@@ -38,13 +38,13 @@
   {% set radioItems = [] %}
 
   {% for featureType in featureTypes %}
-    {% if featureType.value == "other-feature" %}
+    {% if featureType.hasDetails %}
       {% set otherConditionalHtml %}
         {{ input({
           id: "customLabel",
           name: "customLabel",
           label: {
-            text: customInputLabel
+            text: "Provide details"
           }
         }) }}
       {% endset %}
