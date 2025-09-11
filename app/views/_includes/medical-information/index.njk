@@ -111,7 +111,24 @@
 
   {# Explicitly set referrer chain to the current url #}
   {% set referrerChain = currentUrl %}
-  {% include "add-symptom-button-menu.njk" %}
+
+  <h4>Add symptoms</h4>
+  <div class="app-button-group">
+    {% for symptomType in ['lump', 'swellingOrShapeChange', 'skinChange', 'nippleChange', 'other'] %}
+      {% set symptomNames = {
+        lump: 'Lump',
+        swellingOrShapeChange: 'Swelling or shape change',
+        skinChange: 'Skin change',
+        nippleChange: 'Nipple change',
+        other: 'Other'
+      } %}
+      {{ button({
+        text: symptomNames[symptomType],
+        href: ("./medical-information/symptoms/add?symptomType=" + symptomType) | urlWithReferrer(currentUrl, scrollTo),
+        classes: "nhsuk-button--secondary app-button--small"
+      }) }}
+    {% endfor %}
+  </div>
 {% endset %}
 
 {% switch displayFormat %}
