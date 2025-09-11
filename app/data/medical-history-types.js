@@ -5,7 +5,7 @@ module.exports = [
     type: 'breastCancer',
     name: 'Breast cancer',
     slug: 'breast-cancer',
-    canHaveMultiple: false,
+    canHaveMultiple: true,
   },
   {
     type: 'implantedMedicalDevice',
@@ -17,7 +17,7 @@ module.exports = [
     type: 'breastImplantsAugmentation',
     name: 'Breast implants or augmentation',
     slug: 'breast-implants-augmentation',
-    canHaveMultiple: true,
+    canHaveMultiple: false,
   },
   {
     type: 'mastectomyLumpectomy',

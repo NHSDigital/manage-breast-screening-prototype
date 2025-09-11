@@ -9,17 +9,13 @@
 
   {% call fieldset({
     legend: {
-      text: "In which breasts has " + (participant.demographicInformation.firstName or "the participant") + " had a cancer diagnosis?",
+      text: "In which breasts was cancer diagnosed?",
       classes: "nhsuk-fieldset__legend--m"
     },
     attributes: {
       "aria-describedby": "breast-location-hint"
     }
   }) %}
-
-  <div class="nhsuk-hint" id="breast-location-hint">
-      Include any breast cancer diagnosis including initial, recurring or secondary
-    </div>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
@@ -89,35 +85,107 @@
     inputmode: "numeric"
   }) }}
 
-  {% set surgeryQuestionText %}
-    What surgery have they had
+  {% set procedureQuestionText %}
+    What procedure have they had
   {%- endset %}
 
-  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
-  <h2 aria-hidden="true">{{ surgeryQuestionText }}?</h2>
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of radios #}
+  <h2 aria-hidden="true">{{ procedureQuestionText }}?</h2>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
-      {{ checkboxes({
-        name: "event[medicalHistoryTemp][surgeryRightBreast]",
-        values: event.medicalHistoryTemp.surgeryRightBreast,
-        idPrefix: "surgeryRightBreast",
+      {{ radios({
+        name: "event[medicalHistoryTemp][procedureRightBreast]",
+        value: event.medicalHistoryTemp.procedureRightBreast,
+        idPrefix: "procedureRightBreast",
         fieldset: {
           legend: {
-            html: ((surgeryQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
+            html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
             classes: "nhsuk-fieldset__legend--s",
             isPageHeading: false
           }
         },
         items: [
           {
-            value: "Full mastectomy",
-            text: "Full mastectomy"
+            value: "Lumpectomy",
+            text: "Lumpectomy"
           },
           {
-            value: "Lumpectomy (or partial mastectomy)",
-            text: "Lumpectomy (or partial mastectomy)"
+            value: "Mastectomy (tissue remaining)",
+            text: "Mastectomy (tissue remaining)"
           },
+          {
+            value: "Mastectomy (no tissue remaining)",
+            text: "Mastectomy (no tissue remaining)"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures"
+          }
+        ]
+      }) }}
+    </div>
+    <div class="nhsuk-grid-column-one-half">
+      {{ radios({
+        name: "event[medicalHistoryTemp][procedureLeftBreast]",
+        value: event.medicalHistoryTemp.procedureLeftBreast,
+        idPrefix: "procedureLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Lumpectomy",
+            text: "Lumpectomy"
+          },
+          {
+            value: "Mastectomy (tissue remaining)",
+            text: "Mastectomy (tissue remaining)"
+          },
+          {
+            value: "Mastectomy (no tissue remaining)",
+            text: "Mastectomy (no tissue remaining)"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures"
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+  {% set otherSurgeryQuestionText %}
+    What other surgery have they had
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ otherSurgeryQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][otherSurgeryRightBreast]",
+        values: event.medicalHistoryTemp.otherSurgeryRightBreast,
+        idPrefix: "otherSurgeryRightBreast",
+        fieldset: {
+          legend: {
+            html: ((otherSurgeryQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
           {
             value: "Lymph node surgery",
             text: "Lymph node surgery"
@@ -143,25 +211,17 @@
     </div>
     <div class="nhsuk-grid-column-one-half">
       {{ checkboxes({
-        name: "event[medicalHistoryTemp][surgeryLeftBreast]",
-        values: event.medicalHistoryTemp.surgeryLeftBreast,
-        idPrefix: "surgeryLeftBreast",
+        name: "event[medicalHistoryTemp][otherSurgeryLeftBreast]",
+        values: event.medicalHistoryTemp.otherSurgeryLeftBreast,
+        idPrefix: "otherSurgeryLeftBreast",
         fieldset: {
           legend: {
-            html: ((surgeryQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
+            html: ((otherSurgeryQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
             classes: "nhsuk-fieldset__legend--s",
             isPageHeading: false
           }
         },
         items: [
-          {
-            value: "Full mastectomy",
-            text: "Full mastectomy"
-          },
-          {
-            value: "Lumpectomy (or partial mastectomy)",
-            text: "Lumpectomy (or partial mastectomy)"
-          },
           {
             value: "Lymph node surgery",
             text: "Lymph node surgery"
