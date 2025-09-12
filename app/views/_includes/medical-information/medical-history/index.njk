@@ -297,9 +297,9 @@
         {% set isRemoved = historyItem.deviceRemoved or historyItem.implantsRemoved %}
         {% if isRemoved %}
           Implanted in
-        {% endif %}{{ historyItem.year }} ({{ historyItem.year | formatRelativeDate }})
+        {% endif %}{{ historyItem.year }} ({{ historyItem.year | relativeYear }})
         {% if isRemoved %}
-          <br>Removed in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | formatRelativeDate }})
+          <br>Removed in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }})
         {% endif %}
       {% endset %}
 

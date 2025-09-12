@@ -111,11 +111,21 @@ const isValidDate = (dateInput) => {
   let date
 
   // Handle array or object input
-  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+  if (
+    Array.isArray(dateInput) ||
+    (typeof dateInput === 'object' &&
+      dateInput !== null &&
+      !(dateInput instanceof Date))
+  ) {
     // Check if it's a month/year input first
     if (Array.isArray(dateInput) && dateInput.length === 2) {
       date = monthYearToDateObject(dateInput)
-    } else if (typeof dateInput === 'object' && dateInput.month && dateInput.year && !dateInput.day) {
+    } else if (
+      typeof dateInput === 'object' &&
+      dateInput.month &&
+      dateInput.year &&
+      !dateInput.day
+    ) {
       date = monthYearToDateObject(dateInput)
     } else {
       // Handle full date input
@@ -153,7 +163,12 @@ const formatDate = (dateString, format = 'D MMMM YYYY') => {
     // Check if it's a month/year input first
     if (Array.isArray(dateString) && dateString.length === 2) {
       dateObj = monthYearToDateObject(dateString)
-    } else if (typeof dateString === 'object' && dateString.month && dateString.year && !dateString.day) {
+    } else if (
+      typeof dateString === 'object' &&
+      dateString.month &&
+      dateString.year &&
+      !dateString.day
+    ) {
       dateObj = monthYearToDateObject(dateString)
     } else {
       // Handle full date input
@@ -318,11 +333,21 @@ const formatRelativeDate = (dateInput, withoutSuffix = false) => {
   let date
 
   // Handle array or object input
-  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+  if (
+    Array.isArray(dateInput) ||
+    (typeof dateInput === 'object' &&
+      dateInput !== null &&
+      !(dateInput instanceof Date))
+  ) {
     // Check if it's a month/year input first
     if (Array.isArray(dateInput) && dateInput.length === 2) {
       date = monthYearToDateObject(dateInput)
-    } else if (typeof dateInput === 'object' && dateInput.month && dateInput.year && !dateInput.day) {
+    } else if (
+      typeof dateInput === 'object' &&
+      dateInput.month &&
+      dateInput.year &&
+      !dateInput.day
+    ) {
       date = monthYearToDateObject(dateInput)
     } else {
       // Handle full date input
@@ -359,6 +384,58 @@ const formatRelativeDate = (dateInput, withoutSuffix = false) => {
 }
 
 /**
+ * Format a year as relative to the current year
+ * @param {string|number|object} yearInput - Year as number, string, or object {year: 2024}
+ * @returns {string} Relative year description (e.g., "this year", "last year", "3 years ago")
+ */
+const relativeYear = (yearInput) => {
+  if (!yearInput) return ''
+
+  let year
+
+  // Handle different input types
+  if (typeof yearInput === 'number') {
+    year = yearInput
+  } else if (typeof yearInput === 'string') {
+    // Check if it's just digits (year only)
+    if (/^\d{4}$/.test(yearInput.trim())) {
+      year = parseInt(yearInput.trim(), 10)
+    } else {
+      return ''
+    }
+  } else if (
+    typeof yearInput === 'object' &&
+    yearInput !== null &&
+    !(yearInput instanceof Date)
+  ) {
+    // Handle object with year property
+    if (yearInput.year) {
+      year = parseInt(yearInput.year, 10)
+    } else {
+      return ''
+    }
+  } else {
+    return ''
+  }
+
+  // Validate year is a reasonable number
+  if (isNaN(year) || year < 1900 || year > 2100) return ''
+
+  // Calculate difference from current year
+  const currentYear = dayjs().year()
+  const yearDifference = currentYear - year
+
+  // Return appropriate relative description
+  if (yearDifference === 0) return 'this year'
+  if (yearDifference === 1) return 'last year'
+  if (yearDifference === -1) return 'next year'
+  if (yearDifference > 1) return `${yearDifference} years ago`
+  if (yearDifference < -1) return `in ${Math.abs(yearDifference)} years`
+
+  return ''
+}
+
+/**
  * Calculate the number of days since a given date
  * @param {string | object | array } dateInput - Input date in one of ISO date string, keyed object, array of [day, month, year], [month, year], or {month, year}
  * @param {string | Dayjs | null} [compareDate] - Optional reference date (defaults to today)
@@ -373,11 +450,21 @@ const daysSince = (dateInput, compareDate = null) => {
   let date
 
   // Handle array or object input
-  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+  if (
+    Array.isArray(dateInput) ||
+    (typeof dateInput === 'object' &&
+      dateInput !== null &&
+      !(dateInput instanceof Date))
+  ) {
     // Check if it's a month/year input first
     if (Array.isArray(dateInput) && dateInput.length === 2) {
       date = monthYearToDateObject(dateInput)
-    } else if (typeof dateInput === 'object' && dateInput.month && dateInput.year && !dateInput.day) {
+    } else if (
+      typeof dateInput === 'object' &&
+      dateInput.month &&
+      dateInput.year &&
+      !dateInput.day
+    ) {
       date = monthYearToDateObject(dateInput)
     } else {
       // Handle full date input
@@ -412,11 +499,21 @@ const isToday = (dateInput) => {
   let date
 
   // Handle array or object input
-  if (Array.isArray(dateInput) || (typeof dateInput === 'object' && dateInput !== null && !(dateInput instanceof Date))) {
+  if (
+    Array.isArray(dateInput) ||
+    (typeof dateInput === 'object' &&
+      dateInput !== null &&
+      !(dateInput instanceof Date))
+  ) {
     // Check if it's a month/year input first
     if (Array.isArray(dateInput) && dateInput.length === 2) {
       date = monthYearToDateObject(dateInput)
-    } else if (typeof dateInput === 'object' && dateInput.month && dateInput.year && !dateInput.day) {
+    } else if (
+      typeof dateInput === 'object' &&
+      dateInput.month &&
+      dateInput.year &&
+      !dateInput.day
+    ) {
       date = monthYearToDateObject(dateInput)
     } else {
       // Handle full date input
@@ -607,7 +704,12 @@ const add = (dateInput, amount, unit) => {
     // Check if it's a month/year input first
     if (Array.isArray(dateInput) && dateInput.length === 2) {
       date = monthYearToDateObject(dateInput)
-    } else if (typeof dateInput === 'object' && dateInput.month && dateInput.year && !dateInput.day) {
+    } else if (
+      typeof dateInput === 'object' &&
+      dateInput.month &&
+      dateInput.year &&
+      !dateInput.day
+    ) {
       date = monthYearToDateObject(dateInput)
     } else {
       // Handle full date input
@@ -650,6 +752,7 @@ module.exports = {
   formatTimeRange,
   formatDateTime,
   formatRelativeDate,
+  relativeYear,
   formatDateRange,
   isToday,
   isPast,
