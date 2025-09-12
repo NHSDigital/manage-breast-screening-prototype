@@ -293,6 +293,16 @@
         {% endif %}
       {% endset %}
 
+      {% set yearText %}
+        {% set isRemoved = historyItem.deviceRemoved or historyItem.implantsRemoved %}
+        {% if isRemoved %}
+          Implanted in
+        {% endif %}{{ historyItem.year }} ({{ historyItem.year | formatRelativeDate }})
+        {% if isRemoved %}
+          <br>Removed in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | formatRelativeDate }})
+        {% endif %}
+      {% endset %}
+
       {% set diagnosisDateText %}
         {% if historyItem.diagnosisDate %}
           {% if historyItem.diagnosisDate == "Specific date" %}
@@ -408,6 +418,14 @@
                 html: mastectomyLumpectomySurgeryReasonHtml
               }
             } if historyItem.mastectomyLumpectomySurgeryReason,
+            {
+              key: {
+                text: typeData.yearLabel or "Year"
+              },
+              value: {
+                html: yearText
+              }
+            } if historyItem.year,
             {
               key: {
                 text: "Date"

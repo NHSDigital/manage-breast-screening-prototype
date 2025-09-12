@@ -82,16 +82,29 @@
     </div>
   </div>
 
-  {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
+  {% set yearText = "Year of procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  <h2>Removed devices</h2>
 
   {# Implant removal #}
   {% set conditionalInput %}
-  {{ input({
+  {# {{ input({
       name: "event[medicalHistoryTemp][removalDetails]",
       value: event.medicalHistoryTemp.removalDetails,
       label: {
         text: "Provide details"
       }
+    }) }} #}
+    {{ input({
+      label: {
+        text: "Year removed"
+      },
+      name: "event[medicalHistoryTemp][yearRemoved]",
+      value: event.medicalHistoryTemp.yearRemoved,
+      id: "yearRemoved",
+      classes: "nhsuk-input--width-4",
+      inputmode: "numeric"
     }) }}
   {% endset %}
 

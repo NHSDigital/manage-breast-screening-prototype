@@ -167,8 +167,8 @@
     </div>
   </div>
 
-  {# Was procedure in last 6 months #}
-  {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
+  {% set yearText = "Year of surgery (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% set conditionalInputHtml %}
     {{ input({

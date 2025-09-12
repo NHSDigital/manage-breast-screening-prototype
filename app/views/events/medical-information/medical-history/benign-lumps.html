@@ -84,56 +84,8 @@
     </div>
   </div>
 
-  {% set conditionalDateHtml %}
-  {{ dateInput({
-      id: "diagnosisDateSpecific",
-      namePrefix: "event[medicalHistoryTemp][diagnosisDateSpecific]",
-      fieldset: {
-        legend: {
-          text: "Date of most recent diagnosis",
-          classes: "nhsuk-fieldset__legend--s"
-        }
-      },
-      hint: {
-        text: "For example, 3 2019"
-      },
-      items: [
-        {
-          name: "month",
-          classes: "nhsuk-input--width-2"
-        },
-        {
-          name: "year",
-          classes: "nhsuk-input--width-4"
-        }
-      ]
-    }) }}
-  {% endset %}
-
-  {{ radios({
-    name: "event[medicalHistoryTemp][diagnosisDate]",
-    value: event.medicalHistoryTemp.diagnosisDate,
-    fieldset: {
-      legend: {
-        text: "When was the most recent diagnosis?",
-        classes: "nhsuk-fieldset__legend--m"
-      }
-    },
-    items: [
-      {
-        value: "Specific date",
-        text: "Add a date",
-        values: event.medicalHistoryTemp.diagnosisDateSpecific,
-        conditional: {
-          html: conditionalDateHtml
-        }
-      },
-      {
-        value: "Date unknown",
-        text: "Date unknown"
-      }
-    ]
-  }) }}
+  {% set yearText = "Year of procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% set treatmentLocationText = "Where were the tests and treatment done?" %}
   {% include "_includes/medical-information/medical-history/location.njk" %}

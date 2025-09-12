@@ -72,7 +72,8 @@
     ]
   }) }}
 
-  {% include "_includes/medical-information/medical-history/recent-procedure.njk" %}
+  {% set yearText = "Year of procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
