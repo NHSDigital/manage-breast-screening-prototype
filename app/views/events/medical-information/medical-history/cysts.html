@@ -1,0 +1,38 @@
+{# app/views/events/medical-information/medical-history/cysts.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Add details of cysts" %}
+{% set medicalHistoryType = "cysts" %}
+
+{% block formContent %}
+
+  {{ radios({
+    name: "event[medicalHistoryTemp][cystsStatus]",
+    value: event.medicalHistoryTemp.cystsStatus,
+    fieldset: {
+      legend: {
+        text: "Has " + (participant.demographicInformation.firstName or "the participant") + " had breast cysts?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Yes, not treated",
+        text: "Yes, not treated"
+      },
+      {
+        value: "Yes, drained or removed",
+        text: "Yes, drained or removed"
+      },
+      {
+        value: "No",
+        text: "No"
+      }
+    ]
+  }) }}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}
