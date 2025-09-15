@@ -57,21 +57,6 @@ function getEventData(data, clinicId, eventId) {
   }
 }
 
-// // Update event status and add to history
-// function updateEventStatus (event, newStatus) {
-//   return {
-//     ...event,
-//     status: newStatus,
-//     statusHistory: [
-//       ...event.statusHistory,
-//       {
-//         status: newStatus,
-//         timestamp: new Date().toISOString(),
-//       },
-//     ],
-//   }
-// }
-
 module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics
   router.use('/clinics/:clinicId/events/:eventId', (req, res, next) => {
@@ -247,8 +232,6 @@ module.exports = (router) => {
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {
     const { clinicId, eventId } = req.params
-    // res.render('events/show', {
-    // })
     res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
   })
 
@@ -372,6 +355,48 @@ module.exports = (router) => {
     }
   )
 
+  // Handle appointment note form submission
+  router.post('/clinics/:clinicId/events/:eventId/appointment-note', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    
+    // Save the appointment note to the temp event data
+    if (!data.event) {
+      data.event = {}
+    }
+    
+    data.event.appointmentNote = req.body.appointmentNote
+    
+    // Save the temporary event data back to the main events array
+    saveTempEventToEvent(data)
+    
+    // Flash success message
+    req.flash('success', 'Appointment note saved')
+    
+    // Redirect back to the appointment page
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+  })
+
+  // Handle appointment note deletion
+  router.get('/clinics/:clinicId/events/:eventId/appointment-note/delete', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    
+    // Clear the appointment note from temp event data
+    if (data.event) {
+      delete data.event.appointmentNote
+    }
+    
+    // Save the temporary event data back to the main events array
+    saveTempEventToEvent(data)
+    
+    // Flash success message
+    req.flash('success', 'Appointment note deleted')
+    
+    // Redirect back to the appointment page
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+  })
+
   // Main route in to starting an event - used to clear any temp data
   router.get(
     '/clinics/:clinicId/events/:eventId/previous-mammograms/add',
@@ -421,7 +446,6 @@ module.exports = (router) => {
         req.flash('success', mammogramAddedMessage)
 
         delete data.event?.previousMammogramTemp
-        // return res.redirect(`/clinics/${clinicId}/events/${eventId}`)
 
         const returnUrl = getReturnUrl(
           `/clinics/${clinicId}/events/${eventId}`,
@@ -657,9 +681,6 @@ module.exports = (router) => {
           // For other symptom types (Lump, Swelling)
           symptom.location = symptomTemp.location
 
-          // if (symptomTemp.location?.includes('other')) {
-          //   symptom.otherLocationDescription = symptomTemp.otherLocationDescription
-          // }
           // Add location descriptions
           if (symptomTemp.location === 'right breast') {
             symptom.rightBreastDescription = symptomTemp.rightBreastDescription
@@ -875,10 +896,7 @@ module.exports = (router) => {
     res.redirect(returnUrl)
   })
 
-  // Medical history
-
-  // Medical history routes - add these to the events.js file
-
+  // Medical history routes
   const medicalHistoryTypes = require('../data/medical-history-types')
 
   function isValidMedicalHistoryType(type) {
@@ -986,8 +1004,6 @@ module.exports = (router) => {
         medicalHistoryItem.dateAdded = new Date().toISOString()
         medicalHistoryItem.addedBy = data.currentUser.id
       }
-
-      // REMOVED: The consent line that was adding consentGiven to all items
 
       // Update existing or add new
       const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
@@ -1154,8 +1170,6 @@ module.exports = (router) => {
   })
 
   // Imaging view - this is the main imaging page for the event
-
-  // Specific route for imaging view
   router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
@@ -1244,7 +1258,6 @@ module.exports = (router) => {
     '/clinics/:clinicId/events/:eventId/attended-not-screened-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
-
       const data = req.session.data
 
       const participantName = getFullName(data.participant)
@@ -1303,7 +1316,6 @@ module.exports = (router) => {
   // Handle screening completion
   router.post('/clinics/:clinicId/events/:eventId/complete', (req, res) => {
     const { clinicId, eventId } = req.params
-
     const data = req.session.data
     const participantName = getFullName(data.participant)
     const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
@@ -1318,8 +1330,6 @@ module.exports = (router) => {
     req.flash('success', { wrapWithHeading: successMessage })
 
     res.redirect(`/clinics/${clinicId}`)
-
-    // res.redirect(`/clinics/${clinicId}/events/${eventId}/screening-complete`)
   })
 
   // Handle special appointment form submission

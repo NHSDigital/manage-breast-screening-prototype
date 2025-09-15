@@ -29,6 +29,7 @@
 
   {% set valueHtml = "None" %}
 
+
   {# Scars, moles, warts, lumps #}
   {# Temporarily hardcode some features for UR #}
   {% set useFakeBreastFeaturesCard = true %}
@@ -117,6 +118,10 @@
     feature: true,
     descriptionHtml: otherDetailsCardHtml
   }) }}
+
+
+   {# Appointment note section #}
+  {% include "_includes/appointment-note.njk" %}
 
   {{ button({
     text: "Complete screening and return to clinic"
