@@ -1,17 +1,19 @@
-{# app/views/events/appointment #}
+{# app/views/events/appointment.html #}
 
 {% extends 'layout-appointment-tab.html' %}
 
 {# {% set pageHeading = "Screening appointment" %} #}
 
-
 {% set activeTab = 'appointment' %}
 
-{% set formAction = "./start" %}
+{# Remove or comment out the formAction that's causing the redirect #}
+{# {% set formAction = "./start" %} #}
 
 {% block tabContent %}
 
   {% include "_includes/special-appointment-warning-card.njk" %}
+
+  {% include "_includes/appointment-note.njk" %}
 
   {% set statusHtml %}
     {# Status tag with check-in link #}
@@ -42,7 +44,17 @@
     {% endif %}
   {% endset %}
 
-  {% set appointmentHtml %}
+  {% set appointmentNotesHtml %}
+    {% if event.appointmentNote %}
+      <p>{{ event.appointmentNote }}</p>
+    {% else %}
+      {{ "No appointment note added" | asHint }}
+    {% endif %}
+  {% endset %}
+
+  {% call card({
+    headingHtml: " "
+  }) %}
     {{ summaryList({
       rows: [
         {
@@ -114,26 +126,18 @@
             text: "Appointment notes"
           },
           value: {
-            html: ''
+            html: appointmentNotesHtml
           },
           actions: {
             items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "appointment notes"
-              }
+
             ]
           }
-        } if false
+        }
       ]
     } | handleSummaryListMissingInformation) }}
-  {% endset %}
-
-  {% call card({
-    headingHtml: " "
-  }) %}
-    {{ appointmentHtml | safe }}
   {% endcall %}
+
+  
 
 {% endblock %}

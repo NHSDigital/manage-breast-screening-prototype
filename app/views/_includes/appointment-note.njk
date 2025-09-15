@@ -1,0 +1,48 @@
+{# app/views/_includes/appointment-note.njk #}
+
+{% set appointmentNoteFormHtml %}
+  <form method="post" action="/clinics/{{ clinicId }}/events/{{ eventId }}/appointment-note">      
+    {{ textarea({
+      name: "appointmentNote",
+      id: "appointment-note",
+      label: {
+        text: "Note",
+        classes: "nhsuk-label--s"
+      },
+      hint: {
+        text: "Add any relevant information about this appointment"
+      },
+      value: event.appointmentNote,
+      rows: 4
+    }) }}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Save appointment note"
+      }) }}
+
+      {% if event.appointmentNote %}
+        <a href="/clinics/{{ clinicId }}/events/{{ eventId }}/appointment-note/delete" class="nhsuk-link app-link--warning">
+          Delete appointment note
+        </a>
+      {% endif %}
+    </div>
+  </form>
+{% endset %}
+
+{% set appointmentNoteContentsSummary %}
+  {% if event.appointmentNote %}
+    Note added
+  {% else %}
+    No note added
+  {% endif %}
+{% endset %}
+
+{{ appDetails({
+  id: "appointment-note",
+  classes: "nhsuk-expander",
+  summaryText: "Appointment note",
+  contentsSummary: appointmentNoteContentsSummary,
+  html: appointmentNoteFormHtml,
+  open: false
+}) }}

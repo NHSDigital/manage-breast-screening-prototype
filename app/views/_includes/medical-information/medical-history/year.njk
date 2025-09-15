@@ -1,0 +1,16 @@
+{# app/views/_includes/medical-information/medical-history/year.njk #}
+
+{{ input({
+  label: {
+    text: yearText or "Year of proceedure (optional)",
+    classes: "nhsuk-label--m"
+  },
+  name: "event[medicalHistoryTemp][year]",
+  value: event.medicalHistoryTemp.year,
+  id: "year",
+  classes: "nhsuk-input--width-4",
+  hint: {
+    text: "Leave blank if unknown"
+  },
+  inputmode: "numeric"
+}) }}

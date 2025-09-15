@@ -1,0 +1,80 @@
+{# app/views/events/medical-information/medical-history/other-procedures.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Add procedure details" %}
+{% set medicalHistoryType = "otherProcedures" %}
+
+{% block formContent %}
+
+  {{ radios({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: "What procedure has " + (participant.demographicInformation.firstName or "the participant") + " had?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Breast reduction",
+        text: "Breast reduction",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][breastReductionDetails]",
+            value: event.medicalHistoryTemp.breastReductionDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Breast symmetrisation",
+        text: "Breast symmetrisation",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][breastSymmetrisationDetails]",
+            value: event.medicalHistoryTemp.breastSymmetrisationDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Nipple correction",
+        text: "Nipple correction",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][nippleCorrectionDetails]",
+            value: event.medicalHistoryTemp.nippleCorrectionDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            name: "event[medicalHistoryTemp][typeOtherDetails]",
+            value: event.medicalHistoryTemp.typeOtherDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
+
+  {% set yearText = "Year of procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}
