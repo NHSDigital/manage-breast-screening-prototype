@@ -47,10 +47,8 @@
   {% set additionalDetailsHintText = "Include any other relevant information" %}
   {% include "_includes/medical-information/medical-history/additional-details.njk" %}
 
-  <div class="app-button-group">
-    {{ button({
-      text: "Continue"
-    }) }}
-  </div>
-  
+  {{ button({
+    text: "Continue"
+  }) }}
+
 {% endblock %}
