@@ -127,9 +127,6 @@
     </ul>
   </li>
   {% set completedSections = completedSections + "&event[workflowStatus][record-medical-information]=completed" %}
-    <li>
-        <a href="{{ startUrl }}?returnTo=medical-information/mastectomy-image-requirements&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Mastectomy image requirements</a>
-      </li>
   <li>
     <a href="{{ startUrl }}?returnTo=images&{{ completedSections }}">Images</a>
   </li>

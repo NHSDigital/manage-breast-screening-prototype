@@ -52,13 +52,6 @@
   <h2>Removed implants</h2>
 
   {% set conditionalDetails %}
-    {# {{ input({
-      name: "event[medicalHistoryTemp][removalDetails]",
-      value: event.medicalHistoryTemp.removalDetails,
-      label: {
-        text: "Provide details"
-      }
-    }) }} #}
     {{ input({
       label: {
         text: "Year removed"
@@ -69,7 +62,6 @@
       classes: "nhsuk-input--width-4",
       inputmode: "numeric"
     }) }}
-
   {% endset %}
 
   {{ checkboxes({

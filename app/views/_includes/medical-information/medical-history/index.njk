@@ -19,7 +19,7 @@
       {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
 
-      {# Type - used by implanted medical devices, other proceedures #}
+      {# Type - used by implanted medical devices, other procedures #}
       {% set typeHtml %}
         {% if historyItem.type %}
           {% if historyItem.type | isArray %}

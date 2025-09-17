@@ -1,4 +1,4 @@
-{# app/views/events/medical-information/medical-history/appointment-should-not-proceed.html #}
+{# app/views/events/medical-information/medical-history/appointment-cannot-proceed.html #}
 
 {% extends 'layout-app.html' %}
 
@@ -7,8 +7,6 @@
 {% set formAction = './../previous-mammograms-answer' %}
 
 {% block pageContent %}
-
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
