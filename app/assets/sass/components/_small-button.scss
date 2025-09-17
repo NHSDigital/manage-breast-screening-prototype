@@ -8,6 +8,8 @@
   margin-bottom: nhsuk-spacing(3);
 }
 
+// Reduce button group margin
+// Based on https://github.com/nhsuk/nhsuk-frontend/blob/8f453df75be6c4dced33c57d0a47b409f99c9004/packages/nhsuk-frontend/src/nhsuk/core/objects/_button-group.scss#L67
 .app-button-group--small {
   $horizontal-gap: nhsuk-spacing(2);
 

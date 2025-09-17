@@ -197,24 +197,9 @@
   {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
 {% endset %}
 
-{# {% if hasBreastFeatures %} #}
-  {% set breastFeaturesContentsSummaryText %}
-    {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
-  {% endset %}
-
-{# {% else %}
-
-  {% set breastFeaturesContentsSummaryHtml %}
-    <p class="nhsuk-u-secondary-text-color">
-      No breast features recorded
-    </p>
-    <p class="nhsuk-u-margin-bottom-0">
-      <a href="{{ addBreastFeatureHref | safe }}" class="js-expand-parent-section nhsuk-link--no-visited-state">
-        Add a feature
-      </a>
-    </p>
-  {% endset %}
-{% endif %} #}
+{% set breastFeaturesContentsSummaryText %}
+  {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
+{% endset %}
 
 {% set breastFeaturesHtml %}
   {% include "_includes/medical-information/breast-features.njk" %}
