@@ -1,0 +1,69 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Request consent to continue" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./consent-answer" %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <h2 class="nhsuk-heading-m">Explain the risks</h2>
+  <p>You must get the participant’s permission to carry out a mammogram on breasts with implants.</p>
+
+  <p>There is no medical reason for people with breast implants to avoid the procedure. The benefits of early cancer detection outweigh the minor increase in risk.</p>
+
+  <p>Explain to them that:</p>
+
+  <ul class="nhsuk-list nhsuk-list--bullet">
+    <li>very rarely, implants can rupture due to pressure during imaging</li>
+    <li>a special imaging technique will be used to reduce the likelihood of complications</li>
+    <li>implants make it harder to spot signs of cancer as can they obscure breast tissue</li>
+    <li>extra images may be needed to scan enough breast tissue, slightly increasing radiation exposure</li>
+  </ul>
+
+  <p>If the participant notices any problems with their implants after the appointment, they should contact their GP.</p>
+
+  <p>Once you’ve explained the process and the risks, ask them to read and complete your paper consent form.</p>
+
+  <h2 class="nhsuk-heading-m">Difficulties interpreting images</h2>
+  <p>Mammograms with breast implants can be less effective at detecting breast cancer because the implants can obscure some breast tissue.</p>
+
+  {{ radios({
+    name: "event[medicalInformation][implantedDevices][consentGiven]",
+    value: event.medicalInformation.implantedDevices.consentGiven,
+    fieldset: {
+      legend: {
+        text: "Has " + (participant.demographicInformation.firstName or "the participant") + " signed the consent form?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no",
+        text: "No, end the appointment"
+      }
+    ]
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+  {% include "screening-cannot-proceed-link.njk" %}
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{# app/views/events/medical-information/medical-history/implanted-medical-device.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Add details of an implanted medical device" %}
+{% set medicalHistoryType = "implantedMedicalDevice" %}
+
+
+{% block formContent %}
+
+  {% set conditionalTypeDetails %}
+    {{ input({
+      name: "event[medicalHistoryTemp][typeOtherDetails]",
+      value: event.medicalHistoryTemp.typeOtherDetails,
+      label: {
+        text: "Provide details"
+      }
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    name: "event[medicalHistoryTemp][type]",
+    value: event.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: "What device does " + (participant.demographicInformatin.firstName or "the participant") + " have?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "Cardiac device",
+        text: "Cardiac device (such as a pacemaker or ICD)"
+      },
+      {
+        value: "Hickman line",
+        text: "Hickman line"
+      },
+      {
+        value: "Other medical device",
+        text: "Other medical device (or does not know)",
+        conditional: {
+          html: conditionalTypeDetails
+        }
+      }
+    ]
+  }) }}
+
+  {% set yearText = "Year of procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  <h2>Removed implants</h2>
+
+  {% set conditionalDetails %}
+    {{ input({
+      label: {
+        text: "Year removed"
+      },
+      name: "event[medicalHistoryTemp][yearRemoved]",
+      value: event.medicalHistoryTemp.yearRemoved,
+      id: "yearRemoved",
+      classes: "nhsuk-input--width-4",
+      inputmode: "numeric"
+    }) }}
+  {% endset %}
+
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][deviceRemoved]",
+    values: event.medicalHistoryTemp.deviceRemoved,
+    items: [
+      {
+        value: "Implanted device has been removed",
+        text: "Implanted device has been removed",
+        conditional: {
+          html: conditionalDetails
+        }
+      }
+    ]
+  }) }}
+
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}

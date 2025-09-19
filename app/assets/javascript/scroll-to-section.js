@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search)
   const scrollTo = urlParams.get('scrollTo')
 
+  console.log("scrollTo running", scrollTo)
+
   if (scrollTo) {
     const targetSection = document.getElementById(scrollTo)
     if (targetSection) {
@@ -15,8 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Scroll to the section
       setTimeout(() => {
-        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 100)
+        targetSection.scrollIntoView({ behavior: 'instant', block: 'start' })
+      }, 10)
 
       // Clean up the URL (remove scrollTo parameter)
       const url = new URL(window.location)

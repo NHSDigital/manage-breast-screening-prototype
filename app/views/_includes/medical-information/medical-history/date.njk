@@ -1,0 +1,52 @@
+{# app/views/_includes/medical-information/medical-history/date.njk #}
+
+{# File not currently used #}
+
+{% set specificDate %}
+  {{ dateInput({
+    id: "specificDate",
+    namePrefix: "event[medicalHistoryTemp][specificDate]",
+    values: event.medicalHistoryTemp.specificDate,
+    fieldset: {
+      legend: {
+        text: "Enter the date",
+        classes: "nhsuk-fieldset__legend--s nhsuk-u-visually-hidden"
+      }
+    },
+    hint: {
+      text: "For example, 15 3 2019"
+    }
+  }) }}
+{% endset %}
+
+{{ radios({
+  name: "event[medicalHistoryTemp][generalDate]",
+  value: event.medicalHistoryTemp.generalDate,
+  fieldset: {
+    legend: {
+      text: dateQuestionText or "When did it happen?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "Under six months ago",
+      text: "Under six months ago"
+    },
+    {
+      value: "Over six months ago",
+      text: "Over six months ago"
+    },
+    {
+      divider: "or"
+    },
+    {
+      value: "Specific date",
+      text: "Specific date",
+      conditional: {
+        html: specificDate
+      }
+    }
+  ]
+}) }}

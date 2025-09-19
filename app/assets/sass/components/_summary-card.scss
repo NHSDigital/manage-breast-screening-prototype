@@ -1,0 +1,166 @@
+@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
+@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
+
+// Styles for summary card adapted from:
+// https://github.com/alphagov/govuk-frontend/blob/main/packages/govuk-frontend/src/govuk/components/summary-list/_index.scss
+
+.nhsuk-summary-card__action {
+  display: inline-block;
+}
+
+@include nhsuk-media-query($until: tablet) {
+  .nhsuk-summary-card__action {
+    margin-right: nhsuk-spacing(2);
+    padding-right: nhsuk-spacing(2);
+    border-right: 1px solid $nhsuk-border-color;
+  }
+
+  .nhsuk-summary-card__action:last-child {
+    margin-right: 0;
+    padding-right: 0;
+    border: 0;
+  }
+}
+
+  @include nhsuk-media-query($from: tablet) {
+  .nhsuk-summary-card__action {
+    margin-left: nhsuk-spacing(2);
+    padding-left: nhsuk-spacing(2);
+  }
+
+  .nhsuk-summary-card__action:not(:first-child) {
+    border-left: 1px solid $nhsuk-border-color;
+  }
+
+  .nhsuk-summary-card__action:first-child {
+    margin-left: 0;
+    padding-left: 0;
+    border: 0;
+  }
+}
+
+  // Additional block for the summary card
+  .nhsuk-summary-card {
+    border: 1px solid $nhsuk-border-color;
+    @include nhsuk-responsive-margin(6, "bottom");
+  }
+
+  .nhsuk-summary-card__title-wrapper {
+    padding: nhsuk-spacing(3);
+
+    // Ensures the card header appears separate to the summary list in forced
+    // colours mode
+    border-bottom: 1px solid transparent;
+    background-color: $color_nhsuk-grey-5;
+
+    @include nhsuk-media-query($from: "tablet") {
+      display: flex;
+      // Justify removed because we always want actions on the right
+      // /justify-content: space-between;
+      flex-wrap: nowrap;
+      padding: nhsuk-spacing(3) nhsuk-spacing(4);
+    }
+  }
+
+  .nhsuk-summary-card__title {
+    @include nhsuk-font($size: 19, $weight: bold);
+    color: $nhsuk-text-color;
+    margin: nhsuk-spacing(1) nhsuk-spacing(4) nhsuk-spacing(2) 0;
+
+    @include nhsuk-media-query($from: "tablet") {
+      margin-bottom: nhsuk-spacing(1);
+    }
+  }
+
+  .nhsuk-summary-card__actions {
+    @include nhsuk-font-size($size: 19);
+    @include nhsuk-typography-weight-bold;
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: 10px;
+    margin: nhsuk-spacing(1) 0;
+    padding: 0;
+    list-style: none;
+
+    @include nhsuk-media-query($from: "tablet") {
+      justify-content: right;
+      text-align: right;
+      margin-left: auto; // Added so actions are always aligned right
+    }
+  }
+
+  .nhsuk-summary-card__action {
+    display: inline;
+
+    // We use the following media query to target IE11 and 10 only to add margin
+    // between actions.
+    //
+    // We do this because we're using row-gap to create space between actions on
+    // more evergreen browsers which IE doesn't support. @supports currently isn't
+    // a viable solution, see https://github.com/w3c/csswg-drafts/issues/3559.
+    //
+    // Solution taken from https://stackoverflow.com/questions/11173106/apply-style-only-on-ie#answer-36448860
+    // which also includes an explanation of why this works
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+      margin-bottom: nhsuk-spacing(1);
+    }
+  }
+
+  .nhsuk-summary-card__action:last-child {
+    // See above comment for why this is here
+    @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+      margin-bottom: 0;
+    }
+  }
+
+  .nhsuk-summary-card__content {
+    padding: nhsuk-spacing(3) nhsuk-spacing(3) 0;
+
+    @include nhsuk-media-query($from: "tablet") {
+      padding: nhsuk-spacing(3) nhsuk-spacing(4);
+    }
+
+    .nhsuk-summary-list {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-list__row:last-of-type {
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+  }
+
+  .nhsuk-summary-card--no-border {
+    border: none;
+
+    .nhsuk-summary-card__actions {
+      @include nhsuk-typography-weight-normal;
+    }
+
+    .nhsuk-summary-card__action {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-card__title-wrapper {
+      background-color: inherit;
+    }
+
+    .nhsuk-summary-card__title-wrapper, .nhsuk-summary-card__content {
+      padding: 0;
+    }
+  }
+
+  .nhsuk-summary-card--compact {
+
+    .nhsuk-summary-card__actions {
+      @include nhsuk-typography-weight-normal;
+    }
+
+    .nhsuk-summary-card__action {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-card__title-wrapper, .nhsuk-summary-card__content {
+      padding: nhsuk-spacing(1) nhsuk-spacing(2);
+    }
+  }
