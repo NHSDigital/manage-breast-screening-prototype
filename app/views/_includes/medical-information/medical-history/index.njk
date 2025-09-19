@@ -271,6 +271,59 @@
 
       {% endset %}
 
+      {# Other surgery - used by breast cancer #}
+      {% set otherSurgeryHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.otherSurgeryRightBreast %}
+                {# Handle cases where proceduresRightBreast is not an array #}
+                {% if not historyItem.otherSurgeryRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.otherSurgeryRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for surgery in historyItem.otherSurgeryRightBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.otherSurgeryLeftBreast %}
+                {% if not historyItem.otherSurgeryLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.otherSurgeryLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for surgery in historyItem.otherSurgeryLeftBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+      {% endset %}
+
       {# Surgery reason - Mastectomy and lumpectomy #}
       {% set mastectomyLumpectomySurgeryReasonHtml %}
         {{ historyItem.mastectomyLumpectomySurgeryReason }}
@@ -402,6 +455,14 @@
                 html: proceduresHtml
               }
             } if historyItem.proceduresRightBreast or historyItem.proceduresLeftBreast,
+            {
+              key: {
+                text: "Other surgery"
+              },
+              value: {
+                html: otherSurgeryHtml
+              }
+            } if historyItem.otherSurgeryRightBreast or historyItem.otherSurgeryLeftBreast,
             {
               key: {
                 text: "Treatment"
