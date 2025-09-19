@@ -6,7 +6,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{% set formAction = './imaging-answer' %}
+{% set formAction = './images' %}
 
 {% set activeTab = 'images' %}
 
@@ -28,13 +28,26 @@
   {% set insetHtml %}
     <p>Mammography images will appear here once they have been transmitted by the PACS</p>
   {% endset %}
+
   {{ insetText({
     html: insetHtml
   }) }}
 
-  <div id="loading-spinner" class="">
-    <p class="app-suppress-link-styles"><a href="./images?event[workflowStatus][awaiting-images]=completed"><span class="">Loading images...</span></a></p>
-  </div>
+
+  {{ appHiddenInput({
+    name: "event[workflowStatus][awaiting-images]",
+    value: "completed"
+  }) }}
+
+  <p class="app-suppress-link-styles">
+    <button class="app-button-link" type="submit">
+      Loading images...
+    </button>
+    {# <a href="./images?event[workflowStatus][awaiting-images]=completed">
+      <span class="">Loading images...</span>
+    </a> #}
+  </p>
+
 
 
   {% include "screening-cannot-proceed-link.njk" %}
