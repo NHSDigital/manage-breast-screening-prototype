@@ -1,0 +1,73 @@
+{# app/views/_templates/layout-medical-history-form.html #}
+
+{% extends 'layout-app.html' %}
+
+{# {% set gridColumn = "nhsuk-grid-column-full" %} #}
+
+{# Find the type data object from the array #}
+{% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}
+
+{# Set dynamic page heading based on whether editing existing data #}
+{% if event.medicalHistoryTemp.id %}
+  {% set dynamicPageHeading = "Edit details of " + typeDataObject.name | lower %}
+{% else %}
+  {% set dynamicPageHeading = "Add details of " + typeDataObject.name | lower %}
+{% endif %}
+
+{% set formAction = "./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo) %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ dynamicPageHeading }}
+  </h1>
+
+  {{ appHiddenInput({
+    name: "event[medicalHistoryTemp][medicalHistoryType]",
+    value: medicalHistoryType
+  }) }}
+
+  {% block formContent %}
+  {% endblock formContent %}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save",
+      attributes: {
+        name: "action",
+        value: "save"
+      }
+    }) }}
+
+    {% if typeDataObject.canHaveMultiple %}
+      {{ button({
+        text: "Save and add another",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          name: "action",
+          value: "save-and-add"
+        }
+      }) }}
+    {% endif %}
+
+
+  </div>
+
+  {# Only show link if this is a previously saved symptom #}
+  {% if event.medicalHistoryTemp.id %}
+    {% set deleteHref %}
+      ./{{ typeDataObject.slug }}/delete/{{ event.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+    {% endset %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+        Delete this item
+      </a>
+    </p>
+  {% endif %}
+
+  {# {% include "screening-cannot-proceed-link.njk" %} #}
+
+{% endblock %}

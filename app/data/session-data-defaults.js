@@ -5,6 +5,7 @@ const users = require('./users')
 const breastScreeningUnits = require('./breast-screening-units')
 // All breast screening units
 const allBreastScreeningUnits = require('./all-breast-screening-units')
+const medicalHistoryTypes = require('./medical-history-types')
 const path = require('path')
 const fs = require('fs')
 const { needsRegeneration } = require('../lib/utils/regenerate-data')
@@ -81,5 +82,6 @@ module.exports = {
   generationInfo,
   config,
   settings: defaultSettings,
-  defaultSettings
+  defaultSettings,
+  medicalHistoryTypes
 }

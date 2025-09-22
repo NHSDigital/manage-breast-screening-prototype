@@ -4,6 +4,7 @@ $nhsuk-page-width: 1260px;
 @forward "nhsuk-frontend/dist/nhsuk/nhsuk";
 
 // Components that are not in the NHS.UK frontend library
+
 @forward "components/button-menu";
 @forward "components/details";
 @forward "components/dark-mode";
@@ -17,19 +18,21 @@ $nhsuk-page-width: 1260px;
 @forward "components/forward-link";
 @forward "components/status";
 @forward "components/status-bar";
+@forward 'components/summary-card';
 @forward "components/reading";
 
 @forward "components/overrides";
 @forward "components/checkboxes";
 @forward "components/breast-features";
 @forward "components/sticky-appointment-bar";
-
+@forward 'components/small-button';
 @forward "components/annotation";
 
 @forward "misc";
 
 @forward "typography";
 @forward "utils";
+
 
 $nhsuk-page-width: 1260px;
 

@@ -153,6 +153,20 @@ const map = function (array, filterName) {
   return array.map((item) => filterFunction.call(this, item))
 }
 
+/**
+ * Check if a value is an array
+ *
+ * @param {*} value - Value to check
+ * @returns {boolean} True if value is an array, false otherwise
+ * @example
+ * isArray([1, 2, 3]) // Returns true
+ * isArray('hello') // Returns false
+ * isArray(null) // Returns false
+ */
+const isArray = (value) => {
+  return Array.isArray(value)
+}
+
 module.exports = {
   push,
   includes,
@@ -161,5 +175,6 @@ module.exports = {
   findById,
   where,
   removeWhere,
-  map
+  map,
+  isArray
 }

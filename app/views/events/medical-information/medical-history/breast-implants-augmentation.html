@@ -1,0 +1,133 @@
+{# app/views/events/medical-information/medical-history/breast-implants-augmentation.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Add details of breast implants or augmentation" %}
+{% set medicalHistoryType = "breastImplantsAugmentation" %}
+
+{% block formContent %}
+
+  {% set proceduresQuestionText %}
+    What procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][proceduresRightBreast]",
+        values: event.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Breast implants",
+            text: "Breast implants (silicone or saline)"
+          },
+          {
+            value: "Other augmentation",
+            text: "Other augmentation"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+        values: event.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Breast implants",
+            text: "Breast implants (silicone or saline)"
+          },
+          {
+            value: "Other augmentation",
+            text: "Other augmentation"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+  {% set yearText = "Year of procedure (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  <h2>Removed devices</h2>
+
+  {# Implant removal #}
+  {% set conditionalInput %}
+  {# {{ input({
+      name: "event[medicalHistoryTemp][removalDetails]",
+      value: event.medicalHistoryTemp.removalDetails,
+      label: {
+        text: "Provide details"
+      }
+    }) }} #}
+    {{ input({
+      label: {
+        text: "Year removed"
+      },
+      name: "event[medicalHistoryTemp][yearRemoved]",
+      value: event.medicalHistoryTemp.yearRemoved,
+      id: "yearRemoved",
+      classes: "nhsuk-input--width-4",
+      inputmode: "numeric"
+    }) }}
+  {% endset %}
+
+  {{ checkboxes({
+    name: "event[medicalHistoryTemp][implantsRemoved]",
+    values: event.medicalHistoryTemp.implantsRemoved,
+    classes: "nhsuk-u-margin-bottom-6",
+    items: [
+      {
+        value: "Implants have been removed",
+        text: "Implants have been removed",
+        conditional: {
+          html: conditionalInput
+        }
+      }
+    ]
+  }) }}
+  {{ appHiddenInput({
+    name: "event[medicalHistoryTemp][hasImplantsRemovedCheckbox]",
+    value: "true"
+  }) }}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}

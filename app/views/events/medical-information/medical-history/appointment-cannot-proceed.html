@@ -1,0 +1,27 @@
+{# app/views/events/medical-information/medical-history/appointment-cannot-proceed.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "This appointment cannot proceed" %}
+
+{% set formAction = './../previous-mammograms-answer' %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>The participant has not given their consent.</p>
+
+  <form method="post" action="{{ formAction }}">
+    <input type="hidden" name="action" value="end-immediately">
+    {{ button({
+      text: "End appointment and return to clinic"
+    }) }}
+  </form>
+
+{% endblock %}

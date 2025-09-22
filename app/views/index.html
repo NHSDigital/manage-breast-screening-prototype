@@ -82,6 +82,40 @@
         <a href="{{ startUrl }}?returnTo=medical-information/symptoms/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Add a symptom</a>
       </li>
       <li>
+        {% call details({
+          summaryText: "Medical history"
+        }) %}
+          <ul>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Breast cancer</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-implants-augmentation/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Breast implants or augmentation</a>
+              <ul>
+                <li>
+                  <a href="{{ startUrl }}?returnTo=medical-information/medical-history/consent&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Consent</a>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/cysts/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Cysts</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/implanted-medical-device/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Implanted medical device</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/benign-lumps/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Benign lumps</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/mastectomy-lumpectomy/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Mastectomy or lumpectomy</a>
+            </li>
+            <li>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/other-procedures/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Other procedures</a>
+            </li>
+          </ul>
+        {% endcall %}
+      </li>
+      <li>
         <a href="{{ startUrl }}?returnTo=medical-information/record-breast-features&{{ completedSections }}">Record breast features</a>
       </li>
       <li>
@@ -100,7 +134,9 @@
   <li>
     <a href="{{ startUrl }}?returnTo=review&{{ completedSections }}">Review</a>
   </li>
+  
 </ul>
+
 
 <h2>Completed screening appointment</h2>
 

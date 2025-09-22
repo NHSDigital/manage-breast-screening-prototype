@@ -15,16 +15,16 @@ const createDynamicTemplateRoute = (options) => {
     const { subPaths } = req.params // Get the wildcard paths
     const subPath = subPaths?.join('/') ?? ''
 
-    console.log(
-      `Dynamic route attempting to render: ${templatePrefix}/${subPath}`
-    )
+//     console.log(
+//       `Dynamic route attempting to render: ${templatePrefix}/${subPath}`
+//     )
 
     // Try to render {templatePrefix}/{subPath}
     const templatePath = `${templatePrefix}/${subPath}`
 
     res.render(templatePath, (error, html) => {
       if (!error) {
-        console.log(`Successfully rendered: ${templatePath}`)
+        // console.log(`Successfully rendered: ${templatePath}`)
         res.set({ 'Content-type': 'text/html; charset=utf-8' })
         res.end(html)
         return

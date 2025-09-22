@@ -1,0 +1,622 @@
+{# app/views/_includes/medical-information/medical-history/index.njk #}
+
+{# Hacky way of testing if there is any medical history data. Can't just test medicalInformation.medicalHistory as once items have been added and then deleted, it would still be truthy. #}
+{% set hasAnyMedicalHistoryData = false %}
+
+{% for typeData in data.medicalHistoryTypes %}
+
+  {% set historyItemArray = data.event.medicalInformation.medicalHistory[typeData.type] %}
+
+  {% if historyItemArray and historyItemArray | length %}
+
+    {% set hasAnyMedicalHistoryData = true %}
+    <h3 class="nhsuk-u-margin-bottom-2">{{ typeData.name }}</h3>
+
+    {% for historyItem in historyItemArray %}
+
+      {% set changeHref =  "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
+
+      {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
+
+
+      {# Type - used by implanted medical devices, other procedures #}
+      {% set typeHtml %}
+        {% if historyItem.type %}
+          {% if historyItem.type | isArray %}
+            {% if historyItem.type | length > 1 %}
+              <ul class="nhsuk-list">
+                {% for item in historyItem.type %}
+                  <li>
+                    {% if item | startsWith("Other") %}
+                      {{ item }}: {{ historyItem.typeOtherDetails }}
+                    {% else %}
+                      {{ item }}
+                    {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+            <p>
+              {% if historyItem.type[0] | startsWith("Other") %}
+                {{ historyItem.type[0] }}: {{ historyItem.typeOtherDetails }}
+              {% else %}
+                {{ historyItem.type[0] }}
+              {% endif %}
+            </p>
+          {% else %}
+            <p>
+              {% if historyItem.type | startsWith("Other") %}
+                {{ historyItem.type }}: {{ historyItem.typeOtherDetails }}
+              {% else %}
+                {{ historyItem.type }}
+                {# Grab other details used by other procedures #}
+                {% set otherDetails = historyItem[(historyItem.type | camelCase) ~ "Details"] %}
+                {% if otherDetails %}
+                  <br>
+                  Details: {{ otherDetails }}
+                {% endif %}
+              {% endif %}
+            </p>
+          {% endif %}
+        {% endif %}
+
+        {% if historyItem.deviceRemoved %}
+          <p>
+            {{ historyItem.deviceRemoved }}
+            {% if historyItem.removalDetails %}
+              <br>
+              Details: {{ historyItem.removalDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
+      {% endset %}
+
+      {# Breast cancer location #}
+      {# Todo: could this be combined in to a generic 'Breast location' row with conditional text? #}
+      {% set cancerLocationText %}
+        {% if historyItem.cancerLocation | includes("Right breast") and historyItem.cancerLocation | includes("Left breast") %}
+          Both breasts
+        {% else %}
+          {{ historyItem.cancerLocation[0] }}
+        {% endif %}
+      {% endset %}
+
+      {# Surgery - breast cancer #}
+      {% set surgeryHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.surgeryRightBreast %}
+                {# Handle cases where surgeryRightBreast is not an array #}
+                {% if not historyItem.surgeryRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.surgeryRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for surgery in historyItem.surgeryRightBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.surgeryLeftBreast %}
+                {% if not historyItem.surgeryLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.surgeryLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for surgery in historyItem.surgeryLeftBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+      {% endset %}
+
+      {% set treatmentHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.treatmentRightBreast %}
+                {# Handle cases where treatmentRightBreast is not an array #}
+                {% if not historyItem.treatmentRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.treatmentRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for treatment in historyItem.treatmentRightBreast %}
+                    <li>
+                      {{ treatment }}
+                    </li>
+                  {% else %}
+                    No treatment
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No treatment</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.treatmentLeftBreast %}
+                {% if not historyItem.treatmentLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.treatmentLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for treatment in historyItem.treatmentLeftBreast %}
+                    <li>
+                      {{ treatment }}
+                    </li>
+                  {% else %}
+                    No treatment
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No treatment</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+        {% if historyItem.systemicTreatments %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Systemic treatments</p>
+          {% for treatment in historyItem.systemicTreatments %}
+            <p>{{ treatment }}</p>
+          {% endfor %}
+        {% endif %}
+
+      {% endset %}
+
+      {# Procedures - used by breast implants, lump removal and bopsy, mastectomy lumpectomy #}
+      {% set proceduresHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.proceduresRightBreast %}
+                {# Handle cases where proceduresRightBreast is not an array #}
+                {% if not historyItem.proceduresRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.proceduresRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for procedure in historyItem.proceduresRightBreast %}
+                    <li>
+                      {{ procedure }}
+                      {%- if (procedure | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
+                      : {{ historyItem.proceduresRightBreastOtherDetails }}
+                      {% endif %}
+                    </li>
+                  {% else %}
+                    No procedure
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No procedure</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.proceduresLeftBreast %}
+                {% if not historyItem.proceduresLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.proceduresLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for procedure in historyItem.proceduresLeftBreast %}
+                    <li>
+                      {{ procedure }}
+                    </li>
+                  {% else %}
+                    No procedures recorded
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No procedures recorded</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+        {# Used by breast implants and augmentation only #}
+        {% if historyItem.implantsRemoved | falsify %}
+          <p>
+            {{ historyItem.implantsRemoved }}
+            {% if historyItem.removalDetails %}
+              <br>
+              Details: {{ historyItem.removalDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
+
+        {# Used by mastectomy lumpectomy only #}
+        {% if historyItem.hasHadReconstructionCheckbox | falsify %}
+          <p>
+            {% if historyItem.hadReconstruction %}
+              {{ historyItem.hadReconstruction }}
+            {% else %}
+              Has not had reconstruction or symmetrisation surgery
+            {% endif %}
+          </p>
+        {% endif %}
+
+      {% endset %}
+
+      {# Other surgery - used by breast cancer #}
+      {% set otherSurgeryHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.otherSurgeryRightBreast %}
+                {# Handle cases where proceduresRightBreast is not an array #}
+                {% if not historyItem.otherSurgeryRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.otherSurgeryRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for surgery in historyItem.otherSurgeryRightBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.otherSurgeryLeftBreast %}
+                {% if not historyItem.otherSurgeryLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.otherSurgeryLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for surgery in historyItem.otherSurgeryLeftBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+      {% endset %}
+
+      {# Surgery reason - Mastectomy and lumpectomy #}
+      {% set mastectomyLumpectomySurgeryReasonHtml %}
+        {{ historyItem.mastectomyLumpectomySurgeryReason }}
+        {% if historyItem.mastectomyLumpectomySurgeryReason | startsWith("Other") %}
+          <br>
+          Details: {{ historyItem.mastectomyLumpectomySurgeryReasonDetails }}
+        {% endif %}
+      {% endset %}
+
+      {# Dates #}
+      {% set dateText %}
+        {% if historyItem.generalDate %}
+          {% if historyItem.generalDate == "Specific date" %}
+            {% if historyItem.specificDate | isValidDate %}
+              {{ historyItem.specificDate | formatDate }} ({{ historyItem.specificDate | formatRelativeDate }})
+            {% endif %}
+          {% else %}
+            {{ historyItem.generalDate }}
+          {% endif %}
+        {% endif %}
+      {% endset %}
+
+      {% set yearText %}
+        {% set isRemoved = historyItem.deviceRemoved or historyItem.implantsRemoved %}
+        {% if isRemoved %}
+          Implanted in
+        {% endif %}{{ historyItem.year }} ({{ historyItem.year | relativeYear }})
+        {% if isRemoved %}
+          <br>Removed in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }})
+        {% endif %}
+      {% endset %}
+
+      {% set diagnosisDateText %}
+        {% if historyItem.diagnosisDate %}
+          {% if historyItem.diagnosisDate == "Specific date" %}
+            {% if historyItem.diagnosisDateSpecific | isValidDate %}
+              {{ historyItem.diagnosisDateSpecific | formatDate }} ({{ historyItem.diagnosisDateSpecific | formatRelativeDate }})
+            {% endif %}
+          {% else %}
+            {{ historyItem.diagnosisDate }}
+          {% endif %}
+        {% endif %}
+      {% endset %}
+
+      {# Was procedure in last 6 months #}
+      {% set recentProcedureText %}
+        {% if historyItem.hasRecentProcedureCheckbox %}
+          {% if historyItem.recentProcedure[0] == "true" %}
+            {# {% if historyItem.procedureDate %} #}
+            {% if historyItem.procedureDate | isValidDate %}
+              {{ historyItem.procedureDate | formatMonthYear }} ({{ historyItem.procedureDate | formatRelativeDate }})
+            {% else %}
+              Procedure was within the last 6 months. Date not provided
+            {% endif %}
+          {% else %}
+            Procedure was not in the last 6 months
+          {% endif %}
+        {% endif %}
+      {% endset %}
+
+      {# Treatment location #}
+      {% set locationHtml %}
+
+        {% macro otherLocation(item) %}
+          <br>
+          {% if item %}
+            Details: {{ item }}
+          {% else %}
+            Details not provided
+          {% endif %}
+        {% endmacro %}
+
+        {{ historyItem.location }}
+        {% switch historyItem.location %}
+          {% case 'At an NHS hospital' %}
+            {{ otherLocation(historyItem.locationNhsHospitalDetails) }}
+          {% case 'At a private clinic in the UK' %}
+            {{ otherLocation(historyItem.locationPrivateClinicDetails) }}
+          {% case 'Outside the UK' %}
+            {{ otherLocation(historyItem.locationOutsideUkDetails) }}
+          {% case 'In multiple locations' %}
+            {{ otherLocation(historyItem.locationMultipleLocationsDetails) }}
+          {% case 'Exact location unknown' %}
+            {{ otherLocation(historyItem.locationUnknownLocationDetails) }}
+        {% endswitch %}
+      {% endset %}
+
+      {% set addedByText %}
+        Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
+      {% endset %}
+
+      {{ typeData.type | log("Type data type") }}
+      {{ historyItem.consentGiven | log("Consent given value") }}
+
+      {# Contents of history item #}
+
+      {% set historyItemContents %}
+        {{ summaryList({
+          rows: [
+            {
+              key: {
+                text: "Types" if (historyItem.type | isArray and historyItem.type | length > 1) else "Type"
+              },
+              value: {
+                html: typeHtml
+              }
+            } if historyItem.type,
+            {
+              key: {
+                text: "Cancer location"
+              },
+              value: {
+                text: cancerLocationText
+              }
+            } if historyItem.cancerLocation,
+            {
+              key: {
+                text: "Surgery"
+              },
+              value: {
+                html: surgeryHtml
+              }
+            } if historyItem.surgeryRightBreast or historyItem.surgeryLeftBreast,
+            {
+              key: {
+                text: "Procedures"
+              },
+              value: {
+                html: proceduresHtml
+              }
+            } if historyItem.proceduresRightBreast or historyItem.proceduresLeftBreast,
+            {
+              key: {
+                text: "Other surgery"
+              },
+              value: {
+                html: otherSurgeryHtml
+              }
+            } if historyItem.otherSurgeryRightBreast or historyItem.otherSurgeryLeftBreast,
+            {
+              key: {
+                text: "Treatment"
+              },
+              value: {
+                html: treatmentHtml
+              }
+            } if historyItem.treatmentRightBreast or historyItem.treatmentLeftBreast,
+            {
+              key: {
+                text: "Surgery reason"
+              },
+              value: {
+                html: mastectomyLumpectomySurgeryReasonHtml
+              }
+            } if historyItem.mastectomyLumpectomySurgeryReason,
+            {
+              key: {
+                text: typeData.yearLabel or "Year"
+              },
+              value: {
+                html: yearText
+              }
+            } if historyItem.year,
+            {
+              key: {
+                text: "Date"
+              },
+              value: {
+                text: dateText
+              }
+            } if historyItem.generalDate,
+            {
+              key: {
+                text: "Diagnosis date"
+              },
+              value: {
+                text: diagnosisDateText
+              }
+            } if historyItem.diagnosisDate,
+            {
+              key: {
+                text: "Date"
+              },
+              value: {
+                text: recentProcedureText
+              }
+            } if historyItem.hasRecentProcedureCheckbox | falsify,
+            {
+              key: {
+                text: "Treatment location"
+              },
+              value: {
+                html: locationHtml
+              }
+            } if historyItem.location | falsify,
+            {
+            key: {
+            text: "Consent for imaging"
+            },
+            value: {
+            text: "Consent given"
+            }
+            } if (typeData.type == 'breastImplantsAugmentation' and historyItem.consentGiven == 'yes'),
+            {
+              key: {
+                text: "Additional details"
+              },
+              value: {
+                text: historyItem.additionalDetails
+              }
+            } if historyItem.additionalDetails
+          ]
+        } | handleSummaryListMissingInformation(true) ) }}
+
+        {# Only show attribution if added by someone else, or added by current user before today #}
+        {% if not (historyItem.addedBy | isCurrentUser) or (historyItem.dateAdded | isPast) %}
+          <p class="nhsuk-u-margin-bottom-0">
+            {{ addedByText | asHint }}
+          </p>
+        {% endif %}
+      {% endset %}
+
+      {# Container for history item #}
+      <div class="nhsuk-u-margin-bottom-4">
+
+        {# {% if historyItemArray | length > 1 %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-2">
+            Item #{{ loop.index }}
+          </p>
+        {% endif %} #}
+
+        {% call appSummaryCard({
+          title: {
+            text: "Item " ~ loop.index,
+            headingLevel: 4
+          } if historyItemArray | length > 1,
+          classes: "nhsuk-summary-card--compact nhsuk-u-margin-bottom-2",
+          actions: {
+            items: [
+        
+              {
+                href: changeHref,
+                text: "Change",
+                visuallyHiddenText: typeData.name ~ " item " ~ loop.index
+              }
+            ]
+          }
+        }) %}
+          {{ historyItemContents | safe }}
+        {% endcall %}
+      </div>
+
+    {% endfor %}
+
+    {# {% set addItemHref = ("./medical-information/medical-history/" + typeData.slug + "/add") | urlWithReferrer(currentUrl, scrollTo) %}
+
+    {% set addAnotherLink %}
+      <p class="nhsuk-u-margin-bottom-4">
+        <a href="{{ addItemHref }}">Add another {{ typeData.name | lower | asVisuallyHiddenText }}
+        </a>
+      </p>
+    {% endset %}
+
+    {% if typeData.canHaveMultiple %}
+      {{ addAnotherLink | safe }}
+    {% endif %} #}
+
+  {% endif %}
+
+{% endfor %}
+
+{% if not hasAnyMedicalHistoryData %}
+  {% set insetTextHtml %}
+    <p>
+      No medical history has been added yet.
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml
+  }) }}
+{% endif %}
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Add medical history</h3>
+
+<div class="nhsuk-button-group app-button-group--small">
+  {% for typeData in data.medicalHistoryTypes %}
+    {{ button({
+      text: typeData.name,
+      href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
+      classes: "nhsuk-button--secondary app-button--small"
+    }) }}
+  {% endfor %}
+</div>

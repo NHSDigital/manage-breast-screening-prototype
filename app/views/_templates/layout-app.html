@@ -1,7 +1,7 @@
 
 {% extends "layout.html" %}
 
-{% set bodyClasses = bodyClasses + (" app-dark-mode" if data.settings.darkMode == 'true') %}
+{% set bodyClasses = (bodyClasses if bodyClasses) + (" app-dark-mode" if data.settings.darkMode == 'true') %}
 
 {% block beforeContent %}
 {% if not hideBackLink %}
