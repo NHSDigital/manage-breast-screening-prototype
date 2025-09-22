@@ -358,6 +358,13 @@
         {% endswitch %}
       {% endset %}
 
+      {# Cysts status - used by cysts medical history type #}
+      {% set cystsStatusHtml %}
+        {% if historyItem.cystsStatus %}
+          <p>{{ historyItem.cystsStatus }}</p>
+        {% endif %}
+      {% endset %}
+
       {% set addedByText %}
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
@@ -459,13 +466,21 @@
               }
             } if historyItem.location | falsify,
             {
-            key: {
-            text: "Consent for imaging"
-            },
-            value: {
-            text: "Consent given"
-            }
+              key: {
+                text: "Consent for imaging"
+              },
+              value: {
+                text: "Consent given"
+              }
             } if (typeData.type == 'breastImplantsAugmentation' and historyItem.consentGiven == 'yes'),
+            {
+              key: {
+                text: "Status"
+              },
+              value: {
+                html: cystsStatusHtml
+              }
+            } if historyItem.cystsStatus,
             {
               key: {
                 text: "Additional details"

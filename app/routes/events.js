@@ -397,6 +397,67 @@ module.exports = (router) => {
     res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
   })
 
+// Handle mammographer notes form submission
+router.post('/clinics/:clinicId/events/:eventId/medical-information/mammographer-notes/save', (req, res) => {
+  const { clinicId, eventId } = req.params
+  const data = req.session.data
+  
+  console.log('Form data received:', req.body)
+  console.log('Nested form data:', req.body.event)
+  
+  // Initialize medicalInformation structure if needed
+  if (!data.event.medicalInformation) {
+    data.event.medicalInformation = {}
+  }
+  
+  if (!data.event.medicalInformation.mammographerNotes) {
+    data.event.medicalInformation.mammographerNotes = {}
+  }
+  
+  // Access the notes from the parsed form data
+  const notesFromForm = req.body.event?.medicalInformation?.mammographerNotes?.notes
+  console.log('Notes from form:', notesFromForm)
+  
+  data.event.medicalInformation.mammographerNotes.notes = notesFromForm || ''
+  
+  console.log('Mammographer notes saved:', data.event.medicalInformation.mammographerNotes.notes)
+  
+  // Save the temporary event data back to the main events array
+  saveTempEventToEvent(data)
+  
+  // Flash success message
+  req.flash('success', 'Mammographer notes saved')
+  
+  // Redirect back to the record medical information page
+  res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+})
+
+// Handle mammographer notes deletion
+router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-notes/delete', (req, res) => {
+  const { clinicId, eventId } = req.params
+  const data = req.session.data
+
+  // Clear the mammographer notes
+  if (data.event?.medicalInformation?.mammographerNotes) {
+    delete data.event.medicalInformation.mammographerNotes.notes
+  }
+
+  // Save the temporary event data back to the main events array
+  saveTempEventToEvent(data)
+
+  // Flash success message
+  req.flash('success', 'Mammographer notes deleted')
+
+  // Get return URL from referrer chain
+  const returnUrl = getReturnUrl(
+    `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+    req.query.referrerChain,
+    req.query.scrollTo
+  )
+  
+  res.redirect(returnUrl)
+})
+
   // Main route in to starting an event - used to clear any temp data
   router.get(
     '/clinics/:clinicId/events/:eventId/previous-mammograms/add',

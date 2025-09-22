@@ -1,0 +1,45 @@
+{# app/views/events/medical-information/mammographer-notes.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Mammographer notes" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <form method="post" action="/clinics/{{ clinicId }}/events/{{ eventId }}/medical-information/mammographer-notes/save">
+    <h1 class="nhsuk-heading-l">
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+      {{ pageHeading }}
+    </h1>
+
+    {{ textarea({
+      name: "event[medicalInformation][mammographerNotes][notes]",
+      value: event.medicalInformation.mammographerNotes.notes,
+      hint: {
+        text: "Enter any other relevant medical notes"
+      },
+      rows: 15
+    }) }}
+
+    {{ button({
+      text: "Save"
+    }) }}
+  </form>
+
+  {# Show delete option if notes exist #}
+  {% if event.medicalInformation.mammographerNotes.notes %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ ('/clinics/' + clinicId + '/events/' + eventId + '/medical-information/mammographer-notes/delete') | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link app-link--warning">
+        Delete note
+      </a>
+    </p>
+  {% endif %}
+
+
+{% endblock %}

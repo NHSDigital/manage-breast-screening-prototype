@@ -291,6 +291,10 @@
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
+{% if event.medicalInformation.mammographerNotes and event.medicalInformation.mammographerNotes.notes %}
+  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
+{% endif %}
+
 {% if otherRelevantInformationCount > 0 %}
   {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information recorded" %}
 {% else %}

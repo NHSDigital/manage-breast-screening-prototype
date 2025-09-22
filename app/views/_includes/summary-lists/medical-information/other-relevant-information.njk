@@ -1,4 +1,8 @@
-{# app/views/_includes/summary-lists/medical-information/other-relevant-information #}
+{# app/views/_includes/summary-lists/medical-information/other-relevant-information.njk #}
+
+{# DEBUG: Check what mammographer notes data we have #}
+{{ event.medicalInformation | log("Medical information structure") }}
+{{ event.medicalInformation.mammographerNotes | log("Mammographer notes data") }}
 
 {% set hrtHtml %}
   {% set hrtData = event.medicalInformation.hrt %}
@@ -9,7 +13,6 @@
         Currently taking HRT
       </p>
       <p>
-        {# Example: "Duration taken: 3 months" #}
         Duration taken: {{ hrtData.hrtDuration }}
       </p>
     {% elseif hrtData.hrtQuestion == 'no-recently-stopped' %}
@@ -26,7 +29,7 @@
       No information provided
     {% endif %}
   {% else %}
-    {{ valueHtml }}
+    No information provided
   {% endif %}
 {% endset %}
 
@@ -39,7 +42,6 @@
         Currently pregnant
       </p>
       <p>
-        {# Example: "Duration taken: 3 months" #}
         Timeframe: {{ pregnancyAndBreastfeedingData.currentlyPregnantDetails }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.pregnancyStatus == 'noButRecently' %}
@@ -55,12 +57,11 @@
       <p>No information provided</p>
     {% endif %}
 
-  {% if pregnancyAndBreastfeedingData.breastfeedingStatus == 'yes' %}
+    {% if pregnancyAndBreastfeedingData.breastfeedingStatus == 'yes' %}
       <p>
         Currently breastfeeding
       </p>
       <p>
-        {# Example: "Duration taken: 3 months" #}
         Duration: {{ pregnancyAndBreastfeedingData.currentlyBreastfeedingDuration }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'recentlyStopped' %}
@@ -76,63 +77,89 @@
       <p>No information provided</p>
     {% endif %}
   {% else %}
-    {{ valueHtml }}
+    No information provided
   {% endif %}
-
 {% endset %}
 
+{% set mammographerNotesHtml %}
+  {% if event.medicalInformation.mammographerNotes.notes %}
+    <div class="app-prose">
+      {{ event.medicalInformation.mammographerNotes.notes | nl2br | safe }}
+    </div>
+  {% else %}
+    No notes recorded
+  {% endif %}
+{% endset %}
+
+{# Build rows array manually since Nunjucks doesn't have merge filter #}
+{% set summaryListRows = [] %}
+
+{# HRT Row #}
+{% set hrtHasData = event.medicalInformation.hrt and event.medicalInformation.hrt.hrtQuestion %}
+{% if hrtHasData %}
+  {% set hrtRow = {
+    key: { text: "Hormone replacement therapy (HRT)" },
+    value: { html: hrtHtml },
+    actions: {
+      items: [{
+        href: "./medical-information/hormone-replacement-therapy" | urlWithReferrer(currentUrl, scrollTo),
+        text: "Change",
+        visuallyHiddenText: "hormone replacement therapy (HRT)"
+      }]
+    } if allowEdits
+  } %}
+{% else %}
+  {% set hrtRow = {
+    key: { text: "Hormone replacement therapy (HRT)" },
+    value: { html: '<a href="' + ("./medical-information/hormone-replacement-therapy" | urlWithReferrer(currentUrl, scrollTo)) + '">Enter hormone replacement therapy (HRT) details</a>' }
+  } %}
+{% endif %}
+{% set summaryListRows = (summaryListRows.push(hrtRow), summaryListRows) %}
+
+{# Pregnancy and breastfeeding Row #}
+{% set pregnancyHasData = event.medicalInformation.pregnancyAndBreastfeeding and (event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus or event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus) %}
+{% if pregnancyHasData %}
+  {% set pregnancyRow = {
+    key: { text: "Pregnancy and breastfeeding" },
+    value: { html: pregnancyAndBreastfeedingHtml },
+    actions: {
+      items: [{
+        href: "./medical-information/pregnancy-and-breastfeeding" | urlWithReferrer(currentUrl, scrollTo),
+        text: "Change",
+        visuallyHiddenText: "pregnancy and breastfeeding"
+      }]
+    } if allowEdits
+  } %}
+{% else %}
+  {% set pregnancyRow = {
+    key: { text: "Pregnancy and breastfeeding" },
+    value: { html: '<a href="' + ("./medical-information/pregnancy-and-breastfeeding" | urlWithReferrer(currentUrl, scrollTo)) + '">Enter pregnancy and breastfeeding details</a>' }
+  } %}
+{% endif %}
+{% set summaryListRows = (summaryListRows.push(pregnancyRow), summaryListRows) %}
+
+{# Mammographer notes Row #}
+{% set notesHaveData = event.medicalInformation.mammographerNotes.notes %}
+{% if notesHaveData %}
+  {% set notesRow = {
+    key: { text: "Mammographer notes" },
+    value: { html: mammographerNotesHtml },
+    actions: {
+      items: [{
+        href: "./medical-information/mammographer-notes" | urlWithReferrer(currentUrl, scrollTo),
+        text: "Change",
+        visuallyHiddenText: "mammographer notes"
+      }]
+    } if allowEdits
+  } %}
+{% else %}
+  {% set notesRow = {
+    key: { text: "Mammographer notes" },
+    value: { html: '<a href="' + ("./medical-information/mammographer-notes" | urlWithReferrer(currentUrl, scrollTo)) + '">Add a note</a>' }
+  } %}
+{% endif %}
+{% set summaryListRows = (summaryListRows.push(notesRow), summaryListRows) %}
+
 {{ summaryList({
-  rows: [
-    {
-      key: {
-        text: "Hormone replacement therapy (HRT)"
-      },
-      value: {
-        html: hrtHtml
-      },
-      actions: {
-        items: [
-          {
-            href: "./medical-information/hormone-replacement-therapy" | urlWithReferrer(currentUrl, scrollTo),
-            text: "Change",
-            visuallyHiddenText: "hormone replacement therapy (HRT)"
-          }
-        ]
-      } if allowEdits
-    },
-    {
-      key: {
-        text: "Pregnancy and breastfeeding"
-      },
-      value: {
-        html: pregnancyAndBreastfeedingHtml
-      },
-      actions: {
-        items: [
-          {
-            href: "./medical-information/pregnancy-and-breastfeeding" | urlWithReferrer(currentUrl, scrollTo),
-            text: "Change",
-            visuallyHiddenText: "pregnancy and breastfeeding"
-          }
-        ]
-      } if allowEdits
-    },
-    {
-      key: {
-        text: "Mammographer notes"
-      },
-      value: {
-        html: ""
-      },
-      actions: {
-        items: [
-          {
-            href: "#",
-            text: "Change",
-            visuallyHiddenText: "mammographer notes"
-          }
-        ]
-      } if allowEdits
-    }
-  ]
-} | handleSummaryListMissingInformation ) }}
+  rows: summaryListRows
+}) }}
