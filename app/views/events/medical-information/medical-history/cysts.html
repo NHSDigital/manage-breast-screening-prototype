@@ -11,7 +11,7 @@
   {{ event.medicalHistoryTemp | log("medicalHistoryTemp data") }}
   {{ ("Current cystsStatus value: '" + event.medicalHistoryTemp.cystsStatus + "'") | log if event.medicalHistoryTemp.cystsStatus }}
 
-  {% set currentValue = event.medicalHistoryTemp.cystsStatus | string %}
+{% set currentValue = (event.medicalHistoryTemp.cystsStatus or "") | string %}
   {{ ("Converted value: '" + currentValue + "'") | log if currentValue }}
 
   {{ radios({
