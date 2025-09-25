@@ -155,7 +155,7 @@
 {% else %}
   {% set notesRow = {
     key: { text: "Other medical information" },
-    value: { html: '<a href="' + ("./medical-information/mammographer-notes" | urlWithReferrer(currentUrl, scrollTo)) + '">Add other medical information</a>' }
+    value: { html: '<a href="' + ("./medical-information/other-medical-information" | urlWithReferrer(currentUrl, scrollTo)) + '">Add other medical information</a>' }
   } %}
 {% endif %}
 {% set summaryListRows = (summaryListRows.push(notesRow), summaryListRows) %}
