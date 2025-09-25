@@ -7,22 +7,22 @@
 
 {% block formContent %}
 
-<<<<<<< HEAD
   {# Debug output - remove this once working #}
   {{ event.medicalHistoryTemp | log("medicalHistoryTemp data") }}
-  {{ ("Current cystsStatus value: '" + event.medicalHistoryTemp.cystsStatus + "'") | log if event.medicalHistoryTemp.cystsStatus }}
+  
+  {% if event.medicalHistoryTemp.cystsStatus %}
+    {{ ("Current cystsStatus value: '" + event.medicalHistoryTemp.cystsStatus + "'") | log }}
+  {% endif %}
 
-{% set currentValue = (event.medicalHistoryTemp.cystsStatus or "") | string %}
-  {{ ("Converted value: '" + currentValue + "'") | log if currentValue }}
+  {% set currentValue = (event.medicalHistoryTemp.cystsStatus or "") | string %}
+  
+  {% if currentValue %}
+    {{ ("Converted value: '" + currentValue + "'") | log }}
+  {% endif %}
 
   {{ radios({
     name: "event[medicalHistoryTemp][cystsStatus]",
     value: currentValue,
-=======
-  {{ radios({
-    name: "event[medicalHistoryTemp][cystsStatus]",
-    value: event.medicalHistoryTemp.cystsStatus,
->>>>>>> main
     fieldset: {
       legend: {
         text: "Has " + (participant.demographicInformation.firstName or "the participant") + " had breast cysts?",

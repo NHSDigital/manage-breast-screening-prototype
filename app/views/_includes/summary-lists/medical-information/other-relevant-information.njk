@@ -2,7 +2,7 @@
 
 {# DEBUG: Check what mammographer notes data we have #}
 {{ event.medicalInformation | log("Medical information structure") }}
-{{ event.medicalInformation.mammographerNotes | log("Mammographer notes data") }}
+{{ event.medicalInformation.mammographerNotes | log("Other medical information data") }}
 
 {% set hrtHtml %}
   {% set hrtData = event.medicalInformation.hrt %}
@@ -81,13 +81,13 @@
   {% endif %}
 {% endset %}
 
-{% set mammographerNotesHtml %}
+{% set otherMedicalInformationHtml %}
   {% if event.medicalInformation.mammographerNotes.notes %}
     <div class="app-prose">
       {{ event.medicalInformation.mammographerNotes.notes | nl2br | safe }}
     </div>
   {% else %}
-    No notes recorded
+    No information recorded
   {% endif %}
 {% endset %}
 
@@ -138,24 +138,24 @@
 {% endif %}
 {% set summaryListRows = (summaryListRows.push(pregnancyRow), summaryListRows) %}
 
-{# Mammographer notes Row #}
+{# Other medical information Row #}
 {% set notesHaveData = event.medicalInformation.mammographerNotes.notes %}
 {% if notesHaveData %}
   {% set notesRow = {
-    key: { text: "Mammographer notes" },
-    value: { html: mammographerNotesHtml },
+    key: { text: "Other medical information" },
+    value: { html: otherMedicalInformationHtml },
     actions: {
       items: [{
-        href: "./medical-information/mammographer-notes" | urlWithReferrer(currentUrl, scrollTo),
+        href: "./medical-information/other-medical-information" | urlWithReferrer(currentUrl, scrollTo),
         text: "Change",
-        visuallyHiddenText: "mammographer notes"
+        visuallyHiddenText: "other medical information"
       }]
     } if allowEdits
   } %}
 {% else %}
   {% set notesRow = {
-    key: { text: "Mammographer notes" },
-    value: { html: '<a href="' + ("./medical-information/mammographer-notes" | urlWithReferrer(currentUrl, scrollTo)) + '">Add a note</a>' }
+    key: { text: "Other medical information" },
+    value: { html: '<a href="' + ("./medical-information/mammographer-notes" | urlWithReferrer(currentUrl, scrollTo)) + '">Add other medical information</a>' }
   } %}
 {% endif %}
 {% set summaryListRows = (summaryListRows.push(notesRow), summaryListRows) %}

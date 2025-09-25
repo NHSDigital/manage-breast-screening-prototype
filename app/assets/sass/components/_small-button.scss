@@ -1,23 +1,15 @@
-<<<<<<< HEAD
-@use 'nhsuk-frontend/dist/nhsuk/core/settings' as *;
-@use 'nhsuk-frontend/dist/nhsuk/core/tools' as *;
-=======
 @use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
 @use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
->>>>>>> main
 
 .nhsuk-button.app-button--small {
   padding: nhsuk-spacing(2) 12px nhsuk-spacing(1);
   @include nhsuk-font-size(16);
   line-height: 1.2;
   margin-bottom: nhsuk-spacing(3);
-<<<<<<< HEAD
-} 
+}
 
 .app-button-group {
   margin-bottom: nhsuk-spacing(6);
-}
-=======
 }
 
 // Reduce button group margin
@@ -39,4 +31,3 @@
     }
   }
 }
->>>>>>> main

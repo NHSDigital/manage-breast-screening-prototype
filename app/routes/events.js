@@ -397,8 +397,11 @@ module.exports = (router) => {
     res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
   })
 
+// Partial update for app/routes/events.js
+// Updated route handlers for mammographer notes -> other medical information
+
 // Handle mammographer notes form submission
-router.post('/clinics/:clinicId/events/:eventId/medical-information/mammographer-notes/save', (req, res) => {
+router.post('/clinics/:clinicId/events/:eventId/medical-information/other-medical-information/save', (req, res) => {
   const { clinicId, eventId } = req.params
   const data = req.session.data
   
@@ -416,24 +419,24 @@ router.post('/clinics/:clinicId/events/:eventId/medical-information/mammographer
   
   // Access the notes from the parsed form data
   const notesFromForm = req.body.event?.medicalInformation?.mammographerNotes?.notes
-  console.log('Notes from form:', notesFromForm)
+  console.log('Other medical information from form:', notesFromForm)
   
   data.event.medicalInformation.mammographerNotes.notes = notesFromForm || ''
   
-  console.log('Mammographer notes saved:', data.event.medicalInformation.mammographerNotes.notes)
+  console.log('Other medical information saved:', data.event.medicalInformation.mammographerNotes.notes)
   
   // Save the temporary event data back to the main events array
   saveTempEventToEvent(data)
   
   // Flash success message
-  req.flash('success', 'Mammographer notes saved')
+  req.flash('success', 'Other medical information saved')
   
   // Redirect back to the record medical information page
   res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
 })
 
-// Handle mammographer notes deletion
-router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-notes/delete', (req, res) => {
+// Handle other medical info notes deletion
+router.get('/clinics/:clinicId/events/:eventId/medical-information/other-medical-information/delete', (req, res) => {
   const { clinicId, eventId } = req.params
   const data = req.session.data
 
@@ -446,7 +449,7 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
   saveTempEventToEvent(data)
 
   // Flash success message
-  req.flash('success', 'Mammographer notes deleted')
+  req.flash('success', 'Other medical information deleted')
 
   // Get return URL from referrer chain
   const returnUrl = getReturnUrl(
@@ -957,14 +960,7 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
     res.redirect(returnUrl)
   })
 
-<<<<<<< HEAD
   // Medical history routes
-=======
-  // Medical history
-
-  // Medical history routes - add these to the events.js file
-
->>>>>>> main
   const medicalHistoryTypes = require('../data/medical-history-types')
 
   function isValidMedicalHistoryType(type) {
@@ -1073,11 +1069,6 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
         medicalHistoryItem.addedBy = data.currentUser.id
       }
 
-<<<<<<< HEAD
-=======
-      // REMOVED: The consent line that was adding consentGiven to all items
-
->>>>>>> main
       // Update existing or add new
       const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
       if (existingIndex !== -1) {
@@ -1110,7 +1101,7 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
       const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
       res.redirect(returnUrl)
     }
-  })
+  })  
 
   // Edit existing medical history item
   router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId', (req, res) => {
@@ -1242,12 +1233,7 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
     }
   })
 
-  // Imaging view - this is the main imaging page for the event
-<<<<<<< HEAD
-=======
-
   // Specific route for imaging view
->>>>>>> main
   router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data

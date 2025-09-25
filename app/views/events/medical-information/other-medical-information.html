@@ -1,8 +1,8 @@
-{# app/views/events/medical-information/mammographer-notes.html #}
+{# app/views/events/medical-information/other-medical-information.html #}
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Mammographer notes" %}
+{% set pageHeading = "Other medical information" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
@@ -10,7 +10,7 @@
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
-  <form method="post" action="/clinics/{{ clinicId }}/events/{{ eventId }}/medical-information/mammographer-notes/save">
+  <form method="post" action="/clinics/{{ clinicId }}/events/{{ eventId }}/medical-information/other-medical-information/save">
     <h1 class="nhsuk-heading-l">
       <span class="nhsuk-caption-l">
         {{ participant | getFullName }}
@@ -22,7 +22,7 @@
       name: "event[medicalInformation][mammographerNotes][notes]",
       value: event.medicalInformation.mammographerNotes.notes,
       hint: {
-        text: "Enter any other relevant medical notes"
+        text: "Provide details of any relevant health conditions or medications that are not covered by symptoms or medical history questions."
       },
       rows: 15
     }) }}
@@ -35,8 +35,8 @@
   {# Show delete option if notes exist #}
   {% if event.medicalInformation.mammographerNotes.notes %}
     <p class="nhsuk-u-margin-top-4">
-      <a href="{{ ('/clinics/' + clinicId + '/events/' + eventId + '/medical-information/mammographer-notes/delete') | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link app-link--warning">
-        Delete note
+      <a href="{{ ('/clinics/' + clinicId + '/events/' + eventId + '/medical-information/other-medical-information/delete') | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link app-link--warning">
+        Delete information
       </a>
     </p>
   {% endif %}

@@ -4,12 +4,9 @@
 
 {% set allowEdits = true if currentUser | isClinician else false %}
 
-<<<<<<< HEAD
-=======
 {# Explicitly set referrer chain to the current url #}
 {% set referrerChain = currentUrl %}
 
->>>>>>> main
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
 {% set subHeading = "The last confirmed mammogram and any added manually since then" %}
@@ -98,23 +95,6 @@
     <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
   </p> #}
 
-<<<<<<< HEAD
-  {# Explicitly set referrer chain to the current url #}
-  {% set referrerChain = currentUrl %}
-
-  <h4>Add symptoms</h4>
-  <div class="app-button-group">
-    {% for symptomType in ['lump', 'swellingOrShapeChange', 'skinChange', 'nippleChange', 'other'] %}
-      {% set symptomNames = {
-        lump: 'Lump',
-        swellingOrShapeChange: 'Swelling or shape change',
-        skinChange: 'Skin change',
-        nippleChange: 'Nipple change',
-        other: 'Other'
-      } %}
-      {{ button({
-        text: symptomNames[symptomType],
-=======
   <h4>Add symptoms</h4>
 
   <div class="nhsuk-button-group app-button-group--small">
@@ -128,7 +108,6 @@
     {% for symptomType, symptomName in symptoms %}
       {{ button({
         text: symptomName,
->>>>>>> main
         href: ("./medical-information/symptoms/add?symptomType=" + symptomType) | urlWithReferrer(currentUrl, scrollTo),
         classes: "nhsuk-button--secondary app-button--small"
       }) }}
@@ -257,7 +236,7 @@
 {# -------------------------------------------------------------- #}
 {# Other relevant information #}
 {% set sectionHeading = "Other relevant information" %}
-{% set subHeading = "Including HRT, pregnancy, breastfeeding and mammographer notes" %}
+{% set subHeading = "Including HRT, pregnancy, breastfeeding and other medical information" %}
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
@@ -277,13 +256,10 @@
 
 {% if event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
-<<<<<<< HEAD
 {% endif %}
 
 {% if event.medicalInformation.mammographerNotes and event.medicalInformation.mammographerNotes.notes %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
-=======
->>>>>>> main
 {% endif %}
 
 {% if otherRelevantInformationCount > 0 %}
