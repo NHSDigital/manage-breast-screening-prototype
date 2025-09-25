@@ -957,7 +957,14 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
     res.redirect(returnUrl)
   })
 
+<<<<<<< HEAD
   // Medical history routes
+=======
+  // Medical history
+
+  // Medical history routes - add these to the events.js file
+
+>>>>>>> main
   const medicalHistoryTypes = require('../data/medical-history-types')
 
   function isValidMedicalHistoryType(type) {
@@ -1066,6 +1073,11 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
         medicalHistoryItem.addedBy = data.currentUser.id
       }
 
+<<<<<<< HEAD
+=======
+      // REMOVED: The consent line that was adding consentGiven to all items
+
+>>>>>>> main
       // Update existing or add new
       const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
       if (existingIndex !== -1) {
@@ -1231,6 +1243,11 @@ router.get('/clinics/:clinicId/events/:eventId/medical-information/mammographer-
   })
 
   // Imaging view - this is the main imaging page for the event
+<<<<<<< HEAD
+=======
+
+  // Specific route for imaging view
+>>>>>>> main
   router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data

@@ -45,6 +45,8 @@ document.addEventListener('DOMContentLoaded', function () {
           newStatus = 'Complete'
         } else if (currentStatus === 'To review') {
           newStatus = 'Reviewed'
+        } else if (currentStatus === 'Reviewed') {
+          newStatus = 'Reviewed' // Keep as reviewed
         } else {
           newStatus = 'Complete' // Default fallback
         }

@@ -4,6 +4,12 @@
 
 {% set allowEdits = true if currentUser | isClinician else false %}
 
+<<<<<<< HEAD
+=======
+{# Explicitly set referrer chain to the current url #}
+{% set referrerChain = currentUrl %}
+
+>>>>>>> main
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
 {% set subHeading = "The last confirmed mammogram and any added manually since then" %}
@@ -68,26 +74,9 @@
 {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
 {% set hasSymptoms = symptomsCount > 0 %}
 
-{# Show add symptom ui when nothing added and collapsed #}
-{# {% if hasSymptoms %} #}
-  {% set symptomsContentsSummaryHtml %}
-    <span class="nhsuk-u-secondary-text-color">
-      {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
-    </span>
-  {% endset %}
-{# {% else %}
-  {% set symptomsContentsSummaryHtml %}
-    <p class="nhsuk-u-secondary-text-color">
-      0 symptoms recorded
-    </p> #}
-    {# <p class="nhsuk-u-margin-bottom-0">
-      <a href="{{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}" class="js-expand-parent-section">Add a symptom</a>
-    </p> #}
-    {# {% set referrerChain = currentUrl %}
-
-    {% include "add-symptom-button-menu.njk" %}
-  {% endset %}
-{% endif %} #}
+{% set symptomsContentsSummaryText %}
+  {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
+{% endset %}
 
 {% set currentSymptomsHtml %}
   {% include "summary-lists/medical-information/symptoms/summary.njk" %}
@@ -109,6 +98,7 @@
     <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
   </p> #}
 
+<<<<<<< HEAD
   {# Explicitly set referrer chain to the current url #}
   {% set referrerChain = currentUrl %}
 
@@ -124,6 +114,21 @@
       } %}
       {{ button({
         text: symptomNames[symptomType],
+=======
+  <h4>Add symptoms</h4>
+
+  <div class="nhsuk-button-group app-button-group--small">
+    {% set symptoms = {
+      lump: 'Lump',
+      swellingOrShapeChange: 'Swelling or shape change',
+      skinChange: 'Skin change',
+      nippleChange: 'Nipple change',
+      other: 'Other'
+    } %}
+    {% for symptomType, symptomName in symptoms %}
+      {{ button({
+        text: symptomName,
+>>>>>>> main
         href: ("./medical-information/symptoms/add?symptomType=" + symptomType) | urlWithReferrer(currentUrl, scrollTo),
         classes: "nhsuk-button--secondary app-button--small"
       }) }}
@@ -153,7 +158,7 @@
       classes: "nhsuk-expander js-expandable-section",
       summaryText: sectionHeading,
       subtitle: subHeading,
-      contentsSummaryHtml: symptomsContentsSummaryHtml,
+      contentsSummary: symptomsContentsSummaryText,
       html: currentSymptomsHtml,
       status: "To review"
     }) }}
@@ -213,26 +218,9 @@
   {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
 {% endset %}
 
-{# {% if hasBreastFeatures %} #}
-  {% set breastFeaturesContentsSummaryHtml %}
-    <span class="nhsuk-u-secondary-text-color">
-      {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
-    </span>
-  {% endset %}
-
-{# {% else %}
-
-  {% set breastFeaturesContentsSummaryHtml %}
-    <p class="nhsuk-u-secondary-text-color">
-      No breast features recorded
-    </p>
-    <p class="nhsuk-u-margin-bottom-0">
-      <a href="{{ addBreastFeatureHref | safe }}" class="js-expand-parent-section nhsuk-link--no-visited-state">
-        Add a feature
-      </a>
-    </p>
-  {% endset %}
-{% endif %} #}
+{% set breastFeaturesContentsSummaryText %}
+  {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
+{% endset %}
 
 {% set breastFeaturesHtml %}
   {% include "_includes/medical-information/breast-features.njk" %}
@@ -261,7 +249,7 @@
       summaryText: sectionHeading,
       subtitle: subHeading,
       html: breastFeaturesHtml,
-      contentsSummaryHtml: breastFeaturesContentsSummaryHtml,
+      contentsSummary: breastFeaturesContentsSummaryText,
       status: "To review"
     }) }}
 {% endswitch %}
@@ -289,10 +277,13 @@
 
 {% if event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
+<<<<<<< HEAD
 {% endif %}
 
 {% if event.medicalInformation.mammographerNotes and event.medicalInformation.mammographerNotes.notes %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
+=======
+>>>>>>> main
 {% endif %}
 
 {% if otherRelevantInformationCount > 0 %}

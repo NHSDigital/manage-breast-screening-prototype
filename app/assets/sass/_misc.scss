@@ -41,6 +41,11 @@
   color: $nhsuk-secondary-text-colour;
 }
 
+.app-suppress-link-styles .app-button-link {
+  text-decoration: none;
+  color: $nhsuk-secondary-text-colour;
+}
+
 .app-image-flip-horizontal {
   -webkit-transform: scaleX(-1);
   transform: scaleX(-1);

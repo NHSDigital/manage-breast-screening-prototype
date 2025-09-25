@@ -26,3 +26,20 @@ h3 {
 .app-link--warning {
   color: $nhsuk-error-colour;
 }
+
+.app-button-link {
+  background: none;
+  border: none;
+  color: $nhsuk-link-colour;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+
+  &:hover,
+  &:focus {
+    color: $nhsuk-link-hover-colour;
+    text-decoration: none;
+  }
+}

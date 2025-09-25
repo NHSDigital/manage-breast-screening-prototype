@@ -98,9 +98,15 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
+<<<<<<< HEAD
         name: "event[medicalHistoryTemp][procedureRightBreast]",
         value: event.medicalHistoryTemp.procedureRightBreast,
         idPrefix: "procedureRightBreast",
+=======
+        name: "event[medicalHistoryTemp][proceduresRightBreast]",
+        value: event.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
+>>>>>>> main
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
@@ -125,17 +131,28 @@
             divider: "or"
           },
           {
+<<<<<<< HEAD
             value: "No procedures",
             text: "No procedures"
+=======
+            value: "No procedure",
+            text: "No procedure"
+>>>>>>> main
           }
         ]
       }) }}
     </div>
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
+<<<<<<< HEAD
         name: "event[medicalHistoryTemp][procedureLeftBreast]",
         value: event.medicalHistoryTemp.procedureLeftBreast,
         idPrefix: "procedureLeftBreast",
+=======
+        name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+        value: event.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
+>>>>>>> main
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",

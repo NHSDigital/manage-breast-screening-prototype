@@ -19,7 +19,11 @@
       {% set deleteHref =  "./medical-information/medical-history/" + typeData.slug + "/delete/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
 
+<<<<<<< HEAD
       {# Type - used by implanted medical devices, other proceedures #}
+=======
+      {# Type - used by implanted medical devices, other procedures #}
+>>>>>>> main
       {% set typeHtml %}
         {% if historyItem.type %}
           {% if historyItem.type | isArray %}
@@ -271,6 +275,62 @@
 
       {% endset %}
 
+<<<<<<< HEAD
+=======
+      {# Other surgery - used by breast cancer #}
+      {% set otherSurgeryHtml %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Right breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.otherSurgeryRightBreast %}
+                {# Handle cases where proceduresRightBreast is not an array #}
+                {% if not historyItem.otherSurgeryRightBreast | isArray %}
+                  <li>
+                    {{ historyItem.otherSurgeryRightBreast }}
+                  </li>
+                {% else %}
+
+                  {% for surgery in historyItem.otherSurgeryRightBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Left breast</p>
+            <ul class="nhsuk-list">
+              {% if historyItem.otherSurgeryLeftBreast %}
+                {% if not historyItem.otherSurgeryLeftBreast | isArray %}
+                  <li>
+                    {{ historyItem.otherSurgeryLeftBreast }}
+                  </li>
+                {% else %}
+                  {% for surgery in historyItem.otherSurgeryLeftBreast %}
+                    <li>
+                      {{ surgery }}
+                    </li>
+                  {% else %}
+                    No surgery
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                <li>No surgery</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+
+      {% endset %}
+
+>>>>>>> main
       {# Surgery reason - Mastectomy and lumpectomy #}
       {% set mastectomyLumpectomySurgeryReasonHtml %}
         {{ historyItem.mastectomyLumpectomySurgeryReason }}
@@ -358,6 +418,7 @@
         {% endswitch %}
       {% endset %}
 
+<<<<<<< HEAD
       {# Cysts status - used by cysts medical history type #}
       {% set cystsStatusHtml %}
         {% if historyItem.cystsStatus %}
@@ -365,6 +426,8 @@
         {% endif %}
       {% endset %}
 
+=======
+>>>>>>> main
       {% set addedByText %}
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
@@ -411,6 +474,17 @@
             } if historyItem.proceduresRightBreast or historyItem.proceduresLeftBreast,
             {
               key: {
+<<<<<<< HEAD
+=======
+                text: "Other surgery"
+              },
+              value: {
+                html: otherSurgeryHtml
+              }
+            } if historyItem.otherSurgeryRightBreast or historyItem.otherSurgeryLeftBreast,
+            {
+              key: {
+>>>>>>> main
                 text: "Treatment"
               },
               value: {
@@ -466,6 +540,7 @@
               }
             } if historyItem.location | falsify,
             {
+<<<<<<< HEAD
               key: {
                 text: "Consent for imaging"
               },
@@ -483,6 +558,17 @@
             } if historyItem.cystsStatus,
             {
               key: {
+=======
+            key: {
+            text: "Consent for imaging"
+            },
+            value: {
+            text: "Consent given"
+            }
+            } if (typeData.type == 'breastImplantsAugmentation' and historyItem.consentGiven == 'yes'),
+            {
+              key: {
+>>>>>>> main
                 text: "Additional details"
               },
               value: {
@@ -564,7 +650,12 @@
 <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
 <h3>Add medical history</h3>
+<<<<<<< HEAD
 <div class="app-button-group">
+=======
+
+<div class="nhsuk-button-group app-button-group--small">
+>>>>>>> main
   {% for typeData in data.medicalHistoryTypes %}
     {{ button({
       text: typeData.name,
