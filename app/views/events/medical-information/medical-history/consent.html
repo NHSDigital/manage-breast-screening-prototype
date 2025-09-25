@@ -1,3 +1,5 @@
+{# app/views/clinics/[clinicId]/events/[eventId]/medical-information/medical-history/consent.html #}
+
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = "Request consent to continue" %}
@@ -10,40 +12,35 @@
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
-  <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span>
-    {{ pageHeading }}
-  </h1>
+  <h1 class="nhsuk-heading-xl">Request consent to continue</h1>
+
+  <p>You must get the participant's permission to carry out a mammogram on breasts with implants.</p>
+
+  <p>There is no medical reason for people with breast implants to avoid the procedure.</p>
 
   <h2 class="nhsuk-heading-m">Explain the risks</h2>
-  <p>You must get the participant’s permission to carry out a mammogram on breasts with implants.</p>
-
-  <p>There is no medical reason for people with breast implants to avoid the procedure. The benefits of early cancer detection outweigh the minor increase in risk.</p>
-
-  <p>Explain to them that:</p>
 
   <ul class="nhsuk-list nhsuk-list--bullet">
-    <li>very rarely, implants can rupture due to pressure during imaging</li>
-    <li>a special imaging technique will be used to reduce the likelihood of complications</li>
-    <li>implants make it harder to spot signs of cancer as can they obscure breast tissue</li>
-    <li>extra images may be needed to scan enough breast tissue, slightly increasing radiation exposure</li>
+    <li>Very rarely, implants can rupture due to pressure during imaging</li>
+    <li>Extra images may be needed to scan enough breast tissue, slightly increasing radiation exposure</li>
+    <li>Implants make it harder to spot signs of cancer as they can obscure breast tissue</li>
   </ul>
 
-  <p>If the participant notices any problems with their implants after the appointment, they should contact their GP.</p>
+  <div class="nhsuk-inset-text">
+    <span class="nhsuk-u-visually-hidden">Information: </span>
+    <p>If the participant notices any problems with their implants after the appointment, they should contact their GP.</p>
+  </div>
 
-  <p>Once you’ve explained the process and the risks, ask them to read and complete your paper consent form.</p>
+  <h2 class="nhsuk-heading-m">Ask {{ participant.demographicInformation.firstName or "the participant" }} for consent</h2>
 
-  <h2 class="nhsuk-heading-m">Difficulties interpreting images</h2>
-  <p>Mammograms with breast implants can be less effective at detecting breast cancer because the implants can obscure some breast tissue.</p>
+  <p>Once you've explained the process and the risks, ask them to read and complete your paper consent form.</p>
 
   {{ radios({
     name: "event[medicalInformation][implantedDevices][consentGiven]",
     value: event.medicalInformation.implantedDevices.consentGiven,
     fieldset: {
       legend: {
-        text: "Has " + (participant.demographicInformation.firstName or "the participant") + " signed the consent form?",
+        text: "Have they signed the consent form?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -55,22 +52,22 @@
       },
       {
         value: "no",
-        text: "No, end the appointment"
+        text: "No, end the appointment",
+        conditional: {
+          html: '<div class="nhsuk-form-group">
+            <label class="nhsuk-label" for="consent-details">
+              Provide details (optional)
+            </label>
+            <textarea class="nhsuk-textarea" id="consent-details" name="event[medicalInformation][implantedDevices][consentDeclinedDetails]" rows="4">' + (event.medicalInformation.implantedDevices.consentDeclinedDetails or '') + '</textarea>
+          </div>'
+        }
       }
     ]
   }) }}
 
-<<<<<<< HEAD
-  <div class="app-button-group">
-    {{ button({
-      text: "Continue"
-    }) }}
-  </div>
-=======
   {{ button({
     text: "Continue"
   }) }}
->>>>>>> main
 
   {% include "screening-cannot-proceed-link.njk" %}
 

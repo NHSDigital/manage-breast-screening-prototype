@@ -70,21 +70,6 @@
 
   {% endcall %}
 
-  {# {{ input({
-    label: {
-      text: "In what year was breast cancer first diagnosed?",
-      classes: "nhsuk-label--m"
-    },
-    name: "event[medicalHistoryTemp][diagnosisYear]",
-    value: event.medicalHistoryTemp.diagnosisYear,
-    id: "diagnosis-year",
-    classes: "nhsuk-input--width-4",
-    hint: {
-      text: "For example, 2019"
-    },
-    inputmode: "numeric"
-  }) }} #}
-
   {% set yearText = "Year of diagnosis (optional)" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
@@ -98,15 +83,9 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
-<<<<<<< HEAD
-        name: "event[medicalHistoryTemp][procedureRightBreast]",
-        value: event.medicalHistoryTemp.procedureRightBreast,
-        idPrefix: "procedureRightBreast",
-=======
         name: "event[medicalHistoryTemp][proceduresRightBreast]",
         value: event.medicalHistoryTemp.proceduresRightBreast,
         idPrefix: "proceduresRightBreast",
->>>>>>> main
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
@@ -131,28 +110,17 @@
             divider: "or"
           },
           {
-<<<<<<< HEAD
-            value: "No procedures",
-            text: "No procedures"
-=======
             value: "No procedure",
             text: "No procedure"
->>>>>>> main
           }
         ]
       }) }}
     </div>
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
-<<<<<<< HEAD
-        name: "event[medicalHistoryTemp][procedureLeftBreast]",
-        value: event.medicalHistoryTemp.procedureLeftBreast,
-        idPrefix: "procedureLeftBreast",
-=======
         name: "event[medicalHistoryTemp][proceduresLeftBreast]",
         value: event.medicalHistoryTemp.proceduresLeftBreast,
         idPrefix: "proceduresLeftBreast",
->>>>>>> main
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
@@ -177,8 +145,8 @@
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures"
+            value: "No procedure",
+            text: "No procedure"
           }
         ]
       }) }}
@@ -343,42 +311,42 @@
   </div>
 
   {{ checkboxes({
-  name: "event[medicalHistoryTemp][systemicTreatments]",
-  values: event.medicalHistoryTemp.systemicTreatments,
-  idPrefix: "systemicTreatments",
-  fieldset: {
-    legend: {
-      html: ((treatmentQuestionText + " that are ") | asVisuallyHiddenText) ~ "Systemic treatments",
-      classes: "nhsuk-fieldset__legend--s",
-      isPageHeading: false
-    }
-  },
-  items: [
-    {
-      value: "Chemotherapy",
-      text: "Chemotherapy"
-    },
-    {
-      value: "Hormone therapy",
-      text: "Hormone therapy"
-    },
-    {
-      value: "Other treatment",
-      text: "Other treatment",
-      conditional: {
-        html: input({
-          label: {
-            text: "Provide details",
-            classes: "nhsuk-label--s"
-          },
-          name: "event[medicalHistoryTemp][otherTreatmentDetails]",
-          value: event.medicalHistoryTemp.otherTreatmentDetails,
-          id: "other-treatment-details"
-        })
+    name: "event[medicalHistoryTemp][systemicTreatments]",
+    values: event.medicalHistoryTemp.systemicTreatments,
+    idPrefix: "systemicTreatments",
+    fieldset: {
+      legend: {
+        html: ((treatmentQuestionText + " that are ") | asVisuallyHiddenText) ~ "Systemic treatments",
+        classes: "nhsuk-fieldset__legend--s",
+        isPageHeading: false
       }
-    }
-  ]
-}) }}
+    },
+    items: [
+      {
+        value: "Chemotherapy",
+        text: "Chemotherapy"
+      },
+      {
+        value: "Hormone therapy",
+        text: "Hormone therapy"
+      },
+      {
+        value: "Other treatment",
+        text: "Other treatment",
+        conditional: {
+          html: input({
+            label: {
+              text: "Provide details",
+              classes: "nhsuk-label--s"
+            },
+            name: "event[medicalHistoryTemp][otherTreatmentDetails]",
+            value: event.medicalHistoryTemp.otherTreatmentDetails,
+            id: "other-treatment-details"
+          })
+        }
+      }
+    ]
+  }) }}
 
   {% set treatmentLocationText = "Where did surgery and treatment take place?" %}
   {% include "_includes/medical-information/medical-history/location.njk" %}
