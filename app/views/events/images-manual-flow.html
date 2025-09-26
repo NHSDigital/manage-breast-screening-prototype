@@ -1,0 +1,55 @@
+
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Images" %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set formAction = './imaging-answer' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  {# <span class="nhsuk-caption-l">
+    {{ participant | getFullName }}
+  </span>
+  <h1 class="nhsuk-heading-l js-image-count">
+    {{ pageHeading }}
+  </h1> #}
+
+
+
+  {% include "event-workflow.njk" %}
+
+  {% set insetHtml %}
+    <p>Mammography images will appear here once they have been transmitted by the PACS</p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetHtml
+  }) }}
+
+
+  {{ appHiddenInput({
+    name: "event[workflowStatus][awaiting-images]",
+    value: "completed"
+  }) }}
+
+  <p>
+    <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
+  </p>
+
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+  {# {% include "screening-cannot-proceed-link.njk" %} #}
+
+{% endblock %}
+
+
