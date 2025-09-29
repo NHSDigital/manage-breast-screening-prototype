@@ -1,0 +1,45 @@
+{# app/views/events/appointment-note.html #}
+
+{% extends 'layout-appointment-tab.html' %}
+
+{% set activeTab = 'appointment-note' %}
+
+{% set allowEdits = true %}
+
+{% block tabContent %}
+
+  <div class="nhsuk-grid-row"> 
+    <div class="nhsuk-grid-column-two-thirds">
+
+    <form method="post" action="/clinics/{{ clinicId }}/events/{{ eventId }}/appointment-note">
+    {{ textarea({
+      name: "appointmentNote",
+      id: "appointment-note",
+      label: {
+        text: "Appointment note",
+        classes: "nhsuk-label--m"
+      },
+      hint: {
+        text: "Add any information about this appointment that the mammographer needs to know"
+      },
+      value: event.appointmentNote,
+      rows: 5
+    }) }}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Save appointment note"
+      }) }}
+
+      {% if event.appointmentNote %}
+        <a href="/clinics/{{ clinicId }}/events/{{ eventId }}/appointment-note/delete" class="nhsuk-link app-link--warning">
+          Delete appointment note
+        </a>
+      {% endif %}
+    </div>
+ 
+   </form>
+
+       </div>
+    </div>
+{% endblock %}
