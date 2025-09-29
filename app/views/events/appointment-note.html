@@ -6,14 +6,15 @@
 
 {% set allowEdits = true %}
 
+{% set formAction = eventUrl + "/appointment-note" %}
+
 {% block tabContent %}
 
   <div class="nhsuk-grid-row"> 
     <div class="nhsuk-grid-column-two-thirds">
 
-    <form method="post" action="/clinics/{{ clinicId }}/events/{{ eventId }}/appointment-note">
     {{ textarea({
-      name: "appointmentNote",
+      name: "[event][appointmentNote]",
       id: "appointment-note",
       label: {
         text: "Appointment note",
@@ -38,7 +39,6 @@
       {% endif %}
     </div>
  
-   </form>
 
        </div>
     </div>
