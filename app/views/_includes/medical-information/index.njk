@@ -23,14 +23,15 @@
 {% endset %}
 
 {% set mammogramHistoryContentsSummary %}
-  Last mammogrogram {{ "2022-03-23" | formatDate | formatRelativeDate | asHint }}
+  {# Last mammogrogram {{ "2022-03-23" | formatDate | formatRelativeDate | asHint }} #}
 {% endset %}
 
 {% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
 
 {% if hasAdditionalMammograms %}
-  {% set mammogramHistoryContentsSummary = ((event.previousMammograms | length) + 1) ~ " mammograms added" %}
+  {% set mammogramHistoryContentsSummary = ((event.previousMammograms | length)) ~ " new " + ("mammogram" | pluralise(event.previousMammograms | length)) + " added" %}
 {% endif %}
+
 
 {% switch displayFormat %}
   {% case 'flat' %}
@@ -53,7 +54,7 @@
       id: sectionId,
       classes: "nhsuk-expander js-expandable-section",
       summaryText: "Mammogram history",
-      _contentsSummary: mammogramHistoryContentsSummary,
+      contentsSummary: mammogramHistoryContentsSummary,
       subtitle: "The last confirmed mammogram and any added manually since then",
       html: mammogramHistoryHtml,
       status: "To review",
