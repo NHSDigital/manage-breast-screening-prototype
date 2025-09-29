@@ -52,9 +52,9 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][confirmIdentityOnCheckIn]={{'true' if data.settings.screening.confirmIdentityOnCheckIn !== 'true' else 'false'}}&clearQuery=true">{{ 'Require confirmation for identity on check-in' if data.settings.screening.confirmIdentityOnCheckIn=='false' else 'Do not require confirmation for identity on check-in'}}</a>
     </p>
 
-    {# Manual image flow #}
+    {# Manual image collection #}
     <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageFlow]={{'true' if data.settings.screening.manualImageFlow !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.screening.manualImageFlow=='false' else 'Disable'}} manual image flow</a>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]={{'true' if data.settings.screening.manualImageCollection !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.screening.manualImageCollection=='false' else 'Disable'}} manual image collection</a>
     </p>
 
     <h2>Image reading</h2>

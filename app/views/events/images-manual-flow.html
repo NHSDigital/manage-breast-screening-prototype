@@ -12,36 +12,47 @@
 
 {% block pageContent %}
 
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-
-  {# <span class="nhsuk-caption-l">
-    {{ participant | getFullName }}
-  </span>
-  <h1 class="nhsuk-heading-l js-image-count">
-    {{ pageHeading }}
-  </h1> #}
-
-
-
   {% include "event-workflow.njk" %}
 
-  {% set insetHtml %}
-    <p>Mammography images will appear here once they have been transmitted by the PACS</p>
-  {% endset %}
-
-  {{ insetText({
-    html: insetHtml
+  {{ radios({
+    idPrefix: "imagingComplete",
+    name: "event[mammogramData][isPartialMammography]",
+    fieldset: {
+      legend: {
+        text: "Have images been taken?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    value: event.mammogramData.isPartialMammography,
+    items: [
+      {
+        value: "yes",
+        text: "Yes, standard 4 images"
+      },
+      {
+        value: "yes",
+        text: "Yes, but provide additional details"
+      },
+      {
+        value: "no",
+        text: "No, imaging not completed",
+        conditional: {
+          html: reasonHtml
+        }
+      }
+    ]
   }) }}
 
-
-  {{ appHiddenInput({
-    name: "event[workflowStatus][awaiting-images]",
-    value: "completed"
-  }) }}
-
-  <p>
+  {# <p>
     <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
-  </p>
+  </p> #}
+
+  {# {{ appHiddenInput({
+    name: "event[mammogramData][isPartialMammography]",
+    value: "no"
+  }) }} #}
+
 
 
   {{ button({

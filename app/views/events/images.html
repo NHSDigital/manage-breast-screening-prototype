@@ -8,7 +8,7 @@
   {% set showWorkflowNav = true %}
   {% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %}
 
-  {% if data.settings.screening.manualImageFlow | falsify %}
+  {% if data.settings.screening.manualImageCollection | falsify %}
     {% include "events/images-manual-flow.html" %}
   {% elseif isAwaitingImages %}
     {% include "events/images-before-mammography.html" %}
