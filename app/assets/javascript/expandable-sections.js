@@ -54,6 +54,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Update the status for this section
         updateSectionStatus(section, newStatus)
 
+        // Save status to sessionStorage
+        const sectionId = section.getAttribute('id')
+        if (sectionId && window.saveSectionStatus) {
+          window.saveSectionStatus(sectionId, newStatus)
+        }
+
         // Close current section
         section.removeAttribute('open')
 
