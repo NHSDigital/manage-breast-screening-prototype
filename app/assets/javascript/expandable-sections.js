@@ -22,9 +22,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const button = document.createElement('button')
       button.className =
         'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
-      button.textContent = 'Mark as reviewed'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
+
+      // Set initial button text based on current status
+      updateButtonText(section, button)
 
       buttonContainer.appendChild(button)
 
@@ -60,6 +62,9 @@ document.addEventListener('DOMContentLoaded', function () {
           window.saveSectionStatus(sectionId, newStatus)
         }
 
+        // Update button text based on new status
+        updateButtonText(section, button)
+
         // Close current section
         section.removeAttribute('open')
 
@@ -74,6 +79,51 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Initialize progress
   updateProgress(sections, completedSections)
+
+  // Handle "Complete all and continue" button
+  const completeAllButtons = document.querySelectorAll(
+    '.js-complete-all-sections'
+  )
+  completeAllButtons.forEach(function (button) {
+    button.addEventListener('click', function (event) {
+      // Mark all sections as completed
+      sections.forEach(function (section, index) {
+        // Add to completed set
+        completedSections.add(index)
+
+        // Determine current status and set new status
+        const currentStatus = getCurrentSectionStatus(section)
+        let newStatus
+
+        if (currentStatus === 'Incomplete') {
+          newStatus = 'Complete'
+        } else if (currentStatus === 'To review') {
+          newStatus = 'Reviewed'
+        } else if (currentStatus === 'Reviewed') {
+          newStatus = 'Reviewed' // Keep as reviewed
+        } else {
+          newStatus = 'Complete' // Default fallback
+        }
+
+        // Update the status for this section
+        updateSectionStatus(section, newStatus)
+
+        // Save status to sessionStorage
+        const sectionId = section.getAttribute('id')
+        if (sectionId && window.saveSectionStatus) {
+          window.saveSectionStatus(sectionId, newStatus)
+        }
+
+        // Close the section
+        section.removeAttribute('open')
+      })
+
+      // Update progress counter
+      updateProgress(sections, completedSections)
+
+      console.log('All sections marked as complete')
+    })
+  })
 })
 
 // Function to get current section status
@@ -138,6 +188,17 @@ function getCurrentSectionStatus(section) {
   }
 
   return statusElement ? statusElement.textContent.trim() : 'Incomplete'
+}
+
+// Function to update button text based on section status
+function updateButtonText(section, button) {
+  const currentStatus = getCurrentSectionStatus(section)
+
+  if (currentStatus === 'Reviewed' || currentStatus === 'Complete') {
+    button.textContent = 'Next section'
+  } else {
+    button.textContent = 'Mark as reviewed'
+  }
 }
 
 // Function to find and open the next incomplete section after the current one
@@ -294,7 +355,7 @@ function updateSectionStatus(section, statusText) {
     console.log('Found status element:', statusElement)
     statusElement.textContent = statusText
 
-    // Update the tag color class based on status
+    // Update the tag colour class based on status
     // Reset all status classes first
     statusElement.classList.remove(
       'nhsuk-tag--blue',
@@ -338,4 +399,15 @@ function updateProgress(sections, completedSections) {
   console.log(
     `Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`
   )
+}
+
+// Expose function globally for use by expanded-state-tracker
+window.updateSectionButtonText = function (sectionId) {
+  const section = document.getElementById(sectionId)
+  if (section) {
+    const button = section.querySelector('.js-save-and-next')
+    if (button) {
+      updateButtonText(section, button)
+    }
+  }
 }
