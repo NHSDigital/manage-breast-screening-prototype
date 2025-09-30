@@ -185,6 +185,16 @@ const generateMammogramImages = ({
     (sum, view) => sum + view.images.length,
     0
   )
+
+  // Calculate images per breast
+  const rightBreastImages = Object.values(views)
+    .filter((view) => view.side === 'right')
+    .reduce((sum, view) => sum + view.images.length, 0)
+
+  const leftBreastImages = Object.values(views)
+    .filter((view) => view.side === 'left')
+    .reduce((sum, view) => sum + view.images.length, 0)
+
   const allTimestamps = Object.values(views)
     .flatMap((view) => view.images.map((img) => img.timestamp))
     .sort()
@@ -202,7 +212,11 @@ const generateMammogramImages = ({
       standardViewsCompleted: Object.keys(views).length === 4,
       startTime: allTimestamps[0],
       endTime: allTimestamps[allTimestamps.length - 1],
-      hasRepeat
+      hasRepeat,
+      imagesByBreast: {
+        right: rightBreastImages,
+        left: leftBreastImages
+      }
     }
   }
 }
