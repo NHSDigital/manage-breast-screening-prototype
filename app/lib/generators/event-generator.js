@@ -52,10 +52,10 @@ const determineEventStatus = (
   if (minutesPassed <= 60) {
     // Within 30 mins of appointment
     return weighted.select({
-      event_checked_in: 0.6,
-      event_complete: 0.1,
+      event_checked_in: 0.3,
+      event_complete: 0.2,
       event_attended_not_screened: 0.1,
-      event_scheduled: 0.2
+      event_scheduled: 0.4
     })
   } else {
     // More than 30 mins after appointment
@@ -82,6 +82,8 @@ const generateEvent = ({
   const simulatedDateTime = dayjs()
     .hour(parseInt(hours))
     .minute(parseInt(minutes))
+    .second(0)
+    .millisecond(0)
   const slotDateTime = dayjs(slot.dateTime)
   const isPast = slotDateTime.isBefore(simulatedDateTime)
 
