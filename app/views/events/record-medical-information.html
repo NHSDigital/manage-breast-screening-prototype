@@ -35,7 +35,7 @@
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
         text: "Complete all and continue" if data.event.workflowStatus['record-medical-information'] != 'completed' else "Next section",
-        classes: "nhsuk-u-margin-bottom-0 nhsuk-button"
+        classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
       }) }}
 
     </div>
@@ -47,7 +47,8 @@
 
   <div class="nhsuk-form-group">
     {{ button({
-      text: "Complete all and continue"
+      text: "Complete all and continue",
+      classes: "js-complete-all-sections"
     }) }}
 
     {% include "screening-cannot-proceed-link.njk" %}

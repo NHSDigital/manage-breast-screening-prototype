@@ -2,12 +2,14 @@
 
 // Generic expanded state tracker
 // Tracks open/closed state of elements with .js-track-expanded class
+// Also tracks section statuses for elements with .js-expandable-section class
 
 ;(function () {
   'use strict'
 
   const STORAGE_KEY_PREFIX = 'expanded-sections-'
   const PENDING_EXPAND_KEY_PREFIX = 'pending-expand-'
+  const STATUS_KEY_PREFIX = 'section-statuses-'
 
   function getStorageKey() {
     return STORAGE_KEY_PREFIX + window.location.pathname
@@ -15,6 +17,10 @@
 
   function getPendingExpandKey() {
     return PENDING_EXPAND_KEY_PREFIX + window.location.pathname
+  }
+
+  function getStatusStorageKey() {
+    return STATUS_KEY_PREFIX + window.location.pathname
   }
 
   function saveExpandedState() {
@@ -28,6 +34,120 @@
     })
 
     sessionStorage.setItem(getStorageKey(), JSON.stringify(expandedSections))
+  }
+
+  function saveStatusState(sectionId, statusText) {
+    const storedStatuses = sessionStorage.getItem(getStatusStorageKey())
+    let statuses = {}
+
+    if (storedStatuses) {
+      try {
+        statuses = JSON.parse(storedStatuses)
+      } catch (e) {
+        console.warn('Failed to parse stored statuses:', e)
+      }
+    }
+
+    statuses[sectionId] = statusText
+    sessionStorage.setItem(getStatusStorageKey(), JSON.stringify(statuses))
+  }
+
+  function restoreStatusState() {
+    const storedStatuses = sessionStorage.getItem(getStatusStorageKey())
+    if (storedStatuses) {
+      try {
+        const statuses = JSON.parse(storedStatuses)
+        Object.keys(statuses).forEach((sectionId) => {
+          const section = document.getElementById(sectionId)
+          if (section && section.classList.contains('js-expandable-section')) {
+            const statusText = statuses[sectionId]
+            updateSectionStatusDisplay(section, statusText)
+          }
+        })
+      } catch (e) {
+        console.warn('Failed to restore status state:', e)
+      }
+    }
+  }
+
+  function updateSectionStatusDisplay(section, statusText) {
+    const sectionId = section.getAttribute('id')
+    let statusElement = null
+
+    // Use the same strategies to find the status element
+    const parent = section.parentElement
+    if (parent) {
+      statusElement = parent.querySelector('.app-details__status .nhsuk-tag')
+    }
+
+    if (!statusElement && sectionId) {
+      statusElement =
+        document.querySelector(`[data-section="${sectionId}"] .nhsuk-tag`) ||
+        document.querySelector(`#${sectionId}-status .nhsuk-tag`)
+    }
+
+    if (!statusElement) {
+      let currentElement = section.previousElementSibling
+      while (currentElement && !statusElement) {
+        statusElement = currentElement.querySelector(
+          '.app-details__status .nhsuk-tag'
+        )
+
+        if (!statusElement) {
+          currentElement = currentElement.previousElementSibling
+        }
+      }
+    }
+
+    if (!statusElement) {
+      let currentElement = section.nextElementSibling
+      while (currentElement && !statusElement) {
+        statusElement = currentElement.querySelector(
+          '.app-details__status .nhsuk-tag'
+        )
+
+        if (!statusElement) {
+          currentElement = currentElement.nextElementSibling
+        }
+      }
+    }
+
+    if (!statusElement) {
+      const container =
+        section.closest('.nhsuk-grid-column-two-thirds') ||
+        section.closest('.nhsuk-grid-row') ||
+        document.body
+
+      const allStatusElements = container.querySelectorAll(
+        '.app-details__status .nhsuk-tag'
+      )
+
+      const allSections = container.querySelectorAll('.js-expandable-section')
+      const sectionIndex = Array.from(allSections).indexOf(section)
+
+      if (allStatusElements[sectionIndex]) {
+        statusElement = allStatusElements[sectionIndex]
+      }
+    }
+
+    if (statusElement) {
+      statusElement.textContent = statusText
+
+      // Update the tag colour class based on status
+      statusElement.classList.remove(
+        'nhsuk-tag--blue',
+        'nhsuk-tag--green',
+        'nhsuk-tag--yellow'
+      )
+
+      if (statusText === 'Complete' || statusText === 'Reviewed') {
+        statusElement.classList.add('nhsuk-tag--green')
+      } else if (statusText === 'Incomplete') {
+        statusElement.classList.add('nhsuk-tag--blue')
+      } else if (statusText === 'To review') {
+        statusElement.classList.add('nhsuk-tag--yellow')
+      }
+    }
   }
 
   function restoreExpandedState() {
@@ -63,6 +183,9 @@
         console.warn('Failed to restore pending expand state:', e)
       }
     }
+
+    // Restore section statuses
+    restoreStatusState()
   }
 
   function clearExpandedStateIfNeeded() {
@@ -78,7 +201,8 @@
     Object.keys(sessionStorage).forEach((key) => {
       if (
         key.startsWith(STORAGE_KEY_PREFIX) ||
-        key.startsWith(PENDING_EXPAND_KEY_PREFIX)
+        key.startsWith(PENDING_EXPAND_KEY_PREFIX) ||
+        key.startsWith(STATUS_KEY_PREFIX)
       ) {
         sessionStorage.removeItem(key)
       }
@@ -129,6 +253,7 @@
     setupEventListeners()
   })
 
-  // Expose clear function globally for clear data link
+  // Expose functions globally
   window.clearAllExpandedStates = clearAllExpandedStates
+  window.saveSectionStatus = saveStatusState
 })()
