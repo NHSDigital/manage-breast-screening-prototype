@@ -4,7 +4,7 @@
 
 {% set pageHeading = "Images" %}
 
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {% set formAction = './imaging-answer' %}
 
@@ -43,6 +43,271 @@
       }
     ]
   }) }}
+
+  {{ radios({
+    name: "event[mammogramData][machineRoom]",
+    value: event.mammogramData.machineRoom,
+    idPrefix: "machineRoom",
+    fieldset: {
+      legend: {
+        text: "Which machine took the images?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Room A",
+        text: "Room A"
+      },
+      {
+        value: "Room B",
+        text: "Room B"
+      },
+      {
+        value: "Room C",
+        text: "Room C"
+      }
+    ]
+  }) }}
+
+  {% set viewsQuestionText %}
+    Which views were taken
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[mammogramData][viewsRightBreast]",
+        values: event.mammogramData.viewsRightBreast,
+        idPrefix: "viewsRightBreast",
+        fieldset: {
+          legend: {
+            html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "CC",
+            text: "CC"
+          },
+          {
+            value: "MLO",
+            text: "MLO"
+          },
+          {
+            value: "Eklund",
+            text: "Eklund"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No images taken",
+            text: "No images taken",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[mammogramData][viewsLeftBreast]",
+        values: event.mammogramData.viewsLeftBreast,
+        idPrefix: "viewsLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "CC",
+            text: "CC"
+          },
+          {
+            value: "MLO",
+            text: "MLO"
+          },
+          {
+            value: "Eklund",
+            text: "Eklund"
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No images taken",
+            text: "No images taken",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+
+
+  {% set viewsQuestionText %}
+    Which views were taken
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[mammogramData][viewsRightBreast]",
+        values: event.mammogramData.viewsRightBreast,
+        idPrefix: "viewsRightBreast",
+        fieldset: {
+          legend: {
+            html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "CC",
+            text: "CC",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramData][viewsRightBreastCCCount]",
+                value: event.mammogramData.viewsRightBreastCCCount or "1",
+                id: "views-right-breast-cc-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "MLO",
+            text: "MLO",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramData][viewsRightBreastMLOCount]",
+                value: event.mammogramData.viewsRightBreastMLOCount or "1",
+                id: "views-right-breast-mlo-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "Eklund",
+            text: "Eklund",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramData][viewsRightBreastEklundCount]",
+                value: event.mammogramData.viewsRightBreastEklundCount or "1",
+                id: "views-right-breast-eklund-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No images taken",
+            text: "No images taken",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[mammogramData][viewsLeftBreast]",
+        values: event.mammogramData.viewsLeftBreast,
+        idPrefix: "viewsLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "CC",
+            text: "CC",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramData][viewsLeftBreastCCCount]",
+                value: event.mammogramData.viewsLeftBreastCCCount or "1",
+                id: "views-left-breast-cc-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "MLO",
+            text: "MLO",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramData][viewsLeftBreastMLOCount]",
+                value: event.mammogramData.viewsLeftBreastMLOCount or "1",
+                id: "views-left-breast-mlo-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "Eklund",
+            text: "Eklund",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramData][viewsLeftBreastEklundCount]",
+                value: event.mammogramData.viewsLeftBreastEklundCount or "1",
+                id: "views-left-breast-eklund-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No images taken",
+            text: "No images taken",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+  </div>
 
   {# <p>
     <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
