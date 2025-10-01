@@ -103,7 +103,9 @@ const generateClinicsForDay = (
   allParticipants,
   unit,
   usedParticipantsInSnapshot,
-  indices
+  indices,
+  testScenarioParticipantIds = new Set(),
+  unitEvents = []
 ) => {
   const clinics = []
   const events = []
@@ -111,6 +113,12 @@ const generateClinicsForDay = (
 
   // Check if this snapshot date is for the recent period (not historical)
   const isRecentSnapshot = dayjs(date).isAfter(dayjs().subtract(1, 'month'))
+
+  // For historical snapshots, extract participants who have events in the current period
+  const participantsWithExistingEvents =
+    !isRecentSnapshot && unitEvents.length > 0
+      ? new Set(unitEvents.map((event) => event.participantId))
+      : new Set()
 
   // Check if this is today - we want one in-progress event for today only
   const isToday = dayjs(date).isSame(dayjs(), 'day')
@@ -199,9 +207,26 @@ const generateClinicsForDay = (
       )
 
       // Get available participants of selected risk level
-      const availableParticipants = indices.riskLevelIndex[
+      // EXCLUDE test scenario participants from random selection
+      let availableParticipants = indices.riskLevelIndex[
         selectedRiskLevel
-      ].filter((p) => !usedParticipantsInSnapshot.has(p.id))
+      ].filter(
+        (p) =>
+          !usedParticipantsInSnapshot.has(p.id) &&
+          !testScenarioParticipantIds.has(p.id)
+      )
+
+      // For historical snapshots, prefer participants with existing events
+      if (!isRecentSnapshot && participantsWithExistingEvents.size > 0) {
+        const preferred = availableParticipants.filter((p) =>
+          participantsWithExistingEvents.has(p.id)
+        )
+
+        // Use preferred participants if available, otherwise fall back to all available
+        if (preferred.length > 0) {
+          availableParticipants = preferred
+        }
+      }
 
       if (availableParticipants.length === 0) {
         const newParticipant = generateParticipant({
@@ -275,6 +300,11 @@ const generateData = async () => {
       overrides: scenario.participant
     })
   })
+
+  // Create set of test scenario participant IDs
+  const testScenarioParticipantIds = new Set(
+    testScenarios.map((s) => s.participant.id)
+  )
 
   console.log('Generating random participants...')
   const randomParticipants = Array.from(
@@ -351,7 +381,9 @@ const generateData = async () => {
           participants,
           unit,
           usedParticipantsInSnapshot,
-          indices
+          indices,
+          testScenarioParticipantIds,
+          unitEvents
         )
       )
 

@@ -128,7 +128,8 @@
       {% if flashSuccess | isString %}
         {{ notificationBanner({
           text: flashSuccess,
-          type: "success"
+          type: "success",
+          disableAutoFocus: true if disableAutoFocus else false
         }) }}
       {% else %}
         {% set html = flashSuccess.html %}
@@ -143,7 +144,8 @@
           title: flashSuccess.title,
           html: html,
           text: flashSuccess.text,
-          type: "success"
+          type: "success",
+          disableAutoFocus: true if disableAutoFocus else false
         }) }}
       {% endif %}
     {% endif %}

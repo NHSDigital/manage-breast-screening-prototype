@@ -7,10 +7,10 @@
       <span class="nhsuk-u-font-weight-bold">At this BSU</span><br>
     {% endif %}
     {# Temporarily hardcode until we can investigate bug with date #}
-    {{ "2022-03-23" | formatDate }}
+    {# {{ "2022-03-23" | formatDate }}
     ({{ "2022-03-23" | formatDate | formatRelativeDate | asHint }})</br>
-    West of London BSU
-    {# {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
+    West of London BSU #}
+    {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
     {% if mostRecentClinic %}
       {{ mostRecentClinic | log }}
       {{ mostRecentClinic.event.timing.startTime | formatDate }} ({{ mostRecentClinic.event.timing.startTime | formatDate | formatRelativeDate | asHint }})</br>
@@ -19,7 +19,7 @@
 
     {% else %}
         {{ "Not known" | asHint }}
-    {% endif %} #}
+    {% endif %}
   </p>
 
   {% if hasAdditionalMammograms %}

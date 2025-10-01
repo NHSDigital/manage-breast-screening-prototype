@@ -1,4 +1,3 @@
-
 {% extends 'layout-app.html' %}
 
 
@@ -36,17 +35,19 @@
 
   {% set valueHtml = "No" %}
 
+  {% set imageCount = event.mammogramData.metadata.totalImages %}
+
   {% set imagesCardHtml %}
     <ul class="nhsuk-list nhsuk-list--bullet">
-      <li>2 right breast images</li>
-      <li>3 left breast images (one repeat)</li>
+      <li>{{ event.mammogramData.metadata.imagesByBreast.right }} right breast {{ "image" | pluralise(event.mammogramData.metadata.imagesByBreast.right) }}</li>
+      <li>{{ event.mammogramData.metadata.imagesByBreast.left }} left breast {{ "image" | pluralise(event.mammogramData.metadata.imagesByBreast.left) }}</li>
     </ul>
 
     <p><a href="./imaging">View or update imaging information</a></p>
   {% endset %}
 
   {{ card({
-    heading: "5 images taken",
+    heading: imageCount ~ " images taken",
     headingLevel: "2",
     feature: true,
     descriptionHtml: imagesCardHtml

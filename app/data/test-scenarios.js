@@ -77,7 +77,7 @@ module.exports = [
         missingViews: ['RMLO', 'RCC'], // ensure all views are present
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_checked_in',
+          status: 'event_scheduled',
           approximateTime: '11:30'
           // slotIndex: 20,
         }

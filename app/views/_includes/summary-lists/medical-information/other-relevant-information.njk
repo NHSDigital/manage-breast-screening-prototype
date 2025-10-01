@@ -119,17 +119,17 @@
     },
     {
       key: {
-        text: "Mammographer notes"
+        text: "Other medical information"
       },
       value: {
-        html: ""
+        html: data.event.medicalInformation.otherMedicalInformation
       },
       actions: {
         items: [
           {
-            href: "#",
+            href: "./medical-information/other-medical-information" | urlWithReferrer(currentUrl, scrollTo),
             text: "Change",
-            visuallyHiddenText: "mammographer notes"
+            visuallyHiddenText: "other medical information"
           }
         ]
       } if allowEdits
