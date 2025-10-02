@@ -43,7 +43,11 @@
       <li>{{ event.mammogramData.metadata.imagesByBreast.left }} left breast {{ "image" | pluralise(event.mammogramData.metadata.imagesByBreast.left) }}</li>
     </ul>
 
-    <p><a href="./imaging">View or update imaging information</a></p>
+    {% if event.mammogramData.isManualEntry %}
+      <p><a href="./images-manual-details">View or update imaging information</a></p>
+    {% else %}
+      <p><a href="./images">View or update imaging information</a></p>
+    {% endif %}
   {% endset %}
 
   {{ card({

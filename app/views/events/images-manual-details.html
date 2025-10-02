@@ -1,0 +1,255 @@
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Image details" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './images-manual-details-answer' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  {% include "event-workflow.njk" %}
+
+  {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
+
+  {% set viewsQuestionText %}
+    Which views were taken
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[mammogramDataTemp][viewsRightBreast]",
+        values: mammogramSource.viewsRightBreast,
+        idPrefix: "viewsRightBreast",
+        fieldset: {
+          legend: {
+            html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Right breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "CC",
+            text: "CC",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
+                value: mammogramSource.viewsRightBreastCCCount or "1",
+                id: "views-right-breast-cc-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "MLO",
+            text: "MLO",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
+                value: mammogramSource.viewsRightBreastMLOCount or "1",
+                id: "views-right-breast-mlo-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "Eklund",
+            text: "Eklund",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastEklundCount]",
+                value: mammogramSource.viewsRightBreastEklundCount or "1",
+                id: "views-right-breast-eklund-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No images taken",
+            text: "No images taken",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "event[mammogramDataTemp][viewsLeftBreast]",
+        values: mammogramSource.viewsLeftBreast,
+        idPrefix: "viewsLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Left breast",
+            classes: "nhsuk-fieldset__legend--s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "CC",
+            text: "CC",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
+                value: mammogramSource.viewsLeftBreastCCCount or "1",
+                id: "views-left-breast-cc-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "MLO",
+            text: "MLO",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
+                value: mammogramSource.viewsLeftBreastMLOCount or "1",
+                id: "views-left-breast-mlo-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            value: "Eklund",
+            text: "Eklund",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Number of images"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastEklundCount]",
+                value: mammogramSource.viewsLeftBreastEklundCount or "1",
+                id: "views-left-breast-eklund-count",
+                classes: "nhsuk-input--width-3",
+                inputmode: "numeric"
+              })
+            }
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "No images taken",
+            text: "No images taken",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+  {% set reasonHtml %}
+
+    {% set partialMammographyReasons = [
+      "Exam limited due to chronic disease condition",
+      "Withdrew consent",
+      "Unable to co-operate due to limited understanding of the procedure",
+      "Exam limited due to implanted medical device",
+      "Restricted mobility - unable to attain / maintain position",
+      "Exam performed in a wheelchair which restricted positioning",
+      "Other"
+      ] %}
+
+    {% set selectItems = [] %}
+
+    {% for item in partialMammographyReasons %}
+      {% set selectItem = {
+        value: item,
+        text: item
+      } %}
+      {% set selectItems = selectItems | push(selectItem) %}
+    {% endfor %}
+
+    {{ select({
+      id: "partialMammographyReasonSelect",
+      name: "event[mammogramDataTemp][partialMammographyReasonSelect]",
+      label: {
+        text: "Reason"
+      },
+      value: mammogramSource.partialMammographyReasonSelect,
+      items: selectItems
+    }) }}
+
+    {{ textarea({
+      name: "event[mammogramDataTemp][partialMammographyReasonComment]",
+      value: mammogramSource.partialMammographyReasonComment,
+      id: "partialMammographyReasonComment",
+      label: {
+        text: "Comment (optional)"
+      },
+      rows: 3
+    }) }}
+  {% endset %}
+
+  {{ checkboxes({
+    idPrefix: "isPartialMammography",
+    name: "event[mammogramDataTemp][isPartialMammography]",
+    values: mammogramSource.isPartialMammography,
+    fieldset: {
+      legend: {
+        text: "Record as partial mammography?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes, partial mammography",
+        conditional: {
+          html: reasonHtml
+        }
+      }
+    ]
+  }) }}
+
+  {{ textarea({
+    name: "event[mammogramDataTemp][additionalDetails]",
+    id: "additional-details",
+    value: mammogramSource.additionalDetails,
+    label: {
+      text: "Additional details (optional)",
+      classes: "nhsuk-label--m"
+    },
+    hint: {
+      text: "Any other relevant information about the images"
+    },
+    rows: 2
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}

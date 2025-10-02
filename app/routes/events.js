@@ -206,7 +206,6 @@ module.exports = (router) => {
 
     // Only allow leaving if the event is currently in progress
     if (event?.status === 'event_in_progress') {
-
       // Reset workflow status
       delete data.event.workflowStatus
 
@@ -839,41 +838,54 @@ module.exports = (router) => {
   )
 
   // Save breast features (includes converting JSON string to structured data)
-  router.post('/clinics/:clinicId/events/:eventId/medical-information/record-breast-features/save', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const referrerChain = req.query.referrerChain
-    const scrollTo = req.query.scrollTo
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/record-breast-features/save',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
 
-    let conversionsCount = 0
-    let errorCount = 0
+      let conversionsCount = 0
+      let errorCount = 0
 
-    // Convert breast features raw data
-    if (data.event?.medicalInformation?.breastFeaturesRaw) {
-      try {
-        const rawFeatures = data.event.medicalInformation.breastFeaturesRaw
-        if (typeof rawFeatures === 'string') {
-          data.event.medicalInformation.breastFeatures = JSON.parse(rawFeatures)
-          // Delete the raw data once converted
-          delete data.event.medicalInformation.breastFeaturesRaw
-          conversionsCount++
-          console.log('Converted breastFeaturesRaw to structured data and deleted raw data')
+      // Convert breast features raw data
+      if (data.event?.medicalInformation?.breastFeaturesRaw) {
+        try {
+          const rawFeatures = data.event.medicalInformation.breastFeaturesRaw
+          if (typeof rawFeatures === 'string') {
+            data.event.medicalInformation.breastFeatures =
+              JSON.parse(rawFeatures)
+            // Delete the raw data once converted
+            delete data.event.medicalInformation.breastFeaturesRaw
+            conversionsCount++
+            console.log(
+              'Converted breastFeaturesRaw to structured data and deleted raw data'
+            )
+          }
+        } catch (error) {
+          console.warn('Failed to convert breastFeaturesRaw:', error)
+          errorCount++
         }
-      } catch (error) {
-        console.warn('Failed to convert breastFeaturesRaw:', error)
-        errorCount++
       }
-    }
 
-    // Flash error message if needed
-    if (errorCount > 0) {
-      req.flash('error', 'Some data could not be converted. Please check the information and try again.')
-    }
+      // Flash error message if needed
+      if (errorCount > 0) {
+        req.flash(
+          'error',
+          'Some data could not be converted. Please check the information and try again.'
+        )
+      }
 
-    // Redirect back using referrer chain
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, referrerChain, scrollTo)
-    res.redirect(returnUrl)
-  })
+      // Redirect back using referrer chain
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        referrerChain,
+        scrollTo
+      )
+      res.redirect(returnUrl)
+    }
+  )
 
   // Medical history
 
@@ -883,221 +895,103 @@ module.exports = (router) => {
 
   function isValidMedicalHistoryType(type) {
     // Check against both type field and slug field
-    return medicalHistoryTypes.some(item => item.type === type || item.slug === type)
+    return medicalHistoryTypes.some(
+      (item) => item.type === type || item.slug === type
+    )
   }
 
   // Helper function to get medical history type object by type (camelCase type or kebab-case slug)
   function getMedicalHistoryType(type) {
     // First try to find by type field
-    let result = medicalHistoryTypes.find(item => item.type === type)
+    let result = medicalHistoryTypes.find((item) => item.type === type)
     if (result) {
       return result
     }
     // Then try to find by slug field
-    return medicalHistoryTypes.find(item => item.slug === type)
+    return medicalHistoryTypes.find((item) => item.slug === type)
   }
 
   // Helper function to get camelCase type from slug
   function getMedicalHistoryKeyFromSlug(slug) {
-    const item = medicalHistoryTypes.find(item => item.slug === slug)
+    const item = medicalHistoryTypes.find((item) => item.slug === slug)
     return item ? item.type : null
   }
 
   // Add new medical history item - clear temp data and redirect to form
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add', (req, res) => {
-    const { clinicId, eventId, type } = req.params
+  router.get(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add',
+    (req, res) => {
+      const { clinicId, eventId, type } = req.params
 
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
+      }
+
+      // Clear any existing temp medical history data
+      delete req.session.data.event?.medicalHistoryTemp
+
+      // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
     }
-
-    // Clear any existing temp medical history data
-    delete req.session.data.event?.medicalHistoryTemp
-
-    // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
-  })
+  )
 
   // Save medical history item - handles both 'save' and 'save and add another'
-  router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/save', (req, res) => {
-    const { clinicId, eventId, type } = req.params
-    const data = req.session.data
-    const action = req.body.action || 'save'
-    const referrerChain = req.query.referrerChain
-    const scrollTo = req.query.scrollTo
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/save',
+    (req, res) => {
+      const { clinicId, eventId, type } = req.params
+      const data = req.session.data
+      const action = req.body.action || 'save'
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
 
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    }
-
-    const typeConfig = getMedicalHistoryType(type)
-    // Convert slug to camelCase key for data storage
-    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
-
-    // Check if consent is needed for breast implants BEFORE processing the data
-    if (type === 'breast-implants-augmentation' || type === 'breastImplantsAugmentation') {
-      const medicalHistoryTemp = data.event?.medicalHistoryTemp
-      const rightBreastProcedures = medicalHistoryTemp?.proceduresRightBreast || []
-      const leftBreastProcedures = medicalHistoryTemp?.proceduresLeftBreast || []
-      
-      // Check if breast implants were selected in either breast
-      const hasBreastImplants = 
-        rightBreastProcedures.includes('Breast implants') || 
-        leftBreastProcedures.includes('Breast implants')
-      
-      if (hasBreastImplants) {
-        // Redirect to consent page immediately - we'll save the data after consent
-        return res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`)
-      }
-    }
-
-    let isNewItem
-
-    // Save temp medical history to array
-    if (data.event?.medicalHistoryTemp) {
-      // Initialize medicalInformation object if needed
-      if (!data.event.medicalInformation) {
-        data.event.medicalInformation = {}
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
       }
 
-      // Initialize medicalHistory object if needed
-      if (!data.event.medicalInformation.medicalHistory) {
-        data.event.medicalInformation.medicalHistory = {}
+      const typeConfig = getMedicalHistoryType(type)
+      // Convert slug to camelCase key for data storage
+      const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+      // Check if consent is needed for breast implants BEFORE processing the data
+      if (
+        type === 'breast-implants-augmentation' ||
+        type === 'breastImplantsAugmentation'
+      ) {
+        const medicalHistoryTemp = data.event?.medicalHistoryTemp
+        const rightBreastProcedures =
+          medicalHistoryTemp?.proceduresRightBreast || []
+        const leftBreastProcedures =
+          medicalHistoryTemp?.proceduresLeftBreast || []
+
+        // Check if breast implants were selected in either breast
+        const hasBreastImplants =
+          rightBreastProcedures.includes('Breast implants') ||
+          leftBreastProcedures.includes('Breast implants')
+
+        if (hasBreastImplants) {
+          // Redirect to consent page immediately - we'll save the data after consent
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+          )
+        }
       }
 
-      // Initialize array for this type if needed
-      if (!data.event.medicalInformation.medicalHistory[dataKey]) {
-        data.event.medicalInformation.medicalHistory[dataKey] = []
-      }
+      let isNewItem
 
-      const medicalHistoryTemp = data.event.medicalHistoryTemp
-      isNewItem = !medicalHistoryTemp.id
-
-      // Create medical history item
-      const medicalHistoryItem = {
-        id: medicalHistoryTemp.id || generateId(),
-        ...medicalHistoryTemp
-      }
-
-      // For new items, add the creation timestamp
-      if (isNewItem) {
-        medicalHistoryItem.dateAdded = new Date().toISOString()
-        medicalHistoryItem.addedBy = data.currentUser.id
-      }
-
-      // REMOVED: The consent line that was adding consentGiven to all items
-
-      // Update existing or add new
-      const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
-      if (existingIndex !== -1) {
-        data.event.medicalInformation.medicalHistory[dataKey][existingIndex] = medicalHistoryItem
-      } else {
-        data.event.medicalInformation.medicalHistory[dataKey].push(medicalHistoryItem)
-      }
-
-      // Clear temp data
-      delete data.event.medicalHistoryTemp
-    }
-
-    let methodVerb = 'added'
-    if (!isNewItem) {
-      methodVerb = 'updated'
-    }
-
-    const itemAddedMessage = `${typeConfig.name} ${methodVerb}`
-    req.flash('success', itemAddedMessage)
-
-    // Redirect based on action
-    if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
-      // Clear any existing temp medical history data for the new item
-      delete data.event.medicalHistoryTemp
-
-      // Redirect directly to the form instead of going through the add route
-      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, referrerChain, scrollTo))
-    } else {
-      // Regular save - redirect back to medical information page
-      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
-      res.redirect(returnUrl)
-    }
-  })
-
-  // Edit existing medical history item
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId', (req, res) => {
-    const { clinicId, eventId, type, itemId } = req.params
-    const data = req.session.data
-
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    }
-
-    // Convert slug to camelCase key for data lookup
-    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
-
-    // Initialize medicalInformation if needed
-    if (!data.event.medicalInformation) {
-      data.event.medicalInformation = {}
-    }
-
-    // Find the medical history item using the correct data key
-    const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[dataKey]?.find(item => item.id === itemId)
-
-    if (medicalHistoryItem) {
-      // Copy to temp for editing
-      data.event.medicalHistoryTemp = { ...medicalHistoryItem }
-    } else {
-      console.log(`Cannot find item ${itemId} in ${dataKey}`)
-    }
-
-    // Redirect to the form
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
-  })
-
-  // Delete medical history item
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/delete/:itemId', (req, res) => {
-    const { clinicId, eventId, type, itemId } = req.params
-    const data = req.session.data
-
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    }
-
-    const typeConfig = getMedicalHistoryType(type)
-    // Convert slug to camelCase key for data lookup
-    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
-
-    // Remove item from array
-    if (data.event?.medicalInformation?.medicalHistory?.[dataKey]) {
-      data.event.medicalInformation.medicalHistory[dataKey] = data.event.medicalInformation.medicalHistory[dataKey].filter(item => item.id !== itemId)
-    }
-
-    req.flash('success', `${typeConfig.name} deleted`)
-
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain, req.query.scrollTo)
-    res.redirect(returnUrl)
-  })
-
-  // Handle breast implants consent form submission  
-  router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const consentGiven = data.event?.medicalInformation?.implantedDevices?.consentGiven
-    const referrerChain = req.query.referrerChain
-    const scrollTo = req.query.scrollTo
-
-    if (!consentGiven) {
-      req.flash('error', {
-        text: 'Select whether the participant has signed the consent form',
-        name: 'event[medicalInformation][implantedDevices][consentGiven]'
-      })
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`)
-    }
-
-    if (consentGiven === 'yes') {
-      // Save the breast implants data that was held in temp
+      // Save temp medical history to array
       if (data.event?.medicalHistoryTemp) {
         // Initialize medicalInformation object if needed
         if (!data.event.medicalInformation) {
@@ -1109,13 +1003,13 @@ module.exports = (router) => {
           data.event.medicalInformation.medicalHistory = {}
         }
 
-        // Initialize array for breast implants if needed
-        if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation) {
-          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+        // Initialize array for this type if needed
+        if (!data.event.medicalInformation.medicalHistory[dataKey]) {
+          data.event.medicalInformation.medicalHistory[dataKey] = []
         }
 
         const medicalHistoryTemp = data.event.medicalHistoryTemp
-        const isNewItem = !medicalHistoryTemp.id
+        isNewItem = !medicalHistoryTemp.id
 
         // Create medical history item
         const medicalHistoryItem = {
@@ -1129,29 +1023,226 @@ module.exports = (router) => {
           medicalHistoryItem.addedBy = data.currentUser.id
         }
 
-        // Add consent information
-        medicalHistoryItem.consentGiven = 'yes'
+        // REMOVED: The consent line that was adding consentGiven to all items
 
-        // Add to array
-        data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+        // Update existing or add new
+        const existingIndex = data.event.medicalInformation.medicalHistory[
+          dataKey
+        ].findIndex((item) => item.id === medicalHistoryItem.id)
+        if (existingIndex !== -1) {
+          data.event.medicalInformation.medicalHistory[dataKey][existingIndex] =
+            medicalHistoryItem
+        } else {
+          data.event.medicalInformation.medicalHistory[dataKey].push(
+            medicalHistoryItem
+          )
+        }
 
         // Clear temp data
         delete data.event.medicalHistoryTemp
       }
 
-      // Show combined success message
-      req.flash('success', 'Breast implants recorded and consent recorded')
-      
+      let methodVerb = 'added'
+      if (!isNewItem) {
+        methodVerb = 'updated'
+      }
+
+      const itemAddedMessage = `${typeConfig.name} ${methodVerb}`
+      req.flash('success', itemAddedMessage)
+
+      // Redirect based on action
+      if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
+        // Clear any existing temp medical history data for the new item
+        delete data.event.medicalHistoryTemp
+
+        // Redirect directly to the form instead of going through the add route
+        res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`,
+            referrerChain,
+            scrollTo
+          )
+        )
+      } else {
+        // Regular save - redirect back to medical information page
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          referrerChain,
+          scrollTo
+        )
+        res.redirect(returnUrl)
+      }
+    }
+  )
+
+  // Edit existing medical history item
+  router.get(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId',
+    (req, res) => {
+      const { clinicId, eventId, type, itemId } = req.params
+      const data = req.session.data
+
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
+      }
+
+      // Convert slug to camelCase key for data lookup
+      const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+      // Initialize medicalInformation if needed
+      if (!data.event.medicalInformation) {
+        data.event.medicalInformation = {}
+      }
+
+      // Find the medical history item using the correct data key
+      const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[
+        dataKey
+      ]?.find((item) => item.id === itemId)
+
+      if (medicalHistoryItem) {
+        // Copy to temp for editing
+        data.event.medicalHistoryTemp = { ...medicalHistoryItem }
+      } else {
+        console.log(`Cannot find item ${itemId} in ${dataKey}`)
+      }
+
+      // Redirect to the form
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
+    }
+  )
+
+  // Delete medical history item
+  router.get(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/delete/:itemId',
+    (req, res) => {
+      const { clinicId, eventId, type, itemId } = req.params
+      const data = req.session.data
+
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
+      }
+
+      const typeConfig = getMedicalHistoryType(type)
+      // Convert slug to camelCase key for data lookup
+      const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+      // Remove item from array
+      if (data.event?.medicalInformation?.medicalHistory?.[dataKey]) {
+        data.event.medicalInformation.medicalHistory[dataKey] =
+          data.event.medicalInformation.medicalHistory[dataKey].filter(
+            (item) => item.id !== itemId
+          )
+      }
+
+      req.flash('success', `${typeConfig.name} deleted`)
+
       const returnUrl = getReturnUrl(
         `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
-        referrerChain,
-        scrollTo
+        req.query.referrerChain,
+        req.query.scrollTo
       )
       res.redirect(returnUrl)
-    } else {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`)
     }
-  })
+  )
+
+  // Handle breast implants consent form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const consentGiven =
+        data.event?.medicalInformation?.implantedDevices?.consentGiven
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
+
+      if (!consentGiven) {
+        req.flash('error', {
+          text: 'Select whether the participant has signed the consent form',
+          name: 'event[medicalInformation][implantedDevices][consentGiven]'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+        )
+      }
+
+      if (consentGiven === 'yes') {
+        // Save the breast implants data that was held in temp
+        if (data.event?.medicalHistoryTemp) {
+          // Initialize medicalInformation object if needed
+          if (!data.event.medicalInformation) {
+            data.event.medicalInformation = {}
+          }
+
+          // Initialize medicalHistory object if needed
+          if (!data.event.medicalInformation.medicalHistory) {
+            data.event.medicalInformation.medicalHistory = {}
+          }
+
+          // Initialize array for breast implants if needed
+          if (
+            !data.event.medicalInformation.medicalHistory
+              .breastImplantsAugmentation
+          ) {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation =
+              []
+          }
+
+          const medicalHistoryTemp = data.event.medicalHistoryTemp
+          const isNewItem = !medicalHistoryTemp.id
+
+          // Create medical history item
+          const medicalHistoryItem = {
+            id: medicalHistoryTemp.id || generateId(),
+            ...medicalHistoryTemp
+          }
+
+          // For new items, add the creation timestamp
+          if (isNewItem) {
+            medicalHistoryItem.dateAdded = new Date().toISOString()
+            medicalHistoryItem.addedBy = data.currentUser.id
+          }
+
+          // Add consent information
+          medicalHistoryItem.consentGiven = 'yes'
+
+          // Add to array
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
+            medicalHistoryItem
+          )
+
+          // Clear temp data
+          delete data.event.medicalHistoryTemp
+        }
+
+        // Show combined success message
+        req.flash('success', 'Breast implants recorded and consent recorded')
+
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          referrerChain,
+          scrollTo
+        )
+        res.redirect(returnUrl)
+      } else {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+        )
+      }
+    }
+  )
 
   // Imaging view - this is the main imaging page for the event
 
@@ -1238,6 +1329,398 @@ module.exports = (router) => {
       }
     }
   )
+
+  // Manual imaging routes
+
+  // Add this section to events.js after the existing imaging routes
+
+  // Manual imaging routes
+
+  // Initialize or edit manual imaging - clears temp or prepopulates from existing data
+  router.get('/clinics/:clinicId/events/:eventId/images-manual', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    // If mammogramData exists and is manual entry, prepopulate temp for editing
+    if (data.event?.mammogramData?.isManualEntry) {
+      const formData = convertMammogramFormatToFormData(
+        data.event.mammogramData
+      )
+      if (formData) {
+        data.event.mammogramDataTemp = formData
+      }
+    } else {
+      // Clear any existing temp data for fresh start
+      delete data.event.mammogramDataTemp
+    }
+
+    // Let the dynamic routing handle the actual rendering
+    res.render('events/images-manual')
+  })
+
+  // Direct link to details page - also prepopulates if editing
+  router.get(
+    '/clinics/:clinicId/events/:eventId/images-manual-details',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // If mammogramData exists and is manual entry, prepopulate temp for editing
+      if (
+        data.event?.mammogramData?.isManualEntry &&
+        !data.event?.mammogramDataTemp
+      ) {
+        const formData = convertMammogramFormatToFormData(
+          data.event.mammogramData
+        )
+        if (formData) {
+          data.event.mammogramDataTemp = formData
+        }
+      }
+
+      // Let the dynamic routing handle the actual rendering
+      res.render('events/images-manual-details')
+    }
+  )
+
+  /**
+   * Helper function to check if any view has multiple images (needs repeat question)
+   */
+  function needsRepeatQuestions(mammogramDataTemp) {
+    const views = ['viewsRightBreast', 'viewsLeftBreast']
+    const viewTypes = ['CC', 'MLO', 'Eklund']
+
+    for (const breastView of views) {
+      if (!mammogramDataTemp[breastView]) continue
+
+      for (const viewType of viewTypes) {
+        const countField = `${breastView}${viewType}Count`
+        const count = parseInt(mammogramDataTemp[countField]) || 0
+
+        if (count > 1) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Helper function to convert manual mammogram format back to form format (for editing)
+   */
+  function convertMammogramFormatToFormData(mammogramData) {
+    if (!mammogramData.isManualEntry) {
+      return null
+    }
+
+    const formData = {
+      machineRoom: mammogramData.machineRoom,
+      isPartialMammography:
+        mammogramData.isPartialMammography === 'yes' ? ['yes'] : [],
+      additionalDetails: mammogramData.additionalDetails,
+      viewsRightBreast: [],
+      viewsLeftBreast: []
+    }
+
+    // Split the combined partial mammography reason back into select and comment
+    if (mammogramData.partialMammographyReason) {
+      const reason = mammogramData.partialMammographyReason
+      // Check if it contains a colon (meaning it was a select + comment)
+      if (reason.includes(':')) {
+        const parts = reason.split(':')
+        formData.partialMammographyReasonSelect = parts[0].trim()
+        formData.partialMammographyReasonComment = parts
+          .slice(1)
+          .join(':')
+          .trim()
+      } else {
+        // Could be either just select or just comment
+        // Check if it matches one of the predefined reasons
+        const predefinedReasons = [
+          'Exam limited due to chronic disease condition',
+          'Withdrew consent',
+          'Unable to co-operate due to limited understanding of the procedure',
+          'Exam limited due to implanted medical device',
+          'Restricted mobility - unable to attain / maintain position',
+          'Exam performed in a wheelchair which restricted positioning',
+          'Other'
+        ]
+
+        if (predefinedReasons.includes(reason)) {
+          formData.partialMammographyReasonSelect = reason
+        } else {
+          formData.partialMammographyReasonComment = reason
+        }
+      }
+    }
+
+    // Convert views back to checkbox/input format
+    for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
+      const breastKey =
+        viewData.side === 'right' ? 'viewsRightBreast' : 'viewsLeftBreast'
+      const countKey = `${breastKey}${viewData.viewShort}Count`
+
+      formData[breastKey].push(viewData.viewShort)
+      formData[countKey] = viewData.imageCount.toString()
+
+      // Add repeat data if present
+      if (viewData.isRepeat) {
+        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] = 'isRepeat'
+        formData[`repeatReason-${viewData.viewShortWithSide}`] =
+          viewData.repeatReason
+      } else if (viewData.imageCount > 1) {
+        // If multiple images but not marked as repeat, assume extra images
+        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] =
+          'extraImages'
+      }
+    }
+
+    return formData
+  }
+
+  /**
+   * Helper function to convert manual form data to mammogram data structure
+   */
+  function convertManualDataToMammogramFormat(formData) {
+    const views = {}
+    const breasts = [
+      { key: 'viewsRightBreast', side: 'right', sideCode: 'R' },
+      { key: 'viewsLeftBreast', side: 'left', sideCode: 'L' }
+    ]
+
+    const viewTypes = [
+      { value: 'CC', name: 'craniocaudal', short: 'CC' },
+      { value: 'MLO', name: 'mediolateral oblique', short: 'MLO' },
+      { value: 'Eklund', name: 'Eklund', short: 'Eklund' }
+    ]
+
+    let totalImages = 0
+    const imagesByBreast = { right: 0, left: 0 }
+
+    for (const breast of breasts) {
+      const selectedViews = formData[breast.key] || []
+
+      // Skip if "No images taken" was selected
+      if (selectedViews.includes('No images taken')) {
+        continue
+      }
+
+      for (const viewType of viewTypes) {
+        // Check if this view was selected
+        if (selectedViews.includes(viewType.value)) {
+          const countField = `${breast.key}${viewType.value}Count`
+          const imageCount = parseInt(formData[countField]) || 1
+
+          // Create view key matching automated format (e.g., rightCraniocaudal)
+          const viewKey = `${breast.side}${viewType.name.charAt(0).toUpperCase()}${viewType.name.slice(1).replace(' ', '')}`
+
+          // Check for repeat data
+          const repeatQuestionKey = `isRepeatQuestion-${breast.sideCode}${viewType.short}`
+          const isRepeat = formData[repeatQuestionKey] === 'isRepeat'
+          const repeatReasonKey = `repeatReason-${breast.sideCode}${viewType.short}`
+
+          views[viewKey] = {
+            side: breast.side,
+            view: viewType.name,
+            viewShort: viewType.short,
+            viewShortWithSide: `${breast.sideCode}${viewType.short}`,
+            imageCount: imageCount,
+            isRepeat: isRepeat,
+            repeatReason: isRepeat ? formData[repeatReasonKey] : null
+          }
+
+          totalImages += imageCount
+          imagesByBreast[breast.side] += imageCount
+        }
+      }
+    }
+
+    // Check if standard views completed (4 standard views: RCC, RMLO, LCC, LMLO)
+    const standardViews = [
+      'rightCraniocaudal',
+      'rightMediolateralOblique',
+      'leftCraniocaudal',
+      'leftMediolateralOblique'
+    ]
+    const standardViewsCompleted = standardViews.every((view) => views[view])
+
+    // Handle partial mammography reason - combine select and comment
+    let partialMammographyReason = null
+    if (formData.isPartialMammography?.includes('yes')) {
+      const reasonSelect = formData.partialMammographyReasonSelect
+      const reasonComment = formData.partialMammographyReasonComment
+
+      if (reasonSelect && reasonComment) {
+        partialMammographyReason = `${reasonSelect}: ${reasonComment}`
+      } else if (reasonSelect) {
+        partialMammographyReason = reasonSelect
+      } else if (reasonComment) {
+        partialMammographyReason = reasonComment
+      }
+    }
+
+    return {
+      isManualEntry: true,
+      machineRoom: formData.machineRoom,
+      views,
+      isPartialMammography: formData.isPartialMammography?.includes('yes')
+        ? 'yes'
+        : null,
+      partialMammographyReason,
+      additionalDetails: formData.additionalDetails,
+      metadata: {
+        totalImages,
+        standardViewsCompleted,
+        imagesByBreast
+      }
+    }
+  }
+
+  // Handle initial manual imaging form (standard vs custom)
+  router.post(
+    '/clinics/:clinicId/events/:eventId/images-manual-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const isStandardSet = data.event?.mammogramDataTemp?.isStandardSet
+
+      if (!isStandardSet) {
+        req.flash('error', {
+          text: 'Select whether the imaging stage is complete',
+          name: 'event[mammogramDataTemp][isStandardSet]'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual`
+        )
+      }
+
+      // If standard 4 images, preset the data
+      if (isStandardSet === 'yes') {
+        if (!data.event.mammogramDataTemp) {
+          data.event.mammogramDataTemp = {}
+        }
+
+        // Preset standard views in temp
+        data.event.mammogramDataTemp.viewsRightBreast = ['CC', 'MLO']
+        data.event.mammogramDataTemp.viewsRightBreastCCCount = '1'
+        data.event.mammogramDataTemp.viewsRightBreastMLOCount = '1'
+        data.event.mammogramDataTemp.viewsLeftBreast = ['CC', 'MLO']
+        data.event.mammogramDataTemp.viewsLeftBreastCCCount = '1'
+        data.event.mammogramDataTemp.viewsLeftBreastMLOCount = '1'
+
+        // Convert to final format
+        const mammogramData = convertManualDataToMammogramFormat(
+          data.event.mammogramDataTemp
+        )
+        data.event.mammogramData = mammogramData
+
+        // Clear temp data
+        delete data.event.mammogramDataTemp
+
+        // Mark workflow as complete
+        data.event.workflowStatus.images = 'completed'
+
+        // Redirect to review
+        return res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      }
+
+      // If custom details needed, go to details page
+      if (isStandardSet === 'custom') {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual-details`
+        )
+      }
+
+      // If there was a problem (no), redirect to attended-not-screened flow
+      if (isStandardSet === 'no') {
+        // TODO: Route to attended-not-screened flow
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+        )
+      }
+
+      // Fallback - shouldn't reach here
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/images-manual`)
+    }
+  )
+
+  // Handle manual imaging details form
+  router.post(
+    '/clinics/:clinicId/events/:eventId/images-manual-details-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const mammogramDataTemp = data.event?.mammogramDataTemp
+
+      // Validate at least one view was selected
+      const rightViews = mammogramDataTemp?.viewsRightBreast || []
+      const leftViews = mammogramDataTemp?.viewsLeftBreast || []
+
+      const hasNoRightImages = rightViews.includes('No images taken')
+      const hasNoLeftImages = leftViews.includes('No images taken')
+      const hasNoViews =
+        (rightViews.length === 0 || hasNoRightImages) &&
+        (leftViews.length === 0 || hasNoLeftImages)
+
+      if (hasNoViews) {
+        req.flash('error', {
+          text: 'Select at least one view that was taken',
+          name: 'event[mammogramDataTemp][viewsRightBreast]'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual-details`
+        )
+      }
+
+      // Check if we need to ask about repeats
+      if (needsRepeatQuestions(mammogramDataTemp)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual-repeats`
+        )
+      }
+
+      // Convert to final format and save
+      const convertedData =
+        convertManualDataToMammogramFormat(mammogramDataTemp)
+      data.event.mammogramData = convertedData
+
+      // Clear temp data
+      delete data.event.mammogramDataTemp
+
+      // Mark workflow as complete
+      data.event.workflowStatus.images = 'completed'
+
+      // Redirect to review
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+    }
+  )
+
+  // Handle repeat reasons form
+  router.post(
+    '/clinics/:clinicId/events/:eventId/images-manual-repeats-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // Convert to final format and save
+      const mammogramDataTemp = data.event?.mammogramDataTemp
+      const convertedData =
+        convertManualDataToMammogramFormat(mammogramDataTemp)
+      data.event.mammogramData = convertedData
+
+      // Clear temp data
+      delete data.event.mammogramDataTemp
+
+      // Mark workflow as complete
+      data.event.workflowStatus.images = 'completed'
+
+      // Redirect to review
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+    }
+  )
+
+  // End Manual imaging routes
 
   // Handle screening completion
   router.post(
@@ -1376,7 +1859,7 @@ module.exports = (router) => {
       )
     }
   )
-  
+
   // Handle special appointment confirmation
   router.post(
     '/clinics/:clinicId/events/:eventId/special-appointment/confirm-answer',
