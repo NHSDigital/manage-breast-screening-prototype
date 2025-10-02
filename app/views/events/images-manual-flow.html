@@ -19,7 +19,7 @@
     name: "event[mammogramData][isPartialMammography]",
     fieldset: {
       legend: {
-        text: "Have images been taken?",
+        text: "Is the imaging stage complete?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -28,15 +28,21 @@
     items: [
       {
         value: "yes",
-        text: "Yes, standard 4 images"
+        text: "Yes, standard 4 images taken",
+        hint: {
+          text: "2 views of each breast (CC and MLO views)"
+        }
       },
       {
         value: "yes",
-        text: "Yes, but provide additional details"
+        text: "Yes, but provide additional details",
+        hint: {
+          text: "For example, additional images taken or partial mammography"
+        }
       },
       {
         value: "no",
-        text: "No, imaging not completed",
+        text: "No, there was a problem with imaging",
         conditional: {
           html: reasonHtml
         }
@@ -57,16 +63,16 @@
     },
     items: [
       {
-        value: "Room A",
-        text: "Room A"
+        value: "Room A - machine XYZ",
+        text: "Room A - machine XYZ"
       },
       {
-        value: "Room B",
-        text: "Room B"
+        value: "Room B - machine ABC",
+        text: "Room B - machine ABC"
       },
       {
-        value: "Room C",
-        text: "Room C"
+        value: "Room C - machine DEF",
+        text: "Room C - machine DEF"
       }
     ]
   }) }}
@@ -76,7 +82,7 @@
   {%- endset %}
 
   {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
-  <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
+  {# <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
@@ -151,7 +157,7 @@
         ]
       }) }}
     </div>
-  </div>
+  </div> #}
 
 
 
@@ -309,6 +315,64 @@
     </div>
   </div>
 
+  {% set reasonHtml %}
+    {{ textarea({
+      name: "event[mammogramData][partialMammographyReason]",
+      value: event.mammogramData.partialMammographyReason,
+      id: "partialMammographyReason",
+      label: {
+        text: "Reason for partial mammography"
+      }
+    }) }}
+  {% endset %}
+
+  {{ checkboxes({
+    idPrefix: "example",
+    name: "example",
+    fieldset: {
+      legend: {
+        text: "Record as partial mammography?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Yes, partial mammography",
+        text: "Yes, partial mammography",
+        conditional: {
+          html: reasonHtml
+        }
+      }
+    ]
+  }) }}
+
+  {# {{ radios({
+    idPrefix: "imagingComplete",
+    name: "event[mammogramData][isPartialMammography]",
+    fieldset: {
+      legend: {
+        text: "Has the full mammography been taken?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    value: event.mammogramData.isPartialMammography,
+    items: [
+      {
+        value: "no",
+        text: "Yes (" + imageCount + " images)"
+      },
+      {
+        value: "yes",
+        text: "No, partial mammography only",
+        conditional: {
+          html: reasonHtml
+        }
+      }
+    ]
+  }) }} #}
+
   {# <p>
     <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
   </p> #}
@@ -318,7 +382,19 @@
     value: "no"
   }) }} #}
 
-
+  {{ textarea({
+    name: "TBC",
+    id: "additional-details",
+    value: TBC,
+    label: {
+      text: "Additional details (optional)",
+      classes: "nhsuk-label--m"
+    },
+    hint: {
+      text: "Any other relevant information about the images"
+    },
+    rows: 2
+  }) }}
 
   {{ button({
     text: "Continue"
