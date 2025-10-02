@@ -10,36 +10,46 @@
 
 {% block tabContent %}
 
-  <div class="nhsuk-grid-row"> 
-    <div class="nhsuk-grid-column-two-thirds">
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-two-thirds">
+
+    {% from 'inset-text/macro.njk' import insetText %}
+
+    {% set insetTextHtml %}
+    <p>If adjustments are required, <a href="./special-appointment/edit.html">provide special appointment details instead</a></p>
+    {% endset %}
+
+    {{ insetText({
+    html: insetTextHtml
+    }) }}
 
     {{ textarea({
-      name: "[event][appointmentNote]",
-      id: "appointment-note",
-      label: {
-        text: "Appointment note",
-        classes: "nhsuk-label--m"
-      },
-      hint: {
-        text: "Add any information about this appointment that the mammographer needs to know"
-      },
-      value: event.appointmentNote,
-      rows: 5
+    name: "[event][appointmentNote]",
+    id: "appointment-note",
+    label: {
+    text: "Note",
+    classes: "nhsuk-label--m"
+    },
+    hint: {
+    text: "Include information that is relevant to this appointment."
+    },
+    value: event.appointmentNote,
+    rows: 5
     }) }}
 
     <div class="nhsuk-button-group">
       {{ button({
-        text: "Save appointment note"
+      text: "Save note"
       }) }}
 
       {% if event.appointmentNote %}
-        <a href="/clinics/{{ clinicId }}/events/{{ eventId }}/appointment-note/delete" class="nhsuk-link app-link--warning">
-          Delete appointment note
-        </a>
+      <a href="./appointment-note?event[appointmentNote]=&clearQuery=true" class="nhsuk-link app-link--warning">
+        Delete appointment note
+      </a>
       {% endif %}
     </div>
- 
 
-       </div>
-    </div>
+
+  </div>
+</div>
 {% endblock %}
