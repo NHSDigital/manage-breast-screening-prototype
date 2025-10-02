@@ -38,15 +38,12 @@
   {% set imageCount = event.mammogramData.metadata.totalImages %}
 
   {% set imagesCardHtml %}
-    <ul class="nhsuk-list nhsuk-list--bullet">
-      <li>{{ event.mammogramData.metadata.imagesByBreast.right }} right breast {{ "image" | pluralise(event.mammogramData.metadata.imagesByBreast.right) }}</li>
-      <li>{{ event.mammogramData.metadata.imagesByBreast.left }} left breast {{ "image" | pluralise(event.mammogramData.metadata.imagesByBreast.left) }}</li>
-    </ul>
+    {% include "mammogram-data-display.njk" %}
 
     {% if event.mammogramData.isManualEntry %}
       <p><a href="./images-manual-details">View or update imaging information</a></p>
     {% else %}
-      <p><a href="./images">View or update imaging information</a></p>
+      <p><a href="./imaging">View or update imaging information</a></p>
     {% endif %}
   {% endset %}
 

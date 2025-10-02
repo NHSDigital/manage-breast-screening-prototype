@@ -1619,6 +1619,9 @@ module.exports = (router) => {
         delete data.event.mammogramDataTemp
 
         // Mark workflow as complete
+        if (!data.event.workflowStatus) {
+          data.event.workflowStatus = {}
+        }
         data.event.workflowStatus.images = 'completed'
 
         // Redirect to review
@@ -1689,6 +1692,9 @@ module.exports = (router) => {
       delete data.event.mammogramDataTemp
 
       // Mark workflow as complete
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
       data.event.workflowStatus.images = 'completed'
 
       // Redirect to review
@@ -1713,6 +1719,9 @@ module.exports = (router) => {
       delete data.event.mammogramDataTemp
 
       // Mark workflow as complete
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
       data.event.workflowStatus.images = 'completed'
 
       // Redirect to review
