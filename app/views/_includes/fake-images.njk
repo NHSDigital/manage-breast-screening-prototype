@@ -109,17 +109,22 @@
 
               <div class="nhsuk-grid-row">
                 <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-3">
-                  {% set repeatReasonHtml %}
-                    {{ input({
-                      label: {
-                        text: "Repeat reason"
-                      },
-                      id: "repeatReason-" + side.viewShortWithSide,
-                      name: "event[mammogramData][repeatReason-" + side.viewShortWithSide + "]",
-                      value: event.mammogramData["repeatReason-" + side.viewShortWithSide]
-                    }) }}
-                  {% endset %}
-
+                  
+                  {% set repeatReasons = data.repeatReasons %}
+                  {% set reasonItems = [{
+                    value: "",
+                    text: "Please select",
+                    selected: true
+                  }] %}
+                  
+                  {% for reason in repeatReasons %}
+                    {% set item = {
+                      value: reason,
+                      text: reason
+                    } %}
+                    {% set reasonItems = reasonItems | push(item) %}
+                  {% endfor %}
+                  
                   {{ radios({
                     idPrefix: "isRepeatQuestion-" + side.viewShortWithSide,
                     name: "event[mammogramData][isRepeatQuestion-" + side.viewShortWithSide + "]",
@@ -136,7 +141,15 @@
                         value: "isRepeat",
                         text: "A repeat was needed",
                         conditional: {
-                          html: repeatReasonHtml
+                          html: select({
+                            id: "repeatReason-" + side.viewShortWithSide,
+                            name: "event[mammogramData][repeatReason-" + side.viewShortWithSide + "]",
+                            label: {
+                              text: "Repeat reason"
+                            },
+                            value: event.mammogramData["repeatReason-" + side.viewShortWithSide],
+                            items: reasonItems
+                          })
                         }
                       },
                       {
