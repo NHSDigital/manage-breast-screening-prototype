@@ -14,7 +14,11 @@
           <a href="{{ eventUrl }}/appointment-note{{ ('?referrerChain=' + referrerChain) if referrerChain }}" style="font-size: 19px;">Change<span class="nhsuk-u-visually-hidden"> note</span></a>
         </div>
       {% endif %}
-      <p>{{ event.appointmentNote }}</p>
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-two-thirds">
+          <p>{{ event.appointmentNote }}</p>
+        </div>
+      </div>
     </div>
   </div>
 {% endif %}
