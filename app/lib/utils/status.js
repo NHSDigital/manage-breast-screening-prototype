@@ -279,6 +279,16 @@ const isSpecialAppointment = (event) => {
   return event?.specialAppointment?.supportTypes?.length > 0
 }
 
+/**
+ * Check if an event has an appointment note
+ *
+ * @param {object} event - Event object to check
+ * @returns {boolean} Whether the event has an appointment note
+ */
+const hasAppointmentNote = (event) => {
+  return event?.appointmentNote && event.appointmentNote.trim().length > 0
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -291,6 +301,7 @@ module.exports = {
   getStatusText,
   filterEventsByStatus,
   isSpecialAppointment,
+  hasAppointmentNote,
   // Export groups for testing/reference
   STATUS_GROUPS
 }
