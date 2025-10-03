@@ -1499,7 +1499,18 @@ module.exports = (router) => {
     const imagesByBreast = { right: 0, left: 0 }
 
     for (const breast of breasts) {
-      const selectedViews = formData[breast.key] || []
+      let selectedViews = formData[breast.key] || []
+
+      // If using text inputs instead of checkboxes, infer selected views from counts
+      if (selectedViews.length === 0) {
+        for (const viewType of viewTypes) {
+          const countField = `${breast.key}${viewType.value}Count`
+          const count = parseInt(formData[countField]) || 0
+          if (count > 0) {
+            selectedViews.push(viewType.value)
+          }
+        }
+      }
 
       // Skip if "No images taken" was selected
       if (selectedViews.includes('No images taken')) {
@@ -1656,20 +1667,72 @@ module.exports = (router) => {
       const data = req.session.data
       const mammogramDataTemp = data.event?.mammogramDataTemp
 
-      // Validate at least one view was selected
-      const rightViews = mammogramDataTemp?.viewsRightBreast || []
-      const leftViews = mammogramDataTemp?.viewsLeftBreast || []
+      // Clean up orphaned count fields when using checkbox version
+      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
+        const rightViews = mammogramDataTemp.viewsRightBreast || []
+        const leftViews = mammogramDataTemp.viewsLeftBreast || []
 
-      const hasNoRightImages = rightViews.includes('No images taken')
-      const hasNoLeftImages = leftViews.includes('No images taken')
-      const hasNoViews =
-        (rightViews.length === 0 || hasNoRightImages) &&
-        (leftViews.length === 0 || hasNoLeftImages)
+        // Clear counts for unchecked right breast views
+        if (!rightViews.includes('CC')) {
+          delete mammogramDataTemp.viewsRightBreastCCCount
+        }
+        if (!rightViews.includes('MLO')) {
+          delete mammogramDataTemp.viewsRightBreastMLOCount
+        }
+        if (!rightViews.includes('Eklund')) {
+          delete mammogramDataTemp.viewsRightBreastEklundCount
+        }
+
+        // Clear counts for unchecked left breast views
+        if (!leftViews.includes('CC')) {
+          delete mammogramDataTemp.viewsLeftBreastCCCount
+        }
+        if (!leftViews.includes('MLO')) {
+          delete mammogramDataTemp.viewsLeftBreastMLOCount
+        }
+        if (!leftViews.includes('Eklund')) {
+          delete mammogramDataTemp.viewsLeftBreastEklundCount
+        }
+      }
+
+      // Validate at least one view was selected/entered
+      let hasNoViews = false
+
+      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
+        // Checkbox validation
+        const rightViews = mammogramDataTemp?.viewsRightBreast || []
+        const leftViews = mammogramDataTemp?.viewsLeftBreast || []
+
+        const hasNoRightImages = rightViews.includes('No images taken')
+        const hasNoLeftImages = leftViews.includes('No images taken')
+        hasNoViews =
+          (rightViews.length === 0 || hasNoRightImages) &&
+          (leftViews.length === 0 || hasNoLeftImages)
+      } else {
+        // Input validation - check if any count field has a value > 0
+        const viewTypes = ['CC', 'MLO', 'Eklund']
+        const breasts = ['Right', 'Left']
+        let hasAnyImages = false
+
+        for (const breast of breasts) {
+          for (const viewType of viewTypes) {
+            const countField = `views${breast}Breast${viewType}Count`
+            const count = parseInt(mammogramDataTemp?.[countField]) || 0
+            if (count > 0) {
+              hasAnyImages = true
+              break
+            }
+          }
+          if (hasAnyImages) break
+        }
+
+        hasNoViews = !hasAnyImages
+      }
 
       if (hasNoViews) {
         req.flash('error', {
-          text: 'Select at least one view that was taken',
-          name: 'event[mammogramDataTemp][viewsRightBreast]'
+          text: 'Enter at least one image count',
+          name: 'event[mammogramDataTemp][viewsRightBreastCCCount]'
         })
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/images-manual-details`
@@ -1701,6 +1764,25 @@ module.exports = (router) => {
       res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
     }
   )
+
+  // Helper function - place this near the other helper functions
+  function needsRepeatQuestions(mammogramDataTemp) {
+    const viewTypes = ['CC', 'MLO', 'Eklund']
+    const breasts = ['Right', 'Left']
+
+    for (const breast of breasts) {
+      for (const viewType of viewTypes) {
+        const countField = `views${breast}Breast${viewType}Count`
+        const count = parseInt(mammogramDataTemp?.[countField]) || 0
+
+        if (count > 1) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
 
   // Handle repeat reasons form
   router.post(
