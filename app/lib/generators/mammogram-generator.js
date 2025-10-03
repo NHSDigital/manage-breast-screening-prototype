@@ -4,26 +4,13 @@ const { faker } = require('@faker-js/faker')
 const generateId = require('../utils/id-generator')
 const dayjs = require('dayjs')
 const weighted = require('weighted')
+const REPEAT_REASONS = require('../../data/repeat-reasons')
 
 const STANDARD_VIEWS = [
   { side: 'right', view: 'mediolateral oblique' },
   { side: 'right', view: 'craniocaudal' },
   { side: 'left', view: 'craniocaudal' },
   { side: 'left', view: 'mediolateral oblique' }
-]
-
-const REPEAT_REASONS = [
-  'patient moved during exposure',
-  'unable to maintain compression',
-  'inadequate compression achieved',
-  'incorrect positioning identified',
-  'image too light - exposure needs adjustment',
-  'image too dark - exposure needs adjustment',
-  'motion blur affecting image quality',
-  'equipment technical fault',
-  'folded skin needs smoothing',
-  'pectoral muscle not visualized correctly',
-  'nipple not in profile'
 ]
 
 // Default probability settings

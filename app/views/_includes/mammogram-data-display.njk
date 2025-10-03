@@ -1,0 +1,139 @@
+{# app/views/_includes/mammogram-data-display.njk #}
+{# Display captured mammogram information - works for both manual and automated #}
+
+{% set isManualEntry = event.mammogramData.isManualEntry %}
+{% set mammogramViews = event.mammogramData.views | getObjectValues %}
+
+{# Group views by side for display #}
+{% set rightViews = [] %}
+{% set leftViews = [] %}
+{% for view in mammogramViews %}
+  {% if isManualEntry %}
+    {% if view.imageCount > 1 %}
+      {% set viewText = view.viewShort + " (" + view.imageCount + "x)" %}
+    {% else %}
+      {% set viewText = view.viewShort %}
+    {% endif %}
+  {% else %}
+    {% if view.images | length > 1 %}
+      {% set viewText = view.viewShort + " (" + (view.images | length) + "x)" %}
+    {% else %}
+      {% set viewText = view.viewShort %}
+    {% endif %}
+  {% endif %}
+  
+  {% if view.side == 'right' %}
+    {% set rightViews = rightViews | push(viewText) %}
+  {% else %}
+    {% set leftViews = leftViews | push(viewText) %}
+  {% endif %}
+{% endfor %}
+
+{% set viewsHtml %}
+  {% if rightViews | length > 0 %}
+    <p class="nhsuk-u-margin-bottom-1"><strong>Right:</strong> {{ rightViews | join(", ") }}</p>
+  {% endif %}
+  {% if leftViews | length > 0 %}
+    <p class="nhsuk-u-margin-bottom-0"><strong>Left:</strong> {{ leftViews | join(", ") }}</p>
+  {% endif %}
+{% endset %}
+
+{# Build repeats/additional images information #}
+{% set repeatsHtml = "" %}
+{% set hasRepeatsOrExtras = false %}
+{% for view in mammogramViews %}
+  {% set viewHasMultiple = false %}
+  {% if isManualEntry and view.imageCount > 1 %}
+    {% set viewHasMultiple = true %}
+  {% elseif not isManualEntry and view.images | length > 1 %}
+    {% set viewHasMultiple = true %}
+  {% endif %}
+  
+  {% if viewHasMultiple %}
+    {% if view.isRepeat and view.repeatReason %}
+      {% set hasRepeatsOrExtras = true %}
+      {% set repeatsHtml = repeatsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + view.viewShortWithSide + ":</strong> " + view.repeatReason + "</p>" %}
+    {% else %}
+      {# Assume additional images if multiple but not marked as repeat #}
+      {% set hasRepeatsOrExtras = true %}
+      {% set repeatsHtml = repeatsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + view.viewShortWithSide + ":</strong> Additional images were required to capture complete view</p>" %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{# Build summary list rows #}
+{% set summaryRows = [] %}
+
+{# Machine room (manual only) #}
+{% if isManualEntry and event.mammogramData.machineRoom %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Machine room"
+    },
+    value: {
+      text: event.mammogramData.machineRoom
+    }
+  }) %}
+{% endif %}
+
+{# Views taken #}
+{% set summaryRows = summaryRows | push({
+  key: {
+    text: "Views taken"
+  },
+  value: {
+    html: viewsHtml
+  }
+}) %}
+
+{# Image counts #}
+{% set summaryRows = summaryRows | push({
+  key: {
+    text: "Total images"
+  },
+  value: {
+    html: event.mammogramData.metadata.totalImages + " (" + 
+          event.mammogramData.metadata.imagesByBreast.right + " right, " +
+          event.mammogramData.metadata.imagesByBreast.left + " left)"
+  }
+}) %}
+
+{# Repeats and additional images #}
+{% if hasRepeatsOrExtras %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Repeat reasons"
+    },
+    value: {
+      html: repeatsHtml
+    }
+  }) %}
+{% endif %}
+
+{# Partial mammography #}
+{% if event.mammogramData.isPartialMammography == 'yes' %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Partial mammography"
+    },
+    value: {
+      text: event.mammogramData.partialMammographyReason or "Yes"
+    }
+  }) %}
+{% endif %}
+
+{# Additional details #}
+{% if event.mammogramData.additionalDetails %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Additional details"
+    },
+    value: {
+      text: event.mammogramData.additionalDetails
+    }
+  }) %}
+{% endif %}
+
+{{ summaryList({
+  rows: summaryRows
+}) }}
