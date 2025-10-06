@@ -53,13 +53,6 @@ const NOTE_CATEGORIES = {
     ]
   },
   
-  mobility: {
-    weight: 0.08,
-    notes: [
-      'Difficulty with steps, uses zimmer frame - BCU appointments',
-      'Static appointment please, 2 radiographers, double appointment time'
-    ]
-  },
   
   communication: {
     weight: 0.1,
