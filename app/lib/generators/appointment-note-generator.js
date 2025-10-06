@@ -9,11 +9,7 @@ const NOTE_CATEGORIES = {
     weight: 0.35,
     notes: [
       'Pain in left breast, GP thinks it\'s blocked ducts and has given antibiotics',
-      'Recent diagnosis, unable to tolerate more compression',
       'On blood thinners',
-      'Lump removal left breast',
-      'Reduction surgery - nothing on pictogram',
-      'Surgery 2010',
       'Aching on left side',
       'Shoulder pain',
       'Patient feels left breast visibly bigger than right, feels pain sometimes',
@@ -21,8 +17,6 @@ const NOTE_CATEGORIES = {
       'Recent CT scan',
       'On Manjaro since mid January 2025, lost 4 stone',
       'Lost 5 stone',
-      'Diabetes type 2',
-      'Kyphotic posture',
       'Twisted back, in a lot of pain'
     ]
   },
@@ -33,7 +27,7 @@ const NOTE_CATEGORIES = {
       'Family history of breast cancer (both sisters)',
       'Maternal cousin breast cancer at 46 years',
       'Sister breast cancer at 50 years',
-      'Family history: grandma at 40 years old (printed)',
+      'Family history: grandma at 40 years old',
     ]
   },
   
