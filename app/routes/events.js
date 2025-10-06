@@ -1402,6 +1402,26 @@ module.exports = (router) => {
     }
   )
 
+  // Handle appointment note form submission
+router.post(
+  '/clinics/:clinicId/events/:eventId/appointment-note',
+  (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    // Save the appointment note from temp event to permanent event
+    saveTempEventToEvent(data)
+
+    req.flash('success', 'Appointment note saved')
+    
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}`,
+      req.query.referrerChain
+    )
+    res.redirect(returnUrl)
+  }
+)
+
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(
