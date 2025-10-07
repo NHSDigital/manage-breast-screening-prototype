@@ -1246,27 +1246,30 @@ module.exports = (router) => {
 
   // Imaging view - this is the main imaging page for the event
 
-  // Specific route for imaging view
-  router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const eventData = getEventData(req.session.data, clinicId, eventId)
+  // Generate mammogram data when simulating automatic upload
+  router.get(
+    '/clinics/:clinicId/events/:eventId/images-automatic',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const eventData = getEventData(req.session.data, clinicId, eventId)
 
-    // If no mammogram data exists, generate it
-    if (!data?.event?.mammogramData) {
-      // Set start time to 3 minutes ago to simulate an in-progress screening
-      const startTime = dayjs().subtract(3, 'minutes').toDate()
-      const mammogramData = generateMammogramImages({
-        startTime,
-        isSeedData: false,
-        config: eventData?.participant?.config
-      })
-      data.event.mammogramData = mammogramData
-      res.locals.event = data.event
+      // If no mammogram data exists, generate it
+      if (!data?.event?.mammogramData) {
+        // Set start time to 3 minutes ago to simulate an in-progress screening
+        const startTime = dayjs().subtract(3, 'minutes').toDate()
+        const mammogramData = generateMammogramImages({
+          startTime,
+          isSeedData: false,
+          config: eventData?.participant?.config
+        })
+        data.event.mammogramData = mammogramData
+        res.locals.event = data.event
+      }
+
+      res.render('events/images-automatic', {})
     }
-
-    res.render('events/images', {})
-  })
+  )
 
   // Handle medical information answer
   router.post(

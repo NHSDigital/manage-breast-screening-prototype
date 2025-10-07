@@ -113,6 +113,8 @@ const isActive = (input) => {
  * @returns {boolean} Whether the event is in the appointment workflow for this user
  */
 const isAppointmentWorkflow = function (event, currentUser) {
+  if (!event) return false
+
   // Get currentUser from context if not provided
   currentUser = currentUser || this?.ctx?.data?.currentUser
 

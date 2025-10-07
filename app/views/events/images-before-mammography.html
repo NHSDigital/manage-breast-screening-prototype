@@ -6,7 +6,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{% set formAction = './images' %}
+{% set formAction = './images-automatic' %}
 
 {% set activeTab = 'images' %}
 
@@ -46,6 +46,13 @@
     {# <a href="./images?event[workflowStatus][awaiting-images]=completed">
       <span class="">Loading images...</span>
     </a> #}
+  </p>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--l nhsuk-section-break--visible">
+
+
+  <p>
+    <a class="nhsuk-link app-link--error" href="./images-manual">There is a problem with the images</a>
   </p>
 
 
