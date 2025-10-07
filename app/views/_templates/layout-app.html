@@ -17,14 +17,67 @@
 {% block header %}
 
   {% set useMinimalNav = useMinimalNav | default(false) %}
+
   {% set rootHref = "/" %}
 
-  {% if event and event | isAppointmentWorkflow %}
-    {% set useMinimalNav = true %}
-
+  {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
+  {% if appointmentWorkflow %}
     {# Explicitly leave appointment if navigating away #}
-    {% set rootHref = eventUrl ~ "/leave" | urlWithReferrer("/") %}
+    {% set leaveAppointmentHref = eventUrl ~ "/leave" %}
+    {# Override rootHref so things don't get wrong when demoing #}
+    {% set rootHref = leaveAppointmentHref | urlWithReferrer("/") %}
   {% endif %}
+
+  {% set navItems = [
+    {
+      href: "/dashboard",
+      text: "Home",
+      current: true if navActive == "home"
+    },
+    {
+      href: "/clinics",
+      text: "Screening",
+      current: true if navActive == "screening"
+    },
+    {
+      href: "/reading",
+      text: "Image reading",
+      current: true if navActive == "reading"
+    },
+    {
+      href: "/participants",
+      text: "Participants",
+      current: true if navActive == "participants"
+    },
+    {
+      href: "#",
+      text: "Messages",
+      current: true if navActive == "messages"
+    }, {
+      href: "#",
+      text: "Help and support",
+      current: true if navActive == "help"
+    }
+  ] %}
+
+  {% if appointmentWorkflow %}
+    {% set navItems = [
+      {
+        href: leaveAppointmentHref,
+        text: "Leave this appointment"
+      },
+      {
+        href: "#",
+        text: "Manage appointment"
+      }
+    ] %}
+  {% endif %}
+
+  {# Used by error pages and some misc pages #}
+  {% if useMinimalNav %}
+    {% set navItems = [] %}
+  {% endif %}
+
 
   {{ header({
     account: {
@@ -45,38 +98,7 @@
       href: rootHref
     },
     navigation: {
-      items:
-      [
-        {
-          href: "/dashboard",
-          text: "Home",
-          current: true if navActive == "home"
-        },
-        {
-          href: "/clinics",
-          text: "Screening",
-          current: true if navActive == "screening"
-        },
-        {
-          href: "/reading",
-          text: "Image reading",
-          current: true if navActive == "reading"
-        },
-        {
-          href: "/participants",
-          text: "Participants",
-          current: true if navActive == "participants"
-        },
-        {
-          href: "#",
-          text: "Messages",
-          current: true if navActive == "messages"
-        }, {
-          href: "#",
-          text: "Help and support",
-          current: true if navActive == "help"
-        }
-      ] if not useMinimalNav
+      items: navItems
     }
   }) }}
  {#  {{ serviceheader({
