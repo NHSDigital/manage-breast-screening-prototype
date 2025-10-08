@@ -1,9 +1,10 @@
 {# app/views/_includes/appointment-status-bar.njk #}
 
+
+{# Appointment actions - not currently used - moved to main header #}
 {% set leaveAppointmentLink %}
   <a href="{{ eventUrl }}/leave">Leave this appointment</a>
 {% endset %}
-
 
 {% set manageAppointmentLink %}
   <a href="#">Manage appointment</a>
@@ -18,37 +19,25 @@
   }
 ] %}
 
+{# Appointment row items - date, time, tags #}
 {% set appointmentRowItems = [] %}
 
-  {# Location name #}
-  {# {% set locationName %}
-    {% if location.type === 'mobile_unit' %}
-      {{ location.name }} at {{ clinic.siteName }}
-    {% else %}
-      {{ location.name }}
-    {% endif %}
-  {% endset %}
-  {% set appointmentRowItems = appointmentRowItems | push({
-    key: "Location:",
-    value: locationName
-  }) %} #}
+{# Date and time #}
+{% set appointmentHtml %}
+  {{ clinic.date | formatDate }} at {{ event.timing.startTime | formatTimeString }}
+  {% if event | isSpecialAppointment %}
+    {{ tag({
+      text: "Special appointment",
+      classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
+    })}}
+  {% endif %}
+{% endset %}
+{% set appointmentRowItems = appointmentRowItems | push({
+  key: "Appointment:",
+  value: appointmentHtml
+}) %}
 
-  {# Date and time #}
-  {% set appointmentHtml %}
-    {{ clinic.date | formatDate }} at {{ event.timing.startTime | formatTimeString }}
-    {% if event | isSpecialAppointment %}
-      {{ tag({
-        text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
-      })}}
-    {% endif %}
-  {% endset %}
-  {% set appointmentRowItems = appointmentRowItems | push({
-    key: "Appointment:",
-    value: appointmentHtml
-  }) %}
-
-  {# Appointment type #}
+{# Appointment type #}
 {% set screeningTagHtml %}
   <strong class="nhsuk-tag nhsuk-tag--blue">
     Screening
@@ -58,58 +47,57 @@
   html: screeningTagHtml
 }) %}
 
-  {% set statusHtml %}
-    {{ event.status | getStatusText | default(event.status | formatWords | sentenceCase) }}
+{% set statusHtml %}
+  {{ event.status | getStatusText | default(event.status | formatWords | sentenceCase) }}
 
-    {% if event | isSpecialAppointment %}
-    {# <br> #}
-      {{ tag({
-        text: "Special appointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
-      })}}
-    {% endif %}
-  {% endset %}
+  {% if event | isSpecialAppointment %}
+  {# <br> #}
+    {{ tag({
+      text: "Special appointment",
+      classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
+    })}}
+  {% endif %}
+{% endset %}
 
-  {# Appointment status #}
-  {# {% set appointmentRowItems = appointmentRowItems | push({
-    key: "Status:",
-    value: statusHtml
-  }) %} #}
+{# Appointment status #}
+{# {% set appointmentRowItems = appointmentRowItems | push({
+  key: "Status:",
+  value: statusHtml
+}) %} #}
 
-  {# Second row - participant details #}
-  {% set participantRowItems = [] %}
+{# Second row - participant name, dob, nhs number #}
+{% set participantRowItems = [] %}
 
-  {# Full name with age #}
-  {% set nameWithAge %}
-    {{ participant | getFullName }}
+{# Full name with age #}
+{% set nameWithAge %}
+  {{ participant | getFullName }}
 
-  {% endset %}
-  {% set participantRowItems = participantRowItems | push({
-    html: "<strong>" + nameWithAge + "</strong>"
-  }) %}
+{% endset %}
+{% set participantRowItems = participantRowItems | push({
+  html: "<strong>" + nameWithAge + "</strong>"
+}) %}
 
-  {% set dobValue %}
-    {{ participant.demographicInformation.dateOfBirth | formatDate }} {% if participant | getAge %}
-      ({{ participant | getAge }} years)
-    {% endif %}
-  {% endset %}
+{% set dobValue %}
+  {{ participant.demographicInformation.dateOfBirth | formatDate }} {% if participant | getAge %}
+    ({{ participant | getAge }} years)
+  {% endif %}
+{% endset %}
 
-  {# DOB #}
-  {% set participantRowItems = participantRowItems | push({
-    key: "DOB:",
-    value: dobValue
-  }) %}
+{# DOB #}
+{% set participantRowItems = participantRowItems | push({
+  key: "DOB:",
+  value: dobValue
+}) %}
 
-  {# NHS Number #}
-  {% set participantRowItems = participantRowItems | push({
-    key: "NHS:",
-    value: participant.medicalInformation.nhsNumber | formatNhsNumber
-  }) %}
+{# NHS Number #}
+{% set participantRowItems = participantRowItems | push({
+  key: "NHS:",
+  value: participant.medicalInformation.nhsNumber | formatNhsNumber
+}) %}
 
-  {{ appStatusBar({
-    rows: [
-      { items: appointmentActionItems },
-      { items: appointmentRowItems },
-      { items: participantRowItems }
-    ]
-  }) }}
+{{ appStatusBar({
+  rows: [
+    { items: appointmentRowItems },
+    { items: participantRowItems }
+  ]
+}) }}
