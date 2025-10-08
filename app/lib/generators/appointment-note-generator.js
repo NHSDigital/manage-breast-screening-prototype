@@ -12,9 +12,7 @@ const NOTE_CATEGORIES = {
       'On blood thinners',
       'Aching on left side',
       'Shoulder pain',
-      'Patient feels left breast visibly bigger than right, feels pain sometimes',
       'General tenderness',
-      'Recent CT scan',
       'On Manjaro since mid January 2025, lost 4 stone',
       'Lost 5 stone',
       'Twisted back, in a lot of pain'
@@ -27,11 +25,11 @@ const NOTE_CATEGORIES = {
       'Family history of breast cancer (both sisters)',
       'Maternal cousin breast cancer at 46 years',
       'Sister breast cancer at 50 years',
-      'Family history: grandma at 40 years old',
+      'Family history of cancer - grandma at 40 years old',
     ]
   },
   
-  procedural: {
+  mammogramProcedure: {
     weight: 0.25,
     notes: [
       'Very nervous',
@@ -39,10 +37,6 @@ const NOTE_CATEGORIES = {
       'Unable to tolerate full compression',
       'Difficulty with compression, consent given to complete',
       'Difficult, kept moving, pulled out of machine, compression sensitive',
-      'No priors available',
-      'Noticed artefact from detector',
-      'No 16x24 paddles available',
-      'Left side implant (cosmetic)',
       'Pain with mammogram and implants'
     ]
   },
@@ -85,9 +79,9 @@ const generateAppointmentNote = (options = {}) => {
   // Determine probability based on event status
   let probability = 0
   if (isScheduled) {
-    probability = 0.2 // 5% of scheduled events have notes
+    probability = 0.2 // 20% of scheduled events have notes
   } else if (isCompleted) {
-    probability = 0.2 // 10% of completed events have notes
+    probability = 0.2 // 20% of completed events have notes
   }
   
   // Check if this event should have a note

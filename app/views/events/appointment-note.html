@@ -16,7 +16,9 @@
     {% from 'inset-text/macro.njk' import insetText %}
 
     {% set insetTextHtml %}
-    <p>If adjustments are required, <a href="./special-appointment/edit.html">provide special appointment details instead</a></p>
+    <p>If adjustments are required, <a
+        href="{{ eventUrl }}/special-appointment/edit{{ ('?referrerChain=' + referrerChain) if referrerChain }}">provide
+        special appointment details instead</a></p>
     {% endset %}
 
     {{ insetText({
