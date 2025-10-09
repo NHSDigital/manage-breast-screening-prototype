@@ -61,7 +61,7 @@ const defaultSettings = {
   darkMode: 'false',
   screening: {
     confirmIdentityOnCheckIn: 'true',
-    manualImageCollection: 'true'
+    manualImageCollection: 'false'
   },
   reading: {
     blindReading: config.reading.blindReading,
