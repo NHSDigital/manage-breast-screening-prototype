@@ -11,6 +11,7 @@ const { generateSymptoms } = require('./symptoms-generator')
 const {
   generateSpecialAppointment
 } = require('./special-appointment-generator')
+const { generateAppointmentNote } = require('./appointment-note-generator')
 const users = require('../../data/users')
 
 const NOT_SCREENED_REASONS = [
@@ -159,6 +160,15 @@ const generateEvent = ({
   }
 
   if (!isPast && !forceInProgress) {
+    // Generate appointment note for scheduled events (5% probability)
+    const appointmentNote = generateAppointmentNote({
+      isScheduled: true,
+      isCompleted: false
+    })
+    if (appointmentNote) {
+      eventBase.appointmentNote = appointmentNote
+    }
+
     return eventBase
   }
 
@@ -178,6 +188,15 @@ const generateEvent = ({
     // Add special appointment data if present
     if (specialAppointment) {
       event.specialAppointment = specialAppointment
+    }
+
+    // Generate appointment note for past/completed events (10% probability)
+    const appointmentNote = generateAppointmentNote({
+      isScheduled: false,
+      isCompleted: isCompleted(eventStatus)
+    })
+    if (appointmentNote) {
+      event.appointmentNote = appointmentNote
     }
 
     // Add timing details for completed appointments
