@@ -5,16 +5,17 @@
 {% set pageHeading = "Confirm identity" %}
 {% set pageLevel = "top" %}
 {% set activeWorkflowStep = 'confirm-identity' %}
+{% set hideBackLink = true %}
 
 {% set referrerChain = currentUrl %}
 
 {% set formAction = "./review-medical-information" | getReturnUrl(referrerChain) %}
 
 {# {% set hideBackLink = true %} #}
-{% set back = {
+{# {% set back = {
   href: eventUrl ~ "/leave",
   text: "Leave this appointment"
-} %}
+} %} #}
 
 
 {% block appointmentContent %}
