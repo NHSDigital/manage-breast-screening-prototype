@@ -1,0 +1,88 @@
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Record images taken" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './images-manual-answer' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  {% include "event-workflow.njk" %}
+
+  {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
+
+  {{ radios({
+    name: "event[mammogramDataTemp][machineRoom]",
+    value: mammogramSource.machineRoom,
+    idPrefix: "machineRoom",
+    fieldset: {
+      legend: {
+        text: "Which room is imaging being done in?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Room A - machine XYZ",
+        text: "Room A - machine XYZ"
+      },
+      {
+        value: "Room B - machine ABC",
+        text: "Room B - machine ABC"
+      },
+      {
+        value: "Room C - machine DEF",
+        text: "Room C - machine DEF"
+      }
+    ]
+  }) }}
+
+  {{ radios({
+    idPrefix: "imagingComplete",
+    name: "event[mammogramDataTemp][isStandardSet]",
+    fieldset: {
+      legend: {
+        text: "Is the imaging stage complete?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    value: mammogramSource.isStandardSet,
+    items: [
+      {
+        value: "yes",
+        text: "Yes, standard 4 images taken",
+        hint: {
+          text: "2 views of each breast (CC and MLO views)"
+        }
+      },
+      {
+        value: "custom",
+        text: "Yes, but provide additional details",
+        hint: {
+          text: "For example, additional images taken or partial mammography"
+        }
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "no",
+        text: "No images taken",
+        _hint: {
+          text: "No images taken or technical problems that prevented any images being taken"
+        }
+      }
+    ]
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}

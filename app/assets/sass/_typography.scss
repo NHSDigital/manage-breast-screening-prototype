@@ -1,6 +1,7 @@
 @use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
 @use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
 @use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 h1 {
   @extend %nhsuk-heading-l;
@@ -24,7 +25,19 @@ h3 {
 
 .app-link--error,
 .app-link--warning {
-  color: $nhsuk-error-colour;
+  &,
+  &:visited {
+    color: $nhsuk-error-colour;
+  }
+
+  &:hover,
+  &:hover:visited {
+    color: nhsuk-shade($nhsuk-error-colour, 20%);
+  }
+
+  &:hover:active {
+    color: $nhsuk-text-colour;
+  }
 }
 
 .app-button-link {

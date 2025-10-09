@@ -1251,27 +1251,30 @@ module.exports = (router) => {
 
   // Imaging view - this is the main imaging page for the event
 
-  // Specific route for imaging view
-  router.get('/clinics/:clinicId/events/:eventId/images', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const eventData = getEventData(req.session.data, clinicId, eventId)
+  // Generate mammogram data when simulating automatic upload
+  router.get(
+    '/clinics/:clinicId/events/:eventId/images-automatic',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const eventData = getEventData(req.session.data, clinicId, eventId)
 
-    // If no mammogram data exists, generate it
-    if (!data?.event?.mammogramData) {
-      // Set start time to 3 minutes ago to simulate an in-progress screening
-      const startTime = dayjs().subtract(3, 'minutes').toDate()
-      const mammogramData = generateMammogramImages({
-        startTime,
-        isSeedData: false,
-        config: eventData?.participant?.config
-      })
-      data.event.mammogramData = mammogramData
-      res.locals.event = data.event
+      // If no mammogram data exists, generate it
+      if (!data?.event?.mammogramData) {
+        // Set start time to 3 minutes ago to simulate an in-progress screening
+        const startTime = dayjs().subtract(3, 'minutes').toDate()
+        const mammogramData = generateMammogramImages({
+          startTime,
+          isSeedData: false,
+          config: eventData?.participant?.config
+        })
+        data.event.mammogramData = mammogramData
+        res.locals.event = data.event
+      }
+
+      res.render('events/images-automatic', {})
     }
-
-    res.render('events/images', {})
-  })
+  )
 
   // Handle medical information answer
   router.post(
@@ -1334,6 +1337,489 @@ module.exports = (router) => {
       }
     }
   )
+
+  // Manual imaging routes
+
+  // Add this section to events.js after the existing imaging routes
+
+  // Manual imaging routes
+
+  // Initialize or edit manual imaging - clears temp or prepopulates from existing data
+  router.get('/clinics/:clinicId/events/:eventId/images-manual', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    // If mammogramData exists and is manual entry, prepopulate temp for editing
+    if (data.event?.mammogramData?.isManualEntry) {
+      const formData = convertMammogramFormatToFormData(
+        data.event.mammogramData
+      )
+      if (formData) {
+        data.event.mammogramDataTemp = formData
+      }
+    } else {
+      // Clear any existing temp data for fresh start
+      delete data.event.mammogramDataTemp
+    }
+
+    // Let the dynamic routing handle the actual rendering
+    res.render('events/images-manual')
+  })
+
+  // Direct link to details page - also prepopulates if editing
+  router.get(
+    '/clinics/:clinicId/events/:eventId/images-manual-details',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // If mammogramData exists and is manual entry, prepopulate temp for editing
+      if (
+        data.event?.mammogramData?.isManualEntry &&
+        !data.event?.mammogramDataTemp
+      ) {
+        const formData = convertMammogramFormatToFormData(
+          data.event.mammogramData
+        )
+        if (formData) {
+          data.event.mammogramDataTemp = formData
+        }
+      }
+
+      // Let the dynamic routing handle the actual rendering
+      res.render('events/images-manual-details')
+    }
+  )
+
+  /**
+   * Helper function to check if any view has multiple images (needs repeat question)
+   */
+  function needsRepeatQuestions(mammogramDataTemp) {
+    const views = ['viewsRightBreast', 'viewsLeftBreast']
+    const viewTypes = ['CC', 'MLO', 'Eklund']
+
+    for (const breastView of views) {
+      if (!mammogramDataTemp[breastView]) continue
+
+      for (const viewType of viewTypes) {
+        const countField = `${breastView}${viewType}Count`
+        const count = parseInt(mammogramDataTemp[countField]) || 0
+
+        if (count > 1) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Helper function to convert manual mammogram format back to form format (for editing)
+   */
+  function convertMammogramFormatToFormData(mammogramData) {
+    if (!mammogramData.isManualEntry) {
+      return null
+    }
+
+    const formData = {
+      machineRoom: mammogramData.machineRoom,
+      isPartialMammography:
+        mammogramData.isPartialMammography === 'yes' ? ['yes'] : [],
+      additionalDetails: mammogramData.additionalDetails,
+      viewsRightBreast: [],
+      viewsLeftBreast: []
+    }
+
+    // Split the combined partial mammography reason back into select and comment
+    if (mammogramData.partialMammographyReason) {
+      const reason = mammogramData.partialMammographyReason
+      // Check if it contains a colon (meaning it was a select + comment)
+      if (reason.includes(':')) {
+        const parts = reason.split(':')
+        formData.partialMammographyReasonSelect = parts[0].trim()
+        formData.partialMammographyReasonComment = parts
+          .slice(1)
+          .join(':')
+          .trim()
+      } else {
+        // Could be either just select or just comment
+        // Check if it matches one of the predefined reasons
+        const predefinedReasons = [
+          'Exam limited due to chronic disease condition',
+          'Withdrew consent',
+          'Unable to co-operate due to limited understanding of the procedure',
+          'Exam limited due to implanted medical device',
+          'Restricted mobility - unable to attain / maintain position',
+          'Exam performed in a wheelchair which restricted positioning',
+          'Other'
+        ]
+
+        if (predefinedReasons.includes(reason)) {
+          formData.partialMammographyReasonSelect = reason
+        } else {
+          formData.partialMammographyReasonComment = reason
+        }
+      }
+    }
+
+    // Convert views back to checkbox/input format
+    for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
+      const breastKey =
+        viewData.side === 'right' ? 'viewsRightBreast' : 'viewsLeftBreast'
+      const countKey = `${breastKey}${viewData.viewShort}Count`
+
+      formData[breastKey].push(viewData.viewShort)
+      formData[countKey] = viewData.imageCount.toString()
+
+      // Add repeat data if present
+      if (viewData.isRepeat) {
+        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] = 'isRepeat'
+        formData[`repeatReason-${viewData.viewShortWithSide}`] =
+          viewData.repeatReason
+      } else if (viewData.imageCount > 1) {
+        // If multiple images but not marked as repeat, assume extra images
+        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] =
+          'extraImages'
+      }
+    }
+
+    return formData
+  }
+
+  /**
+   * Helper function to convert manual form data to mammogram data structure
+   */
+  function convertManualDataToMammogramFormat(formData) {
+    const views = {}
+    const breasts = [
+      { key: 'viewsRightBreast', side: 'right', sideCode: 'R' },
+      { key: 'viewsLeftBreast', side: 'left', sideCode: 'L' }
+    ]
+
+    const viewTypes = [
+      { value: 'CC', name: 'craniocaudal', short: 'CC' },
+      { value: 'MLO', name: 'mediolateral oblique', short: 'MLO' },
+      { value: 'Eklund', name: 'Eklund', short: 'Eklund' }
+    ]
+
+    let totalImages = 0
+    const imagesByBreast = { right: 0, left: 0 }
+
+    for (const breast of breasts) {
+      let selectedViews = formData[breast.key] || []
+
+      // If using text inputs instead of checkboxes, infer selected views from counts
+      if (selectedViews.length === 0) {
+        for (const viewType of viewTypes) {
+          const countField = `${breast.key}${viewType.value}Count`
+          const count = parseInt(formData[countField]) || 0
+          if (count > 0) {
+            selectedViews.push(viewType.value)
+          }
+        }
+      }
+
+      // Skip if "No images taken" was selected
+      if (selectedViews.includes('No images taken')) {
+        continue
+      }
+
+      for (const viewType of viewTypes) {
+        // Check if this view was selected
+        if (selectedViews.includes(viewType.value)) {
+          const countField = `${breast.key}${viewType.value}Count`
+          const imageCount = parseInt(formData[countField]) || 1
+
+          // Create view key matching automated format (e.g., rightCraniocaudal)
+          const viewKey = `${breast.side}${viewType.name.charAt(0).toUpperCase()}${viewType.name.slice(1).replace(' ', '')}`
+
+          // Check for repeat data
+          const repeatQuestionKey = `isRepeatQuestion-${breast.sideCode}${viewType.short}`
+          const isRepeat = formData[repeatQuestionKey] === 'isRepeat'
+          const repeatReasonKey = `repeatReason-${breast.sideCode}${viewType.short}`
+
+          views[viewKey] = {
+            side: breast.side,
+            view: viewType.name,
+            viewShort: viewType.short,
+            viewShortWithSide: `${breast.sideCode}${viewType.short}`,
+            imageCount: imageCount,
+            isRepeat: isRepeat,
+            repeatReason: isRepeat ? formData[repeatReasonKey] : null
+          }
+
+          totalImages += imageCount
+          imagesByBreast[breast.side] += imageCount
+        }
+      }
+    }
+
+    // Check if standard views completed (4 standard views: RCC, RMLO, LCC, LMLO)
+    const standardViews = [
+      'rightCraniocaudal',
+      'rightMediolateralOblique',
+      'leftCraniocaudal',
+      'leftMediolateralOblique'
+    ]
+    const standardViewsCompleted = standardViews.every((view) => views[view])
+
+    // Handle partial mammography reason - combine select and comment
+    let partialMammographyReason = null
+    if (formData.isPartialMammography?.includes('yes')) {
+      const reasonSelect = formData.partialMammographyReasonSelect
+      const reasonComment = formData.partialMammographyReasonComment
+
+      if (reasonSelect && reasonComment) {
+        partialMammographyReason = `${reasonSelect}: ${reasonComment}`
+      } else if (reasonSelect) {
+        partialMammographyReason = reasonSelect
+      } else if (reasonComment) {
+        partialMammographyReason = reasonComment
+      }
+    }
+
+    return {
+      isManualEntry: true,
+      machineRoom: formData.machineRoom,
+      views,
+      isPartialMammography: formData.isPartialMammography?.includes('yes')
+        ? 'yes'
+        : null,
+      partialMammographyReason,
+      additionalDetails: formData.additionalDetails,
+      metadata: {
+        totalImages,
+        standardViewsCompleted,
+        imagesByBreast
+      }
+    }
+  }
+
+  // Handle initial manual imaging form (standard vs custom)
+  router.post(
+    '/clinics/:clinicId/events/:eventId/images-manual-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const isStandardSet = data.event?.mammogramDataTemp?.isStandardSet
+
+      if (!isStandardSet) {
+        req.flash('error', {
+          text: 'Select whether the imaging stage is complete',
+          name: 'event[mammogramDataTemp][isStandardSet]'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual`
+        )
+      }
+
+      // If standard 4 images, preset the data
+      if (isStandardSet === 'yes') {
+        if (!data.event.mammogramDataTemp) {
+          data.event.mammogramDataTemp = {}
+        }
+
+        // Preset standard views in temp
+        data.event.mammogramDataTemp.viewsRightBreast = ['CC', 'MLO']
+        data.event.mammogramDataTemp.viewsRightBreastCCCount = '1'
+        data.event.mammogramDataTemp.viewsRightBreastMLOCount = '1'
+        data.event.mammogramDataTemp.viewsLeftBreast = ['CC', 'MLO']
+        data.event.mammogramDataTemp.viewsLeftBreastCCCount = '1'
+        data.event.mammogramDataTemp.viewsLeftBreastMLOCount = '1'
+
+        // Convert to final format
+        const mammogramData = convertManualDataToMammogramFormat(
+          data.event.mammogramDataTemp
+        )
+        data.event.mammogramData = mammogramData
+
+        // Clear temp data
+        delete data.event.mammogramDataTemp
+
+        // Mark workflow as complete
+        if (!data.event.workflowStatus) {
+          data.event.workflowStatus = {}
+        }
+        data.event.workflowStatus.images = 'completed'
+
+        // Redirect to review
+        return res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      }
+
+      // If custom details needed, go to details page
+      if (isStandardSet === 'custom') {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual-details`
+        )
+      }
+
+      // If there was a problem (no), redirect to attended-not-screened flow
+      if (isStandardSet === 'no') {
+        // TODO: Route to attended-not-screened flow
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+        )
+      }
+
+      // Fallback - shouldn't reach here
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/images-manual`)
+    }
+  )
+
+  // Handle manual imaging details form
+  router.post(
+    '/clinics/:clinicId/events/:eventId/images-manual-details-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const mammogramDataTemp = data.event?.mammogramDataTemp
+
+      // Clean up orphaned count fields when using checkbox version
+      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
+        const rightViews = mammogramDataTemp.viewsRightBreast || []
+        const leftViews = mammogramDataTemp.viewsLeftBreast || []
+
+        // Clear counts for unchecked right breast views
+        if (!rightViews.includes('CC')) {
+          delete mammogramDataTemp.viewsRightBreastCCCount
+        }
+        if (!rightViews.includes('MLO')) {
+          delete mammogramDataTemp.viewsRightBreastMLOCount
+        }
+        if (!rightViews.includes('Eklund')) {
+          delete mammogramDataTemp.viewsRightBreastEklundCount
+        }
+
+        // Clear counts for unchecked left breast views
+        if (!leftViews.includes('CC')) {
+          delete mammogramDataTemp.viewsLeftBreastCCCount
+        }
+        if (!leftViews.includes('MLO')) {
+          delete mammogramDataTemp.viewsLeftBreastMLOCount
+        }
+        if (!leftViews.includes('Eklund')) {
+          delete mammogramDataTemp.viewsLeftBreastEklundCount
+        }
+      }
+
+      // Validate at least one view was selected/entered
+      let hasNoViews = false
+
+      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
+        // Checkbox validation
+        const rightViews = mammogramDataTemp?.viewsRightBreast || []
+        const leftViews = mammogramDataTemp?.viewsLeftBreast || []
+
+        const hasNoRightImages = rightViews.includes('No images taken')
+        const hasNoLeftImages = leftViews.includes('No images taken')
+        hasNoViews =
+          (rightViews.length === 0 || hasNoRightImages) &&
+          (leftViews.length === 0 || hasNoLeftImages)
+      } else {
+        // Input validation - check if any count field has a value > 0
+        const viewTypes = ['CC', 'MLO', 'Eklund']
+        const breasts = ['Right', 'Left']
+        let hasAnyImages = false
+
+        for (const breast of breasts) {
+          for (const viewType of viewTypes) {
+            const countField = `views${breast}Breast${viewType}Count`
+            const count = parseInt(mammogramDataTemp?.[countField]) || 0
+            if (count > 0) {
+              hasAnyImages = true
+              break
+            }
+          }
+          if (hasAnyImages) break
+        }
+
+        hasNoViews = !hasAnyImages
+      }
+
+      if (hasNoViews) {
+        req.flash('error', {
+          text: 'Enter at least one image count',
+          name: 'event[mammogramDataTemp][viewsRightBreastCCCount]'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual-details`
+        )
+      }
+
+      // Check if we need to ask about repeats
+      if (needsRepeatQuestions(mammogramDataTemp)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-manual-repeats`
+        )
+      }
+
+      // Convert to final format and save
+      const convertedData =
+        convertManualDataToMammogramFormat(mammogramDataTemp)
+      data.event.mammogramData = convertedData
+
+      // Clear temp data
+      delete data.event.mammogramDataTemp
+
+      // Mark workflow as complete
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
+      data.event.workflowStatus.images = 'completed'
+
+      // Redirect to review
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+    }
+  )
+
+  // Helper function - place this near the other helper functions
+  function needsRepeatQuestions(mammogramDataTemp) {
+    const viewTypes = ['CC', 'MLO', 'Eklund']
+    const breasts = ['Right', 'Left']
+
+    for (const breast of breasts) {
+      for (const viewType of viewTypes) {
+        const countField = `views${breast}Breast${viewType}Count`
+        const count = parseInt(mammogramDataTemp?.[countField]) || 0
+
+        if (count > 1) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
+  // Handle repeat reasons form
+  router.post(
+    '/clinics/:clinicId/events/:eventId/images-manual-repeats-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // Convert to final format and save
+      const mammogramDataTemp = data.event?.mammogramDataTemp
+      const convertedData =
+        convertManualDataToMammogramFormat(mammogramDataTemp)
+      data.event.mammogramData = convertedData
+
+      // Clear temp data
+      delete data.event.mammogramDataTemp
+
+      // Mark workflow as complete
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
+      data.event.workflowStatus.images = 'completed'
+
+      // Redirect to review
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+    }
+  )
+
+  // End Manual imaging routes
 
   // Handle screening completion
   router.post(
