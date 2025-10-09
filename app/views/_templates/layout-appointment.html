@@ -1,21 +1,21 @@
 {# app/views/_templates/layout-appointment.html #}
 {% extends 'layout-app.html' %}
 
-{# Top-level pages need full width for navigation, child pages use default or custom width #}
-{% if pageLevel == "top" %}
+{# Pages with navigation need full width, pages without use default or custom width #}
+{% if showNavigation %}
   {% set gridColumn = "nhsuk-grid-column-full" %}
 {% else %}
   {% set gridColumn = gridColumn or "nhsuk-grid-column-two-thirds" %}
 {% endif %}
 
 {# Wider page for workflow mode with side nav #}
-{% if isAppointmentWorkflow and pageLevel == "top" %}
+{% if isAppointmentWorkflow and showNavigation %}
   {# {% set containerClasses = "nhsuk-width-container nhsuk-width-container--wide" %} #}
   {% set bodyClasses = (bodyClasses or "") + " app-workflow-mode" %}
 {% endif %}
 
 {# Pages set these variables to control behaviour #}
-{% set pageLevel = pageLevel or "top" %}
+{% set showNavigation = showNavigation if showNavigation != undefined else false %}
 {% set showPageHeading = showPageHeading if showPageHeading != undefined else true %}
 {% set activeTab = activeTab or "" %}
 {% set activeWorkflowStep = activeWorkflowStep or "" %}
@@ -42,8 +42,8 @@
     {% block appointmentContent %}{% endblock %}
   {% endset %}
   
-  {# Top-level pages show navigation #}
-  {% if pageLevel == "top" %}
+  {# Pages with navigation show either workflow side nav or tabs #}
+  {% if showNavigation %}
     
     {% if isAppointmentWorkflow %}
       {# Workflow mode: side navigation layout #}
@@ -74,7 +74,7 @@
     {% endif %}
     
   {% else %}
-    {# Child pages: parent layout-app handles grid wrapper based on gridColumn #}
+    {# Pages without navigation: parent layout-app handles grid wrapper based on gridColumn #}
     {% if showPageHeading %}
       <h1>
         {% if participant %}
