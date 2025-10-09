@@ -23,6 +23,7 @@ const {
   appendReferrer
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
+const { isAppointmentWorkflow } = require('../lib/utils/status')
 
 /**
  * Get single event and its related data
@@ -139,6 +140,10 @@ module.exports = (router) => {
 
     res.locals.eventData = originalEventData
     res.locals.clinic = originalEventData.clinic
+    res.locals.isAppointmentWorkflow = isAppointmentWorkflow(
+      data.event,
+      data.currentUser
+    )
 
     res.locals.participant = data.participant
     res.locals.participantId = participantId
@@ -206,7 +211,6 @@ module.exports = (router) => {
 
     // Only allow leaving if the event is currently in progress
     if (event?.status === 'event_in_progress') {
-
       // Reset workflow status
       delete data.event.workflowStatus
 
@@ -839,41 +843,54 @@ module.exports = (router) => {
   )
 
   // Save breast features (includes converting JSON string to structured data)
-  router.post('/clinics/:clinicId/events/:eventId/medical-information/record-breast-features/save', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const referrerChain = req.query.referrerChain
-    const scrollTo = req.query.scrollTo
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/record-breast-features/save',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
 
-    let conversionsCount = 0
-    let errorCount = 0
+      let conversionsCount = 0
+      let errorCount = 0
 
-    // Convert breast features raw data
-    if (data.event?.medicalInformation?.breastFeaturesRaw) {
-      try {
-        const rawFeatures = data.event.medicalInformation.breastFeaturesRaw
-        if (typeof rawFeatures === 'string') {
-          data.event.medicalInformation.breastFeatures = JSON.parse(rawFeatures)
-          // Delete the raw data once converted
-          delete data.event.medicalInformation.breastFeaturesRaw
-          conversionsCount++
-          console.log('Converted breastFeaturesRaw to structured data and deleted raw data')
+      // Convert breast features raw data
+      if (data.event?.medicalInformation?.breastFeaturesRaw) {
+        try {
+          const rawFeatures = data.event.medicalInformation.breastFeaturesRaw
+          if (typeof rawFeatures === 'string') {
+            data.event.medicalInformation.breastFeatures =
+              JSON.parse(rawFeatures)
+            // Delete the raw data once converted
+            delete data.event.medicalInformation.breastFeaturesRaw
+            conversionsCount++
+            console.log(
+              'Converted breastFeaturesRaw to structured data and deleted raw data'
+            )
+          }
+        } catch (error) {
+          console.warn('Failed to convert breastFeaturesRaw:', error)
+          errorCount++
         }
-      } catch (error) {
-        console.warn('Failed to convert breastFeaturesRaw:', error)
-        errorCount++
       }
-    }
 
-    // Flash error message if needed
-    if (errorCount > 0) {
-      req.flash('error', 'Some data could not be converted. Please check the information and try again.')
-    }
+      // Flash error message if needed
+      if (errorCount > 0) {
+        req.flash(
+          'error',
+          'Some data could not be converted. Please check the information and try again.'
+        )
+      }
 
-    // Redirect back using referrer chain
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}`, referrerChain, scrollTo)
-    res.redirect(returnUrl)
-  })
+      // Redirect back using referrer chain
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        referrerChain,
+        scrollTo
+      )
+      res.redirect(returnUrl)
+    }
+  )
 
   // Medical history
 
@@ -883,221 +900,103 @@ module.exports = (router) => {
 
   function isValidMedicalHistoryType(type) {
     // Check against both type field and slug field
-    return medicalHistoryTypes.some(item => item.type === type || item.slug === type)
+    return medicalHistoryTypes.some(
+      (item) => item.type === type || item.slug === type
+    )
   }
 
   // Helper function to get medical history type object by type (camelCase type or kebab-case slug)
   function getMedicalHistoryType(type) {
     // First try to find by type field
-    let result = medicalHistoryTypes.find(item => item.type === type)
+    let result = medicalHistoryTypes.find((item) => item.type === type)
     if (result) {
       return result
     }
     // Then try to find by slug field
-    return medicalHistoryTypes.find(item => item.slug === type)
+    return medicalHistoryTypes.find((item) => item.slug === type)
   }
 
   // Helper function to get camelCase type from slug
   function getMedicalHistoryKeyFromSlug(slug) {
-    const item = medicalHistoryTypes.find(item => item.slug === slug)
+    const item = medicalHistoryTypes.find((item) => item.slug === slug)
     return item ? item.type : null
   }
 
   // Add new medical history item - clear temp data and redirect to form
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add', (req, res) => {
-    const { clinicId, eventId, type } = req.params
+  router.get(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add',
+    (req, res) => {
+      const { clinicId, eventId, type } = req.params
 
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
+      }
+
+      // Clear any existing temp medical history data
+      delete req.session.data.event?.medicalHistoryTemp
+
+      // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
     }
-
-    // Clear any existing temp medical history data
-    delete req.session.data.event?.medicalHistoryTemp
-
-    // Redirect to the form (assumes template exists at medical-information/medical-history/[type])
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
-  })
+  )
 
   // Save medical history item - handles both 'save' and 'save and add another'
-  router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/save', (req, res) => {
-    const { clinicId, eventId, type } = req.params
-    const data = req.session.data
-    const action = req.body.action || 'save'
-    const referrerChain = req.query.referrerChain
-    const scrollTo = req.query.scrollTo
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/save',
+    (req, res) => {
+      const { clinicId, eventId, type } = req.params
+      const data = req.session.data
+      const action = req.body.action || 'save'
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
 
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    }
-
-    const typeConfig = getMedicalHistoryType(type)
-    // Convert slug to camelCase key for data storage
-    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
-
-    // Check if consent is needed for breast implants BEFORE processing the data
-    if (type === 'breast-implants-augmentation' || type === 'breastImplantsAugmentation') {
-      const medicalHistoryTemp = data.event?.medicalHistoryTemp
-      const rightBreastProcedures = medicalHistoryTemp?.proceduresRightBreast || []
-      const leftBreastProcedures = medicalHistoryTemp?.proceduresLeftBreast || []
-      
-      // Check if breast implants were selected in either breast
-      const hasBreastImplants = 
-        rightBreastProcedures.includes('Breast implants') || 
-        leftBreastProcedures.includes('Breast implants')
-      
-      if (hasBreastImplants) {
-        // Redirect to consent page immediately - we'll save the data after consent
-        return res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`)
-      }
-    }
-
-    let isNewItem
-
-    // Save temp medical history to array
-    if (data.event?.medicalHistoryTemp) {
-      // Initialize medicalInformation object if needed
-      if (!data.event.medicalInformation) {
-        data.event.medicalInformation = {}
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
       }
 
-      // Initialize medicalHistory object if needed
-      if (!data.event.medicalInformation.medicalHistory) {
-        data.event.medicalInformation.medicalHistory = {}
+      const typeConfig = getMedicalHistoryType(type)
+      // Convert slug to camelCase key for data storage
+      const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+      // Check if consent is needed for breast implants BEFORE processing the data
+      if (
+        type === 'breast-implants-augmentation' ||
+        type === 'breastImplantsAugmentation'
+      ) {
+        const medicalHistoryTemp = data.event?.medicalHistoryTemp
+        const rightBreastProcedures =
+          medicalHistoryTemp?.proceduresRightBreast || []
+        const leftBreastProcedures =
+          medicalHistoryTemp?.proceduresLeftBreast || []
+
+        // Check if breast implants were selected in either breast
+        const hasBreastImplants =
+          rightBreastProcedures.includes('Breast implants') ||
+          leftBreastProcedures.includes('Breast implants')
+
+        if (hasBreastImplants) {
+          // Redirect to consent page immediately - we'll save the data after consent
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+          )
+        }
       }
 
-      // Initialize array for this type if needed
-      if (!data.event.medicalInformation.medicalHistory[dataKey]) {
-        data.event.medicalInformation.medicalHistory[dataKey] = []
-      }
+      let isNewItem
 
-      const medicalHistoryTemp = data.event.medicalHistoryTemp
-      isNewItem = !medicalHistoryTemp.id
-
-      // Create medical history item
-      const medicalHistoryItem = {
-        id: medicalHistoryTemp.id || generateId(),
-        ...medicalHistoryTemp
-      }
-
-      // For new items, add the creation timestamp
-      if (isNewItem) {
-        medicalHistoryItem.dateAdded = new Date().toISOString()
-        medicalHistoryItem.addedBy = data.currentUser.id
-      }
-
-      // REMOVED: The consent line that was adding consentGiven to all items
-
-      // Update existing or add new
-      const existingIndex = data.event.medicalInformation.medicalHistory[dataKey].findIndex(item => item.id === medicalHistoryItem.id)
-      if (existingIndex !== -1) {
-        data.event.medicalInformation.medicalHistory[dataKey][existingIndex] = medicalHistoryItem
-      } else {
-        data.event.medicalInformation.medicalHistory[dataKey].push(medicalHistoryItem)
-      }
-
-      // Clear temp data
-      delete data.event.medicalHistoryTemp
-    }
-
-    let methodVerb = 'added'
-    if (!isNewItem) {
-      methodVerb = 'updated'
-    }
-
-    const itemAddedMessage = `${typeConfig.name} ${methodVerb}`
-    req.flash('success', itemAddedMessage)
-
-    // Redirect based on action
-    if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
-      // Clear any existing temp medical history data for the new item
-      delete data.event.medicalHistoryTemp
-
-      // Redirect directly to the form instead of going through the add route
-      res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, referrerChain, scrollTo))
-    } else {
-      // Regular save - redirect back to medical information page
-      const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, referrerChain, scrollTo)
-      res.redirect(returnUrl)
-    }
-  })
-
-  // Edit existing medical history item
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId', (req, res) => {
-    const { clinicId, eventId, type, itemId } = req.params
-    const data = req.session.data
-
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    }
-
-    // Convert slug to camelCase key for data lookup
-    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
-
-    // Initialize medicalInformation if needed
-    if (!data.event.medicalInformation) {
-      data.event.medicalInformation = {}
-    }
-
-    // Find the medical history item using the correct data key
-    const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[dataKey]?.find(item => item.id === itemId)
-
-    if (medicalHistoryItem) {
-      // Copy to temp for editing
-      data.event.medicalHistoryTemp = { ...medicalHistoryItem }
-    } else {
-      console.log(`Cannot find item ${itemId} in ${dataKey}`)
-    }
-
-    // Redirect to the form
-    res.redirect(urlWithReferrer(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`, req.query.referrerChain, req.query.scrollTo))
-  })
-
-  // Delete medical history item
-  router.get('/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/delete/:itemId', (req, res) => {
-    const { clinicId, eventId, type, itemId } = req.params
-    const data = req.session.data
-
-    // Validate type
-    if (!isValidMedicalHistoryType(type)) {
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/record-medical-information`)
-    }
-
-    const typeConfig = getMedicalHistoryType(type)
-    // Convert slug to camelCase key for data lookup
-    const dataKey = getMedicalHistoryKeyFromSlug(type) || type
-
-    // Remove item from array
-    if (data.event?.medicalInformation?.medicalHistory?.[dataKey]) {
-      data.event.medicalInformation.medicalHistory[dataKey] = data.event.medicalInformation.medicalHistory[dataKey].filter(item => item.id !== itemId)
-    }
-
-    req.flash('success', `${typeConfig.name} deleted`)
-
-    const returnUrl = getReturnUrl(`/clinics/${clinicId}/events/${eventId}/record-medical-information`, req.query.referrerChain, req.query.scrollTo)
-    res.redirect(returnUrl)
-  })
-
-  // Handle breast implants consent form submission  
-  router.post('/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const consentGiven = data.event?.medicalInformation?.implantedDevices?.consentGiven
-    const referrerChain = req.query.referrerChain
-    const scrollTo = req.query.scrollTo
-
-    if (!consentGiven) {
-      req.flash('error', {
-        text: 'Select whether the participant has signed the consent form',
-        name: 'event[medicalInformation][implantedDevices][consentGiven]'
-      })
-      return res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`)
-    }
-
-    if (consentGiven === 'yes') {
-      // Save the breast implants data that was held in temp
+      // Save temp medical history to array
       if (data.event?.medicalHistoryTemp) {
         // Initialize medicalInformation object if needed
         if (!data.event.medicalInformation) {
@@ -1109,13 +1008,13 @@ module.exports = (router) => {
           data.event.medicalInformation.medicalHistory = {}
         }
 
-        // Initialize array for breast implants if needed
-        if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation) {
-          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+        // Initialize array for this type if needed
+        if (!data.event.medicalInformation.medicalHistory[dataKey]) {
+          data.event.medicalInformation.medicalHistory[dataKey] = []
         }
 
         const medicalHistoryTemp = data.event.medicalHistoryTemp
-        const isNewItem = !medicalHistoryTemp.id
+        isNewItem = !medicalHistoryTemp.id
 
         // Create medical history item
         const medicalHistoryItem = {
@@ -1129,29 +1028,226 @@ module.exports = (router) => {
           medicalHistoryItem.addedBy = data.currentUser.id
         }
 
-        // Add consent information
-        medicalHistoryItem.consentGiven = 'yes'
+        // REMOVED: The consent line that was adding consentGiven to all items
 
-        // Add to array
-        data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+        // Update existing or add new
+        const existingIndex = data.event.medicalInformation.medicalHistory[
+          dataKey
+        ].findIndex((item) => item.id === medicalHistoryItem.id)
+        if (existingIndex !== -1) {
+          data.event.medicalInformation.medicalHistory[dataKey][existingIndex] =
+            medicalHistoryItem
+        } else {
+          data.event.medicalInformation.medicalHistory[dataKey].push(
+            medicalHistoryItem
+          )
+        }
 
         // Clear temp data
         delete data.event.medicalHistoryTemp
       }
 
-      // Show combined success message
-      req.flash('success', 'Breast implants recorded and consent recorded')
-      
+      let methodVerb = 'added'
+      if (!isNewItem) {
+        methodVerb = 'updated'
+      }
+
+      const itemAddedMessage = `${typeConfig.name} ${methodVerb}`
+      req.flash('success', itemAddedMessage)
+
+      // Redirect based on action
+      if (action === 'save-and-add' && typeConfig.canHaveMultiple) {
+        // Clear any existing temp medical history data for the new item
+        delete data.event.medicalHistoryTemp
+
+        // Redirect directly to the form instead of going through the add route
+        res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`,
+            referrerChain,
+            scrollTo
+          )
+        )
+      } else {
+        // Regular save - redirect back to medical information page
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          referrerChain,
+          scrollTo
+        )
+        res.redirect(returnUrl)
+      }
+    }
+  )
+
+  // Edit existing medical history item
+  router.get(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/edit/:itemId',
+    (req, res) => {
+      const { clinicId, eventId, type, itemId } = req.params
+      const data = req.session.data
+
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
+      }
+
+      // Convert slug to camelCase key for data lookup
+      const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+      // Initialize medicalInformation if needed
+      if (!data.event.medicalInformation) {
+        data.event.medicalInformation = {}
+      }
+
+      // Find the medical history item using the correct data key
+      const medicalHistoryItem = data.event.medicalInformation.medicalHistory?.[
+        dataKey
+      ]?.find((item) => item.id === itemId)
+
+      if (medicalHistoryItem) {
+        // Copy to temp for editing
+        data.event.medicalHistoryTemp = { ...medicalHistoryItem }
+      } else {
+        console.log(`Cannot find item ${itemId} in ${dataKey}`)
+      }
+
+      // Redirect to the form
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${type}`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
+    }
+  )
+
+  // Delete medical history item
+  router.get(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/delete/:itemId',
+    (req, res) => {
+      const { clinicId, eventId, type, itemId } = req.params
+      const data = req.session.data
+
+      // Validate type
+      if (!isValidMedicalHistoryType(type)) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+        )
+      }
+
+      const typeConfig = getMedicalHistoryType(type)
+      // Convert slug to camelCase key for data lookup
+      const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+
+      // Remove item from array
+      if (data.event?.medicalInformation?.medicalHistory?.[dataKey]) {
+        data.event.medicalInformation.medicalHistory[dataKey] =
+          data.event.medicalInformation.medicalHistory[dataKey].filter(
+            (item) => item.id !== itemId
+          )
+      }
+
+      req.flash('success', `${typeConfig.name} deleted`)
+
       const returnUrl = getReturnUrl(
         `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
-        referrerChain,
-        scrollTo
+        req.query.referrerChain,
+        req.query.scrollTo
       )
       res.redirect(returnUrl)
-    } else {
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`)
     }
-  })
+  )
+
+  // Handle breast implants consent form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const consentGiven =
+        data.event?.medicalInformation?.implantedDevices?.consentGiven
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
+
+      if (!consentGiven) {
+        req.flash('error', {
+          text: 'Select whether the participant has signed the consent form',
+          name: 'event[medicalInformation][implantedDevices][consentGiven]'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+        )
+      }
+
+      if (consentGiven === 'yes') {
+        // Save the breast implants data that was held in temp
+        if (data.event?.medicalHistoryTemp) {
+          // Initialize medicalInformation object if needed
+          if (!data.event.medicalInformation) {
+            data.event.medicalInformation = {}
+          }
+
+          // Initialize medicalHistory object if needed
+          if (!data.event.medicalInformation.medicalHistory) {
+            data.event.medicalInformation.medicalHistory = {}
+          }
+
+          // Initialize array for breast implants if needed
+          if (
+            !data.event.medicalInformation.medicalHistory
+              .breastImplantsAugmentation
+          ) {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation =
+              []
+          }
+
+          const medicalHistoryTemp = data.event.medicalHistoryTemp
+          const isNewItem = !medicalHistoryTemp.id
+
+          // Create medical history item
+          const medicalHistoryItem = {
+            id: medicalHistoryTemp.id || generateId(),
+            ...medicalHistoryTemp
+          }
+
+          // For new items, add the creation timestamp
+          if (isNewItem) {
+            medicalHistoryItem.dateAdded = new Date().toISOString()
+            medicalHistoryItem.addedBy = data.currentUser.id
+          }
+
+          // Add consent information
+          medicalHistoryItem.consentGiven = 'yes'
+
+          // Add to array
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
+            medicalHistoryItem
+          )
+
+          // Clear temp data
+          delete data.event.medicalHistoryTemp
+        }
+
+        // Show combined success message
+        req.flash('success', 'Breast implants recorded and consent recorded')
+
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          referrerChain,
+          scrollTo
+        )
+        res.redirect(returnUrl)
+      } else {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+        )
+      }
+    }
+  )
 
   // Imaging view - this is the main imaging page for the event
 
@@ -1376,7 +1472,7 @@ module.exports = (router) => {
       )
     }
   )
-  
+
   // Handle special appointment confirmation
   router.post(
     '/clinics/:clinicId/events/:eventId/special-appointment/confirm-answer',
@@ -1403,47 +1499,47 @@ module.exports = (router) => {
   )
 
   // Handle appointment note form submission
-router.post(
-  '/clinics/:clinicId/events/:eventId/appointment-note',
-  (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
+  router.post(
+    '/clinics/:clinicId/events/:eventId/appointment-note',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-    // Save the appointment note from temp event to permanent event
-    saveTempEventToEvent(data)
+      // Save the appointment note from temp event to permanent event
+      saveTempEventToEvent(data)
 
-    req.flash('success', 'Appointment note saved')
-    
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}/events/${eventId}`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  }
-)
+      req.flash('success', 'Appointment note saved')
 
-// Delete appointment note
-router.get(
-  '/clinics/:clinicId/events/:eventId/appointment-note/delete',
-  (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
 
-    // Delete the appointment note
-    delete data.event.appointmentNote
+  // Delete appointment note
+  router.get(
+    '/clinics/:clinicId/events/:eventId/appointment-note/delete',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-    // Save changes
-    saveTempEventToEvent(data)
+      // Delete the appointment note
+      delete data.event.appointmentNote
 
-    req.flash('success', 'Appointment note deleted')
+      // Save changes
+      saveTempEventToEvent(data)
 
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}/events/${eventId}/appointment-note`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  }
-)
+      req.flash('success', 'Appointment note deleted')
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/appointment-note`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(
