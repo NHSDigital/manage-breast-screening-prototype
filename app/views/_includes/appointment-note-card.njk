@@ -3,23 +3,24 @@
 {% from 'warning-callout/macro.njk' import warningCallout %}
 
 {% if event | hasAppointmentNote %}
-{% set warningCalloutHtml %}
-{% if allowEdits %}
-<div style="text-align: right;">
-  <a href="{{ eventUrl }}/appointment-note{{ ('?referrerChain=' + referrerChain) if referrerChain }}"
-    style="font-size: 19px;">Change<span class="nhsuk-u-visually-hidden"> note</span></a>
-</div>
-{% endif %}
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-two-thirds">
-    <p>{{ event.appointmentNote }}</p>
-  </div>
-</div>
-{% endset %}
+  {% set warningCalloutHtml %}
+    {% if allowEdits %}
+      <div style="text-align: right;">
+        <a href="{{ eventUrl }}/appointment-note{{ ('?referrerChain=' + referrerChain) if referrerChain }}"
+          style="font-size: 19px;">Change<span class="nhsuk-u-visually-hidden"> note</span></a>
+      </div>
+    {% endif %}
+    
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        <p>{{ event.appointmentNote }}</p>
+      </div>
+    </div>
+  {% endset %}
 
-{{ warningCallout({
-heading: "Appointment note",
-html: warningCalloutHtml,
-classes: "nhsuk-u-margin-bottom-4"
-}) }}
+  {{ warningCallout({
+    heading: "Appointment note",
+    html: warningCalloutHtml,
+    classes: "nhsuk-u-margin-bottom-4"
+  }) }}
 {% endif %}
