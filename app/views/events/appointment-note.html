@@ -45,8 +45,8 @@
       }) }}
 
       {% if event.appointmentNote %}
-      <a href="./appointment-note?event[appointmentNote]=&clearQuery=true" class="nhsuk-link app-link--warning">
-        Delete appointment note
+      <a href="{{ eventUrl }}/appointment-note/delete{{ ('?referrerChain=' + referrerChain) if referrerChain }}"
+        class="nhsuk-link app-link--warning"> Delete appointment note
       </a>
       {% endif %}
     </div>

@@ -1422,6 +1422,28 @@ router.post(
   }
 )
 
+// Delete appointment note
+router.get(
+  '/clinics/:clinicId/events/:eventId/appointment-note/delete',
+  (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    // Delete the appointment note
+    delete data.event.appointmentNote
+
+    // Save changes
+    saveTempEventToEvent(data)
+
+    req.flash('success', 'Appointment note deleted')
+
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}/appointment-note`,
+      req.query.referrerChain
+    )
+    res.redirect(returnUrl)
+  }
+)
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(
