@@ -1,14 +1,15 @@
-
 {% extends 'layout-appointment.html' %}
 
 {% set imageCount = event.mammogramData.metadata.totalImages %}
 
 {% set pageHeading = imageCount + " images taken" %}
+
 {% set pageLevel = "top" %}
 {% set activeWorkflowStep = 'take-images' %}
 {% set hideBackLink = true %}
 
 {# {% set hideBackLink = true %} #}
+
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set formAction = './imaging-answer' %}
