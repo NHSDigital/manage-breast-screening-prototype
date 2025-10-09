@@ -24,7 +24,7 @@
 
   {% include "event-workflow.njk" %}
 
-  {% if data.event.workflowStatus.images == 'completed' %}
+  {% if data.event.workflowStatus["take-images"] == 'completed' %}
     {{ button({
       text: "Next section",
       classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"

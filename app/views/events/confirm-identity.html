@@ -1,10 +1,10 @@
 {# app/views/events/identity #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Confirm identity" %}
-
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set pageLevel = "top" %}
+{% set activeWorkflowStep = 'confirm-identity' %}
 
 {% set referrerChain = currentUrl %}
 
@@ -16,12 +16,8 @@
   text: "Leave this appointment"
 } %}
 
-{% set showWorkflowNav = true %}
-{% set activeTab = 'confirm-identity' %}
 
-{% block pageContent %}
-
-  {% include "event-workflow.njk" %}
+{% block appointmentContent %}
 
   {{ appHiddenInput({
     name: "event[workflowStatus][confirm-identity]",

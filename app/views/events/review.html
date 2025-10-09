@@ -1,7 +1,9 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 
 {% set pageHeading = "Review" %}
+{% set pageLevel = "top" %}
+{% set activeWorkflowStep = 'review' %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -16,11 +18,7 @@
 {% set activeTab = 'review' %}
 
 
-{% block pageContent %}
-
-
-
-  {% include "event-workflow.njk" %}
+{% block appointmentContent %}
 
   {{ button({
     text: "Complete screening and return to clinic"

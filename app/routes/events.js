@@ -195,7 +195,7 @@ module.exports = (router) => {
 
     // Determine redirect destination
     // This lets us deep link in to the flow whilst still going through this setup route
-    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`
+    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/confirm-identity`
     const finalDestination = returnTo
       ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
       : defaultDestination
@@ -1329,7 +1329,7 @@ module.exports = (router) => {
       if (!isPartialMammography) {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/imaging`)
       } else {
-        data.event.workflowStatus.images = 'completed'
+        data.event.workflowStatus['take-images'] = 'completed'
         res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
       }
     }
