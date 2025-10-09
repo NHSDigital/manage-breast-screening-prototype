@@ -20,6 +20,8 @@
 
   {% set rootHref = "/" %}
 
+  {{ isAppointmentWorkflow | log("Is appointment workflow") }}
+
   {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
   {% if appointmentWorkflow %}
     {# Explicitly leave appointment if navigating away #}
@@ -113,9 +115,9 @@
     account: navigation.account if not public
   }) }} #}
 
-  {% if event and event | isAppointmentWorkflow %}
+  {# {% if event and event | isAppointmentWorkflow %}
     {% include "_includes/appointment-header.njk" %}
-  {% endif %}
+  {% endif %} #}
 
 {% endblock %}
 

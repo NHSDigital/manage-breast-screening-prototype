@@ -70,16 +70,16 @@
     </ul>
   </li>
 
-  {% set completedSections = "event[workflowStatus][identity]=completed" %}
+  {% set completedSections = "event[workflowStatus][confirm-identity]=completed" %}
 
   <li>
-    <a href="{{ startUrl }}?returnTo=record-medical-information&{{ completedSections }}">Review medical information</a>
+    <a href="{{ startUrl }}?returnTo=review-medical-information&{{ completedSections }}">Review medical information</a>
     <ul>
       <li>
         <a href="{{ startUrl }}?returnTo=/previous-mammograms/add&{{ completedSections }}">Add details of a previous mammogram</a>
       </li>
       <li>
-        <a href="{{ startUrl }}?returnTo=medical-information/symptoms/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Add a symptom</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/symptoms/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Add a symptom</a>
       </li>
       <li>
         {% call details({
@@ -87,30 +87,30 @@
         }) %}
           <ul>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Breast cancer</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-cancer/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Breast cancer</a>
             </li>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-implants-augmentation/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Breast implants or augmentation</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/breast-implants-augmentation/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Breast implants or augmentation</a>
               <ul>
                 <li>
-                  <a href="{{ startUrl }}?returnTo=medical-information/medical-history/consent&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Consent</a>
+                  <a href="{{ startUrl }}?returnTo=medical-information/medical-history/consent&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Consent</a>
                 </li>
               </ul>
             </li>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/cysts/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Cysts</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/cysts/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Cysts</a>
             </li>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/implanted-medical-device/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Implanted medical device</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/implanted-medical-device/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Implanted medical device</a>
             </li>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/benign-lumps/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Benign lumps</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/benign-lumps/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Benign lumps</a>
             </li>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/mastectomy-lumpectomy/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Mastectomy or lumpectomy</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/mastectomy-lumpectomy/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Mastectomy or lumpectomy</a>
             </li>
             <li>
-              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/other-procedures/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Other procedures</a>
+              <a href="{{ startUrl }}?returnTo=medical-information/medical-history/other-procedures/add&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Other procedures</a>
             </li>
           </ul>
         {% endcall %}
@@ -119,14 +119,14 @@
         <a href="{{ startUrl }}?returnTo=medical-information/record-breast-features&{{ completedSections }}">Record breast features</a>
       </li>
       <li>
-        <a href="{{ startUrl }}?returnTo=medical-information/hormone-replacement-therapy?{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Hormone replacement therapy</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/hormone-replacement-therapy?{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Hormone replacement therapy</a>
       </li>
       <li>
-        <a href="{{ startUrl }}?returnTo=medical-information/pregnancy-and-breastfeeding&{{ completedSections }}&referrerChain={{ exampleParticipant }}/record-medical-information">Pregnancy and breastfeeding</a>
+        <a href="{{ startUrl }}?returnTo=medical-information/pregnancy-and-breastfeeding&{{ completedSections }}&referrerChain={{ exampleParticipant }}/review-medical-information">Pregnancy and breastfeeding</a>
       </li>
     </ul>
   </li>
-  {% set completedSections = completedSections + "&event[workflowStatus][record-medical-information]=completed" %}
+  {% set completedSections = completedSections + "&event[workflowStatus][review-medical-information]=completed" %}
   <li>
     <a href="{{ startUrl }}?returnTo=images&{{ completedSections }}">Images</a>
   </li>

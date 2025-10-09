@@ -1,8 +1,8 @@
 {# app/views/_includes/event-workflow.njk #}
 
 {# Tracking of status #}
-{% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
-{% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information'] == 'completed' else false %}
+{% set identityStageCompleted = true if data.event.workflowStatus['confirm-identity'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if data.event.workflowStatus['review-medical-information'] == 'completed' else false %}
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
 {% set imagesStageCompleted = true if data.event.workflowStatus['images'] == 'completed' else false %}
 
@@ -21,7 +21,7 @@
     /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}
   {% endset %}
 
-    {# { id: 'eligibility', label: 'Eligibility' }, #}
+  {# { id: 'eligibility', label: 'Eligibility' }, #}
 
   {# SVG copied from https://service-manual.nhs.uk/design-system/components/do-and-dont-lists #}
   {% set tickSvg %}

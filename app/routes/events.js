@@ -710,7 +710,7 @@ module.exports = (router) => {
       } else {
         // Regular save - redirect back to medical information page
         const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
@@ -781,7 +781,7 @@ module.exports = (router) => {
       req.flash('success', 'Symptom deleted')
 
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
         req.query.referrerChain,
         req.query.scrollTo
       )
@@ -931,7 +931,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -962,7 +962,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -1071,7 +1071,7 @@ module.exports = (router) => {
       } else {
         // Regular save - redirect back to medical information page
         const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
@@ -1090,7 +1090,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -1135,7 +1135,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -1154,7 +1154,7 @@ module.exports = (router) => {
       req.flash('success', `${typeConfig.name} deleted`)
 
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
         req.query.referrerChain,
         req.query.scrollTo
       )
@@ -1236,7 +1236,7 @@ module.exports = (router) => {
         req.flash('success', 'Breast implants recorded and consent recorded')
 
         const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
@@ -1288,7 +1288,7 @@ module.exports = (router) => {
         )
       } else if (hasRelevantMedicalInformation === 'yes') {
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       } else {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
@@ -1298,7 +1298,7 @@ module.exports = (router) => {
 
   // Handle record medical information answer
   router.post(
-    '/clinics/:clinicId/events/:eventId/record-medical-information-answer',
+    '/clinics/:clinicId/events/:eventId/review-medical-information-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
@@ -1306,7 +1306,7 @@ module.exports = (router) => {
 
       if (!imagingCanProceed) {
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       } else if (imagingCanProceed === 'yes') {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)

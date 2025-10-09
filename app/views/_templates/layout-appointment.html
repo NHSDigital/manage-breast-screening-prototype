@@ -1,0 +1,91 @@
+{# app/views/_templates/layout-appointment.html #}
+{% extends 'layout-app.html' %}
+
+{# Top-level pages need full width for navigation, child pages use default or custom width #}
+{% if pageLevel == "top" %}
+  {% set gridColumn = "nhsuk-grid-column-full" %}
+{% else %}
+  {% set gridColumn = gridColumn or "nhsuk-grid-column-two-thirds" %}
+{% endif %}
+
+{# Wider page for workflow mode with side nav #}
+{% if isAppointmentWorkflow and pageLevel == "top" %}
+  {# {% set containerClasses = "nhsuk-width-container nhsuk-width-container--wide" %} #}
+  {% set bodyClasses = (bodyClasses or "") + " app-workflow-mode" %}
+{% endif %}
+
+{# Pages set these variables to control behaviour #}
+{% set pageLevel = pageLevel or "top" %}
+{% set showPageHeading = showPageHeading if showPageHeading != undefined else true %}
+{% set activeTab = activeTab or "" %}
+{% set activeWorkflowStep = activeWorkflowStep or "" %}
+
+{% block header %}
+  {# Parent header with navigation #}
+  {{ super() }}
+  
+  {# Appointment status bar - full width #}
+  {% if isAppointmentWorkflow %}
+    {% include "_includes/appointment-status-bar.njk" %}
+    {# <is-sticky class="app-appointment-header app-appointment-header--sticky">
+      <div class="nhsuk-width-container">
+        {% include "_includes/workflow/workflow-top-nav.njk" %}
+      </div>
+    </is-sticky> #}
+  {% endif %}
+{% endblock %}
+
+{% block pageContent %}
+
+  {# Capture the content block once #}
+  {% set appointmentContentHtml %}
+    {% block appointmentContent %}{% endblock %}
+  {% endset %}
+  
+  {# Top-level pages show navigation #}
+  {% if pageLevel == "top" %}
+    
+    {% if isAppointmentWorkflow %}
+      {# Workflow mode: side navigation layout #}
+
+      <div class="app-workflow-container">
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-quarter">
+            {% include '_includes/workflow/workflow-side-navigation.njk' %}
+          </div>
+          <div class="nhsuk-grid-column-three-quarters">
+            {% if showPageHeading %}
+              <h1>{{ pageHeading }}</h1>
+            {% endif %}
+            {{ appointmentContentHtml | safe }}
+          </div>
+        </div>
+      </div>
+      
+      
+    {% else %}
+      {# View mode: tabs navigation #}
+      {% include 'appointment-tabs.njk' %}
+      {% if showPageHeading %}
+        <h1>{{ pageHeading }}</h1>
+      {% endif %}
+      {{ appointmentContentHtml | safe }}
+      
+    {% endif %}
+    
+  {% else %}
+    {# Child pages: parent layout-app handles grid wrapper based on gridColumn #}
+    {% if showPageHeading %}
+      <h1>
+        {% if participant %}
+          <span class="nhsuk-caption-l">
+            {{ participant | getFullName }}
+          </span>
+        {% endif %}
+        {{ pageHeading }}
+      </h1>
+    {% endif %}
+    {{ appointmentContentHtml | safe }}
+    
+  {% endif %}
+{% endblock %}

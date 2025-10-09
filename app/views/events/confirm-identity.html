@@ -2,13 +2,13 @@
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Review participant" %}
+{% set pageHeading = "Confirm identity" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set referrerChain = currentUrl %}
 
-{% set formAction = "./record-medical-information" | getReturnUrl(referrerChain) %}
+{% set formAction = "./review-medical-information" | getReturnUrl(referrerChain) %}
 
 {# {% set hideBackLink = true %} #}
 {% set back = {
@@ -17,16 +17,14 @@
 } %}
 
 {% set showWorkflowNav = true %}
-{% set activeTab = 'identity' %}
+{% set activeTab = 'confirm-identity' %}
 
 {% block pageContent %}
-
-
 
   {% include "event-workflow.njk" %}
 
   {{ appHiddenInput({
-    name: "event[workflowStatus][identity]",
+    name: "event[workflowStatus][confirm-identity]",
     value: "completed"
   }) }}
 
