@@ -4,7 +4,7 @@
 {% set identityStageCompleted = true if data.event.workflowStatus['confirm-identity'] == 'completed' else false %}
 {% set medicalInformationStageCompleted = true if data.event.workflowStatus['review-medical-information'] == 'completed' else false %}
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
-{% set imagesStageCompleted = true if data.event.workflowStatus['images'] == 'completed' else false %}
+{% set imagesStageCompleted = true if data.event.workflowStatus['take-images'] == 'completed' else false %}
 
 {# Build secondary nav #}
 {% set secondaryNavItems = [] %}
@@ -15,7 +15,7 @@
   { id: 'confirm-identity', label: 'Confirm identity' },
 
   { id: 'review-medical-information', label: 'Review medical information' },
-  { id: 'images', label: 'Take images' },
+  { id: 'take-images', label: 'Take images' },
   { id: 'review', label: 'Review' }
 ] | removeEmpty) %}
   {% set href -%}
@@ -32,8 +32,6 @@
   {% endset %}
 
   {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
-
-
 
   {% set isDisabled = false %}
   {# Todo: refactor this be easier to check status #}
