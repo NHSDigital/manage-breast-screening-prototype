@@ -5,12 +5,13 @@
   {# Convert object to an array of views #}
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}
 
+  {# Check if this is manual entry #}
+  {% set isManualEntry = event.mammogramData.isManualEntry %}
+
   {# Group views by view name so we get MLO or CC only #}
   {% set groupedViews = mammogramViews | groupby("viewShort") %}
 
   {# Iterate through each view - they should be in a set / known order #}
-  {# Todo: this won't handle cases where entire views are missing - should we iterate
-  through a hardcoded list and show gaps where there are any? #}
   {% for viewName, view in groupedViews %}
 
     {# General view name - "MLO views" #}
@@ -24,101 +25,143 @@
       {# Right then left #}
       {% for side in view %}
         <div class="{{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
-          {# 1 RCC image | 2 LMLO images, etc #}
-          <h2>
-            {{ side.images | length }} {{ side.viewShortWithSide }} {{ "images" | pluralise(side.images | length) }}
-          </h2>
 
-          {# Loop through each image for each side #}
-          {% for image in side.images %}
-            <div class="nhsuk-grid-row {{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
-              <div class="nhsuk-grid-column-three-quarters">
-                {{ summaryList({
-                  classes: "nhsuk-u-margin-bottom-0",
-                  rows: [
-                    {
-                      key: {
-                        text: "Captured"
+          {# Display differently for manual vs automated #}
+          {% if isManualEntry %}
+            {# Manual entry - show count only #}
+            <h2>
+              {{ side.imageCount }} {{ side.viewShortWithSide }} {{ "image" | pluralise(side.imageCount) }}
+            </h2>
+
+            {{ summaryList({
+              classes: "nhsuk-u-margin-bottom-0",
+              rows: [
+                {
+                  key: {
+                    text: "Machine room"
+                  },
+                  value: {
+                    text: event.mammogramData.machineRoom or "Not recorded"
+                  }
+                }
+              ]
+            }) }}
+
+            {# Show repeat information if present #}
+            {% if side.isRepeat and side.repeatReason %}
+              <p class="nhsuk-u-margin-top-2">
+                <strong>Repeat reason:</strong> {{ side.repeatReason }}
+              </p>
+            {% endif %}
+
+          {% else %}
+            {# Automated entry - show full image details #}
+            <h2>
+              {{ side.images | length }} {{ side.viewShortWithSide }} {{ "image" | pluralise(side.images | length) }}
+            </h2>
+
+            {# Loop through each image for each side #}
+            {% for image in side.images %}
+              <div class="nhsuk-grid-row {{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
+                <div class="nhsuk-grid-column-three-quarters">
+                  {{ summaryList({
+                    classes: "nhsuk-u-margin-bottom-0",
+                    rows: [
+                      {
+                        key: {
+                          text: "Captured"
+                        },
+                        value: {
+                          text: image.timestamp | formatDateTime("D MMMM YYYY, H:mm:ss a")
+                        }
                       },
-                      value: {
-                        text: image.timestamp | formatDateTime("D MMMM YYYY, H:mm:ss a")
+                      {
+                        key: {
+                          text: "Accession"
+                        },
+                        value: {
+                          html: image.accessionNumber
+                        }
                       }
-                    },
-                    {
-                      key: {
-                        text: "Accession"
-                      },
-                      value: {
-                        html: image.accessionNumber
-                      }
-                    }
-                  ]
-                }) }}
-              </div>
-              {# Small graphic of mammogram #}
-              <div class="nhsuk-grid-column-one-quarter">
-                <div class="app-mammogram-image--placeholder">
-                  {# <img class="nhsuk-image__img {{ 'app-image-flip-horizontal' if side.side == 'right' }}" src="/images/mammograms/nci-vol-9405-72.jpg" alt="Mammogram image"> #}
-                  <img class="nhsuk-image__img" src="/images/mammogram-diagrams/{{ side.viewShortWithSide | lower }}.png" alt="">
+                    ]
+                  }) }}
+                </div>
+                {# Small graphic of mammogram #}
+                <div class="nhsuk-grid-column-one-quarter">
+                  <div class="app-mammogram-image--placeholder">
+                    <img class="nhsuk-image__img" src="/images/mammogram-diagrams/{{ side.viewShortWithSide | lower }}.png" alt="">
+                  </div>
                 </div>
               </div>
-            </div>
 
-          {# If there are no images, show inset text - likely partial mammography #}
-          {% else %}
-            {% set insetHtml %}
-              <p>There are no {{ side.viewShortWithSide }} images</p>
-            {% endset %}
-            {{ insetText({
-              html: insetHtml
-            }) }}
-          {% endfor %}
+            {# If there are no images, show inset text - likely partial mammography #}
+            {% else %}
+              {% set insetHtml %}
+                <p>There are no {{ side.viewShortWithSide }} images</p>
+              {% endset %}
+              {{ insetText({
+                html: insetHtml
+              }) }}
+            {% endfor %}
 
-          {# If there are multiple images for a side, show UI for repeats #}
-          {# Todo: during capture this should be a radio, later it should  #}
-          {% if side.images | length > 1 %}
+            {# If there are multiple images for a side, show UI for repeats #}
+            {% if side.images | length > 1 %}
 
-            <div class="nhsuk-grid-row">
-              <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-3">
-                {% set repeatReasonHtml %}
-                  {{ input({
-                    label: {
-                      text: "Repeat reason"
-                    },
-                    id: "repeatReason-" + side.viewShortWithSide,
-                    name: "event[mammogramData][repeatReason-" + side.viewShortWithSide + "]",
-                    value: event.mammogramData["repeatReason-" + side.viewShortWithSide]
-                  }) }}
-                {% endset %}
-
-                {{ radios({
-                  idPrefix: "isRepeatQuestion-" + side.viewShortWithSide,
-                  name: "event[mammogramData][isRepeatQuestion-" + side.viewShortWithSide + "]",
-                  fieldset: {
-                    legend: {
-                      text: "Why are there multiple " + side.viewShortWithSide + " images?",
-                      classes: "nhsuk-fieldset__legend--s",
-                      isPageHeading: false
-                    }
-                  },
-                  value: event.mammogramData["isRepeatQuestion-" + side.viewShortWithSide],
-                  items: [
-                    {
-                      value: "isRepeat",
-                      text: "A repeat was needed",
-                      conditional: {
-                        html: repeatReasonHtml
+              <div class="nhsuk-grid-row">
+                <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-3">
+                  
+                  {% set repeatReasons = data.repeatReasons %}
+                  {% set reasonItems = [{
+                    value: "",
+                    text: "Please select",
+                    selected: true
+                  }] %}
+                  
+                  {% for reason in repeatReasons %}
+                    {% set item = {
+                      value: reason,
+                      text: reason
+                    } %}
+                    {% set reasonItems = reasonItems | push(item) %}
+                  {% endfor %}
+                  
+                  {{ radios({
+                    idPrefix: "isRepeatQuestion-" + side.viewShortWithSide,
+                    name: "event[mammogramData][isRepeatQuestion-" + side.viewShortWithSide + "]",
+                    fieldset: {
+                      legend: {
+                        text: "Why are there multiple " + side.viewShortWithSide + " images?",
+                        classes: "nhsuk-fieldset__legend--s",
+                        isPageHeading: false
                       }
                     },
-                    {
-                      value: "extraImages",
-                      text: "Additional images were required to capture complete view"
-                    }
-                  ]
-                }) }}
+                    value: event.mammogramData["isRepeatQuestion-" + side.viewShortWithSide],
+                    items: [
+                      {
+                        value: "isRepeat",
+                        text: "A repeat was needed",
+                        conditional: {
+                          html: select({
+                            id: "repeatReason-" + side.viewShortWithSide,
+                            name: "event[mammogramData][repeatReason-" + side.viewShortWithSide + "]",
+                            label: {
+                              text: "Repeat reason"
+                            },
+                            value: event.mammogramData["repeatReason-" + side.viewShortWithSide],
+                            items: reasonItems
+                          })
+                        }
+                      },
+                      {
+                        value: "extraImages",
+                        text: "Additional images were required to capture complete view"
+                      }
+                    ]
+                  }) }}
+                </div>
               </div>
-            </div>
 
+            {% endif %}
           {% endif %}
         </div>
 
@@ -144,7 +187,8 @@
         const imageCards = document.querySelectorAll('.app-image-card')
         const imagingForm = document.getElementById('imaging-form')
 
-        if (!loadingSpinner || !imageCards.length || !imagingForm) {
+        if (!loadingSpinner || !imageCards.length || !imagingForm)
+        {
           return
         }
 
@@ -164,7 +208,8 @@
               setTimeout(() => card.style.opacity = 1, 50)
 
               // Show form at same time as first image
-              if (index === 0) {
+              if (index === 0)
+              {
                 imagingForm.classList.remove('app-hidden')
                 imagingForm.style.opacity = 0
                 imagingForm.style.transition = 'opacity 0.5s ease-in'

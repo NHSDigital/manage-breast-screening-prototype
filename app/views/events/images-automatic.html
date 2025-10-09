@@ -132,6 +132,20 @@
         ]
       }) }}
 
+      {{ textarea({
+        name: "event[mammogramData][additionalDetails]",
+        id: "additional-details",
+        value: mammogramSource.additionalDetails,
+        label: {
+          text: "Additional details (optional)",
+          classes: "nhsuk-label--m"
+        },
+        hint: {
+          text: "Any other relevant information about the images"
+        },
+        rows: 2
+      }) }}
+
       {{ button({
         text: "Continue"
       }) }}

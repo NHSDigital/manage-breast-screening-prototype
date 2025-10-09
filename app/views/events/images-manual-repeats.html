@@ -1,0 +1,106 @@
+{% extends 'layout-app.html' %}
+
+
+{% set pageHeading = "Repeat images" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './images-manual-repeats-answer' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  {% include "event-workflow.njk" %}
+
+  <p>
+    You have indicated multiple images were needed for some views.
+  </p>
+
+  {% set repeatReasons = data.repeatReasons %}
+
+  {# Build array of views that need repeat questions #}
+  {% set viewsNeedingRepeats = [] %}
+
+  {# Check right breast views #}
+  {% set rightViews = event.mammogramDataTemp.viewsRightBreast or [] %}
+  {% if 'CC' in rightViews and (event.mammogramDataTemp.viewsRightBreastCCCount | int) > 1 %}
+    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Right', view: 'CC', code: 'RCC', count: event.mammogramDataTemp.viewsRightBreastCCCount }) %}
+  {% endif %}
+  {% if 'MLO' in rightViews and (event.mammogramDataTemp.viewsRightBreastMLOCount | int) > 1 %}
+    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Right', view: 'MLO', code: 'RMLO', count: event.mammogramDataTemp.viewsRightBreastMLOCount }) %}
+  {% endif %}
+  {% if 'Eklund' in rightViews and (event.mammogramDataTemp.viewsRightBreastEklundCount | int) > 1 %}
+    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Right', view: 'Eklund', code: 'REklund', count: event.mammogramDataTemp.viewsRightBreastEklundCount }) %}
+  {% endif %}
+
+  {# Check left breast views #}
+  {% set leftViews = event.mammogramDataTemp.viewsLeftBreast or [] %}
+  {% if 'CC' in leftViews and (event.mammogramDataTemp.viewsLeftBreastCCCount | int) > 1 %}
+    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Left', view: 'CC', code: 'LCC', count: event.mammogramDataTemp.viewsLeftBreastCCCount }) %}
+  {% endif %}
+  {% if 'MLO' in leftViews and (event.mammogramDataTemp.viewsLeftBreastMLOCount | int) > 1 %}
+    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Left', view: 'MLO', code: 'LMLO', count: event.mammogramDataTemp.viewsLeftBreastMLOCount }) %}
+  {% endif %}
+  {% if 'Eklund' in leftViews and (event.mammogramDataTemp.viewsLeftBreastEklundCount | int) > 1 %}
+    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Left', view: 'Eklund', code: 'LEklund', count: event.mammogramDataTemp.viewsLeftBreastEklundCount }) %}
+  {% endif %}
+
+  {# Show a question for each view with repeats #}
+  {% for viewItem in viewsNeedingRepeats %}
+
+    {% set reasonItems = [{
+      value: "",
+      text: "Please select",
+      selected: true
+    }] %}
+    
+    {% for reason in repeatReasons %}
+      {% set item = {
+        value: reason,
+        text: reason
+      } %}
+      {% set reasonItems = reasonItems | push(item) %}
+    {% endfor %}
+
+    {{ radios({
+      idPrefix: "isRepeatQuestion-" + viewItem.code,
+      name: "event[mammogramDataTemp][isRepeatQuestion-" + viewItem.code + "]",
+      fieldset: {
+        legend: {
+          text: "Why were " + viewItem.count + " " + viewItem.code + " images taken?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      value: event.mammogramDataTemp["isRepeatQuestion-" + viewItem.code],
+      items: [
+        {
+          value: "isRepeat",
+          text: "A repeat was needed",
+          conditional: {
+            html: select({
+              id: "repeatReason-" + viewItem.code,
+              name: "event[mammogramDataTemp][repeatReason-" + viewItem.code + "]",
+              label: {
+                text: "Repeat reason"
+              },
+              value: event.mammogramDataTemp["repeatReason-" + viewItem.code],
+              items: reasonItems
+            })
+          }
+        },
+        {
+          value: "extraImages",
+          text: "Additional images were required to capture complete view"
+        }
+      ]
+    }) }}
+
+  {% endfor %}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}
