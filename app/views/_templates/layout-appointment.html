@@ -20,6 +20,14 @@
 {% set activeTab = activeTab or "" %}
 {% set activeWorkflowStep = activeWorkflowStep or "" %}
 
+{# Set back link for tab view mode (unless explicitly overridden) #}
+{% if showNavigation and not isAppointmentWorkflow and not back %}
+  {% set back = {
+    href: "/clinics/" + clinicId,
+    text: "Back to clinic"
+  } %}
+{% endif %}
+
 {% block header %}
   {# Parent header with navigation #}
   {{ super() }}
@@ -64,11 +72,8 @@
       
       
     {% else %}
-      {# View mode: tabs navigation #}
-      {% include 'appointment-tabs.njk' %}
-      {% if showPageHeading %}
-        <h1>{{ pageHeading }}</h1>
-      {% endif %}
+      {# View mode: appointment header with tabs navigation #}
+      {% include "_includes/appointment/appointment-header.njk" %}
       {{ appointmentContentHtml | safe }}
       
     {% endif %}
