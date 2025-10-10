@@ -1,0 +1,134 @@
+{# app/views/_templates/layout-base.html #}
+{# Base layout for app pages - contains header, navigation, and basic structure #}
+{# Extended by layout-app.html and layout-appointment.html #}
+
+{% extends "layout.html" %}
+
+{% set bodyClasses = (bodyClasses if bodyClasses) + (" app-dark-mode" if data.settings.darkMode == 'true') %}
+
+{% block beforeContent %}
+  {% if not hideBackLink %}
+    {{ backLink({
+      href: back.href or "javascript:history.back();",
+      text: back.text or "Back"
+    }) }}
+  {% endif %}
+{% endblock %}
+
+{% block header %}
+
+  {% set useMinimalNav = useMinimalNav | default(false) %}
+
+  {% set rootHref = "/" %}
+
+  {{ isAppointmentWorkflow | log("Is appointment workflow") }}
+
+  {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
+  {% if appointmentWorkflow %}
+    {# Explicitly leave appointment if navigating away #}
+    {% set leaveAppointmentHref = eventUrl ~ "/leave" %}
+    {# Override rootHref so things don't get wrong when demoing #}
+    {% set rootHref = leaveAppointmentHref | urlWithReferrer("/") %}
+  {% endif %}
+
+  {% set navItems = [
+    {
+      href: "/dashboard",
+      text: "Home",
+      current: true if navActive == "home"
+    },
+    {
+      href: "/clinics",
+      text: "Screening",
+      current: true if navActive == "screening"
+    },
+    {
+      href: "/reading",
+      text: "Image reading",
+      current: true if navActive == "reading"
+    },
+    {
+      href: "/participants",
+      text: "Participants",
+      current: true if navActive == "participants"
+    },
+    {
+      href: "#",
+      text: "Messages",
+      current: true if navActive == "messages"
+    }, {
+      href: "#",
+      text: "Help and support",
+      current: true if navActive == "help"
+    }
+  ] %}
+
+  {% if appointmentWorkflow %}
+    {% set navItems = [
+      {
+        href: leaveAppointmentHref,
+        text: "Leave this appointment"
+      },
+      {
+        href: "#",
+        text: "Manage appointment"
+      }
+    ] %}
+  {% endif %}
+
+  {# Used by error pages and some misc pages #}
+  {% if useMinimalNav %}
+    {% set navItems = [] %}
+  {% endif %}
+
+  {{ header({
+    account: {
+      items: [
+        {
+          href: "#",
+          text: data.currentUser.email,
+          icon: true
+        },
+        {
+          href: "/choose-user" | urlWithReferrer(currentUrl),
+          text: "Log out"
+        }
+      ]
+    },
+    service: {
+      text: serviceName,
+      href: rootHref
+    },
+    navigation: {
+      items: navItems
+    }
+  }) }}
+
+{% endblock %}
+
+{% block content %}
+
+  {% if event %}
+    {{ event | log("Event data") }}
+  {% endif %}
+
+  {% if participant %}
+    {{ participant | log("Participant") }}
+  {% endif %}
+
+  {% if clinicId and clinic %}
+    {{ clinic | log("Clinic data") }}
+  {% endif %}
+
+  {# Child templates provide the actual page content structure #}
+  {% block pageStructure %}{% endblock %}
+
+{% endblock %}
+
+{% block head %}
+  {{ super() }}
+  {% block mammogramViewer %}
+    <!-- Default: mammogram viewer should be hidden -->
+    <meta name="mammogram-viewer" content="hide">
+  {% endblock %}
+{% endblock head %}

@@ -4,6 +4,7 @@
 
 {% set pageHeading = "Appointment note" %}
 
+{# Appointment note is special as for appointment view we want it at the top level with tabs, but in the worklfow we treat it as a regular form #}
 {% if not isAppointmentWorkflow %}
   {% set showNavigation = true %}
   {% set referrerChain = currentUrl %}
@@ -11,13 +12,14 @@
 
 {% set activeTab = 'appointment-note' %}
 
+{# Unlike other top level pages, we want a 2/3 grid here #}
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {% set allowEdits = true %}
 
 {% set formAction = eventUrl + "/appointment-note-answer" | urlWithReferrer(referrerChain) %}
 
-{% block appointmentContent %}
+{% block pageContent %}
 
   {# Only show H1 in workflow mode - tab view has appointment header #}
   {% if isAppointmentWorkflow %}

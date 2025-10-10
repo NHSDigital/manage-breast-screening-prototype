@@ -12,7 +12,9 @@
 
 {% set activeTab = 'images' %}
 
-{% block appointmentContent %}
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 

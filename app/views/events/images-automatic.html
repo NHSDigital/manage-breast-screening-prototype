@@ -16,7 +16,9 @@
 
 {% set activeTab = 'images' %}
 
-{% block appointmentContent %}
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
 
   {% if data.event.workflowStatus["take-images"] == 'completed' %}
     {{ button({

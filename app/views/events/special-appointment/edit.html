@@ -7,7 +7,7 @@
 {# Change the form action to go to the special-appointment handler #}
 {% set formAction = "./edit-answer" | getReturnUrl(referrerChain) %}
 
-{% block appointmentContent %}
+{% block pageContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 

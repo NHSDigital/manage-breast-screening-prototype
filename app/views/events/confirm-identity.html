@@ -18,7 +18,9 @@
 } %} #}
 
 
-{% block appointmentContent %}
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
 
   {{ appHiddenInput({
     name: "event[workflowStatus][confirm-identity]",

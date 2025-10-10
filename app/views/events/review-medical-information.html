@@ -13,7 +13,9 @@
 {# Display format for medical information sections #}
 {% set displayFormat = "expander" %}
 
-{% block appointmentContent %}
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
 
   {{ appHiddenInput({
     name: "event[workflowStatus][review-medical-information]",

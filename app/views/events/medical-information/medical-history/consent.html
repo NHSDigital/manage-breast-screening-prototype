@@ -6,7 +6,7 @@
 
 {% set formAction = "./consent-answer" | urlWithReferrer(referrerChain, query.scrollTo) %}
 
-{% block appointmentContent %}
+{% block pageContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
