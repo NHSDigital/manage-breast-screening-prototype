@@ -77,6 +77,14 @@ a.app-workflow-side-nav__link {
   pointer-events: none;
 }
 
+// Clickable links (not current, not completed, not disabled) have blue circles
+.app-workflow-side-nav__link--clickable {
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-blue;
+    color: $color_nhsuk-white;
+  }
+}
+
 .app-workflow-side-nav__number {
   display: flex;
   align-items: center;
@@ -127,7 +135,16 @@ a.app-workflow-side-nav__link {
   }
 }
 
+// Clickable links (not current, not completed, not disabled) have blue circles
+.app-workflow-side-nav__link--clickable {
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-blue;
+    color: $color_nhsuk-white;
+  }
+}
+
 .app-workflow-side-nav__item--completed {
+  .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
   .app-workflow-side-nav__number {
     background-color: $color_nhsuk-green;
     color: $color_nhsuk-white;
@@ -139,6 +156,7 @@ a.app-workflow-side-nav__link {
 }
 
 .app-workflow-side-nav__item--disabled {
+  .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
   .app-workflow-side-nav__number {
     background-color: $color_nhsuk-grey-3;
     color: $color_nhsuk-grey-1;
