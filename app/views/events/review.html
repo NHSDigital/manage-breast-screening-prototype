@@ -93,23 +93,23 @@
         },
         {
           key: {
-            text: "Notes about appointment"
+            text: "Appointment note"
           },
           value: {
-            html: "Not provided" | asHint
+            html: event.appointmentNote
           },
           actions: {
             items: [
               {
-                href: "#",
+                href: (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain),
                 text: "Change",
-                visuallyHiddenText: "observations"
+                visuallyHiddenText: "appointment note"
               }
             ]
           }
         }
       ]
-    }) }}
+    } | handleSummaryListMissingInformation) }}
   {% endset %}
 
   {{ card({

@@ -1,6 +1,6 @@
 {# app/views/events/mammography/medical-information/symptoms/details.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set type = event.symptomTemp.type %}
 {% if type != "Other" %}
@@ -13,16 +13,7 @@
 
 {% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
-{# {% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
- #}
-
-
-
-
-{% block pageContent %}
+{% block appointmentContent %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">

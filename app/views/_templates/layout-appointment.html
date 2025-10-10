@@ -20,6 +20,9 @@
 {% set activeTab = activeTab or "" %}
 {% set activeWorkflowStep = activeWorkflowStep or "" %}
 
+{# Set referrerChain to current URL for change links #}
+{% set referrerChain = referrerChain or currentUrl %}
+
 {# Set back link for tab view mode (unless explicitly overridden) #}
 {% if showNavigation and not isAppointmentWorkflow and not back %}
   {% set back = {
@@ -76,8 +79,7 @@
           </div>
         </div>
       </div>
-      
-      
+
     {% else %}
       {# View mode: tabs already shown in pageNavigation block #}
       {{ appointmentContentHtml | safe }}
@@ -85,17 +87,7 @@
     {% endif %}
     
   {% else %}
-    {# Pages without navigation: parent layout-app handles grid wrapper based on gridColumn #}
-    {% if showPageHeading %}
-      <h1>
-        {% if participant %}
-          <span class="nhsuk-caption-l">
-            {{ participant | getFullName }}
-          </span>
-        {% endif %}
-        {{ pageHeading }}
-      </h1>
-    {% endif %}
+    {# Pages without navigation: render content directly (pages should include their own H1) #}
     {{ appointmentContentHtml | safe }}
     
   {% endif %}

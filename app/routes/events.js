@@ -1986,7 +1986,7 @@ module.exports = (router) => {
 
   // Handle appointment note form submission
   router.post(
-    '/clinics/:clinicId/events/:eventId/appointment-note',
+    '/clinics/:clinicId/events/:eventId/appointment-note-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
