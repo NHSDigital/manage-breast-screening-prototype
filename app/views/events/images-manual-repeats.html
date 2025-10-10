@@ -1,17 +1,17 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'take-images' %}
 
 {% set pageHeading = "Repeat images" %}
-
+{% set hideBackLink = true %}
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {% set formAction = './images-manual-repeats-answer' %}
 
 {% set activeTab = 'images' %}
 
-{% block pageContent %}
-
-  {% include "event-workflow.njk" %}
+{% block appointmentContent %}
 
   <p>
     You have indicated multiple images were needed for some views.

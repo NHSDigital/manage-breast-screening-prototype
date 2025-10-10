@@ -1,6 +1,5 @@
 
-{% extends 'layout-app.html' %}
-
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Screening complete" %}
 
@@ -8,14 +7,7 @@
 
 {% set formAction = './complete' %}
 
-{# {% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
- #}
-
-
-{% block pageContent %}
+{% block appointmentContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 

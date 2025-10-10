@@ -1,5 +1,8 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
+{% set showNavigation = true %}
+{% set hideBackLink = true %}
+{% set activeWorkflowStep = 'take-images' %}
 
 {% set pageHeading = "Record images taken" %}
 
@@ -9,9 +12,7 @@
 
 {% set activeTab = 'images' %}
 
-{% block pageContent %}
-
-  {% include "event-workflow.njk" %}
+{% block appointmentContent %}
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 

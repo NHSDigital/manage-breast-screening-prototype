@@ -1641,7 +1641,7 @@ module.exports = (router) => {
         if (!data.event.workflowStatus) {
           data.event.workflowStatus = {}
         }
-        data.event.workflowStatus.images = 'completed'
+        data.event.workflowStatus['take-images'] = 'completed'
 
         // Redirect to review
         return res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
@@ -1766,7 +1766,7 @@ module.exports = (router) => {
       if (!data.event.workflowStatus) {
         data.event.workflowStatus = {}
       }
-      data.event.workflowStatus.images = 'completed'
+      data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to review
       res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
@@ -1812,7 +1812,7 @@ module.exports = (router) => {
       if (!data.event.workflowStatus) {
         data.event.workflowStatus = {}
       }
-      data.event.workflowStatus.images = 'completed'
+      data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to review
       res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
