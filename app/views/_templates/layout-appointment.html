@@ -43,6 +43,13 @@
   {% endif %}
 {% endblock %}
 
+{% block pageNavigation %}
+  {# View mode: appointment header with tabs (outside main form) #}
+  {% if showNavigation and not isAppointmentWorkflow %}
+    {% include "_includes/appointment/appointment-header.njk" %}
+  {% endif %}
+{% endblock %}
+
 {% block pageContent %}
 
   {# Capture the content block once #}
@@ -72,8 +79,7 @@
       
       
     {% else %}
-      {# View mode: appointment header with tabs navigation #}
-      {% include "_includes/appointment/appointment-header.njk" %}
+      {# View mode: tabs already shown in pageNavigation block #}
       {{ appointmentContentHtml | safe }}
       
     {% endif %}

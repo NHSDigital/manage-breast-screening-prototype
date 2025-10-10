@@ -1,14 +1,15 @@
 {# app/views/events/appointment-note.html #}
 
-{% extends 'layout-appointment-tab.html' %}
+{% extends 'layout-appointment.html' %}
 
+{% set showNavigation = true %}
 {% set activeTab = 'appointment-note' %}
 
 {% set allowEdits = true %}
 
 {% set formAction = eventUrl + "/appointment-note" %}
 
-{% block tabContent %}
+{% block appointmentContent %}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
