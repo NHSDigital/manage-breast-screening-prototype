@@ -569,7 +569,7 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
-      const action = req.body.action || req.query.action // 'save' or 'save-and-add'
+      const action = req.body?.action || req.query.action // 'save' or 'save-and-add'
       const nextSymptomType = req.query.symptomType // camelCase symptom type
       const referrerChain = req.query.referrerChain
       const scrollTo = req.query.scrollTo
@@ -632,9 +632,11 @@ module.exports = (router) => {
           symptom.isIntermittent = true
         }
 
-        symptom.hasStopped = symptomTemp?.hasStopped?.includes('yes')
-          ? true
-          : false
+        symptom.hasStopped =
+          Array.isArray(symptomTemp.hasStopped) &&
+          symptomTemp.hasStopped.includes('yes')
+            ? true
+            : false
 
         if (symptom.hasStopped) {
           symptom.approximateDateStopped = symptomTemp.approximateDateStopped
