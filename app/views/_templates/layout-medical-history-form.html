@@ -1,8 +1,6 @@
 {# app/views/_templates/layout-medical-history-form.html #}
 
-{% extends 'layout-app.html' %}
-
-{# {% set gridColumn = "nhsuk-grid-column-full" %} #}
+{% extends 'layout-appointment.html' %}
 
 {# Find the type data object from the array #}
 {% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}
@@ -16,7 +14,7 @@
 
 {% set formAction = "./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo) %}
 
-{% block pageContent %}
+{% block appointmentContent %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
