@@ -57,7 +57,7 @@
         },
         {
           text: "Make this appointment a special appointment" if not event | isSpecialAppointment else "Change special appointment details",
-          href: eventId ~ "/special-appointment/edit" | urlWithReferrer(currentUrl),
+          href: eventUrl ~ "/special-appointment/edit" | urlWithReferrer(eventUrl),
           classes: "nhsuk-button--secondary"
         }
       ],

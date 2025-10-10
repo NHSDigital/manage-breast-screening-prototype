@@ -1,4 +1,4 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Confirm special appointment requirements" %}
 
@@ -19,7 +19,7 @@
 
 {% set allowEdits = true %}
 
-{% block pageContent %}
+{% block appointmentContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
@@ -29,8 +29,6 @@
     </span>
     {{ pageHeading }}
   </h1>
-
-  {{ data.event.specialAppointment | log("specialAppointment data") }}
 
 
 

@@ -1,15 +1,13 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Provide special appointment details" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {# Change the form action to go to the special-appointment handler #}
-{% set formAction = "./edit-answer"  | getReturnUrl(referrerChain)  %}
+{% set formAction = "./edit-answer" | getReturnUrl(referrerChain) %}
 
-{% block pageContent %}
-
-  {{ participant | log }}
+{% block appointmentContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 

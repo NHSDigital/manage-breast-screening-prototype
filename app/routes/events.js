@@ -433,7 +433,7 @@ module.exports = (router) => {
           scrollTo
         )
 
-        res.redirect(returnUrl)
+        return res.redirect(returnUrl)
       }
 
       // Handle the direct cancel action from appointment-should-not-proceed.html

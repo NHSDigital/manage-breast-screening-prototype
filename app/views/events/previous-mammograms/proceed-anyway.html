@@ -1,12 +1,12 @@
 {# app/views/events/mammography/previous-mammograms/proceed-anyway.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "You are continuing despite a recent mammogram" %}
 
-{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, scrollTo) %}
+{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
-{% block pageContent %}
+{% block appointmentContent %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
