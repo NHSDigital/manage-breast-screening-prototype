@@ -4,7 +4,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./consent-answer" %}
+{% set formAction = "./consent-answer" | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block appointmentContent %}
 

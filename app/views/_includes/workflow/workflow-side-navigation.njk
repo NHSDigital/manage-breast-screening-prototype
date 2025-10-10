@@ -24,7 +24,13 @@
 ] %}
 
 <nav class="app-workflow-side-nav" aria-label="Workflow steps">
-  <h2 class="app-workflow-side-nav__heading">Workflow steps</h2>
+
+  <h2 class="app-workflow-side-nav__heading">
+    <span class="nhsuk-caption-m">
+      {{ clinic.clinicType | sentenceCase }} appointment
+    </span>
+    Workflow steps
+  </h2>
   
   <ol class="app-workflow-side-nav__list">
     {% for item in workflowSteps %}

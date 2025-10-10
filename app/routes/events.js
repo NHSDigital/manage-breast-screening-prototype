@@ -989,7 +989,11 @@ module.exports = (router) => {
         if (hasBreastImplants) {
           // Redirect to consent page immediately - we'll save the data after consent
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+            urlWithReferrer(
+              `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`,
+              referrerChain,
+              scrollTo
+            )
           )
         }
       }

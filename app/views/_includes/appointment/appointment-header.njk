@@ -22,7 +22,7 @@
     <span class="nhsuk-caption-l">
       {{ clinic.clinicType | sentenceCase }} appointment
     </span>
-    {{ (pageHeading | default(participant | getFullName)) | safe }}
+    {{ participant | getFullName | safe }}
   </h1>
 
   <div class="app-header-with-status__status-tag">
