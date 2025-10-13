@@ -22,64 +22,63 @@
     {{ pageHeading }}
   </h1>
 
-    {# Location #}
+  {# Location #}
 
   {# Nipple change location #}
   {% if event.symptomTemp.type == "Nipple change" %}
 
-    {{ checkboxes({
-      idPrefix: "nippleChangeLocation",
-      name: "event[symptomTemp][nippleChangeLocation]",
-      values: event.symptomTemp.nippleChangeLocation,
-      classes: "app-checkboxes--inline",
-      fieldset: {
+    <div class="nhsuk-form-group">
+      {% call fieldset({
         legend: {
           text: "Which nipple has changed?",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
-        }
-      },
-      items: [
-        {
-          value: "right nipple",
-          text: "Right nipple"
+          classes: "nhsuk-fieldset__legend--m"
         },
-        {
-          value: "left nipple",
-          text: "Left nipple"
+        attributes: {
+          "aria-describedby": "nipple-change-location-error" if errors.nippleChangeLocation else ""
         }
-      ]
-    }) }}
+      }) %}
 
-    {# {{ radios({
-      idPrefix: "nippleChangeLocation",
-      name: "event[symptomTemp][nippleChangeLocation]",
-      value: event.symptomTemp.nippleChangeLocation,
-      fieldset: {
-        legend: {
-          text: "Which nipple has changed?",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
-        }
-      },
-      items: [
-        {
-          value: "right nipple",
-          text: "Right nipple"
-        },
-        {
-          value: "left nipple",
-          text: "Left nipple"
-        },
-        {
-          value: "both nipples",
-          text: "Both nipples"
-        }
-      ]
-    }) }} #}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            {{ checkboxes({
+              name: "event[symptomTemp][nippleChangeLocation]",
+              values: event.symptomTemp.nippleChangeLocation,
+              idPrefix: "nippleChangeLocationRight",
+              formGroup: {
+                classes: "nhsuk-u-margin-bottom-0"
+              },
+              items: [
+                {
+                  value: "right nipple",
+                  text: "Right nipple"
+                }
+              ]
+            }) }}
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            {{ checkboxes({
+              name: "event[symptomTemp][nippleChangeLocation]",
+              values: event.symptomTemp.nippleChangeLocation,
+              idPrefix: "nippleChangeLocationLeft",
+              formGroup: {
+                classes: "nhsuk-u-margin-bottom-0"
+              },
+              items: [
+                {
+                  value: "left nipple",
+                  text: "Left nipple"
+                }
+              ]
+            }) }}
+          </div>
+        </div>
+
+      {% endcall %}
+    </div>
 
   {% else %}
 
+    {# General symptom location #}
     {% set radioQuestionText %}
       {% if event.symptomTemp.type == "Other" %}
         Where is the symptom?
@@ -88,85 +87,117 @@
       {% endif %}
     {% endset %}
 
-    {{ radios({
-      idPrefix: "location",
-      name: "event[symptomTemp][location]",
-      value: event.symptomTemp.location,
-      fieldset: {
+    <div class="nhsuk-form-group">
+      {% call fieldset({
         legend: {
           text: radioQuestionText,
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
+          classes: "nhsuk-fieldset__legend--m"
+        },
+        attributes: {
+          "aria-describedby": "location-error" if errors.location else ""
         }
-      },
-      items: [
-        {
-          value: "right breast",
-          text: "Right breast",
-          conditional: {
-            html: input({
-              name: "event[symptomTemp][rightBreastDescription]",
-              label: {
-                text: "Describe the specific area"
+      }) %}
+
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            {{ radios({
+              idPrefix: "locationRightBreast",
+              name: "event[symptomTemp][location]",
+              value: event.symptomTemp.location,
+              formGroup: {
+                classes: "nhsuk-u-margin-bottom-2"
               },
-              value: event.symptomTemp.rightBreastDescription,
-              classes: "nhsuk-u-width-two-thirds"
-            })
-          }
-        },
-        {
-          value: "left breast",
-          text: "Left breast",
-          conditional: {
-            html: input({
-              name: "event[symptomTemp][leftBreastDescription]",
-              label: {
-                text: "Describe the specific area"
+              items: [
+                {
+                  value: "right breast",
+                  text: "Right breast",
+                  conditional: {
+                    html: input({
+                      name: "event[symptomTemp][rightBreastDescription]",
+                      label: {
+                        text: "Describe the specific area"
+                      },
+                      value: event.symptomTemp.rightBreastDescription
+                    })
+                  }
+                }
+              ]
+            }) }}
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            {{ radios({
+              idPrefix: "locationLeftBreast",
+              name: "event[symptomTemp][location]",
+              value: event.symptomTemp.location,
+              formGroup: {
+                classes: "nhsuk-u-margin-bottom-2"
               },
-              value: event.symptomTemp.leftBreastDescription,
-              classes: "nhsuk-u-width-two-thirds"
-            })
-          }
-        },
-        {
-          value: "both breasts",
-          text: "Both breasts",
-          conditional: {
-            html: input({
-              name: "event[symptomTemp][bothBreastsDescription]",
-              label: {
-                text: "Describe the specific areas"
-              },
-              value: event.symptomTemp.bothBreastsDescription,
-              classes: "nhsuk-u-width-two-thirds"
-            })
-          }
-        } if event.symptomTemp.type == "Lumps" else {},
-        {
-          divider: "or"
-        },
-        {
-          value: "other",
-          text: "Other",
-          _hint: {
-            text: "For example, the armpit"
-          },
-          conditional: {
-            html: input({
-              name: "event[symptomTemp][otherLocationDescription]",
-              label: {
-                text: "Describe the specific area"
-              },
+              items: [
+                {
+                  value: "left breast",
+                  text: "Left breast",
+                  conditional: {
+                    html: input({
+                      name: "event[symptomTemp][leftBreastDescription]",
+                      label: {
+                        text: "Describe the specific area"
+                      },
+                      value: event.symptomTemp.leftBreastDescription
+                    })
+                  }
+                }
+              ]
+            }) }}
+          </div>
+        </div>
+
+        {{ radios({
+          idPrefix: "locationOther",
+          name: "event[symptomTemp][location]",
+          value: event.symptomTemp.location,
+          items: [
+            {
+              value: "both breasts",
+              text: "Both breasts",
+              conditional: {
+                html: input({
+                  name: "event[symptomTemp][bothBreastsDescription]",
+                  label: {
+                    text: "Describe the specific areas"
+                  },
+                  value: event.symptomTemp.bothBreastsDescription,
+                  classes: "nhsuk-u-width-two-thirds"
+                })
+              }
+            } if event.symptomTemp.type == "Lumps" else {},
+            {
+              divider: "or"
+            },
+            {
+              value: "other",
+              text: "Other",
               hint: {
-                text: "For example, the left armpit"
+                text: "For example, the armpit"
               },
-              value: event.symptomTemp.otherLocationDescription,
-              classes: "nhsuk-u-width-two-thirds"
-            })
-          }
-        }
-      ] | removeEmpty
-    }) }}
+              conditional: {
+                html: input({
+                  name: "event[symptomTemp][otherLocationDescription]",
+                  label: {
+                    text: "Describe the specific area"
+                  },
+                  hint: {
+                    text: "For example, the left armpit"
+                  },
+                  value: event.symptomTemp.otherLocationDescription,
+                  classes: "nhsuk-u-width-two-thirds"
+                })
+              }
+            }
+          ] | removeEmpty
+        }) }}
+
+      {% endcall %}
+    </div>
 
   {% endif %}
 
@@ -524,4 +555,3 @@
   {# {% include "screening-cannot-proceed-link.njk" %} #}
 
 {% endblock %}
-
