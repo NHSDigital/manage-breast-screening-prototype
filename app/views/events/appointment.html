@@ -1,15 +1,14 @@
 {# app/views/events/appointment #}
 
-{% extends 'layout-appointment-tab.html' %}
+{% extends 'layout-appointment.html' %}
 
-{# {% set pageHeading = "Screening appointment" %} #}
-
-
+{% set pageHeading = "Screening appointment" %}
+{% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
-
 {% set formAction = "./start" %}
 
-{% block tabContent %}
+
+{% block pageContent %}
 
   {% set allowEdits = true %}
   {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}

@@ -1,23 +1,23 @@
-{# app/views/_includes/event-active-tabs.njk #}
+{# app/views/_includes/workflow/workflow-top-nav.njk #}
 
 {# Tracking of status #}
-{% set identityStageCompleted = true if data.event.workflowStatus['identity'] == 'completed' else false %}
-{% set medicalInformationStageCompleted = true if data.event.workflowStatus['record-medical-information'] == 'completed' else false %}
+{% set identityStageCompleted = true if data.event.workflowStatus['confirm-identity'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if data.event.workflowStatus['review-medical-information'] == 'completed' else false %}
 {% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
-{% set imagesStageCompleted = true if data.event.workflowStatus['images'] == 'completed' else false %}
+{% set imagesStageCompleted = true if data.event.workflowStatus['take-images'] == 'completed' else false %}
 
 {# Build secondary nav #}
 {% set secondaryNavItems = [] %}
 
   {# { id: 'appointment', label: 'Appointment' }, #}
 
-{% for item in [
-  { id: 'identity', label: 'Participant' },
+{% for item in ([
+  { id: 'confirm-identity', label: 'Confirm identity' },
 
-  { id: 'record-medical-information', label: 'Medical information' },
-  { id: 'images', label: 'Images' },
+  { id: 'review-medical-information', label: 'Review medical information' },
+  { id: 'take-images', label: 'Take images' },
   { id: 'review', label: 'Review' }
-] %}
+] | removeEmpty) %}
   {% set href -%}
     /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}
   {% endset %}
@@ -33,12 +33,10 @@
 
   {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
 
-
-
   {% set isDisabled = false %}
   {# Todo: refactor this be easier to check status #}
 
-  {% if item.id == 'record-medical-information' %}
+  {% if item.id == 'review-medical-information' %}
     {% set isDisabled = true %}
     {% if identityStageCompleted %}
       {% set isDisabled = false %}
@@ -75,7 +73,7 @@
 
   {% set secondaryNavItems = secondaryNavItems | push({
     html: linkHtml,
-    current: true if item.id == activeTab
+    current: true if (item.id == activeWorkflowStep) or (item.id == activeTab)
   }) %}
 
   {# text: (tickSvg if isCompleted) + item.label,

@@ -1,32 +1,29 @@
 {# app/views/events/identity #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
-{% set pageHeading = "Review participant" %}
-
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set pageHeading = "Confirm identity" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'confirm-identity' %}
+{% set hideBackLink = true %}
 
 {% set referrerChain = currentUrl %}
 
-{% set formAction = "./record-medical-information" | getReturnUrl(referrerChain) %}
+{% set formAction = "./review-medical-information" | getReturnUrl(referrerChain) %}
 
 {# {% set hideBackLink = true %} #}
-{% set back = {
+{# {% set back = {
   href: eventUrl ~ "/leave",
   text: "Leave this appointment"
-} %}
+} %} #}
 
-{% set showWorkflowNav = true %}
-{% set activeTab = 'identity' %}
 
 {% block pageContent %}
 
-
-
-  {% include "event-workflow.njk" %}
+  <h1>{{ pageHeading }}</h1>
 
   {{ appHiddenInput({
-    name: "event[workflowStatus][identity]",
+    name: "event[workflowStatus][confirm-identity]",
     value: "completed"
   }) }}
 
@@ -35,7 +32,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
-        text: "Confirm identity" if data.event.workflowStatus.identity != 'completed' else "Next section",
+        text: "Confirm identity" if data.event.workflowStatus['confirm-identity'] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0"
       }) }}
 

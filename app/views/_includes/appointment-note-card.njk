@@ -6,7 +6,7 @@
   {% set warningCalloutHtml %}
     {% if allowEdits %}
       <div style="text-align: right;">
-        <a href="{{ eventUrl }}/appointment-note{{ ('?referrerChain=' + referrerChain) if referrerChain }}"
+        <a href="{{ (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain) }}"
           style="font-size: 19px;">Change<span class="nhsuk-u-visually-hidden"> note</span></a>
       </div>
     {% endif %}

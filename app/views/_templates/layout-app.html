@@ -1,216 +1,40 @@
+{# app/views/_templates/layout-app.html #}
+{# Standard single-column layout with flash messages and form wrapper #}
 
-{% extends "layout.html" %}
+{% extends "layout-base.html" %}
 
-{% set bodyClasses = (bodyClasses if bodyClasses) + (" app-dark-mode" if data.settings.darkMode == 'true') %}
+{% block pageStructure %}
 
-{% block beforeContent %}
-{% if not hideBackLink %}
-  {{ backLink({
-    href: back.href or "javascript:history.back();",
-    text: back.text or "Back"
-  }) }}
-{% endif %}
-
-
-{% endblock %}
-
-{% block header %}
-
-  {% set useMinimalNav = useMinimalNav | default(false) %}
-
-  {% set rootHref = "/" %}
-
-  {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
-  {% if appointmentWorkflow %}
-    {# Explicitly leave appointment if navigating away #}
-    {% set leaveAppointmentHref = eventUrl ~ "/leave" %}
-    {# Override rootHref so things don't get wrong when demoing #}
-    {% set rootHref = leaveAppointmentHref | urlWithReferrer("/") %}
-  {% endif %}
-
-  {% set navItems = [
-    {
-      href: "/dashboard",
-      text: "Home",
-      current: true if navActive == "home"
-    },
-    {
-      href: "/clinics",
-      text: "Screening",
-      current: true if navActive == "screening"
-    },
-    {
-      href: "/reading",
-      text: "Image reading",
-      current: true if navActive == "reading"
-    },
-    {
-      href: "/participants",
-      text: "Participants",
-      current: true if navActive == "participants"
-    },
-    {
-      href: "#",
-      text: "Messages",
-      current: true if navActive == "messages"
-    }, {
-      href: "#",
-      text: "Help and support",
-      current: true if navActive == "help"
-    }
-  ] %}
-
-  {% if appointmentWorkflow %}
-    {% set navItems = [
-      {
-        href: leaveAppointmentHref,
-        text: "Leave this appointment"
-      },
-      {
-        href: "#",
-        text: "Manage appointment"
-      }
-    ] %}
-  {% endif %}
-
-  {# Used by error pages and some misc pages #}
-  {% if useMinimalNav %}
-    {% set navItems = [] %}
-  {% endif %}
-
-
-  {{ header({
-    account: {
-      items: [
-        {
-          href: "#",
-          text: data.currentUser.email,
-          icon: true
-        },
-        {
-          href: "/choose-user" | urlWithReferrer(currentUrl),
-          text: "Log out"
-        }
-      ]
-    },
-    service: {
-      text: serviceName,
-      href: rootHref
-    },
-    navigation: {
-      items: navItems
-    }
-  }) }}
- {#  {{ serviceheader({
-    service: {
-      name: serviceName,
-      href: "/home" if not public else "/"
-    } if not transactionalService,
-    homeHref: "/home" if not public else "/",
-    transactional: true if transactionalService,
-    transactionalService: transactionalService,
-    primaryLinks: navigation.primaryLinks if not public,
-    account: navigation.account if not public
-  }) }} #}
-
-  {% if event and event | isAppointmentWorkflow %}
-    {% include "_includes/appointment-header.njk" %}
-  {% endif %}
-
-{% endblock %}
-
-{% block content %}
-
-{% if event %}
-  {{ event | log("Event data") }}
-{% endif %}
-
-{% if participant %}
-  {{ participant | log("Participant") }}
-{% endif %}
-
-{% if clinicId and clinic %}
-  {{ clinic | log("Clinic data") }}
-{% endif %}
-
-{% if flash.error or flash.success or flash.info or flash.warning %}
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-two-thirds">
-
-    {% if flash.error %}
-      {{ errorSummary({
-        "titleText": "There is a problem",
-        "errorList": flash.error
-      }) }}
-      {{ flash.error | log("Flash error") }}
-    {% endif %}
-
-    {% if flash.success %}
-      {% set flashSuccess = flash.success[0] %}
-      {% if flashSuccess | isString %}
-        {{ notificationBanner({
-          text: flashSuccess,
-          type: "success",
-          disableAutoFocus: true if disableAutoFocus else false
-        }) }}
-      {% else %}
-        {% set html = flashSuccess.html %}
-        {% if flashSuccess.wrapWithHeading %}
-          {% set html %}
-            <p class="nhsuk-notification-banner__heading">
-              {{ flashSuccess.wrapWithHeading | safe }}
-            </p>
-          {% endset %}
-        {% endif %}
-        {{ notificationBanner({
-          title: flashSuccess.title,
-          html: html,
-          text: flashSuccess.text,
-          type: "success",
-          disableAutoFocus: true if disableAutoFocus else false
-        }) }}
-      {% endif %}
-    {% endif %}
-
-    {% if flash.info %}
-      {{ notificationBanner({
-        html: flash.info,
-        type: "info"
-      }) }}
-    {% endif %}
-
-    {% if flash.warning %}
-      {{ notificationBanner({
-        html: flash.warning,
-        type: "warning"
-      }) }}
-    {% endif %}
-  </div>
-</div>
-{% endif %}
-
-{# Awkwardly test if pageNavigation is set. This is a workaround for Nunjucks
-   not having a way to check if a block is defined or not.
-
-See related issues:
-https://github.com/mozilla/nunjucks/issues/135
-https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
-
-{% macro pageNavigationWrapper() %}
-  {% if caller() | length > 0 %}
+  {% if flash.error or flash.success or flash.info or flash.warning %}
     <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-full">
-        {{ caller() }}
+      <div class="nhsuk-grid-column-two-thirds">
+        {% include "_includes/flash-messages.njk" %}
       </div>
     </div>
   {% endif %}
-{% endmacro %}
-{% call pageNavigationWrapper() %}{% block pageNavigation %}{% endblock pageNavigation %}{% endcall %}
 
-{% if gridColumn != "none" %}
-<div class="nhsuk-grid-row">
-  <div class="{{ gridColumn or 'nhsuk-grid-column-two-thirds' }}">
-{% endif %}
+  {# Awkwardly test if pageNavigation is set. This is a workaround for Nunjucks
+    not having a way to check if a block is defined or not.
+
+  See related issues:
+  https://github.com/mozilla/nunjucks/issues/135
+  https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
+
+  {% macro pageNavigationWrapper() %}
+    {% if caller() | length > 0 %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-full">
+          {{ caller() }}
+        </div>
+      </div>
+    {% endif %}
+  {% endmacro %}
+  {% call pageNavigationWrapper() %}{% block pageNavigation %}{% endblock pageNavigation %}{% endcall %}
+
+  {% if gridColumn != "none" %}
+  <div class="nhsuk-grid-row">
+    <div class="{{ gridColumn or 'nhsuk-grid-column-two-thirds' }}">
+  {% endif %}
 
     {% if formAction or isForm %}
       <form action="{{formAction or './'}}" method="{{ formMethod or 'POST'}}">
@@ -220,18 +44,10 @@ https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
       </form>
     {% endif %}
 
-{# This is paired with a matching opening div #}
-{% if gridColumn != "none" %}
+  {# This is paired with a matching opening div #}
+  {% if gridColumn != "none" %}
+    </div>
   </div>
-</div>
-{% endif %}
+  {% endif %}
 
-{% endblock %}
-
-{% block head %}
-  {{ super() }}
-  {% block mammogramViewer %}
-    <!-- Default: mammogram viewer should be hidden -->
-    <meta name="mammogram-viewer" content="hide">
-  {% endblock %}
-{% endblock head %}
+{% endblock pageStructure %}

@@ -1,0 +1,124 @@
+{# app/views/_templates/layout-appointment.html #}
+{# Layout for appointment/event pages with three modes: workflow, tab view, and form #}
+{% extends 'layout-base.html' %}
+
+
+
+{# Wider page for workflow mode with side nav #}
+{% if isAppointmentWorkflow and showNavigation %}
+  {# {% set containerClasses = "nhsuk-width-container nhsuk-width-container--wide" %} #}
+  {% set bodyClasses = (bodyClasses or "") + " app-workflow-mode" %}
+{% endif %}
+
+{# Pages set these variables to control behaviour #}
+{% set showNavigation = showNavigation if showNavigation != undefined else false %}
+{% set activeTab = activeTab or "" %}
+{% set activeWorkflowStep = activeWorkflowStep or "" %}
+
+{# Full width when showing navigation - as these tend to be summary lists #}
+{% set gridDefault = "nhsuk-grid-column-full" if showNavigation else "nhsuk-grid-column-two-thirds" %}
+{% set gridColumn = gridColumn or gridDefault %}
+
+{# Set referrerChain to current URL for change links #}
+{% set referrerChain = referrerChain or currentUrl %}
+
+{# Set back link for tab view mode (unless explicitly overridden) #}
+{% if showNavigation and not isAppointmentWorkflow and not back %}
+  {% set back = {
+    href: "/clinics/" + clinicId,
+    text: "Back to clinic"
+  } %}
+{% endif %}
+
+{% block header %}
+  {# Parent header with navigation #}
+  {{ super() }}
+  
+  {# Appointment status bar - full width #}
+  {% if isAppointmentWorkflow %}
+    {% include "_includes/appointment-status-bar.njk" %}
+  {% endif %}
+{% endblock %}
+
+{% block pageStructure %}
+
+  {# Awkwardly test if pageNavigation is set. This is a workaround for Nunjucks
+    not having a way to check if a block is defined or not. We want to do this because we want page navigation to be wrapped in grid system divs. But if it's not set, we shouldn't output those divs.
+
+  See related issues:
+  https://github.com/mozilla/nunjucks/issues/135
+  https://github.com/mozilla/nunjucks/issues/164#issuecomment-3073581360 #}
+
+  {% macro pageNavigationWrapper() %}
+    {% if caller() | length > 0 %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-full">
+          {{ caller() }}
+        </div>
+      </div>
+    {% endif %}
+  {% endmacro %}
+
+  {% call pageNavigationWrapper() %}
+    {% block pageNavigation %}
+      {# View mode: appointment header with tabs (outside main form) #}
+      {% if showNavigation and not isAppointmentWorkflow %}
+        {% include "_includes/flash-messages.njk" %}
+        {% include "_includes/appointment/appointment-header.njk" %}
+      {% endif %}
+    {% endblock %}
+  {% endcall %}
+
+  {# Capture the page content with flash messages, grid and form wrapper applied #}
+  {% set wrappedPageContent %}
+    {# Flash messages for all pages - except appointment with navigation #}
+    {% if (isAppointmentWorkflow or (not isAppointmentWorkflow and not showNavigation)) %}
+      {% include "_includes/flash-messages.njk" %}
+    {% endif %}
+
+    {% if gridColumn != "none" %}
+    <div class="nhsuk-grid-row">
+      <div class="{{ gridColumn }}">
+    {% endif %}
+
+      {% if formAction or isForm %}
+        <form action="{{formAction or './'}}" method="{{ formMethod or 'POST'}}">
+      {% endif %}
+      {% block pageContent %}{% endblock %}
+      {% if formAction or isForm %}
+        </form>
+      {% endif %}
+
+    {% if gridColumn != "none" %}
+      </div>
+    </div>
+    {% endif %}
+  {% endset %}
+
+  {# Pages with navigation show either workflow side nav or tabs #}
+  {% if showNavigation %}
+    
+    {% if isAppointmentWorkflow %}
+      {# Workflow mode: side navigation layout #}
+      <div class="app-workflow-container">
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-quarter">
+            {% include '_includes/workflow/workflow-side-navigation.njk' %}
+          </div>
+          <div class="nhsuk-grid-column-three-quarters">
+            {{ wrappedPageContent | safe }}
+          </div>
+        </div>
+      </div>
+
+    {% else %}
+      {# View mode: tabs already shown in pageNavigation block #}
+      {{ wrappedPageContent | safe }}
+    {% endif %}
+    
+  {% else %}
+    {# Pages without navigation: render content directly (pages should include their own H1) #}
+    {{ wrappedPageContent | safe }}
+  {% endif %}
+
+{% endblock pageStructure %}

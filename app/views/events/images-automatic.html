@@ -1,9 +1,15 @@
-
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set imageCount = event.mammogramData.metadata.totalImages %}
 
 {% set pageHeading = imageCount + " images taken" %}
+
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'take-images' %}
+{% set hideBackLink = true %}
+
+{# {% set hideBackLink = true %} #}
+
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set formAction = './imaging-answer' %}
@@ -12,19 +18,9 @@
 
 {% block pageContent %}
 
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+  <h1>{{ pageHeading }}</h1>
 
-  {# <span class="nhsuk-caption-l">
-    {{ participant | getFullName }}
-  </span>
-  <h1 class="nhsuk-heading-l js-image-count">
-    {{ pageHeading }}
-  </h1> #}
-
-
-  {% include "event-workflow.njk" %}
-
-  {% if data.event.workflowStatus.images == 'completed' %}
+  {% if data.event.workflowStatus["take-images"] == 'completed' %}
     {{ button({
       text: "Next section",
       classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"

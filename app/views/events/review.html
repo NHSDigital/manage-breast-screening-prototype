@@ -1,7 +1,10 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 
 {% set pageHeading = "Review" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'review' %}
+{% set hideBackLink = true %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -17,10 +20,6 @@
 
 
 {% block pageContent %}
-
-
-
-  {% include "event-workflow.njk" %}
 
   {{ button({
     text: "Complete screening and return to clinic"
@@ -94,23 +93,23 @@
         },
         {
           key: {
-            text: "Notes about appointment"
+            text: "Appointment note"
           },
           value: {
-            html: "Not provided" | asHint
+            html: event.appointmentNote
           },
           actions: {
             items: [
               {
-                href: "#",
+                href: (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain),
                 text: "Change",
-                visuallyHiddenText: "observations"
+                visuallyHiddenText: "appointment note"
               }
             ]
           }
         }
       ]
-    }) }}
+    } | handleSummaryListMissingInformation) }}
   {% endset %}
 
   {{ card({

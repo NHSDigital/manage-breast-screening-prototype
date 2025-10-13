@@ -23,6 +23,7 @@ const {
   appendReferrer
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
+const { isAppointmentWorkflow } = require('../lib/utils/status')
 
 /**
  * Get single event and its related data
@@ -139,6 +140,10 @@ module.exports = (router) => {
 
     res.locals.eventData = originalEventData
     res.locals.clinic = originalEventData.clinic
+    res.locals.isAppointmentWorkflow = isAppointmentWorkflow(
+      data.event,
+      data.currentUser
+    )
 
     res.locals.participant = data.participant
     res.locals.participantId = participantId
@@ -190,7 +195,7 @@ module.exports = (router) => {
 
     // Determine redirect destination
     // This lets us deep link in to the flow whilst still going through this setup route
-    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/identity`
+    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/confirm-identity`
     const finalDestination = returnTo
       ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
       : defaultDestination
@@ -428,7 +433,7 @@ module.exports = (router) => {
           scrollTo
         )
 
-        res.redirect(returnUrl)
+        return res.redirect(returnUrl)
       }
 
       // Handle the direct cancel action from appointment-should-not-proceed.html
@@ -564,7 +569,7 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
-      const action = req.body.action || req.query.action // 'save' or 'save-and-add'
+      const action = req.body?.action || req.query.action // 'save' or 'save-and-add'
       const nextSymptomType = req.query.symptomType // camelCase symptom type
       const referrerChain = req.query.referrerChain
       const scrollTo = req.query.scrollTo
@@ -627,9 +632,11 @@ module.exports = (router) => {
           symptom.isIntermittent = true
         }
 
-        symptom.hasStopped = symptomTemp?.hasStopped?.includes('yes')
-          ? true
-          : false
+        symptom.hasStopped =
+          Array.isArray(symptomTemp.hasStopped) &&
+          symptomTemp.hasStopped.includes('yes')
+            ? true
+            : false
 
         if (symptom.hasStopped) {
           symptom.approximateDateStopped = symptomTemp.approximateDateStopped
@@ -705,7 +712,7 @@ module.exports = (router) => {
       } else {
         // Regular save - redirect back to medical information page
         const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
@@ -776,7 +783,7 @@ module.exports = (router) => {
       req.flash('success', 'Symptom deleted')
 
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
         req.query.referrerChain,
         req.query.scrollTo
       )
@@ -926,7 +933,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -957,7 +964,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -984,7 +991,11 @@ module.exports = (router) => {
         if (hasBreastImplants) {
           // Redirect to consent page immediately - we'll save the data after consent
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+            urlWithReferrer(
+              `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`,
+              referrerChain,
+              scrollTo
+            )
           )
         }
       }
@@ -1066,7 +1077,7 @@ module.exports = (router) => {
       } else {
         // Regular save - redirect back to medical information page
         const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
@@ -1085,7 +1096,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -1130,7 +1141,7 @@ module.exports = (router) => {
       // Validate type
       if (!isValidMedicalHistoryType(type)) {
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       }
 
@@ -1149,7 +1160,7 @@ module.exports = (router) => {
       req.flash('success', `${typeConfig.name} deleted`)
 
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
         req.query.referrerChain,
         req.query.scrollTo
       )
@@ -1231,7 +1242,7 @@ module.exports = (router) => {
         req.flash('success', 'Breast implants recorded and consent recorded')
 
         const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`,
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
@@ -1286,7 +1297,7 @@ module.exports = (router) => {
         )
       } else if (hasRelevantMedicalInformation === 'yes') {
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       } else {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
@@ -1296,7 +1307,7 @@ module.exports = (router) => {
 
   // Handle record medical information answer
   router.post(
-    '/clinics/:clinicId/events/:eventId/record-medical-information-answer',
+    '/clinics/:clinicId/events/:eventId/review-medical-information-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
@@ -1304,7 +1315,7 @@ module.exports = (router) => {
 
       if (!imagingCanProceed) {
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/record-medical-information`
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`
         )
       } else if (imagingCanProceed === 'yes') {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/awaiting-images`)
@@ -1327,7 +1338,7 @@ module.exports = (router) => {
       if (!isPartialMammography) {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/imaging`)
       } else {
-        data.event.workflowStatus.images = 'completed'
+        data.event.workflowStatus['take-images'] = 'completed'
         res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
       }
     }
@@ -1636,7 +1647,7 @@ module.exports = (router) => {
         if (!data.event.workflowStatus) {
           data.event.workflowStatus = {}
         }
-        data.event.workflowStatus.images = 'completed'
+        data.event.workflowStatus['take-images'] = 'completed'
 
         // Redirect to review
         return res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
@@ -1761,7 +1772,7 @@ module.exports = (router) => {
       if (!data.event.workflowStatus) {
         data.event.workflowStatus = {}
       }
-      data.event.workflowStatus.images = 'completed'
+      data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to review
       res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
@@ -1807,7 +1818,7 @@ module.exports = (router) => {
       if (!data.event.workflowStatus) {
         data.event.workflowStatus = {}
       }
-      data.event.workflowStatus.images = 'completed'
+      data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to review
       res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
@@ -1980,47 +1991,47 @@ module.exports = (router) => {
   )
 
   // Handle appointment note form submission
-router.post(
-  '/clinics/:clinicId/events/:eventId/appointment-note',
-  (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
+  router.post(
+    '/clinics/:clinicId/events/:eventId/appointment-note-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-    // Save the appointment note from temp event to permanent event
-    saveTempEventToEvent(data)
+      // Save the appointment note from temp event to permanent event
+      saveTempEventToEvent(data)
 
-    req.flash('success', 'Appointment note saved')
-    
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}/events/${eventId}`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  }
-)
+      req.flash('success', 'Appointment note saved')
 
-// Delete appointment note
-router.get(
-  '/clinics/:clinicId/events/:eventId/appointment-note/delete',
-  (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
 
-    // Delete the appointment note
-    delete data.event.appointmentNote
+  // Delete appointment note
+  router.get(
+    '/clinics/:clinicId/events/:eventId/appointment-note/delete',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-    // Save changes
-    saveTempEventToEvent(data)
+      // Delete the appointment note
+      delete data.event.appointmentNote
 
-    req.flash('success', 'Appointment note deleted')
+      // Save changes
+      saveTempEventToEvent(data)
 
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}/events/${eventId}/appointment-note`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  }
-)
+      req.flash('success', 'Appointment note deleted')
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/appointment-note`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(

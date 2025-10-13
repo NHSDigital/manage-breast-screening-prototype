@@ -1,14 +1,16 @@
 {# app/views/events/appointment #}
 
-{% extends 'layout-appointment-tab.html' %}
+{% extends 'layout-appointment.html' %}
 
 {# {% set pageHeading = "Participant" %} #}
 
+{% set showNavigation = true %}
 {% set activeTab = 'participant' %}
+
 
 {% set allowEdits = true %}
 
-{% block tabContent %}
+{% block pageContent %}
 
   {% include "_includes/tabs/participant-details.njk" %}
 

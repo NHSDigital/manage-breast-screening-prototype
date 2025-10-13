@@ -1,0 +1,47 @@
+{# app/views/events/review-medical-information.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Review medical information" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'review-medical-information' %}
+{% set disableAutoFocus = true %}
+{% set hideBackLink = true %}
+
+{% set formAction = "./take-images" | getReturnUrl(referrerChain) %}
+
+{# Display format for medical information sections #}
+{% set displayFormat = "expander" %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {{ appHiddenInput({
+    name: "event[workflowStatus][review-medical-information]",
+    value: "completed"
+  }) }}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      {{ button({
+        text: "Complete all and continue" if data.event.workflowStatus['review-medical-information'] != 'completed' else "Next section",
+        classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
+      }) }}
+    </div>
+  </div>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+  {% include "_includes/medical-information/index.njk" %}
+
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Complete all and continue",
+      classes: "js-complete-all-sections"
+    }) }}
+
+    {% include "screening-cannot-proceed-link.njk" %}
+  </div>
+
+{% endblock %}

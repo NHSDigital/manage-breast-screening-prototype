@@ -51,7 +51,7 @@ const handleSummaryListMissingInformation = (
         row.key.text.toLowerCase()
       const href = row.actions?.items?.[0]?.href || '#'
 
-      const endText = keyText.endsWith('notes') ? '' : ' details'
+      const endText = keyText.endsWith('note') ? '' : ' details'
 
       return {
         ...row,
@@ -76,10 +76,9 @@ const handleSummaryListMissingInformation = (
 
   // Check if input is a summary list (has rows property)
   if (input.rows && Array.isArray(input.rows)) {
-
     // Filter out empty rows before processing
-    const validRows = input.rows.filter(row =>
-      row && typeof row === 'object' && row.key
+    const validRows = input.rows.filter(
+      (row) => row && typeof row === 'object' && row.key
     )
 
     const updatedRows = validRows.map(processRow)

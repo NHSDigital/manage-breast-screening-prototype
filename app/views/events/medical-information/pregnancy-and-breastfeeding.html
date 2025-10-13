@@ -1,21 +1,17 @@
 
-{% extends 'layout-app.html' %}
-
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Pregnancy and breastfeeding" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./../record-medical-information" | getReturnUrl(referrerChain)  %}
+{% set formAction = "./../review-medical-information" | getReturnUrl(referrerChain, query.scrollTo) %}
 
 {# {% set back = {
   href: "/clinics/" + clinicId,
   text: "Back to clinic"
 } %}
  #}
-
-
-
 
 {% block pageContent %}
 

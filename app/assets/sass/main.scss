@@ -18,21 +18,21 @@ $nhsuk-page-width: 1260px;
 @forward "components/forward-link";
 @forward "components/status";
 @forward "components/status-bar";
-@forward 'components/summary-card';
+@forward "components/summary-card";
 @forward "components/reading";
 
 @forward "components/overrides";
 @forward "components/checkboxes";
 @forward "components/breast-features";
 @forward "components/sticky-appointment-bar";
-@forward 'components/small-button';
+@forward "components/small-button";
 @forward "components/annotation";
 
 @forward "misc";
+@forward "workflow";
 
 @forward "typography";
 @forward "utils";
-
 
 $nhsuk-page-width: 1260px;
 

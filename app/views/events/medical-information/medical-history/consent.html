@@ -1,10 +1,10 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Request consent to continue" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./consent-answer" %}
+{% set formAction = "./consent-answer" | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
 

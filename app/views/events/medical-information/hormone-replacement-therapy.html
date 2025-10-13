@@ -1,11 +1,14 @@
+{# app/views/events/medical-information/hormone-replacement-therapy.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Hormone replacement therapy (HRT)" %}
 
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set showBackLink = true %}
+{# 
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %} #}
 
-{% set formAction = './../record-medical-information' | getReturnUrl(referrerChain) %}
+{% set formAction = './../review-medical-information' | getReturnUrl(referrerChain) %}
 
 {# {% set back = {
   href: "/clinics/" + clinicId,

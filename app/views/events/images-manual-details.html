@@ -1,5 +1,8 @@
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
+{% set showNavigation = true %}
+{% set hideBackLink = true %}
+{% set activeWorkflowStep = 'take-images' %}
 
 {% set pageHeading = "Provide image details" %}
 
@@ -13,7 +16,7 @@
 
 {% block pageContent %}
 
-  {% include "event-workflow.njk" %}
+  <h1>{{ pageHeading }}</h1>
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 

@@ -1,28 +1,16 @@
 {# app/views/events/mammography/previous-mammograms/edit.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set previousMammogramCount = event.previousMammograms | length %}
 
-{# {% set pageHeading = "Add details of a previous mammogram" if previousMammogramCount == 0 else "Add another degree" %} #}
-
 {% set pageHeading = "Add details of a previous mammogram" %}
 
-{# {% set gridColumn = "nhsuk-grid-column-full" %} #}
-
 {% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, query.scrollTo) %}
-
-{# {% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
- #}
-
 
 {% block pageContent %}
 
   {% set previousMammogramCount = data.event.previousMammograms | length %}
-
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 

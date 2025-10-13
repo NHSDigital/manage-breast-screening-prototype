@@ -1,21 +1,12 @@
 {# app/views/events/mammography/previous-mammograms/appointment-should-not-proceed.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set previousMammogramCount = event.previousMammograms | length %}
 
 {% set pageHeading = "This appointment should not proceed" %}
 
-{# {% set gridColumn = "nhsuk-grid-column-full" %} #}
-
-{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, scrollTo) %}
-
-{# {% set back = {
-  href: "/clinics/" + clinicId,
-  text: "Back to clinic"
-} %}
- #}
-
+{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
 
@@ -54,6 +45,6 @@
   </p>
 
   <p>
-    <a href="./proceed-anyway" class="app-link--warning">Proceed with this appointment</a>
+    <a href="{{ './proceed-anyway' | urlWithReferrer(referrerChain, query.scrollTo) }}" class="app-link--warning">Proceed with this appointment</a>
   </p>
 {% endblock %}

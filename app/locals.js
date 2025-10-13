@@ -7,7 +7,8 @@ module.exports = (config) => (req, res, next) => {
     flash: req.flash(),
     query: req.query,
     referrerChain: req.query.referrerChain,
-    currentUser: req.session.data.currentUser
+    currentUser: req.session.data.currentUser,
+    isAppointmentWorkflow: false
   }
 
   // Assign all local variables at once

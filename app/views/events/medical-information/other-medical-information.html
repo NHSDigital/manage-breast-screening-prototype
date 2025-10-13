@@ -1,16 +1,14 @@
 {# app/views/events/medical-information/other-medical-information.html #}
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Other medical information" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './../record-medical-information' | getReturnUrl(referrerChain, query.scrollTo) %}
-
+{% set formAction = './../review-medical-information' | getReturnUrl(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
-
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
@@ -31,8 +29,5 @@
   {{ button({
     text: "Save"
   }) }}
-
-  
-
 
 {% endblock %}

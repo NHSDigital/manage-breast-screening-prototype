@@ -1,11 +1,12 @@
 
-{% extends 'layout-appointment-tab.html' %}
+{% extends 'layout-appointment.html' %}
 
 {# {% set pageHeading = "Medical information" %} #}
 
+{% set showNavigation = true %}
 {% set activeTab = 'medical-information' %}
 
-{% block tabContent %}
+{% block pageContent %}
 
   {% set displayFormat = "card" %}
   {% include "_includes/medical-information/index.njk" %}

@@ -1,19 +1,14 @@
-{# app/views/events/images.html #}
 
-{% set isCompleted = event | isCompleted %}
+{% extends 'layout-appointment.html' %}
 
-{% if isCompleted %}
-  {% include "events/images-completed-mammography.html" %}
-{% else %}
-  {% set showWorkflowNav = true %}
-  {% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
 
-  {% if data.settings.screening.manualImageCollection | falsify %}
-    {% include "events/images-manual.html" %}
-  {% elseif isAwaitingImages %}
-    {% include "events/images-before-mammography.html" %}
-  {% else %}
-    {% include "events/images-automatic.html" %}
-  {% endif %}
+{% set showNavigation = true %}
+{% set activeTab = 'images' %}
 
-{% endif %}
+{% block pageContent %}
+
+  {% include "fake-images.njk" %}
+
+{% endblock %}
+

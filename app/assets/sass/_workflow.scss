@@ -1,0 +1,171 @@
+// app/assets/sass/components/_workflow.scss
+
+@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core/objects" as *;
+
+// Wider container for workflow mode
+.nhsuk-width-container--wide {
+  @include nhsuk-width-container(1200px);
+}
+
+.app-workflow-mode .nhsuk-width-container {
+  @include nhsuk-width-container(1200px);
+}
+
+.app-workflow-container .nhsuk-grid-column-one-quarter {
+  align-self: flex-start;
+}
+
+// Side navigation
+.app-workflow-side-nav {
+  position: sticky;
+  top: nhsuk-spacing(4);
+  align-self: flex-start; // Important for sticky in grid/flex
+  padding-bottom: 15px;
+}
+
+.app-workflow-side-nav__heading {
+  margin-bottom: nhsuk-spacing(3);
+}
+
+.app-workflow-side-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-workflow-side-nav__item {
+  position: relative;
+  border-left: 4px solid transparent;
+  margin-left: -1px;
+}
+
+.app-workflow-side-nav__link {
+  @include nhsuk-font($size: 16);
+
+  display: flex;
+  align-items: center;
+  gap: nhsuk-spacing(2);
+  padding: nhsuk-spacing(2) 0 nhsuk-spacing(2) nhsuk-spacing(2);
+  text-decoration: none;
+  position: relative;
+}
+
+// Only apply link styles to actual links
+a.app-workflow-side-nav__link {
+  @include nhsuk-link-style-default;
+  @include nhsuk-link-style-no-visited-state;
+
+  &:hover {
+    .app-workflow-side-nav__label {
+      text-decoration: underline;
+      text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
+    }
+  }
+
+  &:focus {
+    @include nhsuk-focused-text;
+    color: $nhsuk-focus-text-color;
+  }
+}
+
+.app-workflow-side-nav__link--disabled {
+  color: $nhsuk-secondary-text-colour;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// Clickable links (not current, not completed, not disabled) have blue circles
+.app-workflow-side-nav__link--clickable {
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-blue;
+    color: $color_nhsuk-white;
+  }
+}
+
+.app-workflow-side-nav__number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  background-color: $color_nhsuk-grey-3;
+  color: $color_nhsuk-grey-1;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1;
+  padding-left: 1px; // Nudge numbers slightly right
+
+  .app-icon--tick {
+    width: 16px;
+    height: 16px;
+
+    path {
+      fill: none;
+      stroke: $color_nhsuk-white;
+      stroke-width: 4;
+    }
+  }
+}
+
+.app-workflow-side-nav__label {
+  flex: 1;
+}
+
+// Item states
+.app-workflow-side-nav__item--current {
+  border-left-color: $nhsuk-brand-colour;
+
+  .app-workflow-side-nav__link {
+    color: $nhsuk-text-colour;
+  }
+
+  .app-workflow-side-nav__label {
+    font-weight: bold;
+  }
+
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-blue;
+    color: $color_nhsuk-white;
+  }
+}
+
+// Clickable links (not current, not completed, not disabled) have blue circles
+.app-workflow-side-nav__link--clickable {
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-blue;
+    color: $color_nhsuk-white;
+  }
+}
+
+.app-workflow-side-nav__item--completed {
+  .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-green;
+    color: $color_nhsuk-white;
+
+    .app-icon--tick path {
+      stroke: $color_nhsuk-white;
+    }
+  }
+}
+
+.app-workflow-side-nav__item--disabled {
+  .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
+  .app-workflow-side-nav__number {
+    background-color: $color_nhsuk-grey-3;
+    color: $color_nhsuk-grey-1;
+  }
+}
+
+// Responsive - use full width on mobile
+@media (max-width: 768px) {
+  .app-workflow-side-nav {
+    position: static;
+  }
+}

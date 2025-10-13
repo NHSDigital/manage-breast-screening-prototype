@@ -1,10 +1,11 @@
 
-{% extends 'layout-app.html' %}
+{% extends 'layout-appointment.html' %}
 
 
 {% set pageHeading = "Awaiting images" %}
-
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'take-images' %}
+{% set hideBackLink = true %}
 
 {% set formAction = './images-automatic' %}
 
@@ -12,21 +13,12 @@
 
 {% block pageContent %}
 
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-
-  {# <span class="nhsuk-caption-l">
-    {{ participant | getFullName }}
-  </span>
-  <h1 class="nhsuk-heading-l js-image-count">
-    {{ pageHeading }}
-  </h1> #}
-
-
-
-  {% include "event-workflow.njk" %}
+  <h1>{{ pageHeading }}</h1>
 
   {% set insetHtml %}
-    <p>Mammography images will appear here once they have been transmitted by the PACS</p>
+    <p>
+      Mammography images will appear here once they have been transmitted by the PACS
+    </p>
   {% endset %}
 
   {{ insetText({

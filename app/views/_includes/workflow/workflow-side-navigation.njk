@@ -1,0 +1,87 @@
+{# app/views/_includes/workflow/workflow-side-nav.njk #}
+
+{# Tracking of status #}
+{% set identityStageCompleted = true if data.event.workflowStatus['confirm-identity'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if data.event.workflowStatus['review-medical-information'] == 'completed' else false %}
+{% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
+{% set imagesStageCompleted = true if data.event.workflowStatus['take-images'] == 'completed' else false %}
+
+{# SVG for completed items #}
+{% set tickSvg %}
+  <svg class="app-icon app-icon--tick" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+    <path stroke-linecap="round" d="M18.4 7.8l-8.5 8.4L5.6 12"></path>
+  </svg>
+{% endset %}
+
+{# Workflow steps #}
+{% set workflowSteps = [
+  { id: 'confirm-identity', label: 'Confirm identity' },
+  { id: 'review-medical-information', label: 'Review medical information' },
+  { id: 'take-images', label: 'Take images' },
+  { id: 'review', label: 'Review' }
+] %}
+
+<nav class="app-workflow-side-nav" aria-label="Workflow steps">
+
+  <h2 class="app-workflow-side-nav__heading">
+    <span class="nhsuk-caption-m">
+      {{ clinic.clinicType | sentenceCase }} appointment
+    </span>
+    Workflow steps
+  </h2>
+
+  <ol class="app-workflow-side-nav__list">
+    {% for item in workflowSteps %}
+      {% set href = '/clinics/' + clinicId + '/events/' + event.id + '/' + item.id %}
+      {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
+      {% set isCurrent = item.id == activeWorkflowStep %}
+      {% set isDisabled = false %}
+
+      {# Determine if step is disabled based on prerequisites - but never disable current or completed steps #}
+      {% if not isCurrent and not isCompleted %}
+        {% if item.id == 'review-medical-information' %}
+          {% set isDisabled = not identityStageCompleted %}
+        {% endif %}
+        
+        {% if item.id == 'take-images' %}
+          {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted) %}
+        {% endif %}
+
+        {% if item.id == 'review' %}
+          {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted and imagesStageCompleted) %}
+        {% endif %}
+      {% endif %}
+
+      <li class="app-workflow-side-nav__item {{ 'app-workflow-side-nav__item--current' if isCurrent }} {{ 'app-workflow-side-nav__item--completed' if isCompleted }} {{ 'app-workflow-side-nav__item--disabled' if isDisabled }}">
+        {% if isDisabled %}
+          <span class="app-workflow-side-nav__link app-workflow-side-nav__link--disabled">
+            <span class="app-workflow-side-nav__number">{{ loop.index }}</span>
+            <span class="app-workflow-side-nav__label">{{ item.label }}</span>
+          </span>
+        {% elif isCurrent %}
+          <span class="app-workflow-side-nav__link" aria-current="page">
+            <span class="app-workflow-side-nav__number">
+              {% if isCompleted %}
+                {{ tickSvg | safe }}
+              {% else %}
+                {{ loop.index }}
+              {% endif %}
+            </span>
+            <span class="app-workflow-side-nav__label">{{ item.label }}</span>
+          </span>
+        {% else %}
+          <a class="app-workflow-side-nav__link app-workflow-side-nav__link--clickable" href="{{ href }}">
+            <span class="app-workflow-side-nav__number">
+              {% if isCompleted %}
+                {{ tickSvg | safe }}
+              {% else %}
+                {{ loop.index }}
+              {% endif %}
+            </span>
+            <span class="app-workflow-side-nav__label">{{ item.label }}</span>
+          </a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</nav>

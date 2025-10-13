@@ -1,0 +1,59 @@
+{# app/views/_includes/flash-messages.njk #}
+{# Flash messages include - displays error summaries and notification banners #}
+
+{% set showFakeFlashMessage = false %}
+{% if showFakeFlashMessage %}
+  {{ notificationBanner({
+    text: "This is a fake flash message",
+    type: "info"
+  }) }}
+{% endif %}
+
+{% if flash.error %}
+  {{ errorSummary({
+    "titleText": "There is a problem",
+    "errorList": flash.error
+  }) }}
+  {{ flash.error | log("Flash error") }}
+{% endif %}
+
+{% if flash.success %}
+  {% set flashSuccess = flash.success[0] %}
+  {% if flashSuccess | isString %}
+    {{ notificationBanner({
+      text: flashSuccess,
+      type: "success",
+      disableAutoFocus: true if disableAutoFocus else false
+    }) }}
+  {% else %}
+    {% set html = flashSuccess.html %}
+    {% if flashSuccess.wrapWithHeading %}
+      {% set html %}
+        <p class="nhsuk-notification-banner__heading">
+          {{ flashSuccess.wrapWithHeading | safe }}
+        </p>
+      {% endset %}
+    {% endif %}
+    {{ notificationBanner({
+      title: flashSuccess.title,
+      html: html,
+      text: flashSuccess.text,
+      type: "success",
+      disableAutoFocus: true if disableAutoFocus else false
+    }) }}
+  {% endif %}
+{% endif %}
+
+{% if flash.info %}
+  {{ notificationBanner({
+    html: flash.info,
+    type: "info"
+  }) }}
+{% endif %}
+
+{% if flash.warning %}
+  {{ notificationBanner({
+    html: flash.warning,
+    type: "warning"
+  }) }}
+{% endif %}
