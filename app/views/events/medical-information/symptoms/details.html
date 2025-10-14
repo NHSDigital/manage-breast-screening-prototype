@@ -22,6 +22,38 @@
     {{ pageHeading }}
   </h1>
 
+  {% set symptomType = data.symptomTypes | find("name", event.symptomTemp.type | lower) %}
+
+  {{ symptomType | log("Symptom type")}}
+
+
+  {% if symptomType.isSignificantByDefault %}
+    {% set insetTextHtml %}
+      <p>{{ event.symptomTemp.type }} is a recognised symptom of breast cancer. Information recorded here will be highlighted during image reading.</p>
+    {% endset %}
+
+    {{ insetText({
+      html: insetTextHtml
+    }) }}
+
+  {% else %}
+    {# Show content when a symptom will not be considered significant by default #}
+    {% if event.symptomTemp.type == "Breast pain" %}
+      <p>
+        Breast pain is not a recognised sign of breast cancer unless it is persistent and accompanied by other symptoms. Pain information will only be shown during image reading if you record it as significant.
+      </p>
+    {% endif %}
+
+    {% if event.symptomTemp.type == "Other" %}
+      <p>
+        Details of this symptom will only be shown during image reading if you record it as significant.
+      </p>
+    {% endif %}
+
+  {% endif %}
+
+  
+
   {# Location #}
 
   {# Nipple change location #}
@@ -82,6 +114,8 @@
     {% set radioQuestionText %}
       {% if event.symptomTemp.type == "Other" %}
         Where is the symptom?
+      {% elseif event.symptomTemp.type == "Breast pain" %}
+        Where is the pain located?
       {% else %}
         Where is the {{ event.symptomTemp.type | lower }} located?
       {% endif %}
@@ -443,6 +477,30 @@
 
     {# todo: this is hacky! #}
     <br>
+
+    {% if not symptomType.isSignificantByDefault %}
+      {% set significantSymptomCheckboxLabel %}
+        {% if (event.symptomTemp.type == "Breast pain") %}
+          The pain is significant
+        {% else %}
+          The symptom is significant
+        {% endif %}
+        (alert image readers)
+      {% endset %}
+      
+      {{ checkboxes({
+        idPrefix: "isSignificant",
+        name: "event[symptomTemp][isSignificant]",
+        items: [
+          {
+            value: "yes",
+            text: significantSymptomCheckboxLabel,
+            checked: true if event.symptomTemp.isSignificant else false
+          }
+        ]
+      }) }}
+      
+    {% endif %}
 
     {{ checkboxes({
       idPrefix: "isIntermittent",

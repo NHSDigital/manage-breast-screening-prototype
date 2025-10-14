@@ -11,6 +11,7 @@ const fs = require('fs')
 const { needsRegeneration } = require('../lib/utils/regenerate-data')
 const config = require('../config')
 const repeatReasons = require('./repeat-reasons')
+const symptomTypes = require('./symptom-types')
 
 // Check if generated data folder exists and create if needed
 const generatedDataPath = path.join(__dirname, 'generated')
@@ -86,5 +87,6 @@ module.exports = {
   settings: defaultSettings,
   defaultSettings,
   medicalHistoryTypes,
-  repeatReasons
+  repeatReasons,
+  symptomTypes
 }

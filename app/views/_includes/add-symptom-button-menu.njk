@@ -8,20 +8,12 @@
   {% set methodUrl = methodUrl ~ "/add?symptomType=" %}
 {% endif %}
 
-{% set symptoms = [
-  "Lump",
-  "Swelling or shape change",
-  "Skin change",
-  "Nipple change",
-  "Other"
-] %}
-
 {% set buttonMenuItems = [] %}
 
-{% for symptom in symptoms %}
+{% for symptomType in data.symptomTypes %}
   {% set buttonMenuItems = buttonMenuItems | push({
-    text: symptom,
-    href: (methodUrl ~ (symptom | camelCase) ) | urlWithReferrer(referrerChain, scrollTo),
+    text: symptomType.name | sentenceCase,
+    href: (methodUrl ~ symptomType.slug) | urlWithReferrer(referrerChain, scrollTo),
     classes: "nhsuk-button--secondary js-expand-parent-section"
   }) %}
 {% endfor %}
@@ -38,5 +30,3 @@
     }) }}
   </div>
 {% endif %}
-
-

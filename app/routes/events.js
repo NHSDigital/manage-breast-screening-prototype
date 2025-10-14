@@ -638,7 +638,7 @@ module.exports = (router) => {
             ? true
             : false
 
-        if (symptom.hasStopped) {
+        if (symptom.hasStopped && symptom) {
           symptom.approximateDateStopped = symptomTemp.approximateDateStopped
         }
 
@@ -805,21 +805,23 @@ module.exports = (router) => {
 
       // If symptomType is provided, pre-populate and go to details
       if (symptomType) {
-        // Map camelCase symptom types to display names
-        const symptomTypeMap = {
-          lump: 'Lump',
-          swellingOrShapeChange: 'Swelling or shape change',
-          skinChange: 'Skin change',
-          nippleChange: 'Nipple change',
-          other: 'Other'
-        }
+        // Load symptom types data
+        const symptomTypes = require('../data/symptom-types')
 
-        const fullSymptomType = symptomTypeMap[symptomType]
+        // Find symptom type by slug
+        const symptomTypeConfig = symptomTypes.find(
+          (st) => st.slug === symptomType
+        )
 
-        if (fullSymptomType) {
+        if (symptomTypeConfig) {
+          // Convert name to sentence case for storage
+          const sentenceCaseName =
+            symptomTypeConfig.name.charAt(0).toUpperCase() +
+            symptomTypeConfig.name.slice(1)
+
           // Pre-populate symptomTemp with the selected type
           data.event.symptomTemp = {
-            type: fullSymptomType
+            type: sentenceCaseName
           }
 
           // Redirect to details page

@@ -16,20 +16,12 @@
 
 {% block pageContent %}
 
-  {% set symptoms = [
-    "Lump",
-    "Swelling or shape change",
-    "Skin change",
-    "Nipple change",
-    "Other"
-  ] %}
-
   {% set radioItems = [] %}
 
-  {% for symptom in symptoms %}
+  {% for symptom in data.symptomTypes %}
     {% set radioItems = radioItems | push({
-      value: symptom,
-      text: symptom
+      value: symptom.name | sentenceCase,
+      text: symptom.name | sentenceCase
     }) %}
   {% endfor %}
 
