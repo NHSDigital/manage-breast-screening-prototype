@@ -26,10 +26,19 @@
 
   {{ symptomType | log("Symptom type")}}
 
-
   {% if symptomType.isSignificantByDefault %}
+    {# Special case for lumps, otherwise all other types work with '[name] is a' #}
     {% set insetTextHtml %}
-      <p>{{ event.symptomTemp.type }} is a recognised symptom of breast cancer. Information recorded here will be highlighted during image reading.</p>
+      <p>{{ "Lumps are" if event.symptomTemp.type == "Lump" else (event.symptomTemp.type + " is ")}} a recognised symptom of breast cancer. Information recorded here will be highlighted during image reading.</p>
+    {% endset %}
+
+    {{ insetText({
+      html: insetTextHtml
+    }) }}
+
+  {% elseif event.symptomTemp.isSignificant %}
+    {% set insetTextHtml %}
+      <p>This symptom has been manually marked as significant. Information recorded here will be highlighted during image reading.</p>
     {% endset %}
 
     {{ insetText({

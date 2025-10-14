@@ -24,6 +24,9 @@ const {
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
+const { sentenceCase } = require('../lib/utils/strings')
+// Load symptom types data
+const symptomTypes = require('../data/symptom-types')
 
 /**
  * Get single event and its related data
@@ -590,6 +593,10 @@ module.exports = (router) => {
         const symptomType = symptomTemp.type
         const isNewSymptom = !symptomTemp.id
 
+        const symptomTypeConfig = symptomTypes.find(
+          (st) => st.name === symptomType.toLowerCase()
+        )
+
         // Start with base symptom data
         const symptom = {
           id: symptomTemp.id || generateId(),
@@ -602,6 +609,20 @@ module.exports = (router) => {
         // For new symptoms, add the creation timestamp
         if (isNewSymptom) {
           symptom.dateAdded = new Date().toISOString()
+        }
+
+        if (symptomTypeConfig) {
+          if (symptomTypeConfig.isSignificantByDefault) {
+            // Always significant for default significant types
+            symptom.isSignificant = true
+          } else {
+            // Use checkbox value for non-default types
+            symptom.isSignificant =
+              Array.isArray(symptomTemp.isSignificant) &&
+              symptomTemp.isSignificant.includes('yes')
+                ? true
+                : false
+          }
         }
 
         // Add investigation details if investigated
@@ -805,23 +826,15 @@ module.exports = (router) => {
 
       // If symptomType is provided, pre-populate and go to details
       if (symptomType) {
-        // Load symptom types data
-        const symptomTypes = require('../data/symptom-types')
-
         // Find symptom type by slug
         const symptomTypeConfig = symptomTypes.find(
           (st) => st.slug === symptomType
         )
 
         if (symptomTypeConfig) {
-          // Convert name to sentence case for storage
-          const sentenceCaseName =
-            symptomTypeConfig.name.charAt(0).toUpperCase() +
-            symptomTypeConfig.name.slice(1)
-
           // Pre-populate symptomTemp with the selected type
           data.event.symptomTemp = {
-            type: sentenceCaseName
+            type: sentenceCase(symptomTypeConfig.name)
           }
 
           // Redirect to details page

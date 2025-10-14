@@ -20,9 +20,16 @@
       {% endif %}
     {% endset %}
 
+    {% set symptomLabel %}
+      {{ symptom.type | sentenceCase }}
+      {# {% if symptom.isSignificant %} #}
+        {{ "Significant symptom" | toTag }}
+      {# {% endif %} #}
+    {% endset %}
+
     {% set rows = rows | push({
       key: {
-        text: symptom.type | replace('_', ' ') | sentenceCase
+        html: "hello world"
       },
       value: {
         html: valueHtml | trim

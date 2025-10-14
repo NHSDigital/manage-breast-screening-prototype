@@ -197,6 +197,7 @@ const getStatusTagColour = (status) => {
     // Metadata
     'has_symptoms': 'yellow',
     'has_repeat': 'yellow',
+    'significant_symptom': 'yellow',
 
     // Reading statuses
     'waiting_for_1st_read': 'grey',
