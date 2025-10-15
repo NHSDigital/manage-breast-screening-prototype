@@ -1,6 +1,8 @@
 {# /app/views/_includes/summary-lists/event-symptoms.njk #}
 
-{% if event.medicalInformation.symptoms and event.medicalInformation.symptoms.length > 0 %}
+{% set hasSymptoms = event | hasSymptoms %}
+
+{% if hasSymptoms %}
   {% set rows = [] %}
 
   {% for symptom in event.medicalInformation.symptoms %}
@@ -11,7 +13,7 @@
     {% set keyText %}
       {{ symptom.type | sentenceCase }}
       {% if symptom.isSignificant %}
-        <br>{{ "Significant symptom" | toTag }}
+        <br>{{ "Highlight to image readers" | toTag }}
       {% endif %}
     {% endset %}
 

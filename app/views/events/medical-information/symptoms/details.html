@@ -38,7 +38,7 @@
 
   {% elseif event.symptomTemp.isSignificant %}
     {% set insetTextHtml %}
-      <p>This symptom has been manually marked as significant. Information recorded here will be highlighted during image reading.</p>
+      <p>This symptom will be highlighted to image readers.</p>
     {% endset %}
 
     {{ insetText({
@@ -49,13 +49,13 @@
     {# Show content when a symptom will not be considered significant by default #}
     {% if event.symptomTemp.type == "Breast pain" %}
       <p>
-        Breast pain is not a recognised sign of breast cancer unless it is persistent and accompanied by other symptoms. Pain information will only be shown during image reading if you record it as significant.
+        Breast pain is not a recognised sign of breast cancer unless it is persistent and accompanied by other symptoms. Pain information will only be shown during image reading if you use the highlight to image readers checkbox.
       </p>
     {% endif %}
 
     {% if event.symptomTemp.type == "Other" %}
       <p>
-        Details of this symptom will only be shown during image reading if you record it as significant.
+        Details of this symptom will only be highlighted to image readers if you use the highlight to image readers checkbox.
       </p>
     {% endif %}
 
@@ -484,26 +484,18 @@
       }) }}
     {% endset %}
 
-    {# todo: this is hacky! #}
+    {# TODO: don't use br for spacing! #}
     <br>
 
+    {# Only show if not significant by default #}
     {% if not symptomType.isSignificantByDefault %}
-      {% set significantSymptomCheckboxLabel %}
-        {% if (event.symptomTemp.type == "Breast pain") %}
-          The pain is significant
-        {% else %}
-          The symptom is significant
-        {% endif %}
-        (alert image readers)
-      {% endset %}
-      
       {{ checkboxes({
         idPrefix: "isSignificant",
         name: "event[symptomTemp][isSignificant]",
         items: [
           {
             value: "yes",
-            text: significantSymptomCheckboxLabel,
+            text: "Highlight this symptom to image readers",
             checked: true if event.symptomTemp.isSignificant else false
           }
         ]

@@ -113,17 +113,24 @@ items: secondaryNavItems
       <td class="nhsuk-table__cell">{{ event.statusHistory[0].timestamp | formatTimeString }}
         <br>
         {% if event | isSpecialAppointment %}
-        {{ tag({
-        text: "Special apppointment",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
-        })}}
+          {{ tag({
+          text: "Special apppointment",
+          classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
+          })}}
         {% endif %}
         {% if event | hasAppointmentNote %}
-        {{ tag({
-        text: "Appointment note",
-        classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
-        })}}
+          {{ tag({
+          text: "Appointment note",
+          classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
+          })}}
         {% endif %}
+        {# Symptoms tag used for testing to verify data is working #}
+        {# {% if event | hasSymptoms %}
+          {{ tag({
+          text: "Has symptoms",
+          classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
+          })}}
+        {% endif %} #}
       </td>
 
       {# Appointment details - Name and NHS number #}

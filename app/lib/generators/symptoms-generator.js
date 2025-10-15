@@ -3,11 +3,16 @@
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
 const generateId = require('../utils/id-generator')
+const symptomTypesData = require('../../data/symptom-types.js')
 
-// Updated symptom types to match the form
-const SYMPTOM_TYPES = {
-  'Lump': {
-    weight: 0.4,
+// Helper to convert lowercase to sentence case
+const toSentenceCase = (str) => str.charAt(0).toUpperCase() + str.slice(1)
+
+// Generator-specific configuration (weights, descriptions, etc.)
+// Keys match lowercase names from symptom-types.js
+const GENERATOR_CONFIG = {
+  'lump': {
+    weight: 0.25,
     requiresLocation: true,
     descriptions: [
       "Hard lump that doesn't move",
@@ -17,8 +22,21 @@ const SYMPTOM_TYPES = {
       'Tender lump that varies with menstrual cycle'
     ]
   },
-  'Swelling or shape change': {
-    weight: 0.2,
+  'breast pain': {
+    weight: 0.35, // Most common symptom
+    requiresLocation: true,
+    descriptions: [
+      'Sharp pain in breast',
+      'Dull ache that comes and goes',
+      'Burning or stabbing sensation',
+      'Tenderness that varies with menstrual cycle',
+      'Constant throbbing pain',
+      'Pain when pressure applied',
+      'Shooting pain through breast'
+    ]
+  },
+  'swelling or shape change': {
+    weight: 0.15,
     requiresLocation: true,
     descriptions: [
       'Change in size or shape of breast',
@@ -28,14 +46,15 @@ const SYMPTOM_TYPES = {
       'Visible dent or dimpling'
     ]
   },
-  'Nipple change': {
-    weight: 0.15,
+  'nipple change': {
+    weight: 0.1,
     requiresLocation: false, // Uses nippleChangeLocation instead
     nippleChangeTypes: [
       'bloody discharge',
       'other discharge',
-      'inversion or shape change',
-      'rash',
+      'inversion',
+      'rash or eczema',
+      'shape change',
       'colour change'
     ],
     nippleChangeDescriptions: {
@@ -46,10 +65,15 @@ const SYMPTOM_TYPES = {
       ]
     }
   },
-  'Skin change': {
-    weight: 0.15,
+  'skin change': {
+    weight: 0.13,
     requiresLocation: true,
-    skinChangeTypes: ['dimples or indentation', 'rash', 'colour change'],
+    skinChangeTypes: [
+      'sores or cysts',
+      'dimples or indentation',
+      'rash',
+      'colour change'
+    ],
     skinChangeDescriptions: {
       other: [
         'Orange peel texture',
@@ -58,30 +82,34 @@ const SYMPTOM_TYPES = {
       ]
     }
   },
-  'Other': {
+  'other': {
     weight: 0.02,
     requiresLocation: true,
     descriptions: [
       'Unusual sensation or tenderness',
       'Heaviness in breast',
       'Tingling sensation',
-      'Unusual firmness',
-      'Persistent pain'
+      'Unusual firmness'
     ]
   }
 }
 
-// const DATE_RANGE_OPTIONS = [
-//   "Less than a week",
-//   "1 week to a month",
-//   "1 to 3 months",
-//   "3 months to a year",
-//   "1 to 3 years",
-//   "Over 3 years"
-// ]
+// Build SYMPTOM_TYPES by merging data file with generator config
+// Use sentence case keys to match stored data format
+const SYMPTOM_TYPES = {}
+for (const symptomType of symptomTypesData) {
+  const config = GENERATOR_CONFIG[symptomType.name]
+  if (config) {
+    const sentenceCaseName = toSentenceCase(symptomType.name)
+    SYMPTOM_TYPES[sentenceCaseName] = {
+      ...config,
+      isSignificantByDefault: symptomType.isSignificantByDefault
+    }
+  }
+}
 
 const DATE_RANGE_OPTIONS = [
-  'Less than  3 months',
+  'Less than 3 months',
   '3 months to a year',
   '1 to 3 years',
   'Over 3 years'
@@ -175,7 +203,7 @@ const generateSymptom = (options = {}) => {
 
   // Generate dateType matching the form structure
   const dateTypeWeights = {
-    ...Object.fromEntries(DATE_RANGE_OPTIONS.map((range) => [range, 0.1])), // 60% total for ranges
+    ...Object.fromEntries(DATE_RANGE_OPTIONS.map((range) => [range, 0.1])),
     dateKnown: 0.3,
     notSure: 0.1
   }
@@ -188,6 +216,14 @@ const generateSymptom = (options = {}) => {
     hasBeenInvestigated:
       options.requireInvestigation ?? (Math.random() < 0.3 ? 'yes' : 'no'),
     dateAdded: new Date().toISOString()
+  }
+
+  // Set significance based on type
+  if (typeData.isSignificantByDefault) {
+    symptom.isSignificant = true
+  } else {
+    // For non-significant-by-default types, randomly mark 10% as significant
+    symptom.isSignificant = Math.random() < 0.1
   }
 
   // Add user who added the symptom
@@ -213,7 +249,6 @@ const generateSymptom = (options = {}) => {
     // For range options, store the same value in approximateDuration
     symptom.approximateDuration = symptom.dateType
   }
-  // For range options and 'notSure', no additional date fields needed
 
   // 30% chance the symptom has recently stopped
   symptom.hasStopped = Math.random() < 0.3
@@ -227,10 +262,15 @@ const generateSymptom = (options = {}) => {
   symptom.isIntermittent = Math.random() < 0.25
 
   // Handle type-specific fields
-  if (type === 'Other') {
-    symptom.otherLocationDescription = faker.helpers.arrayElement(
-      typeData.descriptions
-    )
+  if (type === 'Other' || type === 'Breast pain') {
+    // Both Other and Breast pain use simple descriptions
+    if (type === 'Breast pain') {
+      // Breast pain doesn't need otherDescription, but we can add to additionalInfo later
+    } else {
+      symptom.otherDescription = faker.helpers.arrayElement(
+        typeData.descriptions
+      )
+    }
   } else if (type === 'Nipple change') {
     const changeType = faker.helpers.arrayElement(typeData.nippleChangeTypes)
     symptom.nippleChangeType = changeType
