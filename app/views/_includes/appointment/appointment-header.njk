@@ -78,7 +78,10 @@
   {{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes) - {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})
 </p>
 
-<p class="nhsuk-u-margin-bottom-4"><a href="{{ '/participants/' + participant.id | urlWithReferrer(currentUrl) }}">View participant record</a></p>
+{# Suppressed until we decide whether to ship the participant record #}
+{% if data.settings.screening.showParticipantSection | falsify %}
+  <p class="nhsuk-u-margin-bottom-4"><a href="{{ '/participants/' + participant.id | urlWithReferrer(currentUrl) }}">View participant record</a></p>
+{% endif %}
 
 {% if event | hasNotStarted and currentUser | isClinician %}
   <form action="./start" method="POST">

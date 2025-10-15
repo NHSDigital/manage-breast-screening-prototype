@@ -66,8 +66,9 @@
 
   {% endif %}
 
-  <p><a href="#">View participant record</a></p>
-
+  {% if data.settings.screening.showParticipantRecord %}
+    <p><a href="#">View participant record</a></p>
+  {% endif %}
   {# {{ card({
     heading: "Symptoms",
     headingLevel: "2",

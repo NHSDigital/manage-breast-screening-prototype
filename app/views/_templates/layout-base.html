@@ -51,7 +51,7 @@
       href: "/participants",
       text: "Participants",
       current: true if navActive == "participants"
-    },
+    } if data.settings.screening.showParticipantSection != 'false' else {},
     {
       href: "#",
       text: "Messages",
@@ -61,7 +61,7 @@
       text: "Help and support",
       current: true if navActive == "help"
     }
-  ] %}
+  ] | removeEmpty %}
 
   {% if appointmentWorkflow %}
     {% set navItems = [
