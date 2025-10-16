@@ -1,12 +1,21 @@
 {# /app/views/_includes/summary-lists/event-symptoms.njk #}
 
-{% if event.medicalInformation.symptoms and event.medicalInformation.symptoms.length > 0 %}
+{% set hasSymptoms = event | hasSymptoms %}
+
+{% if hasSymptoms %}
   {% set rows = [] %}
 
   {% for symptom in event.medicalInformation.symptoms %}
 
     {# Build the key (left column) - just the symptom type #}
-    {% set keyText = symptom.type or "" %}
+    {# {% set keyText = symptom.type or "" %} #}
+
+    {% set keyText %}
+      {{ symptom.type | sentenceCase }}
+      {% if symptom.isSignificant %}
+        <br>{{ "Highlight to image readers" | toTag }}
+      {% endif %}
+    {% endset %}
 
     {# Build the value (right column) - all supporting details #}
     {% set valueLines = [] %}
@@ -112,7 +121,7 @@
 
     {% set rows = rows | push({
       key: {
-        text: keyText | trim
+        html: keyText
       },
       value: {
         html: symptomValueHtml

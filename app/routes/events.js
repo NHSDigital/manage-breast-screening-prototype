@@ -24,6 +24,9 @@ const {
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
+const { sentenceCase } = require('../lib/utils/strings')
+// Load symptom types data
+const symptomTypes = require('../data/symptom-types')
 
 /**
  * Get single event and its related data
@@ -590,6 +593,10 @@ module.exports = (router) => {
         const symptomType = symptomTemp.type
         const isNewSymptom = !symptomTemp.id
 
+        const symptomTypeConfig = symptomTypes.find(
+          (st) => st.name === symptomType.toLowerCase()
+        )
+
         // Start with base symptom data
         const symptom = {
           id: symptomTemp.id || generateId(),
@@ -602,6 +609,16 @@ module.exports = (router) => {
         // For new symptoms, add the creation timestamp
         if (isNewSymptom) {
           symptom.dateAdded = new Date().toISOString()
+        }
+
+        if (symptomTypeConfig) {
+          if (symptomTypeConfig.isSignificantByDefault) {
+            // Always significant for default significant types
+            symptom.isSignificant = true
+          } else {
+            // Use string value for non-default types
+            symptom.isSignificant = symptomTemp.isSignificant === 'yes'
+          }
         }
 
         // Add investigation details if investigated
@@ -638,7 +655,7 @@ module.exports = (router) => {
             ? true
             : false
 
-        if (symptom.hasStopped) {
+        if (symptom.hasStopped && symptom) {
           symptom.approximateDateStopped = symptomTemp.approximateDateStopped
         }
 
@@ -805,21 +822,15 @@ module.exports = (router) => {
 
       // If symptomType is provided, pre-populate and go to details
       if (symptomType) {
-        // Map camelCase symptom types to display names
-        const symptomTypeMap = {
-          lump: 'Lump',
-          swellingOrShapeChange: 'Swelling or shape change',
-          skinChange: 'Skin change',
-          nippleChange: 'Nipple change',
-          other: 'Other'
-        }
+        // Find symptom type by slug
+        const symptomTypeConfig = symptomTypes.find(
+          (st) => st.slug === symptomType
+        )
 
-        const fullSymptomType = symptomTypeMap[symptomType]
-
-        if (fullSymptomType) {
+        if (symptomTypeConfig) {
           // Pre-populate symptomTemp with the selected type
           data.event.symptomTemp = {
-            type: fullSymptomType
+            type: sentenceCase(symptomTypeConfig.name)
           }
 
           // Redirect to details page

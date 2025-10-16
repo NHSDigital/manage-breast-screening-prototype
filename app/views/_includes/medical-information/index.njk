@@ -99,17 +99,10 @@
   <h4>Add symptoms</h4>
 
   <div class="nhsuk-button-group app-button-group--small">
-    {% set symptoms = {
-      lump: 'Lump',
-      swellingOrShapeChange: 'Swelling or shape change',
-      skinChange: 'Skin change',
-      nippleChange: 'Nipple change',
-      other: 'Other'
-    } %}
-    {% for symptomType, symptomName in symptoms %}
+    {% for symptomType in data.symptomTypes %}
       {{ button({
-        text: symptomName,
-        href: ("./medical-information/symptoms/add?symptomType=" + symptomType) | urlWithReferrer(currentUrl, scrollTo),
+        text: symptomType.name | sentenceCase,
+        href: ("./medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
         classes: "nhsuk-button--secondary app-button--small"
       }) }}
     {% endfor %}

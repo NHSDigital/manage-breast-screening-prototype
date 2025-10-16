@@ -197,6 +197,8 @@ const getStatusTagColour = (status) => {
     // Metadata
     'has_symptoms': 'yellow',
     'has_repeat': 'yellow',
+    'significant_symptom': 'yellow',
+    'highlight_to_image_readers': 'yellow',
 
     // Reading statuses
     'waiting_for_1st_read': 'grey',
@@ -291,6 +293,20 @@ const hasAppointmentNote = (event) => {
   return event?.appointmentNote && event.appointmentNote.trim().length > 0
 }
 
+/**
+ * Check if an event has an appointment note
+ *
+ * @param {object} event - Event object to check
+ * @returns {boolean} Whether the event has an appointment note
+ */
+const hasSymptoms = (event) => {
+  // symptoms stored at event.medicalInformation.symptoms[]
+  return (
+    event?.medicalInformation?.symptoms &&
+    event.medicalInformation.symptoms.length > 0
+  )
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -304,6 +320,7 @@ module.exports = {
   filterEventsByStatus,
   isSpecialAppointment,
   hasAppointmentNote,
+  hasSymptoms,
   // Export groups for testing/reference
   STATUS_GROUPS
 }

@@ -27,20 +27,20 @@
     value: "completed"
   }) }}
 
-  {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
-
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
+  {% set dynamicConfirmButton %}
+    <div class="nhsuk-form-group">
       {{ button({
         text: "Confirm identity" if data.event.workflowStatus['confirm-identity'] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0"
       }) }}
-
-      {# <p>
-        Selecting this confirms there is nothing further to record for the 4 remaining medical information sections
-      </p> #}
     </div>
-  </div>
+  {% endset %}
+
+  {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
+
+  {# 'Confirm identity' or 'Next section' #}
+  {{ dynamicConfirmButton | safe }}
+
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
@@ -66,12 +66,9 @@
     {% endcall %}
   {% endcall %}
 
+  {# 'Confirm identity' or 'Next section' #}
+  {{ dynamicConfirmButton | safe }}
 
-  <div class="nhsuk-form-group">
-    {{ button({
-      text: "Confirm identity"
-    }) }}
-  </div>
 
   {% include "screening-cannot-proceed-link.njk" %}
 
