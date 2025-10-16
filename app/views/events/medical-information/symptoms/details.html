@@ -561,11 +561,11 @@
       {% if event.symptomTemp.type == "Breast pain" %}
         {% set significantSymptomLegend = "Should this pain be highlighted to image readers?" %}
     
-        {% set isSignificantHint = "If it is persistent or accompanied by other symptoms, you can choose to include it in a special alert during reading." %}
+        {% set isSignificantHint = "If it is persistent or accompanied by other symptoms, you can choose to include it in a special alert during reading" %}
       {% else %}
         {% set significantSymptomLegend = "Should this symptom be highlighted to image readers?" %}
 
-        {% set isSignificantHint = "You can choose to include it in a special alert during reading." %}
+        {% set isSignificantHint = "You can choose to include it in a special alert during reading" %}
       {% endif %}
 
       {{ radios({
