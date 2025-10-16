@@ -559,9 +559,13 @@
     {% if not symptomType.isSignificantByDefault %}
 
       {% if event.symptomTemp.type == "Breast pain" %}
-        {% set isSignificantHint = "Breast pain is not usually considered a significant symptom of breast cancer unless it is persistent and accompanied by other symptoms. If you think this pain is important for image readers to know about, you can choose to highlight it." %}
+        {% set significantSymptomLegend = "Should this pain be highlighted to image readers?" %}
+    
+        {% set isSignificantHint = "If it is persistent or accompanied by other symptoms, you can choose to include it in a special alert during reading." %}
       {% else %}
-        {% set isSignificantHint = "Most symptoms are only highlighted to image readers if they are considered significant. If you think this symptom is important for image readers to know about, you can choose to highlight it." %}
+        {% set significantSymptomLegend = "Should this symptom be highlighted to image readers?" %}
+
+        {% set isSignificantHint = "You can choose to include it in a special alert during reading." %}
       {% endif %}
 
       {{ radios({
@@ -569,7 +573,7 @@
         name: "event[symptomTemp][isSignificant]",
         fieldset: {
           legend: {
-            text: "Should this symptom be highlighted to image readers?",
+            text: significantSymptomLegend,
             classes: "nhsuk-fieldset__legend--m"
           }
         },
@@ -579,16 +583,13 @@
         items: [
           {
             value: "yes",
-            text: "Yes, highlight the symptom",
+            text: "Yes, highlight to image readers",
             checked: true if event.symptomTemp.isSignificant
           },
           {
             value: "no",
-            text: "No, do not highlight the symptom",
-            checked: true if event.symptomTemp.isSignificant == false,
-            hint: {
-              text: "The symptom will still be available to image readers"
-            }
+            text: "No, just record information",
+            checked: true if event.symptomTemp.isSignificant == false
           }
         ]
       }) }}
