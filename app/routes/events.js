@@ -616,12 +616,8 @@ module.exports = (router) => {
             // Always significant for default significant types
             symptom.isSignificant = true
           } else {
-            // Use checkbox value for non-default types
-            symptom.isSignificant =
-              Array.isArray(symptomTemp.isSignificant) &&
-              symptomTemp.isSignificant.includes('yes')
-                ? true
-                : false
+            // Use string value for non-default types
+            symptom.isSignificant = symptomTemp.isSignificant === 'yes'
           }
         }
 

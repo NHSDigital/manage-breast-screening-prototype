@@ -45,19 +45,20 @@
       html: insetTextHtml
     }) }}
 
-  {% else %}
-    {# Show content when a symptom will not be considered significant by default #}
+
+  {# Show content when a symptom will not be considered significant by default #}
+  {# {% else %}
     {% if event.symptomTemp.type == "Breast pain" %}
       <p>
-        Breast pain is not a recognised sign of breast cancer unless it is persistent and accompanied by other symptoms. Pain information will only be shown during image reading if you use the highlight to image readers checkbox.
+        Breast pain is not a recognised sign of breast cancer unless it is persistent and accompanied by other symptoms. Select the ’highlight to image readers’ checkbox if you want to make readers aware of the breast pain.
       </p>
     {% endif %}
 
     {% if event.symptomTemp.type == "Other" %}
       <p>
-        Details of this symptom will only be highlighted to image readers if you use the highlight to image readers checkbox.
+        Select the ’highlight to image readers’ checkbox if you want to make readers aware of this symptom.
       </p>
-    {% endif %}
+    {% endif %} #}
 
   {% endif %}
 
@@ -219,17 +220,19 @@
             {
               value: "other",
               text: "Other",
-              hint: {
-                text: "For example, the armpit"
+              _hint: {
+                text: "For example, the left armpit"
               },
               conditional: {
                 html: input({
                   name: "event[symptomTemp][otherLocationDescription]",
                   label: {
-                    text: "Describe the specific area"
+                    text: "Describe the specific area",
+                    _classes: "nhsuk-u-visually-hidden"
                   },
                   hint: {
-                    text: "For example, the left armpit"
+                    text: "For example, the left armpit",
+                    _classes: "nhsuk-u-visually-hidden"
                   },
                   value: event.symptomTemp.otherLocationDescription,
                   classes: "nhsuk-u-width-two-thirds"
@@ -487,21 +490,7 @@
     {# TODO: don't use br for spacing! #}
     <br>
 
-    {# Only show if not significant by default #}
-    {% if not symptomType.isSignificantByDefault %}
-      {{ checkboxes({
-        idPrefix: "isSignificant",
-        name: "event[symptomTemp][isSignificant]",
-        items: [
-          {
-            value: "yes",
-            text: "Highlight this symptom to image readers",
-            checked: true if event.symptomTemp.isSignificant else false
-          }
-        ]
-      }) }}
-      
-    {% endif %}
+    
 
     {{ checkboxes({
       idPrefix: "isIntermittent",
@@ -565,6 +554,57 @@
       }
     ]
   }) }}
+
+  {# Only show if not significant by default #}
+    {% if not symptomType.isSignificantByDefault %}
+
+      {% if event.symptomTemp.type == "Breast pain" %}
+        {% set isSignificantHint = "Breast pain is not usually considered a significant symptom of breast cancer unless it is persistent and accompanied by other symptoms. If you think this pain is important for image readers to know about, you can choose to highlight it." %}
+      {% else %}
+        {% set isSignificantHint = "Most symptoms are only highlighted to image readers if they are considered significant. If you think this symptom is important for image readers to know about, you can choose to highlight it." %}
+      {% endif %}
+
+      {{ radios({
+        idPrefix: "isSignificant",
+        name: "event[symptomTemp][isSignificant]",
+        fieldset: {
+          legend: {
+            text: "Should this symptom be highlighted to image readers?",
+            classes: "nhsuk-fieldset__legend--m"
+          }
+        },
+        hint: {
+          text: isSignificantHint
+        },
+        items: [
+          {
+            value: "yes",
+            text: "Yes, highlight the symptom",
+            checked: true if event.symptomTemp.isSignificant
+          },
+          {
+            value: "no",
+            text: "No, do not highlight the symptom",
+            checked: true if event.symptomTemp.isSignificant == false,
+            hint: {
+              text: "The symptom will still be available to image readers"
+            }
+          }
+        ]
+      }) }}
+
+      {# {{ checkboxes({
+        idPrefix: "isSignificant",
+        name: "event[symptomTemp][isSignificant]",
+        items: [
+          {
+            value: "yes",
+            text: "Highlight this symptom to image readers",
+            checked: true if event.symptomTemp.isSignificant else false
+          }
+        ]
+      }) }} #}
+    {% endif %}
 
 
 
