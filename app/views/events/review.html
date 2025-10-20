@@ -6,6 +6,8 @@
 {% set activeWorkflowStep = 'review' %}
 {% set hideBackLink = true %}
 
+{% set allowEdits = true %}
+
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set formAction = './complete' %}
@@ -21,29 +23,37 @@
 
 {% block pageContent %}
 
+  <h1>{{ pageHeading }}</h1>
+
   {{ button({
     text: "Complete screening and return to clinic"
   }) }}
 
   {% set valueHtml = "None" %}
 
-  {# Scars, moles, warts, lumps #}
-  {# Temporarily hardcode some features for UR #}
-  {% set useFakeBreastFeaturesCard = true %}
-  {% include "cards/medical-information/breast-features.njk" %}
+  {% set breastFeaturesHtml %}
+    {% include "_includes/medical-information/breast-features.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Breast features",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: breastFeaturesHtml
+  }) }}
 
   {% set valueHtml = "No" %}
 
   {% set imageCount = event.mammogramData.metadata.totalImages %}
 
   {% set imagesCardHtml %}
-    {% include "mammogram-data-display.njk" %}
+    {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
 
-    {% if event.mammogramData.isManualEntry %}
+    {# {% if event.mammogramData.isManualEntry %}
       <p><a href="./images-manual-details">View or update images</a></p>
     {% else %}
       <p><a href="./images-automatic">View or update images</a></p>
-    {% endif %}
+    {% endif %} #}
   {% endset %}
 
   {{ card({
@@ -76,7 +86,7 @@
       rows: [
         {
           key: {
-            text: "Appointment needs"
+            text: "Special appointment"
           },
           value: {
             html: specialAppointmentHtml
@@ -84,9 +94,9 @@
           actions: {
             items: [
               {
-                href: "#",
+                href: (eventUrl + "/special-appointment/edit") | urlWithReferrer(referrerChain),
                 text: "Change",
-                visuallyHiddenText: "images"
+                visuallyHiddenText: "special appointment"
               }
             ]
           }

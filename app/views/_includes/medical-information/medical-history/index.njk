@@ -607,16 +607,19 @@
   }) }}
 {% endif %}
 
-<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+{% if allowEdits %}
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
-<h3>Add medical history</h3>
+  <h3>Add medical history</h3>
 
-<div class="nhsuk-button-group app-button-group--small">
-  {% for typeData in data.medicalHistoryTypes %}
-    {{ button({
-      text: typeData.name,
-      href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
-      classes: "nhsuk-button--secondary app-button--small"
-    }) }}
-  {% endfor %}
-</div>
+  <div class="nhsuk-button-group app-button-group--small">
+    {% for typeData in data.medicalHistoryTypes %}
+      {{ button({
+        text: typeData.name,
+        href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
+        classes: "nhsuk-button--secondary app-button--small"
+      }) }}
+    {% endfor %}
+  </div>
+{% endif %}
+

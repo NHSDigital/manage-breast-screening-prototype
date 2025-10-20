@@ -21,67 +21,69 @@
   { id: 'review', label: 'Review' }
 ] %}
 
-<nav class="app-workflow-side-nav" aria-label="Workflow steps">
+<div class="app-workflow-side-nav-wrapper">
+  <nav class="app-workflow-side-nav" aria-label="Workflow steps">
 
-  <h2 class="app-workflow-side-nav__heading">
-    <span class="nhsuk-caption-m">
-      {{ clinic.clinicType | sentenceCase }} appointment
-    </span>
-    Workflow steps
-  </h2>
+    <h2 class="app-workflow-side-nav__heading">
+      <span class="nhsuk-caption-m">
+        {{ clinic.clinicType | sentenceCase }} appointment
+      </span>
+      Workflow steps
+    </h2>
 
-  <ol class="app-workflow-side-nav__list">
-    {% for item in workflowSteps %}
-      {% set href = '/clinics/' + clinicId + '/events/' + event.id + '/' + item.id %}
-      {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
-      {% set isCurrent = item.id == activeWorkflowStep %}
-      {% set isDisabled = false %}
+    <ol class="app-workflow-side-nav__list">
+      {% for item in workflowSteps %}
+        {% set href = '/clinics/' + clinicId + '/events/' + event.id + '/' + item.id %}
+        {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
+        {% set isCurrent = item.id == activeWorkflowStep %}
+        {% set isDisabled = false %}
 
-      {# Determine if step is disabled based on prerequisites - but never disable current or completed steps #}
-      {% if not isCurrent and not isCompleted %}
-        {% if item.id == 'review-medical-information' %}
-          {% set isDisabled = not identityStageCompleted %}
+        {# Determine if step is disabled based on prerequisites - but never disable current or completed steps #}
+        {% if not isCurrent and not isCompleted %}
+          {% if item.id == 'review-medical-information' %}
+            {% set isDisabled = not identityStageCompleted %}
+          {% endif %}
+          
+          {% if item.id == 'take-images' %}
+            {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted) %}
+          {% endif %}
+
+          {% if item.id == 'review' %}
+            {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted and imagesStageCompleted) %}
+          {% endif %}
         {% endif %}
-        
-        {% if item.id == 'take-images' %}
-          {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted) %}
-        {% endif %}
 
-        {% if item.id == 'review' %}
-          {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted and imagesStageCompleted) %}
-        {% endif %}
-      {% endif %}
-
-      <li class="app-workflow-side-nav__item {{ 'app-workflow-side-nav__item--current' if isCurrent }} {{ 'app-workflow-side-nav__item--completed' if isCompleted }} {{ 'app-workflow-side-nav__item--disabled' if isDisabled }}">
-        {% if isDisabled %}
-          <span class="app-workflow-side-nav__link app-workflow-side-nav__link--disabled">
-            <span class="app-workflow-side-nav__number">{{ loop.index }}</span>
-            <span class="app-workflow-side-nav__label">{{ item.label }}</span>
-          </span>
-        {% elif isCurrent %}
-          <span class="app-workflow-side-nav__link" aria-current="page">
-            <span class="app-workflow-side-nav__number">
-              {% if isCompleted %}
-                {{ tickSvg | safe }}
-              {% else %}
-                {{ loop.index }}
-              {% endif %}
+        <li class="app-workflow-side-nav__item {{ 'app-workflow-side-nav__item--current' if isCurrent }} {{ 'app-workflow-side-nav__item--completed' if isCompleted }} {{ 'app-workflow-side-nav__item--disabled' if isDisabled }}">
+          {% if isDisabled %}
+            <span class="app-workflow-side-nav__link app-workflow-side-nav__link--disabled">
+              <span class="app-workflow-side-nav__number">{{ loop.index }}</span>
+              <span class="app-workflow-side-nav__label">{{ item.label }}</span>
             </span>
-            <span class="app-workflow-side-nav__label">{{ item.label }}</span>
-          </span>
-        {% else %}
-          <a class="app-workflow-side-nav__link app-workflow-side-nav__link--clickable" href="{{ href }}">
-            <span class="app-workflow-side-nav__number">
-              {% if isCompleted %}
-                {{ tickSvg | safe }}
-              {% else %}
-                {{ loop.index }}
-              {% endif %}
+          {% elif isCurrent %}
+            <span class="app-workflow-side-nav__link" aria-current="page">
+              <span class="app-workflow-side-nav__number">
+                {% if isCompleted %}
+                  {{ tickSvg | safe }}
+                {% else %}
+                  {{ loop.index }}
+                {% endif %}
+              </span>
+              <span class="app-workflow-side-nav__label">{{ item.label }}</span>
             </span>
-            <span class="app-workflow-side-nav__label">{{ item.label }}</span>
-          </a>
-        {% endif %}
-      </li>
-    {% endfor %}
-  </ol>
-</nav>
+          {% else %}
+            <a class="app-workflow-side-nav__link app-workflow-side-nav__link--clickable" href="{{ href }}">
+              <span class="app-workflow-side-nav__number">
+                {% if isCompleted %}
+                  {{ tickSvg | safe }}
+                {% else %}
+                  {{ loop.index }}
+                {% endif %}
+              </span>
+              <span class="app-workflow-side-nav__label">{{ item.label }}</span>
+            </a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </nav>
+</div>

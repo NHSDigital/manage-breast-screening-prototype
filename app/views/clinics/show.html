@@ -244,31 +244,31 @@ items: secondaryNavItems
       {# Actions - check-in or start appointment #}
       <td class="nhsuk-table__cell">
         {% if event.status == 'event_scheduled' %}
-        {{ appCheckIn({
-        clinicId: clinicId,
-        event: event,
-        participant: participant,
-        confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
-        statusTagId: statusTagId,
-        currentUser: currentUser
-        }) }}
+          {{ appCheckIn({
+            clinicId: clinicId,
+            event: event,
+            participant: participant,
+            confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+            statusTagId: statusTagId,
+            currentUser: currentUser
+          }) }}
 
         {% endif %}
 
-        {% if currentUser | isClinician %}
-        {% if event | hasNotStarted %}
-        {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this
-        class to make the link visible #}
-        <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started"
-          class="app-nowrap {{ 'app-display-none' if event.status == 'event_scheduled' }} js-start-appointment-link">
-          Start appointment
-        </a>
+        {% if (currentUser | isClinician) and (event | isActive) %}
+          {% if event | hasNotStarted %}
+            {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this
+            class to make the link visible #}
+            <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started"
+              class="app-nowrap {{ 'app-display-none' if event.status == 'event_scheduled' }} js-start-appointment-link">
+              Start appointment
+            </a>
 
-        {% elseif event | startedByCurrentUser %}
-        <a href="{{ eventBaseUrl }}/identity">
-          Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
-        </a>
-        {% endif %}
+          {% elseif event | startedByCurrentUser %}
+            <a href="{{ eventBaseUrl }}/confirm-identity">
+              Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+            </a>
+          {% endif %}
 
         {% endif %}
 

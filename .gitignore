@@ -75,3 +75,7 @@ coverage
 
 # ESlint cache
 .cache
+
+# LLM instructions
+.github
+CLAUDE.md

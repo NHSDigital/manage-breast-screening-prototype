@@ -14,15 +14,17 @@
   @include nhsuk-width-container(1200px);
 }
 
-.app-workflow-container .nhsuk-grid-column-one-quarter {
-  align-self: flex-start;
+@include nhsuk-media-query($from: desktop) {
+  .app-workflow-side-nav-wrapper {
+    position: relative;
+    min-height: 100vh; // Ensures it's tall enough for sticky to work
+  }
 }
 
-// Side navigation
 .app-workflow-side-nav {
   position: sticky;
   top: nhsuk-spacing(4);
-  align-self: flex-start; // Important for sticky in grid/flex
+  align-self: flex-start;
   padding-bottom: 15px;
 }
 

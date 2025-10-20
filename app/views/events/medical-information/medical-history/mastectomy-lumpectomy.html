@@ -23,9 +23,9 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
-        name: "event[medicalHistoryTemp][procedureRightBreast]",
-        value: event.medicalHistoryTemp.procedureRightBreast,
-        idPrefix: "procedureRightBreast",
+        name: "event[medicalHistoryTemp][proceduresRightBreast]",
+        value: event.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
@@ -58,9 +58,9 @@
     </div>
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
-        name: "event[medicalHistoryTemp][procedureLeftBreast]",
-        value: event.medicalHistoryTemp.procedureLeftBreast,
-        idPrefix: "procedureLeftBreast",
+        name: "event[medicalHistoryTemp][proceduresLeftBreast]",
+        value: event.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",

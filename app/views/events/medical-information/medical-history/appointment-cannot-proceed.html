@@ -4,7 +4,7 @@
 
 {% set pageHeading = "This appointment cannot proceed" %}
 
-{% set formAction = './../previous-mammograms-answer' %}
+{% set formAction = './../../attended-not-screened-reason' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
 

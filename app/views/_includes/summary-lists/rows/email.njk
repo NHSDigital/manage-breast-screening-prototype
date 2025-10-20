@@ -1,6 +1,7 @@
 {# /app/views/_includes/summary-lists/rows/email.njk #}
 
 {% set emailRow = {
+  classes: "nhsuk-summary-list__row--no-border" if noBorder,
   key: {
     text: "Email"
   },
@@ -15,7 +16,8 @@
          visuallyHiddenText: "email"
        } if allowEdits
      ]
-   }
+   } if allowEdits,
+   anyRowHasActions: allowEdits
 } | handleSummaryListMissingInformation(showNotProvidedText) %}
 
 {{ appSummaryListRow(emailRow) }}

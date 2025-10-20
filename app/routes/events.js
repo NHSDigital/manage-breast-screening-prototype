@@ -171,6 +171,10 @@ module.exports = (router) => {
     const currentUser = data.currentUser
     const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
 
+    console.log(
+      `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
+    )
+
     if (event?.status !== 'event_in_progress') {
       // Update status
       updateEventStatus(data, req.params.eventId, 'event_in_progress')

@@ -17,7 +17,7 @@ const STATUS_GROUPS = {
     'event_attended_not_screened',
     'event_cancelled'
   ],
-  active: ['event_scheduled', 'event_checked_in'],
+  active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
   eligible_for_reading: ['event_complete', 'event_partially_screened']
 }
 
@@ -119,7 +119,12 @@ const isAppointmentWorkflow = function (event, currentUser) {
   currentUser = currentUser || this?.ctx?.data?.currentUser
 
   const startedBy = event?.sessionDetails?.startedBy
-  if (!currentUser || !startedBy) return false
+  if (!currentUser || !startedBy) {
+    console.log(
+      `User or event not found: currentuser: ${currentUser}, startedBy: ${startedBy}`
+    )
+    return false
+  }
 
   // Extract user ID whether currentUser is object or string
   const currentUserId =
