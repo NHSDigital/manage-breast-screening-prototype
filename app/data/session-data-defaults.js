@@ -62,7 +62,7 @@ const defaultSettings = {
   darkMode: 'false',
   screening: {
     confirmIdentityOnCheckIn: 'true',
-    manualImageCollection: 'false',
+    manualImageCollection: 'true',
     showParticipantSection: 'false'
   },
   reading: {

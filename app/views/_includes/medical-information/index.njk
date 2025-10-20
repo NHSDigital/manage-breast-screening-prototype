@@ -2,7 +2,7 @@
 
 {# Calling template sets variable `displayFormat` to one of card / expander / flat #}
 
-{% set allowEdits = true if currentUser | isClinician else false %}
+{% set allowEdits = true if (isAppointmentWorkflow and currentUser | isClinician) else false %}
 
 {# Explicitly set referrer chain to the current url #}
 {% set referrerChain = currentUrl %}
@@ -96,17 +96,20 @@
     <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
   </p> #}
 
-  <h4>Add symptoms</h4>
+  {% if allowEdits %}
+    <h4>Add symptoms</h4>
 
-  <div class="nhsuk-button-group app-button-group--small">
-    {% for symptomType in data.symptomTypes %}
-      {{ button({
-        text: symptomType.name | sentenceCase,
-        href: ("./medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
-        classes: "nhsuk-button--secondary app-button--small"
-      }) }}
-    {% endfor %}
-  </div>
+    <div class="nhsuk-button-group app-button-group--small">
+      {% for symptomType in data.symptomTypes %}
+        {{ button({
+          text: symptomType.name | sentenceCase,
+          href: ("./medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
+          classes: "nhsuk-button--secondary app-button--small"
+        }) }}
+      {% endfor %}
+    </div>
+  {% endif %}
+  
 {% endset %}
 
 {% switch displayFormat %}

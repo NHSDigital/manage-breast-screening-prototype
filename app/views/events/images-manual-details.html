@@ -20,7 +20,7 @@
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
-  {% set inputsLink %}
+  {# {% set inputsLink %}
     <p>
       <a href="./images-manual-details?viewQuestionStyle=inputs">Swap to 'input' style</a>
     </p>
@@ -38,7 +38,7 @@
   {% else %}
     {{ inputsLink | safe }}
     {% set viewQuestionStyle = "checkboxes" %}
-  {% endif %}
+  {% endif %} #}
 
   {% set viewsQuestionCheckboxes %}
 
