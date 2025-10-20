@@ -18,8 +18,11 @@
     {% call summaryList() %}
       {% include "_includes/summary-lists/rows/full-name.njk" %}
       {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
-      {% set noBorder = true %}
+      
       {% include "_includes/summary-lists/rows/address.njk" %}
+      {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+        {% set noBorder = true %}
+      {% include "_includes/summary-lists/rows/email.njk" %}
     {% endcall %}
   {% endset %}
 

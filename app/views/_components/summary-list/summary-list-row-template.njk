@@ -15,7 +15,7 @@ true unless told otherwise #}
 {%- set anyRowHasActions = row.anyRowHasActions | default(true) %}
 
 {% if row %}
-  <div class="nhsuk-summary-list__row {%- if anyRowHasActions and not row.actions.items %} nhsuk-summary-list__row--no-actions{% endif %} {%- if row.classes %} {{ row.classes }}{% endif %}">
+  <div class="nhsuk-summary-list__row {%- if not anyRowHasActions and not row.actions.items %} nhsuk-summary-list__row--no-actions{% endif %} {%- if row.classes %} {{ row.classes }}{% endif %}">
     <dt class="nhsuk-summary-list__key {%- if row.key.classes %} {{ row.key.classes }}{% endif %}">
       {{ row.key.html | safe if row.key.html else row.key.text }}
     </dt>

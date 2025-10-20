@@ -119,7 +119,12 @@ const isAppointmentWorkflow = function (event, currentUser) {
   currentUser = currentUser || this?.ctx?.data?.currentUser
 
   const startedBy = event?.sessionDetails?.startedBy
-  if (!currentUser || !startedBy) return false
+  if (!currentUser || !startedBy) {
+    console.log(
+      `User or event not found: currentuser: ${currentUser}, startedBy: ${startedBy}`
+    )
+    return false
+  }
 
   // Extract user ID whether currentUser is object or string
   const currentUserId =
