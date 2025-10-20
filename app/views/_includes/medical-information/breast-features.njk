@@ -40,7 +40,15 @@
 {% endset %}
 
 {% if allowEdits %}
-  <p>
+  {# <p>
     <a href="{{ linkHref | safe }}" class="nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
-  </p>
+  </p> #}
+
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Add a feature" if not hasBreastFeatures else "View or edit breast features",
+      href: "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo),
+      classes: "nhsuk-button--secondary app-button--small"
+    }) }}
+  </div>
 {% endif %}

@@ -64,6 +64,8 @@
 {# Build summary list rows #}
 {% set summaryRows = [] %}
 
+{% set defaultHref = "./images-automatic" %}
+
 {# Machine room (manual only) #}
 {% if isManualEntry and event.mammogramData.machineRoom %}
   {% set summaryRows = summaryRows | push({
@@ -72,6 +74,15 @@
     },
     value: {
       text: event.mammogramData.machineRoom
+    },
+    actions: {
+      items: [
+        {
+          href: ("./images-manual" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          text: "Change",
+          visuallyHiddenText: "machine room"
+        }
+      ]
     }
   }) %}
 {% endif %}
@@ -83,6 +94,15 @@
   },
   value: {
     html: viewsHtml
+  },
+  actions: {
+    items: [
+      {
+        href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+        text: "Change",
+        visuallyHiddenText: "views taken"
+      }
+    ]
   }
 }) %}
 
@@ -106,6 +126,15 @@
     },
     value: {
       html: repeatsHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./images-manual-repeats" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          text: "Change",
+          visuallyHiddenText: "repeat reasons"
+        }
+      ]
     }
   }) %}
 {% endif %}
@@ -118,22 +147,40 @@
     },
     value: {
       text: event.mammogramData.partialMammographyReason or "Yes"
+    },
+    actions: {
+      items: [
+        {
+          href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          text: "Change",
+          visuallyHiddenText: "partial mammography"
+        }
+      ]
     }
   }) %}
 {% endif %}
 
 {# Additional details #}
-{% if event.mammogramData.additionalDetails %}
+{# {% if event.mammogramData.additionalDetails %} #}
   {% set summaryRows = summaryRows | push({
     key: {
       text: "Additional details"
     },
     value: {
       text: event.mammogramData.additionalDetails
+    },
+    actions: {
+      items: [
+        {
+          href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          text: "Change",
+          visuallyHiddenText: "additional details"
+        }
+      ]
     }
   }) %}
-{% endif %}
+{# {% endif %} #}
 
 {{ summaryList({
   rows: summaryRows
-}) }}
+} | handleSummaryListMissingInformation) }}
