@@ -1,9 +1,9 @@
-// app/lib/generators/symptoms-generator.js
+// app/lib/generators/medical-information/symptoms-generator.js
 
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
-const generateId = require('../utils/id-generator')
-const symptomTypesData = require('../../data/symptom-types.js')
+const generateId = require('../../utils/id-generator')
+const symptomTypesData = require('../../../data/symptom-types.js')
 
 // Helper to convert lowercase to sentence case
 const toSentenceCase = (str) => str.charAt(0).toUpperCase() + str.slice(1)
@@ -359,11 +359,11 @@ const generateSymptom = (options = {}) => {
  * @param {object} [options] - Generation options
  * @param {number} [options.probabilityOfSymptoms] - Chance of having any symptoms
  * @param {number} [options.maxSymptoms] - Maximum number of symptoms to generate
- * @param {Array} [options.users] - Array of users to pick from for addedByUserId
+ * @param {string} [options.addedByUserId] - User ID who added these symptoms (typically from sessionDetails.startedBy)
  * @returns {Array} Array of generated symptoms
  */
 const generateSymptoms = (options = {}) => {
-  const { probabilityOfSymptoms = 0.15, maxSymptoms = 3, users = [] } = options
+  const { probabilityOfSymptoms, maxSymptoms = 3, addedByUserId } = options
 
   // Determine if they have any symptoms
   if (Math.random() > probabilityOfSymptoms) {
@@ -376,10 +376,6 @@ const generateSymptoms = (options = {}) => {
     2: 0.15,
     3: 0.05
   })
-
-  // Pick a consistent user for all symptoms for this participant
-  const addedByUserId =
-    users.length > 0 ? faker.helpers.arrayElement(users).id : null
 
   // Track used types to avoid duplicates
   const usedTypes = new Set()
