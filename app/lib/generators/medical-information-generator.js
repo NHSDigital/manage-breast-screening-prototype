@@ -11,6 +11,9 @@ const {
 const {
   generateBreastFeatures
 } = require('./medical-information/breast-features-generator')
+const {
+  generateMedicalHistory
+} = require('./medical-information/medical-history-generator')
 
 /**
  * Generate complete medical information for an event
@@ -24,6 +27,7 @@ const {
  * @param {number} [options.probabilityOfPregnancyBreastfeeding=0.05] - Chance of having pregnancy/breastfeeding data
  * @param {number} [options.probabilityOfOtherMedicalInfo=0.15] - Chance of having other medical information
  * @param {number} [options.probabilityOfBreastFeatures=0.20] - Chance of having breast features
+ * @param {number} [options.probabilityOfMedicalHistory=0.20] - Chance of having medical history
  * @param {object} [options.config] - Participant config for overrides and forced generation
  * @returns {object} Complete medicalInformation object
  */
@@ -35,6 +39,7 @@ const generateMedicalInformation = (options = {}) => {
     probabilityOfPregnancyBreastfeeding = 0.99,
     probabilityOfOtherMedicalInfo = 0.99,
     probabilityOfBreastFeatures = 0.99,
+    probabilityOfMedicalHistory = 0.99,
     config
   } = options
 
@@ -77,15 +82,16 @@ const generateMedicalInformation = (options = {}) => {
     medicalInfo.otherMedicalInformation = otherMedicalInformation
   }
 
-  // Future: Add medical history generation here
-  // const medicalHistory = generateMedicalHistory({
-  //   addedByUserId,
-  //   probability: 0.20,
-  //   config
-  // })
-  // if (Object.keys(medicalHistory).length > 0) {
-  //   medicalInfo.medicalHistory = medicalHistory
-  // }
+  // Generate medical history
+  const medicalHistory = generateMedicalHistory({
+    addedByUserId,
+    probability: probabilityOfMedicalHistory,
+    config
+  })
+
+  if (Object.keys(medicalHistory).length > 0) {
+    medicalInfo.medicalHistory = medicalHistory
+  }
 
   // Generate breast features
   const breastFeatures = generateBreastFeatures({
