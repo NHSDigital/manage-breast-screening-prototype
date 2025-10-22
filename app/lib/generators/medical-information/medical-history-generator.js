@@ -22,6 +22,32 @@ const BREAST_IMPLANTS_CONFIG = {
   }
 }
 
+// Configuration for mastectomy/lumpectomy generation
+const MASTECTOMY_LUMPECTOMY_CONFIG = {
+  // Which breast(s) had surgery
+  breastChoice: {
+    'right-only': 0.4,
+    'left-only': 0.4,
+    'both': 0.2
+  },
+  // Procedure types (same as breast cancer but for prophylactic/elective surgery)
+  procedureTypes: [
+    'Lumpectomy',
+    'Mastectomy (tissue remaining)',
+    'Mastectomy (no tissue remaining)'
+  ],
+  // Other surgery options
+  otherSurgeryOptions: [
+    'Reconstruction',
+    'Symmetrisation'
+  ],
+  // Surgery reasons (skip 'Other reason')
+  surgeryReasons: {
+    'Risk reduction': 0.7,
+    'Gender-affirmation': 0.3
+  }
+}
+
 // Configuration for breast cancer generation
 const BREAST_CANCER_CONFIG = {
   // Which breast(s) affected
@@ -93,10 +119,10 @@ const generateBreastCancerItem = (options = {}) =>
     item.cancerLocation = ['Does not know']
   }
 
-  // Procedure year (90% of the time)
+  // Year (90% of the time)
   if (Math.random() < 0.9)
   {
-    item.procedureYear = faker.number.int({ min: 2010, max: 2024 }).toString()
+    item.year = faker.number.int({ min: 2010, max: 2024 }).toString()
   }
 
   // Procedures - always generate based on which breast is affected
@@ -231,24 +257,42 @@ const generateBreastCancerItem = (options = {}) =>
     }
   }
 
-  // Treatment location (90% of the time)
+  // Location (90% of the time)
   if (Math.random() < 0.9)
   {
     const locationChoice = weighted.select({
-      'at-this-service': 0.6,
-      'at-another-service': 0.3,
-      'do-not-know': 0.1
+      'At an NHS hospital': 0.6,
+      'At a private clinic in the UK': 0.2,
+      'Outside the UK': 0.1,
+      'Exact location unknown': 0.1
     })
 
-    item.treatmentLocation = locationChoice
+    item.location = locationChoice
 
-    if (locationChoice === 'at-another-service')
+    // Add conditional details for certain locations
+    if (locationChoice === 'At an NHS hospital')
     {
-      item.treatmentLocationDetails = faker.helpers.arrayElement([
+      item.locationNhsHospitalDetails = faker.helpers.arrayElement([
         'Royal Marsden Hospital',
         'Christie Hospital Manchester',
         'University College Hospital London',
         'Addenbrooke\'s Hospital Cambridge'
+      ])
+    }
+    else if (locationChoice === 'At a private clinic in the UK')
+    {
+      item.locationPrivateClinicDetails = faker.helpers.arrayElement([
+        'Harley Street Clinic',
+        'London Bridge Hospital',
+        'Cromwell Hospital'
+      ])
+    }
+    else if (locationChoice === 'Outside the UK')
+    {
+      item.locationOutsideUkDetails = faker.helpers.arrayElement([
+        'France',
+        'Spain',
+        'Australia'
       ])
     }
   }
@@ -305,10 +349,10 @@ const generateBreastImplantsItem = (options = {}) =>
   // Consent is required for breast implants - always set to 'yes' for generated data
   item.consentGiven = 'yes'
 
-  // Procedure year (85% of the time)
+  // Year (85% of the time)
   if (Math.random() < 0.85)
   {
-    item.procedureYear = faker.number.int({ min: 2005, max: 2024 }).toString()
+    item.year = faker.number.int({ min: 2005, max: 2024 }).toString()
   }
 
   // Implants removed (20% chance)
@@ -319,7 +363,7 @@ const generateBreastImplantsItem = (options = {}) =>
     // Year removed (90% of the time if removed)
     if (Math.random() < 0.9)
     {
-      const implantYear = item.procedureYear ? parseInt(item.procedureYear) : 2010
+      const implantYear = item.year ? parseInt(item.year) : 2010
       item.yearRemoved = faker.number.int({
         min: implantYear,
         max: 2024
@@ -360,10 +404,10 @@ const generateImplantedDeviceItem = (options = {}) =>
   // Device type
   item.type = weighted.select(IMPLANTED_DEVICE_CONFIG.deviceTypes)
 
-  // Procedure year (80% of the time)
+  // Year (80% of the time)
   if (Math.random() < 0.8)
   {
-    item.procedureYear = faker.number.int({ min: 2010, max: 2024 }).toString()
+    item.year = faker.number.int({ min: 2010, max: 2024 }).toString()
   }
 
   // Device removed (30% chance)
@@ -374,7 +418,7 @@ const generateImplantedDeviceItem = (options = {}) =>
     // Year removed (90% of the time if removed)
     if (Math.random() < 0.9)
     {
-      const implantYear = item.procedureYear ? parseInt(item.procedureYear) : 2015
+      const implantYear = item.year ? parseInt(item.year) : 2015
       item.yearRemoved = faker.number.int({
         min: implantYear,
         max: 2024
