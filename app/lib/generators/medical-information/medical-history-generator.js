@@ -48,6 +48,16 @@ const MASTECTOMY_LUMPECTOMY_CONFIG = {
   }
 }
 
+// Configuration for cysts generation
+const CYSTS_CONFIG = {
+  // Cyst status options with weights
+  statusOptions: {
+    'Yes, not treated': 0.4,
+    'Yes, drained or removed': 0.5,
+    'No': 0.1
+  }
+}
+
 // Configuration for benign lumps generation
 const BENIGN_LUMPS_CONFIG = {
   // Which breast(s) had procedures
@@ -152,19 +162,20 @@ const generateBreastCancerItem = (options = {}) =>
   }
 
   // Procedures - always generate based on which breast is affected
+  // Remove 'No procedure' from options - if they have cancer history, at least one breast had a procedure
+  const actualProcedureTypes = BREAST_CANCER_CONFIG.procedureTypes.filter(
+    type => type !== 'No procedure'
+  )
+
   // Even if cancer location is unknown, procedures might still be recorded
   if (breastAffected === 'right-only' || breastAffected === 'both')
   {
-    item.proceduresRightBreast = faker.helpers.arrayElement(
-      BREAST_CANCER_CONFIG.procedureTypes
-    )
+    item.proceduresRightBreast = faker.helpers.arrayElement(actualProcedureTypes)
   }
 
   if (breastAffected === 'left-only' || breastAffected === 'both')
   {
-    item.proceduresLeftBreast = faker.helpers.arrayElement(
-      BREAST_CANCER_CONFIG.procedureTypes
-    )
+    item.proceduresLeftBreast = faker.helpers.arrayElement(actualProcedureTypes)
   }
 
   // If cancer location is unknown, still might have procedures recorded
@@ -179,16 +190,12 @@ const generateBreastCancerItem = (options = {}) =>
 
     if (unknownBreastChoice === 'right' || unknownBreastChoice === 'both')
     {
-      item.proceduresRightBreast = faker.helpers.arrayElement(
-        BREAST_CANCER_CONFIG.procedureTypes
-      )
+      item.proceduresRightBreast = faker.helpers.arrayElement(actualProcedureTypes)
     }
 
     if (unknownBreastChoice === 'left' || unknownBreastChoice === 'both')
     {
-      item.proceduresLeftBreast = faker.helpers.arrayElement(
-        BREAST_CANCER_CONFIG.procedureTypes
-      )
+      item.proceduresLeftBreast = faker.helpers.arrayElement(actualProcedureTypes)
     }
   }
 
@@ -323,8 +330,8 @@ const generateBreastCancerItem = (options = {}) =>
     }
   }
 
-  // Additional details (60% of the time)
-  if (Math.random() < 0.6)
+  // Additional details (75% of the time)
+  if (Math.random() < 0.75)
   {
     item.additionalDetails = faker.helpers.arrayElement([
       'Currently on five-year follow-up surveillance',
@@ -397,8 +404,8 @@ const generateBreastImplantsItem = (options = {}) =>
     }
   }
 
-  // Additional details (40% of the time)
-  if (Math.random() < 0.4)
+  // Additional details (75% of the time)
+  if (Math.random() < 0.75)
   {
     item.additionalDetails = faker.helpers.arrayElement([
       'Silicone implants',
@@ -498,8 +505,8 @@ const generateMastectomyLumpectomyItem = (options = {}) =>
     MASTECTOMY_LUMPECTOMY_CONFIG.surgeryReasons
   )
 
-  // Additional details (50% of the time)
-  if (Math.random() < 0.5)
+  // Additional details (75% of the time)
+  if (Math.random() < 0.75)
   {
     item.additionalDetails = faker.helpers.arrayElement([
       'Prophylactic surgery following genetic testing',
@@ -553,14 +560,59 @@ const generateImplantedDeviceItem = (options = {}) =>
     }
   }
 
-  // Additional details (40% of the time)
-  if (Math.random() < 0.4)
+  // Additional details (75% of the time)
+  if (Math.random() < 0.75)
   {
     item.additionalDetails = faker.helpers.arrayElement([
       'Device functioning normally',
       'Regular monitoring in place',
       'Patient has device identification card'
     ])
+  }
+
+  return item
+}
+
+/**
+ * Generate a single cysts history item
+ * @param {object} [options] - Generation options
+ * @param {string} [options.addedByUserId] - User who added this information
+ * @returns {object} Generated cysts item
+ */
+const generateCystsItem = (options = {}) =>
+{
+  const { addedByUserId } = options
+
+  const item = {
+    id: generateId(),
+    dateAdded: new Date().toISOString(),
+    addedBy: addedByUserId || null
+  }
+
+  // Cyst status
+  item.cystsStatus = weighted.select(CYSTS_CONFIG.statusOptions)
+
+  // Additional details (75% of the time, but only if status is not "No")
+  if (item.cystsStatus !== 'No' && Math.random() < 0.75)
+  {
+    if (item.cystsStatus === 'Yes, not treated')
+    {
+      item.additionalDetails = faker.helpers.arrayElement([
+        'Simple cysts identified on ultrasound',
+        'Multiple small cysts present',
+        'Monitored regularly, no treatment required',
+        'Benign cysts confirmed'
+      ])
+    }
+    else if (item.cystsStatus === 'Yes, drained or removed')
+    {
+      item.additionalDetails = faker.helpers.arrayElement([
+        'Aspirated in clinic, fluid drained successfully',
+        'Drained ' + faker.number.int({ min: 6, max: 36 }) + ' months ago',
+        'Recurrent cyst, drained multiple times',
+        'Large cyst removed surgically'
+      ])
+    }
   }
 
   return item
@@ -587,66 +639,83 @@ const generateBenignLumpsItem = (options = {}) =>
 
   if (breastChoice === 'right-only')
   {
-    // 80% chance of having procedures (not 'No procedures')
-    if (Math.random() < 0.8)
-    {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.proceduresRightBreast = faker.helpers.arrayElements(
-        BENIGN_LUMPS_CONFIG.procedureOptions,
-        numberOfOptions
-      )
-    }
-    else
-    {
-      item.proceduresRightBreast = ['No procedures']
-    }
+    // Always have procedures on right breast if this is right-only
+    const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
+    item.proceduresRightBreast = faker.helpers.arrayElements(
+      BENIGN_LUMPS_CONFIG.procedureOptions,
+      numberOfOptions
+    )
     item.proceduresLeftBreast = ['No procedures']
   }
   else if (breastChoice === 'left-only')
   {
-    // 80% chance of having procedures (not 'No procedures')
-    if (Math.random() < 0.8)
-    {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.proceduresLeftBreast = faker.helpers.arrayElements(
-        BENIGN_LUMPS_CONFIG.procedureOptions,
-        numberOfOptions
-      )
-    }
-    else
-    {
-      item.proceduresLeftBreast = ['No procedures']
-    }
+    // Always have procedures on left breast if this is left-only
+    const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
+    item.proceduresLeftBreast = faker.helpers.arrayElements(
+      BENIGN_LUMPS_CONFIG.procedureOptions,
+      numberOfOptions
+    )
     item.proceduresRightBreast = ['No procedures']
   }
   else // both
   {
-    // 80% chance of having procedures on right (not 'No procedures')
-    if (Math.random() < 0.8)
-    {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.proceduresRightBreast = faker.helpers.arrayElements(
-        BENIGN_LUMPS_CONFIG.procedureOptions,
-        numberOfOptions
-      )
-    }
-    else
-    {
-      item.proceduresRightBreast = ['No procedures']
-    }
+    // At least one breast must have actual procedures
+    // 80% chance of having procedures on right
+    const rightHasProcedures = Math.random() < 0.8
+    // 80% chance of having procedures on left
+    const leftHasProcedures = Math.random() < 0.8
 
-    // 80% chance of having procedures on left (not 'No procedures')
-    if (Math.random() < 0.8)
+    // If both randomly became 'No procedures', force at least one to have procedures
+    if (!rightHasProcedures && !leftHasProcedures)
     {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.proceduresLeftBreast = faker.helpers.arrayElements(
-        BENIGN_LUMPS_CONFIG.procedureOptions,
-        numberOfOptions
-      )
+      // Randomly pick which breast will have procedures
+      if (Math.random() < 0.5)
+      {
+        const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
+        item.proceduresRightBreast = faker.helpers.arrayElements(
+          BENIGN_LUMPS_CONFIG.procedureOptions,
+          numberOfOptions
+        )
+        item.proceduresLeftBreast = ['No procedures']
+      }
+      else
+      {
+        const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
+        item.proceduresLeftBreast = faker.helpers.arrayElements(
+          BENIGN_LUMPS_CONFIG.procedureOptions,
+          numberOfOptions
+        )
+        item.proceduresRightBreast = ['No procedures']
+      }
     }
     else
     {
-      item.proceduresLeftBreast = ['No procedures']
+      // Generate normally based on the random checks
+      if (rightHasProcedures)
+      {
+        const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
+        item.proceduresRightBreast = faker.helpers.arrayElements(
+          BENIGN_LUMPS_CONFIG.procedureOptions,
+          numberOfOptions
+        )
+      }
+      else
+      {
+        item.proceduresRightBreast = ['No procedures']
+      }
+
+      if (leftHasProcedures)
+      {
+        const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
+        item.proceduresLeftBreast = faker.helpers.arrayElements(
+          BENIGN_LUMPS_CONFIG.procedureOptions,
+          numberOfOptions
+        )
+      }
+      else
+      {
+        item.proceduresLeftBreast = ['No procedures']
+      }
     }
   }
 
@@ -694,8 +763,8 @@ const generateBenignLumpsItem = (options = {}) =>
     }
   }
 
-  // Additional details (40% of the time)
-  if (Math.random() < 0.4)
+  // Additional details (75% of the time)
+  if (Math.random() < 0.75)
   {
     item.additionalDetails = faker.helpers.arrayElement([
       'Confirmed as fibroadenoma',
@@ -767,8 +836,8 @@ const generateOtherProceduresItem = (options = {}) =>
     item.year = faker.number.int({ min: 2015, max: 2024 }).toString()
   }
 
-  // Additional details (30% of the time)
-  if (Math.random() < 0.3)
+  // Additional details (75% of the time)
+  if (Math.random() < 0.75)
   {
     item.additionalDetails = faker.helpers.arrayElement([
       'Procedure completed successfully',
@@ -846,6 +915,12 @@ const generateMedicalHistory = (options = {}) =>
     history.mastectomyLumpectomy = Array.from({ length: numberOfItems }, () =>
       generateMastectomyLumpectomyItem({ addedByUserId })
     )
+  }
+
+  if (forceMedicalHistoryTypes.includes('cysts'))
+  {
+    // Cysts can only have one entry (single entry only)
+    history.cysts = [generateCystsItem({ addedByUserId })]
   }
 
   if (forceMedicalHistoryTypes.includes('benignLumps'))
@@ -926,6 +1001,13 @@ const generateMedicalHistory = (options = {}) =>
       )
     }
 
+    // Cysts (100% for testing)
+    if (Math.random() < 1.0)
+    {
+      // Cysts can only have one entry (single entry only)
+      history.cysts = [generateCystsItem({ addedByUserId })]
+    }
+
     // Benign lumps (100% for testing)
     if (Math.random() < 1.0)
     {
@@ -951,8 +1033,6 @@ const generateMedicalHistory = (options = {}) =>
     }
   }
 
-  // TODO: Add cysts medical history type
-
   return history
 }
 
@@ -962,6 +1042,7 @@ module.exports = {
   generateImplantedDeviceItem,
   generateBreastImplantsItem,
   generateMastectomyLumpectomyItem,
+  generateCystsItem,
   generateBenignLumpsItem,
   generateOtherProceduresItem
 }
