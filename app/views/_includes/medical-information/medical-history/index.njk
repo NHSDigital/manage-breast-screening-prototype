@@ -465,6 +465,14 @@
             } if historyItem.otherSurgeryRightBreast or historyItem.otherSurgeryLeftBreast,
             {
               key: {
+                text: "History of cysts"
+              },
+              value: {
+                html: historyItem.cystsStatus
+              }
+            } if historyItem.cystsStatus,
+            {
+              key: {
                 text: "Treatment"
               },
               value: {
