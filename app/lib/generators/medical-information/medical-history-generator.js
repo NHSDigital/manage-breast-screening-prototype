@@ -954,83 +954,111 @@ const generateMedicalHistory = (options = {}) =>
       return {}
     }
 
-    // They have medical history - check each type independently
-    // This allows multiple types per event for testing
-    // Set to 100% (1.0) for maximum test coverage
+    // They have medical history - decide how many types (1-4, weighted towards 1-2)
+    const numberOfTypes = weighted.select({
+      1: 0.5,   // 50% have just 1 type
+      2: 0.3,   // 30% have 2 types
+      3: 0.15,  // 15% have 3 types
+      4: 0.05   // 5% have 4 types
+    })
 
-    // Breast cancer (100% for testing)
-    if (Math.random() < 1.0)
+    // Weights for each type (more common conditions have higher weights)
+    const typeWeights = {
+      cysts: 0.25,                        // Most common
+      benignLumps: 0.20,                  // Common
+      mastectomyLumpectomy: 0.15,         // Fairly common
+      implantedMedicalDevice: 0.15,       // Fairly common
+      breastCancer: 0.10,                 // Less common
+      otherProcedures: 0.10,              // Less common
+      breastImplantsAugmentation: 0.05    // Least common
+    }
+
+    // Select types randomly based on weights, ensuring no duplicates
+    const availableTypes = Object.keys(typeWeights)
+    const selectedTypes = []
+
+    while (selectedTypes.length < numberOfTypes && availableTypes.length > 0)
     {
-      const numberOfItems = weighted.select({
-        1: 0.85,
-        2: 0.15
+      // Build weights object for remaining types
+      const remainingWeights = {}
+      availableTypes.forEach(type =>
+      {
+        remainingWeights[type] = typeWeights[type]
       })
-      history.breastCancer = Array.from({ length: numberOfItems }, () =>
-        generateBreastCancerItem({ addedByUserId })
-      )
+
+      // Select a type
+      const selectedType = weighted.select(remainingWeights)
+      selectedTypes.push(selectedType)
+
+      // Remove from available types
+      const index = availableTypes.indexOf(selectedType)
+      availableTypes.splice(index, 1)
     }
 
-    // Implanted medical device (100% for testing)
-    if (Math.random() < 1.0)
+    // Generate items for each selected type
+    selectedTypes.forEach(type =>
     {
-      const numberOfItems = weighted.select({
-        1: 0.85,
-        2: 0.15
-      })
-      history.implantedMedicalDevice = Array.from({ length: numberOfItems }, () =>
-        generateImplantedDeviceItem({ addedByUserId })
-      )
-    }
-
-    // Breast implants (100% for testing)
-    if (Math.random() < 1.0)
-    {
-      // Breast implants can only have one entry (single entry only)
-      history.breastImplantsAugmentation = [generateBreastImplantsItem({ addedByUserId })]
-    }
-
-    // Mastectomy/lumpectomy (100% for testing)
-    if (Math.random() < 1.0)
-    {
-      const numberOfItems = weighted.select({
-        1: 0.85,
-        2: 0.15
-      })
-      history.mastectomyLumpectomy = Array.from({ length: numberOfItems }, () =>
-        generateMastectomyLumpectomyItem({ addedByUserId })
-      )
-    }
-
-    // Cysts (100% for testing)
-    if (Math.random() < 1.0)
-    {
-      // Cysts can only have one entry (single entry only)
-      history.cysts = [generateCystsItem({ addedByUserId })]
-    }
-
-    // Benign lumps (100% for testing)
-    if (Math.random() < 1.0)
-    {
-      const numberOfItems = weighted.select({
-        1: 0.85,
-        2: 0.15
-      })
-      history.benignLumps = Array.from({ length: numberOfItems }, () =>
-        generateBenignLumpsItem({ addedByUserId })
-      )
-    }
-
-    // Other procedures (100% for testing)
-    if (Math.random() < 1.0)
-    {
-      const numberOfItems = weighted.select({
-        1: 0.85,
-        2: 0.15
-      })
-      history.otherProcedures = Array.from({ length: numberOfItems }, () =>
-        generateOtherProceduresItem({ addedByUserId })
-      )
-    }
+      if (type === 'breastCancer')
+      {
+        const numberOfItems = weighted.select({
+          1: 0.85,
+          2: 0.15
+        })
+        history.breastCancer = Array.from({ length: numberOfItems }, () =>
+          generateBreastCancerItem({ addedByUserId })
+        )
+      }
+      else if (type === 'implantedMedicalDevice')
+      {
+        const numberOfItems = weighted.select({
+          1: 0.85,
+          2: 0.15
+        })
+        history.implantedMedicalDevice = Array.from({ length: numberOfItems }, () =>
+          generateImplantedDeviceItem({ addedByUserId })
+        )
+      }
+      else if (type === 'breastImplantsAugmentation')
+      {
+        // Breast implants can only have one entry (single entry only)
+        history.breastImplantsAugmentation = [generateBreastImplantsItem({ addedByUserId })]
+      }
+      else if (type === 'mastectomyLumpectomy')
+      {
+        const numberOfItems = weighted.select({
+          1: 0.85,
+          2: 0.15
+        })
+        history.mastectomyLumpectomy = Array.from({ length: numberOfItems }, () =>
+          generateMastectomyLumpectomyItem({ addedByUserId })
+        )
+      }
+      else if (type === 'cysts')
+      {
+        // Cysts can only have one entry (single entry only)
+        history.cysts = [generateCystsItem({ addedByUserId })]
+      }
+      else if (type === 'benignLumps')
+      {
+        const numberOfItems = weighted.select({
+          1: 0.85,
+          2: 0.15
+        })
+        history.benignLumps = Array.from({ length: numberOfItems }, () =>
+          generateBenignLumpsItem({ addedByUserId })
+        )
+      }
+      else if (type === 'otherProcedures')
+      {
+        const numberOfItems = weighted.select({
+          1: 0.85,
+          2: 0.15
+        })
+        history.otherProcedures = Array.from({ length: numberOfItems }, () =>
+          generateOtherProceduresItem({ addedByUserId })
+        )
+      }
+    })
   }
 
   return history

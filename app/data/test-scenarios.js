@@ -55,6 +55,24 @@ module.exports = [
           whenRelativeToToday: 0,
           status: 'event_complete',
           approximateTime: '9:45'
+        },
+        // Force 100% of all medical information types for testing
+        medicalInformation: {
+          probabilityOfSymptoms: 1.0,
+          probabilityOfHRT: 1.0,
+          probabilityOfPregnancyBreastfeeding: 1.0,
+          probabilityOfOtherMedicalInfo: 1.0,
+          probabilityOfBreastFeatures: 1.0,
+          probabilityOfMedicalHistory: 1.0,
+          forceMedicalHistoryTypes: [
+            'breastCancer',
+            'implantedMedicalDevice',
+            'breastImplantsAugmentation',
+            'mastectomyLumpectomy',
+            'cysts',
+            'benignLumps',
+            'otherProcedures'
+          ]
         }
       }
     }

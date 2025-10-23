@@ -368,22 +368,6 @@
         {% endif %}
       {% endset %}
 
-      {# Was procedure in last 6 months #}
-      {% set recentProcedureText %}
-        {% if historyItem.hasRecentProcedureCheckbox %}
-          {% if historyItem.recentProcedure[0] == "true" %}
-            {# {% if historyItem.procedureDate %} #}
-            {% if historyItem.procedureDate | isValidDate %}
-              {{ historyItem.procedureDate | formatMonthYear }} ({{ historyItem.procedureDate | formatRelativeDate }})
-            {% else %}
-              Procedure was within the last 6 months. Date not provided
-            {% endif %}
-          {% else %}
-            Procedure was not in the last 6 months
-          {% endif %}
-        {% endif %}
-      {% endset %}
-
       {# Treatment location #}
       {% set locationHtml %}
 
@@ -513,14 +497,6 @@
             } if historyItem.diagnosisDate,
             {
               key: {
-                text: "Date"
-              },
-              value: {
-                text: recentProcedureText
-              }
-            } if historyItem.hasRecentProcedureCheckbox | falsify,
-            {
-              key: {
                 text: "Treatment location"
               },
               value: {
@@ -528,12 +504,12 @@
               }
             } if historyItem.location | falsify,
             {
-            key: {
-            text: "Consent for imaging"
-            },
-            value: {
-            text: "Consent given"
-            }
+              key: {
+                text: "Consent for imaging"
+              },
+              value: {
+                text: "Consent given"
+              }
             } if (typeData.type == 'breastImplantsAugmentation' and historyItem.consentGiven == 'yes'),
             {
               key: {

@@ -247,7 +247,9 @@ const generateEvent = ({
       // All attributed to the user who ran the appointment
       const medicalInformation = generateMedicalInformation({
         addedByUserId: event.sessionDetails.startedBy,
-        config: participant.config
+        config: participant.config,
+        // Allow config to override probabilities for test scenarios
+        ...(participant.config?.medicalInformation || {})
       })
 
       // Store medical information if any was generated

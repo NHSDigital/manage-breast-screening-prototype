@@ -22,24 +22,26 @@ const {
  *
  * @param {object} options - Generation options
  * @param {string} [options.addedByUserId] - User ID who collected this information (typically from sessionDetails.startedBy)
- * @param {number} [options.probabilityOfSymptoms=0.85] - Chance of having symptoms
+ * @param {number} [options.probabilityOfSymptoms=0.15] - Chance of having symptoms
  * @param {number} [options.probabilityOfHRT=0.30] - Chance of having HRT data
  * @param {number} [options.probabilityOfPregnancyBreastfeeding=0.05] - Chance of having pregnancy/breastfeeding data
- * @param {number} [options.probabilityOfOtherMedicalInfo=0.15] - Chance of having other medical information
- * @param {number} [options.probabilityOfBreastFeatures=0.20] - Chance of having breast features
- * @param {number} [options.probabilityOfMedicalHistory=0.20] - Chance of having medical history
+ * @param {number} [options.probabilityOfOtherMedicalInfo=0.20] - Chance of having other medical information
+ * @param {number} [options.probabilityOfBreastFeatures=0.15] - Chance of having breast features
+ * @param {number} [options.probabilityOfMedicalHistory=0.50] - Chance of having medical history
+ * @param {Array} [options.forceMedicalHistoryTypes] - Array of medical history types to force generation (e.g. ['breastCancer', 'cysts'])
  * @param {object} [options.config] - Participant config for overrides and forced generation
  * @returns {object} Complete medicalInformation object
  */
 const generateMedicalInformation = (options = {}) => {
   const {
     addedByUserId,
-    probabilityOfSymptoms = 0.99,
-    probabilityOfHRT = 0.99,
-    probabilityOfPregnancyBreastfeeding = 0.99,
-    probabilityOfOtherMedicalInfo = 0.99,
-    probabilityOfBreastFeatures = 0.99,
-    probabilityOfMedicalHistory = 0.99,
+    probabilityOfSymptoms = 0.15,
+    probabilityOfHRT = 0.3,
+    probabilityOfPregnancyBreastfeeding = 0.05,
+    probabilityOfOtherMedicalInfo = 0.2,
+    probabilityOfBreastFeatures = 0.15,
+    probabilityOfMedicalHistory = 0.5,
+    forceMedicalHistoryTypes,
     config
   } = options
 
@@ -86,6 +88,7 @@ const generateMedicalInformation = (options = {}) => {
   const medicalHistory = generateMedicalHistory({
     addedByUserId,
     probability: probabilityOfMedicalHistory,
+    forceMedicalHistoryTypes,
     config
   })
 
