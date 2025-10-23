@@ -239,9 +239,9 @@ class AppModal {
 
 // Initialize modals
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('Initializing modals...') // Debug log
+  // console.log('Initializing modals...') // Debug log
   const modals = document.querySelectorAll('.app-modal')
-  console.log('Found modals:', modals.length) // Debug log
+  // console.log('Found modals:', modals.length) // Debug log
   modals.forEach((modal) => {
     modal.appModal = new AppModal(modal)
   })
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Global functions
 window.openModal = function (modalId) {
-  console.log('Opening modal via global function:', modalId) // Debug log
+  // console.log('Opening modal via global function:', modalId) // Debug log
   const modal = document.getElementById(modalId)
   if (modal && modal.appModal) {
     modal.appModal.open()

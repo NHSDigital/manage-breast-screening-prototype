@@ -5,8 +5,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search)
   const scrollTo = urlParams.get('scrollTo')
 
-  console.log("scrollTo running", scrollTo)
-
   if (scrollTo) {
     const targetSection = document.getElementById(scrollTo)
     if (targetSection) {

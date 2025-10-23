@@ -8,20 +8,19 @@
   - listId (string, default "featuresList") - ID for the list element
   - clearLinkId (string, default "clearAllFeaturesLink") - ID for clear all link
   - headerText (string, default "Key") - heading text for the list
-  - showClearLink (boolean, default true) - whether to show "Clear all features" link
+  - allowEdits (boolean, default true) - whether to show "Clear all features" link
 #}
 
 {% set listContainerId = listContainerId or "featuresListContainer" %}
 {% set listId = listId or "featuresList" %}
 {% set clearLinkId = clearLinkId or "clearAllFeaturesLink" %}
 {% set headerText = headerText or "Key" %}
-{% set showClearLink = showClearLink if showClearLink is defined else true %}
 
-<div id="{{ listContainerId }}" style="display: none;" class="breast-features__list nhsuk-u-margin-top-4">
+<div id="{{ listContainerId }}" style="display: none;" class="breast-features__list">
   <div class="breast-features__list-header">
-    <h3 class="nhsuk-heading-s breast-features__list-title">{{ headerText }}</h3>
-    {% if showClearLink %}
-    <a href="#" id="{{ clearLinkId }}" class="nhsuk-link breast-features__list-clear-link">Clear all features</a>
+    <h3 class="nhsuk-heading-xs breast-features__list-title">{{ headerText }}</h3>
+    {% if allowEdits and not suppressClearLink %}
+      <a href="#" id="{{ clearLinkId }}" class="nhsuk-link breast-features__list-clear-link">Clear all features</a>
     {% endif %}
   </div>
   <div class="breast-features__list-items" id="{{ listId }}"></div>

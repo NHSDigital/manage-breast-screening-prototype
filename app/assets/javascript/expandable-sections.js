@@ -2,7 +2,7 @@
 
 // Handle expandable sections with completion tracking
 document.addEventListener('DOMContentLoaded', function () {
-  console.log('Expandable sections script loaded') // Debug log
+  // console.log('Expandable sections script loaded') // Debug log
   const sections = document.querySelectorAll('.js-expandable-section')
   const completedSections = new Set()
 
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Update progress counter
       updateProgress(sections, completedSections)
 
-      console.log('All sections marked as complete')
+      // console.log('All sections marked as complete')
     })
   })
 })
@@ -223,7 +223,7 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
         })
       }
 
-      console.log(`Opened next incomplete section: ${nextIncompleteSection.id}`)
+      // console.log(`Opened next incomplete section: ${nextIncompleteSection.id}`)
       return // Exit once we've found and opened the next incomplete section
     }
   }
@@ -248,16 +248,16 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
         })
       }
 
-      console.log(
-        `Looped back to incomplete section: ${nextIncompleteSection.id}`
-      )
+      // console.log(
+      //   `Looped back to incomplete section: ${nextIncompleteSection.id}`
+      // )
 
       return // Exit once we've found and opened the incomplete section
     }
   }
 
   // If we get here, all sections are complete
-  console.log('All sections are now complete!')
+  // console.log('All sections are now complete!')
   highlightCompletionButton()
 }
 
@@ -352,7 +352,7 @@ function updateSectionStatus(section, statusText) {
   }
 
   if (statusElement) {
-    console.log('Found status element:', statusElement)
+    // console.log('Found status element:', statusElement)
     statusElement.textContent = statusText
 
     // Update the tag colour class based on status
@@ -371,7 +371,7 @@ function updateSectionStatus(section, statusText) {
       statusElement.classList.add('nhsuk-tag--yellow')
     }
 
-    console.log('Updated status to:', statusText)
+    // console.log('Updated status to:', statusText)
   } else {
     console.error('Could not find status element for section:', sectionId)
   }
@@ -396,9 +396,9 @@ function updateProgress(sections, completedSections) {
   if (progressCurrent) progressCurrent.textContent = inProgress
   if (progressRemaining) progressRemaining.textContent = remaining
 
-  console.log(
-    `Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`
-  )
+  // console.log(
+  //   `Progress: ${completed}/${totalSections} completed, ${inProgress} in progress`
+  // )
 }
 
 // Expose function globally for use by expanded-state-tracker
