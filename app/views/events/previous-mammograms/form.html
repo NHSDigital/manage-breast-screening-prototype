@@ -1,4 +1,4 @@
-{# app/views/events/mammography/previous-mammograms/edit.html #}
+{# app/views/events/mammography/previous-mammograms/form.html #}
 
 {% extends 'layout-appointment.html' %}
 
@@ -6,7 +6,7 @@
 
 {% set pageHeading = "Add details of a previous mammogram" %}
 
-{% set formAction = './../previous-mammograms-answer' | urlWithReferrer(referrerChain, query.scrollTo) %}
+{% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
 
@@ -276,6 +276,18 @@
   {{ button({
     text: "Continue"
   }) }}
+
+  {# Only show delete link if this is a previously saved mammogram #}
+  {% if event.previousMammogramTemp.id %}
+    {% set deleteHref %}
+      ./delete/{{ event.previousMammogramTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+    {% endset %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+        Delete this mammogram
+      </a>
+    </p>
+  {% endif %}
 
 {% endblock %}
 
