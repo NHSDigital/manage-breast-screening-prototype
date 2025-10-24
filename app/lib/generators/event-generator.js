@@ -7,7 +7,9 @@ const dayjs = require('dayjs')
 const config = require('../../config')
 const { STATUS_GROUPS, isCompleted, isFinal } = require('../utils/status')
 const { generateMammogramImages } = require('./mammogram-generator')
-const { generateSymptoms } = require('./symptoms-generator')
+const {
+  generateMedicalInformation
+} = require('./medical-information-generator')
 const {
   generateSpecialAppointment
 } = require('./special-appointment-generator')
@@ -241,18 +243,18 @@ const generateEvent = ({
       // Pretend some events have previous images requested
       event.hasRequestedImages = weighted.select({ true: 0.3, false: 0.7 })
 
-      // Generate symptoms using new structure
-      const symptomProbability = 0.15
-      const symptoms = generateSymptoms({
-        probabilityOfSymptoms: symptomProbability,
-        users
+      // Generate medical information (symptoms, medical history, etc.)
+      // All attributed to the user who ran the appointment
+      const medicalInformation = generateMedicalInformation({
+        addedByUserId: event.sessionDetails.startedBy,
+        config: participant.config,
+        // Allow config to override probabilities for test scenarios
+        ...(participant.config?.medicalInformation || {})
       })
 
-      // Store symptoms in new medicalInformation structure
-      if (symptoms.length > 0) {
-        event.medicalInformation = {
-          symptoms
-        }
+      // Store medical information if any was generated
+      if (Object.keys(medicalInformation).length > 0) {
+        event.medicalInformation = medicalInformation
       }
     }
 

@@ -6,7 +6,6 @@
 @use "nhsuk-frontend/dist/nhsuk/core/objects" as *;
 @use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
 
-
 // Custom variables for breast features
 $breast-features-marker-size: 40px;
 $breast-features-border-width: 2px;
@@ -131,7 +130,9 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
   background: nhsuk-colour("white");
   border: 4px solid $nhsuk-link-colour;
   padding: $breast-features-spacing-large;
-  padding-bottom: calc($breast-features-spacing-large - 20px); // reduce padding by margin size on buttons. Ideally this would be dynamically generated.
+  padding-bottom: calc(
+    $breast-features-spacing-large - 20px
+  ); // reduce padding by margin size on buttons. Ideally this would be dynamically generated.
   box-shadow: 0 4px 16px rgba(33, 43, 50, 0.16);
   z-index: $breast-features-z-index-popover;
   min-width: $breast-features-popover-min-width;
@@ -144,7 +145,7 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: Features list component
 .breast-features__list {
-  margin-top: 20px;
+  // margin-top: 20px;
 }
 
 // ELEMENT: List header
@@ -162,7 +163,7 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: Clear all link
 .breast-features__list-clear-link {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 // ELEMENT: List items container

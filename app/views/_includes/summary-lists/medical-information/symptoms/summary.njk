@@ -134,7 +134,7 @@
             visuallyHiddenText: symptom.type | lower
           }
         ]
-      },
+      } if allowEdits,
       classes: "nhsuk-summary-list--no-border" if loop.last
     }) %}
   {% endfor %}

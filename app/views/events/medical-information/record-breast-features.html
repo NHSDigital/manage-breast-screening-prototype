@@ -6,6 +6,8 @@
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
+{% set allowEdits = true %}
+
 {% block pageContent %}
 
 {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
@@ -43,9 +45,15 @@
 
   <div class="breast-features-diagram-container">
 
-    {% include "_includes/breast-diagram.njk" %}
+    <div class="nhsuk-u-margin-bottom-4">
+      {% include "_includes/breast-diagram.njk" %}
+    </div>
+    
 
     {# Popover (initially hidden) #}
+    <div>
+
+    </div>
     {% include "_includes/feature-popover.njk" %}
 
     {# Key for features #}

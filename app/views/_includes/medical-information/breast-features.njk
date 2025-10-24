@@ -20,9 +20,20 @@
   <script src="/js/breast-features.js"></script>
 
   {# div with hardcoded max-width, left aligned #}
-  <div style="max-width: 650px; margin: 0 auto 10px 0;">
-    {% include "breast-diagram.njk" %}
+  <div class="nhsuk-grid-row nhsuk-u-margin-bottom-3">
+    {# column two thirds column one third #}
+    <div class="nhsuk-grid-column-two-thirds">
+      {% include "breast-diagram.njk" %}
+    </div>
+    <div class="nhsuk-grid-column-one-third">
+      {% set suppressClearLink = true %}
+      {% include "features-list.njk" %}
+    </div>
   </div>
+
+  {# <div style="max-width: 650px; margin: 0 auto 10px 0;">
+    {% include "breast-diagram.njk" %}
+  </div> #}
 
 {% else %}
   {% set insetHtml %}

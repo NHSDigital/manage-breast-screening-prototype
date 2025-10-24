@@ -368,22 +368,6 @@
         {% endif %}
       {% endset %}
 
-      {# Was procedure in last 6 months #}
-      {% set recentProcedureText %}
-        {% if historyItem.hasRecentProcedureCheckbox %}
-          {% if historyItem.recentProcedure[0] == "true" %}
-            {# {% if historyItem.procedureDate %} #}
-            {% if historyItem.procedureDate | isValidDate %}
-              {{ historyItem.procedureDate | formatMonthYear }} ({{ historyItem.procedureDate | formatRelativeDate }})
-            {% else %}
-              Procedure was within the last 6 months. Date not provided
-            {% endif %}
-          {% else %}
-            Procedure was not in the last 6 months
-          {% endif %}
-        {% endif %}
-      {% endset %}
-
       {# Treatment location #}
       {% set locationHtml %}
 
@@ -414,9 +398,6 @@
       {% set addedByText %}
         Added by {{ historyItem.addedBy | getUsername }} on {{ historyItem.dateAdded | formatDate }} ({{ historyItem.dateAdded | formatRelativeDate }})
       {% endset %}
-
-      {{ typeData.type | log("Type data type") }}
-      {{ historyItem.consentGiven | log("Consent given value") }}
 
       {# Contents of history item #}
 
@@ -465,6 +446,14 @@
             } if historyItem.otherSurgeryRightBreast or historyItem.otherSurgeryLeftBreast,
             {
               key: {
+                text: "History of cysts"
+              },
+              value: {
+                html: historyItem.cystsStatus
+              }
+            } if historyItem.cystsStatus,
+            {
+              key: {
                 text: "Treatment"
               },
               value: {
@@ -505,14 +494,6 @@
             } if historyItem.diagnosisDate,
             {
               key: {
-                text: "Date"
-              },
-              value: {
-                text: recentProcedureText
-              }
-            } if historyItem.hasRecentProcedureCheckbox | falsify,
-            {
-              key: {
                 text: "Treatment location"
               },
               value: {
@@ -520,11 +501,11 @@
               }
             } if historyItem.location | falsify,
             {
-            key: {
-            text: "Consent for imaging"
-            },
-            value: {
-            text: "Consent given"
+              key: {
+                text: "Consent for imaging"
+              },
+              value: {
+                text: "Consent given"
             }
             } if (typeData.type == 'breastImplantsAugmentation' and historyItem.consentGiven == 'yes'),
             {

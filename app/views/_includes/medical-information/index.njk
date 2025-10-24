@@ -63,6 +63,64 @@
 {% endswitch %}
 
 {# -------------------------------------------------------------- #}
+{# Medical history #}
+
+{% set sectionHeading = "Medical history" %}
+
+{% set subHeading = "Including breast cancer, implants, prior procedures and treatments" %}
+{% set sectionId = sectionHeading | kebabCase %}
+{% set scrollTo = sectionId %}
+
+{% set medicalHistoryHtml %}
+  {% include "medical-information/medical-history/index.njk" %}
+{% endset %}
+
+{% set medicalInfoCount = 0 %}
+{% if event.medicalInformation.medicalHistory %}
+  {% for type, historyGroup in event.medicalInformation.medicalHistory %}
+    {% for item in historyGroup %}
+      {% set medicalInfoCount = medicalInfoCount + 1 %}
+    {% endfor %}
+  {% endfor %}
+{% endif %}
+
+{{ medicalInfoCount | log("Medical info count") }}
+
+{% set contentsSummary %}
+  {% if medicalInfoCount > 0 %}
+    {{ medicalInfoCount }} {{ "item" | pluralise(medicalInfoCount) }} added
+  {% else %}
+    No information added
+  {% endif %}
+{% endset %}
+
+{% switch displayFormat %}
+  {% case 'flat' %}
+    <h2>{{ sectionHeading }}</h2>
+    {{ medicalHistoryHtml | safe }}
+  {% case 'card' %}
+    {% call card({
+      heading: sectionHeading
+    }) %}
+      <p>
+        {{ subHeading }}
+      </p>
+      {{ medicalHistoryHtml | safe }}
+    {% endcall %}
+  {% default %}
+    {{ appDetails({
+      id: "medical-history",
+      classes: "nhsuk-expander js-expandable-section js-track-expanded",
+      summaryText: sectionHeading,
+      contentsSummary: contentsSummary,
+      subtitle: subHeading,
+      html: medicalHistoryHtml,
+      status: "To review"
+    }) }}
+{% endswitch %}
+
+
+{# -------------------------------------------------------------- #}
 {# Symptoms #}
 {% set sectionHeading = "Symptoms" %}
 {% set subHeading = "Any problems or symptoms, including lumps, swelling, rashes or nipple changes" %}
@@ -136,63 +194,6 @@
       subtitle: subHeading,
       contentsSummary: symptomsContentsSummaryText,
       html: currentSymptomsHtml,
-      status: "To review"
-    }) }}
-{% endswitch %}
-
-{# -------------------------------------------------------------- #}
-{# Medical history #}
-
-{% set sectionHeading = "Medical history" %}
-
-{% set subHeading = "Including breast cancer, implants, prior procedures and treatments" %}
-{% set sectionId = sectionHeading | kebabCase %}
-{% set scrollTo = sectionId %}
-
-{% set medicalHistoryHtml %}
-  {% include "medical-information/medical-history/index.njk" %}
-{% endset %}
-
-{% set medicalInfoCount = 0 %}
-{% if event.medicalInformation.medicalHistory %}
-  {% for type, historyGroup in event.medicalInformation.medicalHistory %}
-    {% for item in historyGroup %}
-      {% set medicalInfoCount = medicalInfoCount + 1 %}
-    {% endfor %}
-  {% endfor %}
-{% endif %}
-
-{{ medicalInfoCount | log("Medical info count") }}
-
-{% set contentsSummary %}
-  {% if medicalInfoCount > 0 %}
-    {{ medicalInfoCount }} {{ "item" | pluralise(medicalInfoCount) }} added
-  {% else %}
-    No information added
-  {% endif %}
-{% endset %}
-
-{% switch displayFormat %}
-  {% case 'flat' %}
-    <h2>{{ sectionHeading }}</h2>
-    {{ medicalHistoryHtml | safe }}
-  {% case 'card' %}
-    {% call card({
-      heading: sectionHeading
-    }) %}
-      <p>
-        {{ subHeading }}
-      </p>
-      {{ medicalHistoryHtml | safe }}
-    {% endcall %}
-  {% default %}
-    {{ appDetails({
-      id: "medical-history",
-      classes: "nhsuk-expander js-expandable-section js-track-expanded",
-      summaryText: sectionHeading,
-      contentsSummary: contentsSummary,
-      subtitle: subHeading,
-      html: medicalHistoryHtml,
       status: "To review"
     }) }}
 {% endswitch %}
