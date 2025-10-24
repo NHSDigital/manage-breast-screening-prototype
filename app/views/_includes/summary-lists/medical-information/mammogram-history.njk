@@ -1,11 +1,13 @@
+{# app/views/_includes/summary-lists/medical-information/mammogram-history.njk #}
+
 {% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
 
-{# System record row - last known mammogram from BSU records #}
+{# System record - last known mammogram from BSU records #}
+{% if hasAdditionalMammograms %}
+  <h3 class="nhsuk-heading-s">From screening records</h3>
+{% endif %}
+
 {% set systemRecordHtml %}
-  {# Temporarily hardcode until we can investigate bug with date #}
-  {# {{ "2022-03-23" | formatDate }}
-  ({{ "2022-03-23" | formatDate | formatRelativeDate | asHint }})</br>
-  West of London BSU #}
   {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
   {% if mostRecentClinic %}
     {{ mostRecentClinic | log }}
@@ -17,22 +19,25 @@
   {% endif %}
 {% endset %}
 
-{% set systemRecordRow = {
-  classes: "nhsuk-summary-list__row--no-border" if (noBorder and not hasAdditionalMammograms),
-  key: {
-    text: "Last known mammogram"
-  },
-  value: {
-    html: systemRecordHtml
-  }
-} | handleSummaryListMissingInformation(showNotProvidedText) %}
+{{ summaryList({
+  rows: [
+    {
+      key: {
+        text: "Last known mammogram"
+      },
+      value: {
+        html: systemRecordHtml
+      }
+    }
+  ]
+}) }}
 
-{{ appSummaryListRow(systemRecordRow) }}
-
-{# User-added mammograms - each gets its own row with Change link #}
+{# User-added unverified mammograms #}
 {% if hasAdditionalMammograms %}
-  {% for previousMammogram in event.previousMammograms %}
+  <h3 class="nhsuk-heading-s">Participant reported</h3>
+  {% set userMammogramRows = [] %}
 
+  {% for previousMammogram in event.previousMammograms %}
     {% set mammogramValueLines = [] %}
 
     {# Date #}
@@ -78,10 +83,9 @@
 
     {% set mammogramValueHtml = mammogramValueLines | join('<br>') %}
 
-    {% set userMammogramRow = {
-      classes: "nhsuk-summary-list__row--no-border" if (noBorder and loop.last),
+    {% set userMammogramRows = userMammogramRows | push({
       key: {
-        text: "Added mammogram"
+        text: "Participant reported mammogram"
       },
       value: {
         html: mammogramValueHtml
@@ -91,21 +95,14 @@
           {
             href: "./previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(currentUrl, scrollTo),
             text: "Change",
-            visuallyHiddenText: "added mammogram"
+            visuallyHiddenText: "Participant reported mammogram"
           }
         ]
       } if allowEdits
-    } %}
-
-    {{ appSummaryListRow(userMammogramRow) }}
-
+    }) %}
   {% endfor %}
-{% endif %}
 
-{% if allowEdits %}
-  {{ button({
-    text: "Add another mammogram",
-    href: './previous-mammograms/add' | urlWithReferrer(currentUrl, scrollTo),
-    classes: "nhsuk-button--secondary app-button--small"
+  {{ summaryList({
+    rows: userMammogramRows
   }) }}
 {% endif %}
