@@ -34,7 +34,7 @@
 
 {# User-added unverified mammograms #}
 {% if hasAdditionalMammograms %}
-  <h3 class="nhsuk-heading-s">Participant reported</h3>
+  <h3 class="nhsuk-heading-s">Reported mammograms</h3>
   {% set userMammogramRows = [] %}
 
   {% for previousMammogram in event.previousMammograms %}
@@ -83,9 +83,20 @@
 
     {% set mammogramValueHtml = mammogramValueLines | join('<br>') %}
 
+    {% set keyHtml %}
+      Recorded {{ previousMammogram.dateAdded | formatDate }}
+      {% if previousMammogram.addedBy %}
+        <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-font-weight-normal nhsuk-u-margin-bottom-0 ">by {{ previousMammogram.addedBy
+          | getUsername({
+          format: 'short',
+          identifyCurrentUser: true
+          }) }}</span>
+      {% endif %}
+    {% endset %}
+      
     {% set userMammogramRows = userMammogramRows | push({
       key: {
-        text: "Participant reported mammogram"
+        html: keyHtml
       },
       value: {
         html: mammogramValueHtml
