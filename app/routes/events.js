@@ -207,7 +207,26 @@ module.exports = (router) => {
       ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
       : defaultDestination
 
-    res.redirect(finalDestination)
+    // Preserve all query string parameters except returnTo (already used)
+    // Todo: could a library do this for us?
+    const queryParams = { ...req.query }
+    delete queryParams.returnTo
+    const queryString = Object.keys(queryParams).length
+      ? '?' +
+        Object.entries(queryParams)
+          .map(([key, value]) =>
+            Array.isArray(value)
+              ? value
+                  .map(
+                    (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`
+                  )
+                  .join('&')
+              : `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+          )
+          .join('&')
+      : ''
+
+    res.redirect(finalDestination + queryString)
   })
 
   // Leave appointment - revert status from in_progress back to checked_in
