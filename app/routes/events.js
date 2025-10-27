@@ -207,7 +207,26 @@ module.exports = (router) => {
       ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
       : defaultDestination
 
-    res.redirect(finalDestination)
+    // Preserve all query string parameters except returnTo (already used)
+    // Todo: could a library do this for us?
+    const queryParams = { ...req.query }
+    delete queryParams.returnTo
+    const queryString = Object.keys(queryParams).length
+      ? '?' +
+        Object.entries(queryParams)
+          .map(([key, value]) =>
+            Array.isArray(value)
+              ? value
+                  .map(
+                    (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`
+                  )
+                  .join('&')
+              : `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+          )
+          .join('&')
+      : ''
+
+    res.redirect(finalDestination + queryString)
   })
 
   // Leave appointment - revert status from in_progress back to checked_in
@@ -387,28 +406,75 @@ module.exports = (router) => {
   router.get(
     '/clinics/:clinicId/events/:eventId/previous-mammograms/add',
     (req, res) => {
+      const { clinicId, eventId } = req.params
       delete req.session.data?.event?.previousMammogramTemp
-      res.render('events/previous-mammograms/edit')
+      // Redirect to the form page
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/previous-mammograms/form`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
     }
   )
 
   // Save data about a mammogram
   router.post(
-    '/clinics/:clinicId/events/:eventId/previous-mammograms-answer',
+    '/clinics/:clinicId/events/:eventId/previous-mammograms/save',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
-      const previousMammogram = data.event?.previousMammogramTemp
+      const previousMammogramTemp = data.event?.previousMammogramTemp
       const action = req.body.action
       const referrerChain = req.query.referrerChain
       const scrollTo = req.query.scrollTo
 
-      const mammogramAddedMessage = 'Previous mammogram added'
+      // Check if editing existing or creating new
+      const isNewMammogram = !previousMammogramTemp?.id
+
+      const mammogramAddedMessage = isNewMammogram
+        ? 'Previous mammogram added'
+        : 'Previous mammogram updated'
+
+      // Helper function to build mammogram object with ID and metadata
+      const buildMammogramObject = (tempData, additionalFields = {}) => {
+        const mammogram = {
+          id: tempData.id || generateId(),
+          ...tempData,
+          ...additionalFields
+        }
+
+        // Add metadata for new mammograms
+        if (isNewMammogram) {
+          mammogram.dateAdded = new Date().toISOString()
+          mammogram.addedBy = data.currentUser.id
+        }
+
+        return mammogram
+      }
+
+      // Helper function to save mammogram (update existing or add new)
+      const saveMammogram = (mammogram) => {
+        if (!data.event.previousMammograms) {
+          data.event.previousMammograms = []
+        }
+
+        // Update existing or add new
+        const existingIndex = data.event.previousMammograms.findIndex(
+          (m) => m.id === mammogram.id
+        )
+        if (existingIndex !== -1) {
+          data.event.previousMammograms[existingIndex] = mammogram
+        } else {
+          data.event.previousMammograms.push(mammogram)
+        }
+      }
 
       // Check if this is coming from "proceed anyway" page
       if (action === 'proceed-anyway') {
         // Validate that a reason was provided
-        if (!previousMammogram?.overrideReason) {
+        if (!previousMammogramTemp?.overrideReason) {
           // Set error in flash and redirect back to proceed-anyway page
           req.flash('error', {
             text: 'Enter a reason for proceeding with this appointment',
@@ -419,20 +485,15 @@ module.exports = (router) => {
           )
         }
 
-        // Save the mammogram with override flag and reason
-        if (!data.event.previousMammograms) {
-          data.event.previousMammograms = []
-        }
-
-        data.event.previousMammograms.push({
-          ...previousMammogram,
+        // Build and save the mammogram with override flag
+        const mammogram = buildMammogramObject(previousMammogramTemp, {
           warningOverridden: true
         })
+        saveMammogram(mammogram)
 
         req.flash('success', mammogramAddedMessage)
 
         delete data.event?.previousMammogramTemp
-        // return res.redirect(`/clinics/${clinicId}/events/${eventId}`)
 
         const returnUrl = getReturnUrl(
           `/clinics/${clinicId}/events/${eventId}`,
@@ -452,11 +513,9 @@ module.exports = (router) => {
         data.event.appointmentStopped.stoppedReason = 'recent_mammogram'
         data.event.appointmentStopped.needsReschedule = 'no' // Default to no reschedule needed
 
-        // Add the mammogram to history
-        if (!data.event.previousMammograms) {
-          data.event.previousMammograms = []
-        }
-        data.event.previousMammograms.push(previousMammogram)
+        // Build and save the mammogram
+        const mammogram = buildMammogramObject(previousMammogramTemp)
+        saveMammogram(mammogram)
         delete data.event?.previousMammogramTemp
 
         // Save changes and update status
@@ -478,7 +537,7 @@ module.exports = (router) => {
       }
 
       // Check if this is a recent mammogram (within 6 months)
-      const isRecentMammogram = checkIfRecentMammogram(previousMammogram)
+      const isRecentMammogram = checkIfRecentMammogram(previousMammogramTemp)
 
       // If recent mammogram detected and not already coming from warning page
       if (isRecentMammogram && action !== 'continue') {
@@ -492,11 +551,9 @@ module.exports = (router) => {
       }
 
       // Normal flow - save the mammogram
-      if (previousMammogram) {
-        if (!data.event.previousMammograms) {
-          data.event.previousMammograms = []
-        }
-        data.event.previousMammograms.push(previousMammogram)
+      if (previousMammogramTemp) {
+        const mammogram = buildMammogramObject(previousMammogramTemp)
+        saveMammogram(mammogram)
       }
 
       delete data.event?.previousMammogramTemp
@@ -521,6 +578,61 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         referrerChain,
         scrollTo
+      )
+      res.redirect(returnUrl)
+    }
+  )
+
+  // Edit existing previous mammogram
+  router.get(
+    '/clinics/:clinicId/events/:eventId/previous-mammograms/edit/:mammogramId',
+    (req, res) => {
+      const { clinicId, eventId, mammogramId } = req.params
+      const data = req.session.data
+
+      // Find the mammogram by ID
+      const mammogram = data.event?.previousMammograms?.find(
+        (m) => m.id === mammogramId
+      )
+
+      if (mammogram) {
+        // Copy to temp for editing
+        data.event.previousMammogramTemp = { ...mammogram }
+      } else {
+        console.log(`Cannot find previous mammogram with ID ${mammogramId}`)
+      }
+
+      // Redirect to the form page
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/previous-mammograms/form`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
+    }
+  )
+
+  // Delete previous mammogram
+  router.get(
+    '/clinics/:clinicId/events/:eventId/previous-mammograms/delete/:mammogramId',
+    (req, res) => {
+      const { clinicId, eventId, mammogramId } = req.params
+      const data = req.session.data
+
+      // Remove mammogram from array
+      if (data.event?.previousMammograms) {
+        data.event.previousMammograms = data.event.previousMammograms.filter(
+          (m) => m.id !== mammogramId
+        )
+      }
+
+      req.flash('success', 'Previous mammogram deleted')
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        req.query.referrerChain,
+        req.query.scrollTo
       )
       res.redirect(returnUrl)
     }

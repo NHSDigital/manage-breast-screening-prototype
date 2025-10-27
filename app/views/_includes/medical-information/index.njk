@@ -14,12 +14,15 @@
 {% set scrollTo = sectionId %}
 
 {% set mammogramHistoryHtml %}
-  {# {% include "summary-lists/medical-information/mammogram-history.njk" %} #}
+  {% include "_includes/medical-information/mammogram-history.njk" %}
 
-  {% call summaryList() %}
-    {% set noBorder = true %}
-    {% include "_includes/summary-lists/rows/last-known-mammogram.njk" %}
-  {% endcall %}
+  {% if allowEdits %}
+    {{ button({
+      text: "Add another mammogram",
+      href: './previous-mammograms/add' | urlWithReferrer(currentUrl, scrollTo),
+      classes: "nhsuk-button--secondary app-button--small"
+    }) }}
+  {% endif %}
 {% endset %}
 
 {% set mammogramHistoryContentsSummary %}

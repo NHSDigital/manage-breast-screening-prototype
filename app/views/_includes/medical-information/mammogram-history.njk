@@ -1,0 +1,119 @@
+{# app/views/_includes/summary-lists/medical-information/mammogram-history.njk #}
+
+{% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
+
+{# System record - last known mammogram from BSU records #}
+{% if hasAdditionalMammograms %}
+  <h3 class="nhsuk-heading-s">From screening records</h3>
+{% endif %}
+
+{% set systemRecordHtml %}
+  {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
+  {% if mostRecentClinic %}
+    {{ mostRecentClinic | log }}
+    {{ mostRecentClinic.event.timing.startTime | formatDate }} ({{ mostRecentClinic.event.timing.startTime | formatDate | formatRelativeDate | asHint }})</br>
+    {{ mostRecentClinic.location.name }}</br>
+    {{ mostRecentClinic.event.type | sentenceCase }}
+  {% else %}
+    {{ "Not known" | asHint }}
+  {% endif %}
+{% endset %}
+
+{{ summaryList({
+  rows: [
+    {
+      key: {
+        text: "Last known mammogram"
+      },
+      value: {
+        html: systemRecordHtml
+      }
+    }
+  ]
+}) }}
+
+{# User-added unverified mammograms #}
+{% if hasAdditionalMammograms %}
+  <h3 class="nhsuk-heading-s">Reported mammograms</h3>
+  {% set userMammogramRows = [] %}
+
+  {% for previousMammogram in event.previousMammograms %}
+    {% set mammogramValueLines = [] %}
+
+    {# Date #}
+    {% if previousMammogram.dateType == 'dateKnown' %}
+      {% set mammogramValueLines = mammogramValueLines | push(
+        previousMammogram.dateTaken | formatDate + " (" + (previousMammogram.dateTaken | formatDate | formatRelativeDate | asHint) + ")"
+      ) %}
+    {% elseif previousMammogram.dateType == 'approximateDate' %}
+      {% set mammogramValueLines = mammogramValueLines | push("Approximate date: " + previousMammogram.approximateDate) %}
+    {% else %}
+      {% set mammogramValueLines = mammogramValueLines | push("Date unknown") %}
+    {% endif %}
+
+    {# Location #}
+    {% if previousMammogram.location == "currentBsu" %}
+      {% set mammogramValueLines = mammogramValueLines | push(unit.name) %}
+    {% elseif previousMammogram.location == "bsu" %}
+      {% set mammogramValueLines = mammogramValueLines | push(previousMammogram.bsu) %}
+    {% elseif previousMammogram.location == "otherUk" %}
+      {% set mammogramValueLines = mammogramValueLines | push("In the UK: " + (previousMammogram.otherUk | nl2br | safe)) %}
+    {% elseif previousMammogram.location == "otherNonUk" %}
+      {% set mammogramValueLines = mammogramValueLines | push("Outside the UK: " + (previousMammogram.otherNonUk | nl2br | safe)) %}
+    {% elseif previousMammogram.location == "preferNotToSay" %}
+      {% set mammogramValueLines = mammogramValueLines | push("Location: prefer not to say") %}
+    {% else %}
+      {% set mammogramValueLines = mammogramValueLines | push("Unknown location") %}
+    {% endif %}
+
+    {# Previous mammogram was less than 6 months and we are force-proceeding #}
+    {% if previousMammogram.overrideReason %}
+      {% set mammogramValueLines = mammogramValueLines | push("Reason for continuing with mammograms: " + previousMammogram.overrideReason) %}
+    {% endif %}
+
+    {# Changed name #}
+    {% if previousMammogram.sameName == "differentName" %}
+      {% set mammogramValueLines = mammogramValueLines | push("Previous name: " + previousMammogram.previousName) %}
+    {% endif %}
+
+    {# Additional information #}
+    {% if previousMammogram.otherDetails %}
+      {% set mammogramValueLines = mammogramValueLines | push("Additional information: " + (previousMammogram.otherDetails | nl2br | safe)) %}
+    {% endif %}
+
+    {% set mammogramValueHtml = mammogramValueLines | join('<br>') %}
+
+    {% set keyHtml %}
+      Recorded {{ previousMammogram.dateAdded | formatDate }}
+      {% if previousMammogram.addedBy %}
+        <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-font-weight-normal nhsuk-u-margin-bottom-0 ">by {{ previousMammogram.addedBy
+          | getUsername({
+          format: 'short',
+          identifyCurrentUser: true
+          }) }}</span>
+      {% endif %}
+    {% endset %}
+      
+    {% set userMammogramRows = userMammogramRows | push({
+      key: {
+        html: keyHtml
+      },
+      value: {
+        html: mammogramValueHtml
+      },
+      actions: {
+        items: [
+          {
+            href: "./previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(currentUrl, scrollTo),
+            text: "Change",
+            visuallyHiddenText: "Participant reported mammogram"
+          }
+        ]
+      } if allowEdits
+    }) %}
+  {% endfor %}
+
+  {{ summaryList({
+    rows: userMammogramRows
+  }) }}
+{% endif %}
