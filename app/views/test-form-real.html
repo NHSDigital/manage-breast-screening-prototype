@@ -1,0 +1,38 @@
+{# app/views/dashboard.html #}
+
+{% extends 'layout.html' %}
+
+{% set pageHeading = "Test page" %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set hideBackLink = true %}
+
+{% set navActive = "home" %}
+
+{% block content %}
+
+  <h1>
+    {{pageHeading}}
+  </h1>
+
+  <form action="test-form-submit" method="POST">
+    {{ input({
+      label: {
+        text: "Test input"
+      },
+      value: data.testFormValue,
+      id: "example",
+      name: "testFormValue"
+    }) }}
+
+
+    {{ button({
+      text: "Continue"
+    }) }}
+
+  </form>
+
+
+
+{% endblock %}
