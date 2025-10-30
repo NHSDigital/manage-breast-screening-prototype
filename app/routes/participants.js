@@ -129,7 +129,7 @@ module.exports = (router) => {
   })
 
   router.get(
-    '/participants/:participantId/*subPaths',
+    '/participants/:participantId/*',
     createDynamicTemplateRoute({
       templatePrefix: 'participants'
     })

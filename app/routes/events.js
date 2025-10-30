@@ -2162,7 +2162,7 @@ module.exports = (router) => {
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(
-    '/clinics/:clinicId/events/:eventId/*subPaths',
+    '/clinics/:clinicId/events/:eventId/*',
     createDynamicTemplateRoute({
       templatePrefix: 'events'
     })
