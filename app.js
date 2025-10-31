@@ -138,28 +138,48 @@ if (useCookieSessionStore === 'true') {
     })
   }
 
-  app.use(
-    sessionInMemory({
-      ...sessionOptions,
-      name: sessionName,
-      resave: false,
-      saveUninitialized: false,
-      store: new FileStore({
-        path: sessionPath,
-        logFn: (message) => {
-          // Suppress all expected session-related messages
-          if (
-            message.endsWith('Deleting expired sessions') ||
-            message.includes('ENOENT')
-          ) {
-            return
-          }
-          // Only log unexpected issues
-          console.log(message)
-        }
+  // app.use(
+  //   sessionInMemory({
+  //     ...sessionOptions,
+  //     name: sessionName,
+  //     resave: false,
+  //     saveUninitialized: false,
+  //     store: new FileStore({
+  //       path: sessionPath,
+  //       logFn: (message) => {
+  //         // Suppress all expected session-related messages
+  //         if (
+  //           message.endsWith('Deleting expired sessions') ||
+  //           message.includes('ENOENT')
+  //         ) {
+  //           return
+  //         }
+  //         // Only log unexpected issues
+  //         console.log(message)
+  //       }
+  //     })
+  //   })
+  // )
+  // Support session data in cookie or memory
+  if (useCookieSessionStore === 'true') {
+    app.use(
+      sessionInCookie({
+        ...sessionOptions,
+        cookieName: sessionName,
+        proxy: true,
+        requestKey: 'session'
       })
-    })
-  )
+    )
+  } else {
+    app.use(
+      sessionInMemory({
+        ...sessionOptions,
+        name: sessionName,
+        resave: false,
+        saveUninitialized: false
+      })
+    )
+  }
 }
 
 // Support for parsing data in POSTs

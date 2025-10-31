@@ -34,7 +34,7 @@ router.use((req, res, next) => {
 router.use((req, res, next) => {
   const data = req.session.data
 
-  if (data.currentUserId != data.currentUser.id) {
+  if (data && data.currentUser && data.currentUserId != data.currentUser.id) {
     const selectedUser = data.users.find(
       (user) => user.id === data.currentUserId
     )

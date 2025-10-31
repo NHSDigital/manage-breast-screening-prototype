@@ -39,10 +39,18 @@ async function regenerateData(req) {
   }
 
   // Reload session data defaults with fresh data and updated generation info
-  req.session.data = {
-    ...require('../../data/session-data-defaults'),
-    generationInfo
-  }
+  // req.session.data = {
+  //   ...require('../../data/session-data-defaults'),
+  //   generationInfo
+  // }
+  // IMPORTANT: Modify existing object rather than replacing it
+  // Replacing breaks express-session's change tracking
+  const freshDefaults = require('../../data/session-data-defaults')
+
+  // Clear existing keys
+  Object.keys(req.session.data).forEach((key) => delete req.session.data[key])
+  // Merge in fresh defaults and generation info
+  Object.assign(req.session.data, freshDefaults, { generationInfo })
 }
 
 function needsRegeneration(generationInfo) {
