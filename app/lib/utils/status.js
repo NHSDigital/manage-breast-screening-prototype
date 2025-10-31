@@ -121,7 +121,7 @@ const isAppointmentWorkflow = function (event, currentUser) {
   const startedBy = event?.sessionDetails?.startedBy
   if (!currentUser || !startedBy) {
     console.log(
-      `User or event not found: currentuser: ${currentUser}, startedBy: ${startedBy}`
+      `User or event not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
     )
     return false
   }
