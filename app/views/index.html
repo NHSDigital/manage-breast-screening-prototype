@@ -70,6 +70,8 @@
     </ul>
   </li>
 
+  {% set completedSections = "event[workflowStatus][confirm-identity]=completed" %}
+
   <li>
     <a href="{{ startUrl }}?returnTo=review-medical-information&{{ completedSections }}">Review medical information</a>
     <ul>
@@ -126,9 +128,9 @@
   </li>
   {% set completedSections = completedSections + "&event[workflowStatus][review-medical-information]=completed" %}
   <li>
-    <a href="{{ startUrl }}?returnTo=images&{{ completedSections }}">Images</a>
+    <a href="{{ startUrl }}?returnTo=take-images&{{ completedSections }}">Images</a>
   </li>
-  {% set completedSections = completedSections + "&event[workflowStatus][images]=completed" %}
+  {% set completedSections = completedSections + "&event[workflowStatus][take-images]=completed" %}
   <li>
     <a href="{{ startUrl }}?returnTo=review&{{ completedSections }}">Review</a>
   </li>
