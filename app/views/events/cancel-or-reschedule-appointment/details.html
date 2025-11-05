@@ -1,0 +1,118 @@
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Cancel or reschedule appointment" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./cancel-or-reschedule-appointment-answer" %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {{ radios({
+    name: "event[cancellation][reason]",
+    value: data.event.cancellation.reason,
+    fieldset: {
+      legend: {
+        text: "Why is this appointment not going ahead?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Availability to attend",
+        text: "Availability to attend"
+      },
+      {
+        value: "Moving outside England",
+        text: "Moving outside England"
+      },
+      {
+        value: "Breast implant concerns",
+        text: "Breast implant concerns"
+      },
+      {
+        value: "Bilateral mastectomy",
+        text: "Bilateral mastectomy"
+      },
+      {
+        value: "Recent mammogram",
+        text: "Recent mammogram"
+      },
+      {
+        value: "Medical reasons",
+        text: "Medical reasons"
+      },
+      {
+        value: "Has a symptomatic appointment",
+        text: "Has a symptomatic appointment"
+      },
+      {
+        value: "No qualified mammographer available",
+        text: "No qualified mammographer available"
+      },
+      {
+        value: "Technical issues at clinic",
+        text: "Technical issues at clinic"
+      },
+      {
+        value: "Other reason",
+        text: "Other reason",
+        conditional: {
+          html: textarea({
+            name: "event[cancellation][otherReasonDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.otherReasonDetails
+          })
+        }
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ radios({
+    name: "event[cancellation][reschedule]",
+    value: data.event.cancellation.reschedule,
+    fieldset: {
+      legend: {
+        text: "Should the appointment be rescheduled?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no-invite",
+        text: "No, invite to next routine appointment"
+      },
+      {
+        value: "no-opt-out",
+        text: "No, permanently opt out",
+        hint: {
+          text: "They will receive information explaining their options"
+        }
+      }
+    ]
+  } | populateErrors) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Continue"
+    }) }}
+  </div>
+
+{% endblock %}

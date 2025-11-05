@@ -2167,4 +2167,107 @@ module.exports = (router) => {
       templatePrefix: 'events'
     })
   )
+
+// Handle cancel or reschedule appointment form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/cancel-or-reschedule-appointment/cancel-or-reschedule-appointment-answer',
+    (req, res) =>
+    {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      const participantName = getFullName(data.participant)
+      const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+      const rescheduleChoice = data.event?.cancellation?.reschedule
+
+      // Validate that a reschedule option was selected
+      if (!rescheduleChoice)
+      {
+        req.flash('error', {
+          text: 'Select whether the appointment should be rescheduled',
+          name: 'event[cancellation][reschedule]',
+          href: '#reschedule'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/details`
+        )
+      }
+
+      // If yes, redirect to reschedule page
+      if (rescheduleChoice === 'yes')
+      {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+      else
+      {
+        // Save the cancellation data
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+
+        // Update event status to cancelled
+        updateEventStatus(data, eventId, 'event_cancelled')
+
+        // Set success message based on choice
+        let successMessage
+        if (rescheduleChoice === 'no-invite')
+        {
+          successMessage = `${participantName} will be invited to their next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+        else if (rescheduleChoice === 'no-opt-out')
+        {
+          successMessage = `${participantName} has been opted out. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+
+        req.flash('success', { wrapWithHeading: successMessage })
+
+        // Return to clinic page
+        res.redirect(`/clinics/${clinicId}`)
+      }
+    }
+  )
+
+  // Handle reschedule appointment form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/cancel-or-reschedule-appointment/reschedule-answer',
+    (req, res) =>
+    {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      const participantName = getFullName(data.participant)
+      const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+      const timing = data.event?.reschedule?.timing
+
+      // Validate that timing was selected
+      if (!timing)
+      {
+        req.flash('error', {
+          text: 'Select when the appointment should be rescheduled',
+          name: 'event[reschedule][timing]',
+          href: '#timing'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+
+      // Save the reschedule data
+      saveTempEventToEvent(data)
+      saveTempParticipantToParticipant(data)
+
+      // Update event status to rescheduled
+      updateEventStatus(data, eventId, 'event_rescheduled')
+
+      const successMessage = `${participantName}'s appointment has been rescheduled. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+
+      req.flash('success', { wrapWithHeading: successMessage })
+
+      // Return to clinic page
+      res.redirect(`/clinics/${clinicId}`)
+    }
+  )
 }
