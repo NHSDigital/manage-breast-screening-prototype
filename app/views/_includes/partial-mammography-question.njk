@@ -1,0 +1,82 @@
+{# app/views/events/_includes/partial-mammography-question.njk #}
+
+{# 
+  Include for partial mammography question
+  
+  Parameters:
+  - namePrefix: string - prefix for form field names (e.g., "event[mammogramData]" or "event[mammogramDataTemp]")
+  - mammogramSource: object - object containing the mammogram data with values
+#}
+
+{% set reasonHtml %}
+
+  {% set partialMammographyReasons = [
+    "Exam limited due to chronic disease condition",
+    "Withdrew consent",
+    "Unable to co-operate due to limited understanding of the procedure",
+    "Exam limited due to implanted medical device",
+    "Restricted mobility - unable to attain / maintain position",
+    "Exam performed in a wheelchair which restricted positioning",
+    "Other"
+  ] %}
+
+  {% set selectItems = [{
+    value: "",
+    text: "",
+    selected: true,
+    disabled: true,
+    attributes: {
+      style: "display:none;"
+    }
+  }] %}
+
+  {% for item in partialMammographyReasons %}
+    {% set selectItem = {
+      value: item,
+      text: item
+    } %}
+    {% set selectItems = selectItems | push(selectItem) %}
+  {% endfor %}
+
+  {{ select({
+    id: "partialMammographyReasonSelect",
+    name: namePrefix + "[partialMammographyReasonSelect]",
+    label: {
+      text: "Reason"
+    },
+    value: mammogramSource.partialMammographyReasonSelect,
+    items: selectItems
+  }) }}
+
+  {{ textarea({
+    name: namePrefix + "[partialMammographyReasonComment]",
+    value: mammogramSource.partialMammographyReasonComment,
+    id: "partialMammographyReasonComment",
+    label: {
+      text: "Comment (optional)"
+    },
+    rows: 3
+  }) }}
+{% endset %}
+
+{{ checkboxes({
+  idPrefix: "isPartialMammography",
+  name: namePrefix + "[isPartialMammography]",
+  values: mammogramSource.isPartialMammography,
+  fieldset: {
+    legend: {
+      text: "Record as partial mammography?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "yes",
+      text: "Yes, partial mammography",
+      conditional: {
+        html: reasonHtml
+      }
+    }
+  ]
+}) }}

@@ -140,13 +140,25 @@
 {% endif %}
 
 {# Partial mammography #}
-{% if event.mammogramData.isPartialMammography == 'yes' %}
+{% if event.mammogramData.isPartialMammography | includes('yes') %}
+  {% set partialMammographyHtml %}
+    {% if event.mammogramData.partialMammographyReasonSelect %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>Reason:</strong> {{ event.mammogramData.partialMammographyReasonSelect }}</p>
+    {% endif %}
+    {% if event.mammogramData.partialMammographyReasonComment %}
+      <p class="nhsuk-u-margin-bottom-0"><strong>Comment:</strong> {{ event.mammogramData.partialMammographyReasonComment }}</p>
+    {% endif %}
+    {% if not event.mammogramData.partialMammographyReasonSelect and not event.mammogramData.partialMammographyReasonComment %}
+      Yes
+    {% endif %}
+  {% endset %}
+  
   {% set summaryRows = summaryRows | push({
     key: {
       text: "Partial mammography"
     },
     value: {
-      text: event.mammogramData.partialMammographyReason or "Yes"
+      html: partialMammographyHtml
     },
     actions: {
       items: [
