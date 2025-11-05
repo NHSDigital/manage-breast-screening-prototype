@@ -518,15 +518,17 @@ module.exports = (router) => {
         saveMammogram(mammogram)
         delete data.event?.previousMammogramTemp
 
+       // Get participant info for message
+        const participantName = getFullName(data.participant)
+        const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+
         // Save changes and update status
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
         updateEventStatus(data, eventId, 'event_attended_not_screened')
 
-        // Get participant info for message
-        const participantName = getFullName(data.participant)
-        const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
-
+  
         // Flash success message
         const successMessage = `
       ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
@@ -558,18 +560,61 @@ module.exports = (router) => {
 
       delete data.event?.previousMammogramTemp
 
-      // If user clicked "continue" on warning page, start the appointment cancellation flow
-      if (action === 'continue') {
+     // If user clicked "continue" on warning page, handle reschedule options
+      if (action === 'continue')
+      {
+        const needsReschedule = data.event?.appointmentStopped?.needsReschedule
+
+        // Validate that reschedule option was selected
+        if (!needsReschedule)
+        {
+          req.flash('error', {
+            text: 'Select whether the appointment should be rescheduled',
+            name: 'event[appointmentStopped][needsReschedule]',
+            href: '#needsReschedule'
+          })
+          return res.redirect(
+            urlWithReferrer(
+              `/clinics/${clinicId}/events/${eventId}/previous-mammograms/appointment-should-not-proceed`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
         // Set stopping reason for the appointment
-        if (!data.event.appointmentStopped) {
+        if (!data.event.appointmentStopped)
+        {
           data.event.appointmentStopped = {}
         }
-        data.event.appointmentStopped.stoppedReason = 'recent_mammogram'
-        data.event.appointmentStopped.needsReschedule = 'no' // Default to no reschedule needed
+        data.event.appointmentStopped.stoppedReason = ['Recent mammogram']
 
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
-        )
+        // If yes, redirect to reschedule page
+        if (needsReschedule === 'yes')
+        {
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+          )
+        }
+        else if (needsReschedule === 'no-invite')
+        {
+        // Get participant info BEFORE saving (which clears temp data)
+         const participantName = getFullName(data.participant) 
+         const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+         // Save changes and update status
+         saveTempEventToEvent(data)
+         saveTempParticipantToParticipant(data)
+         updateEventStatus(data, eventId, 'event_attended_not_screened')
+
+          // Flash success message
+          const successMessage = `
+    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+          req.flash('success', { wrapWithHeading: successMessage })
+
+          // Return to clinic list
+          return res.redirect(`/clinics/${clinicId}/`)
+        }
       }
 
       req.flash('success', mammogramAddedMessage)
@@ -1955,44 +2000,46 @@ module.exports = (router) => {
   // End Manual imaging routes
 
   // Handle screening completion
-  router.post(
+ router.post(
     '/clinics/:clinicId/events/:eventId/attended-not-screened-answer',
-    (req, res) => {
+    (req, res) =>
+    {
       const { clinicId, eventId } = req.params
-
       const data = req.session.data
 
       const participantName = getFullName(data.participant)
+      console.log('Participant data:', data.participant)
+      console.log('Participant name:', participantName)
       const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
 
       const notScreenedReason = data.event.appointmentStopped.stoppedReason
       const needsReschedule = data.event.appointmentStopped.needsReschedule
-      const otherReasonDetails = data.event.appointmentStopped.otherDetails
+      const otherDetails = data.event.appointmentStopped.otherDetails
       const hasOtherReasonButNoDetails =
-        notScreenedReason?.includes('other') && !otherReasonDetails
+        notScreenedReason?.includes('Other reason') && !otherDetails
 
-      if (
-        !notScreenedReason ||
-        !needsReschedule ||
-        hasOtherReasonButNoDetails
-      ) {
-        if (!notScreenedReason) {
+      if (!notScreenedReason || !needsReschedule || hasOtherReasonButNoDetails)
+      {
+        if (!notScreenedReason)
+        {
           req.flash('error', {
-            text: 'A reason for why this appointment cannot continue must be provided',
+            text: 'Select why this appointment has been stopped',
             name: 'event[appointmentStopped][stoppedReason]',
             href: '#stoppedReason'
           })
         }
-        if (hasOtherReasonButNoDetails) {
+        if (hasOtherReasonButNoDetails)
+        {
           req.flash('error', {
-            text: 'Explain why this appointment cannot proceed',
+            text: 'Provide details about the other reason',
             name: 'event[appointmentStopped][otherDetails]',
             href: '#otherDetails'
           })
         }
-        if (!needsReschedule) {
+        if (!needsReschedule)
+        {
           req.flash('error', {
-            text: 'Select whether the participant needs to be invited for another appointment',
+            text: 'Select whether the appointment should be rescheduled',
             name: 'event[appointmentStopped][needsReschedule]',
             href: '#needsReschedule'
           })
@@ -2003,15 +2050,38 @@ module.exports = (router) => {
         return
       }
 
-      saveTempEventToEvent(data)
-      saveTempParticipantToParticipant(data)
-      updateEventStatus(data, eventId, 'event_attended_not_screened')
+      // If yes, redirect to reschedule page
+      if (needsReschedule === 'yes')
+      {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+    else
+      {
+       // Get participant info BEFORE saving (which clears temp data)
 
-      const successMessage = `
-    ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
-      req.flash('success', { wrapWithHeading: successMessage })
+       saveTempEventToEvent(data)
+       saveTempParticipantToParticipant(data)
+       updateEventStatus(data, eventId, 'event_attended_not_screened')
 
-      res.redirect(`/clinics/${clinicId}/`)
+       // Set success message based on choice
+        let successMessage
+        if (needsReschedule === 'no-invite')
+        {
+          successMessage = `
+    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+        else if (needsReschedule === 'no-opt-out')
+        {
+          successMessage = `
+    ${participantName} has been opted out. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+
+        req.flash('success', { wrapWithHeading: successMessage })
+
+        res.redirect(`/clinics/${clinicId}/`)
+      }
     }
   )
 

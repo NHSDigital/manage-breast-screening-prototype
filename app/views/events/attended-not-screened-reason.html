@@ -1,7 +1,6 @@
-
 {% extends 'layout-appointment.html' %}
 
-{% set pageHeading = "Appointment cannot go ahead" %}
+{% set pageHeading = "Appointment cannot proceed" %}
 
 {% set formAction = './attended-not-screened-answer' %}
 
@@ -16,42 +15,7 @@
     {{ pageHeading }}
   </h1>
 
-  {% macro makeCheckboxConditionalItem(params) %}
-    {{ input({
-      label: {
-        text: "Provide details" +  ( " (optional)" if params.value !== "other" else "")
-      },
-      id: params.value + "Details",
-      name: "event[appointmentStopped][" + params.value + "Details]",
-      value: event.appointmentStopped[params.value + "Details"]
-    } | populateErrors) }}
-  {% endmacro %}
-
-  {% set checkboxItems = [] %}
-
-  {% for reason in [
-    'Failed identity check',
-    'Language difficulties',
-    'Physical health issue',
-    'Mental health issue',
-    'Last mammogram within 6 months',
-    'Breast implant risks',
-    'Pain during screening',
-    'Technical issues',
-    'Participant withdrew consent',
-    'Other'
-  ] %}
-    {% set checkboxItems = checkboxItems | push({
-      text: reason,
-      value: reason | camelCase,
-      conditional: {
-        html: makeCheckboxConditionalItem({value:reason | camelCase})
-      }
-    }) %}
-  {% endfor %}
-
   {{ checkboxes({
-    idPrefix: "stoppedReason",
     name: "event[appointmentStopped][stoppedReason]",
     fieldset: {
       legend: {
@@ -60,40 +24,96 @@
         isPageHeading: false
       }
     },
-    values: event.appointmentStopped.stoppedReason,
     hint: {
       text: "Select all that apply"
     },
-    items: checkboxItems
-  } | populateErrors ) }}
+    values: event.appointmentStopped.stoppedReason,
+    items: [
+      {
+        value: "Failed identity check",
+        text: "Failed identity check"
+      },
+      {
+        value: "Pain during screening",
+        text: "Pain during screening"
+      },
+      {
+        value: "Has a symptomatic appointment",
+        text: "Has a symptomatic appointment"
+      },
+      {
+        value: "Consent withdrawn",
+        text: "Consent withdrawn"
+      },
+      {
+        value: "Physical health issue",
+        text: "Physical health issue"
+      },
+      {
+        value: "Mental health issue",
+        text: "Mental health issue"
+      },
+      {
+        value: "Language difficulties",
+        text: "Language difficulties"
+      },
+      {
+        value: "No qualified mammographer available",
+        text: "No qualified mammographer available"
+      },
+      {
+        value: "Technical issues at clinic",
+        text: "Technical issues at clinic"
+      },
+      {
+        value: "Other reason",
+        text: "Other reason",
+        conditional: {
+          html: textarea({
+            name: "event[appointmentStopped][otherDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.otherDetails
+          })
+        }
+      }
+    ]
+  } | populateErrors) }}
 
   {{ radios({
-    idPrefix: "needsReschedule",
     name: "event[appointmentStopped][needsReschedule]",
+    value: event.appointmentStopped.needsReschedule,
     fieldset: {
       legend: {
-        text: "Does the appointment need to be rescheduled?",
+        text: "Should the appointment be rescheduled?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
     },
-    value: event.appointmentStopped.needsReschedule,
     items: [
       {
         value: "yes",
-        text: "Yes, add participant to reinvite list"
+        text: "Yes"
       },
       {
-        value: "no",
-        text: "No"
+        value: "no-invite",
+        text: "No, invite to next routine appointment"
+      },
+      {
+        value: "no-opt-out",
+        text: "No, permanently opt out",
+        hint: {
+          text: "They will receive information explaining their options"
+        }
       }
     ]
-  } | populateErrors ) }}
+  } | populateErrors) }}
 
-
-  {{ button({
-    text: "Save and return to clinic"
-  }) }}
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Continue"
+    }) }}
+  </div>
 
 {% endblock %}
-
