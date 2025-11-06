@@ -1340,92 +1340,248 @@ module.exports = (router) => {
     }
   )
 
-  // Handle breast implants consent form submission
-  router.post(
-    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
-    (req, res) => {
-      const { clinicId, eventId } = req.params
-      const data = req.session.data
-      const consentGiven =
-        data.event?.medicalInformation?.implantedDevices?.consentGiven
-      const referrerChain = req.query.referrerChain
-      const scrollTo = req.query.scrollTo
+// Route handler for breast implants consent – appointment cannot proceed
 
-      if (!consentGiven) {
-        req.flash('error', {
-          text: 'Select whether the participant has signed the consent form',
-          name: 'event[medicalInformation][implantedDevices][consentGiven]'
-        })
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
-        )
-      }
+router.post(
+  '/clinics/:clinicId/events/:eventId/medical-information/medical-history/appointment-cannot-proceed-answer',
+  (req, res) =>
+  {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const participantName = getFullName(data.participant)
 
-      if (consentGiven === 'yes') {
-        // Save the breast implants data that was held in temp
-        if (data.event?.medicalHistoryTemp) {
-          // Initialize medicalInformation object if needed
-          if (!data.event.medicalInformation) {
-            data.event.medicalInformation = {}
-          }
+    const futureScreeningPlan = data.event?.cannotProceed?.futureScreeningPlan
 
-          // Initialize medicalHistory object if needed
-          if (!data.event.medicalInformation.medicalHistory) {
-            data.event.medicalInformation.medicalHistory = {}
-          }
+    // Validate that an option was selected
+    if (!futureScreeningPlan)
+    {
+      req.flash('error', {
+        text: 'Select whether the participant plans to attend breast screening in future',
+        name: 'event[cannotProceed][futureScreeningPlan]',
+        href: '#futureScreeningPlan'
+      })
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+      )
+    }
 
-          // Initialize array for breast implants if needed
-          if (
-            !data.event.medicalInformation.medicalHistory
-              .breastImplantsAugmentation
-          ) {
-            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation =
-              []
-          }
+    // Save the data
+    saveTempEventToEvent(data)
+    saveTempParticipantToParticipant(data)
 
-          const medicalHistoryTemp = data.event.medicalHistoryTemp
-          const isNewItem = !medicalHistoryTemp.id
+    // Update event status to indicate cannot proceed
+    updateEventStatus(data, eventId, 'event_cancelled')
 
-          // Create medical history item
-          const medicalHistoryItem = {
-            id: medicalHistoryTemp.id || generateId(),
-            ...medicalHistoryTemp
-          }
+    // Set success message based on choice
+    let successMessage
+    if (futureScreeningPlan === 'contact-six-weeks')
+    {
+      successMessage = `${participantName} will be contacted in six weeks to rearrange their appointment`
+    }
+    else if (futureScreeningPlan === 'invite-next-routine')
+    {
+      successMessage = `${participantName} will be invited to their next routine appointment`
+    }
+    else if (futureScreeningPlan === 'opt-out')
+    {
+      successMessage = `${participantName} has been permanently opted out and will receive information explaining their options`
+    }
 
-          // For new items, add the creation timestamp
-          if (isNewItem) {
-            medicalHistoryItem.dateAdded = new Date().toISOString()
-            medicalHistoryItem.addedBy = data.currentUser.id
-          }
+    req.flash('success', successMessage)
 
-          // Add consent information
-          medicalHistoryItem.consentGiven = 'yes'
 
-          // Add to array
-          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
-            medicalHistoryItem
-          )
+    // Return to clinic page
+    res.redirect(`/clinics/${clinicId}`)
+  }
+)
 
-          // Clear temp data
-          delete data.event.medicalHistoryTemp
+// Handle breast implants consent form submission
+router.post(
+  '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
+  (req, res) =>
+  {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const consentGiven = data.event?.medicalInformation?.implantedDevices?.consentGiven
+    const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
+
+    // Validate that an option was selected
+    if (!consentGiven)
+    {
+      req.flash('error', {
+        text: 'Select whether they have signed the consent form',
+        name: 'event[medicalInformation][implantedDevices][consentGiven]',
+        href: '#consentGiven'
+      })
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+      )
+    }
+
+    // Handle "Yes" - full consent given
+    if (consentGiven === 'yes')
+    {
+      // Save the medical history data that was in temp
+      if (data.event?.medicalHistoryTemp)
+      {
+        // Initialize medicalInformation object if needed
+        if (!data.event.medicalInformation)
+        {
+          data.event.medicalInformation = {}
         }
 
-        // Show combined success message
-        req.flash('success', 'Breast implants recorded and consent recorded')
+        // Initialize medicalHistory object if needed
+        if (!data.event.medicalInformation.medicalHistory)
+        {
+          data.event.medicalInformation.medicalHistory = {}
+        }
 
-        const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
-          referrerChain,
-          scrollTo
+        // Initialize array for breast implants if needed
+        if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+        }
+
+        const medicalHistoryTemp = data.event.medicalHistoryTemp
+        const isNewItem = !medicalHistoryTemp.id
+
+        // Create medical history item
+        const medicalHistoryItem = {
+          id: medicalHistoryTemp.id || generateId(),
+          ...medicalHistoryTemp
+        }
+
+        // Add the creation timestamp if new
+        if (isNewItem)
+        {
+          medicalHistoryItem.dateAdded = new Date().toISOString()
+          medicalHistoryItem.addedBy = data.currentUser.id
+        }
+
+        // Add consent information
+        medicalHistoryItem.consentGiven = 'yes'
+
+        // Update existing or add new
+        const existingIndex = data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.findIndex(
+          (item) => item.id === medicalHistoryItem.id
         )
-        res.redirect(returnUrl)
-      } else {
-        res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
-        )
+        if (existingIndex !== -1)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation[existingIndex] = medicalHistoryItem
+        }
+        else
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+        }
+
+        // Clear temp data
+        delete data.event.medicalHistoryTemp
       }
+
+      // Show combined success message
+      req.flash('success', 'Breast implants recorded and consent recorded')
+
+      // Continue to next step in the flow
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
+        referrerChain,
+        scrollTo
+      )
+      res.redirect(returnUrl)
     }
-  )
+    // Handle "No, but scan unaffected breast"
+    else if (consentGiven.startsWith('no-continue-'))
+    {
+      const unaffectedBreast = consentGiven.replace('no-continue-', '')
+      const affectedBreast = unaffectedBreast === 'left' ? 'right' : 'left'
+
+      // Save the medical history data with partial consent
+      if (data.event?.medicalHistoryTemp)
+      {
+        // Initialize medicalInformation object if needed
+        if (!data.event.medicalInformation)
+        {
+          data.event.medicalInformation = {}
+        }
+
+        // Initialize medicalHistory object if needed
+        if (!data.event.medicalInformation.medicalHistory)
+        {
+          data.event.medicalInformation.medicalHistory = {}
+        }
+
+        // Initialize array for breast implants if needed
+        if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+        }
+
+        const medicalHistoryTemp = data.event.medicalHistoryTemp
+        const isNewItem = !medicalHistoryTemp.id
+
+        // Create medical history item with partial consent noted
+        const medicalHistoryItem = {
+          id: medicalHistoryTemp.id || generateId(),
+          ...medicalHistoryTemp,
+          consentGiven: 'partial',
+          partialConsent: {
+            unaffectedBreast: unaffectedBreast,
+            affectedBreast: affectedBreast
+          }
+        }
+
+        // Add the creation timestamp if new
+        if (isNewItem)
+        {
+          medicalHistoryItem.dateAdded = new Date().toISOString()
+          medicalHistoryItem.addedBy = data.currentUser.id
+        }
+
+        // Update existing or add new
+        const existingIndex = data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.findIndex(
+          (item) => item.id === medicalHistoryItem.id
+        )
+        if (existingIndex !== -1)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation[existingIndex] = medicalHistoryItem
+        }
+        else
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+        }
+
+        // Clear temp data
+        delete data.event.medicalHistoryTemp
+      }
+
+      // Set success message
+      req.flash(
+        'success',
+        `Consent recorded as not given for ${affectedBreast} breast, but ${unaffectedBreast} breast to be scanned`
+      )
+
+      // Redirect back to medical history page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
+        referrerChain,
+        scrollTo
+      )
+      res.redirect(returnUrl)
+    }
+    // Handle "No, end appointment"
+    else if (consentGiven === 'no')
+    {
+      // Don't save the medical history data - consent not given
+      delete data.event.medicalHistoryTemp
+
+      // Redirect to appointment cannot proceed page
+      res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+      )
+    }
+  }
+)
 
   // Imaging view - this is the main imaging page for the event
 
