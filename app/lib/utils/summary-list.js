@@ -51,7 +51,10 @@ const handleSummaryListMissingInformation = (
         row.key.text.toLowerCase()
       const href = row.actions?.items?.[0]?.href || '#'
 
-      const endText = keyText.endsWith('note') ? '' : ' details'
+      const endText =
+        keyText.endsWith('note') || keyText.endsWith('details')
+          ? ''
+          : ' details'
 
       return {
         ...row,

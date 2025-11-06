@@ -11,6 +11,5 @@ module.exports = [
   'Equipment technical fault',
   'Folded skin needs smoothing',
   'Pectoral muscle not visualised correctly',
-  'Nipple not in profile',
   'Other'
 ]

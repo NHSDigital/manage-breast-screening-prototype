@@ -1462,7 +1462,12 @@ module.exports = (router) => {
       const data = req.session.data
       const isPartialMammography = data.event.mammogramData.isPartialMammography
 
-      if (!isPartialMammography) {
+      // Check if array includes 'yes' (checkbox format) or equals 'yes' (string format from manual entry)
+      const hasPartialMammography = Array.isArray(isPartialMammography)
+        ? isPartialMammography.includes('yes')
+        : isPartialMammography === 'yes'
+
+      if (!hasPartialMammography) {
         res.redirect(`/clinics/${clinicId}/events/${eventId}/imaging`)
       } else {
         data.event.workflowStatus['take-images'] = 'completed'
@@ -1559,44 +1564,16 @@ module.exports = (router) => {
       machineRoom: mammogramData.machineRoom,
       isPartialMammography:
         mammogramData.isPartialMammography === 'yes' ? ['yes'] : [],
+      partialMammographyReasonSelect:
+        mammogramData.partialMammographyReasonSelect,
+      partialMammographyReasonComment:
+        mammogramData.partialMammographyReasonComment,
+      partialMammographyShouldReinvite:
+        mammogramData.partialMammographyShouldReinvite === 'yes' ? ['yes'] : [],
       additionalDetails: mammogramData.additionalDetails,
       viewsRightBreast: [],
       viewsLeftBreast: []
-    }
-
-    // Split the combined partial mammography reason back into select and comment
-    if (mammogramData.partialMammographyReason) {
-      const reason = mammogramData.partialMammographyReason
-      // Check if it contains a colon (meaning it was a select + comment)
-      if (reason.includes(':')) {
-        const parts = reason.split(':')
-        formData.partialMammographyReasonSelect = parts[0].trim()
-        formData.partialMammographyReasonComment = parts
-          .slice(1)
-          .join(':')
-          .trim()
-      } else {
-        // Could be either just select or just comment
-        // Check if it matches one of the predefined reasons
-        const predefinedReasons = [
-          'Exam limited due to chronic disease condition',
-          'Withdrew consent',
-          'Unable to co-operate due to limited understanding of the procedure',
-          'Exam limited due to implanted medical device',
-          'Restricted mobility - unable to attain / maintain position',
-          'Exam performed in a wheelchair which restricted positioning',
-          'Other'
-        ]
-
-        if (predefinedReasons.includes(reason)) {
-          formData.partialMammographyReasonSelect = reason
-        } else {
-          formData.partialMammographyReasonComment = reason
-        }
-      }
-    }
-
-    // Convert views back to checkbox/input format
+    } // Convert views back to checkbox/input format
     for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
       const breastKey =
         viewData.side === 'right' ? 'viewsRightBreast' : 'viewsLeftBreast'
@@ -1699,6 +1676,8 @@ module.exports = (router) => {
 
     // Handle partial mammography reason - combine select and comment
     let partialMammographyReason = null
+    let partialMammographyShouldReinvite = null
+
     if (formData.isPartialMammography?.includes('yes')) {
       const reasonSelect = formData.partialMammographyReasonSelect
       const reasonComment = formData.partialMammographyReasonComment
@@ -1710,6 +1689,12 @@ module.exports = (router) => {
       } else if (reasonComment) {
         partialMammographyReason = reasonComment
       }
+
+      // Convert checkbox array to string for consistency
+      partialMammographyShouldReinvite =
+        formData.partialMammographyShouldReinvite?.includes('yes')
+          ? 'yes'
+          : null
     }
 
     return {
@@ -1720,6 +1705,9 @@ module.exports = (router) => {
         ? 'yes'
         : null,
       partialMammographyReason,
+      partialMammographyReasonSelect: formData.partialMammographyReasonSelect,
+      partialMammographyReasonComment: formData.partialMammographyReasonComment,
+      partialMammographyShouldReinvite,
       additionalDetails: formData.additionalDetails,
       metadata: {
         totalImages,

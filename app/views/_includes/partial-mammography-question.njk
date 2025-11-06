@@ -48,15 +48,31 @@
     items: selectItems
   }) }}
 
+  {{ checkboxes({
+    idPrefix: "partialMammographyShouldReinvite",
+    name: namePrefix + "[partialMammographyShouldReinvite]",
+    values: mammogramSource.partialMammographyShouldReinvite,
+    items: [
+      {
+        value: "yes",
+        text: "Schedule another appointment to complete remaining images"
+      }
+    ]
+  }) }}
+
   {{ textarea({
     name: namePrefix + "[partialMammographyReasonComment]",
     value: mammogramSource.partialMammographyReasonComment,
     id: "partialMammographyReasonComment",
     label: {
-      text: "Comment (optional)"
+      text: "Details (optional)"
+    },
+    hint: {
+      text: "If scheduling another appointment, include details for the next appointment here"
     },
     rows: 3
   }) }}
+  
 {% endset %}
 
 {{ checkboxes({
