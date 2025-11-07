@@ -325,70 +325,8 @@
     {{ viewsQuestionTextInputs | safe }}
   {% endif %}
 
-  {% set reasonHtml %}
-
-    {% set partialMammographyReasons = [
-      "Exam limited due to chronic disease condition",
-      "Withdrew consent",
-      "Unable to co-operate due to limited understanding of the procedure",
-      "Exam limited due to implanted medical device",
-      "Restricted mobility - unable to attain / maintain position",
-      "Exam performed in a wheelchair which restricted positioning",
-      "Other"
-      ] %}
-
-    {% set selectItems = [] %}
-
-    {% for item in partialMammographyReasons %}
-      {% set selectItem = {
-        value: item,
-        text: item
-      } %}
-      {% set selectItems = selectItems | push(selectItem) %}
-    {% endfor %}
-
-    {{ select({
-      id: "partialMammographyReasonSelect",
-      name: "event[mammogramDataTemp][partialMammographyReasonSelect]",
-      label: {
-        text: "Reason"
-      },
-      value: mammogramSource.partialMammographyReasonSelect,
-      items: selectItems
-    }) }}
-
-    {{ textarea({
-      name: "event[mammogramDataTemp][partialMammographyReasonComment]",
-      value: mammogramSource.partialMammographyReasonComment,
-      id: "partialMammographyReasonComment",
-      label: {
-        text: "Comment (optional)"
-      },
-      rows: 3
-    }) }}
-  {% endset %}
-
-  {{ checkboxes({
-    idPrefix: "isPartialMammography",
-    name: "event[mammogramDataTemp][isPartialMammography]",
-    values: mammogramSource.isPartialMammography,
-    fieldset: {
-      legend: {
-        text: "Record as partial mammography?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
-      }
-    },
-    items: [
-      {
-        value: "yes",
-        text: "Yes, partial mammography",
-        conditional: {
-          html: reasonHtml
-        }
-      }
-    ]
-  }) }}
+  {% set namePrefix = "event[mammogramDataTemp]" %}
+  {% include "_includes/partial-mammography-question.njk" %}
 
   {{ textarea({
     name: "event[mammogramDataTemp][additionalDetails]",
@@ -399,7 +337,7 @@
       classes: "nhsuk-label--m"
     },
     hint: {
-      text: "Any other relevant information about the images"
+      text: "Provide information for image readers when reviewing"
     },
     rows: 2
   }) }}

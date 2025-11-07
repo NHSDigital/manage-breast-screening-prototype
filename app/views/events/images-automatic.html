@@ -4,6 +4,9 @@
 
 {% set pageHeading = imageCount + " images taken" %}
 
+{% set mammogramSource = event.mammogramData %}
+{% set namePrefix = "event[mammogramData]" %}
+
 {% set showNavigation = true %}
 {% set activeWorkflowStep = 'take-images' %}
 {% set hideBackLink = true %}
@@ -45,99 +48,18 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
-      {# {% set notImportedCorrectlyHtml %}
-
-        {{ input({
-          label: {
-            text: "How many images were taken?"
-          },
-          id: "imageCount",
-          name: "imageCount",
-          classes: "nhsuk-input--width-5"
-        }) }}
-
-        {{ input({
-          label: {
-            text: "Describe the issue"
-          },
-          id: "issueComment",
-          name: "issueComment"
-        }) }}
-
-      {% endset %}
-
-      {{ radios({
-        idPrefix: "imagesImportedCorrectly",
-        name: "imagesImportedCorrectly",
-        fieldset: {
-          legend: {
-            text: "Have all images imported correctly?",
-            classes: "nhsuk-fieldset__legend--m",
-            isPageHeading: false
-          }
-        },
-        items: [
-          {
-            value: "yes",
-            text: "Yes, " + imageCount + " images were taken"
-          },
-          {
-            value: "yesPartial",
-            text: "No, there is an issue and rescanning has not fixed it",
-            conditional: {
-              html: notImportedCorrectlyHtml
-            }
-          }
-        ]
-      }) }} #}
-
-      {% set reasonHtml %}
-        {{ textarea({
-          name: "event[mammogramData][partialMammographyReason]",
-          value: event.mammogramData.partialMammographyReason,
-          id: "partialMammographyReason",
-          label: {
-            text: "Reason for partial mammography"
-          }
-        }) }}
-      {% endset %}
-
-      {{ radios({
-        idPrefix: "imagingComplete",
-        name: "event[mammogramData][isPartialMammography]",
-        fieldset: {
-          legend: {
-            text: "Has the full mammography been taken?",
-            classes: "nhsuk-fieldset__legend--m",
-            isPageHeading: false
-          }
-        },
-        value: event.mammogramData.isPartialMammography,
-        items: [
-          {
-            value: "no",
-            text: "Yes (" + imageCount + " images)"
-          },
-          {
-            value: "yes",
-            text: "No, partial mammography only",
-            conditional: {
-              html: reasonHtml
-            }
-          }
-        ]
-      }) }}
+      {% include "_includes/partial-mammography-question.njk" %}
 
       {{ textarea({
         name: "event[mammogramData][additionalDetails]",
         id: "additional-details",
-        value: mammogramSource.additionalDetails,
+        value: event.mammogramData.additionalDetails,
         label: {
           text: "Additional details (optional)",
           classes: "nhsuk-label--m"
         },
         hint: {
-          text: "Any other relevant information about the images"
+          text: "Provide information for image readers when reviewing"
         },
         rows: 2
       }) }}

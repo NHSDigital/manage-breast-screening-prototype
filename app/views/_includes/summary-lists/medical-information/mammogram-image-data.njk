@@ -107,7 +107,7 @@
 }) %}
 
 {# Image counts #}
-{% set summaryRows = summaryRows | push({
+{# {% set summaryRows = summaryRows | push({
   key: {
     text: "Total images"
   },
@@ -116,7 +116,43 @@
           event.mammogramData.metadata.imagesByBreast.right + " right, " +
           event.mammogramData.metadata.imagesByBreast.left + " left)"
   }
-}) %}
+}) %} #}
+
+{# Partial mammography #}
+{% if event.mammogramData.isPartialMammography == 'yes' %}
+  {% set partialMammographyHtml %}
+    {% if event.mammogramData.partialMammographyReasonSelect %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>Reason:</strong> {{ event.mammogramData.partialMammographyReasonSelect }}</p>
+    {% endif %}
+    {% if event.mammogramData.partialMammographyShouldReinvite == 'yes' %}
+      <p class="nhsuk-u-margin-bottom-2">Participant to be reinvited to complete the remaining images</p>
+    {% endif %}
+    {% if event.mammogramData.partialMammographyReasonComment %}
+      <p class="nhsuk-u-margin-bottom-0"><strong>Follow-up appointment information:</strong> {{ event.mammogramData.partialMammographyReasonComment }}</p>
+    {% endif %}
+    {% if not event.mammogramData.partialMammographyReasonSelect and not event.mammogramData.partialMammographyReasonComment %}
+      Yes, no reason provided
+    {% endif %}
+  {% endset %}
+  
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Partial mammography"
+    },
+    value: {
+      html: partialMammographyHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          text: "Change",
+          visuallyHiddenText: "partial mammography"
+        }
+      ]
+    }
+  }) %}
+{% endif %}
 
 {# Repeats and additional images #}
 {% if hasRepeatsOrExtras %}
@@ -133,27 +169,6 @@
           href: ("./images-manual-repeats" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
           text: "Change",
           visuallyHiddenText: "repeat reasons"
-        }
-      ]
-    }
-  }) %}
-{% endif %}
-
-{# Partial mammography #}
-{% if event.mammogramData.isPartialMammography == 'yes' %}
-  {% set summaryRows = summaryRows | push({
-    key: {
-      text: "Partial mammography"
-    },
-    value: {
-      text: event.mammogramData.partialMammographyReason or "Yes"
-    },
-    actions: {
-      items: [
-        {
-          href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
-          text: "Change",
-          visuallyHiddenText: "partial mammography"
         }
       ]
     }
