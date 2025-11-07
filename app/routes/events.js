@@ -1467,12 +1467,11 @@ module.exports = (router) => {
         ? isPartialMammography.includes('yes')
         : isPartialMammography === 'yes'
 
-      if (!hasPartialMammography) {
-        res.redirect(`/clinics/${clinicId}/events/${eventId}/imaging`)
-      } else {
-        data.event.workflowStatus['take-images'] = 'completed'
-        res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
-      }
+      // Mark the workflow step as completed regardless of partial mammography status
+      data.event.workflowStatus['take-images'] = 'completed'
+
+      // Redirect to review page
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
     }
   )
 

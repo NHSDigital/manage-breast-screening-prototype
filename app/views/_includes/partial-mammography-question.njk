@@ -17,7 +17,7 @@
     "Exam limited due to implanted medical device",
     "Restricted mobility - unable to attain / maintain position",
     "Exam performed in a wheelchair which restricted positioning",
-    "Other"
+    "Other (provide details below)"
   ] %}
 
   {% set selectItems = [{
@@ -48,6 +48,21 @@
     items: selectItems
   }) }}
 
+  {% set rescheduleFreeText %}
+    {{ textarea({
+      name: namePrefix + "[partialMammographyReasonComment]",
+      value: mammogramSource.partialMammographyReasonComment,
+      id: "partialMammographyReasonComment",
+      label: {
+        text: "Follow-up appointment information"
+      },
+      hint: {
+        text: "Provide information to help arrange the appointment and complete the mammogram"
+      },
+      rows: 3
+    }) }}
+  {% endset %}
+
   {{ checkboxes({
     idPrefix: "partialMammographyShouldReinvite",
     name: namePrefix + "[partialMammographyShouldReinvite]",
@@ -55,24 +70,14 @@
     items: [
       {
         value: "yes",
-        text: "Schedule another appointment to complete remaining images"
+        text: "Schedule another appointment to take more images",
+        conditional: {
+          html: rescheduleFreeText
+        }
       }
     ]
   }) }}
 
-  {{ textarea({
-    name: namePrefix + "[partialMammographyReasonComment]",
-    value: mammogramSource.partialMammographyReasonComment,
-    id: "partialMammographyReasonComment",
-    label: {
-      text: "Details (optional)"
-    },
-    hint: {
-      text: "If scheduling another appointment, include details for the next appointment here"
-    },
-    rows: 3
-  }) }}
-  
 {% endset %}
 
 {{ checkboxes({

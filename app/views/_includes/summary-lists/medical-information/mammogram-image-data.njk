@@ -128,7 +128,7 @@
       <p class="nhsuk-u-margin-bottom-2">Participant to be reinvited to complete the remaining images</p>
     {% endif %}
     {% if event.mammogramData.partialMammographyReasonComment %}
-      <p class="nhsuk-u-margin-bottom-0"><strong>Details:</strong> {{ event.mammogramData.partialMammographyReasonComment }}</p>
+      <p class="nhsuk-u-margin-bottom-0"><strong>Follow-up appointment information:</strong> {{ event.mammogramData.partialMammographyReasonComment }}</p>
     {% endif %}
     {% if not event.mammogramData.partialMammographyReasonSelect and not event.mammogramData.partialMammographyReasonComment %}
       Yes, no reason provided
