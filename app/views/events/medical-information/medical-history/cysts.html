@@ -12,22 +12,18 @@
     value: event.medicalHistoryTemp.cystsStatus,
     fieldset: {
       legend: {
-        text: "Has " + (participant.demographicInformation.firstName or "the participant") + " had breast cysts?",
+        text: "What breast cycst treatment has " + (participant.demographicInformation.firstName or "the participant") + " had?",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
     items: [
       {
-        value: "Yes, not treated",
-        text: "Yes, not treated"
+        value: "Drainage or removal",
+        text: "Drainage or removal"
       },
       {
-        value: "Yes, drained or removed",
-        text: "Yes, drained or removed"
-      },
-      {
-        value: "No",
-        text: "No"
+        value: "No treatment",
+        text: "No treatment"
       }
     ]
   }) }}
