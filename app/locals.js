@@ -1,8 +1,7 @@
 // app/locals.js
 
-module.exports = (config) => (req, res, next) => {
+module.exports = (req, res, next) => {
   const locals = {
-    serviceName: config.serviceName,
     currentUrl: req.path,
     flash: req.flash(),
     query: req.query,
