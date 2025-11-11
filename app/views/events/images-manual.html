@@ -18,7 +18,18 @@
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
-  {{ radios({
+  {% set roomName = "Room B - machine ABC" %}
+
+  <p>
+    Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ roomName }}</span>.<br><a href="#">Change room or machine details</a>
+  </p>
+
+  {{ appHiddenInput({
+    name: "event[mammogramDataTemp][machineRoom]",
+    value: roomName
+  }) }}
+
+  {# {{ radios({
     name: "event[mammogramDataTemp][machineRoom]",
     value: mammogramSource.machineRoom,
     idPrefix: "machineRoom",
@@ -43,14 +54,14 @@
         text: "Room C - machine DEF"
       }
     ]
-  }) }}
+  }) }} #}
 
   {{ radios({
     idPrefix: "imagingComplete",
     name: "event[mammogramDataTemp][isStandardSet]",
     fieldset: {
       legend: {
-        text: "Is the imaging stage complete?",
+        text: "Have you taken a standard set of images?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -59,17 +70,11 @@
     items: [
       {
         value: "yes",
-        text: "Yes, standard 4 images taken",
-        hint: {
-          text: "2 views of each breast (CC and MLO views)"
-        }
+        text: "Yes, 2 CC and 2 MLO"
       },
       {
         value: "custom",
-        text: "Yes, but provide additional details",
-        hint: {
-          text: "For example, additional images taken or partial mammography"
-        }
+        text: "No, add extra image or partial mammogram details"
       },
       {
         divider: "or"
@@ -77,8 +82,8 @@
       {
         value: "no",
         text: "No images taken",
-        _hint: {
-          text: "No images taken or technical problems that prevented any images being taken"
+        hint: {
+          text: "The appointment cannot proceed"
         }
       }
     ]
