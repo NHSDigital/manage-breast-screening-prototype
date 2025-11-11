@@ -13,7 +13,7 @@ const config = require('./app/config')
 const locals = require('./app/locals')
 const routes = require('./app/routes')
 const sessionDataDefaults = require('./app/data/session-data-defaults')
-const utils = require('./lib/utils')
+const filters = require('./app/filters')
 
 // Set configuration variables
 const port = parseInt(process.env.PORT || config.port, 10) || 2000
@@ -61,7 +61,12 @@ app.use(
 )
 
 // Add Nunjucks filters
-utils.addNunjucksFilters(nunjucksAppEnv)
+for (const [name, filter] of Object.entries(filters())) {
+  nunjucksAppEnv.addFilter(name, filter)
+
+  // Duplicate filter as global function
+  nunjucksAppEnv.addGlobal(name, filter)
+}
 
 NHSPrototypeKit.init({
   serviceName: config.serviceName,
