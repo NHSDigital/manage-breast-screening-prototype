@@ -43,6 +43,21 @@
     {% endif %}
 
     <br>
+
+    <ul class="nhsuk-list">
+      <li>
+        <a href="{{ eventUrl }}/cancel-or-reschedule-appointment/details{{ '?referrerChain=' + eventUrl if eventUrl }}">
+          Cancel or reschedule appointment
+        </a>
+      </li>
+      <li>
+        <a href="{{ eventUrl }}/special-appointment/edit{{ '?referrerChain=' + eventUrl if eventUrl }}">
+          {{ "Make this appointment a special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
+        </a>
+      </li>
+    </ul>
+
+    {# 
     {{ buttonMenu({
       items: [
         {
@@ -67,6 +82,7 @@
       },
       alignMenu: "right"
     }) }}
+    #}
   </div>
 </div>
 

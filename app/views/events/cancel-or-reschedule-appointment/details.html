@@ -1,8 +1,10 @@
 {% extends 'layout-appointment.html' %}
 
-{% set pageHeading = "Appointment cannot proceed" %}
+{% set pageHeading = "Cancel or reschedule appointment" %}
 
-{% set formAction = './attended-not-screened-answer' %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./cancel-or-reschedule-appointment-answer" %}
 
 {% block pageContent %}
 
@@ -15,47 +17,44 @@
     {{ pageHeading }}
   </h1>
 
-  {{ checkboxes({
-    name: "event[appointmentStopped][stoppedReason]",
+  {{ radios({
+    name: "event[cancellation][reason]",
+    value: data.event.cancellation.reason,
     fieldset: {
       legend: {
-        text: "Why has this appointment been stopped?",
+        text: "Why is this appointment not going ahead?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
     },
-    hint: {
-      text: "Select all that apply"
-    },
-    values: event.appointmentStopped.stoppedReason,
     items: [
       {
-        value: "Failed identity check",
-        text: "Failed identity check"
+        value: "Availability to attend",
+        text: "Availability to attend"
       },
       {
-        value: "Pain during screening",
-        text: "Pain during screening"
+        value: "Moving outside England",
+        text: "Moving outside England"
+      },
+      {
+        value: "Breast implant concerns",
+        text: "Breast implant concerns"
+      },
+      {
+        value: "Bilateral mastectomy",
+        text: "Bilateral mastectomy"
+      },
+      {
+        value: "Recent mammogram",
+        text: "Recent mammogram"
+      },
+      {
+        value: "Medical reasons",
+        text: "Medical reasons"
       },
       {
         value: "Has a symptomatic appointment",
         text: "Has a symptomatic appointment"
-      },
-      {
-        value: "Consent withdrawn",
-        text: "Consent withdrawn"
-      },
-      {
-        value: "Physical health issue",
-        text: "Physical health issue"
-      },
-      {
-        value: "Mental health issue",
-        text: "Mental health issue"
-      },
-      {
-        value: "Language difficulties",
-        text: "Language difficulties"
       },
       {
         value: "No qualified mammographer available",
@@ -70,11 +69,11 @@
         text: "Other reason",
         conditional: {
           html: textarea({
-            name: "event[appointmentStopped][otherDetails]",
+            name: "event[cancellation][otherReasonDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.otherDetails
+            value: data.event.cancellation.otherReasonDetails
           })
         }
       }
@@ -82,8 +81,8 @@
   } | populateErrors) }}
 
   {{ radios({
-    name: "event[appointmentStopped][needsReschedule]",
-    value: event.appointmentStopped.needsReschedule,
+    name: "event[cancellation][reschedule]",
+    value: data.event.cancellation.reschedule,
     fieldset: {
       legend: {
         text: "Should the appointment be rescheduled?",

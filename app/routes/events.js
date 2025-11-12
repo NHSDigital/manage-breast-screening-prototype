@@ -518,15 +518,17 @@ module.exports = (router) => {
         saveMammogram(mammogram)
         delete data.event?.previousMammogramTemp
 
+       // Get participant info for message
+        const participantName = getFullName(data.participant)
+        const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+
         // Save changes and update status
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
         updateEventStatus(data, eventId, 'event_attended_not_screened')
 
-        // Get participant info for message
-        const participantName = getFullName(data.participant)
-        const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
-
+  
         // Flash success message
         const successMessage = `
       ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
@@ -558,18 +560,61 @@ module.exports = (router) => {
 
       delete data.event?.previousMammogramTemp
 
-      // If user clicked "continue" on warning page, start the appointment cancellation flow
-      if (action === 'continue') {
+     // If user clicked "continue" on warning page, handle reschedule options
+      if (action === 'continue')
+      {
+        const needsReschedule = data.event?.appointmentStopped?.needsReschedule
+
+        // Validate that reschedule option was selected
+        if (!needsReschedule)
+        {
+          req.flash('error', {
+            text: 'Select whether the appointment should be rescheduled',
+            name: 'event[appointmentStopped][needsReschedule]',
+            href: '#needsReschedule'
+          })
+          return res.redirect(
+            urlWithReferrer(
+              `/clinics/${clinicId}/events/${eventId}/previous-mammograms/appointment-should-not-proceed`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
         // Set stopping reason for the appointment
-        if (!data.event.appointmentStopped) {
+        if (!data.event.appointmentStopped)
+        {
           data.event.appointmentStopped = {}
         }
-        data.event.appointmentStopped.stoppedReason = 'recent_mammogram'
-        data.event.appointmentStopped.needsReschedule = 'no' // Default to no reschedule needed
+        data.event.appointmentStopped.stoppedReason = ['Recent mammogram']
 
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
-        )
+        // If yes, redirect to reschedule page
+        if (needsReschedule === 'yes')
+        {
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+          )
+        }
+        else if (needsReschedule === 'no-invite')
+        {
+        // Get participant info BEFORE saving (which clears temp data)
+         const participantName = getFullName(data.participant) 
+         const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+         // Save changes and update status
+         saveTempEventToEvent(data)
+         saveTempParticipantToParticipant(data)
+         updateEventStatus(data, eventId, 'event_attended_not_screened')
+
+          // Flash success message
+          const successMessage = `
+    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+          req.flash('success', { wrapWithHeading: successMessage })
+
+          // Return to clinic list
+          return res.redirect(`/clinics/${clinicId}/`)
+        }
       }
 
       req.flash('success', mammogramAddedMessage)
@@ -1295,92 +1340,248 @@ module.exports = (router) => {
     }
   )
 
-  // Handle breast implants consent form submission
-  router.post(
-    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
-    (req, res) => {
-      const { clinicId, eventId } = req.params
-      const data = req.session.data
-      const consentGiven =
-        data.event?.medicalInformation?.implantedDevices?.consentGiven
-      const referrerChain = req.query.referrerChain
-      const scrollTo = req.query.scrollTo
+// Route handler for breast implants consent – appointment cannot proceed
 
-      if (!consentGiven) {
-        req.flash('error', {
-          text: 'Select whether the participant has signed the consent form',
-          name: 'event[medicalInformation][implantedDevices][consentGiven]'
-        })
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
-        )
-      }
+router.post(
+  '/clinics/:clinicId/events/:eventId/medical-information/medical-history/appointment-cannot-proceed-answer',
+  (req, res) =>
+  {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const participantName = getFullName(data.participant)
 
-      if (consentGiven === 'yes') {
-        // Save the breast implants data that was held in temp
-        if (data.event?.medicalHistoryTemp) {
-          // Initialize medicalInformation object if needed
-          if (!data.event.medicalInformation) {
-            data.event.medicalInformation = {}
-          }
+    const futureScreeningPlan = data.event?.cannotProceed?.futureScreeningPlan
 
-          // Initialize medicalHistory object if needed
-          if (!data.event.medicalInformation.medicalHistory) {
-            data.event.medicalInformation.medicalHistory = {}
-          }
+    // Validate that an option was selected
+    if (!futureScreeningPlan)
+    {
+      req.flash('error', {
+        text: 'Select whether the participant plans to attend breast screening in future',
+        name: 'event[cannotProceed][futureScreeningPlan]',
+        href: '#futureScreeningPlan'
+      })
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+      )
+    }
 
-          // Initialize array for breast implants if needed
-          if (
-            !data.event.medicalInformation.medicalHistory
-              .breastImplantsAugmentation
-          ) {
-            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation =
-              []
-          }
+    // Save the data
+    saveTempEventToEvent(data)
+    saveTempParticipantToParticipant(data)
 
-          const medicalHistoryTemp = data.event.medicalHistoryTemp
-          const isNewItem = !medicalHistoryTemp.id
+    // Update event status to indicate cannot proceed
+    updateEventStatus(data, eventId, 'event_cancelled')
 
-          // Create medical history item
-          const medicalHistoryItem = {
-            id: medicalHistoryTemp.id || generateId(),
-            ...medicalHistoryTemp
-          }
+    // Set success message based on choice
+    let successMessage
+    if (futureScreeningPlan === 'contact-six-weeks')
+    {
+      successMessage = `${participantName} will be contacted in six weeks to rearrange their appointment`
+    }
+    else if (futureScreeningPlan === 'invite-next-routine')
+    {
+      successMessage = `${participantName} will be invited to their next routine appointment`
+    }
+    else if (futureScreeningPlan === 'opt-out')
+    {
+      successMessage = `${participantName} has been permanently opted out and will receive information explaining their options`
+    }
 
-          // For new items, add the creation timestamp
-          if (isNewItem) {
-            medicalHistoryItem.dateAdded = new Date().toISOString()
-            medicalHistoryItem.addedBy = data.currentUser.id
-          }
+    req.flash('success', successMessage)
 
-          // Add consent information
-          medicalHistoryItem.consentGiven = 'yes'
 
-          // Add to array
-          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
-            medicalHistoryItem
-          )
+    // Return to clinic page
+    res.redirect(`/clinics/${clinicId}`)
+  }
+)
 
-          // Clear temp data
-          delete data.event.medicalHistoryTemp
+// Handle breast implants consent form submission
+router.post(
+  '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
+  (req, res) =>
+  {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const consentGiven = data.event?.medicalInformation?.implantedDevices?.consentGiven
+    const referrerChain = req.query.referrerChain
+    const scrollTo = req.query.scrollTo
+
+    // Validate that an option was selected
+    if (!consentGiven)
+    {
+      req.flash('error', {
+        text: 'Select whether they have signed the consent form',
+        name: 'event[medicalInformation][implantedDevices][consentGiven]',
+        href: '#consentGiven'
+      })
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
+      )
+    }
+
+    // Handle "Yes" - full consent given
+    if (consentGiven === 'yes')
+    {
+      // Save the medical history data that was in temp
+      if (data.event?.medicalHistoryTemp)
+      {
+        // Initialize medicalInformation object if needed
+        if (!data.event.medicalInformation)
+        {
+          data.event.medicalInformation = {}
         }
 
-        // Show combined success message
-        req.flash('success', 'Breast implants recorded and consent recorded')
+        // Initialize medicalHistory object if needed
+        if (!data.event.medicalInformation.medicalHistory)
+        {
+          data.event.medicalInformation.medicalHistory = {}
+        }
 
-        const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
-          referrerChain,
-          scrollTo
+        // Initialize array for breast implants if needed
+        if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+        }
+
+        const medicalHistoryTemp = data.event.medicalHistoryTemp
+        const isNewItem = !medicalHistoryTemp.id
+
+        // Create medical history item
+        const medicalHistoryItem = {
+          id: medicalHistoryTemp.id || generateId(),
+          ...medicalHistoryTemp
+        }
+
+        // Add the creation timestamp if new
+        if (isNewItem)
+        {
+          medicalHistoryItem.dateAdded = new Date().toISOString()
+          medicalHistoryItem.addedBy = data.currentUser.id
+        }
+
+        // Add consent information
+        medicalHistoryItem.consentGiven = 'yes'
+
+        // Update existing or add new
+        const existingIndex = data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.findIndex(
+          (item) => item.id === medicalHistoryItem.id
         )
-        res.redirect(returnUrl)
-      } else {
-        res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
-        )
+        if (existingIndex !== -1)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation[existingIndex] = medicalHistoryItem
+        }
+        else
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+        }
+
+        // Clear temp data
+        delete data.event.medicalHistoryTemp
       }
+
+      // Show combined success message
+      req.flash('success', 'Breast implants recorded and consent recorded')
+
+      // Continue to next step in the flow
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
+        referrerChain,
+        scrollTo
+      )
+      res.redirect(returnUrl)
     }
-  )
+    // Handle "No, but scan unaffected breast"
+    else if (consentGiven.startsWith('no-continue-'))
+    {
+      const unaffectedBreast = consentGiven.replace('no-continue-', '')
+      const affectedBreast = unaffectedBreast === 'left' ? 'right' : 'left'
+
+      // Save the medical history data with partial consent
+      if (data.event?.medicalHistoryTemp)
+      {
+        // Initialize medicalInformation object if needed
+        if (!data.event.medicalInformation)
+        {
+          data.event.medicalInformation = {}
+        }
+
+        // Initialize medicalHistory object if needed
+        if (!data.event.medicalInformation.medicalHistory)
+        {
+          data.event.medicalInformation.medicalHistory = {}
+        }
+
+        // Initialize array for breast implants if needed
+        if (!data.event.medicalInformation.medicalHistory.breastImplantsAugmentation)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation = []
+        }
+
+        const medicalHistoryTemp = data.event.medicalHistoryTemp
+        const isNewItem = !medicalHistoryTemp.id
+
+        // Create medical history item with partial consent noted
+        const medicalHistoryItem = {
+          id: medicalHistoryTemp.id || generateId(),
+          ...medicalHistoryTemp,
+          consentGiven: 'partial',
+          partialConsent: {
+            unaffectedBreast: unaffectedBreast,
+            affectedBreast: affectedBreast
+          }
+        }
+
+        // Add the creation timestamp if new
+        if (isNewItem)
+        {
+          medicalHistoryItem.dateAdded = new Date().toISOString()
+          medicalHistoryItem.addedBy = data.currentUser.id
+        }
+
+        // Update existing or add new
+        const existingIndex = data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.findIndex(
+          (item) => item.id === medicalHistoryItem.id
+        )
+        if (existingIndex !== -1)
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation[existingIndex] = medicalHistoryItem
+        }
+        else
+        {
+          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(medicalHistoryItem)
+        }
+
+        // Clear temp data
+        delete data.event.medicalHistoryTemp
+      }
+
+      // Set success message
+      req.flash(
+        'success',
+        `Consent recorded as not given for ${affectedBreast} breast, but ${unaffectedBreast} breast to be scanned`
+      )
+
+      // Redirect back to medical history page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
+        referrerChain,
+        scrollTo
+      )
+      res.redirect(returnUrl)
+    }
+    // Handle "No, end appointment"
+    else if (consentGiven === 'no')
+    {
+      // Don't save the medical history data - consent not given
+      delete data.event.medicalHistoryTemp
+
+      // Redirect to appointment cannot proceed page
+      res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+      )
+    }
+  }
+)
 
   // Imaging view - this is the main imaging page for the event
 
@@ -1942,44 +2143,46 @@ module.exports = (router) => {
   // End Manual imaging routes
 
   // Handle screening completion
-  router.post(
+ router.post(
     '/clinics/:clinicId/events/:eventId/attended-not-screened-answer',
-    (req, res) => {
+    (req, res) =>
+    {
       const { clinicId, eventId } = req.params
-
       const data = req.session.data
 
       const participantName = getFullName(data.participant)
+      console.log('Participant data:', data.participant)
+      console.log('Participant name:', participantName)
       const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
 
       const notScreenedReason = data.event.appointmentStopped.stoppedReason
       const needsReschedule = data.event.appointmentStopped.needsReschedule
-      const otherReasonDetails = data.event.appointmentStopped.otherDetails
+      const otherDetails = data.event.appointmentStopped.otherDetails
       const hasOtherReasonButNoDetails =
-        notScreenedReason?.includes('other') && !otherReasonDetails
+        notScreenedReason?.includes('Other reason') && !otherDetails
 
-      if (
-        !notScreenedReason ||
-        !needsReschedule ||
-        hasOtherReasonButNoDetails
-      ) {
-        if (!notScreenedReason) {
+      if (!notScreenedReason || !needsReschedule || hasOtherReasonButNoDetails)
+      {
+        if (!notScreenedReason)
+        {
           req.flash('error', {
-            text: 'A reason for why this appointment cannot continue must be provided',
+            text: 'Select why this appointment has been stopped',
             name: 'event[appointmentStopped][stoppedReason]',
             href: '#stoppedReason'
           })
         }
-        if (hasOtherReasonButNoDetails) {
+        if (hasOtherReasonButNoDetails)
+        {
           req.flash('error', {
-            text: 'Explain why this appointment cannot proceed',
+            text: 'Provide details about the other reason',
             name: 'event[appointmentStopped][otherDetails]',
             href: '#otherDetails'
           })
         }
-        if (!needsReschedule) {
+        if (!needsReschedule)
+        {
           req.flash('error', {
-            text: 'Select whether the participant needs to be invited for another appointment',
+            text: 'Select whether the appointment should be rescheduled',
             name: 'event[appointmentStopped][needsReschedule]',
             href: '#needsReschedule'
           })
@@ -1990,15 +2193,38 @@ module.exports = (router) => {
         return
       }
 
-      saveTempEventToEvent(data)
-      saveTempParticipantToParticipant(data)
-      updateEventStatus(data, eventId, 'event_attended_not_screened')
+      // If yes, redirect to reschedule page
+      if (needsReschedule === 'yes')
+      {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+    else
+      {
+       // Get participant info BEFORE saving (which clears temp data)
 
-      const successMessage = `
-    ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
-      req.flash('success', { wrapWithHeading: successMessage })
+       saveTempEventToEvent(data)
+       saveTempParticipantToParticipant(data)
+       updateEventStatus(data, eventId, 'event_attended_not_screened')
 
-      res.redirect(`/clinics/${clinicId}/`)
+       // Set success message based on choice
+        let successMessage
+        if (needsReschedule === 'no-invite')
+        {
+          successMessage = `
+    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+        else if (needsReschedule === 'no-opt-out')
+        {
+          successMessage = `
+    ${participantName} has been opted out. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+
+        req.flash('success', { wrapWithHeading: successMessage })
+
+        res.redirect(`/clinics/${clinicId}/`)
+      }
     }
   )
 
@@ -2153,5 +2379,108 @@ module.exports = (router) => {
     createDynamicTemplateRoute({
       templatePrefix: 'events'
     })
+  )
+
+// Handle cancel or reschedule appointment form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/cancel-or-reschedule-appointment/cancel-or-reschedule-appointment-answer',
+    (req, res) =>
+    {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      const participantName = getFullName(data.participant)
+      const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+      const rescheduleChoice = data.event?.cancellation?.reschedule
+
+      // Validate that a reschedule option was selected
+      if (!rescheduleChoice)
+      {
+        req.flash('error', {
+          text: 'Select whether the appointment should be rescheduled',
+          name: 'event[cancellation][reschedule]',
+          href: '#reschedule'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/details`
+        )
+      }
+
+      // If yes, redirect to reschedule page
+      if (rescheduleChoice === 'yes')
+      {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+      else
+      {
+        // Save the cancellation data
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+
+        // Update event status to cancelled
+        updateEventStatus(data, eventId, 'event_cancelled')
+
+        // Set success message based on choice
+        let successMessage
+        if (rescheduleChoice === 'no-invite')
+        {
+          successMessage = `${participantName} will be invited to their next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+        else if (rescheduleChoice === 'no-opt-out')
+        {
+          successMessage = `${participantName} has been opted out. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+
+        req.flash('success', { wrapWithHeading: successMessage })
+
+        // Return to clinic page
+        res.redirect(`/clinics/${clinicId}`)
+      }
+    }
+  )
+
+  // Handle reschedule appointment form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/cancel-or-reschedule-appointment/reschedule-answer',
+    (req, res) =>
+    {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      const participantName = getFullName(data.participant)
+      const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+      const timing = data.event?.reschedule?.timing
+
+      // Validate that timing was selected
+      if (!timing)
+      {
+        req.flash('error', {
+          text: 'Select when the appointment should be rescheduled',
+          name: 'event[reschedule][timing]',
+          href: '#timing'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+
+      // Save the reschedule data
+      saveTempEventToEvent(data)
+      saveTempParticipantToParticipant(data)
+
+      // Update event status to rescheduled
+      updateEventStatus(data, eventId, 'event_rescheduled')
+
+      const successMessage = `${participantName}'s appointment has been rescheduled. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+
+      req.flash('success', { wrapWithHeading: successMessage })
+
+      // Return to clinic page
+      res.redirect(`/clinics/${clinicId}`)
+    }
   )
 }
