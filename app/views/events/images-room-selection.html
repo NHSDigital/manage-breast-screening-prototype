@@ -1,0 +1,71 @@
+{% extends 'layout-appointment.html' %}
+
+{% set showNavigation = false %}
+{% set hideBackLink = true %}
+
+{% set pageHeading = "Which room are mammograms being taken in?" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './images-manual' | getReturnUrl(referrerChain) %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  {{ backLink({
+    href: "javascript:history.back();",
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
+
+  {% set radioItems = [] %}
+
+  {# Check if this is a mobile clinic #}
+  {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
+
+  {% if isMobileClinic %}
+    {# For mobile clinics, show the mobile unit as the only option #}
+    {% set radioItems = radioItems | push({
+      value: clinic.location.name,
+      text: clinic.location.name,
+      hint: {
+        text: "Mobile screening unit"
+      },
+      checked: true
+    }) %}
+  {% else %}
+    {# For hospital clinics, show available rooms #}
+    {% for room in data.screeningRooms %}
+      {% if room.locationId == clinic.location.id %}
+        {% set isChecked = (data.currentScreeningRoom == room.id) %}
+        {% set radioItems = radioItems | push({
+          value: room.id,
+          text: room.displayName,
+          checked: isChecked
+        }) %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {{ radios({
+    idPrefix: "screening-room",
+    name: "currentScreeningRoom",
+    fieldset: {
+      legend: {
+        text: pageHeading,
+        classes: "nhsuk-fieldset__legend--l",
+        isPageHeading: true
+      }
+    },
+    hint: {
+      text: "We'll remember this for your next screening"
+    },
+    items: radioItems
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}

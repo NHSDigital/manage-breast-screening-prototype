@@ -1,4 +1,4 @@
-{% extends 'layout-appointment.html' %}
+{% extends 'layout-appointment.html' %} 
 
 {% set showNavigation = true %}
 {% set hideBackLink = true %}
@@ -12,13 +12,33 @@
 
 {% set activeTab = 'images' %}
 
-{% set viewQuestionStyle = data.viewQuestionStyle or "checkboxes" %} {# "checkboxes" or "inputs" #}
+{% set viewQuestionStyle = data.viewQuestionStyle or "inputs" %} {# "checkboxes" or "inputs" #}
 
 {% block pageContent %}
 
+  {# TODO: Ideally this would be before the main element #}
+  {{ backLink({
+    href: "javascript:history.back();",
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
+
   <h1>{{ pageHeading }}</h1>
 
-  {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
+  {# Get count values - prefer temp data, fall back to structured mammogramData #}
+  {% set mammogramTemp = event.mammogramDataTemp or {} %}
+  {% set mammogramViews = event.mammogramData.views or {} %}
+  
+  {% set viewsRightBreastCCCount = mammogramTemp.viewsRightBreastCCCount or mammogramViews.rightCraniocaudal.count or "" %}
+  {% set viewsRightBreastMLOCount = mammogramTemp.viewsRightBreastMLOCount or mammogramViews.rightMediolateralOblique.count or "" %}
+  {% set viewsRightBreastEklundCount = mammogramTemp.viewsRightBreastEklundCount or mammogramViews.rightEklund.count or "" %}
+  {% set viewsLeftBreastCCCount = mammogramTemp.viewsLeftBreastCCCount or mammogramViews.leftCraniocaudal.count or "" %}
+  {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "" %}
+  {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "" %}
+  {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
+  
+  {# Set mammogramSource for partial mammography question - prefer temp data, fall back to final data #}
+  {% set mammogramSource = mammogramTemp or event.mammogramData or {} %}
 
   {# {% set inputsLink %}
     <p>
@@ -30,15 +50,13 @@
     <p>
       <a href="./images-manual-details?viewQuestionStyle=checkboxes">Swap to 'checkboxes' style</a>
     </p>
-  {% endset %}
+  {% endset %} #}
 
-  {% if data.viewQuestionStyle == 'inputs' %}
+  {% if viewQuestionStyle == 'inputs' %}
     {{ checkboxesLink | safe }}
-    {% set viewQuestionStyle = "inputs" %}
   {% else %}
     {{ inputsLink | safe }}
-    {% set viewQuestionStyle = "checkboxes" %}
-  {% endif %} #}
+  {% endif %}
 
   {% set viewsQuestionCheckboxes %}
 
@@ -54,11 +72,34 @@
     {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
     <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
 
+    {# Build checked values arrays based on count fields #}
+    {% set rightBreastChecked = [] %}
+    {% if (viewsRightBreastCCCount | int) > 0 %}
+      {% set rightBreastChecked = rightBreastChecked | push('CC') %}
+    {% endif %}
+    {% if (viewsRightBreastMLOCount | int) > 0 %}
+      {% set rightBreastChecked = rightBreastChecked | push('MLO') %}
+    {% endif %}
+    {% if (viewsRightBreastEklundCount | int) > 0 %}
+      {% set rightBreastChecked = rightBreastChecked | push('Eklund') %}
+    {% endif %}
+
+    {% set leftBreastChecked = [] %}
+    {% if (viewsLeftBreastCCCount | int) > 0 %}
+      {% set leftBreastChecked = leftBreastChecked | push('CC') %}
+    {% endif %}
+    {% if (viewsLeftBreastMLOCount | int) > 0 %}
+      {% set leftBreastChecked = leftBreastChecked | push('MLO') %}
+    {% endif %}
+    {% if (viewsLeftBreastEklundCount | int) > 0 %}
+      {% set leftBreastChecked = leftBreastChecked | push('Eklund') %}
+    {% endif %}
+
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-one-half">
         {{ checkboxes({
           name: "event[mammogramDataTemp][viewsRightBreast]",
-          values: mammogramSource.viewsRightBreast,
+          values: rightBreastChecked,
           idPrefix: "viewsRightBreast",
           fieldset: {
             legend: {
@@ -77,7 +118,7 @@
                     text: "Number of images"
                   },
                   name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
-                  value: mammogramSource.viewsRightBreastCCCount or "1",
+                  value: viewsRightBreastCCCount or "1",
                   id: "views-right-breast-cc-count",
                   classes: "nhsuk-input--width-3",
                   inputmode: "numeric"
@@ -93,7 +134,7 @@
                     text: "Number of images"
                   },
                   name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
-                  value: mammogramSource.viewsRightBreastMLOCount or "1",
+                  value: viewsRightBreastMLOCount or "1",
                   id: "views-right-breast-mlo-count",
                   classes: "nhsuk-input--width-3",
                   inputmode: "numeric"
@@ -109,7 +150,7 @@
                     text: "Number of images"
                   },
                   name: "event[mammogramDataTemp][viewsRightBreastEklundCount]",
-                  value: mammogramSource.viewsRightBreastEklundCount or "1",
+                  value: viewsRightBreastEklundCount or "1",
                   id: "views-right-breast-eklund-count",
                   classes: "nhsuk-input--width-3",
                   inputmode: "numeric"
@@ -130,7 +171,7 @@
       <div class="nhsuk-grid-column-one-half">
         {{ checkboxes({
           name: "event[mammogramDataTemp][viewsLeftBreast]",
-          values: mammogramSource.viewsLeftBreast,
+          values: leftBreastChecked,
           idPrefix: "viewsLeftBreast",
           fieldset: {
             legend: {
@@ -149,7 +190,7 @@
                     text: "Number of images"
                   },
                   name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
-                  value: mammogramSource.viewsLeftBreastCCCount or "1",
+                  value: viewsLeftBreastCCCount or "1",
                   id: "views-left-breast-cc-count",
                   classes: "nhsuk-input--width-3",
                   inputmode: "numeric"
@@ -165,7 +206,7 @@
                     text: "Number of images"
                   },
                   name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
-                  value: mammogramSource.viewsLeftBreastMLOCount or "1",
+                  value: viewsLeftBreastMLOCount or "1",
                   id: "views-left-breast-mlo-count",
                   classes: "nhsuk-input--width-3",
                   inputmode: "numeric"
@@ -181,7 +222,7 @@
                     text: "Number of images"
                   },
                   name: "event[mammogramDataTemp][viewsLeftBreastEklundCount]",
-                  value: mammogramSource.viewsLeftBreastEklundCount or "1",
+                  value: viewsLeftBreastEklundCount or "1",
                   id: "views-left-breast-eklund-count",
                   classes: "nhsuk-input--width-3",
                   inputmode: "numeric"
@@ -223,35 +264,35 @@
             {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Right breast
           </legend>
           
-          {{ input({
+          {{ appStepperInput({
             label: {
               text: "CC"
             },
-            hint: {
+            _hint: {
               text: "Craniocaudal view"
             },
             name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
-            value: mammogramSource.viewsRightBreastCCCount,
+            value: viewsRightBreastCCCount | default("0"),
             id: "views-right-breast-cc-count",
-            classes: "nhsuk-input--width-3",
-            inputmode: "numeric"
+            min: 0,
+            max: 9
           }) }}
           
-          {{ input({
+          {{ appStepperInput({
             label: {
               text: "MLO"
             },
-            hint: {
+            _hint: {
               text: "Mediolateral oblique view"
             },
             name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
-            value: mammogramSource.viewsRightBreastMLOCount,
+            value: viewsRightBreastMLOCount | default("0"),
             id: "views-right-breast-mlo-count",
-            classes: "nhsuk-input--width-3",
-            inputmode: "numeric"
+            min: 0,
+            max: 9
           }) }}
           
-          {{ input({
+          {{ appStepperInput({
             label: {
               text: "Eklund"
             },
@@ -259,10 +300,10 @@
               text: "Used with breast implants"
             },
             name: "event[mammogramDataTemp][viewsRightBreastEklundCount]",
-            value: mammogramSource.viewsRightBreastEklundCount,
+            value: viewsRightBreastEklundCount | default("0"),
             id: "views-right-breast-eklund-count",
-            classes: "nhsuk-input--width-3",
-            inputmode: "numeric"
+            min: 0,
+            max: 9
           }) }}
         </fieldset>
       </div>
@@ -273,35 +314,35 @@
             {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Left breast
           </legend>
           
-          {{ input({
+          {{ appStepperInput({
             label: {
               text: "CC"
             },
-            hint: {
+            _hint: {
               text: "Craniocaudal view"
             },
             name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
-            value: mammogramSource.viewsLeftBreastCCCount,
+            value: viewsLeftBreastCCCount | default("0"),
             id: "views-left-breast-cc-count",
-            classes: "nhsuk-input--width-3",
-            inputmode: "numeric"
+            min: 0,
+            max: 9
           }) }}
           
-          {{ input({
+          {{ appStepperInput({
             label: {
               text: "MLO"
             },
-            hint: {
+            _hint: {
               text: "Mediolateral oblique view"
             },
             name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
-            value: mammogramSource.viewsLeftBreastMLOCount,
+            value: viewsLeftBreastMLOCount | default("0"),
             id: "views-left-breast-mlo-count",
-            classes: "nhsuk-input--width-3",
-            inputmode: "numeric"
+            min: 0,
+            max: 9
           }) }}
           
-          {{ input({
+          {{ appStepperInput({
             label: {
               text: "Eklund"
             },
@@ -309,10 +350,10 @@
               text: "Used with breast implants"
             },
             name: "event[mammogramDataTemp][viewsLeftBreastEklundCount]",
-            value: mammogramSource.viewsLeftBreastEklundCount,
+            value: viewsLeftBreastEklundCount | default("0"),
             id: "views-left-breast-eklund-count",
-            classes: "nhsuk-input--width-3",
-            inputmode: "numeric"
+            min: 0,
+            max: 9
           }) }}
         </fieldset>
       </div>
@@ -325,13 +366,39 @@
     {{ viewsQuestionTextInputs | safe }}
   {% endif %}
 
+  {# Calculate initial total count from form data #}
+  {% set initialTotalCount = 0 %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastCCCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastMLOCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastEklundCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastCCCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastMLOCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastEklundCount | int(0)) %}
+
+  <p class="_nhsuk-u-font-weight-bold app-js-only app-text-grey nhsuk-u-margin-bottom-4 nhsuk-u-font-size-22" id="total-images-count">
+    Images taken: <span data-total-count>{{ initialTotalCount }}</span>
+  </p>
+
+  {% set insetTextHtml %}
+    <p>Repeat or extra image details captured on the next screen</p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml,
+    attributes: {
+      "id": "repeat-images-inset",
+      "data-module": "repeat-images-notice",
+      "style": "display: none;"
+    }
+  }) }}
+
   {% set namePrefix = "event[mammogramDataTemp]" %}
   {% include "_includes/partial-mammography-question.njk" %}
 
   {{ textarea({
     name: "event[mammogramDataTemp][additionalDetails]",
     id: "additional-details",
-    value: mammogramSource.additionalDetails,
+    value: additionalDetails,
     label: {
       text: "Additional details (optional)",
       classes: "nhsuk-label--m"
@@ -346,4 +413,93 @@
     text: "Continue"
   }) }}
 
+{% endblock %}
+
+{% block pageScripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const insetText = document.querySelector('[data-module="repeat-images-notice"]')
+      const totalCountElement = document.querySelector('[data-total-count]')
+      
+      if (!insetText) {
+        return
+      }
+
+      // Function to get all currently visible count inputs
+      const getCountInputs = () => {
+        return [
+          document.getElementById('views-right-breast-cc-count'),
+          document.getElementById('views-right-breast-mlo-count'),
+          document.getElementById('views-right-breast-eklund-count'),
+          document.getElementById('views-left-breast-cc-count'),
+          document.getElementById('views-left-breast-mlo-count'),
+          document.getElementById('views-left-breast-eklund-count')
+        ].filter(Boolean) // Remove any null values
+      }
+
+      // Function to calculate total image count
+      const getTotalCount = () => {
+        const inputs = getCountInputs()
+        return inputs.reduce((total, input) => {
+          const value = parseInt(input.value, 10)
+          return total + (isNaN(value) ? 0 : value)
+        }, 0)
+      }
+
+      // Function to check if any count is greater than 1
+      const hasRepeats = () => {
+        const inputs = getCountInputs()
+        return inputs.some(input => {
+          const value = parseInt(input.value, 10)
+          return !isNaN(value) && value > 1
+        })
+      }
+
+      // Function to update total count display
+      const updateTotalCount = () => {
+        if (totalCountElement) {
+          const total = getTotalCount()
+          totalCountElement.textContent = total
+        }
+      }
+
+      // Function to update visibility
+      const updateVisibility = () => {
+        if (hasRepeats()) {
+          insetText.style.display = ''
+        } else {
+          insetText.style.display = 'none'
+        }
+      }
+
+      // Function to update everything
+      const updateAll = () => {
+        updateTotalCount()
+        updateVisibility()
+      }
+
+      // Set initial state after a short delay to allow conditional reveals to initialize
+      setTimeout(updateAll, 100)
+
+      // Add event listeners using delegation on the form
+      document.addEventListener('input', (event) => {
+        const target = event.target
+        if (target.id && target.id.includes('breast') && target.id.includes('count')) {
+          updateAll()
+        }
+      })
+
+      document.addEventListener('change', (event) => {
+        const target = event.target
+        // Handle checkbox changes (which reveal/hide conditional inputs)
+        if (target.name && target.name.includes('event[mammogramDataTemp][views')) {
+          setTimeout(updateAll, 100)
+        }
+        // Handle count input changes
+        if (target.id && target.id.includes('breast') && target.id.includes('count')) {
+          updateAll()
+        }
+      })
+    })
+  </script>
 {% endblock %}

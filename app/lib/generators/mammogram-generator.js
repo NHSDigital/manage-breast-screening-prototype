@@ -87,10 +87,11 @@ const generateViewImages = ({
     viewShort: view === 'mediolateral oblique' ? 'MLO' : 'CC',
     viewShortWithSide: `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`,
     images,
-    isRepeat: needsRepeat && isSeedData,
-    repeatReason:
+    count: images.length,
+    repeatCount: needsRepeat ? 1 : 0,
+    repeatReasons:
       needsRepeat && isSeedData
-        ? faker.helpers.arrayElement(REPEAT_REASONS)
+        ? [faker.helpers.arrayElement(REPEAT_REASONS)]
         : null
   }
 }
@@ -188,7 +189,7 @@ const generateMammogramImages = ({
 
   // Check if any views are missing
   const hasMissingViews = Object.keys(views).length < 4
-  const hasRepeat = Object.values(views).some((view) => view.isRepeat)
+  const hasRepeat = Object.values(views).some((view) => view.repeatCount > 0)
 
   return {
     accessionBase,

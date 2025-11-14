@@ -30,7 +30,7 @@
           {% if isManualEntry %}
             {# Manual entry - show count only #}
             <h2>
-              {{ side.imageCount }} {{ side.viewShortWithSide }} {{ "image" | pluralise(side.imageCount) }}
+              {{ side.count }} {{ side.viewShortWithSide }} {{ "image" | pluralise(side.count) }}
             </h2>
 
             {{ summaryList({
@@ -48,9 +48,9 @@
             }) }}
 
             {# Show repeat information if present #}
-            {% if side.isRepeat and side.repeatReason %}
+            {% if side.repeatCount > 0 and side.repeatReasons %}
               <p class="nhsuk-u-margin-top-2">
-                <strong>Repeat reason:</strong> {{ side.repeatReason }}
+                <strong>Repeat {{ 'reason' | pluralise(side.repeatReasons | length) }}:</strong> {{ side.repeatReasons | join(', ') }}
               </p>
             {% endif %}
 

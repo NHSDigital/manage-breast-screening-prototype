@@ -3,7 +3,7 @@
 {% set showNavigation = true %}
 {% set activeWorkflowStep = 'take-images' %}
 
-{% set pageHeading = "Repeat images" %}
+{% set pageHeading = "Add image information" %}
 {% set hideBackLink = true %}
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
@@ -12,6 +12,13 @@
 {% set activeTab = 'images' %}
 
 {% block pageContent %}
+
+  {# TODO: Ideally this would be before the main element #}
+  {{ backLink({
+    href: "javascript:history.back();",
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
 
   <h1>{{ pageHeading }}</h1>
 
@@ -22,84 +29,248 @@
   {% set repeatReasons = data.repeatReasons %}
 
   {# Build array of views that need repeat questions #}
+  {# Check mammogramDataTemp first (when coming from details page), then fall back to structured data (when editing) #}
   {% set viewsNeedingRepeats = [] %}
+  {% set mammogramData = event.mammogramDataTemp %}
+  {% set mammogramViews = event.mammogramData.views | getObjectValues %}
 
-  {# Check right breast views #}
-  {% set rightViews = event.mammogramDataTemp.viewsRightBreast or [] %}
-  {% if 'CC' in rightViews and (event.mammogramDataTemp.viewsRightBreastCCCount | int) > 1 %}
-    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Right', view: 'CC', code: 'RCC', count: event.mammogramDataTemp.viewsRightBreastCCCount }) %}
-  {% endif %}
-  {% if 'MLO' in rightViews and (event.mammogramDataTemp.viewsRightBreastMLOCount | int) > 1 %}
-    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Right', view: 'MLO', code: 'RMLO', count: event.mammogramDataTemp.viewsRightBreastMLOCount }) %}
-  {% endif %}
-  {% if 'Eklund' in rightViews and (event.mammogramDataTemp.viewsRightBreastEklundCount | int) > 1 %}
-    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Right', view: 'Eklund', code: 'REklund', count: event.mammogramDataTemp.viewsRightBreastEklundCount }) %}
-  {% endif %}
+  {# If we have temp data, use the count fields #}
+  {% if mammogramData %}
+    {# Check all possible view/breast combinations #}
+    {% if (mammogramData.viewsRightBreastCCCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+        side: 'Right', 
+        view: 'CC', 
+        code: 'RCC', 
+        count: mammogramData.viewsRightBreastCCCount 
+      }) %}
+    {% endif %}
+    
+    {% if (mammogramData.viewsRightBreastMLOCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+        side: 'Right', 
+        view: 'MLO', 
+        code: 'RMLO', 
+        count: mammogramData.viewsRightBreastMLOCount 
+      }) %}
+    {% endif %}
+    
+    {% if (mammogramData.viewsRightBreastEklundCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+        side: 'Right', 
+        view: 'Eklund', 
+        code: 'REklund', 
+        count: mammogramData.viewsRightBreastEklundCount 
+      }) %}
+    {% endif %}
 
-  {# Check left breast views #}
-  {% set leftViews = event.mammogramDataTemp.viewsLeftBreast or [] %}
-  {% if 'CC' in leftViews and (event.mammogramDataTemp.viewsLeftBreastCCCount | int) > 1 %}
-    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Left', view: 'CC', code: 'LCC', count: event.mammogramDataTemp.viewsLeftBreastCCCount }) %}
-  {% endif %}
-  {% if 'MLO' in leftViews and (event.mammogramDataTemp.viewsLeftBreastMLOCount | int) > 1 %}
-    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Left', view: 'MLO', code: 'LMLO', count: event.mammogramDataTemp.viewsLeftBreastMLOCount }) %}
-  {% endif %}
-  {% if 'Eklund' in leftViews and (event.mammogramDataTemp.viewsLeftBreastEklundCount | int) > 1 %}
-    {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ side: 'Left', view: 'Eklund', code: 'LEklund', count: event.mammogramDataTemp.viewsLeftBreastEklundCount }) %}
+    {% if (mammogramData.viewsLeftBreastCCCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+        side: 'Left', 
+        view: 'CC', 
+        code: 'LCC', 
+        count: mammogramData.viewsLeftBreastCCCount 
+      }) %}
+    {% endif %}
+    
+    {% if (mammogramData.viewsLeftBreastMLOCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+        side: 'Left', 
+        view: 'MLO', 
+        code: 'LMLO', 
+        count: mammogramData.viewsLeftBreastMLOCount 
+      }) %}
+    {% endif %}
+    
+    {% if (mammogramData.viewsLeftBreastEklundCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+        side: 'Left', 
+        view: 'Eklund', 
+        code: 'LEklund', 
+        count: mammogramData.viewsLeftBreastEklundCount 
+      }) %}
+    {% endif %}
+  {% else %}
+    {# No temp data, so we're editing - use structured data #}
+    {% for view in mammogramViews %}
+      {% if view.count > 1 %}
+        {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+          side: view.side | capitalize, 
+          view: view.viewShort, 
+          code: view.viewShortWithSide, 
+          count: view.count 
+        }) %}
+      {% endif %}
+    {% endfor %}
   {% endif %}
 
   {# Show a question for each view with repeats #}
   {% for viewItem in viewsNeedingRepeats %}
 
-    {% set reasonItems = [{
-      value: "",
-      text: "Please select",
-      selected: true
-    }] %}
-    
-    {% for reason in repeatReasons %}
-      {% set item = {
-        value: reason,
-        text: reason
-      } %}
-      {% set reasonItems = reasonItems | push(item) %}
-    {% endfor %}
+    {% set extraImageCount = (viewItem.count | int) - 1 %}
 
-    {{ radios({
-      idPrefix: "isRepeatQuestion-" + viewItem.code,
-      name: "event[mammogramDataTemp][isRepeatQuestion-" + viewItem.code + "]",
-      fieldset: {
-        legend: {
-          text: "Why were " + viewItem.count + " " + viewItem.code + " images taken?",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
-        }
-      },
-      value: event.mammogramDataTemp["isRepeatQuestion-" + viewItem.code],
-      items: [
-        {
-          value: "isRepeat",
-          text: "A repeat was needed",
-          conditional: {
-            html: select({
-              id: "repeatReason-" + viewItem.code,
-              name: "event[mammogramDataTemp][repeatReason-" + viewItem.code + "]",
-              label: {
-                text: "Repeat reason"
-              },
-              value: event.mammogramDataTemp["repeatReason-" + viewItem.code],
-              items: reasonItems
-            })
+    {% if extraImageCount == 1 %}
+      {# Simple choice for 1 extra image #}
+      
+      {% set repeatReasonItems = [] %}
+      {% for reason in repeatReasons %}
+        {% set repeatReasonItems = repeatReasonItems | push({ value: reason, text: reason }) %}
+      {% endfor %}
+
+      {% set repeatReasonsHtml %}
+        {{ checkboxes({
+          idPrefix: "repeatReasons-" + viewItem.code,
+          name: "event[mammogramDataTemp][repeatReasons-" + viewItem.code + "]",
+          fieldset: {
+            legend: {
+              text: "Why was a repeat needed?",
+              classes: "nhsuk-fieldset__legend--s"
+            }
+          },
+          hint: {
+            text: "Select all that apply"
+          },
+          values: event.mammogramDataTemp["repeatReasons-" + viewItem.code],
+          items: repeatReasonItems
+        }) }}
+      {% endset %}
+
+      {{ radios({
+        idPrefix: "repeatNeeded-" + viewItem.code,
+        name: "event[mammogramDataTemp][repeatNeeded-" + viewItem.code + "]",
+        fieldset: {
+          legend: {
+            text: viewItem.count + " " + viewItem.code + " images were taken. Was the additional image a repeat?",
+            classes: "nhsuk-fieldset__legend--m",
+            isPageHeading: false
           }
         },
-        {
-          value: "extraImages",
-          text: "Additional images were required to capture complete view"
-        }
-      ]
-    }) }}
+        value: event.mammogramDataTemp["repeatNeeded-" + viewItem.code],
+        items: [
+          {
+            value: "yes",
+            text: "Yes, it was a repeat",
+            conditional: {
+              html: repeatReasonsHtml
+            }
+          },
+          {
+            value: "no",
+            text: "No, an extra image was needed to capture the complete view"
+          }
+        ]
+      }) }}
+
+    {% else %}
+      {# Multiple extra images - more options #}
+      
+      {% set repeatCountInputHtml %}
+        {{ input({
+          id: "repeatCount-" + viewItem.code,
+          name: "event[mammogramDataTemp][repeatCount-" + viewItem.code + "]",
+          label: {
+            text: "How many were repeats?"
+          },
+          hint: {
+            text: "Out of " + extraImageCount + " extra images"
+          },
+          classes: "nhsuk-input--width-3",
+          value: event.mammogramDataTemp["repeatCount-" + viewItem.code],
+          inputmode: "numeric"
+        }) }}
+      {% endset %}
+
+      {% set repeatReasonItems = [] %}
+      {% for reason in repeatReasons %}
+        {% set repeatReasonItems = repeatReasonItems | push({ value: reason, text: reason }) %}
+      {% endfor %}
+
+      {% set repeatReasonsAllHtml %}
+        {{ checkboxes({
+          idPrefix: "repeatReasons-all-" + viewItem.code,
+          name: "event[mammogramDataTemp][repeatReasonsAll-" + viewItem.code + "]",
+          fieldset: {
+            legend: {
+              text: "Why were repeats needed?",
+              classes: "nhsuk-fieldset__legend--s"
+            }
+          },
+          hint: {
+            text: "Select all that apply"
+          },
+          values: event.mammogramDataTemp["repeatReasons-" + viewItem.code],
+          items: repeatReasonItems
+        }) }}
+      {% endset %}
+
+      {% set repeatReasonsSomeHtml %}
+        {{ checkboxes({
+          idPrefix: "repeatReasons-some-" + viewItem.code,
+          name: "event[mammogramDataTemp][repeatReasonsSome-" + viewItem.code + "]",
+          fieldset: {
+            legend: {
+              text: "Why were repeats needed?",
+              classes: "nhsuk-fieldset__legend--s"
+            }
+          },
+          hint: {
+            text: "Select all that apply"
+          },
+          values: event.mammogramDataTemp["repeatReasons-" + viewItem.code],
+          items: repeatReasonItems
+        }) }}
+      {% endset %}
+
+      {{ radios({
+        idPrefix: "repeatNeeded-" + viewItem.code,
+        name: "event[mammogramDataTemp][repeatNeeded-" + viewItem.code + "]",
+        fieldset: {
+          legend: {
+            text: viewItem.count + " " + viewItem.code + " images were taken. Were the additional images repeats?",
+            classes: "nhsuk-fieldset__legend--m",
+            isPageHeading: false
+          }
+        },
+        value: event.mammogramDataTemp["repeatNeeded-" + viewItem.code],
+        items: [
+          {
+            value: "all-repeats",
+            text: "Yes, all images were repeats",
+            conditional: {
+              html: repeatReasonsAllHtml
+            }
+          },
+          {
+            value: "some-repeats",
+            text: "Yes, some were repeats and some were extra images",
+            conditional: {
+              html: repeatCountInputHtml + repeatReasonsSomeHtml
+            }
+          },
+          {
+            value: "no",
+            text: "No, all extra images were needed to capture the complete view"
+          }
+        ]
+      }) }}
+
+    {% endif %}
 
   {% endfor %}
+
+  {{ textarea({
+    name: "event[mammogramDataTemp][additionalDetails]",
+    id: "additional-details",
+    value: event.mammogramDataTemp.additionalDetails,
+    label: {
+      text: "Additional details (optional)",
+      classes: "nhsuk-label--m"
+    },
+    hint: {
+      text: "Provide information for image readers when reviewing"
+    },
+    rows: 2
+  }) }}
 
   {{ button({
     text: "Continue"

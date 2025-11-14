@@ -1,0 +1,82 @@
+{# app/views/_components/stepper-input/template.njk #}
+
+{#
+  Number input with increment/decrement buttons (stepper)
+  
+  params:
+    - name (string, required): The name attribute for the input
+    - id (string, required): The id attribute for the input
+    - value (string|number, optional): The current value
+    - label (object, optional): Label configuration (same as NHS input component)
+    - hint (object, optional): Hint configuration (same as NHS input component)
+    - classes (string, optional): Additional classes for the input
+    - min (number, optional): Minimum value (no minimum if not provided)
+    - max (number, optional): Maximum value (no maximum if not provided)
+    - step (number, optional): Increment step (default: 1)
+#}
+
+{% set inputId = params.id %}
+{% set inputName = params.name %}
+{% set inputValue = params.value or 0 %}
+{% set minValue = params.min %}
+{% set maxValue = params.max %}
+{% set stepValue = params.step or 1 %}
+{% set labelText = params.label.text if params.label else "value" %}
+
+<div class="nhsuk-form-group app-stepper-input">
+  {% if params.label %}
+    <label class="nhsuk-label{{ ' ' + params.label.classes if params.label.classes }}" for="{{ inputId }}">
+      {{ params.label.text }}
+    </label>
+  {% endif %}
+  
+  {% if params.hint %}
+    <div class="nhsuk-hint{{ ' ' + params.hint.classes if params.hint.classes }}" id="{{ inputId }}-hint">
+      {{ params.hint.text }}
+    </div>
+  {% endif %}
+  
+  <div class="app-stepper-input__wrapper">
+
+    <button 
+      type="button" 
+      class="nhsuk-button nhsuk-button--secondary app-button--small app-stepper-input__button app-stepper-input__button--decrease app-js-only" 
+      data-input-id="{{ inputId }}"
+      aria-label="Decrease {{ labelText | lower }}"
+      aria-controls="{{ inputId }}"
+      {% if minValue is defined and inputValue <= minValue %}disabled{% endif %}>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    
+    <input 
+      class="nhsuk-input nhsuk-input--width-3{{ ' ' + params.classes if params.classes }}" 
+      id="{{ inputId }}" 
+      name="{{ inputName }}" 
+      type="text" 
+      inputmode="numeric" 
+      value="{{ inputValue }}"
+      {% if minValue is defined %}min="{{ minValue }}"{% endif %}
+      {% if maxValue is defined %}max="{{ maxValue }}"{% endif %}
+      step="{{ stepValue }}"
+      {% if params.hint %}aria-describedby="{{ inputId }}-hint"{% endif %}>
+
+      
+    
+    <button 
+      type="button" 
+      class="nhsuk-button nhsuk-button--secondary app-button--small app-stepper-input__button app-stepper-input__button--increase app-js-only" 
+      data-input-id="{{ inputId }}"
+      aria-label="Increase {{ labelText | lower }}"
+      aria-controls="{{ inputId }}"
+      {% if maxValue is defined and inputValue >= maxValue %}disabled{% endif %}>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+    
+    {# Visually hidden live region for announcing value changes #}
+    <div id="{{ inputId }}-status" class="nhsuk-u-visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  </div>
+</div>
