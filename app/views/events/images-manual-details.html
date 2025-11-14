@@ -1,6 +1,4 @@
-{% extends 'layout-appointment.html' %}
-
-{% from "_components/stepper-input/macro.njk" import appStepperInput %}
+{% extends 'layout-appointment.html' %} 
 
 {% set showNavigation = true %}
 {% set hideBackLink = true %}
@@ -39,7 +37,7 @@
   {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "" %}
   {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
 
-  {% set inputsLink %}
+  {# {% set inputsLink %}
     <p>
       <a href="./images-manual-details?viewQuestionStyle=inputs">Swap to 'input' style</a>
     </p>
@@ -49,7 +47,7 @@
     <p>
       <a href="./images-manual-details?viewQuestionStyle=checkboxes">Swap to 'checkboxes' style</a>
     </p>
-  {% endset %}
+  {% endset %} #}
 
   {% if viewQuestionStyle == 'inputs' %}
     {{ checkboxesLink | safe }}
