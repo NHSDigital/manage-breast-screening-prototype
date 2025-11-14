@@ -1528,6 +1528,31 @@ module.exports = (router) => {
     }
   )
 
+  // Direct link to repeats page - also prepopulates if editing
+  router.get(
+    '/clinics/:clinicId/events/:eventId/images-manual-repeats',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // If mammogramData exists and is manual entry, prepopulate temp for editing
+      if (
+        data.event?.mammogramData?.isManualEntry &&
+        !data.event?.mammogramDataTemp
+      ) {
+        const formData = convertMammogramFormatToFormData(
+          data.event.mammogramData
+        )
+        if (formData) {
+          data.event.mammogramDataTemp = formData
+        }
+      }
+
+      // Let the dynamic routing handle the actual rendering
+      res.render('events/images-manual-repeats')
+    }
+  )
+
   /**
    * Helper function to check if any view has multiple images (needs repeat question)
    */
@@ -1579,17 +1604,35 @@ module.exports = (router) => {
       const countKey = `${breastKey}${viewData.viewShort}Count`
 
       formData[breastKey].push(viewData.viewShort)
-      formData[countKey] = viewData.imageCount.toString()
+      formData[countKey] = viewData.count.toString()
 
       // Add repeat data if present
-      if (viewData.isRepeat) {
-        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] = 'isRepeat'
-        formData[`repeatReason-${viewData.viewShortWithSide}`] =
-          viewData.repeatReason
-      } else if (viewData.imageCount > 1) {
-        // If multiple images but not marked as repeat, assume extra images
-        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] =
-          'extraImages'
+      if (viewData.repeatCount > 0) {
+        const extraCount = viewData.count - 1
+
+        // Determine which radio option to select
+        if (extraCount === 1) {
+          // Single extra image - use legacy 'yes' value
+          formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'yes'
+        } else if (viewData.repeatCount === extraCount) {
+          // All extra images were repeats
+          formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'all-repeats'
+        } else {
+          // Some were repeats, some were additional
+          formData[`repeatNeeded-${viewData.viewShortWithSide}`] =
+            'some-repeats'
+          formData[`repeatCount-${viewData.viewShortWithSide}`] =
+            viewData.repeatCount.toString()
+        }
+
+        // Add repeat reasons if present
+        if (viewData.repeatReasons) {
+          formData[`repeatReasons-${viewData.viewShortWithSide}`] =
+            viewData.repeatReasons
+        }
+      } else if (viewData.count > 1) {
+        // If multiple images but no repeats, mark as extra images needed
+        formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'no'
       }
     }
 
@@ -1599,68 +1642,120 @@ module.exports = (router) => {
   /**
    * Helper function to convert manual form data to mammogram data structure
    */
+  /**
+   * Convert flat form data to structured mammogram format
+   * Works from count fields which are the single source of truth
+   */
   function convertManualDataToMammogramFormat(formData) {
     const views = {}
-    const breasts = [
-      { key: 'viewsRightBreast', side: 'right', sideCode: 'R' },
-      { key: 'viewsLeftBreast', side: 'left', sideCode: 'L' }
-    ]
 
-    const viewTypes = [
-      { value: 'CC', name: 'craniocaudal', short: 'CC' },
-      { value: 'MLO', name: 'mediolateral oblique', short: 'MLO' },
-      { value: 'Eklund', name: 'Eklund', short: 'Eklund' }
+    const viewConfig = [
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'CC',
+        viewName: 'craniocaudal',
+        viewKey: 'rightCraniocaudal'
+      },
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'MLO',
+        viewName: 'mediolateral oblique',
+        viewKey: 'rightMediolateralOblique'
+      },
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'Eklund',
+        viewName: 'Eklund',
+        viewKey: 'rightEklund'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'CC',
+        viewName: 'craniocaudal',
+        viewKey: 'leftCraniocaudal'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'MLO',
+        viewName: 'mediolateral oblique',
+        viewKey: 'leftMediolateralOblique'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'Eklund',
+        viewName: 'Eklund',
+        viewKey: 'leftEklund'
+      }
     ]
 
     let totalImages = 0
     const imagesByBreast = { right: 0, left: 0 }
+    let hasRepeat = false
 
-    for (const breast of breasts) {
-      let selectedViews = formData[breast.key] || []
+    for (const config of viewConfig) {
+      const countField = `views${config.side.charAt(0).toUpperCase() + config.side.slice(1)}Breast${config.viewType}Count`
+      const count = parseInt(formData[countField]) || 0
 
-      // If using text inputs instead of checkboxes, infer selected views from counts
-      if (selectedViews.length === 0) {
-        for (const viewType of viewTypes) {
-          const countField = `${breast.key}${viewType.value}Count`
-          const count = parseInt(formData[countField]) || 0
-          if (count > 0) {
-            selectedViews.push(viewType.value)
+      // Only add view if count > 0
+      if (count > 0) {
+        const code = `${config.sideCode}${config.viewType}`
+
+        // Get repeat data if this view has count > 1
+        let repeatCount = 0
+        let repeatReasons = null
+
+        if (count > 1) {
+          const repeatNeeded = formData[`repeatNeeded-${code}`]
+          const extraImageCount = count - 1
+
+          if (repeatNeeded === 'yes') {
+            // Legacy support: single extra image, answered "yes"
+            repeatCount = 1
+            const reasons = formData[`repeatReasons-${code}`]
+            if (reasons && reasons.length > 0) {
+              repeatReasons = reasons
+            }
+            hasRepeat = true
+          } else if (repeatNeeded === 'all-repeats') {
+            // All extra images were repeats
+            repeatCount = extraImageCount
+            const reasons = formData[`repeatReasons-${code}`]
+            if (reasons && reasons.length > 0) {
+              repeatReasons = reasons
+            }
+            hasRepeat = true
+          } else if (repeatNeeded === 'some-repeats') {
+            // Some were repeats, some were additional
+            repeatCount = parseInt(formData[`repeatCount-${code}`]) || 0
+            const reasons = formData[`repeatReasons-${code}`]
+            if (reasons && reasons.length > 0) {
+              repeatReasons = reasons
+            }
+            if (repeatCount > 0) {
+              hasRepeat = true
+            }
           }
+          // If repeatNeeded is 'no', then all extra images were needed but not repeats
         }
-      }
 
-      // Skip if "No images taken" was selected
-      if (selectedViews.includes('No images taken')) {
-        continue
-      }
-
-      for (const viewType of viewTypes) {
-        // Check if this view was selected
-        if (selectedViews.includes(viewType.value)) {
-          const countField = `${breast.key}${viewType.value}Count`
-          const imageCount = parseInt(formData[countField]) || 1
-
-          // Create view key matching automated format (e.g., rightCraniocaudal)
-          const viewKey = `${breast.side}${viewType.name.charAt(0).toUpperCase()}${viewType.name.slice(1).replace(' ', '')}`
-
-          // Check for repeat data
-          const repeatQuestionKey = `isRepeatQuestion-${breast.sideCode}${viewType.short}`
-          const isRepeat = formData[repeatQuestionKey] === 'isRepeat'
-          const repeatReasonKey = `repeatReason-${breast.sideCode}${viewType.short}`
-
-          views[viewKey] = {
-            side: breast.side,
-            view: viewType.name,
-            viewShort: viewType.short,
-            viewShortWithSide: `${breast.sideCode}${viewType.short}`,
-            imageCount: imageCount,
-            isRepeat: isRepeat,
-            repeatReason: isRepeat ? formData[repeatReasonKey] : null
-          }
-
-          totalImages += imageCount
-          imagesByBreast[breast.side] += imageCount
+        views[config.viewKey] = {
+          side: config.side,
+          view: config.viewName,
+          viewShort: config.viewType,
+          viewShortWithSide: code,
+          count: count,
+          repeatCount: repeatCount,
+          repeatReasons: repeatReasons
         }
+
+        totalImages += count
+        imagesByBreast[config.side] += count
       }
     }
 
@@ -1673,7 +1768,7 @@ module.exports = (router) => {
     ]
     const standardViewsCompleted = standardViews.every((view) => views[view])
 
-    // Handle partial mammography reason - combine select and comment
+    // Handle partial mammography reason
     let partialMammographyReason = null
     let partialMammographyShouldReinvite = null
 
@@ -1689,7 +1784,6 @@ module.exports = (router) => {
         partialMammographyReason = reasonComment
       }
 
-      // Convert checkbox array to string for consistency
       partialMammographyShouldReinvite =
         formData.partialMammographyShouldReinvite?.includes('yes')
           ? 'yes'
@@ -1711,6 +1805,7 @@ module.exports = (router) => {
       metadata: {
         totalImages,
         standardViewsCompleted,
+        hasRepeat,
         imagesByBreast
       }
     }
@@ -1793,71 +1888,50 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
-      const mammogramDataTemp = data.event?.mammogramDataTemp
+      const formData = data.event?.mammogramDataTemp || {}
 
-      // Clean up orphaned count fields when using checkbox version
-      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
-        const rightViews = mammogramDataTemp.viewsRightBreast || []
-        const leftViews = mammogramDataTemp.viewsLeftBreast || []
+      // Normalize checkbox data into count fields (our single source of truth)
+      if (formData.uiVersion === 'checkboxes') {
+        const rightViews = formData.viewsRightBreast || []
+        const leftViews = formData.viewsLeftBreast || []
 
-        // Clear counts for unchecked right breast views
-        if (!rightViews.includes('CC')) {
-          delete mammogramDataTemp.viewsRightBreastCCCount
-        }
-        if (!rightViews.includes('MLO')) {
-          delete mammogramDataTemp.viewsRightBreastMLOCount
-        }
-        if (!rightViews.includes('Eklund')) {
-          delete mammogramDataTemp.viewsRightBreastEklundCount
-        }
-
-        // Clear counts for unchecked left breast views
-        if (!leftViews.includes('CC')) {
-          delete mammogramDataTemp.viewsLeftBreastCCCount
-        }
-        if (!leftViews.includes('MLO')) {
-          delete mammogramDataTemp.viewsLeftBreastMLOCount
-        }
-        if (!leftViews.includes('Eklund')) {
-          delete mammogramDataTemp.viewsLeftBreastEklundCount
-        }
-      }
-
-      // Validate at least one view was selected/entered
-      let hasNoViews = false
-
-      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
-        // Checkbox validation
-        const rightViews = mammogramDataTemp?.viewsRightBreast || []
-        const leftViews = mammogramDataTemp?.viewsLeftBreast || []
-
-        const hasNoRightImages = rightViews.includes('No images taken')
-        const hasNoLeftImages = leftViews.includes('No images taken')
-        hasNoViews =
-          (rightViews.length === 0 || hasNoRightImages) &&
-          (leftViews.length === 0 || hasNoLeftImages)
-      } else {
-        // Input validation - check if any count field has a value > 0
+        // Set counts to 0 for unchecked views, preserve existing counts for checked views
         const viewTypes = ['CC', 'MLO', 'Eklund']
-        const breasts = ['Right', 'Left']
-        let hasAnyImages = false
 
-        for (const breast of breasts) {
-          for (const viewType of viewTypes) {
-            const countField = `views${breast}Breast${viewType}Count`
-            const count = parseInt(mammogramDataTemp?.[countField]) || 0
-            if (count > 0) {
-              hasAnyImages = true
-              break
-            }
+        viewTypes.forEach((viewType) => {
+          // Right breast
+          if (!rightViews.includes(viewType)) {
+            formData[`viewsRightBreast${viewType}Count`] = '0'
           }
-          if (hasAnyImages) break
-        }
+          // Left breast
+          if (!leftViews.includes(viewType)) {
+            formData[`viewsLeftBreast${viewType}Count`] = '0'
+          }
+        })
 
-        hasNoViews = !hasAnyImages
+        // Delete the checkbox arrays - we only keep the count fields
+        delete formData.viewsRightBreast
+        delete formData.viewsLeftBreast
       }
 
-      if (hasNoViews) {
+      // Validate at least one view has a count > 0
+      const viewTypes = ['CC', 'MLO', 'Eklund']
+      const breasts = ['Right', 'Left']
+      let hasAnyImages = false
+
+      for (const breast of breasts) {
+        for (const viewType of viewTypes) {
+          const countField = `views${breast}Breast${viewType}Count`
+          const count = parseInt(formData[countField]) || 0
+          if (count > 0) {
+            hasAnyImages = true
+            break
+          }
+        }
+        if (hasAnyImages) break
+      }
+
+      if (!hasAnyImages) {
         req.flash('error', {
           text: 'Enter at least one image count',
           name: 'event[mammogramDataTemp][viewsRightBreastCCCount]'
@@ -1868,16 +1942,23 @@ module.exports = (router) => {
       }
 
       // Check if we need to ask about repeats
-      if (needsRepeatQuestions(mammogramDataTemp)) {
+      const needsRepeats = viewTypes.some((viewType) =>
+        breasts.some((breast) => {
+          const countField = `views${breast}Breast${viewType}Count`
+          const count = parseInt(formData[countField]) || 0
+          return count > 1
+        })
+      )
+
+      if (needsRepeats) {
+        // Keep temp data for repeats page
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/images-manual-repeats`
         )
       }
 
-      // Convert to final format and save
-      const convertedData =
-        convertManualDataToMammogramFormat(mammogramDataTemp)
-      data.event.mammogramData = convertedData
+      // Convert to final format and save directly to mammogramData
+      data.event.mammogramData = convertManualDataToMammogramFormat(formData)
 
       // Clear temp data
       delete data.event.mammogramDataTemp
@@ -1893,25 +1974,6 @@ module.exports = (router) => {
     }
   )
 
-  // Helper function - place this near the other helper functions
-  function needsRepeatQuestions(mammogramDataTemp) {
-    const viewTypes = ['CC', 'MLO', 'Eklund']
-    const breasts = ['Right', 'Left']
-
-    for (const breast of breasts) {
-      for (const viewType of viewTypes) {
-        const countField = `views${breast}Breast${viewType}Count`
-        const count = parseInt(mammogramDataTemp?.[countField]) || 0
-
-        if (count > 1) {
-          return true
-        }
-      }
-    }
-
-    return false
-  }
-
   // Handle repeat reasons form
   router.post(
     '/clinics/:clinicId/events/:eventId/images-manual-repeats-answer',
@@ -1919,11 +1981,43 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
 
-      // Convert to final format and save
-      const mammogramDataTemp = data.event?.mammogramDataTemp
-      const convertedData =
-        convertManualDataToMammogramFormat(mammogramDataTemp)
-      data.event.mammogramData = convertedData
+      // Clean up and normalize repeat reasons based on which option was selected
+      const formData = data.event?.mammogramDataTemp || {}
+      const viewCodes = ['RCC', 'RMLO', 'REklund', 'LCC', 'LMLO', 'LEklund']
+
+      viewCodes.forEach((code) => {
+        const repeatNeeded = formData[`repeatNeeded-${code}`]
+
+        // Pick the correct set of repeatReasons based on which radio option was selected
+        if (repeatNeeded === 'yes' || repeatNeeded === 'all-repeats') {
+          // Use the 'all' checkbox values if they exist
+          if (formData[`repeatReasonsAll-${code}`]) {
+            formData[`repeatReasons-${code}`] =
+              formData[`repeatReasonsAll-${code}`]
+          }
+          // Clean up temporary fields
+          delete formData[`repeatReasonsAll-${code}`]
+          delete formData[`repeatReasonsSome-${code}`]
+        } else if (repeatNeeded === 'some-repeats') {
+          // Use the 'some' checkbox values if they exist
+          if (formData[`repeatReasonsSome-${code}`]) {
+            formData[`repeatReasons-${code}`] =
+              formData[`repeatReasonsSome-${code}`]
+          }
+          // Clean up temporary fields
+          delete formData[`repeatReasonsAll-${code}`]
+          delete formData[`repeatReasonsSome-${code}`]
+        } else if (repeatNeeded === 'no') {
+          // Clear all repeat-related data
+          delete formData[`repeatReasons-${code}`]
+          delete formData[`repeatReasonsAll-${code}`]
+          delete formData[`repeatReasonsSome-${code}`]
+          delete formData[`repeatCount-${code}`]
+        }
+      })
+
+      // Convert form data (including repeat information) to final format and save
+      data.event.mammogramData = convertManualDataToMammogramFormat(formData)
 
       // Clear temp data
       delete data.event.mammogramDataTemp

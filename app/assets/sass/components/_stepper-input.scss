@@ -1,0 +1,46 @@
+// app/assets/sass/components/_stepper-input.scss
+
+.app-stepper-input {
+  user-select: none;
+}
+
+.app-stepper-input__wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.app-stepper-input__button {
+  margin-bottom: 4px !important;
+  flex-shrink: 0;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: 0 !important;
+  user-select: none;
+
+  // Ensure focus state is visible above input
+  &:focus {
+    position: relative;
+    z-index: 1;
+  }
+
+  &:disabled,
+  &[disabled] {
+    cursor: not-allowed !important;
+  }
+
+  // Icon sizing
+  svg {
+    display: block;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+.app-stepper-input input.nhsuk-input {
+  text-align: center;
+}
