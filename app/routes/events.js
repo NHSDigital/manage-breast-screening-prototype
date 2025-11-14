@@ -52,12 +52,14 @@ function getEventData(data, clinicId, eventId) {
   const unit = data.breastScreeningUnits.find(
     (u) => u.id === clinic.breastScreeningUnitId
   )
+  const location = unit?.locations.find((l) => l.id === clinic.locationId)
 
   return {
     clinic,
     event,
     participant,
-    unit
+    unit,
+    location
   }
 }
 
@@ -142,7 +144,14 @@ module.exports = (router) => {
     res.locals.event = data.event
 
     res.locals.eventData = originalEventData
-    res.locals.clinic = originalEventData.clinic
+
+    // Attach location to clinic for template convenience
+    const clinic = { ...originalEventData.clinic }
+    if (originalEventData.location) {
+      clinic.location = originalEventData.location
+    }
+    res.locals.clinic = clinic
+
     res.locals.isAppointmentWorkflow = isAppointmentWorkflow(
       data.event,
       data.currentUser

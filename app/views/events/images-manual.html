@@ -18,16 +18,39 @@
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
-  {% set roomName = "Room B - machine ABC" %}
+  {# Determine current room name #}
+  {% set currentRoomName = "" %}
+  {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
+  
+  {% if isMobileClinic %}
+    {# For mobile clinics, use the mobile unit name #}
+    {% set currentRoomName = clinic.location.name %}
+  {% else %}
+    {# For hospital clinics, look up the room from screening rooms #}
+    {% for room in data.screeningRooms %}
+      {% if room.id == data.currentScreeningRoom %}
+        {% set currentRoomName = room.displayName %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
 
-  <p>
-    Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ roomName }}</span>.<br><a href="#">Change room or machine details</a>
-  </p>
+  {% if currentRoomName %}
+    <p>
+      Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ currentRoomName }}</span>.
+      {% if not isMobileClinic %}
+        <br><a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Change room or machine details</a>
+      {% endif %}
+    </p>
 
-  {{ appHiddenInput({
-    name: "event[mammogramDataTemp][machineRoom]",
-    value: roomName
-  }) }}
+    {{ appHiddenInput({
+      name: "event[mammogramDataTemp][machineRoom]",
+      value: currentRoomName
+    }) }}
+  {% else %}
+    <p>
+      <a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Select a room before continuing</a>
+    </p>
+  {% endif %}
 
   {# {{ radios({
     name: "event[mammogramDataTemp][machineRoom]",

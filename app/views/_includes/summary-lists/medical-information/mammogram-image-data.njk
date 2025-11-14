@@ -94,6 +94,20 @@
 
 {# Machine room (manual only) #}
 {% if isManualEntry and event.mammogramData.machineRoom %}
+  {# Check if this is a mobile clinic #}
+  {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
+  
+  {% set machineRoomActions = [] %}
+  {% if not isMobileClinic %}
+    {% set machineRoomActions = [
+      {
+        href: "./images-room-selection" | urlWithReferrer(referrerChain, scrollTo),
+        text: "Change",
+        visuallyHiddenText: "machine room"
+      }
+    ] %}
+  {% endif %}
+  
   {% set summaryRows = summaryRows | push({
     key: {
       text: "Machine room"
@@ -102,13 +116,7 @@
       text: event.mammogramData.machineRoom
     },
     actions: {
-      items: [
-        {
-          href: ("./images-manual" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
-          text: "Change",
-          visuallyHiddenText: "machine room"
-        }
-      ]
+      items: machineRoomActions
     }
   }) %}
 {% endif %}
