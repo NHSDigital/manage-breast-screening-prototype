@@ -55,20 +55,22 @@
   
   {% if viewHasMultiple %}
     {% set hasRepeatsOrExtras = true %}
-    {% set extraCount = totalCount - 1 %}
+    
+    {# Calculate counts explicitly #}
+    {% set additionalCount = totalCount - 1 %}
     {% set repeatCount = view.repeatCount or 0 %}
-    {% set additionalCount = extraCount - repeatCount %}
+    {% set extraCount = additionalCount - repeatCount %}
     
     {# Build description for this view #}
     {% set viewDescription = "" %}
     
-    {# Describe the extra images breakdown #}
-    {% if repeatCount > 0 and additionalCount > 0 %}
-      {% set viewDescription = extraCount + " extra " + ("image" | pluralise(extraCount)) + ": " + repeatCount + " " + ("repeat" | pluralise(repeatCount)) + ", " + additionalCount + " additional" %}
-    {% elseif repeatCount > 0 %}
+    {# Describe the breakdown using specific counts #}
+    {% if repeatCount > 0 and extraCount > 0 %}
+      {% set viewDescription = repeatCount + " " + ("repeat" | pluralise(repeatCount)) + ", " + extraCount + " extra" %}
+    {% elseif repeatCount > 0 and extraCount == 0 %}
       {% set viewDescription = repeatCount + " " + ("repeat" | pluralise(repeatCount)) %}
-    {% else %}
-      {% set viewDescription = extraCount + " additional " + ("image" | pluralise(extraCount)) %}
+    {% elseif repeatCount == 0 and extraCount > 0 %}
+      {% set viewDescription = extraCount + " extra" %}
     {% endif %}
     
     {# Add repeat reasons if present #}
@@ -111,8 +113,75 @@
   }) %}
 {% endif %}
 
-{# Views taken #}
+{# Combined views taken (showing all view information in one row) #}
+{% set combinedViewsHtml = "" %}
+{% for view in mammogramViews %}
+  {% set totalCount = 0 %}
+  
+  {% if isManualEntry %}
+    {% set totalCount = view.count %}
+  {% else %}
+    {% set totalCount = view.images | length %}
+  {% endif %}
+  
+  {# Build view label with count prefix #}
+  {% set viewLabel = totalCount + "× " + view.viewShortWithSide %}
+  {% set viewDescription = "" %}
+  
+  {# If multiple images, add breakdown #}
+  {% if totalCount > 1 %}
+    {# Calculate counts explicitly #}
+    {% set additionalCount = totalCount - 1 %}
+    {% set repeatCount = view.repeatCount or 0 %}
+    {% set extraCount = additionalCount - repeatCount %}
+    
+    {# Add breakdown using specific counts #}
+    {% if repeatCount > 0 and extraCount > 0 %}
+      {% set viewDescription = repeatCount + " " + ("repeat" | pluralise(repeatCount)) + ", " + extraCount + " extra" %}
+    {% elseif repeatCount > 0 and extraCount == 0 %}
+      {% set viewDescription = repeatCount + " " + ("repeat" | pluralise(repeatCount)) %}
+    {% elseif repeatCount == 0 and extraCount > 0 %}
+      {% set viewDescription = extraCount + " extra" %}
+    {% endif %}
+    
+    {# Add repeat reasons if present #}
+    {% if view.repeatReasons and view.repeatReasons | length > 0 %}
+      {% set reasonsList = "<ul class='nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0'>" %}
+      {% for reason in view.repeatReasons %}
+        {% set reasonsList = reasonsList + "<li>" + reason + "</li>" %}
+      {% endfor %}
+      {% set reasonsList = reasonsList + "</ul>" %}
+      {% set viewDescription = viewDescription + "<br>Repeat " + ("reason" | pluralise(view.repeatReasons | length)) + ":" + reasonsList %}
+    {% endif %}
+  {% endif %}
+  
+  {% if viewDescription %}
+    {% set combinedViewsHtml = combinedViewsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + viewLabel + ":</strong> " + viewDescription + "</p>" %}
+  {% else %}
+    {% set combinedViewsHtml = combinedViewsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + viewLabel + "</strong></p>" %}
+  {% endif %}
+{% endfor %}
+
 {% set summaryRows = summaryRows | push({
+  key: {
+    text: "Views taken"
+  },
+  value: {
+    html: combinedViewsHtml
+  },
+  actions: {
+    items: [
+      {
+        href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+        text: "Change",
+        visuallyHiddenText: "views taken"
+      }
+    ]
+  }
+}) %}
+
+{# OLD Views taken (split into separate rows) - keeping for reference #}
+{# {% set summaryRows = summaryRows | push({
   key: {
     text: "Views taken"
   },
@@ -128,7 +197,7 @@
       }
     ]
   }
-}) %}
+}) %} #}
 
 {# Image counts #}
 {# {% set summaryRows = summaryRows | push({
@@ -178,11 +247,11 @@
   }) %}
 {% endif %}
 
-{# Repeats and additional images #}
-{% if hasRepeatsOrExtras %}
+{# OLD Repeats and additional images (separate row) - keeping for reference #}
+{# {% if hasRepeatsOrExtras %}
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Extra images"
+      text: "Additional images"
     },
     value: {
       html: extraImagesHtml
@@ -192,12 +261,12 @@
         {
           href: ("./images-manual-repeats" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
           text: "Change",
-          visuallyHiddenText: "extra images"
+          visuallyHiddenText: "additional images"
         }
       ]
     }
   }) %}
-{% endif %}
+{% endif %} #}
 
 {# Additional details #}
 {# {% if event.mammogramData.additionalDetails %} #}

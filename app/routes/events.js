@@ -1608,17 +1608,17 @@ module.exports = (router) => {
 
       // Add repeat data if present
       if (viewData.repeatCount > 0) {
-        const extraCount = viewData.count - 1
+        const additionalCount = viewData.count - 1
 
         // Determine which radio option to select
-        if (extraCount === 1) {
-          // Single extra image - use legacy 'yes' value
+        if (additionalCount === 1) {
+          // Single additional image - use legacy 'yes' value
           formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'yes'
-        } else if (viewData.repeatCount === extraCount) {
-          // All extra images were repeats
+        } else if (viewData.repeatCount === additionalCount) {
+          // All additional images were repeats
           formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'all-repeats'
         } else {
-          // Some were repeats, some were additional
+          // Some additional images were repeats, some were extra
           formData[`repeatNeeded-${viewData.viewShortWithSide}`] =
             'some-repeats'
           formData[`repeatCount-${viewData.viewShortWithSide}`] =
@@ -1631,7 +1631,7 @@ module.exports = (router) => {
             viewData.repeatReasons
         }
       } else if (viewData.count > 1) {
-        // If multiple images but no repeats, mark as extra images needed
+        // If multiple images but no repeats, all additional images were extra
         formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'no'
       }
     }

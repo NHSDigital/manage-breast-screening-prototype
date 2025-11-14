@@ -36,6 +36,9 @@
   {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "" %}
   {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "" %}
   {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
+  
+  {# Set mammogramSource for partial mammography question - prefer temp data, fall back to final data #}
+  {% set mammogramSource = mammogramTemp or event.mammogramData or {} %}
 
   {# {% set inputsLink %}
     <p>
@@ -363,6 +366,19 @@
     {{ viewsQuestionTextInputs | safe }}
   {% endif %}
 
+  {# Calculate initial total count from form data #}
+  {% set initialTotalCount = 0 %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastCCCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastMLOCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastEklundCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastCCCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastMLOCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastEklundCount | int(0)) %}
+
+  <p class="_nhsuk-u-font-weight-bold app-js-only app-text-grey nhsuk-u-margin-bottom-4 nhsuk-u-font-size-22" id="total-images-count">
+    Images taken: <span data-total-count>{{ initialTotalCount }}</span>
+  </p>
+
   {% set insetTextHtml %}
     <p>Repeat or extra image details captured on the next screen</p>
   {% endset %}
@@ -403,6 +419,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const insetText = document.querySelector('[data-module="repeat-images-notice"]')
+      const totalCountElement = document.querySelector('[data-total-count]')
       
       if (!insetText) {
         return
@@ -420,6 +437,15 @@
         ].filter(Boolean) // Remove any null values
       }
 
+      // Function to calculate total image count
+      const getTotalCount = () => {
+        const inputs = getCountInputs()
+        return inputs.reduce((total, input) => {
+          const value = parseInt(input.value, 10)
+          return total + (isNaN(value) ? 0 : value)
+        }, 0)
+      }
+
       // Function to check if any count is greater than 1
       const hasRepeats = () => {
         const inputs = getCountInputs()
@@ -427,6 +453,14 @@
           const value = parseInt(input.value, 10)
           return !isNaN(value) && value > 1
         })
+      }
+
+      // Function to update total count display
+      const updateTotalCount = () => {
+        if (totalCountElement) {
+          const total = getTotalCount()
+          totalCountElement.textContent = total
+        }
       }
 
       // Function to update visibility
@@ -438,14 +472,20 @@
         }
       }
 
+      // Function to update everything
+      const updateAll = () => {
+        updateTotalCount()
+        updateVisibility()
+      }
+
       // Set initial state after a short delay to allow conditional reveals to initialize
-      setTimeout(updateVisibility, 100)
+      setTimeout(updateAll, 100)
 
       // Add event listeners using delegation on the form
       document.addEventListener('input', (event) => {
         const target = event.target
         if (target.id && target.id.includes('breast') && target.id.includes('count')) {
-          updateVisibility()
+          updateAll()
         }
       })
 
@@ -453,11 +493,11 @@
         const target = event.target
         // Handle checkbox changes (which reveal/hide conditional inputs)
         if (target.name && target.name.includes('event[mammogramDataTemp][views')) {
-          setTimeout(updateVisibility, 100)
+          setTimeout(updateAll, 100)
         }
         // Handle count input changes
         if (target.id && target.id.includes('breast') && target.id.includes('count')) {
-          updateVisibility()
+          updateAll()
         }
       })
     })
