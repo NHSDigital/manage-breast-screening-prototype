@@ -1410,6 +1410,18 @@ module.exports = (router) => {
           isSeedData: false,
           config: eventData?.participant?.config
         })
+        
+        // Add machine room from current screening room
+        if (data.currentScreeningRoom)
+        {
+          const screeningRooms = data.screeningRooms || []
+          const currentRoom = screeningRooms.find(room => room.id === data.currentScreeningRoom)
+          if (currentRoom)
+          {
+            mammogramData.machineRoom = currentRoom.displayName
+          }
+        }
+        
         data.event.mammogramData = mammogramData
         res.locals.event = data.event
       }
@@ -1469,12 +1481,86 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
+      
+      // Save current screening room if not already set
+      if (!data.event.mammogramData.machineRoom && data.currentScreeningRoom)
+      {
+        const screeningRooms = data.screeningRooms || []
+        const currentRoom = screeningRooms.find(room => room.id === data.currentScreeningRoom)
+        if (currentRoom)
+        {
+          data.event.mammogramData.machineRoom = currentRoom.displayName
+        }
+      }
+      
+      // Process repeat data from form submission for automatic flow
+      // The form fields are named like "event[mammogramData][repeatNeeded-RCC]"
+      // and are already in data.event.mammogramData
+      const mammogramData = data.event.mammogramData
+      if (mammogramData.views)
+      {
+        for (const [viewKey, viewData] of Object.entries(mammogramData.views))
+        {
+          const code = viewData.viewShortWithSide
+          const imageCount = viewData.images ? viewData.images.length : 0
+          
+          if (imageCount > 1)
+          {
+            const repeatNeeded = mammogramData[`repeatNeeded-${code}`]
+            const extraImageCount = imageCount - 1
+            let repeatCount = 0
+            let repeatReasons = null
+            
+            if (repeatNeeded === 'yes')
+            {
+              // Single extra image answered "yes"
+              repeatCount = 1
+              const reasons = mammogramData[`repeatReasons-${code}`]
+              if (reasons && reasons.length > 0)
+              {
+                repeatReasons = reasons
+              }
+            }
+            else if (repeatNeeded === 'all-repeats')
+            {
+              // All extra images were repeats
+              repeatCount = extraImageCount
+              const reasons = mammogramData[`repeatReasons-${code}`]
+              if (reasons && reasons.length > 0)
+              {
+                repeatReasons = reasons
+              }
+            }
+            else if (repeatNeeded === 'some-repeats')
+            {
+              // Some were repeats, some were additional
+              repeatCount = parseInt(mammogramData[`repeatCount-${code}`]) || 0
+              const reasons = mammogramData[`repeatReasons-${code}`]
+              if (reasons && reasons.length > 0)
+              {
+                repeatReasons = reasons
+              }
+            }
+            
+            // Update view with repeat information
+            viewData.repeatCount = repeatCount
+            viewData.repeatReasons = repeatReasons
+          }
+        }
+      }
+      
       const isPartialMammography = data.event.mammogramData.isPartialMammography
 
       // Check if array includes 'yes' (checkbox format) or equals 'yes' (string format from manual entry)
       const hasPartialMammography = Array.isArray(isPartialMammography)
         ? isPartialMammography.includes('yes')
         : isPartialMammography === 'yes'
+
+      // Initialize workflowStatus if it doesn't exist
+      if (!data.event.workflowStatus)
+      {
+        data.event.workflowStatus = {}
+      }
 
       // Mark the workflow step as completed regardless of partial mammography status
       data.event.workflowStatus['take-images'] = 'completed'
@@ -1898,30 +1984,6 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
       const formData = data.event?.mammogramDataTemp || {}
-
-      // Normalize checkbox data into count fields (our single source of truth)
-      if (formData.uiVersion === 'checkboxes') {
-        const rightViews = formData.viewsRightBreast || []
-        const leftViews = formData.viewsLeftBreast || []
-
-        // Set counts to 0 for unchecked views, preserve existing counts for checked views
-        const viewTypes = ['CC', 'MLO', 'Eklund']
-
-        viewTypes.forEach((viewType) => {
-          // Right breast
-          if (!rightViews.includes(viewType)) {
-            formData[`viewsRightBreast${viewType}Count`] = '0'
-          }
-          // Left breast
-          if (!leftViews.includes(viewType)) {
-            formData[`viewsLeftBreast${viewType}Count`] = '0'
-          }
-        })
-
-        // Delete the checkbox arrays - we only keep the count fields
-        delete formData.viewsRightBreast
-        delete formData.viewsLeftBreast
-      }
 
       // Validate at least one view has a count > 0
       const viewTypes = ['CC', 'MLO', 'Eklund']

@@ -92,8 +92,8 @@
 
 {% set defaultHref = "./images-automatic" %}
 
-{# Machine room (manual only) #}
-{% if isManualEntry and event.mammogramData.machineRoom %}
+{# Machine room #}
+{% if event.mammogramData.machineRoom %}
   {# Check if this is a mobile clinic #}
   {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
   

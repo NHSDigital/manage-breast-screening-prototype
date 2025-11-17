@@ -12,8 +12,6 @@
 
 {% set activeTab = 'images' %}
 
-{% set viewQuestionStyle = data.viewQuestionStyle or "inputs" %} {# "checkboxes" or "inputs" #}
-
 {% block pageContent %}
 
   {# TODO: Ideally this would be before the main element #}
@@ -40,222 +38,17 @@
   {# Set mammogramSource for partial mammography question - prefer temp data, fall back to final data #}
   {% set mammogramSource = mammogramTemp or event.mammogramData or {} %}
 
-  {# {% set inputsLink %}
-    <p>
-      <a href="./images-manual-details?viewQuestionStyle=inputs">Swap to 'input' style</a>
-    </p>
-  {% endset %}
+  {{ appHiddenInput({
+    name: "event[mammogramDataTemp][uiVersion]",
+    value: "inputs"
+  }) }}
 
-  {% set checkboxesLink %}
-    <p>
-      <a href="./images-manual-details?viewQuestionStyle=checkboxes">Swap to 'checkboxes' style</a>
-    </p>
-  {% endset %} #}
+  {% set viewsQuestionText %}
+    How many images were taken
+  {%- endset %}
 
-  {% if viewQuestionStyle == 'inputs' %}
-    {{ checkboxesLink | safe }}
-  {% else %}
-    {{ inputsLink | safe }}
-  {% endif %}
-
-  {% set viewsQuestionCheckboxes %}
-
-    {{ appHiddenInput({
-      name: "event[mammogramDataTemp][uiVersion]",
-      value: "checkboxes"
-    }) }}
-
-    {% set viewsQuestionText %}
-      Which views were taken
-    {%- endset %}
-
-    {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
-    <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
-
-    {# Build checked values arrays based on count fields #}
-    {% set rightBreastChecked = [] %}
-    {% if (viewsRightBreastCCCount | int) > 0 %}
-      {% set rightBreastChecked = rightBreastChecked | push('CC') %}
-    {% endif %}
-    {% if (viewsRightBreastMLOCount | int) > 0 %}
-      {% set rightBreastChecked = rightBreastChecked | push('MLO') %}
-    {% endif %}
-    {% if (viewsRightBreastEklundCount | int) > 0 %}
-      {% set rightBreastChecked = rightBreastChecked | push('Eklund') %}
-    {% endif %}
-
-    {% set leftBreastChecked = [] %}
-    {% if (viewsLeftBreastCCCount | int) > 0 %}
-      {% set leftBreastChecked = leftBreastChecked | push('CC') %}
-    {% endif %}
-    {% if (viewsLeftBreastMLOCount | int) > 0 %}
-      {% set leftBreastChecked = leftBreastChecked | push('MLO') %}
-    {% endif %}
-    {% if (viewsLeftBreastEklundCount | int) > 0 %}
-      {% set leftBreastChecked = leftBreastChecked | push('Eklund') %}
-    {% endif %}
-
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-one-half">
-        {{ checkboxes({
-          name: "event[mammogramDataTemp][viewsRightBreast]",
-          values: rightBreastChecked,
-          idPrefix: "viewsRightBreast",
-          fieldset: {
-            legend: {
-              html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Right breast",
-              classes: "nhsuk-fieldset__legend--s",
-              isPageHeading: false
-            }
-          },
-          items: [
-            {
-              value: "CC",
-              text: "CC",
-              conditional: {
-                html: input({
-                  label: {
-                    text: "Number of images"
-                  },
-                  name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
-                  value: viewsRightBreastCCCount or "1",
-                  id: "views-right-breast-cc-count",
-                  classes: "nhsuk-input--width-3",
-                  inputmode: "numeric"
-                })
-              }
-            },
-            {
-              value: "MLO",
-              text: "MLO",
-              conditional: {
-                html: input({
-                  label: {
-                    text: "Number of images"
-                  },
-                  name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
-                  value: viewsRightBreastMLOCount or "1",
-                  id: "views-right-breast-mlo-count",
-                  classes: "nhsuk-input--width-3",
-                  inputmode: "numeric"
-                })
-              }
-            },
-            {
-              value: "Eklund",
-              text: "Eklund",
-              conditional: {
-                html: input({
-                  label: {
-                    text: "Number of images"
-                  },
-                  name: "event[mammogramDataTemp][viewsRightBreastEklundCount]",
-                  value: viewsRightBreastEklundCount or "1",
-                  id: "views-right-breast-eklund-count",
-                  classes: "nhsuk-input--width-3",
-                  inputmode: "numeric"
-                })
-              }
-            },
-            {
-              divider: "or"
-            },
-            {
-              value: "No images taken",
-              text: "No images taken",
-              exclusive: true
-            }
-          ]
-        }) }}
-      </div>
-      <div class="nhsuk-grid-column-one-half">
-        {{ checkboxes({
-          name: "event[mammogramDataTemp][viewsLeftBreast]",
-          values: leftBreastChecked,
-          idPrefix: "viewsLeftBreast",
-          fieldset: {
-            legend: {
-              html: ((viewsQuestionText + " for the") | asVisuallyHiddenText) ~ " Left breast",
-              classes: "nhsuk-fieldset__legend--s",
-              isPageHeading: false
-            }
-          },
-          items: [
-            {
-              value: "CC",
-              text: "CC",
-              conditional: {
-                html: input({
-                  label: {
-                    text: "Number of images"
-                  },
-                  name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
-                  value: viewsLeftBreastCCCount or "1",
-                  id: "views-left-breast-cc-count",
-                  classes: "nhsuk-input--width-3",
-                  inputmode: "numeric"
-                })
-              }
-            },
-            {
-              value: "MLO",
-              text: "MLO",
-              conditional: {
-                html: input({
-                  label: {
-                    text: "Number of images"
-                  },
-                  name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
-                  value: viewsLeftBreastMLOCount or "1",
-                  id: "views-left-breast-mlo-count",
-                  classes: "nhsuk-input--width-3",
-                  inputmode: "numeric"
-                })
-              }
-            },
-            {
-              value: "Eklund",
-              text: "Eklund",
-              conditional: {
-                html: input({
-                  label: {
-                    text: "Number of images"
-                  },
-                  name: "event[mammogramDataTemp][viewsLeftBreastEklundCount]",
-                  value: viewsLeftBreastEklundCount or "1",
-                  id: "views-left-breast-eklund-count",
-                  classes: "nhsuk-input--width-3",
-                  inputmode: "numeric"
-                })
-              }
-            },
-            {
-              divider: "or"
-            },
-            {
-              value: "No images taken",
-              text: "No images taken",
-              exclusive: true
-            }
-          ]
-        }) }}
-      </div>
-    </div>
-  {% endset %}
-
-  {% set viewsQuestionTextInputs %}
-
-    {{ appHiddenInput({
-      name: "event[mammogramDataTemp][uiVersion]",
-      value: "inputs"
-    }) }}
-
-    {% set viewsQuestionText %}
-      How many images were taken
-    {%- endset %}
-
-    {# H2 hidden from AT as it's included in the fieldset legend of each set of inputs #}
-    <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of inputs #}
+  <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
 
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-one-half">
@@ -358,13 +151,6 @@
         </fieldset>
       </div>
     </div>
-  {% endset %}
-
-  {% if viewQuestionStyle == "checkboxes" %}
-    {{ viewsQuestionCheckboxes | safe }}
-  {% else %}
-    {{ viewsQuestionTextInputs | safe }}
-  {% endif %}
 
   {# Calculate initial total count from form data #}
   {% set initialTotalCount = 0 %}

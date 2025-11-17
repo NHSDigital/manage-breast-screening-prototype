@@ -1,0 +1,100 @@
+{# app/views/_includes/mammogram-image-display.njk #}
+{# 
+  Display a single mammogram view with count/images and machine room
+  
+  Parameters:
+  - viewItem: object with { side, view, viewShort, viewShortWithSide, count, images, etc }
+  - isManualEntry: boolean - true shows count only, false shows image details
+  - machineRoom: string - the screening room name
+#}
+
+<div class="{{ 'nhsuk-u-margin-bottom-3' }}">
+
+  {% if isManualEntry %}
+    {# Manual entry - show count only #}
+    <h2>
+      {{ viewItem.count }} {{ viewItem.viewShortWithSide }} {{ "image" | pluralise(viewItem.count) }}
+    </h2>
+
+    {{ summaryList({
+      classes: "nhsuk-u-margin-bottom-0",
+      rows: [
+        {
+          key: {
+            text: "Machine room"
+          },
+          value: {
+            text: machineRoom or "Not recorded"
+          }
+        }
+      ]
+    }) }}
+
+    {# Show repeat information if present #}
+    {% if viewItem.repeatCount > 0 and viewItem.repeatReasons %}
+      <p class="nhsuk-u-margin-top-2">
+        <strong>Repeat {{ 'reason' | pluralise(viewItem.repeatReasons | length) }}:</strong> {{ viewItem.repeatReasons | join(', ') }}
+      </p>
+    {% endif %}
+
+  {% else %}
+    {# Automated entry - show full image details #}
+    <h2>
+      {{ viewItem.images | length }} {{ viewItem.viewShortWithSide }} {{ "image" | pluralise(viewItem.images | length) }}
+    </h2>
+
+    {# Loop through each image #}
+    {% for image in viewItem.images %}
+      <div class="nhsuk-grid-row {{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
+        <div class="nhsuk-grid-column-three-quarters">
+          {{ summaryList({
+            classes: "nhsuk-u-margin-bottom-0",
+            rows: [
+              {
+                key: {
+                  text: "Captured"
+                },
+                value: {
+                  text: image.timestamp | formatDateTime("D MMMM YYYY, H:mm:ss a")
+                }
+              },
+              {
+                key: {
+                  text: "Accession"
+                },
+                value: {
+                  html: image.accessionNumber
+                }
+              },
+              {
+                key: {
+                  text: "Machine room"
+                },
+                value: {
+                  text: machineRoom or "Not recorded"
+                }
+              }
+            ]
+          }) }}
+        </div>
+        {# Small graphic of mammogram #}
+        <div class="nhsuk-grid-column-one-quarter">
+          <div class="app-mammogram-image--placeholder">
+            <img class="nhsuk-image__img" src="/images/mammogram-diagrams/{{ viewItem.viewShortWithSide | lower }}.png" alt="">
+          </div>
+        </div>
+      </div>
+
+    {# If there are no images, show inset text - likely partial mammography #}
+    {% else %}
+      {% set insetHtml %}
+        <p>There are no {{ viewItem.viewShortWithSide }} images</p>
+      {% endset %}
+      {{ insetText({
+        html: insetHtml
+      }) }}
+    {% endfor %}
+
+  {% endif %}
+
+</div>
