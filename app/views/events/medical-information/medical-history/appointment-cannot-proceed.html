@@ -42,9 +42,18 @@
       },
       {
         value: "opt-out",
-        text: "No, permanently opt out",
+        text: "No, request opt out",
         hint: {
           text: "They will receive information explaining their options"
+        },
+        conditional: {
+          html: input({
+            name: "event[cannotProceed][optOutDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.cannotProceed.optOutDetails
+          })
         }
       }
     ]

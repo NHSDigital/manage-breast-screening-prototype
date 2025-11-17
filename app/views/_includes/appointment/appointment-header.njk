@@ -52,7 +52,7 @@
       </li>
       <li>
         <a href="{{ eventUrl }}/special-appointment/edit{{ '?referrerChain=' + eventUrl if eventUrl }}">
-          {{ "Make this appointment a special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
+          {{ "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
         </a>
       </li>
     </ul>

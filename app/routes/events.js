@@ -1384,7 +1384,7 @@ router.post(
     }
     else if (futureScreeningPlan === 'opt-out')
     {
-      successMessage = `${participantName} has been permanently opted out and will receive information explaining their options`
+      successMessage = `An opt out request has been submitted for ${participantName}`
     }
 
     req.flash('success', successMessage)
@@ -2231,7 +2231,7 @@ router.post(
         else if (needsReschedule === 'no-opt-out')
         {
           successMessage = `
-    ${participantName} has been opted out. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+    An opt out request has been submitted for ${participantName}`
         }
 
         req.flash('success', { wrapWithHeading: successMessage })
@@ -2444,7 +2444,7 @@ router.post(
         }
         else if (rescheduleChoice === 'no-opt-out')
         {
-          successMessage = `${participantName} has been opted out. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+          successMessage = `An opt out request has been submitted for ${participantName}`
         }
 
         req.flash('success', { wrapWithHeading: successMessage })
