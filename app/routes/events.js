@@ -1560,9 +1560,41 @@ module.exports = (router) => {
 
   // Manual imaging routes
 
-  // Add this section to events.js after the existing imaging routes
+  // Handle take-images route - redirect to appropriate page based on state
+  router.get('/clinics/:clinicId/events/:eventId/take-images', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
 
-  // Manual imaging routes
+    const isManualImageCollection =
+      data.settings?.screening?.manualImageCollection
+    const imagesStageCompleted =
+      data.event?.workflowStatus?.['take-images'] === 'completed'
+
+    // If manual flow and images already completed, redirect to details page for editing
+    if (
+      isManualImageCollection &&
+      imagesStageCompleted &&
+      data.event?.mammogramData?.isManualEntry
+    ) {
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/images-manual-details`
+      )
+    }
+
+    // If automatic flow and images completed, redirect to automatic page
+    if (
+      !isManualImageCollection &&
+      imagesStageCompleted &&
+      data.event?.mammogramData
+    ) {
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/images-automatic`
+      )
+    }
+
+    // Otherwise render the take-images template which will determine which flow to show
+    res.render('events/take-images')
+  })
 
   // Initialize or edit manual imaging - clears temp or prepopulates from existing data
   router.get('/clinics/:clinicId/events/:eventId/images-manual', (req, res) => {

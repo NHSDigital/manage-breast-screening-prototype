@@ -23,6 +23,13 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  {% if data.event.workflowStatus["take-images"] == 'completed' %}
+    {{ button({
+      text: "Next section",
+      classes: "nhsuk-u-margin-bottom-1"
+    }) }}
+  {% endif %}
+
   {% set insetTextHtml %}
     <p>{{ imageCount }} images have been detected and imported from PACS</p>
   {% endset %}
@@ -31,12 +38,7 @@
     html: insetTextHtml
   }) }}
 
-  {% if data.event.workflowStatus["take-images"] == 'completed' %}
-    {{ button({
-      text: "Next section",
-      classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"
-    }) }}
-  {% endif %}
+  
 
   {# Convert object to an array of views and get machine room #}
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}

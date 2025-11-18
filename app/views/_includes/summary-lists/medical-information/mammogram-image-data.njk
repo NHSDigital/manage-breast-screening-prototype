@@ -4,9 +4,12 @@
 {% set isManualEntry = event.mammogramData.isManualEntry %}
 {% set mammogramViews = event.mammogramData.views | getObjectValues %}
 
-{# Group views by side for display #}
-{% set rightViews = [] %}
-{% set leftViews = [] %}
+{# Define view order for consistent display (CC, MLO, Eklund) #}
+{% set viewOrder = ['CC', 'MLO', 'Eklund'] %}
+
+{# Group views by side and sort by standard order #}
+{% set rightViewsUnsorted = [] %}
+{% set leftViewsUnsorted = [] %}
 {% for view in mammogramViews %}
   {% if isManualEntry %}
     {% if view.count > 1 %}
@@ -23,10 +26,26 @@
   {% endif %}
   
   {% if view.side == 'right' %}
-    {% set rightViews = rightViews | push(viewText) %}
+    {% set rightViewsUnsorted = rightViewsUnsorted | push({ text: viewText, type: view.viewShort, view: view }) %}
   {% else %}
-    {% set leftViews = leftViews | push(viewText) %}
+    {% set leftViewsUnsorted = leftViewsUnsorted | push({ text: viewText, type: view.viewShort, view: view }) %}
   {% endif %}
+{% endfor %}
+
+{# Sort views by standard order #}
+{% set rightViews = [] %}
+{% set leftViews = [] %}
+{% for viewType in viewOrder %}
+  {% for item in rightViewsUnsorted %}
+    {% if item.type == viewType %}
+      {% set rightViews = rightViews | push(item.text) %}
+    {% endif %}
+  {% endfor %}
+  {% for item in leftViewsUnsorted %}
+    {% if item.type == viewType %}
+      {% set leftViews = leftViews | push(item.text) %}
+    {% endif %}
+  {% endfor %}
 {% endfor %}
 
 {% set viewsHtml %}
@@ -122,8 +141,25 @@
 {% endif %}
 
 {# Combined views taken (showing all view information in one row) #}
+{# Sort views by side and standard order before displaying #}
+{% set sortedViews = [] %}
+{% for viewType in viewOrder %}
+  {% for view in mammogramViews %}
+    {% if view.viewShort == viewType and view.side == 'right' %}
+      {% set sortedViews = sortedViews | push(view) %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+{% for viewType in viewOrder %}
+  {% for view in mammogramViews %}
+    {% if view.viewShort == viewType and view.side == 'left' %}
+      {% set sortedViews = sortedViews | push(view) %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
 {% set combinedViewsHtml = "" %}
-{% for view in mammogramViews %}
+{% for view in sortedViews %}
   {% set totalCount = 0 %}
   
   {% if isManualEntry %}
