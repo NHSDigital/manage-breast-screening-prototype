@@ -240,13 +240,13 @@ const generateEvent = ({
         isSeedData: true,
         config: participant.config
       })
-      
+
       // Add machine room for hospital locations
-      if (clinic.location?.id)
-      {
-        const availableRooms = screeningRooms.filter(room => room.locationId === clinic.location.id)
-        if (availableRooms.length > 0)
-        {
+      if (clinic.location?.id) {
+        const availableRooms = screeningRooms.filter(
+          (room) => room.locationId === clinic.location.id
+        )
+        if (availableRooms.length > 0) {
           const randomRoom = faker.helpers.arrayElement(availableRooms)
           event.mammogramData.machineRoom = randomRoom.displayName
         }

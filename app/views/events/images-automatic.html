@@ -2,7 +2,7 @@
 
 {% set imageCount = event.mammogramData.metadata.totalImages %}
 
-{% set pageHeading = imageCount + " images taken" %}
+{% set pageHeading = "Review image details" %}
 
 {% set mammogramSource = event.mammogramData %}
 {% set namePrefix = "event[mammogramData]" %}
@@ -23,6 +23,14 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  {% set insetTextHtml %}
+    <p>{{ imageCount }} images have been detected and imported from PACS</p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml
+  }) }}
+
   {% if data.event.workflowStatus["take-images"] == 'completed' %}
     {{ button({
       text: "Next section",
@@ -34,31 +42,83 @@
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}
   {% set machineRoom = event.mammogramData.machineRoom %}
 
-  {# Group views by view name so we get MLO or CC only #}
-  {% set groupedViews = mammogramViews | groupby("viewShort") %}
+  {# Define view order for consistent display (CC, MLO, Eklund) #}
+  {% set viewOrder = ['CC', 'MLO', 'Eklund'] %}
 
-  {# Iterate through each view type (MLO, CC, etc.) #}
-  {% for viewName, viewsInGroup in groupedViews %}
-
-    {# General view name - "MLO views" #}
-    {% set viewNameString = viewName + " views" %}
-
-    {# Capture html for entire view group #}
-    {% set viewCardHtml %}
-      {# Right then left #}
-      {% for viewItem in viewsInGroup %}
-        {% set isManualEntry = false %}
-        {% include "_includes/mammogram-image-display.njk" %}
-      {% endfor %}
-    {% endset %}
-
-    {{ card({
-      heading: viewNameString | sentenceCase,
-      headingLevel: "2",
-      feature: true,
-      descriptionHtml: viewCardHtml
-    }) }}
+  {# Group views by side first (right/left) and sort by view type #}
+  {% set rightViews = [] %}
+  {% set leftViews = [] %}
+  {% for viewItem in mammogramViews %}
+    {% if viewItem.side == 'right' %}
+      {% set rightViews = rightViews | push(viewItem) %}
+    {% else %}
+      {% set leftViews = leftViews | push(viewItem) %}
+    {% endif %}
   {% endfor %}
+
+  {# Sort views by the standard order #}
+  {% set sortedRightViews = [] %}
+  {% set sortedLeftViews = [] %}
+  {% for viewType in viewOrder %}
+    {% for viewItem in rightViews %}
+      {% if viewItem.viewShort == viewType %}
+        {% set sortedRightViews = sortedRightViews | push(viewItem) %}
+      {% endif %}
+    {% endfor %}
+    {% for viewItem in leftViews %}
+      {% if viewItem.viewShort == viewType %}
+        {% set sortedLeftViews = sortedLeftViews | push(viewItem) %}
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+
+  {# Display in two columns: right breast on left, left breast on right #}
+  <div class="nhsuk-grid-row">
+    {# Right views on the left #}
+    <div class="nhsuk-grid-column-one-half">
+      {% set rightViewsHtml %}
+        {% for viewItem in sortedRightViews %}
+          {% set isManualEntry = false %}
+          {% include "_includes/mammogram-image-display.njk" %}
+        {% endfor %}
+      {% endset %}
+
+      {{ card({
+        heading: "Right breast",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: rightViewsHtml
+      }) }}
+    </div>
+
+    {# Left views on the right #}
+    <div class="nhsuk-grid-column-one-half">
+      {% set leftViewsHtml %}
+        {% for viewItem in sortedLeftViews %}
+          {% set isManualEntry = false %}
+          {% include "_includes/mammogram-image-display.njk" %}
+        {% endfor %}
+      {% endset %}
+
+      {{ card({
+        heading: "Left breast",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: leftViewsHtml
+      }) }}
+    </div>
+  </div>
+
+  <p><a href="#">View imported image metadata</a></p>
+
+  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+    {{ button({
+      text: "Re-scan PACS for image updates",
+      classes: "nhsuk-button--secondary"
+    }) }}
+
+    <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
+  </div>
 
   {# Build array of views needing repeat questions (count > 1) #}
   {% set viewsNeedingRepeats = [] %}
@@ -75,32 +135,26 @@
 
   {# Show repeat questions if any views have multiple images #}
   {% if viewsNeedingRepeats | length > 0 %}
-    <hr class="nhsuk-section-break nhsuk-section-break--l nhsuk-section-break--visible">
+    <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-two-thirds">
-        <h2>Multiple images information</h2>
-        <p>Some views have multiple images. Please provide information about why additional images were taken.</p>
+        <h2>Additional images</h2>
+        {# <p>Some views have multiple images. Please provide information about why additional images were taken.</p> #}
 
         {% for viewItem in viewsNeedingRepeats %}
           {% set namePrefix = "event[mammogramData]" %}
           {% set dataSource = event.mammogramData %}
+          {% set radioQuestionSize = "s" %}
           {% include "_includes/images-repeat-question.njk" %}
         {% endfor %}
       </div>
     </div>
   {% endif %}
 
-  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
-    {{ button({
-      text: "Re-scan PACS for image updates",
-      classes: "nhsuk-button--secondary"
-    }) }}
+  
 
-    <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
-  </div>
-
-  <hr class="nhsuk-section-break nhsuk-section-break--l nhsuk-section-break--visible nhsuk-u-margin-top-3">
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible nhsuk-u-margin-top-0">
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
@@ -122,7 +176,7 @@
       }) }}
 
       {{ button({
-        text: "Continue"
+        text: "Confirm images"
       }) }}
 
     </div>
