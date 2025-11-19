@@ -27,10 +27,14 @@
 
   <div class="app-header-with-status__status-tag">
     {% set statusTagId = "status-tag-" + event.id %}
-    {{ event.status | toTag({
-      id: statusTagId,
-      classes: "nhsuk-u-margin-bottom-2"
-    }) }}
+    {% if event.status === "event_rescheduled" %}
+      <strong class="nhsuk-tag nhsuk-tag--blue nhsuk-u-margin-bottom-2" id="{{ statusTagId }}">Requested to reschedule appointment</strong>
+    {% else %}
+      {{ event.status | toTag({
+        id: statusTagId,
+        classes: "nhsuk-u-margin-bottom-2"
+      }) }}
+    {% endif %}
 
     {% if event.status == 'event_scheduled' %}
       {{ appCheckIn({
@@ -44,18 +48,20 @@
 
     <br>
 
-    <ul class="nhsuk-list">
-      <li>
-        <a href="{{ eventUrl }}/cancel-or-reschedule-appointment/details{{ '?referrerChain=' + eventUrl if eventUrl }}">
-          Cancel or reschedule appointment
-        </a>
-      </li>
-      <li>
-        <a href="{{ eventUrl }}/special-appointment/edit{{ '?referrerChain=' + eventUrl if eventUrl }}">
-          {{ "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
-        </a>
-      </li>
-    </ul>
+    {% if allowEdits %}
+      <ul class="nhsuk-list">
+        <li>
+          <a href="{{ eventUrl }}/cancel-or-reschedule-appointment/details{{ '?referrerChain=' + eventUrl if eventUrl }}">
+            Cancel or reschedule appointment
+          </a>
+        </li>
+        <li>
+          <a href="{{ eventUrl }}/special-appointment/edit{{ '?referrerChain=' + eventUrl if eventUrl }}">
+            {{ "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
+          </a>
+        </li>
+      </ul>
+    {% endif %}
 
     {# 
     {{ buttonMenu({

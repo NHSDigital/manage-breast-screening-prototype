@@ -2440,11 +2440,11 @@ router.post(
         let successMessage
         if (rescheduleChoice === 'no-invite')
         {
-          successMessage = `${participantName} will be invited to their next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+          successMessage = `Appointment cancelled. If eligible, ${participantName} will be invited to their next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         }
         else if (rescheduleChoice === 'no-opt-out')
         {
-          successMessage = `An opt out request has been submitted for ${participantName}`
+          successMessage = `An opt out request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         }
 
         req.flash('success', { wrapWithHeading: successMessage })
@@ -2488,12 +2488,68 @@ router.post(
       // Update event status to rescheduled
       updateEventStatus(data, eventId, 'event_rescheduled')
 
-      const successMessage = `${participantName}'s appointment has been rescheduled. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+      const successMessage = `A reschedule request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
 
       req.flash('success', { wrapWithHeading: successMessage })
 
       // Return to clinic page
       res.redirect(`/clinics/${clinicId}`)
+    }
+  )
+
+  // Handle undo cancel appointment
+  router.get(
+    '/clinics/:clinicId/events/:eventId/undo-cancel',
+    (req, res) =>
+    {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+
+      if (event && event.status === 'event_cancelled')
+      {
+        // Clear cancellation data
+        delete data.event.cancellation
+        delete data.event.reschedule
+
+        // Save changes
+        saveTempEventToEvent(data)
+
+        // Revert to scheduled status
+        updateEventStatus(data, eventId, 'event_scheduled')
+
+        req.flash('success', 'Appointment cancellation undone')
+      }
+
+      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+    }
+  )
+
+  // Handle undo reschedule appointment
+  router.get(
+    '/clinics/:clinicId/events/:eventId/undo-reschedule',
+    (req, res) =>
+    {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+
+      if (event && event.status === 'event_rescheduled')
+      {
+        // Clear reschedule and cancellation data
+        delete data.event.cancellation
+        delete data.event.reschedule
+
+        // Save changes
+        saveTempEventToEvent(data)
+
+        // Revert to scheduled status
+        updateEventStatus(data, eventId, 'event_scheduled')
+
+        req.flash('success', 'Reschedule request undone')
+      }
+
+      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
     }
   )
 }

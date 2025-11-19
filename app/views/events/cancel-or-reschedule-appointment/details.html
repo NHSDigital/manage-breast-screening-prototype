@@ -1,3 +1,6 @@
+{# app/views/events/cancel-or-reschedule-appointment/details.html #}
+
+
 {% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Cancel or reschedule appointment" %}
@@ -32,8 +35,8 @@
     },
     items: [
       {
-        value: "Availability to attend",
-        text: "Availability to attend",
+        value: "Not available to attend",
+        text: "Not available to attend",
         conditional: {
           html: input({
             name: "event[cancellation][availabilityDetails]",
@@ -184,7 +187,10 @@
       },
       {
         value: "no-invite",
-        text: "No, invite to next routine appointment"
+        text: "No, cancel the appointment",
+        hint: {
+          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
+        }
       },
       {
         value: "no-opt-out",

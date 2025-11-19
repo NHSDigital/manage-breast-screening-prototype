@@ -6,11 +6,11 @@
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
 {% set formAction = "./start" %}
+{% set allowEdits = event.status != "event_cancelled" and event.status != "event_rescheduled" %}
 
 
 {% block pageContent %}
 
-  {% set allowEdits = true %}
   {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
 
   {% include "_includes/special-appointment-warning-card.njk" %}
@@ -19,14 +19,68 @@
 
   {% set statusHtml %}
     {# Status tag with check-in link #}
-    {{ eventStatus({
-      clinicId: clinicId,
-      event: event,
-      referrerChain: currentUrl
-    })}}
+    {% if event.status === "event_rescheduled" %}
+      <strong class="nhsuk-tag nhsuk-tag--blue">Requested to reschedule appointment</strong>
+    {% else %}
+      {{ eventStatus({
+        clinicId: clinicId,
+        event: event,
+        referrerChain: currentUrl
+      })}}
+    {% endif %}
 
     {% if event.status === "event_attended_not_screened" %}
       <p class="nhsuk-u-margin-top-2">[Reason for not screened here]</p>
+    {% endif %}
+
+    {% if event.status === "event_cancelled" and event.cancellation %}
+      <p class="nhsuk-u-margin-top-2">
+        Cancellation details: {% for reason in event.cancellation.reason -%}
+          {{ reason }}
+          {%- if reason === "Not available to attend" and event.cancellation.availabilityDetails %} ({{ event.cancellation.availabilityDetails }})
+          {%- elif reason === "Moving outside England" and event.cancellation.movingDetails %} ({{ event.cancellation.movingDetails }})
+          {%- elif reason === "Breast implant concerns" and event.cancellation.implantDetails %} ({{ event.cancellation.implantDetails }})
+          {%- elif reason === "Bilateral mastectomy" and event.cancellation.mastectomyDetails %} ({{ event.cancellation.mastectomyDetails }})
+          {%- elif reason === "Recent mammogram" and event.cancellation.mammogramDetails %} ({{ event.cancellation.mammogramDetails }})
+          {%- elif reason === "Medical reasons" and event.cancellation.medicalDetails %} ({{ event.cancellation.medicalDetails }})
+          {%- elif reason === "Has a symptomatic appointment" and event.cancellation.symptomaticDetails %} ({{ event.cancellation.symptomaticDetails }})
+          {%- elif reason === "No qualified mammographer available" and event.cancellation.mammographerDetails %} ({{ event.cancellation.mammographerDetails }})
+          {%- elif reason === "Technical issues at clinic" and event.cancellation.technicalDetails %} ({{ event.cancellation.technicalDetails }})
+          {%- elif reason === "Other reason" and event.cancellation.otherReasonDetails %} ({{ event.cancellation.otherReasonDetails }})
+          {%- endif -%}
+          {%- if not loop.last %}, {% endif -%}
+        {% endfor -%}
+        {%- if event.cancellation.reschedule === "no-invite" %}. Appointment cancelled. If eligible, {{ participant | getFullName }} will be invited to their next routine appointment.
+        {%- elif event.cancellation.reschedule === "no-opt-out" %}. Requested to opt out
+          {%- if event.cancellation.optOutDetails %} ({{ event.cancellation.optOutDetails }})
+          {%- endif -%}.
+        {%- endif %}
+      </p>
+    {% endif %}
+
+    {% if event.status === "event_rescheduled" and event.reschedule %}
+      <p class="nhsuk-u-margin-top-2">
+        Requested to reschedule details: {% if event.cancellation and event.cancellation.reason -%}
+          {% for reason in event.cancellation.reason -%}
+            {{ reason }}
+            {%- if reason === "Not available to attend" and event.cancellation.availabilityDetails %} ({{ event.cancellation.availabilityDetails }})
+            {%- elif reason === "Moving outside England" and event.cancellation.movingDetails %} ({{ event.cancellation.movingDetails }})
+            {%- elif reason === "Breast implant concerns" and event.cancellation.implantDetails %} ({{ event.cancellation.implantDetails }})
+            {%- elif reason === "Bilateral mastectomy" and event.cancellation.mastectomyDetails %} ({{ event.cancellation.mastectomyDetails }})
+            {%- elif reason === "Recent mammogram" and event.cancellation.mammogramDetails %} ({{ event.cancellation.mammogramDetails }})
+            {%- elif reason === "Medical reasons" and event.cancellation.medicalDetails %} ({{ event.cancellation.medicalDetails }})
+            {%- elif reason === "Has a symptomatic appointment" and event.cancellation.symptomaticDetails %} ({{ event.cancellation.symptomaticDetails }})
+            {%- elif reason === "No qualified mammographer available" and event.cancellation.mammographerDetails %} ({{ event.cancellation.mammographerDetails }})
+            {%- elif reason === "Technical issues at clinic" and event.cancellation.technicalDetails %} ({{ event.cancellation.technicalDetails }})
+            {%- elif reason === "Other reason" and event.cancellation.otherReasonDetails %} ({{ event.cancellation.otherReasonDetails }})
+            {%- endif -%}
+            {%- if not loop.last %}, {% endif -%}
+          {% endfor -%}. 
+        {%- endif -%}
+        {%- if event.reschedule.timing === "within-6-weeks" %} A request to reschedule within six weeks has been recorded.
+        {%- elif event.reschedule.timing === "more-than-6-weeks" %} A request to reschedule for more than six weeks away has been recorded.
+        {%- endif %}
+      </p>
     {% endif %}
   {% endset %}
 
@@ -58,11 +112,7 @@
           },
           actions: {
             items: [
-              {
-                href: "#",
-                text: "Reschedule appointment",
-                visuallyHiddenText: "name"
-              } if event.status == "event_scheduled"
+
             ]
           }
         },
@@ -89,11 +139,17 @@
           actions: {
             items: [
               {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "other details"
-              } if event.status != "event_scheduled"
-            ]
+                href: "./undo-cancel",
+                text: "Undo cancel appointment",
+                visuallyHiddenText: "appointment"
+              }
+            ] if event.status == "event_cancelled" else ([
+              {
+                href: "./undo-reschedule",
+                text: "Undo reschedule request",
+                visuallyHiddenText: "appointment"
+              }
+            ] if event.status == "event_rescheduled" else [])
           }
         },
         {
