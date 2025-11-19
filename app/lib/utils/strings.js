@@ -369,6 +369,34 @@ const pluralise = (word, ...args) => {
   return pluralizeLib(word, ...args)
 }
 
+/**
+ * Format mammogram view code for display
+ * Converts "REklund" or "LEklund" to "Right Eklund" or "Left Eklund"
+ * Leaves standard codes like "RCC", "RMLO", "LCC", "LMLO" unchanged
+ *
+ * @param {string} code - View code to format
+ * @returns {string} Formatted view code
+ * @example
+ * formatMammogramViewCode('RCC') // returns 'RCC'
+ * formatMammogramViewCode('REklund') // returns 'Right Eklund'
+ * formatMammogramViewCode('Left Eklund') // returns 'Left Eklund' (already formatted)
+ */
+const formatMammogramViewCode = (code) => {
+  if (!code || typeof code !== 'string') return code
+
+  // Already in the correct format (has a space)
+  if (code.includes(' ')) return code
+
+  // Handle REklund -> Right Eklund
+  if (code === 'REklund') return 'Right Eklund'
+
+  // Handle LEklund -> Left Eklund
+  if (code === 'LEklund') return 'Left Eklund'
+
+  // Return standard codes unchanged (RCC, RMLO, LCC, LMLO, etc)
+  return code
+}
+
 module.exports = {
   addIndefiniteArticle,
   formatCurrency,
@@ -393,5 +421,6 @@ module.exports = {
   stringIncludes,
   stringLiteral,
   formatPhoneNumber,
-  pluralise
+  pluralise,
+  formatMammogramViewCode
 }

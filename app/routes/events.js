@@ -1819,7 +1819,12 @@ module.exports = (router) => {
 
       // Only add view if count > 0
       if (count > 0) {
-        const code = `${config.sideCode}${config.viewType}`
+        // For Eklund views, use full form like "Right Eklund" or "Left Eklund"
+        // For standard views, use abbreviated form like "RCC" or "LMLO"
+        const code =
+          config.viewType === 'Eklund'
+            ? `${config.side.charAt(0).toUpperCase() + config.side.slice(1)} ${config.viewType}`
+            : `${config.sideCode}${config.viewType}`
 
         // Get repeat data if this view has count > 1
         let repeatCount = 0
@@ -2074,7 +2079,14 @@ module.exports = (router) => {
 
       // Clean up and normalize repeat reasons based on which option was selected
       const formData = data.event?.mammogramDataTemp || {}
-      const viewCodes = ['RCC', 'RMLO', 'REklund', 'LCC', 'LMLO', 'LEklund']
+      const viewCodes = [
+        'RCC',
+        'RMLO',
+        'Right Eklund',
+        'LCC',
+        'LMLO',
+        'Left Eklund'
+      ]
 
       viewCodes.forEach((code) => {
         const repeatNeeded = formData[`repeatNeeded-${code}`]

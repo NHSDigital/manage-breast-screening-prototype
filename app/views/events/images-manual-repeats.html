@@ -39,54 +39,54 @@
     {# Check all possible view/breast combinations #}
     {% if (mammogramData.viewsRightBreastCCCount | int) > 1 %}
       {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
-        side: 'Right', 
-        view: 'CC', 
-        code: 'RCC', 
+        side: 'Right',
+        view: 'CC',
+        code: 'RCC',
         count: mammogramData.viewsRightBreastCCCount 
       }) %}
     {% endif %}
     
     {% if (mammogramData.viewsRightBreastMLOCount | int) > 1 %}
       {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
-        side: 'Right', 
-        view: 'MLO', 
-        code: 'RMLO', 
+        side: 'Right',
+        view: 'MLO',
+        code: 'RMLO',
         count: mammogramData.viewsRightBreastMLOCount 
       }) %}
     {% endif %}
     
     {% if (mammogramData.viewsRightBreastEklundCount | int) > 1 %}
       {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
-        side: 'Right', 
-        view: 'Eklund', 
-        code: 'REklund', 
+        side: 'Right',
+        view: 'Eklund',
+        code: 'Right Eklund',
         count: mammogramData.viewsRightBreastEklundCount 
       }) %}
     {% endif %}
 
     {% if (mammogramData.viewsLeftBreastCCCount | int) > 1 %}
       {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
-        side: 'Left', 
-        view: 'CC', 
-        code: 'LCC', 
+        side: 'Left',
+        view: 'CC',
+        code: 'LCC',
         count: mammogramData.viewsLeftBreastCCCount 
       }) %}
     {% endif %}
     
     {% if (mammogramData.viewsLeftBreastMLOCount | int) > 1 %}
       {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
-        side: 'Left', 
-        view: 'MLO', 
-        code: 'LMLO', 
+        side: 'Left',
+        view: 'MLO',
+        code: 'LMLO',
         count: mammogramData.viewsLeftBreastMLOCount 
       }) %}
     {% endif %}
     
     {% if (mammogramData.viewsLeftBreastEklundCount | int) > 1 %}
       {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
-        side: 'Left', 
-        view: 'Eklund', 
-        code: 'LEklund', 
+        side: 'Left',
+        view: 'Eklund',
+        code: 'Left Eklund',
         count: mammogramData.viewsLeftBreastEklundCount 
       }) %}
     {% endif %}
@@ -96,7 +96,7 @@
       {% if view.count > 1 %}
         {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
           side: view.side | capitalize, 
-          view: view.viewShort, 
+          view: view.viewShort,
           code: view.viewShortWithSide, 
           count: view.count 
         }) %}
