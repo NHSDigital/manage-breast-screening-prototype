@@ -4,13 +4,19 @@
 
 
 {% set showWorkflowNav = true %}
-{% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %}
 
-{% if data.settings.screening.manualImageCollection | falsify %}
+{% set hideBackLink = true %}
+
+{# Used in automatic flow to show holding page #}
+{# {% set isAwaitingImages = event.workflowStatus['awaiting-images'] != 'completed' %} #}
+
+{% set isManualImageCollection = data.settings.screening.manualImageCollection | falsify %}
+
+{# {% set imagesStageCompleted = true if data.event.workflowStatus['take-images'] == 'completed' else false %} #}
+
+{% if isManualImageCollection %}
   {% include "events/images-manual.html" %}
-{% elseif isAwaitingImages %}
-  {% include "events/images-before-mammography.html" %}
 {% else %}
-  {% include "events/images-automatic.html" %}
+  {% include "events/images-before-mammography.html" %}
 {% endif %}
 
