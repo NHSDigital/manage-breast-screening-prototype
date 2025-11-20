@@ -15,7 +15,8 @@ const STATUS_GROUPS = {
     'event_partially_screened',
     'event_did_not_attend',
     'event_attended_not_screened',
-    'event_cancelled'
+    'event_cancelled',
+    'event_rescheduled'
   ],
   active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
   eligible_for_reading: ['event_complete', 'event_partially_screened']
@@ -174,6 +175,7 @@ const getStatusTagColour = (status) => {
     'event_partially_screened': 'orange',
     'event_did_not_attend': 'red',
     'event_cancelled': 'red',
+    'event_rescheduled': 'yellow',
     'event_attended_not_screened': 'orange',
 
     // Task list
@@ -245,15 +247,16 @@ const getStatusTagColour = (status) => {
 const getStatusText = (status) => {
   const statusMap = {
     // Clinic statuses
-    event_scheduled: 'Scheduled', // default blue
+    event_scheduled: 'Scheduled',
     // Event statuses
-    event_checked_in: 'Checked in', // no colour will get solid dark blue
+    event_checked_in: 'Checked in',
     event_in_progress: 'In progress',
     event_complete: 'Screened',
     event_partially_screened: 'Partially screened',
     event_did_not_attend: 'Did not attend',
     event_attended_not_screened: 'Attended not screened',
-    event_cancelled: 'Cancelled'
+    event_cancelled: 'Cancelled',
+    event_rescheduled: 'Request to reschedule appointment'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',
