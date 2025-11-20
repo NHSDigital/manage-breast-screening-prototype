@@ -1,6 +1,3 @@
-{# app/views/events/cancel-or-reschedule-appointment/details.html #}
-
-
 {% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Cancel or reschedule appointment" %}
@@ -35,8 +32,8 @@
     },
     items: [
       {
-        value: "Not available to attend",
-        text: "Not available to attend",
+        value: "Availability to attend",
+        text: "Availability to attend",
         conditional: {
           html: input({
             name: "event[cancellation][availabilityDetails]",
@@ -135,6 +132,19 @@
               text: "Provide details"
             },
             value: data.event.cancellation.mammographerDetails
+          })
+        }
+      },
+      {
+        value: "Mammogram room unavailable",
+        text: "Mammogram room unavailable",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mammogramRoomDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mammogramRoomDetails
           })
         }
       },

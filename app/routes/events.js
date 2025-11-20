@@ -2440,7 +2440,7 @@ router.post(
         let successMessage
         if (rescheduleChoice === 'no-invite')
         {
-          successMessage = `Appointment cancelled. If eligible, ${participantName} will be invited to their next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+          successMessage = `${participantName}'s appointment has been cancelled. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         }
         else if (rescheduleChoice === 'no-opt-out')
         {

@@ -46,6 +46,7 @@
           {%- elif reason === "Has a symptomatic appointment" and event.cancellation.symptomaticDetails %} ({{ event.cancellation.symptomaticDetails }})
           {%- elif reason === "No qualified mammographer available" and event.cancellation.mammographerDetails %} ({{ event.cancellation.mammographerDetails }})
           {%- elif reason === "Technical issues at clinic" and event.cancellation.technicalDetails %} ({{ event.cancellation.technicalDetails }})
+          {%- elif reason === "Mammogram room unavailable" and event.cancellation.mammogramRoomDetails %} ({{ event.cancellation.mammogramRoomDetails }})
           {%- elif reason === "Other reason" and event.cancellation.otherReasonDetails %} ({{ event.cancellation.otherReasonDetails }})
           {%- endif -%}
           {%- if not loop.last %}, {% endif -%}
@@ -72,6 +73,7 @@
             {%- elif reason === "Has a symptomatic appointment" and event.cancellation.symptomaticDetails %} ({{ event.cancellation.symptomaticDetails }})
             {%- elif reason === "No qualified mammographer available" and event.cancellation.mammographerDetails %} ({{ event.cancellation.mammographerDetails }})
             {%- elif reason === "Technical issues at clinic" and event.cancellation.technicalDetails %} ({{ event.cancellation.technicalDetails }})
+            {%- elif reason === "Mammogram room unavailable" and event.cancellation.mammogramRoomDetails %} ({{ event.cancellation.mammogramRoomDetails }})
             {%- elif reason === "Other reason" and event.cancellation.otherReasonDetails %} ({{ event.cancellation.otherReasonDetails }})
             {%- endif -%}
             {%- if not loop.last %}, {% endif -%}
