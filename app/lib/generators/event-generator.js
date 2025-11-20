@@ -44,8 +44,17 @@ const determineEventStatus = (
     })
   }
 
+  // For past dates, use a subset of final statuses (excluding event_rescheduled which is user-initiated only)
+  const seedDataFinalStatuses = [
+    'event_complete',
+    'event_partially_screened',
+    'event_did_not_attend',
+    'event_attended_not_screened',
+    'event_cancelled'
+  ]
+
   if (slotDate.isBefore(currentDate)) {
-    return weighted.select(STATUS_GROUPS.final, attendanceWeights)
+    return weighted.select(seedDataFinalStatuses, attendanceWeights)
   }
 
   // For past slots, generate a status based on how long ago the slot was

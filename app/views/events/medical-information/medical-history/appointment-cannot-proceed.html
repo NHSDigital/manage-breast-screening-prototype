@@ -4,7 +4,9 @@
 
 {% set pageHeading = "This appointment cannot proceed" %}
 
-{% set formAction = './../../attended-not-screened-reason' | urlWithReferrer(referrerChain, query.scrollTo) %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './appointment-cannot-proceed-answer' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
 
@@ -17,11 +19,53 @@
 
   <p>The participant has not given their consent.</p>
 
-  <form method="post" action="{{ formAction }}">
-    <input type="hidden" name="action" value="end-immediately">
+  <p>They can choose to receive invites to future appointments, or opt out of the breast screening programme.</p>
+
+  {{ radios({
+    name: "event[cannotProceed][futureScreeningPlan]",
+    value: event.cannotProceed.futureScreeningPlan,
+    fieldset: {
+      legend: {
+        text: "Does the participant plan to attend breast screening in future?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "contact-six-weeks",
+        text: "Yes, contact them in six weeks to rearrange"
+      },
+      {
+        value: "invite-next-routine",
+        text: "Yes, invite to next routine appointment",
+        hint: {
+          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
+        }
+      },
+      {
+        value: "opt-out",
+        text: "No, request opt out",
+        hint: {
+          text: "They will receive information explaining their options"
+        },
+        conditional: {
+          html: input({
+            name: "event[cannotProceed][optOutDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.cannotProceed.optOutDetails
+          })
+        }
+      }
+    ]
+  } | populateErrors) }}
+
+  <div class="nhsuk-button-group">
     {{ button({
       text: "End appointment and return to clinic"
     }) }}
-  </form>
+  </div>
 
 {% endblock %}

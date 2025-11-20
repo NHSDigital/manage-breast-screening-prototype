@@ -31,10 +31,7 @@
       {{ clinic.clinicType | sentenceCase }} clinic
     </h1>
     <div class="app-header-with-status__status-tag">
-      {{ tag({
-      html: clinic.status | formatWords | sentenceCase | noWrap,
-      classes: "nhsuk-tag--" + clinic.status | getStatusTagColour
-      })}}
+      {{ clinic.status | toTag }}
     </div>
 
   </div>
