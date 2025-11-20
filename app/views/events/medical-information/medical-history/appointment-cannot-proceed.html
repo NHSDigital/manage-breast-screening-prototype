@@ -38,7 +38,10 @@
       },
       {
         value: "invite-next-routine",
-        text: "Yes, invite to next routine appointment"
+        text: "Yes, invite to next routine appointment",
+        hint: {
+          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
+        }
       },
       {
         value: "opt-out",
@@ -57,10 +60,12 @@
         }
       }
     ]
-  }) }}
+  } | populateErrors) }}
 
-  {{ button({
-    text: "End appointment and return to clinic"
-  }) }}
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "End appointment and return to clinic"
+    }) }}
+  </div>
 
 {% endblock %}

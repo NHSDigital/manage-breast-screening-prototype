@@ -1,3 +1,5 @@
+{# app/views/events/attended-not-screened-reason.html #}
+
 {% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Appointment cannot proceed" %}
@@ -17,53 +19,137 @@
 
   {{ checkboxes({
     name: "event[appointmentStopped][stoppedReason]",
+    values: event.appointmentStopped.stoppedReason,
     fieldset: {
       legend: {
         text: "Why has this appointment been stopped?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
+      },
+      hint: {
+        text: "Select all that apply"
       }
     },
-    hint: {
-      text: "Select all that apply"
-    },
-    values: event.appointmentStopped.stoppedReason,
     items: [
       {
         value: "Failed identity check",
-        text: "Failed identity check"
+        text: "Failed identity check",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][failedIdentityDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.failedIdentityDetails
+          })
+        }
       },
       {
         value: "Pain during screening",
-        text: "Pain during screening"
+        text: "Pain during screening",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][painDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.painDetails
+          })
+        }
       },
       {
         value: "Has a symptomatic appointment",
-        text: "Has a symptomatic appointment"
+        text: "Has a symptomatic appointment",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][symptomaticDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.symptomaticDetails
+          })
+        }
       },
       {
         value: "Consent withdrawn",
-        text: "Consent withdrawn"
+        text: "Consent withdrawn",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][consentDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.consentDetails
+          })
+        }
       },
       {
         value: "Physical health issue",
-        text: "Physical health issue"
+        text: "Physical health issue",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][physicalHealthDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.physicalHealthDetails
+          })
+        }
       },
       {
         value: "Mental health issue",
-        text: "Mental health issue"
+        text: "Mental health issue",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][mentalHealthDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.mentalHealthDetails
+          })
+        }
       },
       {
         value: "Language difficulties",
-        text: "Language difficulties"
+        text: "Language difficulties",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][languageDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.languageDetails
+          })
+        }
       },
       {
         value: "No qualified mammographer available",
-        text: "No qualified mammographer available"
+        text: "No qualified mammographer available",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][mammographerDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.mammographerDetails
+          })
+        }
       },
       {
         value: "Technical issues at clinic",
-        text: "Technical issues at clinic"
+        text: "Technical issues at clinic",
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][technicalDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.technicalDetails
+          })
+        }
+      },
+      {
+        divider: "or"
       },
       {
         value: "Other reason",
@@ -74,6 +160,7 @@
             label: {
               text: "Provide details"
             },
+            rows: 5,
             value: event.appointmentStopped.otherDetails
           })
         }
@@ -98,13 +185,25 @@
       },
       {
         value: "no-invite",
-        text: "No, invite to next routine appointment"
+        text: "No, invite to next routine appointment",
+        hint: {
+          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
+        }
       },
       {
         value: "no-opt-out",
-        text: "No, permanently opt out",
+        text: "No, request opt out",
         hint: {
           text: "They will receive information explaining their options"
+        },
+        conditional: {
+          html: input({
+            name: "event[appointmentStopped][optOutDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: event.appointmentStopped.optOutDetails
+          })
         }
       }
     ]
