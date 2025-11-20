@@ -29,7 +29,19 @@
     text: "Complete screening and return to clinic"
   }) }}
 
-  {% set valueHtml = "None" %}
+  {% set medicalHistoryHtml %}
+  {% include "medical-information/medical-history/index.njk" %}
+{% endset %}
+  {# Medical history card #}
+  {{ card({
+    heading: "Medical history",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalHistoryHtml
+  }) }}
+
+
+  {# Breast features card #}
 
   {% set breastFeaturesHtml %}
     {% include "_includes/medical-information/breast-features.njk" %}
@@ -42,18 +54,11 @@
     descriptionHtml: breastFeaturesHtml
   }) }}
 
-  {% set valueHtml = "No" %}
 
+  {# Image card #}
   {% set imageCount = event.mammogramData.metadata.totalImages %}
-
   {% set imagesCardHtml %}
     {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
-
-    {# {% if event.mammogramData.isManualEntry %}
-      <p><a href="./images-manual-details">View or update images</a></p>
-    {% else %}
-      <p><a href="./images-automatic">View or update images</a></p>
-    {% endif %} #}
   {% endset %}
 
   {{ card({
@@ -128,6 +133,8 @@
     feature: true,
     descriptionHtml: otherDetailsCardHtml
   }) }}
+
+  {# Finish #}
 
   {{ button({
     text: "Complete screening and return to clinic"

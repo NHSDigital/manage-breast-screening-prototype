@@ -437,6 +437,7 @@
         {% endmacro %}
 
         {{ historyItem.location }}
+        
         {% switch historyItem.location %}
           {% case 'At an NHS hospital' %}
             {{ otherLocation(historyItem.locationNhsHospitalDetails) }}
@@ -510,38 +511,38 @@
             {{ locationRow | safe }}
 
           {# Implanted medical device #}
-          {% elif typeData.type == 'implantedMedicalDevice' %}
+          {% elseif typeData.type == 'implantedMedicalDevice' %}
             {{ typeRow | safe }}
             {{ yearRow | safe }}
 
           {# Breast implants or augmentation #}
-          {% elif typeData.type == 'breastImplantsAugmentation' %}
+          {% elseif typeData.type == 'breastImplantsAugmentation' %}
             {{ proceduresRow | safe }}
             {{ yearRow | safe }}
             {{ locationRow | safe }}
             {{ consentRow | safe }}
 
           {# Mastectomy or lumpectomy #}
-          {% elif typeData.type == 'mastectomyLumpectomy' %}
+          {% elseif typeData.type == 'mastectomyLumpectomy' %}
             {{ proceduresRow | safe }}
             {{ otherSurgeryRow | safe }}
-            {{ surgeryReasonRow | safe }}
             {{ yearRow | safe }}
+            {{ surgeryReasonRow | safe }}
             {{ locationRow | safe }}
 
           {# Cysts #}
-          {% elif typeData.type == 'cysts' %}
+          {% elseif typeData.type == 'cysts' %}
             {{ cystsTreatmentRow | safe }}
             {{ dateRow | safe }}
 
           {# Benign lumps #}
-          {% elif typeData.type == 'benignLumps' %}
+          {% elseif typeData.type == 'benignLumps' %}
             {{ proceduresRow | safe }}
             {{ yearRow | safe }}
             {{ locationRow | safe }}
 
           {# Other procedures #}
-          {% elif typeData.type == 'otherProcedures' %}
+          {% elseif typeData.type == 'otherProcedures' %}
             {{ typeRow | safe }}
             {{ yearRow | safe }}
           {% endif %}
