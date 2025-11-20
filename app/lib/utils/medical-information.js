@@ -1,0 +1,256 @@
+// app/lib/utils/medical-information.js
+
+const medicalHistoryTypes = require('../../data/medical-history-types')
+
+/**
+ * Summarise a single medical history item into a concise string
+ *
+ * @param {Object} item - The medical history item (must have medicalHistoryType property)
+ * @returns {string} A summary string like "Breast cancer (2016)" or "Implanted cardiac device (2018)"
+ */
+const summariseMedicalHistoryItem = (item) => {
+  if (!item || !item.medicalHistoryType) {
+    return ''
+  }
+
+  // Get the type name from the medical history types data
+  const typeData = medicalHistoryTypes.find(
+    (t) => t.type === item.medicalHistoryType
+  )
+  const typeName = typeData ? typeData.name : item.medicalHistoryType
+
+  // Build the summary based on type
+  let summary = typeName
+
+  // Add specific details for certain types
+  switch (item.medicalHistoryType) {
+    case 'implantedMedicalDevice':
+      // Format as "Implanted [device type]" instead of "Implanted medical device ([device type])"
+      if (item.type) {
+        const deviceType = Array.isArray(item.type) ? item.type[0] : item.type
+        // Keep proper nouns capitalised (Hickman line)
+        const formattedDeviceType = deviceType
+          .toLowerCase()
+          .replace('hickman', 'Hickman')
+        summary = `Implanted ${formattedDeviceType}`
+        if (item.year) {
+          summary += ` (${item.year}`
+          if (item.deviceRemoved === 'Yes' || item.yearRemoved) {
+            summary += `, removed`
+            if (item.yearRemoved) {
+              summary += ` ${item.yearRemoved}`
+            }
+          }
+          summary += ')'
+        } else if (item.deviceRemoved === 'Yes' || item.yearRemoved) {
+          summary += ' (removed'
+          if (item.yearRemoved) {
+            summary += ` ${item.yearRemoved}`
+          }
+          summary += ')'
+        }
+        return summary
+      }
+      break
+
+    case 'breastImplantsAugmentation':
+      // Be specific about what procedures were done
+      const rightProcedures = item.proceduresRightBreast || []
+      const leftProcedures = item.proceduresLeftBreast || []
+      const hasRightImplants =
+        rightProcedures.includes && rightProcedures.includes('Breast implants')
+      const hasLeftImplants =
+        leftProcedures.includes && leftProcedures.includes('Breast implants')
+      const hasRightAugmentation =
+        rightProcedures.includes &&
+        rightProcedures.includes('Other augmentation')
+      const hasLeftAugmentation =
+        leftProcedures.includes && leftProcedures.includes('Other augmentation')
+
+      let procedureType = ''
+      if (
+        (hasRightImplants || hasLeftImplants) &&
+        (hasRightAugmentation || hasLeftAugmentation)
+      ) {
+        procedureType = 'Breast implants and augmentation'
+      } else if (hasRightImplants || hasLeftImplants) {
+        procedureType = 'Breast implants'
+      } else if (hasRightAugmentation || hasLeftAugmentation) {
+        procedureType = 'Breast augmentation'
+      } else {
+        procedureType = typeName
+      }
+
+      summary = procedureType
+
+      // Check if implants were removed
+      if (item.implantsRemoved === 'Yes' || item.yearRemoved) {
+        if (item.year) {
+          summary += ` (${item.year}, removed`
+          if (item.yearRemoved) {
+            summary += ` ${item.yearRemoved}`
+          }
+          summary += ')'
+        } else {
+          summary += ' (removed'
+          if (item.yearRemoved) {
+            summary += ` ${item.yearRemoved}`
+          }
+          summary += ')'
+        }
+      } else if (item.year) {
+        summary += ` (${item.year})`
+      }
+      return summary
+
+    case 'mastectomyLumpectomy':
+      // Be specific about what procedures were done
+      const rightProc = item.proceduresRightBreast
+      const leftProc = item.proceduresLeftBreast
+      const hasRightMastectomy =
+        rightProc &&
+        (rightProc.includes('Mastectomy (tissue remaining)') ||
+          rightProc.includes('Mastectomy (no tissue remaining)'))
+      const hasLeftMastectomy =
+        leftProc &&
+        (leftProc.includes('Mastectomy (tissue remaining)') ||
+          leftProc.includes('Mastectomy (no tissue remaining)'))
+      const hasRightLumpectomy = rightProc && rightProc.includes('Lumpectomy')
+      const hasLeftLumpectomy = leftProc && leftProc.includes('Lumpectomy')
+
+      let procType = ''
+      if (
+        (hasRightMastectomy || hasLeftMastectomy) &&
+        (hasRightLumpectomy || hasLeftLumpectomy)
+      ) {
+        procType = 'Mastectomy and lumpectomy'
+      } else if (hasRightMastectomy || hasLeftMastectomy) {
+        procType = 'Mastectomy'
+      } else if (hasRightLumpectomy || hasLeftLumpectomy) {
+        procType = 'Lumpectomy'
+      } else {
+        procType = typeName
+      }
+
+      summary = procType
+      if (item.year) {
+        summary += ` (${item.year})`
+      }
+      return summary
+
+    case 'cysts':
+      // Display as "History of cysts"
+      summary = 'History of cysts'
+      return summary
+
+    case 'otherProcedures':
+      // Add procedure type if available
+      if (item.type) {
+        const procedureType = Array.isArray(item.type)
+          ? item.type[0]
+          : item.type
+        if (procedureType.startsWith('Other')) {
+          // Use the custom details if "Other" was selected
+          const details = item.typeOtherDetails || 'other procedure'
+          summary = `${typeName} (${details.toLowerCase()}`
+        } else {
+          summary = `${typeName} (${procedureType.toLowerCase()}`
+        }
+        if (item.year) {
+          summary += `, ${item.year}`
+        }
+        summary += ')'
+        return summary
+      }
+      break
+  }
+
+  // Default format: "Type (year)" or "Type (year unknown)" if no year
+  if (item.year) {
+    summary = `${typeName} (${item.year})`
+  } else {
+    summary = `${typeName} (year unknown)`
+  }
+
+  return summary
+}
+
+/**
+ * Summarise all medical history items into an array of summary strings
+ *
+ * @param {Object} medicalHistory - Object with medical history items grouped by type
+ * @returns {Array<string>} Array of summary strings
+ */
+const summariseMedicalHistory = (medicalHistory) => {
+  if (!medicalHistory) {
+    return []
+  }
+
+  const summaries = []
+
+  // Iterate through each medical history type
+  for (const items of Object.values(medicalHistory)) {
+    if (Array.isArray(items) && items.length > 0) {
+      // Summarise each item
+      items.forEach((item) => {
+        const summary = summariseMedicalHistoryItem(item)
+        if (summary) {
+          summaries.push(summary)
+        }
+      })
+    }
+  }
+
+  return summaries
+}
+
+/**
+ * Get all medical history items as a flat array
+ *
+ * @param {Object} medicalHistory - Object with medical history items grouped by type
+ * @returns {Array<Object>} Flat array of all medical history items
+ */
+const getMedicalHistoryItems = (medicalHistory) => {
+  if (!medicalHistory) {
+    return []
+  }
+
+  const items = []
+
+  for (const itemArray of Object.values(medicalHistory)) {
+    if (Array.isArray(itemArray) && itemArray.length > 0) {
+      items.push(...itemArray)
+    }
+  }
+
+  return items
+}
+
+/**
+ * Count total number of medical history items
+ *
+ * @param {Object} medicalHistory - Object with medical history items grouped by type
+ * @returns {number} Total count of medical history items
+ */
+const countMedicalHistoryItems = (medicalHistory) => {
+  if (!medicalHistory) {
+    return 0
+  }
+
+  let count = 0
+
+  for (const items of Object.values(medicalHistory)) {
+    if (Array.isArray(items)) {
+      count += items.length
+    }
+  }
+
+  return count
+}
+
+module.exports = {
+  summariseMedicalHistoryItem,
+  summariseMedicalHistory,
+  getMedicalHistoryItems,
+  countMedicalHistoryItems
+}
