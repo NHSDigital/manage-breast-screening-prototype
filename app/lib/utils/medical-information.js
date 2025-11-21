@@ -248,9 +248,130 @@ const countMedicalHistoryItems = (medicalHistory) => {
   return count
 }
 
+/**
+ * Summarise a single symptom into a concise string
+ *
+ * @param {Object} symptom - The symptom object
+ * @returns {string} A summary string like "Lump (right breast)" or "Nipple change: bloody discharge (both nipples)"
+ */
+const summariseSymptom = (symptom) => {
+  if (!symptom || !symptom.type) {
+    return ''
+  }
+
+  let summary = symptom.type
+
+  // Add sub-type details for specific symptom types
+  if (symptom.type === 'Nipple change' && symptom.nippleChangeType) {
+    const changeType =
+      symptom.nippleChangeType === 'other' && symptom.nippleChangeDescription
+        ? symptom.nippleChangeDescription
+        : symptom.nippleChangeType
+    summary += `: ${changeType}`
+  } else if (symptom.type === 'Skin change' && symptom.skinChangeType) {
+    const changeType =
+      symptom.skinChangeType === 'other' && symptom.skinChangeDescription
+        ? symptom.skinChangeDescription
+        : symptom.skinChangeType
+    summary += `: ${changeType}`
+  } else if (symptom.type === 'Other' && symptom.otherDescription) {
+    summary = symptom.otherDescription
+  }
+
+  // Add location
+  let location = ''
+  if (symptom.type === 'Nipple change' && symptom.nippleChangeLocation) {
+    // nippleChangeLocation is an array like ['right nipple'] or ['right nipple', 'left nipple']
+    if (
+      symptom.nippleChangeLocation.length === 2 ||
+      (symptom.nippleChangeLocation.length === 1 &&
+        symptom.nippleChangeLocation[0] === 'both nipples')
+    ) {
+      location = 'both nipples'
+    } else if (symptom.nippleChangeLocation.length === 1) {
+      location = symptom.nippleChangeLocation[0]
+    }
+  } else if (symptom.location) {
+    location = symptom.location
+  }
+
+  if (location) {
+    summary += ` (${location})`
+  }
+
+  return summary
+}
+
+/**
+ * Summarise all symptoms into an array of summary strings
+ *
+ * @param {Array} symptoms - Array of symptom objects
+ * @returns {Array<string>} Array of summary strings
+ */
+const summariseSymptoms = (symptoms) => {
+  if (!symptoms || !Array.isArray(symptoms) || symptoms.length === 0) {
+    return []
+  }
+
+  return symptoms.map((symptom) => summariseSymptom(symptom)).filter(Boolean)
+}
+
+/**
+ * Summarise a single breast feature into a concise string
+ *
+ * @param {Object} feature - The breast feature object
+ * @returns {string} A summary string like "Mole (left lower central)" or "Wart (right upper outer)"
+ */
+const summariseBreastFeature = (feature) => {
+  if (!feature || !feature.text) {
+    return ''
+  }
+
+  // Extract feature type from text (handles "Other: Description" format)
+  const featureType = feature.text
+
+  // Build location string
+  let location = ''
+  if (feature.side && feature.region) {
+    // Format: "side region" (e.g., "left lower central", "right upper outer")
+    if (feature.side === 'center') {
+      location = feature.region
+    } else {
+      location = `${feature.side} ${feature.region}`
+    }
+  }
+
+  // Combine feature type and location
+  if (location) {
+    return `${featureType} (${location})`
+  }
+
+  return featureType
+}
+
+/**
+ * Summarise all breast features into an array of summary strings
+ *
+ * @param {Array} features - Array of breast feature objects
+ * @returns {Array<string>} Array of summary strings
+ */
+const summariseBreastFeatures = (features) => {
+  if (!features || !Array.isArray(features) || features.length === 0) {
+    return []
+  }
+
+  return features
+    .map((feature) => summariseBreastFeature(feature))
+    .filter(Boolean)
+}
+
 module.exports = {
   summariseMedicalHistoryItem,
   summariseMedicalHistory,
   getMedicalHistoryItems,
-  countMedicalHistoryItems
+  countMedicalHistoryItems,
+  summariseSymptom,
+  summariseSymptoms,
+  summariseBreastFeature,
+  summariseBreastFeatures
 }
