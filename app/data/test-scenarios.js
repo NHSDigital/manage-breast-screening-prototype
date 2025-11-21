@@ -99,7 +99,13 @@ module.exports = [
           approximateTime: '11:30'
           // slotIndex: 20,
         },
-
+        workflowStatus: {
+          'appointment': 'started',
+          'confirm-identity': 'completed',
+          'review-medical-information': 'completed',
+          'awaiting-images': 'completed',
+          'take-images': 'completed'
+        },
         // Force 100% of all medical information types for testing
         medicalInformation: {
           probabilityOfSymptoms: 1.0,

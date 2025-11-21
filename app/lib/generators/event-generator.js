@@ -162,6 +162,11 @@ const generateEvent = ({
         .toISOString(),
       startedBy: randomUser.id
     }
+
+    // Add workflow status from participant config if provided
+    if (participant.config?.workflowStatus) {
+      eventBase.workflowStatus = participant.config.workflowStatus
+    }
   }
 
   if (!isPast && !forceInProgress && forceStatus !== 'event_in_progress') {

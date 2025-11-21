@@ -21,17 +21,155 @@
 {% set activeTab = 'review' %}
 
 
+
+
 {% block pageContent %}
 
-  <h1>{{ pageHeading }}</h1>
+{# ----------------- #}
 
-  {{ button({
-    text: "Complete screening and return to clinic"
+{% set condensedSummaries %}
+  {# Medical information summary card #}
+  {% set medicalInfoSummaryHtml %}
+    
+    {# Count medical history items #}
+    {% set medicalHistoryCount = event.medicalInformation.medicalHistory | countMedicalHistoryItems %}
+
+    {# Get medical history summaries #}
+    {% set medicalHistorySummaries = event.medicalInformation.medicalHistory | summariseMedicalHistory %}
+
+    {# Build medical history HTML #}
+    {% set medicalHistoryHtml %}
+      {% if medicalHistoryCount == 0 %}
+        <p>No medical history added</p>
+      {% elif medicalHistoryCount == 1 %}
+        <p>{{ medicalHistorySummaries[0] }}</p>
+      {% else %}
+        <ul class="nhsuk-list _nhsuk-list--bullet">
+          {% for summary in medicalHistorySummaries %}
+            <li>{{ summary }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endset %}
+
+    {# Count symptoms #}
+    {% set symptomsCount = event.medicalInformation.symptoms | length %}
+
+    {# Count breast features #}
+    {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
+    {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+    {% set breastFeaturesCount = breastFeatures | length %}
+
+    {# Count additional mammograms #}
+    {% set additionalMammogramsCount = event.previousMammograms | length %}
+
+    {{ summaryList({
+      rows: [
+        {
+          key: {
+            text: "Previous mammograms"
+          },
+          value: {
+            text: "No additional mammograms added" if additionalMammogramsCount == 0 else (additionalMammogramsCount + " additional " + ("mammogram" | pluralise(additionalMammogramsCount)) + " added")
+          },
+          actions: {
+            items: [
+              {
+                href: ("./previous-mammograms/add" if additionalMammogramsCount == 0 else "./review-medical-information#mammogram-history") | urlWithReferrer(currentUrl),
+                text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
+                visuallyHiddenText: "previous mammograms"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Medical history"
+          },
+          value: {
+            html: medicalHistoryHtml
+          },
+          actions: {
+            items: [
+              {
+                href: ("./medical-information/medical-history/type" if medicalHistoryCount == 0 else "./review-medical-information#medical-history") | urlWithReferrer(currentUrl),
+                text: "Add medical history" if medicalHistoryCount == 0 else "View or change",
+                visuallyHiddenText: "medical history"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Symptoms"
+          },
+          value: {
+            text: "No symptoms recorded" if symptomsCount == 0 else (symptomsCount + " " + ("symptom" | pluralise(symptomsCount)) + " recorded")
+          },
+          actions: {
+            items: [
+              {
+                href: ("./medical-information/symptoms/add" if symptomsCount == 0 else "./review-medical-information#symptoms") | urlWithReferrer(currentUrl),
+                text: "Add symptoms" if symptomsCount == 0 else "View or change",
+                visuallyHiddenText: "symptoms"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Breast features"
+          },
+          value: {
+            text: "No breast features recorded" if breastFeaturesCount == 0 else (breastFeaturesCount + " breast " + ("feature" | pluralise(breastFeaturesCount)) + " recorded")
+          },
+          actions: {
+            items: [
+              {
+                href: ("./medical-information/record-breast-features" if breastFeaturesCount == 0 else "./review-medical-information#breast-features") | urlWithReferrer(currentUrl),
+                text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
+                visuallyHiddenText: "breast features"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Other relevant information"
+          },
+          value: {
+            text: "No other information added"
+          },
+          actions: {
+            items: [
+              {
+                href: ("./review-medical-information#other-relevant-information") | urlWithReferrer(currentUrl),
+                text: "View or change",
+                visuallyHiddenText: "other relevant information"
+              }
+            ]
+          }
+        }
+      ]
+    }) }}
+  {% endset %}
+
+  {{ card({
+    heading: "Medical information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalInfoSummaryHtml
   }) }}
+{% endset %}
+
+
+{% set nonCondensedSummaries %}
+
+  
 
   {% set medicalHistoryHtml %}
-  {% include "medical-information/medical-history/index.njk" %}
-{% endset %}
+    {% include "medical-information/medical-history/index.njk" %}
+  {% endset %}
   {# Medical history card #}
   {{ card({
     heading: "Medical history",
@@ -40,6 +178,17 @@
     descriptionHtml: medicalHistoryHtml
   }) }}
 
+  {# Symptoms card #}
+  {% set symptomsCardContent %}
+    {% include "_includes/medical-information/symptoms-card-content.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Symptoms",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: symptomsCardContent
+  }) }}
 
   {# Breast features card #}
 
@@ -53,6 +202,70 @@
     feature: true,
     descriptionHtml: breastFeaturesHtml
   }) }}
+
+  {# Other relevant information card #}
+  {% set otherRelevantInformationHtml %}
+    {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Other relevant medical information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: otherRelevantInformationHtml
+  }) }}
+
+{% endset %}
+
+
+
+{# ----------------- #}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {{ button({
+    text: "Complete screening and return to clinic"
+  }) }}
+
+  {# Personal information #}
+  {% set participantDetailsHtml %}
+    {% call summaryList() %}
+      
+      {{ appSummaryListRow({
+        key: {
+          text: "Personal information"
+        },
+        value: {
+          html: "No changes"
+        },
+        actions: {
+          items: [
+            {
+              href: contextUrl + "/personal-details" | urlWithReferrer(referrerChain),
+              text: "View or change",
+              visuallyHiddenText: "personal information"
+            } if allowEdits
+          ]
+        }
+      }) }}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {{ card({
+    heading: "Personal information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: participantDetailsHtml
+  }) }}
+
+  {{ data.settings | log("Settings in review page:") }}
+
+  {% if data.settings.screening.useCondensedReviewSummaries == 'true' %}
+    {{ condensedSummaries | safe }}
+  {% else %}
+    {{ nonCondensedSummaries | safe }}
+  {% endif %}
 
 
   {# Image card #}

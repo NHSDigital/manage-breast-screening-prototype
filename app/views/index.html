@@ -35,11 +35,18 @@
 
 <h2>Screening appointment</h2>
 
+{# Janet Williams #}
 {% set eventId = "5gpn41oi" %}
+
+{# Diana McIntosh #}
+{% set almostCompleteAppointment = "0gdof6fh" %}
 
 {% set makeActiveAppointment -%}?event[workflowStatus][appointment]=started{%- endset %}
 
 {% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+
+
+
 {% set startUrl = exampleParticipant + "/start" %}
 
 <h3>Appointment pages</h3>
@@ -134,12 +141,16 @@
   <li>
     <a href="{{ startUrl }}?returnTo=review&{{ completedSections }}">Review</a>
   </li>
+  <li>
+    <a href="/clinics/wtrl7jud/events/{{ almostCompleteAppointment }}/start?returnTo=review">Review (Diana, fully populated)</a>
+  </li>
   
 </ul>
 
 
 <h2>Completed screening appointment</h2>
 
+{# Angelina Renner #}
 {% set eventId = "1fefyh1q" %}
 
 {% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}

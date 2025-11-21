@@ -130,53 +130,14 @@
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
-{% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-{% set hasSymptoms = symptomsCount > 0 %}
-
-{% set symptomsContentsSummaryText %}
-  {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
-{% endset %}
-
-{% set currentSymptomsHtml %}
-  {% include "summary-lists/medical-information/symptoms/summary.njk" %}
-
-  {% if not hasSymptoms %}
-    {% set insetHtml %}
-      <p>No symptoms have been recorded for this participant.</p>
-    {% endset %}
-    {{ insetText({
-      html: insetHtml
-    }) }}
-  {% endif %}
-
-  {% set linkHref %}
-    {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
-  {% endset %}
-
-  {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
-    <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
-  </p> #}
-
-  {% if allowEdits %}
-    <h4>Add symptoms</h4>
-
-    <div class="nhsuk-button-group app-button-group--small">
-      {% for symptomType in data.symptomTypes %}
-        {{ button({
-          text: symptomType.name | sentenceCase,
-          href: ("./medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
-          classes: "nhsuk-button--secondary app-button--small"
-        }) }}
-      {% endfor %}
-    </div>
-  {% endif %}
-  
+{% set symptomsCardContent %}
+  {% include "_includes/medical-information/symptoms-card-content.njk" %}
 {% endset %}
 
 {% switch displayFormat %}
   {% case 'flat' %}
     <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
-    {{ currentSymptomsHtml | safe }}
+    {{ symptomsCardContent | safe }}
   {% case 'card' %}
     {% call card({
       heading: sectionHeading,
@@ -187,7 +148,7 @@
       <p>
         {{ subHeading }}
       </p>
-      {{ currentSymptomsHtml | safe }}
+      {{ symptomsCardContent | safe }}
     {% endcall %}
   {% default %}
     {{ appDetails({
@@ -196,7 +157,7 @@
       summaryText: sectionHeading,
       subtitle: subHeading,
       contentsSummary: symptomsContentsSummaryText,
-      html: currentSymptomsHtml,
+      html: symptomsCardContent,
       status: "To review"
     }) }}
 {% endswitch %}
@@ -212,10 +173,6 @@
 {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
 {% set breastFeaturesCount = breastFeatures | length %}
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
-
-{% set addBreastFeatureHref %}
-  {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
-{% endset %}
 
 {% set breastFeaturesContentsSummaryText %}
   {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
