@@ -1,7 +1,7 @@
 {% extends 'layout-appointment.html' %}
 
 
-{% set pageHeading = "Review" %}
+{% set pageHeading = "Check information" %}
 {% set showNavigation = true %}
 {% set activeWorkflowStep = 'review' %}
 {% set hideBackLink = true %}
@@ -278,9 +278,13 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  {{ button({
+  
+
+  {# <h2>Summary of appointment record</h2> #}
+
+  {# {{ button({
     text: "Complete screening and return to clinic"
-  }) }}
+  }) }} #}
 
   {# Personal information #}
   {% set participantDetailsHtml %}
@@ -322,8 +326,8 @@
     {{ nonCondensedSummaries | safe }}
   {% endif %}
 
-
-  {# Image card #}
+  {# <h2>Image summary</h2> #}
+    {# Image card #}
   {% set imageCount = event.mammogramData.metadata.totalImages %}
   {% set imagesCardHtml %}
     {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
@@ -335,6 +339,7 @@
     feature: true,
     descriptionHtml: imagesCardHtml
   }) }}
+
 
   {% set otherDetailsCardHtml %}
 
