@@ -92,7 +92,8 @@ module.exports = [
       config: {
         eventId: '0gdof6fh',
         defaultRiskLevel: 'routine',
-        missingViews: [], // ensure all views are present
+        repeatViews: [],
+        missingViews: [],
         scheduling: {
           whenRelativeToToday: 0,
           status: 'event_in_progress',

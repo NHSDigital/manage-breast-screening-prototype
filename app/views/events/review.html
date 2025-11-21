@@ -85,7 +85,7 @@
     {% set breastFeaturesHtml %}
       {% if breastFeaturesCount == 0 %}
         <p>No breast features recorded</p>
-      {% elif breastFeaturesCount == 1 %}
+      {% elseif breastFeaturesCount == 1 %}
         <p>{{ breastFeatureSummaries[0] }}</p>
       {% else %}
         <ul class="nhsuk-list _nhsuk-list--bullet">
@@ -98,6 +98,25 @@
 
     {# Count additional mammograms #}
     {% set additionalMammogramsCount = event.previousMammograms | length %}
+
+    {# Get other relevant information summaries #}
+    {% set otherRelevantInfoSummaries = event.medicalInformation | summariseOtherRelevantInformation %}
+    {% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
+
+    {# Build other relevant information HTML #}
+    {% set otherRelevantInfoHtml %}
+      {% if otherRelevantInfoCount == 0 %}
+        <p>No other information added</p>
+      {% elif otherRelevantInfoCount == 1 %}
+        <p>{{ otherRelevantInfoSummaries[0] }}</p>
+      {% else %}
+        <ul class="nhsuk-list _nhsuk-list--bullet">
+          {% for summary in otherRelevantInfoSummaries %}
+            <li>{{ summary }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endset %}
 
     {{ summaryList({
       rows: [
@@ -174,7 +193,7 @@
             text: "Other relevant information"
           },
           value: {
-            text: "No other information added"
+            html: otherRelevantInfoHtml
           },
           actions: {
             items: [

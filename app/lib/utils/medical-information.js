@@ -365,6 +365,88 @@ const summariseBreastFeatures = (features) => {
     .filter(Boolean)
 }
 
+/**
+ * Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info)
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from event
+ * @returns {Array<string>} Array of summary strings
+ */
+const summariseOtherRelevantInformation = (medicalInformation) => {
+  if (!medicalInformation) {
+    return []
+  }
+
+  const summaries = []
+
+  // HRT summary
+  const hrt = medicalInformation.hrt
+  if (hrt) {
+    if (hrt.hrtQuestion === 'yes') {
+      summaries.push(
+        `Taking HRT (${hrt.hrtDuration || 'duration not specified'})`
+      )
+    } else if (hrt.hrtQuestion === 'no-recently-stopped') {
+      if (hrt.hrtDurationSinceStopped) {
+        summaries.push(`Recently stopped HRT (${hrt.hrtDurationSinceStopped})`)
+      } else {
+        summaries.push('Recently stopped HRT')
+      }
+    }
+    // Don't add anything for 'no' - that's the default/negative state
+  }
+
+  // Pregnancy and breastfeeding summary
+  const pregBf = medicalInformation.pregnancyAndBreastfeeding
+  if (pregBf) {
+    // Pregnancy
+    if (pregBf.pregnancyStatus === 'yes') {
+      if (pregBf.currentlyPregnantDetails) {
+        summaries.push(`Pregnant (${pregBf.currentlyPregnantDetails})`)
+      } else {
+        summaries.push('Pregnant')
+      }
+    } else if (pregBf.pregnancyStatus === 'noButRecently') {
+      if (pregBf.recentlyPregnantDetails) {
+        summaries.push(`Recently pregnant (${pregBf.recentlyPregnantDetails})`)
+      } else {
+        summaries.push('Recently pregnant')
+      }
+    }
+
+    // Breastfeeding
+    if (pregBf.breastfeedingStatus === 'yes') {
+      if (pregBf.currentlyBreastfeedingDuration) {
+        summaries.push(
+          `Breastfeeding (${pregBf.currentlyBreastfeedingDuration})`
+        )
+      } else {
+        summaries.push('Breastfeeding')
+      }
+    } else if (pregBf.breastfeedingStatus === 'recentlyStopped') {
+      if (pregBf.recentlyBreastfeedingDuration) {
+        summaries.push(
+          `Recently breastfeeding (stopped ${pregBf.recentlyBreastfeedingDuration})`
+        )
+      } else {
+        summaries.push('Recently breastfeeding')
+      }
+    }
+  }
+
+  // Other medical information (free text)
+  if (medicalInformation.otherMedicalInformation) {
+    // Truncate if very long, otherwise show as-is
+    const otherInfo = medicalInformation.otherMedicalInformation.trim()
+    if (otherInfo.length > 100) {
+      summaries.push(otherInfo.substring(0, 100) + '...')
+    } else {
+      summaries.push(otherInfo)
+    }
+  }
+
+  return summaries
+}
+
 module.exports = {
   summariseMedicalHistoryItem,
   summariseMedicalHistory,
@@ -373,5 +455,6 @@ module.exports = {
   summariseSymptom,
   summariseSymptoms,
   summariseBreastFeature,
-  summariseBreastFeatures
+  summariseBreastFeatures,
+  summariseOtherRelevantInformation
 }

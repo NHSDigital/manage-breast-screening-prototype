@@ -280,6 +280,15 @@ const generateEvent = ({
       if (Object.keys(medicalInformation).length > 0) {
         event.medicalInformation = medicalInformation
       }
+
+      // Generate mammogram images if workflow indicates images have been taken
+      if (event.workflowStatus?.['take-images'] === 'completed') {
+        event.mammogramData = generateMammogramImages({
+          startTime: dayjs(event.sessionDetails.startedAt),
+          isSeedData: true,
+          config: participant.config
+        })
+      }
     }
 
     // Add session details for attended-not-screened events
