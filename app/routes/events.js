@@ -1060,6 +1060,41 @@ module.exports = (router) => {
     return item ? item.type : null
   }
 
+  // Select medical history type - choose which type to add
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/select',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const typeSlug = data.medicalHistoryTypeSlug
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
+
+      // Validate type
+      if (!typeSlug || !isValidMedicalHistoryType(typeSlug)) {
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/type`,
+            referrerChain,
+            scrollTo
+          )
+        )
+      }
+
+      // Clear the type selection from session
+      delete data.medicalHistoryTypeSlug
+
+      // Redirect to add page for this type
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${typeSlug}/add`,
+          referrerChain,
+          scrollTo
+        )
+      )
+    }
+  )
+
   // Add new medical history item - clear temp data and redirect to form
   router.get(
     '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add',

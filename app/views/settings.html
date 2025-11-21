@@ -57,6 +57,11 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]={{'true' if data.settings.screening.manualImageCollection !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.screening.manualImageCollection=='false' else 'Disable'}} manual image collection</a>
     </p>
 
+    {# Use condensed review summaries #}
+    <p>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][useCondensedReviewSummaries]={{'true' if data.settings.screening.useCondensedReviewSummaries !== 'true' else 'false'}}&clearQuery=true">{{ 'Use condensed review summaries' if data.settings.screening.useCondensedReviewSummaries=='false' else 'Do not use condensed review summaries'}}</a>
+    </p>
+
     {# Show participant section #}
     <p>
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][showParticipantSection]={{'true' if data.settings.screening.showParticipantSection !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.screening.showParticipantSection=='false' else 'Hide'}} participant section</a>

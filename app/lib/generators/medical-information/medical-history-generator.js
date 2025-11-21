@@ -119,6 +119,7 @@ const generateBreastCancerItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'breastCancer',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }
@@ -306,6 +307,7 @@ const generateBreastImplantsItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'breastImplantsAugmentation',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }
@@ -373,6 +375,7 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'mastectomyLumpectomy',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }
@@ -467,6 +470,7 @@ const generateImplantedDeviceItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'implantedMedicalDevice',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }
@@ -518,6 +522,7 @@ const generateCystsItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'cysts',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }
@@ -558,6 +563,7 @@ const generateBenignLumpsItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'benignLumps',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }
@@ -692,6 +698,7 @@ const generateOtherProceduresItem = (options = {}) => {
 
   const item = {
     id: generateId(),
+    medicalHistoryType: 'otherProcedures',
     dateAdded: new Date().toISOString(),
     addedBy: addedByUserId || null
   }

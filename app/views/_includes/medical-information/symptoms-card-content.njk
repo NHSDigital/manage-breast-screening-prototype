@@ -1,0 +1,43 @@
+
+{% set scrollTo = sectionId %}
+
+{% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+{% set hasSymptoms = symptomsCount > 0 %}
+
+{% set symptomsContentsSummaryText %}
+  {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
+{% endset %}
+
+
+{% include "summary-lists/medical-information/symptoms/summary.njk" %}
+
+{% if not hasSymptoms %}
+  {% set insetHtml %}
+    <p>No symptoms have been recorded for this participant.</p>
+  {% endset %}
+  {{ insetText({
+    html: insetHtml
+  }) }}
+{% endif %}
+
+{% set linkHref %}
+  {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
+{% endset %}
+
+{# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
+  <a href="{{ linkHref }}" class="nhsuk-link">{{ "Add another symptom" if hasSymptoms else "Add a symptom" }}</a>
+</p> #}
+
+{% if allowEdits %}
+  <h4>Add symptoms</h4>
+
+  <div class="nhsuk-button-group app-button-group--small">
+    {% for symptomType in data.symptomTypes %}
+      {{ button({
+        text: symptomType.name | sentenceCase,
+        href: ("./medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
+        classes: "nhsuk-button--secondary app-button--small"
+      }) }}
+    {% endfor %}
+  </div>
+{% endif %}

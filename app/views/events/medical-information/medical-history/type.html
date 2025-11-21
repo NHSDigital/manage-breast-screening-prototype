@@ -1,0 +1,42 @@
+{# app/views/events/medical-information/medical-history/type.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "What type of medical history are you adding?" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './select' | urlWithReferrer(referrerChain, query.scrollTo) %}
+
+{% block pageContent %}
+
+  {% set radioItems = [] %}
+
+  {% for historyType in data.medicalHistoryTypes %}
+    {% set radioItems = radioItems | push({
+      value: historyType.slug,
+      text: historyType.name
+    }) %}
+  {% endfor %}
+
+  {{ radios({
+    name: "medicalHistoryTypeSlug",
+    idPrefix: "type",
+    value: data.medicalHistoryTypeSlug,
+    fieldset: {
+      legend: {
+        text: pageHeading,
+        classes: "nhsuk-fieldset__legend--l",
+        isPageHeading: true
+      }
+    },
+    items: radioItems
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+  {% include "screening-cannot-proceed-link.njk" %}
+
+{% endblock %}
