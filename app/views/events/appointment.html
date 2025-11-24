@@ -20,7 +20,7 @@
   {% set statusHtml %}
     {# Status tag with check-in link #}
     {% if event.status === "event_rescheduled" %}
-      <strong class="nhsuk-tag nhsuk-tag--blue">Requested to reschedule appointment</strong>
+      <strong class="nhsuk-tag nhsuk-tag--red">Reschedule requested</strong>
     {% else %}
       {{ eventStatus({
         clinicId: clinicId,
@@ -61,7 +61,7 @@
 
     {% if event.status === "event_rescheduled" and event.reschedule %}
       <p class="nhsuk-u-margin-top-2">
-        Requested to reschedule details: {% if event.cancellation and event.cancellation.reason -%}
+        Reschedule requested details: {% if event.cancellation and event.cancellation.reason -%}
           {% for reason in event.cancellation.reason -%}
             {{ reason }}
             {%- if reason === "Not available to attend" and event.cancellation.availabilityDetails %} ({{ event.cancellation.availabilityDetails }})
@@ -81,6 +81,8 @@
         {%- endif -%}
         {%- if event.reschedule.timing === "within-6-weeks" %} A request to reschedule within six weeks has been recorded.
         {%- elif event.reschedule.timing === "more-than-6-weeks" %} A request to reschedule for more than six weeks away has been recorded.
+        {%- endif -%}
+        {%- if event.reschedule.note %} Reschedule note: {{ event.reschedule.note }}
         {%- endif %}
       </p>
     {% endif %}

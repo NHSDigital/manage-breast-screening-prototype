@@ -175,7 +175,7 @@ const getStatusTagColour = (status) => {
     'event_partially_screened': 'orange',
     'event_did_not_attend': 'red',
     'event_cancelled': 'red',
-    'event_rescheduled': 'yellow',
+    'event_rescheduled': 'red',
     'event_attended_not_screened': 'orange',
 
     // Task list
@@ -256,7 +256,7 @@ const getStatusText = (status) => {
     event_did_not_attend: 'Did not attend',
     event_attended_not_screened: 'Attended not screened',
     event_cancelled: 'Cancelled',
-    event_rescheduled: 'Request to reschedule appointment'
+    event_rescheduled: 'Reschedule requested'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',
