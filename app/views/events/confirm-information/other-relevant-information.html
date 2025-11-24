@@ -1,0 +1,47 @@
+{# app/views/events/confirm-information/other-relevant-information.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Review other relevant information" %}
+{% set showNavigation = false %}
+{% set activeWorkflowStep = 'review' %}
+{% set hideBackLink = true %}
+
+{% set allowEdits = true %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set scrollTo = "other-relevant-information" %}
+
+{% block pageContent %}
+
+  {# TODO: Ideally this would be before the main element #}
+  {{ backLink({
+    href: "javascript:history.back();",
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {# Include the full other relevant information summary in a feature card #}
+  {% set otherRelevantInformationHtml %}
+    {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Other relevant medical information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: otherRelevantInformationHtml
+  }) }}
+
+  {# Continue button back to review #}
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Confirm",
+      href: "../review" | urlWithReferrer(referrerChain)
+    }) }}
+  </div>
+
+{% endblock %}

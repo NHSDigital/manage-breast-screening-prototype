@@ -21,7 +21,7 @@
 {% endif %}
 
 {% set linkHref %}
-  {{ "./medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
+  {{ contextUrl + "/medical-information/symptoms/add" | urlWithReferrer(currentUrl, scrollTo) }}
 {% endset %}
 
 {# <p class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
@@ -35,7 +35,7 @@
     {% for symptomType in data.symptomTypes %}
       {{ button({
         text: symptomType.name | sentenceCase,
-        href: ("./medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
+        href: (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
         classes: "nhsuk-button--secondary app-button--small"
       }) }}
     {% endfor %}

@@ -1,7 +1,7 @@
 {% extends 'layout-appointment.html' %}
 
 
-{% set pageHeading = "Check information" %}
+{% set pageHeading = "Review" %}
 {% set showNavigation = true %}
 {% set activeWorkflowStep = 'review' %}
 {% set hideBackLink = true %}
@@ -52,6 +52,9 @@
       {% endif %}
     {% endset %}
 
+    {# Build referrer chain for add journey: confirmation -> review #}
+    {% set medicalHistoryAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/medical-history") %}
+
     {# Count symptoms #}
     {% set symptomsCount = event.medicalInformation.symptoms | length %}
 
@@ -72,6 +75,9 @@
         </ul>
       {% endif %}
     {% endset %}
+
+    {# Build referrer chain for add journey: confirmation -> review #}
+    {% set symptomsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/symptoms") %}
 
     {# Count breast features #}
     {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
@@ -96,8 +102,14 @@
       {% endif %}
     {% endset %}
 
+    {# Build referrer chain for add journey: confirmation -> review #}
+    {% set breastFeaturesAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/breast-features") %}
+
     {# Count additional mammograms #}
     {% set additionalMammogramsCount = event.previousMammograms | length %}
+
+    {# Build referrer chain for add journey: confirmation -> review #}
+    {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
     {# Get other relevant information summaries #}
     {% set otherRelevantInfoSummaries = event.medicalInformation | summariseOtherRelevantInformation %}
@@ -130,7 +142,7 @@
           actions: {
             items: [
               {
-                href: ("./previous-mammograms/add" if additionalMammogramsCount == 0 else "./review-medical-information?scrollTo=mammogram-history") | urlWithReferrer(currentUrl),
+                href: ("./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain) if additionalMammogramsCount == 0 else "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl)),
                 text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
                 visuallyHiddenText: "previous mammograms"
               }
@@ -147,7 +159,7 @@
           actions: {
             items: [
               {
-                href: ("./medical-information/medical-history/type" if medicalHistoryCount == 0 else "./review-medical-information?scrollTo=medical-history") | urlWithReferrer(currentUrl),
+                href: ("./medical-information/medical-history/type" | urlWithReferrer(medicalHistoryAddReferrerChain) if medicalHistoryCount == 0 else "./confirm-information/medical-history" | urlWithReferrer(currentUrl)),
                 text: "Add medical history" if medicalHistoryCount == 0 else "View or change",
                 visuallyHiddenText: "medical history"
               }
@@ -164,7 +176,7 @@
           actions: {
             items: [
               {
-                href: ("./medical-information/symptoms/add" if symptomsCount == 0 else "./review-medical-information?scrollTo=symptoms") | urlWithReferrer(currentUrl),
+                href: ("./medical-information/symptoms/add" | urlWithReferrer(symptomsAddReferrerChain) if symptomsCount == 0 else "./confirm-information/symptoms" | urlWithReferrer(currentUrl)),
                 text: "Add symptoms" if symptomsCount == 0 else "View or change",
                 visuallyHiddenText: "symptoms"
               }
@@ -181,7 +193,7 @@
           actions: {
             items: [
               {
-                href: ("./medical-information/record-breast-features" if breastFeaturesCount == 0 else "./review-medical-information?scrollTo=breast-features") | urlWithReferrer(currentUrl),
+                href: ("./medical-information/record-breast-features" | urlWithReferrer(breastFeaturesAddReferrerChain) if breastFeaturesCount == 0 else "./confirm-information/breast-features" | urlWithReferrer(currentUrl)),
                 text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
                 visuallyHiddenText: "breast features"
               }
@@ -198,7 +210,7 @@
           actions: {
             items: [
               {
-                href: ("./review-medical-information?scrollTo=other-relevant-information") | urlWithReferrer(currentUrl),
+                href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
                 text: "View or change",
                 visuallyHiddenText: "other relevant information"
               }
@@ -278,13 +290,9 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  
-
-  {# <h2>Summary of appointment record</h2> #}
-
-  {# {{ button({
+  {{ button({
     text: "Complete screening and return to clinic"
-  }) }} #}
+  }) }}
 
   {# Personal information #}
   {% set participantDetailsHtml %}
@@ -326,8 +334,8 @@
     {{ nonCondensedSummaries | safe }}
   {% endif %}
 
-  {# <h2>Image summary</h2> #}
-    {# Image card #}
+
+  {# Image card #}
   {% set imageCount = event.mammogramData.metadata.totalImages %}
   {% set imagesCardHtml %}
     {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
@@ -339,7 +347,6 @@
     feature: true,
     descriptionHtml: imagesCardHtml
   }) }}
-
 
   {% set otherDetailsCardHtml %}
 

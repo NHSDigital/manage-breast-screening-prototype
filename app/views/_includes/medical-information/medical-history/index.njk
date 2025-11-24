@@ -70,7 +70,7 @@
 
     {% for historyItem in historyItemArray %}
 
-      {% set changeHref = "./medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
+      {% set changeHref = contextUrl + "/medical-information/medical-history/" + typeData.slug + "/edit/" + historyItem.id | urlWithReferrer(currentUrl, scrollTo) %}
 
       {# Attribution text #}
       {% set addedByText %}
@@ -611,7 +611,7 @@
       {% if typeData.canHaveMultiple %}
         {{ button({
           text: typeData.name,
-          href: "./medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
+          href: contextUrl + "/medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(currentUrl, scrollTo),
           classes: "nhsuk-button--secondary app-button--small"
         }) }}
      {% endif %}
