@@ -18,7 +18,7 @@
   { id: 'confirm-identity', label: 'Confirm identity' },
   { id: 'review-medical-information', label: 'Review medical information' },
   { id: 'take-images', label: 'Take images' },
-  { id: 'review', label: 'Review' }
+  { id: 'check-information', label: 'Check information' }
 ] %}
 
 <div class="app-workflow-side-nav-wrapper">
@@ -48,7 +48,7 @@
             {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted) %}
           {% endif %}
 
-          {% if item.id == 'review' %}
+          {% if item.id == 'check-information' %}
             {% set isDisabled = not (identityStageCompleted and medicalInformationStageCompleted and imagesStageCompleted) %}
           {% endif %}
         {% endif %}

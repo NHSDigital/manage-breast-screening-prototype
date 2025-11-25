@@ -1514,8 +1514,8 @@ module.exports = (router) => {
       // Mark the workflow step as completed regardless of partial mammography status
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to review page
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      // Redirect to check information page
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 
@@ -1902,8 +1902,10 @@ module.exports = (router) => {
         }
         data.event.workflowStatus['take-images'] = 'completed'
 
-        // Redirect to review
-        return res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+        // Redirect to check information
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/check-information`
+        )
       }
 
       // If custom details needed, go to details page
@@ -2013,8 +2015,8 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to review
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      // Redirect to check information
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 
@@ -2072,8 +2074,8 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to review
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      // Redirect to check information
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 

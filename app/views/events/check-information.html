@@ -1,9 +1,9 @@
 {% extends 'layout-appointment.html' %}
 
 
-{% set pageHeading = "Review" %}
+{% set pageHeading = "Check information" %}
 {% set showNavigation = true %}
-{% set activeWorkflowStep = 'review' %}
+{% set activeWorkflowStep = 'check-information' %}
 {% set hideBackLink = true %}
 
 {% set allowEdits = true %}
@@ -287,9 +287,12 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  {{ button({
+  <p class="nhsuk-u-reading-width">
+    Before concluding this appointment, confirm that the information recorded is correct.
+  </p>
+  {# {{ button({
     text: "Complete screening and return to clinic"
-  }) }}
+  }) }} #}
 
   {# Personal information #}
   {% set participantDetailsHtml %}

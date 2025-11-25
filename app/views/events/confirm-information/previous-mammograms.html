@@ -4,7 +4,7 @@
 
 {% set pageHeading = "Review previous mammograms" %}
 {% set showNavigation = false %}
-{% set activeWorkflowStep = 'review' %}
+{% set activeWorkflowStep = 'check-information' %}
 {% set hideBackLink = true %}
 
 {% set allowEdits = true %}
@@ -36,11 +36,11 @@
     descriptionHtml: previousMammogramsHtml
   }) }}
 
-  {# Continue button back to review #}
+  {# Continue button back to check information #}
   <div class="nhsuk-form-group">
     {{ button({
       text: "Confirm",
-      href: "../review" | urlWithReferrer(referrerChain)
+      href: "../check-information" | urlWithReferrer(referrerChain)
     }) }}
   </div>
 
