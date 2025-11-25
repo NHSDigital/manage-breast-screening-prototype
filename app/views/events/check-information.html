@@ -356,12 +356,7 @@
           text: "Special appointment",
           classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
         })}}
-        <ul class="nhsuk-list nhsuk-list--bullet">
-          {# ToDO: pull in special appointment needs here #}
-          {# {% for need in participant.extraNeeds %}
-            <li>{{need}}</li>
-          {% endfor %} #}
-        </ul>
+        {% include "_includes/special-appointment-content.njk" %}
       {% else %}
         <p>No</p>
       {% endif %}
