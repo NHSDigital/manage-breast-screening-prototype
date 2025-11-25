@@ -32,15 +32,16 @@
     },
     items: [
       {
-        value: "Unable to attend",
-        text: "Unable to attend",
+        value: "Availability to attend",
+        text: "Availability to attend",
         conditional: {
           html: input({
             name: "event[cancellation][availabilityDetails]",
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.availabilityDetails
+            value: data.event.cancellation.availabilityDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -53,7 +54,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.movingDetails
+            value: data.event.cancellation.movingDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -66,7 +68,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.implantDetails
+            value: data.event.cancellation.implantDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -79,7 +82,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.mastectomyDetails
+            value: data.event.cancellation.mastectomyDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -92,7 +96,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.mammogramDetails
+            value: data.event.cancellation.mammogramDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -105,7 +110,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.medicalDetails
+            value: data.event.cancellation.medicalDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -118,7 +124,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.symptomaticDetails
+            value: data.event.cancellation.symptomaticDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -131,7 +138,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.mammographerDetails
+            value: data.event.cancellation.mammographerDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -144,7 +152,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.mammogramRoomDetails
+            value: data.event.cancellation.mammogramRoomDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -157,7 +166,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.technicalDetails
+            value: data.event.cancellation.technicalDetails,
+            autocomplete: "off"
           })
         }
       },
@@ -173,7 +183,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.otherReasonDetails
+            value: data.event.cancellation.otherReasonDetails,
+            autocomplete: "off"
           })
         }
       }
@@ -214,7 +225,8 @@
             label: {
               text: "Provide details"
             },
-            value: data.event.cancellation.optOutDetails
+            value: data.event.cancellation.optOutDetails,
+            autocomplete: "off"
           })
         }
       }
