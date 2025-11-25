@@ -102,9 +102,6 @@
       {% endif %}
     {% endset %}
 
-    {# Build referrer chain for add journey: confirmation -> review #}
-    {% set breastFeaturesAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/breast-features") %}
-
     {# Count additional mammograms #}
     {% set additionalMammogramsCount = event.previousMammograms | length %}
 
@@ -193,7 +190,7 @@
           actions: {
             items: [
               {
-                href: ("./medical-information/record-breast-features" | urlWithReferrer(breastFeaturesAddReferrerChain) if breastFeaturesCount == 0 else "./confirm-information/breast-features" | urlWithReferrer(currentUrl)),
+                href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
                 text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
                 visuallyHiddenText: "breast features"
               }
@@ -308,7 +305,7 @@
         actions: {
           items: [
             {
-              href: contextUrl + "/personal-details" | urlWithReferrer(referrerChain),
+              href: "./confirm-information/personal-details" | urlWithReferrer(currentUrl),
               text: "View or change",
               visuallyHiddenText: "personal information"
             } if allowEdits
