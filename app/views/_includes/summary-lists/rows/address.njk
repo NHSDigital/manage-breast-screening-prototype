@@ -14,11 +14,12 @@
 {% set addressHtml %}
   {{ addressLines | join("<br>") | safe }}
 
-  {{ details({
+  {# Address history hidden temporarily until we decide we need it #}
+  {# {{ details({
     summaryText: "Address history",
     classes: "nhsuk-u-margin-top-3",
     html: addressHistoryHtml
-  }) }}
+  }) }} #}
 {% endset %}
 
 {% set addressRow = {
