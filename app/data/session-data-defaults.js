@@ -61,10 +61,12 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
+  showEnvironmentBanner: 'true',
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
-    showParticipantSection: 'false'
+    showParticipantSection: 'false',
+    useCondensedReviewSummaries: 'true'
   },
   reading: {
     blindReading: config.reading.blindReading,

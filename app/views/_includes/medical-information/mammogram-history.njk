@@ -104,7 +104,7 @@
       actions: {
         items: [
           {
-            href: "./previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(currentUrl, scrollTo),
+            href: contextUrl + "/previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
             text: "Change",
             visuallyHiddenText: "Participant reported mammogram"
           }

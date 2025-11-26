@@ -148,11 +148,14 @@ const generateEvent = ({
 
   // For in-progress events, add session details with current time
   if (eventStatus === 'event_in_progress') {
-    // Pick a random clinical user (not the first one)
     const clinicalUsers = users.filter((user) =>
       user.role.includes('clinician')
     )
-    const randomUser = faker.helpers.arrayElement(clinicalUsers.slice(1)) // Skip first user
+    // For forced in-progress (test scenarios), use first user; otherwise random
+    const randomUser =
+      forceStatus === 'event_in_progress'
+        ? clinicalUsers[0]
+        : faker.helpers.arrayElement(clinicalUsers.slice(1))
 
     eventBase.sessionDetails = {
       startedAt: dayjs()
@@ -160,9 +163,14 @@ const generateEvent = ({
         .toISOString(),
       startedBy: randomUser.id
     }
+
+    // Add workflow status from participant config if provided
+    if (participant.config?.workflowStatus) {
+      eventBase.workflowStatus = participant.config.workflowStatus
+    }
   }
 
-  if (!isPast && !forceInProgress) {
+  if (!isPast && !forceInProgress && forceStatus !== 'event_in_progress') {
     // Generate appointment note for scheduled events (5% probability)
     const appointmentNote = generateAppointmentNote({
       isScheduled: true,
@@ -267,6 +275,31 @@ const generateEvent = ({
       // Store medical information if any was generated
       if (Object.keys(medicalInformation).length > 0) {
         event.medicalInformation = medicalInformation
+      }
+    }
+
+    // Generate medical information for in-progress events too
+    // (they would have collected this during check-in/pre-screening)
+    if (eventStatus === 'event_in_progress' && event.sessionDetails) {
+      const medicalInformation = generateMedicalInformation({
+        addedByUserId: event.sessionDetails.startedBy,
+        config: participant.config,
+        // Allow config to override probabilities for test scenarios
+        ...(participant.config?.medicalInformation || {})
+      })
+
+      // Store medical information if any was generated
+      if (Object.keys(medicalInformation).length > 0) {
+        event.medicalInformation = medicalInformation
+      }
+
+      // Generate mammogram images if workflow indicates images have been taken
+      if (event.workflowStatus?.['take-images'] === 'completed') {
+        event.mammogramData = generateMammogramImages({
+          startTime: dayjs(event.sessionDetails.startedAt),
+          isSeedData: true,
+          config: participant.config
+        })
       }
     }
 

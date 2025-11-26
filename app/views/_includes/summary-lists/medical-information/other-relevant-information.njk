@@ -93,7 +93,7 @@
       actions: {
         items: [
           {
-            href: "./medical-information/hormone-replacement-therapy" | urlWithReferrer(currentUrl, scrollTo),
+            href: contextUrl + "/medical-information/hormone-replacement-therapy" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
             text: "Change",
             visuallyHiddenText: "hormone replacement therapy (HRT)"
           }
@@ -110,7 +110,7 @@
       actions: {
         items: [
           {
-            href: "./medical-information/pregnancy-and-breastfeeding" | urlWithReferrer(currentUrl, scrollTo),
+            href: contextUrl + "/medical-information/pregnancy-and-breastfeeding" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
             text: "Change",
             visuallyHiddenText: "pregnancy and breastfeeding"
           }
@@ -127,7 +127,7 @@
       actions: {
         items: [
           {
-            href: "./medical-information/other-medical-information" | urlWithReferrer(currentUrl, scrollTo),
+            href: contextUrl + "/medical-information/other-medical-information" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
             text: "Change",
             visuallyHiddenText: "other medical information"
           }
