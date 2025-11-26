@@ -28,6 +28,39 @@
 {# ----------------- #}
 
 {% set condensedSummaries %}
+
+  {# Personal information #}
+  {% set participantDetailsHtml %}
+    {% call summaryList() %}
+      
+      {{ appSummaryListRow({
+        key: {
+          text: "Personal information"
+        },
+        value: {
+          html: "No changes"
+        },
+        actions: {
+          items: [
+            {
+              href: "./confirm-information/personal-details" | urlWithReferrer(currentUrl),
+              text: "View or change",
+              visuallyHiddenText: "personal information"
+            } if allowEdits
+          ]
+        }
+      }) }}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {{ card({
+    heading: "Personal information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: participantDetailsHtml
+  }) }}
+
   {# Medical information summary card #}
   {% set medicalInfoSummaryHtml %}
     
@@ -229,7 +262,26 @@
 
 {% set nonCondensedSummaries %}
 
-  
+  {# Include the personal details summary in a feature card #}
+  {% set participantDetailsHtml %}
+    {% call summaryList() %}
+      {% include "_includes/summary-lists/rows/nhs-number.njk" %}
+      {% include "_includes/summary-lists/rows/full-name.njk" %}
+      {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+      {% include "_includes/summary-lists/rows/address.njk" %}
+      {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+      {% include "_includes/summary-lists/rows/email.njk" %}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+      {% include "_includes/summary-lists/rows/gp.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {{ card({
+    heading: "Personal information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: participantDetailsHtml
+  }) }}
 
   {% set medicalHistoryHtml %}
     {% include "medical-information/medical-history/index.njk" %}
@@ -294,37 +346,7 @@
     text: "Complete screening and return to clinic"
   }) }} #}
 
-  {# Personal information #}
-  {% set participantDetailsHtml %}
-    {% call summaryList() %}
-      
-      {{ appSummaryListRow({
-        key: {
-          text: "Personal information"
-        },
-        value: {
-          html: "No changes"
-        },
-        actions: {
-          items: [
-            {
-              href: "./confirm-information/personal-details" | urlWithReferrer(currentUrl),
-              text: "View or change",
-              visuallyHiddenText: "personal information"
-            } if allowEdits
-          ]
-        }
-      }) }}
-      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
-    {% endcall %}
-  {% endset %}
-
-  {{ card({
-    heading: "Personal information",
-    headingLevel: "2",
-    feature: true,
-    descriptionHtml: participantDetailsHtml
-  }) }}
+ 
 
   {{ data.settings | log("Settings in review page:") }}
 
