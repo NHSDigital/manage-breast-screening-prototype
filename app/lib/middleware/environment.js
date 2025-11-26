@@ -17,13 +17,15 @@ const formatLink = (url, text) => {
  * Supports: development, production, and review (for Heroku PRs)
  */
 const environment = (req, res, next) => {
-  let environment = 'production'
   const { HEROKU_BRANCH, HEROKU_PR_NUMBER, NODE_ENV } = process.env
 
-  if (NODE_ENV === 'development') {
-    environment = 'development'
+  let environment = 'development' // Default to development
+
+  if (NODE_ENV === 'production') {
+    environment = 'production'
   }
 
+  // Review apps on Heroku override the above
   if (HEROKU_PR_NUMBER || HEROKU_BRANCH) {
     environment = 'review'
   }
