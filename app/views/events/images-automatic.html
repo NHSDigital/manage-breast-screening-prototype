@@ -43,35 +43,52 @@
   {# Convert object to an array of views and get machine room #}
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}
   {% set machineRoom = event.mammogramData.machineRoom %}
-
-  {# Define view order for consistent display (CC, MLO, Eklund) #}
-  {% set viewOrder = ['CC', 'MLO', 'Eklund'] %}
-
-  {# Group views by side first (right/left) and sort by view type #}
-  {% set rightViews = [] %}
-  {% set leftViews = [] %}
+  
+  {# HACK: Remove RCC view to test missing placeholder #}
+  {# {% set filteredViews = [] %}
   {% for viewItem in mammogramViews %}
-    {% if viewItem.side == 'right' %}
-      {% set rightViews = rightViews | push(viewItem) %}
-    {% else %}
-      {% set leftViews = leftViews | push(viewItem) %}
+    {% if viewItem.viewShortWithSide != 'RCC' %}
+      {% set filteredViews = filteredViews | push(viewItem) %}
     {% endif %}
   {% endfor %}
+  {% set mammogramViews = filteredViews %} #}
 
-  {# Sort views by the standard order #}
-  {% set sortedRightViews = [] %}
-  {% set sortedLeftViews = [] %}
-  {% for viewType in viewOrder %}
-    {% for viewItem in rightViews %}
-      {% if viewItem.viewShort == viewType %}
-        {% set sortedRightViews = sortedRightViews | push(viewItem) %}
+  {# Define standard views that should always be shown #}
+  {% set standardViews = [
+    { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
+    { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
+    { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' },
+    { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' }
+  ] %}
+
+  {# Build complete view lists with placeholders for missing views #}
+  {% set rightViews = [] %}
+  {% set leftViews = [] %}
+  {% for standardView in standardViews %}
+    {# Find if this view exists in the data #}
+    {% set viewData = null %}
+    {% for viewItem in mammogramViews %}
+      {% if viewItem.viewShortWithSide == standardView.viewShortWithSide %}
+        {% set viewData = viewItem %}
       {% endif %}
     {% endfor %}
-    {% for viewItem in leftViews %}
-      {% if viewItem.viewShort == viewType %}
-        {% set sortedLeftViews = sortedLeftViews | push(viewItem) %}
-      {% endif %}
-    {% endfor %}
+    
+    {% if not viewData %}
+      {# Create placeholder for missing view #}
+      {% set viewData = {
+        side: standardView.side,
+        viewShort: standardView.viewShort,
+        viewShortWithSide: standardView.viewShortWithSide,
+        images: [],
+        isMissing: true
+      } %}
+    {% endif %}
+    
+    {% if standardView.side == 'right' %}
+      {% set rightViews = rightViews | push(viewData) %}
+    {% else %}
+      {% set leftViews = leftViews | push(viewData) %}
+    {% endif %}
   {% endfor %}
 
   {# Display in two columns: right breast on left, left breast on right #}
@@ -79,7 +96,7 @@
     {# Right views on the left #}
     <div class="nhsuk-grid-column-one-half">
       {% set rightViewsHtml %}
-        {% for viewItem in sortedRightViews %}
+        {% for viewItem in rightViews %}
           {% set isManualEntry = false %}
           {% include "_includes/mammogram-image-display.njk" %}
         {% endfor %}
@@ -96,7 +113,7 @@
     {# Left views on the right #}
     <div class="nhsuk-grid-column-one-half">
       {% set leftViewsHtml %}
-        {% for viewItem in sortedLeftViews %}
+        {% for viewItem in leftViews %}
           {% set isManualEntry = false %}
           {% include "_includes/mammogram-image-display.njk" %}
         {% endfor %}

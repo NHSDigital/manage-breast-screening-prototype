@@ -8,7 +8,7 @@
   - machineRoom: string - the screening room name
 #}
 
-<div class="{{ 'nhsuk-u-margin-bottom-3' }}">
+<div class="{{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
 
   {% if isManualEntry %}
     {# Manual entry - show count only #}
@@ -39,20 +39,33 @@
 
   {% else %}
     {# Automated entry - show full image details #}
-    <h3 class="nhsuk-u-margin-bottom-2">
-      {{ viewItem.images | length }}× {{ viewItem.viewShortWithSide }}
-    </h3>
+    
+    {# Check if this is a missing view #}
+    {% if viewItem.isMissing %}
+      <h3 class="nhsuk-u-margin-bottom-2 nhsuk-u-secondary-text-color">
+        0× {{ viewItem.viewShortWithSide }}
+      </h3>
+      
+      <div class="app-mammogram-image--placeholder app-mammogram-image--missing nhsuk-u-margin-bottom-3">
+        <div class="app-mammogram-image--missing-content">
+          <span class="nhsuk-u-secondary-text-color">No image</span>
+        </div>
+      </div>
+    {% else %}
+      <h3 class="nhsuk-u-margin-bottom-2">
+        {{ viewItem.images | length }}× {{ viewItem.viewShortWithSide }}
+      </h3>
 
-    {# Show thumbnails side by side #}
-    <div class="nhsuk-grid-row nhsuk-u-margin-bottom-3">
-      {% for image in viewItem.images %}
-        {# <div class="nhsuk-grid-column-one-half"> #}
+      {# Show thumbnails side by side #}
+      <div class="">
+        {% for image in viewItem.images %}
           <div class="app-mammogram-image--placeholder nhsuk-u-margin-right-3" style="float:left">
             <img class="nhsuk-image__img" src="/images/mammogram-diagrams/{{ viewItem.viewShortWithSide | lower }}.png" alt="">
           </div>
-        {# </div> #}
-      {% endfor %}
-    </div>
+        {% endfor %}
+        <div style="clear:both"></div>
+      </div>
+    {% endif %}
 
     {# View image metadata details #}
     {% set metadataHtml %}
@@ -96,14 +109,14 @@
     }) }} #}
 
     {# If there are no images, show inset text - likely partial mammography #}
-    {% if viewItem.images | length == 0 %}
+    {# {% if viewItem.images | length == 0 %}
       {% set insetHtml %}
         <p>There are no {{ viewItem.viewShortWithSide }} images</p>
       {% endset %}
       {{ insetText({
         html: insetHtml
       }) }}
-    {% endif %}
+    {% endif %} #}
 
   {% endif %}
 
