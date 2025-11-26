@@ -1,4 +1,8 @@
-<p class="">
-  <a class="nhsuk-link nhsuk-link--no-visited-state" href="./attended-not-screened-reason">Appointment cannot proceed
-  </a>
-</p>
+
+{# Only allow 'appointment cannot proceed' if images haven't been taken #}
+{% if event.workflowStatus['take-images'] != 'completed' %}
+  <p class="">
+    <a class="nhsuk-link nhsuk-link--no-visited-state" href="./attended-not-screened-reason">Appointment cannot proceed
+    </a>
+  </p>
+{% endif %}

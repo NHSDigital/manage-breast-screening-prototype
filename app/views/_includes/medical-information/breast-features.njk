@@ -47,7 +47,7 @@
 {% endif %}
 
 {% set linkHref %}
-  {{ "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
+  {{ contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo) }}
 {% endset %}
 
 {% if allowEdits %}
@@ -58,7 +58,7 @@
   <div class="nhsuk-form-group">
     {{ button({
       text: "Add a feature" if not hasBreastFeatures else "View or edit breast features",
-      href: "./medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo),
+      href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl, scrollTo),
       classes: "nhsuk-button--secondary app-button--small"
     }) }}
   </div>
