@@ -35,7 +35,7 @@
     {% for symptomType in data.symptomTypes %}
       {{ button({
         text: symptomType.name | sentenceCase,
-        href: (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(currentUrl, scrollTo),
+        href: (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
         classes: "nhsuk-button--secondary app-button--small"
       }) }}
     {% endfor %}

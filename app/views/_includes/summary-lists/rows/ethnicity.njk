@@ -31,7 +31,7 @@
   actions: {
     items: [
       {
-        href: contextUrl + "/personal-details/ethnicity" | urlWithReferrer(referrerChain),
+        href: contextUrl + "/personal-details/ethnicity" | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Change",
         visuallyHiddenText: "ethnicity"
       } if allowEdits

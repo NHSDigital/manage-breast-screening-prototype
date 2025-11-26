@@ -16,7 +16,7 @@
   actions: {
     items: [
       {
-        href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain),
+        href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Change",
         visuallyHiddenText: "phone number" if phoneNumbers | length < 2 else "phone numbers"
       } if allowEdits

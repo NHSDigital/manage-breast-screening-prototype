@@ -1,8 +1,118 @@
 // app/lib/utils/referrers.js
 
 /**
- * Handle chained referrer URLs for back navigation
- * Allows deep linking while maintaining proper back navigation chains
+ * Referrer Chain Navigation System
+ *
+ * This module handles multi-level back navigation by maintaining a chain of URLs
+ * that grows as users navigate deeper and shrinks as they navigate back.
+ *
+ * ## Mental Model
+ *
+ * Think of the referrer chain as a breadcrumb trail:
+ * - As you navigate TO deeper pages, add current URL to the chain
+ * - As you navigate BACK, pop the last URL from the chain
+ * - The chain is stored as a query parameter: ?referrerChain=/page1,/page2,/page3
+ * - In templates, `referrerChain` refers to the template variable (populated from query.referrerChain)
+ *
+ * ## The Three Navigation Patterns
+ *
+ * ### 1. Navigating TO a page (extending the chain)
+ * Use when: Going deeper into a flow, user should be able to return to current page
+ *
+ * ```nunjucks
+ * {# Extending an existing chain (most common in multi-level flows) #}
+ * <a href="{{ '/next-page' | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) }}">
+ *
+ * {# Starting a new chain (no existing referrer) #}
+ * <a href="{{ '/next-page' | urlWithReferrer(currentUrl) }}">
+ * ```
+ *
+ * ### 2. Navigating BACK (consuming the chain)
+ * Use when: On a "Continue" or "Save and return" button
+ *
+ * ```nunjucks
+ * {# Extracts destination from chain, includes remaining chain #}
+ * {{ button({
+ *   text: "Continue",
+ *   href: '../fallback' | getReturnUrl(referrerChain)
+ * }) }}
+ * ```
+ *
+ * ### 3. Building chains manually (advanced)
+ * Use when: Pre-building chains for complex flows (e.g., "add" buttons that bypass review page)
+ *
+ * ```nunjucks
+ * {# Build chain for add journey that returns through review page #}
+ * {% set addReferrerChain = currentUrl | appendReferrer('/review') %}
+ * <a href="{{ '/add' | urlWithReferrer(addReferrerChain) }}">Add item</a>
+ * ```
+ *
+ * ## Real-World Example: Check Information Flow
+ *
+ * Starting point: User is on `/clinics/123/events/456/check-information`
+ *
+ * 1. **check-information** → **confirm-information/medical-history**
+ *    ```nunjucks
+ *    {# Start new chain with current page #}
+ *    <a href="{{ './confirm-information/medical-history' | urlWithReferrer(currentUrl) }}">
+ *    {# Result: ?referrerChain=/clinics/123/events/456/check-information #}
+ *    ```
+ *
+ * 2. **confirm-information/medical-history** → **edit form**
+ *    ```nunjucks
+ *    {# Extend chain by appending current page to existing chain #}
+ *    <a href="{{ './edit/123' | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) }}">
+ *    {# Result: ?referrerChain=/check-information,/confirm-information/medical-history #}
+ *    ```
+ *
+ * 3. **edit form** → **back to confirm-information/medical-history**
+ *    ```nunjucks
+ *    {# Navigate back: pops last URL from chain and goes there #}
+ *    {{ button({ href: '../fallback' | getReturnUrl(referrerChain) }) }}
+ *    {# Goes to: /confirm-information/medical-history?referrerChain=/check-information #}
+ *    ```
+ *
+ * 4. **confirm-information/medical-history** → **back to check-information**
+ *    ```nunjucks
+ *    {# Navigate back again: pops last remaining URL #}
+ *    {{ button({ href: '../fallback' | getReturnUrl(referrerChain) }) }}
+ *    {# Goes to: /check-information (no chain param, it's exhausted) #}
+ *    ```
+ *
+ * ## Common Mistakes to Avoid
+ *
+ * ❌ **Using urlWithReferrer for back links**
+ * ```nunjucks
+ * {# WRONG: Adds referrer instead of consuming it #}
+ * <a href="{{ '../previous' | urlWithReferrer(referrerChain) }}">Back</a>
+ * ```
+ * ✅ **Use getReturnUrl for back links**
+ * ```nunjucks
+ * {# CORRECT: Extracts destination from referrer chain #}
+ * <a href="{{ '../previous' | getReturnUrl(referrerChain) }}">Back</a>
+ * ```
+ *
+ * ❌ **Forgetting to extend the chain**
+ * ```nunjucks
+ * {# WRONG: Replaces chain instead of extending it #}
+ * <a href="{{ '/next' | urlWithReferrer(currentUrl) }}">Continue</a>
+ * ```
+ * ✅ **Extend the chain when going deeper**
+ * ```nunjucks
+ * {# CORRECT: Extends existing chain with current URL #}
+ * <a href="{{ '/next' | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) }}">
+ * ```
+ *
+ * ❌ **Not providing fallback for getReturnUrl**
+ * ```nunjucks
+ * {# WRONG: Returns empty string if no referrer #}
+ * <a href="{{ '' | getReturnUrl(referrerChain) }}">Back</a>
+ * ```
+ * ✅ **Always provide a sensible fallback**
+ * ```nunjucks
+ * {# CORRECT: Falls back to sensible default #}
+ * <a href="{{ '../parent-page' | getReturnUrl(referrerChain) }}">Back</a>
+ * ```
  */
 
 /**
@@ -144,6 +254,12 @@ const appendReferrer = (existingReferrerChain, newUrl) => {
   if (!existingReferrerChain) return newUrl
 
   const chain = parseReferrerChain(existingReferrerChain)
+  
+  // Don't append if it's already the last item in the chain (prevents duplicates)
+  if (chain.length > 0 && chain[chain.length - 1] === newUrl) {
+    return existingReferrerChain
+  }
+  
   chain.push(newUrl)
   return chain.join(',')
 }
