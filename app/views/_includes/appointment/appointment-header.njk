@@ -28,7 +28,7 @@
   <div class="app-header-with-status__status-tag">
     {% set statusTagId = "status-tag-" + event.id %}
     {% if event.status === "event_rescheduled" %}
-      <strong class="nhsuk-tag nhsuk-tag--blue nhsuk-u-margin-bottom-2" id="{{ statusTagId }}">Requested to reschedule appointment</strong>
+     <strong class="nhsuk-tag nhsuk-tag--red nhsuk-u-margin-bottom-2" id="{{ statusTagId }}">Reschedule requested</strong>
     {% else %}
       {{ event.status | toTag({
         id: statusTagId,
