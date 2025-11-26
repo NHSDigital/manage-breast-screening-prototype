@@ -1,0 +1,12 @@
+{%- from "nhsuk/components/tag/macro.njk" import tag -%}
+
+{%- set colour = params.colour or "blue" -%}
+<div class="app-environment nhsuk-tag--{{ colour }}">
+  <div class="nhsuk-width-container">
+    {{ tag({
+      classes: "nhsuk-tag--" + colour,
+      text: params.name
+    }) if params.name }}
+    {{ params.html | safe if params.html else params.text }}
+  </div>
+</div>

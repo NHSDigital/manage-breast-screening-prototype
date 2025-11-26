@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block header %}
-
+  {{ appEnvironment(environment) if environment }}
   {% set useMinimalNav = useMinimalNav | default(false) %}
 
   {% set rootHref = "/" %}

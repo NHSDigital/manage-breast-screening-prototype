@@ -33,6 +33,7 @@ const routes = require('./app/routes')
 const exampleTemplatesRoutes = require('./lib/example_templates_routes')
 const authentication = require('./lib/middleware/authentication')
 const automaticRouting = require('./lib/middleware/auto-routing')
+const environmentMiddleware = require('./app/lib/middleware/environment')
 const production = require('./lib/middleware/production')
 const prototypeAdminRoutes = require('./lib/middleware/prototype-admin-routes')
 const utils = require('./lib/utils')
@@ -240,6 +241,9 @@ if (!sessionDataDefaultsFileExists) {
 
 // Local variables
 app.use(locals(config))
+
+// Environment banner
+app.use(environmentMiddleware)
 
 // View engine
 app.set('view engine', 'html')
