@@ -61,6 +61,7 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
+  showEnvironmentBanner: 'true',
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
