@@ -396,7 +396,7 @@
           actions: {
             items: [
               {
-                href: (eventUrl + "/special-appointment/edit") | urlWithReferrer(referrerChain),
+                href: (eventUrl + "/special-appointment/edit") | urlWithReferrer(currentUrl),
                 text: "Change",
                 visuallyHiddenText: "special appointment"
               }
@@ -413,7 +413,7 @@
           actions: {
             items: [
               {
-                href: (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain),
+                href: (eventUrl + "/appointment-note") | urlWithReferrer(currentUrl),
                 text: "Change",
                 visuallyHiddenText: "appointment note"
               }

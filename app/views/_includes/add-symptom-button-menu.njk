@@ -13,7 +13,7 @@
 {% for symptomType in data.symptomTypes %}
   {% set buttonMenuItems = buttonMenuItems | push({
     text: symptomType.name | sentenceCase,
-    href: (methodUrl ~ symptomType.slug) | urlWithReferrer(referrerChain, scrollTo),
+    href: (methodUrl ~ symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
     classes: "nhsuk-button--secondary js-expand-parent-section"
   }) %}
 {% endfor %}
