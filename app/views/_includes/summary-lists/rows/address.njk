@@ -33,7 +33,7 @@
   actions: {
      items: [
        {
-        href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain),
+        href: contextUrl ~ "/personal-details/contact-details" | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
          text: "Change",
          visuallyHiddenText: "home address"
        } if allowEdits
