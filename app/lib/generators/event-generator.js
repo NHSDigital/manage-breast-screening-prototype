@@ -15,6 +15,7 @@ const {
 } = require('./special-appointment-generator')
 const { generateAppointmentNote } = require('./appointment-note-generator')
 const users = require('../../data/users')
+const screeningRooms = require('../../data/screening-rooms')
 
 const NOT_SCREENED_REASONS = [
   'Recent mammogram at different facility',
@@ -247,6 +248,17 @@ const generateEvent = ({
         isSeedData: true,
         config: participant.config
       })
+
+      // Add machine room for hospital locations
+      if (clinic.location?.id) {
+        const availableRooms = screeningRooms.filter(
+          (room) => room.locationId === clinic.location.id
+        )
+        if (availableRooms.length > 0) {
+          const randomRoom = faker.helpers.arrayElement(availableRooms)
+          event.mammogramData.machineRoom = randomRoom.displayName
+        }
+      }
 
       // Pretend some events have previous images requested
       event.hasRequestedImages = weighted.select({ true: 0.3, false: 0.7 })
