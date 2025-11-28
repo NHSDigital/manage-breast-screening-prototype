@@ -1,10 +1,10 @@
-{# app/views/events/attended-not-screened-reason.html #}
-
 {% extends 'layout-appointment.html' %}
 
-{% set pageHeading = "Appointment cannot proceed" %}
+{% set pageHeading = "Cancel or reschedule appointment" %}
 
-{% set formAction = './attended-not-screened-answer' %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./cancel-or-reschedule-appointment-answer" %}
 
 {% block pageContent %}
 
@@ -18,11 +18,11 @@
   </h1>
 
   {{ checkboxes({
-    name: "event[appointmentStopped][stoppedReason]",
-    values: event.appointmentStopped.stoppedReason,
+    name: "event[cancellation][reason]",
+    values: data.event.cancellation.reason,
     fieldset: {
       legend: {
-        text: "Why has this appointment been stopped?",
+        text: "Why is this appointment not going ahead?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       },
@@ -32,29 +32,85 @@
     },
     items: [
       {
-        value: "Failed identity check",
-        text: "Failed identity check",
+        value: "Unable to attend",
+        text: "Unable to attend",
         conditional: {
           html: input({
-            name: "event[appointmentStopped][failedIdentityDetails]",
+            name: "event[cancellation][availabilityDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.failedIdentityDetails,
+            value: data.event.cancellation.availabilityDetails,
             autocomplete: "off"
           })
         }
       },
       {
-        value: "Pain during screening",
-        text: "Pain during screening",
+        value: "Moving outside England",
+        text: "Moving outside England",
         conditional: {
           html: input({
-            name: "event[appointmentStopped][painDetails]",
+            name: "event[cancellation][movingDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.painDetails,
+            value: data.event.cancellation.movingDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Breast implant concerns",
+        text: "Breast implant concerns",
+        conditional: {
+          html: input({
+            name: "event[cancellation][implantDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.implantDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Bilateral mastectomy",
+        text: "Bilateral mastectomy",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mastectomyDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mastectomyDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Recent mammogram",
+        text: "Recent mammogram",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mammogramDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mammogramDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Medical reasons",
+        text: "Medical reasons",
+        conditional: {
+          html: input({
+            name: "event[cancellation][medicalDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.medicalDetails,
             autocomplete: "off"
           })
         }
@@ -64,67 +120,11 @@
         text: "Has a symptomatic appointment",
         conditional: {
           html: input({
-            name: "event[appointmentStopped][symptomaticDetails]",
+            name: "event[cancellation][symptomaticDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.symptomaticDetails,
-            autocomplete: "off"
-          })
-        }
-      },
-      {
-        value: "Consent withdrawn",
-        text: "Consent withdrawn",
-        conditional: {
-          html: input({
-            name: "event[appointmentStopped][consentDetails]",
-            label: {
-              text: "Provide details"
-            },
-            value: event.appointmentStopped.consentDetails,
-            autocomplete: "off"
-          })
-        }
-      },
-      {
-        value: "Physical health issue",
-        text: "Physical health issue",
-        conditional: {
-          html: input({
-            name: "event[appointmentStopped][physicalHealthDetails]",
-            label: {
-              text: "Provide details"
-            },
-            value: event.appointmentStopped.physicalHealthDetails,
-            autocomplete: "off"
-          })
-        }
-      },
-      {
-        value: "Mental health issue",
-        text: "Mental health issue",
-        conditional: {
-          html: input({
-            name: "event[appointmentStopped][mentalHealthDetails]",
-            label: {
-              text: "Provide details"
-            },
-            value: event.appointmentStopped.mentalHealthDetails,
-            autocomplete: "off"
-          })
-        }
-      },
-      {
-        value: "Language difficulties",
-        text: "Language difficulties",
-        conditional: {
-          html: input({
-            name: "event[appointmentStopped][languageDetails]",
-            label: {
-              text: "Provide details"
-            },
-            value: event.appointmentStopped.languageDetails,
+            value: data.event.cancellation.symptomaticDetails,
             autocomplete: "off"
           })
         }
@@ -134,11 +134,25 @@
         text: "No qualified mammographer available",
         conditional: {
           html: input({
-            name: "event[appointmentStopped][mammographerDetails]",
+            name: "event[cancellation][mammographerDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.mammographerDetails,
+            value: data.event.cancellation.mammographerDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Mammogram room unavailable",
+        text: "Mammogram room unavailable",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mammogramRoomDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mammogramRoomDetails,
             autocomplete: "off"
           })
         }
@@ -148,11 +162,11 @@
         text: "Technical issues at clinic",
         conditional: {
           html: input({
-            name: "event[appointmentStopped][technicalDetails]",
+            name: "event[cancellation][technicalDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.technicalDetails,
+            value: data.event.cancellation.technicalDetails,
             autocomplete: "off"
           })
         }
@@ -164,13 +178,12 @@
         value: "Other reason",
         text: "Other reason",
         conditional: {
-          html: textarea({
-            name: "event[appointmentStopped][otherDetails]",
+          html: input({
+            name: "event[cancellation][otherReasonDetails]",
             label: {
               text: "Provide details"
             },
-            rows: 5,
-            value: event.appointmentStopped.otherDetails,
+            value: data.event.cancellation.otherReasonDetails,
             autocomplete: "off"
           })
         }
@@ -179,8 +192,8 @@
   } | populateErrors) }}
 
   {{ radios({
-    name: "event[appointmentStopped][needsReschedule]",
-    value: event.appointmentStopped.needsReschedule,
+    name: "event[cancellation][reschedule]",
+    value: data.event.cancellation.reschedule,
     fieldset: {
       legend: {
         text: "Should the appointment be rescheduled?",
@@ -195,7 +208,7 @@
       },
       {
         value: "no-invite",
-        text: "No, invite to next routine appointment",
+        text: "No, cancel the appointment",
         hint: {
           text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
         }
@@ -208,11 +221,11 @@
         },
         conditional: {
           html: input({
-            name: "event[appointmentStopped][optOutDetails]",
+            name: "event[cancellation][optOutDetails]",
             label: {
               text: "Provide details"
             },
-            value: event.appointmentStopped.optOutDetails,
+            value: data.event.cancellation.optOutDetails,
             autocomplete: "off"
           })
         }

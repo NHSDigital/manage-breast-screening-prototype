@@ -45,8 +45,10 @@ const determineEventStatus = (
     })
   }
 
+  // For past dates, use final_seed_data statuses
+  // This excludes event_rescheduled which should only happen through user action, not seed data
   if (slotDate.isBefore(currentDate)) {
-    return weighted.select(STATUS_GROUPS.final, attendanceWeights)
+    return weighted.select(STATUS_GROUPS.final_seed_data, attendanceWeights)
   }
 
   // For past slots, generate a status based on how long ago the slot was

@@ -1,4 +1,3 @@
-
 {% extends 'layout-app.html' %}
 
 {% set pageHeading %}
@@ -103,10 +102,7 @@
               {{ events.length }}
             </td>
             <td class="nhsuk-table__cell--numeric">
-              {{ tag({
-                html: clinic.status | formatWords | sentenceCase | noWrap,
-                classes: "nhsuk-tag--" + clinic.status | getStatusTagColour
-              })}}
+              {{ clinic.status | toTag }}
             </td>
           </tr>
         {% endfor %}

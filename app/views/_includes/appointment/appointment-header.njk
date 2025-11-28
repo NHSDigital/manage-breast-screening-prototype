@@ -27,10 +27,20 @@
 
   <div class="app-header-with-status__status-tag">
     {% set statusTagId = "status-tag-" + event.id %}
-    {{ event.status | toTag({
-      id: statusTagId,
-      classes: "nhsuk-u-margin-bottom-2"
-    }) }}
+    {% if event.status === "event_rescheduled" %}
+      {{ tag({
+        text: "Reschedule requested",
+        classes: "nhsuk-tag--red nhsuk-u-margin-bottom-2",
+        attributes: {
+          id: statusTagId
+        }
+      }) }}
+    {% else %}
+      {{ event.status | toTag({
+        id: statusTagId,
+        classes: "nhsuk-u-margin-bottom-2"
+      }) }}
+    {% endif %}
 
     {% if event.status == 'event_scheduled' %}
       {{ appCheckIn({
@@ -43,6 +53,23 @@
     {% endif %}
 
     <br>
+
+    {% if allowEdits %}
+      <ul class="nhsuk-list">
+        <li>
+          <a href="{{ (eventUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(eventUrl) }}">
+            Cancel or reschedule appointment
+          </a>
+        </li>
+        <li>
+          <a href="{{ (eventUrl + '/special-appointment/edit') | urlWithReferrer(eventUrl) }}">
+            {{ "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
+          </a>
+        </li>
+      </ul>
+    {% endif %}
+
+    {# 
     {{ buttonMenu({
       items: [
         {
@@ -67,6 +94,7 @@
       },
       alignMenu: "right"
     }) }}
+    #}
   </div>
 </div>
 

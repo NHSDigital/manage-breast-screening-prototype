@@ -1,0 +1,62 @@
+{# app/views/events/cancel-or-reschedule-appointment/reschedule.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Request to reschedule this appointment" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./reschedule-answer" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {{ radios({
+    name: "event[reschedule][timing]",
+    value: data.event.reschedule.timing,
+    fieldset: {
+      legend: {
+        text: "When should the appointment be?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "within-6-weeks",
+        text: "Within the next 6 weeks"
+      },
+      {
+        value: "more-than-6-weeks",
+        text: "More than 6 weeks away"
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ textarea({
+    name: "event[reschedule][note]",
+    label: {
+      text: "Note for rescheduling (optional)",
+      classes: "nhsuk-label--m"
+    },
+    hint: {
+      text: "Include any other relevant information"
+    },
+    rows: 5,
+    value: data.event.reschedule.note,
+    autocomplete: "off"
+  }) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "End appointment and return to clinic"
+    }) }}
+  </div>
+
+{% endblock %}
