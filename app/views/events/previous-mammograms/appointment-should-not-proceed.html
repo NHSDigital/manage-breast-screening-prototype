@@ -25,11 +25,9 @@
   {% set mammogramDate = previousMammogram.dateTaken %}
   {% set timeAgo = mammogramDate | formatRelativeDate %}
 
-  {{ previousMammogram | log }}
-
   <p>
-  The mammogram added took place on {{ timeAgo }}. It is not recommended to take breast x-rays within 6 months of each other.
- </p>
+    The mammogram added took place {{ timeAgo }}. It is not recommended to take breast x-rays within 6 months of each other.
+  </p> 
 
   {{ radios({
     name: "event[appointmentStopped][needsReschedule]",
@@ -53,7 +51,8 @@
     ]
   } | populateErrors) }}
 
-  <input type="hidden" name="action" value="continue">
+  {# Prevents redirect loop - signals to the save route that we've already shown this warning page #}
+  <input type="hidden" name="action" value="acknowledged-warning">
 
   <div class="nhsuk-button-group">
     {{ button({

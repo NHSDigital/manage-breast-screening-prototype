@@ -1,4 +1,4 @@
-// app/lib/utils/status.js 
+// app/lib/utils/status.js
 
 const dayjs = require('dayjs')
 
@@ -17,6 +17,14 @@ const STATUS_GROUPS = {
     'event_attended_not_screened',
     'event_cancelled',
     'event_rescheduled'
+  ],
+  // Final statuses for seed data generation - excludes event_rescheduled which is user-initiated only
+  final_seed_data: [
+    'event_complete',
+    'event_partially_screened',
+    'event_did_not_attend',
+    'event_attended_not_screened',
+    'event_cancelled'
   ],
   active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
   eligible_for_reading: ['event_complete', 'event_partially_screened']
