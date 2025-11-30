@@ -51,6 +51,9 @@ let nunjucksAppEnv = nunjucks.configure(appViews, nunjucksConfig)
 // Flash messages
 app.use(flash())
 
+// Serve the images as static assets
+app.use('/images', express.static(join(__dirname, 'app/assets/images')))
+
 // Use public folder for static assets
 app.use(express.static(join(__dirname, 'public')))
 
@@ -74,7 +77,10 @@ const prototype = NHSPrototypeKit.init({
   nunjucks: nunjucksAppEnv,
   routes: routes,
   locals: locals,
-  sessionDataDefaults: sessionDataDefaults
+  sessionDataDefaults: sessionDataDefaults,
+  buildOptions: {
+    entryPoints: ['app/assets/sass/main.scss', 'app/assets/javascript/**/*.js']
+  }
 })
 
 prototype.start()
