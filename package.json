@@ -4,12 +4,8 @@
   "description": "Rapidly create HTML prototypes of NHS websites and services.",
   "main": "app.js",
   "scripts": {
-    "build": "gulp build",
-    "postinstall": "npm run build",
     "start": "node app.js",
     "test": "jest --coverage=true",
-    "prewatch": "gulp build",
-    "watch": "gulp",
     "lint": "npm run lint:js && npm run lint:prettier",
     "lint:fix": "npm run lint:js:fix && npm run lint:prettier:fix",
     "lint:prettier": "prettier --cache --cache-location .cache/prettier --cache-strategy content --check .",
@@ -23,8 +19,6 @@
     "@babel/core": "^7.28.3",
     "@babel/preset-env": "^7.28.3",
     "@faker-js/faker": "^10.0.0",
-    "@inquirer/prompts": "^7.8.4",
-    "browser-sync": "^3.0.4",
     "connect-flash": "^0.1.1",
     "dayjs": "^1.11.15",
     "express": "^5.1.0",
@@ -40,9 +34,7 @@
     "nunjucks": "^3.2.4",
     "plugin-error": "^2.0.1",
     "pluralize": "^8.0.0",
-    "portscanner": "^2.2.0",
     "sass-embedded": "^1.91.0",
-    "session-file-store": "^1.5.0",
     "weighted": "^1.0.0"
   },
   "devDependencies": {
