@@ -2737,13 +2737,17 @@ module.exports = (router) => {
       const event = getEvent(data, eventId)
 
       if (event && event.status === 'event_checked_in') {
+        const participantName = getFullName(data.participant)
+
         // Save changes
         saveTempEventToEvent(data)
 
         // Revert to scheduled status
         updateEventStatus(data, eventId, 'event_scheduled')
 
-        req.flash('success', 'Check in undone')
+        req.flash('success', `${participantName} is no longer checked in for their appointment`)
+        
+        return res.redirect(`/clinics/${clinicId}`)
       }
 
       res.redirect(`/clinics/${clinicId}/events/${eventId}`)
