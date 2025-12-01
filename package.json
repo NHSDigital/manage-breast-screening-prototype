@@ -31,7 +31,7 @@
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.15",
     "dotenv": "^17.2.1",
-    "express": "^5.1.0",
+    "express": "^5.2.0",
     "express-session": "^1.18.2",
     "gulp": "^5.0.1",
     "gulp-babel": "^8.0.0",
