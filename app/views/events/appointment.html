@@ -175,19 +175,19 @@
           actions: {
             items: [
               {
-                href: "./undo-cancel",
+                href: "./undo-cancel" | urlWithReferrer(currentUrl),
                 text: "Undo cancel appointment",
                 visuallyHiddenText: "appointment"
               }
             ] if event.status == "event_cancelled" else ([
               {
-                href: "./undo-reschedule",
+                href: "./undo-reschedule" | urlWithReferrer(currentUrl),
                 text: "Undo reschedule request",
                 visuallyHiddenText: "appointment"
               }
             ] if event.status == "event_rescheduled" else ([
               {
-                href: "./undo-check-in",
+                href: "./undo-check-in" | urlWithReferrer(currentUrl),
                 text: "Undo check in",
                 visuallyHiddenText: "appointment"
               }
