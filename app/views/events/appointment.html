@@ -185,7 +185,13 @@
                 text: "Undo reschedule request",
                 visuallyHiddenText: "appointment"
               }
-            ] if event.status == "event_rescheduled" else [])
+            ] if event.status == "event_rescheduled" else ([
+              {
+                href: "./undo-check-in",
+                text: "Undo check in",
+                visuallyHiddenText: "appointment"
+              }
+            ] if event.status == "event_checked_in" else []))
           }
         },
         {

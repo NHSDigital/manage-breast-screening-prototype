@@ -2727,4 +2727,30 @@ module.exports = (router) => {
       res.redirect(`/clinics/${clinicId}/events/${eventId}`)
     }
   )
+
+  // Handle undo check in
+  router.get(
+    '/clinics/:clinicId/events/:eventId/undo-check-in',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+
+      if (event && event.status === 'event_checked_in') {
+        const participantName = getFullName(data.participant)
+
+        // Save changes
+        saveTempEventToEvent(data)
+
+        // Revert to scheduled status
+        updateEventStatus(data, eventId, 'event_scheduled')
+
+        req.flash('success', `${participantName} is no longer checked in for their appointment`)
+        
+        return res.redirect(`/clinics/${clinicId}`)
+      }
+
+      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+    }
+  )
 }
