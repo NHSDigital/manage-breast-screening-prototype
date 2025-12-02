@@ -27,12 +27,12 @@
   {% set mammogramTemp = event.mammogramDataTemp or {} %}
   {% set mammogramViews = event.mammogramData.views or {} %}
   
-  {% set viewsRightBreastCCCount = mammogramTemp.viewsRightBreastCCCount or mammogramViews.rightCraniocaudal.count or "" %}
-  {% set viewsRightBreastMLOCount = mammogramTemp.viewsRightBreastMLOCount or mammogramViews.rightMediolateralOblique.count or "" %}
-  {% set viewsRightBreastEklundCount = mammogramTemp.viewsRightBreastEklundCount or mammogramViews.rightEklund.count or "" %}
-  {% set viewsLeftBreastCCCount = mammogramTemp.viewsLeftBreastCCCount or mammogramViews.leftCraniocaudal.count or "" %}
-  {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "" %}
-  {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "" %}
+  {% set viewsRightBreastCCCount = mammogramTemp.viewsRightBreastCCCount or mammogramViews.rightCraniocaudal.count or "1" %}
+  {% set viewsRightBreastMLOCount = mammogramTemp.viewsRightBreastMLOCount or mammogramViews.rightMediolateralOblique.count or "1" %}
+  {% set viewsRightBreastEklundCount = mammogramTemp.viewsRightBreastEklundCount or mammogramViews.rightEklund.count or "0" %}
+  {% set viewsLeftBreastCCCount = mammogramTemp.viewsLeftBreastCCCount or mammogramViews.leftCraniocaudal.count or "1" %}
+  {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "1" %}
+  {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "0" %}
   {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
   
   {# Set mammogramSource for partial mammography question - prefer temp data, fall back to final data #}
