@@ -286,9 +286,15 @@ module.exports = (router) => {
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {
     const { clinicId, eventId } = req.params
-    // res.render('events/show', {
-    // })
-    res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+
+    // Preserve query parameters when redirecting
+    const queryString = Object.keys(req.query).length
+      ? '?' + new URLSearchParams(req.query).toString()
+      : ''
+
+    res.redirect(
+      `/clinics/${clinicId}/events/${eventId}/appointment${queryString}`
+    )
   })
 
   router.post(
@@ -2699,7 +2705,12 @@ module.exports = (router) => {
       req.flash('success', 'Appointment cancellation undone')
     }
 
-    res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+    // Use referrer system to return to originating page
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}/appointment`,
+      req.query.referrerChain
+    )
+    res.redirect(returnUrl)
   })
 
   // Handle undo reschedule appointment
@@ -2724,33 +2735,48 @@ module.exports = (router) => {
         req.flash('success', 'Reschedule request undone')
       }
 
-      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+      // Use referrer system to return to originating page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/appointment`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
     }
   )
 
   // Handle undo check in
-  router.get(
-    '/clinics/:clinicId/events/:eventId/undo-check-in',
-    (req, res) => {
-      const { clinicId, eventId } = req.params
-      const data = req.session.data
-      const event = getEvent(data, eventId)
+  router.get('/clinics/:clinicId/events/:eventId/undo-check-in', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const event = getEvent(data, eventId)
 
-      if (event && event.status === 'event_checked_in') {
-        const participantName = getFullName(data.participant)
+    if (event && event.status === 'event_checked_in') {
+      const participantName = getFullName(data.participant)
 
-        // Save changes
-        saveTempEventToEvent(data)
+      // Save changes
+      saveTempEventToEvent(data)
 
-        // Revert to scheduled status
-        updateEventStatus(data, eventId, 'event_scheduled')
+      // Revert to scheduled status
+      updateEventStatus(data, eventId, 'event_scheduled')
 
-        req.flash('success', `${participantName} is no longer checked in for their appointment`)
-        
-        return res.redirect(`/clinics/${clinicId}`)
-      }
+      req.flash(
+        'success',
+        `${participantName} is no longer checked in for their appointment`
+      )
 
-      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+      // Use referrer system to return to originating page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}`,
+        req.query.referrerChain
+      )
+      return res.redirect(returnUrl)
     }
-  )
+
+    // Use referrer system for fallback too
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}/appointment`,
+      req.query.referrerChain
+    )
+    res.redirect(returnUrl)
+  })
 }

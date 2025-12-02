@@ -608,13 +608,17 @@
 
   <div class="nhsuk-button-group app-button-group--small">
     {% for typeData in data.medicalHistoryTypes %}
-      {# {% if typeData.canHaveMultiple %} #}
+      {% set existingItems = data.event.medicalInformation.medicalHistory[typeData.type] %}
+      {% set hasExistingItem = existingItems and existingItems | length > 0 %}
+      {% set canAdd = typeData.canHaveMultiple or not hasExistingItem %}
+      
+      {% if canAdd %}
         {{ button({
           text: typeData.name,
           href: contextUrl + "/medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
           classes: "nhsuk-button--secondary app-button--small"
         }) }}
-     {# {% endif %} #}
+      {% endif %}
       
     {% endfor %}
   </div>
