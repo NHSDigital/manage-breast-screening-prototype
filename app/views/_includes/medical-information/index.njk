@@ -2,10 +2,13 @@
 
 {# Calling template sets variable `displayFormat` to one of card / expander / flat #}
 
-{% set allowEdits = true if (isAppointmentWorkflow and currentUser | isClinician) else false %}
+
 
 {# Explicitly set referrer chain to the current url #}
 {% set referrerChain = currentUrl %}
+
+{# Force edits enabled for mammogram history #}
+{% set allowEdits = true if (currentUser | isClinician) else false %}
 
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
@@ -64,6 +67,9 @@
       open: true
     }) }}
 {% endswitch %}
+
+{# Set allowEdits for everything else on the  #}
+{% set allowEdits = true if (isAppointmentWorkflow and currentUser | isClinician) else false %}
 
 {# -------------------------------------------------------------- #}
 {# Medical history #}
