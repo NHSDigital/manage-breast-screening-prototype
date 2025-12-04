@@ -6,7 +6,7 @@
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
 {% set formAction = "./start" %}
-{% set allowEdits = event.status != "event_cancelled" and event.status != "event_rescheduled" %}
+{% set allowEdits = event.status != "event_cancelled" and event.status != "event_rescheduled" and event.status != "event_complete" %}
 
 
 {% block pageContent %}
@@ -27,6 +27,13 @@
         event: event,
         referrerChain: currentUrl
       })}}
+    {% endif %}
+
+    {% if event.status === "event_complete" and event.sessionDetails %}
+      {% set durationMinutes = (event.sessionDetails.startedAt | dayjs).diff(event.sessionDetails.endedAt | dayjs, 'minute') | abs %}
+      <p class="nhsuk-u-margin-top-2">
+        Started at {{ event.sessionDetails.startedAt | formatDate('h:mma') }} and ended at {{ event.sessionDetails.endedAt | formatDate('h:mma') }}<br>({{ durationMinutes }} minutes)
+      </p>
     {% endif %}
 
     {% if event.status === "event_attended_not_screened" and event.appointmentStopped %}
@@ -121,8 +128,8 @@
   {% endset %}
 
   {% set appointmentTimeHtml -%}
-    <p>{{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})</p>
-    <p>{{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)</p>
+    {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})<br>
+    {{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes)
   {% endset %}
 
   {% set specialAppointmentHtml %}
@@ -141,7 +148,7 @@
       rows: [
         {
           key: {
-            text: "Date"
+            text: "Scheduled date and time"
           },
           value: {
             html: appointmentTimeHtml
@@ -196,6 +203,17 @@
         },
         {
           key: {
+            text: "Screened by"
+          },
+          value: {
+            text: event.sessionDetails.startedBy | getUsername({format: 'full'})
+          },
+          actions: {
+            items: []
+          }
+        } if event.status === "event_complete" and event.sessionDetails,
+        {
+          key: {
             text: "Special appointment"
           },
           value: {
@@ -208,7 +226,7 @@
                 text: "Change",
                 visuallyHiddenText: "special appointment"
               }
-            ]
+            ] if event.status != "event_complete"
           }
         },
         {
