@@ -145,8 +145,11 @@ function processRegionGroup(svg, side, stats) {
       const cleanId = id.replace(/-\d+$/, '')
       const dataKey = `${side}_${cleanId}`
 
+      // Pre-sternal is a central region - use 'center' instead of left/right
+      const regionSide = humanName === 'pre-sternal' ? 'center' : side
+
       // Build the new path element
-      return `<path class="${BEM_BLOCK}__region" data-name="${humanName}" data-key="${dataKey}" data-side="${side}" d="${dPath}"${rest}/>`
+      return `<path class="${BEM_BLOCK}__region" data-name="${humanName}" data-key="${dataKey}" data-side="${regionSide}" d="${dPath}"${rest}/>`
     }
   )
 
@@ -165,7 +168,10 @@ function processRegionGroup(svg, side, stats) {
       const cleanId = id.replace(/-\d+$/, '')
       const dataKey = `${side}_${cleanId}`
 
-      return `<polygon class="${BEM_BLOCK}__region" data-name="${humanName}" data-key="${dataKey}" data-side="${side}" points="${points}"${rest}/>`
+      // Pre-sternal is a central region - use 'center' instead of left/right
+      const regionSide = humanName === 'pre-sternal' ? 'center' : side
+
+      return `<polygon class="${BEM_BLOCK}__region" data-name="${humanName}" data-key="${dataKey}" data-side="${regionSide}" points="${points}"${rest}/>`
     }
   )
 
