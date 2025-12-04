@@ -2446,8 +2446,18 @@ module.exports = (router) => {
     const { clinicId, eventId } = req.params
 
     const data = req.session.data
+    const currentUser = data.currentUser
     const participantName = getFullName(data.participant)
     const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+    // Store session end details
+    updateEventData(data, eventId, {
+      sessionDetails: {
+        ...getEvent(data, eventId).sessionDetails,
+        endedAt: new Date().toISOString(),
+        endedBy: currentUser.id
+      }
+    })
 
     saveTempEventToEvent(data)
     saveTempParticipantToParticipant(data)
