@@ -243,11 +243,122 @@ function initializeBreastFeatures() {
     temporaryMarker.className =
       'breast-features__marker breast-features__marker--temporary'
     temporaryMarker.innerText = '?'
+    temporaryMarker.style.cursor = 'grab'
 
     positionMarkerAtSvgCoords(temporaryMarker, svgX, svgY)
     diagramContainer.appendChild(temporaryMarker)
 
+    // Add drag functionality to temporary marker
+    setupTemporaryMarkerDrag(temporaryMarker)
+
     // console.log('Temporary marker created at:', svgX, svgY)
+  }
+
+  function setupTemporaryMarkerDrag(markerElement) {
+    let isDragging = false
+    let dragStartX, dragStartY
+    let elementStartX, elementStartY
+    const dragThreshold = 5
+
+    markerElement.addEventListener('mousedown', function (e) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      // Prevent text selection during drag
+      document.body.style.userSelect = 'none'
+      markerElement.style.cursor = 'grabbing'
+
+      isDragging = false
+      dragStartX = e.clientX
+      dragStartY = e.clientY
+      elementStartX = parseInt(markerElement.style.left) || 0
+      elementStartY = parseInt(markerElement.style.top) || 0
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+
+      markerElement.classList.add('breast-features__marker--dragging')
+    })
+
+    function handleMouseMove(e) {
+      const currentX = e.clientX
+      const currentY = e.clientY
+
+      const dx = Math.abs(currentX - dragStartX)
+      const dy = Math.abs(currentY - dragStartY)
+
+      if (!isDragging && (dx > dragThreshold || dy > dragThreshold)) {
+        isDragging = true
+      }
+
+      if (isDragging) {
+        // Update marker position
+        const newLeft = elementStartX + (currentX - dragStartX)
+        const newTop = elementStartY + (currentY - dragStartY)
+        markerElement.style.left = newLeft + 'px'
+        markerElement.style.top = newTop + 'px'
+
+        // Update popover position to follow the marker
+        const markerRect = markerElement.getBoundingClientRect()
+        const markerCenterX = markerRect.left + markerRect.width / 2
+        const markerCenterY = markerRect.top + markerRect.height / 2
+        positionPopover(markerCenterX, markerCenterY)
+
+        // Update currentRegion coordinates
+        updateCurrentRegionFromMarker(markerElement)
+      }
+    }
+
+    function handleMouseUp(e) {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      markerElement.classList.remove('breast-features__marker--dragging')
+      markerElement.style.cursor = 'grab'
+
+      // Restore text selection
+      document.body.style.userSelect = ''
+
+      if (isDragging) {
+        // Final update of region after drag ends
+        updateCurrentRegionFromMarker(markerElement)
+      }
+
+      isDragging = false
+    }
+  }
+
+  function updateCurrentRegionFromMarker(markerElement) {
+    // Convert marker position back to SVG coordinates
+    const containerRect = diagramContainer.getBoundingClientRect()
+    const svgRect = svg.getBoundingClientRect()
+    const markerRect = markerElement.getBoundingClientRect()
+
+    // Get marker center position relative to container
+    const markerCenterX = markerRect.left + markerRect.width / 2 - containerRect.left
+    const markerCenterY = markerRect.top + markerRect.height / 2 - containerRect.top
+
+    // Convert to SVG coordinates
+    const svgOffsetX = svgRect.left - containerRect.left
+    const svgOffsetY = svgRect.top - containerRect.top
+
+    const relativeX = markerCenterX - svgOffsetX
+    const relativeY = markerCenterY - svgOffsetY
+
+    const svgX = (relativeX / svgRect.width) * 800
+    const svgY = (relativeY / svgRect.height) * 400
+
+    // Determine the new region
+    const regionInfo = determineRegionFromCoordinates(svgX, svgY)
+
+    if (regionInfo && currentRegion) {
+      currentRegion.name = regionInfo.region
+      currentRegion.side = regionInfo.side
+      currentRegion.centerX = svgX
+      currentRegion.centerY = svgY
+
+      // Update the region label in the popover
+      updateRegionLabel()
+    }
   }
 
   function removeTemporaryMarker() {
@@ -358,34 +469,49 @@ function initializeBreastFeatures() {
 
     // Wait a moment for the popover to render, then position it
     setTimeout(() => {
-      const popoverRect = popover.getBoundingClientRect()
-      let popoverLeft = clickX + 20
-      let popoverTop = clickY - popoverRect.height / 2
-
-      // Adjust position to stay within viewport
-      if (popoverLeft + popoverRect.width > window.innerWidth) {
-        popoverLeft = window.innerWidth - popoverRect.width - 10
-      }
-      if (popoverTop < 0) {
-        popoverTop = 10
-      }
-      if (popoverTop + popoverRect.height > window.innerHeight) {
-        popoverTop = window.innerHeight - popoverRect.height - 10
-      }
-      if (popoverLeft < 0) {
-        popoverLeft = 10
-      }
-
-      popover.style.left = popoverLeft + 'px'
-      popover.style.top = popoverTop + 'px'
+      positionPopover(clickX, clickY)
 
       // Focus the popover to ensure it's accessible
       popover.focus()
-
-      // console.log('Popover positioned at:', popoverLeft, popoverTop)
-      // console.log('Popover display:', popover.style.display)
-      // console.log('Popover visibility:', popover.style.visibility)
     }, 10)
+  }
+
+  function positionPopover(clickX, clickY) {
+    if (!popover) return
+
+    const popoverRect = popover.getBoundingClientRect()
+    const gap = 20 // Gap between marker and popover
+
+    // Check if there's enough space on the right
+    const spaceOnRight = window.innerWidth - clickX - gap
+    const fitsOnRight = spaceOnRight >= popoverRect.width
+
+    let popoverLeft
+    if (fitsOnRight) {
+      // Position to the right of the marker
+      popoverLeft = clickX + gap
+    } else {
+      // Position to the left of the marker
+      popoverLeft = clickX - popoverRect.width - gap
+      // If it still doesn't fit, align to left edge
+      if (popoverLeft < 10) {
+        popoverLeft = 10
+      }
+    }
+
+    // Vertically center on the click point
+    let popoverTop = clickY - popoverRect.height / 2
+
+    // Adjust vertical position to stay within viewport
+    if (popoverTop < 10) {
+      popoverTop = 10
+    }
+    if (popoverTop + popoverRect.height > window.innerHeight - 10) {
+      popoverTop = window.innerHeight - popoverRect.height - 10
+    }
+
+    popover.style.left = popoverLeft + 'px'
+    popover.style.top = popoverTop + 'px'
   }
 
   function updateRegionLabel() {
