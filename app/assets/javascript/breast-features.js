@@ -41,7 +41,7 @@ function initializeBreastFeatures() {
 
   // Get DOM elements using new BEM class names
   diagramContainer = document.querySelector('.breast-features__diagram')
-  svg = document.querySelector('.breast-features__svg')
+  svg = diagramContainer ? diagramContainer.querySelector('svg') : null
   popover = document.querySelector('.breast-features__popover')
   // console.log(
   //   'DEBUG initializeBreastFeatures: diagramContainer:',
@@ -147,7 +147,7 @@ function initializeBreastFeatures() {
       e.stopPropagation()
       // console.log('DEBUG: Borders button clicked!')
       const anatomicalRegions = document.querySelector(
-        '.breast-features__regions'
+        '.app-breast-diagram__regions'
       )
       // console.log('DEBUG: anatomicalRegions found:', anatomicalRegions)
       // console.log(
@@ -157,28 +157,30 @@ function initializeBreastFeatures() {
 
       if (
         anatomicalRegions.classList.contains(
-          'breast-features__regions--visible'
+          'app-breast-diagram__regions--visible'
         )
       ) {
-        anatomicalRegions.classList.remove('breast-features__regions--visible')
+        anatomicalRegions.classList.remove(
+          'app-breast-diagram__regions--visible'
+        )
         this.textContent = 'Show location borders'
         // console.log('DEBUG: Hiding location borders - removed visible class')
 
         // Force hide all regions by setting style directly
         const allRegions = anatomicalRegions.querySelectorAll(
-          '.breast-features__region'
+          '.app-breast-diagram__region'
         )
         allRegions.forEach((region) => {
           region.style.opacity = '0'
         })
       } else {
-        anatomicalRegions.classList.add('breast-features__regions--visible')
+        anatomicalRegions.classList.add('app-breast-diagram__regions--visible')
         this.textContent = 'Hide location borders'
         // console.log('DEBUG: Showing location borders - added visible class')
 
         // Force show all regions by setting style directly
         const allRegions = anatomicalRegions.querySelectorAll(
-          '.breast-features__region'
+          '.app-breast-diagram__region'
         )
         allRegions.forEach((region) => {
           region.style.opacity = '1'
@@ -191,7 +193,7 @@ function initializeBreastFeatures() {
 
       // Force check all individual regions
       const allRegions = anatomicalRegions.querySelectorAll(
-        '.breast-features__region'
+        '.app-breast-diagram__region'
       )
       // console.log('DEBUG: Found', allRegions.length, 'anatomical regions')
       allRegions.forEach((region, index) => {
@@ -258,7 +260,7 @@ function initializeBreastFeatures() {
 
   function handleSvgClick(e) {
     // Allow border toggle to work - don't interfere with anatomical region visibility
-    if (e.target.classList.contains('breast-features__region')) {
+    if (e.target.classList.contains('app-breast-diagram__region')) {
       // console.log(
       //   'DEBUG: Clicked on anatomical region:',
       //   e.target.getAttribute('data-region')
@@ -314,68 +316,21 @@ function initializeBreastFeatures() {
   }
 
   function determineRegionFromCoordinates(svgX, svgY) {
-    const regions = svg.querySelectorAll('.breast-features__region')
+    const regions = svg.querySelectorAll('.app-breast-diagram__region')
+    const point = new DOMPoint(svgX, svgY)
 
-    // First try to find exact region containing the point
+    // Find region containing the point using isPointInFill
     for (const region of regions) {
-      if (isPointInPolygon(svgX, svgY, region.getAttribute('points'))) {
+      if (region.isPointInFill(point)) {
         return {
-          region: region.getAttribute('data-region'),
+          region: region.getAttribute('data-name'),
           side: region.getAttribute('data-side')
         }
       }
     }
 
-    // Fallback: find closest region by distance to center
-    let closestRegion = null
-    let minDistance = Infinity
-
-    regions.forEach((region) => {
-      const centerX = parseFloat(region.getAttribute('data-center-x'))
-      const centerY = parseFloat(region.getAttribute('data-center-y'))
-
-      const distance = Math.sqrt(
-        Math.pow(svgX - centerX, 2) + Math.pow(svgY - centerY, 2)
-      )
-
-      if (distance < minDistance) {
-        minDistance = distance
-        closestRegion = {
-          region: region.getAttribute('data-region'),
-          side: region.getAttribute('data-side')
-        }
-      }
-    })
-
-    console.log(
-      `No exact region found for (${svgX}, ${svgY}), using closest:`,
-      closestRegion
-    )
-    return closestRegion
-  }
-
-  function isPointInPolygon(x, y, polygonPoints) {
-    const points = polygonPoints.split(' ').map((point) => {
-      const coords = point.split(',')
-      return { x: parseFloat(coords[0]), y: parseFloat(coords[1]) }
-    })
-
-    let inside = false
-    let j = points.length - 1
-
-    for (let i = 0; i < points.length; i++) {
-      const xi = points[i].x
-      const yi = points[i].y
-      const xj = points[j].x
-      const yj = points[j].y
-
-      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-        inside = !inside
-      }
-      j = i
-    }
-
-    return inside
+    console.warn(`No region found for coordinates (${svgX}, ${svgY})`)
+    return null
   }
 
   function showPopover(clickX, clickY) {
@@ -491,7 +446,7 @@ function initializeBreastFeatures() {
     marker.className = 'breast-features__marker'
     marker.innerText = number
     marker.setAttribute('data-id', number)
-    marker.setAttribute('data-region', region)
+    marker.setAttribute('data-name', region)
     marker.setAttribute('data-side', side)
     marker.setAttribute('data-feature-id', featureId)
 
@@ -526,19 +481,19 @@ function initializeBreastFeatures() {
   }
 
   function positionMarkerInRegion(marker, regionName, side) {
-    // Find the corresponding region element (fallback for old data)
+    // Find the corresponding region element and use its bounding box center
     const regionElement = svg.querySelector(
-      `[data-region="${regionName}"][data-side="${side}"]`
+      `[data-name="${regionName}"][data-side="${side}"]`
     )
     if (!regionElement) {
       console.warn('Region element not found:', regionName, side)
       return
     }
 
-    const centerX = parseFloat(regionElement.getAttribute('data-center-x'))
-    const centerY = parseFloat(regionElement.getAttribute('data-center-y'))
-
-    // console.log(`Positioning marker for ${side} ${regionName} at SVG coords:`, centerX, centerY)
+    // Get the center of the region's bounding box
+    const bbox = regionElement.getBBox()
+    const centerX = bbox.x + bbox.width / 2
+    const centerY = bbox.y + bbox.height / 2
 
     positionMarkerAtSvgCoords(marker, centerX, centerY)
   }

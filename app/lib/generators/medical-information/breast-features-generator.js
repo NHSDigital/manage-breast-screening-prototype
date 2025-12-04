@@ -6,10 +6,10 @@ const weighted = require('weighted')
 // Feature type configuration
 // Maps to the types defined in the form
 const FEATURE_TYPES = [
-  { value: 'mole', text: 'Mole', weight: 0.40 },
+  { value: 'mole', text: 'Mole', weight: 0.4 },
   { value: 'wart', text: 'Wart', weight: 0.25 },
-  { value: 'non-surgical-scar', text: 'Non-surgical scar', weight: 0.20 },
-  { value: 'bruising-or-trauma', text: 'Bruising or trauma', weight: 0.10 },
+  { value: 'non-surgical-scar', text: 'Non-surgical scar', weight: 0.2 },
+  { value: 'bruising-or-trauma', text: 'Bruising or trauma', weight: 0.1 },
   { value: 'other-feature', text: 'Other feature', weight: 0.05 }
 ]
 
@@ -27,44 +27,110 @@ const OTHER_FEATURE_DESCRIPTIONS = [
   'Previous injury mark'
 ]
 
-// Anatomical regions and their center coordinates (from breast-diagram.njk)
+// Anatomical regions and their approximate center coordinates (from new breast diagram)
 // Regions that are most likely to have visible features
 const REGIONS = {
   right: [
-    { name: 'axilla', centerX: 61.5, centerY: 89.5, weight: 0.05 },
-    { name: 'upper outer', centerX: 171.5, centerY: 139.5, weight: 0.15 },
-    { name: 'upper central', centerX: 247.2, centerY: 134.5, weight: 0.12 },
-    { name: 'upper inner', centerX: 332.8, centerY: 139.5, weight: 0.10 },
-    { name: 'lateral to nipple', centerX: 181.6, centerY: 199.3, weight: 0.10 },
-    { name: 'central', centerX: 253.6, centerY: 199.3, weight: 0.08 },
-    { name: 'medial to nipple', centerX: 332.8, centerY: 199.3, weight: 0.08 },
-    { name: 'lower lateral', centerX: 166.4, centerY: 258.4, weight: 0.08 },
-    { name: 'lower outer', centerX: 221.8, centerY: 263.4, weight: 0.12 },
-    { name: 'lower central', centerX: 287.4, centerY: 263.4, weight: 0.08 },
-    { name: 'lower inner', centerX: 358.0, centerY: 258.4, weight: 0.07 },
-    { name: 'inframammary fold', centerX: 252.1, centerY: 321.2, weight: 0.05 },
-    { name: 'upper chest', centerX: 252.1, centerY: 63.8, weight: 0.03 },
-    { name: 'lateral chest wall', centerX: 30.3, centerY: 238.6, weight: 0.02 }
+    { name: 'axilla', centerX: 67, centerY: 65, weight: 0.05 },
+    {
+      name: 'lateral infraclavicular',
+      centerX: 155,
+      centerY: 40,
+      weight: 0.03
+    },
+    { name: 'medial infraclavicular', centerX: 318, centerY: 45, weight: 0.03 },
+    { name: 'upper outer', centerX: 168, centerY: 130, weight: 0.1 },
+    { name: 'upper central', centerX: 236, centerY: 130, weight: 0.08 },
+    { name: 'upper inner', centerX: 320, centerY: 130, weight: 0.08 },
+    { name: 'lateral to nipple', centerX: 168, centerY: 200, weight: 0.1 },
+    { name: 'central', centerX: 240, centerY: 200, weight: 0.08 },
+    { name: 'medial to nipple', centerX: 330, centerY: 200, weight: 0.08 },
+    { name: 'lateral to breast', centerX: 52, centerY: 180, weight: 0.04 },
+    { name: 'lower outer', centerX: 168, centerY: 280, weight: 0.08 },
+    { name: 'lower central', centerX: 240, centerY: 280, weight: 0.06 },
+    { name: 'lower inner', centerX: 310, centerY: 280, weight: 0.06 },
+    {
+      name: 'lateral inframammary fold',
+      centerX: 150,
+      centerY: 340,
+      weight: 0.03
+    },
+    {
+      name: 'central inframammary fold',
+      centerX: 260,
+      centerY: 355,
+      weight: 0.03
+    },
+    {
+      name: 'medial inframammary fold',
+      centerX: 370,
+      centerY: 290,
+      weight: 0.02
+    },
+    {
+      name: 'lateral upper abdominal wall',
+      centerX: 120,
+      centerY: 385,
+      weight: 0.01
+    },
+    {
+      name: 'medial upper abdominal wall',
+      centerX: 360,
+      centerY: 370,
+      weight: 0.01
+    },
+    { name: 'pre-sternal', centerX: 390, centerY: 120, weight: 0.02 }
   ],
   left: [
-    { name: 'axilla', centerX: 738.5, centerY: 89.5, weight: 0.05 },
-    { name: 'upper outer', centerX: 628.5, centerY: 139.5, weight: 0.15 },
-    { name: 'upper central', centerX: 552.8, centerY: 134.5, weight: 0.12 },
-    { name: 'upper inner', centerX: 467.2, centerY: 139.5, weight: 0.10 },
-    { name: 'lateral to nipple', centerX: 618.4, centerY: 199.3, weight: 0.10 },
-    { name: 'central', centerX: 546.4, centerY: 199.3, weight: 0.08 },
-    { name: 'medial to nipple', centerX: 467.2, centerY: 199.3, weight: 0.08 },
-    { name: 'lower lateral', centerX: 633.6, centerY: 258.4, weight: 0.08 },
-    { name: 'lower outer', centerX: 578.2, centerY: 263.4, weight: 0.12 },
-    { name: 'lower central', centerX: 512.6, centerY: 263.4, weight: 0.08 },
-    { name: 'lower inner', centerX: 442.0, centerY: 258.4, weight: 0.07 },
-    { name: 'inframammary fold', centerX: 547.9, centerY: 321.2, weight: 0.05 },
-    { name: 'upper chest', centerX: 547.9, centerY: 63.8, weight: 0.03 },
-    { name: 'lateral chest wall', centerX: 769.7, centerY: 238.6, weight: 0.02 }
-  ],
-  center: [
-    { name: 'midline', centerX: 399.5, centerY: 199.8, weight: 0.02 },
-    { name: 'lower sternum', centerX: 399.5, centerY: 321.2, weight: 0.01 }
+    { name: 'axilla', centerX: 733, centerY: 65, weight: 0.05 },
+    {
+      name: 'lateral infraclavicular',
+      centerX: 645,
+      centerY: 40,
+      weight: 0.03
+    },
+    { name: 'medial infraclavicular', centerX: 482, centerY: 45, weight: 0.03 },
+    { name: 'upper outer', centerX: 632, centerY: 130, weight: 0.1 },
+    { name: 'upper central', centerX: 564, centerY: 130, weight: 0.08 },
+    { name: 'upper inner', centerX: 480, centerY: 130, weight: 0.08 },
+    { name: 'lateral to nipple', centerX: 632, centerY: 200, weight: 0.1 },
+    { name: 'central', centerX: 560, centerY: 200, weight: 0.08 },
+    { name: 'medial to nipple', centerX: 470, centerY: 200, weight: 0.08 },
+    { name: 'lateral to breast', centerX: 748, centerY: 180, weight: 0.04 },
+    { name: 'lower outer', centerX: 632, centerY: 280, weight: 0.08 },
+    { name: 'lower central', centerX: 560, centerY: 280, weight: 0.06 },
+    { name: 'lower inner', centerX: 490, centerY: 280, weight: 0.06 },
+    {
+      name: 'lateral inframammary fold',
+      centerX: 650,
+      centerY: 340,
+      weight: 0.03
+    },
+    {
+      name: 'central inframammary fold',
+      centerX: 540,
+      centerY: 355,
+      weight: 0.03
+    },
+    {
+      name: 'medial inframammary fold',
+      centerX: 430,
+      centerY: 290,
+      weight: 0.02
+    },
+    {
+      name: 'lateral upper abdominal wall',
+      centerX: 680,
+      centerY: 385,
+      weight: 0.01
+    },
+    {
+      name: 'medial upper abdominal wall',
+      centerX: 440,
+      centerY: 370,
+      weight: 0.01
+    },
+    { name: 'pre-sternal', centerX: 410, centerY: 120, weight: 0.02 }
   ]
 }
 
@@ -73,24 +139,23 @@ const REGIONS = {
  * @returns {object} Region data with side, name, and base coordinates
  */
 const selectRegion = () => {
-  // First, select which side (weight towards left/right over center)
+  // Select which side (equal weight)
   const side = weighted.select({
-    right: 0.45,
-    left: 0.45,
-    center: 0.10
+    right: 0.5,
+    left: 0.5
   })
 
   const regionsForSide = REGIONS[side]
 
   // Build weights object for regions on this side
   const regionWeights = {}
-  regionsForSide.forEach(region => {
+  regionsForSide.forEach((region) => {
     regionWeights[region.name] = region.weight
   })
 
   // Select region
   const regionName = weighted.select(regionWeights)
-  const regionData = regionsForSide.find(r => r.name === regionName)
+  const regionData = regionsForSide.find((r) => r.name === regionName)
 
   return {
     side,
@@ -128,17 +193,19 @@ const randomizePosition = (baseX, baseY) => {
 const generateBreastFeature = (options = {}) => {
   // Select feature type
   const featureTypeWeights = {}
-  FEATURE_TYPES.forEach(type => {
+  FEATURE_TYPES.forEach((type) => {
     featureTypeWeights[type.value] = type.weight
   })
 
   const selectedType = options.type || weighted.select(featureTypeWeights)
-  const featureType = FEATURE_TYPES.find(t => t.value === selectedType)
+  const featureType = FEATURE_TYPES.find((t) => t.value === selectedType)
 
   // Generate feature text
   let featureText = featureType.text
   if (selectedType === 'other-feature') {
-    const customDescription = faker.helpers.arrayElement(OTHER_FEATURE_DESCRIPTIONS)
+    const customDescription = faker.helpers.arrayElement(
+      OTHER_FEATURE_DESCRIPTIONS
+    )
     featureText = `Other: ${customDescription}`
   }
 
@@ -169,8 +236,8 @@ const generateBreastFeature = (options = {}) => {
  */
 const generateBreastFeatures = (options = {}) => {
   const {
-    probabilityOfAnyFeatures = 0.20,
-    probabilityOfMultipleFeatures = 0.30,
+    probabilityOfAnyFeatures = 0.2,
+    probabilityOfMultipleFeatures = 0.3,
     maxFeatures = 4,
     config
   } = options
@@ -191,9 +258,9 @@ const generateBreastFeatures = (options = {}) => {
   if (Math.random() < probabilityOfMultipleFeatures) {
     // If they're getting multiple, weighted towards fewer
     numberOfFeatures = weighted.select({
-      2: 0.60,
-      3: 0.30,
-      4: 0.10
+      2: 0.6,
+      3: 0.3,
+      4: 0.1
     })
   }
 
