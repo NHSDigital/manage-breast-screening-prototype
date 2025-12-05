@@ -93,36 +93,39 @@ If regions changed, also update `app/lib/generators/medical-information/breast-f
 
 The diagram should have 19 regions per side (38 total).
 
-### BEM classes added by processing script
+### IDs added by processing script
 
-| Element            | Class                                |
-| ------------------ | ------------------------------------ |
-| SVG root           | `app-breast-diagram__svg`            |
-| Regions container  | `app-breast-diagram__regions`        |
-| Left region group  | `app-breast-diagram__regions-left`   |
-| Right region group | `app-breast-diagram__regions-right`  |
-| Individual region  | `app-breast-diagram__region`         |
-| Diagram group      | `app-breast-diagram__diagram`        |
-| Breast outline     | `app-breast-diagram__breast-outline` |
-| Nipple outline     | `app-breast-diagram__nipple-outline` |
+| Element            | ID                                  |
+| ------------------ | ----------------------------------- |
+| SVG root           | `app-breast-diagram__svg`           |
+| Regions container  | `app-breast-diagram__regions`       |
+| Left region group  | `app-breast-diagram__regions-left`  |
+| Right region group | `app-breast-diagram__regions-right` |
+| Diagram group      | `app-breast-diagram__diagram`       |
 
-### Data attributes on regions
+The SVG root also has a matching class for CSS targeting. Child elements (region paths, outline paths/circles) don't have classes – target them via their parent group.
 
-| Attribute   | Example                      |
-| ----------- | ---------------------------- |
-| `data-name` | "lateral to nipple"          |
-| `data-key`  | "left_lateral_to_nipple"     |
-| `data-side` | "left", "right", or "center" |
+### Attributes on regions
 
-Note: Pre-sternal regions use `data-side="center"` as they span both breasts.
+| Attribute    | Example                  | Notes                            |
+| ------------ | ------------------------ | -------------------------------- |
+| `id`         | "left_lateral_to_nipple" | Unique identifier for the region |
+| `aria-label` | "left lateral to nipple" | Human-readable label             |
+
+The side can be derived from the parent group (`#app-breast-diagram__regions-left` or `#app-breast-diagram__regions-right`).
+
+### Attributes on outlines
+
+| Attribute    | Example               | Notes                      |
+| ------------ | --------------------- | -------------------------- |
+| `data-side`  | "left" or "right"     | Which breast               |
+| `aria-label` | "left breast outline" | Human-readable label       |
+
+Target breast outlines with `.app-breast-diagram__diagram path` and nipple outlines with `.app-breast-diagram__diagram circle`.
 
 ### Accessibility attributes
 
-All regions and outline elements have `aria-label` attributes:
-
-- Sided regions: "left upper inner", "right axilla", etc.
-- Center regions: "pre-sternal" (no side prefix)
-- Outlines: "left breast outline", "right nipple outline", etc.
+All regions and outline elements have `aria-label` attributes for screen readers.
 
 ### SVG attributes
 

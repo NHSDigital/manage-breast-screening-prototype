@@ -213,12 +213,25 @@ const generateBreastFeature = (options = {}) => {
   const region = selectRegion()
   const position = randomizePosition(region.baseCenterX, region.baseCenterY)
 
+  // Center regions span the midline - don't prefix with side
+  // In the SVG, these have aria-label without side prefix (e.g., "pre-sternal" not "left pre-sternal")
+  const centerRegions = ['pre-sternal']
+  const isCenter = centerRegions.includes(region.name)
+
+  // Build region name with side (e.g., "left upper inner") unless it's a center region
+  const regionName = isCenter
+    ? region.name
+    : `${region.side} ${region.name}`
+
+  // For center regions, the side should be "center"
+  const sideValue = isCenter ? 'center' : region.side
+
   return {
     id: options.id || 1,
     number: options.number || 1,
     text: featureText,
-    region: region.name,
-    side: region.side,
+    region: regionName,
+    side: sideValue,
     centerX: position.centerX,
     centerY: position.centerY
   }
@@ -284,12 +297,12 @@ const generateBreastFeatures = (options = {}) => {
       })
       attempts++
     } while (
-      usedRegions.has(`${feature.side}-${feature.region}`) &&
+      usedRegions.has(feature.region) &&
       attempts < maxAttempts
     )
 
-    // Add the region to used set
-    usedRegions.add(`${feature.side}-${feature.region}`)
+    // Add the region to used set (region already includes side, e.g., "left upper inner")
+    usedRegions.add(feature.region)
 
     features.push(feature)
   }

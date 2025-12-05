@@ -68,6 +68,9 @@ function processSvg(svg) {
   // Remove inline styles from region paths (fill: none will be handled by CSS)
   svg = removeInlineStylesFromRegions(svg)
 
+  // Clean up unnecessary attributes from defs
+  svg = cleanupDefs(svg)
+
   // Clean up the XML declaration and add a comment
   svg = addProcessedComment(svg)
 
@@ -115,12 +118,9 @@ function processSvgElement(svg) {
   // Remove xmlns:xlink (not used), but keep xmlns for standalone SVG viewing
   attributes = attributes.replace(/\s*xmlns:xlink="[^"]*"/g, '')
 
-  // Replace id and data-name with BEM element name (matches the class)
-  attributes = attributes.replace(/id="[^"]*"/, `id="${BEM_BLOCK}__svg"`)
-  attributes = attributes.replace(
-    /data-name="[^"]*"/,
-    `data-name="${BEM_BLOCK}__svg"`
-  )
+  // Remove id and data-name (class is already added above)
+  attributes = attributes.replace(/\s*id="[^"]*"/g, '')
+  attributes = attributes.replace(/\s*data-name="[^"]*"/g, '')
 
   // Add class attribute
   if (attributes.includes('class="')) {
@@ -168,20 +168,18 @@ function processRegionGroup(svg, side, stats) {
       // Use data-name if available, otherwise convert id from snake_case
       const humanName = dataName || id.replace(/_/g, ' ').replace(/-\d+$/, '')
 
-      // Create the data-key: side_snake_case_name
+      // Create the id: side_snake_case_name
       // Remove any trailing -2, -3 etc from the id first
       const cleanId = id.replace(/-\d+$/, '')
-      const dataKey = `${side}_${cleanId}`
-
-      // Pre-sternal is a central region - use 'center' instead of left/right
-      const regionSide = humanName === 'pre-sternal' ? 'center' : side
+      const regionId = `${side}_${cleanId}`
 
       // aria-label: "right upper inner" for sided regions, just "pre-sternal" for center
       const ariaLabel =
-        regionSide === 'center' ? humanName : `${side} ${humanName}`
+        humanName === 'pre-sternal' ? humanName : `${side} ${humanName}`
 
-      // Build the new path element
-      return `<path class="${BEM_BLOCK}__region" data-name="${humanName}" data-key="${dataKey}" data-side="${regionSide}" aria-label="${ariaLabel}" d="${dPath}"${rest}/>`
+      // Build the new path element - minimal attributes
+      // Use class instead of id for reusability (multiple diagrams on page)
+      return `<path class="${regionId}" aria-label="${ariaLabel}" d="${dPath}"${rest}/>`
     }
   )
 
@@ -198,21 +196,20 @@ function processRegionGroup(svg, side, stats) {
 
       const humanName = dataName || id.replace(/_/g, ' ').replace(/-\d+$/, '')
       const cleanId = id.replace(/-\d+$/, '')
-      const dataKey = `${side}_${cleanId}`
-
-      // Pre-sternal is a central region - use 'center' instead of left/right
-      const regionSide = humanName === 'pre-sternal' ? 'center' : side
+      const regionId = `${side}_${cleanId}`
 
       // aria-label: "right upper inner" for sided regions, just "pre-sternal" for center
       const ariaLabel =
-        regionSide === 'center' ? humanName : `${side} ${humanName}`
+        humanName === 'pre-sternal' ? humanName : `${side} ${humanName}`
 
-      return `<polygon class="${BEM_BLOCK}__region" data-name="${humanName}" data-key="${dataKey}" data-side="${regionSide}" aria-label="${ariaLabel}" points="${points}"${rest}/>`
+      // Build the new polygon element - minimal attributes
+      // Use class instead of id for reusability (multiple diagrams on page)
+      return `<polygon class="${regionId}" aria-label="${ariaLabel}" points="${points}"${rest}/>`
     }
   )
 
-  // Replace the group content in the SVG, adding BEM class to the group
-  const groupOpenTag = `<g id="${side}" class="${BEM_BLOCK}__regions-${side}">`
+  // Replace the group content in the SVG, using BEM class for the group
+  const groupOpenTag = `<g class="${BEM_BLOCK}__regions-${side}">`
   svg = svg.replace(groupRegex, `${groupOpenTag}${groupContent}$3`)
 
   return svg
@@ -222,9 +219,9 @@ function wrapRegionsInContainer(svg) {
   // Find both left and right groups and wrap them in a container
   // We need to find where the groups are and wrap them
 
-  // Match the left group (including its content) - may have class attribute
-  const leftGroupRegex = /(\s*)(<g id="left"[^>]*>[\s\S]*?<\/g>)/m
-  const rightGroupRegex = /(\s*)(<g id="right"[^>]*>[\s\S]*?<\/g>)/m
+  // Match the left group (including its content) - uses BEM class
+  const leftGroupRegex = /(\s*)(<g class="app-breast-diagram__regions-left"[^>]*>[\s\S]*?<\/g>)/m
+  const rightGroupRegex = /(\s*)(<g class="app-breast-diagram__regions-right"[^>]*>[\s\S]*?<\/g>)/m
 
   const leftMatch = svg.match(leftGroupRegex)
   const rightMatch = svg.match(rightGroupRegex)
@@ -301,17 +298,26 @@ function processOutlineGroup(svg) {
     console.warn('Warning: Could not find all outline elements for flattening')
     svg = svg.replace(
       /<g id="diagram">/,
-      `<g id="diagram" class="${BEM_BLOCK}__diagram">`
+      `<g class="${BEM_BLOCK}__diagram">`
     )
     return svg
   }
 
-  // Build the flattened structure
-  const flattenedDiagram = `<g id="diagram" class="${BEM_BLOCK}__diagram" clip-path="url(${clipPathUrl})">
-      <path id="Breast_outline" class="${BEM_BLOCK}__breast-outline" data-side="left" aria-label="left breast outline" vector-effect="non-scaling-stroke"${leftBreastMatch[1]}d="${leftBreastMatch[2]}"${leftBreastMatch[3]}/>
-      <circle id="Nipple_outline" class="${BEM_BLOCK}__nipple-outline" data-side="left" aria-label="left nipple outline" vector-effect="non-scaling-stroke"${leftNippleMatch[1]}/>
-      <path id="Breast_outline-2" class="${BEM_BLOCK}__breast-outline" data-side="right" aria-label="right breast outline" vector-effect="non-scaling-stroke"${rightBreastMatch[1]}d="${rightBreastMatch[2]}"${rightBreastMatch[3]}/>
-      <circle id="Nipple_outline-2" class="${BEM_BLOCK}__nipple-outline" data-side="right" aria-label="right nipple outline" vector-effect="non-scaling-stroke"${rightNippleMatch[1]}/>
+  // Helper to strip data-name from captured attributes
+  const stripDataName = (str) => str.replace(/\s*data-name="[^"]*"/g, '')
+
+  // Helper to strip attributes that have no effect on circles (closed paths)
+  const stripCircleOnlyAttrs = (str) =>
+    str.replace(/\s*stroke-linecap="[^"]*"/g, '')
+       .replace(/\s*stroke-miterlimit="[^"]*"/g, '')
+       .replace(/\s*stroke-linejoin="[^"]*"/g, '')
+
+  // Build the flattened structure - minimal attributes on children
+  const flattenedDiagram = `<g class="${BEM_BLOCK}__diagram" clip-path="url(${clipPathUrl})">
+      <path data-side="left" aria-label="left breast outline" vector-effect="non-scaling-stroke"${stripDataName(leftBreastMatch[1])}d="${leftBreastMatch[2]}"${stripDataName(leftBreastMatch[3])}/>
+      <circle data-side="left" aria-label="left nipple outline" vector-effect="non-scaling-stroke"${stripCircleOnlyAttrs(stripDataName(leftNippleMatch[1]))}/>
+      <path data-side="right" aria-label="right breast outline" vector-effect="non-scaling-stroke"${stripDataName(rightBreastMatch[1])}d="${rightBreastMatch[2]}"${stripDataName(rightBreastMatch[3])}/>
+      <circle data-side="right" aria-label="right nipple outline" vector-effect="non-scaling-stroke"${stripCircleOnlyAttrs(stripDataName(rightNippleMatch[1]))}/>
     </g>`
 
   // Replace the entire diagram group structure
@@ -335,6 +341,16 @@ function removeInlineStylesFromRegions(svg) {
   // This ensures the SVG displays correctly when viewed standalone (e.g. on GitHub)
   // The regions should be transparent by default, with CSS adding hover states etc.
   // With presentation attributes export, fill="none" is used instead of inline styles
+  return svg
+}
+
+function cleanupDefs(svg) {
+  // Remove unnecessary id and data-name from elements in defs
+  // The clippath rect doesn't need these attributes
+  svg = svg.replace(
+    /<rect id="container_outline" data-name="container outline"/g,
+    '<rect'
+  )
   return svg
 }
 
@@ -364,12 +380,12 @@ function validateProcessedSvg(svg, stats) {
     )
   }
 
-  // Check breast outlines exist for each side
+  // Check breast outlines exist for each side (identified by data-side within diagram group)
   const leftBreastOutline = svg.match(
-    /class="[^"]*__breast-outline"[^>]*data-side="left"/
+    /class="app-breast-diagram__diagram"[^>]*>[\s\S]*?<path[^>]*data-side="left"/
   )
   const rightBreastOutline = svg.match(
-    /class="[^"]*__breast-outline"[^>]*data-side="right"/
+    /class="app-breast-diagram__diagram"[^>]*>[\s\S]*?<path[^>]*data-side="right"/
   )
   if (!leftBreastOutline) {
     errors.push('Missing left breast outline')
@@ -380,10 +396,10 @@ function validateProcessedSvg(svg, stats) {
 
   // Check nipple outlines exist for each side
   const leftNippleOutline = svg.match(
-    /class="[^"]*__nipple-outline"[^>]*data-side="left"/
+    /class="app-breast-diagram__diagram"[^>]*>[\s\S]*?<circle[^>]*data-side="left"/
   )
   const rightNippleOutline = svg.match(
-    /class="[^"]*__nipple-outline"[^>]*data-side="right"/
+    /class="app-breast-diagram__diagram"[^>]*>[\s\S]*?<circle[^>]*data-side="right"/
   )
   if (!leftNippleOutline) {
     errors.push('Missing left nipple outline')

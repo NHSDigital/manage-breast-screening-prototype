@@ -155,21 +155,15 @@ function initializeBreastFeatures() {
       //   anatomicalRegions.className
       // )
 
-      if (
-        anatomicalRegions.classList.contains(
-          'app-breast-diagram__regions--visible'
-        )
-      ) {
-        anatomicalRegions.classList.remove(
-          'app-breast-diagram__regions--visible'
-        )
+      // Get all region paths and polygons
+      const allRegions = svg.querySelectorAll('.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon')
+
+      if (anatomicalRegions.classList.contains('app-breast-diagram__regions--visible')) {
+        anatomicalRegions.classList.remove('app-breast-diagram__regions--visible')
         this.textContent = 'Show location borders'
         // console.log('DEBUG: Hiding location borders - removed visible class')
 
         // Force hide all regions by setting style directly
-        const allRegions = anatomicalRegions.querySelectorAll(
-          '.app-breast-diagram__region'
-        )
         allRegions.forEach((region) => {
           region.style.opacity = '0'
         })
@@ -179,9 +173,6 @@ function initializeBreastFeatures() {
         // console.log('DEBUG: Showing location borders - added visible class')
 
         // Force show all regions by setting style directly
-        const allRegions = anatomicalRegions.querySelectorAll(
-          '.app-breast-diagram__region'
-        )
         allRegions.forEach((region) => {
           region.style.opacity = '1'
           region.style.strokeDasharray = '5,5'
@@ -190,11 +181,6 @@ function initializeBreastFeatures() {
           region.style.fill = 'none'
         })
       }
-
-      // Force check all individual regions
-      const allRegions = anatomicalRegions.querySelectorAll(
-        '.app-breast-diagram__region'
-      )
       // console.log('DEBUG: Found', allRegions.length, 'anatomical regions')
       allRegions.forEach((region, index) => {
         // console.log(
@@ -373,10 +359,12 @@ function initializeBreastFeatures() {
 
   function handleSvgClick(e) {
     // Allow border toggle to work - don't interfere with anatomical region visibility
-    if (e.target.classList.contains('app-breast-diagram__region')) {
+    // Check if clicked element is a region (path or polygon inside a regions group)
+    const isRegionElement = e.target.closest('.app-breast-diagram__regions-left, .app-breast-diagram__regions-right')
+    if (isRegionElement) {
       // console.log(
       //   'DEBUG: Clicked on anatomical region:',
-      //   e.target.getAttribute('data-region')
+      //   e.target.getAttribute('aria-label')
       // )
       // Don't return early - let the region click through for adding features
     }
@@ -428,16 +416,29 @@ function initializeBreastFeatures() {
     editingFeature = null
   }
 
+  // Helper to extract side from region name (e.g., "left upper inner" -> "left")
+  function getSideFromRegion(regionName) {
+    if (regionName.startsWith('left ')) return 'left'
+    if (regionName.startsWith('right ')) return 'right'
+    return 'center'
+  }
+
+  // Helper to get all region elements (paths and polygons in left/right groups)
+  function getAllRegionElements() {
+    return svg.querySelectorAll('.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon')
+  }
+
   function determineRegionFromCoordinates(svgX, svgY) {
-    const regions = svg.querySelectorAll('.app-breast-diagram__region')
+    const regions = getAllRegionElements()
     const point = new DOMPoint(svgX, svgY)
 
     // Find region containing the point using isPointInFill
     for (const region of regions) {
       if (region.isPointInFill(point)) {
+        const regionName = region.getAttribute('aria-label')
         return {
-          region: region.getAttribute('data-name'),
-          side: region.getAttribute('data-side')
+          region: regionName,
+          side: getSideFromRegion(regionName)
         }
       }
     }
@@ -520,12 +521,9 @@ function initializeBreastFeatures() {
     const regionLabel = document.querySelector('#regionLabel')
     if (!regionLabel || !currentRegion) return
 
-    if (currentRegion.side === 'center') {
-      regionLabel.textContent =
-        currentRegion.name.charAt(0).toUpperCase() + currentRegion.name.slice(1)
-    } else {
-      regionLabel.textContent = `${currentRegion.side.charAt(0).toUpperCase() + currentRegion.side.slice(1)} ${currentRegion.name}`
-    }
+    // currentRegion.name already includes side (e.g., "left upper inner" or "pre-sternal")
+    regionLabel.textContent =
+      currentRegion.name.charAt(0).toUpperCase() + currentRegion.name.slice(1)
   }
 
   function resetPopoverForm() {
@@ -609,12 +607,20 @@ function initializeBreastFeatures() {
   }
 
   function positionMarkerInRegion(marker, regionName, side) {
-    // Find the corresponding region element and use its bounding box center
-    const regionElement = svg.querySelector(
-      `[data-name="${regionName}"][data-side="${side}"]`
-    )
+    // Find the corresponding region element by class
+    // Convert region name to class format: "left upper inner" -> "left_upper_inner"
+    let regionId = regionName.replace(/ /g, '_')
+    let regionElement = svg.querySelector(`.${regionId}`)
+
+    // For center regions (like pre-sternal), the class has side prefix but aria-label doesn't
+    // Try with left_ or right_ prefix if not found
     if (!regionElement) {
-      console.warn('Region element not found:', regionName, side)
+      regionElement = svg.querySelector(`.left_${regionId}`) ||
+                      svg.querySelector(`.right_${regionId}`)
+    }
+
+    if (!regionElement) {
+      console.warn('Region element not found:', regionName, 'id:', regionId)
       return
     }
 
@@ -764,7 +770,7 @@ function initializeBreastFeatures() {
         updateFeaturesList()
         updateHiddenField()
         console.log(
-          `Feature ${feature.number} moved to ${regionInfo.side} ${regionInfo.region}`
+          `Feature ${feature.number} moved to ${regionInfo.region}`
         )
       }
     } else {
@@ -1022,13 +1028,8 @@ function initializeBreastFeatures() {
         listItem.setAttribute('data-feature-id', feature.id)
       }
 
-      let locationText = ''
-      if (feature.side === 'center') {
-        locationText =
-          feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
-      } else {
-        locationText = `${feature.side.charAt(0).toUpperCase() + feature.side.slice(1)} ${feature.region}`
-      }
+      // Region name already includes side (e.g., "left upper inner" or "pre-sternal")
+      const locationText = feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
 
       listItem.innerHTML = `
                 <div class="breast-features__item-left">

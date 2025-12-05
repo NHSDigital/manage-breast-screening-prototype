@@ -330,20 +330,9 @@ const summariseBreastFeature = (feature) => {
   // Extract feature type from text (handles "Other: Description" format)
   const featureType = feature.text
 
-  // Build location string
-  let location = ''
-  if (feature.side && feature.region) {
-    // Format: "side region" (e.g., "left lower central", "right upper outer")
-    if (feature.side === 'center') {
-      location = feature.region
-    } else {
-      location = `${feature.side} ${feature.region}`
-    }
-  }
-
-  // Combine feature type and location
-  if (location) {
-    return `${featureType} (${location})`
+  // Region already includes side (e.g., "left upper inner", "pre-sternal")
+  if (feature.region) {
+    return `${featureType} (${feature.region})`
   }
 
   return featureType
