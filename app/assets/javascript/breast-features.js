@@ -334,8 +334,10 @@ function initializeBreastFeatures() {
     const markerRect = markerElement.getBoundingClientRect()
 
     // Get marker center position relative to container
-    const markerCenterX = markerRect.left + markerRect.width / 2 - containerRect.left
-    const markerCenterY = markerRect.top + markerRect.height / 2 - containerRect.top
+    const markerCenterX =
+      markerRect.left + markerRect.width / 2 - containerRect.left
+    const markerCenterY =
+      markerRect.top + markerRect.height / 2 - containerRect.top
 
     // Convert to SVG coordinates
     const svgOffsetX = svgRect.left - containerRect.left

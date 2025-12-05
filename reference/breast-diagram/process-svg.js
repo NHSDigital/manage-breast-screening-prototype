@@ -233,12 +233,10 @@ function wrapRegionsInContainer(svg) {
 }
 
 function removeInlineStylesFromRegions(svg) {
-  // Remove style="fill: none;" from region elements
-  // This will be handled by CSS instead
-  return svg.replace(
-    /(<[^>]*class="[^"]*__region"[^>]*)\s+style="[^"]*fill:\s*none;?[^"]*"([^>]*>)/g,
-    '$1$2'
-  )
+  // Keep style="fill: none;" on region elements
+  // This ensures the SVG displays correctly when viewed standalone (e.g. on GitHub)
+  // The regions should be transparent by default, with CSS adding hover states etc.
+  return svg
 }
 
 function addProcessedComment(svg) {
