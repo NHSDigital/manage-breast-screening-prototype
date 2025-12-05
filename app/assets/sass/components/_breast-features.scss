@@ -45,8 +45,8 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
   cursor: default;
 }
 
-// ELEMENT: SVG element itself
-.breast-features__svg {
+// ELEMENT: SVG element itself (targets the SVG inside the diagram container)
+.breast-features__diagram svg {
   width: 100%;
   height: auto;
   aspect-ratio: 2 / 1;
@@ -230,19 +230,19 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
   font-weight: normal;
 }
 
-// ELEMENT: Anatomical region borders (hidden by default)
-.breast-features__regions {
+// ELEMENT: Anatomical region container (from processed SVG)
+.app-breast-diagram__regions {
   opacity: 0;
   pointer-events: all;
 }
 
 // MODIFIER: Visible regions
-.breast-features__regions--visible {
+.app-breast-diagram__regions--visible {
   opacity: 1;
 }
 
-// ELEMENT: Individual anatomical region
-.breast-features__region {
+// ELEMENT: Individual anatomical region (from processed SVG)
+.app-breast-diagram__region {
   stroke: $nhsuk-secondary-text-colour;
   stroke-width: 1px;
   stroke-dasharray: 5, 5;
@@ -252,13 +252,8 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 }
 
 // When regions are visible, show them
-.breast-features__regions--visible .breast-features__region {
+.app-breast-diagram__regions--visible .app-breast-diagram__region {
   opacity: 1;
-}
-
-// Only show axilla borders when toggled
-.breast-features__regions--visible .breast-features__region[data-region="axilla"] {
-  opacity: 1 !important;
 }
 
 // Responsive design
