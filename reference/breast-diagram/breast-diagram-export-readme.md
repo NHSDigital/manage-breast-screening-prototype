@@ -2,19 +2,17 @@
 
 ## Overview
 
-The breast diagram SVG contains the breast outlines and invisible region shapes used for location detection. The master artwork is in Adobe Illustrator, and must be processed before use.
+The breast diagram SVG contains breast outlines and invisible region shapes used for location detection. The master artwork is in Adobe Illustrator and must be processed before use.
 
 **Source file:** `breast-features-diagram-MASTER.ai`
 
 ## Quick start
 
 1. Edit the Illustrator file (if needed)
-2. Run `prepare-breast-regions.jsx` in Illustrator (stage 1)
-3. Expand the Live Paint group: Object > Live Paint > Expand
-4. Run the script again (stage 2)
-5. Export as SVG (Use Artboards: on)
-6. Run `node process-svg.js [exported-file].svg`
-7. Copy the processed SVG to your project
+2. Run `illustrator-processing-script.jsx` in Illustrator
+3. Export as SVG (Use Artboards: on, Styling: Presentation Attributes)
+4. Run `node process-exported-svg.js [exported-file].svg`
+5. Copy the processed SVG to `app/views/_includes/breast-diagram.svg`
 
 ---
 
@@ -24,54 +22,62 @@ The breast diagram SVG contains the breast outlines and invisible region shapes 
 
 The Illustrator file has these key layers:
 
-| Layer          | Purpose                                                           |
-| -------------- | ----------------------------------------------------------------- |
-| Breast diagram | Outline artwork for each breast                                   |
-| Region labels  | Text labels for each region (lowercase, e.g. "lateral to nipple") |
-| Regions        | Live Paint group defining the region boundaries                   |
+| Layer                    | Purpose                                                           |
+| ------------------------ | ----------------------------------------------------------------- |
+| Breast diagram           | Outline artwork for each breast                                   |
+| Region labels            | Text labels for each region (lowercase, e.g. "lateral to nipple") |
+| Regions                  | Live Paint group defining the region boundaries                   |
+| Breast diagram to export | Output layer created by the script                                |
 
 **Tips:**
 
 - Labels must be fully inside their region and near the centre
 - Use horizontal (non-rotated) text labels
-- Work on the right breast first, then mirror for left
+- Only work on the right breast – the left breast is mirrored by the script
 
 ### Running the Illustrator script
 
-The script runs in two stages:
+File > Scripts > Other Script > `illustrator-processing-script.jsx`
 
-**Stage 1:** File > Scripts > Other Script > `prepare-breast-regions.jsx`
+The script:
 
-- Duplicates the Live Paint group to a new layer
+1. Duplicates the Live Paint group to the output layer
+2. Auto-expands the Live Paint group (via Object > Live Paint > Expand)
+3. Labels each path using the text labels
+4. Mirrors the right side to create the left side
+5. Adds breast and nipple outlines
 
-**Between stages:** Object > Live Paint > Expand (with the group selected)
-
-**Stage 2:** Run the script again
-
-- Labels paths from the text labels
-- Mirrors to create left side
-- Adds breast outline
+If the auto-expand fails, follow the on-screen instructions to expand manually and run again.
 
 ### Exporting the SVG
 
 File > Export > Export As...
 
-| Option        | Value         |
-| ------------- | ------------- |
-| Format        | SVG           |
-| Use Artboards | ✓ (important) |
-| Styling       | Inline Style  |
-| Object IDs    | Layer Names   |
-| Decimals      | 2             |
+| Option        | Value                   |
+| ------------- | ----------------------- |
+| Format        | SVG                     |
+| Use Artboards | ✓ (important)           |
+| Styling       | Presentation Attributes |
+| Object IDs    | Layer Names             |
+| Decimals      | 2                       |
 
 ### Processing the SVG
 
 ```bash
 cd reference/breast-diagram
-node process-svg.js breast-features-diagram-[version].svg
+node process-exported-svg.js breast-features-diagram-[version].svg
 ```
 
-Creates a `-processed.svg` file with BEM classes and data attributes.
+Creates a `-processed.svg` file with:
+
+- BEM classes for styling
+- Data attributes for JavaScript interaction
+- Accessibility attributes (aria-labels)
+- Non-scaling strokes on outlines
+- Flattened diagram structure
+- Cleaned XML (no declaration, no xmlns)
+
+The script validates the output and will error if expected elements are missing.
 
 ### Using in the prototype
 
@@ -89,19 +95,38 @@ The diagram should have 19 regions per side (38 total).
 
 ### BEM classes added by processing script
 
-| Element           | Class                         |
-| ----------------- | ----------------------------- |
-| SVG root          | `app-breast-diagram__svg`     |
-| Regions container | `app-breast-diagram__regions` |
-| Individual region | `app-breast-diagram__region`  |
+| Element            | Class                                |
+| ------------------ | ------------------------------------ |
+| SVG root           | `app-breast-diagram__svg`            |
+| Regions container  | `app-breast-diagram__regions`        |
+| Left region group  | `app-breast-diagram__regions-left`   |
+| Right region group | `app-breast-diagram__regions-right`  |
+| Individual region  | `app-breast-diagram__region`         |
+| Diagram group      | `app-breast-diagram__diagram`        |
+| Breast outline     | `app-breast-diagram__breast-outline` |
+| Nipple outline     | `app-breast-diagram__nipple-outline` |
 
 ### Data attributes on regions
 
-| Attribute   | Example                  |
-| ----------- | ------------------------ |
-| `data-name` | "lateral to nipple"      |
-| `data-key`  | "left_lateral_to_nipple" |
-| `data-side` | "left" or "right"        |
+| Attribute   | Example                      |
+| ----------- | ---------------------------- |
+| `data-name` | "lateral to nipple"          |
+| `data-key`  | "left_lateral_to_nipple"     |
+| `data-side` | "left", "right", or "center" |
+
+Note: Pre-sternal regions use `data-side="center"` as they span both breasts.
+
+### Accessibility attributes
+
+All regions and outline elements have `aria-label` attributes:
+
+- Sided regions: "left upper inner", "right axilla", etc.
+- Center regions: "pre-sternal" (no side prefix)
+- Outlines: "left breast outline", "right nipple outline", etc.
+
+### SVG attributes
+
+Outline paths and circles include `vector-effect="non-scaling-stroke"` so stroke width remains constant when the diagram is scaled.
 
 ### Troubleshooting
 
@@ -113,3 +138,6 @@ The Regions layer needs a Live Paint group. Restore from backup if already expan
 
 **Label conflicts warning**
 Multiple labels matched one region. Usually caused by rotated text – use horizontal labels.
+
+**Validation errors**
+The processing script checks for 38 regions, breast/nipple outlines, and viewBox. Fix the source artwork if validation fails.

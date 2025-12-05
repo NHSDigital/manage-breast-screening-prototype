@@ -1,10 +1,8 @@
-// scripts/illustrator/prepare-breast-regions.jsx
+// reference/breast-diagram/illustrator-processing-script.jsx
 //
-// Illustrator ExtendScript to prepare breast diagram regions for export
-//
-// This script (run twice):
-// Step 1: Duplicates Live Paint group, prompts for manual expand
-// Step 2: Labels paths, mirrors to create left side, cleans up
+// Illustrator ExtendScript to prepare breast diagram regions for export.
+// Duplicates Live Paint group, auto-expands it, labels paths using text labels,
+// mirrors the right side to create the left side, and adds breast/nipple outlines.
 //
 // Run this in Illustrator via File > Scripts > Other Script...
 
@@ -111,21 +109,37 @@
       duplicatedGroup.selected = true
       doc.selection = [duplicatedGroup]
 
-      var instructions = 'STEP 1: Expand Live Paint\n\n'
-      instructions +=
-        "The Live Paint group has been duplicated and selected in the '" +
-        OUTPUT_LAYER_NAME +
-        "' layer.\n\n"
-      instructions += 'Now please:\n'
-      instructions += '1. Go to Object > Live Paint > Expand\n'
-      instructions += '2. Run this script again to label and mirror the paths'
+      // Try to expand the Live Paint group automatically
+      try {
+        app.executeMenuCommand('Expand Planet X')
 
-      alert(instructions)
+        // If we got here, expand worked - continue to step 2
+        // We need to re-collect the paths since they've been expanded
+        existingPaths = []
+        collectPathItems(outputLayer, existingPaths)
+        hasExpandedPaths = existingPaths.length > 0
 
-      // Re-lock the source layers
-      if (regionsLayer) regionsLayer.locked = true
-      if (labelsLayer) labelsLayer.locked = true
-      return
+        if (!hasExpandedPaths) {
+          throw new Error('Expand did not create paths')
+        }
+      } catch (e) {
+        // Expand failed - fall back to manual process
+        var instructions = 'STEP 1: Expand Live Paint\n\n'
+        instructions +=
+          "The Live Paint group has been duplicated and selected in the '" +
+          OUTPUT_LAYER_NAME +
+          "' layer.\n\n"
+        instructions += 'Automatic expand failed. Please:\n'
+        instructions += '1. Go to Object > Live Paint > Expand\n'
+        instructions += '2. Run this script again to label and mirror the paths'
+
+        alert(instructions)
+
+        // Re-lock the source layers
+        if (regionsLayer) regionsLayer.locked = true
+        if (labelsLayer) labelsLayer.locked = true
+        return
+      }
     } else {
       alert(
         "Could not find Live Paint group or expanded paths.\n\nMake sure the '" +
@@ -344,7 +358,7 @@
   // Check if we already have breast diagram content in output layer
   var hasBreastDiagram = false
   for (var i = 0; i < outputLayer.groupItems.length; i++) {
-    if (outputLayer.groupItems[i].name === 'outline') {
+    if (outputLayer.groupItems[i].name === 'diagram') {
       hasBreastDiagram = true
       break
     }
@@ -353,20 +367,20 @@
   // Copy breast diagram layer contents if not already done
   if (!hasBreastDiagram && breastDiagramLayer) {
     // Create a group to hold the breast diagram content
-    var outlineGroup = outputLayer.groupItems.add()
-    outlineGroup.name = 'outline'
+    var diagramGroup = outputLayer.groupItems.add()
+    diagramGroup.name = 'diagram'
 
     // Copy all items from breast diagram layer
     for (var i = breastDiagramLayer.pageItems.length - 1; i >= 0; i--) {
       var item = breastDiagramLayer.pageItems[i]
       var copiedItem = item.duplicate(
-        outlineGroup,
+        diagramGroup,
         ElementPlacement.PLACEATBEGINNING
       )
     }
 
-    // Move outline group to the front (above regions)
-    outlineGroup.zOrder(ZOrderMethod.BRINGTOFRONT)
+    // Move diagram group to the front (above regions)
+    diagramGroup.zOrder(ZOrderMethod.BRINGTOFRONT)
   }
 
   // ============ CLEAN UP ============
@@ -411,7 +425,7 @@
       'Unlabelled: ' + unlabelledCount + " (check for 'unlabelled-X' names)\n"
   }
   message += "\nMirrored to create 'left' group.\n"
-  message += "Copied breast diagram to 'outline' group.\n"
+  message += "Copied breast diagram to 'diagram' group.\n"
   message += '\nAll other layers have been hidden.\n'
   message += 'Press Cmd+Y to switch to Outline mode if needed.\n'
   message += '\nExport via File > Export > Export As...\n'
