@@ -166,23 +166,40 @@
     }) }}
   {% endset %}
 
-  {% set approximateDateHtml %}
+  {% set moreThanSixMonthsHtml %}
     {{ input({
-      id: "approximateDate",
+      id: "approximateDateMoreThan",
       name: "event[previousMammogramTemp][approximateDate]",
       label: {
-        text: "Enter an approximate date",
-        classes: "nhsuk-u-visually-hidden"
+        text: "Approximate date"
       },
       hint: {
-        text: "For example, 9 months ago"
+        text: "For example, April 2018 or summer 2021"
       },
       classes: "nhsuk-u-width-two-thirds",
       value: event.previousMammogramTemp.approximateDate
     }) }}
   {% endset %}
 
-  {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not sure'  #}
+  {% set lessThanSixMonthsHtml %}
+    <p>This appointment will need to stop and you will be prompted to reschedule until 6 months has passed.</p>
+
+    {{ input({
+      id: "approximateDateLessThan",
+      name: "event[previousMammogramTemp][approximateDate]",
+      label: {
+        text: "Approximate date"
+      },
+      hint: {
+        text: "For example, April 2018 or summer 2021"
+      },
+      classes: "nhsuk-u-width-two-thirds",
+      value: event.previousMammogramTemp.approximateDate
+    }) }}
+
+  {% endset %}
+
+  {# Radios for when were they taken #}
   {{ radios({
     idPrefix: "dateType",
     name: "event[previousMammogramTemp][dateType]",
@@ -203,15 +220,18 @@
         }
       },
       {
-        value: "approximateDate",
-        text: "Enter an approximate date",
+        value: "moreThanSixMonths",
+        text: "Not sure – more than 6 months ago",
         conditional: {
-          html: approximateDateHtml
+          html: moreThanSixMonthsHtml
         }
       },
       {
-        value: "notSure",
-        text: "Not sure"
+        value: "lessThanSixMonths",
+        text: "Not sure – less than 6 months ago",
+        conditional: {
+          html: lessThanSixMonthsHtml
+        }
       }
     ]
   }) }}
