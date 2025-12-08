@@ -182,7 +182,7 @@
   {% endset %}
 
   {% set lessThanSixMonthsHtml %}
-    <p>This appointment will need to stop and you will be prompted to reschedule until 6 months has passed.</p>
+    <p>This appointment will need to stop and you will be prompted to reschedule once 6 months has passed.</p>
 
     {{ input({
       id: "approximateDateLessThan",
@@ -221,7 +221,7 @@
       },
       {
         value: "moreThanSixMonths",
-        text: "Not sure – more than 6 months ago",
+        text: "Not sure – 6 months or more ago",
         conditional: {
           html: moreThanSixMonthsHtml
         }

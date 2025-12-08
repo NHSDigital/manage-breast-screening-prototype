@@ -46,7 +46,7 @@
         previousMammogram.dateTaken | formatDate + " (" + (previousMammogram.dateTaken | formatDate | formatRelativeDate | asHint) + ")"
       ) %}
     {% elseif previousMammogram.dateType == 'moreThanSixMonths' %}
-      {% set dateText = "Approximately taken more than 6 months ago" %}
+      {% set dateText = "Approximately taken 6 months or more ago" %}
       {% if previousMammogram.approximateDate %}
         {% set dateText = dateText + ": " + previousMammogram.approximateDate %}
       {% endif %}
