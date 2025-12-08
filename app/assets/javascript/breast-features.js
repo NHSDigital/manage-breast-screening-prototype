@@ -41,7 +41,7 @@ function initializeBreastFeatures() {
 
   // Get DOM elements using new BEM class names
   diagramContainer = document.querySelector('.breast-features__diagram')
-  svg = document.querySelector('.breast-features__svg')
+  svg = diagramContainer ? diagramContainer.querySelector('svg') : null
   popover = document.querySelector('.breast-features__popover')
   // console.log(
   //   'DEBUG initializeBreastFeatures: diagramContainer:',
@@ -147,7 +147,7 @@ function initializeBreastFeatures() {
       e.stopPropagation()
       // console.log('DEBUG: Borders button clicked!')
       const anatomicalRegions = document.querySelector(
-        '.breast-features__regions'
+        '.app-breast-diagram__regions'
       )
       // console.log('DEBUG: anatomicalRegions found:', anatomicalRegions)
       // console.log(
@@ -155,31 +155,32 @@ function initializeBreastFeatures() {
       //   anatomicalRegions.className
       // )
 
+      // Get all region paths and polygons
+      const allRegions = svg.querySelectorAll(
+        '.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon'
+      )
+
       if (
         anatomicalRegions.classList.contains(
-          'breast-features__regions--visible'
+          'app-breast-diagram__regions--visible'
         )
       ) {
-        anatomicalRegions.classList.remove('breast-features__regions--visible')
+        anatomicalRegions.classList.remove(
+          'app-breast-diagram__regions--visible'
+        )
         this.textContent = 'Show location borders'
         // console.log('DEBUG: Hiding location borders - removed visible class')
 
         // Force hide all regions by setting style directly
-        const allRegions = anatomicalRegions.querySelectorAll(
-          '.breast-features__region'
-        )
         allRegions.forEach((region) => {
           region.style.opacity = '0'
         })
       } else {
-        anatomicalRegions.classList.add('breast-features__regions--visible')
+        anatomicalRegions.classList.add('app-breast-diagram__regions--visible')
         this.textContent = 'Hide location borders'
         // console.log('DEBUG: Showing location borders - added visible class')
 
         // Force show all regions by setting style directly
-        const allRegions = anatomicalRegions.querySelectorAll(
-          '.breast-features__region'
-        )
         allRegions.forEach((region) => {
           region.style.opacity = '1'
           region.style.strokeDasharray = '5,5'
@@ -188,11 +189,6 @@ function initializeBreastFeatures() {
           region.style.fill = 'none'
         })
       }
-
-      // Force check all individual regions
-      const allRegions = anatomicalRegions.querySelectorAll(
-        '.breast-features__region'
-      )
       // console.log('DEBUG: Found', allRegions.length, 'anatomical regions')
       allRegions.forEach((region, index) => {
         // console.log(
@@ -241,11 +237,124 @@ function initializeBreastFeatures() {
     temporaryMarker.className =
       'breast-features__marker breast-features__marker--temporary'
     temporaryMarker.innerText = '?'
+    temporaryMarker.style.cursor = 'grab'
 
     positionMarkerAtSvgCoords(temporaryMarker, svgX, svgY)
     diagramContainer.appendChild(temporaryMarker)
 
+    // Add drag functionality to temporary marker
+    setupTemporaryMarkerDrag(temporaryMarker)
+
     // console.log('Temporary marker created at:', svgX, svgY)
+  }
+
+  function setupTemporaryMarkerDrag(markerElement) {
+    let isDragging = false
+    let dragStartX, dragStartY
+    let elementStartX, elementStartY
+    const dragThreshold = 5
+
+    markerElement.addEventListener('mousedown', function (e) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      // Prevent text selection during drag
+      document.body.style.userSelect = 'none'
+      markerElement.style.cursor = 'grabbing'
+
+      isDragging = false
+      dragStartX = e.clientX
+      dragStartY = e.clientY
+      elementStartX = parseInt(markerElement.style.left) || 0
+      elementStartY = parseInt(markerElement.style.top) || 0
+
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+
+      markerElement.classList.add('breast-features__marker--dragging')
+    })
+
+    function handleMouseMove(e) {
+      const currentX = e.clientX
+      const currentY = e.clientY
+
+      const dx = Math.abs(currentX - dragStartX)
+      const dy = Math.abs(currentY - dragStartY)
+
+      if (!isDragging && (dx > dragThreshold || dy > dragThreshold)) {
+        isDragging = true
+      }
+
+      if (isDragging) {
+        // Update marker position
+        const newLeft = elementStartX + (currentX - dragStartX)
+        const newTop = elementStartY + (currentY - dragStartY)
+        markerElement.style.left = newLeft + 'px'
+        markerElement.style.top = newTop + 'px'
+
+        // Update popover position to follow the marker
+        const markerRect = markerElement.getBoundingClientRect()
+        const markerCenterX = markerRect.left + markerRect.width / 2
+        const markerCenterY = markerRect.top + markerRect.height / 2
+        positionPopover(markerCenterX, markerCenterY)
+
+        // Update currentRegion coordinates
+        updateCurrentRegionFromMarker(markerElement)
+      }
+    }
+
+    function handleMouseUp(e) {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      markerElement.classList.remove('breast-features__marker--dragging')
+      markerElement.style.cursor = 'grab'
+
+      // Restore text selection
+      document.body.style.userSelect = ''
+
+      if (isDragging) {
+        // Final update of region after drag ends
+        updateCurrentRegionFromMarker(markerElement)
+      }
+
+      isDragging = false
+    }
+  }
+
+  function updateCurrentRegionFromMarker(markerElement) {
+    // Convert marker position back to SVG coordinates
+    const containerRect = diagramContainer.getBoundingClientRect()
+    const svgRect = svg.getBoundingClientRect()
+    const markerRect = markerElement.getBoundingClientRect()
+
+    // Get marker center position relative to container
+    const markerCenterX =
+      markerRect.left + markerRect.width / 2 - containerRect.left
+    const markerCenterY =
+      markerRect.top + markerRect.height / 2 - containerRect.top
+
+    // Convert to SVG coordinates
+    const svgOffsetX = svgRect.left - containerRect.left
+    const svgOffsetY = svgRect.top - containerRect.top
+
+    const relativeX = markerCenterX - svgOffsetX
+    const relativeY = markerCenterY - svgOffsetY
+
+    const svgX = (relativeX / svgRect.width) * 800
+    const svgY = (relativeY / svgRect.height) * 400
+
+    // Determine the new region
+    const regionInfo = determineRegionFromCoordinates(svgX, svgY)
+
+    if (regionInfo && currentRegion) {
+      currentRegion.name = regionInfo.region
+      currentRegion.side = regionInfo.side
+      currentRegion.centerX = svgX
+      currentRegion.centerY = svgY
+
+      // Update the region label in the popover
+      updateRegionLabel()
+    }
   }
 
   function removeTemporaryMarker() {
@@ -258,10 +367,14 @@ function initializeBreastFeatures() {
 
   function handleSvgClick(e) {
     // Allow border toggle to work - don't interfere with anatomical region visibility
-    if (e.target.classList.contains('breast-features__region')) {
+    // Check if clicked element is a region (path or polygon inside a regions group)
+    const isRegionElement = e.target.closest(
+      '.app-breast-diagram__regions-left, .app-breast-diagram__regions-right'
+    )
+    if (isRegionElement) {
       // console.log(
       //   'DEBUG: Clicked on anatomical region:',
-      //   e.target.getAttribute('data-region')
+      //   e.target.getAttribute('aria-label')
       // )
       // Don't return early - let the region click through for adding features
     }
@@ -313,69 +426,37 @@ function initializeBreastFeatures() {
     editingFeature = null
   }
 
-  function determineRegionFromCoordinates(svgX, svgY) {
-    const regions = svg.querySelectorAll('.breast-features__region')
-
-    // First try to find exact region containing the point
-    for (const region of regions) {
-      if (isPointInPolygon(svgX, svgY, region.getAttribute('points'))) {
-        return {
-          region: region.getAttribute('data-region'),
-          side: region.getAttribute('data-side')
-        }
-      }
-    }
-
-    // Fallback: find closest region by distance to center
-    let closestRegion = null
-    let minDistance = Infinity
-
-    regions.forEach((region) => {
-      const centerX = parseFloat(region.getAttribute('data-center-x'))
-      const centerY = parseFloat(region.getAttribute('data-center-y'))
-
-      const distance = Math.sqrt(
-        Math.pow(svgX - centerX, 2) + Math.pow(svgY - centerY, 2)
-      )
-
-      if (distance < minDistance) {
-        minDistance = distance
-        closestRegion = {
-          region: region.getAttribute('data-region'),
-          side: region.getAttribute('data-side')
-        }
-      }
-    })
-
-    console.log(
-      `No exact region found for (${svgX}, ${svgY}), using closest:`,
-      closestRegion
-    )
-    return closestRegion
+  // Helper to extract side from region name (e.g., "left upper inner" -> "left")
+  function getSideFromRegion(regionName) {
+    if (regionName.startsWith('left ')) return 'left'
+    if (regionName.startsWith('right ')) return 'right'
+    return 'center'
   }
 
-  function isPointInPolygon(x, y, polygonPoints) {
-    const points = polygonPoints.split(' ').map((point) => {
-      const coords = point.split(',')
-      return { x: parseFloat(coords[0]), y: parseFloat(coords[1]) }
-    })
+  // Helper to get all region elements (paths and polygons in left/right groups)
+  function getAllRegionElements() {
+    return svg.querySelectorAll(
+      '.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon'
+    )
+  }
 
-    let inside = false
-    let j = points.length - 1
+  function determineRegionFromCoordinates(svgX, svgY) {
+    const regions = getAllRegionElements()
+    const point = new DOMPoint(svgX, svgY)
 
-    for (let i = 0; i < points.length; i++) {
-      const xi = points[i].x
-      const yi = points[i].y
-      const xj = points[j].x
-      const yj = points[j].y
-
-      if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-        inside = !inside
+    // Find region containing the point using isPointInFill
+    for (const region of regions) {
+      if (region.isPointInFill(point)) {
+        const regionName = region.getAttribute('aria-label')
+        return {
+          region: regionName,
+          side: getSideFromRegion(regionName)
+        }
       }
-      j = i
     }
 
-    return inside
+    console.warn(`No region found for coordinates (${svgX}, ${svgY})`)
+    return null
   }
 
   function showPopover(clickX, clickY) {
@@ -403,46 +484,58 @@ function initializeBreastFeatures() {
 
     // Wait a moment for the popover to render, then position it
     setTimeout(() => {
-      const popoverRect = popover.getBoundingClientRect()
-      let popoverLeft = clickX + 20
-      let popoverTop = clickY - popoverRect.height / 2
-
-      // Adjust position to stay within viewport
-      if (popoverLeft + popoverRect.width > window.innerWidth) {
-        popoverLeft = window.innerWidth - popoverRect.width - 10
-      }
-      if (popoverTop < 0) {
-        popoverTop = 10
-      }
-      if (popoverTop + popoverRect.height > window.innerHeight) {
-        popoverTop = window.innerHeight - popoverRect.height - 10
-      }
-      if (popoverLeft < 0) {
-        popoverLeft = 10
-      }
-
-      popover.style.left = popoverLeft + 'px'
-      popover.style.top = popoverTop + 'px'
+      positionPopover(clickX, clickY)
 
       // Focus the popover to ensure it's accessible
       popover.focus()
-
-      // console.log('Popover positioned at:', popoverLeft, popoverTop)
-      // console.log('Popover display:', popover.style.display)
-      // console.log('Popover visibility:', popover.style.visibility)
     }, 10)
+  }
+
+  function positionPopover(clickX, clickY) {
+    if (!popover) return
+
+    const popoverRect = popover.getBoundingClientRect()
+    const gap = 20 // Gap between marker and popover
+
+    // Check if there's enough space on the right
+    const spaceOnRight = window.innerWidth - clickX - gap
+    const fitsOnRight = spaceOnRight >= popoverRect.width
+
+    let popoverLeft
+    if (fitsOnRight) {
+      // Position to the right of the marker
+      popoverLeft = clickX + gap
+    } else {
+      // Position to the left of the marker
+      popoverLeft = clickX - popoverRect.width - gap
+      // If it still doesn't fit, align to left edge
+      if (popoverLeft < 10) {
+        popoverLeft = 10
+      }
+    }
+
+    // Vertically center on the click point
+    let popoverTop = clickY - popoverRect.height / 2
+
+    // Adjust vertical position to stay within viewport
+    if (popoverTop < 10) {
+      popoverTop = 10
+    }
+    if (popoverTop + popoverRect.height > window.innerHeight - 10) {
+      popoverTop = window.innerHeight - popoverRect.height - 10
+    }
+
+    popover.style.left = popoverLeft + 'px'
+    popover.style.top = popoverTop + 'px'
   }
 
   function updateRegionLabel() {
     const regionLabel = document.querySelector('#regionLabel')
     if (!regionLabel || !currentRegion) return
 
-    if (currentRegion.side === 'center') {
-      regionLabel.textContent =
-        currentRegion.name.charAt(0).toUpperCase() + currentRegion.name.slice(1)
-    } else {
-      regionLabel.textContent = `${currentRegion.side.charAt(0).toUpperCase() + currentRegion.side.slice(1)} ${currentRegion.name}`
-    }
+    // currentRegion.name already includes side (e.g., "left upper inner" or "pre-sternal")
+    regionLabel.textContent =
+      currentRegion.name.charAt(0).toUpperCase() + currentRegion.name.slice(1)
   }
 
   function resetPopoverForm() {
@@ -491,7 +584,7 @@ function initializeBreastFeatures() {
     marker.className = 'breast-features__marker'
     marker.innerText = number
     marker.setAttribute('data-id', number)
-    marker.setAttribute('data-region', region)
+    marker.setAttribute('data-name', region)
     marker.setAttribute('data-side', side)
     marker.setAttribute('data-feature-id', featureId)
 
@@ -526,19 +619,28 @@ function initializeBreastFeatures() {
   }
 
   function positionMarkerInRegion(marker, regionName, side) {
-    // Find the corresponding region element (fallback for old data)
-    const regionElement = svg.querySelector(
-      `[data-region="${regionName}"][data-side="${side}"]`
-    )
+    // Find the corresponding region element by class
+    // Convert region name to class format: "left upper inner" -> "left_upper_inner"
+    let regionId = regionName.replace(/ /g, '_')
+    let regionElement = svg.querySelector(`.${regionId}`)
+
+    // For center regions (like pre-sternal), the class has side prefix but aria-label doesn't
+    // Try with left_ or right_ prefix if not found
     if (!regionElement) {
-      console.warn('Region element not found:', regionName, side)
+      regionElement =
+        svg.querySelector(`.left_${regionId}`) ||
+        svg.querySelector(`.right_${regionId}`)
+    }
+
+    if (!regionElement) {
+      console.warn('Region element not found:', regionName, 'id:', regionId)
       return
     }
 
-    const centerX = parseFloat(regionElement.getAttribute('data-center-x'))
-    const centerY = parseFloat(regionElement.getAttribute('data-center-y'))
-
-    // console.log(`Positioning marker for ${side} ${regionName} at SVG coords:`, centerX, centerY)
+    // Get the center of the region's bounding box
+    const bbox = regionElement.getBBox()
+    const centerX = bbox.x + bbox.width / 2
+    const centerY = bbox.y + bbox.height / 2
 
     positionMarkerAtSvgCoords(marker, centerX, centerY)
   }
@@ -680,9 +782,7 @@ function initializeBreastFeatures() {
         positionMarkerAtSvgCoords(markerElement, svgX, svgY)
         updateFeaturesList()
         updateHiddenField()
-        console.log(
-          `Feature ${feature.number} moved to ${regionInfo.side} ${regionInfo.region}`
-        )
+        console.log(`Feature ${feature.number} moved to ${regionInfo.region}`)
       }
     } else {
       // console.log(
@@ -939,13 +1039,9 @@ function initializeBreastFeatures() {
         listItem.setAttribute('data-feature-id', feature.id)
       }
 
-      let locationText = ''
-      if (feature.side === 'center') {
-        locationText =
-          feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
-      } else {
-        locationText = `${feature.side.charAt(0).toUpperCase() + feature.side.slice(1)} ${feature.region}`
-      }
+      // Region name already includes side (e.g., "left upper inner" or "pre-sternal")
+      const locationText =
+        feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
 
       listItem.innerHTML = `
                 <div class="breast-features__item-left">
