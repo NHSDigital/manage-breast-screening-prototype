@@ -6,7 +6,7 @@
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
 {% set formAction = "./start" %}
-{% set allowEdits = !(event | isFinal) %}
+{% set allowEdits = event.status !== "event_cancelled" and event.status !== "event_rescheduled" and event.status !== "event_complete" %}
 
 
 {% block pageContent %}
@@ -175,9 +175,7 @@
             html: appointmentTimeHtml
           },
           actions: {
-            items: [
-
-            ]
+            items: []
           }
         },
         {
@@ -188,9 +186,7 @@
             text: clinic.clinicType | formatWords | sentenceCase
           },
           actions: {
-            items: [
-
-            ]
+            items: []
           }
         },
         {
@@ -224,17 +220,6 @@
         },
         {
           key: {
-            text: "Screened by"
-          },
-          value: {
-            text: event.sessionDetails.startedBy | getUsername({format: 'full'})
-          },
-          actions: {
-            items: []
-          }
-        } if event.status === "event_complete" and event.sessionDetails,
-        {
-          key: {
             text: "Special appointment"
           },
           value: {
@@ -247,26 +232,9 @@
                 text: "Change",
                 visuallyHiddenText: "special appointment"
               }
-            ] if event.status != "event_complete"
+            ] if event.status != "event_complete" else []
           }
-        },
-        {
-          key: {
-            text: "Appointment notes"
-          },
-          value: {
-            html: ''
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "appointment notes"
-              }
-            ]
-          }
-        } if false
+        }
       ]
     } | handleSummaryListMissingInformation) }}
   {% endset %}
