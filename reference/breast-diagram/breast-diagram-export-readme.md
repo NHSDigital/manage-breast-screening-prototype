@@ -116,10 +116,10 @@ The side can be derived from the parent group (`#app-breast-diagram__regions-lef
 
 ### Attributes on outlines
 
-| Attribute    | Example               | Notes                      |
-| ------------ | --------------------- | -------------------------- |
-| `data-side`  | "left" or "right"     | Which breast               |
-| `aria-label` | "left breast outline" | Human-readable label       |
+| Attribute    | Example               | Notes                |
+| ------------ | --------------------- | -------------------- |
+| `data-side`  | "left" or "right"     | Which breast         |
+| `aria-label` | "left breast outline" | Human-readable label |
 
 Target breast outlines with `.app-breast-diagram__diagram path` and nipple outlines with `.app-breast-diagram__diagram circle`.
 

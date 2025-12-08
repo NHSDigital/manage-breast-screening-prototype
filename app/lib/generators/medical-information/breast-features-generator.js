@@ -219,9 +219,7 @@ const generateBreastFeature = (options = {}) => {
   const isCenter = centerRegions.includes(region.name)
 
   // Build region name with side (e.g., "left upper inner") unless it's a center region
-  const regionName = isCenter
-    ? region.name
-    : `${region.side} ${region.name}`
+  const regionName = isCenter ? region.name : `${region.side} ${region.name}`
 
   // For center regions, the side should be "center"
   const sideValue = isCenter ? 'center' : region.side
@@ -296,10 +294,7 @@ const generateBreastFeatures = (options = {}) => {
         number: index + 1
       })
       attempts++
-    } while (
-      usedRegions.has(feature.region) &&
-      attempts < maxAttempts
-    )
+    } while (usedRegions.has(feature.region) && attempts < maxAttempts)
 
     // Add the region to used set (region already includes side, e.g., "left upper inner")
     usedRegions.add(feature.region)

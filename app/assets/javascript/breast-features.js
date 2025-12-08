@@ -156,10 +156,18 @@ function initializeBreastFeatures() {
       // )
 
       // Get all region paths and polygons
-      const allRegions = svg.querySelectorAll('.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon')
+      const allRegions = svg.querySelectorAll(
+        '.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon'
+      )
 
-      if (anatomicalRegions.classList.contains('app-breast-diagram__regions--visible')) {
-        anatomicalRegions.classList.remove('app-breast-diagram__regions--visible')
+      if (
+        anatomicalRegions.classList.contains(
+          'app-breast-diagram__regions--visible'
+        )
+      ) {
+        anatomicalRegions.classList.remove(
+          'app-breast-diagram__regions--visible'
+        )
         this.textContent = 'Show location borders'
         // console.log('DEBUG: Hiding location borders - removed visible class')
 
@@ -360,7 +368,9 @@ function initializeBreastFeatures() {
   function handleSvgClick(e) {
     // Allow border toggle to work - don't interfere with anatomical region visibility
     // Check if clicked element is a region (path or polygon inside a regions group)
-    const isRegionElement = e.target.closest('.app-breast-diagram__regions-left, .app-breast-diagram__regions-right')
+    const isRegionElement = e.target.closest(
+      '.app-breast-diagram__regions-left, .app-breast-diagram__regions-right'
+    )
     if (isRegionElement) {
       // console.log(
       //   'DEBUG: Clicked on anatomical region:',
@@ -425,7 +435,9 @@ function initializeBreastFeatures() {
 
   // Helper to get all region elements (paths and polygons in left/right groups)
   function getAllRegionElements() {
-    return svg.querySelectorAll('.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon')
+    return svg.querySelectorAll(
+      '.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon'
+    )
   }
 
   function determineRegionFromCoordinates(svgX, svgY) {
@@ -615,8 +627,9 @@ function initializeBreastFeatures() {
     // For center regions (like pre-sternal), the class has side prefix but aria-label doesn't
     // Try with left_ or right_ prefix if not found
     if (!regionElement) {
-      regionElement = svg.querySelector(`.left_${regionId}`) ||
-                      svg.querySelector(`.right_${regionId}`)
+      regionElement =
+        svg.querySelector(`.left_${regionId}`) ||
+        svg.querySelector(`.right_${regionId}`)
     }
 
     if (!regionElement) {
@@ -769,9 +782,7 @@ function initializeBreastFeatures() {
         positionMarkerAtSvgCoords(markerElement, svgX, svgY)
         updateFeaturesList()
         updateHiddenField()
-        console.log(
-          `Feature ${feature.number} moved to ${regionInfo.region}`
-        )
+        console.log(`Feature ${feature.number} moved to ${regionInfo.region}`)
       }
     } else {
       // console.log(
@@ -1029,7 +1040,8 @@ function initializeBreastFeatures() {
       }
 
       // Region name already includes side (e.g., "left upper inner" or "pre-sternal")
-      const locationText = feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
+      const locationText =
+        feature.region.charAt(0).toUpperCase() + feature.region.slice(1)
 
       listItem.innerHTML = `
                 <div class="breast-features__item-left">

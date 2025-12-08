@@ -220,8 +220,10 @@ function wrapRegionsInContainer(svg) {
   // We need to find where the groups are and wrap them
 
   // Match the left group (including its content) - uses BEM class
-  const leftGroupRegex = /(\s*)(<g class="app-breast-diagram__regions-left"[^>]*>[\s\S]*?<\/g>)/m
-  const rightGroupRegex = /(\s*)(<g class="app-breast-diagram__regions-right"[^>]*>[\s\S]*?<\/g>)/m
+  const leftGroupRegex =
+    /(\s*)(<g class="app-breast-diagram__regions-left"[^>]*>[\s\S]*?<\/g>)/m
+  const rightGroupRegex =
+    /(\s*)(<g class="app-breast-diagram__regions-right"[^>]*>[\s\S]*?<\/g>)/m
 
   const leftMatch = svg.match(leftGroupRegex)
   const rightMatch = svg.match(rightGroupRegex)
@@ -296,10 +298,7 @@ function processOutlineGroup(svg) {
     !rightNippleMatch
   ) {
     console.warn('Warning: Could not find all outline elements for flattening')
-    svg = svg.replace(
-      /<g id="diagram">/,
-      `<g class="${BEM_BLOCK}__diagram">`
-    )
+    svg = svg.replace(/<g id="diagram">/, `<g class="${BEM_BLOCK}__diagram">`)
     return svg
   }
 
@@ -308,9 +307,10 @@ function processOutlineGroup(svg) {
 
   // Helper to strip attributes that have no effect on circles (closed paths)
   const stripCircleOnlyAttrs = (str) =>
-    str.replace(/\s*stroke-linecap="[^"]*"/g, '')
-       .replace(/\s*stroke-miterlimit="[^"]*"/g, '')
-       .replace(/\s*stroke-linejoin="[^"]*"/g, '')
+    str
+      .replace(/\s*stroke-linecap="[^"]*"/g, '')
+      .replace(/\s*stroke-miterlimit="[^"]*"/g, '')
+      .replace(/\s*stroke-linejoin="[^"]*"/g, '')
 
   // Build the flattened structure - minimal attributes on children
   const flattenedDiagram = `<g class="${BEM_BLOCK}__diagram" clip-path="url(${clipPathUrl})">
@@ -423,7 +423,7 @@ function validateProcessedSvg(svg, stats) {
 function addProcessedComment(svg) {
   // Add a comment indicating this file was processed
   const comment =
-    '<!-- Processed by process-exported-svg.js - do not edit manually -->\n\n'
+    `<!-- Source: ${inputFile} -->\n<!-- Processed by process-exported-svg.js - do not edit manually -->\n\n`
 
   // Insert at the start (XML declaration already removed)
   return comment + svg
