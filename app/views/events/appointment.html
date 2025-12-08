@@ -6,7 +6,7 @@
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
 {% set formAction = "./start" %}
-{% set allowEdits = event.status != "event_cancelled" and event.status != "event_rescheduled" and event.status != "event_complete" %}
+{% set allowEdits = !(event | isFinal) %}
 
 
 {% block pageContent %}
