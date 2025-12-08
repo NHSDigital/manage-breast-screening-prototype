@@ -2719,7 +2719,7 @@ module.exports = (router) => {
         )
       }
 
-      // Capture session end time only if appointment was started
+      // Capture session end time only if appointment was started (appointments might be rescheduled over the phone or that never started)
       const event = getEvent(data, eventId)
       if (event?.sessionDetails?.startedAt) {
         captureSessionEndTime(data, eventId, data.currentUser.id)
