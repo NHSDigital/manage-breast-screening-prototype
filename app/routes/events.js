@@ -63,6 +63,23 @@ function getEventData(data, clinicId, eventId) {
   }
 }
 
+/**
+ * Capture session end time for an event
+ * @param {object} data - Session data
+ * @param {string} eventId - Event ID
+ * @param {string} userId - User ID ending the session
+ */
+function captureSessionEndTime(data, eventId, userId) {
+  const event = getEvent(data, eventId)
+  updateEventData(data, eventId, {
+    sessionDetails: {
+      ...event.sessionDetails,
+      endedAt: new Date().toISOString(),
+      endedBy: userId
+    }
+  })
+}
+
 // // Update event status and add to history
 // function updateEventStatus (event, newStatus) {
 //   return {
@@ -1405,6 +1422,12 @@ module.exports = (router) => {
         )
       }
 
+      // Capture session end time only if appointment was started
+      const event = getEvent(data, eventId)
+      if (event?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, eventId, data.currentUser.id)
+      }
+
       // Save the data
       saveTempEventToEvent(data)
       saveTempParticipantToParticipant(data)
@@ -2412,8 +2435,19 @@ module.exports = (router) => {
         return
       }
 
+      // Capture session end time only if appointment was started
+      const event = getEvent(data, eventId)
+      if (event?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, eventId, data.currentUser.id)
+      }
+
       // If yes, redirect to reschedule page
       if (needsReschedule === 'yes') {
+        // Save the appointmentStopped data before redirecting
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+        updateEventStatus(data, eventId, 'event_attended_not_screened')
+
         res.redirect(
           `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
         )
@@ -2632,6 +2666,12 @@ module.exports = (router) => {
           `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
         )
       } else {
+        // Capture session end time only if appointment was started
+        const event = getEvent(data, eventId)
+        if (event?.sessionDetails?.startedAt) {
+          captureSessionEndTime(data, eventId, data.currentUser.id)
+        }
+
         // Save the cancellation data
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
@@ -2677,6 +2717,12 @@ module.exports = (router) => {
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
         )
+      }
+
+      // Capture session end time only if appointment was started
+      const event = getEvent(data, eventId)
+      if (event?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, eventId, data.currentUser.id)
       }
 
       // Save the reschedule data

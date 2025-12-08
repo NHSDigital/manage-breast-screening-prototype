@@ -679,6 +679,44 @@ const isWithinDayRange = (
 }
 
 /**
+ * Calculate duration between two times in minutes (rounded up)
+ *
+ * @param {string} startTime - Start time (e.g. "09:00", "2024-01-01T09:00:00")
+ * @param {string} endTime - End time (e.g. "10:30", "2024-01-01T10:30:00")
+ * @returns {number} Duration in minutes (rounded up), or 0 if invalid
+ * @example
+ * calculateDurationMinutes("09:00", "10:30") // returns 90
+ * calculateDurationMinutes("09:15", "09:45") // returns 30
+ */
+const calculateDurationMinutes = (startTime, endTime) => {
+  if (!startTime || !endTime) return 0
+
+  // If it looks like just a time (contains no date), prefix with dummy date
+  const startDatetime = startTime.includes('T') || startTime.includes('-')
+    ? startTime
+    : `2000-01-01T${startTime}`
+  
+  const endDatetime = endTime.includes('T') || endTime.includes('-')
+    ? endTime
+    : `2000-01-01T${endTime}`
+
+  const start = dayjs(startDatetime)
+  const end = dayjs(endDatetime)
+
+  // Validate both times are valid
+  if (!start.isValid() || !end.isValid()) return 0
+
+  // Calculate difference in minutes
+  const minutes = end.diff(start, 'minute', true)
+
+  // Return 0 for negative durations (end before start)
+  if (minutes < 0) return 0
+
+  // Round up to nearest minute
+  return Math.ceil(minutes)
+}
+
+/**
  * Add or subtract time from a date
  *
  * @param {string | Array | object} dateInput - ISO date string, array [day, month, year], [month, year], or object {day, month, year}, {month, year}
@@ -766,6 +804,7 @@ module.exports = {
   dayjs,
   daysSince,
   isWithinDayRange,
+  calculateDurationMinutes,
   add,
   remove
 }
