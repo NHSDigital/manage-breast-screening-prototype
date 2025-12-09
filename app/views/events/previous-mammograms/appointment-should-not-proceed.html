@@ -22,12 +22,23 @@
   </h1>
 
   {% set previousMammogram = event.previousMammogramTemp %}
-  {% set mammogramDate = previousMammogram.dateTaken %}
-  {% set timeAgo = mammogramDate | formatRelativeDate %}
 
-  <p>
-    The mammogram added took place {{ timeAgo }}. It is not recommended to take breast x-rays within 6 months of each other.
-  </p> 
+  {% if previousMammogram.dateType == 'dateKnown' %}
+    {% set mammogramDate = previousMammogram.dateTaken %}
+    {% set timeAgo = mammogramDate | formatRelativeDate %}
+    <p>
+      The mammogram added took place {{ timeAgo }}. Breast x-rays should not be taken within 6 months of a previous mammogram.
+    </p>
+  {% else %}
+    <p>
+      The mammogram added was less than 6 months ago. Breast x-rays should not be taken within 6 months of a previous mammogram.
+    </p>
+    {% if previousMammogram.approximateDate %}
+      <p>
+        Approximate date provided: {{ previousMammogram.approximateDate }}
+      </p>
+    {% endif %}
+  {% endif %} 
 
   {{ radios({
     name: "event[appointmentStopped][needsReschedule]",

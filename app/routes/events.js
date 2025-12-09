@@ -694,40 +694,24 @@ module.exports = (router) => {
   function checkIfRecentMammogram(mammogram) {
     if (!mammogram) return false
 
-    const now = dayjs()
-    const sixMonthsAgo = now.subtract(6, 'month')
-
     // Check based on date type
-    if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
+    if (mammogram.dateType === 'lessThanSixMonths') {
+      // User explicitly indicated mammogram was less than 6 months ago
+      return true
+    } else if (mammogram.dateType === 'moreThanSixMonths') {
+      // User explicitly indicated mammogram was more than 6 months ago
+      return false
+    } else if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
+      // Calculate from exact date
+      const now = dayjs()
+      const sixMonthsAgo = now.subtract(6, 'month')
       const date = mammogram.dateTaken
+
       if (date.year && date.month && date.day) {
         const mammogramDate = dayjs(
           `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
         )
         return mammogramDate.isAfter(sixMonthsAgo)
-      }
-    } else if (
-      mammogram.dateType === 'approximateDate' &&
-      mammogram.approximateDate
-    ) {
-      // Try to parse approximate date text
-      const approxText = mammogram.approximateDate.toLowerCase()
-
-      // Check for common time patterns that would indicate recent mammogram
-      if (
-        approxText.includes('month ago') ||
-        approxText.includes('1 month') ||
-        approxText.includes('2 month') ||
-        approxText.includes('3 month') ||
-        approxText.includes('4 month') ||
-        approxText.includes('5 month') ||
-        approxText.includes('last month') ||
-        approxText.includes('weeks ago') ||
-        approxText.includes('few weeks') ||
-        approxText.includes('last week') ||
-        approxText.includes('days ago')
-      ) {
-        return true
       }
     }
 
