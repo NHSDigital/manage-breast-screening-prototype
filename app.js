@@ -1,3 +1,6 @@
+// Suppress deprecation warning from dependencies using util.isArray
+process.noDeprecation = true
+
 // Core dependencies
 const {
   createReadStream,
@@ -96,7 +99,7 @@ const sessionName = `nhsuk-prototype-kit-${Buffer.from(config.serviceName, 'utf8
 const sessionOptions = {
   secret: sessionName,
   cookie: {
-    maxAge: 1000 * 60 * 60 * 4 // 4 hours
+    maxAge: 1000 * 60 * 60 * 1 // 1 hour (reduced from 4 to limit session accumulation)
   }
 }
 

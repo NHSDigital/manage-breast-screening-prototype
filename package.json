@@ -6,10 +6,10 @@
   "scripts": {
     "build": "gulp build",
     "postinstall": "npm run build",
-    "start": "node app.js",
+    "start": "node --no-deprecation --max-old-space-size=1000 app.js",
     "test": "jest --coverage=true",
     "prewatch": "gulp build",
-    "watch": "gulp",
+    "watch": "NODE_OPTIONS='--no-deprecation' gulp",
     "lint": "npm run lint:js && npm run lint:prettier",
     "lint:fix": "npm run lint:js:fix && npm run lint:prettier:fix",
     "lint:prettier": "prettier --cache --cache-location .cache/prettier --cache-strategy content --check .",
