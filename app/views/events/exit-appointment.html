@@ -13,24 +13,24 @@
     name: "exitAction",
     fieldset: {
       legend: {
-        text: "What do you want to do?",
+        text: "Do you want to save your progress?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
     },
     items: [
       {
-        value: "discard",
-        text: "Discard changes and exit appointment",
+        value: "save",
+        text: "Yes",
         hint: {
-          text: "Appointment status will revert to checked in"
+          text: "Keep appointment status as 'In progress'"
         }
       },
       {
-        value: "save",
-        text: "Save changes and exit appointment",
+        value: "discard",
+        text: "No, discard changes",
         hint: {
-          text: "Appointment status will remain"
+          text: "Revert status to 'Checked in'"
         }
       }
     ]
