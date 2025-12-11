@@ -9,6 +9,10 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
+  {{ insetText({
+    html: 'If the appointment will not resume later, go to <a href="' + eventUrl + '/attended-not-screened-reason">appointment cannot proceed</a>'
+  }) }}
+
   {{ radios({
     name: "exitAction",
     fieldset: {
