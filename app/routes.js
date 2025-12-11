@@ -10,12 +10,54 @@ const { resetCallSequence } = require('./lib/utils/random')
 
 const router = express.Router()
 
+// Memory logging - tracks growth and logs significant changes
+let requestCount = 0
+let lastLoggedRss = 0
+const logMemory = (context, sessionData) => {
+  const mem = process.memoryUsage()
+  const rss = mem.rss / 1024 / 1024
+  let sessionInfo = ''
+  if (sessionData) {
+    try {
+      const sessionStr = JSON.stringify(sessionData)
+      sessionInfo = `, session: ${(sessionStr.length / 1024 / 1024).toFixed(2)}MB`
+    } catch (e) {
+      sessionInfo = ', session: [error]'
+    }
+  }
+  console.log(
+    `[Memory ${context}] heap: ${(mem.heapUsed / 1024 / 1024).toFixed(1)}MB, rss: ${rss.toFixed(1)}MB, requests: ${requestCount}${sessionInfo}`
+  )
+  lastLoggedRss = rss
+}
+
+// Log memory on startup
+logMemory('startup')
+
 // Keep regeneration middleware before other routes
 router.use(async (req, res, next) => {
   try {
+    requestCount++
+    const isStaticRequest = req.path.match(
+      /\.(js|css|ico|png|jpg|svg|woff|woff2)$/
+    )
+
+    // Log memory if RSS has grown significantly (>20MB) since last log
+    const currentRss = process.memoryUsage().rss / 1024 / 1024
+    if (!isStaticRequest && currentRss - lastLoggedRss > 20) {
+      logMemory(`growth on ${req.method} ${req.path}`, req.session?.data)
+    }
+
+    // Also log periodically
+    if (!isStaticRequest && requestCount % 50 === 0) {
+      logMemory(`request #${requestCount}`, req.session?.data)
+    }
+
     if (needsRegeneration(req.session.data?.generationInfo)) {
+      logMemory('before-regeneration')
       console.log('Regenerating data for new day...')
       await regenerateData(req)
+      logMemory('after-regeneration')
     }
     next()
   } catch (err) {
