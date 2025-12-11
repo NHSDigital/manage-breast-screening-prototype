@@ -9,8 +9,12 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
+  {% set appointmentCannotProceedCallout %}
+    <p>If the appointment will not resume later, go to <a href="{{ eventUrl }}/attended-not-screened-reason">appointment cannot proceed</a></p>
+  {% endset %}
+
   {{ insetText({
-    html: 'If the appointment will not resume later, go to <a href="' + eventUrl + '/attended-not-screened-reason">appointment cannot proceed</a>'
+    html: appointmentCannotProceedCallout
   }) }}
 
   {{ radios({
@@ -42,10 +46,10 @@
 
   <div class="nhsuk-button-group">
     {{ button({
-      text: "Confirm and back to clinic"
+      text: "Confirm and return to clinic"
     }) }}
 
-    <a href="{{ eventUrl }}/confirm-identity" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+    <a href="{{ referrerChain }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
   </div>
 
 {% endblock %}
