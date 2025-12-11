@@ -73,7 +73,7 @@ Tested with caching enabled:
 
 ### ❌ Redis session store
 
-Implemented Redis to move session storage out of Node. Result:
+Tested Redis to move session storage out of Node. Result:
 
 ```
 [Memory startup] heap: 27.6MB, rss: 101.3MB
@@ -85,7 +85,7 @@ Redis moves the **storage** but not the **processing**. Each request still:
 - Processes request
 - Stringifies back → sends 3.6MB to Redis
 
-The temporary heap allocations still cause RSS growth.
+The temporary heap allocations still cause RSS growth. Redis was removed as it adds complexity without solving the problem.
 
 ## The Actual Problem
 
@@ -156,12 +156,9 @@ This avoids the per-request serialize/deserialize of the full dataset.
 | File | Change |
 |------|--------|
 | `app/routes.js` | Added memory logging with session size tracking |
-| `app.js` | Added Redis session store support (conditional on REDIS_URL) |
-| `package.json` | Added `connect-redis` and `redis` packages |
 
 ## Current State
 
-- Redis support is implemented but **doesn't solve the memory issue**
 - Memory logging is in place for monitoring
 - Root cause is understood but proper fix requires significant refactoring
 - Recommend: Reduce seed data volume as interim measure, plan proper fix for later
