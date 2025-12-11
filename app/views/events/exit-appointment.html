@@ -1,0 +1,47 @@
+{# app/views/events/exit-appointment.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Exit appointment" %}
+{% set formAction = eventUrl + "/exit-appointment" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {{ radios({
+    name: "exitAction",
+    fieldset: {
+      legend: {
+        text: "What do you want to do?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "discard",
+        text: "Discard changes and exit appointment",
+        hint: {
+          text: "Appointment status will revert to checked in"
+        }
+      },
+      {
+        value: "save",
+        text: "Save changes and exit appointment",
+        hint: {
+          text: "Appointment status will remain"
+        }
+      }
+    ]
+  }) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Confirm and back to clinic"
+    }) }}
+
+    <a href="{{ eventUrl }}/confirm-identity" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+  </div>
+
+{% endblock %}

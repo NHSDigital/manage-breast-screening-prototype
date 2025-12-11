@@ -66,12 +66,12 @@
   {% if appointmentWorkflow %}
     {% set navItems = [
       {
-        href: leaveAppointmentHref,
-        text: "Leave this appointment"
+        href: eventUrl ~ "/exit-appointment",
+        text: "Exit appointment"
       },
       {
-        href: "#",
-        text: "Manage appointment"
+        href: eventUrl ~ "/attended-not-screened-reason",
+        text: "Appointment cannot proceed"
       }
     ] %}
   {% endif %}
