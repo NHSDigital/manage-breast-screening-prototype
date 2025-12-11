@@ -105,15 +105,46 @@ $app-dark-mode-link-visited-colour: #89b;
     }
   }
 
-  .app-secondary-navigation__list-item--current {
-    border-color: $app-dark-mode-white;
+  .app-secondary-navigation__link:visited {
+    color: $app-dark-mode-link-visited-colour;
   }
 
-  .app-secondary-navigation__list-item--current .app-secondary-navigation__link:link,
-  .app-secondary-navigation__list-item--current .app-secondary-navigation__link:visited {
+  .app-secondary-navigation__link:hover,
+  .app-secondary-navigation__link:visited:hover {
+    color: $app-dark-mode-link-hover-colour;
+  }
+
+  .app-secondary-navigation__link:focus,
+  .app-secondary-navigation__link:focus:hover {
+    color: $nhsuk-focus-text-colour !important;
+    background-color: $nhsuk-focus-colour !important;
+    box-shadow:
+      0 -2px $nhsuk-focus-colour,
+      0 $nhsuk-focus-width $nhsuk-focus-text-colour !important;
+    outline: $nhsuk-focus-width solid transparent !important;
+    text-decoration: none !important;
+  }
+
+  .app-secondary-navigation__link[aria-current] {
     color: $app-dark-mode-text-colour;
+    box-shadow: inset $nhsuk-border-width 0 $app-dark-mode-white;
+
+    @include nhsuk-media-query($from: tablet) {
+      box-shadow: inset 0 ($nhsuk-border-width * -1) $app-dark-mode-white;
+    }
+
+    &:hover {
+      color: $app-dark-mode-link-hover-colour;
+    }
+
     &:focus {
-      @include app-dark-mode-focused-text;
+      color: $nhsuk-focus-text-colour !important;
+      background-color: $nhsuk-focus-colour !important;
+      box-shadow:
+        0 -2px $nhsuk-focus-colour,
+        0 $nhsuk-focus-width $nhsuk-focus-text-colour !important;
+      outline: $nhsuk-focus-width solid transparent !important;
+      text-decoration: none !important;
     }
   }
 

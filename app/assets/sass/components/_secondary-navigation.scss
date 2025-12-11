@@ -1,50 +1,57 @@
 @use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
 @use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
-
-$govuk-spacing1: 5px;
-$govuk-spacing2: 10px;
-$govuk-spacing3: 15px;
-$govuk-spacing4: 20px;
+@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
 
 .app-secondary-navigation {
-  @include nhsuk-responsive-margin(4, "bottom");
-}
+  margin-right: #{$nhsuk-gutter-half * -1};
+  margin-left: #{$nhsuk-gutter-half * -1};
 
-.app-secondary-navigation__list-item {
-  margin: 0;
-}
+  @include nhsuk-responsive-margin(5, "bottom");
 
-.app-secondary-navigation__list-item--current {
-  border-bottom-width: $govuk-spacing1;
+  @include nhsuk-media-query($from: tablet) {
+    margin-right: auto;
+    margin-left: auto;
+  }
 }
 
 .app-secondary-navigation__link {
-  padding-left: $govuk-spacing3;
-  padding-right: $govuk-spacing3;
-}
-
-// --------
-
-.app-secondary-navigation {
-  @include nhsuk-font($size: 19);
-}
-
-.app-secondary-navigation__link {
-  @include nhsuk-link-style-default;
-  @include nhsuk-link-style-no-visited-state;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: nhsuk-spacing(2) $nhsuk-gutter-half;
 
   &:link {
     text-decoration: none;
   }
 
-  // Extend the touch area of the link to the list
-  &::after {
-    bottom: 0;
-    content: "";
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
+  @include nhsuk-link-style-default;
+  @include nhsuk-link-style-no-visited-state;
+
+  @include nhsuk-media-query($from: tablet) {
+    padding: nhsuk-spacing(3) 2px;
+  }
+
+  &[aria-current] {
+    color: $nhsuk-text-colour;
+    box-shadow: inset $nhsuk-border-width 0 nhsuk-colour("blue");
+    text-decoration: none;
+
+    @include nhsuk-media-query($from: tablet) {
+      box-shadow: inset 0 ($nhsuk-border-width * -1) nhsuk-colour("blue");
+    }
+  }
+
+  &:focus {
+    box-shadow: inset $nhsuk-focus-width 0 $nhsuk-focus-text-colour;
+
+    @include nhsuk-media-query($from: tablet) {
+      box-shadow: inset 0 ($nhsuk-focus-width * -1) $nhsuk-focus-text-colour;
+    }
+  }
+
+  .nhsuk-icon {
+    width: 1.5rem;
+    height: 1.5rem;
   }
 }
 
@@ -60,52 +67,32 @@ $govuk-spacing4: 20px;
   }
 }
 
-.app-secondary-navigation__list {
-  @include nhsuk-clearfix;
+.app-secondary-navigation__current {
+  font-weight: inherit;
+}
 
-  // The list uses box-shadow rather than a border to set a 1px
-  // grey line at the bottom, so that border from the current
-  // item appears on top of the grey line.
-  box-shadow: inset 0 -1px 0 $nhsuk-border-colour;
-  list-style: none;
+.app-secondary-navigation__list {
+  display: flex;
+
+  flex-flow: column;
+
+  width: 100%;
   margin: 0;
   padding: 0;
-  width: 100%;
+
+  list-style: none;
+  // The list uses box-shadow rather than a border to set a 1px grey line at the
+  // bottom, so that the current item appears on top of the grey line.
+  box-shadow: inset 0 -1px 0 $nhsuk-border-colour;
+
+  @include nhsuk-font(19);
+
+  @include nhsuk-media-query($from: tablet) {
+    flex-flow: row wrap;
+    gap: nhsuk-spacing(2) nhsuk-spacing(5);
+  }
 }
 
 .app-secondary-navigation__list-item {
-  box-sizing: border-box;
-  display: block;
-  float: left;
-  margin-right: $govuk-spacing4;
-  padding-bottom: $govuk-spacing2;
-  padding-top: $govuk-spacing2;
-  position: relative;
-
-  // More generous padding beneath items on wider screens
-  @include nhsuk-media-query($from: tablet) {
-    padding-bottom: $govuk-spacing3;
-  }
-}
-
-// The last item of the list doesn’t need any spacing to its right.
-// Removing this prevents the item from wrapping to the next line
-// unnecessarily.
-.app-secondary-navigation__list-item:last-child {
-  margin-right: 0;
-}
-
-.app-secondary-navigation__list-item--current {
-  border-bottom: $nhsuk-border-width solid $nhsuk-brand-colour;
-  padding-bottom: $govuk-spacing1;
-
-  // More generous padding beneath items on wider screens
-  @include nhsuk-media-query($from: tablet) {
-    padding-bottom: $govuk-spacing2;
-  }
-}
-
-.app-secondary-navigation__list-item--current .app-secondary-navigation__link:link,
-.app-secondary-navigation__list-item--current .app-secondary-navigation__link:visited {
-  color: $nhsuk-text-colour;
+  margin-bottom: 0;
 }

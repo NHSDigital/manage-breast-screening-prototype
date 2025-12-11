@@ -1,14 +1,19 @@
-<nav class="app-secondary-navigation {%- if params.classes %} {{ params.classes }}{% endif -%}" {% if params.labelledBy %}aria-labelledby="{{ params.labelledBy }}"{% else %}aria-label="{{ params.visuallyHiddenTitle or "Secondary menu" }}"{% endif %} {%- for attribute, value in params.attributes %} {{ attribute }}="{{ value }}"{% endfor %}>
+{%- from "nhsuk/macros/attributes.njk" import nhsukAttributes -%}
+<nav class="app-secondary-navigation {%- if params.classes %} {{ params.classes }}{% endif -%}" {% if params.labelledBy %}aria-labelledby="{{ params.labelledBy }}"{% else %}aria-label="{{ params.visuallyHiddenTitle or "Secondary menu" }}"{% endif %} {{- nhsukAttributes(params.attributes) }}>
   <ul class="app-secondary-navigation__list">
   {% for item in params.items %}
     {% if item %}
-    <li class="app-secondary-navigation__list-item {{ "app-secondary-navigation__list-item--current" if item.current }}{% if item.classes %} {{ item.classes }}{% endif -%}">
+    <li class="app-secondary-navigation__list-item{% if item.classes %} {{ item.classes }}{% endif -%}">
       {% if item.html %}
         {{ item.html | safe }}
       {% else %}
         {% if not item.disabled %}
-          <a class="app-secondary-navigation__link" href="{{ item.href }}" {{ "aria-current=page" if item.current }}>
-            {{ item.text | safe }}
+          <a class="app-secondary-navigation__link" href="{{ item.href }}" {{ 'aria-current="page"' if item.current }}>
+          {%- if item.active or item.current -%}
+            <strong class="app-secondary-navigation__current">{{ item.text | safe }}</strong>
+          {%- else -%}
+            {{- item.text | safe -}}
+          {%- endif -%}
           </a>
         {% else %}
           <span class="app-secondary-navigation__link app-secondary-navigation__link--disabled">
