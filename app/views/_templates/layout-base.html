@@ -85,8 +85,11 @@
     account: {
       items: [
         {
+          text: currentBSU.name
+        },
+        {
           href: "#",
-          text: data.currentUser.email,
+          text: (data.currentUser.lastName | upper) + ", " + (data.currentUser.firstName),
           icon: true
         },
         {
