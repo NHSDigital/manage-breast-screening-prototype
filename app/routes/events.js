@@ -1203,7 +1203,19 @@ module.exports = (router) => {
           rightBreastProcedures.includes('Breast implants') ||
           leftBreastProcedures.includes('Breast implants')
 
-        if (hasBreastImplants) {
+        // Check if implants have been removed
+        const implantsRemoved = 
+          Array.isArray(medicalHistoryTemp?.implantsRemoved) &&
+          medicalHistoryTemp.implantsRemoved.includes('Implants have been removed')
+
+        // Check if consent was already given (editing existing item)
+        const alreadyConsented = medicalHistoryTemp?.consentGiven
+
+        // Only show consent page if:
+        // - Breast implants are selected
+        // - AND implants have NOT been removed
+        // - AND consent has NOT already been given
+        if (hasBreastImplants && !implantsRemoved && !alreadyConsented) {
           // Redirect to consent page immediately - we'll save the data after consent
           return res.redirect(
             urlWithReferrer(
