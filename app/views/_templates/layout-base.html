@@ -81,15 +81,11 @@
     {% set navItems = [] %}
   {% endif %}
 
-  {# Look up unit based on the current signed-in user #}
-  {# Todo: this will need to be updated when users can belong to multiple units #}
-  {% set unit = data.breastScreeningUnits | findById(data.currentUser.breastScreeningUnit) %}
-
   {{ header({
     account: {
       items: [
         {
-          text: unit.name
+          text: currentBSU.name
         },
         {
           href: "#",

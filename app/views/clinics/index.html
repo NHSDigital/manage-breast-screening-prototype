@@ -13,16 +13,14 @@
   {% endswitch %}
 {% endset %}
 
+{# Can get to dashboard using main nav instead #}
 {% set hideBackLink = true %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{# {% set back = {
-  href: "/dashboard",
-  text: "Dashboard"
-} %} #}
-
 {% block pageContent %}
+
+  <span class="nhsuk-caption-l">{{ currentBSU.name }}</span>
   <h1>{{pageHeading}}</h1>
 
   {% set secondaryNavItems = [] %}

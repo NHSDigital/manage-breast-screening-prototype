@@ -10,6 +10,8 @@
 
 
 {% block pageContent %}
+
+  {# Todo: this could instead use the currentBSU local variable though that relates to the signed in user #}
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
   {{ filteredEvents | log("Filtered events")}}
   {# {% set events = data.events | getClinicEvents(clinicId) %} #}
