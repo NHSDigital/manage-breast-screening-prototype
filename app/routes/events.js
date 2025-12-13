@@ -300,6 +300,66 @@ module.exports = (router) => {
     res.redirect(returnUrl)
   })
 
+  // Exit appointment - handles discard or save
+  router.post(
+    '/clinics/:clinicId/events/:eventId/exit-appointment',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+      const exitAction = data.exitAction
+
+      // Only allow exiting if the event is currently in progress
+      if (event?.status === 'event_in_progress') {
+        if (exitAction === 'discard') {
+          // Discard changes - reset workflow and revert to checked in
+          delete data.event.workflowStatus
+
+          // Revert status back to checked in
+          updateEventStatus(data, eventId, 'event_checked_in')
+
+          // Clear session details
+          updateEventData(data, eventId, {
+            sessionDetails: {
+              startedAt: null,
+              startedBy: null
+            }
+          })
+
+          // Clear temporary session data without saving
+          delete data.event
+          delete data.participant
+
+          console.log(
+            'Exited appointment (discard) - reverted status to checked_in and cleared temp data'
+          )
+        }
+        else if (exitAction === 'save') {
+          // Save changes - keep current status
+          delete data.event.workflowStatus
+
+          // Save any temporary changes before leaving
+          saveTempEventToEvent(data)
+          saveTempParticipantToParticipant(data)
+
+          // Clear temporary session data (now safe since we've saved changes)
+          delete data.event
+          delete data.participant
+
+          console.log('Exited appointment (save) - saved temp data and cleared temp data')
+        }
+      }
+
+      // Clear the exit action from session
+      delete data.exitAction
+
+      console.log(`After exit: data.event exists? ${!!data.event}, data.participant exists? ${!!data.participant}`)
+
+      // Redirect to clinic view without referrer chain
+      res.redirect(`/clinics/${clinicId}`)
+    }
+  )
+
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {
     const { clinicId, eventId } = req.params

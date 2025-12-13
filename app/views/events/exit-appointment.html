@@ -1,0 +1,55 @@
+{# app/views/events/exit-appointment.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Exit appointment" %}
+{% set formAction = eventUrl + "/exit-appointment" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% set appointmentCannotProceedCallout %}
+    <p>If the appointment will not resume later, go to <a href="{{ eventUrl }}/attended-not-screened-reason">appointment cannot proceed</a></p>
+  {% endset %}
+
+  {{ insetText({
+    html: appointmentCannotProceedCallout
+  }) }}
+
+  {{ radios({
+    name: "exitAction",
+    fieldset: {
+      legend: {
+        text: "Do you want to save your progress?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "save",
+        text: "Yes",
+        hint: {
+          text: "Keep appointment status as 'In progress'"
+        }
+      },
+      {
+        value: "discard",
+        text: "No, discard changes",
+        hint: {
+          text: "Revert status to 'Checked in'"
+        }
+      }
+    ]
+  }) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Confirm and return to clinic"
+    }) }}
+
+    <a href="{{ referrerChain }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+  </div>
+
+{% endblock %}
