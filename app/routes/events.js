@@ -201,15 +201,34 @@ module.exports = (router) => {
       `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
     )
 
-    if (event?.status !== 'event_in_progress') {
-      // Update status
+    const isPaused = event?.status === 'event_paused'
+    const isNotStarted = event?.status !== 'event_in_progress' && !isPaused
+
+    if (isNotStarted || isPaused) {
+      // Get existing session details for paused appointments
+      const existingDetails = event.sessionDetails || {}
+      const authors = existingDetails.authors || []
+
+      // Add resume action to authors if resuming a paused appointment
+      if (isPaused) {
+        authors.push({
+          userId: currentUser.id,
+          action: 'resumed',
+          timestamp: new Date().toISOString()
+        })
+      }
+
+      // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
-      // Store session details
+      // Store/update session details
       updateEventData(data, req.params.eventId, {
         sessionDetails: {
-          startedAt: new Date().toISOString(),
-          startedBy: currentUser.id
+          startedAt: existingDetails.startedAt || new Date().toISOString(),
+          startedBy: currentUser.id,
+          pausedAt: null,
+          pausedBy: null,
+          authors: authors
         }
       })
     }
@@ -329,34 +348,50 @@ module.exports = (router) => {
           // Clear temporary session data without saving
           delete data.event
           delete data.participant
-
-          console.log(
-            'Exited appointment (discard) - reverted status to checked_in and cleared temp data'
-          )
         }
         else if (exitAction === 'save') {
-          // Save changes - keep current status
-          delete data.event.workflowStatus
+          // Save changes and pause the appointment
 
           // Save any temporary changes before leaving
           saveTempEventToEvent(data)
           saveTempParticipantToParticipant(data)
 
+          // Get existing session details to track authors
+          const existingDetails = event.sessionDetails || {}
+          const authors = existingDetails.authors || []
+          
+          // Add current user as pauser if they started the appointment
+          if (existingDetails.startedBy) {
+            authors.push({
+              userId: existingDetails.startedBy,
+              action: 'paused',
+              timestamp: new Date().toISOString()
+            })
+          }
+
+          // Update status to paused and record pause details
+          updateEventStatus(data, eventId, 'event_paused')
+          updateEventData(data, eventId, {
+            sessionDetails: {
+              startedAt: existingDetails.startedAt || null,
+              startedBy: null,
+              pausedAt: new Date().toISOString(),
+              pausedBy: data.currentUser?.id || null,
+              authors: authors
+            }
+          })
+
           // Clear temporary session data (now safe since we've saved changes)
           delete data.event
           delete data.participant
-
-          console.log('Exited appointment (save) - saved temp data and cleared temp data')
         }
       }
 
       // Clear the exit action from session
       delete data.exitAction
 
-      console.log(`After exit: data.event exists? ${!!data.event}, data.participant exists? ${!!data.participant}`)
-
-      // Redirect to clinic view without referrer chain
-      res.redirect(`/clinics/${clinicId}`)
+      // Redirect to appointment page instead of clinic
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
     }
   )
 

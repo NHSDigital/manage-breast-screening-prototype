@@ -261,6 +261,11 @@
                   Start appointment
                 </a>
 
+              {% elseif event | isPaused %}
+                <a href="{{ eventBaseUrl }}/start">
+                  Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                </a>
+
               {% elseif event | startedByCurrentUser %}
                 <a href="{{ eventBaseUrl }}/confirm-identity">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
