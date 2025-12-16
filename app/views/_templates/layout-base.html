@@ -70,7 +70,7 @@
         text: "Exit appointment"
       },
       {
-        href: eventUrl ~ "/attended-not-screened-reason",
+        href: (eventUrl ~ "/attended-not-screened-reason") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Appointment cannot proceed"
       }
     ] %}

@@ -103,6 +103,18 @@ const isPaused = (input) => {
 }
 
 /**
+ * Check if a status represents an in-progress event that is not paused
+ *
+ * @param {string | object} input - Status string or event object
+ * @returns {boolean} Whether the status is in progress but not paused
+ */
+const isInProgressNotPaused = (input) => {
+  const status = getStatus(input)
+  if (!status) return false
+  return status === 'event_in_progress'
+}
+
+/**
  * Check if a status represents a final state
  *
  * @param {string | object} input - Status string or event object
@@ -152,10 +164,10 @@ const isAppointmentWorkflow = function (event, currentUser) {
     typeof currentUser === 'string' ? currentUser : currentUser.id
   if (!currentUserId) return false
 
-  // Check if event is actively in progress (not paused) and started by current user
-  const eventInProgress = event?.status === 'event_in_progress'
+  // Check if event is in progress (not paused) and started by current user
+  const eventInProgressNotPaused = isInProgressNotPaused(event)
 
-  return eventInProgress && startedBy === currentUserId
+  return eventInProgressNotPaused && startedBy === currentUserId
 }
 
 /**
@@ -342,6 +354,7 @@ module.exports = {
   isCompleted,
   isInProgress,
   isPaused,
+  isInProgressNotPaused,
   isFinal,
   isActive,
   isAppointmentWorkflow,

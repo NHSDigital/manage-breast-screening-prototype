@@ -175,7 +175,7 @@
 
             {{ event.status | toTag({ id: statusTagId }) }}
 
-            {% if (event.status === 'event_in_progress') %}
+            {% if event | isInProgressNotPaused %}
               <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
                 event.sessionDetails.startedBy | getUsername({
                 format: 'short',
@@ -262,7 +262,7 @@
                 </a>
 
               {% elseif event | isPaused %}
-                <a href="{{ eventBaseUrl }}/start">
+                <a href="{{ eventBaseUrl }}/resume">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
 

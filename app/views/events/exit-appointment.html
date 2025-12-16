@@ -49,7 +49,7 @@
       text: "Confirm"
     }) }}
 
-    <a href="{{ referrerChain }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+    <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
   </div>
 
 {% endblock %}

@@ -14,8 +14,8 @@
   }) }}
 {% endif %}
 
-{# Banner if event is in progress by someone else (not paused) #}
-{% if (event.status === 'event_in_progress') and not event | startedByCurrentUser %}
+{# Banner if event is in progress (not paused) by someone else #}
+{% if (event | isInProgressNotPaused) and not event | startedByCurrentUser %}
   {% set notificationBannerHtml %}
     <p class="nhsuk-notification-banner__heading">
       This appointment is currently being run by {{ event.sessionDetails.startedBy | getUsername({
@@ -129,7 +129,7 @@
   <div class="nhsuk-button-group">
     {{ button({
       text: "Resume appointment",
-      href: "./start"
+      href: "./resume"
     }) }}
     <a href="{{ (eventUrl + '/attended-not-screened-reason') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning">
       Appointment cannot proceed

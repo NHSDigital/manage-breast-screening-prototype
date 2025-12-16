@@ -190,7 +190,7 @@ module.exports = (router) => {
     next()
   })
 
-  // Main route in to starting an event - used to clear any temp data, set status to in progress and store the user id of the mammographer doing the appointment
+  // Main route for starting a new appointment
   router.get('/clinics/:clinicId/events/:eventId/start', (req, res) => {
     const data = req.session.data
     const event = getEvent(data, req.params.eventId)
@@ -201,34 +201,18 @@ module.exports = (router) => {
       `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
     )
 
-    const isPaused = event?.status === 'event_paused'
-    const isNotStarted = event?.status !== 'event_in_progress' && !isPaused
-
-    if (isNotStarted || isPaused) {
-      // Get existing session details for paused appointments
-      const existingDetails = event.sessionDetails || {}
-      const authors = existingDetails.authors || []
-
-      // Add resume action to authors if resuming a paused appointment
-      if (isPaused) {
-        authors.push({
-          userId: currentUser.id,
-          action: 'resumed',
-          timestamp: new Date().toISOString()
-        })
-      }
-
+    if (event?.status !== 'event_in_progress') {
       // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
-      // Store/update session details
+      // Store session details
       updateEventData(data, req.params.eventId, {
         sessionDetails: {
-          startedAt: existingDetails.startedAt || new Date().toISOString(),
+          startedAt: new Date().toISOString(),
           startedBy: currentUser.id,
           pausedAt: null,
           pausedBy: null,
-          authors: authors
+          authors: []
         }
       })
     }
@@ -272,6 +256,49 @@ module.exports = (router) => {
       : ''
 
     res.redirect(finalDestination + queryString)
+  })
+
+  // Resume a paused appointment
+  router.get('/clinics/:clinicId/events/:eventId/resume', (req, res) => {
+    const data = req.session.data
+    const event = getEvent(data, req.params.eventId)
+    const currentUser = data.currentUser
+
+    console.log(
+      `Resuming appointment for event ${req.params.eventId} by user ${currentUser.id}`
+    )
+
+    if (event?.status === 'event_paused') {
+      // Get existing session details
+      const existingDetails = event.sessionDetails || {}
+      const authors = existingDetails.authors || []
+
+      // Add resume action to authors
+      authors.push({
+        userId: currentUser.id,
+        action: 'resumed',
+        timestamp: new Date().toISOString()
+      })
+
+      // Update status to in progress
+      updateEventStatus(data, req.params.eventId, 'event_in_progress')
+
+      // Update session details with new user
+      updateEventData(data, req.params.eventId, {
+        sessionDetails: {
+          startedAt: existingDetails.startedAt,
+          startedBy: currentUser.id,
+          pausedAt: null,
+          pausedBy: null,
+          authors: authors
+        }
+      })
+    }
+
+    // Redirect to appointment page
+    res.redirect(
+      `/clinics/${req.params.clinicId}/events/${req.params.eventId}/appointment`
+    )
   })
 
   // Leave appointment - revert status from in_progress back to checked_in
@@ -360,14 +387,12 @@ module.exports = (router) => {
           const existingDetails = event.sessionDetails || {}
           const authors = existingDetails.authors || []
           
-          // Add current user as pauser if they started the appointment
-          if (existingDetails.startedBy) {
-            authors.push({
-              userId: existingDetails.startedBy,
-              action: 'paused',
-              timestamp: new Date().toISOString()
-            })
-          }
+          // Add current user's pause action to authors
+          authors.push({
+            userId: data.currentUser?.id,
+            action: 'paused',
+            timestamp: new Date().toISOString()
+          })
 
           // Update status to paused and record pause details
           updateEventStatus(data, eventId, 'event_paused')
