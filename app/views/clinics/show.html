@@ -175,7 +175,7 @@
 
             {{ event.status | toTag({ id: statusTagId }) }}
 
-            {% if event | isInProgress %}
+            {% if (event.status === 'event_in_progress') %}
               <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
                 event.sessionDetails.startedBy | getUsername({
                 format: 'short',
