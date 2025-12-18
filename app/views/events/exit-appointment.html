@@ -11,10 +11,14 @@
 
   {% if event.workflowStatus['take-images'] == 'completed' %}
     {# Images have been taken - simpler confirmation #}
-    <p>Are you sure you want to exit this appointment?</p>
+    <p>This appointment will be paused.</p>
+
+    {% set insetHtml %}
+      <p>Once images have been taken, appointment details cannot be discarded.</p>
+    {% endset %}
 
     {{ insetText({
-      html: "<p>The appointment will be paused.</p><p>Changes cannot be discarded due to images taken.</p>"
+      html: insetHtml
     }) }}
 
     <input type="hidden" name="exitAction" value="save">
@@ -24,7 +28,7 @@
         text: "Confirm"
       }) }}
 
-      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel and return to appointment</a>
     </div>
 
   {% else %}
