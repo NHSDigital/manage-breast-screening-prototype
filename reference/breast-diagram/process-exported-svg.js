@@ -71,7 +71,10 @@ function processSvg(svg) {
   // Clean up unnecessary attributes from defs
   svg = cleanupDefs(svg)
 
-  // Clean up the XML declaration and add a comment
+  // Auto-indent the SVG for consistent formatting
+  svg = autoIndentSvg(svg)
+
+  // Add processed comment at the top
   svg = addProcessedComment(svg)
 
   // Validate the processed SVG
@@ -142,8 +145,10 @@ function processSvgElement(svg) {
 
 function processRegionGroup(svg, side, stats) {
   // Find the group for this side
-  // Match: <g id="left"> or <g id="right">
-  const groupRegex = new RegExp(`(<g id="${side}">)([\\s\\S]*?)(</g>)`, 'm')
+  const groupRegex = new RegExp(
+    `(\\s*)(<g id="${side}">)([\\s\\S]*?)(</g>)`,
+    'm'
+  )
   const groupMatch = svg.match(groupRegex)
 
   if (!groupMatch) {
@@ -151,7 +156,7 @@ function processRegionGroup(svg, side, stats) {
     return svg
   }
 
-  let groupContent = groupMatch[2]
+  let groupContent = groupMatch[3]
 
   // Process each path in this group
   // Match path elements with id and data-name attributes
@@ -210,62 +215,43 @@ function processRegionGroup(svg, side, stats) {
 
   // Replace the group content in the SVG, using BEM class for the group
   const groupOpenTag = `<g class="${BEM_BLOCK}__regions-${side}">`
-  svg = svg.replace(groupRegex, `${groupOpenTag}${groupContent}$3`)
+  svg = svg.replace(groupRegex, `${groupOpenTag}${groupContent}$4`)
 
   return svg
 }
 
 function wrapRegionsInContainer(svg) {
   // Find both left and right groups and wrap them in a container
-  // We need to find where the groups are and wrap them
-
-  // Match the left group (including its content) - uses BEM class
-  const leftGroupRegex =
-    /(\s*)(<g class="app-breast-diagram__regions-left"[^>]*>[\s\S]*?<\/g>)/m
-  const rightGroupRegex =
-    /(\s*)(<g class="app-breast-diagram__regions-right"[^>]*>[\s\S]*?<\/g>)/m
-
-  const leftMatch = svg.match(leftGroupRegex)
-  const rightMatch = svg.match(rightGroupRegex)
-
-  if (!leftMatch || !rightMatch) {
-    console.warn(
-      'Warning: Could not find both left and right groups for wrapping'
-    )
-    return svg
-  }
 
   // Check if already wrapped
   if (svg.includes(`class="${BEM_BLOCK}__regions"`)) {
     return svg
   }
 
-  // Find the position of the first group (should be left or right)
-  const leftIndex = svg.indexOf(leftMatch[2])
-  const rightIndex = svg.indexOf(rightMatch[2])
-  const firstIndex = Math.min(leftIndex, rightIndex)
-  const lastIndex = Math.max(leftIndex, rightIndex)
+  // Find the first regions group and insert opening wrapper before it
+  const firstGroupPattern =
+    /(<g class="app-breast-diagram__regions-(?:left|right)")/
+  if (!firstGroupPattern.test(svg)) {
+    console.warn('Warning: Could not find region groups for wrapping')
+    return svg
+  }
+  svg = svg.replace(firstGroupPattern, `<g class="${BEM_BLOCK}__regions">\n$1`)
 
-  // Find where the last group ends
-  const lastGroup = lastIndex === leftIndex ? leftMatch[2] : rightMatch[2]
-  const endOfLastGroup = lastIndex + lastGroup.length
+  // Find the last closing </g> of the right group and insert closing wrapper after it
+  // We need to find the </g> that closes the right regions group
+  const rightGroupEndPattern =
+    /(<\/g>)(\s*)(<g id="diagram"|<g class="app-breast-diagram__diagram")/
+  if (rightGroupEndPattern.test(svg)) {
+    svg = svg.replace(rightGroupEndPattern, '$1\n</g>$2$3')
+  } else {
+    // Fallback: find the pattern before the diagram group in the source structure
+    const altPattern = /(<\/g>)(\s*)(<g id="diagram">)/
+    if (altPattern.test(svg)) {
+      svg = svg.replace(altPattern, '$1\n</g>$2$3')
+    }
+  }
 
-  // Get the indentation
-  const indent = leftMatch[1] || '  '
-
-  // Extract the region groups
-  const beforeGroups = svg.substring(0, firstIndex)
-  const regionGroups = svg.substring(firstIndex, endOfLastGroup)
-  const afterGroups = svg.substring(endOfLastGroup)
-
-  // Wrap with the container, adding indentation
-  const indentedGroups = regionGroups
-    .split('\n')
-    .map((line) => indent + line)
-    .join('\n')
-  const wrappedGroups = `${indent}<g class="${BEM_BLOCK}__regions">\n${indentedGroups}\n${indent}</g>`
-
-  return beforeGroups + wrappedGroups + afterGroups
+  return svg
 }
 
 function processOutlineGroup(svg) {
@@ -312,13 +298,13 @@ function processOutlineGroup(svg) {
       .replace(/\s*stroke-miterlimit="[^"]*"/g, '')
       .replace(/\s*stroke-linejoin="[^"]*"/g, '')
 
-  // Build the flattened structure - minimal attributes on children
+  // Build the flattened structure - indentation handled by autoIndentSvg
   const flattenedDiagram = `<g class="${BEM_BLOCK}__diagram" clip-path="url(${clipPathUrl})">
-      <path data-side="left" aria-label="left breast outline" vector-effect="non-scaling-stroke"${stripDataName(leftBreastMatch[1])}d="${leftBreastMatch[2]}"${stripDataName(leftBreastMatch[3])}/>
-      <circle data-side="left" aria-label="left nipple outline" vector-effect="non-scaling-stroke"${stripCircleOnlyAttrs(stripDataName(leftNippleMatch[1]))}/>
-      <path data-side="right" aria-label="right breast outline" vector-effect="non-scaling-stroke"${stripDataName(rightBreastMatch[1])}d="${rightBreastMatch[2]}"${stripDataName(rightBreastMatch[3])}/>
-      <circle data-side="right" aria-label="right nipple outline" vector-effect="non-scaling-stroke"${stripCircleOnlyAttrs(stripDataName(rightNippleMatch[1]))}/>
-    </g>`
+<path data-side="left" aria-label="left breast outline" vector-effect="non-scaling-stroke"${stripDataName(leftBreastMatch[1])}d="${leftBreastMatch[2]}"${stripDataName(leftBreastMatch[3])}/>
+<circle data-side="left" aria-label="left nipple outline" vector-effect="non-scaling-stroke"${stripCircleOnlyAttrs(stripDataName(leftNippleMatch[1]))}/>
+<path data-side="right" aria-label="right breast outline" vector-effect="non-scaling-stroke"${stripDataName(rightBreastMatch[1])}d="${rightBreastMatch[2]}"${stripDataName(rightBreastMatch[3])}/>
+<circle data-side="right" aria-label="right nipple outline" vector-effect="non-scaling-stroke"${stripCircleOnlyAttrs(stripDataName(rightNippleMatch[1]))}/>
+</g>`
 
   // Replace the entire diagram group structure
   // Match from <g id="diagram"> through all its nested closing </g> tags
@@ -352,6 +338,51 @@ function cleanupDefs(svg) {
     '<rect'
   )
   return svg
+}
+
+function autoIndentSvg(svg) {
+  // Auto-indent SVG based on tag nesting depth
+  // This provides consistent formatting regardless of how transformations affect whitespace
+
+  // First, ensure each tag is on its own line
+  // Split adjacent tags like "</defs><g" onto separate lines
+  svg = svg.replace(/>([\s]*)</g, '>\n<')
+
+  let depth = 0
+  const indent = '  '
+
+  return svg
+    .split('\n')
+    .map((line) => {
+      const trimmed = line.trim()
+      if (!trimmed) return ''
+
+      // Check if line is a closing tag - decrease depth before indenting
+      const isClosingTag = trimmed.startsWith('</')
+      // Check if line is a self-closing tag or comment
+      const isSelfClosing = trimmed.endsWith('/>') || trimmed.startsWith('<!--')
+      // Check if line is an opening tag (not closing, not self-closing, not comment)
+      const isOpeningTag =
+        trimmed.startsWith('<') &&
+        !isClosingTag &&
+        !isSelfClosing &&
+        !trimmed.startsWith('<!')
+
+      // Decrease depth for closing tags before indenting this line
+      if (isClosingTag) {
+        depth = Math.max(0, depth - 1)
+      }
+
+      const indented = indent.repeat(depth) + trimmed
+
+      // Increase depth after opening tags for subsequent lines
+      if (isOpeningTag) {
+        depth++
+      }
+
+      return indented
+    })
+    .join('\n')
 }
 
 // ============ Validation ============
@@ -422,8 +453,7 @@ function validateProcessedSvg(svg, stats) {
 
 function addProcessedComment(svg) {
   // Add a comment indicating this file was processed
-  const comment =
-    `<!-- Source: ${inputFile} -->\n<!-- Processed by process-exported-svg.js - do not edit manually -->\n\n`
+  const comment = `<!-- Source: ${inputFile} -->\n<!-- Processed by process-exported-svg.js - do not edit manually -->\n\n`
 
   // Insert at the start (XML declaration already removed)
   return comment + svg
