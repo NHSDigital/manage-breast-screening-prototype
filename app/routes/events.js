@@ -201,7 +201,8 @@ module.exports = (router) => {
       `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
     )
 
-    if (event?.status !== 'event_in_progress') {
+    // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
+    if (event?.status === 'event_scheduled' || event?.status === 'event_checked_in') {
       // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
@@ -283,11 +284,11 @@ module.exports = (router) => {
       // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
-      // Update session details with new user
+      // Update session details - preserve original starter
       updateEventData(data, req.params.eventId, {
         sessionDetails: {
           startedAt: existingDetails.startedAt,
-          startedBy: currentUser.id,
+          startedBy: existingDetails.startedBy,
           pausedAt: null,
           pausedBy: null,
           authors: authors
@@ -295,10 +296,20 @@ module.exports = (router) => {
       })
     }
 
-    // Redirect to appointment page
-    res.redirect(
-      `/clinics/${req.params.clinicId}/events/${req.params.eventId}/appointment`
-    )
+    // Determine redirect destination
+    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/confirm-identity`
+    const finalDestination = req.query.returnTo
+      ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${req.query.returnTo}`
+      : defaultDestination
+
+    // Preserve all query string parameters except returnTo (already used)
+    const queryParams = { ...req.query }
+    delete queryParams.returnTo
+    const queryString = Object.keys(queryParams).length
+      ? '?' + new URLSearchParams(queryParams).toString()
+      : ''
+
+    res.redirect(finalDestination + queryString)
   })
 
   // Leave appointment - revert status from in_progress back to checked_in
@@ -346,7 +357,7 @@ module.exports = (router) => {
     res.redirect(returnUrl)
   })
 
-  // Exit appointment - handles discard or save
+  // Exit appointment - handles discard, save, or cannot-proceed
   router.post(
     '/clinics/:clinicId/events/:eventId/exit-appointment',
     (req, res) => {
@@ -375,6 +386,19 @@ module.exports = (router) => {
           // Clear temporary session data without saving
           delete data.event
           delete data.participant
+
+          // Clear the exit action from session
+          delete data.exitAction
+
+          // Redirect to appointment page with checked in status
+          return res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+        }
+        else if (exitAction === 'cannot-proceed') {
+          // Cannot proceed - redirect to attended-not-screened flow
+          delete data.exitAction
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+          )
         }
         else if (exitAction === 'save') {
           // Save changes and pause the appointment
@@ -399,7 +423,7 @@ module.exports = (router) => {
           updateEventData(data, eventId, {
             sessionDetails: {
               startedAt: existingDetails.startedAt || null,
-              startedBy: null,
+              startedBy: existingDetails.startedBy || null,
               pausedAt: new Date().toISOString(),
               pausedBy: data.currentUser?.id || null,
               authors: authors
@@ -409,13 +433,19 @@ module.exports = (router) => {
           // Clear temporary session data (now safe since we've saved changes)
           delete data.event
           delete data.participant
+
+          // Clear the exit action from session
+          delete data.exitAction
+
+          // Redirect to appointment page with paused status
+          return res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
         }
       }
 
-      // Clear the exit action from session
+      // Clear the exit action from session (in case status check failed)
       delete data.exitAction
 
-      // Redirect to appointment page instead of clinic
+      // Fallback redirect
       res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
     }
   )

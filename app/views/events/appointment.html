@@ -199,6 +199,21 @@
         },
         {
           key: {
+            text: "Screened by"
+          },
+          value: {
+            html: (event.sessionDetails.endedBy | getUsername) + 
+                  ((" and " + (event.sessionDetails.authors | last).userId | getUsername) 
+                   if event.sessionDetails.authors and event.sessionDetails.authors.length > 0 
+                   and (event.sessionDetails.authors | last).userId != event.sessionDetails.endedBy
+                   else "")
+          },
+          actions: {
+            items: []
+          }
+        } if event.status == "event_complete" and event.sessionDetails.endedBy else {},
+        {
+          key: {
             text: "Special appointment"
           },
           value: {

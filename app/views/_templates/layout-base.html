@@ -68,10 +68,6 @@
       {
         href: (eventUrl ~ "/exit-appointment") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Exit appointment"
-      },
-      {
-        href: (eventUrl ~ "/attended-not-screened-reason") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
-        text: "Appointment cannot proceed"
       }
     ] %}
   {% endif %}

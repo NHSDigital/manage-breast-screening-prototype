@@ -9,19 +9,11 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {% set appointmentCannotProceedCallout %}
-    <p>If the appointment will not resume later, go to <a href="{{ eventUrl }}/attended-not-screened-reason">appointment cannot proceed</a></p>
-  {% endset %}
-
-  {{ insetText({
-    html: appointmentCannotProceedCallout
-  }) }}
-
   {{ radios({
     name: "exitAction",
     fieldset: {
       legend: {
-        text: "Do you want to save your progress?",
+        text: "Will this appointment be resumed today?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -29,17 +21,18 @@
     items: [
       {
         value: "save",
-        text: "Yes",
-        hint: {
-          text: "Pause this appointment"
-        }
+        text: "Yes, pause and save changes"
+      },
+      {
+        value: "cannot-proceed",
+        text: "No, appointment cannot proceed"
+      },
+      {
+        divider: "or"
       },
       {
         value: "discard",
-        text: "No, discard changes",
-        hint: {
-          text: "Revert status to 'Checked in'"
-        }
+        text: "Discard changes and revert status to 'Checked in'"
       }
     ]
   }) }}
