@@ -9,40 +9,62 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {{ radios({
-    name: "exitAction",
-    fieldset: {
-      legend: {
-        text: "Will this appointment be resumed today?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
-      }
-    },
-    items: [
-      {
-        value: "save",
-        text: "Yes, pause and save changes"
-      },
-      {
-        value: "cannot-proceed",
-        text: "No, appointment cannot proceed"
-      },
-      {
-        divider: "or"
-      },
-      {
-        value: "discard",
-        text: "Discard changes and revert status to 'Checked in'"
-      }
-    ]
-  }) }}
+  {% if event.workflowStatus['take-images'] == 'completed' %}
+    {# Images have been taken - simpler confirmation #}
+    <p>Are you sure you want to exit this appointment?</p>
 
-  <div class="nhsuk-button-group">
-    {{ button({
-      text: "Confirm"
+    {{ insetText({
+      html: "<p>The appointment will be paused.</p><p>Changes cannot be discarded due to images taken.</p>"
     }) }}
 
-    <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
-  </div>
+    <input type="hidden" name="exitAction" value="save">
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Confirm"
+      }) }}
+
+      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+    </div>
+
+  {% else %}
+    {# No images - show all options #}
+    {{ radios({
+      name: "exitAction",
+      fieldset: {
+        legend: {
+          text: "Will this appointment be resumed today?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "save",
+          text: "Yes, pause and save changes"
+        },
+        {
+          value: "cannot-proceed",
+          text: "No, appointment cannot proceed"
+        },
+        {
+          divider: "or"
+        },
+        {
+          value: "discard",
+          text: "Discard changes and revert status to 'Checked in'"
+        }
+      ]
+    }) }}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Confirm"
+      }) }}
+
+      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+    </div>
+
+  {% endif %}
 
 {% endblock %}
