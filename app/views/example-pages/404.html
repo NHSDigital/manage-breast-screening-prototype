@@ -1,0 +1,19 @@
+{# app/views/example-pages/404.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = "Page not found" %}
+{# {% set useMinimalNav = true %} #}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>If you typed the web address, check it is correct.</p>
+
+  <p>If you pasted the web address, check you copied the entire address.</p>
+
+  <p>If the web address is correct or you selected a link or button, <a href="#">contact us</a> if you need to speak to someone about managing breast screening.</p>
+
+{% endblock %}

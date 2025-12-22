@@ -1,0 +1,17 @@
+{# app/views/example-pages/500.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = "Sorry, there is a problem with the service" %}
+{% set useMinimalNav = true %}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>Try again later.</p>
+
+  <p>If you need to speak to someone about managing breast screening, you can <a href="#">contact us</a>.</p>
+
+{% endblock %}

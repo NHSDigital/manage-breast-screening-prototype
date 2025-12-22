@@ -5,6 +5,9 @@
 {% set pageHeading = "Exit appointment" %}
 {% set formAction = eventUrl + "/exit-appointment-answer" %}
 
+{# Suppress nav as it's a link to the page we're on #}
+{% set useMinimalNav = true %}
+
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
