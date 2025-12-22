@@ -319,7 +319,7 @@ module.exports = (router) => {
   // Exit appointment - handles discard, save, or cannot-proceed
   // Accepts both GET (with query param) and POST (with form data)
   router.all(
-    '/clinics/:clinicId/events/:eventId/exit-appointment',
+    '/clinics/:clinicId/events/:eventId/exit-appointment-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
