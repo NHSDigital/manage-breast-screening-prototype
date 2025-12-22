@@ -190,26 +190,34 @@ module.exports = (router) => {
     next()
   })
 
-  // Main route in to starting an event - used to clear any temp data, set status to in progress and store the user id of the mammographer doing the appointment
+  // Main route for starting a new appointment
   router.get('/clinics/:clinicId/events/:eventId/start', (req, res) => {
     const data = req.session.data
     const event = getEvent(data, req.params.eventId)
     const currentUser = data.currentUser
     const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
+    delete data.returnTo // Clean up session - we're using query string explicitly here
 
     console.log(
       `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
     )
 
-    if (event?.status !== 'event_in_progress') {
-      // Update status
+    // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
+    if (
+      event?.status === 'event_scheduled' ||
+      event?.status === 'event_checked_in'
+    ) {
+      // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
       // Store session details
       updateEventData(data, req.params.eventId, {
         sessionDetails: {
           startedAt: new Date().toISOString(),
-          startedBy: currentUser.id
+          startedBy: currentUser.id,
+          pausedAt: null,
+          pausedBy: null,
+          authors: []
         }
       })
     }
@@ -255,50 +263,156 @@ module.exports = (router) => {
     res.redirect(finalDestination + queryString)
   })
 
-  // Leave appointment - revert status from in_progress back to checked_in
-  router.get('/clinics/:clinicId/events/:eventId/leave', (req, res) => {
-    const { clinicId, eventId } = req.params
+  // Resume a paused appointment
+  router.get('/clinics/:clinicId/events/:eventId/resume', (req, res) => {
     const data = req.session.data
-    const event = getEvent(data, eventId)
+    const event = getEvent(data, req.params.eventId)
+    const currentUser = data.currentUser
 
-    // Only allow leaving if the event is currently in progress
-    if (event?.status === 'event_in_progress') {
-      // Reset workflow status
-      delete data.event.workflowStatus
+    console.log(
+      `Resuming appointment for event ${req.params.eventId} by user ${currentUser.id}`
+    )
 
-      // Save any temporary changes before leaving
-      saveTempEventToEvent(data)
-      saveTempParticipantToParticipant(data)
+    if (event?.status === 'event_paused') {
+      // Get existing session details
+      const existingDetails = event.sessionDetails || {}
+      const authors = existingDetails.authors || []
 
-      // Revert status back to checked in
-      updateEventStatus(data, eventId, 'event_checked_in')
-
-      // Clear session details
-      updateEventData(data, eventId, {
-        sessionDetails: {
-          startedAt: null,
-          startedBy: null
-        }
+      // Add resume action to authors
+      authors.push({
+        userId: currentUser.id,
+        action: 'resumed',
+        timestamp: new Date().toISOString()
       })
 
-      // Clear temporary session data (now safe since we've saved changes)
-      delete data.event
-      delete data.participant
+      // Update status to in progress
+      updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
-      console.log(
-        'Left appointment - saved temp data, reverted status to checked_in, and cleared temp data'
-      )
-
-      // req.flash('info', 'You have left the appointment. The participant remains checked in.')
+      // Update session details - preserve original starter
+      updateEventData(data, req.params.eventId, {
+        sessionDetails: {
+          startedAt: existingDetails.startedAt,
+          startedBy: existingDetails.startedBy,
+          pausedAt: null,
+          pausedBy: null,
+          authors: authors
+        }
+      })
     }
 
-    // Use referrer chain for redirect, fallback to clinic view
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
+    // Determine redirect destination
+    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/confirm-identity`
+    const finalDestination = req.query.returnTo
+      ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${req.query.returnTo}`
+      : defaultDestination
+
+    // Preserve all query string parameters except returnTo (already used)
+    const queryParams = { ...req.query }
+    delete queryParams.returnTo
+    const queryString = Object.keys(queryParams).length
+      ? '?' + new URLSearchParams(queryParams).toString()
+      : ''
+
+    res.redirect(finalDestination + queryString)
   })
+
+  // Exit appointment - handles discard, save, or cannot-proceed
+  // Accepts both GET (with query param) and POST (with form data)
+  router.all(
+    '/clinics/:clinicId/events/:eventId/exit-appointment-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+      const exitAction = data.exitAction
+
+      // Only allow exiting if the event is currently in progress
+      if (event?.status === 'event_in_progress') {
+        if (exitAction === 'discard') {
+          // Discard changes - reset workflow and revert to checked in
+          delete data.event.workflowStatus
+
+          // Revert status back to checked in
+          updateEventStatus(data, eventId, 'event_checked_in')
+
+          // Clear session details
+          updateEventData(data, eventId, {
+            sessionDetails: {
+              startedAt: null,
+              startedBy: null
+            }
+          })
+
+          // Clear temporary session data without saving
+          delete data.event
+          delete data.participant
+
+          // Clear the exit action from session
+          delete data.exitAction
+
+          // Redirect to returnTo destination or appointment page
+          const returnTo = data.returnTo
+          delete data.returnTo
+          const destination =
+            returnTo || `/clinics/${clinicId}/events/${eventId}/appointment`
+          return res.redirect(destination)
+        } else if (exitAction === 'cannot-proceed') {
+          // Cannot proceed - redirect to attended-not-screened flow
+          delete data.exitAction
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+          )
+        } else if (exitAction === 'save') {
+          // Save changes and pause the appointment
+
+          // Save any temporary changes before leaving
+          saveTempEventToEvent(data)
+          saveTempParticipantToParticipant(data)
+
+          // Get existing session details to track authors
+          const existingDetails = event.sessionDetails || {}
+          const authors = existingDetails.authors || []
+
+          // Add current user's pause action to authors
+          authors.push({
+            userId: data.currentUser?.id,
+            action: 'paused',
+            timestamp: new Date().toISOString()
+          })
+
+          // Update status to paused and record pause details
+          updateEventStatus(data, eventId, 'event_paused')
+          updateEventData(data, eventId, {
+            sessionDetails: {
+              startedAt: existingDetails.startedAt || null,
+              startedBy: existingDetails.startedBy || null,
+              pausedAt: new Date().toISOString(),
+              pausedBy: data.currentUser?.id || null,
+              authors: authors
+            }
+          })
+
+          // Clear temporary session data (now safe since we've saved changes)
+          delete data.event
+          delete data.participant
+
+          // Clear the exit action from session
+          delete data.exitAction
+
+          // Redirect to appointment page with paused status
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/appointment`
+          )
+        }
+      }
+
+      // Clear the exit action from session (in case status check failed)
+      delete data.exitAction
+
+      // Fallback redirect
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+    }
+  )
 
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {

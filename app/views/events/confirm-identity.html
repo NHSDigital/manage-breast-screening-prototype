@@ -6,17 +6,11 @@
 {% set showNavigation = true %}
 {% set activeWorkflowStep = 'confirm-identity' %}
 {% set hideBackLink = true %}
+{% set allowEdits = true %}
 
 {% set referrerChain = currentUrl %}
 
 {% set formAction = "./review-medical-information" | getReturnUrl(referrerChain) %}
-
-{# {% set hideBackLink = true %} #}
-{# {% set back = {
-  href: eventUrl ~ "/leave",
-  text: "Leave this appointment"
-} %} #}
-
 
 {% block pageContent %}
 
@@ -51,7 +45,7 @@
   {% call card({
     headingHtml: " "
   }) %}
-    {% set allowEdits = true %}
+    
 
     {% call summaryList() %}
       {% include "_includes/summary-lists/rows/nhs-number.njk" %}
