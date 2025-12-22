@@ -266,8 +266,8 @@
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
 
-              {% elseif event | startedByCurrentUser %}
-                <a href="{{ eventBaseUrl }}/confirm-identity">
+              {% elseif (event | isPaused) and (event | startedByCurrentUser) %}
+                <a href="{{ eventBaseUrl }}/resume">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
               {% endif %}
