@@ -196,13 +196,17 @@ module.exports = (router) => {
     const event = getEvent(data, req.params.eventId)
     const currentUser = data.currentUser
     const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
+    delete data.returnTo // Clean up session - we're using query string explicitly here
 
     console.log(
       `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
     )
 
     // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
-    if (event?.status === 'event_scheduled' || event?.status === 'event_checked_in') {
+    if (
+      event?.status === 'event_scheduled' ||
+      event?.status === 'event_checked_in'
+    ) {
       // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
@@ -312,53 +316,9 @@ module.exports = (router) => {
     res.redirect(finalDestination + queryString)
   })
 
-  // Leave appointment - revert status from in_progress back to checked_in
-  router.get('/clinics/:clinicId/events/:eventId/leave', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-    const event = getEvent(data, eventId)
-
-    // Only allow leaving if the event is currently in progress
-    if (event?.status === 'event_in_progress') {
-      // Reset workflow status
-      delete data.event.workflowStatus
-
-      // Save any temporary changes before leaving
-      saveTempEventToEvent(data)
-      saveTempParticipantToParticipant(data)
-
-      // Revert status back to checked in
-      updateEventStatus(data, eventId, 'event_checked_in')
-
-      // Clear session details
-      updateEventData(data, eventId, {
-        sessionDetails: {
-          startedAt: null,
-          startedBy: null
-        }
-      })
-
-      // Clear temporary session data (now safe since we've saved changes)
-      delete data.event
-      delete data.participant
-
-      console.log(
-        'Left appointment - saved temp data, reverted status to checked_in, and cleared temp data'
-      )
-
-      // req.flash('info', 'You have left the appointment. The participant remains checked in.')
-    }
-
-    // Use referrer chain for redirect, fallback to clinic view
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  })
-
   // Exit appointment - handles discard, save, or cannot-proceed
-  router.post(
+  // Accepts both GET (with query param) and POST (with form data)
+  router.all(
     '/clinics/:clinicId/events/:eventId/exit-appointment',
     (req, res) => {
       const { clinicId, eventId } = req.params
@@ -390,17 +350,19 @@ module.exports = (router) => {
           // Clear the exit action from session
           delete data.exitAction
 
-          // Redirect to appointment page with checked in status
-          return res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
-        }
-        else if (exitAction === 'cannot-proceed') {
+          // Redirect to returnTo destination or appointment page
+          const returnTo = data.returnTo
+          delete data.returnTo
+          const destination =
+            returnTo || `/clinics/${clinicId}/events/${eventId}/appointment`
+          return res.redirect(destination)
+        } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
           delete data.exitAction
           return res.redirect(
             `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
           )
-        }
-        else if (exitAction === 'save') {
+        } else if (exitAction === 'save') {
           // Save changes and pause the appointment
 
           // Save any temporary changes before leaving
@@ -410,7 +372,7 @@ module.exports = (router) => {
           // Get existing session details to track authors
           const existingDetails = event.sessionDetails || {}
           const authors = existingDetails.authors || []
-          
+
           // Add current user's pause action to authors
           authors.push({
             userId: data.currentUser?.id,
@@ -438,7 +400,9 @@ module.exports = (router) => {
           delete data.exitAction
 
           // Redirect to appointment page with paused status
-          return res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/appointment`
+          )
         }
       }
 

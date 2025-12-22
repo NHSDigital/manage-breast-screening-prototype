@@ -25,10 +25,10 @@
 
   {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
   {% if appointmentWorkflow %}
-    {# Explicitly leave appointment if navigating away #}
-    {% set leaveAppointmentHref = eventUrl ~ "/leave" %}
-    {# Override rootHref so things don't get wrong when demoing #}
-    {% set rootHref = leaveAppointmentHref | urlWithReferrer("/") %}
+    {# Exit appointment with discard action, returning to root #}
+    {% set exitAppointmentHref = eventUrl ~ "/exit-appointment?exitAction=discard&returnTo=/" %}
+    {# Override rootHref to exit appointment and return to root #}
+    {% set rootHref = exitAppointmentHref %}
   {% endif %}
 
   {% set navItems = [
