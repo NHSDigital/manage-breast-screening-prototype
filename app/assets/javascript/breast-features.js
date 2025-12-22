@@ -138,72 +138,28 @@ function initializeBreastFeatures() {
     // console.log('Read-only mode: skipping interactive setup')
   }
 
-  // Toggle borders button listener
-  // console.log('DEBUG: toggleBordersBtn found:', toggleBordersBtn)
-  if (toggleBordersBtn) {
-    // console.log('DEBUG: Adding click listener to borders button')
-    toggleBordersBtn.addEventListener('click', function (e) {
-      e.preventDefault()
-      e.stopPropagation()
-      // console.log('DEBUG: Borders button clicked!')
-      const anatomicalRegions = document.querySelector(
-        '.app-breast-diagram__regions'
-      )
-      // console.log('DEBUG: anatomicalRegions found:', anatomicalRegions)
-      // console.log(
-      //   'DEBUG: anatomicalRegions current classes:',
-      //   anatomicalRegions.className
-      // )
+  // Apply location borders based on config setting
+  const showLocationBorders = config.showLocationBorders || false
+  if (showLocationBorders) {
+    const anatomicalRegions = document.querySelector(
+      '.app-breast-diagram__regions'
+    )
+    const allRegions = svg.querySelectorAll(
+      '.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon'
+    )
 
-      // Get all region paths and polygons
-      const allRegions = svg.querySelectorAll(
-        '.app-breast-diagram__regions-left path, .app-breast-diagram__regions-left polygon, .app-breast-diagram__regions-right path, .app-breast-diagram__regions-right polygon'
-      )
+    if (anatomicalRegions) {
+      anatomicalRegions.classList.add('app-breast-diagram__regions--visible')
+    }
 
-      if (
-        anatomicalRegions.classList.contains(
-          'app-breast-diagram__regions--visible'
-        )
-      ) {
-        anatomicalRegions.classList.remove(
-          'app-breast-diagram__regions--visible'
-        )
-        this.textContent = 'Show location borders'
-        // console.log('DEBUG: Hiding location borders - removed visible class')
-
-        // Force hide all regions by setting style directly
-        allRegions.forEach((region) => {
-          region.style.opacity = '0'
-        })
-      } else {
-        anatomicalRegions.classList.add('app-breast-diagram__regions--visible')
-        this.textContent = 'Hide location borders'
-        // console.log('DEBUG: Showing location borders - added visible class')
-
-        // Force show all regions by setting style directly
-        allRegions.forEach((region) => {
-          region.style.opacity = '1'
-          region.style.strokeDasharray = '5,5'
-          region.style.strokeWidth = '1px'
-          region.style.stroke = '#4c6272'
-          region.style.fill = 'none'
-        })
-      }
-      // console.log('DEBUG: Found', allRegions.length, 'anatomical regions')
-      allRegions.forEach((region, index) => {
-        // console.log(
-        //   `DEBUG: Region ${index}:`,
-        //   region.getAttribute('data-region'),
-        //   region.getAttribute('data-side')
-        // )
-        // console.log(
-        //   `DEBUG: Region ${index} computed style:`,
-        //   window.getComputedStyle(region).opacity
-        // )
-      })
+    // Show all regions by setting style directly
+    allRegions.forEach((region) => {
+      region.style.opacity = '1'
+      region.style.strokeDasharray = '5,5'
+      region.style.strokeWidth = '1px'
+      region.style.stroke = '#4c6272'
+      region.style.fill = 'none'
     })
-  } else {
-    // console.log('DEBUG: toggleBordersBtn NOT found')
   }
 
   // --- Setup Functions ---

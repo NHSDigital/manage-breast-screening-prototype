@@ -66,7 +66,8 @@ const defaultSettings = {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
     showParticipantSection: 'false',
-    useCondensedReviewSummaries: 'true'
+    useCondensedReviewSummaries: 'true',
+    showLocationBorders: 'false'
   },
   reading: {
     blindReading: config.reading.blindReading,
