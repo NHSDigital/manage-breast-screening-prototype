@@ -1,0 +1,40 @@
+{# app/views/example-pages/500.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = "Sorry, this service is unavailable" %}
+{% set useMinimalNav = true %}
+{% set hideBackLink = true %}
+{% set hideAccountMenu = true %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>
+    {{ serviceName }} is unavailable right now. We’re doing our best to fix the issue.
+  </p>
+
+  <p>
+    We will continue to put updates on this page to keep you informed.
+  </p>
+  
+  {% set insetTextHtml %}
+    <h2 class="nhsuk-heading-s">
+      1:11pm, {{ today() | remove(1, 'day') | formatDate("dddd D MMMM YYYY") }}
+    </h2>
+    <p>
+      We are aware of an issue affecting the service and are working to resolve it as quickly as possible. We apologise for the inconvenience.
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml,
+    classes: "nhsuk-u-margin-top-6 nhsuk-u-margin-bottom-6"
+  }) }}
+
+  <p>
+    [Message about who to contact in an emergency]
+  </p>
+
+{% endblock %}

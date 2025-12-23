@@ -1,0 +1,49 @@
+{# app/views/example-pages/500.html #}
+
+{% extends "layout-appointment.html" %}
+
+{% set pageHeading = "Are you sure you want to delete this [name of thing]?" %}
+{% set useMinimalNav = true %}
+{% set hideBackLink = true %}
+{# {% set showNavigation = true %} #}
+{% set isAppointmentWorkflow = true %}
+
+{# Janet Williams #}
+{% set eventId = "5gpn41oi" %}
+{% set participantId = "bc724e9f" %}
+{% set clinicId = "wtrl7jud" %}
+{% set participant = data | getParticipant(participantId) %}
+{% set clinic = data.clinics | findById(clinicId) %}
+{% set event = data.events | findById(eventId) %}
+
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>
+    [Details about the thing being deleted]
+  </p>
+
+  {% set insetTextHtml %}
+    <p>
+      This action is final and cannot be undone
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml,
+    classes: "nhsuk-u-margin-top-6 nhsuk-u-margin-bottom-6"
+  }) }}
+
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Delete [name of thing]",
+      classes: "nhsuk-button--warning"
+    }) }}
+
+    <a href="#" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+  </div>
+
+{% endblock %}
