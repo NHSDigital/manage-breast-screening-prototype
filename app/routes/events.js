@@ -2545,25 +2545,24 @@ module.exports = (router) => {
         return
       }
 
-      // Capture session end time only if appointment was started
-      const event = getEvent(data, eventId)
-      if (event?.sessionDetails?.startedAt) {
-        captureSessionEndTime(data, eventId, data.currentUser.id)
-      }
-
       // If yes, redirect to reschedule page
       if (needsReschedule === 'yes') {
         // Save the appointmentStopped data before redirecting
+        // Don't update status yet - keep workflow active until reschedule is complete
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
-        updateEventStatus(data, eventId, 'event_attended_not_screened')
 
         res.redirect(
           `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
         )
       } else {
-        // Get participant info BEFORE saving (which clears temp data)
+        // Capture session end time only if appointment was started
+        const event = getEvent(data, eventId)
+        if (event?.sessionDetails?.startedAt) {
+          captureSessionEndTime(data, eventId, data.currentUser.id)
+        }
 
+        // Get participant info BEFORE saving (which clears temp data)
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
         updateEventStatus(data, eventId, 'event_attended_not_screened')

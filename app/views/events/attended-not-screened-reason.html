@@ -6,6 +6,9 @@
 
 {% set formAction = './attended-not-screened-answer' %}
 
+{# Suppress nav as we don't want the user to leave without making a decision #}
+{% set useMinimalNav = true %}
+
 {% block pageContent %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}

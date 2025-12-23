@@ -1,0 +1,26 @@
+{# app/views/example-pages/500.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = "Sorry, this service is unavailable" %}
+{% set useMinimalNav = true %}
+{% set hideBackLink = true %}
+{% set hideAccountMenu = true %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>
+    The service is unavailable due to planned maintenance.
+  </p>
+
+  <p>
+    You will be able to use the service from 9am on {{ today() | add(1, 'day') | formatDate("dddd D MMMM YYYY") }}.
+  </p>
+
+  <p>
+    [Message about who to contact in an emergency]
+  </p>
+
+{% endblock %}
