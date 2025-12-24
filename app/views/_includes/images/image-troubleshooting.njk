@@ -1,0 +1,51 @@
+{% from "details/macro.njk" import details %}
+{% from "button/macro.njk" import button %}
+
+<div class="nhsuk-expander-group">
+  {% call details({
+    summaryText: "Image troubleshooting",
+    classes: "nhsuk-expander"
+  }) %}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        <h2>There are too few or too many images</h2>
+        <ul>
+          <li>Wait 15 seconds</li>
+          <li>Resend images from mammogram machine</li>
+        </ul>
+
+        {{ button({
+          text: "Resend images from mammogram machine",
+          href: "#",
+          classes: "app-button--small"
+        }) }}
+
+        <p>or</p>
+
+        <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a></p>
+
+        <h2>Images are blurred or obstructed</h2>
+        <ul>
+          <li>Retake the necessary image views</li>
+          <li>The new images will appear above (refresh image information if they do not)</li>
+        </ul>
+
+        <h2>Images are incorrectly labelled (views or participant info)</h2>
+        <ul>
+          <li>Change label details on the mammogram machine</li>
+          <li>Amended image details will appear above (refresh image information if they do not)</li>
+        </ul>
+
+        <p>or</p>
+
+        <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a> – you can add notes to indicate what information needs to be corrected</p>
+
+        <h2>Technical issues with the mammogram machine</h2>
+        <p><a href="./attended-not-screened-reason" class="nhsuk-link app-link--warning">Stop this appointment</a></p>
+
+        <p>Other appointments can be cancelled from the clinic list if this fault cannot be resolved.</p>
+      </div>
+    </div>
+  {% endcall %}
+
+</div>
