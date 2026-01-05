@@ -23,6 +23,8 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  
+
   {% if data.event.workflowStatus["take-images"] == 'completed' %}
     {{ button({
       text: "Next section",
@@ -130,14 +132,9 @@
 
   <p><a href="#">View imported image metadata</a></p>
 
-  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
-    {{ button({
-      text: "Re-scan PACS for image updates",
-      classes: "nhsuk-button--secondary"
-    }) }}
+    {% include "_includes/images/image-troubleshooting.njk" %}
 
-    <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
-  </div>
+
 
   {# Build array of views needing repeat questions (count > 1) #}
   {% set viewsNeedingRepeats = [] %}
@@ -200,9 +197,8 @@
 
     </div>
   </div>
-  
 
-  {% include "_includes/images/image-troubleshooting.njk" %}
+
 
 {% endblock %}
 

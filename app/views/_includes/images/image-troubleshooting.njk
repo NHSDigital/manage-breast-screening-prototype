@@ -1,7 +1,6 @@
 {% from "details/macro.njk" import details %}
 {% from "button/macro.njk" import button %}
 
-<div class="nhsuk-expander-group">
   {% call details({
     summaryText: "Image troubleshooting",
     classes: "nhsuk-expander"
@@ -17,7 +16,7 @@
         {{ button({
           text: "Resend images from mammogram machine",
           href: "#",
-          classes: "app-button--small"
+          classes: "nhsuk-button nhsuk-button--secondary"
         }) }}
 
         <p>or</p>
@@ -38,7 +37,7 @@
 
         <p>or</p>
 
-        <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a> – you can add notes to indicate what information needs to be corrected</p>
+        <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a> – you can add notes to indicate what information needs to be corrected.</p>
 
         <h2>Technical issues with the mammogram machine</h2>
         <p><a href="./attended-not-screened-reason" class="nhsuk-link app-link--warning">Stop this appointment</a></p>
@@ -48,4 +47,3 @@
     </div>
   {% endcall %}
 
-</div>
