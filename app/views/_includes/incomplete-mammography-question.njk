@@ -1,0 +1,161 @@
+{# app/views/events/_includes/partial-mammography-question.njk #}
+
+{# 
+  Include for partial mammography question
+  
+  Parameters:
+  - namePrefix: string - prefix for form field names (e.g., "event[mammogramData]" or "event[mammogramDataTemp]")
+  - mammogramSource: object - object containing the mammogram data with values
+#}
+
+{% set reasonHtml %}
+
+  {% set otherDetailsHtml %}
+    {{ textarea({
+      name: namePrefix + "[incompleteMammographyReasonOtherDetails]",
+      value: mammogramSource.incompleteMammographyReasonOtherDetails,
+      id: "incompleteMammographyReasonOtherDetails",
+      label: {
+        text: "Provide details"
+      },
+      rows: 3
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    idPrefix: "incompleteMammographyReason",
+    name: namePrefix + "[incompleteMammographyReason]",
+    value: mammogramSource.incompleteMammographyReason,
+    fieldset: {
+      legend: {
+        text: "Why was imaging not completed?",
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "Consent withdrawn",
+        text: "Consent withdrawn"
+      },
+      {
+        value: "Language or learning difficulties",
+        text: "Language or learning difficulties"
+      },
+      {
+        value: "Unable to scan tissue",
+        text: "Unable to scan tissue"
+      },
+      {
+        value: "Positioning difficulties due to wheelchair",
+        text: "Positioning difficulties due to wheelchair"
+      },
+      {
+        value: "Positioning difficulties for other mobility reasons",
+        text: "Positioning difficulties for other mobility reasons"
+      },
+      {
+        value: "Technical issues",
+        text: "Technical issues"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: otherDetailsHtml
+        }
+      }
+    ]
+  }) }}
+
+  {{ textarea({
+    name: namePrefix + "[incompleteMammographyReasonDetails]",
+    value: mammogramSource.incompleteMammographyReasonDetails,
+    id: "incompleteMammographyReasonDetails",
+    label: {
+      text: "Provide details (optional)"
+    },
+    rows: 3
+  }) }}
+
+  {% set yesAsSoonAsPossibleDetailsHtml %}
+    {{ textarea({
+      name: namePrefix + "[incompleteMammographyFollowUpDetailsImprove]",
+      value: mammogramSource.incompleteMammographyFollowUpDetailsImprove,
+      id: "incompleteMammographyFollowUpDetailsImprove",
+      label: {
+        text: "Provide details"
+      },
+      rows: 3
+    }) }}
+  {% endset %}
+
+  {% set noDetailsHtml %}
+    {{ textarea({
+      name: namePrefix + "[incompleteMammographyFollowUpDetailsNo]",
+      value: mammogramSource.incompleteMammographyFollowUpDetailsNo,
+      id: "incompleteMammographyFollowUpDetailsNo",
+      label: {
+        text: "Provide details"
+      },
+      rows: 3
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    idPrefix: "incompleteMammographyFollowUp",
+    name: namePrefix + "[incompleteMammographyFollowUp]",
+    value: mammogramSource.incompleteMammographyFollowUp,
+    fieldset: {
+      legend: {
+        text: "Can another appointment be scheduled to take the remaining images?",
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "Yes, as soon as possible",
+        text: "Yes, as soon as possible"
+      },
+      {
+        value: "Yes, when physical condition improves",
+        text: "Yes, when physical condition improves",
+        conditional: {
+          html: yesAsSoonAsPossibleDetailsHtml
+        }
+      },
+      {
+        value: "No, best possible images taken",
+        text: "No, best possible images taken",
+        conditional: {
+          html: noDetailsHtml
+        }
+      }
+    ]
+  }) }}
+
+{% endset %}
+
+{{ checkboxes({
+  idPrefix: "isPartialMammography",
+  name: namePrefix + "[isPartialMammography]",
+  values: mammogramSource.isPartialMammography,
+  fieldset: {
+    legend: {
+      text: "Incomplete mammography?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "yes",
+      text: "Incomplete set of mammograms",
+      conditional: {
+        html: reasonHtml
+      }
+    }
+  ]
+}) }}

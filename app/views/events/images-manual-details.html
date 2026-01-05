@@ -179,7 +179,8 @@
   }) }}
 
   {% set namePrefix = "event[mammogramDataTemp]" %}
-  {% include "_includes/partial-mammography-question.njk" %}
+  {# {% include "_includes/partial-mammography-question.njk" %} #}
+  {% include "_includes/incomplete-mammography-question.njk" %}
 
   {{ textarea({
     name: "event[mammogramDataTemp][additionalDetails]",
