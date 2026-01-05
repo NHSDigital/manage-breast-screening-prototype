@@ -1,49 +1,62 @@
 {% from "details/macro.njk" import details %}
 {% from "button/macro.njk" import button %}
 
-  {% call details({
-    summaryText: "Image troubleshooting",
-    classes: "nhsuk-expander"
-  }) %}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
-        <h2>There are too few or too many images</h2>
-        <ul>
-          <li>Wait 15 seconds</li>
-          <li>Resend images from mammogram machine</li>
-        </ul>
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-two-thirds">
+    <div class="nhsuk-card">
+      <div class="nhsuk-card__content">
+        <h2>Troubleshoot issues with images</h2>
 
-        {{ button({
-          text: "Resend images from mammogram machine",
-          href: "#",
-          classes: "nhsuk-button nhsuk-button--secondary"
-        }) }}
+        {% call details({
+          summaryText: "There are too few or too many images"
+        }) %}
+          <ul>
+            <li>Wait 15 seconds</li>
+            <li>Resend images from mammogram machine</li>
+          </ul>
 
-        <p>or</p>
+          {{ button({
+            text: "Resend images from mammogram machine",
+            href: "#",
+            classes: "nhsuk-button nhsuk-button--secondary"
+          }) }}
 
-        <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a></p>
+          <p>or</p>
 
-        <h2>Images are blurred or obstructed</h2>
-        <ul>
-          <li>Retake the necessary image views</li>
-          <li>The new images will appear above (refresh image information if they do not)</li>
-        </ul>
+          <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a></p>
+        {% endcall %}
 
-        <h2>Images are incorrectly labelled (views or participant info)</h2>
-        <ul>
-          <li>Change label details on the mammogram machine</li>
-          <li>Amended image details will appear above (refresh image information if they do not)</li>
-        </ul>
+        {% call details({
+          summaryText: "Images are blurred or obstructed"
+        }) %}
+          <ul>
+            <li>Retake the necessary image views</li>
+            <li>The new images will appear above (refresh image information if they do not)</li>
+          </ul>
+        {% endcall %}
 
-        <p>or</p>
+        {% call details({
+          summaryText: "Images are incorrectly labelled (views or participant info)"
+        }) %}
+          <ul>
+            <li>Change label details on the mammogram machine</li>
+            <li>Amended image details will appear above (refresh image information if they do not)</li>
+          </ul>
 
-        <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a> – you can add notes to indicate what information needs to be corrected.</p>
+          <p>or</p>
 
-        <h2>Technical issues with the mammogram machine</h2>
-        <p><a href="./attended-not-screened-reason" class="nhsuk-link app-link--warning">Stop this appointment</a></p>
+          <p><a href="./images-manual" class="nhsuk-link">Record image information manually</a> – you can add notes to indicate what information needs to be corrected.</p>
+        {% endcall %}
 
-        <p>Other appointments can be cancelled from the clinic list if this fault cannot be resolved.</p>
+        {% call details({
+          summaryText: "Technical issues with the mammogram machine"
+        }) %}
+          <p><a href="./attended-not-screened-reason" class="nhsuk-link app-link--warning">Stop this appointment</a></p>
+
+          <p>Other appointments can be cancelled from the clinic list if this fault cannot be resolved.</p>
+        {% endcall %}
       </div>
     </div>
-  {% endcall %}
+  </div>
+</div>
 
