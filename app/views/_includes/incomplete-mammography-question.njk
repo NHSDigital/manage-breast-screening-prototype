@@ -1,7 +1,7 @@
-{# app/views/events/_includes/partial-mammography-question.njk #}
+{# app/views/_includes/incomplete-mammography-question.njk #}
 
 {# 
-  Include for partial mammography question
+  Include for incomplete mammography question
   
   Parameters:
   - namePrefix: string - prefix for form field names (e.g., "event[mammogramData]" or "event[mammogramDataTemp]")
@@ -9,18 +9,6 @@
 #}
 
 {% set reasonHtml %}
-
-  {% set otherDetailsHtml %}
-    {{ textarea({
-      name: namePrefix + "[incompleteMammographyReasonOtherDetails]",
-      value: mammogramSource.incompleteMammographyReasonOtherDetails,
-      id: "incompleteMammographyReasonOtherDetails",
-      label: {
-        text: "Provide details"
-      },
-      rows: 3
-    }) }}
-  {% endset %}
 
   {{ radios({
     idPrefix: "incompleteMammographyReason",
@@ -62,10 +50,7 @@
       },
       {
         value: "Other",
-        text: "Other",
-        conditional: {
-          html: otherDetailsHtml
-        }
+        text: "Other"
       }
     ]
   }) }}
@@ -77,37 +62,25 @@
     label: {
       text: "Provide details (optional)"
     },
-    rows: 3
+    rows: 2
   }) }}
 
-  {% set yesAsSoonAsPossibleDetailsHtml %}
+  {% set yesWhenPhysicalConditionImprovesDetailsHtml %}
     {{ textarea({
-      name: namePrefix + "[incompleteMammographyFollowUpDetailsImprove]",
-      value: mammogramSource.incompleteMammographyFollowUpDetailsImprove,
-      id: "incompleteMammographyFollowUpDetailsImprove",
+      name: namePrefix + "[incompleteMammographyFollowUpAppointmentDetails]",
+      value: mammogramSource.incompleteMammographyFollowUpAppointmentDetails,
+      id: "incompleteMammographyFollowUpAppointmentDetails",
       label: {
-        text: "Provide details"
-      },
-      rows: 3
-    }) }}
-  {% endset %}
-
-  {% set noDetailsHtml %}
-    {{ textarea({
-      name: namePrefix + "[incompleteMammographyFollowUpDetailsNo]",
-      value: mammogramSource.incompleteMammographyFollowUpDetailsNo,
-      id: "incompleteMammographyFollowUpDetailsNo",
-      label: {
-        text: "Provide details"
+        text: "Provide details for staff rebooking the appointment"
       },
       rows: 3
     }) }}
   {% endset %}
 
   {{ radios({
-    idPrefix: "incompleteMammographyFollowUp",
-    name: namePrefix + "[incompleteMammographyFollowUp]",
-    value: mammogramSource.incompleteMammographyFollowUp,
+    idPrefix: "incompleteMammographyFollowUpAppointment",
+    name: namePrefix + "[incompleteMammographyFollowUpAppointment]",
+    value: mammogramSource.incompleteMammographyFollowUpAppointment,
     fieldset: {
       legend: {
         text: "Can another appointment be scheduled to take the remaining images?",
@@ -123,15 +96,12 @@
         value: "Yes, when physical condition improves",
         text: "Yes, when physical condition improves",
         conditional: {
-          html: yesAsSoonAsPossibleDetailsHtml
+          html: yesWhenPhysicalConditionImprovesDetailsHtml
         }
       },
       {
         value: "No, best possible images taken",
-        text: "No, best possible images taken",
-        conditional: {
-          html: noDetailsHtml
-        }
+        text: "No, best possible images taken"
       }
     ]
   }) }}
@@ -139,12 +109,12 @@
 {% endset %}
 
 {{ checkboxes({
-  idPrefix: "isPartialMammography",
-  name: namePrefix + "[isPartialMammography]",
-  values: mammogramSource.isPartialMammography,
+  idPrefix: "isIncompleteMammography",
+  name: namePrefix + "[isIncompleteMammography]",
+  values: mammogramSource.isIncompleteMammography,
   fieldset: {
     legend: {
-      text: "Incomplete mammography?",
+      text: "Incomplete mammography",
       classes: "nhsuk-fieldset__legend--m",
       isPageHeading: false
     }

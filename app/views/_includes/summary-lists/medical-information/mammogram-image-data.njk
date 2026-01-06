@@ -1,6 +1,8 @@
 {# app/views/_includes/mammogram-data-display.njk #}
 {# Display captured mammogram information - works for both manual and automated #}
 
+{% set allowEdits = allowEdits | default(true) %}
+
 {% set isManualEntry = event.mammogramData.isManualEntry %}
 {% set mammogramViews = event.mammogramData.views | getObjectValues %}
 
@@ -117,7 +119,7 @@
   {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
   
   {% set machineRoomActions = [] %}
-  {% if not isMobileClinic %}
+  {% if allowEdits and not isMobileClinic %}
     {% set machineRoomActions = [
       {
         href: "./images-room-selection" | urlWithReferrer(referrerChain, scrollTo),
@@ -221,7 +223,7 @@
         visuallyHiddenText: "views taken"
       }
     ]
-  }
+  } if allowEdits
 }) %}
 
 {# OLD Views taken (split into separate rows) - keeping for reference #}
@@ -255,39 +257,42 @@
   }
 }) %} #}
 
-{# Partial mammography #}
-{% if event.mammogramData.isPartialMammography == 'yes' %}
-  {% set partialMammographyHtml %}
-    {% if event.mammogramData.partialMammographyReasonSelect %}
-      <p class="nhsuk-u-margin-bottom-2"><strong>Reason:</strong> {{ event.mammogramData.partialMammographyReasonSelect }}</p>
+{# Incomplete mammography #}
+{% if event.mammogramData.isIncompleteMammography == 'yes' %}
+  {% set incompleteMammographyHtml %}
+    {% if event.mammogramData.incompleteMammographyReason %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>Reason:</strong> {{ event.mammogramData.incompleteMammographyReason }}</p>
     {% endif %}
-    {% if event.mammogramData.partialMammographyShouldReinvite == 'yes' %}
-      <p class="nhsuk-u-margin-bottom-2">Participant to be reinvited to complete the remaining images</p>
+    {% if event.mammogramData.incompleteMammographyReasonDetails %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>Details:</strong> {{ event.mammogramData.incompleteMammographyReasonDetails }}</p>
     {% endif %}
-    {% if event.mammogramData.partialMammographyReasonComment %}
-      <p class="nhsuk-u-margin-bottom-0"><strong>Follow-up appointment information:</strong> {{ event.mammogramData.partialMammographyReasonComment }}</p>
+    {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>Follow-up appointment:</strong> {{ event.mammogramData.incompleteMammographyFollowUpAppointment }}</p>
     {% endif %}
-    {% if not event.mammogramData.partialMammographyReasonSelect and not event.mammogramData.partialMammographyReasonComment %}
-      Yes, no reason provided
+    {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
+      <p class="nhsuk-u-margin-bottom-0"><strong>Follow-up details:</strong> {{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+    {% endif %}
+    {% if not event.mammogramData.incompleteMammographyReason and not event.mammogramData.incompleteMammographyFollowUpAppointment %}
+      Yes, no details provided
     {% endif %}
   {% endset %}
   
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Partial mammography"
+      text: "Incomplete mammography"
     },
     value: {
-      html: partialMammographyHtml
+      html: incompleteMammographyHtml
     },
     actions: {
       items: [
         {
           href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
           text: "Change",
-          visuallyHiddenText: "partial mammography"
+          visuallyHiddenText: "incomplete mammography"
         }
       ]
-    }
+    } if allowEdits
   }) %}
 {% endif %}
 
@@ -329,7 +334,7 @@
           visuallyHiddenText: "additional details"
         }
       ]
-    }
+    } if allowEdits
   }) %}
 {# {% endif %} #}
 

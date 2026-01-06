@@ -1,38 +1,23 @@
 {# app/views/_includes/mammogram-image-display.njk #}
 {# 
-  Display a single mammogram view with count/images and machine room
+  Display a single mammogram view with count/images
   
   Parameters:
   - viewItem: object with { side, view, viewShort, viewShortWithSide, count, images, etc }
   - isManualEntry: boolean - true shows count only, false shows image details
-  - machineRoom: string - the screening room name
 #}
 
 <div class="{{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
 
   {% if isManualEntry %}
     {# Manual entry - show count only #}
-    <h2>
+    <h3 class="nhsuk-u-margin-bottom-2">
       {{ viewItem.count }}× {{ viewItem.viewShortWithSide }}
-    </h2>
-
-    {{ summaryList({
-      classes: "nhsuk-u-margin-bottom-0",
-      rows: [
-        {
-          key: {
-            text: "Machine room"
-          },
-          value: {
-            text: machineRoom or "Not recorded"
-          }
-        }
-      ]
-    }) }}
+    </h3>
 
     {# Show repeat information if present #}
     {% if viewItem.repeatCount > 0 and viewItem.repeatReasons %}
-      <p class="nhsuk-u-margin-top-2">
+      <p class="nhsuk-u-margin-bottom-0">
         <strong>Repeat {{ 'reason' | pluralise(viewItem.repeatReasons | length) }}:</strong> {{ viewItem.repeatReasons | join(', ') }}
       </p>
     {% endif %}
@@ -65,58 +50,55 @@
         {% endfor %}
         <div style="clear:both"></div>
       </div>
+
+      {# Show additional image details if there are repeats or multiple images #}
+      {% if viewItem.repeatCount > 0 or (viewItem.images | length) > 1 %}
+        {% set additionalCount = (viewItem.images | length) - 1 %}
+        {% set repeatCount = viewItem.repeatCount or 0 %}
+        {% set extraCount = additionalCount - repeatCount %}
+        
+        {% set additionalDetailsHtml %}
+          {# Show repeat information #}
+          {% if repeatCount > 0 %}
+            <p class="nhsuk-u-margin-bottom-2">
+              {{ repeatCount }} {{ 'repeat' | pluralise(repeatCount) }} taken
+            </p>
+            {% if viewItem.repeatReasons and viewItem.repeatReasons | length > 0 %}
+              {% if viewItem.repeatReasons | length == 1 %}
+                <p class="nhsuk-u-margin-bottom-2">
+                  {{ viewItem.repeatReasons[0] }}
+                </p>
+              {% else %}
+                <p class="nhsuk-u-margin-bottom-2"><strong>Repeat reasons:</strong></p>
+                <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
+                  {% for reason in viewItem.repeatReasons %}
+                    <li>{{ reason }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+          
+          {# Show extra image information #}
+          {% if extraCount > 0 %}
+            <p class="nhsuk-u-margin-bottom-0">
+              {% if extraCount == 1 %}
+                An extra image was taken to capture the complete view.
+              {% else %}
+                {{ extraCount }} extra images were taken to capture the complete view.
+              {% endif %}
+            </p>
+          {% endif %}
+        {% endset %}
+        
+        <div class="nhsuk-u-margin-top-3">
+          {{ details({
+            summaryText: "Additional image details",
+            html: additionalDetailsHtml
+          }) }}
+        </div>
+      {% endif %}
     {% endif %}
-
-    {# View image metadata details #}
-    {% set metadataHtml %}
-      {% for image in viewItem.images %}
-        <h4 class="nhsuk-heading-xs {{ 'nhsuk-u-margin-bottom-2' if not loop.last else 'nhsuk-u-margin-bottom-1' }}">Image {{ loop.index }}</h4>
-        {{ summaryList({
-          classes: "nhsuk-u-margin-bottom-" + ("4" if not loop.last else "0"),
-          rows: [
-            {
-              key: {
-                text: "Captured"
-              },
-              value: {
-                text: image.timestamp | formatDateTime("D MMMM YYYY, H:mm:ss a")
-              }
-            },
-            {
-              key: {
-                text: "Accession"
-              },
-              value: {
-                html: image.accessionNumber
-              }
-            },
-            {
-              key: {
-                text: "Machine room"
-              },
-              value: {
-                text: machineRoom or "Not recorded"
-              }
-            }
-          ]
-        }) }}
-      {% endfor %}
-    {% endset %}
-
-    {# {{ details({
-      summaryText: "View image metadata",
-      html: metadataHtml
-    }) }} #}
-
-    {# If there are no images, show inset text - likely partial mammography #}
-    {# {% if viewItem.images | length == 0 %}
-      {% set insetHtml %}
-        <p>There are no {{ viewItem.viewShortWithSide }} images</p>
-      {% endset %}
-      {{ insetText({
-        html: insetHtml
-      }) }}
-    {% endif %} #}
 
   {% endif %}
 
