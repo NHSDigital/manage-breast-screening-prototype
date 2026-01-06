@@ -1,0 +1,59 @@
+{# app/views/_includes/special-appointment-content.njk #}
+{# 
+  Displays special appointment needs with bold category headings and details
+  Requires: event object with specialAppointment data
+#}
+{% set specialAppointmentData = event.specialAppointment %}
+{% if specialAppointmentData and specialAppointmentData.supportTypes %}
+  {% for supportType in specialAppointmentData.supportTypes %}
+    {# Skip the _unchecked form artifact #}
+    {% if supportType != '_unchecked' and supportType and supportType.trim() %}
+      {% set details = "" %}
+      {% set isTemporary = false %}
+
+      {# Get the details for each support type #}
+      {% if supportType == "Breast implants" and specialAppointmentData.implantDetails %}
+        {% set details = specialAppointmentData.implantDetails %}
+      {% elif supportType == "Implanted medical devices" and specialAppointmentData.implantedMedicalDevicesDetails %}
+        {% set details = specialAppointmentData.implantedMedicalDevicesDetails %}
+      {% elif supportType == "Vision" and specialAppointmentData.visionDetails %}
+        {% set details = specialAppointmentData.visionDetails %}
+      {% elif supportType == "Hearing" and specialAppointmentData.hearingDetails %}
+        {% set details = specialAppointmentData.hearingDetails %}
+      {% elif supportType == "Physical restriction" and specialAppointmentData.physicalRestrictionDetails %}
+        {% set details = specialAppointmentData.physicalRestrictionDetails %}
+      {% elif supportType == "Social, emotional, and mental health" and specialAppointmentData.socialEmotionalMentalHealthDetails %}
+        {% set details = specialAppointmentData.socialEmotionalMentalHealthDetails %}
+      {% elif supportType == "Language" and specialAppointmentData.languageDetails %}
+        {% set details = specialAppointmentData.languageDetails %}
+      {% elif supportType == "Gender identity" and specialAppointmentData.genderIdentityDetails %}
+        {% set details = specialAppointmentData.genderIdentityDetails %}
+      {% elif supportType == "Other" and specialAppointmentData.otherDetails %}
+        {% set details = specialAppointmentData.otherDetails %}
+      {% endif %}
+
+      {# Check if this support type is temporary #}
+      {% if specialAppointmentData.temporaryReasons == "yes" and specialAppointmentData.temporaryReasonsList %}
+        {% for tempReason in specialAppointmentData.temporaryReasonsList %}
+          {% if tempReason == supportType %}
+            {% set isTemporary = true %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {# Display the support type as bold, followed by details #}
+      <p class="nhsuk-u-margin-bottom-2">
+        <strong>{{ supportType }}</strong>
+        {% if isTemporary %}
+          {{ tag({
+            text: "Temporary",
+            classes: "nhsuk-tag--white nhsuk-u-margin-left-2"
+          })}}
+        {% endif %}
+        {% if details %}
+          <br>{{ details }}
+        {% endif %}
+      </p>
+    {% endif %}
+  {% endfor %}
+{% endif %}

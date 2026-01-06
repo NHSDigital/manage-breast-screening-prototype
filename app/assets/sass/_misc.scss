@@ -4,8 +4,8 @@
 
 .app-mammogram-image--placeholder {
   background-color: black;
-  width: 75px;
-  height: 100px;
+  width: 125px;
+  // height: 150px;
 
   outline: 1px solid rgba(255, 255, 255, 0.2);
 
@@ -13,6 +13,34 @@
     color: white;
     margin-left: 5px;
   }
+}
+
+.app-mammogram-image--missing {
+  background-color: $color_nhsuk-grey-5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 125px;
+  height: 187.5px;
+  border: 2px dashed $color_nhsuk-grey-2;
+}
+
+.app-mammogram-image--missing-content {
+  text-align: center;
+  font-size: 16px;
+}
+
+// Progressive enhancement helpers
+.app-js-only {
+  display: none;
+}
+
+body.js-enabled .app-js-only {
+  display: block;
+}
+
+body.js-enabled .app-no-js-only {
+  display: none;
 }
 
 .app-image-two-up {

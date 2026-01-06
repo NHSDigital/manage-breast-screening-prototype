@@ -18,7 +18,41 @@
 
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
-  {{ radios({
+  {# Determine current room name #}
+  {% set currentRoomName = "" %}
+  {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
+  
+  {% if isMobileClinic %}
+    {# For mobile clinics, use the mobile unit name #}
+    {% set currentRoomName = clinic.location.name %}
+  {% else %}
+    {# For hospital clinics, look up the room from screening rooms #}
+    {% for room in data.screeningRooms %}
+      {% if room.id == data.currentScreeningRoom %}
+        {% set currentRoomName = room.displayName %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% if currentRoomName %}
+    <p>
+      Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ currentRoomName }}</span>.
+      {% if not isMobileClinic %}
+        <br><a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Change room or machine details</a>
+      {% endif %}
+    </p>
+
+    {{ appHiddenInput({
+      name: "event[mammogramDataTemp][machineRoom]",
+      value: currentRoomName
+    }) }}
+  {% else %}
+    <p>
+      <a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Select a room before continuing</a>
+    </p>
+  {% endif %}
+
+  {# {{ radios({
     name: "event[mammogramDataTemp][machineRoom]",
     value: mammogramSource.machineRoom,
     idPrefix: "machineRoom",
@@ -43,14 +77,14 @@
         text: "Room C - machine DEF"
       }
     ]
-  }) }}
+  }) }} #}
 
   {{ radios({
     idPrefix: "imagingComplete",
     name: "event[mammogramDataTemp][isStandardSet]",
     fieldset: {
       legend: {
-        text: "Is the imaging stage complete?",
+        text: "Have you taken a standard set of images?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
@@ -59,16 +93,13 @@
     items: [
       {
         value: "yes",
-        text: "Yes, standard 4 images taken",
-        hint: {
-          text: "2 views of each breast (CC and MLO views)"
-        }
+        text: "Yes, 2 CC and 2 MLO"
       },
       {
         value: "custom",
-        text: "Yes, but provide additional details",
+        text: "No, add other information",
         hint: {
-          text: "For example, additional images taken or partial mammography"
+          text: "Such as partial mammography or additional images"
         }
       },
       {
@@ -77,8 +108,8 @@
       {
         value: "no",
         text: "No images taken",
-        _hint: {
-          text: "No images taken or technical problems that prevented any images being taken"
+        hint: {
+          text: "The appointment cannot proceed"
         }
       }
     ]

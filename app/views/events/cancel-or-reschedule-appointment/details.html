@@ -1,0 +1,240 @@
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Cancel or reschedule appointment" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = "./cancel-or-reschedule-appointment-answer" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {{ checkboxes({
+    name: "event[cancellation][reason]",
+    values: data.event.cancellation.reason,
+    fieldset: {
+      legend: {
+        text: "Why is this appointment not going ahead?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      },
+      hint: {
+        text: "Select all that apply"
+      }
+    },
+    items: [
+      {
+        value: "Unable to attend",
+        text: "Unable to attend",
+        conditional: {
+          html: input({
+            name: "event[cancellation][availabilityDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.availabilityDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Moving outside England",
+        text: "Moving outside England",
+        conditional: {
+          html: input({
+            name: "event[cancellation][movingDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.movingDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Breast implant concerns",
+        text: "Breast implant concerns",
+        conditional: {
+          html: input({
+            name: "event[cancellation][implantDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.implantDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Bilateral mastectomy",
+        text: "Bilateral mastectomy",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mastectomyDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mastectomyDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Recent mammogram",
+        text: "Recent mammogram",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mammogramDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mammogramDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Medical reasons",
+        text: "Medical reasons",
+        conditional: {
+          html: input({
+            name: "event[cancellation][medicalDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.medicalDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Has a symptomatic appointment",
+        text: "Has a symptomatic appointment",
+        conditional: {
+          html: input({
+            name: "event[cancellation][symptomaticDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.symptomaticDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "No qualified mammographer available",
+        text: "No qualified mammographer available",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mammographerDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mammographerDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Mammogram room unavailable",
+        text: "Mammogram room unavailable",
+        conditional: {
+          html: input({
+            name: "event[cancellation][mammogramRoomDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.mammogramRoomDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        value: "Technical issues at clinic",
+        text: "Technical issues at clinic",
+        conditional: {
+          html: input({
+            name: "event[cancellation][technicalDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.technicalDetails,
+            autocomplete: "off"
+          })
+        }
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "Other reason",
+        text: "Other reason",
+        conditional: {
+          html: input({
+            name: "event[cancellation][otherReasonDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.otherReasonDetails,
+            autocomplete: "off"
+          })
+        }
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ radios({
+    name: "event[cancellation][reschedule]",
+    value: data.event.cancellation.reschedule,
+    fieldset: {
+      legend: {
+        text: "Should the appointment be rescheduled?",
+        classes: "nhsuk-fieldset__legend--m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no-invite",
+        text: "No, cancel the appointment",
+        hint: {
+          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
+        }
+      },
+      {
+        value: "no-opt-out",
+        text: "No, request opt out",
+        hint: {
+          text: "They will receive information explaining their options"
+        },
+        conditional: {
+          html: input({
+            name: "event[cancellation][optOutDetails]",
+            label: {
+              text: "Provide details"
+            },
+            value: data.event.cancellation.optOutDetails,
+            autocomplete: "off"
+          })
+        }
+      }
+    ]
+  } | populateErrors) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Continue"
+    }) }}
+  </div>
+
+{% endblock %}

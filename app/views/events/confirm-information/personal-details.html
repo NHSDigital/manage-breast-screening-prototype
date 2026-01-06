@@ -1,0 +1,54 @@
+{# app/views/events/confirm-information/personal-details.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Review personal information" %}
+{% set showNavigation = false %}
+{% set activeWorkflowStep = 'check-information' %}
+{% set hideBackLink = true %}
+
+{% set allowEdits = true %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageContent %}
+
+  {# TODO: Ideally this would be before the main element #}
+  {{ backLink({
+    href: "../check-information" | getReturnUrl(referrerChain),
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {# Include the personal details summary in a feature card #}
+  {% set participantDetailsHtml %}
+    {% call summaryList() %}
+      {% include "_includes/summary-lists/rows/nhs-number.njk" %}
+      {% include "_includes/summary-lists/rows/full-name.njk" %}
+      {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+      {% include "_includes/summary-lists/rows/address.njk" %}
+      {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+      {% include "_includes/summary-lists/rows/email.njk" %}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+      {% include "_includes/summary-lists/rows/gp.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {{ card({
+    heading: "Personal information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: participantDetailsHtml
+  }) }}
+
+  {# Continue button back to check information #}
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Continue",
+      href: "../check-information" | getReturnUrl(referrerChain)
+    }) }}
+  </div>
+
+{% endblock %}

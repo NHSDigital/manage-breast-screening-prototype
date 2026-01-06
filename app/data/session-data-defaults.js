@@ -6,6 +6,7 @@ const breastScreeningUnits = require('./breast-screening-units')
 // All breast screening units
 const allBreastScreeningUnits = require('./all-breast-screening-units')
 const medicalHistoryTypes = require('./medical-history-types')
+const screeningRooms = require('./screening-rooms')
 const path = require('path')
 const fs = require('fs')
 const { needsRegeneration } = require('../lib/utils/regenerate-data')
@@ -60,10 +61,12 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
+  showEnvironmentBanner: 'true',
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
-    showParticipantSection: 'false'
+    showParticipantSection: 'false',
+    useCondensedReviewSummaries: 'true'
   },
   reading: {
     blindReading: config.reading.blindReading,
@@ -78,8 +81,10 @@ module.exports = {
   users,
   currentUserId: users[0].id,
   currentUser: users[0],
+  currentScreeningRoom: screeningRooms[0].id,
   breastScreeningUnits,
   allBreastScreeningUnits,
+  screeningRooms,
   participants,
   clinics,
   events,

@@ -92,12 +92,38 @@ module.exports = [
       config: {
         eventId: '0gdof6fh',
         defaultRiskLevel: 'routine',
-        missingViews: ['RMLO', 'RCC'], // ensure all views are present
+        repeatViews: [],
+        missingViews: [],
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_scheduled',
+          status: 'event_in_progress',
           approximateTime: '11:30'
           // slotIndex: 20,
+        },
+        workflowStatus: {
+          'appointment': 'started',
+          'confirm-identity': 'completed',
+          'review-medical-information': 'completed',
+          'awaiting-images': 'completed',
+          'take-images': 'completed'
+        },
+        // Force 100% of all medical information types for testing
+        medicalInformation: {
+          probabilityOfSymptoms: 1.0,
+          probabilityOfHRT: 1.0,
+          probabilityOfPregnancyBreastfeeding: 1.0,
+          probabilityOfOtherMedicalInfo: 1.0,
+          probabilityOfBreastFeatures: 1.0,
+          probabilityOfMedicalHistory: 1.0,
+          forceMedicalHistoryTypes: [
+            'breastCancer',
+            'implantedMedicalDevice',
+            'breastImplantsAugmentation',
+            'mastectomyLumpectomy',
+            'cysts',
+            'benignLumps',
+            'otherProcedures'
+          ]
         }
       }
     }

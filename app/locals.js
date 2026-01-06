@@ -1,12 +1,18 @@
 // app/locals.js
-
 module.exports = (req, res, next) => {
+
+  const currentUser = req.session.data.currentUser
+  const currentBSU = currentUser
+    ? req.session.data.breastScreeningUnits?.find(unit => unit.id === currentUser.breastScreeningUnit)
+    : null
+
   const locals = {
     currentUrl: req.path,
     flash: req.flash(),
     query: req.query,
     referrerChain: req.query.referrerChain,
-    currentUser: req.session.data.currentUser,
+    currentUser: currentUser,
+    currentBSU: currentBSU,
     isAppointmentWorkflow: false
   }
 

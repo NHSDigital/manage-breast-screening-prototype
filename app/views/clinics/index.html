@@ -1,4 +1,3 @@
-
 {% extends 'layout-app.html' %}
 
 {% set pageHeading %}
@@ -14,16 +13,14 @@
   {% endswitch %}
 {% endset %}
 
+{# Can get to dashboard using main nav instead #}
 {% set hideBackLink = true %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{# {% set back = {
-  href: "/dashboard",
-  text: "Dashboard"
-} %} #}
-
 {% block pageContent %}
+
+  <span class="nhsuk-caption-l">{{ currentBSU.name }}</span>
   <h1>{{pageHeading}}</h1>
 
   {% set secondaryNavItems = [] %}
@@ -103,10 +100,7 @@
               {{ events.length }}
             </td>
             <td class="nhsuk-table__cell--numeric">
-              {{ tag({
-                html: clinic.status | formatWords | sentenceCase | noWrap,
-                classes: "nhsuk-tag--" + clinic.status | getStatusTagColour
-              })}}
+              {{ clinic.status | toTag }}
             </td>
           </tr>
         {% endfor %}

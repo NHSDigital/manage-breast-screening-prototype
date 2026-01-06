@@ -16,7 +16,7 @@
 {% endblock %}
 
 {% block header %}
-
+  {{ appEnvironment(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
   {% set useMinimalNav = useMinimalNav | default(false) %}
 
   {% set rootHref = "/" %}
@@ -25,10 +25,10 @@
 
   {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
   {% if appointmentWorkflow %}
-    {# Explicitly leave appointment if navigating away #}
-    {% set leaveAppointmentHref = eventUrl ~ "/leave" %}
-    {# Override rootHref so things don't get wrong when demoing #}
-    {% set rootHref = leaveAppointmentHref | urlWithReferrer("/") %}
+    {# Exit appointment with discard action, returning to root #}
+    {% set exitAppointmentHref = eventUrl ~ "/exit-appointment-answer?exitAction=discard&returnTo=/" %}
+    {# Override rootHref to exit appointment and return to root #}
+    {% set rootHref = exitAppointmentHref %}
   {% endif %}
 
   {% set navItems = [
@@ -66,12 +66,8 @@
   {% if appointmentWorkflow %}
     {% set navItems = [
       {
-        href: leaveAppointmentHref,
-        text: "Leave this appointment"
-      },
-      {
-        href: "#",
-        text: "Manage appointment"
+        href: (eventUrl ~ "/exit-appointment") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+        text: "Exit appointment"
       }
     ] %}
   {% endif %}
@@ -85,8 +81,11 @@
     account: {
       items: [
         {
+          text: currentBSU.name
+        },
+        {
           href: "#",
-          text: data.currentUser.email,
+          text: (data.currentUser.lastName | upper) + ", " + (data.currentUser.firstName),
           icon: true
         },
         {

@@ -10,6 +10,8 @@
 
 
 {% block pageContent %}
+
+  {# Todo: this could instead use the currentBSU local variable though that relates to the signed in user #}
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
   {{ filteredEvents | log("Filtered events")}}
   {# {% set events = data.events | getClinicEvents(clinicId) %} #}
@@ -31,10 +33,7 @@
       {{ clinic.clinicType | sentenceCase }} clinic
     </h1>
     <div class="app-header-with-status__status-tag">
-      {{ tag({
-      html: clinic.status | formatWords | sentenceCase | noWrap,
-      classes: "nhsuk-tag--" + clinic.status | getStatusTagColour
-      })}}
+      {{ clinic.status | toTag }}
     </div>
 
   </div>
@@ -178,7 +177,7 @@
 
             {{ event.status | toTag({ id: statusTagId }) }}
 
-            {% if event | isInProgress %}
+            {% if event | isInProgressNotPaused %}
               <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
                 event.sessionDetails.startedBy | getUsername({
                 format: 'short',
@@ -264,8 +263,13 @@
                   Start appointment
                 </a>
 
-              {% elseif event | startedByCurrentUser %}
-                <a href="{{ eventBaseUrl }}/confirm-identity">
+              {% elseif event | isPaused %}
+                <a href="{{ eventBaseUrl }}/resume">
+                  Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
+                </a>
+
+              {% elseif (event | isPaused) and (event | startedByCurrentUser) %}
+                <a href="{{ eventBaseUrl }}/resume">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
               {% endif %}

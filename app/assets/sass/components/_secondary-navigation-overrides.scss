@@ -4,10 +4,8 @@
 
 // Fix for tick SVG in secondary navigation
 .app-secondary-navigation__link {
-  // Ensure proper alignment when SVG is present
-  display: inline-flex;
-  align-items: center;
-  gap: 10px; // 10px spacing between tick and text
+  // gap is already set to 6px in the main component
+  // display: flex and align-items: center also already set
 }
 
 // Style the tick SVG specifically
@@ -16,7 +14,6 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0; // Prevent SVG from shrinking
-  margin-right: 0; // Remove any default margin
 
   // Style the tick path
   path {
@@ -24,10 +21,4 @@
     stroke-width: 4;
     fill: none; // Stroke only, no fill
   }
-}
-
-// Maintain layout for items without ticks
-.app-secondary-navigation__list-item {
-  // Ensure float layout still works with flexbox links
-  overflow: hidden;
 }

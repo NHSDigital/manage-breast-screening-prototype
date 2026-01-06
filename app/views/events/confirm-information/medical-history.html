@@ -1,0 +1,47 @@
+{# app/views/events/confirm-information/medical-history.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Review medical history" %}
+{% set showNavigation = false %}
+{% set activeWorkflowStep = 'check-information' %}
+{% set hideBackLink = true %}
+
+{% set allowEdits = true %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set scrollTo = "medical-history" %}
+
+{% block pageContent %}
+
+  {# TODO: Ideally this would be before the main element #}
+  {{ backLink({
+    href: "../check-information" | getReturnUrl(referrerChain),
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {# Include the full medical history summary in a feature card #}
+  {% set medicalHistoryHtml %}
+    {% include "_includes/medical-information/medical-history/index.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Medical history",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalHistoryHtml
+  }) }}
+
+  {# Continue button back to check information #}
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Continue",
+      href: "../check-information" | getReturnUrl(referrerChain)
+    }) }}
+  </div>
+
+{% endblock %}

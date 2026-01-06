@@ -1,0 +1,74 @@
+{# app/views/events/exit-appointment.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Exit appointment" %}
+{% set formAction = eventUrl + "/exit-appointment-answer" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% if event.workflowStatus['take-images'] == 'completed' %}
+    {# Images have been taken - simpler confirmation #}
+    <p>This appointment will be paused.</p>
+
+    {% set insetHtml %}
+      <p>Once images have been taken, appointment details cannot be discarded.</p>
+    {% endset %}
+
+    {{ insetText({
+      html: insetHtml
+    }) }}
+
+    <input type="hidden" name="exitAction" value="save">
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Confirm"
+      }) }}
+
+      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel and return to appointment</a>
+    </div>
+
+  {% else %}
+    {# No images - show all options #}
+    {{ radios({
+      name: "exitAction",
+      fieldset: {
+        legend: {
+          text: "Will this appointment be resumed today?",
+          classes: "nhsuk-fieldset__legend--m",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "save",
+          text: "Yes, pause and save changes"
+        },
+        {
+          value: "cannot-proceed",
+          text: "No, appointment cannot proceed"
+        },
+        {
+          divider: "or"
+        },
+        {
+          value: "discard",
+          text: "Discard changes and revert status to 'Checked in'"
+        }
+      ]
+    }) }}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Confirm"
+      }) }}
+
+      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+    </div>
+
+  {% endif %}
+
+{% endblock %}

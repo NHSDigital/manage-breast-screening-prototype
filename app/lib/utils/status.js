@@ -15,9 +15,18 @@ const STATUS_GROUPS = {
     'event_partially_screened',
     'event_did_not_attend',
     'event_attended_not_screened',
+    'event_cancelled',
+    'event_rescheduled'
+  ],
+  // Final statuses for seed data generation - excludes event_rescheduled which is user-initiated only
+  final_seed_data: [
+    'event_complete',
+    'event_partially_screened',
+    'event_did_not_attend',
+    'event_attended_not_screened',
     'event_cancelled'
   ],
-  active: ['event_scheduled', 'event_checked_in', 'event_in_progress'],
+  active: ['event_scheduled', 'event_checked_in', 'event_in_progress', 'event_paused'],
   eligible_for_reading: ['event_complete', 'event_partially_screened']
 }
 
@@ -70,15 +79,39 @@ const isCompleted = (input) => {
 }
 
 /**
- * Check if a status represents a completed event
+ * Check if a status represents an in-progress event (includes paused)
  *
  * @param {string | object} input - Status string or event object
- * @returns {boolean} Whether the status is completed
+ * @returns {boolean} Whether the status is in progress or paused
  */
 const isInProgress = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status == 'event_in_progress'
+  return status === 'event_in_progress' || status === 'event_paused'
+}
+
+/**
+ * Check if a status represents a paused event
+ *
+ * @param {string | object} input - Status string or event object
+ * @returns {boolean} Whether the status is paused
+ */
+const isPaused = (input) => {
+  const status = getStatus(input)
+  if (!status) return false
+  return status === 'event_paused'
+}
+
+/**
+ * Check if a status represents an in-progress event that is not paused
+ *
+ * @param {string | object} input - Status string or event object
+ * @returns {boolean} Whether the status is in progress but not paused
+ */
+const isInProgressNotPaused = (input) => {
+  const status = getStatus(input)
+  if (!status) return false
+  return status === 'event_in_progress'
 }
 
 /**
@@ -131,10 +164,10 @@ const isAppointmentWorkflow = function (event, currentUser) {
     typeof currentUser === 'string' ? currentUser : currentUser.id
   if (!currentUserId) return false
 
-  // Check if event is in progress and started by current user
-  const eventInProgress = isInProgress(event)
+  // Check if event is in progress (not paused) and started by current user
+  const eventInProgressNotPaused = isInProgressNotPaused(event)
 
-  return eventInProgress && startedBy === currentUserId
+  return eventInProgressNotPaused && startedBy === currentUserId
 }
 
 /**
@@ -170,10 +203,12 @@ const getStatusTagColour = (status) => {
     'event_scheduled': 'blue', // default blue
     'event_checked_in': '', // no colour will get solid dark blue
     'event_in_progress': 'aqua-green',
+    'event_paused': 'orange',
     'event_complete': 'green',
     'event_partially_screened': 'orange',
     'event_did_not_attend': 'red',
     'event_cancelled': 'red',
+    'event_rescheduled': 'red',
     'event_attended_not_screened': 'orange',
 
     // Task list
@@ -245,15 +280,17 @@ const getStatusTagColour = (status) => {
 const getStatusText = (status) => {
   const statusMap = {
     // Clinic statuses
-    event_scheduled: 'Scheduled', // default blue
+    event_scheduled: 'Scheduled',
     // Event statuses
-    event_checked_in: 'Checked in', // no colour will get solid dark blue
+    event_checked_in: 'Checked in',
     event_in_progress: 'In progress',
+    event_paused: 'Paused',
     event_complete: 'Screened',
     event_partially_screened: 'Partially screened',
     event_did_not_attend: 'Did not attend',
     event_attended_not_screened: 'Attended not screened',
-    event_cancelled: 'Cancelled'
+    event_cancelled: 'Cancelled',
+    event_rescheduled: 'Reschedule requested'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',
@@ -268,7 +305,7 @@ const filterEventsByStatus = (events, filter) => {
     case 'checked-in':
       return events.filter((e) => e.status === 'event_checked_in')
     case 'in-progress':
-      return events.filter((e) => e.status === 'event_in_progress')
+      return events.filter((e) => e.status === 'event_in_progress' || e.status === 'event_paused')
     case 'complete':
       return events.filter((e) => isFinal(e))
     case 'remaining':
@@ -316,6 +353,8 @@ module.exports = {
   hasNotStarted,
   isCompleted,
   isInProgress,
+  isPaused,
+  isInProgressNotPaused,
   isFinal,
   isActive,
   isAppointmentWorkflow,

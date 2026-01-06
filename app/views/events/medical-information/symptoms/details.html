@@ -14,7 +14,7 @@
 {% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
-
+ 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
       {{ participant | getFullName }}
@@ -638,7 +638,9 @@
     }) }} #}
     {% set saveSymptomFirst = true %}
     {% set allowEdits = true %}
-    {% include "add-symptom-button-menu.njk" %}
+
+    {# Button menu disabled for now until we have a prod component #}
+    {# {% include "add-symptom-button-menu.njk" %} #}
   </div>
 
   {# Only show link if this is a previously saved symptom #}

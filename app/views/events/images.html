@@ -8,7 +8,35 @@
 
 {% block pageContent %}
 
-  {% include "fake-images.njk" %}
+  {# Convert object to an array of views #}
+  {% set mammogramViews = event.mammogramData.views | getObjectValues %}
+  {% set machineRoom = event.mammogramData.machineRoom %}
+  {% set isManualEntry = event.mammogramData.isManualEntry %}
+
+  {# Group views by view name so we get MLO or CC only #}
+  {% set groupedViews = mammogramViews | groupby("viewShort") %}
+
+  {# Iterate through each view type (MLO, CC, etc.) #}
+  {% for viewName, viewsInGroup in groupedViews %}
+
+    {# General view name - "MLO views" #}
+    {% set viewNameString = viewName + " views" %}
+
+    {# Capture html for entire view group #}
+    {% set viewCardHtml %}
+      {# Right then left #}
+      {% for viewItem in viewsInGroup %}
+        {% include "_includes/mammogram-image-display.njk" %}
+      {% endfor %}
+    {% endset %}
+
+    {{ card({
+      heading: viewNameString | sentenceCase,
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: viewCardHtml
+    }) }}
+  {% endfor %}
 
 {% endblock %}
 

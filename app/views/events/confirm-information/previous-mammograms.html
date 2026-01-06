@@ -1,0 +1,47 @@
+{# app/views/events/confirm-information/previous-mammograms.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Review previous mammograms" %}
+{% set showNavigation = false %}
+{% set activeWorkflowStep = 'check-information' %}
+{% set hideBackLink = true %}
+
+{% set allowEdits = true %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set scrollTo = "mammogram-history" %}
+
+{% block pageContent %}
+
+  {# TODO: Ideally this would be before the main element #}
+  {{ backLink({
+    href: "../check-information" | getReturnUrl(referrerChain),
+    text: "Back",
+    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
+  }) }}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {# Include the full previous mammograms summary in a feature card #}
+  {% set previousMammogramsHtml %}
+    {% include "_includes/medical-information/mammogram-history.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Previous mammograms",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: previousMammogramsHtml
+  }) }}
+
+  {# Continue button back to check information #}
+  <div class="nhsuk-form-group">
+    {{ button({
+      text: "Confirm",
+      href: "../check-information" | getReturnUrl(referrerChain)
+    }) }}
+  </div>
+
+{% endblock %}

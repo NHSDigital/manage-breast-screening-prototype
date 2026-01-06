@@ -1,0 +1,24 @@
+{# app/views/_includes/breast-diagram-wrapper.njk #}
+
+{#
+  Wrapper for the breast diagram SVG component.
+  
+  The SVG itself is in breast-diagram.svg (a processed export from Illustrator).
+  This wrapper adds the container markup and optional side labels.
+
+  Set these variables before including if you want to customise:
+  - showSideLabels (boolean, default true) - whether to show "Right"/"Left" labels
+#}
+
+{% set showSideLabels = showSideLabels if showSideLabels is defined else true %}
+
+{% if showSideLabels %}
+<div class="breast-features__side-labels">
+  <span>Right</span>
+  <span>Left</span>
+</div>
+{% endif %}
+
+<div class="breast-features__diagram">
+  {% include "_includes/breast-diagram.svg" %}
+</div>

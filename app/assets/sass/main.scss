@@ -20,6 +20,7 @@ $nhsuk-page-width: 1260px;
 @forward "components/status-bar";
 @forward "components/summary-card";
 @forward "components/reading";
+@forward "components/environment";
 
 @forward "components/overrides";
 @forward "components/checkboxes";
@@ -27,6 +28,7 @@ $nhsuk-page-width: 1260px;
 @forward "components/sticky-appointment-bar";
 @forward "components/small-button";
 @forward "components/annotation";
+@forward "components/stepper-input";
 
 @forward "misc";
 @forward "workflow";

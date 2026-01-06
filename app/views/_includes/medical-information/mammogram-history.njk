@@ -45,8 +45,18 @@
       {% set mammogramValueLines = mammogramValueLines | push(
         previousMammogram.dateTaken | formatDate + " (" + (previousMammogram.dateTaken | formatDate | formatRelativeDate | asHint) + ")"
       ) %}
-    {% elseif previousMammogram.dateType == 'approximateDate' %}
-      {% set mammogramValueLines = mammogramValueLines | push("Approximate date: " + previousMammogram.approximateDate) %}
+    {% elseif previousMammogram.dateType == 'moreThanSixMonths' %}
+      {% set dateText = "Approximately taken 6 months or more ago" %}
+      {% if previousMammogram.approximateDate %}
+        {% set dateText = dateText + ": " + previousMammogram.approximateDate %}
+      {% endif %}
+      {% set mammogramValueLines = mammogramValueLines | push(dateText) %}
+    {% elseif previousMammogram.dateType == 'lessThanSixMonths' %}
+      {% set dateText = "Approximately taken less than 6 months ago" %}
+      {% if previousMammogram.approximateDate %}
+        {% set dateText = dateText + ": " + previousMammogram.approximateDate %}
+      {% endif %}
+      {% set mammogramValueLines = mammogramValueLines | push(dateText) %}
     {% else %}
       {% set mammogramValueLines = mammogramValueLines | push("Date unknown") %}
     {% endif %}
@@ -104,7 +114,7 @@
       actions: {
         items: [
           {
-            href: "./previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(currentUrl, scrollTo),
+            href: contextUrl + "/previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
             text: "Change",
             visuallyHiddenText: "Participant reported mammogram"
           }

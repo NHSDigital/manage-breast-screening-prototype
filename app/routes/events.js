@@ -52,13 +52,32 @@ function getEventData(data, clinicId, eventId) {
   const unit = data.breastScreeningUnits.find(
     (u) => u.id === clinic.breastScreeningUnitId
   )
+  const location = unit?.locations.find((l) => l.id === clinic.locationId)
 
   return {
     clinic,
     event,
     participant,
-    unit
+    unit,
+    location
   }
+}
+
+/**
+ * Capture session end time for an event
+ * @param {object} data - Session data
+ * @param {string} eventId - Event ID
+ * @param {string} userId - User ID ending the session
+ */
+function captureSessionEndTime(data, eventId, userId) {
+  const event = getEvent(data, eventId)
+  updateEventData(data, eventId, {
+    sessionDetails: {
+      ...event.sessionDetails,
+      endedAt: new Date().toISOString(),
+      endedBy: userId
+    }
+  })
 }
 
 // // Update event status and add to history
@@ -142,7 +161,14 @@ module.exports = (router) => {
     res.locals.event = data.event
 
     res.locals.eventData = originalEventData
-    res.locals.clinic = originalEventData.clinic
+
+    // Attach location to clinic for template convenience
+    const clinic = { ...originalEventData.clinic }
+    if (originalEventData.location) {
+      clinic.location = originalEventData.location
+    }
+    res.locals.clinic = clinic
+
     res.locals.isAppointmentWorkflow = isAppointmentWorkflow(
       data.event,
       data.currentUser
@@ -164,26 +190,34 @@ module.exports = (router) => {
     next()
   })
 
-  // Main route in to starting an event - used to clear any temp data, set status to in progress and store the user id of the mammographer doing the appointment
+  // Main route for starting a new appointment
   router.get('/clinics/:clinicId/events/:eventId/start', (req, res) => {
     const data = req.session.data
     const event = getEvent(data, req.params.eventId)
     const currentUser = data.currentUser
     const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
+    delete data.returnTo // Clean up session - we're using query string explicitly here
 
     console.log(
       `Starting appointment for event ${req.params.eventId} by user ${currentUser.id}`
     )
 
-    if (event?.status !== 'event_in_progress') {
-      // Update status
+    // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
+    if (
+      event?.status === 'event_scheduled' ||
+      event?.status === 'event_checked_in'
+    ) {
+      // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
       // Store session details
       updateEventData(data, req.params.eventId, {
         sessionDetails: {
           startedAt: new Date().toISOString(),
-          startedBy: currentUser.id
+          startedBy: currentUser.id,
+          pausedAt: null,
+          pausedBy: null,
+          authors: []
         }
       })
     }
@@ -229,57 +263,169 @@ module.exports = (router) => {
     res.redirect(finalDestination + queryString)
   })
 
-  // Leave appointment - revert status from in_progress back to checked_in
-  router.get('/clinics/:clinicId/events/:eventId/leave', (req, res) => {
-    const { clinicId, eventId } = req.params
+  // Resume a paused appointment
+  router.get('/clinics/:clinicId/events/:eventId/resume', (req, res) => {
     const data = req.session.data
-    const event = getEvent(data, eventId)
+    const event = getEvent(data, req.params.eventId)
+    const currentUser = data.currentUser
 
-    // Only allow leaving if the event is currently in progress
-    if (event?.status === 'event_in_progress') {
-      // Reset workflow status
-      delete data.event.workflowStatus
+    console.log(
+      `Resuming appointment for event ${req.params.eventId} by user ${currentUser.id}`
+    )
 
-      // Save any temporary changes before leaving
-      saveTempEventToEvent(data)
-      saveTempParticipantToParticipant(data)
+    if (event?.status === 'event_paused') {
+      // Get existing session details
+      const existingDetails = event.sessionDetails || {}
+      const authors = existingDetails.authors || []
 
-      // Revert status back to checked in
-      updateEventStatus(data, eventId, 'event_checked_in')
-
-      // Clear session details
-      updateEventData(data, eventId, {
-        sessionDetails: {
-          startedAt: null,
-          startedBy: null
-        }
+      // Add resume action to authors
+      authors.push({
+        userId: currentUser.id,
+        action: 'resumed',
+        timestamp: new Date().toISOString()
       })
 
-      // Clear temporary session data (now safe since we've saved changes)
-      delete data.event
-      delete data.participant
+      // Update status to in progress
+      updateEventStatus(data, req.params.eventId, 'event_in_progress')
 
-      console.log(
-        'Left appointment - saved temp data, reverted status to checked_in, and cleared temp data'
-      )
-
-      // req.flash('info', 'You have left the appointment. The participant remains checked in.')
+      // Update session details - preserve original starter
+      updateEventData(data, req.params.eventId, {
+        sessionDetails: {
+          startedAt: existingDetails.startedAt,
+          startedBy: existingDetails.startedBy,
+          pausedAt: null,
+          pausedBy: null,
+          authors: authors
+        }
+      })
     }
 
-    // Use referrer chain for redirect, fallback to clinic view
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
+    // Determine redirect destination
+    const defaultDestination = `/clinics/${req.params.clinicId}/events/${req.params.eventId}/confirm-identity`
+    const finalDestination = req.query.returnTo
+      ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${req.query.returnTo}`
+      : defaultDestination
+
+    // Preserve all query string parameters except returnTo (already used)
+    const queryParams = { ...req.query }
+    delete queryParams.returnTo
+    const queryString = Object.keys(queryParams).length
+      ? '?' + new URLSearchParams(queryParams).toString()
+      : ''
+
+    res.redirect(finalDestination + queryString)
   })
+
+  // Exit appointment - handles discard, save, or cannot-proceed
+  // Accepts both GET (with query param) and POST (with form data)
+  router.all(
+    '/clinics/:clinicId/events/:eventId/exit-appointment-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+      const exitAction = data.exitAction
+
+      // Only allow exiting if the event is currently in progress
+      if (event?.status === 'event_in_progress') {
+        if (exitAction === 'discard') {
+          // Discard changes - reset workflow and revert to checked in
+          delete data.event.workflowStatus
+
+          // Revert status back to checked in
+          updateEventStatus(data, eventId, 'event_checked_in')
+
+          // Clear session details
+          updateEventData(data, eventId, {
+            sessionDetails: {
+              startedAt: null,
+              startedBy: null
+            }
+          })
+
+          // Clear temporary session data without saving
+          delete data.event
+          delete data.participant
+
+          // Clear the exit action from session
+          delete data.exitAction
+
+          // Redirect to returnTo destination or appointment page
+          const returnTo = data.returnTo
+          delete data.returnTo
+          const destination =
+            returnTo || `/clinics/${clinicId}/events/${eventId}/appointment`
+          return res.redirect(destination)
+        } else if (exitAction === 'cannot-proceed') {
+          // Cannot proceed - redirect to attended-not-screened flow
+          delete data.exitAction
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+          )
+        } else if (exitAction === 'save') {
+          // Save changes and pause the appointment
+
+          // Save any temporary changes before leaving
+          saveTempEventToEvent(data)
+          saveTempParticipantToParticipant(data)
+
+          // Get existing session details to track authors
+          const existingDetails = event.sessionDetails || {}
+          const authors = existingDetails.authors || []
+
+          // Add current user's pause action to authors
+          authors.push({
+            userId: data.currentUser?.id,
+            action: 'paused',
+            timestamp: new Date().toISOString()
+          })
+
+          // Update status to paused and record pause details
+          updateEventStatus(data, eventId, 'event_paused')
+          updateEventData(data, eventId, {
+            sessionDetails: {
+              startedAt: existingDetails.startedAt || null,
+              startedBy: existingDetails.startedBy || null,
+              pausedAt: new Date().toISOString(),
+              pausedBy: data.currentUser?.id || null,
+              authors: authors
+            }
+          })
+
+          // Clear temporary session data (now safe since we've saved changes)
+          delete data.event
+          delete data.participant
+
+          // Clear the exit action from session
+          delete data.exitAction
+
+          // Redirect to appointment page with paused status
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/appointment`
+          )
+        }
+      }
+
+      // Clear the exit action from session (in case status check failed)
+      delete data.exitAction
+
+      // Fallback redirect
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+    }
+  )
 
   // Event within clinic context
   router.get('/clinics/:clinicId/events/:eventId', (req, res) => {
     const { clinicId, eventId } = req.params
-    // res.render('events/show', {
-    // })
-    res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+
+    // Preserve query parameters when redirecting
+    const queryString = Object.keys(req.query).length
+      ? '?' + new URLSearchParams(req.query).toString()
+      : ''
+
+    res.redirect(
+      `/clinics/${clinicId}/events/${eventId}/appointment${queryString}`
+    )
   })
 
   router.post(
@@ -518,14 +664,14 @@ module.exports = (router) => {
         saveMammogram(mammogram)
         delete data.event?.previousMammogramTemp
 
+        // Get participant info for message
+        const participantName = getFullName(data.participant)
+        const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
         // Save changes and update status
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
         updateEventStatus(data, eventId, 'event_attended_not_screened')
-
-        // Get participant info for message
-        const participantName = getFullName(data.participant)
-        const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
 
         // Flash success message
         const successMessage = `
@@ -540,7 +686,7 @@ module.exports = (router) => {
       const isRecentMammogram = checkIfRecentMammogram(previousMammogramTemp)
 
       // If recent mammogram detected and not already coming from warning page
-      if (isRecentMammogram && action !== 'continue') {
+      if (isRecentMammogram && action !== 'acknowledged-warning') {
         return res.redirect(
           urlWithReferrer(
             `/clinics/${clinicId}/events/${eventId}/previous-mammograms/appointment-should-not-proceed`,
@@ -558,18 +704,55 @@ module.exports = (router) => {
 
       delete data.event?.previousMammogramTemp
 
-      // If user clicked "continue" on warning page, start the appointment cancellation flow
-      if (action === 'continue') {
+      // If user acknowledged the warning page, handle their reschedule decision
+      if (action === 'acknowledged-warning') {
+        const needsReschedule = data.event?.appointmentStopped?.needsReschedule
+
+        // Validate that reschedule option was selected
+        if (!needsReschedule) {
+          req.flash('error', {
+            text: 'Select whether the appointment should be rescheduled',
+            name: 'event[appointmentStopped][needsReschedule]',
+            href: '#needsReschedule'
+          })
+          return res.redirect(
+            urlWithReferrer(
+              `/clinics/${clinicId}/events/${eventId}/previous-mammograms/appointment-should-not-proceed`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
         // Set stopping reason for the appointment
         if (!data.event.appointmentStopped) {
           data.event.appointmentStopped = {}
         }
-        data.event.appointmentStopped.stoppedReason = 'recent_mammogram'
-        data.event.appointmentStopped.needsReschedule = 'no' // Default to no reschedule needed
+        data.event.appointmentStopped.stoppedReason = ['Recent mammogram']
 
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
-        )
+        // If yes, redirect to reschedule page
+        if (needsReschedule === 'yes') {
+          return res.redirect(
+            `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+          )
+        } else if (needsReschedule === 'no-invite') {
+          // Get participant info BEFORE saving (which clears temp data)
+          const participantName = getFullName(data.participant)
+          const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+          // Save changes and update status
+          saveTempEventToEvent(data)
+          saveTempParticipantToParticipant(data)
+          updateEventStatus(data, eventId, 'event_attended_not_screened')
+
+          // Flash success message
+          const successMessage = `
+    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+          req.flash('success', { wrapWithHeading: successMessage })
+
+          // Return to clinic list
+          return res.redirect(`/clinics/${clinicId}/`)
+        }
       }
 
       req.flash('success', mammogramAddedMessage)
@@ -642,40 +825,24 @@ module.exports = (router) => {
   function checkIfRecentMammogram(mammogram) {
     if (!mammogram) return false
 
-    const now = dayjs()
-    const sixMonthsAgo = now.subtract(6, 'month')
-
     // Check based on date type
-    if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
+    if (mammogram.dateType === 'lessThanSixMonths') {
+      // User explicitly indicated mammogram was less than 6 months ago
+      return true
+    } else if (mammogram.dateType === 'moreThanSixMonths') {
+      // User explicitly indicated mammogram was more than 6 months ago
+      return false
+    } else if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
+      // Calculate from exact date
+      const now = dayjs()
+      const sixMonthsAgo = now.subtract(6, 'month')
       const date = mammogram.dateTaken
+
       if (date.year && date.month && date.day) {
         const mammogramDate = dayjs(
           `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`
         )
         return mammogramDate.isAfter(sixMonthsAgo)
-      }
-    } else if (
-      mammogram.dateType === 'approximateDate' &&
-      mammogram.approximateDate
-    ) {
-      // Try to parse approximate date text
-      const approxText = mammogram.approximateDate.toLowerCase()
-
-      // Check for common time patterns that would indicate recent mammogram
-      if (
-        approxText.includes('month ago') ||
-        approxText.includes('1 month') ||
-        approxText.includes('2 month') ||
-        approxText.includes('3 month') ||
-        approxText.includes('4 month') ||
-        approxText.includes('5 month') ||
-        approxText.includes('last month') ||
-        approxText.includes('weeks ago') ||
-        approxText.includes('few weeks') ||
-        approxText.includes('last week') ||
-        approxText.includes('days ago')
-      ) {
-        return true
       }
     }
 
@@ -1051,6 +1218,41 @@ module.exports = (router) => {
     return item ? item.type : null
   }
 
+  // Select medical history type - choose which type to add
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/select',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const typeSlug = data.medicalHistoryTypeSlug
+      const referrerChain = req.query.referrerChain
+      const scrollTo = req.query.scrollTo
+
+      // Validate type
+      if (!typeSlug || !isValidMedicalHistoryType(typeSlug)) {
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/type`,
+            referrerChain,
+            scrollTo
+          )
+        )
+      }
+
+      // Clear the type selection from session
+      delete data.medicalHistoryTypeSlug
+
+      // Redirect to add page for this type
+      res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/${typeSlug}/add`,
+          referrerChain,
+          scrollTo
+        )
+      )
+    }
+  )
+
   // Add new medical history item - clear temp data and redirect to form
   router.get(
     '/clinics/:clinicId/events/:eventId/medical-information/medical-history/:type/add',
@@ -1115,7 +1317,19 @@ module.exports = (router) => {
           rightBreastProcedures.includes('Breast implants') ||
           leftBreastProcedures.includes('Breast implants')
 
-        if (hasBreastImplants) {
+        // Check if implants have been removed
+        const implantsRemoved = 
+          Array.isArray(medicalHistoryTemp?.implantsRemoved) &&
+          medicalHistoryTemp.implantsRemoved.includes('Implants have been removed')
+
+        // Check if consent was already given (editing existing item)
+        const alreadyConsented = medicalHistoryTemp?.consentGiven
+
+        // Only show consent page if:
+        // - Breast implants are selected
+        // - AND implants have NOT been removed
+        // - AND consent has NOT already been given
+        if (hasBreastImplants && !implantsRemoved && !alreadyConsented) {
           // Redirect to consent page immediately - we'll save the data after consent
           return res.redirect(
             urlWithReferrer(
@@ -1295,6 +1509,59 @@ module.exports = (router) => {
     }
   )
 
+  // Route handler for breast implants consent – appointment cannot proceed
+
+  router.post(
+    '/clinics/:clinicId/events/:eventId/medical-information/medical-history/appointment-cannot-proceed-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const participantName = getFullName(data.participant)
+
+      const futureScreeningPlan = data.event?.cannotProceed?.futureScreeningPlan
+
+      // Validate that an option was selected
+      if (!futureScreeningPlan) {
+        req.flash('error', {
+          text: 'Select whether the participant plans to attend breast screening in future',
+          name: 'event[cannotProceed][futureScreeningPlan]',
+          href: '#futureScreeningPlan'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
+        )
+      }
+
+      // Capture session end time only if appointment was started
+      const event = getEvent(data, eventId)
+      if (event?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, eventId, data.currentUser.id)
+      }
+
+      // Save the data
+      saveTempEventToEvent(data)
+      saveTempParticipantToParticipant(data)
+
+      // Update event status to indicate cannot proceed
+      updateEventStatus(data, eventId, 'event_cancelled')
+
+      // Set success message based on choice
+      let successMessage
+      if (futureScreeningPlan === 'contact-six-weeks') {
+        successMessage = `${participantName} will be contacted in six weeks to rearrange their appointment`
+      } else if (futureScreeningPlan === 'invite-next-routine') {
+        successMessage = `${participantName} will be invited to their next routine appointment`
+      } else if (futureScreeningPlan === 'opt-out') {
+        successMessage = `An opt out request has been submitted for ${participantName}`
+      }
+
+      req.flash('success', successMessage)
+
+      // Return to clinic page
+      res.redirect(`/clinics/${clinicId}`)
+    }
+  )
+
   // Handle breast implants consent form submission
   router.post(
     '/clinics/:clinicId/events/:eventId/medical-information/medical-history/consent-answer',
@@ -1306,18 +1573,21 @@ module.exports = (router) => {
       const referrerChain = req.query.referrerChain
       const scrollTo = req.query.scrollTo
 
+      // Validate that an option was selected
       if (!consentGiven) {
         req.flash('error', {
-          text: 'Select whether the participant has signed the consent form',
-          name: 'event[medicalInformation][implantedDevices][consentGiven]'
+          text: 'Select whether they have signed the consent form',
+          name: 'event[medicalInformation][implantedDevices][consentGiven]',
+          href: '#consentGiven'
         })
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/consent`
         )
       }
 
+      // Handle "Yes" - full consent given
       if (consentGiven === 'yes') {
-        // Save the breast implants data that was held in temp
+        // Save the medical history data that was in temp
         if (data.event?.medicalHistoryTemp) {
           // Initialize medicalInformation object if needed
           if (!data.event.medicalInformation) {
@@ -1347,7 +1617,7 @@ module.exports = (router) => {
             ...medicalHistoryTemp
           }
 
-          // For new items, add the creation timestamp
+          // Add the creation timestamp if new
           if (isNewItem) {
             medicalHistoryItem.dateAdded = new Date().toISOString()
             medicalHistoryItem.addedBy = data.currentUser.id
@@ -1356,10 +1626,20 @@ module.exports = (router) => {
           // Add consent information
           medicalHistoryItem.consentGiven = 'yes'
 
-          // Add to array
-          data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
-            medicalHistoryItem
-          )
+          // Update existing or add new
+          const existingIndex =
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.findIndex(
+              (item) => item.id === medicalHistoryItem.id
+            )
+          if (existingIndex !== -1) {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation[
+              existingIndex
+            ] = medicalHistoryItem
+          } else {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
+              medicalHistoryItem
+            )
+          }
 
           // Clear temp data
           delete data.event.medicalHistoryTemp
@@ -1368,13 +1648,99 @@ module.exports = (router) => {
         // Show combined success message
         req.flash('success', 'Breast implants recorded and consent recorded')
 
+        // Continue to next step in the flow
         const returnUrl = getReturnUrl(
           `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
           referrerChain,
           scrollTo
         )
         res.redirect(returnUrl)
-      } else {
+      }
+      // Handle "No, but scan unaffected breast"
+      else if (consentGiven.startsWith('no-continue-')) {
+        const unaffectedBreast = consentGiven.replace('no-continue-', '')
+        const affectedBreast = unaffectedBreast === 'left' ? 'right' : 'left'
+
+        // Save the medical history data with partial consent
+        if (data.event?.medicalHistoryTemp) {
+          // Initialize medicalInformation object if needed
+          if (!data.event.medicalInformation) {
+            data.event.medicalInformation = {}
+          }
+
+          // Initialize medicalHistory object if needed
+          if (!data.event.medicalInformation.medicalHistory) {
+            data.event.medicalInformation.medicalHistory = {}
+          }
+
+          // Initialize array for breast implants if needed
+          if (
+            !data.event.medicalInformation.medicalHistory
+              .breastImplantsAugmentation
+          ) {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation =
+              []
+          }
+
+          const medicalHistoryTemp = data.event.medicalHistoryTemp
+          const isNewItem = !medicalHistoryTemp.id
+
+          // Create medical history item with partial consent noted
+          const medicalHistoryItem = {
+            id: medicalHistoryTemp.id || generateId(),
+            ...medicalHistoryTemp,
+            consentGiven: 'partial',
+            partialConsent: {
+              unaffectedBreast: unaffectedBreast,
+              affectedBreast: affectedBreast
+            }
+          }
+
+          // Add the creation timestamp if new
+          if (isNewItem) {
+            medicalHistoryItem.dateAdded = new Date().toISOString()
+            medicalHistoryItem.addedBy = data.currentUser.id
+          }
+
+          // Update existing or add new
+          const existingIndex =
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.findIndex(
+              (item) => item.id === medicalHistoryItem.id
+            )
+          if (existingIndex !== -1) {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation[
+              existingIndex
+            ] = medicalHistoryItem
+          } else {
+            data.event.medicalInformation.medicalHistory.breastImplantsAugmentation.push(
+              medicalHistoryItem
+            )
+          }
+
+          // Clear temp data
+          delete data.event.medicalHistoryTemp
+        }
+
+        // Set success message
+        req.flash(
+          'success',
+          `Consent recorded as not given for ${affectedBreast} breast, but ${unaffectedBreast} breast to be scanned`
+        )
+
+        // Redirect back to medical history page
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}/events/${eventId}/review-medical-information`,
+          referrerChain,
+          scrollTo
+        )
+        res.redirect(returnUrl)
+      }
+      // Handle "No, end appointment"
+      else if (consentGiven === 'no') {
+        // Don't save the medical history data - consent not given
+        delete data.event.medicalHistoryTemp
+
+        // Redirect to appointment cannot proceed page
         res.redirect(
           `/clinics/${clinicId}/events/${eventId}/medical-information/medical-history/appointment-cannot-proceed`
         )
@@ -1401,6 +1767,18 @@ module.exports = (router) => {
           isSeedData: false,
           config: eventData?.participant?.config
         })
+
+        // Add machine room from current screening room
+        if (data.currentScreeningRoom) {
+          const screeningRooms = data.screeningRooms || []
+          const currentRoom = screeningRooms.find(
+            (room) => room.id === data.currentScreeningRoom
+          )
+          if (currentRoom) {
+            mammogramData.machineRoom = currentRoom.displayName
+          }
+        }
+
         data.event.mammogramData = mammogramData
         res.locals.event = data.event
       }
@@ -1460,6 +1838,63 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
+
+      // Save current screening room if not already set
+      if (!data.event.mammogramData.machineRoom && data.currentScreeningRoom) {
+        const screeningRooms = data.screeningRooms || []
+        const currentRoom = screeningRooms.find(
+          (room) => room.id === data.currentScreeningRoom
+        )
+        if (currentRoom) {
+          data.event.mammogramData.machineRoom = currentRoom.displayName
+        }
+      }
+
+      // Process repeat data from form submission for automatic flow
+      // The form fields are named like "event[mammogramData][repeatNeeded-RCC]"
+      // and are already in data.event.mammogramData
+      const mammogramData = data.event.mammogramData
+      if (mammogramData.views) {
+        for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
+          const code = viewData.viewShortWithSide
+          const imageCount = viewData.images ? viewData.images.length : 0
+
+          if (imageCount > 1) {
+            const repeatNeeded = mammogramData[`repeatNeeded-${code}`]
+            const extraImageCount = imageCount - 1
+            let repeatCount = 0
+            let repeatReasons = null
+
+            if (repeatNeeded === 'yes') {
+              // Single extra image answered "yes"
+              repeatCount = 1
+              const reasons = mammogramData[`repeatReasons-${code}`]
+              if (reasons && reasons.length > 0) {
+                repeatReasons = reasons
+              }
+            } else if (repeatNeeded === 'all-repeats') {
+              // All extra images were repeats
+              repeatCount = extraImageCount
+              const reasons = mammogramData[`repeatReasons-${code}`]
+              if (reasons && reasons.length > 0) {
+                repeatReasons = reasons
+              }
+            } else if (repeatNeeded === 'some-repeats') {
+              // Some were repeats, some were additional
+              repeatCount = parseInt(mammogramData[`repeatCount-${code}`]) || 0
+              const reasons = mammogramData[`repeatReasons-${code}`]
+              if (reasons && reasons.length > 0) {
+                repeatReasons = reasons
+              }
+            }
+
+            // Update view with repeat information
+            viewData.repeatCount = repeatCount
+            viewData.repeatReasons = repeatReasons
+          }
+        }
+      }
+
       const isPartialMammography = data.event.mammogramData.isPartialMammography
 
       // Check if array includes 'yes' (checkbox format) or equals 'yes' (string format from manual entry)
@@ -1467,19 +1902,56 @@ module.exports = (router) => {
         ? isPartialMammography.includes('yes')
         : isPartialMammography === 'yes'
 
+      // Initialize workflowStatus if it doesn't exist
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
+
       // Mark the workflow step as completed regardless of partial mammography status
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to review page
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      // Redirect to check information page
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 
   // Manual imaging routes
 
-  // Add this section to events.js after the existing imaging routes
+  // Handle take-images route - redirect to appropriate page based on state
+  router.get('/clinics/:clinicId/events/:eventId/take-images', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
 
-  // Manual imaging routes
+    const isManualImageCollection =
+      data.settings?.screening?.manualImageCollection
+    const imagesStageCompleted =
+      data.event?.workflowStatus?.['take-images'] === 'completed'
+
+    // If manual flow and images already completed, redirect to details page for editing
+    if (
+      isManualImageCollection &&
+      imagesStageCompleted &&
+      data.event?.mammogramData?.isManualEntry
+    ) {
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/images-manual-details`
+      )
+    }
+
+    // If automatic flow and images completed, redirect to automatic page
+    if (
+      !isManualImageCollection &&
+      imagesStageCompleted &&
+      data.event?.mammogramData
+    ) {
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/images-automatic`
+      )
+    }
+
+    // Otherwise render the take-images template which will determine which flow to show
+    res.render('events/take-images')
+  })
 
   // Initialize or edit manual imaging - clears temp or prepopulates from existing data
   router.get('/clinics/:clinicId/events/:eventId/images-manual', (req, res) => {
@@ -1525,6 +1997,31 @@ module.exports = (router) => {
 
       // Let the dynamic routing handle the actual rendering
       res.render('events/images-manual-details')
+    }
+  )
+
+  // Direct link to repeats page - also prepopulates if editing
+  router.get(
+    '/clinics/:clinicId/events/:eventId/images-manual-repeats',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // If mammogramData exists and is manual entry, prepopulate temp for editing
+      if (
+        data.event?.mammogramData?.isManualEntry &&
+        !data.event?.mammogramDataTemp
+      ) {
+        const formData = convertMammogramFormatToFormData(
+          data.event.mammogramData
+        )
+        if (formData) {
+          data.event.mammogramDataTemp = formData
+        }
+      }
+
+      // Let the dynamic routing handle the actual rendering
+      res.render('events/images-manual-repeats')
     }
   )
 
@@ -1579,17 +2076,35 @@ module.exports = (router) => {
       const countKey = `${breastKey}${viewData.viewShort}Count`
 
       formData[breastKey].push(viewData.viewShort)
-      formData[countKey] = viewData.imageCount.toString()
+      formData[countKey] = viewData.count.toString()
 
       // Add repeat data if present
-      if (viewData.isRepeat) {
-        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] = 'isRepeat'
-        formData[`repeatReason-${viewData.viewShortWithSide}`] =
-          viewData.repeatReason
-      } else if (viewData.imageCount > 1) {
-        // If multiple images but not marked as repeat, assume extra images
-        formData[`isRepeatQuestion-${viewData.viewShortWithSide}`] =
-          'extraImages'
+      if (viewData.repeatCount > 0) {
+        const additionalCount = viewData.count - 1
+
+        // Determine which radio option to select
+        if (additionalCount === 1) {
+          // Single additional image - use legacy 'yes' value
+          formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'yes'
+        } else if (viewData.repeatCount === additionalCount) {
+          // All additional images were repeats
+          formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'all-repeats'
+        } else {
+          // Some additional images were repeats, some were extra
+          formData[`repeatNeeded-${viewData.viewShortWithSide}`] =
+            'some-repeats'
+          formData[`repeatCount-${viewData.viewShortWithSide}`] =
+            viewData.repeatCount.toString()
+        }
+
+        // Add repeat reasons if present
+        if (viewData.repeatReasons) {
+          formData[`repeatReasons-${viewData.viewShortWithSide}`] =
+            viewData.repeatReasons
+        }
+      } else if (viewData.count > 1) {
+        // If multiple images but no repeats, all additional images were extra
+        formData[`repeatNeeded-${viewData.viewShortWithSide}`] = 'no'
       }
     }
 
@@ -1599,68 +2114,125 @@ module.exports = (router) => {
   /**
    * Helper function to convert manual form data to mammogram data structure
    */
+  /**
+   * Convert flat form data to structured mammogram format
+   * Works from count fields which are the single source of truth
+   */
   function convertManualDataToMammogramFormat(formData) {
     const views = {}
-    const breasts = [
-      { key: 'viewsRightBreast', side: 'right', sideCode: 'R' },
-      { key: 'viewsLeftBreast', side: 'left', sideCode: 'L' }
-    ]
 
-    const viewTypes = [
-      { value: 'CC', name: 'craniocaudal', short: 'CC' },
-      { value: 'MLO', name: 'mediolateral oblique', short: 'MLO' },
-      { value: 'Eklund', name: 'Eklund', short: 'Eklund' }
+    const viewConfig = [
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'CC',
+        viewName: 'craniocaudal',
+        viewKey: 'rightCraniocaudal'
+      },
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'MLO',
+        viewName: 'mediolateral oblique',
+        viewKey: 'rightMediolateralOblique'
+      },
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'Eklund',
+        viewName: 'Eklund',
+        viewKey: 'rightEklund'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'CC',
+        viewName: 'craniocaudal',
+        viewKey: 'leftCraniocaudal'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'MLO',
+        viewName: 'mediolateral oblique',
+        viewKey: 'leftMediolateralOblique'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'Eklund',
+        viewName: 'Eklund',
+        viewKey: 'leftEklund'
+      }
     ]
 
     let totalImages = 0
     const imagesByBreast = { right: 0, left: 0 }
+    let hasRepeat = false
 
-    for (const breast of breasts) {
-      let selectedViews = formData[breast.key] || []
+    for (const config of viewConfig) {
+      const countField = `views${config.side.charAt(0).toUpperCase() + config.side.slice(1)}Breast${config.viewType}Count`
+      const count = parseInt(formData[countField]) || 0
 
-      // If using text inputs instead of checkboxes, infer selected views from counts
-      if (selectedViews.length === 0) {
-        for (const viewType of viewTypes) {
-          const countField = `${breast.key}${viewType.value}Count`
-          const count = parseInt(formData[countField]) || 0
-          if (count > 0) {
-            selectedViews.push(viewType.value)
+      // Only add view if count > 0
+      if (count > 0) {
+        // For Eklund views, use full form like "Right Eklund" or "Left Eklund"
+        // For standard views, use abbreviated form like "RCC" or "LMLO"
+        const code =
+          config.viewType === 'Eklund'
+            ? `${config.side.charAt(0).toUpperCase() + config.side.slice(1)} ${config.viewType}`
+            : `${config.sideCode}${config.viewType}`
+
+        // Get repeat data if this view has count > 1
+        let repeatCount = 0
+        let repeatReasons = null
+
+        if (count > 1) {
+          const repeatNeeded = formData[`repeatNeeded-${code}`]
+          const extraImageCount = count - 1
+
+          if (repeatNeeded === 'yes') {
+            // Legacy support: single extra image, answered "yes"
+            repeatCount = 1
+            const reasons = formData[`repeatReasons-${code}`]
+            if (reasons && reasons.length > 0) {
+              repeatReasons = reasons
+            }
+            hasRepeat = true
+          } else if (repeatNeeded === 'all-repeats') {
+            // All extra images were repeats
+            repeatCount = extraImageCount
+            const reasons = formData[`repeatReasons-${code}`]
+            if (reasons && reasons.length > 0) {
+              repeatReasons = reasons
+            }
+            hasRepeat = true
+          } else if (repeatNeeded === 'some-repeats') {
+            // Some were repeats, some were additional
+            repeatCount = parseInt(formData[`repeatCount-${code}`]) || 0
+            const reasons = formData[`repeatReasons-${code}`]
+            if (reasons && reasons.length > 0) {
+              repeatReasons = reasons
+            }
+            if (repeatCount > 0) {
+              hasRepeat = true
+            }
           }
+          // If repeatNeeded is 'no', then all extra images were needed but not repeats
         }
-      }
 
-      // Skip if "No images taken" was selected
-      if (selectedViews.includes('No images taken')) {
-        continue
-      }
-
-      for (const viewType of viewTypes) {
-        // Check if this view was selected
-        if (selectedViews.includes(viewType.value)) {
-          const countField = `${breast.key}${viewType.value}Count`
-          const imageCount = parseInt(formData[countField]) || 1
-
-          // Create view key matching automated format (e.g., rightCraniocaudal)
-          const viewKey = `${breast.side}${viewType.name.charAt(0).toUpperCase()}${viewType.name.slice(1).replace(' ', '')}`
-
-          // Check for repeat data
-          const repeatQuestionKey = `isRepeatQuestion-${breast.sideCode}${viewType.short}`
-          const isRepeat = formData[repeatQuestionKey] === 'isRepeat'
-          const repeatReasonKey = `repeatReason-${breast.sideCode}${viewType.short}`
-
-          views[viewKey] = {
-            side: breast.side,
-            view: viewType.name,
-            viewShort: viewType.short,
-            viewShortWithSide: `${breast.sideCode}${viewType.short}`,
-            imageCount: imageCount,
-            isRepeat: isRepeat,
-            repeatReason: isRepeat ? formData[repeatReasonKey] : null
-          }
-
-          totalImages += imageCount
-          imagesByBreast[breast.side] += imageCount
+        views[config.viewKey] = {
+          side: config.side,
+          view: config.viewName,
+          viewShort: config.viewType,
+          viewShortWithSide: code,
+          count: count,
+          repeatCount: repeatCount,
+          repeatReasons: repeatReasons
         }
+
+        totalImages += count
+        imagesByBreast[config.side] += count
       }
     }
 
@@ -1673,7 +2245,7 @@ module.exports = (router) => {
     ]
     const standardViewsCompleted = standardViews.every((view) => views[view])
 
-    // Handle partial mammography reason - combine select and comment
+    // Handle partial mammography reason
     let partialMammographyReason = null
     let partialMammographyShouldReinvite = null
 
@@ -1689,7 +2261,6 @@ module.exports = (router) => {
         partialMammographyReason = reasonComment
       }
 
-      // Convert checkbox array to string for consistency
       partialMammographyShouldReinvite =
         formData.partialMammographyShouldReinvite?.includes('yes')
           ? 'yes'
@@ -1711,6 +2282,7 @@ module.exports = (router) => {
       metadata: {
         totalImages,
         standardViewsCompleted,
+        hasRepeat,
         imagesByBreast
       }
     }
@@ -1763,8 +2335,10 @@ module.exports = (router) => {
         }
         data.event.workflowStatus['take-images'] = 'completed'
 
-        // Redirect to review
-        return res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+        // Redirect to check information
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/check-information`
+        )
       }
 
       // If custom details needed, go to details page
@@ -1793,71 +2367,26 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
-      const mammogramDataTemp = data.event?.mammogramDataTemp
+      const formData = data.event?.mammogramDataTemp || {}
 
-      // Clean up orphaned count fields when using checkbox version
-      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
-        const rightViews = mammogramDataTemp.viewsRightBreast || []
-        const leftViews = mammogramDataTemp.viewsLeftBreast || []
+      // Validate at least one view has a count > 0
+      const viewTypes = ['CC', 'MLO', 'Eklund']
+      const breasts = ['Right', 'Left']
+      let hasAnyImages = false
 
-        // Clear counts for unchecked right breast views
-        if (!rightViews.includes('CC')) {
-          delete mammogramDataTemp.viewsRightBreastCCCount
-        }
-        if (!rightViews.includes('MLO')) {
-          delete mammogramDataTemp.viewsRightBreastMLOCount
-        }
-        if (!rightViews.includes('Eklund')) {
-          delete mammogramDataTemp.viewsRightBreastEklundCount
-        }
-
-        // Clear counts for unchecked left breast views
-        if (!leftViews.includes('CC')) {
-          delete mammogramDataTemp.viewsLeftBreastCCCount
-        }
-        if (!leftViews.includes('MLO')) {
-          delete mammogramDataTemp.viewsLeftBreastMLOCount
-        }
-        if (!leftViews.includes('Eklund')) {
-          delete mammogramDataTemp.viewsLeftBreastEklundCount
-        }
-      }
-
-      // Validate at least one view was selected/entered
-      let hasNoViews = false
-
-      if (mammogramDataTemp?.uiVersion === 'checkboxes') {
-        // Checkbox validation
-        const rightViews = mammogramDataTemp?.viewsRightBreast || []
-        const leftViews = mammogramDataTemp?.viewsLeftBreast || []
-
-        const hasNoRightImages = rightViews.includes('No images taken')
-        const hasNoLeftImages = leftViews.includes('No images taken')
-        hasNoViews =
-          (rightViews.length === 0 || hasNoRightImages) &&
-          (leftViews.length === 0 || hasNoLeftImages)
-      } else {
-        // Input validation - check if any count field has a value > 0
-        const viewTypes = ['CC', 'MLO', 'Eklund']
-        const breasts = ['Right', 'Left']
-        let hasAnyImages = false
-
-        for (const breast of breasts) {
-          for (const viewType of viewTypes) {
-            const countField = `views${breast}Breast${viewType}Count`
-            const count = parseInt(mammogramDataTemp?.[countField]) || 0
-            if (count > 0) {
-              hasAnyImages = true
-              break
-            }
+      for (const breast of breasts) {
+        for (const viewType of viewTypes) {
+          const countField = `views${breast}Breast${viewType}Count`
+          const count = parseInt(formData[countField]) || 0
+          if (count > 0) {
+            hasAnyImages = true
+            break
           }
-          if (hasAnyImages) break
         }
-
-        hasNoViews = !hasAnyImages
+        if (hasAnyImages) break
       }
 
-      if (hasNoViews) {
+      if (!hasAnyImages) {
         req.flash('error', {
           text: 'Enter at least one image count',
           name: 'event[mammogramDataTemp][viewsRightBreastCCCount]'
@@ -1868,16 +2397,23 @@ module.exports = (router) => {
       }
 
       // Check if we need to ask about repeats
-      if (needsRepeatQuestions(mammogramDataTemp)) {
+      const needsRepeats = viewTypes.some((viewType) =>
+        breasts.some((breast) => {
+          const countField = `views${breast}Breast${viewType}Count`
+          const count = parseInt(formData[countField]) || 0
+          return count > 1
+        })
+      )
+
+      if (needsRepeats) {
+        // Keep temp data for repeats page
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/images-manual-repeats`
         )
       }
 
-      // Convert to final format and save
-      const convertedData =
-        convertManualDataToMammogramFormat(mammogramDataTemp)
-      data.event.mammogramData = convertedData
+      // Convert to final format and save directly to mammogramData
+      data.event.mammogramData = convertManualDataToMammogramFormat(formData)
 
       // Clear temp data
       delete data.event.mammogramDataTemp
@@ -1888,29 +2424,10 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to review
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      // Redirect to check information
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
-
-  // Helper function - place this near the other helper functions
-  function needsRepeatQuestions(mammogramDataTemp) {
-    const viewTypes = ['CC', 'MLO', 'Eklund']
-    const breasts = ['Right', 'Left']
-
-    for (const breast of breasts) {
-      for (const viewType of viewTypes) {
-        const countField = `views${breast}Breast${viewType}Count`
-        const count = parseInt(mammogramDataTemp?.[countField]) || 0
-
-        if (count > 1) {
-          return true
-        }
-      }
-    }
-
-    return false
-  }
 
   // Handle repeat reasons form
   router.post(
@@ -1919,11 +2436,50 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
 
-      // Convert to final format and save
-      const mammogramDataTemp = data.event?.mammogramDataTemp
-      const convertedData =
-        convertManualDataToMammogramFormat(mammogramDataTemp)
-      data.event.mammogramData = convertedData
+      // Clean up and normalize repeat reasons based on which option was selected
+      const formData = data.event?.mammogramDataTemp || {}
+      const viewCodes = [
+        'RCC',
+        'RMLO',
+        'Right Eklund',
+        'LCC',
+        'LMLO',
+        'Left Eklund'
+      ]
+
+      viewCodes.forEach((code) => {
+        const repeatNeeded = formData[`repeatNeeded-${code}`]
+
+        // Pick the correct set of repeatReasons based on which radio option was selected
+        if (repeatNeeded === 'yes' || repeatNeeded === 'all-repeats') {
+          // Use the 'all' checkbox values if they exist
+          if (formData[`repeatReasonsAll-${code}`]) {
+            formData[`repeatReasons-${code}`] =
+              formData[`repeatReasonsAll-${code}`]
+          }
+          // Clean up temporary fields
+          delete formData[`repeatReasonsAll-${code}`]
+          delete formData[`repeatReasonsSome-${code}`]
+        } else if (repeatNeeded === 'some-repeats') {
+          // Use the 'some' checkbox values if they exist
+          if (formData[`repeatReasonsSome-${code}`]) {
+            formData[`repeatReasons-${code}`] =
+              formData[`repeatReasonsSome-${code}`]
+          }
+          // Clean up temporary fields
+          delete formData[`repeatReasonsAll-${code}`]
+          delete formData[`repeatReasonsSome-${code}`]
+        } else if (repeatNeeded === 'no') {
+          // Clear all repeat-related data
+          delete formData[`repeatReasons-${code}`]
+          delete formData[`repeatReasonsAll-${code}`]
+          delete formData[`repeatReasonsSome-${code}`]
+          delete formData[`repeatCount-${code}`]
+        }
+      })
+
+      // Convert form data (including repeat information) to final format and save
+      data.event.mammogramData = convertManualDataToMammogramFormat(formData)
 
       // Clear temp data
       delete data.event.mammogramDataTemp
@@ -1934,8 +2490,8 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to review
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/review`)
+      // Redirect to check information
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 
@@ -1946,7 +2502,6 @@ module.exports = (router) => {
     '/clinics/:clinicId/events/:eventId/attended-not-screened-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
-
       const data = req.session.data
 
       const participantName = getFullName(data.participant)
@@ -1954,9 +2509,9 @@ module.exports = (router) => {
 
       const notScreenedReason = data.event.appointmentStopped.stoppedReason
       const needsReschedule = data.event.appointmentStopped.needsReschedule
-      const otherReasonDetails = data.event.appointmentStopped.otherDetails
+      const otherDetails = data.event.appointmentStopped.otherDetails
       const hasOtherReasonButNoDetails =
-        notScreenedReason?.includes('other') && !otherReasonDetails
+        notScreenedReason?.includes('Other reason') && !otherDetails
 
       if (
         !notScreenedReason ||
@@ -1965,21 +2520,21 @@ module.exports = (router) => {
       ) {
         if (!notScreenedReason) {
           req.flash('error', {
-            text: 'A reason for why this appointment cannot continue must be provided',
+            text: 'Select why this appointment has been stopped',
             name: 'event[appointmentStopped][stoppedReason]',
             href: '#stoppedReason'
           })
         }
         if (hasOtherReasonButNoDetails) {
           req.flash('error', {
-            text: 'Explain why this appointment cannot proceed',
+            text: 'Provide details about the other reason',
             name: 'event[appointmentStopped][otherDetails]',
             href: '#otherDetails'
           })
         }
         if (!needsReschedule) {
           req.flash('error', {
-            text: 'Select whether the participant needs to be invited for another appointment',
+            text: 'Select whether the appointment should be rescheduled',
             name: 'event[appointmentStopped][needsReschedule]',
             href: '#needsReschedule'
           })
@@ -1990,15 +2545,43 @@ module.exports = (router) => {
         return
       }
 
-      saveTempEventToEvent(data)
-      saveTempParticipantToParticipant(data)
-      updateEventStatus(data, eventId, 'event_attended_not_screened')
+      // Capture session end time only if appointment was started
+      const event = getEvent(data, eventId)
+      if (event?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, eventId, data.currentUser.id)
+      }
 
-      const successMessage = `
-    ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
-      req.flash('success', { wrapWithHeading: successMessage })
+      // If yes, redirect to reschedule page
+      if (needsReschedule === 'yes') {
+        // Save the appointmentStopped data before redirecting
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+        updateEventStatus(data, eventId, 'event_attended_not_screened')
 
-      res.redirect(`/clinics/${clinicId}/`)
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      } else {
+        // Get participant info BEFORE saving (which clears temp data)
+
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+        updateEventStatus(data, eventId, 'event_attended_not_screened')
+
+        // Set success message based on choice
+        let successMessage
+        if (needsReschedule === 'no-invite') {
+          successMessage = `
+    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        } else if (needsReschedule === 'no-opt-out') {
+          successMessage = `
+    An opt out request has been submitted for ${participantName}`
+        }
+
+        req.flash('success', { wrapWithHeading: successMessage })
+
+        res.redirect(`/clinics/${clinicId}/`)
+      }
     }
   )
 
@@ -2007,8 +2590,18 @@ module.exports = (router) => {
     const { clinicId, eventId } = req.params
 
     const data = req.session.data
+    const currentUser = data.currentUser
     const participantName = getFullName(data.participant)
     const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+    // Store session end details
+    updateEventData(data, eventId, {
+      sessionDetails: {
+        ...getEvent(data, eventId).sessionDetails,
+        endedAt: new Date().toISOString(),
+        endedBy: currentUser.id
+      }
+    })
 
     saveTempEventToEvent(data)
     saveTempParticipantToParticipant(data)
@@ -2032,8 +2625,6 @@ module.exports = (router) => {
       const data = req.session.data
       const supportTypes = data.event?.specialAppointment?.supportTypes || []
       const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
-
-      console.log('Support types:', supportTypes)
 
       // Validate that temporaryReasons was answered
       if (!temporaryReasons && supportTypes) {
@@ -2154,4 +2745,204 @@ module.exports = (router) => {
       templatePrefix: 'events'
     })
   )
+
+  // Handle cancel or reschedule appointment form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/cancel-or-reschedule-appointment/cancel-or-reschedule-appointment-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      const participantName = getFullName(data.participant)
+      const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+      const rescheduleChoice = data.event?.cancellation?.reschedule
+
+      // Validate that a reschedule option was selected
+      if (!rescheduleChoice) {
+        req.flash('error', {
+          text: 'Select whether the appointment should be rescheduled',
+          name: 'event[cancellation][reschedule]',
+          href: '#reschedule'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/details`
+        )
+      }
+
+      // If yes, redirect to reschedule page
+      if (rescheduleChoice === 'yes') {
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      } else {
+        // Capture session end time only if appointment was started
+        const event = getEvent(data, eventId)
+        if (event?.sessionDetails?.startedAt) {
+          captureSessionEndTime(data, eventId, data.currentUser.id)
+        }
+
+        // Save the cancellation data
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+
+        // Update event status to cancelled
+        updateEventStatus(data, eventId, 'event_cancelled')
+
+        // Set success message based on choice
+        let successMessage
+        if (rescheduleChoice === 'no-invite') {
+          successMessage = `${participantName}'s appointment has been cancelled. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        } else if (rescheduleChoice === 'no-opt-out') {
+          successMessage = `An opt out request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+        }
+
+        req.flash('success', { wrapWithHeading: successMessage })
+
+        // Return to clinic page
+        res.redirect(`/clinics/${clinicId}`)
+      }
+    }
+  )
+
+  // Handle reschedule appointment form submission
+  router.post(
+    '/clinics/:clinicId/events/:eventId/cancel-or-reschedule-appointment/reschedule-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      const participantName = getFullName(data.participant)
+      const participantEventUrl = `/clinics/${clinicId}/events/${eventId}`
+
+      const timing = data.event?.reschedule?.timing
+
+      // Validate that timing was selected
+      if (!timing) {
+        req.flash('error', {
+          text: 'Select when the appointment should be rescheduled',
+          name: 'event[reschedule][timing]',
+          href: '#timing'
+        })
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
+        )
+      }
+
+      // Capture session end time only if appointment was started (appointments might be rescheduled over the phone or that never started)
+      const event = getEvent(data, eventId)
+      if (event?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, eventId, data.currentUser.id)
+      }
+
+      // Save the reschedule data
+      saveTempEventToEvent(data)
+      saveTempParticipantToParticipant(data)
+
+      // Update event status to rescheduled
+      updateEventStatus(data, eventId, 'event_rescheduled')
+
+      const successMessage = `A reschedule request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+
+      req.flash('success', { wrapWithHeading: successMessage })
+
+      // Return to clinic page
+      res.redirect(`/clinics/${clinicId}`)
+    }
+  )
+
+  // Handle undo cancel appointment
+  router.get('/clinics/:clinicId/events/:eventId/undo-cancel', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const event = getEvent(data, eventId)
+
+    if (event && event.status === 'event_cancelled') {
+      // Clear cancellation data
+      delete data.event.cancellation
+      delete data.event.reschedule
+
+      // Save changes
+      saveTempEventToEvent(data)
+
+      // Revert to scheduled status
+      updateEventStatus(data, eventId, 'event_scheduled')
+
+      req.flash('success', 'Appointment cancellation undone')
+    }
+
+    // Use referrer system to return to originating page
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}/appointment`,
+      req.query.referrerChain
+    )
+    res.redirect(returnUrl)
+  })
+
+  // Handle undo reschedule appointment
+  router.get(
+    '/clinics/:clinicId/events/:eventId/undo-reschedule',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+
+      if (event && event.status === 'event_rescheduled') {
+        // Clear reschedule and cancellation data
+        delete data.event.cancellation
+        delete data.event.reschedule
+
+        // Save changes
+        saveTempEventToEvent(data)
+
+        // Revert to scheduled status
+        updateEventStatus(data, eventId, 'event_scheduled')
+
+        req.flash('success', 'Reschedule request undone')
+      }
+
+      // Use referrer system to return to originating page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/appointment`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
+
+  // Handle undo check in
+  router.get('/clinics/:clinicId/events/:eventId/undo-check-in', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    const event = getEvent(data, eventId)
+
+    if (event && event.status === 'event_checked_in') {
+      const participantName = getFullName(data.participant)
+
+      // Save changes
+      saveTempEventToEvent(data)
+
+      // Revert to scheduled status
+      updateEventStatus(data, eventId, 'event_scheduled')
+
+      req.flash(
+        'success',
+        `${participantName} is no longer checked in for their appointment`
+      )
+
+      // Use referrer system to return to originating page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}`,
+        req.query.referrerChain
+      )
+      return res.redirect(returnUrl)
+    }
+
+    // Use referrer system for fallback too
+    const returnUrl = getReturnUrl(
+      `/clinics/${clinicId}/events/${eventId}/appointment`,
+      req.query.referrerChain
+    )
+    res.redirect(returnUrl)
+  })
 }

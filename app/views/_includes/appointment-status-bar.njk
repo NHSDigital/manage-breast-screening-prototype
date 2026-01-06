@@ -1,24 +1,5 @@
 {# app/views/_includes/appointment-status-bar.njk #}
 
-
-{# Appointment actions - not currently used - moved to main header #}
-{% set leaveAppointmentLink %}
-  <a href="{{ eventUrl }}/leave">Leave this appointment</a>
-{% endset %}
-
-{% set manageAppointmentLink %}
-  <a href="#">Manage appointment</a>
-{% endset %}
-
-{% set appointmentActionItems = [
-  {
-    html: leaveAppointmentLink
-  },
-  {
-    html: manageAppointmentLink
-  }
-] %}
-
 {# Appointment row items - date, time, tags #}
 {% set appointmentRowItems = [] %}
 

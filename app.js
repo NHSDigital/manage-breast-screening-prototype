@@ -15,6 +15,7 @@ const routes = require('./app/routes')
 const sessionDataDefaults = require('./app/data/session-data-defaults')
 const filters = require('./app/filters')
 
+
 // Set configuration variables
 const port = parseInt(process.env.PORT || config.port, 10) || 2000
 
@@ -48,11 +49,13 @@ nunjucksConfig.express = app
 
 let nunjucksAppEnv = nunjucks.configure(appViews, nunjucksConfig)
 
+
 // Flash messages
 app.use(flash())
 
 // Serve the images as static assets
 app.use('/images', express.static(join(__dirname, 'app/assets/images')))
+
 
 // Use public folder for static assets
 app.use(express.static(join(__dirname, 'public')))

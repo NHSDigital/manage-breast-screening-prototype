@@ -4,14 +4,7 @@
   "description": "Rapidly create HTML prototypes of NHS websites and services.",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "test": "jest --coverage=true",
-    "lint": "npm run lint:js && npm run lint:prettier",
-    "lint:fix": "npm run lint:js:fix && npm run lint:prettier:fix",
-    "lint:prettier": "prettier --cache --cache-location .cache/prettier --cache-strategy content --check .",
-    "lint:prettier:fix": "prettier --write .",
-    "lint:js": "eslint --cache --cache-location .cache/eslint --cache-strategy content --color --ignore-path .gitignore \"**/*.js\"",
-    "lint:js:fix": "npm run lint:js -- --fix"
+    "start": "node app.js"
   },
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
@@ -20,6 +13,9 @@
     "connect-flash": "^0.1.1",
     "nhsuk-frontend": "^10.2.2",
     "nhsuk-prototype-kit": "8.0.0-beta.4",
+    "cookie-parser": "^1.4.7",
+    "dayjs": "^1.11.15",
+    "lodash": "^4.17.21",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
   },

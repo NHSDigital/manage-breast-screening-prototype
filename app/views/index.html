@@ -35,17 +35,38 @@
 
 <h2>Screening appointment</h2>
 
+{# Janet Williams #}
 {% set eventId = "5gpn41oi" %}
+
+{# Diana McIntosh #}
+{% set almostCompleteAppointment = "0gdof6fh" %}
 
 {% set makeActiveAppointment -%}?event[workflowStatus][appointment]=started{%- endset %}
 
 {% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+
+
+
 {% set startUrl = exampleParticipant + "/start" %}
 
 <h3>Appointment pages</h3>
 <ul>
   <li>
     <a href="{{ exampleParticipant }}/appointment">Appointment tab</a>
+    <ul>
+      <li>
+        <a href="{{ exampleParticipant }}/cancel-or-reschedule-appointment/details">Cancel or reschedule appointment</a>
+      </li>
+      <li>
+        <a href="{{ exampleParticipant }}/cancel-or-reschedule-appointment/reschedule">Reschedule appointment</a>
+      </li>
+      <li>
+        <a href="{{ exampleParticipant }}/medical-information/medical-history/appointment-cannot-proceed.html">Appointment cannot proceed (consent not given)</a>
+      </li>
+      <li>
+        <a href="{{ exampleParticipant }}//attended-not-screened-reason">Appointment cannot proceed (appointment stopped)</a>
+      </li>
+    </ul>
   </li>
   <li>
     <a href="{{ exampleParticipant }}/participant">Participant tab</a>
@@ -67,6 +88,7 @@
       <li>
         <a href="{{ startUrl }}?returnTo=personal-details/ethnicity">Ethnicity</a>
       </li>
+         
     </ul>
   </li>
 
@@ -132,14 +154,20 @@
   </li>
   {% set completedSections = completedSections + "&event[workflowStatus][take-images]=completed" %}
   <li>
-    <a href="{{ startUrl }}?returnTo=review&{{ completedSections }}">Review</a>
+    <a href="{{ startUrl }}?returnTo=check-information&{{ completedSections }}">Check information</a>
   </li>
-  
+  <li>
+    <a href="/clinics/wtrl7jud/events/{{ almostCompleteAppointment }}/start?returnTo=check-information">Check information (Diana, fully populated)</a>
+  </li>
+  <li>
+    <a href="{{ startUrl }}?returnTo=exit-appointment">Exit appointment</a>
+  </li>
 </ul>
 
 
 <h2>Completed screening appointment</h2>
 
+{# Angelina Renner #}
 {% set eventId = "1fefyh1q" %}
 
 {% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
