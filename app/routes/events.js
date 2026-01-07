@@ -324,6 +324,24 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
       const event = getEvent(data, eventId)
+      const imagesTaken = data.imagesTaken
+
+      // Handle the initial question about whether images were taken
+      if (imagesTaken === 'no') {
+        // No images taken - go to attended-not-screened flow
+        delete data.imagesTaken
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+        )
+      } else if (imagesTaken === 'yes') {
+        // Images taken - go to exit appointment with images page
+        delete data.imagesTaken
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/exit-appointment-with-images`
+        )
+      }
+
+      // Handle the old exitAction flow for backwards compatibility
       const exitAction = data.exitAction
 
       // Only allow exiting if the event is currently in progress
@@ -411,6 +429,71 @@ module.exports = (router) => {
 
       // Fallback redirect
       res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+    }
+  )
+
+  // Handle exit appointment with images answer
+  router.post(
+    '/clinics/:clinicId/events/:eventId/exit-appointment-with-images-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const event = getEvent(data, eventId)
+      const pauseAction = data.pauseAction
+
+      if (pauseAction === 'yes') {
+        // Save changes and pause the appointment
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+
+        // Get existing session details to track authors
+        const existingDetails = event.sessionDetails || {}
+        const authors = existingDetails.authors || []
+
+        // Add current user's pause action to authors
+        authors.push({
+          userId: data.currentUser?.id,
+          action: 'paused',
+          timestamp: new Date().toISOString()
+        })
+
+        // Update status to paused and record pause details
+        updateEventStatus(data, eventId, 'event_paused')
+        updateEventData(data, eventId, {
+          sessionDetails: {
+            startedAt: existingDetails.startedAt || null,
+            startedBy: existingDetails.startedBy || null,
+            pausedAt: new Date().toISOString(),
+            pausedBy: data.currentUser?.id || null,
+            authors: authors
+          }
+        })
+
+        // Clear temporary session data
+        delete data.event
+        delete data.participant
+        delete data.pauseAction
+
+        // Redirect to appointment page with paused status
+        return res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+      } else if (pauseAction === 'no') {
+        // Return to imaging page - resume workflow from where they left off
+        delete data.pauseAction
+        
+        // Check if there's a returnTo destination
+        const returnTo = data.returnTo
+        delete data.returnTo
+        const destination = returnTo || `/clinics/${clinicId}/events/${eventId}/images`
+        
+        return res.redirect(destination)
+      }
+
+      // Fallback - return to where they were
+      delete data.pauseAction
+      const returnTo = data.returnTo
+      delete data.returnTo
+      const destination = returnTo || `/clinics/${clinicId}/events/${eventId}/images`
+      res.redirect(destination)
     }
   )
 
