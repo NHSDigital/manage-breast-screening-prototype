@@ -167,16 +167,25 @@
 
 {% endif %}
 
-{% set partialMammographyHtml %}
+{% if event.mammogramData.isIncompleteMammography == 'yes' %}
+{% set incompleteMammographyHtml %}
 <p>
-  <b>Partial mammography:</b> Patient was uncomfortable and asked to stop
+  <b>Incomplete mammography</b>
+  {% if event.mammogramData.incompleteMammographyReason %}
+    <br>Reason: {{ event.mammogramData.incompleteMammographyReason }}
+  {% endif %}
+  {% if event.mammogramData.incompleteMammographyReasonDetails %}
+    <br>Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}
+  {% endif %}
+  {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
+    <br>Follow-up: {{ event.mammogramData.incompleteMammographyFollowUpAppointment }}
+  {% endif %}
 </p>
 {% endset %}
-{% if event.mammogramData.isPartialMammography == 'yes' %}
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
     {{ insetText({
-      html: partialMammographyHtml
+      html: incompleteMammographyHtml
     }) }}
   </div>
 </div>

@@ -194,7 +194,7 @@ const generateMammogramImages = ({
   return {
     accessionBase,
     views,
-    isPartialMammography: isSeedData ? hasMissingViews : null,
+    isIncompleteMammography: isSeedData && hasMissingViews ? 'yes' : null,
     metadata: {
       totalImages,
       standardViewsCompleted: Object.keys(views).length === 4,
