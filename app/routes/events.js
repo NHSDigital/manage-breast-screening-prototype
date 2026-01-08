@@ -2594,9 +2594,18 @@ module.exports = (router) => {
       }
     })
 
+    // Determine status based on mammogram completeness (check before saving clears data.event)
+    const isIncompleteMammography =
+      data.event?.mammogramData?.isIncompleteMammography === 'yes'
+
     saveTempEventToEvent(data)
     saveTempParticipantToParticipant(data)
-    updateEventStatus(data, eventId, 'event_complete')
+
+    updateEventStatus(
+      data,
+      eventId,
+      isIncompleteMammography ? 'event_partially_screened' : 'event_complete'
+    )
 
     const successMessage = `
     ${participantName} has been screened. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
