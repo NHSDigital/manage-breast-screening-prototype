@@ -1,0 +1,30 @@
+{# app/views/example-pages/500.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = serviceName %}
+{% set useMinimalNav = true %}
+{% set hideAccountMenu = true %}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-xl">{{ pageHeading }}</h1>
+
+  <p>Use this service to:</p>
+  
+  <ul>
+    <li>bullet one</li>
+    <li>bullet two</li>
+    <li>bullet three</li>
+  </ul>
+
+  {{ button({
+    classes: "nhsuk-button--login nhsuk-u-margin-bottom-4",
+    html: "Log in with my Care Identity",
+    href: "/choose-user"
+  }) }}
+
+  <p><a href="#">Contact us</a> if you have problems accessing.</p>
+
+{% endblock %}
