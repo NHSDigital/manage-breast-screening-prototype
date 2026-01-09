@@ -47,31 +47,24 @@
     meta: {
       items: [
         {
-          href: "/",
-          text: "Home"
-        },
-        {
-          href: "/settings",
-          text: "Settings"
-        },
-        {
-          attributes: { 'data-reset-session': true },
-          href: "/prototype-admin/reset?returnPage=" + (currentPage | urlencode),
-          text: "Reset data"
-        },
-        {
-          href: "https://github.com/NHSDigital/manage-screening-events-prototype",
-          text: "Github"
-        },
-        {
           href: "/accessibility-statement",
-          text: "Accessibility statement"
+          text: "Accessibility"
+        },
+        {
+          href: "/contact",
+          text: "Contact us"
         },
         {
           href: "/terms-and-conditions",
           text: "Terms and conditions"
         }
-      ]
+      ],
+      html: '<ul class="nhsuk-footer__list">
+        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/">Home</a></li>
+        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings">Settings</a></li>
+        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/prototype-admin/reset?returnPage=' + (currentPage | urlencode) + '" data-reset-session>Reset data</a></li>
+        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="https://github.com/NHSDigital/manage-screening-events-prototype">Github</a></li>
+      </ul>'
     }
   }) }}
 {% endblock %}
