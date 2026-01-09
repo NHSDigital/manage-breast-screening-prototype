@@ -10,19 +10,11 @@ async function regenerateData(req) {
   const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
   const generatedDataPath = resolve(dataDirectory, 'generated')
   const generationInfoPath = join(generatedDataPath, 'generation-info.json')
-
-  // Also clear lib/utils.js cache so its sessionDataDefaults gets refreshed
-  // (it caches sessionDataDefaults at module load time)
-  const libUtilsPath = resolve(__dirname, '../../../lib/utils.js')
-
   // Generate new data
   await generateData()
 
   // Clear the require cache for session data defaults
   delete require.cache[require.resolve(sessionDataPath)]
-
-  // Clear lib/utils.js cache so it reloads with fresh sessionDataDefaults
-  delete require.cache[require.resolve(libUtilsPath)]
 
   // Clear cache for the generated JSON files
   Object.keys(require.cache).forEach((key) => {
