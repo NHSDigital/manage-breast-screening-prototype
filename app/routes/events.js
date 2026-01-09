@@ -1318,9 +1318,11 @@ module.exports = (router) => {
           leftBreastProcedures.includes('Breast implants')
 
         // Check if implants have been removed
-        const implantsRemoved = 
+        const implantsRemoved =
           Array.isArray(medicalHistoryTemp?.implantsRemoved) &&
-          medicalHistoryTemp.implantsRemoved.includes('Implants have been removed')
+          medicalHistoryTemp.implantsRemoved.includes(
+            'Implants have been removed'
+          )
 
         // Check if consent was already given (editing existing item)
         const alreadyConsented = medicalHistoryTemp?.consentGiven
@@ -1895,19 +1897,20 @@ module.exports = (router) => {
         }
       }
 
-      const isPartialMammography = data.event.mammogramData.isPartialMammography
+      const isIncompleteMammography =
+        data.event.mammogramData.isIncompleteMammography
 
       // Check if array includes 'yes' (checkbox format) or equals 'yes' (string format from manual entry)
-      const hasPartialMammography = Array.isArray(isPartialMammography)
-        ? isPartialMammography.includes('yes')
-        : isPartialMammography === 'yes'
+      const hasIncompleteMammography = Array.isArray(isIncompleteMammography)
+        ? isIncompleteMammography.includes('yes')
+        : isIncompleteMammography === 'yes'
 
       // Initialize workflowStatus if it doesn't exist
       if (!data.event.workflowStatus) {
         data.event.workflowStatus = {}
       }
 
-      // Mark the workflow step as completed regardless of partial mammography status
+      // Mark the workflow step as completed regardless of incomplete mammography status
       data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to check information page
@@ -2058,14 +2061,15 @@ module.exports = (router) => {
 
     const formData = {
       machineRoom: mammogramData.machineRoom,
-      isPartialMammography:
-        mammogramData.isPartialMammography === 'yes' ? ['yes'] : [],
-      partialMammographyReasonSelect:
-        mammogramData.partialMammographyReasonSelect,
-      partialMammographyReasonComment:
-        mammogramData.partialMammographyReasonComment,
-      partialMammographyShouldReinvite:
-        mammogramData.partialMammographyShouldReinvite === 'yes' ? ['yes'] : [],
+      isIncompleteMammography:
+        mammogramData.isIncompleteMammography === 'yes' ? ['yes'] : [],
+      incompleteMammographyReason: mammogramData.incompleteMammographyReason,
+      incompleteMammographyReasonDetails:
+        mammogramData.incompleteMammographyReasonDetails,
+      incompleteMammographyFollowUpAppointment:
+        mammogramData.incompleteMammographyFollowUpAppointment,
+      incompleteMammographyFollowUpAppointmentDetails:
+        mammogramData.incompleteMammographyFollowUpAppointmentDetails,
       additionalDetails: mammogramData.additionalDetails,
       viewsRightBreast: [],
       viewsLeftBreast: []
@@ -2245,39 +2249,27 @@ module.exports = (router) => {
     ]
     const standardViewsCompleted = standardViews.every((view) => views[view])
 
-    // Handle partial mammography reason
-    let partialMammographyReason = null
-    let partialMammographyShouldReinvite = null
-
-    if (formData.isPartialMammography?.includes('yes')) {
-      const reasonSelect = formData.partialMammographyReasonSelect
-      const reasonComment = formData.partialMammographyReasonComment
-
-      if (reasonSelect && reasonComment) {
-        partialMammographyReason = `${reasonSelect}: ${reasonComment}`
-      } else if (reasonSelect) {
-        partialMammographyReason = reasonSelect
-      } else if (reasonComment) {
-        partialMammographyReason = reasonComment
-      }
-
-      partialMammographyShouldReinvite =
-        formData.partialMammographyShouldReinvite?.includes('yes')
-          ? 'yes'
-          : null
-    }
+    // Handle incomplete mammography
+    const hasIncompleteMammography =
+      formData.isIncompleteMammography?.includes('yes')
 
     return {
       isManualEntry: true,
       machineRoom: formData.machineRoom,
       views,
-      isPartialMammography: formData.isPartialMammography?.includes('yes')
-        ? 'yes'
+      isIncompleteMammography: hasIncompleteMammography ? 'yes' : null,
+      incompleteMammographyReason: hasIncompleteMammography
+        ? formData.incompleteMammographyReason
         : null,
-      partialMammographyReason,
-      partialMammographyReasonSelect: formData.partialMammographyReasonSelect,
-      partialMammographyReasonComment: formData.partialMammographyReasonComment,
-      partialMammographyShouldReinvite,
+      incompleteMammographyReasonDetails: hasIncompleteMammography
+        ? formData.incompleteMammographyReasonDetails
+        : null,
+      incompleteMammographyFollowUpAppointment: hasIncompleteMammography
+        ? formData.incompleteMammographyFollowUpAppointment
+        : null,
+      incompleteMammographyFollowUpAppointmentDetails: hasIncompleteMammography
+        ? formData.incompleteMammographyFollowUpAppointmentDetails
+        : null,
       additionalDetails: formData.additionalDetails,
       metadata: {
         totalImages,
@@ -2545,25 +2537,24 @@ module.exports = (router) => {
         return
       }
 
-      // Capture session end time only if appointment was started
-      const event = getEvent(data, eventId)
-      if (event?.sessionDetails?.startedAt) {
-        captureSessionEndTime(data, eventId, data.currentUser.id)
-      }
-
       // If yes, redirect to reschedule page
       if (needsReschedule === 'yes') {
         // Save the appointmentStopped data before redirecting
+        // Don't update status yet - keep workflow active until reschedule is complete
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
-        updateEventStatus(data, eventId, 'event_attended_not_screened')
 
         res.redirect(
           `/clinics/${clinicId}/events/${eventId}/cancel-or-reschedule-appointment/reschedule`
         )
       } else {
-        // Get participant info BEFORE saving (which clears temp data)
+        // Capture session end time only if appointment was started
+        const event = getEvent(data, eventId)
+        if (event?.sessionDetails?.startedAt) {
+          captureSessionEndTime(data, eventId, data.currentUser.id)
+        }
 
+        // Get participant info BEFORE saving (which clears temp data)
         saveTempEventToEvent(data)
         saveTempParticipantToParticipant(data)
         updateEventStatus(data, eventId, 'event_attended_not_screened')
@@ -2603,9 +2594,18 @@ module.exports = (router) => {
       }
     })
 
+    // Determine status based on mammogram completeness (check before saving clears data.event)
+    const isIncompleteMammography =
+      data.event?.mammogramData?.isIncompleteMammography === 'yes'
+
     saveTempEventToEvent(data)
     saveTempParticipantToParticipant(data)
-    updateEventStatus(data, eventId, 'event_complete')
+
+    updateEventStatus(
+      data,
+      eventId,
+      isIncompleteMammography ? 'event_partially_screened' : 'event_complete'
+    )
 
     const successMessage = `
     ${participantName} has been screened. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`

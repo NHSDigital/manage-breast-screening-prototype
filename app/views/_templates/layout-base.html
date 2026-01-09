@@ -84,16 +84,16 @@
           text: currentBSU.name
         },
         {
-          href: "#",
+          href: "/choose-user" | urlWithReferrer(currentUrl),
           text: (data.currentUser.lastName | upper) + ", " + (data.currentUser.firstName),
           icon: true
         },
         {
-          href: "/choose-user" | urlWithReferrer(currentUrl),
+          href: "/start",
           text: "Log out"
         }
       ]
-    },
+    } if not hideAccountMenu,
     service: {
       text: serviceName,
       href: rootHref

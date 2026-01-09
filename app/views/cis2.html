@@ -1,0 +1,82 @@
+{# app/views/cis2.html #}
+{# This page is a copy of the real CIS2 Authentication page https://am.nhsidentity.spineservices.nhs.uk - will not be controlled by our service, but added to the prototype for completeness #}
+
+{% extends "layout-app.html" %}
+
+{% set serviceName = "CIS2 Authentication" %}
+{% set pageHeading = "Select your login method" %}
+{% set useMinimalNav = true %}
+{% set hideAccountMenu = true %}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+  <form method="post" action="/choose-user">
+    
+    {{ radios({
+      name: "cis2LoginMethod",
+      fieldset: {
+        legend: {
+          text: pageHeading,
+          classes: "nhsuk-fieldset__legend--l",
+          isPageHeading: true
+        }
+      },
+      items: [
+        {
+          value: "smartcard",
+          text: "Smartcard"
+        },
+        {
+          value: "windows-hello",
+          text: "Windows Hello"
+        },
+        {
+          value: "security-key",
+          text: "Security key"
+        },
+        {
+          value: "ipad-app",
+          text: "iPad app"
+        },
+        {
+          value: "authenticator-app",
+          text: "Authenticator app"
+        },
+        {
+          value: "nhs-net-connect",
+          text: "NHS.net Connect (formerly NHSmail)"
+        },
+        {
+          value: "passkey",
+          text: "Passkey (including Windows Hello & Security key)"
+        }
+      ]
+    }) }}
+    
+    <h2 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2 nhsuk-u-margin-top-5">Agree to our Terms of Use</h2>
+
+    <p>By continuing, you agree to our <a href="https://digital.nhs.uk/services/care-identity-service/terms-and-conditions" target="_blank">terms and conditions</a></p>
+
+    {{ button({
+      text: "Continue"
+    }) }}
+
+    {{ checkboxes({
+      idPrefix: "remember",
+      name: "cis2LoginMethodRemember",
+      items: [
+        {
+          value: "yes",
+          text: "Remember my selection",
+          hint: {
+            text: "Do not check this box if you are on a shared computer."
+          }
+        }
+      ]
+     
+    }) }}
+
+  </form>
+
+{% endblock %}

@@ -35,7 +35,7 @@
   {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "0" %}
   {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
   
-  {# Set mammogramSource for partial mammography question - prefer temp data, fall back to final data #}
+  {# Set mammogramSource for incomplete mammography question - prefer temp data, fall back to final data #}
   {% set mammogramSource = mammogramTemp or event.mammogramData or {} %}
 
   {{ appHiddenInput({
@@ -179,7 +179,8 @@
   }) }}
 
   {% set namePrefix = "event[mammogramDataTemp]" %}
-  {% include "_includes/partial-mammography-question.njk" %}
+  {# {% include "_includes/partial-mammography-question.njk" %} #}
+  {% include "_includes/incomplete-mammography-question.njk" %}
 
   {{ textarea({
     name: "event[mammogramDataTemp][additionalDetails]",

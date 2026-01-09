@@ -5,6 +5,7 @@
 
 {% set showNavigation = true %}
 {% set activeTab = 'images' %}
+{% set allowEdits = false %}
 
 {% block pageContent %}
 
@@ -13,30 +14,93 @@
   {% set machineRoom = event.mammogramData.machineRoom %}
   {% set isManualEntry = event.mammogramData.isManualEntry %}
 
-  {# Group views by view name so we get MLO or CC only #}
-  {% set groupedViews = mammogramViews | groupby("viewShort") %}
+  {# Only show image thumbnails for automatic entry #}
+  {% if not isManualEntry %}
+    {# Define standard views that should always be shown #}
+    {% set standardViews = [
+      { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
+      { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
+      { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' },
+      { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' }
+    ] %}
 
-  {# Iterate through each view type (MLO, CC, etc.) #}
-  {% for viewName, viewsInGroup in groupedViews %}
-
-    {# General view name - "MLO views" #}
-    {% set viewNameString = viewName + " views" %}
-
-    {# Capture html for entire view group #}
-    {% set viewCardHtml %}
-      {# Right then left #}
-      {% for viewItem in viewsInGroup %}
-        {% include "_includes/mammogram-image-display.njk" %}
+    {# Build complete view lists with placeholders for missing views #}
+    {% set rightViews = [] %}
+    {% set leftViews = [] %}
+    {% for standardView in standardViews %}
+      {# Find if this view exists in the data #}
+      {% set viewData = null %}
+      {% for viewItem in mammogramViews %}
+        {% if viewItem.viewShortWithSide == standardView.viewShortWithSide %}
+          {% set viewData = viewItem %}
+        {% endif %}
       {% endfor %}
-    {% endset %}
+      
+      {% if not viewData %}
+        {# Create placeholder for missing view #}
+        {% set viewData = {
+          side: standardView.side,
+          viewShort: standardView.viewShort,
+          viewShortWithSide: standardView.viewShortWithSide,
+          images: [],
+          isMissing: true
+        } %}
+      {% endif %}
+      
+      {% if standardView.side == 'right' %}
+        {% set rightViews = rightViews | push(viewData) %}
+      {% else %}
+        {% set leftViews = leftViews | push(viewData) %}
+      {% endif %}
+    {% endfor %}
 
-    {{ card({
-      heading: viewNameString | sentenceCase,
-      headingLevel: "2",
-      feature: true,
-      descriptionHtml: viewCardHtml
-    }) }}
-  {% endfor %}
+    {# Display in two columns: right breast on left, left breast on right #}
+    <div class="nhsuk-grid-row">
+      {# Right views on the left #}
+      <div class="nhsuk-grid-column-one-half">
+        {% set rightViewsHtml %}
+          {% for viewItem in rightViews %}
+            {% include "_includes/mammogram-image-display.njk" %}
+          {% endfor %}
+        {% endset %}
+
+        {{ card({
+          heading: "Right breast",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: rightViewsHtml
+        }) }}
+      </div>
+
+      {# Left views on the right #}
+      <div class="nhsuk-grid-column-one-half">
+        {% set leftViewsHtml %}
+          {% for viewItem in leftViews %}
+            {% include "_includes/mammogram-image-display.njk" %}
+          {% endfor %}
+        {% endset %}
+
+        {{ card({
+          heading: "Left breast",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: leftViewsHtml
+        }) }}
+      </div>
+    </div>
+  {% endif %}
+
+  {# Summary of mammogram data #}
+  {% set mammogramDetailsHtml %}
+    {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Mammogram details",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: mammogramDetailsHtml
+  }) }}
 
 {% endblock %}
 

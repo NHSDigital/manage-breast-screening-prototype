@@ -1,10 +1,27 @@
 // app/lib/generators/mammogram-generator.js
 
 const { faker } = require('@faker-js/faker')
-const generateId = require('../utils/id-generator')
 const dayjs = require('dayjs')
 const weighted = require('weighted')
 const REPEAT_REASONS = require('../../data/repeat-reasons')
+
+// Reasons for incomplete mammography - matches the options in incomplete-mammography-question.njk
+const INCOMPLETE_MAMMOGRAPHY_REASONS = [
+  'Consent withdrawn',
+  'Language or learning difficulties',
+  'Unable to scan tissue',
+  'Positioning difficulties due to wheelchair',
+  'Positioning difficulties for other mobility reasons',
+  'Technical issues',
+  'Other'
+]
+
+// Follow-up appointment options
+const INCOMPLETE_MAMMOGRAPHY_FOLLOW_UP_OPTIONS = [
+  'Yes, as soon as possible',
+  'Yes, when physical condition improves',
+  'No, best possible images taken'
+]
 
 const STANDARD_VIEWS = [
   { side: 'right', view: 'mediolateral oblique' },
@@ -191,10 +208,51 @@ const generateMammogramImages = ({
   const hasMissingViews = Object.keys(views).length < 4
   const hasRepeat = Object.values(views).some((view) => view.repeatCount > 0)
 
+  // Generate incomplete mammography data if views are missing and this is seed data
+  let incompleteMammographyData = {}
+  if (isSeedData && hasMissingViews) {
+    const reason = faker.helpers.arrayElement(INCOMPLETE_MAMMOGRAPHY_REASONS)
+    const followUp = weighted.select({
+      'Yes, as soon as possible': 0.4,
+      'Yes, when physical condition improves': 0.3,
+      'No, best possible images taken': 0.3
+    })
+
+    incompleteMammographyData = {
+      isIncompleteMammography: 'yes',
+      incompleteMammographyReason: reason,
+      incompleteMammographyFollowUpAppointment: followUp
+    }
+
+    // Add optional details for 'Other' reason or randomly for some cases
+    if (reason === 'Other' || Math.random() < 0.3) {
+      incompleteMammographyData.incompleteMammographyReasonDetails =
+        faker.helpers.arrayElement([
+          'Participant became unwell during the appointment.',
+          'Equipment malfunction prevented completion.',
+          'Participant had to leave urgently.',
+          'Severe pain prevented further imaging.',
+          'Implants made positioning very difficult.'
+        ])
+    }
+
+    // Add details if follow-up depends on physical condition improving
+    if (followUp === 'Yes, when physical condition improves') {
+      incompleteMammographyData.incompleteMammographyFollowUpAppointmentDetails =
+        faker.helpers.arrayElement([
+          'Participant has a shoulder injury that should heal in 4-6 weeks.',
+          'Recent surgery - needs 3 months recovery before rebooking.',
+          'Mobility issues - suggest booking at hospital site with better accessibility.',
+          'Chest infection - rebook when recovered.',
+          'Arm in a cast - expected to be removed in 2 weeks.'
+        ])
+    }
+  }
+
   return {
     accessionBase,
     views,
-    isPartialMammography: isSeedData ? hasMissingViews : null,
+    ...incompleteMammographyData,
     metadata: {
       totalImages,
       standardViewsCompleted: Object.keys(views).length === 4,

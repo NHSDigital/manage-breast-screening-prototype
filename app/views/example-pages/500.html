@@ -1,0 +1,26 @@
+{# app/views/example-pages/500.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = "There is a problem with the service" %}
+{% set useMinimalNav = true %}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>We may be experiencing service issues.</p>
+  
+  <h2>What you can do:</h2>
+  
+  <ul>
+    <li>refresh this page</li>
+    <li>go back to the previous page and try again</li>
+    <li><a href="/">go back to the home page</a></li>
+  </ul>
+
+
+  <p><a href="#">Contact us</a> if you are still unable to access the required information.</p>
+
+{% endblock %}

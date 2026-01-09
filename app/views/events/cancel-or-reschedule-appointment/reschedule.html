@@ -8,6 +8,9 @@
 
 {% set formAction = "./reschedule-answer" %}
 
+{# Suppress nav as we don't want the user to leave without making a decision #}
+{% set useMinimalNav = true %}
+
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">

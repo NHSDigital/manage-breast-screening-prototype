@@ -45,10 +45,16 @@ const determineEventStatus = (
     })
   }
 
-  // For past dates, use final_seed_data statuses
-  // This excludes event_rescheduled which should only happen through user action, not seed data
+  // For past dates, select from final statuses
+  // Note: event_partially_screened is excluded - determined by mammogram completeness instead
   if (slotDate.isBefore(currentDate)) {
-    return weighted.select(STATUS_GROUPS.final_seed_data, attendanceWeights)
+    const weights = attendanceWeights
+    return weighted.select({
+      event_complete: weights.complete,
+      event_did_not_attend: weights.didNotAttend,
+      event_attended_not_screened: weights.attendedNotScreened,
+      event_cancelled: weights.cancelled
+    })
   }
 
   // For past slots, generate a status based on how long ago the slot was
@@ -104,10 +110,22 @@ const generateEvent = ({
   const duration = hasSpecialAppointment ? slot.duration * 2 : slot.duration
   const endDateTime = dayjs(slot.dateTime).add(duration, 'minute')
 
+  // Attendance weights for seed data generation
+  // Note: event_partially_screened is determined by mammogram completeness, not selected here
   const attendanceWeights =
     clinic.clinicType === 'assessment'
-      ? [0.85, 0.05, 0.05, 0, 0.05]
-      : [0.7, 0.1, 0.1, 0.05, 0.05]
+      ? {
+          complete: 0.9,
+          didNotAttend: 0.05,
+          attendedNotScreened: 0,
+          cancelled: 0.05
+        }
+      : {
+          complete: 0.8,
+          didNotAttend: 0.1,
+          attendedNotScreened: 0.05,
+          cancelled: 0.05
+        }
 
   // We'll use forceStatus if provided, otherwise calculate based on timing
   let eventStatus =
@@ -250,6 +268,16 @@ const generateEvent = ({
         isSeedData: true,
         config: participant.config
       })
+
+      // Sync event status with mammogram completeness
+      // If mammogram is incomplete, status should be partially_screened
+      // If mammogram is complete but status was partially_screened, change to complete
+      const isIncomplete = !event.mammogramData.metadata.standardViewsCompleted
+      if (isIncomplete && event.status !== 'event_partially_screened') {
+        event.status = 'event_partially_screened'
+      } else if (!isIncomplete && event.status === 'event_partially_screened') {
+        event.status = 'event_complete'
+      }
 
       // Add machine room for hospital locations
       if (clinic.location?.id) {
