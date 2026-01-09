@@ -1,0 +1,132 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Clinic report - " + clinic.clinicCode %}
+{% set hideBackLink = true %}
+{% set gridColumn = "none" %}
+
+{% block beforeContent %}
+  {{ breadcrumb({
+    items: [
+      {
+        href: "/",
+        text: "Home"
+      },
+      {
+        href: "/reports",
+        text: "Reports"
+      },
+      {
+        href: "/reports/screening",
+        text: "Screening clinic reports"
+      }
+    ]
+  }) }}
+{% endblock %}
+
+{% block pageContent %}
+
+  <span class="nhsuk-caption-l">
+    {% if location.type === 'mobile_unit' %}
+      {{ location.name }} at {{ clinic.siteName }}
+    {% else %}
+      {{ location.name }}
+    {% endif %}
+  </span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  <p class="">
+    <a href="/clinics/{{ clinic.id }}">View clinic</a>
+  </p>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <dl class="nhsuk-summary-list">
+        <div class="nhsuk-summary-list__row">
+          <dt class="nhsuk-summary-list__key">Clinic code</dt>
+          <dd class="nhsuk-summary-list__value">{{ clinic.clinicCode }}</dd>
+        </div>
+        <div class="nhsuk-summary-list__row">
+          <dt class="nhsuk-summary-list__key">Date</dt>
+          <dd class="nhsuk-summary-list__value">{{ clinic.date | formatDate }}</dd>
+        </div>
+        <div class="nhsuk-summary-list__row">
+          <dt class="nhsuk-summary-list__key">Time</dt>
+          <dd class="nhsuk-summary-list__value">{{ clinic.sessionTimes | formatTimeRange }}</dd>
+        </div>
+        <div class="nhsuk-summary-list__row">
+          <dt class="nhsuk-summary-list__key">Type</dt>
+          <dd class="nhsuk-summary-list__value">{{ clinic.sessionType | sentenceCase }} ({{ clinic.clinicType | sentenceCase }})</dd>
+        </div>
+        <div class="nhsuk-summary-list__row">
+          <dt class="nhsuk-summary-list__key">Status</dt>
+          <dd class="nhsuk-summary-list__value">{{ clinic.status | toTag }}</dd>
+        </div>
+      </dl>
+
+    </div>
+  </div>
+
+  <h2 class="">Clinic outcomes</h2>
+
+  <ul class="nhsuk-grid-row nhsuk-card-group">
+    <li class="nhsuk-grid-column-one-quarter nhsuk-card-group__item">
+      {{ card({
+        headingHtml: '<p class="nhsuk-heading-xl nhsuk-u-margin-bottom-1">' + (events | length) + '</p><p class="nhsuk-body nhsuk-u-margin-bottom-0">Participants</p>'
+      }) }}
+    </li>
+    <li class="nhsuk-grid-column-one-quarter nhsuk-card-group__item">
+      {{ card({
+        headingHtml: '<p class="nhsuk-heading-xl nhsuk-u-margin-bottom-1">' + outcomeCounts.screened + '</p><p class="nhsuk-body nhsuk-u-margin-bottom-0">Screened</p>'
+      }) }}
+    </li>
+    <li class="nhsuk-grid-column-one-quarter nhsuk-card-group__item">
+      {{ card({
+        headingHtml: '<p class="nhsuk-heading-xl nhsuk-u-margin-bottom-1">' + outcomeCounts.dna + '</p><p class="nhsuk-body nhsuk-u-margin-bottom-0">Did not attend</p>'
+      }) }}
+    </li>
+    {% if not isClinicClosed %}
+    <li class="nhsuk-grid-column-one-quarter nhsuk-card-group__item">
+      {{ card({
+        headingHtml: '<p class="nhsuk-heading-xl nhsuk-u-margin-bottom-1">' + outcomeCounts.pending + '</p><p class="nhsuk-body nhsuk-u-margin-bottom-0">Pending</p>'
+      }) }}
+    </li>
+    {% endif %}
+  </ul>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <h2 class="">Available reports</h2>
+
+      <table class="nhsuk-table">
+        <thead class="nhsuk-table__head">
+          <tr>
+            <th scope="col">Report name</th>
+            <th scope="col">Format</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody class="nhsuk-table__body">
+          <tr>
+            <td>Clinic summary</td>
+            <td>CSV</td>
+            <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Clinic Summary PDF</span></a></td>
+          </tr>
+          <tr>
+            <td>Participant list</td>
+            <td>CSV</td>
+            <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Participant List CSV</span></a></td>
+          </tr>
+          <tr>
+            <td>Outcomes report</td>
+            <td>CSV</td>
+            <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Outcomes Report Excel</span></a></td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+{% endblock %}

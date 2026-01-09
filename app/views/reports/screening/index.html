@@ -1,0 +1,204 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Screening reports" %}
+{% set hideBackLink = true %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block beforeContent %}
+  {{ breadcrumb({
+    items: [
+      {
+        href: "/",
+        text: "Home"
+      },
+      {
+        href: "/reports",
+        text: "Reports"
+      }
+    ]
+  }) }}
+{% endblock %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p class="nhsuk-body-l">
+    View and download reports for screening clinics and appointments.
+  </p>
+
+  {# Headline statistics #}
+  <div class="nhsuk-grid-row nhsuk-u-margin-bottom-6">
+    <div class="nhsuk-grid-column-one-third">
+      <div class="nhsuk-card">
+        <div class="nhsuk-card__content">
+          <h2 class="nhsuk-heading-m nhsuk-u-margin-bottom-2">Screened today</h2>
+          <p class="nhsuk-heading-xl nhsuk-u-margin-bottom-0">47</p>
+        </div>
+      </div>
+    </div>
+    <div class="nhsuk-grid-column-one-third">
+      <div class="nhsuk-card">
+        <div class="nhsuk-card__content">
+          <h2 class="nhsuk-heading-m nhsuk-u-margin-bottom-2">Past 7 days</h2>
+          <p class="nhsuk-heading-xl nhsuk-u-margin-bottom-0">312</p>
+        </div>
+      </div>
+    </div>
+    <div class="nhsuk-grid-column-one-third">
+      <div class="nhsuk-card">
+        <div class="nhsuk-card__content">
+          <h2 class="nhsuk-heading-m nhsuk-u-margin-bottom-2">Year to date</h2>
+          <p class="nhsuk-heading-xl nhsuk-u-margin-bottom-0">1,847</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Secondary navigation for view type #}
+  {% set secondaryNavItems = [] %}
+
+  {% for item in [
+    { id: 'by-clinic', label: 'By clinic' },
+    { id: 'by-day', label: 'By day' }
+  ] %}
+    {% set href -%}
+      /reports/screening/{{ item.id }}
+    {% endset %}
+    {% set secondaryNavItems = secondaryNavItems | push({
+      text: item.label,
+      href: href | trim,
+      current: true if item.id == view
+    }) %}
+  {% endfor %}
+
+  {{ appSecondaryNavigation({
+    visuallyHiddenTitle: "Secondary menu",
+    items: secondaryNavItems
+  }) }}
+
+  {% if not clinics or clinics | length == 0 %}
+    <p>No clinics available for reporting.</p>
+  {% else %}
+
+    {% if view == 'by-day' %}
+      {# By day view - show list of dates #}
+      <table class="nhsuk-table">
+        <thead class="nhsuk-table__head">
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col" class="nhsuk-table__cell--numeric">Clinics</th>
+            <th scope="col" class="nhsuk-table__cell--numeric">Participants</th>
+            {# <th scope="col">Actions</th> #}
+          </tr>
+        </thead>
+        <tbody class="nhsuk-table__body">
+          {% for dayOffset in range(0, 20) %}
+            {% set date = today() | add(0 - dayOffset, 'days') %}
+            {# Generate realistic seeded random numbers for this date #}
+            {% set clinicCount = randomInt(5, 9, date ~ '-clinics') %}
+            {% set avgParticipantsPerClinic = randomInt(25, 45, date ~ '-avg-participants') %}
+            {% set totalParticipants = clinicCount * avgParticipantsPerClinic %}
+            <tr>
+              <td>
+                <a href="#" class="nhsuk-link">{{ date | formatDate | noWrap }}</a>
+                <br>
+                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ date | formatRelativeDate | sentenceCase }}</span>
+              </td>
+              <td class="nhsuk-table__cell--numeric">
+                {{ clinicCount }}
+              </td>
+              <td class="nhsuk-table__cell--numeric">
+                {{ totalParticipants }}
+              </td>
+              {# <td>
+                <a href="#" class="nhsuk-link">
+                  Download <span class="nhsuk-u-visually-hidden">report for {{ date | formatDate }}</span>
+                </a>
+              </td> #}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    {% else %}
+      {# By clinic view - show list of clinics #}
+      <table class="nhsuk-table">
+        <thead class="nhsuk-table__head">
+          <tr>
+            <th scope="col">Clinic</th>
+            <th scope="col">Date and time</th>
+            <th scope="col" class="nhsuk-table__cell--numeric">Participants</th>
+            {# <th scope="col">Actions</th> #}
+          </tr>
+        </thead>
+        <tbody class="nhsuk-table__body">
+          {% for clinic in clinics | sort(false, false, 'date') %}
+            {% if loop.index <= 20 %}
+            {% set location = clinic.location %}
+            <tr>
+              <td>
+                <a href="/reports/{{ clinic.id }}" class="nhsuk-link">
+                  {{ clinic.clinicCode }} – {% if location.type == 'mobile_unit' %}
+                    {{ location.name }} at {{ clinic.siteName }}
+                  {% else %}
+                    {{ location.name }}
+                  {% endif %}
+                </a>
+                <br>
+                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.sessionType | sentenceCase }} ({{ clinic.clinicType | sentenceCase }})</span>
+              </td>
+              <td>
+                {{ clinic.date | formatDate | noWrap }}<br>
+                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.sessionTimes | formatTimeRange }}</span>
+              </td>
+              <td class="nhsuk-table__cell--numeric">
+                {{ clinic.events | length }}
+              </td>
+              {# <td>
+                <a href="#" class="nhsuk-link">
+                  Download <span class="nhsuk-u-visually-hidden">report for {{ location.name }} on {{ clinic.date | formatDate }}</span>
+                </a>
+              </td> #}
+            </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {# Fake pagination - shows numbered pages if we have more than 20 clinics #}
+    {% if clinics | length > 20 %}
+      {{ pagination({
+        _previousUrl: "#",
+        _previousPage: "Previous",
+        items: [
+          {
+            number: 1,
+            href: "#",
+            current: true
+          },
+          {
+            number: 2,
+            href: "#"
+          },
+          {
+            number: 3,
+            href: "#"
+          },
+          {
+            ellipsis: true
+          },
+          {
+            number: 8,
+            href: "#"
+          }
+        ],
+        nextUrl: "#",
+        nextPage: "Next"
+      }) }}
+    {% endif %}
+
+  {% endif %}
+
+{% endblock %}

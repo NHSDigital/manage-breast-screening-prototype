@@ -34,6 +34,9 @@
     </h1>
     <div class="app-header-with-status__status-tag">
       {{ clinic.status | toTag }}
+      <p>
+        <a href="/reports/{{ clinic.id }}">View clinic report</a>
+      </p>
     </div>
 
   </div>
@@ -43,7 +46,9 @@
 
 {# Clinic time and date #}
 {# 9am to midday - 31 December 2024 #}
-<p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
+<p>
+  {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
+</p>
 
 {% set secondaryNavItems = [] %}
 
