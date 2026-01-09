@@ -1,7 +1,6 @@
 const { join } = require('node:path')
 
 // External dependencies
-const flash = require('connect-flash')
 const express = require('express')
 const nunjucks = require('nunjucks')
 
@@ -32,9 +31,6 @@ const prototype = NHSPrototypeKit.init({
     entryPoints: ['app/assets/sass/main.scss']
   }
 })
-
-// Flash messages
-prototype.app.use(flash())
 
 for (const [name, filter] of Object.entries(filters())) {
   prototype.nunjucks.addFilter(name, filter)
