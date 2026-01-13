@@ -327,13 +327,13 @@ module.exports = (router) => {
       const imagesTaken = data.imagesTaken
 
       // Handle the initial question about whether images were taken
-      if (imagesTaken === 'no') {
+      if (imagesTaken === 'No') {
         // No images taken - go to attended-not-screened flow
         delete data.imagesTaken
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
         )
-      } else if (imagesTaken === 'yes') {
+      } else if (imagesTaken === 'Yes') {
         // Images taken - go to exit appointment with images page
         delete data.imagesTaken
         return res.redirect(
@@ -2052,6 +2052,18 @@ module.exports = (router) => {
     } else {
       // Clear any existing temp data for fresh start
       delete data.event.mammogramDataTemp
+      
+      // Check if this is a failover from automatic mode
+      const isManualImageCollection = data.settings?.screening?.manualImageCollection === 'true'
+      const hadAutomaticData = !!data.event?.mammogramData && !data.event?.mammogramData?.isManualEntry
+      
+      // Set failover flag if switching from automatic to manual
+      if (!isManualImageCollection || hadAutomaticData) {
+        if (!data.event.mammogramDataTemp) {
+          data.event.mammogramDataTemp = {}
+        }
+        data.event.mammogramDataTemp.isManualFailover = true
+      }
     }
 
     // Let the dynamic routing handle the actual rendering
@@ -2352,6 +2364,7 @@ module.exports = (router) => {
 
     return {
       isManualEntry: true,
+      isManualFailover: formData.isManualFailover || false,
       machineRoom: formData.machineRoom,
       views,
       isPartialMammography: formData.isPartialMammography?.includes('yes')

@@ -9,8 +9,11 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {% if event.workflowStatus['take-images'] %}
-    {# User is at or past the imaging phase - ask if images were taken #}
+  {% set hasStartedImaging = event.workflowStatus['confirm-identity'] and event.workflowStatus['review-medical-information'] %}
+  {% set hasCompletedImaging = event.workflowStatus['take-images'] %}
+
+  {% if hasStartedImaging and not hasCompletedImaging %}
+    {# User is ready for imaging but hasn't completed it yet - ask if images were taken #}
     {{ radios({
       name: "imagesTaken",
       fieldset: {
@@ -22,11 +25,11 @@
       },
       items: [
         {
-          value: "yes",
+          value: "Yes",
           text: "Yes"
         },
         {
-          value: "no",
+          value: "No",
           text: "No"
         }
       ]

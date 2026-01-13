@@ -144,7 +144,9 @@
 {% if isManualEntry %}
   {% set imageRecordingValueHtml %}
     <p>Manual</p>
-    <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
+    {% if event.mammogramData.isManualFailover %}
+      <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
+    {% endif %}
   {% endset %}
 
   {% set summaryRows = summaryRows | push({

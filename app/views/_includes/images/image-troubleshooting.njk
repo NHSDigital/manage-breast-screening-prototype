@@ -3,6 +3,8 @@
 {% from "textarea/macro.njk" import textarea %}
 {% from "radios/macro.njk" import radios %}
 
+{% set lastRequestedTime = now() | remove(1, 'minute') %}
+
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
     <div class="nhsuk-card">
@@ -23,7 +25,6 @@
             classes: "nhsuk-button nhsuk-button--secondary"
           }) }}
 
-          {% set lastRequestedTime = "2026-01-06T14:32:17" %}
           <p class="nhsuk-body-s nhsuk-u-secondary-text-color">Last requested at {{ lastRequestedTime | formatTime("HH:mm:ss") }}</p>
 
           <h3>If images are still not displaying</h3>
@@ -47,7 +48,6 @@
             classes: "nhsuk-button nhsuk-button--secondary"
           }) }}
 
-          {% set lastRequestedTime = "2026-01-06T14:32:17" %}
           <p class="nhsuk-body-s nhsuk-u-secondary-text-color">Last requested at {{ lastRequestedTime | formatTime("HH:mm:ss") }}</p>
         {% endcall %}
 
@@ -66,7 +66,6 @@
             classes: "nhsuk-button nhsuk-button--secondary"
           }) }}
 
-          {% set lastRequestedTime = "2026-01-06T14:32:17" %}
           <p class="nhsuk-body-s nhsuk-u-secondary-text-color">Last requested at {{ lastRequestedTime | formatTime("HH:mm:ss") }}</p>
 
           <h3>If the wrong information is still showing</h3>
@@ -93,7 +92,6 @@
             classes: "nhsuk-button nhsuk-button--secondary"
           }) }}
 
-          {% set lastRequestedTime = "2026-01-06T14:32:17" %}
           <p class="nhsuk-body-s nhsuk-u-secondary-text-color">Last requested at {{ lastRequestedTime | formatTime("HH:mm:ss") }}</p>
 
           <h3>If the images taken are the best possible</h3>
