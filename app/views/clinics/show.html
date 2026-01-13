@@ -263,7 +263,7 @@
                   Start appointment
                 </a>
 
-              {% elseif event | isPaused %}
+              {% elseif event | isPaused or event | isInProgress %}
                 <a href="{{ eventBaseUrl }}/resume">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
