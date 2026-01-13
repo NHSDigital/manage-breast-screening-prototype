@@ -9,8 +9,8 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {% set hasStartedImaging = event.workflowStatus['confirm-identity'] and event.workflowStatus['review-medical-information'] %}
-  {% set hasCompletedImaging = event.workflowStatus['take-images'] %}
+  {% set hasStartedImaging = (event.workflowStatus['confirm-identity'] == 'completed') and (event.workflowStatus['review-medical-information'] == 'completed') %}
+  {% set hasCompletedImaging = event.workflowStatus['take-images'] == 'completed' %}
 
   {% if hasStartedImaging and not hasCompletedImaging %}
     {# User is ready for imaging but hasn't completed it yet - ask if images were taken #}
