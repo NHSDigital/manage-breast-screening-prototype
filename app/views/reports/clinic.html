@@ -43,10 +43,6 @@
 
       <dl class="nhsuk-summary-list">
         <div class="nhsuk-summary-list__row">
-          <dt class="nhsuk-summary-list__key">Clinic code</dt>
-          <dd class="nhsuk-summary-list__value">{{ clinic.clinicCode }}</dd>
-        </div>
-        <div class="nhsuk-summary-list__row">
           <dt class="nhsuk-summary-list__key">Date</dt>
           <dd class="nhsuk-summary-list__value">{{ clinic.date | formatDate }}</dd>
         </div>
@@ -113,11 +109,11 @@
             <td>CSV</td>
             <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Clinic Summary PDF</span></a></td>
           </tr>
-          <tr>
+          {# <tr>
             <td>Participant list</td>
             <td>CSV</td>
             <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Participant List CSV</span></a></td>
-          </tr>
+          </tr> #}
           <tr>
             <td>Outcomes report</td>
             <td>CSV</td>

@@ -30,26 +30,28 @@ module.exports = (router) => {
       })
     }
 
-    const clinics = data.clinics.map((clinic) => {
-      const unit = data.breastScreeningUnits.find(
-        (u) => u.id === clinic.breastScreeningUnitId
-      )
+    const clinics = data.clinics
+      .filter((clinic) => clinic.status === 'closed')
+      .map((clinic) => {
+        const unit = data.breastScreeningUnits.find(
+          (u) => u.id === clinic.breastScreeningUnitId
+        )
 
-      let location = {}
-      if (unit && unit.locations) {
-        location = unit.locations.find((l) => l.id === clinic.locationId)
-      }
+        let location = {}
+        if (unit && unit.locations) {
+          location = unit.locations.find((l) => l.id === clinic.locationId)
+        }
 
-      // Get events count for context
-      const events = getClinicEvents(data.events, clinic.id)
+        // Get events count for context
+        const events = getClinicEvents(data.events, clinic.id)
 
-      return {
-        ...clinic,
-        unit,
-        location,
-        events
-      }
-    })
+        return {
+          ...clinic,
+          unit,
+          location,
+          events
+        }
+      })
 
     res.render('reports/screening/index', {
       clinics,

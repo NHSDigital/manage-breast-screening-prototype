@@ -23,9 +23,9 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  <p class="nhsuk-body-l">
+  {# <p class="nhsuk-body-l">
     View and download reports for screening clinics and appointments.
-  </p>
+  </p> #}
 
   {# Headline statistics #}
   <div class="nhsuk-grid-row nhsuk-u-margin-bottom-6">
@@ -133,7 +133,7 @@
           </tr>
         </thead>
         <tbody class="nhsuk-table__body">
-          {% for clinic in clinics | sort(false, false, 'date') %}
+          {% for clinic in clinics | sort(true, false, 'date') %}
             {% if loop.index <= 20 %}
             {% set location = clinic.location %}
             <tr>
@@ -150,7 +150,7 @@
               </td>
               <td>
                 {{ clinic.date | formatDate | noWrap }}<br>
-                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.sessionTimes | formatTimeRange }}</span>
+                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.date | formatRelativeDate | sentenceCase }}</span>
               </td>
               <td class="nhsuk-table__cell--numeric">
                 {{ clinic.events | length }}
