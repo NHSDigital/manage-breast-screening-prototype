@@ -180,21 +180,9 @@
 
       <h2>Additional details</h2>
 
-      {% include "_includes/incomplete-mammography-question.njk" %}
-
-      {{ textarea({
-        name: "event[mammogramData][notesForReader]",
-        id: "notes-for-reader",
-        value: event.mammogramData.notesForReader,
-        label: {
-          text: "Notes for reader (optional)",
-          classes: "nhsuk-label--s"
-        },
-        hint: {
-          text: "Provide information for image readers when reviewing"
-        },
-        rows: 2
-      }) }}
+      {% set namePrefix = "event[mammogramData]" %}
+      {% set mammogramSource = event.mammogramData %}
+      {% include "_includes/additional-image-details.njk" %}
 
       {{ button({
         text: "Confirm images"

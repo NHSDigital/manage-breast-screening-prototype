@@ -1,7 +1,12 @@
-{# app/views/_includes/incomplete-mammography-question.njk #}
+{# app/views/_includes/additional-image-details.njk #}
 
 {# 
-  Include for incomplete mammography question
+  Include for additional image details section
+  
+  Contains:
+  - Incomplete mammography checkbox with reasons and follow-up questions
+  - Imperfect but best possible images checkbox
+  - Notes for reader textarea
   
   Parameters:
   - namePrefix: string - prefix for form field names (e.g., "event[mammogramData]" or "event[mammogramDataTemp]")
@@ -92,20 +97,35 @@
     },
     items: [
       {
-        value: "Yes, record as ‘to be recalled’",
-        text: "Yes, record as ‘to be recalled’",
+        value: "Yes, record as 'to be recalled'",
+        text: "Yes, record as 'to be recalled'",
         conditional: {
           html: yesRecallRescheduleDetailsHtml
         }
       },
       {
-        value: "No, record as ‘partial mammography’",
-        text: "No, record as ‘partial mammography’"
+        value: "No, record as 'partial mammography'",
+        text: "No, record as 'partial mammography'"
       }
     ]
   }) }}
 
 {% endset %}
+
+{{ checkboxes({
+  idPrefix: "isImperfectButBestPossible",
+  name: namePrefix + "[isImperfectButBestPossible]",
+  values: mammogramSource.isImperfectButBestPossible,
+  items: [
+    {
+      value: "yes",
+      text: "Imperfect, but best possible images",
+      hint: {
+        text: "Advise image readers not to request a technical recall"
+      }
+    }
+  ]
+}) }}
 
 {{ checkboxes({
   idPrefix: "isIncompleteMammography",
@@ -120,4 +140,18 @@
       }
     }
   ]
+}) }}
+
+{{ textarea({
+  name: namePrefix + "[notesForReader]",
+  id: "notesForReader",
+  value: mammogramSource.notesForReader,
+  label: {
+    text: "Notes for reader (optional)",
+    classes: "nhsuk-label--s"
+  },
+  hint: {
+    text: "Provide information for image readers when reviewing"
+  },
+  rows: 2
 }) }}

@@ -257,6 +257,27 @@
   }
 }) %} #}
 
+{# Imperfect but best possible images #}
+{% if event.mammogramData.isImperfectButBestPossible and event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Image quality note"
+    },
+    value: {
+      text: "Imperfect, but best possible images – advise image readers not to request a technical recall"
+    },
+    actions: {
+      items: [
+        {
+          href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          text: "Change",
+          visuallyHiddenText: "image quality note"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
 {# Incomplete mammography #}
 {% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteMammographyHtml %}
@@ -310,6 +331,8 @@
     } if allowEdits
   }) %}
 {% endif %}
+
+
 
 {# OLD Repeats and additional images (separate row) - keeping for reference #}
 {# {% if hasRepeatsOrExtras %}
