@@ -2081,6 +2081,13 @@ module.exports = (router) => {
         mammogramData.incompleteMammographyFollowUpAppointment,
       incompleteMammographyFollowUpAppointmentDetails:
         mammogramData.incompleteMammographyFollowUpAppointmentDetails,
+      isImperfectButBestPossible: Array.isArray(
+        mammogramData.isImperfectButBestPossible
+      )
+        ? mammogramData.isImperfectButBestPossible
+        : mammogramData.isImperfectButBestPossible === 'yes'
+          ? ['yes']
+          : [],
       additionalDetails: mammogramData.additionalDetails,
       notesForReader: mammogramData.notesForReader,
       viewsRightBreast: [],
@@ -2281,6 +2288,11 @@ module.exports = (router) => {
         : null,
       incompleteMammographyFollowUpAppointmentDetails: hasIncompleteMammography
         ? formData.incompleteMammographyFollowUpAppointmentDetails
+        : null,
+      isImperfectButBestPossible: formData.isImperfectButBestPossible?.includes(
+        'yes'
+      )
+        ? ['yes']
         : null,
       additionalDetails: formData.additionalDetails,
       notesForReader: formData.notesForReader,
