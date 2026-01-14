@@ -286,7 +286,7 @@
         }) }}
         {# <p class="nhsuk-u-margin-bottom-{% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}1{% else %}0{% endif %}">Participant to be invited to a recall appointment to take more images.</p> #}
         {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
-          <p class="nhsuk-u-margin-bottom-0">Notes for recall scheduling:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+          <p class="nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
         {% endif %}
       {% endif %}
     {% endif %}
