@@ -178,16 +178,17 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
-      {# {% include "_includes/partial-mammography-question.njk" %} #}
+      <h2>Additional details</h2>
+
       {% include "_includes/incomplete-mammography-question.njk" %}
 
       {{ textarea({
-        name: "event[mammogramData][additionalDetails]",
-        id: "additional-details",
-        value: event.mammogramData.additionalDetails,
+        name: "event[mammogramData][notesForReader]",
+        id: "notes-for-reader",
+        value: event.mammogramData.notesForReader,
         label: {
-          text: "Additional details (optional)",
-          classes: "nhsuk-label--m"
+          text: "Notes for reader (optional)",
+          classes: "nhsuk-label--s"
         },
         hint: {
           text: "Provide information for image readers when reviewing"

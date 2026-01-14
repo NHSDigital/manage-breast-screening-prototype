@@ -10,13 +10,13 @@
 
 {% set reasonHtml %}
 
-  {{ radios({
-    idPrefix: "incompleteMammographyReason",
-    name: namePrefix + "[incompleteMammographyReason]",
-    value: mammogramSource.incompleteMammographyReason,
+  {{ checkboxes({
+    idPrefix: "incompleteMammographyReasons",
+    name: namePrefix + "[incompleteMammographyReasons]",
+    values: mammogramSource.incompleteMammographyReasons,
     fieldset: {
       legend: {
-        text: "Why was imaging not completed?",
+        text: "Why could you not take all the images?",
         classes: "nhsuk-fieldset__legend--s"
       }
     },
@@ -31,7 +31,10 @@
       },
       {
         value: "Unable to scan tissue",
-        text: "Unable to scan tissue"
+        text: "Unable to scan tissue",
+        hint: {
+          text: "For example, large breasts or implanted device"
+        }
       },
       {
         value: "Positioning difficulties due to wheelchair",
@@ -65,13 +68,13 @@
     rows: 2
   }) }}
 
-  {% set yesWhenPhysicalConditionImprovesDetailsHtml %}
+  {% set yesRecallRescheduleDetailsHtml %}
     {{ textarea({
       name: namePrefix + "[incompleteMammographyFollowUpAppointmentDetails]",
       value: mammogramSource.incompleteMammographyFollowUpAppointmentDetails,
       id: "incompleteMammographyFollowUpAppointmentDetails",
       label: {
-        text: "Provide details for staff rebooking the appointment"
+        text: "Provide details staff scheduling the recall appointment"
       },
       rows: 3
     }) }}
@@ -83,25 +86,21 @@
     value: mammogramSource.incompleteMammographyFollowUpAppointment,
     fieldset: {
       legend: {
-        text: "Can another appointment be scheduled to take the remaining images?",
+        text: "Should the participant be recalled to take more images?",
         classes: "nhsuk-fieldset__legend--s"
       }
     },
     items: [
       {
-        value: "Yes, as soon as possible",
-        text: "Yes, as soon as possible"
-      },
-      {
-        value: "Yes, when physical condition improves",
-        text: "Yes, when physical condition improves",
+        value: "Yes, record as ‘to be recalled’",
+        text: "Yes, record as ‘to be recalled’",
         conditional: {
-          html: yesWhenPhysicalConditionImprovesDetailsHtml
+          html: yesRecallRescheduleDetailsHtml
         }
       },
       {
-        value: "No, best possible images taken",
-        text: "No, best possible images taken"
+        value: "No, record as ‘partial mammography’",
+        text: "No, record as ‘partial mammography’"
       }
     ]
   }) }}
@@ -112,17 +111,10 @@
   idPrefix: "isIncompleteMammography",
   name: namePrefix + "[isIncompleteMammography]",
   values: mammogramSource.isIncompleteMammography,
-  fieldset: {
-    legend: {
-      text: "Incomplete mammography",
-      classes: "nhsuk-fieldset__legend--m",
-      isPageHeading: false
-    }
-  },
   items: [
     {
       value: "yes",
-      text: "Incomplete set of mammograms",
+      text: "Not all mammograms taken",
       conditional: {
         html: reasonHtml
       }

@@ -258,28 +258,43 @@
 }) %} #}
 
 {# Incomplete mammography #}
-{% if event.mammogramData.isIncompleteMammography == 'yes' %}
+{% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteMammographyHtml %}
-    {% if event.mammogramData.incompleteMammographyReason %}
-      <p class="nhsuk-u-margin-bottom-2"><strong>Reason:</strong> {{ event.mammogramData.incompleteMammographyReason }}</p>
+    {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
+      <p class="nhsuk-u-margin-bottom-1">{{ "Reason" | pluralise(event.mammogramData.incompleteMammographyReasons | length) }}:</p>
+      <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
+        {% for reason in event.mammogramData.incompleteMammographyReasons %}
+          <li>{{ reason }}</li>
+        {% endfor %}
+      </ul>
     {% endif %}
     {% if event.mammogramData.incompleteMammographyReasonDetails %}
-      <p class="nhsuk-u-margin-bottom-2"><strong>Details:</strong> {{ event.mammogramData.incompleteMammographyReasonDetails }}</p>
+      <p class="nhsuk-u-margin-bottom-2">Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}</p>
     {% endif %}
     {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
-      <p class="nhsuk-u-margin-bottom-2"><strong>Follow-up appointment:</strong> {{ event.mammogramData.incompleteMammographyFollowUpAppointment }}</p>
-    {% endif %}
-    {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
-      <p class="nhsuk-u-margin-bottom-0"><strong>Follow-up details:</strong> {{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
-    {% endif %}
-    {% if not event.mammogramData.incompleteMammographyReason and not event.mammogramData.incompleteMammographyFollowUpAppointment %}
-      Yes, no details provided
+      {% set followUpValue = event.mammogramData.incompleteMammographyFollowUpAppointment %}
+      {% if followUpValue.startsWith("No") %}
+        {{ tag({
+          text: "Partial mammography",
+          classes: "nhsuk-tag--orange nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+        }) }}
+        {# <p class="nhsuk-u-margin-bottom-0">Recorded as partial mammography.</p> #}
+      {% else %}
+        {{ tag({
+          text: "Recall requested",
+          classes: "nhsuk-tag--orange nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+        }) }}
+        {# <p class="nhsuk-u-margin-bottom-{% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}1{% else %}0{% endif %}">Participant to be invited to a recall appointment to take more images.</p> #}
+        {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
+          <p class="nhsuk-u-margin-bottom-0">Notes for recall scheduling:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+        {% endif %}
+      {% endif %}
     {% endif %}
   {% endset %}
   
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Incomplete mammography"
+      text: "Not all mammograms taken"
     },
     value: {
       html: incompleteMammographyHtml
@@ -289,7 +304,7 @@
         {
           href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
           text: "Change",
-          visuallyHiddenText: "incomplete mammography"
+          visuallyHiddenText: "not all mammograms taken"
         }
       ]
     } if allowEdits
@@ -317,21 +332,21 @@
   }) %}
 {% endif %} #}
 
-{# Additional details #}
-{# {% if event.mammogramData.additionalDetails %} #}
+{# Notes for reader #}
+{# {% if event.mammogramData.notesForReader %} #}
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Additional details"
+      text: "Notes for reader"
     },
     value: {
-      text: event.mammogramData.additionalDetails
+      text: event.mammogramData.notesForReader
     },
     actions: {
       items: [
         {
           href: ("./images-manual-details" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
           text: "Change",
-          visuallyHiddenText: "additional details"
+          visuallyHiddenText: "notes for reader"
         }
       ]
     } if allowEdits

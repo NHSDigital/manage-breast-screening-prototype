@@ -126,7 +126,7 @@
 {% endif %}
 
 {% if currentUser | isClinician %}
-  {% if event | isInProgress %}
+  {% if event | isPaused or (event | isInProgress and event | startedByCurrentUser) %}
     <div class="nhsuk-button-group">
       {{ button({
         text: "Resume appointment",
@@ -145,7 +145,5 @@
     </div>
   {% endif %}
 {% endif %}
-
-
 
 {% include "_includes/appointment/appointment-tabs.njk" %}
