@@ -1046,7 +1046,7 @@ const createReadingBatch = (data, options) => {
     name,
     clinicId,
     batchId = null, // Allow custom batch ID
-    limit = 50,
+    limit = 25,
     filters = {}
   } = options
 

@@ -121,6 +121,7 @@
   }) }}
 {% endblock header %}
 
+{# todo: unsure this guard is working - needs similar guard inside #}
 {% if not hideSecondaryNavigation %}
   {% set mainClasses = "nhsuk-u-padding-top-3" %}
 
@@ -130,17 +131,19 @@
 
   {% block beforeContent %}
 
-    {{ backLink({
-      href: "/reading/batch/" ~ batchId,
-      text: "Batch list" if isBatchContext else "Clinic list"
-    }) }}
+    {% if not hideSecondaryNavigation %}
+
+      {{ backLink({
+        href: "/reading/batch/" ~ batchId,
+        text: "Batch list" if isBatchContext else "Clinic list"
+      }) }}
+    {% endif %}
 
     {% if hideSecondaryNavigation %}
       {{ backLink({
         href: "javascript:history.back();",
         text: "Back"
       }) }}
-
     {% endif %}
 
     {% if (progress.hasPreviousUserReadable or progress.hasNextUserReadable) and not hideSecondaryNavigation %}
