@@ -160,7 +160,18 @@
     <a href="/clinics/wtrl7jud/events/{{ almostCompleteAppointment }}/start?returnTo=check-information">Check information (Diana, fully populated)</a>
   </li>
   <li>
-    <a href="{{ startUrl }}?returnTo=exit-appointment">Exit appointment</a>
+    Exit appointment
+    <ul>
+      <li>
+        <a href="{{ startUrl }}?returnTo=exit-appointment">Before images stage</a>
+      </li>
+      <li>
+        <a href="{{ startUrl }}?returnTo=exit-appointment&event[workflowStatus][confirm-identity]=completed&event[workflowStatus][review-medical-information]=completed">During images stage (may have images)</a>
+      </li>
+      <li>
+        <a href="{{ startUrl }}?returnTo=exit-appointment&{{ completedSections }}">After images completed</a>
+      </li>
+    </ul>
   </li>
 </ul>
 
