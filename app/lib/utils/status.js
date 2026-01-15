@@ -26,7 +26,12 @@ const STATUS_GROUPS = {
     'event_attended_not_screened',
     'event_cancelled'
   ],
-  active: ['event_scheduled', 'event_checked_in', 'event_in_progress', 'event_paused'],
+  active: [
+    'event_scheduled',
+    'event_checked_in',
+    'event_in_progress',
+    'event_paused'
+  ],
   eligible_for_reading: ['event_complete', 'event_partially_screened']
 }
 
@@ -305,11 +310,13 @@ const filterEventsByStatus = (events, filter) => {
     case 'checked-in':
       return events.filter((e) => e.status === 'event_checked_in')
     case 'in-progress':
-      return events.filter((e) => e.status === 'event_in_progress' || e.status === 'event_paused')
+      return events.filter(
+        (e) => e.status === 'event_in_progress' || e.status === 'event_paused'
+      )
     case 'complete':
       return events.filter((e) => isFinal(e))
     case 'remaining':
-      return events.filter((e) => isActive(e))
+      return events.filter((e) => hasNotStarted(e))
     default:
       return events
   }

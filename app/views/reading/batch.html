@@ -24,6 +24,10 @@
 
 {% block pageContent %}
 
+{{ batch | log("Batch data") }}
+{{ readingStatus | log("Reading status") }}
+{{ events | log("Events in batch") }}
+
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
     <div class="app-header-with-status">

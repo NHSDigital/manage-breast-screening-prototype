@@ -153,7 +153,7 @@ module.exports = (router) => {
         type: type || 'custom',
         name,
         clinicId,
-        limit: limit ? parseInt(limit) : 50,
+        limit: limit ? parseInt(limit) : 25,
         filters
       })
 
