@@ -1,0 +1,37 @@
+{# app/views/events/exit-appointment/before-images.html #}
+
+{{ radios({
+  name: "exitAction",
+  fieldset: {
+    legend: {
+      text: "Will this appointment be resumed today?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "save",
+      text: "Yes, pause and save changes"
+    },
+    {
+      value: "cannot-proceed",
+      text: "No, appointment cannot proceed"
+    },
+    {
+      divider: "or"
+    },
+    {
+      value: "discard",
+      text: "Discard changes and revert status to 'Checked in'"
+    }
+  ]
+}) }}
+
+<div class="nhsuk-button-group">
+  {{ button({
+    text: "Confirm"
+  }) }}
+
+  <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+</div>

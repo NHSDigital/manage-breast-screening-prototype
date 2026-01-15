@@ -142,6 +142,25 @@
   }) %}
 {% endif %}
 
+{# Image recording method - only show if manual entry #}
+{% if isManualEntry %}
+  {% set imageRecordingValueHtml %}
+    <p>Manual</p>
+    {% if event.mammogramData.isManualFailover %}
+      <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
+    {% endif %}
+  {% endset %}
+
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Image recording method"
+    },
+    value: {
+      html: imageRecordingValueHtml
+    }
+  }) %}
+{% endif %}
+
 {# Combined views taken (showing all view information in one row) #}
 {# Sort views by side and standard order before displaying #}
 {% set sortedViews = [] %}

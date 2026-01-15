@@ -1,0 +1,30 @@
+{# app/views/events/exit-appointment/images-may-be-taken.html #}
+
+{{ radios({
+  name: "imagesTaken",
+  fieldset: {
+    legend: {
+      text: "Have you taken any mammogram images of " + (participant | getFullName) + " during this appointment?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "Yes",
+      text: "Yes"
+    },
+    {
+      value: "No",
+      text: "No"
+    }
+  ]
+}) }}
+
+<div class="nhsuk-button-group">
+  {{ button({
+    text: "Continue"
+  }) }}
+
+  <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+</div>

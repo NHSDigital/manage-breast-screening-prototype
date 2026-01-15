@@ -1,0 +1,30 @@
+{# app/views/events/exit-appointment/images-completed.html #}
+
+<p>After taking one or more images, appointments can only be paused, not stopped. Return to the imaging step and complete the appointment if you are not taking any more images of this participant today.</p>
+
+{{ radios({
+  name: "pauseAction",
+  fieldset: {
+    legend: {
+      text: "Do you want to pause this appointment?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  },
+  items: [
+    {
+      value: "yes",
+      text: "Yes, pause and save changes"
+    },
+    {
+      value: "no",
+      text: "No, return to appointment"
+    }
+  ]
+}) }}
+
+<div class="nhsuk-button-group">
+  {{ button({
+    text: "Continue"
+  }) }}
+</div>
