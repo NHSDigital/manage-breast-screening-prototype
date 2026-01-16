@@ -34,6 +34,14 @@
   {% endif %}
 {% endset %}
 
+{# Screened date #}
+{% if event %}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Screened:",
+    value: event.timing.startTime | formatDate
+  }) %}
+{% endif %}
+
 {% set firstRowItems = firstRowItems | push({
   key: "Progress:",
   value: progressText | trim
@@ -80,13 +88,7 @@
     value: participant.sxNumber
   }) %}
 
-  {# Screened date #}
-  {% if event %}
-    {% set participantRowItems = participantRowItems | push({
-      key: "Screened:",
-      value: event.timing.startTime | formatDate
-    }) %}
-  {% endif %}
+
 
   {% set statusBarRows = statusBarRows | push({
     items: participantRowItems
