@@ -1,0 +1,179 @@
+{# app/views/_includes/summary-lists/read-summary.njk #}
+{# 
+  Summary list showing a reading assessment.
+  Outputs a summary list - wrap in a card if needed.
+  
+  Parameters:
+    - read: object - the read data (defaults to data.imageReadingTemp)
+    - allowEdits: boolean - whether to show change links (default: false)
+    - changeOpinionUrl: string - URL for change opinion link
+#}
+
+{% set read = read if read is defined else data.imageReadingTemp %}
+{% set allowEdits = allowEdits if allowEdits is defined else false %}
+
+{# Format the result for display #}
+{% set resultText %}
+  {% if read.result == 'normal' %}
+    Normal
+  {% elseif read.result == 'technical_recall' %}
+    Technical recall
+  {% elseif read.result == 'recall_for_assessment' %}
+    Recall for assessment
+  {% else %}
+    {{ read.result }}
+  {% endif %}
+{% endset %}
+
+{# Count annotations #}
+{% set leftAnnotations = read.left.annotations if read.left and read.left.annotations else [] %}
+{% set rightAnnotations = read.right.annotations if read.right and read.right.annotations else [] %}
+{% set totalAnnotations = leftAnnotations | length + rightAnnotations | length %}
+
+{# Build annotation summary #}
+{% set annotationSummaryHtml %}
+  {% if totalAnnotations == 0 %}
+    No annotations added
+  {% else %}
+    {% if leftAnnotations | length > 0 %}
+      <p class="nhsuk-u-margin-bottom-1">
+        <strong>Left breast:</strong> {{ leftAnnotations | length }} {{ "annotation" | pluralise(leftAnnotations | length) }}
+      </p>
+    {% endif %}
+    {% if rightAnnotations | length > 0 %}
+      <p class="nhsuk-u-margin-bottom-1">
+        <strong>Right breast:</strong> {{ rightAnnotations | length }} {{ "annotation" | pluralise(rightAnnotations | length) }}
+      </p>
+    {% endif %}
+  {% endif %}
+{% endset %}
+
+{# Build rows based on result type #}
+{% set rows = [] %}
+
+{# Opinion row - always shown #}
+{% set rows = rows | push({
+  key: {
+    text: "Opinion"
+  },
+  value: {
+    html: read.result | toTag
+  },
+  actions: {
+    items: [
+      {
+        href: changeOpinionUrl,
+        text: "Change",
+        visuallyHiddenText: "opinion"
+      }
+    ]
+  } if allowEdits and changeOpinionUrl
+}) %}
+
+{# Normal - additional details #}
+{% if read.result == 'normal' and read.normalDetails %}
+  {% set rows = rows | push({
+    key: {
+      text: "Details"
+    },
+    value: {
+      text: read.normalDetails
+    },
+    actions: {
+      items: [
+        {
+          href: "./normal-details",
+          text: "Change",
+          visuallyHiddenText: "details"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{# Technical recall - views to retake #}
+{% if read.result == 'technical_recall' %}
+  {% set whichViews = read.whichViews %}
+  {% if whichViews %}
+    {# Handle both array and single value #}
+    {% if whichViews.join %}
+      {% set viewsText = whichViews | join(', ') | upper %}
+    {% else %}
+      {% set viewsText = whichViews | upper %}
+    {% endif %}
+    {% set rows = rows | push({
+      key: {
+        text: "Views to retake"
+      },
+      value: {
+        text: viewsText
+      },
+      actions: {
+        items: [
+          {
+            href: changeOpinionUrl,
+            text: "Change",
+            visuallyHiddenText: "views"
+          }
+        ]
+      } if allowEdits and changeOpinionUrl
+    }) %}
+  {% endif %}
+{% endif %}
+
+{# Recall for assessment details #}
+{% if read.result == 'recall_for_assessment' %}
+  
+  {# Left breast assessment #}
+  {% if read.left and read.left.breastAssessment %}
+    {% set rows = rows | push({
+      key: {
+        text: "Left breast"
+      },
+      value: {
+        text: read.left.breastAssessment | capitalize
+      }
+    }) %}
+  {% endif %}
+  
+  {# Right breast assessment #}
+  {% if read.right and read.right.breastAssessment %}
+    {% set rows = rows | push({
+      key: {
+        text: "Right breast"
+      },
+      value: {
+        text: read.right.breastAssessment | capitalize
+      }
+    }) %}
+  {% endif %}
+  
+  {# Annotations summary #}
+  {% set rows = rows | push({
+    key: {
+      text: "Annotations"
+    },
+    value: {
+      html: annotationSummaryHtml
+    }
+  }) %}
+  
+{% endif %}
+
+{# Normal with details #}
+{% if read.result == 'normal' %}
+  {% if read.normalComment %}
+    {% set rows = rows | push({
+      key: {
+        text: "Comment"
+      },
+      value: {
+        text: read.normalComment
+      }
+    }) %}
+  {% endif %}
+{% endif %}
+
+{{ summaryList({
+  rows: rows
+}) }}

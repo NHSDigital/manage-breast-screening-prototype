@@ -13,6 +13,15 @@
 {% block header %}
   {{ super() }}
 
+  {# Reading-specific debug logging #}
+  {% if isReadingWorkflow %}
+    {{ data.imageReadingTemp | log("imageReadingTemp") }}
+  {% endif %}
+  {% if batchId %}
+    {{ batch | log("Batch") }}
+  {% endif %}
+
+
   {# Show status bar only in workflow mode #}
   {% if isReadingWorkflow %}
     {% include "_includes/reading/reading-status-bar.njk" %}
@@ -49,3 +58,4 @@
     <meta name="mammogram-viewer" content="hide">
   {% endif %}
 {% endblock %}
+

@@ -6,7 +6,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './result-technical-recall' %}
+{% set formAction = './review' %}
 
 
 {% set backLink = value %}
@@ -94,7 +94,7 @@
     {% set selectHtml %}
       {{ select({
         id: "recallReason-" + loop.index,
-        name: "recallReason-" + loop.index,
+        name: "imageReadingTemp[recallReason-" + loop.index + "]",
         label: {
           text: "Reason for recall"
         },
@@ -102,7 +102,7 @@
       }) }}
 
       {{ input({
-        name: "recallReasonAdditional-" + loop.index,
+        name: "imageReadingTemp[recallReasonAdditional-" + loop.index + "]",
         id: "recallReasonAdditional-" + loop.index,
         label: {
           text: "Additional details (optional)",
@@ -128,7 +128,7 @@
 
   {{ checkboxes({
     idPrefix: "whichViews",
-    name: "whichViews",
+    name: "imageReadingTemp[whichViews]",
     fieldset: {
       legend: {
         text: "Which views are required?",

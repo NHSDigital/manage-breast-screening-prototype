@@ -256,6 +256,7 @@ module.exports = (router) => {
   router.use('/reading/batch/:batchId/events/:eventId', (req, res, next) => {
     const data = req.session.data
     const { batchId, eventId } = req.params
+    const currentUserId = data.currentUser?.id
 
     // Get the batch
     const batch = getReadingBatch(data, batchId)
@@ -294,6 +295,30 @@ module.exports = (router) => {
 
     // Get reading progress for this batch
     const progress = getBatchReadingProgress(data, batchId, eventId)
+
+    // Initialise or update imageReadingTemp for this event
+    // Only do this on GET requests - POST requests should preserve form data
+    if (req.method === 'GET') {
+      if (!data.imageReadingTemp || data.imageReadingTemp.eventId !== eventId) {
+        const existingRead = event.imageReading?.reads?.[currentUserId]
+        if (existingRead) {
+          // User has already read this event - populate temp from saved read
+          console.log(
+            `Loading existing read for event ${eventId} into imageReadingTemp`
+          )
+          data.imageReadingTemp = {
+            eventId: eventId,
+            ...existingRead
+          }
+        } else {
+          // No existing read - initialise empty temp with eventId
+          console.log(`Initialising imageReadingTemp for event ${eventId}`)
+          data.imageReadingTemp = { eventId: eventId }
+        }
+        // Update res.locals.data to reflect the change (it was set before this middleware)
+        res.locals.data.imageReadingTemp = data.imageReadingTemp
+      }
+    }
 
     // Set up locals for templates
     res.locals.isReadingWorkflow = true
@@ -359,7 +384,8 @@ module.exports = (router) => {
         'recall-for-assessment-details',
         'annotation',
         'confirm-abnormal',
-        'recommended-assessment'
+        'recommended-assessment',
+        'review'
       ]
 
       if (workflowSteps.includes(step)) {
@@ -722,14 +748,22 @@ module.exports = (router) => {
   // Annotations end
 
   // Handle recording a reading result
+  // Save the reading opinion - reads opinion from imageReadingTemp.result
   router.post(
-    '/reading/batch/:batchId/events/:eventId/result-:resultType',
+    '/reading/batch/:batchId/events/:eventId/save-opinion',
     (req, res) => {
-      const { batchId, eventId, resultType } = req.params
+      const { batchId, eventId } = req.params
       const data = req.session.data
       const currentUserId = data.currentUser.id
       const formData = data.imageReadingTemp
+
+      if (!formData || !formData.result) {
+        console.log('No result in imageReadingTemp - cannot save')
+        return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
+      }
+
       delete data.imageReadingTemp
+      delete res.locals.data?.imageReadingTemp
 
       // Find the event
       const event = data.events.find((e) => e.id === eventId)
@@ -737,9 +771,8 @@ module.exports = (router) => {
         return res.redirect(`/reading/batch/${batchId}`)
       }
 
-      // Create and save the reading result
+      // Create and save the reading
       const readResult = {
-        result: snakeCase(resultType),
         readerId: currentUserId,
         readerType: data.currentUser.role,
         ...formData,
@@ -763,37 +796,64 @@ module.exports = (router) => {
     }
   )
 
-  // Handle reading assessment submissions within a batch
+  // Handle opinion form submission - stores result and routes to appropriate next step
   router.post(
-    '/reading/batch/:batchId/events/:eventId/assessment-answer',
+    '/reading/batch/:batchId/events/:eventId/opinion-answer',
     (req, res) => {
       const { batchId, eventId } = req.params
-      const { result } = req.body
       const data = req.session.data
+
+      // Debug logging
+      console.log('opinion-answer received')
+      console.log(
+        'imageReadingTemp:',
+        JSON.stringify(data.imageReadingTemp, null, 2)
+      )
+
+      // Result and previousResult are auto-saved to data.imageReadingTemp via form binding
+      const result = data.imageReadingTemp?.result
+      const previousResult = data.imageReadingTemp?.previousResult
+
+      console.log('result:', result)
+      console.log('previousResult:', previousResult)
 
       const event = data.events.find((e) => e.id === eventId)
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
 
-      const currentUserId = data.currentUser.id
-      const existingResult = event?.imageReading?.reads?.[currentUserId]?.result
-      const updatedResult = data.imageReadingTemp?.updatedResult
+      // Ensure eventId is set for tracking
+      if (!data.imageReadingTemp) {
+        data.imageReadingTemp = { eventId: eventId }
+      }
+      data.imageReadingTemp.eventId = eventId
 
-      // No change made, so go to next person in batch
-      if (existingResult && existingResult === updatedResult) {
-        const progress = getBatchReadingProgress(data, batchId, eventId)
+      // Normalise normal_with_details to normal (it just goes to details page first)
+      const normalisedResult =
+        result === 'normal_with_details' ? 'normal' : result
+      if (result === 'normal_with_details') {
+        data.imageReadingTemp.result = normalisedResult
+      }
 
-        // Redirect to next participant if available
-        if (progress.hasNextUserReadable) {
-          return res.redirect(
-            `/reading/batch/${batchId}/events/${progress.nextUserReadableId}`
-          )
-        } else {
-          return res.redirect(`/reading/batch/${batchId}`)
+      // Clean up data from other opinion types when changing opinion
+      if (previousResult && previousResult !== normalisedResult) {
+        console.log(
+          `Opinion changed from ${previousResult} to ${normalisedResult} - cleaning up`
+        )
+        // Changing away from technical_recall - clear views to retake
+        if (previousResult === 'technical_recall') {
+          delete data.imageReadingTemp.whichViews
+        }
+        // Changing away from recall_for_assessment - clear breast assessments and annotations
+        if (previousResult === 'recall_for_assessment') {
+          delete data.imageReadingTemp.left
+          delete data.imageReadingTemp.right
         }
       }
 
+      // Clean up previousResult - only needed for change detection
+      delete data.imageReadingTemp.previousResult
+
       // Handle different result types
-      switch (result || updatedResult) {
+      switch (result) {
         case 'normal':
           if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
@@ -802,9 +862,14 @@ module.exports = (router) => {
           } else {
             return res.redirect(
               307,
-              `/reading/batch/${batchId}/events/${eventId}/result-normal`
+              `/reading/batch/${batchId}/events/${eventId}/save-opinion`
             )
           }
+        case 'normal_with_details':
+          // Result already set to 'normal' above - go to details page
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/normal-details`
+          )
         case 'technical_recall':
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/recall-reason`
