@@ -6,14 +6,9 @@
   <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
     <div class="nhsuk-grid-column-two-thirds">
       {% if progress.hasPreviousUserReadable %}
-        {# If user has already read previous case, link to review page; otherwise to event index #}
-        {% if progress.previousUserHasRead %}
-          {% set previousUrl = "/reading/batch/" ~ batchId ~ "/events/" ~ progress.previousUserReadableId ~ "/review" %}
-        {% else %}
-          {% set previousUrl = "/reading/batch/" ~ batchId ~ "/events/" ~ progress.previousUserReadableId %}
-        {% endif %}
+        {# Link to event base URL - route handles redirect to existing-read or opinion #}
         {{ backLink({
-          href: previousUrl,
+          href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.previousUserReadableId,
           text: "Previous case"
         }) }}
       {% endif %}
@@ -30,7 +25,7 @@
           {# We already have a reading so don't need to skip #}
           {{ appForwardLink({
             href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.nextUserReadableId,
-            text: "Next to read"
+            text: "Next case"
           }) }}
         {% endif %}
       </div>

@@ -8,6 +8,7 @@ const {
   getReadingProgress,
   hasReads,
   canUserReadEvent,
+  userHasReadEvent,
   writeReading,
   createReadingBatch,
   getFirstReadableEventInBatch,
@@ -337,15 +338,30 @@ module.exports = (router) => {
   })
 
   // Route for event reading within a batch
-  // Todo: should we make deleting happen on an explicit /start route?
+  // Redirects to existing-read if user has already read, otherwise to opinion
   router.get('/reading/batch/:batchId/events/:eventId', (req, res) => {
     const data = req.session.data
+    const { batchId, eventId } = req.params
+    const currentUserId = data.currentUser?.id
+
+    // Find the event
+    const event = data.events.find((e) => e.id === eventId)
+    if (!event) {
+      return res.redirect(`/reading/batch/${batchId}`)
+    }
+
+    // Check if user has already read this event
+    if (userHasReadEvent(event, currentUserId)) {
+      return res.redirect(
+        `/reading/batch/${batchId}/events/${eventId}/existing-read`
+      )
+    }
 
     // Delete temporary data from previous steps
     delete data.imageReadingTemp
 
     res.redirect(
-      `/reading/batch/${req.params.batchId}/events/${req.params.eventId}/opinion`
+      `/reading/batch/${batchId}/events/${eventId}/opinion`
     )
   })
 
@@ -385,7 +401,8 @@ module.exports = (router) => {
         'annotation',
         'confirm-abnormal',
         'recommended-assessment',
-        'review'
+        'review',
+        'existing-read'
       ]
 
       if (workflowSteps.includes(step)) {

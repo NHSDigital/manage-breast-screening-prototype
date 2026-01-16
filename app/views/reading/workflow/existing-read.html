@@ -1,0 +1,48 @@
+{# app/views/reading/workflow/existing-read.html #}
+{# View a saved read with option to change it #}
+
+{% extends 'layout-reading.html' %}
+
+{% set pageHeading = "Your opinion" %}
+{% set showWorkflowNav = true %}
+
+{% block pageContent %}
+
+
+
+  <span class="nhsuk-caption-l">
+    {{ participant | getFullName }}
+  </span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {# Read summary card #}
+  {% set readSummaryHtml %}
+    {% set read = event | getReadForUser %}
+    {% set allowEdits = true %}
+    {% set changeOpinionUrl = "./opinion" %}
+    {% include "_includes/summary-lists/read-summary.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Your assessment",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: readSummaryHtml
+  }) }}
+
+
+  {# Medical summary #}
+  {% set allowEdits = false %}
+  {% set medicalSummaryHtml %}
+    {% include "_includes/summary-lists/medical-info-summary.njk" %}
+  {% endset %}
+
+  {{ card({
+    classes: "nhsuk-u-margin-top-4",
+    heading: "Medical summary",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalSummaryHtml
+  }) }}
+
+{% endblock %}

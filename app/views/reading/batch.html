@@ -138,7 +138,7 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
-                <a href="{{ readingHref if event | canUserReadEvent else '#' }}">{{ event.participant | getFullName }}</a>
+                <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 {% if event.medicalInformation.symptoms | length %}
                 <br>
