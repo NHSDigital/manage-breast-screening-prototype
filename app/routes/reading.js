@@ -296,6 +296,7 @@ module.exports = (router) => {
     const progress = getBatchReadingProgress(data, batchId, eventId)
 
     // Set up locals for templates
+    res.locals.isReadingWorkflow = true
     res.locals.batch = batch
     res.locals.eventData = { clinic, event, participant, unit, location }
     res.locals.clinic = clinic
@@ -319,7 +320,7 @@ module.exports = (router) => {
     delete data.imageReadingTemp
 
     res.redirect(
-      `/reading/batch/${req.params.batchId}/events/${req.params.eventId}/medical-information`
+      `/reading/batch/${req.params.batchId}/events/${req.params.eventId}/opinion`
     )
   })
 
@@ -348,26 +349,24 @@ module.exports = (router) => {
     '/reading/batch/:batchId/events/:eventId/:step',
     (req, res, next) => {
       const { batchId, eventId, step } = req.params
-      const validSteps = [
-        'assessment',
+
+      // Workflow steps (in reading/workflow/ folder)
+      const workflowSteps = [
+        'opinion',
         'normal-details',
-        'participant-details',
-        'medical-information',
-        'images',
         'confirm-normal',
         'recall-reason',
         'recall-for-assessment-details',
         'annotation',
-        'awaiting-annotations',
         'confirm-abnormal',
         'recommended-assessment'
       ]
 
-      if (!validSteps.includes(step)) {
-        return next()
+      if (workflowSteps.includes(step)) {
+        return res.render(`reading/workflow/${step}`)
       }
 
-      res.render(`reading/${step}`)
+      return next()
     }
   )
 

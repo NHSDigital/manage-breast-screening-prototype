@@ -1,0 +1,219 @@
+{# app/views/reading/workflow/opinion.html #}
+{# Main reading opinion page - entry point for reading workflow #}
+
+{% extends 'layout-reading.html' %}
+
+{% set pageHeading = "Review images" %}
+{% set gridColumn = "none" %}
+{% set showWorkflowNav = true %}
+
+{% block pageContent %}
+
+  {# Get existing read data for this user #}
+  {% set existingRead = event | getReadForUser %}
+  {% set existingResult = existingRead.result %}
+  {% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
+
+  {% set opinionHeading = "Review images" %}
+  {% if existingResult %}
+    {% set opinionHeading = "Update review" %}
+  {% endif %}
+
+  {# Page header with status tags #}
+  <div class="nhsuk-grid-row app-header-with-status">
+    <div class="nhsuk-grid-column-two-thirds">
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+      <h1 class="nhsuk-heading-l js-image-count">
+        {{ opinionHeading }}
+      </h1>
+    </div>
+    <div class="nhsuk-grid-column-one-third app-header-with-status__status-tag">
+
+      {# Urgency tags #}
+      {% set eventAge = event.timing.startTime | daysSince %}
+      {% if eventAge >= data.config.reading.priorityThreshold %}
+        <div class="nhsuk-u-margin-bottom-2">
+          {% if eventAge >= data.config.reading.urgentThreshold %}
+            {{ "Urgent" | toTag }}
+          {% elseif eventAge >= data.config.reading.priorityThreshold %}
+            {{ "Due soon" | toTag }}
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {# First/second read tag #}
+      {% set readCount = event.readingMetadata.readCount %}
+      {% if existingResult %}
+        {% if readCount == 1 %}
+          {{ "First read" | toTag }}
+        {% else %}
+          {{ "Second read" | toTag }}
+        {% endif %}
+      {% else %}
+        {% if readCount == 0 %}
+          {{ "First read" | toTag }}
+        {% else %}
+          {{ "Second read" | toTag }}
+        {% endif %}
+      {% endif %}
+
+      {# Requested images tag #}
+      {% if event.hasRequestedImages | falsify %}
+        {% set requestedWithDateHtml %}
+          {{ "Images requested" | toTag | safe }}<br>
+          Requested 10 Feb 2025
+        {% endset %}
+        {{ requestedWithDateHtml | safe }}
+      {% endif %}
+    </div>
+  </div>
+
+  {# Symptoms warning #}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      {% set symptoms = event.medicalInformation.symptoms %}
+      {% include "symptomsWarningCard.njk" %}
+    </div>
+  </div>
+
+  {# Opinion form #}
+  {% set questionText = "What is your opinion of these images?" %}
+
+  <form action="./assessment-answer" method="POST">
+
+    {% if existingResult %}
+      {# Show radios when updating an existing result #}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-two-thirds">
+          {{ radios({
+            name: "imageReadingTemp[updatedResult]",
+            fieldset: {
+              legend: {
+                text: questionText,
+                classes: "nhsuk-fieldset__legend--m",
+                isPageHeading: false
+              }
+            },
+            items: [
+              {
+                value: "normal",
+                text: "Normal"
+              },
+              {
+                value: "technical_recall",
+                text: "Technical recall"
+              },
+              {
+                value: "recall_for_assessment",
+                text: "Recall for assessment"
+              }
+            ],
+            value: existingResult or data.imageReadingTemp.result
+          } | decorateAttributes(data, "imageReadingTemp.result" )) }}
+
+          {{ button({
+            text: "Update opinion"
+          }) }}
+        </div>
+      </div>
+
+    {% else %}
+      {# Show buttons for initial assessment #}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-two-thirds">
+          <h2>{{ questionText }}</h2>
+        </div>
+      </div>
+
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-one-third">
+          <div class="form-group">
+            {% if hasSymptoms %}
+              {{ button({
+                text: "Normal, and add details",
+                href: "./normal-details",
+                classes: "app-button-full-width nhsuk-u-margin-bottom-3"
+              }) }}
+            {% else %}
+              {{ button({
+                text: "Normal",
+                value: "normal",
+                name: "result",
+                classes: "app-button-full-width nhsuk-u-margin-bottom-3"
+              }) }}
+
+              <p class="nhsuk-u-margin-bottom-0">
+                <a href="./normal-details" class="nhsuk-link--no-visited-state">
+                  Normal, but add details
+                </a>
+              </p>
+            {% endif %}
+          </div>
+        </div>
+        <div class="nhsuk-grid-column-one-third">
+          <div class="form-group">
+            {{ button({
+              text: "Technical recall",
+              classes: "nhsuk-button--secondary app-button-full-width",
+              href: "./recall-reason"
+            }) }}
+          </div>
+        </div>
+        <div class="nhsuk-grid-column-one-third">
+          <div class="form-group">
+            {{ button({
+              text: "Recall for assessment",
+              classes: "nhsuk-button--warning app-button-full-width",
+              href: "./recall-for-assessment-details"
+            }) }}
+          </div>
+        </div>
+      </div>
+
+    {% endif %}
+
+    {# Incomplete mammography warning #}
+    {% if event.mammogramData.isIncompleteMammography == 'yes' %}
+      {% set incompleteMammographyHtml %}
+        <p>
+          <b>Incomplete mammography</b>
+          {% if event.mammogramData.incompleteMammographyReason %}
+            <br>Reason: {{ event.mammogramData.incompleteMammographyReason }}
+          {% endif %}
+          {% if event.mammogramData.incompleteMammographyReasonDetails %}
+            <br>Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}
+          {% endif %}
+          {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
+            <br>Follow-up: {{ event.mammogramData.incompleteMammographyFollowUpAppointment }}
+          {% endif %}
+        </p>
+      {% endset %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-two-thirds">
+          {{ insetText({
+            html: incompleteMammographyHtml
+          }) }}
+        </div>
+      </div>
+    {% endif %}
+
+  </form>
+
+{# Medical summary #}
+  {# <hr class="nhsuk-section-break nhsuk-section-break--l nhsuk-section-break--visible"> #}
+
+  {% set allowEdits = false %}
+  {% set medicalSummaryHtml %}
+    {% include "_includes/summary-lists/medical-info-summary.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Medical summary",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalSummaryHtml
+  }) }}
+
+{% endblock %}
