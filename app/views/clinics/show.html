@@ -1,5 +1,5 @@
 {% extends 'layout-app.html' %}
-{% set pageHeading = "Today’s clinics" %}
+{% set pageHeading = "Screening clinic - " ~ clinic.clinicCode %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -30,10 +30,13 @@
       {# "Screening mixed risk clinic" #}
       <span class="nhsuk-caption-l">{{ unit.name }}</span>
       {# {{ clinicRiskType | sentenceCase }} risk #}
-      {{ clinic.clinicType | sentenceCase }} clinic
+      {{ pageHeading }}
     </h1>
     <div class="app-header-with-status__status-tag">
       {{ clinic.status | toTag }}
+      <p class="nhsuk-u-margin-top-2">
+        <a href="/reports/{{ clinic.id }}">View clinic report</a>
+      </p>
     </div>
 
   </div>
@@ -43,7 +46,9 @@
 
 {# Clinic time and date #}
 {# 9am to midday - 31 December 2024 #}
-<p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
+<p>
+  {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
+</p>
 
 {% set secondaryNavItems = [] %}
 
