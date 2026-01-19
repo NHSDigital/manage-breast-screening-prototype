@@ -360,9 +360,7 @@ module.exports = (router) => {
     // Delete temporary data from previous steps
     delete data.imageReadingTemp
 
-    res.redirect(
-      `/reading/batch/${batchId}/events/${eventId}/opinion`
-    )
+    res.redirect(`/reading/batch/${batchId}/events/${eventId}/opinion`)
   })
 
   // Handle skipping an event in a batch
@@ -396,7 +394,7 @@ module.exports = (router) => {
         'opinion',
         'normal-details',
         'confirm-normal',
-        'recall-reason',
+        'technical-recall',
         'recall-for-assessment-details',
         'annotation',
         'confirm-abnormal',
@@ -889,7 +887,7 @@ module.exports = (router) => {
           )
         case 'technical_recall':
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/recall-reason`
+            `/reading/batch/${batchId}/events/${eventId}/technical-recall`
           )
         case 'recall_for_assessment':
           return res.redirect(
