@@ -762,6 +762,50 @@ module.exports = (router) => {
 
   // Annotations end
 
+  // Handle technical recall form submission
+  // Cleans up the data structure to only include selected views, then redirects to review
+  router.post(
+    '/reading/batch/:batchId/events/:eventId/technical-recall-answer',
+    (req, res) => {
+      const { batchId, eventId } = req.params
+      const data = req.session.data
+
+      // Form binding creates:
+      // - imageReadingTemp.technicalRecall.selectedViews = ['RMLO', 'LCC'] (checked boxes)
+      // - imageReadingTemp.technicalRecall.views.RMLO = { reason: '...', additionalDetails: '...' }
+      // - imageReadingTemp.technicalRecall.views.LMLO = { reason: '', additionalDetails: '' } (unchecked but in DOM)
+      //
+      // We need to filter views to only include those in selectedViews
+
+      const techRecall = data.imageReadingTemp?.technicalRecall || {}
+      let selectedViews = techRecall.selectedViews || []
+      const allViewData = techRecall.views || {}
+
+      // Normalise to array (single selection comes as string)
+      if (typeof selectedViews === 'string') {
+        selectedViews = [selectedViews]
+      }
+
+      // Build clean views object with only selected views
+      const cleanViews = {}
+      selectedViews.forEach((viewCode) => {
+        if (allViewData[viewCode]) {
+          cleanViews[viewCode] = {
+            reason: allViewData[viewCode].reason || '',
+            additionalDetails: allViewData[viewCode].additionalDetails || ''
+          }
+        }
+      })
+
+      // Replace with clean structure (remove selectedViews helper array)
+      data.imageReadingTemp.technicalRecall = {
+        views: cleanViews
+      }
+
+      res.redirect(`/reading/batch/${batchId}/events/${eventId}/review`)
+    }
+  )
+
   // Handle recording a reading result
   // Save the reading opinion - reads opinion from imageReadingTemp.result
   router.post(
@@ -853,9 +897,9 @@ module.exports = (router) => {
         console.log(
           `Opinion changed from ${previousResult} to ${normalisedResult} - cleaning up`
         )
-        // Changing away from technical_recall - clear views to retake
+        // Changing away from technical_recall - clear technical recall data
         if (previousResult === 'technical_recall') {
-          delete data.imageReadingTemp.whichViews
+          delete data.imageReadingTemp.technicalRecall
         }
         // Changing away from recall_for_assessment - clear breast assessments and annotations
         if (previousResult === 'recall_for_assessment') {

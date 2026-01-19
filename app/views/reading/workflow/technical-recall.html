@@ -1,4 +1,11 @@
 {# /app/views/reading/workflow/technical-recall.html #}
+{#
+  Technical recall data structure:
+  imageReadingTemp.technicalRecall.views = {
+    RMLO: { reason: 'Breast positioning', additionalDetails: '...' },
+    LCC: { reason: 'Image blurred', additionalDetails: '' }
+  }
+#}
 
 {% extends 'layout-reading.html' %}
 
@@ -6,10 +13,8 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './review' %}
-
-
-{% set backLink = value %}
+{# POST to route handler that cleans up unselected views before redirecting to review #}
+{% set formAction = './technical-recall-answer' %}
 
 {% block pageContent %}
 
@@ -21,51 +26,8 @@
     {{ pageHeading }}
   </h1>
 
-
-  {% set checkboxItems = [] %}
-
-  {% set mammogramImages = [] %}
-
+  {# Standard views - could be dynamic based on participant/event in future #}
   {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
-
-  {% for view in views %}
-    {% set mammogramImages = mammogramImages | push({
-      value: view | lower,
-      text: view
-    }) %}
-  {% endfor %}
-
-  {# We want a checkbox per image. Mammogram data is stored in a nested array by view, so
-  loop through the views, then loop through the images, and create a new array of images #}
-  {# {% for viewName, viewData in event.mammogramData.views %}
-    {% for image in viewData.images %}
-      {% set mammogramImages = mammogramImages | push({
-        value: viewData.viewShortWithSide + "-" + image.accessionNumber,
-        text: viewData.viewShortWithSide + " (" + image.accessionNumber + ")"
-      }) %}
-    {% endfor %}
-  {% endfor %} #}
-
-  {# {{ mammogramImages | log("Mammograms") }} #}
-
-  {# [
-    {
-      value: "rmlo",
-      text: "RMLO (right mediolateral oblique)"
-    },
-    {
-      value: "lmlo",
-      text: "LMLO (left mediolateral oblique)"
-    },
-    {
-      value: "rcc",
-      text: "RCC (right craniocaudal)"
-    },
-    {
-      value: "lcc",
-      text: "LCC (left craniocaudal)"
-    }
-  ] #}
 
   {% set recallReasons = [
     'Breast positioning',
@@ -74,15 +36,15 @@
     'Image blurred',
     'Image missing',
     'Other reason'
-    ] %}
+  ] %}
 
+  {# Build select items for reason dropdown #}
   {% set selectItems = [{
-    value: 'default',
+    value: '',
     text: "Select a reason",
     disabled: true,
     selected: true
   }] %}
-
   {% for item in recallReasons %}
     {% set selectItems = selectItems | push({
       value: item,
@@ -90,11 +52,18 @@
     }) %}
   {% endfor %}
 
-  {% for view in mammogramImages %}
-    {% set selectHtml %}
+  {# Build checkbox items with conditional fields for each view #}
+  {% set checkboxItems = [] %}
+  {% set currentTechRecall = data.imageReadingTemp.technicalRecall.views | default({}) %}
+
+  {% for viewCode in views %}
+    {% set viewData = currentTechRecall[viewCode] | default({}) %}
+    
+    {% set conditionalHtml %}
       {{ select({
-        id: "recallReason-" + loop.index,
-        name: "imageReadingTemp[recallReason-" + loop.index + "]",
+        id: "technicalRecall-" + viewCode + "-reason",
+        name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][reason]",
+        value: viewData.reason,
         label: {
           text: "Reason for recall"
         },
@@ -102,51 +71,38 @@
       }) }}
 
       {{ input({
-        name: "imageReadingTemp[recallReasonAdditional-" + loop.index + "]",
-        id: "recallReasonAdditional-" + loop.index,
+        id: "technicalRecall-" + viewCode + "-additionalDetails",
+        name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
+        value: viewData.additionalDetails,
         label: {
           text: "Additional details (optional)",
-          _classes: "nhsuk-label--s"
+          classes: "nhsuk-label--s"
         }
       }) }}
     {% endset %}
+
     {% set checkboxItems = checkboxItems | push({
-      value: view.value,
-      text: view.text,
+      value: viewCode,
+      text: viewCode,
+      checked: viewData.reason,
       conditional: {
-        html: selectHtml
+        html: conditionalHtml
       }
     }) %}
   {% endfor %}
 
-  {# {% set checkboxItems = checkboxItems | push({divider: "or"}) %}
-
-  {% set checkboxItems = checkboxItems | push({
-    value: "other",
-    text: "Another reason"
-  }) %} #}
-
   {{ checkboxes({
-    idPrefix: "whichViews",
-    name: "imageReadingTemp[whichViews]",
+    idPrefix: "technicalRecall-selectedViews",
+    name: "imageReadingTemp[technicalRecall][selectedViews]",
     fieldset: {
       legend: {
-        text: "Which views are required?",
+        text: "Which views need to be retaken?",
         classes: "nhsuk-fieldset__legend--m",
         isPageHeading: false
       }
     },
     items: checkboxItems
   }) }}
-
-  {# {{ textarea({
-    name: "additionalNotes",
-    id: "additionalNotes",
-    label: {
-      text: "Additional notes",
-      classes: "nhsuk-label--m"
-    }
-  }) }} #}
 
   {{ button({
     text: "Continue"

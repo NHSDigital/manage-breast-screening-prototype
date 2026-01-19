@@ -7,6 +7,7 @@
     - read: object - the read data (defaults to data.imageReadingTemp)
     - allowEdits: boolean - whether to show change links (default: false)
     - changeOpinionUrl: string - URL for change opinion link
+    - changeTechnicalRecallUrl: string - URL for changing technical recall details
 #}
 
 {% set read = read if read is defined else data.imageReadingTemp %}
@@ -93,30 +94,39 @@
 
 {# Technical recall - views to retake #}
 {% if read.result == 'technical_recall' %}
-  {% set whichViews = read.whichViews %}
-  {% if whichViews %}
-    {# Handle both array and single value #}
-    {% if whichViews.join %}
-      {% set viewsText = whichViews | join(', ') | upper %}
-    {% else %}
-      {% set viewsText = whichViews | upper %}
-    {% endif %}
+  {% set techRecallViews = read.technicalRecall.views | default({}) %}
+  
+  {% if techRecallViews | length > 0 %}
+    {# Build display text for each view with reason #}
+    {% set viewsHtml %}
+      <ul class="nhsuk-list">
+        {% for viewCode, viewData in techRecallViews %}
+          <li>
+            <strong>{{ viewCode }}</strong>
+            {%- if viewData.reason %}: {{ viewData.reason }}{% endif %}
+            {%- if viewData.additionalDetails %} – {{ viewData.additionalDetails }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endset %}
+
+    {% set technicalRecallChangeUrl = changeTechnicalRecallUrl if changeTechnicalRecallUrl else changeOpinionUrl %}
     {% set rows = rows | push({
       key: {
         text: "Views to retake"
       },
       value: {
-        text: viewsText
+        html: viewsHtml
       },
       actions: {
         items: [
           {
-            href: changeOpinionUrl,
+            href: technicalRecallChangeUrl,
             text: "Change",
             visuallyHiddenText: "views"
           }
         ]
-      } if allowEdits and changeOpinionUrl
+      } if allowEdits and technicalRecallChangeUrl
     }) %}
   {% endif %}
 {% endif %}
