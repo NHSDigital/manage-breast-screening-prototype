@@ -110,7 +110,13 @@
             items: [
               {
                 value: "normal",
-                text: "Normal"
+                text: "Normal",
+                checked: currentResult == 'normal' and not existingRead.normalDetails
+              },
+              {
+                value: "normal_with_details",
+                text: "Normal, but add details",
+                checked: (currentResult == 'normal' and existingRead.normalDetails) or currentResult == 'normal_with_details'
               },
               {
                 value: "technical_recall",
