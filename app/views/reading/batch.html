@@ -144,8 +144,16 @@
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
-                {% if (data.settings.reading.showRepeatsTag | falsify) and event.mammogramData.metadata.hasRepeat %}
-                  {{ "Has repeat" | toTag }}
+                {% if (data.settings.reading.showDebugTags | falsify) %}
+                  {% if event.mammogramData.metadata.hasRepeat %}
+                    <br>{{ "Has repeat" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+                     <br>{{ "Imperfect" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+                     <br>{{ "Incomplete" | toTag }}
+                  {% endif %}
                 {% endif %}
               </td>
               <td>
@@ -222,8 +230,16 @@
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
-                {% if (data.settings.reading.showRepeatsTag | falsify) and event.mammogramData.metadata.hasRepeat %}
-                  {{ "Has repeat" | toTag }}
+                {% if (data.settings.reading.showDebugTags | falsify) %}
+                  {% if event.mammogramData.metadata.hasRepeat %}
+                    <br>{{ "Has repeat" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+                     <br>{{ "Imperfect" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+                     <br>{{ "Incomplete" | toTag }}
+                  {% endif %}
                 {% endif %}
               </td>
               <td>

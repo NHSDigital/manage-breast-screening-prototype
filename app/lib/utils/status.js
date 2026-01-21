@@ -257,6 +257,8 @@ const getStatusTagColour = (status) => {
     'partial_second_read': 'blue',
     'mixed_reads': 'yellow',
     'mixed_with_arbitration': 'yellow',
+    'imperfect': 'orange',
+    'incomplete': 'orange',
 
     'no_events': 'grey',
 

@@ -226,11 +226,11 @@ const generateMammogramImages = ({
     if (reason === 'Other' || Math.random() < 0.3) {
       incompleteMammographyData.incompleteMammographyReasonDetails =
         faker.helpers.arrayElement([
-          'Participant became unwell during the appointment.',
-          'Equipment malfunction prevented completion.',
-          'Participant had to leave urgently.',
-          'Severe pain prevented further imaging.',
-          'Implants made positioning very difficult.'
+          'Participant became unwell during the appointment',
+          'Equipment malfunction prevented completion',
+          'Participant had to leave urgently',
+          'Severe pain prevented further imaging',
+          'Implants made positioning very difficult'
         ])
     }
 
@@ -238,11 +238,11 @@ const generateMammogramImages = ({
     if (followUp === "Yes, record as 'to be recalled'") {
       incompleteMammographyData.incompleteMammographyFollowUpAppointmentDetails =
         faker.helpers.arrayElement([
-          'Participant has a shoulder injury that should heal in 4-6 weeks.',
-          'Recent surgery - needs 3 months recovery before rebooking.',
-          'Mobility issues - suggest booking at hospital site with better accessibility.',
-          'Chest infection - rebook when recovered.',
-          'Arm in a cast - expected to be removed in 2 weeks.'
+          'Participant has a shoulder injury that should heal in 4-6 week.',
+          'Recent surgery - needs 3 months recovery before rebooking',
+          'Mobility issues - suggest booking at hospital site with better accessibility',
+          'Chest infection - rebook when recovered',
+          'Arm in a cast - expected to be removed in 2 weeks'
         ])
     }
   }
@@ -259,18 +259,18 @@ const generateMammogramImages = ({
   if (isSeedData) {
     if (imperfectData.isImperfectButBestPossible) {
       notesData.notesForReader = faker.helpers.arrayElement([
-        'Patient found positioning difficult due to shoulder pain.',
-        'Kyphosis made positioning challenging.',
-        'Ideally would have got more tissue but patient unable to tolerate.',
-        'Skin folds present due to weight loss.',
-        'Best possible images achieved.'
+        'Patient found positioning difficult due to shoulder pain',
+        'Kyphosis made positioning challenging',
+        'Ideally would have got more tissue but patient unable to tolerate',
+        'Skin folds present due to weight loss',
+        'Best possible images achieved'
       ])
     } else if (Math.random() < 0.05) {
       notesData.notesForReader = faker.helpers.arrayElement([
-        'Mole on right breast.',
-        'Pacemaker present.',
-        'Previous surgery scars noted.',
-        'Patient anxious but compliant.'
+        'Mole on right breast',
+        'Pacemaker present',
+        'Previous surgery scars noted',
+        'Patient anxious but compliant'
       ])
     }
   }

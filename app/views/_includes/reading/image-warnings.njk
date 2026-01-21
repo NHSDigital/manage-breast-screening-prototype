@@ -1,0 +1,78 @@
+{# app/views/_includes/reading/image-warnings.njk #}
+{# Displays warnings and notes for the reader inside an inset text component #}
+
+{% set warningsHtml = "" %}
+
+{# 1. Imperfect #}
+{% if event.mammogramData.isImperfectButBestPossible and event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+  {% set warningsHtml %}
+    {{ warningsHtml | safe }}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Image quality</h3>
+    <p>Imperfect, but best possible images</p>
+  {% endset %}
+{% endif %}
+
+{# 2. Incomplete #}
+{% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
+  {% set incompleteDetails %}
+    {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
+      {% if event.mammogramData.incompleteMammographyReasons | length == 1 %}
+        <p class="nhsuk-u-margin-bottom-2">Reason: {{ event.mammogramData.incompleteMammographyReasons[0] | lower }}</p>
+      {% else %}
+        <p class="nhsuk-u-margin-bottom-1">{{ "Reason" | pluralise(event.mammogramData.incompleteMammographyReasons | length) }}:</p>
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
+          {% for reason in event.mammogramData.incompleteMammographyReasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endif %}
+    {% if event.mammogramData.incompleteMammographyReasonDetails %}
+      <p class="nhsuk-u-margin-bottom-2">Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}</p>
+    {% endif %}
+    {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
+      {% set followUpValue = event.mammogramData.incompleteMammographyFollowUpAppointment %}
+      {% if followUpValue.startsWith("No") %}
+        {{ tag({
+          text: "Partial mammography",
+          classes: "nhsuk-tag--orange nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+        }) }}
+      {% else %}
+        {{ tag({
+          text: "Recall requested",
+          classes: "nhsuk-tag--orange nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+        }) }}
+        {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
+          <p class="nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  {% endset %}
+
+  {% set warningsHtml %}
+    {{ warningsHtml | safe }}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Not all mammograms taken</h3>
+    {{ incompleteDetails | safe }}
+  {% endset %}
+{% endif %}
+
+{# 3. Notes for reader #}
+{% if event.mammogramData.notesForReader %}
+  {% set warningsHtml %}
+    {{ warningsHtml | safe }}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Notes for reader</h3>
+    <p>{{ event.mammogramData.notesForReader }}</p>
+  {% endset %}
+{% endif %}
+
+{# Render inInset Text if content exists #}
+{% if warningsHtml %}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      {{ insetText({
+        html: warningsHtml,
+        classes: "nhsuk-u-margin-top-6"
+      }) }}
+    </div>
+  </div>
+{% endif %}
