@@ -12,17 +12,15 @@
         <h2>Troubleshoot issues with images</h2>
 
         {% call details({
-          summaryText: "Correct images are not displaying"
+          summaryText: "No images (or incorrect images) are displaying"
         }) %}
 
         <p>Follow these steps if you are seeing no images, too few, too many, or images from a different participant.</p>
 
           <ol>
             <li>Check the correct participant has been selected on the mammogram machine</li>
-              <ul>
-                <li>Change the participant details if necessary</li>
-              </ul>
-            <li>Wait 15 seconds for images to appear</li>
+            <li>Change the participant details if necessary</li>
+            <li>Wait 15 seconds for images to update</li>
             <li>If they do not, resend images to prompt the mammogram machine to refresh</li>
           </ol>
 
@@ -44,9 +42,7 @@
         }) %}
           <ol>
             <li>Check the correct views have been selected on the mammogram machine</li>
-              <ul>
-                <li>Change any incorrect labels</li>
-              </ul>
+            <li>Change any incorrect labels</li>
             <li>Wait 15 seconds for updated information to appear</li>
             <li>If it does not, resend images to prompt the mammogram machine to refresh details</li>
           </ol>
