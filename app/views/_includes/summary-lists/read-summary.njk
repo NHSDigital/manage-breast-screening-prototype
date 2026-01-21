@@ -132,30 +132,53 @@
 {# Recall for assessment details #}
 {% if read.result == 'recall_for_assessment' %}
   
-  {# Left breast assessment #}
-  {% if read.left and read.left.breastAssessment %}
-    {% set rows = rows | push({
-      key: {
-        text: "Left breast"
-      },
-      value: {
-        text: read.left.breastAssessment | capitalize
-      }
-    }) %}
-  {% endif %}
-  
-  {# Right breast assessment #}
-  {% if read.right and read.right.breastAssessment %}
-    {% set rows = rows | push({
-      key: {
-        text: "Right breast"
-      },
-      value: {
-        text: read.right.breastAssessment | capitalize
-      }
-    }) %}
-  {% endif %}
-  
+  {% set breastAssessmentHtml %}
+    <div class="nhsuk-grid-row nhsuk-u-margin-bottom-0">
+      {% for breastSide in ["right", "left"] %}
+        {% set breastData = read[breastSide] %}
+        {% set sideLabel = breastSide | capitalize %}
+        <div class="nhsuk-grid-column-one-half nhsuk-u-margin-bottom-2">
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">{{ sideLabel }} breast</p>
+          {% if breastData and breastData.breastAssessment %}
+            {% set assessmentKey = breastData.breastAssessment | lower %}
+            {% set tagStatusMap = {
+              "normal": "normal",
+              "clinical": "clinical_recall",
+              "abnormal": "abnormal"
+            } %}
+            {% set tagStatus = tagStatusMap[assessmentKey] | default(breastData.breastAssessment) %}
+            <div class="nhsuk-u-margin-bottom-1">
+              {{ tagStatus | toTag }}
+            </div>
+            {% if breastData.comment %}
+              <p class="nhsuk-u-margin-bottom-0">Comment: {{ breastData.comment }}</p>
+            {% endif %}
+          {% else %}
+            <p class="nhsuk-u-secondary-text-color nhsuk-u-margin-bottom-0">Not recorded</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endset %}
+
+  {% set rows = rows | push({
+    key: {
+      text: "Detailed opinion"
+    },
+    value: {
+      html: breastAssessmentHtml
+    },
+    actions: {
+      items: [
+        {
+          href: "./recall-for-assessment-details",
+          text: "Change",
+          visuallyHiddenText: "detailed opinion"
+        }
+      ]
+    } if allowEdits
+  }) %}
+
   {# Annotations summary #}
   {% set rows = rows | push({
     key: {
@@ -163,7 +186,16 @@
     },
     value: {
       html: annotationSummaryHtml
-    }
+    },
+    actions: {
+      items: [
+        {
+          href: "./recall-for-assessment-details",
+          text: "Change",
+          visuallyHiddenText: "annotations"
+        }
+      ]
+    } if allowEdits
   }) %}
   
 {% endif %}

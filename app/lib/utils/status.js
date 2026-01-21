@@ -232,6 +232,8 @@ const getStatusTagColour = (status) => {
     'normal': 'green',
     'recall_for_assessment': 'red',
     'technical_recall': 'orange',
+    'clinical_recall': 'yellow',
+    'abnormal': 'red',
 
     // Image status
     'available': 'green',
@@ -263,9 +265,6 @@ const getStatusTagColour = (status) => {
     'no_events': 'grey',
 
     // Outcomes
-    'normal': 'green',
-    'recall_for_assessment': 'red',
-    'technical_recall': 'grey',
     'arbitration': 'orange',
     'completed_(blind)': 'grey',
 
@@ -297,7 +296,13 @@ const getStatusText = (status) => {
     event_did_not_attend: 'Did not attend',
     event_attended_not_screened: 'Attended not screened',
     event_cancelled: 'Cancelled',
-    event_rescheduled: 'Reschedule requested'
+    event_rescheduled: 'Reschedule requested',
+
+    // Image reading opinions
+    technical_recall: 'Technical recall',
+    clinical_recall: 'Clinical recall',
+    recall_for_assessment: 'Recall for assessment',
+    abnormal: 'Abnormal'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',
