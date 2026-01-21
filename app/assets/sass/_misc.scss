@@ -16,13 +16,13 @@
 }
 
 .app-mammogram-image--missing {
-  background-color: $color_nhsuk-grey-5;
+  background-color: nhsuk-colour("grey-5");
   display: flex;
   align-items: center;
   justify-content: center;
   width: 125px;
   height: 187.5px;
-  border: 2px dashed $color_nhsuk-grey-2;
+  border: 2px dashed nhsuk-colour("grey-2");
 }
 
 .app-mammogram-image--missing-content {

@@ -82,8 +82,8 @@ a.app-workflow-side-nav__link {
 // Clickable links (not current, not completed, not disabled) have blue circles
 .app-workflow-side-nav__link--clickable {
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-blue;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
   }
 }
 
@@ -94,8 +94,8 @@ a.app-workflow-side-nav__link {
   flex: 0 0 24px;
   width: 24px;
   height: 24px;
-  background-color: $color_nhsuk-grey-3;
-  color: $color_nhsuk-grey-1;
+  background-color: nhsuk-colour("grey-3");
+  color: nhsuk-colour("grey-1");
   border-radius: 50%;
   font-weight: 600;
   font-size: 14px;
@@ -109,7 +109,7 @@ a.app-workflow-side-nav__link {
 
     path {
       fill: none;
-      stroke: $color_nhsuk-white;
+      stroke: nhsuk-colour("white");
       stroke-width: 4;
     }
   }
@@ -132,27 +132,27 @@ a.app-workflow-side-nav__link {
   }
 
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-blue;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
   }
 }
 
 // Clickable links (not current, not completed, not disabled) have blue circles
 .app-workflow-side-nav__link--clickable {
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-blue;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
   }
 }
 
 .app-workflow-side-nav__item--completed {
   .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-green;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("green");
+    color: nhsuk-colour("white");
 
     .app-icon--tick path {
-      stroke: $color_nhsuk-white;
+      stroke: nhsuk-colour("white");
     }
   }
 }
@@ -160,8 +160,8 @@ a.app-workflow-side-nav__link {
 .app-workflow-side-nav__item--disabled {
   .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-grey-3;
-    color: $color_nhsuk-grey-1;
+    background-color: nhsuk-colour("grey-3");
+    color: nhsuk-colour("grey-1");
   }
 }
 
