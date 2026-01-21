@@ -261,7 +261,7 @@
 {% if event.mammogramData.isImperfectButBestPossible and event.mammogramData.isImperfectButBestPossible | includes("yes") %}
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Image quality note"
+      text: "Image quality"
     },
     value: {
       text: "Imperfect, but best possible images
