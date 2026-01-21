@@ -12,9 +12,11 @@
         <h2>Troubleshoot issues with images</h2>
 
         {% call details({
-          summaryText: "The correct images are not displaying"
-          Hint: "No images, too few, too many, or wrong participant
+          summaryText: "Correct images are not displaying"
         }) %}
+
+        <p>Follow these steps if you are seeing no images, too few, too many, or images from a different participant.</p>
+
           <ol>
             <li>Check the correct participant has been selected on the mammogram machine</li>
               <ul>
@@ -38,7 +40,7 @@
         {% endcall %}
 
         {% call details({
-          summaryText: "Correct images but incorrect labels"
+          summaryText: "Images have incorrect labels"
         }) %}
           <ol>
             <li>Check the correct views have been selected on the mammogram machine</li>
@@ -60,8 +62,6 @@
           <h3>If the wrong information is still showing</h3>
 
           <p><a href="./images-manual" class="nhsuk-link">Record image details manually</a></p>
-
-          <p>You can add notes to indicate what information needs to be corrected.</p>
         {% endcall %}
 
         {% call details({
@@ -85,7 +85,7 @@
 
           <h3>If the images taken are the best possible</h3>
 
-          <p>Select the 'Imperfect, but best possible images' option.</p>
+          <p>Mark as 'Imperfect, but best possible images' in the 'Additional details' section.</p>
           
           <p>This will advise image readers not to request a technical recall.</p>
 
@@ -97,7 +97,7 @@
           <h3>If some images have been taken and they are displayed above</h3>
 
           <ol>
-            <li>Select the 'Not all mammograms taken' option</li>
+            <li>Mark as 'Not all mammograms taken' in the 'Additional details' section</li>
             <li>Select 'Technical issues' when asked for a reason and provide details</li>
           </ol>
 
