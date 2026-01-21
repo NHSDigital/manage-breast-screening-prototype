@@ -1,9 +1,6 @@
 // app/assets/sass/components/_workflow.scss
 
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/objects" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 // Wider container for workflow mode
 .nhsuk-width-container--wide {

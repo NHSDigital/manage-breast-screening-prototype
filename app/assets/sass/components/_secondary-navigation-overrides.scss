@@ -1,6 +1,5 @@
 // app/assets/sass/components/_secondary-navigation-overrides.scss
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 // Fix for tick SVG in secondary navigation
 .app-secondary-navigation__link {

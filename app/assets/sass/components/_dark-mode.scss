@@ -1,6 +1,4 @@
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 $app-dark-mode-blue: #348de0;
 $app-dark-mode-background: #1c1c1c;
