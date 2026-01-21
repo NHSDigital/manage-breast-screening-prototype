@@ -77,6 +77,16 @@
     ] %}
   {% endif %}
 
+  {# Reading workflow: replace nav with link back to batch #}
+  {% if isReadingWorkflow %}
+    {% set navItems = [
+      {
+        href: "/reading/batch/" ~ batchId,
+        text: "Batch list"
+      }
+    ] %}
+  {% endif %}
+
   {# Used by error pages and some misc pages #}
   {% if useMinimalNav %}
     {% set navItems = [] %}

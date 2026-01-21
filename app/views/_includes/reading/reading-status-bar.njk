@@ -1,0 +1,100 @@
+{# app/views/_includes/reading/reading-status-bar.njk #}
+{# Status bar for reading workflow - shows batch/clinic context and participant info #}
+
+{% set isClinicContext = batch.clinicId %}
+{% set isBatchContext = not isClinicContext %}
+
+{% set firstRowItems = [] %}
+
+{# Context item (Batch or Clinic) #}
+{% if isBatchContext %}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Batch:",
+    value: batch.name
+  }) %}
+{% else %}
+  {% set locationName %}
+    {% if location.type === 'mobile_unit' %}
+      {{ location.name }} at {{ clinic.siteName }}
+    {% else %}
+      {{ location.name }}
+    {% endif %}
+  {% endset %}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Clinic:",
+    value: (locationName + " - " + (clinic.date | formatDate | noWrap))
+  }) %}
+{% endif %}
+
+{# Progress item #}
+{% set progressText %}
+  {{ progress.userReadCount }} read, {{ progress.userReadableCount }} remaining
+  {%- if progress.skippedEvents | length > 0 -%}
+    , {{ progress.skippedEvents | length }} skipped
+  {% endif %}
+{% endset %}
+
+{# Screened date #}
+{% if event %}
+  {% set firstRowItems = firstRowItems | push({
+    key: "Screened:",
+    value: event.timing.startTime | formatDate
+  }) %}
+{% endif %}
+
+{% set firstRowItems = firstRowItems | push({
+  key: "Progress:",
+  value: progressText | trim
+}) %}
+
+{# Build rows array #}
+{% set statusBarRows = [
+  { items: firstRowItems }
+] %}
+
+{# Add participant row if participant exists #}
+{% if participant %}
+  {% set participantRowItems = [] %}
+
+  {# Full name #}
+  {% set nameWithAge %}
+    {{ participant | getFullName }}
+  {% endset %}
+  {% set participantRowItems = participantRowItems | push({
+    html: "<strong>" + nameWithAge + "</strong>"
+  }) %}
+
+  {% set dobValue %}
+    {{ participant.demographicInformation.dateOfBirth | formatDate }} {% if participant | getAge %}
+      ({{ participant | getAge }} years)
+    {% endif %}
+  {% endset %}
+
+  {# DOB #}
+  {% set participantRowItems = participantRowItems | push({
+    key: "DOB:",
+    value: dobValue
+  }) %}
+
+  {# NHS Number #}
+  {% set participantRowItems = participantRowItems | push({
+    key: "NHS:",
+    value: participant.medicalInformation.nhsNumber | formatNhsNumber
+  }) %}
+
+  {# SX Number #}
+  {% set participantRowItems = participantRowItems | push({
+    key: "SX:",
+    value: participant.sxNumber
+  }) %}
+
+
+
+  {% set statusBarRows = statusBarRows | push({
+    items: participantRowItems
+  }) %}
+{% endif %}
+
+{{ appStatusBar({
+  rows: statusBarRows
+}) }}

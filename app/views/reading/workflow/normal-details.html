@@ -1,14 +1,13 @@
-{# /app/views/events/reading/recall-reason.html #}
+{# /app/views/reading/workflow/normal-details.html #}
 
 {% extends 'layout-reading.html' %}
 
-{% set pageHeading = "Confirm opinion normal" %}
+{% set pageHeading = "Confirm normal opinion" %}
 
 {% set gridColumn = "none" %}
 
-{% set formAction = './result-normal' %}
+{% set formAction = './review' %}
 
-{% set hideSecondaryNavigation = true %}
 
 {% set backLink = value %}
 
@@ -37,29 +36,31 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ textarea({
-        name: "normalDetails",
+        name: "imageReadingTemp[normalDetails]",
         id: "normalDetails",
         label: {
           text: "Provide information to support your decision" ~(" (optional)" if hasSymptoms),
           classes: "nhsuk-label--s"
-        }
+        },
+        value: data.imageReadingTemp.normalDetails
       }) }}
 
       {% if hasSymptoms %}
         {{ checkboxes({
           idPrefix: "symptomsAcknowledged",
-          name: "symptomsAcknowledged",
+          name: "imageReadingTemp[symptomsAcknowledged]",
           items: [
             {
               value: "true",
               text: "I acknowledge that the reported symptoms have been considered in my decision"
             }
-          ]
+          ],
+          values: data.imageReadingTemp.symptomsAcknowledged
         }) }}
       {% endif %}
 
       {{ button({
-        text: "Confirm opinion and continue"
+        text: "Continue"
       }) }}
     </div>
   </div>

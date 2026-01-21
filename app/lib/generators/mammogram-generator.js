@@ -18,9 +18,8 @@ const INCOMPLETE_MAMMOGRAPHY_REASONS = [
 
 // Follow-up appointment options
 const INCOMPLETE_MAMMOGRAPHY_FOLLOW_UP_OPTIONS = [
-  'Yes, as soon as possible',
-  'Yes, when physical condition improves',
-  'No, best possible images taken'
+  "Yes, record as 'to be recalled'",
+  "No, record as 'partial mammography'"
 ]
 
 const STANDARD_VIEWS = [
@@ -213,14 +212,13 @@ const generateMammogramImages = ({
   if (isSeedData && hasMissingViews) {
     const reason = faker.helpers.arrayElement(INCOMPLETE_MAMMOGRAPHY_REASONS)
     const followUp = weighted.select({
-      'Yes, as soon as possible': 0.4,
-      'Yes, when physical condition improves': 0.3,
-      'No, best possible images taken': 0.3
+      "Yes, record as 'to be recalled'": 0.4,
+      "No, record as 'partial mammography'": 0.6
     })
 
     incompleteMammographyData = {
-      isIncompleteMammography: 'yes',
-      incompleteMammographyReason: reason,
+      isIncompleteMammography: ['yes'],
+      incompleteMammographyReasons: [reason],
       incompleteMammographyFollowUpAppointment: followUp
     }
 
@@ -228,24 +226,52 @@ const generateMammogramImages = ({
     if (reason === 'Other' || Math.random() < 0.3) {
       incompleteMammographyData.incompleteMammographyReasonDetails =
         faker.helpers.arrayElement([
-          'Participant became unwell during the appointment.',
-          'Equipment malfunction prevented completion.',
-          'Participant had to leave urgently.',
-          'Severe pain prevented further imaging.',
-          'Implants made positioning very difficult.'
+          'Participant became unwell during the appointment',
+          'Equipment malfunction prevented completion',
+          'Participant had to leave urgently',
+          'Severe pain prevented further imaging',
+          'Implants made positioning very difficult'
         ])
     }
 
-    // Add details if follow-up depends on physical condition improving
-    if (followUp === 'Yes, when physical condition improves') {
+    // Add details if follow-up is YES
+    if (followUp === "Yes, record as 'to be recalled'") {
       incompleteMammographyData.incompleteMammographyFollowUpAppointmentDetails =
         faker.helpers.arrayElement([
-          'Participant has a shoulder injury that should heal in 4-6 weeks.',
-          'Recent surgery - needs 3 months recovery before rebooking.',
-          'Mobility issues - suggest booking at hospital site with better accessibility.',
-          'Chest infection - rebook when recovered.',
-          'Arm in a cast - expected to be removed in 2 weeks.'
+          'Participant has a shoulder injury that should heal in 4-6 week.',
+          'Recent surgery - needs 3 months recovery before rebooking',
+          'Mobility issues - suggest booking at hospital site with better accessibility',
+          'Chest infection - rebook when recovered',
+          'Arm in a cast - expected to be removed in 2 weeks'
         ])
+    }
+  }
+
+  // Generate imperfect but best possible data (sometimes)
+  let imperfectData = {}
+  if (isSeedData && Math.random() < 0.1) {
+    imperfectData.isImperfectButBestPossible = ['yes']
+  }
+
+  // Generate notes for reader
+  // Used for imperfect images to explain why, or occasionally for other reasons
+  let notesData = {}
+  if (isSeedData) {
+    if (imperfectData.isImperfectButBestPossible) {
+      notesData.notesForReader = faker.helpers.arrayElement([
+        'Patient found positioning difficult due to shoulder pain',
+        'Kyphosis made positioning challenging',
+        'Ideally would have got more tissue but patient unable to tolerate',
+        'Skin folds present due to weight loss',
+        'Best possible images achieved'
+      ])
+    } else if (Math.random() < 0.05) {
+      notesData.notesForReader = faker.helpers.arrayElement([
+        'Mole on right breast',
+        'Pacemaker present',
+        'Previous surgery scars noted',
+        'Patient anxious but compliant'
+      ])
     }
   }
 
@@ -253,6 +279,8 @@ const generateMammogramImages = ({
     accessionBase,
     views,
     ...incompleteMammographyData,
+    ...imperfectData,
+    ...notesData,
     metadata: {
       totalImages,
       standardViewsCompleted: Object.keys(views).length === 4,

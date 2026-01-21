@@ -1,198 +1,50 @@
+{# app/views/_templates/layout-reading.html #}
+{# Layout for reading pages - extends layout-app with reading-specific features #}
 
 {% extends "layout-app.html" %}
 
 {% set gridColumn = gridColumn or "nhsuk-grid-column-full" %}
 
+{# Workflow mode adds status bar and workflow navigation #}
+{# {% if isReadingWorkflow %}
+  {% set mainClasses = "nhsuk-u-padding-top-3" %}
+{% endif %} #}
 
-{% set isClinicContext = batch.clinicId %}
-{% set isBatchContext = not isClinicContext %}
-{# {% for clinic in clinics %}
-          {% set location = clinic.location %}
-          {% set stats = clinic.readingStatus %}
-
-          <tr>
-            <td>
-              <a href="/reading/clinics/{{ clinic.id }}" class="nhsuk-link">
-                {% if location.type === 'mobile_unit' %}
-                  {{ location.name }} at {{ clinic.siteName }}
-                {% else %}
-                  {{ location.name }}
-                {% endif %} #}
-
-
-{# Custom header with image reading stats and participant name #}
 {% block header %}
-  {{ super()}}
+  {{ super() }}
 
-  {{ data.imageReadingTemp | log("ImageReadingTemp")}}
-  {{ batch | log("Batch")}}
-
-  {% set firstRowItems = [] %}
-
-  {# Context item (Batch or Clinic) #}
-  {% if isBatchContext %}
-    {% set firstRowItems = firstRowItems | push({
-      key: "Batch:",
-      value: batch.name
-    }) %}
-  {% else %}
-    {% set locationName %}
-      {% if location.type === 'mobile_unit' %}
-        {{ location.name }} at {{ clinic.siteName }}
-      {% else %}
-        {{ location.name }}
-      {% endif %}
-    {% endset %}
-    {% set firstRowItems = firstRowItems | push({
-      key: "Clinic:",
-      value: (locationName + " - " + (clinic.date | formatDate | noWrap))
-    }) %}
+  {# Reading-specific debug logging #}
+  {% if isReadingWorkflow %}
+    {{ data.imageReadingTemp | log("imageReadingTemp") }}
+  {% endif %}
+  {% if batchId %}
+    {{ batch | log("Batch") }}
   {% endif %}
 
-  {# Progress item #}
-  {% set progressText %}
-    {{ progress.userReadCount }} read, {{ progress.userReadableCount }} remaining
-    {%- if progress.skippedEvents | length > 0 -%}
-      , {{ progress.skippedEvents | length }} skipped
-    {% endif %}
-  {% endset %}
 
-  {% set firstRowItems = firstRowItems | push({
-    key: "Progress:",
-    value: progressText | trim
-  }) %}
-
-  {# Build rows array #}
-  {% set statusBarRows = [
-    { items: firstRowItems }
-  ] %}
-
-  {# Add participant row if participant exists #}
-  {% if participant %}
-    {% set participantRowItems = [] %}
-
-    {# Full name with age #}
-    {% set nameWithAge %}
-      {{ participant | getFullName }}
-    {% endset %}
-    {% set participantRowItems = participantRowItems | push({
-      html: "<strong>" + nameWithAge + "</strong>"
-    }) %}
-
-    {% set dobValue %}
-      {{ participant.demographicInformation.dateOfBirth | formatDate }} {% if participant | getAge %}
-        ({{ participant | getAge }} years)
-      {% endif %}
-    {% endset %}
-
-    {# DOB #}
-    {% set participantRowItems = participantRowItems | push({
-      key: "DOB:",
-      value: dobValue
-    }) %}
-
-    {# NHS Number #}
-    {% set participantRowItems = participantRowItems | push({
-      key: "NHS:",
-      value: participant.medicalInformation.nhsNumber | formatNhsNumber
-    }) %}
-
-    {# SX Number #}
-    {% set participantRowItems = participantRowItems | push({
-      key: "SX:",
-      value: participant.sxNumber
-    }) %}
-
-    {# Screened date if current event exists #}
-    {% if currentEvent %}
-      {% set participantRowItems = participantRowItems | push({
-        key: "Screened:",
-        value: currentEvent.timing.startTime | formatDate
-      }) %}
-    {% endif %}
-
-    {% set statusBarRows = statusBarRows | push({
-      items: participantRowItems
-    }) %}
+  {# Show status bar only in workflow mode #}
+  {% if isReadingWorkflow %}
+    {% include "_includes/reading/reading-status-bar.njk" %}
   {% endif %}
-
-  {{ appStatusBar({
-    rows: statusBarRows
-  }) }}
 {% endblock header %}
 
-{% if not hideSecondaryNavigation %}
-  {% set mainClasses = "nhsuk-u-padding-top-3" %}
-
-  {% set backHref %}
-    /reading/batch/{{ batchId }}
-  {% endset %}
-
-  {% block beforeContent %}
-
-    {{ backLink({
-      href: "/reading/batch/" ~ batchId,
-      text: "Batch list" if isBatchContext else "Clinic list"
-    }) }}
-
-    {% if hideSecondaryNavigation %}
+{% block beforeContent %}
+  {% if isReadingWorkflow and showWorkflowNav %}
+    {# Workflow navigation: prev/next case - only on main opinion page #}
+    {% include "_includes/reading/workflow-navigation.njk" %}
+  {% else %}
+    {# Standard back link - can be hidden or customised per page #}
+    {% if not hideBackLink %}
       {{ backLink({
-        href: "javascript:history.back();",
-        text: "Back"
+        href: back.href or "javascript:history.back();",
+        text: back.text or "Back"
       }) }}
-
     {% endif %}
-
-    {% if (progress.hasPreviousUserReadable or progress.hasNextUserReadable) and not hideSecondaryNavigation %}
-      <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
-        <div class="nhsuk-grid-column-two-thirds">
-          {% if progress.hasPreviousUserReadable %}
-            {{ backLink({
-              href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.previousUserReadableId,
-              text: "Previous case"
-            }) }}
-          {% endif %}
-        </div>
-
-        {% if progress.hasNextUserReadable %}
-          <div class="nhsuk-grid-column-one-third app-align-right">
-            {# {{ appForwardLink({
-              href: "/reading/clinics/" ~ clinicId ~ "/events/" ~ progress.nextUserReadableId ~ "?skipped=" ~ eventId,
-              text: "Skip to next unread"
-            }) }} #}
-            {% if event | canUserReadEvent %}
-              {{ appForwardLink({
-                href: "/reading/batch/" ~ batchId ~ "/events/" ~ eventId ~ "/skip",
-                text: "Skip to next"
-              }) }}
-            {% else %}
-            {# We already have a reading so don't need to skip #}
-              {{ appForwardLink({
-                href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.nextUserReadableId,
-                text: "Next to read"
-              }) }}
-            {% endif %}
-
-          </div>
-        {% endif %}
-
-      </div>
-    {% endif %}
-
-
-  {% endblock %}
-
-{% endif %}
+  {% endif %}
+{% endblock %}
 
 {% block pageNavigation %}
-
-  {% if not hideSecondaryNavigation %}
-    {% include "reading/opinion-ui.njk" %}
-    {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible"> #}
-    <div class="nhsuk-u-margin-bottom-4"></div>
-    {% include "reading/secondary-navigation.njk" %}
-
-  {% endif %}
+  {# Override this block in pages that need custom navigation #}
 {% endblock pageNavigation %}
 
 {% block mammogramViewer %}
@@ -206,3 +58,4 @@
     <meta name="mammogram-viewer" content="hide">
   {% endif %}
 {% endblock %}
+

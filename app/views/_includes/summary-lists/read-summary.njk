@@ -1,0 +1,219 @@
+{# app/views/_includes/summary-lists/read-summary.njk #}
+{# 
+  Summary list showing a reading assessment.
+  Outputs a summary list - wrap in a card if needed.
+  
+  Parameters:
+    - read: object - the read data (defaults to data.imageReadingTemp)
+    - allowEdits: boolean - whether to show change links (default: false)
+    - changeOpinionUrl: string - URL for change opinion link
+#}
+
+{% set read = read if read is defined else data.imageReadingTemp %}
+{% set allowEdits = allowEdits if allowEdits is defined else false %}
+
+{# Format the result for display #}
+{% set resultText %}
+  {% if read.result == 'normal' %}
+    Normal
+  {% elseif read.result == 'technical_recall' %}
+    Technical recall
+  {% elseif read.result == 'recall_for_assessment' %}
+    Recall for assessment
+  {% else %}
+    {{ read.result }}
+  {% endif %}
+{% endset %}
+
+{# Count annotations #}
+{% set leftAnnotations = read.left.annotations if read.left and read.left.annotations else [] %}
+{% set rightAnnotations = read.right.annotations if read.right and read.right.annotations else [] %}
+{% set totalAnnotations = leftAnnotations | length + rightAnnotations | length %}
+
+{# Build annotation summary #}
+{% set annotationSummaryHtml %}
+  {% if totalAnnotations == 0 %}
+    No annotations added
+  {% else %}
+    {% if leftAnnotations | length > 0 %}
+      <p class="nhsuk-u-margin-bottom-1">
+        <strong>Left breast:</strong> {{ leftAnnotations | length }} {{ "annotation" | pluralise(leftAnnotations | length) }}
+      </p>
+    {% endif %}
+    {% if rightAnnotations | length > 0 %}
+      <p class="nhsuk-u-margin-bottom-1">
+        <strong>Right breast:</strong> {{ rightAnnotations | length }} {{ "annotation" | pluralise(rightAnnotations | length) }}
+      </p>
+    {% endif %}
+  {% endif %}
+{% endset %}
+
+{# Build rows based on result type #}
+{% set rows = [] %}
+
+{# Opinion row - always shown #}
+{% set rows = rows | push({
+  key: {
+    text: "Opinion"
+  },
+  value: {
+    html: read.result | toTag
+  },
+  actions: {
+    items: [
+      {
+        href: changeOpinionUrl,
+        text: "Change",
+        visuallyHiddenText: "opinion"
+      }
+    ]
+  } if allowEdits and changeOpinionUrl
+}) %}
+
+{# Normal - additional details #}
+{% if read.result == 'normal' and read.normalDetails %}
+  {% set rows = rows | push({
+    key: {
+      text: "Details"
+    },
+    value: {
+      text: read.normalDetails
+    },
+    actions: {
+      items: [
+        {
+          href: "./normal-details",
+          text: "Change",
+          visuallyHiddenText: "details"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{# Technical recall - views to retake #}
+{% if read.result == 'technical_recall' %}
+  {% set techRecallViews = read.technicalRecall.views | default({}) %}
+  
+  {% if techRecallViews | length > 0 %}
+    {# Build display text for each view with reason #}
+    {% set viewsHtml %}
+      <ul class="nhsuk-list">
+        {% for viewCode, viewData in techRecallViews %}
+          <li>
+            <strong>{{ viewCode }}</strong>
+            {%- if viewData.reason %}: {{ viewData.reason }}{% endif %}
+            {%- if viewData.additionalDetails %} – {{ viewData.additionalDetails }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endset %}
+
+    {% set rows = rows | push({
+      key: {
+        text: "Views to retake"
+      },
+      value: {
+        html: viewsHtml
+      },
+      actions: {
+        items: [
+          {
+            href: "./technical-recall",
+            text: "Change",
+            visuallyHiddenText: "views"
+          }
+        ]
+      } if allowEdits
+    }) %}
+  {% endif %}
+{% endif %}
+
+{# Recall for assessment details #}
+{% if read.result == 'recall_for_assessment' %}
+  
+  {% set breastAssessmentHtml %}
+    <div class="nhsuk-grid-row nhsuk-u-margin-bottom-0">
+      {% for breastSide in ["right", "left"] %}
+        {% set breastData = read[breastSide] %}
+        {% set sideLabel = breastSide | capitalize %}
+        <div class="nhsuk-grid-column-one-half nhsuk-u-margin-bottom-2">
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">{{ sideLabel }} breast</p>
+          {% if breastData and breastData.breastAssessment %}
+            {% set assessmentKey = breastData.breastAssessment | lower %}
+            {% set tagStatusMap = {
+              "normal": "normal",
+              "clinical": "clinical_recall",
+              "abnormal": "abnormal"
+            } %}
+            {% set tagStatus = tagStatusMap[assessmentKey] | default(breastData.breastAssessment) %}
+            <div class="nhsuk-u-margin-bottom-1">
+              {{ tagStatus | toTag }}
+            </div>
+            {% if breastData.comment %}
+              <p class="nhsuk-u-margin-bottom-0">Comment: {{ breastData.comment }}</p>
+            {% endif %}
+          {% else %}
+            <p class="nhsuk-u-secondary-text-color nhsuk-u-margin-bottom-0">Not recorded</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endset %}
+
+  {% set rows = rows | push({
+    key: {
+      text: "Detailed opinion"
+    },
+    value: {
+      html: breastAssessmentHtml
+    },
+    actions: {
+      items: [
+        {
+          href: "./recall-for-assessment-details",
+          text: "Change",
+          visuallyHiddenText: "detailed opinion"
+        }
+      ]
+    } if allowEdits
+  }) %}
+
+  {# Annotations summary #}
+  {% set rows = rows | push({
+    key: {
+      text: "Annotations"
+    },
+    value: {
+      html: annotationSummaryHtml
+    },
+    actions: {
+      items: [
+        {
+          href: "./recall-for-assessment-details",
+          text: "Change",
+          visuallyHiddenText: "annotations"
+        }
+      ]
+    } if allowEdits
+  }) %}
+  
+{% endif %}
+
+{# Normal with details #}
+{% if read.result == 'normal' %}
+  {% if read.normalComment %}
+    {% set rows = rows | push({
+      key: {
+        text: "Comment"
+      },
+      value: {
+        text: read.normalComment
+      }
+    }) %}
+  {% endif %}
+{% endif %}
+
+{{ summaryList({
+  rows: rows
+}) }}

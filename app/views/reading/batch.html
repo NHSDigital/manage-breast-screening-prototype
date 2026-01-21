@@ -24,6 +24,10 @@
 
 {% block pageContent %}
 
+{{ batch | log("Batch data") }}
+{{ readingStatus | log("Reading status") }}
+{{ events | log("Events in batch") }}
+
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
     <div class="app-header-with-status">
@@ -134,14 +138,22 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
-                <a href="{{ readingHref if event | canUserReadEvent else '#' }}">{{ event.participant | getFullName }}</a>
+                <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 {% if event.medicalInformation.symptoms | length %}
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
-                {% if (data.settings.reading.showRepeatsTag | falsify) and event.mammogramData.metadata.hasRepeat %}
-                  {{ "Has repeat" | toTag }}
+                {% if (data.settings.reading.showDebugTags | falsify) %}
+                  {% if event.mammogramData.metadata.hasRepeat %}
+                    <br>{{ "Has repeat" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+                     <br>{{ "Imperfect" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+                     <br>{{ "Incomplete" | toTag }}
+                  {% endif %}
                 {% endif %}
               </td>
               <td>
@@ -212,14 +224,22 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
-                <a href="{{ readingHref if event | canUserReadEvent else '#' }}">{{ event.participant | getFullName }}</a>
+                <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 {% if event.medicalInformation.symptoms | length %}
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
-                {% if (data.settings.reading.showRepeatsTag | falsify) and event.mammogramData.metadata.hasRepeat %}
-                  {{ "Has repeat" | toTag }}
+                {% if (data.settings.reading.showDebugTags | falsify) %}
+                  {% if event.mammogramData.metadata.hasRepeat %}
+                    <br>{{ "Has repeat" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+                     <br>{{ "Imperfect" | toTag }}
+                  {% endif %}
+                  {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+                     <br>{{ "Incomplete" | toTag }}
+                  {% endif %}
                 {% endif %}
               </td>
               <td>
