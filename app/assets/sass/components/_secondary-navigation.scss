@@ -1,6 +1,4 @@
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/helpers" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-secondary-navigation {
   margin-right: #{$nhsuk-gutter-half * -1};
