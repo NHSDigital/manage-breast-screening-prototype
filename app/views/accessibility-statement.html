@@ -1,0 +1,47 @@
+{# app/views/accessibility-statement.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Accessibility statement" %}
+{% set back = {
+  href: "/dashboard",
+  text: "Home"
+} %}
+
+{% block pageContent %}
+
+<h1>{{ pageHeading }}</h1>
+
+{% set pageContentMarkdown %}
+
+NHS England is committed to making its websites accessible, in accordance with the Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018.
+
+This accessibility statement applies to the Manage breast screening service.
+
+## Compliance status
+
+This website is pending an accessibility audit to determine if it is fully compliant with the Web Content Accessibility Guidelines (WCAG) version 2.2 AA standard.
+
+## Preparation of this accessibility statement
+
+This statement was prepared on 13 January 2026 following a self assessment.
+
+## Feedback and contact information
+
+[Contact us](/contact) to report any compliance failures or to request information regarding accessibility.
+
+## Enforcement procedure
+
+The Equality and Human Rights Commission (EHRC) is responsible for enforcing the Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018 (the ‘accessibility regulations’).
+
+If you’re not happy with how we respond to your complaint, contact the [Equality Advisory and Support Service (EASS)](https://www.equalityadvisoryservice.com/).
+
+
+  
+{% endset %}
+
+{{ pageContentMarkdown | markdown }}
+
+<p class="nhsuk-body-s nhsuk-u-secondary-text-colour nhsuk-u-margin-top-6 nhsuk-u-margin-bottom-0">Updated: January 2026</p>
+
+{% endblock %}

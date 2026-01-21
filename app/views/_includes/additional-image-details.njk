@@ -1,7 +1,12 @@
-{# app/views/_includes/incomplete-mammography-question.njk #}
+{# app/views/_includes/additional-image-details.njk #}
 
 {# 
-  Include for incomplete mammography question
+  Include for additional image details section
+  
+  Contains:
+  - Incomplete mammography checkbox with reasons and follow-up questions
+  - Imperfect but best possible images checkbox
+  - Notes for reader textarea
   
   Parameters:
   - namePrefix: string - prefix for form field names (e.g., "event[mammogramData]" or "event[mammogramDataTemp]")
@@ -10,13 +15,13 @@
 
 {% set reasonHtml %}
 
-  {{ radios({
-    idPrefix: "incompleteMammographyReason",
-    name: namePrefix + "[incompleteMammographyReason]",
-    value: mammogramSource.incompleteMammographyReason,
+  {{ checkboxes({
+    idPrefix: "incompleteMammographyReasons",
+    name: namePrefix + "[incompleteMammographyReasons]",
+    values: mammogramSource.incompleteMammographyReasons,
     fieldset: {
       legend: {
-        text: "Why was imaging not completed?",
+        text: "Why could you not take all the images?",
         classes: "nhsuk-fieldset__legend--s"
       }
     },
@@ -31,7 +36,10 @@
       },
       {
         value: "Unable to scan tissue",
-        text: "Unable to scan tissue"
+        text: "Unable to scan tissue",
+        hint: {
+          text: "For example, large breasts or implanted device"
+        }
       },
       {
         value: "Positioning difficulties due to wheelchair",
@@ -65,13 +73,13 @@
     rows: 2
   }) }}
 
-  {% set yesWhenPhysicalConditionImprovesDetailsHtml %}
+  {% set yesRecallRescheduleDetailsHtml %}
     {{ textarea({
       name: namePrefix + "[incompleteMammographyFollowUpAppointmentDetails]",
       value: mammogramSource.incompleteMammographyFollowUpAppointmentDetails,
       id: "incompleteMammographyFollowUpAppointmentDetails",
       label: {
-        text: "Provide details for staff rebooking the appointment"
+        text: "Note for scheduling recall appointment"
       },
       rows: 3
     }) }}
@@ -83,25 +91,21 @@
     value: mammogramSource.incompleteMammographyFollowUpAppointment,
     fieldset: {
       legend: {
-        text: "Can another appointment be scheduled to take the remaining images?",
+        text: "Should the participant be recalled to take more images?",
         classes: "nhsuk-fieldset__legend--s"
       }
     },
     items: [
       {
-        value: "Yes, as soon as possible",
-        text: "Yes, as soon as possible"
-      },
-      {
-        value: "Yes, when physical condition improves",
-        text: "Yes, when physical condition improves",
+        value: "Yes, record as 'to be recalled'",
+        text: "Yes, record as 'to be recalled'",
         conditional: {
-          html: yesWhenPhysicalConditionImprovesDetailsHtml
+          html: yesRecallRescheduleDetailsHtml
         }
       },
       {
-        value: "No, best possible images taken",
-        text: "No, best possible images taken"
+        value: "No, record as 'partial mammography'",
+        text: "No, record as 'partial mammography'"
       }
     ]
   }) }}
@@ -109,23 +113,45 @@
 {% endset %}
 
 {{ checkboxes({
-  idPrefix: "isIncompleteMammography",
-  name: namePrefix + "[isIncompleteMammography]",
-  values: mammogramSource.isIncompleteMammography,
-  fieldset: {
-    legend: {
-      text: "Incomplete mammography",
-      classes: "nhsuk-fieldset__legend--m",
-      isPageHeading: false
-    }
-  },
+  idPrefix: "isImperfectButBestPossible",
+  name: namePrefix + "[isImperfectButBestPossible]",
+  values: mammogramSource.isImperfectButBestPossible,
   items: [
     {
       value: "yes",
-      text: "Incomplete set of mammograms",
+      text: "Imperfect, but best possible images",
+      hint: {
+        text: "Image readers will be advised not to request a technical recall"
+      }
+    }
+  ]
+}) }}
+
+{{ checkboxes({
+  idPrefix: "isIncompleteMammography",
+  name: namePrefix + "[isIncompleteMammography]",
+  values: mammogramSource.isIncompleteMammography,
+  items: [
+    {
+      value: "yes",
+      text: "Not all mammograms taken",
       conditional: {
         html: reasonHtml
       }
     }
   ]
+}) }}
+
+{{ textarea({
+  name: namePrefix + "[notesForReader]",
+  id: "notesForReader",
+  value: mammogramSource.notesForReader,
+  label: {
+    text: "Notes for reader (optional)",
+    classes: "nhsuk-label--s"
+  },
+  hint: {
+    text: "Provide information for image readers when reviewing"
+  },
+  rows: 2
 }) }}

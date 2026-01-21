@@ -2164,16 +2164,35 @@ module.exports = (router) => {
 
     const formData = {
       machineRoom: mammogramData.machineRoom,
-      isIncompleteMammography:
-        mammogramData.isIncompleteMammography === 'yes' ? ['yes'] : [],
-      incompleteMammographyReason: mammogramData.incompleteMammographyReason,
+      isIncompleteMammography: Array.isArray(
+        mammogramData.isIncompleteMammography
+      )
+        ? mammogramData.isIncompleteMammography
+        : mammogramData.isIncompleteMammography === 'yes'
+          ? ['yes']
+          : [],
+      incompleteMammographyReasons: Array.isArray(
+        mammogramData.incompleteMammographyReasons
+      )
+        ? mammogramData.incompleteMammographyReasons
+        : mammogramData.incompleteMammographyReasons
+          ? [mammogramData.incompleteMammographyReasons]
+          : [],
       incompleteMammographyReasonDetails:
         mammogramData.incompleteMammographyReasonDetails,
       incompleteMammographyFollowUpAppointment:
         mammogramData.incompleteMammographyFollowUpAppointment,
       incompleteMammographyFollowUpAppointmentDetails:
         mammogramData.incompleteMammographyFollowUpAppointmentDetails,
+      isImperfectButBestPossible: Array.isArray(
+        mammogramData.isImperfectButBestPossible
+      )
+        ? mammogramData.isImperfectButBestPossible
+        : mammogramData.isImperfectButBestPossible === 'yes'
+          ? ['yes']
+          : [],
       additionalDetails: mammogramData.additionalDetails,
+      notesForReader: mammogramData.notesForReader,
       viewsRightBreast: [],
       viewsLeftBreast: []
     } // Convert views back to checkbox/input format
@@ -2361,9 +2380,9 @@ module.exports = (router) => {
       isManualFailover: formData.isManualFailover || false,
       machineRoom: formData.machineRoom,
       views,
-      isIncompleteMammography: hasIncompleteMammography ? 'yes' : null,
-      incompleteMammographyReason: hasIncompleteMammography
-        ? formData.incompleteMammographyReason
+      isIncompleteMammography: hasIncompleteMammography ? ['yes'] : null,
+      incompleteMammographyReasons: hasIncompleteMammography
+        ? formData.incompleteMammographyReasons
         : null,
       incompleteMammographyReasonDetails: hasIncompleteMammography
         ? formData.incompleteMammographyReasonDetails
@@ -2374,7 +2393,13 @@ module.exports = (router) => {
       incompleteMammographyFollowUpAppointmentDetails: hasIncompleteMammography
         ? formData.incompleteMammographyFollowUpAppointmentDetails
         : null,
+      isImperfectButBestPossible: formData.isImperfectButBestPossible?.includes(
+        'yes'
+      )
+        ? ['yes']
+        : null,
       additionalDetails: formData.additionalDetails,
+      notesForReader: formData.notesForReader,
       metadata: {
         totalImages,
         standardViewsCompleted,

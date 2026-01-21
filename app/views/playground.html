@@ -18,6 +18,10 @@
 
 <p class="nhsuk-body-l">This is not a user facing page. Use this for quick testing of code.</p>
 
+<p>
+  {{ now() | add(1, 'day') | formatTime("HH:mm:ss") }}
+</p>
+
 {# General symptom location #}
     {% set radioQuestionText %}
       {% if event.symptomTemp.type == "Other" %}
@@ -148,5 +152,7 @@
 
       {% endcall %}
     </div>
+
+    
 
 {% endblock %}

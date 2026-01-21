@@ -1,0 +1,49 @@
+{# app/views/reports/index.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Reports" %}
+{% set hideBackLink = true %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block beforeContent %}
+  {{ breadcrumb({
+    items: [
+      {
+        href: "/",
+        text: "Home"
+      }
+    ]
+  }) }}
+{% endblock %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p class="nhsuk-body-l">
+    Download reports and view data exports.
+  </p>
+
+  <ul class="nhsuk-grid-row nhsuk-card-group">
+    <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
+      {{ card({
+        clickable: true,
+        heading: "Screening clinic reports",
+        headingClasses: "nhsuk-heading-m",
+        href: "/reports/screening",
+        descriptionHtml: "<p>View and download reports for screening clinics and appointments</p>"
+      }) }}
+    </li>
+    <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
+      {{ card({
+        clickable: true,
+        heading: "Image reading reports",
+        headingClasses: "nhsuk-heading-m",
+        href: "#",
+        descriptionHtml: "<p>View and download reports for image reading activity</p>"
+      }) }}
+    </li>
+  </ul>
+
+{% endblock %}
