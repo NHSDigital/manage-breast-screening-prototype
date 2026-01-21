@@ -12,11 +12,12 @@
         <h2>Troubleshoot issues with images</h2>
 
         {% call details({
-          summaryText: "No images (or the wrong number of images) are displaying"
+          summaryText: "The correct images are not displaying"
+          Hint: "No images, too few, too many, or wrong participant
         }) %}
           <ol>
             <li>Check the correct participant has been selected on the mammogram machine</li>
-              <ul class="default-list">
+              <ul>
                 <li>Change the participant details if necessary</li>
               </ul>
             <li>Wait 15 seconds for images to appear</li>
@@ -37,11 +38,11 @@
         {% endcall %}
 
         {% call details({
-          summaryText: "Images are incorrectly labelled"
+          summaryText: "Correct images but incorrect labels"
         }) %}
           <ol>
             <li>Check the correct views have been selected on the mammogram machine</li>
-              <ul class="default-list">
+              <ul>
                 <li>Change any incorrect labels</li>
               </ul>
             <li>Wait 15 seconds for updated information to appear</li>
