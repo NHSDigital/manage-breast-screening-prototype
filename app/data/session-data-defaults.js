@@ -72,8 +72,8 @@ const defaultSettings = {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     showRemaining: 'true',
-    showRepeatsTag: 'false',
-    showPacsViewer: 'false'
+    showDebugTags: 'true',
+    enableMammogramViewer: 'true'
   }
 }
 

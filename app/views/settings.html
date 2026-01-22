@@ -92,9 +92,9 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showDebugTags]={{'true' if data.settings.reading.showDebugTags !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.reading.showDebugTags=='false' else 'Disable'}} debug tags</a>
     </p>
 
-    {# Show PACS Viewer #}
+    {# Enable mammogram viewer #}
     <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showPacsViewer]={{'true' if data.settings.reading.showPacsViewer !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.reading.showPacsViewer=='false' else 'Hide'}} PACS viewer</a>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][enableMammogramViewer]={{'true' if data.settings.reading.enableMammogramViewer !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.enableMammogramViewer !== 'true' else 'Disable'}} mammogram viewer</a>
     </p>
 
     <h2>Generated data</h2>

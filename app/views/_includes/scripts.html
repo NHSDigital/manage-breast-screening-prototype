@@ -13,8 +13,8 @@
   <script src="/js/expandable-sections.js"></script>
   <script src="/js/stepper-input.js"></script>
 
-  {% if data.settings.reading.showPacsViewer | falsify %}
-    <script src="/js/mammogram-viewer.js"></script>
+  {% if data.settings.reading.enableMammogramViewer | falsify %}
+    <script src="/js/mammogram-channel.js"></script>
   {% endif %}
 
   <script>
