@@ -11,17 +11,28 @@
   @include nhsuk-width-container(1200px);
 }
 
-@include nhsuk-media-query($from: desktop) {
-  .app-workflow-side-nav-wrapper {
-    position: relative;
-    min-height: 100vh; // Ensures it's tall enough for sticky to work
+// Use flexbox for workflow layout to allow nav column to stretch for sticky positioning
+.app-workflow-container__row {
+  @include nhsuk-media-query($from: desktop) {
+    display: flex;
   }
+}
+
+.app-workflow-container__sidebar,
+.app-workflow-container__main {
+  @include nhsuk-media-query($from: desktop) {
+    float: none;
+  }
+}
+
+// Wrapper needs to fill the column height for sticky to work
+.app-workflow-side-nav-wrapper {
+  height: 100%;
 }
 
 .app-workflow-side-nav {
   position: sticky;
   top: nhsuk-spacing(4);
-  align-self: flex-start;
   padding-bottom: 15px;
 }
 
