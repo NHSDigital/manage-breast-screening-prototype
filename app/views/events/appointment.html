@@ -203,7 +203,7 @@
             ] if event.status == "event_cancelled" else ([
               {
                 href: "./undo-reschedule" | urlWithReferrer(currentUrl),
-                text: "Undo reschedule request",
+                text: "Undo cancel appointment",
                 visuallyHiddenText: "appointment"
               }
             ] if event.status == "event_rescheduled" else ([

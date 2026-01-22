@@ -2971,7 +2971,7 @@ module.exports = (router) => {
       // Update event status to rescheduled
       updateEventStatus(data, eventId, 'event_rescheduled')
 
-      const successMessage = `A reschedule request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+      const successMessage = `Appointment cancelled and a reschedule request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
 
       req.flash('success', { wrapWithHeading: successMessage })
 
@@ -3027,7 +3027,7 @@ module.exports = (router) => {
         // Revert to scheduled status
         updateEventStatus(data, eventId, 'event_scheduled')
 
-        req.flash('success', 'Reschedule request undone')
+        req.flash('success', 'Appointment cancellation undone')
       }
 
       // Use referrer system to return to originating page
