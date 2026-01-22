@@ -75,6 +75,20 @@ const onMammogramMessage = (callback) => {
 }
 
 /**
+ * Request current participant data from any open parent pages
+ * Used by viewer when it first opens
+ */
+const requestCurrent = () => {
+  const ch = getChannel()
+  if (!ch) return
+
+  ch.postMessage({
+    type: "request-current",
+    timestamp: Date.now()
+  })
+}
+
+/**
  * Close the channel (cleanup)
  */
 const closeChannel = () => {
@@ -84,18 +98,70 @@ const closeChannel = () => {
   }
 }
 
+/**
+ * Open the mammogram viewer window
+ * @returns {Window|null} - The opened window or null if blocked
+ */
+const openViewer = () => {
+  return window.open(
+    "/reading/mammogram-viewer",
+    "mammogram-viewer",
+    "width=800,height=900,resizable=yes"
+  )
+}
+
+/**
+ * Check if viewer is already open by sending a ping and waiting for pong
+ * @returns {Promise<boolean>} - Resolves to true if viewer is open
+ */
+const isViewerOpen = () => {
+  return new Promise((resolve) => {
+    const ch = getChannel()
+    if (!ch) {
+      resolve(false)
+      return
+    }
+
+    let resolved = false
+    const handler = (event) => {
+      if (event.data.type === "pong" && !resolved) {
+        resolved = true
+        ch.removeEventListener("message", handler)
+        resolve(true)
+      }
+    }
+
+    ch.addEventListener("message", handler)
+    ch.postMessage({ type: "ping", timestamp: Date.now() })
+
+    // If no pong within 100ms, viewer is not open
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        ch.removeEventListener("message", handler)
+        resolve(false)
+      }
+    }, 100)
+  })
+}
+
 // Auto-broadcast on page load if we have participant data in meta tags
 document.addEventListener("DOMContentLoaded", () => {
   const eventIdMeta = document.querySelector('meta[name="mammogram-event-id"]')
   const participantNameMeta = document.querySelector('meta[name="mammogram-participant-name"]')
+  const autoOpenMeta = document.querySelector('meta[name="mammogram-auto-open"]')
 
-  if (eventIdMeta && participantNameMeta) {
+  // Helper to get current participant data from meta tags
+  const getCurrentParticipantData = () => {
+    if (!eventIdMeta || !participantNameMeta) return null
+
     const eventId = eventIdMeta.getAttribute("content")
     const participantName = participantNameMeta.getAttribute("content")
+
+    if (!eventId || !participantName) return null
+
     const nhsNumber = document.querySelector('meta[name="mammogram-nhs-number"]')?.getAttribute("content")
     const sxNumber = document.querySelector('meta[name="mammogram-sx-number"]')?.getAttribute("content")
-
-    // Get image paths from meta tags
     const images = {
       rcc: document.querySelector('meta[name="mammogram-image-rcc"]')?.getAttribute("content"),
       lcc: document.querySelector('meta[name="mammogram-image-lcc"]')?.getAttribute("content"),
@@ -103,15 +169,40 @@ document.addEventListener("DOMContentLoaded", () => {
       lmlo: document.querySelector('meta[name="mammogram-image-lmlo"]')?.getAttribute("content")
     }
 
-    if (eventId && participantName) {
-      broadcastShowParticipant({
-        eventId,
-        participantName,
-        nhsNumber,
-        sxNumber,
-        images
+    return { eventId, participantName, nhsNumber, sxNumber, images }
+  }
+
+  // Listen for request-current messages from the viewer
+  const ch = getChannel()
+  if (ch) {
+    ch.addEventListener("message", (event) => {
+      if (event.data.type === "request-current") {
+        const data = getCurrentParticipantData()
+        if (data) {
+          broadcastShowParticipant(data)
+        }
+      }
+    })
+  }
+
+  if (eventIdMeta && participantNameMeta) {
+    const data = getCurrentParticipantData()
+
+    // Auto-open viewer if enabled and viewer is not already open
+    if (autoOpenMeta?.getAttribute("content") === "true") {
+      isViewerOpen().then((isOpen) => {
+        if (!isOpen) {
+          openViewer()
+        }
       })
     }
+
+    if (data) {
+      broadcastShowParticipant(data)
+    }
+  } else {
+    // No participant data - broadcast clear to show placeholder
+    broadcastClear()
   }
 })
 
@@ -120,5 +211,8 @@ window.MammogramChannel = {
   broadcastShowParticipant,
   broadcastClear,
   onMammogramMessage,
-  closeChannel
+  requestCurrent,
+  closeChannel,
+  openViewer,
+  isViewerOpen
 }

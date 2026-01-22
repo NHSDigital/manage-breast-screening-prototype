@@ -177,7 +177,7 @@
       <span class="viewer-panel__label">RCC</span>
       <img class="viewer-panel__image" id="image-rcc" alt="Right craniocaudal view">
     </div>
-    <div class="viewer-panel viewer-panel--left">
+    <div class="viewer-panel">
       <span class="viewer-panel__label">LCC</span>
       <img class="viewer-panel__image" id="image-lcc" alt="Left craniocaudal view">
     </div>
@@ -185,7 +185,7 @@
       <span class="viewer-panel__label">RMLO</span>
       <img class="viewer-panel__image" id="image-rmlo" alt="Right mediolateral oblique view">
     </div>
-    <div class="viewer-panel viewer-panel--left">
+    <div class="viewer-panel">
       <span class="viewer-panel__label">LMLO</span>
       <img class="viewer-panel__image" id="image-lmlo" alt="Left mediolateral oblique view">
     </div>
@@ -273,7 +273,10 @@
     const handleMessage = (event) => {
       const data = event.data
 
-      if (data.type === "show") {
+      if (data.type === "ping") {
+        // Respond to ping with pong so parent knows we're open
+        channel.postMessage({ type: "pong", timestamp: Date.now() })
+      } else if (data.type === "show") {
         // Ignore if same event already displayed
         if (data.eventId === currentEventId) {
           return
@@ -295,6 +298,13 @@
 
       channel = new BroadcastChannel(CHANNEL_NAME)
       channel.addEventListener("message", handleMessage)
+
+      // Request current participant data from any open parent pages
+      channel.postMessage({
+        type: "request-current",
+        timestamp: Date.now()
+      })
+
       updateStatus("Listening for updates...")
     }
 

@@ -73,7 +73,7 @@ const defaultSettings = {
     confirmNormal: 'false',
     showRemaining: 'true',
     showDebugTags: 'true',
-    enableMammogramViewer: 'true'
+    autoOpenPacsViewer: 'false'
   }
 }
 
