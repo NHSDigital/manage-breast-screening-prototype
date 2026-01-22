@@ -101,11 +101,11 @@
     {% if isAppointmentWorkflow %}
       {# Workflow mode: side navigation layout #}
       <div class="app-workflow-container">
-        <div class="nhsuk-grid-row">
-          <div class="nhsuk-grid-column-one-quarter">
+        <div class="nhsuk-grid-row app-workflow-container__row">
+          <div class="nhsuk-grid-column-one-quarter app-workflow-container__sidebar">
             {% include '_includes/workflow/workflow-side-navigation.njk' %}
           </div>
-          <div class="nhsuk-grid-column-three-quarters">
+          <div class="nhsuk-grid-column-three-quarters app-workflow-container__main">
             {{ wrappedPageContent | safe }}
           </div>
         </div>
