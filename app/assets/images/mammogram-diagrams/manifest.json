@@ -1,9 +1,154 @@
 {
   "sets": [
     {
-      "id": "set-01",
+      "id": "set-02",
       "tag": "normal",
-      "description": "Normal mammogram diagrams"
+      "description": "Implants with Eklund view",
+      "powerPointPage": 2
+    },
+    {
+      "id": "set-03",
+      "tag": "abnormal",
+      "description": "Implants + cancer RUOQ M5",
+      "powerPointPage": 3
+    },
+    {
+      "id": "set-04",
+      "tag": "abnormal",
+      "description": "Bilateral cancer – right LIQ irregular mass M5, left retroareolar round mass M4",
+      "powerPointPage": 4
+    },
+    {
+      "id": "set-05",
+      "tag": "abnormal",
+      "description": "Lymph nodes – suspicious M4",
+      "powerPointPage": 5
+    },
+    {
+      "id": "set-06",
+      "tag": "abnormal",
+      "description": "Asymmetric density – suspicious, M4 RUOQ",
+      "powerPointPage": 6
+    },
+    {
+      "id": "set-07",
+      "tag": "abnormal",
+      "description": "Distortion – suspicious, LUOQ, M4",
+      "powerPointPage": 7
+    },
+    {
+      "id": "set-08",
+      "tag": "abnormal",
+      "description": "Irregular mass – malignant, LLIQ, M5",
+      "powerPointPage": 8
+    },
+    {
+      "id": "set-09",
+      "tag": "abnormal",
+      "description": "Irregular mass – malignant – MLO only, symptoms = mass in RUIQ, M5",
+      "powerPointPage": 9
+    },
+    {
+      "id": "set-10",
+      "tag": "abnormal",
+      "description": "Irregular mass + calcification – malignant LUIQ, M5",
+      "powerPointPage": 10
+    },
+    {
+      "id": "set-11",
+      "tag": "indeterminate",
+      "description": "Round mass – benign, M2",
+      "powerPointPage": 11
+    },
+    {
+      "id": "set-12",
+      "tag": "indeterminate",
+      "description": "Round mass – probably benign, left central M3",
+      "powerPointPage": 12
+    },
+    {
+      "id": "set-13",
+      "tag": "abnormal",
+      "description": "Round mass – possibly malignant, right lower central M4",
+      "powerPointPage": 13
+    },
+    {
+      "id": "set-14",
+      "tag": "indeterminate",
+      "description": "Microcalcifications – 1 cluster, probably benign M3, R upper central",
+      "powerPointPage": 14
+    },
+    {
+      "id": "set-15",
+      "tag": "abnormal",
+      "description": "Microcalcifications – 1 cluster, LUOQ probably malignant M4",
+      "powerPointPage": 15
+    },
+    {
+      "id": "set-16",
+      "tag": "abnormal",
+      "description": "Microcalcifications – 2 clusters, L upper central LLIQ M4",
+      "powerPointPage": 16
+    },
+    {
+      "id": "set-17",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 17
+    },
+    {
+      "id": "set-18",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 18
+    },
+    {
+      "id": "set-19",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 19
+    },
+    {
+      "id": "set-20",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 20
+    },
+    {
+      "id": "set-21",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 21
+    },
+    {
+      "id": "set-22",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 22
+    },
+    {
+      "id": "set-23",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 23
+    },
+    {
+      "id": "set-24",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 24
+    },
+    {
+      "id": "set-25",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 25
+    },
+    {
+      "id": "set-26",
+      "tag": "normal",
+      "description": "Normal mammogram",
+      "powerPointPage": 26
     }
   ]
 }

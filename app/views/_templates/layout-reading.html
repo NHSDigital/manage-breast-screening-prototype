@@ -16,16 +16,18 @@
   {# Meta tags for PACS viewer - only in workflow mode with participant #}
   {% if isReadingWorkflow and participant %}
     {% set mammogramImages = getImagesForEvent(eventId, "diagrams") %}
+    {% set mammogramViews = event.mammogramData.views if event and event.mammogramData else {} %}
     <meta name="mammogram-event-id" content="{{ eventId }}">
     <meta name="mammogram-participant-name" content="{{ participant | getFullName }}">
     <meta name="mammogram-nhs-number" content="{{ participant.nhsNumber }}">
     <meta name="mammogram-sx-number" content="{{ participant.sxNumber }}">
     <meta name="mammogram-auto-open" content="{{ 'true' if data.settings.reading.autoOpenPacsViewer | falsify else 'false' }}">
     {% if mammogramImages and mammogramImages.paths %}
-      <meta name="mammogram-image-rcc" content="{{ mammogramImages.paths.rcc }}">
-      <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc }}">
-      <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo }}">
-      <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo }}">
+      {# Pass image paths - empty string if view is missing from mammogram data #}
+      <meta name="mammogram-image-rcc" content="{{ mammogramImages.paths.rcc if mammogramViews.rightCraniocaudal else '' }}">
+      <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc if mammogramViews.leftCraniocaudal else '' }}">
+      <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo if mammogramViews.rightMediolateralOblique else '' }}">
+      <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo if mammogramViews.leftMediolateralOblique else '' }}">
     {% endif %}
   {% endif %}
 {% endblock head %}

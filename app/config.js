@@ -44,7 +44,13 @@ module.exports = {
     blindReading: 'true', // Enable blind reading
     urgentThreshold: 10, // 10 days and over
     priorityThreshold: 7, // 7 days and over
-    mammogramImageSource: 'diagrams' // 'diagrams' or 'real'
+    mammogramImageSource: 'diagrams', // 'diagrams' or 'real'
+    // Distribution of image set tags (must sum to 1.0)
+    mammogramTagWeights: {
+      normal: 0.70,
+      abnormal: 0.20,
+      indeterminate: 0.10
+    }
   },
   screening: {
     outcomes: {

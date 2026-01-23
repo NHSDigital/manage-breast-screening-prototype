@@ -119,6 +119,17 @@
       object-fit: contain;
     }
 
+    .viewer-panel__missing {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: #555;
+      font-size: 14px;
+      font-style: italic;
+    }
+
     .viewer-placeholder {
       flex: 1;
       display: flex;
@@ -173,21 +184,33 @@
   </header>
 
   <div class="viewer-grid" id="viewer-grid" style="display: none;">
-    <div class="viewer-panel">
+    <div class="viewer-panel" id="panel-rcc">
       <span class="viewer-panel__label">RCC</span>
       <img class="viewer-panel__image" id="image-rcc" alt="Right craniocaudal view">
+      <div class="viewer-panel__missing" id="missing-rcc" style="display: none;">
+        <span>No image</span>
+      </div>
     </div>
-    <div class="viewer-panel">
+    <div class="viewer-panel" id="panel-lcc">
       <span class="viewer-panel__label">LCC</span>
       <img class="viewer-panel__image" id="image-lcc" alt="Left craniocaudal view">
+      <div class="viewer-panel__missing" id="missing-lcc" style="display: none;">
+        <span>No image</span>
+      </div>
     </div>
-    <div class="viewer-panel">
+    <div class="viewer-panel" id="panel-rmlo">
       <span class="viewer-panel__label">RMLO</span>
       <img class="viewer-panel__image" id="image-rmlo" alt="Right mediolateral oblique view">
+      <div class="viewer-panel__missing" id="missing-rmlo" style="display: none;">
+        <span>No image</span>
+      </div>
     </div>
-    <div class="viewer-panel">
+    <div class="viewer-panel" id="panel-lmlo">
       <span class="viewer-panel__label">LMLO</span>
       <img class="viewer-panel__image" id="image-lmlo" alt="Left mediolateral oblique view">
+      <div class="viewer-panel__missing" id="missing-lmlo" style="display: none;">
+        <span>No image</span>
+      </div>
     </div>
   </div>
 
@@ -222,6 +245,12 @@
       rmlo: document.getElementById("image-rmlo"),
       lmlo: document.getElementById("image-lmlo")
     }
+    const missingEls = {
+      rcc: document.getElementById("missing-rcc"),
+      lcc: document.getElementById("missing-lcc"),
+      rmlo: document.getElementById("missing-rmlo"),
+      lmlo: document.getElementById("missing-lmlo")
+    }
 
     /**
      * Show the placeholder (no participant loaded)
@@ -235,6 +264,24 @@
     }
 
     /**
+     * Update a single view panel - show image or missing placeholder
+     */
+    const updateViewPanel = (view, imagePath) => {
+      const imageEl = imageEls[view]
+      const missingEl = missingEls[view]
+
+      if (imagePath) {
+        imageEl.src = imagePath
+        imageEl.style.display = "block"
+        missingEl.style.display = "none"
+      } else {
+        imageEl.style.display = "none"
+        imageEl.src = ""
+        missingEl.style.display = "flex"
+      }
+    }
+
+    /**
      * Show mammograms for a participant
      */
     const showMammograms = (data) => {
@@ -243,12 +290,12 @@
       nhsEl.textContent = data.nhsNumber ? `NHS: ${data.nhsNumber}` : ""
       sxEl.textContent = data.sxNumber ? `SX: ${data.sxNumber}` : ""
 
-      // Update images
+      // Update images - show placeholder for missing views
       if (data.images) {
-        imageEls.rcc.src = data.images.rcc || ""
-        imageEls.lcc.src = data.images.lcc || ""
-        imageEls.rmlo.src = data.images.rmlo || ""
-        imageEls.lmlo.src = data.images.lmlo || ""
+        updateViewPanel("rcc", data.images.rcc)
+        updateViewPanel("lcc", data.images.lcc)
+        updateViewPanel("rmlo", data.images.rmlo)
+        updateViewPanel("lmlo", data.images.lmlo)
       }
 
       // Show viewer

@@ -1,7 +1,7 @@
 // app/assets/javascript/mammogram-channel.js
 // BroadcastChannel-based communication for mammogram viewer
 
-const CHANNEL_NAME = "mammogram-viewer"
+const CHANNEL_NAME = 'mammogram-viewer'
 
 /**
  * Get or create the broadcast channel
@@ -9,7 +9,7 @@ const CHANNEL_NAME = "mammogram-viewer"
  */
 let channel = null
 const getChannel = () => {
-  if (!channel && typeof BroadcastChannel !== "undefined") {
+  if (!channel && typeof BroadcastChannel !== 'undefined') {
     channel = new BroadcastChannel(CHANNEL_NAME)
   }
   return channel
@@ -29,7 +29,7 @@ const broadcastShowParticipant = (data) => {
   if (!ch) return
 
   ch.postMessage({
-    type: "show",
+    type: 'show',
     eventId: data.eventId,
     participantName: data.participantName,
     nhsNumber: data.nhsNumber || null,
@@ -47,7 +47,7 @@ const broadcastClear = () => {
   if (!ch) return
 
   ch.postMessage({
-    type: "clear",
+    type: 'clear',
     timestamp: Date.now()
   })
 }
@@ -66,11 +66,11 @@ const onMammogramMessage = (callback) => {
     callback(event.data)
   }
 
-  ch.addEventListener("message", handler)
+  ch.addEventListener('message', handler)
 
   // Return cleanup function
   return () => {
-    ch.removeEventListener("message", handler)
+    ch.removeEventListener('message', handler)
   }
 }
 
@@ -83,7 +83,7 @@ const requestCurrent = () => {
   if (!ch) return
 
   ch.postMessage({
-    type: "request-current",
+    type: 'request-current',
     timestamp: Date.now()
   })
 }
@@ -104,9 +104,9 @@ const closeChannel = () => {
  */
 const openViewer = () => {
   return window.open(
-    "/reading/mammogram-viewer",
-    "mammogram-viewer",
-    "width=800,height=900,resizable=yes"
+    '/reading/mammogram-viewer',
+    'mammogram-viewer',
+    'width=800,height=900,resizable=yes'
   )
 }
 
@@ -124,21 +124,21 @@ const isViewerOpen = () => {
 
     let resolved = false
     const handler = (event) => {
-      if (event.data.type === "pong" && !resolved) {
+      if (event.data.type === 'pong' && !resolved) {
         resolved = true
-        ch.removeEventListener("message", handler)
+        ch.removeEventListener('message', handler)
         resolve(true)
       }
     }
 
-    ch.addEventListener("message", handler)
-    ch.postMessage({ type: "ping", timestamp: Date.now() })
+    ch.addEventListener('message', handler)
+    ch.postMessage({ type: 'ping', timestamp: Date.now() })
 
     // If no pong within 100ms, viewer is not open
     setTimeout(() => {
       if (!resolved) {
         resolved = true
-        ch.removeEventListener("message", handler)
+        ch.removeEventListener('message', handler)
         resolve(false)
       }
     }, 100)
@@ -146,27 +146,43 @@ const isViewerOpen = () => {
 }
 
 // Auto-broadcast on page load if we have participant data in meta tags
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   const eventIdMeta = document.querySelector('meta[name="mammogram-event-id"]')
-  const participantNameMeta = document.querySelector('meta[name="mammogram-participant-name"]')
-  const autoOpenMeta = document.querySelector('meta[name="mammogram-auto-open"]')
+  const participantNameMeta = document.querySelector(
+    'meta[name="mammogram-participant-name"]'
+  )
+  const autoOpenMeta = document.querySelector(
+    'meta[name="mammogram-auto-open"]'
+  )
 
   // Helper to get current participant data from meta tags
   const getCurrentParticipantData = () => {
     if (!eventIdMeta || !participantNameMeta) return null
 
-    const eventId = eventIdMeta.getAttribute("content")
-    const participantName = participantNameMeta.getAttribute("content")
+    const eventId = eventIdMeta.getAttribute('content')
+    const participantName = participantNameMeta.getAttribute('content')
 
     if (!eventId || !participantName) return null
 
-    const nhsNumber = document.querySelector('meta[name="mammogram-nhs-number"]')?.getAttribute("content")
-    const sxNumber = document.querySelector('meta[name="mammogram-sx-number"]')?.getAttribute("content")
+    const nhsNumber = document
+      .querySelector('meta[name="mammogram-nhs-number"]')
+      ?.getAttribute('content')
+    const sxNumber = document
+      .querySelector('meta[name="mammogram-sx-number"]')
+      ?.getAttribute('content')
     const images = {
-      rcc: document.querySelector('meta[name="mammogram-image-rcc"]')?.getAttribute("content"),
-      lcc: document.querySelector('meta[name="mammogram-image-lcc"]')?.getAttribute("content"),
-      rmlo: document.querySelector('meta[name="mammogram-image-rmlo"]')?.getAttribute("content"),
-      lmlo: document.querySelector('meta[name="mammogram-image-lmlo"]')?.getAttribute("content")
+      rcc: document
+        .querySelector('meta[name="mammogram-image-rcc"]')
+        ?.getAttribute('content'),
+      lcc: document
+        .querySelector('meta[name="mammogram-image-lcc"]')
+        ?.getAttribute('content'),
+      rmlo: document
+        .querySelector('meta[name="mammogram-image-rmlo"]')
+        ?.getAttribute('content'),
+      lmlo: document
+        .querySelector('meta[name="mammogram-image-lmlo"]')
+        ?.getAttribute('content')
     }
 
     return { eventId, participantName, nhsNumber, sxNumber, images }
@@ -175,8 +191,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Listen for request-current messages from the viewer
   const ch = getChannel()
   if (ch) {
-    ch.addEventListener("message", (event) => {
-      if (event.data.type === "request-current") {
+    ch.addEventListener('message', (event) => {
+      if (event.data.type === 'request-current') {
         const data = getCurrentParticipantData()
         if (data) {
           broadcastShowParticipant(data)
@@ -189,7 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = getCurrentParticipantData()
 
     // Auto-open viewer if enabled and viewer is not already open
-    if (autoOpenMeta?.getAttribute("content") === "true") {
+    if (autoOpenMeta?.getAttribute('content') === 'true') {
       isViewerOpen().then((isOpen) => {
         if (!isOpen) {
           openViewer()
