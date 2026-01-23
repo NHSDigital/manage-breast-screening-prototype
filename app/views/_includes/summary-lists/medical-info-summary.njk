@@ -1,0 +1,199 @@
+{# app/views/_includes/summary-lists/medical-info-summary.njk #}
+{# 
+  Condensed medical information summary list showing counts/summaries.
+  Outputs a summary list - wrap in a card if needed.
+  
+  Parameters:
+    - allowEdits: boolean - whether to show action links (default: true)
+    - contextUrl: string - base URL for action links (required if allowEdits)
+    - currentUrl: string - current page URL for referrer tracking
+#}
+
+{% set allowEdits = allowEdits if allowEdits is defined else true %}
+
+{# Count medical history items #}
+{% set medicalHistoryCount = event.medicalInformation.medicalHistory | countMedicalHistoryItems %}
+
+{# Get medical history summaries #}
+{% set medicalHistorySummaries = event.medicalInformation.medicalHistory | summariseMedicalHistory %}
+
+{# Build medical history HTML #}
+{% set medicalHistoryHtml %}
+  {% if medicalHistoryCount == 0 %}
+    <p>No medical history added</p>
+  {% elif medicalHistoryCount == 1 %}
+    <p>{{ medicalHistorySummaries[0] }}</p>
+  {% else %}
+    <ul class="nhsuk-list">
+      {% for summary in medicalHistorySummaries %}
+        <li>{{ summary }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endset %}
+
+{# Build referrer chain for add journey: confirmation -> review #}
+{% set medicalHistoryAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/medical-history") %}
+
+{# Count symptoms #}
+{% set symptomsCount = event.medicalInformation.symptoms | length %}
+
+{# Get symptom summaries #}
+{% set symptomSummaries = event.medicalInformation.symptoms | summariseSymptoms %}
+
+{# Build symptoms HTML #}
+{% set symptomsHtml %}
+  {% if symptomsCount == 0 %}
+    <p>No symptoms recorded</p>
+  {% elif symptomsCount == 1 %}
+    <p>{{ symptomSummaries[0] }}</p>
+  {% else %}
+    <ul class="nhsuk-list">
+      {% for summary in symptomSummaries %}
+        <li>{{ summary }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endset %}
+
+{# Build referrer chain for add journey: confirmation -> review #}
+{% set symptomsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/symptoms") %}
+
+{# Count breast features #}
+{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
+{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set breastFeaturesCount = breastFeatures | length %}
+
+{# Get breast feature summaries #}
+{% set breastFeatureSummaries = breastFeatures | summariseBreastFeatures %}
+
+{# Build breast features HTML #}
+{% set breastFeaturesHtml %}
+  {% if breastFeaturesCount == 0 %}
+    <p>No breast features recorded</p>
+  {% elseif breastFeaturesCount == 1 %}
+    <p>{{ breastFeatureSummaries[0] }}</p>
+  {% else %}
+    <ul class="nhsuk-list">
+      {% for summary in breastFeatureSummaries %}
+        <li>{{ summary }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endset %}
+
+{# Count additional mammograms #}
+{% set additionalMammogramsCount = event.previousMammograms | length %}
+
+{# Build referrer chain for add journey: confirmation -> review #}
+{% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
+
+{# Get other relevant information summaries #}
+{% set otherRelevantInfoSummaries = event.medicalInformation | summariseOtherRelevantInformation %}
+{% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
+
+{# Build other relevant information HTML #}
+{% set otherRelevantInfoHtml %}
+  {% if otherRelevantInfoCount == 0 %}
+    <p>No other information added</p>
+  {% elif otherRelevantInfoCount == 1 %}
+    <p>{{ otherRelevantInfoSummaries[0] }}</p>
+  {% else %}
+    <ul class="nhsuk-list">
+      {% for summary in otherRelevantInfoSummaries %}
+        <li>{{ summary }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endset %}
+
+{# Build summary list content #}
+{{ summaryList({
+  rows: [
+    {
+      key: {
+        text: "Previous mammograms"
+      },
+      value: {
+        text: "No additional mammograms added" if additionalMammogramsCount == 0 else (additionalMammogramsCount + " additional " + ("mammogram" | pluralise(additionalMammogramsCount)) + " added")
+      },
+      actions: {
+        items: [
+          {
+            href: ("./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain) if additionalMammogramsCount == 0 else "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl)),
+            text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
+            visuallyHiddenText: "previous mammograms"
+          }
+        ]
+      } if allowEdits
+    },
+    {
+      key: {
+        text: "Medical history"
+      },
+      value: {
+        html: medicalHistoryHtml
+      },
+      actions: {
+        items: [
+          {
+            href: ("./medical-information/medical-history/type" | urlWithReferrer(medicalHistoryAddReferrerChain) if medicalHistoryCount == 0 else "./confirm-information/medical-history" | urlWithReferrer(currentUrl)),
+            text: "Add medical history" if medicalHistoryCount == 0 else "View or change",
+            visuallyHiddenText: "medical history"
+          }
+        ]
+      } if allowEdits
+    },
+    {
+      key: {
+        text: "Symptoms"
+      },
+      value: {
+        html: symptomsHtml
+      },
+      actions: {
+        items: [
+          {
+            href: ("./medical-information/symptoms/add" | urlWithReferrer(symptomsAddReferrerChain) if symptomsCount == 0 else "./confirm-information/symptoms" | urlWithReferrer(currentUrl)),
+            text: "Add symptoms" if symptomsCount == 0 else "View or change",
+            visuallyHiddenText: "symptoms"
+          }
+        ]
+      } if allowEdits
+    },
+    {
+      key: {
+        text: "Breast features"
+      },
+      value: {
+        html: breastFeaturesHtml
+      },
+      actions: {
+        items: [
+          {
+            href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+            text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
+            visuallyHiddenText: "breast features"
+          }
+        ]
+      } if allowEdits
+    },
+    {
+      key: {
+        text: "Other relevant information"
+      },
+      value: {
+        html: otherRelevantInfoHtml
+      },
+      actions: {
+        items: [
+          {
+            href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
+            text: "View or change",
+            visuallyHiddenText: "other relevant information"
+          }
+        ]
+      } if allowEdits
+    }
+  ]
+}) }}

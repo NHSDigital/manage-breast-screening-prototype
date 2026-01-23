@@ -1,9 +1,6 @@
 // app/assets/sass/components/_workflow.scss
 
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/objects" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 // Wider container for workflow mode
 .nhsuk-width-container--wide {
@@ -14,17 +11,28 @@
   @include nhsuk-width-container(1200px);
 }
 
-@include nhsuk-media-query($from: desktop) {
-  .app-workflow-side-nav-wrapper {
-    position: relative;
-    min-height: 100vh; // Ensures it's tall enough for sticky to work
+// Use flexbox for workflow layout to allow nav column to stretch for sticky positioning
+.app-workflow-container__row {
+  @include nhsuk-media-query($from: desktop) {
+    display: flex;
   }
+}
+
+.app-workflow-container__sidebar,
+.app-workflow-container__main {
+  @include nhsuk-media-query($from: desktop) {
+    float: none;
+  }
+}
+
+// Wrapper needs to fill the column height for sticky to work
+.app-workflow-side-nav-wrapper {
+  height: 100%;
 }
 
 .app-workflow-side-nav {
   position: sticky;
   top: nhsuk-spacing(4);
-  align-self: flex-start;
   padding-bottom: 15px;
 }
 
@@ -69,7 +77,7 @@ a.app-workflow-side-nav__link {
 
   &:focus {
     @include nhsuk-focused-text;
-    color: $nhsuk-focus-text-color;
+    color: $nhsuk-focus-text-colour;
   }
 }
 
@@ -82,8 +90,8 @@ a.app-workflow-side-nav__link {
 // Clickable links (not current, not completed, not disabled) have blue circles
 .app-workflow-side-nav__link--clickable {
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-blue;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
   }
 }
 
@@ -94,8 +102,8 @@ a.app-workflow-side-nav__link {
   flex: 0 0 24px;
   width: 24px;
   height: 24px;
-  background-color: $color_nhsuk-grey-3;
-  color: $color_nhsuk-grey-1;
+  background-color: nhsuk-colour("grey-3");
+  color: nhsuk-colour("grey-1");
   border-radius: 50%;
   font-weight: 600;
   font-size: 14px;
@@ -109,7 +117,7 @@ a.app-workflow-side-nav__link {
 
     path {
       fill: none;
-      stroke: $color_nhsuk-white;
+      stroke: nhsuk-colour("white");
       stroke-width: 4;
     }
   }
@@ -132,27 +140,27 @@ a.app-workflow-side-nav__link {
   }
 
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-blue;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
   }
 }
 
 // Clickable links (not current, not completed, not disabled) have blue circles
 .app-workflow-side-nav__link--clickable {
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-blue;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
   }
 }
 
 .app-workflow-side-nav__item--completed {
   .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-green;
-    color: $color_nhsuk-white;
+    background-color: nhsuk-colour("green");
+    color: nhsuk-colour("white");
 
     .app-icon--tick path {
-      stroke: $color_nhsuk-white;
+      stroke: nhsuk-colour("white");
     }
   }
 }
@@ -160,8 +168,8 @@ a.app-workflow-side-nav__link {
 .app-workflow-side-nav__item--disabled {
   .app-workflow-side-nav__link--clickable .app-workflow-side-nav__number,
   .app-workflow-side-nav__number {
-    background-color: $color_nhsuk-grey-3;
-    color: $color_nhsuk-grey-1;
+    background-color: nhsuk-colour("grey-3");
+    color: nhsuk-colour("grey-1");
   }
 }
 

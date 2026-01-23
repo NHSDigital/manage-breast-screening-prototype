@@ -1,8 +1,7 @@
 // Stolen (with thanks) from https://github.com/nhsuk/manage-vaccinations-in-schools-prototype/blob/c294744d6fba958f1ee9a4d51ab4ef8e425d893d/app/assets/stylesheets/components/_environment.scss
 
 // @use "../vendor/nhsuk-frontend" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-environment {
   @include nhsuk-font-size(14);

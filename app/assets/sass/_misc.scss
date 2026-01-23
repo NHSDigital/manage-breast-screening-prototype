@@ -1,6 +1,4 @@
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/styles/typography" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-mammogram-image--placeholder {
   background-color: black;
@@ -16,13 +14,13 @@
 }
 
 .app-mammogram-image--missing {
-  background-color: $color_nhsuk-grey-5;
+  background-color: nhsuk-colour("grey-5");
   display: flex;
   align-items: center;
   justify-content: center;
   width: 125px;
   height: 187.5px;
-  border: 2px dashed $color_nhsuk-grey-2;
+  border: 2px dashed nhsuk-colour("grey-2");
 }
 
 .app-mammogram-image--missing-content {
@@ -58,10 +56,7 @@ body.js-enabled .app-no-js-only {
 }
 
 .app-align-right {
-  float: right;
-  * {
-    text-align: right;
-  }
+  text-align: right;
 }
 
 .app-suppress-link-styles * {
@@ -100,6 +95,6 @@ body.js-enabled .app-no-js-only {
   outline: none;
   box-shadow:
     0 0 0 2px #f0f4f5,
-    0 0 0 calc(2px + $nhsuk-focus-width) $nhsuk-focus-text-color,
-    0 0 0 calc(2px + $nhsuk-focus-width + 4px) $nhsuk-focus-color;
+    0 0 0 calc(2px + $nhsuk-focus-width) $nhsuk-focus-text-colour,
+    0 0 0 calc(2px + $nhsuk-focus-width + 4px) $nhsuk-focus-colour;
 }

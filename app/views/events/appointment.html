@@ -1,4 +1,4 @@
-{# app/views/events/appointment #}
+{# app/views/events/appointment.html #}
 
 {% extends 'layout-appointment.html' %}
 
@@ -7,6 +7,24 @@
 {% set activeTab = 'appointment' %}
 {% set formAction = "./start" %}
 {% set allowEdits = event | hasNotStarted %}
+
+{# Force view mode on this page, never workflow mode.
+   
+   Background: isAppointmentWorkflow is normally calculated from event state (in progress + 
+   started by current user). But this conflates "event is in workflow state" with "user is 
+   currently navigating the workflow". They're different things.
+   
+   Bug being patched: User starts appointment from clinic list, presses browser back, then 
+   clicks "View appointment". The event is still in_progress so isAppointmentWorkflow returns
+   true, but the user intended to view the appointment, not resume the workflow. This caused
+   the layout to incorrectly show workflow side-nav instead of tabs.
+   
+   This page is the tabbed "view appointment" page - it should always render in view mode.
+   Users can click "Resume appointment" from here to re-enter the workflow.
+   
+   A proper fix would use URL structure to distinguish modes (e.g. /events/:id vs 
+   /events/:id/workflow/...) but that's a larger refactor. #}
+{% set isAppointmentWorkflow = false %}
 
 
 {% block pageContent %}
@@ -185,7 +203,7 @@
             ] if event.status == "event_cancelled" else ([
               {
                 href: "./undo-reschedule" | urlWithReferrer(currentUrl),
-                text: "Undo reschedule request",
+                text: "Undo cancel appointment",
                 visuallyHiddenText: "appointment"
               }
             ] if event.status == "event_rescheduled" else ([

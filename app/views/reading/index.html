@@ -62,7 +62,8 @@
     </div>
   {% endif %}
 
-  {% set maxCases = allReadCount if allReadCount < 50 else 50 %}
+  {% set defaultBatchSize = 25 %}
+  {% set maxCases = allReadCount if allReadCount < defaultBatchSize else defaultBatchSize %}
 
   {% set actionLinkHtml %}
     Start session<br>

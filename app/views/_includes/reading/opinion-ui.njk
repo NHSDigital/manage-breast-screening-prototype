@@ -171,8 +171,8 @@
 {% set incompleteMammographyHtml %}
 <p>
   <b>Incomplete mammography</b>
-  {% if event.mammogramData.incompleteMammographyReason %}
-    <br>Reason: {{ event.mammogramData.incompleteMammographyReason }}
+  {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
+    <br>{{ "Reason" | pluralise(event.mammogramData.incompleteMammographyReasons | length) }}: {{ event.mammogramData.incompleteMammographyReasons | join(", ") }}
   {% endif %}
   {% if event.mammogramData.incompleteMammographyReasonDetails %}
     <br>Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}

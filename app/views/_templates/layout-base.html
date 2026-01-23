@@ -48,6 +48,11 @@
       current: true if navActive == "reading"
     },
     {
+      href: "/reports",
+      text: "Reports",
+      current: true if navActive == "reports"
+    },
+    {
       href: "/participants",
       text: "Participants",
       current: true if navActive == "participants"
@@ -68,6 +73,16 @@
       {
         href: (eventUrl ~ "/exit-appointment") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Exit appointment"
+      }
+    ] %}
+  {% endif %}
+
+  {# Reading workflow: replace nav with link back to batch #}
+  {% if isReadingWorkflow %}
+    {% set navItems = [
+      {
+        href: "/reading/batch/" ~ batchId,
+        text: "Batch list"
       }
     ] %}
   {% endif %}

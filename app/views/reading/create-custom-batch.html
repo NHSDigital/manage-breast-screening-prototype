@@ -40,10 +40,6 @@
       {
         value: "second_reads",
         text: "Second reads only"
-      },
-      {
-        value: "awaiting_priors",
-        text: "Only cases awaiting priors"
       }
     ]
   }) }}
@@ -59,22 +55,22 @@
     },
     items: [
       {
-        value: "25",
-        text: "25 cases"
+        value: "10",
+        text: "10 cases"
       },
       {
-        value: "50",
-        text: "50 cases",
+        value: "25",
+        text: "25 cases",
         checked: true
       },
       {
-        value: "100",
-        text: "100 cases"
+        value: "50",
+        text: "50 cases"
       }
     ]
   }) }}
 
-  {{ checkboxes({
+  {# {{ checkboxes({
     idPrefix: "filters",
     name: "filters",
     fieldset: {
@@ -93,7 +89,7 @@
         text: "Include awaiting priors cases"
       }
     ]
-  }) }}
+  }) }} #}
 
   {{ input({
     label: {

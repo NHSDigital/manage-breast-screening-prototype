@@ -324,6 +324,87 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
       const event = getEvent(data, eventId)
+      const imagesTaken = data.imagesTaken
+      const pauseAction = data.pauseAction
+
+      // Handle pause action from images-completed scenario
+      if (pauseAction === 'yes') {
+        // Save changes and pause the appointment
+        saveTempEventToEvent(data)
+        saveTempParticipantToParticipant(data)
+
+        // Get existing session details to track authors
+        const existingDetails = event.sessionDetails || {}
+        const authors = existingDetails.authors || []
+
+        // Add current user's pause action to authors
+        authors.push({
+          userId: data.currentUser?.id,
+          action: 'paused',
+          timestamp: new Date().toISOString()
+        })
+
+        // Update status to paused and record pause details
+        updateEventStatus(data, eventId, 'event_paused')
+        updateEventData(data, eventId, {
+          sessionDetails: {
+            startedAt: existingDetails.startedAt || null,
+            startedBy: existingDetails.startedBy || null,
+            pausedAt: new Date().toISOString(),
+            pausedBy: data.currentUser?.id || null,
+            authors: authors
+          }
+        })
+
+        // Clear temporary session data
+        delete data.event
+        delete data.participant
+        delete data.pauseAction
+        delete data.confirmedImagesWereTaken
+
+        // Redirect to appointment page with paused status
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/appointment`
+        )
+      } else if (pauseAction === 'no') {
+        // Return to appointment - use referrer chain
+        delete data.pauseAction
+        delete data.confirmedImagesWereTaken
+
+        // Use referrer chain to go back to where they came from
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}/events/${eventId}/appointment`,
+          req.query.referrerChain
+        )
+
+        return res.redirect(returnUrl)
+      }
+
+      // Handle the initial question about whether images were taken
+      if (imagesTaken === 'No') {
+        // No images taken - redirect back to exit page to offer choice
+        delete data.imagesTaken
+        // Store that we've confirmed no images to skip the question next time
+        data.confirmedNoImages = true
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/exit-appointment`,
+            req.query.referrerChain
+          )
+        )
+      } else if (imagesTaken === 'Yes') {
+        // Images taken - redirect back to exit page which will show pause-only options
+        delete data.imagesTaken
+        data.confirmedImagesWereTaken = true
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/exit-appointment`,
+            req.query.referrerChain
+          )
+        )
+      }
+
+      // Handle the old exitAction flow for backwards compatibility
       const exitAction = data.exitAction
 
       // Only allow exiting if the event is currently in progress
@@ -347,8 +428,10 @@ module.exports = (router) => {
           delete data.event
           delete data.participant
 
-          // Clear the exit action from session
+          // Clear the exit action and flags from session
           delete data.exitAction
+          delete data.confirmedNoImages
+          delete data.confirmedImagesWereTaken
 
           // Redirect to returnTo destination or appointment page
           const returnTo = data.returnTo
@@ -359,6 +442,8 @@ module.exports = (router) => {
         } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
           delete data.exitAction
+          delete data.confirmedNoImages
+          delete data.confirmedImagesWereTaken
           return res.redirect(
             `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
           )
@@ -396,8 +481,10 @@ module.exports = (router) => {
           delete data.event
           delete data.participant
 
-          // Clear the exit action from session
+          // Clear the exit action and flags from session
           delete data.exitAction
+          delete data.confirmedNoImages
+          delete data.confirmedImagesWereTaken
 
           // Redirect to appointment page with paused status
           return res.redirect(
@@ -406,8 +493,10 @@ module.exports = (router) => {
         }
       }
 
-      // Clear the exit action from session (in case status check failed)
+      // Clear the exit action and flags from session (in case status check failed)
       delete data.exitAction
+      delete data.confirmedNoImages
+      delete data.confirmedImagesWereTaken
 
       // Fallback redirect
       res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
@@ -1972,6 +2061,20 @@ module.exports = (router) => {
     } else {
       // Clear any existing temp data for fresh start
       delete data.event.mammogramDataTemp
+
+      // Check if this is a failover from automatic mode
+      const isManualImageCollection =
+        data.settings?.screening?.manualImageCollection === 'true'
+      const hadAutomaticData =
+        !!data.event?.mammogramData && !data.event?.mammogramData?.isManualEntry
+
+      // Set failover flag if switching from automatic to manual
+      if (!isManualImageCollection || hadAutomaticData) {
+        if (!data.event.mammogramDataTemp) {
+          data.event.mammogramDataTemp = {}
+        }
+        data.event.mammogramDataTemp.isManualFailover = true
+      }
     }
 
     // Let the dynamic routing handle the actual rendering
@@ -2061,16 +2164,35 @@ module.exports = (router) => {
 
     const formData = {
       machineRoom: mammogramData.machineRoom,
-      isIncompleteMammography:
-        mammogramData.isIncompleteMammography === 'yes' ? ['yes'] : [],
-      incompleteMammographyReason: mammogramData.incompleteMammographyReason,
+      isIncompleteMammography: Array.isArray(
+        mammogramData.isIncompleteMammography
+      )
+        ? mammogramData.isIncompleteMammography
+        : mammogramData.isIncompleteMammography === 'yes'
+          ? ['yes']
+          : [],
+      incompleteMammographyReasons: Array.isArray(
+        mammogramData.incompleteMammographyReasons
+      )
+        ? mammogramData.incompleteMammographyReasons
+        : mammogramData.incompleteMammographyReasons
+          ? [mammogramData.incompleteMammographyReasons]
+          : [],
       incompleteMammographyReasonDetails:
         mammogramData.incompleteMammographyReasonDetails,
       incompleteMammographyFollowUpAppointment:
         mammogramData.incompleteMammographyFollowUpAppointment,
       incompleteMammographyFollowUpAppointmentDetails:
         mammogramData.incompleteMammographyFollowUpAppointmentDetails,
+      isImperfectButBestPossible: Array.isArray(
+        mammogramData.isImperfectButBestPossible
+      )
+        ? mammogramData.isImperfectButBestPossible
+        : mammogramData.isImperfectButBestPossible === 'yes'
+          ? ['yes']
+          : [],
       additionalDetails: mammogramData.additionalDetails,
+      notesForReader: mammogramData.notesForReader,
       viewsRightBreast: [],
       viewsLeftBreast: []
     } // Convert views back to checkbox/input format
@@ -2255,11 +2377,12 @@ module.exports = (router) => {
 
     return {
       isManualEntry: true,
+      isManualFailover: formData.isManualFailover || false,
       machineRoom: formData.machineRoom,
       views,
-      isIncompleteMammography: hasIncompleteMammography ? 'yes' : null,
-      incompleteMammographyReason: hasIncompleteMammography
-        ? formData.incompleteMammographyReason
+      isIncompleteMammography: hasIncompleteMammography ? ['yes'] : null,
+      incompleteMammographyReasons: hasIncompleteMammography
+        ? formData.incompleteMammographyReasons
         : null,
       incompleteMammographyReasonDetails: hasIncompleteMammography
         ? formData.incompleteMammographyReasonDetails
@@ -2270,7 +2393,13 @@ module.exports = (router) => {
       incompleteMammographyFollowUpAppointmentDetails: hasIncompleteMammography
         ? formData.incompleteMammographyFollowUpAppointmentDetails
         : null,
+      isImperfectButBestPossible: formData.isImperfectButBestPossible?.includes(
+        'yes'
+      )
+        ? ['yes']
+        : null,
       additionalDetails: formData.additionalDetails,
+      notesForReader: formData.notesForReader,
       metadata: {
         totalImages,
         standardViewsCompleted,
@@ -2842,7 +2971,7 @@ module.exports = (router) => {
       // Update event status to rescheduled
       updateEventStatus(data, eventId, 'event_rescheduled')
 
-      const successMessage = `A reschedule request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+      const successMessage = `Appointment cancelled and a reschedule request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
 
       req.flash('success', { wrapWithHeading: successMessage })
 
@@ -2898,7 +3027,7 @@ module.exports = (router) => {
         // Revert to scheduled status
         updateEventStatus(data, eventId, 'event_scheduled')
 
-        req.flash('success', 'Reschedule request undone')
+        req.flash('success', 'Appointment cancellation undone')
       }
 
       // Use referrer system to return to originating page

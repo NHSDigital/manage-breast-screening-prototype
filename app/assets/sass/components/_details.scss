@@ -1,7 +1,6 @@
 // app/assets/sass/components/_details.scss
 
-@use "nhsuk-frontend/dist/nhsuk/core/settings" as *;
-@use "nhsuk-frontend/dist/nhsuk/core/tools" as *;
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-details__container {
   position: relative;

@@ -403,6 +403,13 @@ const getReadingProgress = function (
     hasPreviousUserReadable: !!previousUserReadableEvent,
     nextUserReadableId: nextUserReadableEvent?.id || null,
     previousUserReadableId: previousUserReadableEvent?.id || null,
+    // Whether user has already read the previous/next event (for review page links)
+    previousUserHasRead: previousUserReadableEvent
+      ? userHasReadEvent(previousUserReadableEvent, currentUserId)
+      : false,
+    nextUserHasRead: nextUserReadableEvent
+      ? userHasReadEvent(nextUserReadableEvent, currentUserId)
+      : false,
     // Skipped events
     skippedEvents,
     isCurrentSkipped: skippedEvents.includes(currentEventId),
@@ -1046,7 +1053,7 @@ const createReadingBatch = (data, options) => {
     name,
     clinicId,
     batchId = null, // Allow custom batch ID
-    limit = 50,
+    limit = 25,
     filters = {}
   } = options
 

@@ -34,6 +34,7 @@
   {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "1" %}
   {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "0" %}
   {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
+  {% set notesForReader = mammogramTemp.notesForReader or event.mammogramData.notesForReader or "" %}
   
   {# Set mammogramSource for incomplete mammography question - prefer temp data, fall back to final data #}
   {% set mammogramSource = mammogramTemp or event.mammogramData or {} %}
@@ -178,23 +179,11 @@
     }
   }) }}
 
-  {% set namePrefix = "event[mammogramDataTemp]" %}
-  {# {% include "_includes/partial-mammography-question.njk" %} #}
-  {% include "_includes/incomplete-mammography-question.njk" %}
+  <h2>Additional details</h2>
 
-  {{ textarea({
-    name: "event[mammogramDataTemp][additionalDetails]",
-    id: "additional-details",
-    value: additionalDetails,
-    label: {
-      text: "Additional details (optional)",
-      classes: "nhsuk-label--m"
-    },
-    hint: {
-      text: "Provide information for image readers when reviewing"
-    },
-    rows: 2
-  }) }}
+  {% set namePrefix = "event[mammogramDataTemp]" %}
+  {% set mammogramSource = mammogramTemp or event.mammogramData or {} %}
+  {% include "_includes/additional-image-details.njk" %}
 
   {{ button({
     text: "Continue"

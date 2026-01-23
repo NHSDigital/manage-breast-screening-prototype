@@ -23,6 +23,8 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  
+
   {% if data.event.workflowStatus["take-images"] == 'completed' %}
     {{ button({
       text: "Next section",
@@ -130,14 +132,9 @@
 
   <p><a href="#">View imported image metadata</a></p>
 
-  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
-    {{ button({
-      text: "Re-scan PACS for image updates",
-      classes: "nhsuk-button--secondary"
-    }) }}
+    {% include "_includes/images/image-troubleshooting.njk" %}
 
-    <a class="nhsuk-link app-link--error" href="#">There is a problem with the images</a>
-  </div>
+
 
   {# Build array of views needing repeat questions (count > 1) #}
   {% set viewsNeedingRepeats = [] %}
@@ -178,22 +175,11 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
-      {# {% include "_includes/partial-mammography-question.njk" %} #}
-      {% include "_includes/incomplete-mammography-question.njk" %}
+      <h2>Additional details</h2>
 
-      {{ textarea({
-        name: "event[mammogramData][additionalDetails]",
-        id: "additional-details",
-        value: event.mammogramData.additionalDetails,
-        label: {
-          text: "Additional details (optional)",
-          classes: "nhsuk-label--m"
-        },
-        hint: {
-          text: "Provide information for image readers when reviewing"
-        },
-        rows: 2
-      }) }}
+      {% set namePrefix = "event[mammogramData]" %}
+      {% set mammogramSource = event.mammogramData %}
+      {% include "_includes/additional-image-details.njk" %}
 
       {{ button({
         text: "Confirm images"
@@ -201,6 +187,8 @@
 
     </div>
   </div>
+
+
 
 {% endblock %}
 

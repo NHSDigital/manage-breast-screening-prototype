@@ -3,7 +3,7 @@
 {% extends 'layout-appointment.html' %}
 
 {% set pageHeading = "Exit appointment" %}
-{% set formAction = eventUrl + "/exit-appointment-answer" %}
+{% set formAction = (eventUrl + "/exit-appointment-answer") | urlWithReferrer(referrerChain) %}
 
 {# Suppress nav as it's a link to the page we're on #}
 {% set useMinimalNav = true %}
@@ -12,66 +12,20 @@
 
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {% if event.workflowStatus['take-images'] == 'completed' %}
-    {# Images have been taken - simpler confirmation #}
-    <p>This appointment will be paused.</p>
+  {% set hasStartedImaging = (event.workflowStatus['confirm-identity'] == 'completed') and (event.workflowStatus['review-medical-information'] == 'completed') %}
+  {% set hasCompletedImaging = event.workflowStatus['take-images'] == 'completed' %}
+  {% set confirmedNoImages = data.confirmedNoImages %}
+  {% set confirmedImagesWereTaken = data.confirmedImagesWereTaken %}
 
-    {% set insetHtml %}
-      <p>Once images have been taken, appointment details cannot be discarded.</p>
-    {% endset %}
-
-    {{ insetText({
-      html: insetHtml
-    }) }}
-
-    <input type="hidden" name="exitAction" value="save">
-
-    <div class="nhsuk-button-group">
-      {{ button({
-        text: "Confirm"
-      }) }}
-
-      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel and return to appointment</a>
-    </div>
-
+  {% if hasCompletedImaging or confirmedImagesWereTaken %}
+    {# Scenario 3: Images completed - can only pause #}
+    {% include 'events/exit-appointment/images-completed.html' %}
+  {% elif hasStartedImaging and not confirmedNoImages %}
+    {# Scenario 2: During images - ask if images were taken #}
+    {% include 'events/exit-appointment/images-may-be-taken.html' %}
   {% else %}
-    {# No images - show all options #}
-    {{ radios({
-      name: "exitAction",
-      fieldset: {
-        legend: {
-          text: "Will this appointment be resumed today?",
-          classes: "nhsuk-fieldset__legend--m",
-          isPageHeading: false
-        }
-      },
-      items: [
-        {
-          value: "save",
-          text: "Yes, pause and save changes"
-        },
-        {
-          value: "cannot-proceed",
-          text: "No, appointment cannot proceed"
-        },
-        {
-          divider: "or"
-        },
-        {
-          value: "discard",
-          text: "Discard changes and revert status to 'Checked in'"
-        }
-      ]
-    }) }}
-
-    <div class="nhsuk-button-group">
-      {{ button({
-        text: "Confirm"
-      }) }}
-
-      <a href="{{ eventUrl | getReturnUrl(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
-    </div>
-
+    {# Scenario 1: Before images - show all options #}
+    {% include 'events/exit-appointment/before-images.html' %}
   {% endif %}
 
 {% endblock %}

@@ -1,0 +1,34 @@
+{# app/views/_includes/reading/workflow-navigation.njk #}
+{# Navigation controls for reading workflow - prev/next case #}
+
+{# Previous/next case navigation #}
+{% if progress.hasPreviousUserReadable or progress.hasNextUserReadable %}
+  <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
+    <div class="nhsuk-grid-column-two-thirds">
+      {% if progress.hasPreviousUserReadable %}
+        {# Link to event base URL - route handles redirect to existing-read or opinion #}
+        {{ backLink({
+          href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.previousUserReadableId,
+          text: "Previous case"
+        }) }}
+      {% endif %}
+    </div>
+
+    {% if progress.hasNextUserReadable %}
+      <div class="nhsuk-grid-column-one-third app-align-right">
+        {% if event | canUserReadEvent %}
+          {{ appForwardLink({
+            href: "/reading/batch/" ~ batchId ~ "/events/" ~ eventId ~ "/skip",
+            text: "Skip to next"
+          }) }}
+        {% else %}
+          {# We already have a reading so don't need to skip #}
+          {{ appForwardLink({
+            href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.nextUserReadableId,
+            text: "Next case"
+          }) }}
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endif %}

@@ -87,9 +87,9 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showRemaining]={{'true' if data.settings.reading.showRemaining !== 'true' else 'false'}}&clearQuery=true">{{ 'Show remaining counts' if data.settings.reading.showRemaining=='false' else 'Show completed counts'}}</a>
     </p>
 
-    {# Show repeats tag #}
+    {# Show debug tags #}
     <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showRepeatsTag]={{'true' if data.settings.reading.showRepeatsTag !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.reading.showRepeatsTag=='false' else 'Disable'}} repeats tag</a>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showDebugTags]={{'true' if data.settings.reading.showDebugTags !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.reading.showDebugTags=='false' else 'Disable'}} debug tags</a>
     </p>
 
     {# Show PACS Viewer #}

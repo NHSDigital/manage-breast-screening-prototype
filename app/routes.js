@@ -131,6 +131,7 @@ require('./routes/clinics')(router)
 require('./routes/participants')(router)
 require('./routes/events')(router)
 require('./routes/reading')(router)
+require('./routes/reports')(router)
 
 router.get('/modal-examples', (req, res) => {
   res.render('_components/modal/examples')

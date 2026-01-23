@@ -1,0 +1,43 @@
+{# app/views/reading/workflow/review.html #}
+{# Review page for technical recall and recall for assessment #}
+
+{% extends 'layout-reading.html' %}
+
+{% set pageHeading = "Review your opinion" %}
+
+{% block pageContent %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+      <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+      {# Assessment summary card #}
+      {% set readSummaryHtml %}
+        {% set read = data.imageReadingTemp %}
+        {% set allowEdits = true %}
+        {% set changeOpinionUrl = "./opinion" %}
+        {% include "_includes/summary-lists/read-summary.njk" %}
+      {% endset %}
+
+      {{ card({
+        heading: "Your assessment",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: readSummaryHtml
+      }) }}
+
+      {# Confirm and save form #}
+      <form action="./save-opinion" method="POST">
+        {{ button({
+          text: "Confirm and save"
+        }) }}
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}
