@@ -1,17 +1,17 @@
-<script src="/js/main.js"></script>
+<script src="/main.js"></script>
 
 <!-- Add any custom scripts -->
-{% if currentUrl.indexOf("/prototype-admin/") === -1 %}
-  <script src="/js/custom-elements/is-sticky.js"></script>
-  <script src="/js/button-menu.js"></script>
-  <script src="/js/modal.js"></script>
-  <script src="/js/scroll-to-section.js"></script>
-  <script src="/js/expanded-state-tracker.js"></script>
-  <script src="/js/expandable-sections.js"></script>
-  <script src="/js/stepper-input.js"></script>
+{% if currentPage.indexOf("/prototype-admin/") === -1 %}
+  <script src="/custom-elements/is-sticky.js"></script>
+  <script src="/button-menu.js"></script>
+  <script src="/modal.js"></script>
+  <script src="/scroll-to-section.js"></script>
+  <script src="/expanded-state-tracker.js"></script>
+  <script src="/expandable-sections.js"></script>
+  <script src="/stepper-input.js"></script>
 
   {% if data.settings.reading.showPacsViewer | falsify %}
-    <script src="/js/mammogram-viewer.js"></script>
+    <script src="/mammogram-viewer.js"></script>
   {% endif %}
 
   <script>

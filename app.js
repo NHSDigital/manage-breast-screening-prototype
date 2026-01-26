@@ -32,7 +32,10 @@ const prototype = NHSPrototypeKit.init({
   sessionDataDefaults: sessionDataDefaults,
   viewsPath: viewsPath,
   buildOptions: {
-    entryPoints: ['app/assets/sass/main.scss']
+    entryPoints: [
+      'app/assets/sass/main.scss',
+      'app/assets/javascript/*.js'
+    ]
   }
 })
 
