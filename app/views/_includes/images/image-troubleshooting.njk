@@ -12,11 +12,16 @@
         <h2>Troubleshoot issues with images</h2>
 
         {% call details({
-          summaryText: "No images are displaying"
+          summaryText: "No images (or incorrect images) are displaying"
         }) %}
+
+        <p>Follow these steps if you are seeing no images, too few, too many, or images from a different participant.</p>
+
           <ol>
-            <li>Wait 15 seconds</li>
-            <li>Resend images to prompt the mammogram machine to refresh</li>
+            <li>Check the correct participant has been selected on the mammogram machine</li>
+            <li>Change the participant details if necessary</li>
+            <li>Wait 15 seconds for images to update</li>
+            <li>If they do not, resend images to prompt the mammogram machine to refresh</li>
           </ol>
 
           {{ button({
@@ -27,37 +32,21 @@
 
           <p class="nhsuk-body-s nhsuk-u-secondary-text-color">Last requested at {{ lastRequestedTime | formatTime("HH:mm:ss") }}</p>
 
-          <h3>If images are still not displaying</h3>
+          <h3>If you're still seeing no images, or an incorrect number of images</h3>
 
           <p><a href="./images-manual" class="nhsuk-link">Record image details manually</a></p>
+
+          <p>You can add details of image issues or adjustments required at the end of this appointment.</p>
         {% endcall %}
 
         {% call details({
-          summaryText: "There are too few or too many images"
+          summaryText: "Images have incorrect labels"
         }) %}
           <ol>
-            <li>Check that images are labelled with the right participant on the mammogram machine</li>
-            <li>If the labels are incorrect, update them on the mammogram machine</li>
-            <li>Wait 15 seconds</li>
-            <li>Resend images to prompt the mammogram machine to refresh details</li>
-          </ol>
-
-          {{ button({
-            text: "Resend images",
-            href: "#",
-            classes: "nhsuk-button nhsuk-button--secondary"
-          }) }}
-
-          <p class="nhsuk-body-s nhsuk-u-secondary-text-color">Last requested at {{ lastRequestedTime | formatTime("HH:mm:ss") }}</p>
-        {% endcall %}
-
-        {% call details({
-          summaryText: "Images are incorrectly labelled"
-        }) %}
-          <ol>
-            <li>Change any incorrect labels (such as view or participant information) on the mammogram machine</li>
-            <li>Wait 15 seconds for new images to appear</li>
-            <li>If they do not, resend images to prompt the mammogram machine to refresh details</li>
+            <li>Check the correct views have been selected on the mammogram machine</li>
+            <li>Change any incorrect labels</li>
+            <li>Wait 15 seconds for updated information to appear</li>
+            <li>If it does not, resend images to prompt the mammogram machine to refresh details</li>
           </ol>
 
           {{ button({
@@ -72,11 +61,11 @@
 
           <p><a href="./images-manual" class="nhsuk-link">Record image details manually</a></p>
 
-          <p>You can add notes to indicate what information needs to be corrected.</p>
+          <p>You can add details of image issues or adjustments required at the end of this appointment.</p>
         {% endcall %}
 
         {% call details({
-          summaryText: "Images are blurred or obstructed"
+          summaryText: "Poor image quality (blurred or artifacts in view)"
         }) %}
           <h3>If more images can be taken to resolve the problem</h3>
 
@@ -96,10 +85,10 @@
 
           <h3>If the images taken are the best possible</h3>
 
-          <ol>
-            <li>Select 'Incomplete set of mammograms' below the image thumbnails</li>
-            <li>Select 'No, best possible images taken' when asked if another appointment is required</li>
-          </ol>
+          <p>Mark as 'Imperfect, but best possible images' in the 'Additional details' section.</p>
+          
+          <p>This will advise image readers not to request a technical recall.</p>
+
         {% endcall %}
 
         {% call details({
@@ -108,13 +97,15 @@
           <h3>If some images have been taken and they are displayed above</h3>
 
           <ol>
-            <li>Select 'Not all mammograms taken' option</li>
+            <li>Mark as 'Not all mammograms taken' in the 'Additional details' section</li>
             <li>Select 'Technical issues' when asked for a reason and provide details</li>
           </ol>
 
           <h3>If some images have been taken and they are not displayed above</h3>
 
           <p><a href="./images-manual" class="nhsuk-link">Record image details manually</a></p>
+
+          <p>You can add details of image issues or adjustments required at the end of this appointment.</p>
 
           <h3>If no images have been taken</h3>
 
