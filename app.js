@@ -21,7 +21,8 @@ const port = parseInt(process.env.PORT || config.port, 10) || 2000
 // Initialise applications
 const viewsPath = [
   join(__dirname, 'app/views/'),
-  join(__dirname, 'app/views/_templates/')
+  join(__dirname, 'app/views/_templates/'),
+  join(__dirname, 'app/views/_includes')
 ]
 
 const prototype = NHSPrototypeKit.init({
