@@ -18,9 +18,9 @@ const ASSETS_PATH = path.join(__dirname, '../../assets/images')
 
 // Default tag weights if not configured
 const DEFAULT_TAG_WEIGHTS = {
-  normal: 0.70,
-  abnormal: 0.20,
-  indeterminate: 0.10
+  normal: 0.7,
+  abnormal: 0.2,
+  indeterminate: 0.1
 }
 
 /**
@@ -107,7 +107,10 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   }
 
   // Get tag weights from config or options
-  const weights = options.weights || config.reading?.mammogramTagWeights || DEFAULT_TAG_WEIGHTS
+  const weights =
+    options.weights ||
+    config.reading?.mammogramTagWeights ||
+    DEFAULT_TAG_WEIGHTS
 
   // Group sets by tag
   const setsByTag = {}
