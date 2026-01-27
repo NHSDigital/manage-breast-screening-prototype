@@ -113,10 +113,16 @@
       z-index: 1;
     }
 
+    .viewer-panel__label--right {
+      left: auto;
+      right: 8px;
+    }
+
     .viewer-panel__image {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
+      cursor: zoom-in;
     }
 
     .viewer-panel__missing {
@@ -165,15 +171,100 @@
       border-top: 1px solid #333;
       flex-shrink: 0;
     }
+
+    .viewer-zoom {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+
+    .viewer-zoom__image {
+      max-width: 95%;
+      max-height: 95%;
+      object-fit: contain;
+    }
+
+    .viewer-zoom__label {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 4px;
+    }
+
+    .viewer-debug {
+      position: fixed;
+      bottom: 32px;
+      left: 0;
+      right: 0;
+      background-color: rgba(50, 50, 0, 0.9);
+      border-top: 1px solid #666;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-family: monospace;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .viewer-debug__label {
+      color: #888;
+    }
+
+    .viewer-debug__id {
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .viewer-debug__tag {
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .viewer-debug__tag--normal {
+      background-color: #0a5;
+      color: #fff;
+    }
+
+    .viewer-debug__tag--abnormal {
+      background-color: #d00;
+      color: #fff;
+    }
+
+    .viewer-debug__tag--technical {
+      background-color: #c80;
+      color: #000;
+    }
+
+    .viewer-debug__tag--indeterminate {
+      background-color: #666;
+      color: #fff;
+    }
+
+    .viewer-debug__description {
+      color: #ccc;
+      flex: 1;
+    }
   </style>
 </head>
 <body>
   <header class="viewer-header" id="viewer-header" style="display: none;">
     <div class="viewer-header__info">
       <div class="viewer-header__name" id="participant-name"></div>
-      <div class="viewer-header__details">
-        <span id="nhs-number"></span>
-        <span id="sx-number"></span>
+      <div class="viewer-header__details" id="participant-details">
       </div>
     </div>
     <div class="viewer-header__actions">
@@ -186,28 +277,28 @@
   <div class="viewer-grid" id="viewer-grid" style="display: none;">
     <div class="viewer-panel" id="panel-rcc">
       <span class="viewer-panel__label">RCC</span>
-      <img class="viewer-panel__image" id="image-rcc" alt="Right craniocaudal view">
+      <img class="viewer-panel__image" id="image-rcc" alt="Right craniocaudal view" data-view="RCC">
       <div class="viewer-panel__missing" id="missing-rcc" style="display: none;">
         <span>No image</span>
       </div>
     </div>
     <div class="viewer-panel" id="panel-lcc">
-      <span class="viewer-panel__label">LCC</span>
-      <img class="viewer-panel__image" id="image-lcc" alt="Left craniocaudal view">
+      <span class="viewer-panel__label viewer-panel__label--right">LCC</span>
+      <img class="viewer-panel__image" id="image-lcc" alt="Left craniocaudal view" data-view="LCC">
       <div class="viewer-panel__missing" id="missing-lcc" style="display: none;">
         <span>No image</span>
       </div>
     </div>
     <div class="viewer-panel" id="panel-rmlo">
       <span class="viewer-panel__label">RMLO</span>
-      <img class="viewer-panel__image" id="image-rmlo" alt="Right mediolateral oblique view">
+      <img class="viewer-panel__image" id="image-rmlo" alt="Right mediolateral oblique view" data-view="RMLO">
       <div class="viewer-panel__missing" id="missing-rmlo" style="display: none;">
         <span>No image</span>
       </div>
     </div>
     <div class="viewer-panel" id="panel-lmlo">
-      <span class="viewer-panel__label">LMLO</span>
-      <img class="viewer-panel__image" id="image-lmlo" alt="Left mediolateral oblique view">
+      <span class="viewer-panel__label viewer-panel__label--right">LMLO</span>
+      <img class="viewer-panel__image" id="image-lmlo" alt="Left mediolateral oblique view" data-view="LMLO">
       <div class="viewer-panel__missing" id="missing-lmlo" style="display: none;">
         <span>No image</span>
       </div>
@@ -224,6 +315,13 @@
     Listening for updates...
   </footer>
 
+  <div class="viewer-debug" id="viewer-debug" style="display: none;">
+    <span class="viewer-debug__label">Set:</span>
+    <span class="viewer-debug__id" id="debug-set-id"></span>
+    <span class="viewer-debug__tag" id="debug-set-tag"></span>
+    <span class="viewer-debug__description" id="debug-set-description"></span>
+  </div>
+
   <script>
     // Mammogram viewer - listens for BroadcastChannel messages
     const CHANNEL_NAME = "mammogram-viewer"
@@ -237,8 +335,7 @@
     const placeholderEl = document.getElementById("viewer-placeholder")
     const statusEl = document.getElementById("viewer-status")
     const nameEl = document.getElementById("participant-name")
-    const nhsEl = document.getElementById("nhs-number")
-    const sxEl = document.getElementById("sx-number")
+    const detailsEl = document.getElementById("participant-details")
     const imageEls = {
       rcc: document.getElementById("image-rcc"),
       lcc: document.getElementById("image-lcc"),
@@ -251,6 +348,50 @@
       rmlo: document.getElementById("missing-rmlo"),
       lmlo: document.getElementById("missing-lmlo")
     }
+
+    // Debug elements
+    const debugEl = document.getElementById("viewer-debug")
+    const debugSetIdEl = document.getElementById("debug-set-id")
+    const debugSetTagEl = document.getElementById("debug-set-tag")
+    const debugSetDescEl = document.getElementById("debug-set-description")
+    let debugVisible = false
+
+    // Current set info for debug display
+    let currentSetInfo = null
+
+    /**
+     * Toggle debug info visibility (press 'd' to toggle)
+     */
+    const toggleDebug = () => {
+      debugVisible = !debugVisible
+      debugEl.style.display = debugVisible ? "flex" : "none"
+      if (debugVisible && currentSetInfo) {
+        updateDebugInfo(currentSetInfo)
+      }
+    }
+
+    /**
+     * Update the debug info display
+     */
+    const updateDebugInfo = (data) => {
+      currentSetInfo = data
+      if (!debugVisible) return
+
+      debugSetIdEl.textContent = data.setId || "unknown"
+      debugSetDescEl.textContent = data.setDescription || ""
+
+      // Update tag with color coding
+      const tag = data.setTag || "unknown"
+      debugSetTagEl.textContent = tag
+      debugSetTagEl.className = `viewer-debug__tag viewer-debug__tag--${tag}`
+    }
+
+    // Listen for 'd' key to toggle debug
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "d" || e.key === "D") {
+        toggleDebug()
+      }
+    })
 
     /**
      * Show the placeholder (no participant loaded)
@@ -282,13 +423,38 @@
     }
 
     /**
+     * Render participant details in single line
+     */
+    const renderDetails = (data) => {
+      const details = []
+      
+      if (data.nhsNumber) {
+        details.push(`NHS: ${data.nhsNumber}`)
+      }
+      if (data.sxNumber) {
+        details.push(`SX: ${data.sxNumber}`)
+      }
+      if (data.dateOfBirth) {
+        details.push(`DOB: ${data.dateOfBirth}`)
+      }
+      
+      detailsEl.innerHTML = details.map(d => `<span>${d}</span>`).join('')
+    }
+
+    /**
      * Show mammograms for a participant
      */
     const showMammograms = (data) => {
+      // Log set info to console for debugging
+      console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
+        id: data.setId,
+        tag: data.setTag,
+        description: data.setDescription
+      })
+
       // Update header
       nameEl.textContent = data.participantName || "Unknown"
-      nhsEl.textContent = data.nhsNumber ? `NHS: ${data.nhsNumber}` : ""
-      sxEl.textContent = data.sxNumber ? `SX: ${data.sxNumber}` : ""
+      renderDetails(data)
 
       // Update images - show placeholder for missing views
       if (data.images) {
@@ -297,6 +463,9 @@
         updateViewPanel("rmlo", data.images.rmlo)
         updateViewPanel("lmlo", data.images.lmlo)
       }
+
+      // Update debug info if visible
+      updateDebugInfo(data)
 
       // Show viewer
       placeholderEl.style.display = "none"
@@ -335,6 +504,49 @@
     }
 
     /**
+     * Show image in fullscreen zoom
+     */
+    const showZoom = (imageSrc, viewLabel) => {
+      const zoomEl = document.createElement('div')
+      zoomEl.className = 'viewer-zoom'
+      zoomEl.innerHTML = `
+        <div class="viewer-zoom__label">${viewLabel}</div>
+        <img class="viewer-zoom__image" src="${imageSrc}" alt="${viewLabel}">
+      `
+      
+      // Close on click
+      zoomEl.addEventListener('click', () => {
+        document.body.removeChild(zoomEl)
+      })
+      
+      // Close on escape key
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          document.body.removeChild(zoomEl)
+          document.removeEventListener('keydown', handleEscape)
+        }
+      }
+      document.addEventListener('keydown', handleEscape)
+      
+      document.body.appendChild(zoomEl)
+    }
+
+    /**
+     * Add click handlers to images for zoom
+     */
+    const setupZoomHandlers = () => {
+      Object.entries(imageEls).forEach(([view, imgEl]) => {
+        imgEl.addEventListener('click', (e) => {
+          if (imgEl.src && imgEl.style.display !== 'none') {
+            e.stopPropagation()
+            const viewLabel = imgEl.getAttribute('data-view')
+            showZoom(imgEl.src, viewLabel)
+          }
+        })
+      })
+    }
+
+    /**
      * Initialise the viewer
      */
     const init = () => {
@@ -351,6 +563,9 @@
         type: "request-current",
         timestamp: Date.now()
       })
+
+      // Setup zoom click handlers
+      setupZoomHandlers()
 
       updateStatus("Listening for updates...")
     }

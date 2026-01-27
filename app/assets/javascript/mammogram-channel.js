@@ -22,6 +22,7 @@ const getChannel = () => {
  * @param {string} data.participantName - Display name for the participant
  * @param {string} data.nhsNumber - NHS number (optional)
  * @param {string} data.sxNumber - SX number (optional)
+ * @param {string} data.dateOfBirth - Date of birth with age (optional)
  * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo)
  */
 const broadcastShowParticipant = (data) => {
@@ -34,7 +35,11 @@ const broadcastShowParticipant = (data) => {
     participantName: data.participantName,
     nhsNumber: data.nhsNumber || null,
     sxNumber: data.sxNumber || null,
+    dateOfBirth: data.dateOfBirth || null,
     images: data.images || null,
+    setId: data.setId || null,
+    setDescription: data.setDescription || null,
+    setTag: data.setTag || null,
     timestamp: Date.now()
   })
 }
@@ -170,6 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sxNumber = document
       .querySelector('meta[name="mammogram-sx-number"]')
       ?.getAttribute('content')
+    const dateOfBirth = document
+      .querySelector('meta[name="mammogram-date-of-birth"]')
+      ?.getAttribute('content')
     const images = {
       rcc: document
         .querySelector('meta[name="mammogram-image-rcc"]')
@@ -185,7 +193,18 @@ document.addEventListener('DOMContentLoaded', () => {
         ?.getAttribute('content')
     }
 
-    return { eventId, participantName, nhsNumber, sxNumber, images }
+    // Get set info for debugging
+    const setId = document
+      .querySelector('meta[name="mammogram-set-id"]')
+      ?.getAttribute('content')
+    const setDescription = document
+      .querySelector('meta[name="mammogram-set-description"]')
+      ?.getAttribute('content')
+    const setTag = document
+      .querySelector('meta[name="mammogram-set-tag"]')
+      ?.getAttribute('content')
+
+    return { eventId, participantName, nhsNumber, sxNumber, dateOfBirth, images, setId, setDescription, setTag }
   }
 
   // Listen for request-current messages from the viewer

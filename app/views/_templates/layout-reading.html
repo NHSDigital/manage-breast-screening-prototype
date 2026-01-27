@@ -19,8 +19,9 @@
     {% set mammogramViews = event.mammogramData.views if event and event.mammogramData else {} %}
     <meta name="mammogram-event-id" content="{{ eventId }}">
     <meta name="mammogram-participant-name" content="{{ participant | getFullName }}">
-    <meta name="mammogram-nhs-number" content="{{ participant.nhsNumber }}">
+    <meta name="mammogram-nhs-number" content="{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}">
     <meta name="mammogram-sx-number" content="{{ participant.sxNumber }}">
+    <meta name="mammogram-date-of-birth" content="{{ participant.demographicInformation.dateOfBirth | formatDate }} ({{ participant | getAge }} years)">
     <meta name="mammogram-auto-open" content="{{ 'true' if data.settings.reading.autoOpenPacsViewer | falsify else 'false' }}">
     {% if mammogramImages and mammogramImages.paths %}
       {# Pass image paths - empty string if view is missing from mammogram data #}
@@ -28,6 +29,10 @@
       <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc if mammogramViews.leftCraniocaudal else '' }}">
       <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo if mammogramViews.rightMediolateralOblique else '' }}">
       <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo if mammogramViews.leftMediolateralOblique else '' }}">
+      {# Pass set info for debugging #}
+      <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
+      <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">
+      <meta name="mammogram-set-tag" content="{{ mammogramImages.set.tag }}">
     {% endif %}
   {% endif %}
 {% endblock head %}

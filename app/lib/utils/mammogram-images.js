@@ -18,9 +18,10 @@ const ASSETS_PATH = path.join(__dirname, '../../assets/images')
 
 // Default tag weights if not configured
 const DEFAULT_TAG_WEIGHTS = {
-  normal: 0.7,
-  abnormal: 0.2,
-  indeterminate: 0.1
+  normal: 0.60,
+  abnormal: 0.20,
+  indeterminate: 0.10,
+  technical: 0.10
 }
 
 /**
@@ -69,12 +70,17 @@ const getManifest = (source = 'diagrams') => {
 /**
  * Get list of available image sets for a source
  * @param {string} source - "diagrams" or "real"
+ * @param {object} options - Optional filtering options
+ * @param {boolean} options.includeDisabled - Include disabled sets (default: false)
  * @returns {Array} - Array of set objects with id, tag, description
  */
-const getAvailableSets = (source = 'diagrams') => {
+const getAvailableSets = (source = 'diagrams', options = {}) => {
   const manifest = getManifest(source)
   if (manifest && manifest.sets) {
-    return manifest.sets
+    if (options.includeDisabled) {
+      return manifest.sets
+    }
+    return manifest.sets.filter((set) => !set.disabled)
   }
   return []
 }
@@ -181,8 +187,8 @@ const getImageLibraryPath = (imageId, source = 'diagrams') => {
   const sourceFolder = IMAGE_SOURCES[source]
   if (!sourceFolder) return null
 
-  // Image library items are stored in an 'images' subfolder
-  return `/images/${sourceFolder}/images/${imageId}.png`
+  // Image library items are stored in an 'image-library' subfolder
+  return `/images/${sourceFolder}/image-library/${imageId}.png`
 }
 
 /**
@@ -194,7 +200,7 @@ const getImageLibraryPath = (imageId, source = 'diagrams') => {
 const getSetById = (setId, source = 'diagrams') => {
   const manifest = getManifest(source)
   if (!manifest || !manifest.sets) return null
-  return manifest.sets.find(s => s.id === setId) || null
+  return manifest.sets.find((s) => s.id === setId) || null
 }
 
 /**

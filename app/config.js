@@ -47,9 +47,10 @@ module.exports = {
     mammogramImageSource: 'diagrams', // 'diagrams' or 'real'
     // Distribution of image set tags (must sum to 1.0)
     mammogramTagWeights: {
-      normal: 0.70,
+      normal: 0.60,
       abnormal: 0.20,
-      indeterminate: 0.10
+      indeterminate: 0.10,
+      technical: 0.10
     }
   },
   screening: {

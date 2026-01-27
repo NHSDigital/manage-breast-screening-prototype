@@ -1,23 +1,95 @@
 {
   "imageLibrary": [
-    { "id": "blur-rmlo", "view": "rmlo", "issue": "blur" },
+    { "id": "artefact-hair-lcc", "view": "lcc", "issue": "artefact-hair" },
+    { "id": "artefact-hair-rcc", "view": "rcc", "issue": "artefact-hair" },
     { "id": "blur-lmlo", "view": "lmlo", "issue": "blur" },
-    { "id": "blur-rcc", "view": "rcc", "issue": "blur" },
-    { "id": "blur-lcc", "view": "lcc", "issue": "blur" },
-    { "id": "positioning-rmlo", "view": "rmlo", "issue": "positioning" },
-    { "id": "positioning-lmlo", "view": "lmlo", "issue": "positioning" },
-    { "id": "positioning-rcc", "view": "rcc", "issue": "positioning" },
-    { "id": "positioning-lcc", "view": "lcc", "issue": "positioning" },
-    { "id": "exposure-light-rmlo", "view": "rmlo", "issue": "exposure-light" },
-    { "id": "exposure-dark-rmlo", "view": "rmlo", "issue": "exposure-dark" }
+    { "id": "blur-rmlo", "view": "rmlo", "issue": "blur" },
+    { "id": "blur-2-lcc", "view": "lcc", "issue": "blur" },
+    { "id": "blur-2-lmlo", "view": "lmlo", "issue": "blur" },
+    { "id": "blur-2-rcc", "view": "rcc", "issue": "blur" },
+    { "id": "blur-2-rmlo", "view": "rmlo", "issue": "blur" },
+    {
+      "id": "laterally-rotated-lcc",
+      "view": "lcc",
+      "issue": "laterally-rotated"
+    },
+    {
+      "id": "laterally-rotated-rcc",
+      "view": "rcc",
+      "issue": "laterally-rotated"
+    },
+    {
+      "id": "medially-rotated-lcc",
+      "view": "lcc",
+      "issue": "medially-rotated"
+    },
+    {
+      "id": "medially-rotated-rcc",
+      "view": "rcc",
+      "issue": "medially-rotated"
+    },
+    {
+      "id": "nipple-not-in-profile-lcc",
+      "view": "lcc",
+      "issue": "nipple-not-in-profile"
+    },
+    {
+      "id": "nipple-not-in-profile-rcc",
+      "view": "rcc",
+      "issue": "nipple-not-in-profile"
+    },
+    { "id": "normal-rcc", "view": "rcc", "issue": "none" },
+    { "id": "normal-rmlo", "view": "rmlo", "issue": "none" },
+    { "id": "normal-lcc", "view": "lcc", "issue": "none" },
+    { "id": "normal-lmlo", "view": "lmlo", "issue": "none" },
+    { "id": "overexposed-lcc", "view": "lcc", "issue": "overexposed" },
+    { "id": "overexposed-lmlo", "view": "lmlo", "issue": "overexposed" },
+    { "id": "overexposed-rcc", "view": "rcc", "issue": "overexposed" },
+    { "id": "overexposed-rmlo", "view": "rmlo", "issue": "overexposed" },
+    {
+      "id": "positioning-front-missing-lmlo",
+      "view": "lmlo",
+      "issue": "positioning-front-missing"
+    },
+    {
+      "id": "positioning-front-missing-rmlo",
+      "view": "rmlo",
+      "issue": "positioning-front-missing"
+    },
+    {
+      "id": "positioning-short-lcc",
+      "view": "lcc",
+      "issue": "positioning-short"
+    },
+    {
+      "id": "positioning-short-lmlo",
+      "view": "lmlo",
+      "issue": "positioning-short"
+    },
+    {
+      "id": "positioning-short-rcc",
+      "view": "rcc",
+      "issue": "positioning-short"
+    },
+    {
+      "id": "positioning-short-rmlo",
+      "view": "rmlo",
+      "issue": "positioning-short"
+    },
+    { "id": "skin-fold-lmlo", "view": "lmlo", "issue": "skin-fold" },
+    { "id": "skin-fold-rmlo", "view": "rmlo", "issue": "skin-fold" },
+    { "id": "underexposed-lcc", "view": "lcc", "issue": "underexposed" },
+    { "id": "underexposed-lmlo", "view": "lmlo", "issue": "underexposed" },
+    { "id": "underexposed-rcc", "view": "rcc", "issue": "underexposed" },
+    { "id": "underexposed-rmlo", "view": "rmlo", "issue": "underexposed" }
   ],
   "sets": [
     {
-      "id": "composite-tech-rmlo-blur",
+      "id": "tech-blur-rmlo",
       "tag": "technical",
-      "description": "Normal mammogram with blurred RMLO",
+      "description": "Blurred RMLO, other views normal",
       "views": {
-        "rmlo": { "image": "blur-rmlo" },
+        "rmlo": { "image": "blur-2-rmlo" },
         "lmlo": { "from": "set-17" },
         "rcc": { "from": "set-17" },
         "lcc": { "from": "set-17" }
@@ -26,11 +98,571 @@
       "left": { "status": "normal" }
     },
     {
+      "id": "tech-blur-lmlo",
+      "tag": "technical",
+      "description": "Blurred LMLO, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "blur-2-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-blur-rcc",
+      "tag": "technical",
+      "description": "Blurred RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "blur-2-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-blur-lcc",
+      "tag": "technical",
+      "description": "Blurred LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "blur-2-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-overexposed-rmlo",
+      "tag": "technical",
+      "description": "Overexposed RMLO, other views normal",
+      "views": {
+        "rmlo": { "image": "overexposed-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-overexposed-lmlo",
+      "tag": "technical",
+      "description": "Overexposed LMLO, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "overexposed-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-overexposed-rcc",
+      "tag": "technical",
+      "description": "Overexposed RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "overexposed-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-overexposed-lcc",
+      "tag": "technical",
+      "description": "Overexposed LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "overexposed-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-underexposed-rmlo",
+      "tag": "technical",
+      "description": "Underexposed RMLO, other views normal",
+      "views": {
+        "rmlo": { "image": "underexposed-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-underexposed-lmlo",
+      "tag": "technical",
+      "description": "Underexposed LMLO, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "underexposed-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-underexposed-rcc",
+      "tag": "technical",
+      "description": "Underexposed RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "underexposed-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-underexposed-lcc",
+      "tag": "technical",
+      "description": "Underexposed LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "underexposed-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-positioning-short-rmlo",
+      "tag": "technical",
+      "description": "Short positioning on RMLO, other views normal",
+      "views": {
+        "rmlo": { "image": "positioning-short-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-positioning-short-lmlo",
+      "tag": "technical",
+      "description": "Short positioning on LMLO, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "positioning-short-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-positioning-short-rcc",
+      "tag": "technical",
+      "description": "Short positioning on RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "positioning-short-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-positioning-short-lcc",
+      "tag": "technical",
+      "description": "Short positioning on LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "positioning-short-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-front-missing-rmlo",
+      "tag": "technical",
+      "description": "Front of breast missing on RMLO, other views normal",
+      "views": {
+        "rmlo": { "image": "positioning-front-missing-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-front-missing-lmlo",
+      "tag": "technical",
+      "description": "Front of breast missing on LMLO, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "positioning-front-missing-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-skin-fold-rmlo",
+      "tag": "technical",
+      "description": "Skin fold on RMLO, other views normal",
+      "views": {
+        "rmlo": { "image": "skin-fold-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-skin-fold-lmlo",
+      "tag": "technical",
+      "description": "Skin fold on LMLO, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "skin-fold-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-artefact-hair-rcc",
+      "tag": "technical",
+      "description": "Hair artefact on RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "artefact-hair-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-artefact-hair-lcc",
+      "tag": "technical",
+      "description": "Hair artefact on LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "artefact-hair-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-laterally-rotated-rcc",
+      "tag": "technical",
+      "description": "Laterally rotated RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "laterally-rotated-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-laterally-rotated-lcc",
+      "tag": "technical",
+      "description": "Laterally rotated LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "laterally-rotated-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-medially-rotated-rcc",
+      "tag": "technical",
+      "description": "Medially rotated RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "medially-rotated-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-medially-rotated-lcc",
+      "tag": "technical",
+      "description": "Medially rotated LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "medially-rotated-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-nipple-not-profile-rcc",
+      "tag": "technical",
+      "description": "Nipple not in profile on RCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "nipple-not-in-profile-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-nipple-not-profile-lcc",
+      "tag": "technical",
+      "description": "Nipple not in profile on LCC, other views normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "nipple-not-in-profile-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-overexposed-all",
+      "tag": "technical",
+      "description": "All four views overexposed",
+      "views": {
+        "rmlo": { "image": "overexposed-rmlo" },
+        "lmlo": { "image": "overexposed-lmlo" },
+        "rcc": { "image": "overexposed-rcc" },
+        "lcc": { "image": "overexposed-lcc" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-underexposed-all",
+      "tag": "technical",
+      "description": "All four views underexposed",
+      "views": {
+        "rmlo": { "image": "underexposed-rmlo" },
+        "lmlo": { "image": "underexposed-lmlo" },
+        "rcc": { "image": "underexposed-rcc" },
+        "lcc": { "image": "underexposed-lcc" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-overexposed-right",
+      "tag": "technical",
+      "description": "Both right views overexposed, left normal",
+      "views": {
+        "rmlo": { "image": "overexposed-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "overexposed-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-overexposed-left",
+      "tag": "technical",
+      "description": "Both left views overexposed, right normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "overexposed-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "overexposed-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-underexposed-right",
+      "tag": "technical",
+      "description": "Both right views underexposed, left normal",
+      "views": {
+        "rmlo": { "image": "underexposed-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "underexposed-rcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-underexposed-left",
+      "tag": "technical",
+      "description": "Both left views underexposed, right normal",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "underexposed-lmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "image": "underexposed-lcc" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "abnormal-right-mass-tech-left-blur",
+      "tag": "abnormal",
+      "description": "Right breast mass (UIQ), left views blurred",
+      "views": {
+        "rmlo": { "from": "set-09" },
+        "lmlo": { "image": "blur-2-lmlo" },
+        "rcc": { "from": "set-09" },
+        "lcc": { "image": "blur-2-lcc" }
+      },
+      "right": { "status": "abnormal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "abnormal-right-lymph-tech-left-underexposed",
+      "tag": "abnormal",
+      "description": "Right breast suspicious lymph nodes, left views underexposed",
+      "views": {
+        "rmlo": { "from": "set-05" },
+        "lmlo": { "image": "underexposed-lmlo" },
+        "rcc": { "from": "set-05" },
+        "lcc": { "image": "underexposed-lcc" }
+      },
+      "right": { "status": "abnormal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "abnormal-right-asymmetric-tech-left-overexposed",
+      "tag": "abnormal",
+      "description": "Right breast asymmetric density (UOQ), left views overexposed",
+      "views": {
+        "rmlo": { "from": "set-06" },
+        "lmlo": { "image": "overexposed-lmlo" },
+        "rcc": { "from": "set-06" },
+        "lcc": { "image": "overexposed-lcc" }
+      },
+      "right": { "status": "abnormal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "abnormal-right-calcification-tech-left-positioning",
+      "tag": "abnormal",
+      "description": "Right breast calcification (central), left views short positioning",
+      "views": {
+        "rmlo": { "from": "set-14" },
+        "lmlo": { "image": "positioning-short-lmlo" },
+        "rcc": { "from": "set-14" },
+        "lcc": { "image": "positioning-short-lcc" }
+      },
+      "right": { "status": "abnormal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "abnormal-right-roundmass-tech-left-blur",
+      "tag": "abnormal",
+      "description": "Right breast round mass (central), left views blurred",
+      "views": {
+        "rmlo": { "from": "set-13" },
+        "lmlo": { "image": "blur-2-lmlo" },
+        "rcc": { "from": "set-13" },
+        "lcc": { "image": "blur-2-lcc" }
+      },
+      "right": { "status": "abnormal" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "abnormal-left-distortion-tech-right-blur",
+      "tag": "abnormal",
+      "description": "Left breast distortion (UOQ), right views blurred",
+      "views": {
+        "rmlo": { "image": "blur-2-rmlo" },
+        "lmlo": { "from": "set-07" },
+        "rcc": { "image": "blur-2-rcc" },
+        "lcc": { "from": "set-07" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "abnormal" }
+    },
+    {
+      "id": "abnormal-left-mass-tech-right-underexposed",
+      "tag": "abnormal",
+      "description": "Left breast mass (LIQ), right views underexposed",
+      "views": {
+        "rmlo": { "image": "underexposed-rmlo" },
+        "lmlo": { "from": "set-08" },
+        "rcc": { "image": "underexposed-rcc" },
+        "lcc": { "from": "set-08" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "abnormal" }
+    },
+    {
+      "id": "abnormal-left-masscalc-tech-right-overexposed",
+      "tag": "abnormal",
+      "description": "Left breast mass with calcification (UIQ), right views overexposed",
+      "views": {
+        "rmlo": { "image": "overexposed-rmlo" },
+        "lmlo": { "from": "set-10" },
+        "rcc": { "image": "overexposed-rcc" },
+        "lcc": { "from": "set-10" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "abnormal" }
+    },
+    {
+      "id": "abnormal-left-calc1-tech-right-positioning",
+      "tag": "abnormal",
+      "description": "Left breast calcification (UOQ), right views short positioning",
+      "views": {
+        "rmlo": { "image": "positioning-short-rmlo" },
+        "lmlo": { "from": "set-15" },
+        "rcc": { "image": "positioning-short-rcc" },
+        "lcc": { "from": "set-15" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "abnormal" }
+    },
+    {
+      "id": "abnormal-left-calc2-tech-right-blur",
+      "tag": "abnormal",
+      "description": "Left breast calcification (central, 2 clusters), right views blurred",
+      "views": {
+        "rmlo": { "image": "blur-2-rmlo" },
+        "lmlo": { "from": "set-16" },
+        "rcc": { "image": "blur-2-rcc" },
+        "lcc": { "from": "set-16" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "abnormal" }
+    },
+    {
       "id": "set-02",
       "tag": "normal",
       "description": "Implants with Eklund view",
       "powerPointPage": 2,
       "hasImplants": true,
+      
       "left": {
         "status": "normal"
       },
@@ -44,6 +676,7 @@
       "description": "Implants + cancer RUOQ M5",
       "powerPointPage": 3,
       "hasImplants": true,
+      
       "left": {
         "status": "normal"
       },
@@ -76,6 +709,7 @@
       "tag": "abnormal",
       "description": "Bilateral cancer – right LIQ irregular mass M5, left retroareolar round mass M4",
       "powerPointPage": 4,
+      
       "left": {
         "status": "abnormal",
         "finding": "mass",
@@ -92,6 +726,7 @@
       "tag": "abnormal",
       "description": "Lymph nodes – suspicious M4",
       "powerPointPage": 5,
+      
       "right": {
         "status": "abnormal",
         "finding": "lymph-nodes",
@@ -103,6 +738,7 @@
       "tag": "abnormal",
       "description": "Asymmetric density – suspicious, M4 RUOQ",
       "powerPointPage": 6,
+      
       "left": {
         "status": "normal"
       },
@@ -117,6 +753,7 @@
       "tag": "abnormal",
       "description": "Distortion – suspicious, LUOQ, M4",
       "powerPointPage": 7,
+      
       "left": {
         "status": "abnormal",
         "finding": "distortion",
@@ -131,6 +768,7 @@
       "tag": "abnormal",
       "description": "Irregular mass – malignant, LLIQ, M5",
       "powerPointPage": 8,
+      
       "left": {
         "status": "abnormal",
         "finding": "mass",
@@ -145,6 +783,7 @@
       "tag": "abnormal",
       "description": "Irregular mass – malignant – MLO only, symptoms = mass in RUIQ, M5",
       "powerPointPage": 9,
+      
       "left": {
         "status": "normal"
       },
@@ -159,6 +798,7 @@
       "tag": "abnormal",
       "description": "Irregular mass + calcification – malignant LUIQ, M5",
       "powerPointPage": 10,
+      
       "left": {
         "status": "abnormal",
         "finding": "mass",
@@ -172,13 +812,15 @@
       "id": "set-11",
       "tag": "indeterminate",
       "description": "Round mass – benign, M2",
-      "powerPointPage": 11
+      "powerPointPage": 11,
+      "disabled": true
     },
     {
       "id": "set-12",
       "tag": "indeterminate",
       "description": "Round mass – probably benign, left central M3",
       "powerPointPage": 12,
+      
       "left": {
         "status": "abnormal",
         "finding": "mass",
@@ -193,6 +835,7 @@
       "tag": "abnormal",
       "description": "Round mass – possibly malignant, right lower central M4",
       "powerPointPage": 13,
+      
       "left": {
         "status": "normal"
       },
@@ -207,6 +850,7 @@
       "tag": "indeterminate",
       "description": "Microcalcifications – 1 cluster, probably benign M3, R upper central",
       "powerPointPage": 14,
+      
       "left": {
         "status": "normal"
       },
@@ -221,6 +865,7 @@
       "tag": "abnormal",
       "description": "Microcalcifications – 1 cluster, LUOQ probably malignant M4",
       "powerPointPage": 15,
+      
       "left": {
         "status": "abnormal",
         "finding": "calcification",
@@ -235,6 +880,7 @@
       "tag": "abnormal",
       "description": "Microcalcifications – 2 clusters, L upper central LLIQ M4",
       "powerPointPage": 16,
+      
       "left": {
         "status": "abnormal",
         "finding": "calcification",
@@ -249,6 +895,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 17,
+      
       "left": {
         "status": "normal"
       },
@@ -261,6 +908,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 18,
+      
       "left": {
         "status": "normal"
       },
@@ -273,6 +921,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 19,
+      
       "left": {
         "status": "normal"
       },
@@ -285,6 +934,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 20,
+      
       "left": {
         "status": "normal"
       },
@@ -297,6 +947,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 21,
+      
       "left": {
         "status": "normal"
       },
@@ -309,6 +960,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 22,
+      
       "left": {
         "status": "normal"
       },
@@ -321,6 +973,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 23,
+      
       "left": {
         "status": "normal"
       },
@@ -333,6 +986,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 24,
+      
       "left": {
         "status": "normal"
       },
@@ -345,6 +999,7 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 25,
+      
       "left": {
         "status": "normal"
       },
@@ -357,11 +1012,24 @@
       "tag": "normal",
       "description": "Normal mammogram",
       "powerPointPage": 26,
+      
       "left": {
         "status": "normal"
       },
       "right": {
         "status": "normal"
+      }
+    },
+    {
+      "id": "set-27",
+      "tag": "technical",
+      "description": "Normal images but wrong name",
+      
+      "left": {
+        "status": "technical"
+      },
+      "right": {
+        "status": "technical"
       }
     }
   ]
