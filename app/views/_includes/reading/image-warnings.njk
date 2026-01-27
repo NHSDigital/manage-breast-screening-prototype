@@ -12,7 +12,16 @@
   {% endset %}
 {% endif %}
 
-{# 2. Incomplete #}
+{# 2. Additional images (repeats/retakes) #}
+{% if event.mammogramData.metadata.hasRepeat %}
+  {% set warningsHtml %}
+    {{ warningsHtml | safe }}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Additional images</h3>
+    <p>Some views were retaken. View additional images in PACS viewer.</p>
+  {% endset %}
+{% endif %}
+
+{# 3. Incomplete #}
 {% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteDetails %}
     {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
@@ -56,7 +65,7 @@
   {% endset %}
 {% endif %}
 
-{# 3. Notes for reader #}
+{# 4. Notes for reader #}
 {% if event.mammogramData.notesForReader %}
   {% set warningsHtml %}
     {{ warningsHtml | safe }}

@@ -1156,6 +1156,32 @@
       },
       "right": { "status": "normal" },
       "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-transposed-cc",
+      "tag": "technical",
+      "description": "CC views transposed (RCC labelled as LCC and vice versa)",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "normal-lcc" },
+        "lcc": { "image": "normal-rcc" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-transposed-mlo",
+      "tag": "technical",
+      "description": "MLO views transposed (RMLO labelled as LMLO and vice versa)",
+      "views": {
+        "rmlo": { "image": "normal-lmlo" },
+        "lmlo": { "image": "normal-rmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "technical" }
     }
   ]
 }

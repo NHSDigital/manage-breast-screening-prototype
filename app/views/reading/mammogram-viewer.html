@@ -101,6 +101,14 @@
       overflow: hidden;
     }
 
+    .viewer-panel--right {
+      justify-content: flex-end;
+    }
+
+    .viewer-panel--left {
+      justify-content: flex-start;
+    }
+
     .viewer-panel__label {
       position: absolute;
       top: 8px;
@@ -409,28 +417,28 @@
   </header>
 
   <div class="viewer-grid" id="viewer-grid" style="display: none;">
-    <div class="viewer-panel" id="panel-rcc">
+    <div class="viewer-panel viewer-panel--right" id="panel-rcc">
       <span class="viewer-panel__label">RCC</span>
       <img class="viewer-panel__image" id="image-rcc" alt="Right craniocaudal view" data-view="RCC">
       <div class="viewer-panel__missing" id="missing-rcc" style="display: none;">
         <span>No image</span>
       </div>
     </div>
-    <div class="viewer-panel" id="panel-lcc">
+    <div class="viewer-panel viewer-panel--left" id="panel-lcc">
       <span class="viewer-panel__label viewer-panel__label--right">LCC</span>
       <img class="viewer-panel__image" id="image-lcc" alt="Left craniocaudal view" data-view="LCC">
       <div class="viewer-panel__missing" id="missing-lcc" style="display: none;">
         <span>No image</span>
       </div>
     </div>
-    <div class="viewer-panel" id="panel-rmlo">
+    <div class="viewer-panel viewer-panel--right" id="panel-rmlo">
       <span class="viewer-panel__label">RMLO</span>
       <img class="viewer-panel__image" id="image-rmlo" alt="Right mediolateral oblique view" data-view="RMLO">
       <div class="viewer-panel__missing" id="missing-rmlo" style="display: none;">
         <span>No image</span>
       </div>
     </div>
-    <div class="viewer-panel" id="panel-lmlo">
+    <div class="viewer-panel viewer-panel--left" id="panel-lmlo">
       <span class="viewer-panel__label viewer-panel__label--right">LMLO</span>
       <img class="viewer-panel__image" id="image-lmlo" alt="Left mediolateral oblique view" data-view="LMLO">
       <div class="viewer-panel__missing" id="missing-lmlo" style="display: none;">
