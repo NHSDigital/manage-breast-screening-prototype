@@ -83,7 +83,8 @@ const extractEventContext = (event) => {
     hasSymptoms: false,
     symptomSides: [], // "left", "right", or both
     hasImplants: false,
-    isImperfect: false
+    isImperfect: false,
+    hasRepeat: false
   }
 
   // Check for symptoms
@@ -141,6 +142,11 @@ const extractEventContext = (event) => {
     context.isImperfect = true
   }
 
+  // Check for repeat/retake images
+  if (event.mammogramData?.metadata?.hasRepeat) {
+    context.hasRepeat = true
+  }
+
   return context
 }
 
@@ -189,11 +195,22 @@ const filterSetsByContext = (sets, context) => {
     // Implants: must match
     if (context.hasImplants) {
       // If participant has implants, only use implant sets
-      return set.hasImplants === true
+      if (set.hasImplants !== true) return false
     } else {
       // If participant doesn't have implants, exclude implant sets
-      return !set.hasImplants
+      if (set.hasImplants) return false
     }
+
+    // Repeats: must match
+    if (context.hasRepeat) {
+      // If event has repeat images, only use repeat sets
+      if (set.hasRepeat !== true) return false
+    } else {
+      // If event doesn't have repeats, exclude repeat sets
+      if (set.hasRepeat) return false
+    }
+
+    return true
   })
 }
 
@@ -406,10 +423,36 @@ const getSetById = (setId, source = 'diagrams') => {
 }
 
 /**
+ * Resolve a single view definition to a path
+ * @param {object} viewDef - View definition (e.g., { image: "blur-rmlo" } or { from: "set-17" })
+ * @param {string} view - The view name (rcc, lcc, rmlo, lmlo)
+ * @param {string} source - "diagrams" or "real"
+ * @returns {string|null} - The resolved path or null
+ */
+const resolveViewPath = (viewDef, view, source) => {
+  if (!viewDef) return null
+
+  if (viewDef.image) {
+    // Reference to image library
+    return getImageLibraryPath(viewDef.image, source)
+  } else if (viewDef.from) {
+    // Reference to another set - recursively get that set's path for this view
+    const referencedPaths = getImagePaths(viewDef.from, source)
+    // Handle case where referenced set has multiple images for this view
+    const refPath = referencedPaths ? referencedPaths[view] : null
+    // If it's an array, return the last (latest) image
+    return Array.isArray(refPath) ? refPath[refPath.length - 1] : refPath
+  }
+
+  return null
+}
+
+/**
  * Get image paths for a specific set, resolving composite sets
+ * Supports arrays of images per view (for repeats/retakes)
  * @param {string} setId - The set ID (e.g., "set-01")
  * @param {string} source - "diagrams" or "real"
- * @returns {object} - Object with paths for each view (rcc, lcc, rmlo, lmlo)
+ * @returns {object} - Object with paths for each view. Path can be string or array of strings.
  */
 const getImagePaths = (setId, source = 'diagrams') => {
   const sourceFolder = IMAGE_SOURCES[source]
@@ -425,18 +468,15 @@ const getImagePaths = (setId, source = 'diagrams') => {
       const viewDef = set.views[view]
 
       if (!viewDef) {
-        // No definition for this view - shouldn't happen but fallback
+        // No definition for this view
         paths[view] = null
-      } else if (viewDef.image) {
-        // Reference to image library
-        paths[view] = getImageLibraryPath(viewDef.image, source)
-      } else if (viewDef.from) {
-        // Reference to another set - recursively get that set's path for this view
-        const referencedPaths = getImagePaths(viewDef.from, source)
-        paths[view] = referencedPaths ? referencedPaths[view] : null
+      } else if (Array.isArray(viewDef)) {
+        // Multiple images for this view (e.g., retakes)
+        // Array order: first attempt first, latest/best last
+        paths[view] = viewDef.map((def) => resolveViewPath(def, view, source))
       } else {
-        // Direct path or malformed - fallback to null
-        paths[view] = null
+        // Single image
+        paths[view] = resolveViewPath(viewDef, view, source)
       }
     }
 
@@ -480,19 +520,33 @@ const VIEW_TO_MAMMOGRAM_DATA_KEY = {
 }
 
 /**
+ * Get the latest image path for a view (handles both string and array)
+ * @param {string|array} pathOrPaths - Single path or array of paths
+ * @returns {string|null} - The latest (last) image path
+ */
+const getLatestPath = (pathOrPaths) => {
+  if (!pathOrPaths) return null
+  if (Array.isArray(pathOrPaths)) {
+    return pathOrPaths[pathOrPaths.length - 1]
+  }
+  return pathOrPaths
+}
+
+/**
  * Get image paths for an event (convenience function)
  * Combines getImageSetForEvent and getImagePaths
  * Filters paths based on which views are present in the event's mammogram data
+ * Returns both latest paths (for default display) and all paths (for additional images)
  * @param {string} eventId - The event ID
  * @param {string} source - "diagrams" or "real"
  * @param {object} options - Options passed to getImageSetForEvent
- * @returns {object|null} - Object with set info and paths, or null if no sets available
+ * @returns {object|null} - Object with set info, paths, allPaths, and hasAdditionalImages flag
  */
 const getImagesForEvent = (eventId, source = 'diagrams', options = {}) => {
   const set = getImageSetForEvent(eventId, source, options)
   if (!set) return null
 
-  const allPaths = getImagePaths(set.id, source)
+  const rawPaths = getImagePaths(set.id, source)
 
   // Filter paths based on which views are present in the event's mammogram data
   const event = options.event
@@ -500,24 +554,52 @@ const getImagesForEvent = (eventId, source = 'diagrams', options = {}) => {
 
   // If no event provided, return all paths (backwards compatibility)
   if (!event) {
+    // Check if any view has multiple images
+    let hasAdditionalImages = false
+    const paths = {}
+    for (const view of VIEWS) {
+      if (Array.isArray(rawPaths[view])) {
+        hasAdditionalImages = true
+        paths[view] = getLatestPath(rawPaths[view])
+      } else {
+        paths[view] = rawPaths[view]
+      }
+    }
+
     return {
       set,
-      paths: allPaths
+      paths,
+      allPaths: rawPaths,
+      hasAdditionalImages
     }
   }
 
   const paths = {}
+  const allPaths = {}
+  let hasAdditionalImages = false
+
   for (const view of VIEWS) {
     const mammogramDataKey = VIEW_TO_MAMMOGRAM_DATA_KEY[view]
     // Only include path if this view was captured
     if (mammogramViews[mammogramDataKey]) {
-      paths[view] = allPaths[view]
+      const rawPath = rawPaths[view]
+
+      if (Array.isArray(rawPath)) {
+        hasAdditionalImages = true
+        paths[view] = getLatestPath(rawPath)
+        allPaths[view] = rawPath
+      } else {
+        paths[view] = rawPath
+        allPaths[view] = rawPath
+      }
     }
   }
 
   return {
     set,
-    paths
+    paths,
+    allPaths,
+    hasAdditionalImages
   }
 }
 

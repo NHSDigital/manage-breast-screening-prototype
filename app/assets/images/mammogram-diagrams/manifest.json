@@ -1032,6 +1032,128 @@
       "right": {
         "status": "technical"
       }
+    },
+    {
+      "id": "repeat-normal-blur-rmlo",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Normal mammogram with RMLO retake (first was blurred)",
+      "views": {
+        "rmlo": [
+          { "image": "blur-2-rmlo" },
+          { "from": "set-17" }
+        ],
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-normal-blur-lmlo",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Normal mammogram with LMLO retake (first was blurred)",
+      "views": {
+        "rmlo": { "from": "set-18" },
+        "lmlo": [
+          { "image": "blur-2-lmlo" },
+          { "from": "set-18" }
+        ],
+        "rcc": { "from": "set-18" },
+        "lcc": { "from": "set-18" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-normal-positioning-lcc",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Normal mammogram with LCC retake (first had short positioning)",
+      "views": {
+        "rmlo": { "from": "set-18" },
+        "lmlo": { "from": "set-18" },
+        "rcc": { "from": "set-18" },
+        "lcc": [
+          { "image": "positioning-short-lcc" },
+          { "from": "set-18" }
+        ]
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-normal-overexposed-rcc",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Normal mammogram with RCC retake (first was overexposed)",
+      "views": {
+        "rmlo": { "from": "set-19" },
+        "lmlo": { "from": "set-19" },
+        "rcc": [
+          { "image": "overexposed-rcc" },
+          { "from": "set-19" }
+        ],
+        "lcc": { "from": "set-19" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-abnormal-left-blur-rmlo",
+      "tag": "abnormal",
+      "hasRepeat": true,
+      "description": "Left breast mass (LIQ) with RMLO retake (first was blurred)",
+      "views": {
+        "rmlo": [
+          { "image": "blur-2-rmlo" },
+          { "from": "set-08" }
+        ],
+        "lmlo": { "from": "set-08" },
+        "rcc": { "from": "set-08" },
+        "lcc": { "from": "set-08" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "abnormal" }
+    },
+    {
+      "id": "repeat-abnormal-right-underexposed-lmlo",
+      "tag": "abnormal",
+      "hasRepeat": true,
+      "description": "Right breast mass (UIQ) with LMLO retake (first was underexposed)",
+      "views": {
+        "rmlo": { "from": "set-09" },
+        "lmlo": [
+          { "image": "underexposed-lmlo" },
+          { "from": "set-09" }
+        ],
+        "rcc": { "from": "set-09" },
+        "lcc": { "from": "set-09" }
+      },
+      "right": { "status": "abnormal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-tech-blur-both-mlo",
+      "tag": "technical",
+      "hasRepeat": true,
+      "description": "Both MLO views retaken but still have issues (blur then skin fold)",
+      "views": {
+        "rmlo": [
+          { "image": "blur-2-rmlo" },
+          { "image": "skin-fold-rmlo" }
+        ],
+        "lmlo": [
+          { "image": "blur-2-lmlo" },
+          { "image": "skin-fold-lmlo" }
+        ],
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "technical" }
     }
   ]
 }

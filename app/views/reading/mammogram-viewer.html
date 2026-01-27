@@ -277,6 +277,121 @@
     .viewer-debug__context-flag--active {
       background-color: #06c;
     }
+
+    .viewer-additional-link {
+      position: fixed;
+      bottom: 40px;
+      right: 16px;
+      background-color: rgba(200, 100, 0, 0.9);
+      color: #fff;
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      z-index: 100;
+    }
+
+    .viewer-additional-link:hover {
+      background-color: rgba(220, 120, 0, 1);
+    }
+
+    .viewer-additional-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.95);
+      z-index: 9998;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+
+    .viewer-additional-modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+
+    .viewer-additional-modal__title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .viewer-additional-modal__close {
+      background-color: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .viewer-additional-modal__close:hover {
+      background-color: #444;
+    }
+
+    .viewer-additional-modal__content {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .viewer-additional-modal__view {
+      margin-bottom: 24px;
+    }
+
+    .viewer-additional-modal__view-label {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #999;
+    }
+
+    .viewer-additional-modal__images {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .viewer-additional-modal__image-container {
+      position: relative;
+    }
+
+    .viewer-additional-modal__image {
+      max-height: 300px;
+      max-width: 300px;
+      object-fit: contain;
+      border: 2px solid #333;
+      border-radius: 4px;
+      cursor: zoom-in;
+    }
+
+    .viewer-additional-modal__image:hover {
+      border-color: #666;
+    }
+
+    .viewer-additional-modal__image--latest {
+      border-color: #0a5;
+    }
+
+    .viewer-additional-modal__image-label {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 2px 6px;
+      font-size: 11px;
+      border-radius: 2px;
+    }
+
+    .viewer-additional-modal__image-label--latest {
+      background-color: rgba(0, 160, 80, 0.9);
+    }
   </style>
 </head>
 <body>
@@ -330,6 +445,10 @@
     <div class="viewer-placeholder__hint">Open a case in the reading workflow to view mammograms</div>
   </div>
 
+  <button class="viewer-additional-link" id="additional-link" style="display: none;">
+    View additional images
+  </button>
+
   <footer class="viewer-status" id="viewer-status">
     Listening for updates...
   </footer>
@@ -377,8 +496,92 @@
     const debugContextEl = document.getElementById("debug-context")
     let debugVisible = false
 
+    // Additional images elements
+    const additionalLinkEl = document.getElementById("additional-link")
+    let currentAllPaths = null
+
     // Current set info for debug display
     let currentSetInfo = null
+
+    /**
+     * Show modal with all additional images
+     */
+    const showAdditionalImages = () => {
+      if (!currentAllPaths) return
+
+      const viewLabels = {
+        rcc: "Right CC",
+        lcc: "Left CC",
+        rmlo: "Right MLO",
+        lmlo: "Left MLO"
+      }
+
+      // Build modal content
+      let contentHtml = ""
+      for (const view of ["rmlo", "lmlo", "rcc", "lcc"]) {
+        const paths = currentAllPaths[view]
+        if (!paths) continue
+
+        const pathArray = Array.isArray(paths) ? paths : [paths]
+        if (pathArray.length === 0) continue
+
+        contentHtml += `<div class="viewer-additional-modal__view">
+          <div class="viewer-additional-modal__view-label">${viewLabels[view]} (${pathArray.length} image${pathArray.length > 1 ? "s" : ""})</div>
+          <div class="viewer-additional-modal__images">`
+
+        pathArray.forEach((path, index) => {
+          const isLatest = index === pathArray.length - 1
+          const label = isLatest ? "Latest" : `Attempt ${index + 1}`
+          const zoomLabel = `${viewLabels[view]} - ${label}`
+          contentHtml += `<div class="viewer-additional-modal__image-container">
+            <img class="viewer-additional-modal__image${isLatest ? " viewer-additional-modal__image--latest" : ""}" src="${path}" alt="${viewLabels[view]} attempt ${index + 1}" data-zoom-label="${zoomLabel}">
+            <span class="viewer-additional-modal__image-label${isLatest ? " viewer-additional-modal__image-label--latest" : ""}">${label}</span>
+          </div>`
+        })
+
+        contentHtml += `</div></div>`
+      }
+
+      // Create and show modal
+      const modalEl = document.createElement("div")
+      modalEl.className = "viewer-additional-modal"
+      modalEl.id = "additional-modal"
+      modalEl.innerHTML = `
+        <div class="viewer-additional-modal__header">
+          <div class="viewer-additional-modal__title">All images (including retakes)</div>
+          <button class="viewer-additional-modal__close" id="close-additional-modal">Close</button>
+        </div>
+        <div class="viewer-additional-modal__content">${contentHtml}</div>
+      `
+
+      document.body.appendChild(modalEl)
+
+      // Add click handlers to images for zoom
+      modalEl.querySelectorAll(".viewer-additional-modal__image").forEach((imgEl) => {
+        imgEl.addEventListener("click", (e) => {
+          e.stopPropagation()
+          const zoomLabel = imgEl.getAttribute("data-zoom-label")
+          showZoom(imgEl.src, zoomLabel)
+        })
+      })
+
+      // Close button handler
+      document.getElementById("close-additional-modal").addEventListener("click", () => {
+        modalEl.remove()
+      })
+
+      // Close on escape
+      const escHandler = (e) => {
+        if (e.key === "Escape") {
+          modalEl.remove()
+          document.removeEventListener("keydown", escHandler)
+        }
+      }
+      document.addEventListener("keydown", escHandler)
+    }
+
+    // Attach click handler to additional images link
+    additionalLinkEl.addEventListener("click", showAdditionalImages)
 
     /**
      * Toggle debug info visibility (press 'd' to toggle)
@@ -436,7 +639,9 @@
       headerEl.style.display = "none"
       gridEl.style.display = "none"
       placeholderEl.style.display = "flex"
+      additionalLinkEl.style.display = "none"
       currentEventId = null
+      currentAllPaths = null
       updateStatus("Waiting for participant...")
     }
 
@@ -486,7 +691,8 @@
         id: data.setId,
         tag: data.setTag,
         description: data.setDescription,
-        context: data.context
+        context: data.context,
+        hasAdditionalImages: data.hasAdditionalImages
       })
 
       // Update header
@@ -499,6 +705,14 @@
         updateViewPanel("lcc", data.images.lcc)
         updateViewPanel("rmlo", data.images.rmlo)
         updateViewPanel("lmlo", data.images.lmlo)
+      }
+
+      // Store all paths and show/hide additional images link
+      currentAllPaths = data.allPaths
+      if (data.hasAdditionalImages) {
+        additionalLinkEl.style.display = "block"
+      } else {
+        additionalLinkEl.style.display = "none"
       }
 
       // Update debug info if visible

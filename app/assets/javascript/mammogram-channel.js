@@ -23,7 +23,9 @@ const getChannel = () => {
  * @param {string} data.nhsNumber - NHS number (optional)
  * @param {string} data.sxNumber - SX number (optional)
  * @param {string} data.dateOfBirth - Date of birth with age (optional)
- * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo)
+ * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo) - latest images
+ * @param {object} data.allPaths - All image paths including additional images
+ * @param {boolean} data.hasAdditionalImages - Whether there are additional images
  */
 const broadcastShowParticipant = (data) => {
   const ch = getChannel()
@@ -37,6 +39,8 @@ const broadcastShowParticipant = (data) => {
     sxNumber: data.sxNumber || null,
     dateOfBirth: data.dateOfBirth || null,
     images: data.images || null,
+    allPaths: data.allPaths || null,
+    hasAdditionalImages: data.hasAdditionalImages || false,
     setId: data.setId || null,
     setDescription: data.setDescription || null,
     setTag: data.setTag || null,
@@ -205,6 +209,21 @@ document.addEventListener('DOMContentLoaded', () => {
       .querySelector('meta[name="mammogram-set-tag"]')
       ?.getAttribute('content')
 
+    // Get additional images info
+    const allPathsRaw = document
+      .querySelector('meta[name="mammogram-all-paths"]')
+      ?.getAttribute('content')
+    let allPaths = null
+    try {
+      allPaths = allPathsRaw ? JSON.parse(allPathsRaw) : null
+    } catch (e) {
+      // Invalid JSON, ignore
+    }
+    const hasAdditionalImages =
+      document
+        .querySelector('meta[name="mammogram-has-additional"]')
+        ?.getAttribute('content') === 'true'
+
     // Get context info for debugging
     const contextRaw = document
       .querySelector('meta[name="mammogram-context"]')
@@ -223,6 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
       sxNumber,
       dateOfBirth,
       images,
+      allPaths,
+      hasAdditionalImages,
       setId,
       setDescription,
       setTag,

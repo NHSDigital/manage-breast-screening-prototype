@@ -28,6 +28,9 @@
       <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc or '' }}">
       <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo or '' }}">
       <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo or '' }}">
+      {# Pass all image paths for additional images view #}
+      <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
+      <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">
       {# Pass set info for debugging #}
       <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
       <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">
