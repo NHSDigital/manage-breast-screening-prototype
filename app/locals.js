@@ -1,13 +1,12 @@
 // app/locals.js
+module.exports = (req, res, next) => {
 
-module.exports = (config) => (req, res, next) => {
   const currentUser = req.session.data.currentUser
   const currentBSU = currentUser
     ? req.session.data.breastScreeningUnits?.find(unit => unit.id === currentUser.breastScreeningUnit)
     : null
 
   const locals = {
-    serviceName: config.serviceName,
     currentUrl: req.path,
     flash: req.flash(),
     query: req.query,
