@@ -1039,10 +1039,7 @@
       "hasRepeat": true,
       "description": "Normal mammogram with RMLO retake (first was blurred)",
       "views": {
-        "rmlo": [
-          { "image": "blur-2-rmlo" },
-          { "from": "set-17" }
-        ],
+        "rmlo": [{ "image": "blur-2-rmlo" }, { "from": "set-17" }],
         "lmlo": { "from": "set-17" },
         "rcc": { "from": "set-17" },
         "lcc": { "from": "set-17" }
@@ -1057,10 +1054,7 @@
       "description": "Normal mammogram with LMLO retake (first was blurred)",
       "views": {
         "rmlo": { "from": "set-18" },
-        "lmlo": [
-          { "image": "blur-2-lmlo" },
-          { "from": "set-18" }
-        ],
+        "lmlo": [{ "image": "blur-2-lmlo" }, { "from": "set-18" }],
         "rcc": { "from": "set-18" },
         "lcc": { "from": "set-18" }
       },
@@ -1076,10 +1070,7 @@
         "rmlo": { "from": "set-18" },
         "lmlo": { "from": "set-18" },
         "rcc": { "from": "set-18" },
-        "lcc": [
-          { "image": "positioning-short-lcc" },
-          { "from": "set-18" }
-        ]
+        "lcc": [{ "image": "positioning-short-lcc" }, { "from": "set-18" }]
       },
       "right": { "status": "normal" },
       "left": { "status": "normal" }
@@ -1092,10 +1083,7 @@
       "views": {
         "rmlo": { "from": "set-19" },
         "lmlo": { "from": "set-19" },
-        "rcc": [
-          { "image": "overexposed-rcc" },
-          { "from": "set-19" }
-        ],
+        "rcc": [{ "image": "overexposed-rcc" }, { "from": "set-19" }],
         "lcc": { "from": "set-19" }
       },
       "right": { "status": "normal" },
@@ -1107,10 +1095,7 @@
       "hasRepeat": true,
       "description": "Left breast mass (LIQ) with RMLO retake (first was blurred)",
       "views": {
-        "rmlo": [
-          { "image": "blur-2-rmlo" },
-          { "from": "set-08" }
-        ],
+        "rmlo": [{ "image": "blur-2-rmlo" }, { "from": "set-08" }],
         "lmlo": { "from": "set-08" },
         "rcc": { "from": "set-08" },
         "lcc": { "from": "set-08" }
@@ -1125,10 +1110,7 @@
       "description": "Right breast mass (UIQ) with LMLO retake (first was underexposed)",
       "views": {
         "rmlo": { "from": "set-09" },
-        "lmlo": [
-          { "image": "underexposed-lmlo" },
-          { "from": "set-09" }
-        ],
+        "lmlo": [{ "image": "underexposed-lmlo" }, { "from": "set-09" }],
         "rcc": { "from": "set-09" },
         "lcc": { "from": "set-09" }
       },
@@ -1141,18 +1123,38 @@
       "hasRepeat": true,
       "description": "Both MLO views retaken but still have issues (blur then skin fold)",
       "views": {
-        "rmlo": [
-          { "image": "blur-2-rmlo" },
-          { "image": "skin-fold-rmlo" }
-        ],
-        "lmlo": [
-          { "image": "blur-2-lmlo" },
-          { "image": "skin-fold-lmlo" }
-        ],
+        "rmlo": [{ "image": "blur-2-rmlo" }, { "image": "skin-fold-rmlo" }],
+        "lmlo": [{ "image": "blur-2-lmlo" }, { "image": "skin-fold-lmlo" }],
         "rcc": { "from": "set-17" },
         "lcc": { "from": "set-17" }
       },
       "right": { "status": "technical" },
+      "left": { "status": "technical" }
+    },
+    {
+      "id": "tech-wrong-view-rcc-is-lcc",
+      "tag": "technical",
+      "description": "RCC is actually an LCC (duplicate LCC, mislabelled as RCC)",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "image": "normal-lcc" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "tech-wrong-view-lmlo-is-rmlo",
+      "tag": "technical",
+      "description": "LMLO is actually an RMLO (duplicate RMLO, mislabelled as LMLO)",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "image": "normal-rmlo" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
       "left": { "status": "technical" }
     }
   ]
