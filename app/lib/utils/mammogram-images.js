@@ -172,7 +172,33 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
 }
 
 /**
- * Get image paths for a specific set
+ * Get the path for a single image from the image library
+ * @param {string} imageId - The image ID from the library
+ * @param {string} source - "diagrams" or "real"
+ * @returns {string|null} - The image path or null if not found
+ */
+const getImageLibraryPath = (imageId, source = 'diagrams') => {
+  const sourceFolder = IMAGE_SOURCES[source]
+  if (!sourceFolder) return null
+
+  // Image library items are stored in an 'images' subfolder
+  return `/images/${sourceFolder}/images/${imageId}.png`
+}
+
+/**
+ * Get a set by ID from the manifest
+ * @param {string} setId - The set ID
+ * @param {string} source - "diagrams" or "real"
+ * @returns {object|null} - The set object or null
+ */
+const getSetById = (setId, source = 'diagrams') => {
+  const manifest = getManifest(source)
+  if (!manifest || !manifest.sets) return null
+  return manifest.sets.find(s => s.id === setId) || null
+}
+
+/**
+ * Get image paths for a specific set, resolving composite sets
  * @param {string} setId - The set ID (e.g., "set-01")
  * @param {string} source - "diagrams" or "real"
  * @returns {object} - Object with paths for each view (rcc, lcc, rmlo, lmlo)
@@ -181,6 +207,35 @@ const getImagePaths = (setId, source = 'diagrams') => {
   const sourceFolder = IMAGE_SOURCES[source]
   if (!sourceFolder) return null
 
+  const set = getSetById(setId, source)
+
+  // Check if this is a composite set (has views object with from/image references)
+  if (set && set.views) {
+    const paths = {}
+
+    for (const view of VIEWS) {
+      const viewDef = set.views[view]
+
+      if (!viewDef) {
+        // No definition for this view - shouldn't happen but fallback
+        paths[view] = null
+      } else if (viewDef.image) {
+        // Reference to image library
+        paths[view] = getImageLibraryPath(viewDef.image, source)
+      } else if (viewDef.from) {
+        // Reference to another set - recursively get that set's path for this view
+        const referencedPaths = getImagePaths(viewDef.from, source)
+        paths[view] = referencedPaths ? referencedPaths[view] : null
+      } else {
+        // Direct path or malformed - fallback to null
+        paths[view] = null
+      }
+    }
+
+    return paths
+  }
+
+  // Standard set - images stored in set folder
   const basePath = `/images/${sourceFolder}/${setId}`
 
   // Try to detect file extension by checking what exists
@@ -240,8 +295,10 @@ module.exports = {
   VIEWS,
   getManifest,
   getAvailableSets,
+  getSetById,
   getImageSetForEvent,
   getImagePaths,
+  getImageLibraryPath,
   getImagesForEvent,
   hasImageSets
 }

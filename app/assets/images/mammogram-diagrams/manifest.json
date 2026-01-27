@@ -1,58 +1,172 @@
 {
+  "imageLibrary": [
+    { "id": "blur-rmlo", "view": "rmlo", "issue": "blur" },
+    { "id": "blur-lmlo", "view": "lmlo", "issue": "blur" },
+    { "id": "blur-rcc", "view": "rcc", "issue": "blur" },
+    { "id": "blur-lcc", "view": "lcc", "issue": "blur" },
+    { "id": "positioning-rmlo", "view": "rmlo", "issue": "positioning" },
+    { "id": "positioning-lmlo", "view": "lmlo", "issue": "positioning" },
+    { "id": "positioning-rcc", "view": "rcc", "issue": "positioning" },
+    { "id": "positioning-lcc", "view": "lcc", "issue": "positioning" },
+    { "id": "exposure-light-rmlo", "view": "rmlo", "issue": "exposure-light" },
+    { "id": "exposure-dark-rmlo", "view": "rmlo", "issue": "exposure-dark" }
+  ],
   "sets": [
+    {
+      "id": "composite-tech-rmlo-blur",
+      "tag": "technical",
+      "description": "Normal mammogram with blurred RMLO",
+      "views": {
+        "rmlo": { "image": "blur-rmlo" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "technical" },
+      "left": { "status": "normal" }
+    },
     {
       "id": "set-02",
       "tag": "normal",
       "description": "Implants with Eklund view",
-      "powerPointPage": 2
+      "powerPointPage": 2,
+      "hasImplants": true,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-03",
       "tag": "abnormal",
       "description": "Implants + cancer RUOQ M5",
-      "powerPointPage": 3
+      "powerPointPage": 3,
+      "hasImplants": true,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UOQ"
+      },
+      "annotations": [
+        {
+          "side": "right",
+          "positions": {
+            "rmlo": {
+              "x": 0.314,
+              "y": 0.52
+            },
+            "rcc": {
+              "x": 0.652,
+              "y": 0.428
+            }
+          },
+          "abnormalityType": "Mass well-defined",
+          "levelOfConcern": "5",
+          "notes": "Cancer"
+        }
+      ]
     },
     {
       "id": "set-04",
       "tag": "abnormal",
       "description": "Bilateral cancer – right LIQ irregular mass M5, left retroareolar round mass M4",
-      "powerPointPage": 4
+      "powerPointPage": 4,
+      "left": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "retroareolar"
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "LIQ"
+      }
     },
     {
       "id": "set-05",
       "tag": "abnormal",
       "description": "Lymph nodes – suspicious M4",
-      "powerPointPage": 5
+      "powerPointPage": 5,
+      "right": {
+        "status": "abnormal",
+        "finding": "lymph-nodes",
+        "location": "axillary"
+      }
     },
     {
       "id": "set-06",
       "tag": "abnormal",
       "description": "Asymmetric density – suspicious, M4 RUOQ",
-      "powerPointPage": 6
+      "powerPointPage": 6,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "asymmetric-density",
+        "location": "UOQ"
+      }
     },
     {
       "id": "set-07",
       "tag": "abnormal",
       "description": "Distortion – suspicious, LUOQ, M4",
-      "powerPointPage": 7
+      "powerPointPage": 7,
+      "left": {
+        "status": "abnormal",
+        "finding": "distortion",
+        "location": "UOQ"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-08",
       "tag": "abnormal",
       "description": "Irregular mass – malignant, LLIQ, M5",
-      "powerPointPage": 8
+      "powerPointPage": 8,
+      "left": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "LIQ"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-09",
       "tag": "abnormal",
       "description": "Irregular mass – malignant – MLO only, symptoms = mass in RUIQ, M5",
-      "powerPointPage": 9
+      "powerPointPage": 9,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UIQ"
+      }
     },
     {
       "id": "set-10",
       "tag": "abnormal",
       "description": "Irregular mass + calcification – malignant LUIQ, M5",
-      "powerPointPage": 10
+      "powerPointPage": 10,
+      "left": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UIQ"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-11",
@@ -64,91 +178,191 @@
       "id": "set-12",
       "tag": "indeterminate",
       "description": "Round mass – probably benign, left central M3",
-      "powerPointPage": 12
+      "powerPointPage": 12,
+      "left": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "central"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-13",
       "tag": "abnormal",
       "description": "Round mass – possibly malignant, right lower central M4",
-      "powerPointPage": 13
+      "powerPointPage": 13,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "central"
+      }
     },
     {
       "id": "set-14",
       "tag": "indeterminate",
       "description": "Microcalcifications – 1 cluster, probably benign M3, R upper central",
-      "powerPointPage": 14
+      "powerPointPage": 14,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "calcification",
+        "location": "central"
+      }
     },
     {
       "id": "set-15",
       "tag": "abnormal",
       "description": "Microcalcifications – 1 cluster, LUOQ probably malignant M4",
-      "powerPointPage": 15
+      "powerPointPage": 15,
+      "left": {
+        "status": "abnormal",
+        "finding": "calcification",
+        "location": "UOQ"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-16",
       "tag": "abnormal",
       "description": "Microcalcifications – 2 clusters, L upper central LLIQ M4",
-      "powerPointPage": 16
+      "powerPointPage": 16,
+      "left": {
+        "status": "abnormal",
+        "finding": "calcification",
+        "location": "central"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-17",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 17
+      "powerPointPage": 17,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-18",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 18
+      "powerPointPage": 18,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-19",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 19
+      "powerPointPage": 19,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-20",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 20
+      "powerPointPage": 20,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-21",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 21
+      "powerPointPage": 21,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-22",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 22
+      "powerPointPage": 22,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-23",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 23
+      "powerPointPage": 23,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-24",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 24
+      "powerPointPage": 24,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-25",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 25
+      "powerPointPage": 25,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     },
     {
       "id": "set-26",
       "tag": "normal",
       "description": "Normal mammogram",
-      "powerPointPage": 26
+      "powerPointPage": 26,
+      "left": {
+        "status": "normal"
+      },
+      "right": {
+        "status": "normal"
+      }
     }
   ]
 }
