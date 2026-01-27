@@ -15,8 +15,7 @@
 
   {# Meta tags for PACS viewer - only in workflow mode with participant #}
   {% if isReadingWorkflow and participant %}
-    {% set mammogramImages = getImagesForEvent(eventId, "diagrams") %}
-    {% set mammogramViews = event.mammogramData.views if event and event.mammogramData else {} %}
+    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
     <meta name="mammogram-event-id" content="{{ eventId }}">
     <meta name="mammogram-participant-name" content="{{ participant | getFullName }}">
     <meta name="mammogram-nhs-number" content="{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}">
@@ -24,15 +23,18 @@
     <meta name="mammogram-date-of-birth" content="{{ participant.demographicInformation.dateOfBirth | formatDate }} ({{ participant | getAge }} years)">
     <meta name="mammogram-auto-open" content="{{ 'true' if data.settings.reading.autoOpenPacsViewer | falsify else 'false' }}">
     {% if mammogramImages and mammogramImages.paths %}
-      {# Pass image paths - empty string if view is missing from mammogram data #}
-      <meta name="mammogram-image-rcc" content="{{ mammogramImages.paths.rcc if mammogramViews.rightCraniocaudal else '' }}">
-      <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc if mammogramViews.leftCraniocaudal else '' }}">
-      <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo if mammogramViews.rightMediolateralOblique else '' }}">
-      <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo if mammogramViews.leftMediolateralOblique else '' }}">
+      {# Pass image paths - util filters to only include views present in mammogram data #}
+      <meta name="mammogram-image-rcc" content="{{ mammogramImages.paths.rcc or '' }}">
+      <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc or '' }}">
+      <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo or '' }}">
+      <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo or '' }}">
       {# Pass set info for debugging #}
       <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
       <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">
       <meta name="mammogram-set-tag" content="{{ mammogramImages.set.tag }}">
+      {# Pass context info for debugging #}
+      {% set eventContext = extractEventContext(event) %}
+      <meta name="mammogram-context" content="{{ eventContext | dump | escape }}">
     {% endif %}
   {% endif %}
 {% endblock head %}

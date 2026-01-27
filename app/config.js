@@ -46,11 +46,13 @@ module.exports = {
     priorityThreshold: 7, // 7 days and over
     mammogramImageSource: 'diagrams', // 'diagrams' or 'real'
     // Distribution of image set tags (must sum to 1.0)
+    // These are the base weights - they get adjusted based on event context
+    // (symptoms, imperfect images, etc.)
     mammogramTagWeights: {
-      normal: 0.60,
-      abnormal: 0.20,
-      indeterminate: 0.10,
-      technical: 0.10
+      normal: 0.7,
+      abnormal: 0.15,
+      indeterminate: 0.1,
+      technical: 0.05
     }
   },
   screening: {

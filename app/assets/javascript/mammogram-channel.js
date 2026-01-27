@@ -40,6 +40,7 @@ const broadcastShowParticipant = (data) => {
     setId: data.setId || null,
     setDescription: data.setDescription || null,
     setTag: data.setTag || null,
+    context: data.context || null,
     timestamp: Date.now()
   })
 }
@@ -204,7 +205,29 @@ document.addEventListener('DOMContentLoaded', () => {
       .querySelector('meta[name="mammogram-set-tag"]')
       ?.getAttribute('content')
 
-    return { eventId, participantName, nhsNumber, sxNumber, dateOfBirth, images, setId, setDescription, setTag }
+    // Get context info for debugging
+    const contextRaw = document
+      .querySelector('meta[name="mammogram-context"]')
+      ?.getAttribute('content')
+    let context = null
+    try {
+      context = contextRaw ? JSON.parse(contextRaw) : null
+    } catch (e) {
+      // Invalid JSON, ignore
+    }
+
+    return {
+      eventId,
+      participantName,
+      nhsNumber,
+      sxNumber,
+      dateOfBirth,
+      images,
+      setId,
+      setDescription,
+      setTag,
+      context
+    }
   }
 
   // Listen for request-current messages from the viewer

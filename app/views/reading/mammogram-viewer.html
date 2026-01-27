@@ -258,6 +258,25 @@
       color: #ccc;
       flex: 1;
     }
+
+    .viewer-debug__context {
+      color: #888;
+      font-size: 11px;
+      margin-left: auto;
+    }
+
+    .viewer-debug__context-flag {
+      display: inline-block;
+      padding: 2px 6px;
+      margin-left: 4px;
+      border-radius: 3px;
+      background-color: #444;
+      color: #fff;
+    }
+
+    .viewer-debug__context-flag--active {
+      background-color: #06c;
+    }
   </style>
 </head>
 <body>
@@ -320,6 +339,7 @@
     <span class="viewer-debug__id" id="debug-set-id"></span>
     <span class="viewer-debug__tag" id="debug-set-tag"></span>
     <span class="viewer-debug__description" id="debug-set-description"></span>
+    <span class="viewer-debug__context" id="debug-context"></span>
   </div>
 
   <script>
@@ -354,6 +374,7 @@
     const debugSetIdEl = document.getElementById("debug-set-id")
     const debugSetTagEl = document.getElementById("debug-set-tag")
     const debugSetDescEl = document.getElementById("debug-set-description")
+    const debugContextEl = document.getElementById("debug-context")
     let debugVisible = false
 
     // Current set info for debug display
@@ -384,6 +405,21 @@
       const tag = data.setTag || "unknown"
       debugSetTagEl.textContent = tag
       debugSetTagEl.className = `viewer-debug__tag viewer-debug__tag--${tag}`
+
+      // Update context flags
+      const context = data.context || {}
+      const flags = []
+      if (context.hasSymptoms) {
+        const sides = context.symptomSides?.length > 0 ? ` (${context.symptomSides.join(", ")})` : ""
+        flags.push(`<span class="viewer-debug__context-flag viewer-debug__context-flag--active">symptoms${sides}</span>`)
+      }
+      if (context.hasImplants) {
+        flags.push(`<span class="viewer-debug__context-flag viewer-debug__context-flag--active">implants</span>`)
+      }
+      if (context.isImperfect) {
+        flags.push(`<span class="viewer-debug__context-flag viewer-debug__context-flag--active">imperfect</span>`)
+      }
+      debugContextEl.innerHTML = flags.length > 0 ? flags.join("") : "<span style='color:#666'>no flags</span>"
     }
 
     // Listen for 'd' key to toggle debug
@@ -449,7 +485,8 @@
       console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
         id: data.setId,
         tag: data.setTag,
-        description: data.setDescription
+        description: data.setDescription,
+        context: data.context
       })
 
       // Update header

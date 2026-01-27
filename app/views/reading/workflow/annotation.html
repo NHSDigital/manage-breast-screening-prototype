@@ -45,7 +45,7 @@
 
         {{ mammogramError | log("Mammogram error") }}
         {# Get the event's selected mammogram set #}
-        {% set mammogramImages = getImagesForEvent(eventId, "diagrams") %}
+        {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
 
         {% if side == 'right' %}
           {% set viewKeys = ['rmlo', 'rcc'] %}
