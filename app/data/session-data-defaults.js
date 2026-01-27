@@ -72,7 +72,7 @@ const defaultSettings = {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     showRemaining: 'true',
-    showDebugTags: 'true',
+    showDebugTags: 'false',
     autoOpenPacsViewer: 'false'
   }
 }
