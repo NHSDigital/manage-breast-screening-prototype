@@ -1384,17 +1384,18 @@
           "side": "right",
           "positions": {
             "rmlo": {
-              "x": 0.314,
-              "y": 0.52
+              "x": 0.321,
+              "y": 0.526
             },
             "rcc": {
-              "x": 0.652,
-              "y": 0.428
+              "x": 0.643,
+              "y": 0.434
             }
           },
           "abnormalityType": "Mass well-defined",
           "levelOfConcern": "5",
-          "notes": "Cancer"
+          "notes": "Cancer",
+          "scale": 2.25
         }
       ]
     },
@@ -1418,8 +1419,8 @@
           "side": "right",
           "positions": {
             "rmlo": {
-              "x": 0.419,
-              "y": 0.871
+              "x": 0.418,
+              "y": 0.881
             },
             "rcc": {
               "x": 0.615,
@@ -1462,7 +1463,7 @@
     {
       "id": "set-06",
       "tag": "abnormal",
-      "description": "Asymmetric density – suspicious, M4 RUOQ",
+      "description": "Asymmetric density – suspicious, M4 RUOQ\ned: faulty screenshots - missing the suspicious bit!",
       "powerPointPage": 6,
       "disabled": true,
       "left": {
@@ -1486,7 +1487,26 @@
       },
       "right": {
         "status": "normal"
-      }
+      },
+      "annotations": [
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.796,
+              "y": 0.655
+            },
+            "lcc": {
+              "x": 0.564,
+              "y": 0.471
+            }
+          },
+          "scale": 4.75,
+          "abnormalityType": "Mass ill-defined",
+          "levelOfConcern": "4",
+          "notes": "suspicious"
+        }
+      ]
     },
     {
       "id": "set-08",
@@ -1500,7 +1520,25 @@
       },
       "right": {
         "status": "normal"
-      }
+      },
+      "annotations": [
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.275,
+              "y": 0.854
+            },
+            "lcc": {
+              "x": 0.367,
+              "y": 0.761
+            }
+          },
+          "scale": 4,
+          "abnormalityType": "Mass well-defined",
+          "levelOfConcern": "5"
+        }
+      ]
     },
     {
       "id": "set-09",
@@ -1514,7 +1552,20 @@
         "status": "abnormal",
         "finding": "mass",
         "location": "UIQ"
-      }
+      },
+      "annotations": [
+        {
+          "side": "right",
+          "positions": {
+            "rmlo": {
+              "x": 0.732,
+              "y": 0.469
+            }
+          },
+          "scale": 3.5,
+          "abnormalityType": "Mass ill-defined"
+        }
+      ]
     },
     {
       "id": "set-10",
@@ -1528,14 +1579,100 @@
       },
       "right": {
         "status": "normal"
-      }
+      },
+      "annotations": [
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.242,
+              "y": 0.53
+            },
+            "lcc": {
+              "x": 0.113,
+              "y": 0.803
+            }
+          },
+          "scale": 3.5,
+          "abnormalityType": "Mass ill-defined",
+          "levelOfConcern": "5"
+        },
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.286,
+              "y": 0.634
+            },
+            "lcc": {
+              "x": 0.218,
+              "y": 0.768
+            }
+          },
+          "scale": 4,
+          "abnormalityType": "Microcalcification outside a mass",
+          "levelOfConcern": "4"
+        }
+      ]
     },
     {
       "id": "set-11",
       "tag": "indeterminate",
       "description": "Round mass – benign, M2",
       "powerPointPage": 11,
-      "disabled": true
+      "annotations": [
+        {
+          "side": "right",
+          "positions": {
+            "rmlo": {
+              "x": 0.296,
+              "y": 0.691
+            },
+            "rcc": {
+              "x": 0.401,
+              "y": 0.428
+            }
+          },
+          "abnormalityType": "Mass well-defined",
+          "levelOfConcern": "2",
+          "notes": "benign",
+          "scale": 3.25
+        },
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.61,
+              "y": 0.615
+            },
+            "lcc": {
+              "x": 0.415,
+              "y": 0.805
+            }
+          },
+          "abnormalityType": "Mass well-defined",
+          "levelOfConcern": "2",
+          "notes": "benign",
+          "scale": 3
+        },
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.558,
+              "y": 0.896
+            },
+            "lcc": {
+              "x": 0.308,
+              "y": 0.635
+            }
+          },
+          "abnormalityType": "Mass well-defined",
+          "levelOfConcern": "2",
+          "notes": "benign",
+          "scale": 3.75
+        }
+      ]
     },
     {
       "id": "set-12",
@@ -1549,7 +1686,25 @@
       },
       "right": {
         "status": "normal"
-      }
+      },
+      "annotations": [
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.612,
+              "y": 0.665
+            },
+            "lcc": {
+              "x": 0.573,
+              "y": 0.606
+            }
+          },
+          "scale": 2.5,
+          "levelOfConcern": "3",
+          "abnormalityType": "Mass well-defined"
+        }
+      ]
     },
     {
       "id": "set-13",
@@ -1563,7 +1718,25 @@
         "status": "abnormal",
         "finding": "mass",
         "location": "central"
-      }
+      },
+      "annotations": [
+        {
+          "side": "right",
+          "positions": {
+            "rmlo": {
+              "x": 0.537,
+              "y": 0.854
+            },
+            "rcc": {
+              "x": 0.521,
+              "y": 0.543
+            }
+          },
+          "scale": 3,
+          "abnormalityType": "Mass well-defined",
+          "levelOfConcern": "4"
+        }
+      ]
     },
     {
       "id": "set-14",
@@ -1577,7 +1750,25 @@
         "status": "abnormal",
         "finding": "calcification",
         "location": "central"
-      }
+      },
+      "annotations": [
+        {
+          "side": "right",
+          "positions": {
+            "rmlo": {
+              "x": 0.342,
+              "y": 0.57
+            },
+            "rcc": {
+              "x": 0.666,
+              "y": 0.603
+            }
+          },
+          "scale": 3,
+          "levelOfConcern": "3",
+          "abnormalityType": "Microcalcification outside a mass"
+        }
+      ]
     },
     {
       "id": "set-15",
@@ -1591,7 +1782,25 @@
       },
       "right": {
         "status": "normal"
-      }
+      },
+      "annotations": [
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.481,
+              "y": 0.48
+            },
+            "lcc": {
+              "x": 0.448,
+              "y": 0.426
+            }
+          },
+          "scale": 4,
+          "abnormalityType": "Microcalcification outside a mass",
+          "levelOfConcern": "4"
+        }
+      ]
     },
     {
       "id": "set-16",
@@ -1605,7 +1814,41 @@
       },
       "right": {
         "status": "normal"
-      }
+      },
+      "annotations": [
+        {
+          "side": "left",
+          "positions": {
+            "lcc": {
+              "x": 0.295,
+              "y": 0.814
+            },
+            "lmlo": {
+              "x": 0.474,
+              "y": 0.843
+            }
+          },
+          "abnormalityType": "Microcalcification outside a mass",
+          "levelOfConcern": "4",
+          "scale": 4
+        },
+        {
+          "side": "left",
+          "positions": {
+            "lmlo": {
+              "x": 0.507,
+              "y": 0.483
+            },
+            "lcc": {
+              "x": 0.382,
+              "y": 0.527
+            }
+          },
+          "scale": 5.25,
+          "abnormalityType": "Microcalcification outside a mass",
+          "levelOfConcern": "4"
+        }
+      ]
     },
     {
       "id": "set-17",
