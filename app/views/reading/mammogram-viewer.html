@@ -512,6 +512,16 @@
     let currentSetInfo = null
 
     /**
+     * Close the additional images modal if open
+     */
+    const closeAdditionalModal = () => {
+      const modalEl = document.getElementById("additional-modal")
+      if (modalEl) {
+        modalEl.remove()
+      }
+    }
+
+    /**
      * Show modal with all additional images
      */
     const showAdditionalImages = () => {
@@ -694,6 +704,9 @@
      * Show mammograms for a participant
      */
     const showMammograms = (data) => {
+      // Close any open modals from previous case
+      closeAdditionalModal()
+
       // Log set info to console for debugging
       console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
         id: data.setId,
