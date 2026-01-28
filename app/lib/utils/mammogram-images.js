@@ -74,7 +74,7 @@ const seededRandom = (seed) => {
 /**
  * Extract context flags from event data for smart set selection
  * @param {object} event - The event object
- * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect
+ * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect, hasRepeat, hasExtraImages, repeatViews
  */
 const extractEventContext = (event) => {
   if (!event) return {}
@@ -84,7 +84,9 @@ const extractEventContext = (event) => {
     symptomSides: [], // "left", "right", or both
     hasImplants: false,
     isImperfect: false,
-    hasRepeat: false
+    hasRepeat: false,
+    hasExtraImages: false,
+    repeatViews: [] // Which views have repeats (e.g., ['rmlo', 'lcc'])
   }
 
   // Check for symptoms
@@ -142,9 +144,28 @@ const extractEventContext = (event) => {
     context.isImperfect = true
   }
 
-  // Check for repeat/retake images
+  // Check for repeat/retake images (technical issues)
   if (event.mammogramData?.metadata?.hasRepeat) {
     context.hasRepeat = true
+
+    // Extract which views have repeats
+    const views = event.mammogramData?.views
+    if (views) {
+      for (const [viewKey, viewData] of Object.entries(views)) {
+        if (viewData.repeatCount > 0) {
+          // Convert viewShortWithSide (e.g., "RMLO") to lowercase (e.g., "rmlo")
+          const viewCode = viewData.viewShortWithSide?.toLowerCase()
+          if (viewCode) {
+            context.repeatViews.push(viewCode)
+          }
+        }
+      }
+    }
+  }
+
+  // Check for extra images (large breasts - not a problem)
+  if (event.mammogramData?.metadata?.hasExtraImages) {
+    context.hasExtraImages = true
   }
 
   return context
@@ -185,7 +206,18 @@ const getContextualWeights = (context, configWeights) => {
 }
 
 /**
- * Filter sets based on hard constraints (e.g., implants)
+ * Check if a set has multiple images for a specific view
+ * @param {object} set - The set object
+ * @param {string} view - The view name (e.g., 'rmlo', 'lcc')
+ * @returns {boolean} - True if the view has multiple images
+ */
+const setHasMultipleImagesForView = (set, view) => {
+  if (!set.views || !set.views[view]) return false
+  return Array.isArray(set.views[view])
+}
+
+/**
+ * Filter sets based on hard constraints (e.g., implants, repeats, extra images)
  * @param {array} sets - Available sets
  * @param {object} context - Context from extractEventContext
  * @returns {array} - Filtered sets
@@ -201,16 +233,62 @@ const filterSetsByContext = (sets, context) => {
       if (set.hasImplants) return false
     }
 
-    // Repeats: must match
+    // Extra images (large breasts): must match
+    if (context.hasExtraImages) {
+      // If event has extra images, only use extra image sets
+      if (set.hasExtraImages !== true) return false
+    } else {
+      // If event doesn't have extra images, exclude extra image sets
+      if (set.hasExtraImages) return false
+    }
+
+    // Technical repeats: must match
     if (context.hasRepeat) {
       // If event has repeat images, only use repeat sets
       if (set.hasRepeat !== true) return false
+
+      // Additionally, prefer sets that match the specific views with repeats
+      // Check if the set has repeats on at least one of the same views
+      if (context.repeatViews && context.repeatViews.length > 0) {
+        const hasMatchingView = context.repeatViews.some((view) =>
+          setHasMultipleImagesForView(set, view)
+        )
+        // If no matching views, still allow but deprioritise (handled by scoring later)
+        // For now, just filter to matching if available
+        if (!hasMatchingView) {
+          // Check if ANY sets match - if not, allow this one
+          // We'll handle this in the scoring phase instead of hard filtering
+        }
+      }
     } else {
       // If event doesn't have repeats, exclude repeat sets
       if (set.hasRepeat) return false
     }
 
     return true
+  })
+}
+
+/**
+ * Score sets by how well they match the repeat views context
+ * Higher score = better match
+ * @param {array} sets - Sets to score
+ * @param {object} context - Context from extractEventContext
+ * @returns {array} - Sets with scores attached
+ */
+const scoreSetsForRepeatMatch = (sets, context) => {
+  if (!context.repeatViews || context.repeatViews.length === 0) {
+    return sets.map((set) => ({ ...set, _matchScore: 0 }))
+  }
+
+  return sets.map((set) => {
+    let score = 0
+    for (const view of context.repeatViews) {
+      if (setHasMultipleImagesForView(set, view)) {
+        score += 1
+      }
+    }
+    return { ...set, _matchScore: score }
   })
 }
 
@@ -387,6 +465,18 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
       context.symptomSides,
       sideRandomValue
     )
+  }
+
+  // Apply repeat view scoring if we have specific views that were repeated
+  if (context.hasRepeat && context.repeatViews?.length > 0) {
+    const scoredSets = scoreSetsForRepeatMatch(setsForTag, context)
+    const maxScore = Math.max(...scoredSets.map((s) => s._matchScore))
+
+    // Prefer sets with the highest match score (70% of the time)
+    const repeatRandomValue = seededRandom(eventId + 'repeat')
+    if (maxScore > 0 && repeatRandomValue < 0.7) {
+      setsForTag = scoredSets.filter((s) => s._matchScore === maxScore)
+    }
   }
 
   // Use a second seeded random to pick within the tag

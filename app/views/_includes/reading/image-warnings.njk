@@ -12,12 +12,23 @@
   {% endset %}
 {% endif %}
 
-{# 2. Additional images (repeats/retakes) #}
-{% if event.mammogramData.metadata.hasRepeat %}
+{# 2. Additional images (repeats or extra images for large breasts) #}
+{% if event.mammogramData.metadata.hasAdditionalImages %}
+  {% set additionalImagesDetail %}
+    {% if event.mammogramData.metadata.hasRepeat and event.mammogramData.metadata.hasExtraImages %}
+      Some views were retaken. Extra images were also taken for large breasts.
+    {% elseif event.mammogramData.metadata.hasRepeat %}
+      Some views were retaken due to technical issues.
+    {% elseif event.mammogramData.metadata.hasExtraImages %}
+      Extra images were taken to ensure full coverage for large breasts.
+    {% else %}
+      Some views have additional images.
+    {% endif %}
+  {% endset %}
   {% set warningsHtml %}
     {{ warningsHtml | safe }}
     <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Additional images</h3>
-    <p>Some views were retaken. View additional images in PACS viewer.</p>
+    <p>{{ additionalImagesDetail | trim }}</p>
   {% endset %}
 {% endif %}
 

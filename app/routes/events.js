@@ -1984,6 +1984,35 @@ module.exports = (router) => {
             viewData.repeatReasons = repeatReasons
           }
         }
+
+        // Recalculate metadata booleans after processing repeat data
+        // hasAdditionalImages: true if any view has count > 1
+        const hasAdditionalImages = Object.values(mammogramData.views).some(
+          (view) => (view.images ? view.images.length : view.count) > 1
+        )
+
+        // hasRepeat: true if any view has repeatCount > 0 (technical issue)
+        const hasRepeat = Object.values(mammogramData.views).some(
+          (view) => view.repeatCount > 0
+        )
+
+        // hasExtraImages: true if additional images exist that are NOT repeats (large breasts)
+        const hasExtraImages = Object.values(mammogramData.views).some(
+          (view) => {
+            const imageCount = view.images ? view.images.length : view.count
+            const additionalCount = imageCount - 1
+            const extraCount = additionalCount - (view.repeatCount || 0)
+            return extraCount > 0
+          }
+        )
+
+        // Update metadata
+        if (!mammogramData.metadata) {
+          mammogramData.metadata = {}
+        }
+        mammogramData.metadata.hasAdditionalImages = hasAdditionalImages
+        mammogramData.metadata.hasRepeat = hasRepeat
+        mammogramData.metadata.hasExtraImages = hasExtraImages
       }
 
       const isIncompleteMammography =
@@ -2375,6 +2404,19 @@ module.exports = (router) => {
     const hasIncompleteMammography =
       formData.isIncompleteMammography?.includes('yes')
 
+    // Calculate additional metadata booleans
+    // hasAdditionalImages: true if any view has count > 1
+    const hasAdditionalImages = Object.values(views).some(
+      (view) => view.count > 1
+    )
+
+    // hasExtraImages: true if additional images exist that are NOT repeats (large breasts)
+    const hasExtraImages = Object.values(views).some((view) => {
+      const additionalCount = view.count - 1
+      const extraCount = additionalCount - (view.repeatCount || 0)
+      return extraCount > 0
+    })
+
     return {
       isManualEntry: true,
       isManualFailover: formData.isManualFailover || false,
@@ -2403,7 +2445,9 @@ module.exports = (router) => {
       metadata: {
         totalImages,
         standardViewsCompleted,
+        hasAdditionalImages,
         hasRepeat,
+        hasExtraImages,
         imagesByBreast
       }
     }

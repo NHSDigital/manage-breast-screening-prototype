@@ -145,8 +145,8 @@
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
-                  {% if event.mammogramData.metadata.hasRepeat %}
-                    <br>{{ "Has repeat" | toTag }}
+                  {% if event.mammogramData.metadata.hasAdditionalImages %}
+                    <br>{{ "Has additional" | toTag }}
                   {% endif %}
                   {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
                      <br>{{ "Imperfect" | toTag }}
@@ -231,8 +231,8 @@
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
-                  {% if event.mammogramData.metadata.hasRepeat %}
-                    <br>{{ "Has repeat" | toTag }}
+                  {% if event.mammogramData.metadata.hasAdditionalImages %}
+                    <br>{{ "Has additional" | toTag }}
                   {% endif %}
                   {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
                      <br>{{ "Imperfect" | toTag }}

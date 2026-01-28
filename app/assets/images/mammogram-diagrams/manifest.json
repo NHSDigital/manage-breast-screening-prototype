@@ -2306,7 +2306,7 @@
     {
       "id": "repeat-large-breast-all",
       "tag": "normal",
-      "hasRepeat": true,
+      "hasExtraImages": true,
       "description": "Large breast requiring two images per view for full coverage",
       "views": {
         "rmlo": [
@@ -2352,7 +2352,7 @@
     {
       "id": "repeat-large-breast-right",
       "tag": "normal",
-      "hasRepeat": true,
+      "hasExtraImages": true,
       "description": "Large right breast requiring two images per view for full coverage",
       "views": {
         "rmlo": [
@@ -2388,7 +2388,7 @@
     {
       "id": "repeat-large-breast-left",
       "tag": "normal",
-      "hasRepeat": true,
+      "hasExtraImages": true,
       "description": "Large left breast requiring two images per view for full coverage",
       "views": {
         "rmlo": {
