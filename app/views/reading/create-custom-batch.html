@@ -73,11 +73,11 @@
         hint: {
           text: "Debug mode only"
         }
-      } if data.settings.debugMode
+      } if data.settings.debugMode | falsify
     ]
   }) }}
 
-  {% if data.settings.debugMode %}
+  {% if data.settings.debugMode | falsify %}
     {{ checkboxes({
       idPrefix: "filters",
       name: "filters",
