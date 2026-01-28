@@ -2311,18 +2311,18 @@
       "views": {
         "rmlo": [
           {
-            "image": "repeat-large-a-rmlo"
+            "image": "repeat-large-b-rmlo"
           },
           {
-            "image": "repeat-large-b-rmlo"
+            "image": "repeat-large-a-rmlo"
           }
         ],
         "lmlo": [
           {
-            "image": "repeat-large-a-lmlo"
+            "image": "repeat-large-b-lmlo"
           },
           {
-            "image": "repeat-large-b-lmlo"
+            "image": "repeat-large-a-lmlo"
           }
         ],
         "rcc": [

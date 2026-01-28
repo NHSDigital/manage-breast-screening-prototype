@@ -144,7 +144,7 @@
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
-                {% if (data.settings.reading.showDebugTags | falsify) %}
+                {% if (data.settings.debugMode | falsify) %}
                   {% if event.mammogramData.metadata.hasRepeat %}
                     <br>{{ "Has repeat" | toTag }}
                   {% endif %}
@@ -230,7 +230,7 @@
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
-                {% if (data.settings.reading.showDebugTags | falsify) %}
+                {% if (data.settings.debugMode | falsify) %}
                   {% if event.mammogramData.metadata.hasRepeat %}
                     <br>{{ "Has repeat" | toTag }}
                   {% endif %}

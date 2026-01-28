@@ -578,6 +578,12 @@ const getImagesForEvent = (eventId, source = 'diagrams', options = {}) => {
   const allPaths = {}
   let hasAdditionalImages = false
 
+  // Check if event metadata indicates repeats exist
+  // This covers cases where the set's paths don't align with event's repeat views
+  if (event.mammogramData?.metadata?.hasRepeat) {
+    hasAdditionalImages = true
+  }
+
   for (const view of VIEWS) {
     const mammogramDataKey = VIEW_TO_MAMMOGRAM_DATA_KEY[view]
     // Only include path if this view was captured

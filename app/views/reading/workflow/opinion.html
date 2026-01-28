@@ -76,7 +76,7 @@
         {{ requestedWithDateHtml | safe }}
       {% endif %}
 
-      {% if (data.settings.reading.showDebugTags | falsify) %}
+      {% if (data.settings.debugMode | falsify) %}
         {% if event.mammogramData.metadata.hasRepeat %}
           <br>{{ "Has repeat" | toTag }}
         {% endif %}
