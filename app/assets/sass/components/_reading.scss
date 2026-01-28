@@ -11,6 +11,123 @@
   padding: 10px;
 }
 
+// Mammogram thumbnail grid for reading pages
+.app-mammogram-thumbnails {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 8px;
+}
+
+.app-mammogram-thumbnail--right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.app-mammogram-thumbnail--left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+// Individual image wrapper (contains image + label)
+.app-mammogram-thumbnail__image-wrapper {
+  position: relative;
+  display: inline-block;
+  // Fixed dimensions for consistent sizing
+  width: 120px;
+  height: 150px;
+  background-color: #000;
+}
+
+.app-mammogram-thumbnail__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  cursor: zoom-in;
+}
+
+// Right breast images align right top (inwards), left breast align left top (inwards)
+.app-mammogram-thumbnail--right .app-mammogram-thumbnail__image {
+  object-position: right top;
+}
+
+.app-mammogram-thumbnail--left .app-mammogram-thumbnail__image {
+  object-position: left top;
+}
+
+.app-mammogram-thumbnail__label {
+  position: absolute;
+  top: 4px;
+  background-color: nhsuk-colour("blue");
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 1;
+}
+
+// Labels align to outer edge - right breast labels on left, left breast labels on right
+.app-mammogram-thumbnail--right .app-mammogram-thumbnail__label {
+  left: 4px;
+}
+
+.app-mammogram-thumbnail--left .app-mammogram-thumbnail__label {
+  right: 4px;
+}
+
+// Missing image placeholder
+.app-mammogram-thumbnail__missing {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed nhsuk-colour("grey-2");
+  background-color: nhsuk-colour("grey-5");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.app-mammogram-thumbnail__missing-text {
+  font-size: 12px;
+  color: nhsuk-colour("grey-2");
+}
+
+// Zoom overlay for thumbnails
+.app-mammogram-zoom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+
+.app-mammogram-zoom__image {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+}
+
+.app-mammogram-zoom__label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background-color: nhsuk-colour("blue");
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .app-reading-status {
   background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
   color: $nhsuk-reverse-text-colour;
