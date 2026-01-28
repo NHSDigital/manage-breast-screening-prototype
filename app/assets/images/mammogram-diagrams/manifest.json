@@ -81,7 +81,23 @@
     { "id": "underexposed-lcc", "view": "lcc", "issue": "underexposed" },
     { "id": "underexposed-lmlo", "view": "lmlo", "issue": "underexposed" },
     { "id": "underexposed-rcc", "view": "rcc", "issue": "underexposed" },
-    { "id": "underexposed-rmlo", "view": "rmlo", "issue": "underexposed" }
+    { "id": "underexposed-rmlo", "view": "rmlo", "issue": "underexposed" },
+    { "id": "repeat-large-a-lcc", "view": "lcc", "issue": "none" },
+    { "id": "repeat-large-b-lcc", "view": "lcc", "issue": "none" },
+    { "id": "repeat-large-a-lmlo", "view": "lmlo", "issue": "none" },
+    { "id": "repeat-large-b-lmlo", "view": "lmlo", "issue": "none" },
+    { "id": "repeat-large-a-rcc", "view": "rcc", "issue": "none" },
+    { "id": "repeat-large-b-rcc", "view": "rcc", "issue": "none" },
+    { "id": "repeat-large-a-rmlo", "view": "rmlo", "issue": "none" },
+    { "id": "repeat-large-b-rmlo", "view": "rmlo", "issue": "none" },
+    { "id": "repeat-missing-front-a-lcc", "view": "lcc", "issue": "none" },
+    { "id": "repeat-missing-front-b-lcc", "view": "lcc", "issue": "none" },
+    { "id": "repeat-missing-front-a-rcc", "view": "rcc", "issue": "none" },
+    { "id": "repeat-missing-front-b-rcc", "view": "rcc", "issue": "none" },
+    { "id": "repeat-short-a-lmlo", "view": "lmlo", "issue": "none" },
+    { "id": "repeat-short-b-lmlo", "view": "lmlo", "issue": "none" },
+    { "id": "repeat-short-a-rmlo", "view": "rmlo", "issue": "none" },
+    { "id": "repeat-short-b-rmlo", "view": "rmlo", "issue": "none" }
   ],
   "sets": [
     {
@@ -1182,6 +1198,180 @@
       },
       "right": { "status": "technical" },
       "left": { "status": "technical" }
+    },
+    {
+      "id": "repeat-large-breast-all",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Large breast requiring two images per view for full coverage",
+      "views": {
+        "rmlo": [
+          { "image": "repeat-large-a-rmlo" },
+          { "image": "repeat-large-b-rmlo" }
+        ],
+        "lmlo": [
+          { "image": "repeat-large-a-lmlo" },
+          { "image": "repeat-large-b-lmlo" }
+        ],
+        "rcc": [
+          { "image": "repeat-large-a-rcc" },
+          { "image": "repeat-large-b-rcc" }
+        ],
+        "lcc": [
+          { "image": "repeat-large-a-lcc" },
+          { "image": "repeat-large-b-lcc" }
+        ]
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-large-breast-right",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Large right breast requiring two images per view for full coverage",
+      "views": {
+        "rmlo": [
+          { "image": "repeat-large-a-rmlo" },
+          { "image": "repeat-large-b-rmlo" }
+        ],
+        "lmlo": { "from": "set-17" },
+        "rcc": [
+          { "image": "repeat-large-a-rcc" },
+          { "image": "repeat-large-b-rcc" }
+        ],
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-large-breast-left",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Large left breast requiring two images per view for full coverage",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": [
+          { "image": "repeat-large-a-lmlo" },
+          { "image": "repeat-large-b-lmlo" }
+        ],
+        "rcc": { "from": "set-17" },
+        "lcc": [
+          { "image": "repeat-large-a-lcc" },
+          { "image": "repeat-large-b-lcc" }
+        ]
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-missing-front-rcc",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "RCC retaken - front of breast missing in first image",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": [
+          { "image": "repeat-missing-front-a-rcc" },
+          { "image": "repeat-missing-front-b-rcc" }
+        ],
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-missing-front-lcc",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "LCC retaken - front of breast missing in first image",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": [
+          { "image": "repeat-missing-front-a-lcc" },
+          { "image": "repeat-missing-front-b-lcc" }
+        ]
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-missing-front-both-cc",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Both CC views retaken - front of breast missing in first images",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": { "from": "set-17" },
+        "rcc": [
+          { "image": "repeat-missing-front-a-rcc" },
+          { "image": "repeat-missing-front-b-rcc" }
+        ],
+        "lcc": [
+          { "image": "repeat-missing-front-a-lcc" },
+          { "image": "repeat-missing-front-b-lcc" }
+        ]
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-short-rmlo",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "RMLO retaken - positioning short in first image",
+      "views": {
+        "rmlo": [
+          { "image": "repeat-short-a-rmlo" },
+          { "image": "repeat-short-b-rmlo" }
+        ],
+        "lmlo": { "from": "set-17" },
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-short-lmlo",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "LMLO retaken - positioning short in first image",
+      "views": {
+        "rmlo": { "from": "set-17" },
+        "lmlo": [
+          { "image": "repeat-short-a-lmlo" },
+          { "image": "repeat-short-b-lmlo" }
+        ],
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
+    },
+    {
+      "id": "repeat-short-both-mlo",
+      "tag": "normal",
+      "hasRepeat": true,
+      "description": "Both MLO views retaken - positioning short in first images",
+      "views": {
+        "rmlo": [
+          { "image": "repeat-short-a-rmlo" },
+          { "image": "repeat-short-b-rmlo" }
+        ],
+        "lmlo": [
+          { "image": "repeat-short-a-lmlo" },
+          { "image": "repeat-short-b-lmlo" }
+        ],
+        "rcc": { "from": "set-17" },
+        "lcc": { "from": "set-17" }
+      },
+      "right": { "status": "normal" },
+      "left": { "status": "normal" }
     }
   ]
 }
