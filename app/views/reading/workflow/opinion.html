@@ -75,6 +75,18 @@
         {% endset %}
         {{ requestedWithDateHtml | safe }}
       {% endif %}
+
+      {% if (data.settings.debugMode | falsify) %}
+        {% if event.mammogramData.metadata.hasAdditionalImages %}
+          <br>{{ "Has additional" | toTag }}
+        {% endif %}
+        {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+            <br>{{ "Imperfect" | toTag }}
+        {% endif %}
+        {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+            <br>{{ "Incomplete" | toTag }}
+        {% endif %}
+      {% endif %}
     </div>
   </div>
 

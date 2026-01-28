@@ -12,7 +12,27 @@
   {% endset %}
 {% endif %}
 
-{# 2. Incomplete #}
+{# 2. Additional images (repeats or extra images for large breasts) #}
+{% if event.mammogramData.metadata.hasAdditionalImages %}
+  {% set additionalImagesDetail %}
+    {% if event.mammogramData.metadata.hasRepeat and event.mammogramData.metadata.hasExtraImages %}
+      Some views were retaken. Extra images were also taken for large breasts.
+    {% elseif event.mammogramData.metadata.hasRepeat %}
+      Some views were retaken due to technical issues.
+    {% elseif event.mammogramData.metadata.hasExtraImages %}
+      Extra images were taken to ensure full coverage for large breasts.
+    {% else %}
+      Some views have additional images.
+    {% endif %}
+  {% endset %}
+  {% set warningsHtml %}
+    {{ warningsHtml | safe }}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Additional images</h3>
+    <p>{{ additionalImagesDetail | trim }}</p>
+  {% endset %}
+{% endif %}
+
+{# 3. Incomplete #}
 {% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteDetails %}
     {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
@@ -56,7 +76,7 @@
   {% endset %}
 {% endif %}
 
-{# 3. Notes for reader #}
+{# 4. Notes for reader #}
 {% if event.mammogramData.notesForReader %}
   {% set warningsHtml %}
     {{ warningsHtml | safe }}

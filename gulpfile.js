@@ -97,7 +97,7 @@ async function startNodemon(done) {
     stdout: true,
     ext: 'js json',
     watch: ['.env', 'app.js', 'app', 'lib'],
-    ignore: ['app/assets', 'app/data/generated', '**.test.*'],
+    ignore: ['app/assets/**', 'app/data/generated/**', '**.test.*'],
     quiet: false
   })
 
@@ -140,14 +140,14 @@ async function startBrowserSync(done) {
     done
   )
 
-  gulp.watch('public/**/*.*').on('change', browserSync.reload)
+  gulp.watch(['public/**/*.*', '!public/images/mammogram-diagrams/manifest.json']).on('change', browserSync.reload)
 }
 
 // Watch for changes within assets/
 function watch() {
   gulp.watch('app/assets/sass/**/*.scss', compileStyles)
   gulp.watch('app/assets/javascript/**/*.js', compileScripts)
-  gulp.watch('app/assets/**/**/*.*', compileAssets)
+  gulp.watch(['app/assets/**/**/*.*', '!app/assets/images/mammogram-diagrams/manifest.json'], compileAssets)
 }
 
 exports.watch = watch

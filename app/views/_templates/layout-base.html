@@ -77,12 +77,16 @@
     ] %}
   {% endif %}
 
-  {# Reading workflow: replace nav with link back to batch #}
+  {# Reading workflow: replace nav with link back to batch and PACS viewer #}
   {% if isReadingWorkflow %}
     {% set navItems = [
       {
         href: "/reading/batch/" ~ batchId,
         text: "Batch list"
+      },
+      {
+        href: "javascript:window.MammogramChannel.openViewer()",
+        text: "Open PACS viewer"
       }
     ] %}
   {% endif %}
@@ -141,8 +145,4 @@
 
 {% block head %}
   {{ super() }}
-  {% block mammogramViewer %}
-    <!-- Default: mammogram viewer should be hidden -->
-    <meta name="mammogram-viewer" content="hide">
-  {% endblock %}
 {% endblock head %}

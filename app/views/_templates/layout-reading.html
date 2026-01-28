@@ -10,6 +10,38 @@
   {% set mainClasses = "nhsuk-u-padding-top-3" %}
 {% endif %} #}
 
+{% block head %}
+  {{ super() }}
+
+  {# Meta tags for PACS viewer - only in workflow mode with participant #}
+  {% if isReadingWorkflow and participant %}
+    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+    <meta name="mammogram-event-id" content="{{ eventId }}">
+    <meta name="mammogram-participant-name" content="{{ participant | getFullName }}">
+    <meta name="mammogram-nhs-number" content="{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}">
+    <meta name="mammogram-sx-number" content="{{ participant.sxNumber }}">
+    <meta name="mammogram-date-of-birth" content="{{ participant.demographicInformation.dateOfBirth | formatDate }} ({{ participant | getAge }} years)">
+    <meta name="mammogram-auto-open" content="{{ 'true' if data.settings.reading.autoOpenPacsViewer | falsify else 'false' }}">
+    {% if mammogramImages and mammogramImages.paths %}
+      {# Pass image paths - util filters to only include views present in mammogram data #}
+      <meta name="mammogram-image-rcc" content="{{ mammogramImages.paths.rcc or '' }}">
+      <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc or '' }}">
+      <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo or '' }}">
+      <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo or '' }}">
+      {# Pass all image paths for additional images view #}
+      <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
+      <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">
+      {# Pass set info for debugging #}
+      <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
+      <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">
+      <meta name="mammogram-set-tag" content="{{ mammogramImages.set.tag }}">
+      {# Pass context info for debugging #}
+      {% set eventContext = extractEventContext(event) %}
+      <meta name="mammogram-context" content="{{ eventContext | dump | escape }}">
+    {% endif %}
+  {% endif %}
+{% endblock head %}
+
 {% block header %}
   {{ super() }}
 
@@ -46,16 +78,4 @@
 {% block pageNavigation %}
   {# Override this block in pages that need custom navigation #}
 {% endblock pageNavigation %}
-
-{% block mammogramViewer %}
-  {% if participant and data.settings.reading.showPacsViewer | falsify %}
-    <!-- Meta tags to control mammogram viewer -->
-    <meta name="mammogram-viewer" content="show">
-    <meta name="participant-name" content="{{ participant | getFullName }}">
-    <meta name="event-id" content="{{ eventId }}">
-  {% else %}
-    <!-- Default: mammogram viewer should be hidden -->
-    <meta name="mammogram-viewer" content="hide">
-  {% endif %}
-{% endblock %}
 
