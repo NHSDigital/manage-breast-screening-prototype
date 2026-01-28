@@ -45,6 +45,9 @@ module.exports = {
     urgentThreshold: 10, // 10 days and over
     priorityThreshold: 7, // 7 days and over
     mammogramImageSource: 'diagrams', // 'diagrams' or 'real'
+    // View order for mammogram display: 'cc-first' or 'mlo-first'
+    // Right breast views always on left, left breast views on right
+    mammogramViewOrder: 'cc-first',
     // Distribution of image set tags (must sum to 1.0)
     // These are the base weights - they get adjusted based on event context
     // (symptoms, imperfect images, etc.)
