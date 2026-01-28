@@ -126,6 +126,22 @@ router.use((req, res, next) => {
   next()
 })
 
+// Admin route to save mammogram manifest
+const fs = require('fs')
+const path = require('path')
+
+router.post('/admin/mammogram-sets/save', express.json({ limit: '5mb' }), (req, res) => {
+  try {
+    const manifestPath = path.join(__dirname, 'assets/images/mammogram-diagrams/manifest.json')
+    const output = JSON.stringify(req.body, null, 2)
+    fs.writeFileSync(manifestPath, output, 'utf8')
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Failed to save manifest:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 require('./routes/settings')(router)
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
