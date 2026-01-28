@@ -539,10 +539,10 @@
 
         pathArray.forEach((path, index) => {
           const isLatest = index === pathArray.length - 1
-          const label = isLatest ? "Latest" : `Attempt ${index + 1}`
+          const label = isLatest ? "Latest" : `Image ${index + 1}`
           const zoomLabel = `${viewLabels[view]} - ${label}`
           contentHtml += `<div class="viewer-additional-modal__image-container">
-            <img class="viewer-additional-modal__image${isLatest ? " viewer-additional-modal__image--latest" : ""}" src="${path}" alt="${viewLabels[view]} attempt ${index + 1}" data-zoom-label="${zoomLabel}">
+            <img class="viewer-additional-modal__image${isLatest ? " viewer-additional-modal__image--latest" : ""}" src="${path}" alt="${viewLabels[view]} image ${index + 1}" data-zoom-label="${zoomLabel}">
             <span class="viewer-additional-modal__image-label${isLatest ? " viewer-additional-modal__image-label--latest" : ""}">${label}</span>
           </div>`
         })
