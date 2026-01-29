@@ -66,30 +66,40 @@
       {
         value: "50",
         text: "50 cases"
-      }
+      },
+      {
+        value: "400",
+        text: "400 cases",
+        hint: {
+          text: "Debug mode only"
+        }
+      } if data.settings.debugMode | falsify
     ]
   }) }}
 
-  {# {{ checkboxes({
-    idPrefix: "filters",
-    name: "filters",
-    fieldset: {
-      legend: {
-        text: "Additional filters",
-        classes: "nhsuk-fieldset__legend--m"
-      }
-    },
-    items: [
-      {
-        value: "hasSymptoms",
-        text: "Only cases with symptoms"
+  {% if data.settings.debugMode | falsify %}
+    {{ checkboxes({
+      idPrefix: "filters",
+      name: "filters",
+      fieldset: {
+        legend: {
+          text: "Additional filters (debug only)",
+          classes: "nhsuk-fieldset__legend--m"
+        }
       },
-      {
-        value: "includeAwaitingPriors",
-        text: "Include awaiting priors cases"
-      }
-    ]
-  }) }} #}
+      items: [
+        {
+          value: "hasSymptoms",
+          text: "Only cases with symptoms"
+        },
+        {
+          value: "includeAwaitingPriors",
+          text: "Include awaiting priors cases"
+        } if false
+      ]
+    }) }}
+  {% endif %}
+  
 
   {{ input({
     label: {

@@ -44,16 +44,24 @@
         {% endif %}
 
         {{ mammogramError | log("Mammogram error") }}
+        {# Get the event's selected mammogram set #}
+        {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+
         {% if side == 'right' %}
-          {% set views = ['RMLO', 'RCC'] %}
+          {% set viewKeys = ['rmlo', 'rcc'] %}
         {% else %}
-          {% set views = ['LMLO', 'LCC'] %}
+          {% set viewKeys = ['lmlo', 'lcc'] %}
         {% endif %}
 
         <div class="app-image-two-up nhsuk-u-margin-bottom-6">
-          {% for view in views %}
+          {% for viewKey in viewKeys %}
             <div class="app-mammogram-container">
-              <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="/images/mammogram-diagrams/{{ view | lower }}.png" alt="">
+              {% set imagePath = mammogramImages.paths[viewKey] if mammogramImages and mammogramImages.paths else '' %}
+              {% if imagePath %}
+                <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="{{ imagePath }}" alt="{{ viewKey | upper }} view">
+              {% else %}
+                <div class="app-mammogram-placeholder">No image</div>
+              {% endif %}
             </div>
           {% endfor %}
         </div>

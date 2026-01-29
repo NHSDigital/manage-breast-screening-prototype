@@ -50,6 +50,10 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[showEnvironmentBanner]={{'true' if data.settings.showEnvironmentBanner !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.showEnvironmentBanner=='false' else 'Hide'}} environment banner</a>
     </p>
 
+    <p>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[debugMode]={{'true' if data.settings.debugMode !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.debugMode !== 'true' else 'Disable'}} debug mode</a>
+    </p>
+
     <h2>Screening</h2>
     {# Confirm identity on check-in #}
     <p>
@@ -87,14 +91,11 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showRemaining]={{'true' if data.settings.reading.showRemaining !== 'true' else 'false'}}&clearQuery=true">{{ 'Show remaining counts' if data.settings.reading.showRemaining=='false' else 'Show completed counts'}}</a>
     </p>
 
-    {# Show debug tags #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showDebugTags]={{'true' if data.settings.reading.showDebugTags !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.reading.showDebugTags=='false' else 'Disable'}} debug tags</a>
-    </p>
+    
 
-    {# Show PACS Viewer #}
+    {# Auto-open PACS viewer #}
     <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showPacsViewer]={{'true' if data.settings.reading.showPacsViewer !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.reading.showPacsViewer=='false' else 'Hide'}} PACS viewer</a>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][autoOpenPacsViewer]={{'true' if data.settings.reading.autoOpenPacsViewer !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.autoOpenPacsViewer !== 'true' else 'Disable'}} auto-open PACS viewer</a>
     </p>
 
     <h2>Generated data</h2>

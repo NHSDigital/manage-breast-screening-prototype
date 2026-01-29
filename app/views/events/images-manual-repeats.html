@@ -112,12 +112,12 @@
   {% endfor %}
 
   {{ textarea({
-    name: "event[mammogramDataTemp][additionalDetails]",
-    id: "additional-details",
-    value: event.mammogramDataTemp.additionalDetails,
+    name: "event[mammogramDataTemp][notesForReader]",
+    id: "notesForReader",
+    value: event.mammogramDataTemp.notesForReader,
     label: {
-      text: "Additional details (optional)",
-      classes: "nhsuk-label--m"
+      text: "Notes for reader (optional)",
+      classes: "nhsuk-label--s"
     },
     hint: {
       text: "Provide information for image readers when reviewing"

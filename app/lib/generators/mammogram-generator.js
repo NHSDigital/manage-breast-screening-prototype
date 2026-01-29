@@ -5,7 +5,7 @@ const dayjs = require('dayjs')
 const weighted = require('weighted')
 const REPEAT_REASONS = require('../../data/repeat-reasons')
 
-// Reasons for incomplete mammography - matches the options in incomplete-mammography-question.njk
+// Reasons for incomplete mammography - matches the options in additional-image-details.njk
 const INCOMPLETE_MAMMOGRAPHY_REASONS = [
   'Consent withdrawn',
   'Language or learning difficulties',
@@ -29,11 +29,18 @@ const STANDARD_VIEWS = [
   { side: 'left', view: 'mediolateral oblique' }
 ]
 
-// Default probability settings
-const DEFAULT_PROBABILITIES = {
-  viewMissing: 0.05, // 5% chance of a view being missing
-  needsRepeat: 0.1, // 10% chance of needing a repeat
-  repeatsPerRound: [1, 2] // When repeating, how many views to repeat (min, max)
+// Image scenarios - mutually exclusive categories
+// - standard: 4 views, 1 image each (normal case)
+// - extraImages: 2 images per view (large breasts - not a problem, just needed for coverage)
+// - technicalRepeat: 1-2 views have a repeat due to technical issues
+// - incomplete: 1 view is missing (participant couldn't complete)
+// - incompleteImperfect: missing view + marked as imperfect
+const IMAGE_SCENARIO_WEIGHTS = {
+  standard: 0.70,
+  extraImages: 0.10,
+  technicalRepeat: 0.10,
+  incomplete: 0.07,
+  incompleteImperfect: 0.03
 }
 
 const generateViewKey = (side, view) => {
@@ -59,7 +66,8 @@ const generateImageUrl = (side, view, accessionNumber) => {
  * @param {number} params.startIndex - Starting index for image numbering
  * @param {string} params.startTime - Start timestamp
  * @param {boolean} params.isSeedData - Whether generating seed data
- * @param {boolean} [params.needsRepeat] - Force this view to be repeated
+ * @param {number} [params.extraCount] - Number of extra images needed (large breasts)
+ * @param {boolean} [params.needsRepeat] - Whether this view needs a repeat (technical issue)
  * @returns {object} View data with images
  */
 const generateViewImages = ({
@@ -69,6 +77,7 @@ const generateViewImages = ({
   startIndex,
   startTime,
   isSeedData,
+  extraCount = 0,
   needsRepeat = false
 }) => {
   let currentIndex = startIndex
@@ -82,7 +91,21 @@ const generateViewImages = ({
     url: generateImageUrl(side, view, `${accessionBase}/${currentIndex}`)
   })
 
-  // Generate repeat if needed
+  // Generate extra images if needed (large breasts - not a problem)
+  for (let i = 0; i < extraCount; i++) {
+    currentIndex++
+    currentTime = currentTime.add(
+      faker.number.int({ min: 25, max: 50 }),
+      'seconds'
+    )
+    images.push({
+      timestamp: currentTime.toISOString(),
+      accessionNumber: `${accessionBase}/${currentIndex}`,
+      url: generateImageUrl(side, view, `${accessionBase}/${currentIndex}`)
+    })
+  }
+
+  // Generate repeat if needed (technical issue)
   if (needsRepeat) {
     currentIndex++
     currentTime = currentTime.add(
@@ -97,6 +120,11 @@ const generateViewImages = ({
     })
   }
 
+  // Calculate counts
+  // repeatCount = number of images that were technical repeats
+  // extraCount passed in = additional images for coverage (not a problem)
+  const repeatCount = needsRepeat ? 1 : 0
+
   return {
     side,
     view,
@@ -104,7 +132,7 @@ const generateViewImages = ({
     viewShortWithSide: `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`,
     images,
     count: images.length,
-    repeatCount: needsRepeat ? 1 : 0,
+    repeatCount,
     repeatReasons:
       needsRepeat && isSeedData
         ? [faker.helpers.arrayElement(REPEAT_REASONS)]
@@ -119,16 +147,16 @@ const generateViewImages = ({
  * @param {Date|string} [options.startTime] - Starting timestamp (defaults to now)
  * @param {boolean} [options.isSeedData] - Whether generating seed data
  * @param {object} [options.config] - Optional configuration for specific scenarios
+ * @param {string} [options.config.scenario] - Force a specific scenario ('standard', 'extraImages', 'technicalRepeat', 'incomplete', 'incompleteImperfect')
  * @param {string[]} [options.config.repeatViews] - Array of views to repeat (e.g. ['RMLO', 'LCC'])
  * @param {string[]} [options.config.missingViews] - Array of views to omit (e.g. ['RMLO'])
- * @param {object} [options.probabilities] - Override default probabilities
+ * @param {boolean} [options.config.allViewsExtra] - If true, all views get extra images
  * @returns {object} Complete mammogram data
  */
 const generateMammogramImages = ({
   startTime = new Date(),
   isSeedData = false,
-  config = {},
-  probabilities = DEFAULT_PROBABILITIES
+  config = {}
 } = {}) => {
   const accessionBase = faker.number
     .int({ min: 100000000, max: 999999999 })
@@ -137,18 +165,45 @@ const generateMammogramImages = ({
   let currentTime = dayjs(startTime)
   const views = {}
 
-  // Determine which views get repeated
+  // Select scenario (use config override or random weighted selection)
+  const scenario = config.scenario || weighted.select(IMAGE_SCENARIO_WEIGHTS)
+
+  // Determine view configuration based on scenario
   let viewsToRepeat = config.repeatViews || []
-  if (!config.repeatViews && Math.random() < probabilities.needsRepeat) {
-    // Randomly select 1-2 views to repeat
-    const repeatCount = faker.number.int({
-      min: probabilities.repeatsPerRound[0],
-      max: probabilities.repeatsPerRound[1]
-    })
-    viewsToRepeat = faker.helpers.arrayElements(
-      ['RMLO', 'RCC', 'LCC', 'LMLO'],
-      { min: repeatCount, max: repeatCount }
-    )
+  let viewsMissing = config.missingViews || []
+  let allViewsExtra = config.allViewsExtra || false
+
+  switch (scenario) {
+    case 'extraImages':
+      // All views get 2 images (large breasts)
+      allViewsExtra = true
+      break
+
+    case 'technicalRepeat':
+      // 1-2 views get a repeat
+      if (!config.repeatViews) {
+        const repeatCount = faker.number.int({ min: 1, max: 2 })
+        viewsToRepeat = faker.helpers.arrayElements(
+          ['RMLO', 'RCC', 'LCC', 'LMLO'],
+          { min: repeatCount, max: repeatCount }
+        )
+      }
+      break
+
+    case 'incomplete':
+    case 'incompleteImperfect':
+      // 1 view is missing
+      if (!config.missingViews) {
+        viewsMissing = [
+          faker.helpers.arrayElement(['RMLO', 'RCC', 'LCC', 'LMLO'])
+        ]
+      }
+      break
+
+    case 'standard':
+    default:
+      // Standard 4 views, 1 image each - no special configuration needed
+      break
   }
 
   // Generate each standard view
@@ -156,11 +211,8 @@ const generateMammogramImages = ({
     const viewKey = generateViewKey(side, view)
     const viewShortWithSide = `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`
 
-    // Skip if this view is in missingViews config
-    if (
-      config.missingViews?.includes(viewShortWithSide) ||
-      (!config.missingViews && Math.random() < probabilities.viewMissing)
-    ) {
+    // Skip if this view is in missingViews
+    if (viewsMissing.includes(viewShortWithSide)) {
       return
     }
 
@@ -171,6 +223,7 @@ const generateMammogramImages = ({
       startIndex: currentIndex,
       startTime: currentTime.toISOString(),
       isSeedData,
+      extraCount: allViewsExtra ? 1 : 0,
       needsRepeat: viewsToRepeat.includes(viewShortWithSide)
     })
 
@@ -203,9 +256,25 @@ const generateMammogramImages = ({
     .flatMap((view) => view.images.map((img) => img.timestamp))
     .sort()
 
+  // Calculate boolean flags for metadata
+  // hasAdditionalImages: true if any view has count > 1
+  const hasAdditionalImages = Object.values(views).some(
+    (view) => view.count > 1
+  )
+
+  // hasRepeat: true if any view has repeatCount > 0 (technical issue)
+  const hasRepeat = Object.values(views).some((view) => view.repeatCount > 0)
+
+  // hasExtraImages: true if additional images exist that are NOT repeats (large breasts)
+  // This is true when we have additional images but they're not all repeats
+  const hasExtraImages = Object.values(views).some((view) => {
+    const additionalCount = view.count - 1
+    const extraCount = additionalCount - (view.repeatCount || 0)
+    return extraCount > 0
+  })
+
   // Check if any views are missing
   const hasMissingViews = Object.keys(views).length < 4
-  const hasRepeat = Object.values(views).some((view) => view.repeatCount > 0)
 
   // Generate incomplete mammography data if views are missing and this is seed data
   let incompleteMammographyData = {}
@@ -238,7 +307,7 @@ const generateMammogramImages = ({
     if (followUp === "Yes, record as 'to be recalled'") {
       incompleteMammographyData.incompleteMammographyFollowUpAppointmentDetails =
         faker.helpers.arrayElement([
-          'Participant has a shoulder injury that should heal in 4-6 week.',
+          'Participant has a shoulder injury that should heal in 4-6 weeks.',
           'Recent surgery - needs 3 months recovery before rebooking',
           'Mobility issues - suggest booking at hospital site with better accessibility',
           'Chest infection - rebook when recovered',
@@ -247,10 +316,19 @@ const generateMammogramImages = ({
     }
   }
 
-  // Generate imperfect but best possible data (sometimes)
+  // Generate imperfect but best possible data
+  // Only for incompleteImperfect scenario, or randomly for technicalRepeat/incomplete
+  // Never for extraImages (large breasts) or standard
   let imperfectData = {}
-  if (isSeedData && Math.random() < 0.1) {
-    imperfectData.isImperfectButBestPossible = ['yes']
+  if (isSeedData) {
+    if (scenario === 'incompleteImperfect') {
+      imperfectData.isImperfectButBestPossible = ['yes']
+    } else if (
+      (scenario === 'technicalRepeat' || scenario === 'incomplete') &&
+      Math.random() < 0.15
+    ) {
+      imperfectData.isImperfectButBestPossible = ['yes']
+    }
   }
 
   // Generate notes for reader
@@ -286,7 +364,9 @@ const generateMammogramImages = ({
       standardViewsCompleted: Object.keys(views).length === 4,
       startTime: allTimestamps[0],
       endTime: allTimestamps[allTimestamps.length - 1],
+      hasAdditionalImages,
       hasRepeat,
+      hasExtraImages,
       imagesByBreast: {
         right: rightBreastImages,
         left: leftBreastImages
@@ -298,5 +378,6 @@ const generateMammogramImages = ({
 module.exports = {
   generateMammogramImages,
   STANDARD_VIEWS,
-  REPEAT_REASONS
+  REPEAT_REASONS,
+  IMAGE_SCENARIO_WEIGHTS
 }

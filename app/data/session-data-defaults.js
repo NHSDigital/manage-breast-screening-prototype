@@ -61,6 +61,7 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
+  debugMode: 'false',
   showEnvironmentBanner: 'true',
   screening: {
     confirmIdentityOnCheckIn: 'true',
@@ -72,8 +73,7 @@ const defaultSettings = {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     showRemaining: 'true',
-    showRepeatsTag: 'false',
-    showPacsViewer: 'false'
+    autoOpenPacsViewer: 'false'
   }
 }
 

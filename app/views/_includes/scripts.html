@@ -9,10 +9,7 @@
   <script src="/expanded-state-tracker.js"></script>
   <script src="/expandable-sections.js"></script>
   <script src="/stepper-input.js"></script>
-
-  {% if data.settings.reading.showPacsViewer | falsify %}
-    <script src="/mammogram-viewer.js"></script>
-  {% endif %}
+  <script src="/js/mammogram-channel.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
