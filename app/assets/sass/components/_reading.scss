@@ -54,3 +54,89 @@
     }
   }
 }
+
+.app-reading-opinion-banner {
+  background-color: nhsuk-colour("blue");
+  color: $nhsuk-reverse-text-colour;
+  display: flex;
+  gap: nhsuk-spacing(3);
+
+  // Manually chosen to line up with the 'previous case' link
+  left: 17px;
+  top: 14px;
+  max-width: 720px;
+  padding: nhsuk-spacing(3) nhsuk-spacing(4);
+  position: absolute;
+  z-index: 10;
+}
+
+.app-reading-opinion-banner__text {
+  color: $nhsuk-reverse-text-colour;
+  margin: 0;
+}
+
+.app-reading-opinion-banner__link,
+.app-reading-opinion-banner__link:visited,
+.app-reading-opinion-banner__link:hover,
+.app-reading-opinion-banner__link:focus {
+  color: $nhsuk-reverse-text-colour;
+  margin-left: nhsuk-spacing(3);
+  text-decoration: underline;
+  transform: translateY(2px);
+  white-space: nowrap;
+}
+
+// To do: is there a better way of doing inverse links?
+.app-reading-opinion-banner__link:focus,
+.app-reading-opinion-banner__link:active {
+  color: $nhsuk-text-colour;
+}
+
+// Reading workflow: styling for locked state
+.js-enabled {
+  .app-reading-opinion--locked,
+  .app-reading-opinion[data-reading-opinion-locked="true"] {
+    cursor: not-allowed;
+
+    * {
+      cursor: not-allowed;
+    }
+
+    button,
+    input[type="button"],
+    input[type="submit"],
+    input[type="radio"],
+    .nhsuk-button,
+    .nhsuk-radios__label,
+    .nhsuk-radios__input,
+    .app-button-link {
+      cursor: not-allowed;
+    }
+
+    .nhsuk-button,
+    .nhsuk-radios__label,
+    .nhsuk-radios__input,
+    button,
+    input[type="button"],
+    input[type="submit"] {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .app-button-link,
+    .app-button-link:hover,
+    .app-button-link:focus,
+    .app-button-link[aria-disabled="true"],
+    .app-button-link[aria-disabled="true"]:hover,
+    .app-button-link[aria-disabled="true"]:focus,
+    .app-button-link[disabled],
+    .app-button-link[disabled]:hover,
+    .app-button-link[disabled]:focus,
+    .app-button-link:disabled,
+    .app-button-link:disabled:hover,
+    .app-button-link:disabled:focus {
+      color: nhsuk-tint($nhsuk-link-colour, 50%);
+      text-decoration: underline;
+    }
+  }
+}

@@ -18,6 +18,7 @@ const {
   skipEventInBatch,
   getReadingMetadata
 } = require('../lib/utils/reading')
+const { getShortName } = require('../lib/utils/participants')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
@@ -318,6 +319,17 @@ module.exports = (router) => {
         }
         // Update res.locals.data to reflect the change (it was set before this middleware)
         res.locals.data.imageReadingTemp = data.imageReadingTemp
+      }
+
+      // Pass along opinion banner and remove from session
+      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+      if (
+        (req.path.endsWith('/opinion') ||
+          req.path.endsWith('/existing-read')) &&
+        data.readingOpinionBanner
+      ) {
+        res.locals.readingOpinionBanner = data.readingOpinionBanner
+        delete data.readingOpinionBanner
       }
     }
 
@@ -843,6 +855,26 @@ module.exports = (router) => {
 
       // Get progress to find next event
       const progress = getBatchReadingProgress(data, batchId, eventId)
+
+      // Store banner message for the next case
+      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+      // Todo: can we get this working with req.flash?
+      const participant = data.participants.find(
+        (person) => person.id === event.participantId
+      )
+      const shortName = getShortName(participant)
+      const resultLabels = {
+        normal: 'Normal',
+        technical_recall: 'Technical recall',
+        recall_for_assessment: 'Recall for assessment'
+      }
+      const resultLabel = resultLabels[formData.result] || 'Opinion'
+      const message = `${resultLabel} opinion recorded for ${shortName}`
+
+      data.readingOpinionBanner = {
+        text: message,
+        editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+      }
 
       // Redirect to next event or batch view
       if (progress.hasNextUserReadable) {
