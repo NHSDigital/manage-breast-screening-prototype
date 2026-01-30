@@ -97,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($resetLink) {
     $resetLink.addEventListener('click', async (e) => {
       e.preventDefault()
+      sessionStorage.clear()
 
       try {
         const response = await fetch('/prototype-admin/reset-session-data', {
@@ -117,5 +118,92 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = $resetLink.href
       }
     })
+  }
+
+  // Reading workflow: delay initial opinion controls to prevent premature clicks
+  const opinionForm = document.querySelector('[data-reading-opinion-form]')
+  if (opinionForm) {
+    const eventId = opinionForm.dataset.eventId
+    if (eventId) {
+      try {
+        if (opinionForm.dataset.readingOpinionLocked !== 'true') {
+          opinionForm.classList.remove('app-reading-opinion--locked')
+          opinionForm.dataset.readingOpinionLocked = 'false'
+          return
+        }
+
+        // Key by date + batch + event so resets and new batches re-lock
+        const batchId = opinionForm.dataset.batchId || 'no-batch'
+        const todayKey = new Date().toISOString().slice(0, 10)
+        const unlockKey = `readingOpinionUnlocked:${todayKey}:${batchId}:${eventId}`
+        if (!sessionStorage.getItem(unlockKey)) {
+          sessionStorage.setItem(unlockKey, 'true')
+          opinionForm.classList.add('app-reading-opinion--locked')
+          opinionForm.dataset.readingOpinionLocked = 'true'
+
+          const controls = Array.from(
+            opinionForm.querySelectorAll('button, input, select, textarea')
+          )
+          const interactiveControls = controls.filter((control) => {
+            if (
+              control.tagName.toLowerCase() === 'input' &&
+              control.type === 'hidden'
+            ) {
+              return false
+            }
+
+            return true
+          })
+
+          const linkControls = Array.from(
+            opinionForm.querySelectorAll('.app-button-link')
+          ).filter((control) => control.tagName.toLowerCase() === 'a')
+
+          interactiveControls.forEach((control) => {
+            control.disabled = true
+          })
+
+          linkControls.forEach((control) => {
+            control.setAttribute('aria-disabled', 'true')
+            control.dataset.readingOpinionDisabled = 'true'
+            control.addEventListener('click', (event) => {
+              if (control.dataset.readingOpinionDisabled === 'true') {
+                event.preventDefault()
+              }
+            })
+          })
+
+          setTimeout(() => {
+            interactiveControls.forEach((control) => {
+              control.disabled = false
+            })
+
+            linkControls.forEach((control) => {
+              control.removeAttribute('aria-disabled')
+              control.dataset.readingOpinionDisabled = 'false'
+            })
+
+            opinionForm.classList.remove('app-reading-opinion--locked')
+            opinionForm.dataset.readingOpinionLocked = 'false'
+          }, 5000)
+        } else {
+          opinionForm.classList.remove('app-reading-opinion--locked')
+          opinionForm.dataset.readingOpinionLocked = 'false'
+        }
+      } catch (error) {
+        console.error('Error applying opinion delay:', error)
+      }
+    }
+  }
+
+  // Reading workflow: auto-dismiss temporary opinion banner
+  const opinionBanner = document.querySelector('[data-reading-opinion-banner]')
+  if (opinionBanner) {
+    const delayValue = Number(opinionBanner.dataset.autoCloseDelay)
+    if (!Number.isNaN(delayValue) && delayValue > 0) {
+      setTimeout(() => {
+        opinionBanner.remove()
+      }, delayValue)
+    }
   }
 })
