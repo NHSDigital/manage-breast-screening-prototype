@@ -874,6 +874,7 @@ module.exports = (router) => {
 
       data.readingOpinionBanner = {
         text: message,
+        participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
         editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
       }
 
