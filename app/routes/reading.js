@@ -323,6 +323,7 @@ module.exports = (router) => {
 
       // Pass along opinion banner and remove from session
       // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+      // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
       if (
         (req.path.endsWith('/opinion') ||
           req.path.endsWith('/existing-read')) &&
