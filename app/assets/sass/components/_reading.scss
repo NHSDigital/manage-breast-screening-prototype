@@ -11,6 +11,8 @@
   padding: 10px;
 }
 
+// Todo: should this be merged with app-status-bar.scss?
+// Todo: otherwise refctor so classes aren't created with &
 .app-reading-status {
   background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
   color: $nhsuk-reverse-text-colour;
@@ -55,6 +57,7 @@
   }
 }
 
+// Toast message shown after giving an opinion
 .app-reading-opinion-banner {
   background-color: nhsuk-colour("blue");
   color: $nhsuk-reverse-text-colour;
@@ -93,6 +96,7 @@
 }
 
 // Reading workflow: styling for locked state
+// When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
 .js-enabled {
   .app-reading-opinion--locked,
   .app-reading-opinion[data-reading-opinion-locked="true"] {

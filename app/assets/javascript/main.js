@@ -121,6 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Reading workflow: delay initial opinion controls to prevent premature clicks
+
+  // When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
   const opinionForm = document.querySelector('[data-reading-opinion-form]')
   if (opinionForm) {
     const eventId = opinionForm.dataset.eventId
