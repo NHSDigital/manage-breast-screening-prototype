@@ -144,7 +144,7 @@
 
     <div class="nhsuk-grid-row">
       {# Left column: Mammogram thumbnails #}
-      <div class="nhsuk-grid-column-one-third">
+      <div class="nhsuk-grid-column-one-third nhsuk-u-margin-bottom-4">
         <h2 class="nhsuk-heading-s">Image thumbnails ({{ imageCount }})</h2>
         <div class="app-mammogram-thumbnails">
           {% for view in viewOrder %}
@@ -309,6 +309,13 @@
 <script>
 // Thumbnail zoom functionality
 document.addEventListener('DOMContentLoaded', () => {
+  const enableThumbnailZoom = false
+
+  if (!enableThumbnailZoom)
+  {
+    return
+  }
+
   const thumbnails = document.querySelectorAll('.app-mammogram-thumbnail__image')
   
   thumbnails.forEach(img => {
