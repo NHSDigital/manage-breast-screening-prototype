@@ -63,6 +63,8 @@
   color: $nhsuk-reverse-text-colour;
   display: flex;
   gap: nhsuk-spacing(3);
+  opacity: 1;
+  transition: opacity 0.2s ease-out;
 
   // Manually chosen to line up with the 'previous case' link
   left: 17px;
@@ -71,6 +73,20 @@
   padding: nhsuk-spacing(3) nhsuk-spacing(4);
   position: absolute;
   z-index: 10;
+  // Todo: reinstate this in v11
+  // border-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  border-radius: 4px;
+  filter: drop-shadow(2px 3px 3px nhsuk-tint(nhsuk-colour("black"), 50%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-reading-opinion-banner {
+    transition: none;
+  }
+}
+
+.app-reading-opinion-banner--fade-out {
+  opacity: 0;
 }
 
 .app-reading-opinion-banner__text {

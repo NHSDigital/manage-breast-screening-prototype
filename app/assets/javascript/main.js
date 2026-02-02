@@ -203,8 +203,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (opinionBanner) {
     const delayValue = Number(opinionBanner.dataset.autoCloseDelay)
     if (!Number.isNaN(delayValue) && delayValue > 0) {
+      const fadeDurationMs = 200
       setTimeout(() => {
-        opinionBanner.remove()
+        opinionBanner.classList.add('app-reading-opinion-banner--fade-out')
+        setTimeout(() => {
+          opinionBanner.remove()
+        }, fadeDurationMs)
       }, delayValue)
     }
   }
