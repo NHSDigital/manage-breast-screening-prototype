@@ -129,6 +129,9 @@
   font-weight: 600;
 }
 
+// Todo: should this be merged with app-status-bar.scss?
+// Todo: otherwise refctor so classes aren't created with &
+
 .app-reading-status {
   background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
   color: $nhsuk-reverse-text-colour;
@@ -169,6 +172,110 @@
     strong {
       font-weight: 600;
       opacity: 0.9;
+    }
+  }
+}
+
+// Toast message shown after giving an opinion
+.app-reading-opinion-banner {
+  background-color: nhsuk-colour("blue");
+  color: $nhsuk-reverse-text-colour;
+  display: flex;
+  gap: nhsuk-spacing(3);
+  opacity: 1;
+  transition: opacity 0.2s ease-out;
+
+  // Manually chosen to line up with the 'previous case' link
+  left: 17px;
+  top: 10px;
+  max-width: 720px;
+  padding: nhsuk-spacing(3) nhsuk-spacing(3);
+  position: absolute;
+  z-index: 10;
+  // Todo: reinstate this in v11
+  // border-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  border-radius: 4px;
+  filter: drop-shadow(2px 3px 3px nhsuk-tint(nhsuk-colour("black"), 50%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-reading-opinion-banner {
+    transition: none;
+  }
+}
+
+.app-reading-opinion-banner--fade-out {
+  opacity: 0;
+}
+
+.app-reading-opinion-banner__text {
+  color: $nhsuk-reverse-text-colour;
+  margin: 0;
+}
+
+.app-reading-opinion-banner__link,
+.app-reading-opinion-banner__link:visited,
+.app-reading-opinion-banner__link:hover,
+.app-reading-opinion-banner__link:focus {
+  color: $nhsuk-reverse-text-colour;
+  margin-left: nhsuk-spacing(3);
+  text-decoration: underline;
+  transform: translateY(2px);
+  white-space: nowrap;
+}
+
+// To do: is there a better way of doing inverse links?
+.app-reading-opinion-banner__link:focus,
+.app-reading-opinion-banner__link:active {
+  color: $nhsuk-text-colour;
+}
+
+// Reading workflow: styling for locked state
+// When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
+.js-enabled {
+  .app-reading-opinion--locked,
+  .app-reading-opinion[data-reading-opinion-locked="true"] {
+    cursor: not-allowed;
+
+    * {
+      cursor: not-allowed;
+    }
+
+    button,
+    input[type="button"],
+    input[type="submit"],
+    input[type="radio"],
+    .nhsuk-button,
+    .nhsuk-radios__label,
+    .nhsuk-radios__input,
+    .app-button-link {
+      cursor: not-allowed;
+    }
+
+    .nhsuk-button,
+    .nhsuk-radios__label,
+    .nhsuk-radios__input,
+    button,
+    input[type="button"],
+    input[type="submit"] {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .app-button-link,
+    .app-button-link:hover,
+    .app-button-link:focus,
+    .app-button-link[aria-disabled="true"],
+    .app-button-link[aria-disabled="true"]:hover,
+    .app-button-link[aria-disabled="true"]:focus,
+    .app-button-link[disabled],
+    .app-button-link[disabled]:hover,
+    .app-button-link[disabled]:focus,
+    .app-button-link:disabled,
+    .app-button-link:disabled:hover,
+    .app-button-link:disabled:focus {
+      color: nhsuk-tint($nhsuk-link-colour, 50%);
+      text-decoration: underline;
     }
   }
 }

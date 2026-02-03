@@ -51,6 +51,7 @@ module.exports = {
     // Distribution of image set tags (must sum to 1.0)
     // These are the base weights - they get adjusted based on event context
     // (symptoms, imperfect images, etc.)
+    opinionBannerDurationMs: 3000,
     mammogramTagWeights: {
       normal: 0.7,
       abnormal: 0.15,

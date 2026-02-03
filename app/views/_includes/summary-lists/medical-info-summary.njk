@@ -5,12 +5,12 @@
   
   Parameters:
     - allowEdits: boolean - whether to show action links (default: true)
+    - showOnlyPopulated: boolean - only show rows with data (default: false)
     - contextUrl: string - base URL for action links (required if allowEdits)
     - currentUrl: string - current page URL for referrer tracking
 #}
 
-{% set allowEdits = allowEdits if allowEdits is defined else true %}
-
+{# Medical history summary #}
 {# Count medical history items #}
 {% set medicalHistoryCount = event.medicalInformation.medicalHistory | countMedicalHistoryItems %}
 
@@ -35,6 +35,7 @@
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set medicalHistoryAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/medical-history") %}
 
+{# Symptoms summary #}
 {# Count symptoms #}
 {% set symptomsCount = event.medicalInformation.symptoms | length %}
 
@@ -59,6 +60,7 @@
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set symptomsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/symptoms") %}
 
+{# Breast features summary #}
 {# Count breast features #}
 {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
 {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
@@ -82,12 +84,14 @@
   {% endif %}
 {% endset %}
 
+{# Previous mammograms summary #}
 {# Count additional mammograms #}
 {% set additionalMammogramsCount = event.previousMammograms | length %}
 
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
+{# Other relevant information summary #}
 {# Get other relevant information summaries #}
 {% set otherRelevantInfoSummaries = event.medicalInformation | summariseOtherRelevantInformation %}
 {% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
@@ -108,92 +112,128 @@
 {% endset %}
 
 {# Build summary list content #}
-{{ summaryList({
-  rows: [
-    {
-      key: {
-        text: "Previous mammograms"
-      },
-      value: {
-        text: "No additional mammograms added" if additionalMammogramsCount == 0 else (additionalMammogramsCount + " additional " + ("mammogram" | pluralise(additionalMammogramsCount)) + " added")
-      },
-      actions: {
-        items: [
-          {
-            href: ("./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain) if additionalMammogramsCount == 0 else "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl)),
-            text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
-            visuallyHiddenText: "previous mammograms"
-          }
-        ]
-      } if allowEdits
+{% set rows = [] %}
+
+{% if not showOnlyPopulated or additionalMammogramsCount > 0 %}
+  {% set rows = rows | push({
+    key: {
+      text: "Previous mammograms"
     },
-    {
-      key: {
-        text: "Medical history"
-      },
-      value: {
-        html: medicalHistoryHtml
-      },
-      actions: {
-        items: [
-          {
-            href: ("./medical-information/medical-history/type" | urlWithReferrer(medicalHistoryAddReferrerChain) if medicalHistoryCount == 0 else "./confirm-information/medical-history" | urlWithReferrer(currentUrl)),
-            text: "Add medical history" if medicalHistoryCount == 0 else "View or change",
-            visuallyHiddenText: "medical history"
-          }
-        ]
-      } if allowEdits
+    value: {
+      text: "No additional mammograms added" if additionalMammogramsCount == 0 else (additionalMammogramsCount + " additional " + ("mammogram" | pluralise(additionalMammogramsCount)) + " added")
     },
-    {
-      key: {
-        text: "Symptoms"
-      },
-      value: {
-        html: symptomsHtml
-      },
-      actions: {
-        items: [
-          {
-            href: ("./medical-information/symptoms/add" | urlWithReferrer(symptomsAddReferrerChain) if symptomsCount == 0 else "./confirm-information/symptoms" | urlWithReferrer(currentUrl)),
-            text: "Add symptoms" if symptomsCount == 0 else "View or change",
-            visuallyHiddenText: "symptoms"
-          }
-        ]
-      } if allowEdits
+    actions: {
+      items: [
+        {
+          href: ("./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain) if additionalMammogramsCount == 0 else "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl)),
+          text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
+          visuallyHiddenText: "previous mammograms"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or medicalHistoryCount > 0 %}
+  {% set rows = rows | push({
+    key: {
+      text: "Medical history"
     },
-    {
-      key: {
-        text: "Breast features"
-      },
-      value: {
-        html: breastFeaturesHtml
-      },
-      actions: {
-        items: [
-          {
-            href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
-            text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
-            visuallyHiddenText: "breast features"
-          }
-        ]
-      } if allowEdits
+    value: {
+      html: medicalHistoryHtml
     },
-    {
-      key: {
-        text: "Other relevant information"
-      },
-      value: {
-        html: otherRelevantInfoHtml
-      },
-      actions: {
-        items: [
-          {
-            href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
-            text: "View or change",
-            visuallyHiddenText: "other relevant information"
-          }
-        ]
-      } if allowEdits
-    }
-  ]
-}) }}
+    actions: {
+      items: [
+        {
+          href: ("./medical-information/medical-history/type" | urlWithReferrer(medicalHistoryAddReferrerChain) if medicalHistoryCount == 0 else "./confirm-information/medical-history" | urlWithReferrer(currentUrl)),
+          text: "Add medical history" if medicalHistoryCount == 0 else "View or change",
+          visuallyHiddenText: "medical history"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or symptomsCount > 0 %}
+  {% set rows = rows | push({
+    key: {
+      text: "Symptoms"
+    },
+    value: {
+      html: symptomsHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./medical-information/symptoms/add" | urlWithReferrer(symptomsAddReferrerChain) if symptomsCount == 0 else "./confirm-information/symptoms" | urlWithReferrer(currentUrl)),
+          text: "Add symptoms" if symptomsCount == 0 else "View or change",
+          visuallyHiddenText: "symptoms"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or breastFeaturesCount > 0 %}
+  {% set rows = rows | push({
+    key: {
+      text: "Breast features"
+    },
+    value: {
+      html: breastFeaturesHtml
+    },
+    actions: {
+      items: [
+        {
+          href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+          text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
+          visuallyHiddenText: "breast features"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or otherRelevantInfoCount > 0 %}
+  {% set rows = rows | push({
+    key: {
+      text: "Other relevant information"
+    },
+    value: {
+      html: otherRelevantInfoHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
+          text: "View or change",
+          visuallyHiddenText: "other relevant information"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{# Final summary list rows #}
+{# Rebuild rows so we can add a no-border class to the final row #}
+{% set rowsForSummaryList = [] %}
+{% for row in rows %}
+  {% if loop.last %}
+    {% set rowsForSummaryList = rowsForSummaryList | push({
+      key: row.key,
+      value: row.value,
+      actions: row.actions,
+      classes: "nhsuk-summary-list__row--no-border"
+    }) %}
+  {% else %}
+    {% set rowsForSummaryList = rowsForSummaryList | push(row) %}
+  {% endif %}
+{% endfor %}
+
+{% if rowsForSummaryList | length == 0 %}
+  <p class="nhsuk-body">No medical information recorded.</p>
+{% else %}
+  {{ summaryList({
+    rows: rowsForSummaryList
+  }) }}
+{% endif %}
