@@ -99,6 +99,8 @@ const handleSummaryListMissingInformation = (
 /**
  * Add no-border class to the last summary list row
  *
+ * Usefule where the summary list is within a card and you want to remove the bottom border
+ *
  * @param {object|array} input - Summary list object or rows array
  * @returns {object|array} Updated summary list or rows array
  */
