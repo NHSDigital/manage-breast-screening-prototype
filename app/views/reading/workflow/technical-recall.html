@@ -26,8 +26,12 @@
     {{ pageHeading }}
   </h1>
 
-  {# Standard views - could be dynamic based on participant/event in future #}
-  {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
+  {# Standard views - order matches config setting #}
+  {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+    {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
+  {% else %}
+    {% set views = ['RCC', 'LCC', 'RMLO', 'LMLO'] %}
+  {% endif %}
 
   {% set recallReasons = [
     'Breast positioning',

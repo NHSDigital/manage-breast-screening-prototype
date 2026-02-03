@@ -214,26 +214,10 @@
   }) %}
 {% endif %}
 
-{# Final summary list rows #}
-{# Rebuild rows so we can add a no-border class to the final row #}
-{% set rowsForSummaryList = [] %}
-{% for row in rows %}
-  {% if loop.last %}
-    {% set rowsForSummaryList = rowsForSummaryList | push({
-      key: row.key,
-      value: row.value,
-      actions: row.actions,
-      classes: "nhsuk-summary-list__row--no-border"
-    }) %}
-  {% else %}
-    {% set rowsForSummaryList = rowsForSummaryList | push(row) %}
-  {% endif %}
-{% endfor %}
-
-{% if rowsForSummaryList | length == 0 %}
+{% if rows | length == 0 %}
   <p class="nhsuk-body">No medical information recorded.</p>
 {% else %}
   {{ summaryList({
-    rows: rowsForSummaryList
+    rows: rows | removeLastRowBorder
   }) }}
 {% endif %}

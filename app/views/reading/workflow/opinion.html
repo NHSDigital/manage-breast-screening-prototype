@@ -3,7 +3,7 @@
 
 {% extends 'layout-reading.html' %}
 
-{% set pageHeading = "Review images" %}
+{% set pageHeading = participant | getFullName %}
 {% set gridColumn = "none" %}
 {% set showWorkflowNav = true %}
 
@@ -28,14 +28,36 @@
     {% set opinionHeading = "Update review" %}
   {% endif %}
 
+  {# Get mammogram images for thumbnails #}
+  {% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
+  {% set mammogramImages = getImagesForEvent(eventId, mammogramImageSource, { event: event }) %}
+
+  {# View order from config - determines if CC or MLO comes first #}
+  {# Right breast views on left, left breast views on right #}
+  {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+    {% set viewOrder = [
+      { key: 'rmlo', label: 'RMLO', side: 'right' },
+      { key: 'lmlo', label: 'LMLO', side: 'left' },
+      { key: 'rcc', label: 'RCC', side: 'right' },
+      { key: 'lcc', label: 'LCC', side: 'left' }
+    ] %}
+  {% else %}
+    {% set viewOrder = [
+      { key: 'rcc', label: 'RCC', side: 'right' },
+      { key: 'lcc', label: 'LCC', side: 'left' },
+      { key: 'rmlo', label: 'RMLO', side: 'right' },
+      { key: 'lmlo', label: 'LMLO', side: 'left' }
+    ] %}
+  {% endif %}
+
   {# Page header with status tags #}
   <div class="nhsuk-grid-row app-header-with-status">
     <div class="nhsuk-grid-column-two-thirds">
       <span class="nhsuk-caption-l">
-        {{ participant | getFullName }}
+        {{ opinionHeading }}
       </span>
       <h1 class="nhsuk-heading-l js-image-count">
-        {{ opinionHeading }}
+        {{ participant | getFullName }}
       </h1>
     </div>
     <div class="nhsuk-grid-column-one-third app-header-with-status__status-tag">
@@ -99,20 +121,87 @@
     </div>
   </div>
 
-  {# Opinion form #}
+
+
+  {# Opinion form with thumbnails #}
   {% set questionText = "What is your opinion of these images?" %}
 
+  {# Count total images #}
+  {% set imageCount = 0 %}
+  {% for view in viewOrder %}
+    {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
+    {% if allPaths %}
+      {% if allPaths is string %}
+        {% set imageCount = imageCount + 1 %}
+      {% else %}
+        {% set imageCount = imageCount + allPaths | length %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  <form action="./opinion-answer" method="POST">
+    
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ 'false' if hasExistingOpinion else 'true' }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
 
-    {# Hidden field to track previous result for change detection #}
+    {# Hidden field to track previous result for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousResult]" value="{{ currentResult }}">
 
-    {% if hasExistingOpinion %}
-      {# Show radios when updating an existing or in-progress result #}
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-two-thirds">
+    <div class="nhsuk-grid-row">
+
+      {# Left column: Mammogram thumbnails #}
+      <div class="nhsuk-grid-column-one-third nhsuk-u-margin-bottom-4">
+        <h2 class="nhsuk-heading-s">Image thumbnails ({{ imageCount }})</h2>
+        <div class="app-mammogram-thumbnails">
+          {% for view in viewOrder %}
+            <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ view.side }}">
+              {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
+              
+              {% if allPaths %}
+                {# Handle both single path (string) and multiple paths (array) #}
+                {% if allPaths is string %}
+                  <div class="app-mammogram-thumbnail__image-wrapper">
+                    <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+                    <img 
+                      class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}" 
+                      src="{{ allPaths }}" 
+                      alt="{{ view.label }} view"
+                      data-view="{{ view.label }}"
+                    >
+                  </div>
+                {% else %}
+                  {# Multiple images - each with its own wrapper and label #}
+                  {% for imagePath in allPaths %}
+                    <div class="app-mammogram-thumbnail__image-wrapper">
+                      <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+                      <img 
+                        class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}" 
+                        src="{{ imagePath }}" 
+                        alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
+                        data-view="{{ view.label }}"
+                      >
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              {% else %}
+                {# Missing image placeholder #}
+                <div class="app-mammogram-thumbnail__image-wrapper">
+                  <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+                  <div class="app-mammogram-thumbnail__missing">
+                    <span class="app-mammogram-thumbnail__missing-text">No image</span>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# Right column: Opinion buttons/radios #}
+      <div class="nhsuk-grid-column-two-thirds">
+        {% if hasExistingOpinion %}
+          {# Show radios when updating an existing or in-progress result #}
           {{ radios({
             name: "imageReadingTemp[result]",
             fieldset: {
@@ -148,20 +237,12 @@
           {{ button({
             text: "Update opinion"
           }) }}
-        </div>
-      </div>
 
-    {% else %}
-      {# Show buttons for initial assessment #}
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-two-thirds">
-          <h2>{{ questionText }}</h2>
-        </div>
-      </div>
+        {% else %}
+          {# Show buttons for initial assessment - vertically stacked #}
+          <h2 class="nhsuk-heading-m">{{ questionText }}</h2>
 
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-one-third">
-          <div class="form-group">
+          <div class="nhsuk-u-margin-bottom-4">
             {% if hasSymptoms %}
               {{ button({
                 text: "Normal, and add details",
@@ -177,26 +258,24 @@
                 classes: "app-button-full-width nhsuk-u-margin-bottom-3"
               }) }}
 
-              <p class="nhsuk-u-margin-bottom-0">
+              <p class="nhsuk-u-margin-bottom-4">
                 <button type="submit" name="imageReadingTemp[result]" value="normal_with_details" class="app-button-link">
                   Normal, but add details
                 </button>
               </p>
             {% endif %}
           </div>
-        </div>
-        <div class="nhsuk-grid-column-one-third">
-          <div class="form-group">
+
+          <div class="nhsuk-u-margin-bottom-4">
             {{ button({
               text: "Technical recall",
               value: "technical_recall",
               name: "imageReadingTemp[result]",
-              classes: "nhsuk-button--secondary app-button-full-width"
+              classes: "nhsuk-button--secondary app-button-full-width nhsuk-u-margin-bottom-3"
             }) }}
           </div>
-        </div>
-        <div class="nhsuk-grid-column-one-third">
-          <div class="form-group">
+
+          <div class="nhsuk-u-margin-bottom-4">
             {{ button({
               text: "Recall for assessment",
               value: "recall_for_assessment",
@@ -204,19 +283,23 @@
               classes: "nhsuk-button--warning app-button-full-width"
             }) }}
           </div>
-        </div>
+
+        {% endif %}
       </div>
-
-    {% endif %}
-
-    {% include "_includes/reading/image-warnings.njk" %}
+    </div>
 
   </form>
+
+
+  {# Image notes - moved above opinion section #}
+  {% include "_includes/reading/image-warnings.njk" %}
+
 
   {# Medical summary #}
   {# Only show rows that have data #}
   {% set showOnlyPopulated = true %}
   {# No edits allowed in image reading #}
+
   {% set allowEdits = false %}
 
   {% set medicalSummaryHtml %}
@@ -230,4 +313,46 @@
     descriptionHtml: medicalSummaryHtml
   }) }}
 
+{% endblock %}
+
+{% block pageScripts %}
+<script>
+// Thumbnail zoom functionality
+document.addEventListener('DOMContentLoaded', () => {
+  const enableThumbnailZoom = false
+
+  if (!enableThumbnailZoom)
+  {
+    return
+  }
+
+  const thumbnails = document.querySelectorAll('.app-mammogram-thumbnail__image')
+  
+  thumbnails.forEach(img => {
+    img.addEventListener('click', (e) => {
+      const src = e.target.src
+      const view = e.target.dataset.view || ''
+      
+      // Create zoom overlay
+      const overlay = document.createElement('div')
+      overlay.className = 'app-mammogram-zoom'
+      overlay.innerHTML = `
+        <span class="app-mammogram-zoom__label">${view}</span>
+        <img class="app-mammogram-zoom__image" src="${src}" alt="${view} view">
+      `
+      
+      // Close on click or escape
+      overlay.addEventListener('click', () => overlay.remove())
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+          overlay.remove()
+          document.removeEventListener('keydown', escHandler)
+        }
+      })
+      
+      document.body.appendChild(overlay)
+    })
+  })
+})
+</script>
 {% endblock %}
