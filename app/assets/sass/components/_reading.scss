@@ -39,6 +39,7 @@
   width: 120px;
   height: 150px;
   background-color: #000;
+  overflow: hidden;
   // Use flexbox for image alignment
   display: flex;
   align-items: flex-start;
@@ -58,6 +59,11 @@
   max-height: 100%;
   display: block;
   cursor: default;
+}
+
+// Slight smoothing for diagram thumbnails to reduce moiré
+.app-mammogram-thumbnail__image--diagram {
+  filter: blur(0.5px);
 }
 
 .app-mammogram-thumbnail__label {

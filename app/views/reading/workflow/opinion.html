@@ -29,7 +29,8 @@
   {% endif %}
 
   {# Get mammogram images for thumbnails #}
-  {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+  {% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
+  {% set mammogramImages = getImagesForEvent(eventId, mammogramImageSource, { event: event }) %}
 
   {# View order from config - determines if CC or MLO comes first #}
   {# Right breast views on left, left breast views on right #}
@@ -139,14 +140,16 @@
   {% endfor %}
 
   <form action="./opinion-answer" method="POST">
+    
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ 'false' if hasExistingOpinion else 'true' }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
 
-    {# Hidden field to track previous result for change detection #}
+    {# Hidden field to track previous result for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousResult]" value="{{ currentResult }}">
 
     <div class="nhsuk-grid-row">
+
       {# Left column: Mammogram thumbnails #}
       <div class="nhsuk-grid-column-one-third nhsuk-u-margin-bottom-4">
         <h2 class="nhsuk-heading-s">Image thumbnails ({{ imageCount }})</h2>
@@ -161,7 +164,7 @@
                   <div class="app-mammogram-thumbnail__image-wrapper">
                     <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
                     <img 
-                      class="app-mammogram-thumbnail__image" 
+                      class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}" 
                       src="{{ allPaths }}" 
                       alt="{{ view.label }} view"
                       data-view="{{ view.label }}"
@@ -173,7 +176,7 @@
                     <div class="app-mammogram-thumbnail__image-wrapper">
                       <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
                       <img 
-                        class="app-mammogram-thumbnail__image" 
+                        class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}" 
                         src="{{ imagePath }}" 
                         alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
                         data-view="{{ view.label }}"

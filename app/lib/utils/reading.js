@@ -1096,6 +1096,42 @@ const createReadingBatch = (data, options) => {
           event?.medicalInformation.symptoms?.length > 0
       )
     }
+
+    // 4. Apply complex case filter if specified
+    if (filters.complexOnly) {
+      const isComplexCase = (event) => {
+        const hasSymptoms =
+          event?.medicalInformation?.symptoms &&
+          event?.medicalInformation.symptoms?.length > 0
+
+        const hasAdditionalImages =
+          event?.mammogramData?.metadata?.hasAdditionalImages
+
+        const isImperfect =
+          event?.mammogramData?.isImperfectButBestPossible?.includes &&
+          event.mammogramData.isImperfectButBestPossible.includes('yes')
+
+        const isIncomplete =
+          event?.mammogramData?.isIncompleteMammography?.includes &&
+          event.mammogramData.isIncompleteMammography.includes('yes')
+
+        const hasImplants =
+          event?.medicalInformation?.medicalHistory
+            ?.breastImplantsAugmentation &&
+          event.medicalInformation.medicalHistory.breastImplantsAugmentation
+            .length > 0
+
+        return (
+          hasSymptoms ||
+          hasAdditionalImages ||
+          isImperfect ||
+          isIncomplete ||
+          hasImplants
+        )
+      }
+
+      events = events.filter((event) => isComplexCase(event))
+    }
   }
 
   // Apply read type filters

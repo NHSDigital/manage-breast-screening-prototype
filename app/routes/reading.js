@@ -149,6 +149,10 @@ module.exports = (router) => {
       filters.includeAwaitingPriors = true
     }
 
+    if (queryFilters.includes('complexOnly')) {
+      filters.complexOnly = true
+    }
+
     // Create the batch
     try {
       const batch = createReadingBatch(data, {
