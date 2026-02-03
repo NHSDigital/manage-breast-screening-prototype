@@ -9,6 +9,7 @@
 
 {% block pageContent %}
 
+
   {# Get existing read data for this user (saved read) #}
   {% set existingRead = event | getReadForUser %}
   {% set existingResult = existingRead.result %}
@@ -101,7 +102,9 @@
   {# Opinion form #}
   {% set questionText = "What is your opinion of these images?" %}
 
-  <form action="./opinion-answer" method="POST">
+  {# Opinion form data attributes are used to manage the first-load lockout #}
+  {# Todo: do we need a form here? is the parent layout's form not enough? #}
+  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ 'false' if hasExistingOpinion else 'true' }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
 
     {# Hidden field to track previous result for change detection #}
     <input type="hidden" name="imageReadingTemp[previousResult]" value="{{ currentResult }}">
@@ -210,17 +213,17 @@
 
   </form>
 
-{# Medical summary #}
-  {# <hr class="nhsuk-section-break nhsuk-section-break--l nhsuk-section-break--visible"> #}
-
+  {# Medical summary #}
+  {# Only show rows that have data #}
+  {% set showOnlyPopulated = true %}
+  {# No edits allowed in image reading #}
   {% set allowEdits = false %}
+
   {% set medicalSummaryHtml %}
- 
     {% include "_includes/summary-lists/medical-info-summary.njk" %}
   {% endset %}
 
   {{ card({
-    classes: "nhsuk-u-margin-top-8",
     heading: "Medical summary",
     headingLevel: "2",
     feature: true,
