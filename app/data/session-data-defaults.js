@@ -73,7 +73,8 @@ const defaultSettings = {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     showRemaining: 'true',
-    autoOpenPacsViewer: 'false'
+    autoOpenPacsViewer: 'false',
+    enableOpinionDelay: 'true'
   }
 }
 

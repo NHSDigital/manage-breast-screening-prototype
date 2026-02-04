@@ -958,6 +958,27 @@ const userHasReadEvent = function (event, userId) {
 }
 
 /**
+ * Get reads from other users (not the current user)
+ * @param {Object} event - The event to check
+ * @param {string} userId - Current user ID to exclude
+ * @returns {Array} Array of read objects from other users
+ */
+const getOtherReads = function (event, userId = null) {
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  if (!event?.imageReading?.reads) {
+    return []
+  }
+
+  return Object.entries(event.imageReading.reads)
+    .filter(([readerId]) => readerId !== currentUserId)
+    .map(([readerId, read]) => ({
+      ...read,
+      readerId
+    }))
+}
+
+/**
  * Check if current user can read an event
  *
  * @param {object} event - The event to check
@@ -1382,6 +1403,7 @@ module.exports = {
   getPreviousEvent,
   // User functions
   getReadForUser,
+  getOtherReads,
   getFirstUserReadableEvent,
   // Booleans
   userHasReadEvent,

@@ -36,9 +36,9 @@ const STANDARD_VIEWS = [
 // - incomplete: 1 view is missing (participant couldn't complete)
 // - incompleteImperfect: missing view + marked as imperfect
 const IMAGE_SCENARIO_WEIGHTS = {
-  standard: 0.70,
-  extraImages: 0.10,
-  technicalRepeat: 0.10,
+  standard: 0.7,
+  extraImages: 0.1,
+  technicalRepeat: 0.1,
   incomplete: 0.07,
   incompleteImperfect: 0.03
 }

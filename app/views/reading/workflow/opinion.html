@@ -139,11 +139,11 @@
     {% endif %}
   {% endfor %}
 
-  <form action="./opinion-answer" method="POST">
-    
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
-  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ 'false' if hasExistingOpinion else 'true' }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
+  {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
+  {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
+  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
 
     {# Hidden field to track previous result for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousResult]" value="{{ currentResult }}">

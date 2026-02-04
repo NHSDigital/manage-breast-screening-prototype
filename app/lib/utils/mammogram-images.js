@@ -369,14 +369,15 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * @param {string} options.tag - Force a specific tag (bypasses weighted selection)
  * @param {object} options.weights - Override tag weights (e.g., { normal: 0.8, abnormal: 0.2 })
  * @param {object} options.event - Event object for context-aware selection
+ * @param {object} options.context - Context object directly (alternative to passing event)
  * @returns {object|null} - The selected set object or null if none available
  */
 const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
 
-  // Extract context from event if provided
-  const context = options.event ? extractEventContext(options.event) : {}
+  // Use provided context, or extract from event if provided
+  const context = options.context || (options.event ? extractEventContext(options.event) : {})
 
   // Apply hard filters based on context (e.g., implants)
   if (Object.keys(context).length > 0) {

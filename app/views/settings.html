@@ -98,6 +98,11 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][autoOpenPacsViewer]={{'true' if data.settings.reading.autoOpenPacsViewer !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.autoOpenPacsViewer !== 'true' else 'Disable'}} auto-open PACS viewer</a>
     </p>
 
+    {# Opinion delay #}
+    <p>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][enableOpinionDelay]={{'true' if data.settings.reading.enableOpinionDelay !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.enableOpinionDelay !== 'true' else 'Disable'}} opinion delay</a>
+    </p>
+
     <h2>Generated data</h2>
 
     <dl class="nhsuk-summary-list">
