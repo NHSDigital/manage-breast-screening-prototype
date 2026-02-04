@@ -7,8 +7,6 @@ const routes = require('./app/routes')
 const sessionDataDefaults = require('./app/data/session-data-defaults')
 const filters = require('./app/filters')
 
-const SERVICE_NAME = config.serviceName
-
 // Set configuration variables
 const port = parseInt(process.env.PORT || config.port, 10) || 2000
 
@@ -19,30 +17,25 @@ const viewsPath = [
   'app/views/_includes'
 ]
 
+const entryPoints = [
+  'app/assets/sass/main.scss',
+  'app/assets/javascript/*.js'
+]
+
 async function init() {
   const prototype = await NHSPrototypeKit.init({
-    serviceName: SERVICE_NAME,
+    serviceName: config.serviceName,
     buildOptions: {
-      entryPoints: [
-        'app/assets/sass/main.scss',
-        'app/assets/javascript/*.js'
-      ]
+      entryPoints
     },
     viewsPath,
     routes,
     locals,
+    filters,
     sessionDataDefaults
   })
 
-  // Add custom port number
-  prototype.app?.set('port', config.port)
-
-  // Add custom Nunjucks filters
-  for (const [name, filter] of Object.entries(filters())) {
-    prototype.nunjucks?.addFilter(name, filter)
-  }
-
-  prototype.start()
+  prototype.start(port)
 }
 
 init()
