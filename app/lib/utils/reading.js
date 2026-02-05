@@ -1006,6 +1006,51 @@ const getOtherReads = function (event, userId = null) {
 }
 
 /**
+ * Determine if a comparison page should be shown to the second reader
+ * Returns false if user is first reader, or if both opinions are normal
+ * Otherwise returns comparison info with the first read and comparison type
+ *
+ * @param {Object} event - The event being read
+ * @param {string} secondReaderOpinion - The second reader's opinion
+ * @param {string} userId - Current user ID (optional, falls back to context)
+ * @returns {false | Object} False if no comparison needed, or { type, firstRead }
+ */
+const getComparisonInfo = function (event, secondReaderOpinion, userId = null) {
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  // Get the first read (from other users)
+  const otherReads = getOtherReads.call(this, event, currentUserId)
+
+  // No first read exists - user is first reader
+  if (otherReads.length === 0) {
+    return false
+  }
+
+  // Get the first reader's opinion (sorted by readNumber)
+  const firstRead = otherReads.sort((a, b) => {
+    if (a.readNumber && b.readNumber) return a.readNumber - b.readNumber
+    return new Date(a.timestamp) - new Date(b.timestamp)
+  })[0]
+
+  const firstOpinion = firstRead.opinion
+
+  // Both normal - no comparison needed
+  if (firstOpinion === 'normal' && secondReaderOpinion === 'normal') {
+    return false
+  }
+
+  // Determine comparison type
+  const type = firstOpinion === secondReaderOpinion ? 'agreeing' : 'discordant'
+
+  return {
+    type,
+    firstRead,
+    firstOpinion,
+    secondOpinion: secondReaderOpinion
+  }
+}
+
+/**
  * Check if current user can read an event
  *
  * @param {object} event - The event to check
@@ -1431,6 +1476,7 @@ module.exports = {
   // User functions
   getReadForUser,
   getOtherReads,
+  getComparisonInfo,
   getReadsAsArray,
   getFirstUserReadableEvent,
   // Booleans

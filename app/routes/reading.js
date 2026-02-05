@@ -16,7 +16,8 @@ const {
   getOrCreateClinicBatch,
   getBatchReadingProgress,
   skipEventInBatch,
-  getReadingMetadata
+  getReadingMetadata,
+  getComparisonInfo
 } = require('../lib/utils/reading')
 const { getShortName } = require('../lib/utils/participants')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
@@ -415,7 +416,8 @@ module.exports = (router) => {
         'confirm-abnormal',
         'recommended-assessment',
         'review',
-        'existing-read'
+        'existing-read',
+        'compare'
       ]
 
       if (workflowSteps.includes(step)) {
@@ -947,6 +949,23 @@ module.exports = (router) => {
       // Clean up previousOpinion - only needed for change detection
       delete data.imageReadingTemp.previousOpinion
 
+      // Check for early comparison (second reader only, not normal+normal)
+      const comparisonSetting = data.settings?.reading?.secondReaderComparison
+      if (comparisonSetting === 'early') {
+        const currentUserId = data.currentUser?.id
+        const comparisonInfo = getComparisonInfo(
+          event,
+          normalisedOpinion,
+          currentUserId
+        )
+        if (comparisonInfo) {
+          // Second reader with opinions that need comparison
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/compare`
+          )
+        }
+      }
+
       // Handle different opinion types
       switch (opinion) {
         case 'normal':
@@ -965,6 +984,90 @@ module.exports = (router) => {
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/normal-details`
           )
+        case 'technical_recall':
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/technical-recall`
+          )
+        case 'recall_for_assessment':
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+          )
+        default:
+          return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
+      }
+    }
+  )
+
+  // Handle compare decision - keep opinion or adopt first reader's
+  router.post(
+    '/reading/batch/:batchId/events/:eventId/compare-answer',
+    (req, res) => {
+      const { batchId, eventId } = req.params
+      const data = req.session.data
+      const decision = req.body.compareDecision
+      const currentUserId = data.currentUser?.id
+
+      const event = data.events.find((e) => e.id === eventId)
+      if (!event) return res.redirect(`/reading/batch/${batchId}`)
+
+      const opinion = data.imageReadingTemp?.opinion
+
+      if (decision === 'adopt') {
+        // Copy first reader's data to our temp
+        const comparisonInfo = getComparisonInfo(event, opinion, currentUserId)
+        if (comparisonInfo && comparisonInfo.firstRead) {
+          const firstRead = comparisonInfo.firstRead
+
+          // Copy opinion and all details from first reader
+          data.imageReadingTemp.opinion = firstRead.opinion
+          data.imageReadingTemp.adoptedFromFirstReader = true
+
+          // Copy technical recall data if present
+          if (firstRead.technicalRecall) {
+            data.imageReadingTemp.technicalRecall = {
+              ...firstRead.technicalRecall
+            }
+          }
+
+          // Copy breast assessment data if present
+          if (firstRead.left) {
+            data.imageReadingTemp.left = JSON.parse(
+              JSON.stringify(firstRead.left)
+            )
+          }
+          if (firstRead.right) {
+            data.imageReadingTemp.right = JSON.parse(
+              JSON.stringify(firstRead.right)
+            )
+          }
+
+          // Copy normal details if present
+          if (firstRead.normalDetails) {
+            data.imageReadingTemp.normalDetails = firstRead.normalDetails
+          }
+
+          console.log('Adopted first reader opinion:', firstRead.opinion)
+        }
+
+        // Go straight to review since we have complete data
+        return res.redirect(
+          `/reading/batch/${batchId}/events/${eventId}/review`
+        )
+      }
+
+      // Keep original opinion - continue to appropriate details page
+      switch (opinion) {
+        case 'normal':
+          if (data.settings.reading.confirmNormal === 'true') {
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
+            )
+          } else {
+            return res.redirect(
+              307,
+              `/reading/batch/${batchId}/events/${eventId}/save-opinion`
+            )
+          }
         case 'technical_recall':
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/technical-recall`

@@ -7,10 +7,12 @@
     - read: object - the read data (defaults to data.imageReadingTemp)
     - allowEdits: boolean - whether to show change links (default: false)
     - changeOpinionUrl: string - URL for change opinion link
+    - opinionOnly: boolean - if true, only show the opinion row (default: false)
 #}
 
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
+{% set opinionOnly = opinionOnly if opinionOnly is defined else false %}
 
 {# Format the opinion for display #}
 {% set opinionText %}
@@ -69,6 +71,8 @@
     ]
   } if allowEdits and changeOpinionUrl
 }) %}
+
+{% if not opinionOnly %}
 
 {# Normal - additional details #}
 {% if read.opinion == 'normal' and read.normalDetails %}
@@ -213,6 +217,8 @@
     }) %}
   {% endif %}
 {% endif %}
+
+{% endif %}{# end opinionOnly check #}
 
 {{ summaryList({
   rows: rows | removeLastRowBorder
