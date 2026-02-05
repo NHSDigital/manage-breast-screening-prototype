@@ -53,16 +53,32 @@
           {% set viewKeys = ['lmlo', 'lcc'] %}
         {% endif %}
 
+        {# Build flat list of all images for this breast with their view keys #}
+        {% set imageList = [] %}
+        {% for viewKey in viewKeys %}
+          {% set viewPaths = mammogramImages.allPaths[viewKey] if mammogramImages and mammogramImages.allPaths else null %}
+          {% if viewPaths %}
+            {% if viewPaths is iterable and viewPaths is not string %}
+              {# Multiple images for this view #}
+              {% for imagePath in viewPaths %}
+                {% set imageIndex = loop.index %}
+                {% set imageViewKey = viewKey if imageIndex == viewPaths | length else viewKey + '-' + imageIndex %}
+                {% set imageList = imageList | push({ path: imagePath, view: viewKey, viewKey: imageViewKey }) %}
+              {% endfor %}
+            {% else %}
+              {# Single image #}
+              {% set imageList = imageList | push({ path: viewPaths, view: viewKey, viewKey: viewKey }) %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
         <div class="app-image-two-up nhsuk-u-margin-bottom-6">
-          {% for viewKey in viewKeys %}
+          {% for image in imageList %}
             <div class="app-mammogram-container">
-              {% set imagePath = mammogramImages.paths[viewKey] if mammogramImages and mammogramImages.paths else '' %}
-              {% if imagePath %}
-                <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="{{ imagePath }}" alt="{{ viewKey | upper }} view" data-view="{{ viewKey }}">
-              {% else %}
-                <div class="app-mammogram-placeholder">No image</div>
-              {% endif %}
+              <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="{{ image.path }}" alt="{{ image.view | upper }} view" data-view="{{ image.viewKey }}">
             </div>
+          {% else %}
+            <div class="app-mammogram-placeholder">No images</div>
           {% endfor %}
         </div>
 

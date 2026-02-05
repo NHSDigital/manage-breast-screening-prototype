@@ -87,10 +87,10 @@ const getLevelOfConcernText = (levelOfConcern) => {
       5: 'likely cancerous'
     }
 
-    const label = labelMap[numericValue]
-    if (label) {
-      return `Level ${numericValue} (${label})`
-    }
+    // const label = labelMap[numericValue]
+    // if (label) {
+    //   return `Level ${numericValue} (${label})`
+    // }
 
     return `Level ${numericValue}`
   }
