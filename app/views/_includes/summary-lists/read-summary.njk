@@ -12,16 +12,16 @@
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
 
-{# Format the result for display #}
-{% set resultText %}
-  {% if read.result == 'normal' %}
+{# Format the opinion for display #}
+{% set opinionText %}
+  {% if read.opinion == 'normal' %}
     Normal
-  {% elseif read.result == 'technical_recall' %}
+  {% elseif read.opinion == 'technical_recall' %}
     Technical recall
-  {% elseif read.result == 'recall_for_assessment' %}
+  {% elseif read.opinion == 'recall_for_assessment' %}
     Recall for assessment
   {% else %}
-    {{ read.result }}
+    {{ read.opinion }}
   {% endif %}
 {% endset %}
 
@@ -57,7 +57,7 @@
     text: "Opinion"
   },
   value: {
-    html: read.result | toTag
+    html: read.opinion | toTag
   },
   actions: {
     items: [
@@ -71,7 +71,7 @@
 }) %}
 
 {# Normal - additional details #}
-{% if read.result == 'normal' and read.normalDetails %}
+{% if read.opinion == 'normal' and read.normalDetails %}
   {% set rows = rows | push({
     key: {
       text: "Details"
@@ -92,7 +92,7 @@
 {% endif %}
 
 {# Technical recall - views to retake #}
-{% if read.result == 'technical_recall' %}
+{% if read.opinion == 'technical_recall' %}
   {% set techRecallViews = read.technicalRecall.views | default({}) %}
   
   {% if techRecallViews | length > 0 %}
@@ -130,7 +130,7 @@
 {% endif %}
 
 {# Recall for assessment details #}
-{% if read.result == 'recall_for_assessment' %}
+{% if read.opinion == 'recall_for_assessment' %}
   
   {% set breastAssessmentHtml %}
     <div class="nhsuk-grid-row nhsuk-u-margin-bottom-0">
@@ -201,7 +201,7 @@
 {% endif %}
 
 {# Normal with details #}
-{% if read.result == 'normal' %}
+{% if read.opinion == 'normal' %}
   {% if read.normalComment %}
     {% set rows = rows | push({
       key: {

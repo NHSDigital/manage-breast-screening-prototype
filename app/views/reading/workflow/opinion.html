@@ -12,14 +12,14 @@
 
   {# Get existing read data for this user (saved read) #}
   {% set existingRead = event | getReadForUser %}
-  {% set existingResult = existingRead.result %}
+  {% set existingOpinion = existingRead.opinion %}
   
   {# Also check for in-progress read in temp data #}
-  {% set tempResult = data.imageReadingTemp.result if data.imageReadingTemp else null %}
+  {% set tempOpinion = data.imageReadingTemp.opinion if data.imageReadingTemp else null %}
   
   {# Show update UI if there's either a saved read or an in-progress one #}
-  {% set hasExistingOpinion = existingResult or tempResult %}
-  {% set currentResult = tempResult or existingResult %}
+  {% set hasExistingOpinion = existingOpinion or tempOpinion %}
+  {% set currentOpinion = tempOpinion or existingOpinion %}
   
   {% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
 
@@ -75,8 +75,8 @@
       {% endif %}
 
       {# First/second read tag #}
-      {% set readCount = event.readingMetadata.readCount %}
-      {% if existingResult %}
+      {% set readCount = (event | getReadingMetadata).readCount %}
+      {% if existingOpinion %}
         {% if readCount == 1 %}
           {{ "First read" | toTag }}
         {% else %}
@@ -145,8 +145,8 @@
   {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
 
-    {# Hidden field to track previous result for opinion change detection #}
-    <input type="hidden" name="imageReadingTemp[previousResult]" value="{{ currentResult }}">
+    {# Hidden field to track previous opinion for opinion change detection #}
+    <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">
 
     <div class="nhsuk-grid-row">
 
@@ -201,9 +201,9 @@
       {# Right column: Opinion buttons/radios #}
       <div class="nhsuk-grid-column-two-thirds">
         {% if hasExistingOpinion %}
-          {# Show radios when updating an existing or in-progress result #}
+          {# Show radios when updating an existing or in-progress opinion #}
           {{ radios({
-            name: "imageReadingTemp[result]",
+            name: "imageReadingTemp[opinion]",
             fieldset: {
               legend: {
                 text: questionText,
@@ -215,12 +215,12 @@
               {
                 value: "normal",
                 text: "Normal",
-                checked: currentResult == 'normal' and not existingRead.normalDetails
+                checked: currentOpinion == 'normal' and not existingRead.normalDetails
               },
               {
                 value: "normal_with_details",
                 text: "Normal, but add details",
-                checked: (currentResult == 'normal' and existingRead.normalDetails) or currentResult == 'normal_with_details'
+                checked: (currentOpinion == 'normal' and existingRead.normalDetails) or currentOpinion == 'normal_with_details'
               },
               {
                 value: "technical_recall",
@@ -231,7 +231,7 @@
                 text: "Recall for assessment"
               }
             ],
-            value: currentResult
+            value: currentOpinion
           }) }}
 
           {{ button({
@@ -247,19 +247,19 @@
               {{ button({
                 text: "Normal, and add details",
                 value: "normal_with_details",
-                name: "imageReadingTemp[result]",
+                name: "imageReadingTemp[opinion]",
                 classes: "app-button-full-width nhsuk-u-margin-bottom-3"
               }) }}
             {% else %}
               {{ button({
                 text: "Normal",
                 value: "normal",
-                name: "imageReadingTemp[result]",
+                name: "imageReadingTemp[opinion]",
                 classes: "app-button-full-width nhsuk-u-margin-bottom-3"
               }) }}
 
               <p class="nhsuk-u-margin-bottom-4">
-                <button type="submit" name="imageReadingTemp[result]" value="normal_with_details" class="app-button-link">
+                <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link">
                   Normal, but add details
                 </button>
               </p>
@@ -270,7 +270,7 @@
             {{ button({
               text: "Technical recall",
               value: "technical_recall",
-              name: "imageReadingTemp[result]",
+              name: "imageReadingTemp[opinion]",
               classes: "nhsuk-button--secondary app-button-full-width nhsuk-u-margin-bottom-3"
             }) }}
           </div>
@@ -279,7 +279,7 @@
             {{ button({
               text: "Recall for assessment",
               value: "recall_for_assessment",
-              name: "imageReadingTemp[result]",
+              name: "imageReadingTemp[opinion]",
               classes: "nhsuk-button--warning app-button-full-width"
             }) }}
           </div>

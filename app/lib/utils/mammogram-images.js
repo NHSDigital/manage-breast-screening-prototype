@@ -377,7 +377,8 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   if (allSets.length === 0) return null
 
   // Use provided context, or extract from event if provided
-  const context = options.context || (options.event ? extractEventContext(options.event) : {})
+  const context =
+    options.context || (options.event ? extractEventContext(options.event) : {})
 
   // Apply hard filters based on context (e.g., implants)
   if (Object.keys(context).length > 0) {

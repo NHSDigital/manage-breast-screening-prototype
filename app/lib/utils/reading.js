@@ -42,12 +42,12 @@ const getReadingMetadata = (event) => {
   const readerIds = reads.map((read) => read.readerId)
   const uniqueReaderCount = new Set(readerIds).size
 
-  // Get all unique results from reads
-  const results = reads.map((read) => read.result)
-  const uniqueResults = [...new Set(results)].filter(Boolean) // Filter out undefined results
+  // Get all unique opinions from reads
+  const opinions = reads.map((read) => read.opinion)
+  const uniqueOpinions = [...new Set(opinions)].filter(Boolean) // Filter out undefined
 
   // Determine if there's disagreement between reads
-  const hasDisagreement = uniqueResults.length > 1
+  const hasDisagreement = uniqueOpinions.length > 1
 
   return {
     readCount: reads.length,
@@ -56,9 +56,29 @@ const getReadingMetadata = (event) => {
     secondReadComplete: reads.length >= 2,
     hasDisagreement,
     needsArbitration: hasDisagreement && reads.length >= 2,
-    results: uniqueResults,
-    reads
+    opinions: uniqueOpinions
   }
+}
+
+/**
+ * Get all reads for an event as an ordered array
+ * Sorted by readNumber if available, otherwise by timestamp
+ * @param {Object} event - The event to get reads for
+ * @returns {Array} Array of read objects sorted by read order
+ */
+const getReadsAsArray = function (event) {
+  if (!event?.imageReading?.reads) {
+    return []
+  }
+
+  return Object.values(event.imageReading.reads).sort((a, b) => {
+    // Sort by readNumber if both have it
+    if (a.readNumber && b.readNumber) {
+      return a.readNumber - b.readNumber
+    }
+    // Fall back to timestamp
+    return new Date(a.timestamp) - new Date(b.timestamp)
+  })
 }
 
 /**
@@ -78,10 +98,17 @@ const writeReading = (event, userId, reading, data = null, batchId = null) => {
     event.imageReading.reads = {}
   }
 
-  // Add the reading with timestamp
+  // Calculate readNumber based on existing reads
+  const existingReadCount = Object.keys(event.imageReading.reads).length
+  // If this user already has a read, keep their readNumber; otherwise assign next number
+  const existingRead = event.imageReading.reads[userId]
+  const readNumber = existingRead?.readNumber || existingReadCount + 1
+
+  // Add the reading with timestamp and readNumber
   event.imageReading.reads[userId] = {
     ...reading,
     readerId: userId, // Ensure the reader ID is saved
+    readNumber,
     timestamp: new Date().toISOString()
   }
 
@@ -1404,6 +1431,7 @@ module.exports = {
   // User functions
   getReadForUser,
   getOtherReads,
+  getReadsAsArray,
   getFirstUserReadableEvent,
   // Booleans
   userHasReadEvent,

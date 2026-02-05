@@ -54,10 +54,18 @@ async function regenerateData(req) {
   // Replacing breaks express-session's change tracking
   const freshDefaults = require('../../data/session-data-defaults')
 
+  // Preserve settings before reset
+  const preservedSettings = req.session.data.settings ? JSON.parse(JSON.stringify(req.session.data.settings)) : null
+
   // Clear existing keys
   Object.keys(req.session.data).forEach((key) => delete req.session.data[key])
   // Merge in fresh defaults and generation info
   Object.assign(req.session.data, freshDefaults, { generationInfo })
+
+  // Restore settings if they existed
+  if (preservedSettings) {
+    req.session.data.settings = preservedSettings
+  }
 }
 
 function needsRegeneration(generationInfo) {

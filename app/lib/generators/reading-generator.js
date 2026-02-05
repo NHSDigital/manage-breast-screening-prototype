@@ -48,54 +48,71 @@ const TAG_TO_RESULT = {
  * @param {string} timestamp - ISO timestamp for the read
  * @param {object} [options] - Generation options
  * @param {boolean} [options.forceAlignment] - Force alignment with set (ignore probability)
- * @param {string} [options.forceResult] - Force a specific result type
+ * @param {string} [options.forceOpinion] - Force a specific opinion type
+ * @param {number} [options.readNumber] - The read number (1 = first, 2 = second)
  * @returns {object} The generated read object
  */
-const generateSingleRead = (event, readerId, readerType, timestamp, options = {}) => {
+const generateSingleRead = (
+  event,
+  readerId,
+  readerType,
+  timestamp,
+  options = {}
+) => {
   const setId = event.mammogramData?.selectedSetId
   const set = setId ? getSetById(setId, 'diagrams') : null
 
-  // Determine the result
-  let result
+  // Determine the opinion
+  let opinion
 
-  if (options.forceResult) {
-    result = options.forceResult
+  if (options.forceOpinion) {
+    opinion = options.forceOpinion
   } else if (set) {
     // Decide if this read aligns with the set
-    const shouldAlign = options.forceAlignment || Math.random() < ALIGNMENT_PROBABILITY
+    const shouldAlign =
+      options.forceAlignment || Math.random() < ALIGNMENT_PROBABILITY
 
     if (shouldAlign) {
-      result = TAG_TO_RESULT[set.tag] || 'normal'
+      opinion = TAG_TO_RESULT[set.tag] || 'normal'
     } else {
-      // Pick a different result
-      const alignedResult = TAG_TO_RESULT[set.tag] || 'normal'
-      const otherResults = Object.keys(DEFAULT_READ_WEIGHTS).filter(r => r !== alignedResult)
-      result = faker.helpers.arrayElement(otherResults)
+      // Pick a different opinion
+      const alignedOpinion = TAG_TO_RESULT[set.tag] || 'normal'
+      const otherOpinions = Object.keys(DEFAULT_READ_WEIGHTS).filter(
+        (r) => r !== alignedOpinion
+      )
+      opinion = faker.helpers.arrayElement(otherOpinions)
     }
   } else {
     // No set - use default weights
-    result = weighted.select(DEFAULT_READ_WEIGHTS)
+    opinion = weighted.select(DEFAULT_READ_WEIGHTS)
   }
 
   // Build base read object
   const read = {
-    result,
+    opinion,
     readerId,
     readerType,
-    timestamp
+    timestamp,
+    readNumber: options.readNumber || 1
   }
 
-  // Add result-specific data
-  if (result === 'normal') {
+  // Add opinion-specific data
+  if (opinion === 'normal') {
     // Normal reads are simple - just per-breast assessment
     read.left = { breastAssessment: 'normal' }
     read.right = { breastAssessment: 'normal' }
-  } else if (result === 'technical_recall') {
+  } else if (opinion === 'technical_recall') {
     // Technical recall - determine which views need retaking
     read.technicalRecall = generateTechnicalRecallData(event, set)
-    read.left = { breastAssessment: set?.left?.status === 'technical' ? 'technical' : 'normal' }
-    read.right = { breastAssessment: set?.right?.status === 'technical' ? 'technical' : 'normal' }
-  } else if (result === 'recall_for_assessment') {
+    read.left = {
+      breastAssessment:
+        set?.left?.status === 'technical' ? 'technical' : 'normal'
+    }
+    read.right = {
+      breastAssessment:
+        set?.right?.status === 'technical' ? 'technical' : 'normal'
+    }
+  } else if (opinion === 'recall_for_assessment') {
     // Abnormal - generate per-breast assessments and annotations
     const { left, right } = generateAbnormalData(event, set)
     read.left = left
@@ -122,7 +139,7 @@ const generateTechnicalRecallData = (event, set) => {
     if (rightTech) {
       // Pick one or both right views
       const rightViews = Math.random() < 0.5 ? ['RMLO'] : ['RMLO', 'RCC']
-      rightViews.forEach(v => {
+      rightViews.forEach((v) => {
         views[v] = {
           reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
           additionalDetails: Math.random() < 0.3 ? 'Repeat required' : ''
@@ -133,7 +150,7 @@ const generateTechnicalRecallData = (event, set) => {
     if (leftTech) {
       // Pick one or both left views
       const leftViews = Math.random() < 0.5 ? ['LMLO'] : ['LMLO', 'LCC']
-      leftViews.forEach(v => {
+      leftViews.forEach((v) => {
         views[v] = {
           reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
           additionalDetails: Math.random() < 0.3 ? 'Repeat required' : ''
@@ -153,9 +170,12 @@ const generateTechnicalRecallData = (event, set) => {
     // No set - pick 1-2 random views
     const viewCodes = ['RMLO', 'RCC', 'LCC', 'LMLO']
     const count = Math.random() < 0.7 ? 1 : 2
-    const selectedViews = faker.helpers.arrayElements(viewCodes, { min: count, max: count })
+    const selectedViews = faker.helpers.arrayElements(viewCodes, {
+      min: count,
+      max: count
+    })
 
-    selectedViews.forEach(v => {
+    selectedViews.forEach((v) => {
       views[v] = {
         reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
         additionalDetails: ''
@@ -184,7 +204,7 @@ const generateAbnormalData = (event, set) => {
 
     // Use set's annotations if available
     if (set.annotations && set.annotations.length > 0) {
-      set.annotations.forEach(annotation => {
+      set.annotations.forEach((annotation) => {
         const targetBreast = annotation.side === 'left' ? left : right
 
         // Convert set annotation format to read annotation format
@@ -199,13 +219,18 @@ const generateAbnormalData = (event, set) => {
           comment: annotation.notes || ''
         })
       })
-    } else if (left.breastAssessment === 'abnormal' || right.breastAssessment === 'abnormal') {
+    } else if (
+      left.breastAssessment === 'abnormal' ||
+      right.breastAssessment === 'abnormal'
+    ) {
       // Set marked as abnormal but no annotations - generate placeholder
       if (left.breastAssessment === 'abnormal') {
         left.annotations.push(generatePlaceholderAnnotation('left', set.left))
       }
       if (right.breastAssessment === 'abnormal') {
-        right.annotations.push(generatePlaceholderAnnotation('right', set.right))
+        right.annotations.push(
+          generatePlaceholderAnnotation('right', set.right)
+        )
       }
     }
   } else {
@@ -217,10 +242,15 @@ const generateAbnormalData = (event, set) => {
   }
 
   // Ensure at least one breast is abnormal for recall_for_assessment
-  if (left.breastAssessment === 'normal' && right.breastAssessment === 'normal') {
+  if (
+    left.breastAssessment === 'normal' &&
+    right.breastAssessment === 'normal'
+  ) {
     const target = Math.random() < 0.5 ? left : right
     target.breastAssessment = 'abnormal'
-    target.annotations.push(generatePlaceholderAnnotation(target === left ? 'left' : 'right', null))
+    target.annotations.push(
+      generatePlaceholderAnnotation(target === left ? 'left' : 'right', null)
+    )
   }
 
   return { left, right }
@@ -363,28 +393,36 @@ const generateReadingData = (events, users) => {
           updatedEvents[eventIndex],
           secondReader.id,
           secondReader.role,
-          firstReadTime
+          firstReadTime,
+          { readNumber: 1 }
         )
-        updatedEvents[eventIndex].imageReading.reads[secondReader.id] = firstRead
+        updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
+          firstRead
 
         // Second read (by first user) - 80% chance of agreement with first read
         const secondReadTime = baseReadTime
           .add(Math.floor(Math.random() * 16) + 15, 'minutes')
           .toISOString()
 
-        // Determine second read result - 80% agree with first, 20% different
-        const forceSecondResult = Math.random() > 0.8
-          ? Object.keys(TAG_TO_RESULT).map(t => TAG_TO_RESULT[t]).filter(r => r !== firstRead.result)[Math.floor(Math.random() * 2)]
-          : firstRead.result
+        // Determine second read opinion - 80% agree with first, 20% different
+        const forceSecondOpinion =
+          Math.random() > 0.8
+            ? Object.keys(TAG_TO_RESULT)
+                .map((t) => TAG_TO_RESULT[t])
+                .filter((r) => r !== firstRead.opinion)[
+                Math.floor(Math.random() * 2)
+              ]
+            : firstRead.opinion
 
         const secondRead = generateSingleRead(
           updatedEvents[eventIndex],
           firstReader.id,
           firstReader.role,
           secondReadTime,
-          { forceResult: forceSecondResult }
+          { forceOpinion: forceSecondOpinion, readNumber: 2 }
         )
-        updatedEvents[eventIndex].imageReading.reads[firstReader.id] = secondRead
+        updatedEvents[eventIndex].imageReading.reads[firstReader.id] =
+          secondRead
 
         updatedEventIds.add(event.id)
         count++
@@ -430,7 +468,8 @@ const generateReadingData = (events, users) => {
         updatedEvents[eventIndex],
         thirdReader.id,
         thirdReader.role,
-        firstReadTime
+        firstReadTime,
+        { readNumber: 1 }
       )
       updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
 
@@ -449,16 +488,21 @@ const generateReadingData = (events, users) => {
       const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
       if (eventIndex === -1) return
 
-      // Get the first read result
+      // Get the first read
       const firstRead =
         updatedEvents[eventIndex].imageReading.reads[thirdReader.id]
       if (!firstRead) return
 
       // Second read (by second user) - 80% chance of agreement with first read
-      // Determine second read result - 80% agree with first, 20% different
-      const forceSecondResult = Math.random() > 0.8
-        ? Object.keys(TAG_TO_RESULT).map(t => TAG_TO_RESULT[t]).filter(r => r !== firstRead.result)[Math.floor(Math.random() * 2)]
-        : firstRead.result
+      // Determine second read opinion - 80% agree with first, 20% different
+      const forceSecondOpinion =
+        Math.random() > 0.8
+          ? Object.keys(TAG_TO_RESULT)
+              .map((t) => TAG_TO_RESULT[t])
+              .filter((r) => r !== firstRead.opinion)[
+              Math.floor(Math.random() * 2)
+            ]
+          : firstRead.opinion
 
       // Advance time by 1-2 minutes for each read
       baseReadTime = baseReadTime.add(
@@ -472,7 +516,7 @@ const generateReadingData = (events, users) => {
         secondReader.id,
         secondReader.role,
         secondReadTime,
-        { forceResult: forceSecondResult }
+        { forceOpinion: forceSecondOpinion, readNumber: 2 }
       )
       updatedEvents[eventIndex].imageReading.reads[secondReader.id] = secondRead
     })
@@ -514,7 +558,8 @@ const generateReadingData = (events, users) => {
           updatedEvents[eventIndex],
           firstReader.id,
           firstReader.role,
-          firstReadTime
+          firstReadTime,
+          { readNumber: 1 }
         )
         updatedEvents[eventIndex].imageReading.reads[firstReader.id] = firstRead
 
@@ -559,9 +604,11 @@ const generateReadingData = (events, users) => {
           updatedEvents[eventIndex],
           secondReader.id,
           secondReader.role,
-          firstReadTime
+          firstReadTime,
+          { readNumber: 1 }
         )
-        updatedEvents[eventIndex].imageReading.reads[secondReader.id] = firstRead
+        updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
+          firstRead
 
         updatedEventIds.add(event.id)
         count++
@@ -606,7 +653,8 @@ const generateReadingData = (events, users) => {
           updatedEvents[eventIndex],
           thirdReader.id,
           thirdReader.role,
-          firstReadTime
+          firstReadTime,
+          { readNumber: 1 }
         )
         updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
 

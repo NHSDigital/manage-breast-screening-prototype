@@ -22,7 +22,7 @@
   {% endset %}
 
   {{ card({
-    heading: "Your assessment",
+    heading: "Your read",
     headingLevel: "2",
     feature: true,
     descriptionHtml: readSummaryHtml
@@ -40,7 +40,7 @@
       {% endset %}
 
       {{ card({
-        heading: readerName + "'s assessment",
+        heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
         headingLevel: "2",
         feature: true,
         descriptionHtml: otherReadSummaryHtml

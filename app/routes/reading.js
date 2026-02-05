@@ -287,8 +287,6 @@ module.exports = (router) => {
       return res.redirect(`/reading/batch/${batchId}`)
     }
 
-    event.readingMetadata = getReadingMetadata(event)
-
     // Get participant and clinic data
     const participant = data.participants.find(
       (p) => p.id === event.participantId
@@ -824,7 +822,7 @@ module.exports = (router) => {
   )
 
   // Handle recording a reading result
-  // Save the reading opinion - reads opinion from imageReadingTemp.result
+  // Save the reading opinion - reads opinion from imageReadingTemp.opinion
   router.post(
     '/reading/batch/:batchId/events/:eventId/save-opinion',
     (req, res) => {
@@ -833,8 +831,8 @@ module.exports = (router) => {
       const currentUserId = data.currentUser.id
       const formData = data.imageReadingTemp
 
-      if (!formData || !formData.result) {
-        console.log('No result in imageReadingTemp - cannot save')
+      if (!formData || !formData.opinion) {
+        console.log('No opinion in imageReadingTemp - cannot save')
         return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
       }
 
@@ -873,7 +871,7 @@ module.exports = (router) => {
         technical_recall: 'Technical recall',
         recall_for_assessment: 'Recall for assessment'
       }
-      const resultLabel = resultLabels[formData.result] || 'Opinion'
+      const resultLabel = resultLabels[formData.opinion] || 'Opinion'
       const message = `${resultLabel} opinion recorded for ${shortName}`
 
       data.readingOpinionBanner = {
@@ -907,12 +905,12 @@ module.exports = (router) => {
         JSON.stringify(data.imageReadingTemp, null, 2)
       )
 
-      // Result and previousResult are auto-saved to data.imageReadingTemp via form binding
-      const result = data.imageReadingTemp?.result
-      const previousResult = data.imageReadingTemp?.previousResult
+      // Opinion and previousOpinion are auto-saved to data.imageReadingTemp via form binding
+      const opinion = data.imageReadingTemp?.opinion
+      const previousOpinion = data.imageReadingTemp?.previousOpinion
 
-      console.log('result:', result)
-      console.log('previousResult:', previousResult)
+      console.log('opinion:', opinion)
+      console.log('previousOpinion:', previousOpinion)
 
       const event = data.events.find((e) => e.id === eventId)
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
@@ -924,33 +922,33 @@ module.exports = (router) => {
       data.imageReadingTemp.eventId = eventId
 
       // Normalise normal_with_details to normal (it just goes to details page first)
-      const normalisedResult =
-        result === 'normal_with_details' ? 'normal' : result
-      if (result === 'normal_with_details') {
-        data.imageReadingTemp.result = normalisedResult
+      const normalisedOpinion =
+        opinion === 'normal_with_details' ? 'normal' : opinion
+      if (opinion === 'normal_with_details') {
+        data.imageReadingTemp.opinion = normalisedOpinion
       }
 
       // Clean up data from other opinion types when changing opinion
-      if (previousResult && previousResult !== normalisedResult) {
+      if (previousOpinion && previousOpinion !== normalisedOpinion) {
         console.log(
-          `Opinion changed from ${previousResult} to ${normalisedResult} - cleaning up`
+          `Opinion changed from ${previousOpinion} to ${normalisedOpinion} - cleaning up`
         )
         // Changing away from technical_recall - clear technical recall data
-        if (previousResult === 'technical_recall') {
+        if (previousOpinion === 'technical_recall') {
           delete data.imageReadingTemp.technicalRecall
         }
         // Changing away from recall_for_assessment - clear breast assessments and annotations
-        if (previousResult === 'recall_for_assessment') {
+        if (previousOpinion === 'recall_for_assessment') {
           delete data.imageReadingTemp.left
           delete data.imageReadingTemp.right
         }
       }
 
-      // Clean up previousResult - only needed for change detection
-      delete data.imageReadingTemp.previousResult
+      // Clean up previousOpinion - only needed for change detection
+      delete data.imageReadingTemp.previousOpinion
 
-      // Handle different result types
-      switch (result) {
+      // Handle different opinion types
+      switch (opinion) {
         case 'normal':
           if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
@@ -1044,7 +1042,7 @@ module.exports = (router) => {
             batchId,
             readerId: reading.readerId,
             readType,
-            result: reading.result,
+            opinion: reading.opinion,
             timestamp: reading.timestamp,
             participant
           }

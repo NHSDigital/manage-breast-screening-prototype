@@ -1,11 +1,11 @@
 {% set existingRead = event | getReadForUser %}
 {{ existingRead | log("Existing Read")}}
-{% set existingResult = existingRead.result %}
+{% set existingOpinion = existingRead.opinion %}
 {% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
 
 
 {% set opionionHeading = "Review images" %}
-{% if existingResult %}
+{% if existingOpinion %}
   {% set opionionHeading = "Update review" %}
 {% endif %}
 
@@ -36,7 +36,7 @@
 
 
     {# Work out if *this* is a first or second read. Have to compare the read counts and whether the current user has read #}
-    {% set readCount = event.readingMetadata.readCount %}
+    {% set readCount = (event | getReadingMetadata).readCount %}
 
     {% if existingResult %}
       {% if readCount == 1 %}
@@ -102,8 +102,8 @@
             text: "Recall for assessment"
           }
         ],
-        value: existingResult or data.imageReadingTemp.result
-      } | decorateAttributes(data, "imageReadingTemp.result" )) }}
+        value: existingOpinion or data.imageReadingTemp.opinion
+      } | decorateAttributes(data, "imageReadingTemp.opinion" )) }}
 
       {{ button({
         text: "Update opinion"
