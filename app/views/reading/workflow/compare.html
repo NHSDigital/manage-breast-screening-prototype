@@ -5,7 +5,8 @@
 
 {% set pageHeading = "Compare opinions" %}
 
-
+{# Layout option: 'side-by-side' or 'stacked' #}
+{% set cardLayout = 'stacked' %}
 
 {% set back = {
   href: "./opinion",
@@ -59,68 +60,86 @@
     </div>
   </div>
 
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-one-half">
+  {# First reader's opinion card #}
+  {% set firstReadSummaryHtml %}
+    {% set read = firstRead %}
+    {% set allowEdits = false %}
+    {% include "_includes/summary-lists/read-summary.njk" %}
+  {% endset %}
 
-      {# First reader's opinion #}
-      {% set firstReadSummaryHtml %}
-        {% set read = firstRead %}
-        {% set allowEdits = false %}
-        {% include "_includes/summary-lists/read-summary.njk" %}
-      {% endset %}
+  {# Second reader's opinion card (yours) #}
+  {# Hide empty rows - shows details if they exist (e.g. adopted from first reader) #}
+  {% set isEarlyComparison = data.settings.reading.secondReaderComparison == 'early' %}
+  {% set secondReadSummaryHtml %}
+    {% set read = data.imageReadingTemp %}
+    {% set allowEdits = false %}
+    {% set hideEmptyRows = true %}
+    {% include "_includes/summary-lists/read-summary.njk" %}
+  {% endset %}
 
-      {{ card({
-        heading: "First read",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: firstReadSummaryHtml
-      }) }}
-
+  {% if cardLayout == 'side-by-side' %}
+    {# Side by side layout #}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        {{ card({
+          heading: "First read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: firstReadSummaryHtml
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        {{ card({
+          heading: "Your read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: secondReadSummaryHtml
+        }) }}
+      </div>
     </div>
-    <div class="nhsuk-grid-column-one-half">
+  {% else %}
+    {# Stacked layout #}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {{ card({
+          heading: "First read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: firstReadSummaryHtml
+        }) }}
 
-      {# Second reader's opinion (yours) #}
-      {# In early comparison, only show the opinion - no details yet #}
-      {% set isEarlyComparison = data.settings.reading.secondReaderComparison == 'early' %}
-      {% set secondReadSummaryHtml %}
-        {% set read = data.imageReadingTemp %}
-        {% set allowEdits = false %}
-        {% set opinionOnly = isEarlyComparison %}
-        {% include "_includes/summary-lists/read-summary.njk" %}
-      {% endset %}
-
-      {{ card({
-        heading: "Your opinion",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: secondReadSummaryHtml
-      }) }}
-
+        {{ card({
+          heading: "Your read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: secondReadSummaryHtml
+        }) }}
+      </div>
     </div>
-  </div>
+  {% endif %}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
       <form action="./compare-answer" method="POST">
 
-        {# Build radio options based on comparison type #}
+        {# Build radio options based on comparison type and timing #}
         {% set radioItems = [] %}
 
         {# Option to keep your opinion #}
         {% set keepLabelHtml %}
-          {% if comparisonType == "discordant" %}
-            Keep my original opinion {{ secondOpinion | toTag }}
-          
+          {% if isEarlyComparison and comparisonType == "agreeing" %}
+            {# Early: they haven't added details yet #}
+            Keep my  opinion {{ secondOpinion | toTag }}{% if secondOpinion != "normal" %} and provide my own details{% endif %}
+          {% elseif isEarlyComparison and comparisonType == "discordant" %}
+            Keep my original opinion {{ secondOpinion | toTag }}{% if secondOpinion != "normal" %} and provide details{% endif %}
           {% else %}
-            {{ secondOpinionLabel }} and add your own details {{ secondOpinion | toTag }}
+            {# Late: they've already added details #}
+            Keep my opinion {{ secondOpinion | toTag }}
           {% endif %}
         {% endset %}
 
         {% set keepHint %}
-          {# {% if comparisonType == "agreeing" %}
-            Continue to add details
-          {% endif %} #}
           {% if comparisonType == "discordant" %}
             This case will go to arbitration
           {% endif %}
@@ -137,18 +156,30 @@
         {# Option to change to match first reader #}
         {% set adoptLabelHtml %}
           {% if comparisonType == "discordant" %}
+            {# Discordant: changing opinion entirely #}
             Change my opinion to {{ firstOpinion | toTag }}
+            {# {%- if firstOpinion != "normal" %} and use their details{% endif %} #}
           {% else %}
-            {{ firstOpinionLabel }} and use first reader's details {{ firstOpinion | toTag }}
+            {# Agreeing: same opinion, adopt their details #}
+            Keep {{ firstOpinion | toTag }} and use the first reader's details
+          {% endif %}
+        {% endset %}
+
+        {% set adoptHint %}
+          {# Add hint text here if needed #}
+          {% if comparisonType == "discordant" %}
+            Copies first reader’s details - you can modify when reviewing
+          {% else %}
+            You can modify details when reviewing
           {% endif %}
         {% endset %}
 
         {% set radioItems = radioItems | push({
           value: "adopt",
           html: adoptLabelHtml,
-          _hint: {
-            text: "Your opinion will match the first reader" if comparisonType == "discordant" else "Your opinion will match the first reader exactly"
-          }
+          hint: {
+            text: adoptHint
+          } if adoptHint | trim
         }) %}
 
         {{ radios({

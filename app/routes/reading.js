@@ -399,6 +399,44 @@ module.exports = (router) => {
     }
   })
 
+  // Intercept review page for late comparison check
+  router.get(
+    '/reading/batch/:batchId/events/:eventId/review',
+    (req, res, next) => {
+      const { batchId, eventId } = req.params
+      const data = req.session.data
+      const currentUserId = data.currentUser?.id
+
+      const comparisonSetting = data.settings?.reading?.secondReaderComparison
+      const formData = data.imageReadingTemp
+
+      // Check for late comparison (if not already done)
+      if (
+        comparisonSetting === 'late' &&
+        formData &&
+        !formData.comparisonComplete
+      ) {
+        const event = data.events.find((e) => e.id === eventId)
+        if (event) {
+          const comparisonInfo = getComparisonInfo(
+            event,
+            formData.opinion,
+            currentUserId
+          )
+          if (comparisonInfo) {
+            // Second reader needs comparison - redirect to compare first
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/compare`
+            )
+          }
+        }
+      }
+
+      // No comparison needed - render review page
+      return res.render('reading/workflow/review')
+    }
+  )
+
   // Render appropriate template for reading views
   router.get(
     '/reading/batch/:batchId/events/:eventId/:step',
@@ -498,17 +536,17 @@ module.exports = (router) => {
       const data = req.session.data
       const action = req.body.action || 'save'
 
-      // Parse marker positions if they came in as a string
+      // Parse positions if they came in as a string
       if (
-        data.imageReadingTemp.annotationTemp.markerPositions &&
-        typeof data.imageReadingTemp.annotationTemp.markerPositions === 'string'
+        data.imageReadingTemp.annotationTemp.positions &&
+        typeof data.imageReadingTemp.annotationTemp.positions === 'string'
       ) {
         try {
-          data.imageReadingTemp.annotationTemp.markerPositions = JSON.parse(
-            data.imageReadingTemp.annotationTemp.markerPositions
+          data.imageReadingTemp.annotationTemp.positions = JSON.parse(
+            data.imageReadingTemp.annotationTemp.positions
           )
         } catch (e) {
-          console.warn('Failed to parse incoming marker positions:', e)
+          console.warn('Failed to parse incoming positions:', e)
         }
       }
 
@@ -524,63 +562,36 @@ module.exports = (router) => {
         )
       }
 
-      // Validate that marker positions are set for both views
+      // Validate that positions are set for at least one view
       if (
-        !annotationTemp.markerPositions ||
-        annotationTemp.markerPositions === '{}' ||
-        annotationTemp.markerPositions === ''
+        !annotationTemp.positions ||
+        annotationTemp.positions === '{}' ||
+        annotationTemp.positions === ''
       ) {
         errors.push({
           text: `Mark the location on at least one ${annotationTemp.side} breast view`,
-          name: 'markerPositions',
+          name: 'positions',
           href: '#mammogram-section'
         })
       } else {
-        // Parse and validate marker positions have markers for both views
+        // Parse and validate positions have at least one marker
         try {
           const positions =
-            typeof annotationTemp.markerPositions === 'string'
-              ? JSON.parse(annotationTemp.markerPositions)
-              : annotationTemp.markerPositions
+            typeof annotationTemp.positions === 'string'
+              ? JSON.parse(annotationTemp.positions)
+              : annotationTemp.positions
 
           if (!positions || Object.keys(positions).length === 0) {
             errors.push({
               text: `Mark the location on at least one ${annotationTemp.side} breast view`,
-              name: 'markerPositions',
+              name: 'positions',
               href: '#mammogram-section'
             })
           }
-          // else {
-          //   // Check we have markers for both image-0 and image-1 (both views)
-          //   const hasImage0 = positions['image-0']
-          //   const hasImage1 = positions['image-1']
-
-          //   if (!hasImage0 && !hasImage1) {
-          //     errors.push({
-          //       text: `Mark the location on both ${annotationTemp.side} breast views`,
-          //       name: 'markerPositions',
-          //       href: '#mammogram-section'
-          //     })
-          //   } else if (!hasImage0) {
-          //     const viewName = annotationTemp.side === 'right' ? 'RMLO' : 'LMLO'
-          //     errors.push({
-          //       text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
-          //       name: 'markerPositions',
-          //       href: '#mammogram-section'
-          //     })
-          //   } else if (!hasImage1) {
-          //     const viewName = annotationTemp.side === 'right' ? 'RCC' : 'LCC'
-          //     errors.push({
-          //       text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
-          //       name: 'markerPositions',
-          //       href: '#mammogram-section'
-          //     })
-          //   }
-          // }
         } catch (e) {
           errors.push({
             text: `Mark the location on both ${annotationTemp.side} breast views`,
-            name: 'markerPositions',
+            name: 'positions',
             href: '#mammogram-section'
           })
         }
@@ -691,16 +702,16 @@ module.exports = (router) => {
           data.imageReadingTemp[side].annotations = []
         }
 
-        // Parse marker positions if provided
-        let markerPositions = null
-        if (annotationTemp.markerPositions) {
+        // Parse positions if provided
+        let positions = null
+        if (annotationTemp.positions) {
           try {
-            markerPositions =
-              typeof annotationTemp.markerPositions === 'string'
-                ? JSON.parse(annotationTemp.markerPositions)
-                : annotationTemp.markerPositions
+            positions =
+              typeof annotationTemp.positions === 'string'
+                ? JSON.parse(annotationTemp.positions)
+                : annotationTemp.positions
           } catch (e) {
-            console.warn('Failed to parse marker positions:', e)
+            console.warn('Failed to parse positions:', e)
           }
         }
 
@@ -712,7 +723,7 @@ module.exports = (router) => {
           location: annotationTemp.location,
           abnormalityType: annotationTemp.abnormalityType,
           levelOfConcern: annotationTemp.levelOfConcern,
-          markerPositions: markerPositions,
+          positions: positions,
           // Include any conditional detail fields
           ...Object.keys(annotationTemp)
             .filter((key) => key.endsWith('Details'))
@@ -838,14 +849,14 @@ module.exports = (router) => {
         return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
       }
 
-      delete data.imageReadingTemp
-      delete res.locals.data?.imageReadingTemp
-
       // Find the event
       const event = data.events.find((e) => e.id === eventId)
       if (!event) {
         return res.redirect(`/reading/batch/${batchId}`)
       }
+
+      delete data.imageReadingTemp
+      delete res.locals.data?.imageReadingTemp
 
       // Create and save the reading
       const readResult = {
@@ -1011,6 +1022,9 @@ module.exports = (router) => {
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
 
       const opinion = data.imageReadingTemp?.opinion
+
+      // Mark comparison as complete so save-opinion doesn't redirect back here
+      data.imageReadingTemp.comparisonComplete = true
 
       if (decision === 'adopt') {
         // Copy first reader's data to our temp

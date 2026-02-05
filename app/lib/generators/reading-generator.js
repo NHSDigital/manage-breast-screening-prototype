@@ -4,7 +4,7 @@ const dayjs = require('dayjs')
 const weighted = require('weighted')
 const { faker } = require('@faker-js/faker')
 const { eligibleForReading } = require('../utils/status')
-const { getSetById } = require('../utils/mammogram-images')
+const { getSetById, getResolvedAnnotations } = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
 
 // Alignment probability - how often reads match the image set's tag
@@ -202,12 +202,14 @@ const generateAbnormalData = (event, set) => {
       right.breastAssessment = 'abnormal'
     }
 
-    // Use set's annotations if available
-    if (set.annotations && set.annotations.length > 0) {
-      set.annotations.forEach((annotation) => {
+    // Get resolved annotations (follows 'from' references for composite sets)
+    const annotations = getResolvedAnnotations(set)
+
+    if (annotations.length > 0) {
+      annotations.forEach((annotation) => {
         const targetBreast = annotation.side === 'left' ? left : right
 
-        // Convert set annotation format to read annotation format
+        // Use positions directly from manifest (already in 0-1 format with view-name keys)
         targetBreast.annotations.push({
           id: generateId(),
           side: annotation.side,
@@ -215,7 +217,7 @@ const generateAbnormalData = (event, set) => {
             ? annotation.abnormalityType
             : [annotation.abnormalityType],
           levelOfConcern: annotation.levelOfConcern || '4',
-          markerPositions: annotation.positions || {},
+          positions: annotation.positions || {},
           comment: annotation.notes || ''
         })
       })
@@ -282,12 +284,22 @@ const generatePlaceholderAnnotation = (side, breastData) => {
     abnormalityType = findingMap[breastData.finding] || abnormalityType
   }
 
+  // Generate random positions for both views (0-1 format, 3 decimal places)
+  // Keep positions in a realistic range (avoiding edges)
+  const randomPos = () => Math.round((0.2 + Math.random() * 0.6) * 1000) / 1000
+
+  const viewKeys = side === 'right' ? ['rmlo', 'rcc'] : ['lmlo', 'lcc']
+  const positions = {}
+  viewKeys.forEach(view => {
+    positions[view] = { x: randomPos(), y: randomPos() }
+  })
+
   return {
     id: generateId(),
     side,
     abnormalityType: [abnormalityType],
     levelOfConcern: faker.helpers.arrayElement(['3', '4', '5']),
-    markerPositions: {},
+    positions,
     comment: ''
   }
 }

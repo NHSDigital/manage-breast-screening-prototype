@@ -7,12 +7,16 @@
     - read: object - the read data (defaults to data.imageReadingTemp)
     - allowEdits: boolean - whether to show change links (default: false)
     - changeOpinionUrl: string - URL for change opinion link
-    - opinionOnly: boolean - if true, only show the opinion row (default: false)
+    - hideEmptyRows: boolean - if true, only show rows that have data (default: false)
 #}
 
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
-{% set opinionOnly = opinionOnly if opinionOnly is defined else false %}
+{% set hideEmptyRows = hideEmptyRows if hideEmptyRows is defined else false %}
+{# Support legacy opinionOnly parameter #}
+{% if opinionOnly is defined and opinionOnly %}
+  {% set hideEmptyRows = true %}
+{% endif %}
 
 {# Format the opinion for display #}
 {% set opinionText %}
@@ -31,21 +35,41 @@
 {% set leftAnnotations = read.left.annotations if read.left and read.left.annotations else [] %}
 {% set rightAnnotations = read.right.annotations if read.right and read.right.annotations else [] %}
 {% set totalAnnotations = leftAnnotations | length + rightAnnotations | length %}
+{% set leftAnnotationSummaries = leftAnnotations | summariseAnnotations %}
+{% set rightAnnotationSummaries = rightAnnotations | summariseAnnotations %}
 
 {# Build annotation summary #}
 {% set annotationSummaryHtml %}
   {% if totalAnnotations == 0 %}
     No annotations added
   {% else %}
-    {% if leftAnnotations | length > 0 %}
+    {% if leftAnnotationSummaries | length > 0 %}
       <p class="nhsuk-u-margin-bottom-1">
-        <strong>Left breast:</strong> {{ leftAnnotations | length }} {{ "annotation" | pluralise(leftAnnotations | length) }}
+        <strong>Left breast:</strong>
       </p>
+      {% if leftAnnotationSummaries | length == 1 %}
+        <p class="nhsuk-u-margin-bottom-2">{{ leftAnnotationSummaries[0] }}</p>
+      {% else %}
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
+          {% for summary in leftAnnotationSummaries %}
+            <li>{{ summary }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     {% endif %}
-    {% if rightAnnotations | length > 0 %}
+    {% if rightAnnotationSummaries | length > 0 %}
       <p class="nhsuk-u-margin-bottom-1">
-        <strong>Right breast:</strong> {{ rightAnnotations | length }} {{ "annotation" | pluralise(rightAnnotations | length) }}
+        <strong>Right breast:</strong>
       </p>
+      {% if rightAnnotationSummaries | length == 1 %}
+        <p class="nhsuk-u-margin-bottom-2">{{ rightAnnotationSummaries[0] }}</p>
+      {% else %}
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
+          {% for summary in rightAnnotationSummaries %}
+            <li>{{ summary }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     {% endif %}
   {% endif %}
 {% endset %}
@@ -72,7 +96,11 @@
   } if allowEdits and changeOpinionUrl
 }) %}
 
-{% if not opinionOnly %}
+{# Determine if detail rows have data #}
+{% set hasNormalDetails = read.opinion == 'normal' and read.normalDetails %}
+{% set hasTechRecallViews = read.opinion == 'technical_recall' and read.technicalRecall and read.technicalRecall.views and (read.technicalRecall.views | length > 0) %}
+{% set hasBreastAssessment = read.opinion == 'recall_for_assessment' and ((read.left and read.left.breastAssessment) or (read.right and read.right.breastAssessment)) %}
+{% set hasAnnotations = read.opinion == 'recall_for_assessment' and (totalAnnotations > 0) %}
 
 {# Normal - additional details #}
 {% if read.opinion == 'normal' and read.normalDetails %}
@@ -165,42 +193,47 @@
     </div>
   {% endset %}
 
-  {% set rows = rows | push({
-    key: {
-      text: "Detailed opinion"
-    },
-    value: {
-      html: breastAssessmentHtml
-    },
-    actions: {
-      items: [
-        {
-          href: "./recall-for-assessment-details",
-          text: "Change",
-          visuallyHiddenText: "detailed opinion"
-        }
-      ]
-    } if allowEdits
-  }) %}
+  {# Only show detailed opinion if we have data, or if not hiding empty rows #}
+  {% if not hideEmptyRows or hasBreastAssessment %}
+    {% set rows = rows | push({
+      key: {
+        text: "Detailed opinion"
+      },
+      value: {
+        html: breastAssessmentHtml
+      },
+      actions: {
+        items: [
+          {
+            href: "./recall-for-assessment-details",
+            text: "Change",
+            visuallyHiddenText: "detailed opinion"
+          }
+        ]
+      } if allowEdits
+    }) %}
+  {% endif %}
 
-  {# Annotations summary #}
-  {% set rows = rows | push({
-    key: {
-      text: "Annotations"
-    },
-    value: {
-      html: annotationSummaryHtml
-    },
-    actions: {
-      items: [
-        {
-          href: "./recall-for-assessment-details",
-          text: "Change",
-          visuallyHiddenText: "annotations"
-        }
-      ]
-    } if allowEdits
-  }) %}
+  {# Only show annotations if we have data, or if not hiding empty rows #}
+  {% if not hideEmptyRows or hasAnnotations %}
+    {% set rows = rows | push({
+      key: {
+        text: "Annotations"
+      },
+      value: {
+        html: annotationSummaryHtml
+      },
+      actions: {
+        items: [
+          {
+            href: "./recall-for-assessment-details",
+            text: "Change",
+            visuallyHiddenText: "annotations"
+          }
+        ]
+      } if allowEdits
+    }) %}
+  {% endif %}
   
 {% endif %}
 
@@ -217,8 +250,6 @@
     }) %}
   {% endif %}
 {% endif %}
-
-{% endif %}{# end opinionOnly check #}
 
 {{ summaryList({
   rows: rows | removeLastRowBorder

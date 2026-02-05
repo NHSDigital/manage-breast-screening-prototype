@@ -32,7 +32,7 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-      {% set mammogramError = flash.error | find('name', 'markerPositions') %}
+      {% set mammogramError = flash.error | find('name', 'positions') %}
 
       <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if mammogramError }}">
         <h2 class="nhsuk-label nhsuk-label--m" id="mammogram-section">Mark the location</h2>
@@ -58,7 +58,7 @@
             <div class="app-mammogram-container">
               {% set imagePath = mammogramImages.paths[viewKey] if mammogramImages and mammogramImages.paths else '' %}
               {% if imagePath %}
-                <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="{{ imagePath }}" alt="{{ viewKey | upper }} view">
+                <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="{{ imagePath }}" alt="{{ viewKey | upper }} view" data-view="{{ viewKey }}">
               {% else %}
                 <div class="app-mammogram-placeholder">No image</div>
               {% endif %}
@@ -245,9 +245,9 @@
 
       {# Used by js to store marker positions #}
       {{ appHiddenInput({
-        name: "imageReadingTemp[annotationTemp][markerPositions]",
-        value: (annotation.markerPositions | dump) if annotation.markerPositions,
-        id: "markerPositions"
+        name: "imageReadingTemp[annotationTemp][positions]",
+        value: (annotation.positions | dump) if annotation.positions,
+        id: "positions"
       }) }}
     </div>
   </div>
@@ -258,15 +258,16 @@
 {% block pageScripts %}
   <script type="module">
 // Mammogram annotation functionality with coordinate saving
+// Positions are stored as 0-1 decimals, keyed by view name (e.g., 'rmlo', 'rcc')
 document.addEventListener('DOMContentLoaded', () => {
   const mammogramImages = document.querySelectorAll('.app-mammogram-image')
-  const markerPositionsInput = document.getElementById('markerPositions')
+  const positionsInput = document.getElementById('positions')
 
-  // Keep track of markers for each image
+  // Keep track of markers for each view
   const markers = {}
 
-  // Get existing marker positions if editing
-  const existingPositions = getExistingMarkerPositions()
+  // Get existing positions if editing
+  const existingPositions = getExistingPositions()
 
   // Track dragging state
   let activeMarker = null
@@ -279,9 +280,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Set up each mammogram image
   mammogramImages.forEach((image, index) => {
-    // Add a unique identifier to each image
-    const imageId = `image-${index}`
-    image.dataset.imageId = imageId
+    // Use view name as identifier (from data-view attribute)
+    const viewKey = image.dataset.view
+    if (!viewKey) {
+      console.warn('Mammogram image missing data-view attribute')
+      return
+    }
 
     // Make sure image container has position relative
     const container = image.parentElement
@@ -303,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     image.addEventListener('click', (event) => {
       // Only place marker if we're not currently dragging
       if (!isDragging) {
-        placeMarker(event, image, imageId)
+        placeMarker(event, image, viewKey)
       }
     })
   })
@@ -323,73 +327,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Restore all markers that have saved positions
   function restoreAllMarkers() {
-    Object.entries(existingPositions).forEach(([imageId, position]) => {
-      const image = document.querySelector(`[data-image-id="${imageId}"]`)
+    Object.entries(existingPositions).forEach(([viewKey, position]) => {
+      const image = document.querySelector(`[data-view="${viewKey}"]`)
       if (image) {
-        restoreMarker(image, imageId, position)
+        restoreMarker(image, viewKey, position)
       }
     })
   }
 
-  // Get existing marker positions from hidden field
-  function getExistingMarkerPositions() {
+  // Get existing positions from hidden field
+  function getExistingPositions() {
     try {
-      const value = markerPositionsInput?.value
+      const value = positionsInput?.value
       return value ? JSON.parse(value) : null
     } catch (e) {
       return null
     }
   }
 
-  // Restore a marker at saved position
-  function restoreMarker(image, imageId, position) {
+  // Restore a marker at saved position (positions stored as 0-1 decimals)
+  function restoreMarker(image, viewKey, position) {
     const container = image.parentElement
 
     // Use the actual container dimensions at restore time
     const containerRect = container.getBoundingClientRect()
 
-    // Convert percentages back to pixel positions
-    const x = (position.x / 100) * containerRect.width
-    const y = (position.y / 100) * containerRect.height
+    // Convert 0-1 decimals to pixel positions
+    const x = position.x * containerRect.width
+    const y = position.y * containerRect.height
 
-    console.log(`Restoring marker for ${imageId}:`, {
-      position,
+    console.log(`Restoring marker for ${viewKey}:`, {
+      position: { x: position.x, y: position.y },
       containerWidth: containerRect.width,
       containerHeight: containerRect.height,
       calculatedX: x,
       calculatedY: y
     })
 
-    createMarkerElement(container, imageId, x, y)
+    createMarkerElement(container, viewKey, x, y)
   }
 
   // Place or move a marker
-  function placeMarker(event, image, imageId) {
+  function placeMarker(event, image, viewKey) {
     // Get position relative to the image container
     const container = image.parentElement
     const rect = container.getBoundingClientRect()
     const x = event.clientX - rect.left
     const y = event.clientY - rect.top
 
-    if (markers[imageId]) {
+    if (markers[viewKey]) {
       // Update existing marker position
-      const marker = markers[imageId]
+      const marker = markers[viewKey]
       marker.style.left = `${x}px`
       marker.style.top = `${y}px`
     } else {
       // Create new marker
-      createMarkerElement(container, imageId, x, y)
+      createMarkerElement(container, viewKey, x, y)
     }
 
     // Save coordinates to hidden field
-    saveMarkerPositions()
+    savePositions()
   }
 
   // Create marker element
-  function createMarkerElement(container, imageId, x, y) {
+  function createMarkerElement(container, viewKey, x, y) {
     const marker = document.createElement('div')
     marker.className = 'app-mammogram-marker'
-    marker.dataset.imageId = imageId
+    marker.dataset.view = viewKey
     marker.style.position = 'absolute'
     marker.style.left = `${x}px`
     marker.style.top = `${y}px`
@@ -428,46 +432,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add marker to container
     container.appendChild(marker)
-    markers[imageId] = marker
+    markers[viewKey] = marker
 
     // Add mousedown event for drag start
     marker.addEventListener('mousedown', startDragging)
   }
 
-  // Save marker positions as percentages
-  function saveMarkerPositions() {
+  // Save positions as 0-1 decimals, keyed by view name
+  function savePositions() {
     const positions = {}
 
-    Object.entries(markers).forEach(([imageId, marker]) => {
+    Object.entries(markers).forEach(([viewKey, marker]) => {
       const container = marker.parentElement
       const rect = container.getBoundingClientRect()
 
-      // Get current marker position
+      // Get current marker position in pixels
       const markerX = parseFloat(marker.style.left)
       const markerY = parseFloat(marker.style.top)
 
-      // Convert to percentages
-      const percentX = (markerX / rect.width) * 100
-      const percentY = (markerY / rect.height) * 100
+      // Convert to 0-1 decimals
+      const x = markerX / rect.width
+      const y = markerY / rect.height
 
-      positions[imageId] = {
-        x: percentX,
-        y: percentY
-      }
+      positions[viewKey] = { x, y }
 
-      console.log(`Saving marker for ${imageId}:`, {
+      console.log(`Saving marker for ${viewKey}:`, {
         pixelX: markerX,
         pixelY: markerY,
         containerWidth: rect.width,
         containerHeight: rect.height,
-        percentX,
-        percentY
+        x,
+        y
       })
     })
 
     // Update hidden field
-    if (markerPositionsInput) {
-      markerPositionsInput.value = JSON.stringify(positions)
+    if (positionsInput) {
+      positionsInput.value = JSON.stringify(positions)
     }
   }
 
@@ -498,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeMarker.style.top = `${y}px`
 
     // Save coordinates during drag
-    saveMarkerPositions()
+    savePositions()
   })
 
   // End dragging
