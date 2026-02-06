@@ -61,7 +61,7 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
-  debugMode: 'true',
+  debugMode: 'false',
   showEnvironmentBanner: 'true',
   screening: {
     confirmIdentityOnCheckIn: 'true',
@@ -74,7 +74,7 @@ const defaultSettings = {
     confirmNormal: 'false',
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
-    enableOpinionDelay: 'false',
+    enableOpinionDelay: 'true',
     secondReaderComparison: 'early' // 'early' | 'late' | 'off'
   }
 }

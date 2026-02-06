@@ -1102,7 +1102,23 @@ module.exports = (router) => {
       }
 
       // Keep original opinion - continue to appropriate details page
+      // But if we already have details (late comparison), skip to review
       const wantsNormalDetails = data.imageReadingTemp?.wantsNormalDetails
+      const temp = data.imageReadingTemp
+
+      // Check if second reader already has details for their opinion
+      const hasExistingDetails =
+        (opinion === 'technical_recall' && temp?.technicalRecall?.views) ||
+        (opinion === 'recall_for_assessment' && (temp?.left || temp?.right)) ||
+        (opinion === 'normal' && temp?.normalDetails)
+
+      if (hasExistingDetails) {
+        // Skip to review - we already have details
+        return res.redirect(
+          `/reading/batch/${batchId}/events/${eventId}/review`
+        )
+      }
+
       switch (opinion) {
         case 'normal':
           // Check if user originally wanted to add details
