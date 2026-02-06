@@ -38,6 +38,31 @@
   {% set firstOpinionLabel = opinionLabels[firstOpinion] or firstOpinion %}
   {% set secondOpinionLabel = opinionLabels[secondOpinion] or secondOpinion %}
 
+  {# 
+    Determine if opinions need/have details:
+    - Normal: only needs details if wantsNormalDetails flag is set
+    - TR: always needs details (views to retake)
+    - RFA: always needs details (breast assessments, annotations)
+  #}
+  {% set secondOpinionNeedsDetails = (
+    secondOpinion == "technical_recall" or 
+    secondOpinion == "recall_for_assessment" or 
+    data.imageReadingTemp.wantsNormalDetails
+  ) %}
+  
+  {% set firstOpinionHasDetails = (
+    (firstOpinion == "technical_recall" and firstRead.technicalRecall and firstRead.technicalRecall.views) or
+    (firstOpinion == "recall_for_assessment" and (firstRead.left or firstRead.right)) or
+    (firstOpinion == "normal" and firstRead.normalDetails)
+  ) %}
+
+  {# Check if second reader already has details #}
+  {% set secondHasDetails = (
+    (secondOpinion == "technical_recall" and data.imageReadingTemp.technicalRecall and data.imageReadingTemp.technicalRecall.views) or
+    (secondOpinion == "recall_for_assessment" and (data.imageReadingTemp.left or data.imageReadingTemp.right)) or
+    (secondOpinion == "normal" and data.imageReadingTemp.normalDetails)
+  ) %}
+
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
@@ -69,7 +94,6 @@
 
   {# Second reader's opinion card (yours) #}
   {# Hide empty rows - shows details if they exist (e.g. adopted from first reader) #}
-  {% set isEarlyComparison = data.settings.reading.secondReaderComparison == 'early' %}
   {% set secondReadSummaryHtml %}
     {% set read = data.imageReadingTemp %}
     {% set allowEdits = false %}
@@ -123,20 +147,20 @@
 
       <form action="./compare-answer" method="POST">
 
-        {# Build radio options based on comparison type and timing #}
+        {# Build radio options based on comparison type and detail state #}
         {% set radioItems = [] %}
 
-        {# Option to keep your opinion #}
+        {# 
+          KEEP option - keep your opinion
+          Label varies based on:
+          - Whether your opinion needs details
+          - Whether you already have details
+        #}
         {% set keepLabelHtml %}
-          {% if isEarlyComparison and comparisonType == "agreeing" %}
-            {# Early: they haven't added details yet #}
-            Keep my  opinion {{ secondOpinion | toTag }}{% if secondOpinion != "normal" %} and provide my own details{% endif %}
-          {% elseif isEarlyComparison and comparisonType == "discordant" %}
-            Keep my original opinion {{ secondOpinion | toTag }}{% if secondOpinion != "normal" %} and provide details{% endif %}
-          {% else %}
-            {# Late: they've already added details #}
-            Keep my opinion {{ secondOpinion | toTag }}
-          {% endif %}
+          Keep my opinion {{ secondOpinion | toTag }}
+          {%- if secondOpinionNeedsDetails and not secondHasDetails %} and provide details
+          {%- elseif secondHasDetails %} and my details
+          {%- endif %}
         {% endset %}
 
         {% set keepHint %}
@@ -153,24 +177,25 @@
           } if keepHint | trim
         }) %}
 
-        {# Option to change to match first reader #}
+        {# 
+          ADOPT option - change to match first reader
+          Label varies based on:
+          - Discordant: "Change my opinion to [tag]" + mention details if first reader has them
+          - Agreeing: "Use the first reader's details" (opinion is already the same)
+        #}
         {% set adoptLabelHtml %}
           {% if comparisonType == "discordant" %}
-            {# Discordant: changing opinion entirely #}
             Change my opinion to {{ firstOpinion | toTag }}
-            {# {%- if firstOpinion != "normal" %} and use their details{% endif %} #}
+            {%- if firstOpinionHasDetails %} and use their details{%- endif %}
           {% else %}
-            {# Agreeing: same opinion, adopt their details #}
-            Keep {{ firstOpinion | toTag }} and use the first reader's details
+            Use the first reader's details
           {% endif %}
         {% endset %}
 
         {% set adoptHint %}
-          {# Add hint text here if needed #}
-          {% if comparisonType == "discordant" %}
-            Copies first reader’s details - you can modify when reviewing
-          {% else %}
-            You can modify details when reviewing
+          {# Hint only needed if first reader doesn't have details we're copying #}
+          {% if comparisonType == "discordant" and not firstOpinionHasDetails %}
+            You can add details when reviewing
           {% endif %}
         {% endset %}
 

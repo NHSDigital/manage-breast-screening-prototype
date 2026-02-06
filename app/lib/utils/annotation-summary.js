@@ -1,6 +1,37 @@
 // app/lib/utils/annotation-summary.js
 
 /**
+ * Map level of concern number to its label
+ * @param {string|number} level - The level (1-5)
+ * @returns {string} The label (e.g., "indeterminate") or empty string if invalid
+ */
+const levelOfConcernLabel = (level) => {
+  const labels = {
+    1: 'normal',
+    2: 'benign',
+    3: 'indeterminate',
+    4: 'suspicious',
+    5: 'highly suspicious'
+  }
+  const num = parseInt(level, 10)
+  return labels[num] || ''
+}
+
+/**
+ * Format level of concern as "Level X (label)"
+ * @param {string|number} level - The level (1-5)
+ * @returns {string} Formatted string (e.g., "Level 3 (indeterminate)") or empty string if invalid
+ */
+const formatLevelOfConcern = (level) => {
+  const num = parseInt(level, 10)
+  if (Number.isNaN(num) || num < 1 || num > 5) {
+    return ''
+  }
+  const label = levelOfConcernLabel(num)
+  return `Level ${num} (${label})`
+}
+
+/**
  * Build a concise one-line summary for a single annotation
  *
  * @param {Object} annotation - The annotation object
@@ -20,7 +51,7 @@ const summariseAnnotation = (annotation) => {
   const typeText = getAbnormalityTypeText(abnormalityTypes, annotation)
   const detailParts = []
 
-  const concernText = getLevelOfConcernText(annotation.levelOfConcern)
+  const concernText = formatLevelOfConcern(annotation.levelOfConcern)
   if (concernText) {
     detailParts.push(concernText)
   }
@@ -72,44 +103,9 @@ const getAbnormalityTypeText = (abnormalityTypes, annotation) => {
   return mappedTypes.join(', ')
 }
 
-const getLevelOfConcernText = (levelOfConcern) => {
-  if (!levelOfConcern) {
-    return ''
-  }
-
-  const numericValue = parseInt(levelOfConcern, 10)
-  if (!Number.isNaN(numericValue)) {
-    const labelMap = {
-      1: 'normal',
-      2: 'benign',
-      3: 'probably benign',
-      4: 'probably cancerous',
-      5: 'likely cancerous'
-    }
-
-    // const label = labelMap[numericValue]
-    // if (label) {
-    //   return `Level ${numericValue} (${label})`
-    // }
-
-    return `Level ${numericValue}`
-  }
-
-  const normalised = String(levelOfConcern).trim().toLowerCase()
-
-  const wordMap = {
-    'normal': 'Level 1 (normal)',
-    'benign': 'Level 2 (benign)',
-    'indeterminate': 'Level 3 (probably benign)',
-    'indeterminatef': 'Level 3 (probably benign)',
-    'suspicious': 'Level 4 (probably cancerous)',
-    'highly suspicious': 'Level 5 (likely cancerous)'
-  }
-
-  return wordMap[normalised] || `Level of concern: ${normalised}`
-}
-
 module.exports = {
+  levelOfConcernLabel,
+  formatLevelOfConcern,
   summariseAnnotation,
   summariseAnnotations
 }

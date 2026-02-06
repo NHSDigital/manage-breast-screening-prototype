@@ -159,7 +159,6 @@
       }) %}
 
       {{ checkboxes({
-        id: "abnormalityType",
         idPrefix: "abnormalityType",
         name: "imageReadingTemp[annotationTemp][abnormalityType]",
         values: data.imageReadingTemp.annotationTemp.abnormalityType,
@@ -189,23 +188,23 @@
             selected: true if not data.imageReadingTemp.annotationTemp.levelOfConcern
           },
           {
-            value: "Normal",
+            value: "1",
             text: "1 - Normal"
           },
           {
-            value: "Benign",
+            value: "2",
             text: "2 - Benign"
           },
           {
-            value: "Indeterminatef",
+            value: "3",
             text: "3 - Indeterminate"
           },
           {
-            value: "Suspicious",
+            value: "4",
             text: "4 - Suspicious"
           },
           {
-            value: "Highly suspicious",
+            value: "5",
             text: "5 - Highly suspicious"
           }
         ]
@@ -265,6 +264,13 @@
         value: (annotation.positions | dump) if annotation.positions,
         id: "positions"
       }) }}
+
+      {# Annotation number for display on markers #}
+      {{ appHiddenInput({
+        name: "annotationNumber",
+        value: annotation.annotationNumber or 1,
+        id: "annotationNumber"
+      }) }}
     </div>
   </div>
 
@@ -278,6 +284,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const mammogramImages = document.querySelectorAll('.app-mammogram-image')
   const positionsInput = document.getElementById('positions')
+  const annotationNumberInput = document.getElementById('annotationNumber')
+  const annotationNumber = annotationNumberInput ? annotationNumberInput.value : '1'
 
   // Keep track of markers for each view
   const markers = {}
@@ -410,41 +418,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const marker = document.createElement('div')
     marker.className = 'app-mammogram-marker'
     marker.dataset.view = viewKey
-    marker.style.position = 'absolute'
     marker.style.left = `${x}px`
     marker.style.top = `${y}px`
-    marker.style.width = '30px'
-    marker.style.height = '30px'
-    marker.style.borderRadius = '50%'
-    marker.style.border = '3px solid #d5281b'
-    marker.style.backgroundColor = 'rgba(213, 40, 27, 0.4)'
-    marker.style.transform = 'translate(-50%, -50%)'
-    marker.style.boxShadow = '0 0 0 2px rgba(255, 255, 255, 0.7), 0 0 8px rgba(0, 0, 0, 0.5)'
-    marker.style.zIndex = '10'
-    marker.style.cursor = 'grab'
-    marker.style.pointerEvents = 'auto'
 
-    // Add crosshair
-    const horizontal = document.createElement('div')
-    horizontal.style.position = 'absolute'
-    horizontal.style.left = '0'
-    horizontal.style.top = '50%'
-    horizontal.style.width = '100%'
-    horizontal.style.height = '2px'
-    horizontal.style.backgroundColor = '#d5281b'
-    horizontal.style.transform = 'translateY(-50%)'
+    // Add number badge
+    const badge = document.createElement('div')
+    badge.className = 'app-mammogram-marker__badge'
+    badge.textContent = annotationNumber
 
-    const vertical = document.createElement('div')
-    vertical.style.position = 'absolute'
-    vertical.style.left = '50%'
-    vertical.style.top = '0'
-    vertical.style.width = '2px'
-    vertical.style.height = '100%'
-    vertical.style.backgroundColor = '#d5281b'
-    vertical.style.transform = 'translateX(-50%)'
-
-    marker.appendChild(horizontal)
-    marker.appendChild(vertical)
+    marker.appendChild(badge)
 
     // Add marker to container
     container.appendChild(marker)

@@ -490,8 +490,15 @@ module.exports = (router) => {
         data.imageReadingTemp = {}
       }
 
+      // Calculate annotation number (next in sequence)
+      const leftAnnotations = data.imageReadingTemp?.left?.annotations || []
+      const rightAnnotations = data.imageReadingTemp?.right?.annotations || []
+      const totalAnnotations = leftAnnotations.length + rightAnnotations.length
+      const annotationNumber = totalAnnotations + 1
+
       data.imageReadingTemp.annotationTemp = {
-        side: side
+        side: side,
+        annotationNumber: annotationNumber
       }
 
       res.redirect(
@@ -507,21 +514,30 @@ module.exports = (router) => {
       const { batchId, eventId, annotationId } = req.params
       const data = req.session.data
 
-      // Find the annotation to edit
+      // Find the annotation to edit and its number
       let annotation = null
+      let annotationNumber = 1
       const sides = ['left', 'right']
 
-      for (const side of sides) {
-        const annotations = data.imageReadingTemp?.[side]?.annotations || []
-        annotation = annotations.find((a) => a.id === annotationId)
-        if (annotation) {
+      // Build ordered list of all annotations to find the number
+      const leftAnnotations = data.imageReadingTemp?.left?.annotations || []
+      const rightAnnotations = data.imageReadingTemp?.right?.annotations || []
+      const allAnnotations = [...leftAnnotations, ...rightAnnotations]
+
+      for (let index = 0; index < allAnnotations.length; index++) {
+        if (allAnnotations[index].id === annotationId) {
+          annotation = allAnnotations[index]
+          annotationNumber = index + 1
           break
         }
       }
 
       if (annotation) {
         // Copy annotation to temp for editing
-        data.imageReadingTemp.annotationTemp = { ...annotation }
+        data.imageReadingTemp.annotationTemp = {
+          ...annotation,
+          annotationNumber: annotationNumber
+        }
       }
 
       res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
@@ -939,6 +955,8 @@ module.exports = (router) => {
         opinion === 'normal_with_details' ? 'normal' : opinion
       if (opinion === 'normal_with_details') {
         data.imageReadingTemp.opinion = normalisedOpinion
+        // Preserve intent to add details for after comparison
+        data.imageReadingTemp.wantsNormalDetails = true
       }
 
       // Clean up data from other opinion types when changing opinion
@@ -980,6 +998,20 @@ module.exports = (router) => {
       // Handle different opinion types
       switch (opinion) {
         case 'normal':
+          // For late comparison, normal still needs to go through compare if discordant
+          // (since there's no review page to intercept)
+          if (comparisonSetting === 'late') {
+            const comparisonInfo = getComparisonInfo(
+              event,
+              normalisedOpinion,
+              data.currentUser?.id
+            )
+            if (comparisonInfo) {
+              return res.redirect(
+                `/reading/batch/${batchId}/events/${eventId}/compare`
+              )
+            }
+          }
           if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
               `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
@@ -1070,9 +1102,15 @@ module.exports = (router) => {
       }
 
       // Keep original opinion - continue to appropriate details page
+      const wantsNormalDetails = data.imageReadingTemp?.wantsNormalDetails
       switch (opinion) {
         case 'normal':
-          if (data.settings.reading.confirmNormal === 'true') {
+          // Check if user originally wanted to add details
+          if (wantsNormalDetails) {
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/normal-details`
+            )
+          } else if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
               `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
             )
