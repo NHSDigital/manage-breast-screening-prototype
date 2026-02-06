@@ -885,8 +885,15 @@ module.exports = (router) => {
       // Write the reading (passing batch context to handle skipped events)
       writeReading(event, currentUserId, readResult, data, batchId)
 
-      // Get progress to find next event
-      const progress = getBatchReadingProgress(data, batchId, eventId)
+      // Find next unread event in batch (not just navigable - we want truly unread)
+      const batch = getReadingBatch(data, batchId)
+      const batchEvents = batch.eventIds
+        .map((id) => data.events.find((e) => e.id === id))
+        .filter(Boolean)
+      const nextUnreadEvent = getFirstUserReadableEvent(
+        batchEvents,
+        currentUserId
+      )
 
       // Store banner message for the next case
       // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
@@ -909,10 +916,10 @@ module.exports = (router) => {
         editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
       }
 
-      // Redirect to next event or batch view
-      if (progress.hasNextUserReadable) {
+      // Redirect to next unread event or batch view if all done
+      if (nextUnreadEvent) {
         res.redirect(
-          `/reading/batch/${batchId}/events/${progress.nextUserReadableId}`
+          `/reading/batch/${batchId}/events/${nextUnreadEvent.id}`
         )
       } else {
         res.redirect(`/reading/batch/${batchId}`)
