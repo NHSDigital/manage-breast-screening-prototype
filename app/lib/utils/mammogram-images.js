@@ -369,14 +369,16 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * @param {string} options.tag - Force a specific tag (bypasses weighted selection)
  * @param {object} options.weights - Override tag weights (e.g., { normal: 0.8, abnormal: 0.2 })
  * @param {object} options.event - Event object for context-aware selection
+ * @param {object} options.context - Context object directly (alternative to passing event)
  * @returns {object|null} - The selected set object or null if none available
  */
 const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
 
-  // Extract context from event if provided
-  const context = options.event ? extractEventContext(options.event) : {}
+  // Use provided context, or extract from event if provided
+  const context =
+    options.context || (options.event ? extractEventContext(options.event) : {})
 
   // Apply hard filters based on context (e.g., implants)
   if (Object.keys(context).length > 0) {
@@ -708,6 +710,70 @@ const hasImageSets = (source = 'diagrams') => {
   return getAvailableSets(source).length > 0
 }
 
+/**
+ * Get resolved annotations for a set, following 'from' references if needed.
+ * For composite sets that reference other sets for their views, this will
+ * collect annotations from those source sets.
+ * @param {object} set - The set object
+ * @param {string} source - "diagrams" or "real"
+ * @returns {array} - Array of annotation objects
+ */
+const getResolvedAnnotations = (set, source = 'diagrams') => {
+  if (!set) return []
+
+  // If set has its own annotations, use those
+  if (set.annotations && set.annotations.length > 0) {
+    return set.annotations
+  }
+
+  // For composite sets, look for annotations in referenced source sets
+  if (set.views) {
+    const collectedAnnotations = []
+    const visitedSets = new Set()
+
+    // Track which source sets we need to check for each side
+    const sourceSetsBySide = { left: new Set(), right: new Set() }
+
+    for (const view of VIEWS) {
+      const viewDef = set.views[view]
+      if (!viewDef) continue
+
+      // Determine which side this view belongs to
+      const side = view.startsWith('l') ? 'left' : 'right'
+
+      // Handle array of view definitions (e.g., retakes)
+      const viewDefs = Array.isArray(viewDef) ? viewDef : [viewDef]
+
+      for (const def of viewDefs) {
+        if (def.from && !visitedSets.has(def.from)) {
+          sourceSetsBySide[side].add(def.from)
+        }
+      }
+    }
+
+    // Collect annotations from source sets, but only for the relevant side
+    for (const side of ['left', 'right']) {
+      for (const sourceSetId of sourceSetsBySide[side]) {
+        if (visitedSets.has(sourceSetId)) continue
+        visitedSets.add(sourceSetId)
+
+        const sourceSet = getSetById(sourceSetId, source)
+        if (sourceSet && sourceSet.annotations) {
+          // Only include annotations for the side that references this set
+          const relevantAnnotations = sourceSet.annotations.filter(
+            (ann) => ann.side === side
+          )
+          collectedAnnotations.push(...relevantAnnotations)
+        }
+      }
+    }
+
+    return collectedAnnotations
+  }
+
+  return []
+}
+
 module.exports = {
   IMAGE_SOURCES,
   VIEWS,
@@ -719,5 +785,6 @@ module.exports = {
   getImageLibraryPath,
   getImagesForEvent,
   hasImageSets,
-  extractEventContext
+  extractEventContext,
+  getResolvedAnnotations
 }

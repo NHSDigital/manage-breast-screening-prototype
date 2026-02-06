@@ -98,18 +98,19 @@
               {% endif %}
             </td>
             <td>
-              {{ reading.result | toTag }}
+              {{ reading.opinion | toTag }}
             </td>
             <td>
               {% set event = data.events | find('id', reading.eventId) %}
               {% set metadata = event | getReadingMetadata %}
+              {% set allReads = event | getReadsAsArray %}
               {{ metadata | log("metadata")}}
               {% if metadata.readCount >= 2 %}
                 {% if metadata.hasDisagreement %}
                   {{ "Arbitration" | toTag }}
                 {% else %}
-                  {% set result = metadata.reads[0].result %}
-                  {{ result | toTag }}
+                  {% set opinion = allReads[0].opinion %}
+                  {{ opinion | toTag }}
                 {% endif %}
               {% elif metadata.readCount == 1 %}
                 {{ "Waiting for 2nd read" | toTag }}

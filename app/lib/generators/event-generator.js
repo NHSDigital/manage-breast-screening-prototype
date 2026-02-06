@@ -14,6 +14,7 @@ const {
   generateSpecialAppointment
 } = require('./special-appointment-generator')
 const { generateAppointmentNote } = require('./appointment-note-generator')
+const { getImageSetForEvent } = require('../utils/mammogram-images')
 const users = require('../../data/users')
 const screeningRooms = require('../../data/screening-rooms')
 
@@ -355,6 +356,15 @@ const generateEvent = ({
         startedAt: actualStartTime.toISOString(),
         startedBy: randomUser.id,
         endedAt: actualEndTime.toISOString()
+      }
+    }
+
+    // Select image set for events with mammogram data
+    // Done at the end so full event context (symptoms, implants, etc.) is available
+    if (event.mammogramData) {
+      const selectedSet = getImageSetForEvent(event.id, 'diagrams', { event })
+      if (selectedSet) {
+        event.mammogramData.selectedSetId = selectedSet.id
       }
     }
 

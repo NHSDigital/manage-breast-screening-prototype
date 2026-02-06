@@ -5,6 +5,31 @@
 
 {% set gridColumn = gridColumn or "nhsuk-grid-column-full" %}
 
+{# Script to show loading state in PACS viewer when navigating away #}
+{% block bodyEnd %}
+  {{ super() }}
+  {% if isReadingWorkflow and participant %}
+    <script>
+      (function() {
+        if (typeof BroadcastChannel === 'undefined') return
+        var ch = new BroadcastChannel('mammogram-viewer')
+        var currentEventId = document.querySelector('meta[name="mammogram-event-id"]')?.getAttribute('content')
+        
+        // Send loading message when clicking navigation links
+        document.addEventListener('click', function(e) {
+          var link = e.target.closest('a[href]')
+          if (!link) return
+          var href = link.getAttribute('href')
+          // Only for internal navigation that might change the case
+          if (href && href.startsWith('/reading/') && !href.includes('#')) {
+            ch.postMessage({ type: 'loading', fromEventId: currentEventId, timestamp: Date.now() })
+          }
+        })
+      })()
+    </script>
+  {% endif %}
+{% endblock bodyEnd %}
+
 {# Workflow mode adds status bar and workflow navigation #}
 {# {% if isReadingWorkflow %}
   {% set mainClasses = "nhsuk-u-padding-top-3" %}
@@ -39,6 +64,44 @@
       {% set eventContext = extractEventContext(event) %}
       <meta name="mammogram-context" content="{{ eventContext | dump | escape }}">
     {% endif %}
+
+    {# Broadcast to PACS viewer immediately - don't wait for DOMContentLoaded #}
+    <script>
+      (function() {
+        if (typeof BroadcastChannel === 'undefined') return
+        var ch = new BroadcastChannel('mammogram-viewer')
+        var getMeta = function(name) {
+          var el = document.querySelector('meta[name="' + name + '"]')
+          return el ? el.getAttribute('content') : null
+        }
+        var eventId = getMeta('mammogram-event-id')
+        var participantName = getMeta('mammogram-participant-name')
+        if (!eventId || !participantName) return
+        var allPathsRaw = getMeta('mammogram-all-paths')
+        var contextRaw = getMeta('mammogram-context')
+        ch.postMessage({
+          type: 'show',
+          eventId: eventId,
+          participantName: participantName,
+          nhsNumber: getMeta('mammogram-nhs-number'),
+          sxNumber: getMeta('mammogram-sx-number'),
+          dateOfBirth: getMeta('mammogram-date-of-birth'),
+          images: {
+            rcc: getMeta('mammogram-image-rcc') || null,
+            lcc: getMeta('mammogram-image-lcc') || null,
+            rmlo: getMeta('mammogram-image-rmlo') || null,
+            lmlo: getMeta('mammogram-image-lmlo') || null
+          },
+          allPaths: allPathsRaw ? JSON.parse(allPathsRaw) : null,
+          hasAdditionalImages: getMeta('mammogram-has-additional') === 'true',
+          setId: getMeta('mammogram-set-id'),
+          setDescription: getMeta('mammogram-set-description'),
+          setTag: getMeta('mammogram-set-tag'),
+          context: contextRaw ? JSON.parse(contextRaw) : null,
+          timestamp: Date.now()
+        })
+      })()
+    </script>
   {% endif %}
 {% endblock head %}
 

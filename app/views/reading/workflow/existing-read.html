@@ -22,12 +22,31 @@
   {% endset %}
 
   {{ card({
-    heading: "Your assessment",
+    heading: "Your read",
     headingLevel: "2",
     feature: true,
     descriptionHtml: readSummaryHtml
   }) }}
 
+  {# Other readers' assessments (for testing/debugging) #}
+  {% set otherReads = event | getOtherReads %}
+  {% if otherReads | length > 0 %}
+    {% for otherRead in otherReads %}
+      {% set readerName = otherRead.readerId | getUsername %}
+      {% set otherReadSummaryHtml %}
+        {% set read = otherRead %}
+        {% set allowEdits = false %}
+        {% include "_includes/summary-lists/read-summary.njk" %}
+      {% endset %}
+
+      {{ card({
+        heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: otherReadSummaryHtml
+      }) }}
+    {% endfor %}
+  {% endif %}
 
   {# Medical summary #}
   {# Only show rows that have data #}
