@@ -11,7 +11,7 @@
   "dependencies": {
     "@faker-js/faker": "^10.0.0",
     "nhsuk-frontend": "^10.2.2",
-    "nhsuk-prototype-kit": "^8.0.0",
+    "nhsuk-prototype-kit": "^8.0.1",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.15",
     "lodash": "^4.17.21",
@@ -19,8 +19,7 @@
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "engines": {
     "node": "^22.11.0"
   }

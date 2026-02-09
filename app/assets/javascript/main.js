@@ -93,29 +93,51 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // Handle reset data in background
-  const $resetLink = document.querySelector('a[data-reset-session]')
-  if ($resetLink) {
-    $resetLink.addEventListener('click', async (e) => {
-      e.preventDefault()
-
-      try {
-        const response = await fetch('/prototype-admin/reset-session-data', {
-          method: 'GET',
-          redirect: 'error'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to clear data')
-        }
-
-        // Refresh the page to reflect the cleared data
-        window.location.reload()
-      } catch (error) {
-        console.error('Error clearing data:', error)
-
-        // Fall back to reset confirmation page
-        window.location.href = $resetLink.href
-      }
-    })
-  }
+  setupResetSessionLink()
 })
+
+function setupResetSessionLink() {
+  if (window.resetSessionListenerAdded) {
+    return
+  }
+
+  window.resetSessionListenerAdded = true
+
+  document.addEventListener('click', async (e) => {
+    const resetLink = e.target.closest('a[data-reset-session]')
+    if (!resetLink) {
+      return
+    }
+
+    e.preventDefault()
+
+    try {
+      const returnPage = `${window.location.pathname}${window.location.search}`
+      const response = await fetch('/prototype-admin/reset-session-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `returnPage=${encodeURIComponent(returnPage)}`,
+        redirect: 'follow'
+      })
+
+      if (response.redirected) {
+        window.location.href = response.url
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to clear data')
+      }
+
+      // Refresh the page to reflect the cleared data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error clearing data:', error)
+
+      // Fall back to reset confirmation page
+      window.location.href = resetLink.href
+    }
+  })
+}
