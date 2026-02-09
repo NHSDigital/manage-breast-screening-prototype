@@ -35,6 +35,12 @@ async function init() {
     sessionDataDefaults
   })
 
+  // Temporary: expose filters as globals until kit supports globals directly
+  const registeredFilters = filters(prototype.nunjucks)
+  Object.entries(registeredFilters).forEach(([name, fn]) => {
+    prototype.nunjucks.addGlobal(name, fn)
+  })
+
   prototype.start(port)
 }
 
