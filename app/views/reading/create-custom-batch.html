@@ -89,13 +89,12 @@
       },
       items: [
         {
-          value: "hasSymptoms",
-          text: "Only cases with symptoms"
-        },
-        {
-          value: "includeAwaitingPriors",
-          text: "Include awaiting priors cases"
-        } if false
+          value: "complexOnly",
+          text: "Only complex cases",
+          hint: {
+            text: "Symptoms, additional images, incomplete or imperfect images, or implants"
+          }
+        }
       ]
     }) }}
   {% endif %}

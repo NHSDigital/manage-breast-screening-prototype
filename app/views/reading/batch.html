@@ -132,7 +132,7 @@
           </thead>
           <tbody>
             {% for event in userReadableEvents %}
-            {% set metadata = event.readingMetadata %}
+            {% set metadata = event | getReadingMetadata %}
             <tr>
               <td>
                 {% set readingHref -%}
@@ -188,8 +188,8 @@
               <td>
                 {% if event | userHasReadEvent %}
                   {% set read = event | getReadForUser %}
-                  {% if read.result %}
-                    {{ read.result | toTag }}
+                  {% if read.opinion %}
+                    {{ read.opinion | toTag }}
                   {% endif %}
                 {% elseif batch.skippedEvents | includes(event.id) %}
                   {{ "Skipped" | toTag }}
@@ -218,7 +218,7 @@
         </thead>
         <tbody>
           {% for event in events %}
-            {% set metadata = event.readingMetadata %}
+            {% set metadata = event | getReadingMetadata %}
             <tr>
               <td>
                 {% set readingHref -%}
@@ -235,10 +235,10 @@
                     <br>{{ "Has additional" | toTag }}
                   {% endif %}
                   {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
-                     <br>{{ "Imperfect" | toTag }}
+                    <br>{{ "Imperfect" | toTag }}
                   {% endif %}
                   {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
-                     <br>{{ "Incomplete" | toTag }}
+                    <br>{{ "Incomplete" | toTag }}
                   {% endif %}
                 {% endif %}
               </td>
@@ -260,16 +260,17 @@
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
+                {% set allReads = event | getReadsAsArray %}
 
                 {% if metadata.readCount >= 1 %}
-                  {% set firstRead = metadata.reads[0] %}
+                  {% set firstRead = allReads[0] %}
                   {% set isCurrentUserRead = firstRead.readerId === data.currentUser.id %}
 
                   {% if isBlind and not isCurrentUserRead and metadata.readCount < 2 %}
                     {{ "Completed (blind)" | toTag }}
                   {% else %}
                     {# Override default colour and make sure it's always grey #}
-                    {{ firstRead.result | toTag({colour: "grey"}) }}
+                    {{ firstRead.opinion | toTag({colour: "grey"}) }}
                   {% endif %}
 
                   <br>
@@ -289,10 +290,10 @@
                 {% set isCurrentUserRead = false %}
 
                 {% if metadata.readCount >= 2 %}
-                  {% set secondRead = metadata.reads[1] %}
+                  {% set secondRead = allReads[1] %}
                   {% set isCurrentUserRead = secondRead.readerId === data.currentUser.id %}
                   {# Force tags to grey #}
-                  {{ secondRead.result | toTag({colour: "grey"}) }}
+                  {{ secondRead.opinion | toTag({colour: "grey"}) }}
                   <br>
                   <span class="app-text-grey app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
                     format: 'short',
@@ -314,8 +315,8 @@
                   {% if metadata.hasDisagreement %}
                     {{ "Arbitration" | toTag }}
                   {% else %}
-                    {% set result = metadata.reads[0].result %}
-                    {{ result | toTag }}
+                    {% set outcome = allReads[0].opinion %}
+                    {{ outcome | toTag }}
                   {% endif %}
                 {% elif metadata.readCount == 1 %}
                   {{ "Waiting for 2nd read" | toTag }}

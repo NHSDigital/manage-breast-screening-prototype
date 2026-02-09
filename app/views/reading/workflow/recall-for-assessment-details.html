@@ -68,51 +68,22 @@
 
       <h3>Abnormalities</h3>
 
-      {% set summaryItems = [] %}
-
-      {% for annotation in data.imageReadingTemp[params.side].annotations %}
-
-        {% set annotationValueHtml -%}
-          {% if annotation.location %}
-            Location: {{ annotation.location }}<br>
+      <ul class="nhsuk-list nhsuk-list--bullet">
+        {% for annotation in data.imageReadingTemp[params.side].annotations %}
+          {% set annotationSummary = annotation | summariseAnnotation %}
+          {% set changeLinkText = "Change" %}
+          {% set changeLinkHiddenText = "annotation" %}
+          {% if annotationSummary %}
+            {% set changeLinkHiddenText = annotationSummary %}
           {% endif %}
-          Level of concern: {{ annotation.levelOfConcern }} -
-          {%- if annotation.levelOfConcern == "1" %} normal
-          {%- elif annotation.levelOfConcern == "2" %} benign
-          {%- elif annotation.levelOfConcern == "3" %} probably benign
-          {%- elif annotation.levelOfConcern == "4" %} probably cancerous
-          {%- elif annotation.levelOfConcern == "5" %} likely cancerous
-          {%- endif -%}
-        {%- endset %}
-
-        {% set abnormalityTypeText = annotation.abnormalityType | join("<br>") | safe %}
-
-        {# {% if annotation.abnormalityType == "Other" and annotation.otherDetails %}
-          {% set abnormalityTypeText = annotation.otherDetails %}
-        {% endif %} #}
-
-        {% set summaryItems = summaryItems | push({
-          key: {
-            text: abnormalityTypeText
-          },
-          value: {
-            html: annotationValueHtml | trim
-          },
-          actions: {
-            items: [
-              {
-                href: "./annotation/edit/" + annotation.id,
-                text: "Change",
-                visuallyHiddenText: abnormalityTypeText
-              }
-            ]
-          }
-        }) %}
-      {% endfor %}
-
-      {{ summaryList({
-        rows: summaryItems
-      }) }}
+          <li>
+            {{ annotationSummary }}
+            <span class="nhsuk-u-visually-hidden"> </span>
+            <a href="./annotation/edit/{{ annotation.id }}">{{ changeLinkText }}</a>
+            <span class="nhsuk-u-visually-hidden"> {{ changeLinkHiddenText }}</span>
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
 
   {% endset %}
@@ -165,7 +136,7 @@
     <div class="nhsuk-grid-column-two-thirds">
 
       {{ button({
-        text: "Confirm opinion and continue"
+        text: "Continue"
       }) }}
 
     </div>

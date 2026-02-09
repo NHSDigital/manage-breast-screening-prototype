@@ -58,33 +58,63 @@
             {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Right breast
           </legend>
           
-          {{ appStepperInput({
-            label: {
-              text: "RMLO"
-            },
-            _hint: {
-              text: "Mediolateral oblique view"
-            },
-            name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
-            value: viewsRightBreastMLOCount | default("1"),
-            id: "views-right-breast-mlo-count",
-            min: 0,
-            max: 9
-          }) }}
-          
-          {{ appStepperInput({
-            label: {
-              text: "RCC"
-            },
-            _hint: {
-              text: "Craniocaudal view"
-            },
-            name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
-            value: viewsRightBreastCCCount | default("1"),
-            id: "views-right-breast-cc-count",
-            min: 0,
-            max: 9
-          }) }}
+          {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+            {{ appStepperInput({
+              label: {
+                text: "RMLO"
+              },
+              _hint: {
+                text: "Mediolateral oblique view"
+              },
+              name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
+              value: viewsRightBreastMLOCount | default("1"),
+              id: "views-right-breast-mlo-count",
+              min: 0,
+              max: 9
+            }) }}
+            
+            {{ appStepperInput({
+              label: {
+                text: "RCC"
+              },
+              _hint: {
+                text: "Craniocaudal view"
+              },
+              name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
+              value: viewsRightBreastCCCount | default("1"),
+              id: "views-right-breast-cc-count",
+              min: 0,
+              max: 9
+            }) }}
+          {% else %}
+            {{ appStepperInput({
+              label: {
+                text: "RCC"
+              },
+              _hint: {
+                text: "Craniocaudal view"
+              },
+              name: "event[mammogramDataTemp][viewsRightBreastCCCount]",
+              value: viewsRightBreastCCCount | default("1"),
+              id: "views-right-breast-cc-count",
+              min: 0,
+              max: 9
+            }) }}
+            
+            {{ appStepperInput({
+              label: {
+                text: "RMLO"
+              },
+              _hint: {
+                text: "Mediolateral oblique view"
+              },
+              name: "event[mammogramDataTemp][viewsRightBreastMLOCount]",
+              value: viewsRightBreastMLOCount | default("1"),
+              id: "views-right-breast-mlo-count",
+              min: 0,
+              max: 9
+            }) }}
+          {% endif %}
           
           {{ appStepperInput({
             label: {
@@ -108,33 +138,63 @@
             {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Left breast
           </legend>
           
-          {{ appStepperInput({
-            label: {
-              text: "LMLO"
-            },
-            _hint: {
-              text: "Mediolateral oblique view"
-            },
-            name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
-            value: viewsLeftBreastMLOCount | default("1"),
-            id: "views-left-breast-mlo-count",
-            min: 0,
-            max: 9
-          }) }}
-          
-          {{ appStepperInput({
-            label: {
-              text: "LCC"
-            },
-            _hint: {
-              text: "Craniocaudal view"
-            },
-            name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
-            value: viewsLeftBreastCCCount | default("1"),
-            id: "views-left-breast-cc-count",
-            min: 0,
-            max: 9
-          }) }}
+          {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+            {{ appStepperInput({
+              label: {
+                text: "LMLO"
+              },
+              _hint: {
+                text: "Mediolateral oblique view"
+              },
+              name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
+              value: viewsLeftBreastMLOCount | default("1"),
+              id: "views-left-breast-mlo-count",
+              min: 0,
+              max: 9
+            }) }}
+            
+            {{ appStepperInput({
+              label: {
+                text: "LCC"
+              },
+              _hint: {
+                text: "Craniocaudal view"
+              },
+              name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
+              value: viewsLeftBreastCCCount | default("1"),
+              id: "views-left-breast-cc-count",
+              min: 0,
+              max: 9
+            }) }}
+          {% else %}
+            {{ appStepperInput({
+              label: {
+                text: "LCC"
+              },
+              _hint: {
+                text: "Craniocaudal view"
+              },
+              name: "event[mammogramDataTemp][viewsLeftBreastCCCount]",
+              value: viewsLeftBreastCCCount | default("1"),
+              id: "views-left-breast-cc-count",
+              min: 0,
+              max: 9
+            }) }}
+            
+            {{ appStepperInput({
+              label: {
+                text: "LMLO"
+              },
+              _hint: {
+                text: "Mediolateral oblique view"
+              },
+              name: "event[mammogramDataTemp][viewsLeftBreastMLOCount]",
+              value: viewsLeftBreastMLOCount | default("1"),
+              id: "views-left-breast-mlo-count",
+              min: 0,
+              max: 9
+            }) }}
+          {% endif %}
           
           {{ appStepperInput({
             label: {

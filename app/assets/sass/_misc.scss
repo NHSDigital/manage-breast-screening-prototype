@@ -43,11 +43,14 @@ body.js-enabled .app-no-js-only {
 
 .app-image-two-up {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 20px;
 
-  app-mammogram-container {
-    width: 48%;
+  .app-mammogram-container {
+    flex: 1 1 45%;
+    min-width: 200px;
+    max-width: 48%;
   }
 }
 

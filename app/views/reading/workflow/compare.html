@@ -1,0 +1,220 @@
+{# app/views/reading/workflow/compare.html #}
+{# Comparison page for second readers to compare their opinion with first reader #}
+
+{% extends 'layout-reading.html' %}
+
+{% set pageHeading = "Compare opinions" %}
+
+{# Layout option: 'side-by-side' or 'stacked' #}
+{% set cardLayout = 'stacked' %}
+
+{% set back = {
+  href: "./opinion",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {# Get comparison info #}
+  {% set secondOpinion = data.imageReadingTemp.opinion %}
+  {% set comparisonInfo = event | getComparisonInfo(secondOpinion) %}
+  {% set firstRead = comparisonInfo.firstRead %}
+  {% set firstOpinion = comparisonInfo.firstOpinion %}
+  {% set comparisonType = comparisonInfo.type %}
+
+  {% if comparisonType == "discordant" %}
+    {% set pageHeading = "The first reader had a different opinion" %}
+  {% elseif comparisonType == "agreeing" %}
+    {% set pageHeading = "You and the first reader gave the same opinion" %}
+  {% endif %}
+
+  {# Format opinion labels #}
+  {% set opinionLabels = {
+    "normal": "Normal",
+    "technical_recall": "Technical recall",
+    "recall_for_assessment": "Recall for assessment"
+  } %}
+
+  {% set firstOpinionLabel = opinionLabels[firstOpinion] or firstOpinion %}
+  {% set secondOpinionLabel = opinionLabels[secondOpinion] or secondOpinion %}
+
+  {# 
+    Determine if opinions need/have details:
+    - Normal: only needs details if wantsNormalDetails flag is set
+    - TR: always needs details (views to retake)
+    - RFA: always needs details (breast assessments, annotations)
+  #}
+  {% set secondOpinionNeedsDetails = (
+    secondOpinion == "technical_recall" or 
+    secondOpinion == "recall_for_assessment" or 
+    data.imageReadingTemp.wantsNormalDetails
+  ) %}
+  
+  {% set firstOpinionHasDetails = (
+    (firstOpinion == "technical_recall" and firstRead.technicalRecall and firstRead.technicalRecall.views) or
+    (firstOpinion == "recall_for_assessment" and (firstRead.left or firstRead.right)) or
+    (firstOpinion == "normal" and firstRead.normalDetails)
+  ) %}
+
+  {# Check if second reader already has details #}
+  {% set secondHasDetails = (
+    (secondOpinion == "technical_recall" and data.imageReadingTemp.technicalRecall and data.imageReadingTemp.technicalRecall.views) or
+    (secondOpinion == "recall_for_assessment" and (data.imageReadingTemp.left or data.imageReadingTemp.right)) or
+    (secondOpinion == "normal" and data.imageReadingTemp.normalDetails)
+  ) %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+      <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+    </div>
+  </div>
+
+  {# First reader's opinion card #}
+  {% set firstReadSummaryHtml %}
+    {% set read = firstRead %}
+    {% set allowEdits = false %}
+    {% include "_includes/summary-lists/read-summary.njk" %}
+  {% endset %}
+
+  {# Second reader's opinion card (yours) #}
+  {# Hide empty rows - shows details if they exist (e.g. adopted from first reader) #}
+  {% set secondReadSummaryHtml %}
+    {% set read = data.imageReadingTemp %}
+    {% set allowEdits = false %}
+    {% set hideEmptyRows = true %}
+    {% include "_includes/summary-lists/read-summary.njk" %}
+  {% endset %}
+
+  {% if cardLayout == 'side-by-side' %}
+    {# Side by side layout #}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        {{ card({
+          heading: "First read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: firstReadSummaryHtml
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        {{ card({
+          heading: "Your read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: secondReadSummaryHtml
+        }) }}
+      </div>
+    </div>
+  {% else %}
+    {# Stacked layout #}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {{ card({
+          heading: "First read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: firstReadSummaryHtml
+        }) }}
+
+        {{ card({
+          heading: "Your read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: secondReadSummaryHtml
+        }) }}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <form action="./compare-answer" method="POST">
+
+        {# Build radio options based on comparison type and detail state #}
+        {% set radioItems = [] %}
+
+        {# 
+          KEEP option - keep your opinion
+          Label varies based on:
+          - Whether your opinion needs details
+          - Whether you already have details
+        #}
+        {% set keepLabelHtml %}
+          Keep my opinion {{ secondOpinion | toTag }}
+          {%- if secondOpinionNeedsDetails and not secondHasDetails %} and provide details
+          {%- elseif secondHasDetails %} and my details
+          {%- endif %}
+        {% endset %}
+
+        {% set keepHint %}
+          {% if comparisonType == "discordant" %}
+            This case will go to arbitration
+          {% endif %}
+        {% endset %}
+
+        {% set radioItems = radioItems | push({
+          value: "keep",
+          html: keepLabelHtml,
+          hint: {
+            text: keepHint
+          } if keepHint | trim
+        }) %}
+
+        {# 
+          ADOPT option - change to match first reader
+          Label varies based on:
+          - Discordant: "Change my opinion to [tag]" + mention details if first reader has them
+          - Agreeing: "Use the first reader's details" (opinion is already the same)
+        #}
+        {% set adoptLabelHtml %}
+          {% if comparisonType == "discordant" %}
+            Change my opinion to {{ firstOpinion | toTag }}
+            {%- if firstOpinionHasDetails %} and use their details{%- endif %}
+          {% else %}
+            Use the first reader's details
+          {% endif %}
+        {% endset %}
+
+        {% set adoptHint %}
+          {# Hint only needed if first reader doesn't have details we're copying #}
+          {% if comparisonType == "discordant" and not firstOpinionHasDetails %}
+            You can add details when reviewing
+          {% endif %}
+        {% endset %}
+
+        {% set radioItems = radioItems | push({
+          value: "adopt",
+          html: adoptLabelHtml,
+          hint: {
+            text: adoptHint
+          } if adoptHint | trim
+        }) %}
+
+        {{ radios({
+          name: "compareDecision",
+          fieldset: {
+            legend: {
+              text: "What would you like to do?",
+              classes: "nhsuk-fieldset__legend--m",
+              isPageHeading: false
+            }
+          },
+          items: radioItems
+        }) }}
+
+        {{ button({
+          text: "Continue"
+        }) }}
+
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

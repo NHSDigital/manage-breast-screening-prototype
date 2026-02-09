@@ -42,12 +42,12 @@ const getReadingMetadata = (event) => {
   const readerIds = reads.map((read) => read.readerId)
   const uniqueReaderCount = new Set(readerIds).size
 
-  // Get all unique results from reads
-  const results = reads.map((read) => read.result)
-  const uniqueResults = [...new Set(results)].filter(Boolean) // Filter out undefined results
+  // Get all unique opinions from reads
+  const opinions = reads.map((read) => read.opinion)
+  const uniqueOpinions = [...new Set(opinions)].filter(Boolean) // Filter out undefined
 
   // Determine if there's disagreement between reads
-  const hasDisagreement = uniqueResults.length > 1
+  const hasDisagreement = uniqueOpinions.length > 1
 
   return {
     readCount: reads.length,
@@ -56,9 +56,29 @@ const getReadingMetadata = (event) => {
     secondReadComplete: reads.length >= 2,
     hasDisagreement,
     needsArbitration: hasDisagreement && reads.length >= 2,
-    results: uniqueResults,
-    reads
+    opinions: uniqueOpinions
   }
+}
+
+/**
+ * Get all reads for an event as an ordered array
+ * Sorted by readNumber if available, otherwise by timestamp
+ * @param {Object} event - The event to get reads for
+ * @returns {Array} Array of read objects sorted by read order
+ */
+const getReadsAsArray = function (event) {
+  if (!event?.imageReading?.reads) {
+    return []
+  }
+
+  return Object.values(event.imageReading.reads).sort((a, b) => {
+    // Sort by readNumber if both have it
+    if (a.readNumber && b.readNumber) {
+      return a.readNumber - b.readNumber
+    }
+    // Fall back to timestamp
+    return new Date(a.timestamp) - new Date(b.timestamp)
+  })
 }
 
 /**
@@ -78,10 +98,17 @@ const writeReading = (event, userId, reading, data = null, batchId = null) => {
     event.imageReading.reads = {}
   }
 
-  // Add the reading with timestamp
+  // Calculate readNumber based on existing reads
+  const existingReadCount = Object.keys(event.imageReading.reads).length
+  // If this user already has a read, keep their readNumber; otherwise assign next number
+  const existingRead = event.imageReading.reads[userId]
+  const readNumber = existingRead?.readNumber || existingReadCount + 1
+
+  // Add the reading with timestamp and readNumber
   event.imageReading.reads[userId] = {
     ...reading,
     readerId: userId, // Ensure the reader ID is saved
+    readNumber,
     timestamp: new Date().toISOString()
   }
 
@@ -958,6 +985,72 @@ const userHasReadEvent = function (event, userId) {
 }
 
 /**
+ * Get reads from other users (not the current user)
+ * @param {Object} event - The event to check
+ * @param {string} userId - Current user ID to exclude
+ * @returns {Array} Array of read objects from other users
+ */
+const getOtherReads = function (event, userId = null) {
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  if (!event?.imageReading?.reads) {
+    return []
+  }
+
+  return Object.entries(event.imageReading.reads)
+    .filter(([readerId]) => readerId !== currentUserId)
+    .map(([readerId, read]) => ({
+      ...read,
+      readerId
+    }))
+}
+
+/**
+ * Determine if a comparison page should be shown to the second reader
+ * Returns false if user is first reader, or if both opinions are normal
+ * Otherwise returns comparison info with the first read and comparison type
+ *
+ * @param {Object} event - The event being read
+ * @param {string} secondReaderOpinion - The second reader's opinion
+ * @param {string} userId - Current user ID (optional, falls back to context)
+ * @returns {false | Object} False if no comparison needed, or { type, firstRead }
+ */
+const getComparisonInfo = function (event, secondReaderOpinion, userId = null) {
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  // Get the first read (from other users)
+  const otherReads = getOtherReads.call(this, event, currentUserId)
+
+  // No first read exists - user is first reader
+  if (otherReads.length === 0) {
+    return false
+  }
+
+  // Get the first reader's opinion (sorted by readNumber)
+  const firstRead = otherReads.sort((a, b) => {
+    if (a.readNumber && b.readNumber) return a.readNumber - b.readNumber
+    return new Date(a.timestamp) - new Date(b.timestamp)
+  })[0]
+
+  const firstOpinion = firstRead.opinion
+
+  // Both normal - no comparison needed
+  if (firstOpinion === 'normal' && secondReaderOpinion === 'normal') {
+    return false
+  }
+
+  // Determine comparison type
+  const type = firstOpinion === secondReaderOpinion ? 'agreeing' : 'discordant'
+
+  return {
+    type,
+    firstRead,
+    firstOpinion,
+    secondOpinion: secondReaderOpinion
+  }
+}
+
+/**
  * Check if current user can read an event
  *
  * @param {object} event - The event to check
@@ -1095,6 +1188,42 @@ const createReadingBatch = (data, options) => {
           event?.medicalInformation?.symptoms &&
           event?.medicalInformation.symptoms?.length > 0
       )
+    }
+
+    // 4. Apply complex case filter if specified
+    if (filters.complexOnly) {
+      const isComplexCase = (event) => {
+        const hasSymptoms =
+          event?.medicalInformation?.symptoms &&
+          event?.medicalInformation.symptoms?.length > 0
+
+        const hasAdditionalImages =
+          event?.mammogramData?.metadata?.hasAdditionalImages
+
+        const isImperfect =
+          event?.mammogramData?.isImperfectButBestPossible?.includes &&
+          event.mammogramData.isImperfectButBestPossible.includes('yes')
+
+        const isIncomplete =
+          event?.mammogramData?.isIncompleteMammography?.includes &&
+          event.mammogramData.isIncompleteMammography.includes('yes')
+
+        const hasImplants =
+          event?.medicalInformation?.medicalHistory
+            ?.breastImplantsAugmentation &&
+          event.medicalInformation.medicalHistory.breastImplantsAugmentation
+            .length > 0
+
+        return (
+          hasSymptoms ||
+          hasAdditionalImages ||
+          isImperfect ||
+          isIncomplete ||
+          hasImplants
+        )
+      }
+
+      events = events.filter((event) => isComplexCase(event))
     }
   }
 
@@ -1346,6 +1475,9 @@ module.exports = {
   getPreviousEvent,
   // User functions
   getReadForUser,
+  getOtherReads,
+  getComparisonInfo,
+  getReadsAsArray,
   getFirstUserReadableEvent,
   // Booleans
   userHasReadEvent,

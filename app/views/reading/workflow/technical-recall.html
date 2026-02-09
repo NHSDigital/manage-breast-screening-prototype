@@ -11,7 +11,7 @@
 
 {% set pageHeading = "Technical recall" %}
 
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
 
 {# POST to route handler that cleans up unselected views before redirecting to review #}
 {% set formAction = './technical-recall-answer' %}
@@ -26,8 +26,12 @@
     {{ pageHeading }}
   </h1>
 
-  {# Standard views - could be dynamic based on participant/event in future #}
-  {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
+  {# Standard views - order matches config setting #}
+  {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+    {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
+  {% else %}
+    {% set views = ['RCC', 'LCC', 'RMLO', 'LMLO'] %}
+  {% endif %}
 
   {% set recallReasons = [
     'Breast positioning',
@@ -53,7 +57,8 @@
   {% endfor %}
 
   {# Build checkbox items with conditional fields for each view #}
-  {% set checkboxItems = [] %}
+  {% set rightCheckboxItems = [] %}
+  {% set leftCheckboxItems = [] %}
   {% set currentTechRecall = data.imageReadingTemp.technicalRecall.views | default({}) %}
 
   {% for viewCode in views %}
@@ -81,28 +86,52 @@
       }) }}
     {% endset %}
 
-    {% set checkboxItems = checkboxItems | push({
+    {% set checkboxItem = {
       value: viewCode,
       text: viewCode,
       checked: viewData.reason,
       conditional: {
         html: conditionalHtml
       }
-    }) %}
+    } %}
+
+    {% if viewCode | first == "R" %}
+      {% set rightCheckboxItems = rightCheckboxItems | push(checkboxItem) %}
+    {% else %}
+      {% set leftCheckboxItems = leftCheckboxItems | push(checkboxItem) %}
+    {% endif %}
   {% endfor %}
 
-  {{ checkboxes({
-    idPrefix: "technicalRecall-selectedViews",
-    name: "imageReadingTemp[technicalRecall][selectedViews]",
-    fieldset: {
-      legend: {
-        text: "Which views need to be retaken?",
-        classes: "nhsuk-fieldset__legend--m",
-        isPageHeading: false
-      }
-    },
-    items: checkboxItems
-  }) }}
+  {% call fieldset({
+    legend: {
+      text: "Which views need to be retaken?",
+      classes: "nhsuk-fieldset__legend--m",
+      isPageHeading: false
+    }
+  }) %}
+
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-one-half">
+        <h2 class="nhsuk-heading-s">Right breast</h2>
+
+        {{ checkboxes({
+          idPrefix: "technicalRecall-selectedViews-right",
+          name: "imageReadingTemp[technicalRecall][selectedViews]",
+          items: rightCheckboxItems
+        }) }}
+      </div>
+      <div class="nhsuk-grid-column-one-half">
+        <h2 class="nhsuk-heading-s">Left breast</h2>
+
+        {{ checkboxes({
+          idPrefix: "technicalRecall-selectedViews-left",
+          name: "imageReadingTemp[technicalRecall][selectedViews]",
+          items: leftCheckboxItems
+        }) }}
+      </div>
+    </div>
+
+  {% endcall %}
 
   {{ button({
     text: "Continue"

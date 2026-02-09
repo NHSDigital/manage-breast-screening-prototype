@@ -96,6 +96,60 @@ const handleSummaryListMissingInformation = (
   return processRow(input)
 }
 
+/**
+ * Add no-border class to the last summary list row
+ *
+ * Usefule where the summary list is within a card and you want to remove the bottom border
+ *
+ * @param {object|array} input - Summary list object or rows array
+ * @returns {object|array} Updated summary list or rows array
+ */
+const removeLastRowBorder = (input) => {
+  if (!input) return input
+
+  const isArrayInput = Array.isArray(input)
+  const rows = isArrayInput ? input : input.rows
+
+  if (!Array.isArray(rows) || rows.length === 0) return input
+
+  let lastRowIndex = -1
+
+  for (let index = rows.length - 1; index >= 0; index -= 1) {
+    const row = rows[index]
+
+    if (row && typeof row === 'object' && row.key) {
+      lastRowIndex = index
+      break
+    }
+  }
+
+  if (lastRowIndex === -1) return input
+
+  const updatedRows = rows.map((row, index) => {
+    if (index !== lastRowIndex) return row
+
+    const className = 'nhsuk-summary-list__row--no-border'
+    const existingClasses = row.classes || ''
+    const hasClass = existingClasses.split(' ').includes(className)
+    const classes = hasClass
+      ? existingClasses
+      : `${existingClasses} ${className}`.trim()
+
+    return {
+      ...row,
+      classes
+    }
+  })
+
+  if (isArrayInput) return updatedRows
+
+  return {
+    ...input,
+    rows: updatedRows
+  }
+}
+
 module.exports = {
-  handleSummaryListMissingInformation
+  handleSummaryListMissingInformation,
+  removeLastRowBorder
 }

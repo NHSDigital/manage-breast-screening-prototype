@@ -38,6 +38,39 @@ const formatAnswer = (value, options = {}) => {
   return yesValue ? `${yesPrefix} - ${yesValue}` : yesPrefix
 }
 
+// Convert an integer to its ordinal name (first, second, third, etc)
+const getOrdinalName = (integer) =>
+{
+  const ordinals = [
+    "zeroth", // shouldn't be possible
+    "first",
+    "second",
+    "third",
+    "fourth",
+    "fifth",
+    "sixth",
+    "seventh",
+    "eighth",
+    "ninth",
+    "tenth"
+  ]
+
+  const parsedInteger = Number(integer)
+
+  if (!Number.isInteger(parsedInteger) || parsedInteger < 1 || parsedInteger > 10)
+  {
+    console.warn("Error in getOrdinalName: input out of bounds")
+    return ""
+  }
+
+  return ordinals[parsedInteger]
+}
+
+// Convert a zero-based index to its ordinal name (0 => first, 1 => second, etc)
+const getOrdinalNameIndex0 = (integer) => getOrdinalName(Number(integer) + 1)
+
 module.exports = {
-  formatAnswer
+  formatAnswer,
+  getOrdinalName,
+  getOrdinalNameIndex0
 }

@@ -16,8 +16,10 @@ const {
   getOrCreateClinicBatch,
   getBatchReadingProgress,
   skipEventInBatch,
-  getReadingMetadata
+  getReadingMetadata,
+  getComparisonInfo
 } = require('../lib/utils/reading')
+const { getShortName } = require('../lib/utils/participants')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
@@ -146,6 +148,10 @@ module.exports = (router) => {
 
     if (queryFilters.includes('includeAwaitingPriors')) {
       filters.includeAwaitingPriors = true
+    }
+
+    if (queryFilters.includes('complexOnly')) {
+      filters.complexOnly = true
     }
 
     // Create the batch
@@ -282,8 +288,6 @@ module.exports = (router) => {
       return res.redirect(`/reading/batch/${batchId}`)
     }
 
-    event.readingMetadata = getReadingMetadata(event)
-
     // Get participant and clinic data
     const participant = data.participants.find(
       (p) => p.id === event.participantId
@@ -318,6 +322,18 @@ module.exports = (router) => {
         }
         // Update res.locals.data to reflect the change (it was set before this middleware)
         res.locals.data.imageReadingTemp = data.imageReadingTemp
+      }
+
+      // Pass along opinion banner and remove from session
+      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+      // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
+      if (
+        (req.path.endsWith('/opinion') ||
+          req.path.endsWith('/existing-read')) &&
+        data.readingOpinionBanner
+      ) {
+        res.locals.readingOpinionBanner = data.readingOpinionBanner
+        delete data.readingOpinionBanner
       }
     }
 
@@ -383,6 +399,44 @@ module.exports = (router) => {
     }
   })
 
+  // Intercept review page for late comparison check
+  router.get(
+    '/reading/batch/:batchId/events/:eventId/review',
+    (req, res, next) => {
+      const { batchId, eventId } = req.params
+      const data = req.session.data
+      const currentUserId = data.currentUser?.id
+
+      const comparisonSetting = data.settings?.reading?.secondReaderComparison
+      const formData = data.imageReadingTemp
+
+      // Check for late comparison (if not already done)
+      if (
+        comparisonSetting === 'late' &&
+        formData &&
+        !formData.comparisonComplete
+      ) {
+        const event = data.events.find((e) => e.id === eventId)
+        if (event) {
+          const comparisonInfo = getComparisonInfo(
+            event,
+            formData.opinion,
+            currentUserId
+          )
+          if (comparisonInfo) {
+            // Second reader needs comparison - redirect to compare first
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/compare`
+            )
+          }
+        }
+      }
+
+      // No comparison needed - render review page
+      return res.render('reading/workflow/review')
+    }
+  )
+
   // Render appropriate template for reading views
   router.get(
     '/reading/batch/:batchId/events/:eventId/:step',
@@ -400,7 +454,8 @@ module.exports = (router) => {
         'confirm-abnormal',
         'recommended-assessment',
         'review',
-        'existing-read'
+        'existing-read',
+        'compare'
       ]
 
       if (workflowSteps.includes(step)) {
@@ -435,8 +490,15 @@ module.exports = (router) => {
         data.imageReadingTemp = {}
       }
 
+      // Calculate annotation number (next in sequence)
+      const leftAnnotations = data.imageReadingTemp?.left?.annotations || []
+      const rightAnnotations = data.imageReadingTemp?.right?.annotations || []
+      const totalAnnotations = leftAnnotations.length + rightAnnotations.length
+      const annotationNumber = totalAnnotations + 1
+
       data.imageReadingTemp.annotationTemp = {
-        side: side
+        side: side,
+        annotationNumber: annotationNumber
       }
 
       res.redirect(
@@ -452,21 +514,30 @@ module.exports = (router) => {
       const { batchId, eventId, annotationId } = req.params
       const data = req.session.data
 
-      // Find the annotation to edit
+      // Find the annotation to edit and its number
       let annotation = null
+      let annotationNumber = 1
       const sides = ['left', 'right']
 
-      for (const side of sides) {
-        const annotations = data.imageReadingTemp?.[side]?.annotations || []
-        annotation = annotations.find((a) => a.id === annotationId)
-        if (annotation) {
+      // Build ordered list of all annotations to find the number
+      const leftAnnotations = data.imageReadingTemp?.left?.annotations || []
+      const rightAnnotations = data.imageReadingTemp?.right?.annotations || []
+      const allAnnotations = [...leftAnnotations, ...rightAnnotations]
+
+      for (let index = 0; index < allAnnotations.length; index++) {
+        if (allAnnotations[index].id === annotationId) {
+          annotation = allAnnotations[index]
+          annotationNumber = index + 1
           break
         }
       }
 
       if (annotation) {
         // Copy annotation to temp for editing
-        data.imageReadingTemp.annotationTemp = { ...annotation }
+        data.imageReadingTemp.annotationTemp = {
+          ...annotation,
+          annotationNumber: annotationNumber
+        }
       }
 
       res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
@@ -481,17 +552,17 @@ module.exports = (router) => {
       const data = req.session.data
       const action = req.body.action || 'save'
 
-      // Parse marker positions if they came in as a string
+      // Parse positions if they came in as a string
       if (
-        data.imageReadingTemp.annotationTemp.markerPositions &&
-        typeof data.imageReadingTemp.annotationTemp.markerPositions === 'string'
+        data.imageReadingTemp.annotationTemp.positions &&
+        typeof data.imageReadingTemp.annotationTemp.positions === 'string'
       ) {
         try {
-          data.imageReadingTemp.annotationTemp.markerPositions = JSON.parse(
-            data.imageReadingTemp.annotationTemp.markerPositions
+          data.imageReadingTemp.annotationTemp.positions = JSON.parse(
+            data.imageReadingTemp.annotationTemp.positions
           )
         } catch (e) {
-          console.warn('Failed to parse incoming marker positions:', e)
+          console.warn('Failed to parse incoming positions:', e)
         }
       }
 
@@ -507,63 +578,36 @@ module.exports = (router) => {
         )
       }
 
-      // Validate that marker positions are set for both views
+      // Validate that positions are set for at least one view
       if (
-        !annotationTemp.markerPositions ||
-        annotationTemp.markerPositions === '{}' ||
-        annotationTemp.markerPositions === ''
+        !annotationTemp.positions ||
+        annotationTemp.positions === '{}' ||
+        annotationTemp.positions === ''
       ) {
         errors.push({
           text: `Mark the location on at least one ${annotationTemp.side} breast view`,
-          name: 'markerPositions',
+          name: 'positions',
           href: '#mammogram-section'
         })
       } else {
-        // Parse and validate marker positions have markers for both views
+        // Parse and validate positions have at least one marker
         try {
           const positions =
-            typeof annotationTemp.markerPositions === 'string'
-              ? JSON.parse(annotationTemp.markerPositions)
-              : annotationTemp.markerPositions
+            typeof annotationTemp.positions === 'string'
+              ? JSON.parse(annotationTemp.positions)
+              : annotationTemp.positions
 
           if (!positions || Object.keys(positions).length === 0) {
             errors.push({
               text: `Mark the location on at least one ${annotationTemp.side} breast view`,
-              name: 'markerPositions',
+              name: 'positions',
               href: '#mammogram-section'
             })
           }
-          // else {
-          //   // Check we have markers for both image-0 and image-1 (both views)
-          //   const hasImage0 = positions['image-0']
-          //   const hasImage1 = positions['image-1']
-
-          //   if (!hasImage0 && !hasImage1) {
-          //     errors.push({
-          //       text: `Mark the location on both ${annotationTemp.side} breast views`,
-          //       name: 'markerPositions',
-          //       href: '#mammogram-section'
-          //     })
-          //   } else if (!hasImage0) {
-          //     const viewName = annotationTemp.side === 'right' ? 'RMLO' : 'LMLO'
-          //     errors.push({
-          //       text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
-          //       name: 'markerPositions',
-          //       href: '#mammogram-section'
-          //     })
-          //   } else if (!hasImage1) {
-          //     const viewName = annotationTemp.side === 'right' ? 'RCC' : 'LCC'
-          //     errors.push({
-          //       text: `Mark the location on the ${annotationTemp.side} ${viewName} view`,
-          //       name: 'markerPositions',
-          //       href: '#mammogram-section'
-          //     })
-          //   }
-          // }
         } catch (e) {
           errors.push({
             text: `Mark the location on both ${annotationTemp.side} breast views`,
-            name: 'markerPositions',
+            name: 'positions',
             href: '#mammogram-section'
           })
         }
@@ -674,16 +718,16 @@ module.exports = (router) => {
           data.imageReadingTemp[side].annotations = []
         }
 
-        // Parse marker positions if provided
-        let markerPositions = null
-        if (annotationTemp.markerPositions) {
+        // Parse positions if provided
+        let positions = null
+        if (annotationTemp.positions) {
           try {
-            markerPositions =
-              typeof annotationTemp.markerPositions === 'string'
-                ? JSON.parse(annotationTemp.markerPositions)
-                : annotationTemp.markerPositions
+            positions =
+              typeof annotationTemp.positions === 'string'
+                ? JSON.parse(annotationTemp.positions)
+                : annotationTemp.positions
           } catch (e) {
-            console.warn('Failed to parse marker positions:', e)
+            console.warn('Failed to parse positions:', e)
           }
         }
 
@@ -695,7 +739,7 @@ module.exports = (router) => {
           location: annotationTemp.location,
           abnormalityType: annotationTemp.abnormalityType,
           levelOfConcern: annotationTemp.levelOfConcern,
-          markerPositions: markerPositions,
+          positions: positions,
           // Include any conditional detail fields
           ...Object.keys(annotationTemp)
             .filter((key) => key.endsWith('Details'))
@@ -807,7 +851,7 @@ module.exports = (router) => {
   )
 
   // Handle recording a reading result
-  // Save the reading opinion - reads opinion from imageReadingTemp.result
+  // Save the reading opinion - reads opinion from imageReadingTemp.opinion
   router.post(
     '/reading/batch/:batchId/events/:eventId/save-opinion',
     (req, res) => {
@@ -816,19 +860,19 @@ module.exports = (router) => {
       const currentUserId = data.currentUser.id
       const formData = data.imageReadingTemp
 
-      if (!formData || !formData.result) {
-        console.log('No result in imageReadingTemp - cannot save')
+      if (!formData || !formData.opinion) {
+        console.log('No opinion in imageReadingTemp - cannot save')
         return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
       }
-
-      delete data.imageReadingTemp
-      delete res.locals.data?.imageReadingTemp
 
       // Find the event
       const event = data.events.find((e) => e.id === eventId)
       if (!event) {
         return res.redirect(`/reading/batch/${batchId}`)
       }
+
+      delete data.imageReadingTemp
+      delete res.locals.data?.imageReadingTemp
 
       // Create and save the reading
       const readResult = {
@@ -841,13 +885,41 @@ module.exports = (router) => {
       // Write the reading (passing batch context to handle skipped events)
       writeReading(event, currentUserId, readResult, data, batchId)
 
-      // Get progress to find next event
-      const progress = getBatchReadingProgress(data, batchId, eventId)
+      // Find next unread event in batch (not just navigable - we want truly unread)
+      const batch = getReadingBatch(data, batchId)
+      const batchEvents = batch.eventIds
+        .map((id) => data.events.find((e) => e.id === id))
+        .filter(Boolean)
+      const nextUnreadEvent = getFirstUserReadableEvent(
+        batchEvents,
+        currentUserId
+      )
 
-      // Redirect to next event or batch view
-      if (progress.hasNextUserReadable) {
+      // Store banner message for the next case
+      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+      // Todo: can we get this working with req.flash?
+      const participant = data.participants.find(
+        (person) => person.id === event.participantId
+      )
+      const shortName = getShortName(participant)
+      const resultLabels = {
+        normal: 'Normal',
+        technical_recall: 'Technical recall',
+        recall_for_assessment: 'Recall for assessment'
+      }
+      const resultLabel = resultLabels[formData.opinion] || 'Opinion'
+      const message = `${resultLabel} opinion recorded for ${shortName}`
+
+      data.readingOpinionBanner = {
+        text: message,
+        participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
+        editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+      }
+
+      // Redirect to next unread event or batch view if all done
+      if (nextUnreadEvent) {
         res.redirect(
-          `/reading/batch/${batchId}/events/${progress.nextUserReadableId}`
+          `/reading/batch/${batchId}/events/${nextUnreadEvent.id}`
         )
       } else {
         res.redirect(`/reading/batch/${batchId}`)
@@ -869,12 +941,12 @@ module.exports = (router) => {
         JSON.stringify(data.imageReadingTemp, null, 2)
       )
 
-      // Result and previousResult are auto-saved to data.imageReadingTemp via form binding
-      const result = data.imageReadingTemp?.result
-      const previousResult = data.imageReadingTemp?.previousResult
+      // Opinion and previousOpinion are auto-saved to data.imageReadingTemp via form binding
+      const opinion = data.imageReadingTemp?.opinion
+      const previousOpinion = data.imageReadingTemp?.previousOpinion
 
-      console.log('result:', result)
-      console.log('previousResult:', previousResult)
+      console.log('opinion:', opinion)
+      console.log('previousOpinion:', previousOpinion)
 
       const event = data.events.find((e) => e.id === eventId)
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
@@ -886,34 +958,67 @@ module.exports = (router) => {
       data.imageReadingTemp.eventId = eventId
 
       // Normalise normal_with_details to normal (it just goes to details page first)
-      const normalisedResult =
-        result === 'normal_with_details' ? 'normal' : result
-      if (result === 'normal_with_details') {
-        data.imageReadingTemp.result = normalisedResult
+      const normalisedOpinion =
+        opinion === 'normal_with_details' ? 'normal' : opinion
+      if (opinion === 'normal_with_details') {
+        data.imageReadingTemp.opinion = normalisedOpinion
+        // Preserve intent to add details for after comparison
+        data.imageReadingTemp.wantsNormalDetails = true
       }
 
       // Clean up data from other opinion types when changing opinion
-      if (previousResult && previousResult !== normalisedResult) {
+      if (previousOpinion && previousOpinion !== normalisedOpinion) {
         console.log(
-          `Opinion changed from ${previousResult} to ${normalisedResult} - cleaning up`
+          `Opinion changed from ${previousOpinion} to ${normalisedOpinion} - cleaning up`
         )
         // Changing away from technical_recall - clear technical recall data
-        if (previousResult === 'technical_recall') {
+        if (previousOpinion === 'technical_recall') {
           delete data.imageReadingTemp.technicalRecall
         }
         // Changing away from recall_for_assessment - clear breast assessments and annotations
-        if (previousResult === 'recall_for_assessment') {
+        if (previousOpinion === 'recall_for_assessment') {
           delete data.imageReadingTemp.left
           delete data.imageReadingTemp.right
         }
       }
 
-      // Clean up previousResult - only needed for change detection
-      delete data.imageReadingTemp.previousResult
+      // Clean up previousOpinion - only needed for change detection
+      delete data.imageReadingTemp.previousOpinion
 
-      // Handle different result types
-      switch (result) {
+      // Check for early comparison (second reader only, not normal+normal)
+      const comparisonSetting = data.settings?.reading?.secondReaderComparison
+      if (comparisonSetting === 'early') {
+        const currentUserId = data.currentUser?.id
+        const comparisonInfo = getComparisonInfo(
+          event,
+          normalisedOpinion,
+          currentUserId
+        )
+        if (comparisonInfo) {
+          // Second reader with opinions that need comparison
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/compare`
+          )
+        }
+      }
+
+      // Handle different opinion types
+      switch (opinion) {
         case 'normal':
+          // For late comparison, normal still needs to go through compare if discordant
+          // (since there's no review page to intercept)
+          if (comparisonSetting === 'late') {
+            const comparisonInfo = getComparisonInfo(
+              event,
+              normalisedOpinion,
+              data.currentUser?.id
+            )
+            if (comparisonInfo) {
+              return res.redirect(
+                `/reading/batch/${batchId}/events/${eventId}/compare`
+              )
+            }
+          }
           if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
               `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
@@ -929,6 +1034,115 @@ module.exports = (router) => {
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/normal-details`
           )
+        case 'technical_recall':
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/technical-recall`
+          )
+        case 'recall_for_assessment':
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+          )
+        default:
+          return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
+      }
+    }
+  )
+
+  // Handle compare decision - keep opinion or adopt first reader's
+  router.post(
+    '/reading/batch/:batchId/events/:eventId/compare-answer',
+    (req, res) => {
+      const { batchId, eventId } = req.params
+      const data = req.session.data
+      const decision = req.body.compareDecision
+      const currentUserId = data.currentUser?.id
+
+      const event = data.events.find((e) => e.id === eventId)
+      if (!event) return res.redirect(`/reading/batch/${batchId}`)
+
+      const opinion = data.imageReadingTemp?.opinion
+
+      // Mark comparison as complete so save-opinion doesn't redirect back here
+      data.imageReadingTemp.comparisonComplete = true
+
+      if (decision === 'adopt') {
+        // Copy first reader's data to our temp
+        const comparisonInfo = getComparisonInfo(event, opinion, currentUserId)
+        if (comparisonInfo && comparisonInfo.firstRead) {
+          const firstRead = comparisonInfo.firstRead
+
+          // Copy opinion and all details from first reader
+          data.imageReadingTemp.opinion = firstRead.opinion
+          data.imageReadingTemp.adoptedFromFirstReader = true
+
+          // Copy technical recall data if present
+          if (firstRead.technicalRecall) {
+            data.imageReadingTemp.technicalRecall = {
+              ...firstRead.technicalRecall
+            }
+          }
+
+          // Copy breast assessment data if present
+          if (firstRead.left) {
+            data.imageReadingTemp.left = JSON.parse(
+              JSON.stringify(firstRead.left)
+            )
+          }
+          if (firstRead.right) {
+            data.imageReadingTemp.right = JSON.parse(
+              JSON.stringify(firstRead.right)
+            )
+          }
+
+          // Copy normal details if present
+          if (firstRead.normalDetails) {
+            data.imageReadingTemp.normalDetails = firstRead.normalDetails
+          }
+
+          console.log('Adopted first reader opinion:', firstRead.opinion)
+        }
+
+        // Go straight to review since we have complete data
+        return res.redirect(
+          `/reading/batch/${batchId}/events/${eventId}/review`
+        )
+      }
+
+      // Keep original opinion - continue to appropriate details page
+      // But if we already have details (late comparison), skip to review
+      const wantsNormalDetails = data.imageReadingTemp?.wantsNormalDetails
+      const temp = data.imageReadingTemp
+
+      // Check if second reader already has details for their opinion
+      const hasExistingDetails =
+        (opinion === 'technical_recall' && temp?.technicalRecall?.views) ||
+        (opinion === 'recall_for_assessment' && (temp?.left || temp?.right)) ||
+        (opinion === 'normal' && temp?.normalDetails)
+
+      if (hasExistingDetails) {
+        // Skip to review - we already have details
+        return res.redirect(
+          `/reading/batch/${batchId}/events/${eventId}/review`
+        )
+      }
+
+      switch (opinion) {
+        case 'normal':
+          // Check if user originally wanted to add details
+          if (wantsNormalDetails) {
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/normal-details`
+            )
+          } else if (data.settings.reading.confirmNormal === 'true') {
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
+            )
+          } else {
+            return res.redirect(
+              307,
+              `/reading/batch/${batchId}/events/${eventId}/save-opinion`
+            )
+          }
         case 'technical_recall':
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/technical-recall`
@@ -1006,7 +1220,7 @@ module.exports = (router) => {
             batchId,
             readerId: reading.readerId,
             readType,
-            result: reading.result,
+            opinion: reading.opinion,
             timestamp: reading.timestamp,
             participant
           }

@@ -453,6 +453,11 @@
     <div class="viewer-placeholder__hint">Open a case in the reading workflow to view mammograms</div>
   </div>
 
+  <div class="viewer-placeholder" id="viewer-loading" style="display: none;">
+    <div class="viewer-placeholder__icon">⏳</div>
+    <div class="viewer-placeholder__text">Loading next case...</div>
+  </div>
+
   <button class="viewer-additional-link" id="additional-link" style="display: none;">
     View additional images
   </button>
@@ -480,6 +485,7 @@
     const headerEl = document.getElementById("viewer-header")
     const gridEl = document.getElementById("viewer-grid")
     const placeholderEl = document.getElementById("viewer-placeholder")
+    const loadingEl = document.getElementById("viewer-loading")
     const statusEl = document.getElementById("viewer-status")
     const nameEl = document.getElementById("participant-name")
     const detailsEl = document.getElementById("participant-details")
@@ -657,6 +663,7 @@
       headerEl.style.display = "none"
       gridEl.style.display = "none"
       placeholderEl.style.display = "flex"
+      loadingEl.style.display = "none"
       additionalLinkEl.style.display = "none"
       currentEventId = null
       currentAllPaths = null
@@ -664,20 +671,52 @@
     }
 
     /**
+     * Show loading state (navigating to next case)
+     */
+    const showLoading = () => {
+      headerEl.style.display = "none"
+      gridEl.style.display = "none"
+      placeholderEl.style.display = "none"
+      loadingEl.style.display = "flex"
+      additionalLinkEl.style.display = "none"
+      updateStatus("Loading...")
+    }
+
+    /**
      * Update a single view panel - show image or missing placeholder
+     * Hides image immediately, then shows once loaded
      */
     const updateViewPanel = (view, imagePath) => {
       const imageEl = imageEls[view]
       const missingEl = missingEls[view]
 
       if (imagePath) {
-        imageEl.src = imagePath
-        imageEl.style.display = "block"
+        // Hide old image immediately while new one loads
+        imageEl.style.display = "none"
         missingEl.style.display = "none"
+
+        // Show image once it's loaded
+        imageEl.onload = () => {
+          imageEl.style.display = "block"
+        }
+        imageEl.src = imagePath
       } else {
         imageEl.style.display = "none"
         imageEl.src = ""
+        imageEl.onload = null
         missingEl.style.display = "flex"
+      }
+    }
+
+    /**
+     * Clear all image panels (show black/empty state)
+     */
+    const clearAllPanels = () => {
+      for (const view of ["rcc", "lcc", "rmlo", "lmlo"]) {
+        imageEls[view].style.display = "none"
+        imageEls[view].src = ""
+        imageEls[view].onload = null
+        missingEls[view].style.display = "none"
       }
     }
 
@@ -706,6 +745,9 @@
     const showMammograms = (data) => {
       // Close any open modals from previous case
       closeAdditionalModal()
+
+      // Clear old images immediately
+      clearAllPanels()
 
       // Log set info to console for debugging
       console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
@@ -741,6 +783,7 @@
 
       // Show viewer
       placeholderEl.style.display = "none"
+      loadingEl.style.display = "none"
       headerEl.style.display = "flex"
       gridEl.style.display = "grid"
 
@@ -764,6 +807,9 @@
       if (data.type === "ping") {
         // Respond to ping with pong so parent knows we're open
         channel.postMessage({ type: "pong", timestamp: Date.now() })
+      } else if (data.type === "loading") {
+        // Show loading state when navigating away from current case
+        showLoading()
       } else if (data.type === "show") {
         // Ignore if same event already displayed
         if (data.eventId === currentEventId) {

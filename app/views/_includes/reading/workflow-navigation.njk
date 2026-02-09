@@ -4,6 +4,8 @@
 {# Previous/next case navigation #}
 {% if progress.hasPreviousUserReadable or progress.hasNextUserReadable %}
   <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
+    {# Toast message for previously read case #}
+    {% include "_includes/reading/opinion-banner.njk" %}
     <div class="nhsuk-grid-column-two-thirds">
       {% if progress.hasPreviousUserReadable %}
         {# Link to event base URL - route handles redirect to existing-read or opinion #}

@@ -2,7 +2,307 @@
 
 const dayjs = require('dayjs')
 const weighted = require('weighted')
+const { faker } = require('@faker-js/faker')
 const { eligibleForReading } = require('../utils/status')
+const { getSetById, getResolvedAnnotations } = require('../utils/mammogram-images')
+const generateId = require('../utils/id-generator')
+
+// Alignment probability - how often reads match the image set's tag
+const ALIGNMENT_PROBABILITY = 0.85
+
+// Default read result weights when no set or misaligned
+const DEFAULT_READ_WEIGHTS = {
+  normal: 0.7,
+  technical_recall: 0.1,
+  recall_for_assessment: 0.2
+}
+
+// Technical recall reasons (matches the form options)
+const TECHNICAL_RECALL_REASONS = [
+  'Breast positioning',
+  'Image blurred',
+  'Exposure incorrect',
+  'Movement artefact',
+  'Foreign body artefact',
+  'Processing error',
+  'Equipment malfunction',
+  'Other'
+]
+
+/**
+ * Map from set tag to read result
+ */
+const TAG_TO_RESULT = {
+  normal: 'normal',
+  abnormal: 'recall_for_assessment',
+  technical: 'technical_recall',
+  indeterminate: 'recall_for_assessment' // Treat indeterminate as needing further assessment
+}
+
+/**
+ * Generate a single read result aligned with the image set metadata
+ *
+ * @param {object} event - The event being read
+ * @param {string} readerId - The reader's user ID
+ * @param {string} readerType - The reader's role
+ * @param {string} timestamp - ISO timestamp for the read
+ * @param {object} [options] - Generation options
+ * @param {boolean} [options.forceAlignment] - Force alignment with set (ignore probability)
+ * @param {string} [options.forceOpinion] - Force a specific opinion type
+ * @param {number} [options.readNumber] - The read number (1 = first, 2 = second)
+ * @returns {object} The generated read object
+ */
+const generateSingleRead = (
+  event,
+  readerId,
+  readerType,
+  timestamp,
+  options = {}
+) => {
+  const setId = event.mammogramData?.selectedSetId
+  const set = setId ? getSetById(setId, 'diagrams') : null
+
+  // Determine the opinion
+  let opinion
+
+  if (options.forceOpinion) {
+    opinion = options.forceOpinion
+  } else if (set) {
+    // Decide if this read aligns with the set
+    const shouldAlign =
+      options.forceAlignment || Math.random() < ALIGNMENT_PROBABILITY
+
+    if (shouldAlign) {
+      opinion = TAG_TO_RESULT[set.tag] || 'normal'
+    } else {
+      // Pick a different opinion
+      const alignedOpinion = TAG_TO_RESULT[set.tag] || 'normal'
+      const otherOpinions = Object.keys(DEFAULT_READ_WEIGHTS).filter(
+        (r) => r !== alignedOpinion
+      )
+      opinion = faker.helpers.arrayElement(otherOpinions)
+    }
+  } else {
+    // No set - use default weights
+    opinion = weighted.select(DEFAULT_READ_WEIGHTS)
+  }
+
+  // Build base read object
+  const read = {
+    opinion,
+    readerId,
+    readerType,
+    timestamp,
+    readNumber: options.readNumber || 1
+  }
+
+  // Add opinion-specific data
+  if (opinion === 'normal') {
+    // Normal reads are simple - just per-breast assessment
+    read.left = { breastAssessment: 'normal' }
+    read.right = { breastAssessment: 'normal' }
+  } else if (opinion === 'technical_recall') {
+    // Technical recall - determine which views need retaking
+    read.technicalRecall = generateTechnicalRecallData(event, set)
+    read.left = {
+      breastAssessment:
+        set?.left?.status === 'technical' ? 'technical' : 'normal'
+    }
+    read.right = {
+      breastAssessment:
+        set?.right?.status === 'technical' ? 'technical' : 'normal'
+    }
+  } else if (opinion === 'recall_for_assessment') {
+    // Abnormal - generate per-breast assessments and annotations
+    const { left, right } = generateAbnormalData(event, set)
+    read.left = left
+    read.right = right
+  }
+
+  return read
+}
+
+/**
+ * Generate technical recall data based on set metadata
+ */
+const generateTechnicalRecallData = (event, set) => {
+  const views = {}
+
+  // If we have a set with per-breast status, use that to determine which views
+  if (set) {
+    const viewCodes = ['RMLO', 'RCC', 'LCC', 'LMLO']
+
+    // Check which side has technical issues
+    const rightTech = set.right?.status === 'technical'
+    const leftTech = set.left?.status === 'technical'
+
+    if (rightTech) {
+      // Pick one or both right views
+      const rightViews = Math.random() < 0.5 ? ['RMLO'] : ['RMLO', 'RCC']
+      rightViews.forEach((v) => {
+        views[v] = {
+          reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
+          additionalDetails: Math.random() < 0.3 ? 'Repeat required' : ''
+        }
+      })
+    }
+
+    if (leftTech) {
+      // Pick one or both left views
+      const leftViews = Math.random() < 0.5 ? ['LMLO'] : ['LMLO', 'LCC']
+      leftViews.forEach((v) => {
+        views[v] = {
+          reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
+          additionalDetails: Math.random() < 0.3 ? 'Repeat required' : ''
+        }
+      })
+    }
+
+    // If neither side marked as technical, pick a random view
+    if (!rightTech && !leftTech) {
+      const randomView = faker.helpers.arrayElement(viewCodes)
+      views[randomView] = {
+        reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
+        additionalDetails: ''
+      }
+    }
+  } else {
+    // No set - pick 1-2 random views
+    const viewCodes = ['RMLO', 'RCC', 'LCC', 'LMLO']
+    const count = Math.random() < 0.7 ? 1 : 2
+    const selectedViews = faker.helpers.arrayElements(viewCodes, {
+      min: count,
+      max: count
+    })
+
+    selectedViews.forEach((v) => {
+      views[v] = {
+        reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
+        additionalDetails: ''
+      }
+    })
+  }
+
+  return { views }
+}
+
+/**
+ * Generate abnormal (recall for assessment) data based on set metadata
+ */
+const generateAbnormalData = (event, set) => {
+  const left = { breastAssessment: 'normal', annotations: [] }
+  const right = { breastAssessment: 'normal', annotations: [] }
+
+  if (set) {
+    // Use set's per-breast status
+    if (set.left?.status === 'abnormal') {
+      left.breastAssessment = 'abnormal'
+    }
+    if (set.right?.status === 'abnormal') {
+      right.breastAssessment = 'abnormal'
+    }
+
+    // Get resolved annotations (follows 'from' references for composite sets)
+    const annotations = getResolvedAnnotations(set)
+
+    if (annotations.length > 0) {
+      annotations.forEach((annotation) => {
+        const targetBreast = annotation.side === 'left' ? left : right
+
+        // Use positions directly from manifest (already in 0-1 format with view-name keys)
+        targetBreast.annotations.push({
+          id: generateId(),
+          side: annotation.side,
+          abnormalityType: Array.isArray(annotation.abnormalityType)
+            ? annotation.abnormalityType
+            : [annotation.abnormalityType],
+          levelOfConcern: annotation.levelOfConcern || '4',
+          positions: annotation.positions || {},
+          comment: annotation.notes || ''
+        })
+      })
+    } else if (
+      left.breastAssessment === 'abnormal' ||
+      right.breastAssessment === 'abnormal'
+    ) {
+      // Set marked as abnormal but no annotations - generate placeholder
+      if (left.breastAssessment === 'abnormal') {
+        left.annotations.push(generatePlaceholderAnnotation('left', set.left))
+      }
+      if (right.breastAssessment === 'abnormal') {
+        right.annotations.push(
+          generatePlaceholderAnnotation('right', set.right)
+        )
+      }
+    }
+  } else {
+    // No set - generate random abnormal data
+    const abnormalSide = Math.random() < 0.5 ? 'left' : 'right'
+    const target = abnormalSide === 'left' ? left : right
+    target.breastAssessment = 'abnormal'
+    target.annotations.push(generatePlaceholderAnnotation(abnormalSide, null))
+  }
+
+  // Ensure at least one breast is abnormal for recall_for_assessment
+  if (
+    left.breastAssessment === 'normal' &&
+    right.breastAssessment === 'normal'
+  ) {
+    const target = Math.random() < 0.5 ? left : right
+    target.breastAssessment = 'abnormal'
+    target.annotations.push(
+      generatePlaceholderAnnotation(target === left ? 'left' : 'right', null)
+    )
+  }
+
+  return { left, right }
+}
+
+/**
+ * Generate a placeholder annotation when set doesn't have detailed annotations
+ */
+const generatePlaceholderAnnotation = (side, breastData) => {
+  const abnormalityTypes = [
+    'Mass well-defined',
+    'Mass ill-defined',
+    'Microcalcification outside a mass',
+    'Microcalcification within a mass',
+    'Architectural distortion',
+    'Asymmetric density'
+  ]
+
+  // Use finding from set if available
+  let abnormalityType = faker.helpers.arrayElement(abnormalityTypes)
+  if (breastData?.finding) {
+    const findingMap = {
+      'mass': 'Mass well-defined',
+      'calcification': 'Microcalcification outside a mass',
+      'distortion': 'Architectural distortion',
+      'lymph-nodes': 'Asymmetric density',
+      'asymmetric-density': 'Asymmetric density'
+    }
+    abnormalityType = findingMap[breastData.finding] || abnormalityType
+  }
+
+  // Generate random positions for both views (0-1 format, 3 decimal places)
+  // Keep positions in a realistic range (avoiding edges)
+  const randomPos = () => Math.round((0.2 + Math.random() * 0.6) * 1000) / 1000
+
+  const viewKeys = side === 'right' ? ['rmlo', 'rcc'] : ['lmlo', 'lcc']
+  const positions = {}
+  viewKeys.forEach(view => {
+    positions[view] = { x: randomPos(), y: randomPos() }
+  })
+
+  return {
+    id: generateId(),
+    side,
+    abnormalityType: [abnormalityType],
+    levelOfConcern: faker.helpers.arrayElement(['3', '4', '5']),
+    positions,
+    comment: ''
+  }
+}
 
 /**
  * Generate sample image reading data to simulate first and second reads
@@ -61,13 +361,6 @@ const generateReadingData = (events, users) => {
     `Found ${clinics.length} clinics with completed events in the last 30 days`
   )
 
-  // Define read results with appropriate weights
-  const readResults = {
-    normal: 0.7, // 70% normal
-    technical_recall: 0.1, // 10% technical recall
-    recall_for_assessment: 0.2 // 20% recall for assessment
-  }
-
   // Clone the events array to avoid modifying the original
   const updatedEvents = [...events]
 
@@ -105,40 +398,43 @@ const generateReadingData = (events, users) => {
 
         // Advance time by 1 minute for each read
         baseReadTime = baseReadTime.add(1, 'minute')
-
-        // First read (by second user)
-        const firstResult = weighted.select(readResults)
         const firstReadTime = baseReadTime.toISOString()
 
-        updatedEvents[eventIndex].imageReading.reads[secondReader.id] = {
-          result: firstResult,
-          readerId: secondReader.id,
-          readerType: secondReader.role,
-          timestamp: firstReadTime
-        }
+        // First read (by second user) - aligned with image set
+        const firstRead = generateSingleRead(
+          updatedEvents[eventIndex],
+          secondReader.id,
+          secondReader.role,
+          firstReadTime,
+          { readNumber: 1 }
+        )
+        updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
+          firstRead
 
-        // Second read (by first user) - 80% chance of agreement
-        let secondResult = firstResult
-        if (Math.random() > 0.8) {
-          // Different result for disagreement
-          const otherResults = Object.keys(readResults).filter(
-            (r) => r !== firstResult
-          )
-          secondResult =
-            otherResults[Math.floor(Math.random() * otherResults.length)]
-        }
-
-        // Add 15-30 minutes for second read
+        // Second read (by first user) - 80% chance of agreement with first read
         const secondReadTime = baseReadTime
           .add(Math.floor(Math.random() * 16) + 15, 'minutes')
           .toISOString()
 
-        updatedEvents[eventIndex].imageReading.reads[firstReader.id] = {
-          result: secondResult,
-          readerId: firstReader.id,
-          readerType: firstReader.role,
-          timestamp: secondReadTime
-        }
+        // Determine second read opinion - 80% agree with first, 20% different
+        const forceSecondOpinion =
+          Math.random() > 0.8
+            ? Object.keys(TAG_TO_RESULT)
+                .map((t) => TAG_TO_RESULT[t])
+                .filter((r) => r !== firstRead.opinion)[
+                Math.floor(Math.random() * 2)
+              ]
+            : firstRead.opinion
+
+        const secondRead = generateSingleRead(
+          updatedEvents[eventIndex],
+          firstReader.id,
+          firstReader.role,
+          secondReadTime,
+          { forceOpinion: forceSecondOpinion, readNumber: 2 }
+        )
+        updatedEvents[eventIndex].imageReading.reads[firstReader.id] =
+          secondRead
 
         updatedEventIds.add(event.id)
         count++
@@ -177,17 +473,17 @@ const generateReadingData = (events, users) => {
 
       // Advance time by 1 minute for each read
       baseReadTime = baseReadTime.add(1, 'minute')
-
-      // First read (by third user)
-      const firstResult = weighted.select(readResults)
       const firstReadTime = baseReadTime.toISOString()
 
-      updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = {
-        result: firstResult,
-        readerId: thirdReader.id,
-        readerType: thirdReader.role,
-        timestamp: firstReadTime
-      }
+      // First read (by third user) - aligned with image set
+      const firstRead = generateSingleRead(
+        updatedEvents[eventIndex],
+        thirdReader.id,
+        thirdReader.role,
+        firstReadTime,
+        { readNumber: 1 }
+      )
+      updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
 
       updatedEventIds.add(event.id)
       count++
@@ -204,21 +500,21 @@ const generateReadingData = (events, users) => {
       const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
       if (eventIndex === -1) return
 
-      // Get the first read result
+      // Get the first read
       const firstRead =
         updatedEvents[eventIndex].imageReading.reads[thirdReader.id]
       if (!firstRead) return
 
-      // Second read (by second user) - 80% chance of agreement
-      let secondResult = firstRead.result
-      if (Math.random() > 0.8) {
-        // Different result for disagreement
-        const otherResults = Object.keys(readResults).filter(
-          (r) => r !== firstRead.result
-        )
-        secondResult =
-          otherResults[Math.floor(Math.random() * otherResults.length)]
-      }
+      // Second read (by second user) - 80% chance of agreement with first read
+      // Determine second read opinion - 80% agree with first, 20% different
+      const forceSecondOpinion =
+        Math.random() > 0.8
+          ? Object.keys(TAG_TO_RESULT)
+              .map((t) => TAG_TO_RESULT[t])
+              .filter((r) => r !== firstRead.opinion)[
+              Math.floor(Math.random() * 2)
+            ]
+          : firstRead.opinion
 
       // Advance time by 1-2 minutes for each read
       baseReadTime = baseReadTime.add(
@@ -227,12 +523,14 @@ const generateReadingData = (events, users) => {
       )
       const secondReadTime = baseReadTime.toISOString()
 
-      updatedEvents[eventIndex].imageReading.reads[secondReader.id] = {
-        result: secondResult,
-        readerId: secondReader.id,
-        readerType: secondReader.role,
-        timestamp: secondReadTime
-      }
+      const secondRead = generateSingleRead(
+        updatedEvents[eventIndex],
+        secondReader.id,
+        secondReader.role,
+        secondReadTime,
+        { forceOpinion: forceSecondOpinion, readNumber: 2 }
+      )
+      updatedEvents[eventIndex].imageReading.reads[secondReader.id] = secondRead
     })
 
     console.log(
@@ -265,17 +563,17 @@ const generateReadingData = (events, users) => {
 
         // Advance time by 1 minute for each read
         baseReadTime = baseReadTime.add(1, 'minute')
-
-        // First read (by first user/current user)
-        const firstResult = weighted.select(readResults)
         const firstReadTime = baseReadTime.toISOString()
 
-        updatedEvents[eventIndex].imageReading.reads[firstReader.id] = {
-          result: firstResult,
-          readerId: firstReader.id,
-          readerType: firstReader.role,
-          timestamp: firstReadTime
-        }
+        // First read (by first user/current user) - aligned with image set
+        const firstRead = generateSingleRead(
+          updatedEvents[eventIndex],
+          firstReader.id,
+          firstReader.role,
+          firstReadTime,
+          { readNumber: 1 }
+        )
+        updatedEvents[eventIndex].imageReading.reads[firstReader.id] = firstRead
 
         updatedEventIds.add(event.id)
         count++
@@ -311,17 +609,18 @@ const generateReadingData = (events, users) => {
 
         // Advance time by 1 minute for each read
         baseReadTime = baseReadTime.add(1, 'minute')
-
-        // First read (by second user)
-        const firstResult = weighted.select(readResults)
         const firstReadTime = baseReadTime.toISOString()
 
-        updatedEvents[eventIndex].imageReading.reads[secondReader.id] = {
-          result: firstResult,
-          readerId: secondReader.id,
-          readerType: secondReader.role,
-          timestamp: firstReadTime
-        }
+        // First read (by second user) - aligned with image set
+        const firstRead = generateSingleRead(
+          updatedEvents[eventIndex],
+          secondReader.id,
+          secondReader.role,
+          firstReadTime,
+          { readNumber: 1 }
+        )
+        updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
+          firstRead
 
         updatedEventIds.add(event.id)
         count++
@@ -359,17 +658,17 @@ const generateReadingData = (events, users) => {
 
         // Advance time by 1 minute for each read
         baseReadTime = baseReadTime.add(1, 'minute')
-
-        // First read (by third user)
-        const firstResult = weighted.select(readResults)
         const firstReadTime = baseReadTime.toISOString()
 
-        updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = {
-          result: firstResult,
-          readerId: thirdReader.id,
-          readerType: thirdReader.role,
-          timestamp: firstReadTime
-        }
+        // First read (by third user) - aligned with image set
+        const firstRead = generateSingleRead(
+          updatedEvents[eventIndex],
+          thirdReader.id,
+          thirdReader.role,
+          firstReadTime,
+          { readNumber: 1 }
+        )
+        updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
 
         updatedEventIds.add(event.id)
         count++
