@@ -93,35 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // Handle reset data in background
-  const $resetLink = document.querySelector('a[data-reset-session]')
-  if ($resetLink) {
-    $resetLink.addEventListener('click', async (e) => {
-      e.preventDefault()
-      sessionStorage.clear()
-
-      try {
-        const response = await fetch('/prototype-admin/reset-session-data', {
-          method: 'GET',
-          redirect: 'error'
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to clear data')
-        }
-
-        // Refresh the page to reflect the cleared data
-        window.location.reload()
-      } catch (error) {
-        console.error('Error clearing data:', error)
-
-        // Fall back to reset confirmation page
-        window.location.href = $resetLink.href
-      }
-    })
-  }
+  setupResetSessionLink()
 
   // Reading workflow: delay initial opinion controls to prevent premature clicks
-
   // When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
   const opinionForm = document.querySelector('[data-reading-opinion-form]')
   if (opinionForm) {
@@ -136,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const batchId = opinionForm.dataset.batchId || 'no-batch'
           const todayKey = new Date().toISOString().slice(0, 10)
           const unlockKey = `readingOpinionUnlocked:${todayKey}:${batchId}:${eventId}`
+
           if (!sessionStorage.getItem(unlockKey)) {
             sessionStorage.setItem(unlockKey, 'true')
             opinionForm.classList.add('app-reading-opinion--locked')
@@ -154,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
               return true
             })
-
             const linkControls = Array.from(
               opinionForm.querySelectorAll('.app-button-link')
             ).filter((control) => control.tagName.toLowerCase() === 'a')
@@ -196,19 +170,50 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-
-  // Reading workflow: auto-dismiss temporary opinion banner
-  const opinionBanner = document.querySelector('[data-reading-opinion-banner]')
-  if (opinionBanner) {
-    const delayValue = Number(opinionBanner.dataset.autoCloseDelay)
-    if (!Number.isNaN(delayValue) && delayValue > 0) {
-      const fadeDurationMs = 200
-      setTimeout(() => {
-        opinionBanner.classList.add('app-reading-opinion-banner--fade-out')
-        setTimeout(() => {
-          opinionBanner.remove()
-        }, fadeDurationMs)
-      }, delayValue)
-    }
-  }
 })
+
+function setupResetSessionLink() {
+  if (window.resetSessionListenerAdded) {
+    return
+  }
+
+  window.resetSessionListenerAdded = true
+
+  document.addEventListener('click', async (e) => {
+    const resetLink = e.target.closest('a[data-reset-session]')
+    if (!resetLink) {
+      return
+    }
+
+    e.preventDefault()
+
+    try {
+      const returnPage = `${window.location.pathname}${window.location.search}`
+      const response = await fetch('/prototype-admin/reset-session-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `returnPage=${encodeURIComponent(returnPage)}`,
+        redirect: 'follow'
+      })
+
+      if (response.redirected) {
+        window.location.href = response.url
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to clear data')
+      }
+
+      // Refresh the page to reflect the cleared data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error clearing data:', error)
+
+      // Fall back to reset confirmation page
+      window.location.href = resetLink.href
+    }
+  })
+}

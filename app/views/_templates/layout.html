@@ -19,14 +19,14 @@
 {%- from '_components/button-menu/macro.njk' import buttonMenu %}
 {%- from '_components/summary-card/macro.njk' import appSummaryCard %}
 {%- from '_components/summary-list/macro.njk' import appSummaryListRow %}
-{%- from '_components/summary-list/macro.njk' import appSummaryList as summaryList %}
+{%- from '_components/summary-list/macro.njk' import appSummaryList %}
 {%- from '_components/status-bar/macro.njk' import appStatusBar %}
 {%- from "_components/stepper-input/macro.njk" import appStepperInput -%}
 {%- from "_components/environment/macro.njk" import appEnvironment -%}
 
 {% block head %}
   <!-- Add your custom CSS or Sass in /app/assets/sass/main.scss -->
-  <link href="/css/main.css" rel="stylesheet">
+  <link href="/assets/sass/main.css" rel="stylesheet">
 {% endblock %}
 
 <!-- Edit the header -->
@@ -70,11 +70,7 @@
 {% endblock %}
 
 {% block bodyEnd %}
-  <script src="/nhsuk-frontend/nhsuk-frontend.min.js" type="module"></script>
-  <script type="module">
-    import { initAll } from '/nhsuk-frontend/nhsuk-frontend.min.js'
-    initAll()
-  </script>
+  {{ super() }}
   {% block scripts %}
     <!-- Custom JavaScript files can be added to this file -->
     {% include "_includes/scripts.html" %}

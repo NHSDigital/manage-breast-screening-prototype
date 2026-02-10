@@ -8,7 +8,7 @@ module.exports = {
   serviceName: 'Manage breast screening',
 
   // Port to run nodemon on locally
-  port: 2000,
+  port: 3000,
 
   // Automatically stores form data, and send to all views
   useAutoStoreData: 'true',

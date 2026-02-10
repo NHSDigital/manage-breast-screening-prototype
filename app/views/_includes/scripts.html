@@ -1,18 +1,15 @@
-<script src="/js/main.js"></script>
-{% if useAutoStoreData %}
-  <script src="/js/auto-store-data.js"></script>
-{% endif %}
+<script type="module" src="/assets/javascript/main.js"></script>
 
 <!-- Add any custom scripts -->
-{% if currentUrl.indexOf("/prototype-admin/") === -1 %}
-  <script src="/js/custom-elements/is-sticky.js"></script>
-  <script src="/js/button-menu.js"></script>
-  <script src="/js/modal.js"></script>
-  <script src="/js/scroll-to-section.js"></script>
-  <script src="/js/expanded-state-tracker.js"></script>
-  <script src="/js/expandable-sections.js"></script>
-  <script src="/js/stepper-input.js"></script>
-  <script src="/js/mammogram-channel.js"></script>
+{% if currentPage.indexOf("/prototype-admin/") === -1 %}
+  <script type="module" src="/assets/javascript/is-sticky.js"></script>
+  <script type="module" src="/assets/javascript/button-menu.js"></script>
+  <script type="module" src="/assets/javascript/modal.js"></script>
+  <script type="module" src="/assets/javascript/scroll-to-section.js"></script>
+  <script type="module" src="/assets/javascript/expanded-state-tracker.js"></script>
+  <script type="module" src="/assets/javascript/expandable-sections.js"></script>
+  <script type="module" src="/assets/javascript/stepper-input.js"></script>
+  <script type="module" src="/assets/javascript/mammogram-channel.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {

@@ -17,7 +17,7 @@
     existingFeatures: {{ breastFeatures | dump | safe }} || []
   }
   </script>
-  <script src="/js/breast-features.js"></script>
+  <script type="module" src="/assets/javascript/breast-features.js"></script>
 
   {# div with hardcoded max-width, left aligned #}
   <div class="nhsuk-grid-row nhsuk-u-margin-bottom-3">
@@ -59,7 +59,7 @@
     {{ button({
       text: "Add a feature" if not hasBreastFeatures else "View or edit breast features",
       href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-      classes: "nhsuk-button--secondary app-button--small"
+      classes: "nhsuk-button--secondary nhsuk-button--small"
     }) }}
   </div>
 {% endif %}

@@ -80,8 +80,8 @@
     {{ button({
       text: addButtonText,
       id: "addBtn",
+      type: "button",
       attributes: {
-        type: "button",
         "data-action": "add"
       }
     }) }}
@@ -89,20 +89,20 @@
     {{ button({
       text: "Cancel",
       classes: "nhsuk-button--secondary",
+      type: "button",
       attributes: {
-       type: "button",
-       "data-action": "cancel"
-       }
+        "data-action": "cancel"
+      }
     }) }}
 
     {% if showRemoveButton %}
     {{ button({
       text: "Remove",
       classes: "nhsuk-button--warning",
+      type: "button",
       attributes: {
-       type: "button",
-       "data-action": "remove"
-       }
+        "data-action": "remove"
+      }
     }) }}
     {% endif %}
   </div>
