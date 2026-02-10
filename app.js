@@ -14,7 +14,7 @@ const port = parseInt(process.env.PORT || config.port, 10) || 2000
 const viewsPath = [
   'app/views/',
   'app/views/_templates/',
-  'app/views/_includes'
+  'app/views/_includes/'
 ]
 
 const entryPoints = [
@@ -36,12 +36,11 @@ async function init() {
   })
 
   // Temporary: expose filters as globals until kit supports globals directly
-  const registeredFilters = filters(prototype.nunjucks)
-  Object.entries(registeredFilters).forEach(([name, fn]) => {
-    prototype.nunjucks.addGlobal(name, fn)
-  })
+  for (const [name, global] of Object.entries(filters(prototype.nunjucks))) {
+    prototype.nunjucks.addGlobal(name, global)
+  }
 
-  prototype.start(port)
+  prototype.start(config.port)
 }
 
 init()
