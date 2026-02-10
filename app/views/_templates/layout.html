@@ -70,11 +70,11 @@
 {% endblock %}
 
 {% block bodyEnd %}
+  {{ super() }}
   {% block scripts %}
     <!-- Custom JavaScript files can be added to this file -->
     {% include "_includes/scripts.html" %}
     <!-- For adding page specific JavaScript -->
     {% block pageScripts %}{% endblock %}
   {% endblock %}
-  {{ super() }}
 {% endblock %}
