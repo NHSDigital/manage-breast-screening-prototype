@@ -6,14 +6,11 @@ $app-dark-mode-background-secondary: nhsuk-tint($app-dark-mode-background, 10%);
 $app-dark-mode-white: #cfcfcf;
 $app-dark-mode-text-colour: $app-dark-mode-white;
 $app-dark-mode-text-colour-secondary: nhsuk-shade($app-dark-mode-text-colour, 30%);
+$app-dark-mode-surface: #161616;
+$app-dark-mode-border: $app-dark-mode-white;
+$app-dark-mode-banner-border: #015eb8;
 
 // Links
-$app-dark-mode-link-colour: $app-dark-mode-blue;
-$app-dark-mode-link-hover-colour: nhsuk-tint($nhsuk-link-hover-colour, 50%);
-$app-dark-mode-link-active-color: nhsuk-shade($app-dark-mode-link-colour, 20%);
-$app-dark-mode-link-visited-colour: nhsuk-tint($nhsuk-link-visited-colour, 50%);
-
-// Paul's colours
 $app-dark-mode-link-colour: #3892e0;
 $app-dark-mode-link-hover-colour: #ffeb3b;
 $app-dark-mode-link-active-colour: #000;
@@ -35,7 +32,7 @@ $app-dark-mode-link-visited-colour: #d055a5;
 }
 
 @mixin app-dark-mode-link-style-default {
-  color: $app-dark-mode-blue;
+  color: $app-dark-mode-link-colour;
 
   &:visited {
     color: $app-dark-mode-link-visited-colour;
@@ -177,19 +174,19 @@ $app-dark-mode-link-visited-colour: #d055a5;
   }
 
   .nhsuk-button--secondary {
-    box-shadow: 0 4px 0 #3892e0;
-    color: #3892e0;
+    box-shadow: 0 4px 0 $app-dark-mode-link-colour;
+    color: $app-dark-mode-link-colour;
 
     &:link,
     &:visited,
     &:active {
-      color: #3892e0;
+      color: $app-dark-mode-link-colour;
     }
 
     &:hover {
-      background-color: #161616;
-      box-shadow: 0 4px 0 #3892e0;
-      color: #3892e0;
+      background-color: $app-dark-mode-surface;
+      box-shadow: 0 4px 0 $app-dark-mode-link-colour;
+      color: $app-dark-mode-link-colour;
     }
   }
 
@@ -220,8 +217,8 @@ $app-dark-mode-link-visited-colour: #d055a5;
   }
   // Component overrides
   .nhsuk-card {
-    background: #161616;
-    border: 1px solid #cfcfcf;
+    background: $app-dark-mode-surface;
+    border: 1px solid $app-dark-mode-border;
     color: $app-dark-mode-text-colour;
 
     .nhsuk-card__heading--feature {
@@ -232,7 +229,7 @@ $app-dark-mode-link-visited-colour: #d055a5;
 
   .nhsuk-footer,
   .nhsuk-footer-container {
-    background: #161616;
+    background: $app-dark-mode-surface;
     color: $app-dark-mode-text-colour;
 
     .nhsuk-footer__list-item-link,
@@ -281,16 +278,16 @@ $app-dark-mode-link-visited-colour: #d055a5;
   }
 
   .app-reading-opinion-banner {
-    background: #161616;
-    border: 2px solid #015eb8;
-    filter: drop-shadow(2px 3px 3px #161616);
+    background: $app-dark-mode-surface;
+    border: 2px solid $app-dark-mode-banner-border;
+    filter: drop-shadow(2px 3px 3px $app-dark-mode-surface);
   }
 
   .app-reading-opinion-banner__link,
   .app-reading-opinion-banner__link:visited,
   .app-reading-opinion-banner__link:hover,
   .app-reading-opinion-banner__link:focus {
-    color: #3892e0;
+    color: $app-dark-mode-link-colour;
   }
 }
 
