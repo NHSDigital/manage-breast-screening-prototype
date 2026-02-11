@@ -87,6 +87,10 @@
       {
         href: "javascript:window.MammogramChannel.openViewer()",
         text: "Open PACS viewer"
+      },
+      {
+        href: "?settings[darkMode]=" ~ ('true' if data.settings.darkMode !== 'true' else 'false') ~ "&clearQuery=true",
+        text: "Toggle dark mode"
       }
     ] %}
   {% endif %}
