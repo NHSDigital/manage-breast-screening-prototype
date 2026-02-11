@@ -58,7 +58,7 @@
             {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Right breast
           </legend>
           
-          {% if data.settings.reading.mammogramViewOrder == 'mlo-first' %}
+          {% if data.settings.mammogramViewOrder == 'mlo-first' %}
             {{ appStepperInput({
               label: {
                 text: "RMLO"
@@ -138,7 +138,7 @@
             {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Left breast
           </legend>
           
-          {% if data.settings.reading.mammogramViewOrder == 'mlo-first' %}
+          {% if data.settings.mammogramViewOrder == 'mlo-first' %}
             {{ appStepperInput({
               label: {
                 text: "LMLO"

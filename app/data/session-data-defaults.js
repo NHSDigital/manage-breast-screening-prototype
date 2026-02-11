@@ -63,6 +63,7 @@ const defaultSettings = {
   darkMode: 'false',
   debugMode: 'false',
   showEnvironmentBanner: 'true',
+  mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
@@ -75,8 +76,7 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    secondReaderComparison: 'early', // 'early' | 'late' | 'off'
-    mammogramViewOrder: config.reading.mammogramViewOrder // 'cc-first' | 'mlo-first'
+    secondReaderComparison: 'early' // 'early' | 'late' | 'off'
   }
 }
 
