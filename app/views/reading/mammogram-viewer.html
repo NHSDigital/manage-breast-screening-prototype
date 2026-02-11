@@ -211,6 +211,37 @@
       border-radius: 4px;
     }
 
+    .viewer-zoom__close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background-color: rgba(80, 80, 80, 0.9);
+      color: #fff;
+      border: 1px solid #777;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    .viewer-zoom__close:hover {
+      background-color: rgba(100, 100, 100, 1);
+      border-color: #999;
+    }
+
+    .viewer-zoom__hint {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #aaa;
+      border-radius: 4px;
+    }
+
     .viewer-debug {
       position: fixed;
       bottom: 32px;
@@ -331,17 +362,26 @@
     }
 
     .viewer-additional-modal__close {
-      background-color: #333;
+      background-color: rgba(80, 80, 80, 0.9);
       color: #fff;
-      border: 1px solid #555;
-      padding: 8px 16px;
+      border: 1px solid #777;
+      padding: 10px 24px;
       font-size: 14px;
       cursor: pointer;
       border-radius: 4px;
     }
 
     .viewer-additional-modal__close:hover {
-      background-color: #444;
+      background-color: rgba(100, 100, 100, 1);
+      border-color: #999;
+    }
+
+    .viewer-additional-modal__hint {
+      text-align: center;
+      padding: 12px;
+      color: #888;
+      font-size: 13px;
+      flex-shrink: 0;
     }
 
     .viewer-additional-modal__content {
@@ -592,9 +632,10 @@
       modalEl.innerHTML = `
         <div class="viewer-additional-modal__header">
           <div class="viewer-additional-modal__title">All images (including retakes)</div>
-          <button class="viewer-additional-modal__close" id="close-additional-modal">Close</button>
+          <button class="viewer-additional-modal__close" id="close-additional-modal">Back to default view</button>
         </div>
         <div class="viewer-additional-modal__content">${contentHtml}</div>
+        <div class="viewer-additional-modal__hint">Press Escape or click the button above to return to default view</div>
       `
 
       document.body.appendChild(modalEl)
@@ -937,27 +978,40 @@
       const zoomEl = document.createElement('div')
       zoomEl.className = 'viewer-zoom'
       
+      const closeZoom = () => {
+        document.body.removeChild(zoomEl)
+        document.removeEventListener('keydown', handleKeydown)
+      }
+      
       const updateZoomContent = () => {
         const img = allImages[currentIndex]
+        const navHint = allImages.length > 1 ? " · ← → to navigate" : ""
         zoomEl.innerHTML = `
           <div class="viewer-zoom__label">${img.label}</div>
+          <button class="viewer-zoom__close" type="button">Close</button>
           <img class="viewer-zoom__image" src="${img.src}" alt="${img.label}">
+          <div class="viewer-zoom__hint">Click anywhere or press Escape to close${navHint}</div>
         `
+        // Attach close button handler
+        zoomEl.querySelector('.viewer-zoom__close').addEventListener('click', (e) => {
+          e.stopPropagation()
+          closeZoom()
+        })
       }
       
       updateZoomContent()
       
-      // Close on click
-      zoomEl.addEventListener('click', () => {
-        document.body.removeChild(zoomEl)
-        document.removeEventListener('keydown', handleKeydown)
+      // Close on click (but not on close button, handled separately)
+      zoomEl.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('viewer-zoom__close')) {
+          closeZoom()
+        }
       })
       
       // Handle keyboard navigation
       const handleKeydown = (e) => {
         if (e.key === 'Escape') {
-          document.body.removeChild(zoomEl)
-          document.removeEventListener('keydown', handleKeydown)
+          closeZoom()
         } else if (e.key === 'ArrowLeft') {
           e.preventDefault()
           // Wrap to end if at start
