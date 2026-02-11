@@ -53,7 +53,7 @@ const generateViewKey = (side, view) => {
 const generateImageUrl = (side, view, accessionNumber) => {
   const sideCode = side === 'right' ? 'R' : 'L'
   const viewCode = view === 'mediolateral oblique' ? 'MLO' : 'CC'
-  return `/images/mammograms/${sideCode}-${viewCode}-${accessionNumber.replace('/', '-')}.dcm`
+  return `/assets/images/mammograms/${sideCode}-${viewCode}-${accessionNumber.replace('/', '-')}.dcm`
 }
 
 /**
