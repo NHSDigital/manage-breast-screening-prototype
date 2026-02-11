@@ -75,7 +75,8 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    secondReaderComparison: 'early' // 'early' | 'late' | 'off'
+    secondReaderComparison: 'early', // 'early' | 'late' | 'off'
+    mammogramViewOrder: config.reading.mammogramViewOrder // 'cc-first' | 'mlo-first'
   }
 }
 

@@ -27,7 +27,7 @@
   </h1>
 
   {# Standard views - order matches config setting #}
-  {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+  {% if data.settings.reading.mammogramViewOrder == 'mlo-first' %}
     {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
   {% else %}
     {% set views = ['RCC', 'LCC', 'RMLO', 'LMLO'] %}

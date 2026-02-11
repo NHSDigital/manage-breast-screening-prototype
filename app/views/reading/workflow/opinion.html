@@ -34,7 +34,7 @@
 
   {# View order from config - determines if CC or MLO comes first #}
   {# Right breast views on left, left breast views on right #}
-  {% if data.config.reading.mammogramViewOrder == 'mlo-first' %}
+  {% if data.settings.reading.mammogramViewOrder == 'mlo-first' %}
     {% set viewOrder = [
       { key: 'rmlo', label: 'RMLO', side: 'right' },
       { key: 'lmlo', label: 'LMLO', side: 'left' },

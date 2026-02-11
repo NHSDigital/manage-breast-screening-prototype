@@ -478,6 +478,9 @@
     // Mammogram viewer - listens for BroadcastChannel messages
     const CHANNEL_NAME = "mammogram-viewer"
 
+    // View order setting rendered from Nunjucks
+    const VIEW_ORDER = "{{ data.settings.reading.mammogramViewOrder or 'cc-first' }}"
+
     let currentEventId = null
     let channel = null
 
@@ -500,6 +503,12 @@
       lcc: document.getElementById("missing-lcc"),
       rmlo: document.getElementById("missing-rmlo"),
       lmlo: document.getElementById("missing-lmlo")
+    }
+    const panelEls = {
+      rcc: document.getElementById("panel-rcc"),
+      lcc: document.getElementById("panel-lcc"),
+      rmlo: document.getElementById("panel-rmlo"),
+      lmlo: document.getElementById("panel-lmlo")
     }
 
     // Debug elements
@@ -740,6 +749,26 @@
     }
 
     /**
+     * Set the view order for mammogram panels
+     * Uses CSS order property to reorder grid items
+     */
+    const setViewOrder = (viewOrder) => {
+      if (viewOrder === "mlo-first") {
+        // MLO on top, CC on bottom
+        panelEls.rmlo.style.order = 1
+        panelEls.lmlo.style.order = 2
+        panelEls.rcc.style.order = 3
+        panelEls.lcc.style.order = 4
+      } else {
+        // CC on top (default), MLO on bottom
+        panelEls.rcc.style.order = 1
+        panelEls.lcc.style.order = 2
+        panelEls.rmlo.style.order = 3
+        panelEls.lmlo.style.order = 4
+      }
+    }
+
+    /**
      * Show mammograms for a participant
      */
     const showMammograms = (data) => {
@@ -748,6 +777,9 @@
 
       // Clear old images immediately
       clearAllPanels()
+
+      // Set view order based on setting
+      setViewOrder(VIEW_ORDER)
 
       // Log set info to console for debugging
       console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
@@ -838,8 +870,7 @@
       
       // Order: right breast views first, then left breast views
       // Within each breast, CC first (default) or MLO first
-      // TODO: Could pass this via BroadcastChannel from parent page if needed
-      const ccFirst = true // Default to cc-first
+      const ccFirst = VIEW_ORDER !== "mlo-first"
       
       const rightViews = ccFirst ? ["rcc", "rmlo"] : ["rmlo", "rcc"]
       const leftViews = ccFirst ? ["lcc", "lmlo"] : ["lmlo", "lcc"]
