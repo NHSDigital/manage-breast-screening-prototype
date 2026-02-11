@@ -211,6 +211,37 @@
       border-radius: 4px;
     }
 
+    .viewer-zoom__close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background-color: rgba(80, 80, 80, 0.9);
+      color: #fff;
+      border: 1px solid #777;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    .viewer-zoom__close:hover {
+      background-color: rgba(100, 100, 100, 1);
+      border-color: #999;
+    }
+
+    .viewer-zoom__hint {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #aaa;
+      border-radius: 4px;
+    }
+
     .viewer-debug {
       position: fixed;
       bottom: 32px;
@@ -331,17 +362,26 @@
     }
 
     .viewer-additional-modal__close {
-      background-color: #333;
+      background-color: rgba(80, 80, 80, 0.9);
       color: #fff;
-      border: 1px solid #555;
-      padding: 8px 16px;
+      border: 1px solid #777;
+      padding: 10px 24px;
       font-size: 14px;
       cursor: pointer;
       border-radius: 4px;
     }
 
     .viewer-additional-modal__close:hover {
-      background-color: #444;
+      background-color: rgba(100, 100, 100, 1);
+      border-color: #999;
+    }
+
+    .viewer-additional-modal__hint {
+      text-align: center;
+      padding: 12px;
+      color: #888;
+      font-size: 13px;
+      flex-shrink: 0;
     }
 
     .viewer-additional-modal__content {
@@ -478,6 +518,9 @@
     // Mammogram viewer - listens for BroadcastChannel messages
     const CHANNEL_NAME = "mammogram-viewer"
 
+    // View order setting rendered from Nunjucks
+    const VIEW_ORDER = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
+
     let currentEventId = null
     let channel = null
 
@@ -501,6 +544,12 @@
       rmlo: document.getElementById("missing-rmlo"),
       lmlo: document.getElementById("missing-lmlo")
     }
+    const panelEls = {
+      rcc: document.getElementById("panel-rcc"),
+      lcc: document.getElementById("panel-lcc"),
+      rmlo: document.getElementById("panel-rmlo"),
+      lmlo: document.getElementById("panel-lmlo")
+    }
 
     // Debug elements
     const debugEl = document.getElementById("viewer-debug")
@@ -516,6 +565,16 @@
 
     // Current set info for debug display
     let currentSetInfo = null
+
+    /**
+     * Close the zoom overlay if open
+     */
+    const closeZoomOverlay = () => {
+      const zoomEl = document.querySelector(".viewer-zoom")
+      if (zoomEl) {
+        zoomEl.remove()
+      }
+    }
 
     /**
      * Close the additional images modal if open
@@ -573,9 +632,10 @@
       modalEl.innerHTML = `
         <div class="viewer-additional-modal__header">
           <div class="viewer-additional-modal__title">All images (including retakes)</div>
-          <button class="viewer-additional-modal__close" id="close-additional-modal">Close</button>
+          <button class="viewer-additional-modal__close" id="close-additional-modal">Back to default view</button>
         </div>
         <div class="viewer-additional-modal__content">${contentHtml}</div>
+        <div class="viewer-additional-modal__hint">Press Escape or click the button above to return to default view</div>
       `
 
       document.body.appendChild(modalEl)
@@ -660,6 +720,10 @@
      * Show the placeholder (no participant loaded)
      */
     const showPlaceholder = () => {
+      // Close any open overlays
+      closeZoomOverlay()
+      closeAdditionalModal()
+
       headerEl.style.display = "none"
       gridEl.style.display = "none"
       placeholderEl.style.display = "flex"
@@ -674,6 +738,10 @@
      * Show loading state (navigating to next case)
      */
     const showLoading = () => {
+      // Close any open overlays
+      closeZoomOverlay()
+      closeAdditionalModal()
+
       headerEl.style.display = "none"
       gridEl.style.display = "none"
       placeholderEl.style.display = "none"
@@ -740,14 +808,38 @@
     }
 
     /**
+     * Set the view order for mammogram panels
+     * Uses CSS order property to reorder grid items
+     */
+    const setViewOrder = (viewOrder) => {
+      if (viewOrder === "mlo-first") {
+        // MLO on top, CC on bottom
+        panelEls.rmlo.style.order = 1
+        panelEls.lmlo.style.order = 2
+        panelEls.rcc.style.order = 3
+        panelEls.lcc.style.order = 4
+      } else {
+        // CC on top (default), MLO on bottom
+        panelEls.rcc.style.order = 1
+        panelEls.lcc.style.order = 2
+        panelEls.rmlo.style.order = 3
+        panelEls.lmlo.style.order = 4
+      }
+    }
+
+    /**
      * Show mammograms for a participant
      */
     const showMammograms = (data) => {
-      // Close any open modals from previous case
+      // Close any open overlays from previous case
+      closeZoomOverlay()
       closeAdditionalModal()
 
       // Clear old images immediately
       clearAllPanels()
+
+      // Set view order based on setting
+      setViewOrder(VIEW_ORDER)
 
       // Log set info to console for debugging
       console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
@@ -822,31 +914,151 @@
     }
 
     /**
-     * Show image in fullscreen zoom
+     * Build a flat array of all viewable images with their labels
+     * Ordered by breast: right breast first, then left breast
+     * Within each breast, respects cc-first or mlo-first preference
+     * Used for arrow key navigation in zoom mode
      */
-    const showZoom = (imageSrc, viewLabel) => {
-      const zoomEl = document.createElement('div')
-      zoomEl.className = 'viewer-zoom'
-      zoomEl.innerHTML = `
-        <div class="viewer-zoom__label">${viewLabel}</div>
-        <img class="viewer-zoom__image" src="${imageSrc}" alt="${viewLabel}">
-      `
+    const getAllViewableImages = () => {
+      const images = []
+      const viewLabels = {
+        rcc: "RCC",
+        lcc: "LCC",
+        rmlo: "RMLO",
+        lmlo: "LMLO"
+      }
       
-      // Close on click
-      zoomEl.addEventListener('click', () => {
-        document.body.removeChild(zoomEl)
-      })
+      // Order: right breast views first, then left breast views
+      // Within each breast, CC first (default) or MLO first
+      const ccFirst = VIEW_ORDER !== "mlo-first"
       
-      // Close on escape key
-      const handleEscape = (e) => {
-        if (e.key === 'Escape') {
-          document.body.removeChild(zoomEl)
-          document.removeEventListener('keydown', handleEscape)
+      const rightViews = ccFirst ? ["rcc", "rmlo"] : ["rmlo", "rcc"]
+      const leftViews = ccFirst ? ["lcc", "lmlo"] : ["lmlo", "lcc"]
+      const viewOrder = [...rightViews, ...leftViews]
+      
+      for (const view of viewOrder) {
+        const imgEl = imageEls[view]
+        if (imgEl && imgEl.src && imgEl.style.display !== "none") {
+          images.push({
+            src: imgEl.src,
+            label: viewLabels[view],
+            side: view.startsWith("r") ? "right" : "left"
+          })
         }
       }
-      document.addEventListener('keydown', handleEscape)
+      
+      return images
+    }
+    
+    /**
+     * Get index of first image for a given side (right or left)
+     */
+    const getFirstIndexForSide = (images, side) => {
+      return images.findIndex(img => img.side === side)
+    }
+
+    /**
+     * Show image in fullscreen zoom with arrow key navigation
+     * @param {string} imageSrc - The image source to show (optional, can start from index)
+     * @param {string} viewLabel - The view label (optional)
+     * @param {number} startIndex - Starting index in allImages array (optional)
+     */
+    const showZoom = (imageSrc, viewLabel, startIndex) => {
+      const allImages = getAllViewableImages()
+      if (allImages.length === 0) return
+      
+      let currentIndex
+      if (typeof startIndex === "number") {
+        currentIndex = startIndex
+      } else {
+        currentIndex = allImages.findIndex(img => img.src === imageSrc)
+        if (currentIndex === -1) currentIndex = 0
+      }
+      
+      const zoomEl = document.createElement('div')
+      zoomEl.className = 'viewer-zoom'
+      
+      const closeZoom = () => {
+        document.body.removeChild(zoomEl)
+        document.removeEventListener('keydown', handleKeydown)
+      }
+      
+      const updateZoomContent = () => {
+        const img = allImages[currentIndex]
+        const navHint = allImages.length > 1 ? " · ← → to navigate" : ""
+        zoomEl.innerHTML = `
+          <div class="viewer-zoom__label">${img.label}</div>
+          <button class="viewer-zoom__close" type="button">Close</button>
+          <img class="viewer-zoom__image" src="${img.src}" alt="${img.label}">
+          <div class="viewer-zoom__hint">Click anywhere or press Escape to close${navHint}</div>
+        `
+        // Attach close button handler
+        zoomEl.querySelector('.viewer-zoom__close').addEventListener('click', (e) => {
+          e.stopPropagation()
+          closeZoom()
+        })
+      }
+      
+      updateZoomContent()
+      
+      // Close on click (but not on close button, handled separately)
+      zoomEl.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('viewer-zoom__close')) {
+          closeZoom()
+        }
+      })
+      
+      // Handle keyboard navigation
+      const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+          closeZoom()
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          // Wrap to end if at start
+          currentIndex = currentIndex === 0 ? allImages.length - 1 : currentIndex - 1
+          updateZoomContent()
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          // Wrap to start if at end
+          currentIndex = currentIndex === allImages.length - 1 ? 0 : currentIndex + 1
+          updateZoomContent()
+        }
+      }
+      document.addEventListener('keydown', handleKeydown)
       
       document.body.appendChild(zoomEl)
+    }
+    
+    /**
+     * Setup global keyboard listener for arrow keys to open zoom when not zoomed
+     * Left arrow: start with first right breast image
+     * Right arrow: start with first left breast image
+     */
+    const setupGlobalArrowKeys = () => {
+      document.addEventListener("keydown", (e) => {
+        // Only handle if no zoom overlay is open
+        const zoomOpen = document.querySelector(".viewer-zoom")
+        if (zoomOpen) return
+        
+        // Only handle arrow keys
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return
+        
+        // Check we have images loaded
+        const allImages = getAllViewableImages()
+        if (allImages.length === 0) return
+        
+        e.preventDefault()
+        
+        if (e.key === "ArrowLeft") {
+          // Start with first right breast image
+          const rightIndex = getFirstIndexForSide(allImages, "right")
+          showZoom(null, null, rightIndex !== -1 ? rightIndex : 0)
+        } else if (e.key === "ArrowRight") {
+          // Start with first left breast image
+          const leftIndex = getFirstIndexForSide(allImages, "left")
+          showZoom(null, null, leftIndex !== -1 ? leftIndex : 0)
+        }
+      })
     }
 
     /**
@@ -884,8 +1096,38 @@
 
       // Setup zoom click handlers
       setupZoomHandlers()
+      
+      // Setup global arrow key handlers for opening zoom
+      setupGlobalArrowKeys()
+      
+      // Setup keyboard shortcut forwarding to reading page
+      setupShortcutForwarding()
 
       updateStatus("Listening for updates...")
+    }
+    
+    /**
+     * Forward keyboard shortcuts to the reading page via BroadcastChannel
+     * Allows radiologists to trigger opinion shortcuts from PACS viewer
+     */
+    const setupShortcutForwarding = () => {
+      const forwardKeys = ["n", "t", "r"]
+      
+      document.addEventListener("keydown", (e) => {
+        // Don't forward with modifier keys
+        if (e.ctrlKey || e.altKey || e.metaKey) return
+        
+        const key = e.key.toLowerCase()
+        
+        // Forward N/T/R shortcuts to reading page (works even when zoomed)
+        if (forwardKeys.includes(key) && channel) {
+          channel.postMessage({
+            type: "shortcut",
+            key: key,
+            timestamp: Date.now()
+          })
+        }
+      })
     }
 
     // Start
