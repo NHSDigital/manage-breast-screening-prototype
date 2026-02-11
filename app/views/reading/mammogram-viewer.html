@@ -822,31 +822,139 @@
     }
 
     /**
-     * Show image in fullscreen zoom
+     * Build a flat array of all viewable images with their labels
+     * Ordered by breast: right breast first, then left breast
+     * Within each breast, respects cc-first or mlo-first preference
+     * Used for arrow key navigation in zoom mode
      */
-    const showZoom = (imageSrc, viewLabel) => {
+    const getAllViewableImages = () => {
+      const images = []
+      const viewLabels = {
+        rcc: "RCC",
+        lcc: "LCC",
+        rmlo: "RMLO",
+        lmlo: "LMLO"
+      }
+      
+      // Order: right breast views first, then left breast views
+      // Within each breast, CC first (default) or MLO first
+      // TODO: Could pass this via BroadcastChannel from parent page if needed
+      const ccFirst = true // Default to cc-first
+      
+      const rightViews = ccFirst ? ["rcc", "rmlo"] : ["rmlo", "rcc"]
+      const leftViews = ccFirst ? ["lcc", "lmlo"] : ["lmlo", "lcc"]
+      const viewOrder = [...rightViews, ...leftViews]
+      
+      for (const view of viewOrder) {
+        const imgEl = imageEls[view]
+        if (imgEl && imgEl.src && imgEl.style.display !== "none") {
+          images.push({
+            src: imgEl.src,
+            label: viewLabels[view],
+            side: view.startsWith("r") ? "right" : "left"
+          })
+        }
+      }
+      
+      return images
+    }
+    
+    /**
+     * Get index of first image for a given side (right or left)
+     */
+    const getFirstIndexForSide = (images, side) => {
+      return images.findIndex(img => img.side === side)
+    }
+
+    /**
+     * Show image in fullscreen zoom with arrow key navigation
+     * @param {string} imageSrc - The image source to show (optional, can start from index)
+     * @param {string} viewLabel - The view label (optional)
+     * @param {number} startIndex - Starting index in allImages array (optional)
+     */
+    const showZoom = (imageSrc, viewLabel, startIndex) => {
+      const allImages = getAllViewableImages()
+      if (allImages.length === 0) return
+      
+      let currentIndex
+      if (typeof startIndex === "number") {
+        currentIndex = startIndex
+      } else {
+        currentIndex = allImages.findIndex(img => img.src === imageSrc)
+        if (currentIndex === -1) currentIndex = 0
+      }
+      
       const zoomEl = document.createElement('div')
       zoomEl.className = 'viewer-zoom'
-      zoomEl.innerHTML = `
-        <div class="viewer-zoom__label">${viewLabel}</div>
-        <img class="viewer-zoom__image" src="${imageSrc}" alt="${viewLabel}">
-      `
+      
+      const updateZoomContent = () => {
+        const img = allImages[currentIndex]
+        zoomEl.innerHTML = `
+          <div class="viewer-zoom__label">${img.label}</div>
+          <img class="viewer-zoom__image" src="${img.src}" alt="${img.label}">
+        `
+      }
+      
+      updateZoomContent()
       
       // Close on click
       zoomEl.addEventListener('click', () => {
         document.body.removeChild(zoomEl)
+        document.removeEventListener('keydown', handleKeydown)
       })
       
-      // Close on escape key
-      const handleEscape = (e) => {
+      // Handle keyboard navigation
+      const handleKeydown = (e) => {
         if (e.key === 'Escape') {
           document.body.removeChild(zoomEl)
-          document.removeEventListener('keydown', handleEscape)
+          document.removeEventListener('keydown', handleKeydown)
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          // Wrap to end if at start
+          currentIndex = currentIndex === 0 ? allImages.length - 1 : currentIndex - 1
+          updateZoomContent()
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          // Wrap to start if at end
+          currentIndex = currentIndex === allImages.length - 1 ? 0 : currentIndex + 1
+          updateZoomContent()
         }
       }
-      document.addEventListener('keydown', handleEscape)
+      document.addEventListener('keydown', handleKeydown)
       
       document.body.appendChild(zoomEl)
+    }
+    
+    /**
+     * Setup global keyboard listener for arrow keys to open zoom when not zoomed
+     * Left arrow: start with first right breast image
+     * Right arrow: start with first left breast image
+     */
+    const setupGlobalArrowKeys = () => {
+      document.addEventListener("keydown", (e) => {
+        // Only handle if no zoom overlay is open
+        const zoomOpen = document.querySelector(".viewer-zoom")
+        if (zoomOpen) return
+        
+        // Only handle arrow keys
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return
+        
+        // Check we have images loaded
+        const allImages = getAllViewableImages()
+        if (allImages.length === 0) return
+        
+        e.preventDefault()
+        
+        if (e.key === "ArrowLeft") {
+          // Start with first right breast image
+          const rightIndex = getFirstIndexForSide(allImages, "right")
+          showZoom(null, null, rightIndex !== -1 ? rightIndex : 0)
+        } else if (e.key === "ArrowRight") {
+          // Start with first left breast image
+          const leftIndex = getFirstIndexForSide(allImages, "left")
+          showZoom(null, null, leftIndex !== -1 ? leftIndex : 0)
+        }
+      })
     }
 
     /**
@@ -884,8 +992,38 @@
 
       // Setup zoom click handlers
       setupZoomHandlers()
+      
+      // Setup global arrow key handlers for opening zoom
+      setupGlobalArrowKeys()
+      
+      // Setup keyboard shortcut forwarding to reading page
+      setupShortcutForwarding()
 
       updateStatus("Listening for updates...")
+    }
+    
+    /**
+     * Forward keyboard shortcuts to the reading page via BroadcastChannel
+     * Allows radiologists to trigger opinion shortcuts from PACS viewer
+     */
+    const setupShortcutForwarding = () => {
+      const forwardKeys = ["n", "t", "r"]
+      
+      document.addEventListener("keydown", (e) => {
+        // Don't forward with modifier keys
+        if (e.ctrlKey || e.altKey || e.metaKey) return
+        
+        const key = e.key.toLowerCase()
+        
+        // Forward N/T/R shortcuts to reading page (works even when zoomed)
+        if (forwardKeys.includes(key) && channel) {
+          channel.postMessage({
+            type: "shortcut",
+            key: key,
+            timestamp: Date.now()
+          })
+        }
+      })
     }
 
     // Start

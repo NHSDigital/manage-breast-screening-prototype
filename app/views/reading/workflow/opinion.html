@@ -214,8 +214,9 @@
             items: [
               {
                 value: "normal",
-                text: "Normal",
-                checked: currentOpinion == 'normal' and not existingRead.normalDetails
+                html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+                checked: currentOpinion == 'normal' and not existingRead.normalDetails,
+                attributes: { "data-shortcut-radio": "n" }
               },
               {
                 value: "normal_with_details",
@@ -224,11 +225,13 @@
               },
               {
                 value: "technical_recall",
-                text: "Technical recall"
+                html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+                attributes: { "data-shortcut-radio": "t" }
               },
               {
                 value: "recall_for_assessment",
-                text: "Recall for assessment"
+                html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+                attributes: { "data-shortcut-radio": "r" }
               }
             ],
             value: currentOpinion
@@ -245,17 +248,19 @@
           <div class="nhsuk-u-margin-bottom-4">
             {% if hasSymptoms %}
               {{ button({
-                text: "Normal, and add details",
+                html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
                 value: "normal_with_details",
                 name: "imageReadingTemp[opinion]",
-                classes: "app-button-full-width nhsuk-u-margin-bottom-3"
+                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+                attributes: { "data-shortcut": "n" }
               }) }}
             {% else %}
               {{ button({
-                text: "Normal",
+                html: "Normal <span class='app-shortcut-hint'>(N)</span>",
                 value: "normal",
                 name: "imageReadingTemp[opinion]",
-                classes: "app-button-full-width nhsuk-u-margin-bottom-3"
+                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+                attributes: { "data-shortcut": "n" }
               }) }}
 
               <p class="nhsuk-u-margin-bottom-4">
@@ -268,19 +273,21 @@
 
           <div class="nhsuk-u-margin-bottom-4">
             {{ button({
-              text: "Technical recall",
+              html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
               value: "technical_recall",
               name: "imageReadingTemp[opinion]",
-              classes: "nhsuk-button--secondary app-button-full-width nhsuk-u-margin-bottom-3"
+              classes: "nhsuk-button--secondary app-button-full-width nhsuk-u-margin-bottom-3",
+              attributes: { "data-shortcut": "t" }
             }) }}
           </div>
 
           <div class="nhsuk-u-margin-bottom-4">
             {{ button({
-              text: "Recall for assessment",
+              html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
               value: "recall_for_assessment",
               name: "imageReadingTemp[opinion]",
-              classes: "nhsuk-button--warning app-button-full-width"
+              classes: "nhsuk-button--warning app-button-full-width",
+              attributes: { "data-shortcut": "r" }
             }) }}
           </div>
 

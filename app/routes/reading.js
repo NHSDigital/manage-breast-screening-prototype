@@ -918,9 +918,7 @@ module.exports = (router) => {
 
       // Redirect to next unread event or batch view if all done
       if (nextUnreadEvent) {
-        res.redirect(
-          `/reading/batch/${batchId}/events/${nextUnreadEvent.id}`
-        )
+        res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
       } else {
         res.redirect(`/reading/batch/${batchId}`)
       }
