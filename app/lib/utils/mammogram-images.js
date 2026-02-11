@@ -499,7 +499,7 @@ const getImageLibraryPath = (imageId, source = 'diagrams') => {
   if (!sourceFolder) return null
 
   // Image library items are stored in an 'image-library' subfolder
-  return `/images/${sourceFolder}/image-library/${imageId}.png`
+  return `/assets/images/${sourceFolder}/image-library/${imageId}.png`
 }
 
 /**
@@ -576,7 +576,7 @@ const getImagePaths = (setId, source = 'diagrams') => {
   }
 
   // Standard set - images stored in set folder
-  const basePath = `/images/${sourceFolder}/${setId}`
+  const basePath = `/assets/images/${sourceFolder}/${setId}`
 
   // Try to detect file extension by checking what exists
   const setFolderPath = path.join(ASSETS_PATH, sourceFolder, setId)
