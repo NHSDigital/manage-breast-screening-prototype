@@ -527,6 +527,16 @@
     let currentSetInfo = null
 
     /**
+     * Close the zoom overlay if open
+     */
+    const closeZoomOverlay = () => {
+      const zoomEl = document.querySelector(".viewer-zoom")
+      if (zoomEl) {
+        zoomEl.remove()
+      }
+    }
+
+    /**
      * Close the additional images modal if open
      */
     const closeAdditionalModal = () => {
@@ -669,6 +679,10 @@
      * Show the placeholder (no participant loaded)
      */
     const showPlaceholder = () => {
+      // Close any open overlays
+      closeZoomOverlay()
+      closeAdditionalModal()
+
       headerEl.style.display = "none"
       gridEl.style.display = "none"
       placeholderEl.style.display = "flex"
@@ -683,6 +697,10 @@
      * Show loading state (navigating to next case)
      */
     const showLoading = () => {
+      // Close any open overlays
+      closeZoomOverlay()
+      closeAdditionalModal()
+
       headerEl.style.display = "none"
       gridEl.style.display = "none"
       placeholderEl.style.display = "none"
@@ -772,7 +790,8 @@
      * Show mammograms for a participant
      */
     const showMammograms = (data) => {
-      // Close any open modals from previous case
+      // Close any open overlays from previous case
+      closeZoomOverlay()
       closeAdditionalModal()
 
       // Clear old images immediately
