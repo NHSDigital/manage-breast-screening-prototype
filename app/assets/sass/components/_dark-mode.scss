@@ -215,6 +215,34 @@ $app-dark-mode-link-visited-colour: #d055a5;
     background: $app-dark-mode-background-secondary;
     color: $app-dark-mode-text-colour;
   }
+
+  .nhsuk-tag--red {
+    background-color: $app-tag--red-dark-background;
+    border-color: $app-tag--red-dark-border;
+    color: $app-tag--red-dark-text;
+  }
+
+  .nhsuk-tag--green {
+    background-color: $app-tag--green-dark-background;
+    border-color: $app-tag--green-dark-border;
+    color: $app-tag--green-dark-text;
+  }
+
+  .nhsuk-tag--orange {
+    background-color: $app-tag--orange-dark-background;
+    border-color: $app-tag--orange-dark-border;
+    color: $app-tag--orange-dark-text;
+  }
+
+  .nhsuk-tag--blue {
+    background-color: $app-tag--blue-dark-background;
+    border-color: $app-tag--blue-dark-border;
+    color: $app-tag--blue-dark-text;
+  }
+
+  .nhsuk-error-summary__title {
+    color: $app-dark-mode-text-colour;
+  }
   // Component overrides
   .nhsuk-card {
     background: $app-dark-mode-surface;
