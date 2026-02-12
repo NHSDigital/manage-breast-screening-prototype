@@ -16,6 +16,20 @@ $app-dark-mode-link-hover-colour: #ffeb3b;
 $app-dark-mode-link-active-colour: #000;
 $app-dark-mode-link-visited-colour: #d055a5;
 
+// Tags
+$nhsuk-tag--red-dark-background: nhsuk-shade(nhsuk-colour("red"), 50%);
+$nhsuk-tag--red-dark-border: nhsuk-tint(nhsuk-colour("red"), 80%);
+$nhsuk-tag--red-dark-text: nhsuk-tint(nhsuk-colour("red"), 80%);
+$nhsuk-tag--green-dark-background: nhsuk-shade(nhsuk-colour("green"), 40%);
+$nhsuk-tag--green-dark-border: nhsuk-tint(nhsuk-colour("green"), 80%);
+$nhsuk-tag--green-dark-text: nhsuk-tint(nhsuk-colour("green"), 80%);
+$nhsuk-tag--orange-dark-background: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
+$nhsuk-tag--orange-dark-border: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
+$nhsuk-tag--orange-dark-text: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
+$nhsuk-tag--blue-dark-background: nhsuk-shade(nhsuk-colour("blue"), 30%);
+$nhsuk-tag--blue-dark-border: nhsuk-tint(nhsuk-colour("blue"), 80%);
+$nhsuk-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
+
 @mixin app-dark-mode-focused-text {
   background-color: $nhsuk-focus-colour;
   box-shadow:
@@ -213,6 +227,34 @@ $app-dark-mode-link-visited-colour: #d055a5;
 
   .app-count {
     background: $app-dark-mode-background-secondary;
+    color: $app-dark-mode-text-colour;
+  }
+
+  .nhsuk-tag--red {
+    background-color: $nhsuk-tag--red-dark-background;
+    border-color: $nhsuk-tag--red-dark-border;
+    color: $nhsuk-tag--red-dark-text;
+  }
+
+  .nhsuk-tag--green {
+    background-color: $nhsuk-tag--green-dark-background;
+    border-color: $nhsuk-tag--green-dark-border;
+    color: $nhsuk-tag--green-dark-text;
+  }
+
+  .nhsuk-tag--orange {
+    background-color: $nhsuk-tag--orange-dark-background;
+    border-color: $nhsuk-tag--orange-dark-border;
+    color: $nhsuk-tag--orange-dark-text;
+  }
+
+  .nhsuk-tag--blue {
+    background-color: $nhsuk-tag--blue-dark-background;
+    border-color: $nhsuk-tag--blue-dark-border;
+    color: $nhsuk-tag--blue-dark-text;
+  }
+
+  .nhsuk-error-summary__title {
     color: $app-dark-mode-text-colour;
   }
   // Component overrides
