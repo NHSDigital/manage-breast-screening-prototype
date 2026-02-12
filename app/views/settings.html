@@ -121,6 +121,18 @@
       {% endif %}
     </p>
 
+    {# Mammogram view order #}
+    <p>
+      Mammogram view order:
+      {% if data.settings.mammogramViewOrder == 'cc-first' %}
+        <strong>CC first</strong> |
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[mammogramViewOrder]=mlo-first&clearQuery=true">MLO first</a>
+      {% else %}
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[mammogramViewOrder]=cc-first&clearQuery=true">CC first</a> |
+        <strong>MLO first</strong>
+      {% endif %}
+    </p>
+
     <h2>Generated data</h2>
 
     <dl class="nhsuk-summary-list">

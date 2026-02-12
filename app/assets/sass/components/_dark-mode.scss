@@ -16,20 +16,6 @@ $app-dark-mode-link-hover-colour: #ffeb3b;
 $app-dark-mode-link-active-colour: #000;
 $app-dark-mode-link-visited-colour: #d055a5;
 
-// Tags
-$app-tag--red-dark-background: nhsuk-shade(nhsuk-colour("red"), 50%);
-$app-tag--red-dark-border: nhsuk-tint(nhsuk-colour("red"), 80%);
-$app-tag--red-dark-text: nhsuk-tint(nhsuk-colour("red"), 80%);
-$app-tag--green-dark-background: nhsuk-shade(nhsuk-colour("green"), 40%);
-$app-tag--green-dark-border: nhsuk-tint(nhsuk-colour("green"), 80%);
-$app-tag--green-dark-text: nhsuk-tint(nhsuk-colour("green"), 80%);
-$app-tag--orange-dark-background: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
-$app-tag--orange-dark-border: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
-$app-tag--orange-dark-text: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
-$app-tag--blue-dark-background: nhsuk-shade(nhsuk-colour("blue"), 30%);
-$app-tag--blue-dark-border: nhsuk-tint(nhsuk-colour("blue"), 80%);
-$app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
-
 @mixin app-dark-mode-focused-text {
   background-color: $nhsuk-focus-colour;
   box-shadow:

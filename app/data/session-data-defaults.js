@@ -63,6 +63,7 @@ const defaultSettings = {
   darkMode: 'false',
   debugMode: 'false',
   showEnvironmentBanner: 'true',
+  mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
