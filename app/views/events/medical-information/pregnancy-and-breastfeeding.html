@@ -33,7 +33,7 @@
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, July 2026"
+        text: "For example, "  ~ (now() | add(3, "months") | formatDate("MMMM YYYY"))
       }
     } ) }}
   {% endset %}
@@ -47,7 +47,7 @@
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, February 2026"
+        text: "For example, " ~ (now() | remove(2, "months") | formatDate("MMMM YYYY"))
       }
     } ) }}
   {% endset %}
@@ -61,7 +61,7 @@
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, since January 2026"
+        text: "For example, since " ~ (now() | remove(2, "months") | formatDate("MMMM YYYY"))
       }
     } ) }}
   {% endset %}
@@ -75,7 +75,7 @@
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, September 2025"
+        text: "For example, " ~ (now() | remove(3, "months") | formatDate("MMMM YYYY"))
       }
     } ) }}
   {% endset %}

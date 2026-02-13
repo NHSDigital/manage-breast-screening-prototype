@@ -35,7 +35,7 @@
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, May 2024"
+        text: "For example, " ~ (now() | remove(18, "months") | formatDate("MMMM YYYY"))
       }
     }) }}
 
@@ -51,7 +51,7 @@
       },
       classes: "nhsuk-u-width-two-thirds",
       hint: {
-        text: "For example, October 2025"
+        text: "For example, " ~ (now() | remove(2, "months") | formatDate("MMMM YYYY"))
       }
     }) }}
 

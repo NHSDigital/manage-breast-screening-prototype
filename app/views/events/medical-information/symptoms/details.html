@@ -480,7 +480,7 @@
           text: "Approximate date symptom stopped"
         },
         hint: {
-          text: "For example, January 2026"
+          text: "For example, " ~ (now() | remove(1, "months") | formatDate("MMMM YYYY"))
         },
         value: event.symptomTemp.approximateDateStopped,
         classes: "nhsuk-u-width-two-thirds"
