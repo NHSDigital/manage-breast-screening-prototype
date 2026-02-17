@@ -335,6 +335,15 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   .app-reading-opinion-banner__link:focus {
     color: $app-dark-mode-link-colour;
   }
+
+  .app-mammogram-thumbnail__missing {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-text-colour-secondary;
+  }
+
+  .app-mammogram-thumbnail__missing-text {
+    color: $app-dark-mode-text-colour;
+  }
 }
 
 html:has(.app-dark-mode) {
