@@ -26,6 +26,9 @@ $app-tag--green-dark-text: nhsuk-tint(nhsuk-colour("green"), 80%);
 $app-tag--orange-dark-background: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
 $app-tag--orange-dark-border: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
 $app-tag--orange-dark-text: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
+$app-tag--yellow-dark-background: nhsuk-shade(nhsuk-colour("yellow"), 70%);
+$app-tag--yellow-dark-border: nhsuk-tint(nhsuk-colour("yellow"), 50%);
+$app-tag--yellow-dark-text: nhsuk-tint(nhsuk-colour("yellow"), 50%);
 $app-tag--blue-dark-background: nhsuk-shade(nhsuk-colour("blue"), 30%);
 $app-tag--blue-dark-border: nhsuk-tint(nhsuk-colour("blue"), 80%);
 $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
@@ -246,6 +249,12 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     background-color: $app-tag--orange-dark-background;
     border-color: $app-tag--orange-dark-border;
     color: $app-tag--orange-dark-text;
+  }
+
+  .nhsuk-tag--yellow {
+    background-color: $app-tag--yellow-dark-background;
+    border-color: $app-tag--yellow-dark-border;
+    color: $app-tag--yellow-dark-text;
   }
 
   .nhsuk-tag--blue {
