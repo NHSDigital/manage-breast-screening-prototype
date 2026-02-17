@@ -1,12 +1,12 @@
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 $app-dark-mode-blue: #348de0;
-$app-dark-mode-background: #1c1c1c;
-$app-dark-mode-background-secondary: nhsuk-tint($app-dark-mode-background, 10%);
+$app-dark-mode-background: #161616;
+$app-dark-mode-background-secondary: #1f1f1f;
 $app-dark-mode-white: #cfcfcf;
 $app-dark-mode-text-colour: $app-dark-mode-white;
 $app-dark-mode-text-colour-secondary: nhsuk-shade($app-dark-mode-text-colour, 30%);
-$app-dark-mode-surface: #161616;
+$app-dark-mode-surface: #1f1f1f;
 $app-dark-mode-border: $app-dark-mode-white;
 $app-dark-mode-banner-border: #015eb8;
 
@@ -316,7 +316,11 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 
   .nhsuk-notification-banner__content {
     color: $app-dark-mode-text-colour;
-    background: $app-dark-mode-background-secondary;
+    background: $app-dark-mode-surface;
+  }
+
+  .nhsuk-warning-callout {
+    background-color: $app-dark-mode-surface;
   }
 
   .app-reading-opinion-banner {
