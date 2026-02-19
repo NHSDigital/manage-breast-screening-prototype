@@ -14,6 +14,7 @@ const {
   generateSpecialAppointment
 } = require('./special-appointment-generator')
 const { generateAppointmentNote } = require('./appointment-note-generator')
+const { generatePreviousMammograms } = require('./previous-mammogram-generator')
 const { getImageSetForEvent } = require('../utils/mammogram-images')
 const users = require('../../data/users')
 const screeningRooms = require('../../data/screening-rooms')
@@ -291,8 +292,14 @@ const generateEvent = ({
         }
       }
 
-      // Pretend some events have previous images requested
-      event.hasRequestedImages = weighted.select({ true: 0.3, false: 0.7 })
+      // Generate previous mammograms (reported mammograms from other facilities)
+      const previousMammograms = generatePreviousMammograms({
+        eventDate: event.timing.actualEndTime || event.timing.actualStartTime,
+        addedByUserId: event.sessionDetails.startedBy
+      })
+      if (previousMammograms) {
+        event.previousMammograms = previousMammograms
+      }
 
       // Generate medical information (symptoms, medical history, etc.)
       // All attributed to the user who ran the appointment

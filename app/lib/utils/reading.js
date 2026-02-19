@@ -3,6 +3,7 @@
 const dayjs = require('dayjs')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
+const { awaitingPriors } = require('./prior-mammograms')
 
 // /**
 //  * Get first unread event in a clinic
@@ -1174,11 +1175,11 @@ const createReadingBatch = (data, options) => {
 
     // 2. Apply the awaiting priors filter
     if (type === 'awaiting_priors') {
-      // Only include events with requested images
-      events = events.filter((event) => event.hasRequestedImages === 'true')
+      // Only include events that are awaiting priors
+      events = events.filter((event) => awaitingPriors(event))
     } else if (!filters.includeAwaitingPriors) {
-      // By default, exclude events with requested images
-      events = events.filter((event) => event.hasRequestedImages !== 'true')
+      // By default, exclude events that are awaiting priors
+      events = events.filter((event) => !awaitingPriors(event))
     }
 
     // 3. Apply symptoms filter if specified
