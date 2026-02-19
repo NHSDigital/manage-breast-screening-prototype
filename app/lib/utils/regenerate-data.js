@@ -47,7 +47,9 @@ async function regenerateData(req) {
   const freshDefaults = require('../../data/session-data-defaults')
 
   // Preserve settings before reset
-  const preservedSettings = req.session.data.settings ? JSON.parse(JSON.stringify(req.session.data.settings)) : null
+  const preservedSettings = req.session.data.settings
+    ? JSON.parse(JSON.stringify(req.session.data.settings))
+    : null
 
   // Clear existing keys
   Object.keys(req.session.data).forEach((key) => delete req.session.data[key])

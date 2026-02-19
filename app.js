@@ -17,10 +17,7 @@ const viewsPath = [
   'app/views/_includes/'
 ]
 
-const entryPoints = [
-  'app/assets/sass/main.scss',
-  'app/assets/javascript/*.js'
-]
+const entryPoints = ['app/assets/sass/main.scss', 'app/assets/javascript/*.js']
 
 async function init() {
   const prototype = await NHSPrototypeKit.init({
