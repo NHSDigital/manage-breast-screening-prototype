@@ -5,9 +5,9 @@
     @include nhsuk-clearfix;
 
     .nhsuk-checkboxes__item {
-      clear: none;
-      float: left;
       margin-right: nhsuk-spacing(4);
+      float: left;
+      clear: none;
     }
   }
 

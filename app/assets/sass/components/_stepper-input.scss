@@ -1,3 +1,5 @@
+// stylelint-disable declaration-no-important
+
 // app/assets/sass/components/_stepper-input.scss
 
 .app-stepper-input {
@@ -6,20 +8,23 @@
 
 .app-stepper-input__wrapper {
   display: flex;
+  flex-wrap: nowrap;
   align-items: stretch;
   gap: 8px;
-  flex-wrap: nowrap;
 }
 
 .app-stepper-input__button {
-  margin-bottom: 4px !important;
-  flex-shrink: 0;
-  align-self: stretch;
   display: flex;
+
+  flex-shrink: 0;
   align-items: center;
+  align-self: stretch;
   justify-content: center;
+
   width: auto !important;
   min-width: 0 !important;
+  margin-bottom: 4px !important;
+
   user-select: none;
 
   // Ensure focus state is visible above input
@@ -41,6 +46,7 @@
   }
 }
 
+// stylelint-disable-next-line selector-no-qualifying-type
 .app-stepper-input input.nhsuk-input {
   text-align: center;
 }

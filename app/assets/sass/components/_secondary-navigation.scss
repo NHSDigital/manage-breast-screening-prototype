@@ -54,10 +54,10 @@
 }
 
 .app-secondary-navigation__link--disabled {
-  color: $nhsuk-secondary-text-colour;
-  cursor: not-allowed;
   pointer-events: none;
+  color: $nhsuk-secondary-text-colour;
   text-decoration: none;
+  cursor: not-allowed;
 
   &:hover,
   &:focus {

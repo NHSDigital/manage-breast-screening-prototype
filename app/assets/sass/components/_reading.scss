@@ -2,147 +2,18 @@
 
 // app/assets/sass/components/_reading.scss
 
-.app-reading-status {
-  background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
-  color: $nhsuk-reverse-text-colour;
-  a {
-    color: $nhsuk-reverse-text-colour;
-  }
-  padding: 10px;
-}
-
-// Mammogram thumbnail grid for reading pages
-.app-mammogram-thumbnails {
-  display: inline-grid;
-  grid-template-columns: auto auto;
-  gap: 8px;
-}
-
-.app-mammogram-thumbnail--right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-}
-
-.app-mammogram-thumbnail--left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-// Individual image wrapper (contains image + label)
-.app-mammogram-thumbnail__image-wrapper {
-  position: relative;
-  // Fixed dimensions for consistent sizing
-  width: 120px;
-  height: 150px;
-  background-color: #000;
-  overflow: hidden;
-  // Use flexbox for image alignment
-  display: flex;
-  align-items: flex-start;
-}
-
-// Right breast images align right (inwards), left breast align left (inwards)
-.app-mammogram-thumbnail--right .app-mammogram-thumbnail__image-wrapper {
-  justify-content: flex-end;
-}
-
-.app-mammogram-thumbnail--left .app-mammogram-thumbnail__image-wrapper {
-  justify-content: flex-start;
-}
-
-.app-mammogram-thumbnail__image {
-  max-width: 100%;
-  max-height: 100%;
-  display: block;
-  cursor: default;
-}
-
-// Slight smoothing for diagram thumbnails to reduce moiré
-.app-mammogram-thumbnail__image--diagram {
-  filter: blur(0.5px);
-}
-
-.app-mammogram-thumbnail__label {
-  position: absolute;
-  top: 4px;
-  background-color: nhsuk-colour("blue");
-  color: #fff;
-  padding: 2px 6px;
-  font-size: 11px;
-  font-weight: 600;
-  z-index: 1;
-}
-
-// Labels align to outer edge - right breast labels on left, left breast labels on right
-.app-mammogram-thumbnail--right .app-mammogram-thumbnail__label {
-  left: 4px;
-}
-
-.app-mammogram-thumbnail--left .app-mammogram-thumbnail__label {
-  right: 4px;
-}
-
-// Missing image placeholder
-.app-mammogram-thumbnail__missing {
-  width: 100%;
-  height: 100%;
-  border: 2px dashed nhsuk-colour("grey-2");
-  background-color: nhsuk-colour("grey-5");
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-.app-mammogram-thumbnail__missing-text {
-  font-size: 12px;
-  color: nhsuk-colour("grey-2");
-}
-
-// Zoom overlay for thumbnails
-.app-mammogram-zoom {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.95);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: default;
-}
-
-.app-mammogram-zoom__image {
-  max-width: 95%;
-  max-height: 95%;
-  object-fit: contain;
-}
-
-.app-mammogram-zoom__label {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  background-color: nhsuk-colour("blue");
-  color: #fff;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 // Todo: should this be merged with app-status-bar.scss?
 // Todo: otherwise refctor so classes aren't created with &
 
 .app-reading-status {
-  background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
-  color: $nhsuk-reverse-text-colour;
-  padding: 8px 0;
+  padding: 10px;
   border-bottom: 1px solid #d8dde0;
+  color: $nhsuk-reverse-text-colour;
+  background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
+
+  a {
+    color: $nhsuk-reverse-text-colour;
+  }
 
   &__row {
     display: flex;
@@ -176,31 +47,179 @@
     align-items: center;
 
     strong {
-      font-weight: 600;
       opacity: 0.9;
+      font-weight: 600;
     }
   }
 }
 
+// Mammogram thumbnail grid for reading pages
+.app-mammogram-thumbnails {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 8px;
+}
+
+.app-mammogram-thumbnail--right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.app-mammogram-thumbnail--left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+// Individual image wrapper (contains image + label)
+.app-mammogram-thumbnail__image-wrapper {
+  // Use flexbox for image alignment
+  display: flex;
+
+  position: relative;
+
+  align-items: flex-start;
+  // Fixed dimensions for consistent sizing
+  width: 120px;
+  height: 150px;
+
+  overflow: hidden;
+
+  background-color: #000000;
+}
+
+// Right breast images align right (inwards), left breast align left (inwards)
+.app-mammogram-thumbnail--right .app-mammogram-thumbnail__image-wrapper {
+  justify-content: flex-end;
+}
+
+.app-mammogram-thumbnail--left .app-mammogram-thumbnail__image-wrapper {
+  justify-content: flex-start;
+}
+
+.app-mammogram-thumbnail__image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  cursor: default;
+}
+
+// Slight smoothing for diagram thumbnails to reduce moiré
+.app-mammogram-thumbnail__image--diagram {
+  filter: blur(0.5px);
+}
+
+.app-mammogram-thumbnail__label {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+
+  padding: 2px 6px;
+
+  color: #ffffff;
+  background-color: nhsuk-colour("blue");
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+// Labels align to outer edge - right breast labels on left, left breast labels on right
+.app-mammogram-thumbnail--right .app-mammogram-thumbnail__label {
+  left: 4px;
+}
+
+.app-mammogram-thumbnail--left .app-mammogram-thumbnail__label {
+  right: 4px;
+}
+
+// Missing image placeholder
+.app-mammogram-thumbnail__missing {
+  box-sizing: border-box;
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+
+  border: 2px dashed nhsuk-colour("grey-2");
+
+  background-color: nhsuk-colour("grey-5");
+}
+
+.app-mammogram-thumbnail__missing-text {
+  color: nhsuk-colour("grey-2");
+  font-size: 12px;
+}
+
+// Zoom overlay for thumbnails
+.app-mammogram-zoom {
+  display: flex;
+
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  align-items: center;
+  justify-content: center;
+
+  background-color: rgba(0, 0, 0, 0.95);
+
+  cursor: default;
+}
+
+.app-mammogram-zoom__image {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+}
+
+.app-mammogram-zoom__label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+
+  padding: 8px 16px;
+
+  color: #ffffff;
+  background-color: nhsuk-colour("blue");
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
 // Toast message shown after giving an opinion
 .app-reading-opinion-banner {
-  background-color: nhsuk-colour("blue");
-  color: $nhsuk-reverse-text-colour;
   display: flex;
-  gap: nhsuk-spacing(3);
-  opacity: 1;
-  transition: opacity 0.2s ease-out;
+
+  position: absolute;
+  z-index: 10;
+  top: 10px;
 
   // Manually chosen to line up with the 'previous case' link
   left: 17px;
-  top: 10px;
+
   max-width: 720px;
-  padding: nhsuk-spacing(3) nhsuk-spacing(3);
-  position: absolute;
-  z-index: 10;
+  padding: nhsuk-spacing(3);
+
+  transition: opacity 0.2s ease-out;
   // Todo: reinstate this in v11
   // border-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
   border-radius: 4px;
+
+  opacity: 1;
+
+  color: $nhsuk-reverse-text-colour;
+  background-color: nhsuk-colour("blue");
+
+  gap: nhsuk-spacing(3);
   filter: drop-shadow(2px 3px 3px nhsuk-tint(nhsuk-colour("black"), 50%));
 }
 
@@ -215,18 +234,18 @@
 }
 
 .app-reading-opinion-banner__text {
-  color: $nhsuk-reverse-text-colour;
   margin: 0;
+  color: $nhsuk-reverse-text-colour;
 }
 
 .app-reading-opinion-banner__link,
 .app-reading-opinion-banner__link:visited,
 .app-reading-opinion-banner__link:hover,
 .app-reading-opinion-banner__link:focus {
-  color: $nhsuk-reverse-text-colour;
   margin-left: nhsuk-spacing(3);
-  text-decoration: underline;
   transform: translateY(2px);
+  color: $nhsuk-reverse-text-colour;
+  text-decoration: underline;
   white-space: nowrap;
 }
 
@@ -264,8 +283,8 @@
     button,
     input[type="button"],
     input[type="submit"] {
-      opacity: 0.6;
       pointer-events: none;
+      opacity: 0.6;
     }
 
     .app-button-link,
@@ -288,6 +307,6 @@
 
 // Keyboard shortcut hint styling
 .app-shortcut-hint {
-  font-weight: 400;
   opacity: 0.8;
+  font-weight: 400;
 }

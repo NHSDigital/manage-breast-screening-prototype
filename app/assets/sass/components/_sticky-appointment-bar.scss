@@ -1,7 +1,7 @@
 .app-sidebar-sticky {
   position: sticky;
-  top: 20px;
   z-index: 100;
+  top: 20px;
   height: fit-content;
 }
 
@@ -16,17 +16,20 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Sticky action button */
+// Sticky action button
 
 .app-sticky-bottom-container {
   position: fixed;
+  z-index: 200;
+  right: 0;
   bottom: 0;
   left: 0;
-  right: 0;
-  z-index: 200;
-  background: #ffffff;
-  border-top: 1px solid #d8dde0;
+
   padding: 20px;
+
+  border-top: 1px solid #d8dde0;
+
+  background: #ffffff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -36,6 +39,6 @@
 }
 
 .app-sticky-bottom-button {
-  /* Use standard NHS button styling */
+  // Use standard NHS button styling
   margin: 0;
 }
