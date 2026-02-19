@@ -90,16 +90,28 @@
         {% endif %}
       {% endif %}
 
-      {# Requested images tag #}
-      {% if event.hasRequestedImages | falsify %}
-        {% set requestedWithDateHtml %}
-          {{ "Images requested" | toTag | safe }}<br>
-          Requested 10 Feb 2025
-        {% endset %}
-        {{ requestedWithDateHtml | safe }}
+      {# Prior mammogram status tags #}
+      {% set priorsSummary = event | getPriorsSummary %}
+      {% if priorsSummary.total > 0 %}
+        {% if priorsSummary.hasAwaiting %}
+          {% set awaitingPriorsList = event | getAwaitingPriors %}
+          {{ "Awaiting priors" | toTag | safe }}<br>
+          {% for prior in awaitingPriorsList %}
+            {% if prior.requestedDate %}
+              Requested {{ prior.requestedDate | formatDate("D MMM YYYY") }}
+              {% if prior.requestReason %}
+                – {{ prior.requestReason }}
+              {% endif %}
+              {% if not loop.last %}<br>{% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
       {% endif %}
 
       {% if (data.settings.debugMode | falsify) %}
+        {% if event | hasReportedMammograms %}
+          <br>{{ "Has priors" | toTag }}
+        {% endif %}
         {% if event.mammogramData.metadata.hasAdditionalImages %}
           <br>{{ "Has additional" | toTag }}
         {% endif %}
@@ -120,6 +132,78 @@
       {% include "symptomsWarningCard.njk" %}
     </div>
   </div>
+
+  {# Reported mammograms callout #}
+  {% set priorsSummary = event | getPriorsSummary %}
+  {% if priorsSummary.total > 0 %}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {% set priorsCalloutHtml %}
+          {% for mammogram in event.previousMammograms %}
+            <p class="nhsuk-u-margin-bottom-1">
+              {# Location #}
+              {% if mammogram.location == "bsu" %}
+                {{ mammogram.bsu }}
+              {% elseif mammogram.location == "otherUk" %}
+                {{ mammogram.otherUk }}
+              {% elseif mammogram.location == "otherNonUk" %}
+                Outside UK: {{ mammogram.otherNonUk }}
+              {% elseif mammogram.location == "currentBsu" %}
+                {{ unit.name if unit else "Current BSU" }}
+              {% endif %}
+
+              {# Date #}
+              {% if mammogram.dateType == "dateKnown" %}
+                – {{ mammogram.dateTaken | formatDate }}
+              {% elseif mammogram.dateType == "moreThanSixMonths" %}
+                – over 6 months ago
+              {% endif %}
+
+              {# Request status #}
+              {% if mammogram.requestStatus == "requested" %}
+                <br>
+                <strong class="nhsuk-tag nhsuk-tag--yellow">Requested</strong>
+                {% if mammogram.requestedDate %}
+                  {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
+                {% endif %}
+                {% if mammogram.requestReason %}
+                  – {{ mammogram.requestReason }}
+                {% endif %}
+              {% elseif mammogram.requestStatus == "received" %}
+                <br>
+                <strong class="nhsuk-tag nhsuk-tag--green">Received</strong>
+                {% if mammogram.receivedDate %}
+                  {{ mammogram.receivedDate | formatDate("D MMM YYYY") }}
+                {% endif %}
+              {% elseif mammogram.requestStatus == "not_available" %}
+                <br>
+                <strong class="nhsuk-tag nhsuk-tag--grey">Not available</strong>
+              {% elseif mammogram.requestStatus == "not_needed" %}
+                <br>
+                <strong class="nhsuk-tag nhsuk-tag--grey">Not needed</strong>
+              {% elseif mammogram.requestStatus == "not_requested" %}
+                <br>
+                <strong class="nhsuk-tag nhsuk-tag--white">Not requested</strong>
+              {% endif %}
+            </p>
+          {% endfor %}
+
+          {# Show request priors link if there are unrequested mammograms #}
+          {% if priorsSummary.hasUnrequested %}
+            <p class="nhsuk-u-margin-bottom-0">
+              <a href="./request-priors">Request prior images</a>
+            </p>
+          {% endif %}
+        {% endset %}
+
+        {{ warningCallout({
+          heading: "Reported mammograms",
+          html: priorsCalloutHtml,
+          classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-5"
+        }) }}
+      </div>
+    </div>
+  {% endif %}
 
 
 

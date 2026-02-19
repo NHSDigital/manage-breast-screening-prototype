@@ -373,6 +373,14 @@ module.exports = (router) => {
       )
     }
 
+    // Check if event is awaiting priors (user or someone else requested)
+    const { awaitingPriors } = require('../lib/utils/prior-mammograms')
+    if (awaitingPriors(event)) {
+      return res.redirect(
+        `/reading/batch/${batchId}/events/${eventId}/existing-read`
+      )
+    }
+
     // Delete temporary data from previous steps
     delete data.imageReadingTemp
 
@@ -398,6 +406,74 @@ module.exports = (router) => {
       res.redirect(`/reading/batch/${batchId}`)
     }
   })
+
+  // Handle requesting prior images during reading
+  router.post(
+    '/reading/batch/:batchId/events/:eventId/request-priors-answer',
+    (req, res) => {
+      const data = req.session.data
+      const { batchId, eventId } = req.params
+      const currentUserId = data.currentUser?.id
+
+      // Get the IDs of mammograms to request
+      let requestPriorIds = req.body.requestPriorIds || []
+      if (!Array.isArray(requestPriorIds)) {
+        requestPriorIds = [requestPriorIds]
+      }
+
+      const reason = req.body.requestPriorReason || ''
+
+      // Find the event in the main events array
+      const event = data.events.find((e) => e.id === eventId)
+      if (event && event.previousMammograms) {
+        event.previousMammograms.forEach((mammogram) => {
+          if (requestPriorIds.includes(mammogram.id)) {
+            mammogram.requestStatus = 'requested'
+            mammogram.requestedDate = new Date().toISOString()
+            mammogram.requestedBy = currentUserId
+            if (reason) {
+              mammogram.requestReason = reason
+            }
+          }
+        })
+
+        // Also update the mirrored event in data.event
+        if (data.event && data.event.id === eventId) {
+          data.event.previousMammograms = event.previousMammograms
+        }
+      }
+
+      // Store banner message for the next case
+      const participant = data.participants.find(
+        (person) => person.id === event.participantId
+      )
+      const shortName = getShortName(participant)
+      data.readingOpinionBanner = {
+        text: `Prior images requested for ${shortName}`,
+        participantName: `${shortName}`,
+        editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+      }
+
+      // Find next readable event in batch (not just next sequential - we want
+      // truly unread events). This mirrors the navigation in save-opinion.
+      const batch = getReadingBatch(data, batchId)
+      const batchEvents = batch.eventIds
+        .map((id) => data.events.find((e) => e.id === id))
+        .filter(Boolean)
+      const nextUnreadEvent = getFirstUserReadableEvent(
+        batchEvents,
+        currentUserId
+      )
+
+      if (nextUnreadEvent) {
+        res.redirect(
+          `/reading/batch/${batchId}/events/${nextUnreadEvent.id}`
+        )
+      } else {
+        res.redirect(`/reading/batch/${batchId}`)
+      }
+    }
+  )
 
   // Intercept review page for late comparison check
   router.get(
@@ -455,7 +531,8 @@ module.exports = (router) => {
         'recommended-assessment',
         'review',
         'existing-read',
-        'compare'
+        'compare',
+        'request-priors'
       ]
 
       if (workflowSteps.includes(step)) {
@@ -885,7 +962,8 @@ module.exports = (router) => {
       // Write the reading (passing batch context to handle skipped events)
       writeReading(event, currentUserId, readResult, data, batchId)
 
-      // Find next unread event in batch (not just navigable - we want truly unread)
+      // Find next unread event in batch (not just navigable - we want truly unread).
+      // This mirrors the navigation in request-priors-answer.
       const batch = getReadingBatch(data, batchId)
       const batchEvents = batch.eventIds
         .map((id) => data.events.find((e) => e.id === id))

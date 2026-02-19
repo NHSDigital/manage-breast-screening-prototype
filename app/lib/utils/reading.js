@@ -1071,6 +1071,11 @@ const canUserReadEvent = function (event, userId = null, options = {}) {
     return false
   }
 
+  // Can't read if event is awaiting priors
+  if (awaitingPriors(event)) {
+    return false
+  }
+
   const metadata = getReadingMetadata(event)
 
   // If we already have enough unique readers, no more reads needed

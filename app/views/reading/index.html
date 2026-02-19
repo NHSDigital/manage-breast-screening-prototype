@@ -15,8 +15,17 @@
 {# Awaiting priors not automatically filtered #}
 {% set allReadsEventsWithAwaitingPriors = data.events | filterEventsByEligibleForReading | filterEventsByNeedsAnyRead | sortEventsByScreeningDate %}
 
-{# Remove awaiting priors #}
-{% set allReadsEvents = allReadsEventsWithAwaitingPriors | where("hasRequestedImages", "false") %}
+{# Split into awaiting priors and available for reading #}
+{# Events with 'requested' status mammograms are held from reading #}
+{% set allReadsEvents = [] %}
+{% set awaitingPriorsEvents = [] %}
+{% for thisEvent in allReadsEventsWithAwaitingPriors %}
+  {% if thisEvent | awaitingPriors %}
+    {% set awaitingPriorsEvents = awaitingPriorsEvents | push(thisEvent) %}
+  {% else %}
+    {% set allReadsEvents = allReadsEvents | push(thisEvent) %}
+  {% endif %}
+{% endfor %}
 
 {% set recentEvents = allReadsEvents | filterEventsByDayRange(0, data.config.reading.priorityThreshold) %}
 
@@ -27,7 +36,6 @@
 
 {% set firstReadsEvents = allReadsEvents | filterEventsByNeedsFirstRead %}
 {% set secondReadsEvents = allReadsEvents | filterEventsByNeedsSecondRead %}
-{% set awaitingPriorsEvents = allReadsEventsWithAwaitingPriors | where("hasRequestedImages", "true") %}
 
 {# Filter for current user - currently not used #}
 {% set allReadsForUser = allReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}

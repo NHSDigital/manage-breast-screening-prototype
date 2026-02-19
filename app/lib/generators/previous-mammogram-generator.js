@@ -10,32 +10,36 @@ const users = require('../../data/users')
 
 // Where the mammogram was taken
 const locationWeights = {
-  bsu: 0.55,          // Another BSU in England - most common, requestable
-  otherUk: 0.2,       // Other UK facility (private, symptomatic clinic, etc.)
-  otherNonUk: 0.15,   // Abroad - typically not requestable
-  currentBsu: 0.1     // Current BSU but not in screening records
+  bsu: 0.55, // Another BSU in England - most common, requestable
+  otherUk: 0.2, // Other UK facility (private, symptomatic clinic, etc.)
+  otherNonUk: 0.15, // Abroad - typically not requestable
+  currentBsu: 0.1 // Current BSU but not in screening records
 }
 
 // Request statuses for seed data
 // Represents state after admin triage
 const requestStatusWeights = {
-  not_requested: 0.35,   // Not yet triaged
-  requested: 0.25,       // Admin has requested, awaiting arrival
-  received: 0.15,        // Images have arrived
-  not_available: 0.15,   // Can't get them (abroad, too old, etc.)
-  not_needed: 0.10       // Decided we don't need them
+  not_requested: 0.35, // Not yet triaged
+  requested: 0.25, // Admin has requested, awaiting arrival
+  received: 0.15, // Images have arrived
+  not_available: 0.15, // Can't get them (abroad, too old, etc.)
+  not_needed: 0.1 // Decided we don't need them
 }
 
 // For mammograms from abroad, status is limited
 const abroadStatusWeights = {
   not_requested: 0.3,
-  not_available: 0.5,   // Most abroad mammograms can't be obtained
+  not_available: 0.5, // Most abroad mammograms can't be obtained
   not_needed: 0.2
 }
 
 // Generate a single previous mammogram entry
 // latestAllowedDate controls the upper bound for when the mammogram was taken
-const generatePreviousMammogram = ({ eventDate, addedByUserId, latestAllowedDate }) => {
+const generatePreviousMammogram = ({
+  eventDate,
+  addedByUserId,
+  latestAllowedDate
+}) => {
   const location = weighted.select(locationWeights)
 
   // Date must be at least 6 months before the event, and within 3 years
@@ -107,21 +111,26 @@ const generatePreviousMammogram = ({ eventDate, addedByUserId, latestAllowedDate
     const adminUsers = users.filter((user) =>
       user.role.some((r) => ['administrator', 'service_manager'].includes(r))
     )
-    const requestUser = adminUsers.length > 0
-      ? faker.helpers.arrayElement(adminUsers)
-      : { id: addedByUserId }
+    const requestUser =
+      adminUsers.length > 0
+        ? faker.helpers.arrayElement(adminUsers)
+        : { id: addedByUserId }
 
     // Request was made 1-5 days after the event
-    const requestedDate = dayjs(eventDate)
-      .add(faker.number.int({ min: 1, max: 5 }), 'day')
+    const requestedDate = dayjs(eventDate).add(
+      faker.number.int({ min: 1, max: 5 }),
+      'day'
+    )
     requestFields.requestedDate = requestedDate.toISOString()
     requestFields.requestedBy = requestUser.id
   }
 
   if (requestStatus === 'received') {
     // Received 3-14 days after request
-    const receivedDate = dayjs(requestFields.requestedDate)
-      .add(faker.number.int({ min: 3, max: 14 }), 'day')
+    const receivedDate = dayjs(requestFields.requestedDate).add(
+      faker.number.int({ min: 3, max: 14 }),
+      'day'
+    )
     requestFields.receivedDate = receivedDate.toISOString()
     requestFields.statusChangedDate = receivedDate.toISOString()
     requestFields.statusChangedBy = requestFields.requestedBy
@@ -129,16 +138,19 @@ const generatePreviousMammogram = ({ eventDate, addedByUserId, latestAllowedDate
 
   if (requestStatus === 'not_available' || requestStatus === 'not_needed') {
     // Status was changed 1-7 days after event
-    const changedDate = dayjs(eventDate)
-      .add(faker.number.int({ min: 1, max: 7 }), 'day')
+    const changedDate = dayjs(eventDate).add(
+      faker.number.int({ min: 1, max: 7 }),
+      'day'
+    )
     requestFields.statusChangedDate = changedDate.toISOString()
 
     const adminUsers = users.filter((user) =>
       user.role.some((r) => ['administrator', 'service_manager'].includes(r))
     )
-    requestFields.statusChangedBy = adminUsers.length > 0
-      ? faker.helpers.arrayElement(adminUsers).id
-      : addedByUserId
+    requestFields.statusChangedBy =
+      adminUsers.length > 0
+        ? faker.helpers.arrayElement(adminUsers).id
+        : addedByUserId
   }
 
   return {
@@ -176,7 +188,9 @@ const generatePreviousMammograms = ({ eventDate, addedByUserId }) => {
       const previousDate = dayjs(mammograms[index - 1]._rawDate)
       latestAllowedDate = previousDate.subtract(6, 'month')
     }
-    mammograms.push(generatePreviousMammogram({ eventDate, addedByUserId, latestAllowedDate }))
+    mammograms.push(
+      generatePreviousMammogram({ eventDate, addedByUserId, latestAllowedDate })
+    )
   }
 
   // Remove internal _rawDate field before returning

@@ -8,44 +8,96 @@
 
 {% block pageContent %}
 
+  {% set isAwaitingPriors = event | awaitingPriors %}
+  {% set hasUserRead = event | userHasReadEvent %}
+
   <span class="nhsuk-caption-l">
     {{ participant | getFullName }}
   </span>
-  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {# Read summary card #}
-  {% set readSummaryHtml %}
-    {% set read = event | getReadForUser %}
-    {% set allowEdits = true %}
-    {% set changeOpinionUrl = "./opinion" %}
-    {% include "_includes/summary-lists/read-summary.njk" %}
-  {% endset %}
+  {% if isAwaitingPriors and not hasUserRead %}
+    {# Event is awaiting priors - show priors status instead of read summary #}
+    <h1 class="nhsuk-heading-l">Awaiting prior images</h1>
 
-  {{ card({
-    heading: "Your read",
-    headingLevel: "2",
-    feature: true,
-    descriptionHtml: readSummaryHtml
-  }) }}
+    {% set priorsContentHtml %}
+      {% for mammogram in event.previousMammograms %}
+        {% if mammogram.requestStatus == "requested" %}
+          <p class="nhsuk-u-margin-bottom-2">
+            {% if mammogram.location == "bsu" %}
+              {{ mammogram.bsu }}
+            {% elseif mammogram.location == "otherUk" %}
+              {{ mammogram.otherUk }}
+            {% elseif mammogram.location == "otherNonUk" %}
+              Outside UK: {{ mammogram.otherNonUk }}
+            {% elseif mammogram.location == "currentBsu" %}
+              {{ unit.name if unit else "Current BSU" }}
+            {% endif %}
+            {% if mammogram.dateType == "dateKnown" %}
+              – {{ mammogram.dateTaken | formatDate }}
+            {% elseif mammogram.dateType == "moreThanSixMonths" %}
+              – over 6 months ago
+            {% endif %}
+            <br>
+            <strong class="nhsuk-tag nhsuk-tag--yellow">Requested</strong>
+            {% if mammogram.requestedDate %}
+              {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
+            {% endif %}
+            {% if mammogram.requestedBy %}
+              by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+            {% endif %}
+            {% if mammogram.requestReason %}
+              <br>Reason: {{ mammogram.requestReason }}
+            {% endif %}
+          </p>
+        {% endif %}
+      {% endfor %}
+    {% endset %}
 
-  {# Other readers' assessments (for testing/debugging) #}
-  {% set otherReads = event | getOtherReads %}
-  {% if otherReads | length > 0 %}
-    {% for otherRead in otherReads %}
-      {% set readerName = otherRead.readerId | getUsername %}
-      {% set otherReadSummaryHtml %}
-        {% set read = otherRead %}
-        {% set allowEdits = false %}
-        {% include "_includes/summary-lists/read-summary.njk" %}
-      {% endset %}
+    {{ card({
+      heading: "Requested prior images",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: priorsContentHtml
+    }) }}
 
-      {{ card({
-        heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: otherReadSummaryHtml
-      }) }}
-    {% endfor %}
+  {% else %}
+    {# Normal existing read view #}
+    <h1 class="nhsuk-heading-l">Your opinion</h1>
+
+    {# Read summary card #}
+    {% set readSummaryHtml %}
+      {% set read = event | getReadForUser %}
+      {% set allowEdits = true %}
+      {% set changeOpinionUrl = "./opinion" %}
+      {% include "_includes/summary-lists/read-summary.njk" %}
+    {% endset %}
+
+    {{ card({
+      heading: "Your read",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: readSummaryHtml
+    }) }}
+
+    {# Other readers' assessments (for testing/debugging) #}
+    {% set otherReads = event | getOtherReads %}
+    {% if otherReads | length > 0 %}
+      {% for otherRead in otherReads %}
+        {% set readerName = otherRead.readerId | getUsername %}
+        {% set otherReadSummaryHtml %}
+          {% set read = otherRead %}
+          {% set allowEdits = false %}
+          {% include "_includes/summary-lists/read-summary.njk" %}
+        {% endset %}
+
+        {{ card({
+          heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: otherReadSummaryHtml
+        }) }}
+      {% endfor %}
+    {% endif %}
   {% endif %}
 
   {# Medical summary #}
