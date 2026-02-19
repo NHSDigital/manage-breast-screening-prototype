@@ -4,7 +4,20 @@
 // https://github.com/alphagov/govuk-frontend/blob/main/packages/govuk-frontend/src/govuk/components/summary-list/_index.scss
 
 .nhsuk-summary-card__action {
-  display: inline-block;
+  display: inline;
+
+  // We use the following media query to target IE11 and 10 only to add margin
+  // between actions.
+  //
+  // We do this because we're using row-gap to create space between actions on
+  // more evergreen browsers which IE doesn't support. @supports currently isn't
+  // a viable solution, see https://github.com/w3c/csswg-drafts/issues/3559.
+  //
+  // Solution taken from https://stackoverflow.com/questions/11173106/apply-style-only-on-ie#answer-36448860
+  // which also includes an explanation of why this works
+  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    margin-bottom: nhsuk-spacing(1);
+  }
 }
 
 @include nhsuk-media-query($until: tablet) {
@@ -88,23 +101,6 @@
     justify-content: right;
     margin-left: auto; // Added so actions are always aligned right
     text-align: right;
-  }
-}
-
-.nhsuk-summary-card__action {
-  display: inline;
-
-  // We use the following media query to target IE11 and 10 only to add margin
-  // between actions.
-  //
-  // We do this because we're using row-gap to create space between actions on
-  // more evergreen browsers which IE doesn't support. @supports currently isn't
-  // a viable solution, see https://github.com/w3c/csswg-drafts/issues/3559.
-  //
-  // Solution taken from https://stackoverflow.com/questions/11173106/apply-style-only-on-ie#answer-36448860
-  // which also includes an explanation of why this works
-  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
-    margin-bottom: nhsuk-spacing(1);
   }
 }
 

@@ -1,5 +1,6 @@
-/* Mammogram annotation styles */
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Mammogram annotation styles
 
 .app-mammogram-image {
   display: block;
@@ -56,7 +57,7 @@
   line-height: 1;
 }
 
-/* Visual feedback when dragging */
+// Visual feedback when dragging
 .app-mammogram-marker.dragging {
   // filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 6px rgba(255, 255, 255, 0.5));
   transform: translate(-50%, -50%) scale(1.1);

@@ -3,6 +3,7 @@
 $app-modal-width: 700px !default; // Default width for the modal
 
 // Prevent background scrolling when modal is open
+// stylelint-disable-next-line selector-no-qualifying-type
 body.app-modal-open {
   width: 100%;
   overflow: hidden;

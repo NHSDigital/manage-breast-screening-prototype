@@ -2,16 +2,6 @@
 
 // app/assets/sass/components/_reading.scss
 
-.app-reading-status {
-  padding: 10px;
-  color: $nhsuk-reverse-text-colour;
-  background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
-
-  a {
-    color: $nhsuk-reverse-text-colour;
-  }
-}
-
 // Mammogram thumbnail grid for reading pages
 .app-mammogram-thumbnails {
   display: inline-grid;
@@ -162,6 +152,10 @@
   border-bottom: 1px solid #d8dde0;
   color: $nhsuk-reverse-text-colour;
   background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);
+
+  a {
+    color: $nhsuk-reverse-text-colour;
+  }
 
   &__row {
     display: flex;

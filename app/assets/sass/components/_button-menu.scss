@@ -1,6 +1,7 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
 // Button Menu Component
 // Adapted from MOJ Frontend for NHS prototype use
-@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-button-menu {
   display: inline-block;
@@ -50,7 +51,7 @@
   }
 }
 
-/* Menu items with no JS */
+// Menu items with no JS
 .app-button-menu__item {
   display: inline-block;
   width: auto; // Override NHS UK's 100% width
@@ -67,7 +68,7 @@
   margin: 0;
 }
 
-/* Menu items with JS */
+// Menu items with JS
 .app-button-menu li > .app-button-menu__item {
   box-sizing: border-box;
   display: inline-block;

@@ -1,3 +1,5 @@
+// stylelint-disable declaration-no-important
+
 // app/assets/sass/components/_stepper-input.scss
 
 .app-stepper-input {
@@ -44,6 +46,7 @@
   }
 }
 
+// stylelint-disable-next-line selector-no-qualifying-type
 .app-stepper-input input.nhsuk-input {
   text-align: center;
 }

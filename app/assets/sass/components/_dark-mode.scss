@@ -1,3 +1,5 @@
+// stylelint-disable declaration-no-important
+
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 $app-dark-mode-blue: #348de0;
@@ -188,7 +190,7 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     &:visited,
     &:active,
     &:hover {
-      color: white;
+      color: #ffffff;
     }
   }
 
