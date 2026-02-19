@@ -9,17 +9,16 @@
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
   "dependencies": {
-    "@faker-js/faker": "^10.0.0",
+    "@faker-js/faker": "^10.3.0",
+    "cookie-parser": "^1.4.7",
+    "dayjs": "^1.11.19",
+    "lodash": "^4.17.23",
+    "markdown-it": "^14.1.1",
     "nhsuk-frontend": "^10.3.1",
     "nhsuk-prototype-kit": "^8.0.1",
-    "cookie-parser": "^1.4.7",
-    "dayjs": "^1.11.15",
-    "lodash": "^4.17.21",
-    "markdown-it": "^14.1.1",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
   },
-  "devDependencies": {},
   "engines": {
     "node": "^22.16.0 || ^24.11.0",
     "npm": "^11.6.1"
