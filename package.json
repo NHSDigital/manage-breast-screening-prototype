@@ -14,7 +14,7 @@
     "nhsuk-prototype-kit": "^8.0.1",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.15",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "markdown-it": "^14.1.1",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
