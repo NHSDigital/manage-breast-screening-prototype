@@ -297,12 +297,14 @@ string  // e.g., 'Takes warfarin for atrial fibrillation. Last INR check was two
 ## Medical History Types Status
 
 **Implemented (4/7):**
+
 - ✅ Breast cancer
 - ✅ Implanted medical device
 - ✅ Breast implants/augmentation
 - ✅ Mastectomy/lumpectomy
 
 **To implement (3/7):**
+
 - Cysts
 - Benign lumps
 - Other procedures
@@ -412,6 +414,7 @@ if (isCompleted(eventStatus)) {
 ```
 
 **Key improvements:**
+
 - ✅ All medical information attributed to `sessionDetails.startedBy` (user who ran the appointment)
 - ✅ Default probabilities set only in umbrella generator (single source of truth)
 - ✅ Supports config overrides for test scenarios
@@ -531,6 +534,7 @@ module.exports = {
 ```
 
 **Key points:**
+
 - ✅ Default probabilities set here (single source of truth)
 - ✅ Passes `addedByUserId` to all sub-generators
 - ✅ Medical info generators organized in `medical-information/` subfolder
@@ -541,17 +545,20 @@ module.exports = {
 **File:** `app/lib/generators/medical-information/medical-history-generator.js`
 
 **Implemented types:**
+
 - ✅ Breast cancer (can have multiple)
 - ✅ Implanted medical device (can have multiple)
 - ✅ Breast implants/augmentation (single entry, includes consent)
 - ✅ Mastectomy/lumpectomy (can have multiple)
 
 **Remaining types:**
+
 - Cysts (single entry only)
 - Benign lumps (can have multiple)
 - Other procedures (can have multiple)
 
 **Notes:**
+
 - All field names corrected to match forms (`year` not `procedureYear`, `location` not `treatmentLocation`)
 - Currently set to 100% probability for all types (testing mode)
 - Each type has independent probability check allowing multiple types per event

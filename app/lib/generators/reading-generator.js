@@ -4,7 +4,10 @@ const dayjs = require('dayjs')
 const weighted = require('weighted')
 const { faker } = require('@faker-js/faker')
 const { eligibleForReading } = require('../utils/status')
-const { getSetById, getResolvedAnnotations } = require('../utils/mammogram-images')
+const {
+  getSetById,
+  getResolvedAnnotations
+} = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
 
 // Alignment probability - how often reads match the image set's tag
@@ -290,7 +293,7 @@ const generatePlaceholderAnnotation = (side, breastData) => {
 
   const viewKeys = side === 'right' ? ['rmlo', 'rcc'] : ['lmlo', 'lcc']
   const positions = {}
-  viewKeys.forEach(view => {
+  viewKeys.forEach((view) => {
     positions[view] = { x: randomPos(), y: randomPos() }
   })
 

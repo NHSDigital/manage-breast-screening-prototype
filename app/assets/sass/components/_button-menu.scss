@@ -1,6 +1,7 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
 // Button Menu Component
 // Adapted from MOJ Frontend for NHS prototype use
-@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-button-menu {
   display: inline-block;
@@ -31,13 +32,17 @@
 .app-button-menu__wrapper {
   position: absolute;
   z-index: 10;
+
   width: 300px;
   margin: 5px 0 0; // 2px shadow, 3px gap
   padding: 0;
+
   list-style: none;
-  background-color: nhsuk-colour("white");
+
   border: 1px solid $nhsuk-border-colour;
   border-bottom: nhsuk-spacing(1) solid $nhsuk-border-colour;
+
+  background-color: nhsuk-colour("white");
   // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   @include nhsuk-print-hide;
 
@@ -46,7 +51,7 @@
   }
 }
 
-/* Menu items with no JS */
+// Menu items with no JS
 .app-button-menu__item {
   display: inline-block;
   width: auto; // Override NHS UK's 100% width
@@ -63,11 +68,13 @@
   margin: 0;
 }
 
-/* Menu items with JS */
+// Menu items with JS
 .app-button-menu li > .app-button-menu__item {
   box-sizing: border-box;
   display: inline-block;
+
   position: relative;
+
   width: 100%;
   margin-top: 0;
   margin-right: 0;
@@ -82,9 +89,12 @@
   // color: $nhsuk-text-colour;
   color: nhsuk-colour("blue");
   background-color: nhsuk-colour("white");
+
   text-align: left;
   vertical-align: top;
+
   cursor: pointer;
+
   -webkit-appearance: none;
   appearance: none;
   @include nhsuk-font(19);

@@ -39,6 +39,7 @@ generate-seed-data.js (main orchestrator)
 ```
 
 **Key points:**
+
 - Generators are called sequentially by the main orchestrator
 - Medical information is only generated for **completed events**
 - Participants are mostly created upfront, but can be generated on-demand
@@ -47,11 +48,13 @@ generate-seed-data.js (main orchestrator)
 ### Storage Locations
 
 **Participant level:**
+
 - Basic demographics
 - NHS number, GP details
 - Persistent information
 
 **Event level:**
+
 - Medical information collected during appointments
 - Session details (who, when, where)
 - Event-specific data
@@ -349,6 +352,7 @@ const generateMedicalInformation = (options = {}) => {
 ```
 
 **Benefits:**
+
 - Single point of orchestration
 - Default probabilities in one place
 - Simplified integration with parent generators
@@ -449,11 +453,13 @@ const relativeDate = faker.helpers.arrayElement([
 ### Testing-Friendly vs Realistic
 
 **For user research testing:**
+
 - Higher probabilities to ensure features appear
 - 30-40% chance of medical history (vs realistic 15-25%)
 - More edge cases than would occur naturally
 
 **For stakeholder demos:**
+
 - Lower, more realistic probabilities
 - Reflects actual NHS screening population
 
@@ -490,6 +496,7 @@ app/lib/generators/
 ```
 
 **Naming conventions:**
+
 - `generateItem()` - Single item
 - `generateItems()` - Array of items
 - `generate[Type]()` - Specific type/variant
@@ -633,6 +640,7 @@ if (availableParticipants.length === 0) {
 ## Summary
 
 The generator system provides:
+
 - **Hierarchical structure** - Generators call sub-generators
 - **Flexible configuration** - Defaults, overrides, test scenarios
 - **Realistic distributions** - Weighted probabilities and faker data

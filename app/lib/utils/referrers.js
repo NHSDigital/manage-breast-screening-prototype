@@ -254,12 +254,12 @@ const appendReferrer = (existingReferrerChain, newUrl) => {
   if (!existingReferrerChain) return newUrl
 
   const chain = parseReferrerChain(existingReferrerChain)
-  
+
   // Don't append if it's already the last item in the chain (prevents duplicates)
   if (chain.length > 0 && chain[chain.length - 1] === newUrl) {
     return existingReferrerChain
   }
-  
+
   chain.push(newUrl)
   return chain.join(',')
 }

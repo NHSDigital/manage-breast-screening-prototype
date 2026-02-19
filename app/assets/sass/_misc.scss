@@ -1,31 +1,35 @@
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-mammogram-image--placeholder {
-  background-color: black;
   width: 125px;
   // height: 150px;
 
   outline: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #000000;
 
   p {
-    color: white;
     margin-left: 5px;
+    color: #ffffff;
   }
 }
 
 .app-mammogram-image--missing {
-  background-color: nhsuk-colour("grey-5");
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   width: 125px;
   height: 187.5px;
+
   border: 2px dashed nhsuk-colour("grey-2");
+
+  background-color: nhsuk-colour("grey-5");
 }
 
 .app-mammogram-image--missing-content {
-  text-align: center;
   font-size: 16px;
+  text-align: center;
 }
 
 // Progressive enhancement helpers
@@ -33,11 +37,11 @@
   display: none;
 }
 
-body.js-enabled .app-js-only {
+.nhsuk-frontend-supported .app-js-only {
   display: block;
 }
 
-body.js-enabled .app-no-js-only {
+.nhsuk-frontend-supported .app-no-js-only {
   display: none;
 }
 
@@ -63,13 +67,13 @@ body.js-enabled .app-no-js-only {
 }
 
 .app-suppress-link-styles * {
-  text-decoration: none;
   color: $nhsuk-secondary-text-colour;
+  text-decoration: none;
 }
 
 .app-suppress-link-styles .app-button-link {
-  text-decoration: none;
   color: $nhsuk-secondary-text-colour;
+  text-decoration: none;
 }
 
 .app-image-flip-horizontal {
