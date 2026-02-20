@@ -48,6 +48,12 @@ const generatePreviousMammogram = ({
     ? dayjs(latestAllowedDate)
     : eventDay.subtract(6, 'month')
   const earliestDate = eventDay.subtract(3, 'year')
+
+  // If there's no valid date range (e.g. second mammogram pushed past 3 year limit), skip
+  if (earliestDate.isAfter(latestDate)) {
+    return null
+  }
+
   const dateTaken = dayjs(
     faker.date.between({
       from: earliestDate.toDate(),
@@ -193,10 +199,13 @@ const generatePreviousMammograms = ({ eventDate, addedByUserId }) => {
     )
   }
 
-  // Remove internal _rawDate field before returning
-  return mammograms.map(({ _rawDate, ...rest }) => rest)
+  // Remove any nulls (second mammogram may be skipped if date range is invalid)
+  // and remove internal _rawDate field before returning
+  const validMammograms = mammograms
+    .filter(Boolean)
+    .map(({ _rawDate, ...rest }) => rest)
 
-  return mammograms
+  return validMammograms.length > 0 ? validMammograms : null
 }
 
 module.exports = {

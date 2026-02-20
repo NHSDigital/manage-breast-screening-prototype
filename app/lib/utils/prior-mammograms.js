@@ -7,17 +7,17 @@
 // Check if an event has any reported mammograms
 const hasReportedMammograms = (event) => {
   if (!event) return false
-  return Array.isArray(event.previousMammograms) &&
+  return (
+    Array.isArray(event.previousMammograms) &&
     event.previousMammograms.length > 0
+  )
 }
 
 // Check if an event is awaiting priors (any mammogram has status 'requested')
 // Only 'requested' status holds a case from reading
 const awaitingPriors = (event) => {
   if (!hasReportedMammograms(event)) return false
-  return event.previousMammograms.some(
-    (m) => m.requestStatus === 'requested'
-  )
+  return event.previousMammograms.some((m) => m.requestStatus === 'requested')
 }
 
 // Check if an event has unrequested priors that a reader might want to request
@@ -59,7 +59,8 @@ const getPriorsSummary = (event) => {
   const total = event.previousMammograms.length
   const hasAwaiting = counts.requested > 0
   const hasUnrequested = counts.not_requested > 0
-  const resolvedCount = counts.received + counts.not_available + counts.not_needed
+  const resolvedCount =
+    counts.received + counts.not_available + counts.not_needed
   const allResolved = resolvedCount === total
 
   return {
@@ -82,9 +83,7 @@ const getUnrequestedPriors = (event) => {
 // Get requested (awaiting) mammograms from an event
 const getAwaitingPriors = (event) => {
   if (!hasReportedMammograms(event)) return []
-  return event.previousMammograms.filter(
-    (m) => m.requestStatus === 'requested'
-  )
+  return event.previousMammograms.filter((m) => m.requestStatus === 'requested')
 }
 
 // Check if a specific user requested priors on this event

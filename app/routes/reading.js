@@ -466,9 +466,7 @@ module.exports = (router) => {
       )
 
       if (nextUnreadEvent) {
-        res.redirect(
-          `/reading/batch/${batchId}/events/${nextUnreadEvent.id}`
-        )
+        res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
       } else {
         res.redirect(`/reading/batch/${batchId}`)
       }
