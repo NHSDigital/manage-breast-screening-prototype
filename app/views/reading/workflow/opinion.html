@@ -133,9 +133,9 @@
     </div>
   </div>
 
-  {# Reported mammograms callout #}
+  {# Reported mammograms callout - only shown if there are unrequested priors #}
   {% set priorsSummary = event | getPriorsSummary %}
-  {% if priorsSummary.total > 0 %}
+  {% if priorsSummary.hasUnrequested %}
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-full">
         {% set priorsCalloutHtml %}

@@ -130,6 +130,24 @@ module.exports = (router) => {
   // Prior mammograms management
   /***********************************************************************/
 
+  // Priors management page with optional tab filter
+  const VALID_PRIOR_FILTERS = ['all', 'not-requested', 'requested', 'resolved']
+
+  router.get(
+    ['/reading/priors', '/reading/priors/:filter'],
+    (req, res, next) => {
+      const filter = req.params.filter || 'all'
+
+      if (!VALID_PRIOR_FILTERS.includes(filter)) {
+        return next()
+      }
+
+      res.render('reading/priors', {
+        priorsFilter: filter
+      })
+    }
+  )
+
   // Update mammogram request status from priors management page
   router.post('/reading/priors/update-status', (req, res) => {
     const data = req.session.data
@@ -138,11 +156,17 @@ module.exports = (router) => {
 
     const event = data.events.find((e) => e.id === eventId)
     if (!event || !event.previousMammograms) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(404).json({ error: 'Event not found' })
+      }
       return res.redirect('/reading/priors')
     }
 
     const mammogram = event.previousMammograms.find((m) => m.id === mammogramId)
     if (!mammogram) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(404).json({ error: 'Mammogram not found' })
+      }
       return res.redirect('/reading/priors')
     }
 
@@ -162,6 +186,15 @@ module.exports = (router) => {
     // Also update mirrored event in data.event if it matches
     if (data.event && data.event.id === eventId) {
       data.event.previousMammograms = event.previousMammograms
+    }
+
+    // If this was a fetch request, send JSON response for in-place update
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({
+        status: 'success',
+        newStatus,
+        mammogramId
+      })
     }
 
     res.redirect('/reading/priors')
