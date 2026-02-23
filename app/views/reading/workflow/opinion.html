@@ -191,13 +191,17 @@
           {# Show request priors link if there are unrequested mammograms #}
           {% if priorsSummary.hasUnrequested %}
             <p class="nhsuk-u-margin-bottom-0">
-              <a href="./request-priors">Request prior images</a>
+              <a href="./request-priors">Request priors</a>
             </p>
           {% endif %}
         {% endset %}
 
+        {% set warningHeading %}
+          Recent {{ "mammogram" | pluralise(priorsSummary.total) }} reported
+        {% endset %}
+
         {{ warningCallout({
-          heading: "Reported mammograms",
+          heading: warningHeading,
           html: priorsCalloutHtml,
           classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-5"
         }) }}

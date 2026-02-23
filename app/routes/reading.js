@@ -127,6 +127,47 @@ module.exports = (router) => {
   })
 
   /************************************************************************
+  // Prior mammograms management
+  /***********************************************************************/
+
+  // Update mammogram request status from priors management page
+  router.post('/reading/priors/update-status', (req, res) => {
+    const data = req.session.data
+    const { eventId, mammogramId, newStatus } = req.body
+    const currentUserId = data.currentUser?.id
+
+    const event = data.events.find((e) => e.id === eventId)
+    if (!event || !event.previousMammograms) {
+      return res.redirect('/reading/priors')
+    }
+
+    const mammogram = event.previousMammograms.find((m) => m.id === mammogramId)
+    if (!mammogram) {
+      return res.redirect('/reading/priors')
+    }
+
+    // Update the status
+    mammogram.requestStatus = newStatus
+    mammogram.statusChangedDate = new Date().toISOString()
+    mammogram.statusChangedBy = currentUserId
+
+    // Set additional fields based on status
+    if (newStatus === 'requested') {
+      mammogram.requestedDate = new Date().toISOString()
+      mammogram.requestedBy = currentUserId
+    } else if (newStatus === 'received') {
+      mammogram.receivedDate = new Date().toISOString()
+    }
+
+    // Also update mirrored event in data.event if it matches
+    if (data.event && data.event.id === eventId) {
+      data.event.previousMammograms = event.previousMammograms
+    }
+
+    res.redirect('/reading/priors')
+  })
+
+  /************************************************************************
   // Batches
   /***********************************************************************/
 

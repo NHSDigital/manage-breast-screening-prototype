@@ -26,25 +26,41 @@
           {{ pageHeading }}
         </h1>
 
+        <p>
+          This case will be put on hold while all available mammogram images for {{ participant | getFullName }} are sourced through the Image Exchange Portal (IEP).
+        </p>
+
+        <p>
+          The case will be returned to the reading list once images are received, or after 5 days if they could not be retrieved.
+        </p>
+
         {# If only one unrequested mammogram, show details without checkboxes #}
         {% if unrequestedPriors | length == 1 %}
           {% set mammogram = unrequestedPriors[0] %}
-          <p>
-            {% if mammogram.location == "bsu" %}
-              {{ mammogram.bsu }}
-            {% elseif mammogram.location == "otherUk" %}
-              {{ mammogram.otherUk }}
-            {% elseif mammogram.location == "otherNonUk" %}
-              Outside UK: {{ mammogram.otherNonUk }}
-            {% elseif mammogram.location == "currentBsu" %}
-              {{ unit.name if unit else "Current BSU" }}
-            {% endif %}
-            {% if mammogram.dateType == "dateKnown" %}
-              – {{ mammogram.dateTaken | formatDate }}
-            {% elseif mammogram.dateType == "moreThanSixMonths" %}
-              – over 6 months ago
-            {% endif %}
-          </p>
+
+          {% set mammogramDetailsHtml %}
+            <p>
+              {% if mammogram.location == "bsu" %}
+                {{ mammogram.bsu }}
+              {% elseif mammogram.location == "otherUk" %}
+                {{ mammogram.otherUk }}
+              {% elseif mammogram.location == "otherNonUk" %}
+                Outside UK: {{ mammogram.otherNonUk }}
+              {% elseif mammogram.location == "currentBsu" %}
+                {{ unit.name if unit else "Current BSU" }}
+              {% endif %}
+              {% if mammogram.dateType == "dateKnown" %}
+                – {{ mammogram.dateTaken | formatDate }}
+              {% elseif mammogram.dateType == "moreThanSixMonths" %}
+                – over 6 months ago
+              {% endif %}
+            </p>
+          {% endset %}
+
+          {{ insetText({
+            html: mammogramDetailsHtml
+          }) }}
+          
 
           {# Hidden field to identify which mammogram to request #}
           <input type="hidden" name="requestPriorIds[]" value="{{ mammogram.id }}">
@@ -81,7 +97,7 @@
             name: "requestPriorIds",
             fieldset: {
               legend: {
-                text: "Select which prior images to request",
+                text: "Which priors would you like to request?",
                 classes: "nhsuk-fieldset__legend--s"
               }
             },
@@ -90,18 +106,22 @@
 
         {% endif %}
 
+
         {{ textarea({
           name: "requestPriorReason",
           id: "requestPriorReason",
           label: {
-            text: "Reason for requesting (optional)",
+            text: "Provide details (optional)",
             classes: "nhsuk-label--s"
+          },
+          hint: {
+            text: "Add information that could be relevant to other readers."
           },
           rows: 3
         }) }}
 
         {{ button({
-          text: "Request and continue to next case"
+          text: "Confirm request and continue"
         }) }}
 
       </form>

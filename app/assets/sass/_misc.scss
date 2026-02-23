@@ -101,3 +101,28 @@ body.js-enabled .app-no-js-only {
     0 0 0 calc(2px + $nhsuk-focus-width) $nhsuk-focus-text-colour,
     0 0 0 calc(2px + $nhsuk-focus-width + 4px) $nhsuk-focus-colour;
 }
+
+// Button styled as a link - for inline form submissions
+.app-link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: $nhsuk-link-colour;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+
+  &:hover {
+    color: $nhsuk-link-hover-colour;
+  }
+
+  &:focus {
+    @include nhsuk-focused-text;
+  }
+}
+
+// Inline form with no extra spacing
+.app-inline-form {
+  display: inline;
+}

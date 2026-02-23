@@ -1,0 +1,159 @@
+{# app/views/reading/priors.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Prior mammograms" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/reading",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {# Find all events with actionable mammograms (not_requested or requested) #}
+  {% set eligibleEvents = data.events | filterEventsByEligibleForReading %}
+  {% set eventsWithActionablePriors = [] %}
+  {% for thisEvent in eligibleEvents %}
+    {% if thisEvent | hasReportedMammograms %}
+      {% set hasPending = false %}
+      {% for mammogram in thisEvent.previousMammograms %}
+        {% if mammogram.requestStatus == "not_requested" or mammogram.requestStatus == "requested" %}
+          {% set hasPending = true %}
+        {% endif %}
+      {% endfor %}
+      {% if hasPending %}
+        {% set eventsWithActionablePriors = eventsWithActionablePriors | push(thisEvent) %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  <span class="nhsuk-caption-l">Image reading</span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% if eventsWithActionablePriors | length == 0 %}
+    <p>No cases with outstanding prior mammograms.</p>
+  {% else %}
+    <p>{{ eventsWithActionablePriors | length }} {{ "case" if eventsWithActionablePriors | length == 1 else "cases" }} with prior mammograms needing action.</p>
+
+    <table class="nhsuk-table">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th scope="col">Participant</th>
+          <th scope="col">Screened</th>
+          <th scope="col">Prior mammogram</th>
+          <th scope="col">Status</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for thisEvent in eventsWithActionablePriors %}
+          {% for mammogram in thisEvent.previousMammograms %}
+            {# Only show actionable mammograms #}
+            {% if mammogram.requestStatus == "not_requested" or mammogram.requestStatus == "requested" %}
+              <tr>
+                {# Participant name with link to event #}
+                <td>
+                  <a href="/participants/{{ thisEvent.participantId }}/events/{{ thisEvent.id }}">
+                    {{ thisEvent.participant | getFullName }}
+                  </a>
+                </td>
+
+                {# Screening date #}
+                <td>
+                  {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
+                  {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+                    {{ "Urgent" | toTag }}<br>
+                  {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+                    {{ "Due soon" | toTag }}<br>
+                  {% endif %}
+                  {{ thisEvent.timing.startTime | formatDate }}<br>
+                  <span class="app-text-grey nhsuk-body-s">
+                    {{ thisEvent.timing.startTime | formatRelativeDate }}
+                  </span>
+                </td>
+
+                {# Mammogram location and date #}
+                <td>
+                  {% if mammogram.location == "bsu" %}
+                    {{ mammogram.bsu }}
+                  {% elseif mammogram.location == "otherUk" %}
+                    {{ mammogram.otherUk }}
+                  {% elseif mammogram.location == "otherNonUk" %}
+                    Outside UK: {{ mammogram.otherNonUk }}
+                  {% elseif mammogram.location == "currentBsu" %}
+                    Current BSU
+                  {% endif %}
+                  {% if mammogram.dateType == "dateKnown" %}
+                    <br>{{ mammogram.dateTaken | formatDate }}
+                  {% elseif mammogram.dateType == "moreThanSixMonths" %}
+                    <br>Over 6 months ago
+                  {% endif %}
+                </td>
+
+                {# Status #}
+                <td>
+                  {% if mammogram.requestStatus == "requested" %}
+                    <strong class="nhsuk-tag nhsuk-tag--yellow">Requested</strong>
+                    {% if mammogram.requestedDate %}
+                      <br>
+                      <span class="app-text-grey nhsuk-body-s">
+                        {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
+                        {% if mammogram.requestedBy %}
+                          by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                        {% endif %}
+                      </span>
+                    {% endif %}
+                    {% if mammogram.requestReason %}
+                      <br>
+                      <span class="app-text-grey nhsuk-body-s">
+                        {{ mammogram.requestReason }}
+                      </span>
+                    {% endif %}
+                  {% elseif mammogram.requestStatus == "not_requested" %}
+                    <strong class="nhsuk-tag nhsuk-tag--white">Not requested</strong>
+                  {% endif %}
+                </td>
+
+                {# Actions #}
+                <td>
+                  {% if mammogram.requestStatus == "not_requested" %}
+                    {# Can mark as requested #}
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="requested">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as requested</button>
+                    </form>
+                  {% elseif mammogram.requestStatus == "requested" %}
+                    {# Can mark as received, not available, or not needed #}
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="received">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as received</button>
+                    </form>
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="not_available">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
+                    </form>
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="not_needed">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not needed</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}
