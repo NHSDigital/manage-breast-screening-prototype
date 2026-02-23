@@ -23,22 +23,9 @@
       {% for mammogram in event.previousMammograms %}
         {% if mammogram.requestStatus == "requested" %}
           <p class="nhsuk-u-margin-bottom-2">
-            {% if mammogram.location == "bsu" %}
-              {{ mammogram.bsu }}
-            {% elseif mammogram.location == "otherUk" %}
-              {{ mammogram.otherUk }}
-            {% elseif mammogram.location == "otherNonUk" %}
-              Outside UK: {{ mammogram.otherNonUk }}
-            {% elseif mammogram.location == "currentBsu" %}
-              {{ unit.name if unit else "Current BSU" }}
-            {% endif %}
-            {% if mammogram.dateType == "dateKnown" %}
-              – {{ mammogram.dateTaken | formatDate }}
-            {% elseif mammogram.dateType == "moreThanSixMonths" %}
-              – over 6 months ago
-            {% endif %}
+            {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
             <br>
-            <strong class="nhsuk-tag nhsuk-tag--yellow">Requested</strong>
+            {{ ("prior_" + mammogram.requestStatus) | toTag }}
             {% if mammogram.requestedDate %}
               {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
             {% endif %}

@@ -66,22 +66,32 @@ const generatePreviousMammogram = ({
   if (location === 'bsu') {
     locationDetails.bsu = faker.helpers.arrayElement(allBSUs)
   } else if (location === 'otherUk') {
+    // Realistic clinic and hospital names a participant might write in a free-text field
     locationDetails.otherUk = faker.helpers.arrayElement([
-      'Private clinic',
-      'Symptomatic breast clinic',
-      'Hospital radiology department',
-      'GP referral imaging'
+      'The London Breast Clinic, Harley Street',
+      'Manchester Royal Infirmary',
+      "St Bartholomew's Hospital, London",
+      'The Nuffield Health hospital in Birmingham',
+      'Spire Manchester Hospital',
+      'Royal Marsden Hospital, Sutton',
+      'BUPA clinic in Bristol',
+      'The Breast Care Centre at Leeds General Infirmary',
+      "Addenbrooke's Hospital, Cambridge",
+      'Queen Elizabeth Hospital, Birmingham'
     ])
   } else if (location === 'otherNonUk') {
+    // What a user might type when describing an overseas clinic – country context included
     locationDetails.otherNonUk = faker.helpers.arrayElement([
-      'Spain',
-      'France',
-      'Germany',
-      'USA',
-      'Australia',
-      'India',
-      'Poland',
-      'Italy'
+      'A hospital in Spain',
+      'Clinic in Madrid',
+      'Hospital in Dublin, Ireland',
+      'A private clinic in France',
+      'Hospital in Sydney, Australia',
+      'Clinic in Toronto, Canada',
+      'Hospital in Berlin, Germany',
+      'A clinic in the USA',
+      'Hospital in Warsaw, Poland',
+      'Clinic in Rome, Italy'
     ])
   }
 
@@ -98,6 +108,15 @@ const generatePreviousMammogram = ({
       day: String(dateTaken.date()),
       month: String(dateTaken.month() + 1),
       year: String(dateTaken.year())
+    }
+  } else if (dateType === 'moreThanSixMonths') {
+    // Approximate date as a participant might write it – e.g. 'April 2018' or 'summer 2021'
+    const seasons = ['early', 'spring', 'summer', 'autumn', 'winter']
+    const useMonth = Math.random() < 0.6
+    if (useMonth) {
+      dateFields.approximateDate = dateTaken.format('MMMM YYYY')
+    } else {
+      dateFields.approximateDate = `${faker.helpers.arrayElement(seasons)} ${dateTaken.year()}`
     }
   }
 
@@ -159,13 +178,67 @@ const generatePreviousMammogram = ({
         : addedByUserId
   }
 
+  // Generate optional 'otherDetails' field based on location type
+  // Reasoning varies by context: symptomatic if same BSU, moved area if another BSU, private if other UK, abroad if non-UK
+  const otherDetailsOptions = {
+    currentBsu: [
+      'Referred by GP after noticing a lump. Came back clear.',
+      'GP referred for breast pain. No concerns found.',
+      'Referred by GP after noticing a change in one breast. All clear.',
+      'Attended the breast clinic after noticing a change. Result was normal.',
+      'Sent to the breast clinic following discharge. Everything was fine.',
+      'Diagnostic mammogram following GP referral. Results normal.'
+    ],
+    bsu: [
+      'Participant has moved to this area. Previously registered with another unit.',
+      'Moved from another part of the country a couple of years ago.',
+      'Previously screened at a unit closer to where they used to live.',
+      'Relocated locally – was screened at a unit in their previous area.'
+    ],
+    otherUk: [
+      'Private mammogram due to family history. Told everything looked normal.',
+      'Paid for a private scan. No concerns raised.',
+      'Routine private screening. All clear.',
+      'Private mammogram following a family diagnosis. Results were fine.',
+      'Went privately after noticing some changes. Given the all clear.'
+    ],
+    otherNonUk: [
+      'Routine screening while living abroad. Everything was normal.',
+      'Mammogram done while living overseas for work. Results were clear.',
+      'Scan taken while staying abroad for a few months. Told all was fine.',
+      'Screened while living overseas. No concerns were raised.'
+    ]
+  }
+
+  // Likelihood of adding details varies – symptomatic (currentBsu) and abroad (otherNonUk) are more likely to have notes
+  const otherDetailsRate = {
+    currentBsu: 0.7,
+    bsu: 0.5,
+    otherUk: 0.55,
+    otherNonUk: 0.6
+  }
+
+  let otherDetails
+  if (Math.random() < (otherDetailsRate[location] ?? 0.4)) {
+    const options = otherDetailsOptions[location] || []
+    if (options.length > 0) {
+      otherDetails = faker.helpers.arrayElement(options)
+    }
+  }
+
+  const sameNameValue = weighted.select({ sameName: 0.85, differentName: 0.15 })
+
   return {
     id: generateId(),
     location,
     ...locationDetails,
     dateType,
     ...dateFields,
-    sameName: weighted.select({ sameName: 0.85, differentName: 0.15 }),
+    sameName: sameNameValue,
+    ...(sameNameValue === 'differentName'
+      ? { previousName: faker.person.lastName() }
+      : {}),
+    ...(otherDetails ? { otherDetails } : {}),
     dateAdded: dayjs(eventDate).toISOString(),
     addedBy: addedByUserId,
     _rawDate: dateTaken.toISOString(), // Internal field for gap calculations

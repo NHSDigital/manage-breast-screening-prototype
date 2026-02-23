@@ -141,28 +141,12 @@
         {% set priorsCalloutHtml %}
           {% for mammogram in event.previousMammograms %}
             <p class="nhsuk-u-margin-bottom-1">
-              {# Location #}
-              {% if mammogram.location == "bsu" %}
-                {{ mammogram.bsu }}
-              {% elseif mammogram.location == "otherUk" %}
-                {{ mammogram.otherUk }}
-              {% elseif mammogram.location == "otherNonUk" %}
-                Outside UK: {{ mammogram.otherNonUk }}
-              {% elseif mammogram.location == "currentBsu" %}
-                {{ unit.name if unit else "Current BSU" }}
-              {% endif %}
-
-              {# Date #}
-              {% if mammogram.dateType == "dateKnown" %}
-                – {{ mammogram.dateTaken | formatDate }}
-              {% elseif mammogram.dateType == "moreThanSixMonths" %}
-                – over 6 months ago
-              {% endif %}
+              {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
 
               {# Request status #}
+              <br>
+              {{ ("prior_" + mammogram.requestStatus) | toTag }}
               {% if mammogram.requestStatus == "requested" %}
-                <br>
-                <strong class="nhsuk-tag nhsuk-tag--yellow">Requested</strong>
                 {% if mammogram.requestedDate %}
                   {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
                 {% endif %}
@@ -170,30 +154,13 @@
                   – {{ mammogram.requestReason }}
                 {% endif %}
               {% elseif mammogram.requestStatus == "received" %}
-                <br>
-                <strong class="nhsuk-tag nhsuk-tag--green">Received</strong>
                 {% if mammogram.receivedDate %}
                   {{ mammogram.receivedDate | formatDate("D MMM YYYY") }}
                 {% endif %}
-              {% elseif mammogram.requestStatus == "not_available" %}
-                <br>
-                <strong class="nhsuk-tag nhsuk-tag--grey">Not available</strong>
-              {% elseif mammogram.requestStatus == "not_needed" %}
-                <br>
-                <strong class="nhsuk-tag nhsuk-tag--grey">Not needed</strong>
-              {% elseif mammogram.requestStatus == "not_requested" %}
-                <br>
-                <strong class="nhsuk-tag nhsuk-tag--white">Not requested</strong>
               {% endif %}
             </p>
           {% endfor %}
 
-          {# Show request priors link if there are unrequested mammograms #}
-          {% if priorsSummary.hasUnrequested %}
-            <p class="nhsuk-u-margin-bottom-0">
-              <a href="./request-priors">Request priors</a>
-            </p>
-          {% endif %}
         {% endset %}
 
         {% set warningHeading %}
@@ -203,8 +170,18 @@
         {{ warningCallout({
           heading: warningHeading,
           html: priorsCalloutHtml,
-          classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-5"
+          classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-5",
+          actions: {
+            items: [
+               {
+                text: "Request priors",
+                href: "./request-priors",
+                classes: "nhsuk-link--no-visited-state"
+              }
+            ]
+          } if priorsSummary.hasUnrequested else null
         }) }}
+
       </div>
     </div>
   {% endif %}

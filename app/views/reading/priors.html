@@ -76,26 +76,13 @@
 
                 {# Mammogram location and date #}
                 <td>
-                  {% if mammogram.location == "bsu" %}
-                    {{ mammogram.bsu }}
-                  {% elseif mammogram.location == "otherUk" %}
-                    {{ mammogram.otherUk }}
-                  {% elseif mammogram.location == "otherNonUk" %}
-                    Outside UK: {{ mammogram.otherNonUk }}
-                  {% elseif mammogram.location == "currentBsu" %}
-                    Current BSU
-                  {% endif %}
-                  {% if mammogram.dateType == "dateKnown" %}
-                    <br>{{ mammogram.dateTaken | formatDate }}
-                  {% elseif mammogram.dateType == "moreThanSixMonths" %}
-                    <br>Over 6 months ago
-                  {% endif %}
+                  {{ mammogram | summarisePriorMammogram }}
                 </td>
 
                 {# Status #}
                 <td>
+                  {{ ("prior_" + mammogram.requestStatus) | toTag }}
                   {% if mammogram.requestStatus == "requested" %}
-                    <strong class="nhsuk-tag nhsuk-tag--yellow">Requested</strong>
                     {% if mammogram.requestedDate %}
                       <br>
                       <span class="app-text-grey nhsuk-body-s">
@@ -111,8 +98,6 @@
                         {{ mammogram.requestReason }}
                       </span>
                     {% endif %}
-                  {% elseif mammogram.requestStatus == "not_requested" %}
-                    <strong class="nhsuk-tag nhsuk-tag--white">Not requested</strong>
                   {% endif %}
                 </td>
 

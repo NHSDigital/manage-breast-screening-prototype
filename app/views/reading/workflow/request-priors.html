@@ -39,22 +39,7 @@
           {% set mammogram = unrequestedPriors[0] %}
 
           {% set mammogramDetailsHtml %}
-            <p>
-              {% if mammogram.location == "bsu" %}
-                {{ mammogram.bsu }}
-              {% elseif mammogram.location == "otherUk" %}
-                {{ mammogram.otherUk }}
-              {% elseif mammogram.location == "otherNonUk" %}
-                Outside UK: {{ mammogram.otherNonUk }}
-              {% elseif mammogram.location == "currentBsu" %}
-                {{ unit.name if unit else "Current BSU" }}
-              {% endif %}
-              {% if mammogram.dateType == "dateKnown" %}
-                – {{ mammogram.dateTaken | formatDate }}
-              {% elseif mammogram.dateType == "moreThanSixMonths" %}
-                – over 6 months ago
-              {% endif %}
-            </p>
+            <p>{{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}</p>
           {% endset %}
 
           {{ insetText({
@@ -69,26 +54,9 @@
           {# Multiple unrequested mammograms - show checkboxes #}
           {% set mammogramItems = [] %}
           {% for mammogram in unrequestedPriors %}
-            {% set mammogramLabel %}
-              {% if mammogram.location == "bsu" %}
-                {{ mammogram.bsu }}
-              {% elseif mammogram.location == "otherUk" %}
-                {{ mammogram.otherUk }}
-              {% elseif mammogram.location == "otherNonUk" %}
-                Outside UK: {{ mammogram.otherNonUk }}
-              {% elseif mammogram.location == "currentBsu" %}
-                {{ unit.name if unit else "Current BSU" }}
-              {% endif %}
-              {% if mammogram.dateType == "dateKnown" %}
-                – {{ mammogram.dateTaken | formatDate }}
-              {% elseif mammogram.dateType == "moreThanSixMonths" %}
-                – over 6 months ago
-              {% endif %}
-            {% endset %}
-
             {% set mammogramItems = mammogramItems | push({
               value: mammogram.id,
-              text: mammogramLabel | trim,
+              text: mammogram | summarisePriorMammogram({ unitName: unit.name }),
               checked: true
             }) %}
           {% endfor %}
