@@ -78,6 +78,6 @@ module.exports = {
   generation: {
     numberOfParticipants: 1000,
     bookingProbability: 0.8, // 80% of slots are booked
-    previousMammogramRate: 0.8 // Rate of completed events with reported previous mammograms (high for testing, lower for user research)
+    previousMammogramRate: 0.05 // Rate of completed events with reported previous mammograms
   }
 }

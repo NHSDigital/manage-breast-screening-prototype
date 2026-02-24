@@ -140,10 +140,7 @@
                 {%- endset %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
-                {% if event | awaitingPriors %}
-                <br>
-                  {{ "Awaiting priors" | toTag }}
-                {% endif %}
+                
                 {% if event.medicalInformation.symptoms | length %}
                 <br>
                   {{ "Has symptoms" | toTag }}
