@@ -77,6 +77,7 @@ module.exports = {
   // Data generation settings
   generation: {
     numberOfParticipants: 1000,
-    bookingProbability: 0.8 // 80% of slots are booked
+    bookingProbability: 0.8, // 80% of slots are booked
+    previousMammogramRate: 0.05 // Rate of completed events with reported previous mammograms
   }
 }

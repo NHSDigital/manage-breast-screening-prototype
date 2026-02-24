@@ -1,0 +1,99 @@
+{# app/views/reading/workflow/request-priors.html #}
+
+{% extends 'layout-reading.html' %}
+
+{% set pageHeading = "Request prior images" %}
+{% set back = {
+  href: "./opinion",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {% set caption %}
+    {{ participant | getFullName }}
+  {% endset %}
+
+  {% set unrequestedPriors = event | getUnrequestedPriors %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <form action="./request-priors-answer" method="POST">
+
+        <h1 class="nhsuk-heading-l">
+          <span class="nhsuk-caption-l">{{ caption }}</span>
+          {{ pageHeading }}
+        </h1>
+
+        <p>
+          This case will be put on hold while all available mammogram images for {{ participant | getFullName }} are sourced through the Image Exchange Portal (IEP).
+        </p>
+
+        <p>
+          The case will be returned to the reading list once images are received, or after 5 days if they could not be retrieved.
+        </p>
+
+        {# If only one unrequested mammogram, show details without checkboxes #}
+        {% if unrequestedPriors | length == 1 %}
+          {% set mammogram = unrequestedPriors[0] %}
+
+          {% set mammogramDetailsHtml %}
+            <p>{{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}</p>
+          {% endset %}
+
+          {{ insetText({
+            html: mammogramDetailsHtml
+          }) }}
+
+          {# Hidden field to identify which mammogram to request #}
+          <input type="hidden" name="requestPriorIds[]" value="{{ mammogram.id }}">
+
+        {% else %}
+          {# Multiple unrequested mammograms - show checkboxes #}
+          {% set mammogramItems = [] %}
+          {% for mammogram in unrequestedPriors %}
+            {% set mammogramItems = mammogramItems | push({
+              value: mammogram.id,
+              text: mammogram | summarisePriorMammogram({ unitName: unit.name }),
+              checked: true
+            }) %}
+          {% endfor %}
+
+          {{ checkboxes({
+            name: "requestPriorIds",
+            fieldset: {
+              legend: {
+                text: "Which priors would you like to request?",
+                classes: "nhsuk-fieldset__legend--s"
+              }
+            },
+            items: mammogramItems
+          }) }}
+
+        {% endif %}
+
+
+        {{ textarea({
+          name: "requestPriorReason",
+          id: "requestPriorReason",
+          label: {
+            text: "Provide details (optional)",
+            classes: "nhsuk-label--s"
+          },
+          hint: {
+            text: "Add information that could be relevant to other readers."
+          },
+          rows: 3
+        }) }}
+
+        {{ button({
+          text: "Confirm request and continue"
+        }) }}
+
+      </form>
+
+    </div>
+  </div>
+
+{% endblock %}

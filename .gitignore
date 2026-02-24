@@ -78,3 +78,6 @@ coverage
 # LLM instructions
 .github
 CLAUDE.md
+
+# Local setting overrides (personal dev preferences, not for committing)
+*.local.js

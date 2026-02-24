@@ -272,7 +272,15 @@ const getStatusTagColour = (status) => {
     'second_read': 'blue',
 
     'urgent': 'red',
-    'due_soon': 'orange'
+    'due_soon': 'orange',
+
+    // Prior mammogram request statuses
+    'prior_not_requested': 'white',
+    'prior_requested': 'yellow',
+    'priors_requested': 'yellow',
+    'prior_received': 'green',
+    'prior_not_available': 'grey',
+    'prior_not_needed': 'grey'
   }
   return colourMap[status.toLowerCase()] || ''
 }
@@ -302,7 +310,14 @@ const getStatusText = (status) => {
     technical_recall: 'Technical recall',
     clinical_recall: 'Clinical recall',
     recall_for_assessment: 'Recall for assessment',
-    abnormal: 'Abnormal'
+    abnormal: 'Abnormal',
+
+    // Prior mammogram request statuses
+    prior_not_requested: 'Not requested',
+    prior_requested: 'Requested',
+    prior_received: 'Received',
+    prior_not_available: 'Not available',
+    prior_not_needed: 'Not needed'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',

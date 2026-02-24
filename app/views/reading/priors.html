@@ -1,0 +1,322 @@
+{# app/views/reading/priors.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Prior mammograms" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/reading",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {# Get all eligible events with reported mammograms, sorted by screening date #}
+  {% set eligibleEvents = data.events | filterEventsByEligibleForReading | sortEventsByScreeningDate %}
+
+  {# Build flat list of mammogram rows with their parent event #}
+  {% set allRows = [] %}
+  {% set notRequestedRows = [] %}
+  {% set requestedRows = [] %}
+  {% set resolvedRows = [] %}
+
+  {% for thisEvent in eligibleEvents %}
+    {% if thisEvent | hasReportedMammograms %}
+      {% for mammogram in thisEvent.previousMammograms %}
+        {% set row = { event: thisEvent, mammogram: mammogram } %}
+        {% if mammogram.requestStatus == "not_requested" %}
+          {% set notRequestedRows = notRequestedRows | push(row) %}
+          {% set allRows = allRows | push(row) %}
+        {% elseif mammogram.requestStatus == "requested" %}
+          {% set requestedRows = requestedRows | push(row) %}
+          {% set allRows = allRows | push(row) %}
+        {% elseif mammogram.requestStatus == "received" or mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed" %}
+          {% set resolvedRows = resolvedRows | push(row) %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+
+  {# Pick which rows to display based on active filter #}
+  {% set priorsFilter = priorsFilter if priorsFilter else "all" %}
+  {% if priorsFilter == "not-requested" %}
+    {% set displayRows = notRequestedRows %}
+  {% elseif priorsFilter == "requested" %}
+    {% set displayRows = requestedRows %}
+  {% elseif priorsFilter == "resolved" %}
+    {% set displayRows = resolvedRows %}
+  {% else %}
+    {% set displayRows = allRows %}
+  {% endif %}
+
+  <span class="nhsuk-caption-l">Image reading</span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {# Secondary navigation tabs #}
+  {% set secondaryNavItems = [] %}
+  {% set tabItems = [
+    { id: "all", label: "All", count: allRows | length },
+    { id: "not-requested", label: "Not requested", count: notRequestedRows | length },
+    { id: "requested", label: "Requested", count: requestedRows | length },
+    { id: "resolved", label: "Recently resolved", count: resolvedRows | length }
+  ] %}
+
+  {% for tab in tabItems %}
+    {% set href -%}
+      /reading/priors{{ ("/" + tab.id) if tab.id != "all" }}
+    {%- endset %}
+    {% set secondaryNavItems = secondaryNavItems | push({
+      text: (tab.label + " " + appCount(tab.count)) | safe,
+      href: href | trim,
+      current: true if tab.id == priorsFilter
+    }) %}
+  {% endfor %}
+
+  {{ appSecondaryNavigation({
+    visuallyHiddenTitle: "Prior mammograms filter",
+    items: secondaryNavItems
+  }) }}
+
+  {% if displayRows | length == 0 %}
+    <p>No prior mammograms in this view.</p>
+  {% else %}
+
+    <table class="nhsuk-table">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th scope="col">Participant</th>
+          <th scope="col">Screened</th>
+          <th scope="col">Prior mammogram</th>
+          <th scope="col">Status</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for row in displayRows %}
+          {% set thisEvent = row.event %}
+          {% set mammogram = row.mammogram %}
+              <tr data-mammogram-row="{{ mammogram.id }}">
+                {# Participant name - look up from session data #}
+                {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
+                <td>
+                  <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}">
+                    {{ thisParticipant | getFullName }}
+                  </a>
+                </td>
+
+                {# Screening date #}
+                <td>
+                  {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
+                  {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+                    {{ "Urgent" | toTag }}<br>
+                  {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+                    {{ "Due soon" | toTag }}<br>
+                  {% endif %}
+                  {{ thisEvent.timing.startTime | formatDate }}<br>
+                  <span class="app-text-grey nhsuk-body-s">
+                    {{ thisEvent.timing.startTime | formatRelativeDate }}
+                  </span>
+                </td>
+
+                {# Mammogram location and date #}
+                <td>
+                  {{ mammogram | summarisePriorMammogram }}
+                </td>
+
+                {# Status #}
+                <td data-mammogram-status="{{ mammogram.id }}">
+                  {{ ("prior_" + mammogram.requestStatus) | toTag }}
+                  {% if mammogram.requestStatus == "requested" %}
+                    {% if mammogram.requestedDate %}
+                      <br>
+                      <span class="app-text-grey nhsuk-body-s">
+                        {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
+                        {% if mammogram.requestedBy %}
+                          by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                        {% endif %}
+                      </span>
+                    {% endif %}
+                    {% if mammogram.requestReason %}
+                      <br>
+                      <span class="app-text-grey nhsuk-body-s">
+                        {{ mammogram.requestReason }}
+                      </span>
+                    {% endif %}
+                  {% elseif mammogram.requestStatus == "received" or mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed" %}
+                    {% if mammogram.statusChangedDate %}
+                      <br>
+                      <span class="app-text-grey nhsuk-body-s">
+                        {{ mammogram.statusChangedDate | formatDate("D MMM YYYY") }}
+                        {% if mammogram.statusChangedBy %}
+                          by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                        {% endif %}
+                      </span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+
+                {# Actions #}
+                <td data-mammogram-actions="{{ mammogram.id }}">
+                  {% if mammogram.requestStatus == "not_requested" %}
+                    {# Can mark as requested, not available, or not needed #}
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="requested">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as requested</button>
+                    </form>
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="not_available">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
+                    </form>
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="not_needed">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not needed</button>
+                    </form>
+                  {% elseif mammogram.requestStatus == "requested" %}
+                    {# Can mark as received, not available, or not needed #}
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="received">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as received</button>
+                    </form>
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="not_available">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
+                    </form>
+                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+                      <input type="hidden" name="newStatus" value="not_needed">
+                      <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not needed</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}
+
+{% block pageScripts %}
+<script>
+  // In-place status updates for prior mammograms
+  // Mirrors the check-in pattern used on clinic show page
+  document.addEventListener('DOMContentLoaded', () => {
+    const statusLabels = {
+      requested: 'Requested',
+      received: 'Received',
+      not_available: 'Not available',
+      not_needed: 'Not needed',
+      not_requested: 'Not requested'
+    }
+
+    const statusColours = {
+      requested: 'nhsuk-tag--yellow',
+      received: 'nhsuk-tag--green',
+      not_available: 'nhsuk-tag--grey',
+      not_needed: 'nhsuk-tag--grey',
+      not_requested: 'nhsuk-tag--white'
+    }
+
+    // Actions available after updating to a given status
+    const actionsForStatus = {
+      requested: ['received', 'not_available', 'not_needed'],
+      not_requested: ['requested', 'not_available', 'not_needed'],
+      received: [],
+      not_available: [],
+      not_needed: []
+    }
+
+    // Labels for action links (different from status labels)
+    const actionLabels = {
+      requested: 'Mark as requested',
+      received: 'Mark as received',
+      not_available: 'Not available',
+      not_needed: 'Not needed'
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault()
+
+      const form = e.currentTarget
+      const formData = new FormData(form)
+      const mammogramId = formData.get('mammogramId')
+      const eventId = formData.get('eventId')
+      const newStatus = formData.get('newStatus')
+
+      fetch(form.action, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json'
+        },
+        body: new URLSearchParams({ eventId, mammogramId, newStatus })
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error('Failed to update status')
+          return response.json()
+        })
+        .then(() => {
+          // Update the status tag in-place
+          const statusCell = document.querySelector(
+            '[data-mammogram-status="' + mammogramId + '"]'
+          )
+          if (statusCell) {
+            const colourClass = statusColours[newStatus] || ''
+            statusCell.innerHTML =
+              '<strong class="nhsuk-tag ' + colourClass + '">' +
+              statusLabels[newStatus] + '</strong>'
+          }
+
+          // Update the actions cell with new available actions
+          const actionsCell = document.querySelector(
+            '[data-mammogram-actions="' + mammogramId + '"]'
+          )
+          if (actionsCell) {
+            const newActions = actionsForStatus[newStatus] || []
+            if (newActions.length === 0) {
+              actionsCell.innerHTML = ''
+            } else {
+              actionsCell.innerHTML = newActions.map(function (action) {
+                return '<form action="/reading/priors/update-status" method="POST"' +
+                  ' class="app-inline-form js-prior-status-form">' +
+                  '<input type="hidden" name="eventId" value="' + eventId + '">' +
+                  '<input type="hidden" name="mammogramId" value="' + mammogramId + '">' +
+                  '<input type="hidden" name="newStatus" value="' + action + '">' +
+                  '<button type="submit" class="nhsuk-link--no-visited-state app-link-button">' +
+                  actionLabels[action] + '</button></form>'
+              }).join('\n')
+
+              // Re-attach listeners to newly created forms
+              actionsCell.querySelectorAll('.js-prior-status-form').forEach(
+                function (newForm) {
+                  newForm.addEventListener('submit', handleFormSubmit)
+                }
+              )
+            }
+          }
+        })
+        .catch(function (error) {
+          console.error('Error updating prior status:', error)
+          // Fall back to normal form submission
+          form.submit()
+        })
+    }
+
+    document.querySelectorAll('.js-prior-status-form').forEach(function (form) {
+      form.addEventListener('submit', handleFormSubmit)
+    })
+  })
+</script>
+{% endblock %}

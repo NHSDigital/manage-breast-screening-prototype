@@ -54,11 +54,21 @@
 
 
 
-    {% set requestedWithDateHtml %}
-      {{ "Images requested" | toTag | safe }}<br>
-      Requested 10 Feb 2025
-    {% endset %}
-    {{ (requestedWithDateHtml | safe) if event.hasRequestedImages | falsify }}
+    {# Prior mammogram status tags #}
+    {% set priorsSummary = event | getPriorsSummary %}
+    {% if priorsSummary.hasAwaiting %}
+      {% set awaitingPriorsList = event | getAwaitingPriors %}
+      {{ "Awaiting priors" | toTag | safe }}<br>
+      {% for prior in awaitingPriorsList %}
+        {% if prior.requestedDate %}
+          Requested {{ prior.requestedDate | formatDate("D MMM YYYY") }}
+          {% if prior.requestReason %}
+            – {{ prior.requestReason }}
+          {% endif %}
+          {% if not loop.last %}<br>{% endif %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
   </div>
 </div>
 <div class="nhsuk-grid-row">

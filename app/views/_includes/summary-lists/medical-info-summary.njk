@@ -88,6 +88,22 @@
 {# Count additional mammograms #}
 {% set additionalMammogramsCount = event.previousMammograms | length %}
 
+{# Build previous mammograms HTML #}
+{% set previousMammogramsHtml %}
+  {% if additionalMammogramsCount == 0 %}
+    <p>No additional mammograms added</p>
+  {% elif additionalMammogramsCount == 1 %}
+    {% set mammogram = event.previousMammograms[0] %}
+    <p>{{ mammogram | summarisePriorMammogram }} {{ ("prior_" + mammogram.requestStatus) | toTag }}</p>
+  {% else %}
+    <ul class="nhsuk-list">
+      {% for mammogram in event.previousMammograms %}
+        <li>{{ mammogram | summarisePriorMammogram }} {{ ("prior_" + mammogram.requestStatus) | toTag }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endset %}
+
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
@@ -117,17 +133,17 @@
 {% if not showOnlyPopulated or additionalMammogramsCount > 0 %}
   {% set rows = rows | push({
     key: {
-      text: "Previous mammograms"
+      text: "Reported mammograms"
     },
     value: {
-      text: "No additional mammograms added" if additionalMammogramsCount == 0 else (additionalMammogramsCount + " additional " + ("mammogram" | pluralise(additionalMammogramsCount)) + " added")
+      html: previousMammogramsHtml
     },
     actions: {
       items: [
         {
           href: ("./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain) if additionalMammogramsCount == 0 else "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl)),
           text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
-          visuallyHiddenText: "previous mammograms"
+          visuallyHiddenText: "reported mammograms"
         }
       ]
     } if allowEdits

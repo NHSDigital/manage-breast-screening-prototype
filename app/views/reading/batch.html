@@ -111,7 +111,7 @@
       {# YOUR READS VIEW - Shows cases from user's perspective #}
       {% set userReadableEvents = [] %}
       {% for event in events %}
-        {% if event | canUserReadEvent or event | userHasReadEvent %}
+        {% if event | canUserReadEvent or event | userHasReadEvent or event | userRequestedPriors(data.currentUser.id) %}
           {% set userReadableEvents = userReadableEvents | push(event) %}
         {% endif %}
       {% endfor %}
@@ -140,11 +140,15 @@
                 {%- endset %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
+                
                 {% if event.medicalInformation.symptoms | length %}
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
+                  {% if event | hasReportedMammograms %}
+                    <br>{{ "Has priors" | toTag }}
+                  {% endif %}
                   {% if event.mammogramData.metadata.hasAdditionalImages %}
                     <br>{{ "Has additional" | toTag }}
                   {% endif %}
@@ -191,6 +195,8 @@
                   {% if read.opinion %}
                     {{ read.opinion | toTag }}
                   {% endif %}
+                {% elseif event | userRequestedPriors(data.currentUser.id) %}
+                  {{ "Priors requested" | toTag }}
                 {% elseif batch.skippedEvents | includes(event.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
@@ -226,11 +232,18 @@
                 {%- endset %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
+                {% if event | awaitingPriors %}
+                <br>
+                  {{ "Awaiting priors" | toTag }}
+                {% endif %}
                 {% if event.medicalInformation.symptoms | length %}
                 <br>
                   {{ "Has symptoms" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
+                  {% if event | hasReportedMammograms %}
+                    <br>{{ "Has priors" | toTag }}
+                  {% endif %}
                   {% if event.mammogramData.metadata.hasAdditionalImages %}
                     <br>{{ "Has additional" | toTag }}
                   {% endif %}

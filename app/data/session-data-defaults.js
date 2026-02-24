@@ -1,5 +1,6 @@
 // app/data/session-data-defaults.js
 
+const _ = require('lodash')
 const users = require('./users')
 // Used to simulate in prototype
 const breastScreeningUnits = require('./breast-screening-units')
@@ -80,7 +81,7 @@ const defaultSettings = {
   }
 }
 
-module.exports = {
+const defaults = {
   users,
   currentUserId: users[0].id,
   currentUser: users[0],
@@ -99,3 +100,13 @@ module.exports = {
   repeatReasons,
   symptomTypes
 }
+
+// Load local overrides if they exist (gitignored, not committed)
+let localOverrides = {}
+try {
+  localOverrides = require('./session-data-defaults.local')
+} catch (err) {
+  // No local overrides file - that's fine
+}
+
+module.exports = _.merge({ ...defaults }, localOverrides)

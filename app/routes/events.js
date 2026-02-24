@@ -684,6 +684,7 @@ module.exports = (router) => {
         if (isNewMammogram) {
           mammogram.dateAdded = new Date().toISOString()
           mammogram.addedBy = data.currentUser.id
+          mammogram.requestStatus = 'not_requested'
         }
 
         return mammogram
