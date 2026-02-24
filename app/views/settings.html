@@ -137,6 +137,19 @@
 
     <dl class="nhsuk-summary-list">
       <div class="nhsuk-summary-list__row">
+        <dt class="nhsuk-summary-list__key">Profile used</dt>
+        <dd class="nhsuk-summary-list__value">
+          {% if data.generationInfo.seedDataProfile == 'low' %}
+            Low
+          {% elseif data.generationInfo.seedDataProfile == 'high' %}
+            High
+          {% else %}
+            Medium
+          {% endif %}
+        </dd>
+      </div>
+
+      <div class="nhsuk-summary-list__row">
         <dt class="nhsuk-summary-list__key">Last generated</dt>
         <dd class="nhsuk-summary-list__value">{{ data.generationInfo.generatedAt | formatDateTime
         }}<br><span class="nhsuk-hint">({{ data.generationInfo.generatedAt | formatRelativeDate }})</span>
@@ -159,7 +172,20 @@
       </div>
     </dl>
 
+    <p class="nhsuk-hint">Choose a profile, then regenerate data to apply it.</p>
+
     <form action="/settings/regenerate" method="post">
+      <div class="nhsuk-form-group">
+        <label class="nhsuk-label" for="seedDataProfile">
+          Regenerate with seed data profile:
+        </label>
+        <select class="nhsuk-select" id="seedDataProfile" name="settings[seedDataProfile]">
+          <option value="low" {{ "selected" if data.settings.seedDataProfile == 'low' }}>Low</option>
+          <option value="medium" {{ "selected" if data.settings.seedDataProfile == 'medium' }}>Medium</option>
+          <option value="high" {{ "selected" if data.settings.seedDataProfile == 'high' }}>High</option>
+        </select>
+      </div>
+
       <button class="nhsuk-button nhsuk-button--secondary" data-module="nhsuk-button" type="submit">
         Regenerate data
       </button>

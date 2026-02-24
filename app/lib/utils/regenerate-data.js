@@ -4,14 +4,20 @@ const generateData = require('../generate-seed-data')
 const { join, resolve } = require('path')
 const dayjs = require('dayjs')
 const fs = require('fs')
+const { getSeedDataProfile } = require('../generators/seed-profiles')
 
-async function regenerateData(req) {
+async function regenerateData(req, options = {}) {
+  const profileFromSession = req?.session?.data?.settings?.seedDataProfile
+  const requestedProfileName = options.seedDataProfile || profileFromSession
+  const resolvedProfile = getSeedDataProfile(requestedProfileName)
+
   const dataDirectory = join(__dirname, '../../data')
   const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
   const generatedDataPath = resolve(dataDirectory, 'generated')
   const generationInfoPath = join(generatedDataPath, 'generation-info.json')
+
   // Generate new data
-  await generateData()
+  await generateData({ seedDataProfile: resolvedProfile.key })
 
   // Clear the require cache for session data defaults
   delete require.cache[require.resolve(sessionDataPath)]
@@ -26,7 +32,8 @@ async function regenerateData(req) {
   // Read generation info including stats
   let generationInfo = {
     generatedAt: new Date().toISOString(),
-    stats: { participants: 0, clinics: 0, events: 0 }
+    stats: { participants: 0, clinics: 0, events: 0 },
+    seedDataProfile: resolvedProfile.key
   }
 
   try {
@@ -47,7 +54,9 @@ async function regenerateData(req) {
   const freshDefaults = require('../../data/session-data-defaults')
 
   // Preserve settings before reset
-  const preservedSettings = req.session.data.settings ? JSON.parse(JSON.stringify(req.session.data.settings)) : null
+  const preservedSettings = req.session.data.settings
+    ? JSON.parse(JSON.stringify(req.session.data.settings))
+    : null
 
   // Clear existing keys
   Object.keys(req.session.data).forEach((key) => delete req.session.data[key])
@@ -57,6 +66,16 @@ async function regenerateData(req) {
   // Restore settings if they existed
   if (preservedSettings) {
     req.session.data.settings = preservedSettings
+  }
+
+  if (!req.session.data.settings) {
+    req.session.data.settings = {}
+  }
+
+  req.session.data.settings.seedDataProfile = resolvedProfile.key
+
+  if (!req.session.data.generationInfo.seedDataProfile) {
+    req.session.data.generationInfo.seedDataProfile = resolvedProfile.key
   }
 }
 
