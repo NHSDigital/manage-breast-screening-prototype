@@ -547,6 +547,41 @@ module.exports = (router) => {
     }
   )
 
+  // Undo prior image requests - resets mammograms requested by current user
+  // back to not_requested, allowing the reader to read the case
+  // Supports GET (summary list action link) and POST
+  router.all(
+    '/reading/batch/:batchId/events/:eventId/undo-priors',
+    (req, res) => {
+      const data = req.session.data
+      const { batchId, eventId } = req.params
+      const currentUserId = data.currentUser?.id
+
+      const event = data.events.find((e) => e.id === eventId)
+      if (event && event.previousMammograms) {
+        event.previousMammograms.forEach((mammogram) => {
+          if (
+            mammogram.requestStatus === 'requested' &&
+            mammogram.requestedBy === currentUserId
+          ) {
+            mammogram.requestStatus = 'not_requested'
+            delete mammogram.requestedDate
+            delete mammogram.requestedBy
+            delete mammogram.requestReason
+          }
+        })
+
+        // Also update the mirrored event in data.event
+        if (data.event && data.event.id === eventId) {
+          data.event.previousMammograms = event.previousMammograms
+        }
+      }
+
+      // Redirect to opinion page so the reader can now read the case
+      res.redirect(`/reading/batch/${batchId}/events/${eventId}/opinion`)
+    }
+  )
+
   // Intercept review page for late comparison check
   router.get(
     '/reading/batch/:batchId/events/:eventId/review',

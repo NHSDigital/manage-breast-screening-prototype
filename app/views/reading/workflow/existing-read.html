@@ -16,35 +16,55 @@
   </span>
 
   {% if isAwaitingPriors and not hasUserRead %}
-    {# Event is awaiting priors - show priors status instead of read summary #}
-    <h1 class="nhsuk-heading-l">Awaiting prior images</h1>
+    {# Event is awaiting priors - show as the reader's opinion #}
+    <h1 class="nhsuk-heading-l">Your opinion</h1>
 
-    {% set priorsContentHtml %}
-      {% for mammogram in event.previousMammograms %}
-        {% if mammogram.requestStatus == "requested" %}
-          <p class="nhsuk-u-margin-bottom-2">
-            {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-            <br>
-            {{ ("prior_" + mammogram.requestStatus) | toTag }}
-            {% if mammogram.requestedDate %}
-              {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
-            {% endif %}
-            {% if mammogram.requestedBy %}
-              by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
-            {% endif %}
-            {% if mammogram.requestReason %}
-              <br>Reason: {{ mammogram.requestReason }}
-            {% endif %}
-          </p>
+    {% set canUndo = event | userRequestedPriors(data.currentUser.id) %}
+
+    {# Get the request reason from any requested mammogram (same reason applied to all) #}
+    {% set requestReason = "" %}
+    {% for mammogram in event.previousMammograms %}
+      {% if mammogram.requestStatus == "requested" and mammogram.requestReason %}
+        {% set requestReason = mammogram.requestReason %}
+      {% endif %}
+    {% endfor %}
+
+    {% set priorsReadSummaryHtml %}
+      {% call appSummaryList() %}
+        {{ appSummaryListRow({
+          key: {
+            text: "Opinion"
+          },
+          value: {
+            html: "Priors requested" | toTag
+          },
+          actions: {
+            items: [{
+              href: "./undo-priors",
+              text: "Undo priors request",
+              visuallyHiddenText: "priors request"
+            }]
+          } if canUndo
+        }) }}
+
+        {% if requestReason %}
+          {{ appSummaryListRow({
+            key: {
+              text: "Reason"
+            },
+            value: {
+              text: requestReason
+            }
+          }) }}
         {% endif %}
-      {% endfor %}
+      {% endcall %}
     {% endset %}
 
     {{ card({
-      heading: "Requested prior images",
+      heading: "Your read",
       headingLevel: "2",
       feature: true,
-      descriptionHtml: priorsContentHtml
+      descriptionHtml: priorsReadSummaryHtml
     }) }}
 
   {% else %}

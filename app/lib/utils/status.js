@@ -277,6 +277,7 @@ const getStatusTagColour = (status) => {
     // Prior mammogram request statuses
     'prior_not_requested': 'white',
     'prior_requested': 'yellow',
+    'priors_requested': 'yellow',
     'prior_received': 'green',
     'prior_not_available': 'grey',
     'prior_not_needed': 'grey'
