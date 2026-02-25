@@ -385,12 +385,8 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   // regardless of which profile weights are currently active.
   // Only bypass this if a specific tag or weights are being forced (e.g. during initial generation).
   const storedSetId = options.event?.mammogramData?.selectedSetId
-  if (
-    storedSetId &&
-    !options.tag &&
-    !options.weights &&
-    !options.contextualWeights
-  ) {
+
+  if (storedSetId && !options.tag && !options.weights) {
     const storedSet = getSetById(storedSetId, source)
     if (storedSet) return storedSet
   }

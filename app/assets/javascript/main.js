@@ -95,6 +95,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle reset data in background
   setupResetSessionLink()
 
+  // Reading workflow: auto-dismiss the opinion banner after a delay
+  const opinionBanner = document.querySelector('[data-reading-opinion-banner]')
+  if (opinionBanner) {
+    const delay = parseInt(opinionBanner.dataset.autoCloseDelay, 10) || 3000
+    setTimeout(() => {
+      opinionBanner.classList.add('app-reading-opinion-banner--fade-out')
+      // Remove from DOM after the CSS transition (0.2s) completes
+      opinionBanner.addEventListener('transitionend', () => {
+        opinionBanner.remove()
+      }, { once: true })
+    }, delay)
+  }
+
   // Reading workflow: delay initial opinion controls to prevent premature clicks
   // When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
   const opinionForm = document.querySelector('[data-reading-opinion-form]')
