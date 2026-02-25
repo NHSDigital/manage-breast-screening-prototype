@@ -380,6 +380,21 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
 
+  // If the event already has a stored selectedSetId, use that directly.
+  // This ensures the viewer always shows the same set the reading generator used,
+  // regardless of which profile weights are currently active.
+  // Only bypass this if a specific tag or weights are being forced (e.g. during initial generation).
+  const storedSetId = options.event?.mammogramData?.selectedSetId
+  if (
+    storedSetId &&
+    !options.tag &&
+    !options.weights &&
+    !options.contextualWeights
+  ) {
+    const storedSet = getSetById(storedSetId, source)
+    if (storedSet) return storedSet
+  }
+
   // Use provided context, or extract from event if provided
   const context =
     options.context || (options.event ? extractEventContext(options.event) : {})
@@ -641,7 +656,27 @@ const getLatestPath = (pathOrPaths) => {
  * @param {object} options - Options passed to getImageSetForEvent
  * @returns {object|null} - Object with set info, paths, allPaths, and hasAdditionalImages flag
  */
-const getImagesForEvent = (eventId, source = 'diagrams', options = {}) => {
+const getImagesForEvent = function (
+  eventId,
+  source = 'diagrams',
+  options = {}
+) {
+  // When called from Nunjucks (this.ctx is available) and no contextualWeights are
+  // explicitly provided, look up the active seed data profile's weights so dynamic
+  // set selection (for events without a stored selectedSetId) uses the right distribution.
+  if (!options.contextualWeights && this && this.ctx) {
+    const profileName = this.ctx.data?.generationInfo?.seedDataProfile
+    if (profileName) {
+      const profile = this.ctx.data?.seedDataProfileSettings?.[profileName]
+      const profileWeights = profile?.imageSetSelection?.contextualTagWeights
+      if (profileWeights) {
+        options = Object.assign({}, options, {
+          contextualWeights: profileWeights
+        })
+      }
+    }
+  }
+
   const set = getImageSetForEvent(eventId, source, options)
   if (!set) return null
 

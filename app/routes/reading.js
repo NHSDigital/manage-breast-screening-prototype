@@ -2,6 +2,7 @@
 const { getEventData } = require('../lib/utils/event-data')
 const {
   getFirstUserReadableEvent,
+  getNextUserReadableEvent,
   getReadableEventsForClinic,
   getReadingStatusForEvents,
   getReadingClinics,
@@ -528,14 +529,15 @@ module.exports = (router) => {
         editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
       }
 
-      // Find next readable event in batch (not just next sequential - we want
-      // truly unread events). This mirrors the navigation in save-opinion.
+      // Find next readable event in batch after the current position, wrapping
+      // to the start if needed. This mirrors the navigation in save-opinion.
       const batch = getReadingBatch(data, batchId)
       const batchEvents = batch.eventIds
         .map((id) => data.events.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getFirstUserReadableEvent(
+      const nextUnreadEvent = getNextUserReadableEvent(
         batchEvents,
+        eventId,
         currentUserId
       )
 
@@ -1069,14 +1071,15 @@ module.exports = (router) => {
       // Write the reading (passing batch context to handle skipped events)
       writeReading(event, currentUserId, readResult, data, batchId)
 
-      // Find next unread event in batch (not just navigable - we want truly unread).
-      // This mirrors the navigation in request-priors-answer.
+      // Find next unread event in batch after the current position, wrapping
+      // to the start if needed. This mirrors the navigation in request-priors-answer.
       const batch = getReadingBatch(data, batchId)
       const batchEvents = batch.eventIds
         .map((id) => data.events.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getFirstUserReadableEvent(
+      const nextUnreadEvent = getNextUserReadableEvent(
         batchEvents,
+        eventId,
         currentUserId
       )
 

@@ -14,7 +14,11 @@ const { needsRegeneration } = require('../lib/utils/regenerate-data')
 const config = require('../config')
 const repeatReasons = require('./repeat-reasons')
 const symptomTypes = require('./symptom-types')
-const { DEFAULT_SEED_DATA_PROFILE } = require('../lib/generators/seed-profiles')
+const {
+  DEFAULT_SEED_DATA_PROFILE,
+  SEED_DATA_PROFILES,
+  getSeedDataProfileOptions
+} = require('../lib/generators/seed-profiles')
 
 // Check if generated data folder exists and create if needed
 const generatedDataPath = path.join(__dirname, 'generated')
@@ -109,6 +113,8 @@ const defaults = {
   clinics,
   events,
   generationInfo,
+  seedDataProfiles: getSeedDataProfileOptions(),
+  seedDataProfileSettings: SEED_DATA_PROFILES,
   config,
   settings: defaultSettings,
   defaultSettings,

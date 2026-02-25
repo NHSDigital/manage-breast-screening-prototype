@@ -962,6 +962,18 @@ const getFirstUserReadableEvent = function (events, userId = null) {
   return readableEvents.length > 0 ? readableEvents[0] : null
 }
 
+// Get the next event the user can read after a given event, wrapping to the
+// start of the list if nothing follows. Returns null if nothing is readable.
+const getNextUserReadableEvent = function (events, currentEventId, userId = null) {
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+  const currentIndex = events.findIndex((e) => e.id === currentEventId)
+  const eventsFromNext = [
+    ...events.slice(currentIndex + 1),
+    ...events.slice(0, currentIndex)
+  ]
+  return getFirstUserReadableEvent(eventsFromNext, currentUserId)
+}
+
 /************************************************************************
 // Booleans
 //***********************************************************************
@@ -1485,6 +1497,7 @@ module.exports = {
   getComparisonInfo,
   getReadsAsArray,
   getFirstUserReadableEvent,
+  getNextUserReadableEvent,
   // Booleans
   userHasReadEvent,
   canUserReadEvent,

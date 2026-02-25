@@ -135,18 +135,20 @@
 
     <h2>Generated data</h2>
 
+    {% set generatedSeedProfileKey = data.generationInfo.seedDataProfile %}
+    {% set selectedSeedProfileKey = generatedSeedProfileKey or data.settings.seedDataProfile or data.defaultSettings.seedDataProfile %}
+
+    {% set generatedSeedProfileLabel = generatedSeedProfileKey %}
+    {% for profile in data.seedDataProfiles %}
+      {% if profile.key == generatedSeedProfileKey %}
+        {% set generatedSeedProfileLabel = profile.label %}
+      {% endif %}
+    {% endfor %}
+
     <dl class="nhsuk-summary-list">
       <div class="nhsuk-summary-list__row">
         <dt class="nhsuk-summary-list__key">Profile used</dt>
-        <dd class="nhsuk-summary-list__value">
-          {% if data.generationInfo.seedDataProfile == 'low' %}
-            Low
-          {% elseif data.generationInfo.seedDataProfile == 'high' %}
-            High
-          {% else %}
-            Medium
-          {% endif %}
-        </dd>
+        <dd class="nhsuk-summary-list__value">{{ generatedSeedProfileLabel }}</dd>
       </div>
 
       <div class="nhsuk-summary-list__row">
@@ -180,9 +182,9 @@
           Regenerate with seed data profile:
         </label>
         <select class="nhsuk-select" id="seedDataProfile" name="settings[seedDataProfile]">
-          <option value="low" {{ "selected" if data.settings.seedDataProfile == 'low' }}>Low</option>
-          <option value="medium" {{ "selected" if data.settings.seedDataProfile == 'medium' }}>Medium</option>
-          <option value="high" {{ "selected" if data.settings.seedDataProfile == 'high' }}>High</option>
+          {% for profile in data.seedDataProfiles %}
+            <option value="{{ profile.key }}" {{ "selected" if selectedSeedProfileKey == profile.key }}>{{ profile.label }}</option>
+          {% endfor %}
         </select>
       </div>
 
