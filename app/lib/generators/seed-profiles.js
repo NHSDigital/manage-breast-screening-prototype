@@ -1,6 +1,6 @@
 // app/lib/generators/seed-profiles.js
 
-const DEFAULT_SEED_DATA_PROFILE = 'routine'
+const DEFAULT_SEED_DATA_PROFILE = 'realistic'
 const CUSTOM_SEED_DATA_PROFILE = 'custom'
 
 const isObject = (value) => {
@@ -91,13 +91,15 @@ const SEED_DATA_PROFILE_DEFAULTS = {
 
 const SEED_DATA_PROFILE_DEFINITIONS = [
   {
-    key: 'routine',
-    label: 'Routine',
+    key: 'realistic',
+    label: 'Realistic',
+    description: 'Roughly realistic distribution',
     settings: {}
   },
   {
     key: 'medium',
-    label: 'Medium',
+    label: 'Medium levels of issues',
+    description: 'More symptoms, medical history and abnormalities',
     settings: {
       medicalInformation: {
         probabilityOfSymptoms: 0.15,
@@ -139,7 +141,9 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
   },
   {
     key: 'high',
-    label: 'High',
+    label: 'High levels of issues',
+    description:
+      'Lots of symptoms, medical history and high chance of abnormalities',
     settings: {
       medicalInformation: {
         probabilityOfSymptoms: 0.25,
@@ -186,6 +190,7 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
   {
     key: 'allNormals',
     label: 'All normals',
+    description: 'No symptoms and normal image outcomes',
     settings: {
       medicalInformation: {
         probabilityOfSymptoms: 0.0
@@ -219,6 +224,7 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
   {
     key: 'highAbnormalities',
     label: 'High abnormalities',
+    description: 'High chance of abnormalities in selected images',
     settings: {
       imageSetSelection: {
         contextualTagWeights: {
@@ -235,9 +241,10 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
   {
     key: 'highSymptoms',
     label: 'High symptoms',
+    description: 'High chance of symptoms being present',
     settings: {
       medicalInformation: {
-        probabilityOfSymptoms: 0.5
+        probabilityOfSymptoms: 1
       }
     }
   }
@@ -253,6 +260,7 @@ const SEED_DATA_PROFILES = Object.fromEntries(
         {
           key: profile.key,
           label: profile.label,
+          description: profile.description,
           ...mergeDeep(SEED_DATA_PROFILE_DEFAULTS, profileSettings)
         }
       ]
@@ -260,14 +268,27 @@ const SEED_DATA_PROFILES = Object.fromEntries(
   )
 )
 
-const getSeedDataProfile = (profileName = DEFAULT_SEED_DATA_PROFILE) => {
+const getFallbackSeedDataProfile = () => {
   return (
-    SEED_DATA_PROFILES[profileName] ||
-    SEED_DATA_PROFILES[DEFAULT_SEED_DATA_PROFILE]
+    SEED_DATA_PROFILES[DEFAULT_SEED_DATA_PROFILE] ||
+    Object.values(SEED_DATA_PROFILES)[0] || {
+      key: DEFAULT_SEED_DATA_PROFILE,
+      label: 'Default',
+      description: '',
+      ...SEED_DATA_PROFILE_DEFAULTS
+    }
   )
 }
 
+const getSeedDataProfile = (profileName = DEFAULT_SEED_DATA_PROFILE) => {
+  return SEED_DATA_PROFILES[profileName] || getFallbackSeedDataProfile()
+}
+
 const cloneDeep = (value) => {
+  if (value === undefined) {
+    return undefined
+  }
+
   return JSON.parse(JSON.stringify(value))
 }
 
@@ -276,7 +297,8 @@ const getSeedDataProfileOptionsWithCustom = () => {
     ...getSeedDataProfileOptions(),
     {
       key: CUSTOM_SEED_DATA_PROFILE,
-      label: 'Custom'
+      label: 'Custom',
+      description: 'Choose your own adventure'
     }
   ]
 }
@@ -285,11 +307,15 @@ const createDefaultCustomProfile = (
   baseProfileKey = DEFAULT_SEED_DATA_PROFILE
 ) => {
   const baseProfile = getSeedDataProfile(baseProfileKey)
+  const clonedBaseProfile = cloneDeep(baseProfile) || {
+    ...SEED_DATA_PROFILE_DEFAULTS
+  }
 
   return {
-    ...cloneDeep(baseProfile),
+    ...clonedBaseProfile,
     key: CUSTOM_SEED_DATA_PROFILE,
-    label: 'Custom'
+    label: 'Custom',
+    description: 'Choose your own adventure'
   }
 }
 
@@ -367,7 +393,8 @@ const getSeedDataProfileOptions = () => {
 
     return {
       key: definition.key,
-      label: definition.label
+      label: definition.label,
+      description: definition.description
     }
   })
 }

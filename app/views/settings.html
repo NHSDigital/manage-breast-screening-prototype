@@ -191,7 +191,7 @@
             {% if profile.divider %}
               <option value="" disabled>{{ profile.label or "---" }}</option>
             {% else %}
-              <option value="{{ profile.key }}" {{ "selected" if selectedSeedProfileKey == profile.key }}>{{ profile.label }}</option>
+              <option value="{{ profile.key }}" {{ "selected" if selectedSeedProfileKey == profile.key }}>{{ profile.label }}{% if profile.description %} — {{ profile.description }}{% endif %}</option>
             {% endif %}
           {% endfor %}
         </select>
