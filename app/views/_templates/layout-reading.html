@@ -5,7 +5,7 @@
 
 {% set gridColumn = gridColumn or "nhsuk-grid-column-full" %}
 
-{# Script to show loading state in PACS viewer when navigating away #}
+{# Script to show loading state in PACS viewer when navigating away, and inspect panel (press I) #}
 {% block bodyEnd %}
   {{ super() }}
   {% if isReadingWorkflow and participant %}
@@ -14,7 +14,7 @@
         if (typeof BroadcastChannel === 'undefined') return
         var ch = new BroadcastChannel('mammogram-viewer')
         var currentEventId = document.querySelector('meta[name="mammogram-event-id"]')?.getAttribute('content')
-        
+
         // Send loading message when clicking navigation links
         document.addEventListener('click', function(e) {
           var link = e.target.closest('a[href]')
@@ -25,6 +25,120 @@
             ch.postMessage({ type: 'loading', fromEventId: currentEventId, timestamp: Date.now() })
           }
         })
+      })()
+    </script>
+
+    {# Inspect panel: press 'i' to show debug info about the current mammogram set #}
+    {% if event.mammogramData %}
+      {% set inspectImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+      {% set inspectContext = extractEventContext(event) %}
+    {% endif %}
+
+    <div id="reading-inspect-panel" style="display:none; position:fixed; bottom:16px; right:16px; background:#1a1a1a; color:#fff; font-family:monospace; font-size:13px; padding:16px; border-radius:6px; border:1px solid #444; z-index:9999; min-width:320px; max-width:480px; box-shadow:0 4px 16px rgba(0,0,0,0.5);">
+      <div style="font-size:11px; color:#888; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Inspect – mammogram set</div>
+
+      {% if event.mammogramData %}
+        <div style="margin-bottom:6px;">
+          <span style="color:#888;">selectedSetId: </span>
+          <span style="color:#fff; font-weight:bold;">{{ event.mammogramData.selectedSetId or "not set" }}</span>
+        </div>
+
+        {% if inspectImages and inspectImages.set %}
+          <div style="margin-bottom:6px;">
+            <span style="color:#888;">resolved set id: </span>
+            <span style="color:#fff; font-weight:bold;">{{ inspectImages.set.id }}</span>
+            {% if inspectImages.set.id != event.mammogramData.selectedSetId %}
+              <span style="color:#ff6b6b;"> ≠ stored</span>
+            {% endif %}
+          </div>
+          <div style="margin-bottom:6px;">
+            <span style="color:#888;">tag: </span>
+            {% if inspectImages.set.tag == "normal" %}
+              <span style="display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; text-transform:uppercase; background:#0a5; color:#fff;">{{ inspectImages.set.tag }}</span>
+            {% elseif inspectImages.set.tag == "abnormal" %}
+              <span style="display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; text-transform:uppercase; background:#d00; color:#fff;">{{ inspectImages.set.tag }}</span>
+            {% elseif inspectImages.set.tag == "technical" %}
+              <span style="display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; text-transform:uppercase; background:#c80; color:#000;">{{ inspectImages.set.tag }}</span>
+            {% elseif inspectImages.set.tag == "indeterminate" %}
+              <span style="display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; text-transform:uppercase; background:#666; color:#fff;">{{ inspectImages.set.tag }}</span>
+            {% else %}
+              <span style="color:#888;">{{ inspectImages.set.tag or "–" }}</span>
+            {% endif %}
+          </div>
+          <div style="margin-bottom:6px;">
+            <span style="color:#888;">description: </span>
+            <span style="color:#ccc;">{{ inspectImages.set.description or "–" }}</span>
+          </div>
+        {% endif %}
+
+        {% if inspectContext %}
+          <div style="margin-top:10px; color:#888; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Context</div>
+          <div style="margin-bottom:3px;">
+            <span style="display:inline-block; padding:2px 6px; border-radius:3px; font-size:11px; background:{{ '#06c' if inspectContext.hasSymptoms else '#444' }}; color:#fff;">symptoms</span>
+            <span style="color:{{ '#fff' if inspectContext.hasSymptoms else '#666' }};">
+              {{ 'yes' if inspectContext.hasSymptoms else 'no' }}
+              {% if inspectContext.hasSymptoms and inspectContext.symptomSides and inspectContext.symptomSides.length %}
+                ({{ inspectContext.symptomSides | join(", ") }})
+              {% endif %}
+            </span>
+          </div>
+          <div style="margin-bottom:3px;">
+            <span style="display:inline-block; padding:2px 6px; border-radius:3px; font-size:11px; background:{{ '#06c' if inspectContext.hasImplants else '#444' }}; color:#fff;">implants</span>
+            <span style="color:{{ '#fff' if inspectContext.hasImplants else '#666' }};"> {{ 'yes' if inspectContext.hasImplants else 'no' }}</span>
+          </div>
+          <div>
+            <span style="display:inline-block; padding:2px 6px; border-radius:3px; font-size:11px; background:{{ '#06c' if inspectContext.isImperfect else '#444' }}; color:#fff;">imperfect</span>
+            <span style="color:{{ '#fff' if inspectContext.isImperfect else '#666' }};"> {{ 'yes' if inspectContext.isImperfect else 'no' }}</span>
+          </div>
+        {% endif %}
+
+        {% if event.mammogramData.machineRoom %}
+          <div style="margin-top:8px; color:#888;">machine room: <span style="color:#fff;">{{ event.mammogramData.machineRoom }}</span></div>
+        {% endif %}
+      {% else %}
+        <div style="color:#888;">No mammogramData on event</div>
+      {% endif %}
+
+      <div style="margin-top:12px; color:#555; font-size:11px;">Press I to close</div>
+    </div>
+
+    <script>
+      (function() {
+        var STORAGE_KEY = "reading-inspect-panel-open"
+        var panel = document.getElementById("reading-inspect-panel")
+        if (!panel) return
+
+        // BroadcastChannel to sync with PACS viewer
+        var channel = typeof BroadcastChannel !== "undefined"
+          ? new BroadcastChannel("mammogram-viewer")
+          : null
+
+        var setInspectState = function(open, broadcast) {
+          panel.style.display = open ? "block" : "none"
+          sessionStorage.setItem(STORAGE_KEY, open ? "true" : "false")
+          if (broadcast && channel) {
+            channel.postMessage({ type: "inspect-toggle", open: open, timestamp: Date.now() })
+          }
+        }
+
+        // Restore state from session storage
+        setInspectState(sessionStorage.getItem(STORAGE_KEY) === "true", false)
+
+        // Toggle on 'i' and broadcast to PACS viewer
+        document.addEventListener("keydown", function(e) {
+          if (e.key !== "i" && e.key !== "I") return
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT" || e.target.isContentEditable) return
+          setInspectState(panel.style.display === "none", true)
+        })
+
+        // Sync state from PACS viewer (don't re-broadcast)
+        if (channel) {
+          channel.addEventListener("message", function(event) {
+            if (event.data.type === "inspect-toggle") {
+              setInspectState(event.data.open, false)
+            }
+          })
+        }
       })()
     </script>
   {% endif %}

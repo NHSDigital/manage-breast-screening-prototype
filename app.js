@@ -19,7 +19,8 @@ const viewsPath = [
 
 const entryPoints = [
   'app/assets/sass/main.scss',
-  'app/assets/javascript/*.js'
+  'app/assets/javascript/*.js',
+  'app/data/generated/**/*.json'
 ]
 
 async function init() {

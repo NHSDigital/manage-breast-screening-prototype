@@ -2,6 +2,7 @@
 const { getEventData } = require('../lib/utils/event-data')
 const {
   getFirstUserReadableEvent,
+  getNextUserReadableEvent,
   getReadableEventsForClinic,
   getReadingStatusForEvents,
   getReadingClinics,
@@ -317,6 +318,9 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
+    // Clear any lingering opinion banner from a previous batch
+    delete data.readingOpinionBanner
+
     // Get clinic data if this is a clinic batch
     let clinic = null
     if (batch.clinicId) {
@@ -517,29 +521,29 @@ module.exports = (router) => {
         }
       }
 
-      // Store banner message for the next case
-      const participant = data.participants.find(
-        (person) => person.id === event.participantId
-      )
-      const shortName = getShortName(participant)
-      data.readingOpinionBanner = {
-        text: `Prior images requested for ${shortName}`,
-        participantName: `${shortName}`,
-        editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
-      }
-
-      // Find next readable event in batch (not just next sequential - we want
-      // truly unread events). This mirrors the navigation in save-opinion.
+      // Find next readable event in batch after the current position, wrapping
+      // to the start if needed. This mirrors the navigation in save-opinion.
       const batch = getReadingBatch(data, batchId)
       const batchEvents = batch.eventIds
         .map((id) => data.events.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getFirstUserReadableEvent(
+      const nextUnreadEvent = getNextUserReadableEvent(
         batchEvents,
+        eventId,
         currentUserId
       )
 
+      // Only store the banner if there is a next case to show it on
       if (nextUnreadEvent) {
+        const participant = data.participants.find(
+          (person) => person.id === event.participantId
+        )
+        const shortName = getShortName(participant)
+        data.readingOpinionBanner = {
+          text: `Prior images requested for ${shortName}`,
+          participantName: `${shortName}`,
+          editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+        }
         res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
       } else {
         res.redirect(`/reading/batch/${batchId}`)
@@ -1069,36 +1073,39 @@ module.exports = (router) => {
       // Write the reading (passing batch context to handle skipped events)
       writeReading(event, currentUserId, readResult, data, batchId)
 
-      // Find next unread event in batch (not just navigable - we want truly unread).
-      // This mirrors the navigation in request-priors-answer.
+      // Find next unread event in batch after the current position, wrapping
+      // to the start if needed. This mirrors the navigation in request-priors-answer.
       const batch = getReadingBatch(data, batchId)
       const batchEvents = batch.eventIds
         .map((id) => data.events.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getFirstUserReadableEvent(
+      const nextUnreadEvent = getNextUserReadableEvent(
         batchEvents,
+        eventId,
         currentUserId
       )
 
-      // Store banner message for the next case
+      // Store banner message for the next case, but only if there is one
       // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
       // Todo: can we get this working with req.flash?
-      const participant = data.participants.find(
-        (person) => person.id === event.participantId
-      )
-      const shortName = getShortName(participant)
-      const resultLabels = {
-        normal: 'Normal',
-        technical_recall: 'Technical recall',
-        recall_for_assessment: 'Recall for assessment'
-      }
-      const resultLabel = resultLabels[formData.opinion] || 'Opinion'
-      const message = `${resultLabel} opinion recorded for ${shortName}`
+      if (nextUnreadEvent) {
+        const participant = data.participants.find(
+          (person) => person.id === event.participantId
+        )
+        const shortName = getShortName(participant)
+        const resultLabels = {
+          normal: 'Normal',
+          technical_recall: 'Technical recall',
+          recall_for_assessment: 'Recall for assessment'
+        }
+        const resultLabel = resultLabels[formData.opinion] || 'Opinion'
+        const message = `${resultLabel} opinion recorded for ${shortName}`
 
-      data.readingOpinionBanner = {
-        text: message,
-        participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
-        editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+        data.readingOpinionBanner = {
+          text: message,
+          participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
+          editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+        }
       }
 
       // Redirect to next unread event or batch view if all done

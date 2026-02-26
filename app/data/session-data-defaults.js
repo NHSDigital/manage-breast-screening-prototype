@@ -14,6 +14,11 @@ const { needsRegeneration } = require('../lib/utils/regenerate-data')
 const config = require('../config')
 const repeatReasons = require('./repeat-reasons')
 const symptomTypes = require('./symptom-types')
+const {
+  DEFAULT_SEED_DATA_PROFILE,
+  SEED_DATA_PROFILES,
+  createSeedProfilesState
+} = require('../lib/generators/seed-profiles')
 
 // Check if generated data folder exists and create if needed
 const generatedDataPath = path.join(__dirname, 'generated')
@@ -26,6 +31,7 @@ let clinics = []
 let events = []
 let generationInfo = {
   generatedAt: 'Never',
+  seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
   stats: { participants: 0, clinics: 0, events: 0 }
 }
 
@@ -39,16 +45,33 @@ if (fs.existsSync(generationInfoPath)) {
   }
 }
 
+if (!generationInfo.seedDataProfile) {
+  generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
+}
+
+if (!SEED_DATA_PROFILES[generationInfo.seedDataProfile]) {
+  generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
+}
+
 // Generate or load data
 if (needsRegeneration(generationInfo)) {
   console.log('Generating new seed data...')
-  require('../lib/generate-seed-data.js')()
+  require('../lib/generate-seed-data.js')({
+    seedDataProfile: generationInfo.seedDataProfile
+  })
 
-  // Save generation info
-  fs.writeFileSync(
-    generationInfoPath,
-    JSON.stringify({ generatedAt: new Date().toISOString() })
-  )
+  // Reload generation info written by the generator
+  if (fs.existsSync(generationInfoPath)) {
+    try {
+      generationInfo = JSON.parse(fs.readFileSync(generationInfoPath))
+    } catch (err) {
+      console.warn('Error reading generation info after regeneration:', err)
+    }
+  }
+
+  if (!generationInfo.seedDataProfile) {
+    generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
+  }
 }
 
 // Load generated data
@@ -65,6 +88,10 @@ const defaultSettings = {
   debugMode: 'false',
   showEnvironmentBanner: 'true',
   mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
+  seedProfiles: {
+    ...createSeedProfilesState(),
+    selectedKey: generationInfo.seedDataProfile
+  },
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',

@@ -4,14 +4,36 @@ const generateData = require('../generate-seed-data')
 const { join, resolve } = require('path')
 const dayjs = require('dayjs')
 const fs = require('fs')
+const {
+  DEFAULT_SEED_DATA_PROFILE,
+  ensureSeedProfilesState,
+  getSeedDataProfileFromState
+} = require('../generators/seed-profiles')
 
-async function regenerateData(req) {
+async function regenerateData(req, options = {}) {
+  if (!req.session.data.settings) {
+    req.session.data.settings = {}
+  }
+
+  const seedProfiles = ensureSeedProfilesState(req.session.data.settings)
+  const profileFromSession = seedProfiles.selectedKey
+  const requestedProfileName =
+    options.seedDataProfile || profileFromSession || DEFAULT_SEED_DATA_PROFILE
+  const resolvedProfile = getSeedDataProfileFromState(
+    seedProfiles,
+    requestedProfileName
+  )
+
   const dataDirectory = join(__dirname, '../../data')
   const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
   const generatedDataPath = resolve(dataDirectory, 'generated')
   const generationInfoPath = join(generatedDataPath, 'generation-info.json')
+
   // Generate new data
-  await generateData()
+  await generateData({
+    seedDataProfile: resolvedProfile.key,
+    seedDataProfileObject: resolvedProfile
+  })
 
   // Clear the require cache for session data defaults
   delete require.cache[require.resolve(sessionDataPath)]
@@ -26,7 +48,8 @@ async function regenerateData(req) {
   // Read generation info including stats
   let generationInfo = {
     generatedAt: new Date().toISOString(),
-    stats: { participants: 0, clinics: 0, events: 0 }
+    stats: { participants: 0, clinics: 0, events: 0 },
+    seedDataProfile: resolvedProfile.key
   }
 
   try {
@@ -47,7 +70,9 @@ async function regenerateData(req) {
   const freshDefaults = require('../../data/session-data-defaults')
 
   // Preserve settings before reset
-  const preservedSettings = req.session.data.settings ? JSON.parse(JSON.stringify(req.session.data.settings)) : null
+  const preservedSettings = req.session.data.settings
+    ? JSON.parse(JSON.stringify(req.session.data.settings))
+    : null
 
   // Clear existing keys
   Object.keys(req.session.data).forEach((key) => delete req.session.data[key])
@@ -58,6 +83,17 @@ async function regenerateData(req) {
   if (preservedSettings) {
     req.session.data.settings = preservedSettings
   }
+
+  if (!req.session.data.settings) {
+    req.session.data.settings = {}
+  }
+
+  const refreshedSeedProfiles = ensureSeedProfilesState(
+    req.session.data.settings
+  )
+  refreshedSeedProfiles.selectedKey = resolvedProfile.key
+
+  req.session.data.generationInfo.seedDataProfile = resolvedProfile.key
 }
 
 function needsRegeneration(generationInfo) {

@@ -89,7 +89,8 @@ const generateEvent = ({
   forceStatus = null,
   id = null,
   specialAppointmentOverride = null,
-  forceInProgress = false
+  forceInProgress = false,
+  seedDataProfile = null
 }) => {
   // Parse dates once
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
@@ -103,7 +104,10 @@ const generateEvent = ({
 
   // Generate special appointment requirements for this event
   const specialAppointment =
-    specialAppointmentOverride || generateSpecialAppointment()
+    specialAppointmentOverride ||
+    generateSpecialAppointment({
+      probability: seedDataProfile?.specialAppointment?.probability
+    })
   const hasSpecialAppointment = Boolean(
     specialAppointment?.supportTypes?.length
   )
@@ -268,7 +272,12 @@ const generateEvent = ({
       event.mammogramData = generateMammogramImages({
         startTime: actualStartTime,
         isSeedData: true,
-        config: participant.config
+        config: participant.config,
+        scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
+        imperfectChanceForTechnicalOrIncomplete:
+          seedDataProfile?.mammogram?.imperfectChanceForTechnicalOrIncomplete,
+        notesForReaderChanceWithoutImperfect:
+          seedDataProfile?.mammogram?.notesForReaderChanceWithoutImperfect
       })
 
       // Sync event status with mammogram completeness
@@ -295,7 +304,8 @@ const generateEvent = ({
       // Generate previous mammograms (reported mammograms from other facilities)
       const previousMammograms = generatePreviousMammograms({
         eventDate: event.timing.actualEndTime || event.timing.actualStartTime,
-        addedByUserId: event.sessionDetails.startedBy
+        addedByUserId: event.sessionDetails.startedBy,
+        rate: seedDataProfile?.previousMammograms?.rate
       })
       if (previousMammograms) {
         event.previousMammograms = previousMammograms
@@ -306,6 +316,7 @@ const generateEvent = ({
       const medicalInformation = generateMedicalInformation({
         addedByUserId: event.sessionDetails.startedBy,
         config: participant.config,
+        ...(seedDataProfile?.medicalInformation || {}),
         // Allow config to override probabilities for test scenarios
         ...(participant.config?.medicalInformation || {})
       })
@@ -322,6 +333,7 @@ const generateEvent = ({
       const medicalInformation = generateMedicalInformation({
         addedByUserId: event.sessionDetails.startedBy,
         config: participant.config,
+        ...(seedDataProfile?.medicalInformation || {}),
         // Allow config to override probabilities for test scenarios
         ...(participant.config?.medicalInformation || {})
       })
@@ -336,7 +348,12 @@ const generateEvent = ({
         event.mammogramData = generateMammogramImages({
           startTime: dayjs(event.sessionDetails.startedAt),
           isSeedData: true,
-          config: participant.config
+          config: participant.config,
+          scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
+          imperfectChanceForTechnicalOrIncomplete:
+            seedDataProfile?.mammogram?.imperfectChanceForTechnicalOrIncomplete,
+          notesForReaderChanceWithoutImperfect:
+            seedDataProfile?.mammogram?.notesForReaderChanceWithoutImperfect
         })
       }
     }
@@ -369,7 +386,11 @@ const generateEvent = ({
     // Select image set for events with mammogram data
     // Done at the end so full event context (symptoms, implants, etc.) is available
     if (event.mammogramData) {
-      const selectedSet = getImageSetForEvent(event.id, 'diagrams', { event })
+      const selectedSet = getImageSetForEvent(event.id, 'diagrams', {
+        event,
+        contextualWeights:
+          seedDataProfile?.imageSetSelection?.contextualTagWeights
+      })
       if (selectedSet) {
         event.mammogramData.selectedSetId = selectedSet.id
       }

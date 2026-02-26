@@ -156,7 +156,10 @@ const generateViewImages = ({
 const generateMammogramImages = ({
   startTime = new Date(),
   isSeedData = false,
-  config = {}
+  config = {},
+  scenarioWeights = null,
+  imperfectChanceForTechnicalOrIncomplete = 0.15,
+  notesForReaderChanceWithoutImperfect = 0.05
 } = {}) => {
   const accessionBase = faker.number
     .int({ min: 100000000, max: 999999999 })
@@ -166,7 +169,9 @@ const generateMammogramImages = ({
   const views = {}
 
   // Select scenario (use config override or random weighted selection)
-  const scenario = config.scenario || weighted.select(IMAGE_SCENARIO_WEIGHTS)
+  const scenario =
+    config.scenario ||
+    weighted.select(scenarioWeights || IMAGE_SCENARIO_WEIGHTS)
 
   // Determine view configuration based on scenario
   let viewsToRepeat = config.repeatViews || []
@@ -325,7 +330,7 @@ const generateMammogramImages = ({
       imperfectData.isImperfectButBestPossible = ['yes']
     } else if (
       (scenario === 'technicalRepeat' || scenario === 'incomplete') &&
-      Math.random() < 0.15
+      Math.random() < imperfectChanceForTechnicalOrIncomplete
     ) {
       imperfectData.isImperfectButBestPossible = ['yes']
     }
@@ -343,7 +348,7 @@ const generateMammogramImages = ({
         'Skin folds present due to weight loss',
         'Best possible images achieved'
       ])
-    } else if (Math.random() < 0.05) {
+    } else if (Math.random() < notesForReaderChanceWithoutImperfect) {
       notesData.notesForReader = faker.helpers.arrayElement([
         'Mole on right breast',
         'Pacemaker present',

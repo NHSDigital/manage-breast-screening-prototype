@@ -517,6 +517,7 @@
   <script>
     // Mammogram viewer - listens for BroadcastChannel messages
     const CHANNEL_NAME = "mammogram-viewer"
+    const INSPECT_KEY = "reading-inspect-panel-open"
 
     // View order setting rendered from Nunjucks
     const VIEW_ORDER = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
@@ -668,14 +669,27 @@
     additionalLinkEl.addEventListener("click", showAdditionalImages)
 
     /**
-     * Toggle debug info visibility (press 'd' to toggle)
+     * Set debug info visibility, optionally broadcasting the change
+     * @param {boolean} open - Whether to show or hide
+     * @param {boolean} broadcast - Whether to notify the reading page
      */
-    const toggleDebug = () => {
-      debugVisible = !debugVisible
-      debugEl.style.display = debugVisible ? "flex" : "none"
-      if (debugVisible && currentSetInfo) {
+    const setDebugState = (open, broadcast) => {
+      debugVisible = open
+      debugEl.style.display = open ? "flex" : "none"
+      if (open && currentSetInfo) {
         updateDebugInfo(currentSetInfo)
       }
+      sessionStorage.setItem(INSPECT_KEY, open ? "true" : "false")
+      if (broadcast && channel) {
+        channel.postMessage({ type: "inspect-toggle", open: open, timestamp: Date.now() })
+      }
+    }
+
+    /**
+     * Toggle debug info visibility (press 'i' to inspect)
+     */
+    const toggleDebug = () => {
+      setDebugState(!debugVisible, true)
     }
 
     /**
@@ -709,9 +723,9 @@
       debugContextEl.innerHTML = flags.length > 0 ? flags.join("") : "<span style='color:#666'>no flags</span>"
     }
 
-    // Listen for 'd' key to toggle debug
+    // Listen for 'i' key to toggle debug (inspect mode)
     document.addEventListener("keydown", (e) => {
-      if (e.key === "d" || e.key === "D") {
+      if (e.key === "i" || e.key === "I") {
         toggleDebug()
       }
     })
@@ -910,6 +924,9 @@
         showMammograms(data)
       } else if (data.type === "clear") {
         showPlaceholder()
+      } else if (data.type === "inspect-toggle") {
+        // Sync inspect state from reading page (don't re-broadcast)
+        setDebugState(data.open, false)
       }
     }
 
@@ -1102,6 +1119,11 @@
       
       // Setup keyboard shortcut forwarding to reading page
       setupShortcutForwarding()
+
+      // Restore inspect state from session storage
+      if (sessionStorage.getItem(INSPECT_KEY) === "true") {
+        setDebugState(true, false)
+      }
 
       updateStatus("Listening for updates...")
     }

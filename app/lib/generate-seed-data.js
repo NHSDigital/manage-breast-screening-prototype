@@ -14,6 +14,7 @@ const { generateClinicsForBSU } = require('./generators/clinic-generator')
 const { generateEvent } = require('./generators/event-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
 const { generateReadingData } = require('./generators/reading-generator')
+const { getSeedDataProfile } = require('./generators/seed-profiles')
 
 const riskLevels = require('../data/risk-levels')
 
@@ -105,7 +106,8 @@ const generateClinicsForDay = (
   usedParticipantsInSnapshot,
   indices,
   testScenarioParticipantIds = new Set(),
-  unitEvents = []
+  unitEvents = [],
+  seedDataProfile
 ) => {
   const clinics = []
   const events = []
@@ -182,7 +184,8 @@ const generateClinicsForDay = (
         outcomeWeights: config.screening.outcomes[firstClinic.clinicType],
         forceStatus: scenario.participant.config.scheduling.status,
         specialAppointmentOverride:
-          scenario?.participant?.config?.specialAppointment
+          scenario?.participant?.config?.specialAppointment,
+        seedDataProfile
       })
 
       events.push(event)
@@ -254,7 +257,8 @@ const generateClinicsForDay = (
           participant,
           clinic,
           outcomeWeights: config.screening.outcomes[clinic.clinicType],
-          forceInProgress: shouldBeInProgress
+          forceInProgress: shouldBeInProgress,
+          seedDataProfile
         })
 
         if (shouldBeInProgress) {
@@ -286,10 +290,17 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
   )
 }
 
-const generateData = async () => {
+const generateData = async (options = {}) => {
+  const selectedSeedDataProfile =
+    options.seedDataProfileObject || getSeedDataProfile(options.seedDataProfile)
+
   if (!fs.existsSync(config.paths.generatedData)) {
     fs.mkdirSync(config.paths.generatedData, { recursive: true })
   }
+
+  console.log(
+    `Using seed data profile: ${selectedSeedDataProfile.label.toLowerCase()}`
+  )
 
   // Create test participants first, using generateParticipant but with overrides
   console.log('Generating test scenario participants...')
@@ -383,7 +394,8 @@ const generateData = async () => {
           usedParticipantsInSnapshot,
           indices,
           testScenarioParticipantIds,
-          unitEvents
+          unitEvents,
+          selectedSeedDataProfile
         )
       )
 
@@ -428,7 +440,8 @@ const generateData = async () => {
   console.log('Generating sample reading data...')
   const eventsWithReadingData = generateReadingData(
     sortedEvents,
-    require('../data/users')
+    require('../data/users'),
+    selectedSeedDataProfile
   )
 
   // breastScreeningUnits.forEach(unit => {
@@ -459,6 +472,7 @@ const generateData = async () => {
   writeData('events.json', { events: eventsWithReadingData })
   writeData('generation-info.json', {
     generatedAt: new Date().toISOString(),
+    seedDataProfile: selectedSeedDataProfile.key,
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,

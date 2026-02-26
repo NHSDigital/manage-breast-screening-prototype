@@ -177,32 +177,35 @@ const extractEventContext = (event) => {
  * @param {object} configWeights - Weights from config (optional override)
  * @returns {object} - Tag weights
  */
-const getContextualWeights = (context, configWeights) => {
+const getContextualWeights = (context, options = {}) => {
+  const { defaultWeights, contextualWeights } = options
+
+  const fallbackDefaultWeights =
+    defaultWeights || config.reading?.mammogramTagWeights || DEFAULT_TAG_WEIGHTS
+
   // If no context flags, use config or defaults
   if (!context.hasSymptoms && !context.isImperfect) {
-    return (
-      configWeights ||
-      config.reading?.mammogramTagWeights ||
-      DEFAULT_TAG_WEIGHTS
-    )
+    return contextualWeights?.default || fallbackDefaultWeights
   }
 
   // Both symptoms and imperfect
   if (context.hasSymptoms && context.isImperfect) {
-    return SYMPTOM_AND_IMPERFECT_WEIGHTS
+    return (
+      contextualWeights?.symptomsAndImperfect || SYMPTOM_AND_IMPERFECT_WEIGHTS
+    )
   }
 
   // Just symptoms
   if (context.hasSymptoms) {
-    return SYMPTOM_WEIGHTS
+    return contextualWeights?.symptoms || SYMPTOM_WEIGHTS
   }
 
   // Just imperfect
   if (context.isImperfect) {
-    return IMPERFECT_WEIGHTS
+    return contextualWeights?.imperfect || IMPERFECT_WEIGHTS
   }
 
-  return configWeights || DEFAULT_TAG_WEIGHTS
+  return contextualWeights?.default || fallbackDefaultWeights
 }
 
 /**
@@ -368,6 +371,7 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * @param {object} options - Optional filtering options
  * @param {string} options.tag - Force a specific tag (bypasses weighted selection)
  * @param {object} options.weights - Override tag weights (e.g., { normal: 0.8, abnormal: 0.2 })
+ * @param {object} options.contextualWeights - Override context-specific weights ({ default, symptoms, imperfect, symptomsAndImperfect })
  * @param {object} options.event - Event object for context-aware selection
  * @param {object} options.context - Context object directly (alternative to passing event)
  * @returns {object|null} - The selected set object or null if none available
@@ -375,6 +379,17 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
 const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
+
+  // If the event already has a stored selectedSetId, use that directly.
+  // This ensures the viewer always shows the same set the reading generator used,
+  // regardless of which profile weights are currently active.
+  // Only bypass this if a specific tag or weights are being forced (e.g. during initial generation).
+  const storedSetId = options.event?.mammogramData?.selectedSetId
+
+  if (storedSetId && !options.tag && !options.weights) {
+    const storedSet = getSetById(storedSetId, source)
+    if (storedSet) return storedSet
+  }
 
   // Use provided context, or extract from event if provided
   const context =
@@ -405,7 +420,10 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   // Get tag weights - use contextual weights if event provided, otherwise config/options
   const weights =
     options.weights ||
-    getContextualWeights(context, config.reading?.mammogramTagWeights)
+    getContextualWeights(context, {
+      defaultWeights: config.reading?.mammogramTagWeights,
+      contextualWeights: options.contextualWeights
+    })
 
   // Group sets by tag
   const setsByTag = {}
@@ -634,7 +652,29 @@ const getLatestPath = (pathOrPaths) => {
  * @param {object} options - Options passed to getImageSetForEvent
  * @returns {object|null} - Object with set info, paths, allPaths, and hasAdditionalImages flag
  */
-const getImagesForEvent = (eventId, source = 'diagrams', options = {}) => {
+const getImagesForEvent = function (
+  eventId,
+  source = 'diagrams',
+  options = {}
+) {
+  // When called from Nunjucks (this.ctx is available) and no contextualWeights are
+  // explicitly provided, look up the active seed data profile's weights so dynamic
+  // set selection (for events without a stored selectedSetId) uses the right distribution.
+  if (!options.contextualWeights && this && this.ctx) {
+    const profileName = this.ctx.data?.generationInfo?.seedDataProfile
+    if (profileName) {
+      const profile =
+        this.ctx.data?.settings?.seedProfiles?.profiles?.[profileName] ||
+        this.ctx.data?.seedDataProfileSettings?.[profileName]
+      const profileWeights = profile?.imageSetSelection?.contextualTagWeights
+      if (profileWeights) {
+        options = Object.assign({}, options, {
+          contextualWeights: profileWeights
+        })
+      }
+    }
+  }
+
   const set = getImageSetForEvent(eventId, source, options)
   if (!set) return null
 
