@@ -9,45 +9,58 @@ const {
   mergeDeep
 } = require('../lib/generators/seed-profiles')
 
-const parseProbability = (value, fallbackValue) => {
+const parsePercentageAsProbability = (value, fallbackProbability) => {
   const parsed = Number(value)
+  const fallbackPercentage = Number(fallbackProbability) * 100
 
   if (Number.isNaN(parsed)) {
-    return fallbackValue
+    return Number.isNaN(fallbackPercentage) ? 0 : fallbackPercentage / 100
   }
 
   if (parsed < 0) {
     return 0
   }
 
-  if (parsed > 1) {
+  if (parsed > 100) {
     return 1
   }
 
-  return parsed
+  return parsed / 100
+}
+
+const convertPercentageOverrides = (overrides, fallbackProfile) => {
+  if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) {
+    return parsePercentageAsProbability(overrides, fallbackProfile)
+  }
+
+  return Object.keys(overrides).reduce((result, key) => {
+    result[key] = convertPercentageOverrides(
+      overrides[key],
+      fallbackProfile?.[key]
+    )
+
+    return result
+  }, {})
 }
 
 const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
-  return {
-    medicalInformation: {
-      probabilityOfSymptoms: parseProbability(
-        body?.medicalInformation?.probabilityOfSymptoms,
-        fallbackProfile?.medicalInformation?.probabilityOfSymptoms
-      )
-    },
-    specialAppointment: {
-      probability: parseProbability(
-        body?.specialAppointment?.probability,
-        fallbackProfile?.specialAppointment?.probability
-      )
-    },
-    previousMammograms: {
-      rate: parseProbability(
-        body?.previousMammograms?.rate,
-        fallbackProfile?.previousMammograms?.rate
-      )
-    }
+  const rawOverrides = {
+    imageReading: body.imageReading,
+    medicalInformation: body.medicalInformation,
+    specialAppointment: body.specialAppointment,
+    previousMammograms: body.previousMammograms,
+    mammogram: body.mammogram,
+    imageSetSelection: body.imageSetSelection
   }
+
+  return convertPercentageOverrides(rawOverrides, {
+    imageReading: fallbackProfile.imageReading,
+    medicalInformation: fallbackProfile.medicalInformation,
+    specialAppointment: fallbackProfile.specialAppointment,
+    previousMammograms: fallbackProfile.previousMammograms,
+    mammogram: fallbackProfile.mammogram,
+    imageSetSelection: fallbackProfile.imageSetSelection
+  })
 }
 
 module.exports = (router) => {
@@ -61,9 +74,30 @@ module.exports = (router) => {
       req.session.data.settings = {}
     }
 
-    ensureSeedProfilesState(req.session.data.settings)
+    const seedProfiles = ensureSeedProfilesState(req.session.data.settings)
+    const requestedBaseProfileKey =
+      typeof req.query?.baseProfile === 'string' ? req.query.baseProfile : null
+    const generatedProfileKey =
+      req.session.data?.generationInfo?.seedDataProfile
+    const hasValidRequestedProfile =
+      requestedBaseProfileKey && seedProfiles.profiles[requestedBaseProfileKey]
+    const hasValidGeneratedProfile =
+      generatedProfileKey && seedProfiles.profiles[generatedProfileKey]
+    const baseProfileKey = hasValidRequestedProfile
+      ? requestedBaseProfileKey
+      : hasValidGeneratedProfile
+        ? generatedProfileKey
+        : seedProfiles.customBaseKey || DEFAULT_SEED_DATA_PROFILE
+    const formProfileKey = baseProfileKey
+    const customFormProfile = getSeedDataProfileFromState(
+      seedProfiles,
+      formProfileKey
+    )
 
-    return res.render('settings/seed-profiles/custom')
+    return res.render('settings/seed-profiles/custom', {
+      customBaseProfileKey: baseProfileKey,
+      customFormProfile
+    })
   })
 
   router.post('/settings/seed-profiles/custom', (req, res) => {
@@ -79,7 +113,10 @@ module.exports = (router) => {
     const baseProfileKey = seedProfiles.profiles[requestedBaseKey]
       ? requestedBaseKey
       : DEFAULT_SEED_DATA_PROFILE
-    const baseProfile = getSeedDataProfileFromState(seedProfiles, baseProfileKey)
+    const baseProfile = getSeedDataProfileFromState(
+      seedProfiles,
+      baseProfileKey
+    )
     const customOverrides = getCustomOverridesFromBody(customForm, baseProfile)
     const customProfile = {
       ...mergeDeep(baseProfile, customOverrides),
@@ -101,7 +138,10 @@ module.exports = (router) => {
         })
         .catch((err) => {
           console.error('Error regenerating data from custom profile:', err)
-          req.flash('error', 'Custom profile saved but data regeneration failed')
+          req.flash(
+            'error',
+            'Custom profile saved but data regeneration failed'
+          )
           return res.redirect(303, '/settings/seed-profiles/custom')
         })
 

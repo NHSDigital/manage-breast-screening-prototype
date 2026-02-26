@@ -1,6 +1,6 @@
 // app/lib/generators/seed-profiles.js
 
-const DEFAULT_SEED_DATA_PROFILE = 'medium'
+const DEFAULT_SEED_DATA_PROFILE = 'routine'
 const CUSTOM_SEED_DATA_PROFILE = 'custom'
 
 const isObject = (value) => {
@@ -36,7 +36,7 @@ const SEED_DATA_PROFILE_DEFAULTS = {
   medicalInformation: {
     probabilityOfSymptoms: 0.05,
     probabilityOfHRT: 0.2,
-    probabilityOfPregnancyBreastfeeding: 0.03,
+    probabilityOfPregnancyBreastfeeding: 0.01,
     probabilityOfOtherMedicalInfo: 0.12,
     probabilityOfBreastFeatures: 0.06,
     probabilityOfMultipleBreastFeatures: 0.2,
@@ -50,10 +50,10 @@ const SEED_DATA_PROFILE_DEFAULTS = {
   },
   mammogram: {
     scenarioWeights: {
-      standard: 0.85,
-      extraImages: 0.04,
-      technicalRepeat: 0.03,
-      incomplete: 0.02,
+      standard: 0.95,
+      extraImages: 0.02,
+      technicalRepeat: 0.01,
+      incomplete: 0.01,
       incompleteImperfect: 0.01
     },
     imperfectChanceForTechnicalOrIncomplete: 0.08,
@@ -62,14 +62,14 @@ const SEED_DATA_PROFILE_DEFAULTS = {
   imageSetSelection: {
     contextualTagWeights: {
       default: {
-        normal: 0.8,
-        abnormal: 0.12,
-        indeterminate: 0.04,
-        technical: 0.04
+        normal: 0.87,
+        abnormal: 0.09,
+        indeterminate: 0.02,
+        technical: 0.02
       },
       symptoms: {
-        normal: 0.5,
-        abnormal: 0.35,
+        normal: 0.7,
+        abnormal: 0.15,
         indeterminate: 0.08,
         technical: 0.07
       },
@@ -91,8 +91,8 @@ const SEED_DATA_PROFILE_DEFAULTS = {
 
 const SEED_DATA_PROFILE_DEFINITIONS = [
   {
-    key: 'low',
-    label: 'Low',
+    key: 'routine',
+    label: 'Routine',
     settings: {}
   },
   {
@@ -184,6 +184,39 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
     label: '---'
   },
   {
+    key: 'allNormals',
+    label: 'All normals',
+    settings: {
+      medicalInformation: {
+        probabilityOfSymptoms: 0.0
+      },
+      mammogram: {
+        scenarioWeights: {
+          standard: 1,
+          extraImages: 0,
+          technicalRepeat: 0,
+          incomplete: 0,
+          incompleteImperfect: 0
+        },
+        imperfectChanceForTechnicalOrIncomplete: 0,
+        notesForReaderChanceWithoutImperfect: 0
+      },
+      previousMammograms: {
+        rate: 0
+      },
+      imageSetSelection: {
+        contextualTagWeights: {
+          default: {
+            normal: 1,
+            abnormal: 0,
+            indeterminate: 0,
+            technical: 0
+          }
+        }
+      }
+    }
+  },
+  {
     key: 'highAbnormalities',
     label: 'High abnormalities',
     settings: {
@@ -204,7 +237,7 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
     label: 'High symptoms',
     settings: {
       medicalInformation: {
-        probabilityOfSymptoms: 1
+        probabilityOfSymptoms: 0.5
       }
     }
   }
@@ -248,7 +281,9 @@ const getSeedDataProfileOptionsWithCustom = () => {
   ]
 }
 
-const createDefaultCustomProfile = (baseProfileKey = DEFAULT_SEED_DATA_PROFILE) => {
+const createDefaultCustomProfile = (
+  baseProfileKey = DEFAULT_SEED_DATA_PROFILE
+) => {
   const baseProfile = getSeedDataProfile(baseProfileKey)
 
   return {

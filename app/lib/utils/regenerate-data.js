@@ -88,7 +88,9 @@ async function regenerateData(req, options = {}) {
     req.session.data.settings = {}
   }
 
-  const refreshedSeedProfiles = ensureSeedProfilesState(req.session.data.settings)
+  const refreshedSeedProfiles = ensureSeedProfilesState(
+    req.session.data.settings
+  )
   refreshedSeedProfiles.selectedKey = resolvedProfile.key
 
   req.session.data.generationInfo.seedDataProfile = resolvedProfile.key

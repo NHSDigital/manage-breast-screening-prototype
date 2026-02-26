@@ -3,6 +3,7 @@
 {% extends "layout-app.html" %}
 
 {% set pageHeading = "Custom seed profile" %}
+{% set formAction = "/settings/seed-profiles/custom" %}
 
 {% set back = {
   href: "/settings",
@@ -13,6 +14,98 @@
 
   {% set seedProfiles = data.settings.seedProfiles or data.defaultSettings.seedProfiles %}
   {% set customProfile = seedProfiles.profiles.custom %}
+  {% set formProfile = customFormProfile or customProfile %}
+  {% set selectedBaseProfileKey = customBaseProfileKey or seedProfiles.customBaseKey %}
+
+  {% macro seedProfilePercentageInput(field) %}
+    {{ input({
+      id: field.id,
+      name: field.name,
+      type: "number",
+      value: field.value | round(3),
+      classes: "nhsuk-input--width-5",
+      label: {
+        text: field.label
+      },
+      hint: {
+        text: field.hint
+      } if field.hint,
+      suffix: {
+        text: "%"
+      },
+      attributes: {
+        "min": "0",
+        "max": "100",
+        "step": "0.1",
+        "inputmode": "decimal"
+      }
+    }) }}
+  {% endmacro %}
+
+  {% set customSeedProfileFieldsHtml %}
+    <h2>Image reading</h2>
+    {{ seedProfilePercentageInput({
+      id: "probabilityFirstReaderOpinionMatchesImages",
+      name: "settings[seedProfiles][customForm][imageReading][probabilityFirstReaderOpinionMatchesImages]",
+      label: "First reader opinion matches images",
+      value: formProfile.imageReading.probabilityFirstReaderOpinionMatchesImages * 100
+    }) }}
+
+    <h2>Medical information</h2>
+    {{ seedProfilePercentageInput({ id: "probabilityOfSymptoms", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfSymptoms]", label: "Symptoms present", value: formProfile.medicalInformation.probabilityOfSymptoms * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfHRT", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfHRT]", label: "Hormone replacement therapy", value: formProfile.medicalInformation.probabilityOfHRT * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfPregnancyBreastfeeding", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfPregnancyBreastfeeding]", label: "Pregnancy or breastfeeding", value: formProfile.medicalInformation.probabilityOfPregnancyBreastfeeding * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfOtherMedicalInfo", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfOtherMedicalInfo]", label: "Other medical information", value: formProfile.medicalInformation.probabilityOfOtherMedicalInfo * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfBreastFeatures", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfBreastFeatures]", label: "Breast features", value: formProfile.medicalInformation.probabilityOfBreastFeatures * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfMultipleBreastFeatures", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfMultipleBreastFeatures]", label: "Multiple breast features", value: formProfile.medicalInformation.probabilityOfMultipleBreastFeatures * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfMedicalHistory", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfMedicalHistory]", label: "Medical history", value: formProfile.medicalInformation.probabilityOfMedicalHistory * 100 }) }}
+
+    <h2>Special appointments and previous mammograms</h2>
+    {{ seedProfilePercentageInput({ id: "specialAppointmentProbability", name: "settings[seedProfiles][customForm][specialAppointment][probability]", label: "Special appointment requirements", value: formProfile.specialAppointment.probability * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "previousMammogramsRate", name: "settings[seedProfiles][customForm][previousMammograms][rate]", label: "Previous mammograms", value: formProfile.previousMammograms.rate * 100 }) }}
+
+    <h2>Mammogram scenarios</h2>
+    {{ seedProfilePercentageInput({ id: "scenarioStandard", name: "settings[seedProfiles][customForm][mammogram][scenarioWeights][standard]", label: "Standard", value: formProfile.mammogram.scenarioWeights.standard * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "scenarioExtraImages", name: "settings[seedProfiles][customForm][mammogram][scenarioWeights][extraImages]", label: "Extra images", value: formProfile.mammogram.scenarioWeights.extraImages * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "scenarioTechnicalRepeat", name: "settings[seedProfiles][customForm][mammogram][scenarioWeights][technicalRepeat]", label: "Technical repeat", value: formProfile.mammogram.scenarioWeights.technicalRepeat * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "scenarioIncomplete", name: "settings[seedProfiles][customForm][mammogram][scenarioWeights][incomplete]", label: "Incomplete", value: formProfile.mammogram.scenarioWeights.incomplete * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "scenarioIncompleteImperfect", name: "settings[seedProfiles][customForm][mammogram][scenarioWeights][incompleteImperfect]", label: "Incomplete and imperfect", value: formProfile.mammogram.scenarioWeights.incompleteImperfect * 100 }) }}
+
+    <h2>Mammogram quality and notes</h2>
+    {{ seedProfilePercentageInput({ id: "imperfectChanceForTechnicalOrIncomplete", name: "settings[seedProfiles][customForm][mammogram][imperfectChanceForTechnicalOrIncomplete]", label: "Imperfect chance for technical or incomplete", value: formProfile.mammogram.imperfectChanceForTechnicalOrIncomplete * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "notesForReaderChanceWithoutImperfect", name: "settings[seedProfiles][customForm][mammogram][notesForReaderChanceWithoutImperfect]", label: "Notes for reader chance without imperfect", value: formProfile.mammogram.notesForReaderChanceWithoutImperfect * 100 }) }}
+
+    <details class="nhsuk-details">
+      <summary class="nhsuk-details__summary">
+        <span class="nhsuk-details__summary-text">Image set selection settings</span>
+      </summary>
+      <div class="nhsuk-details__text">
+        <h3>Default</h3>
+        {{ seedProfilePercentageInput({ id: "defaultNormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][default][normal]", label: "Normal", value: formProfile.imageSetSelection.contextualTagWeights.default.normal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "defaultAbnormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][default][abnormal]", label: "Abnormal", value: formProfile.imageSetSelection.contextualTagWeights.default.abnormal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "defaultIndeterminate", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][default][indeterminate]", label: "Indeterminate", value: formProfile.imageSetSelection.contextualTagWeights.default.indeterminate * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "defaultTechnical", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][default][technical]", label: "Technical", value: formProfile.imageSetSelection.contextualTagWeights.default.technical * 100 }) }}
+
+        <h3>Symptoms</h3>
+        {{ seedProfilePercentageInput({ id: "symptomsNormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptoms][normal]", label: "Normal", value: formProfile.imageSetSelection.contextualTagWeights.symptoms.normal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "symptomsAbnormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptoms][abnormal]", label: "Abnormal", value: formProfile.imageSetSelection.contextualTagWeights.symptoms.abnormal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "symptomsIndeterminate", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptoms][indeterminate]", label: "Indeterminate", value: formProfile.imageSetSelection.contextualTagWeights.symptoms.indeterminate * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "symptomsTechnical", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptoms][technical]", label: "Technical", value: formProfile.imageSetSelection.contextualTagWeights.symptoms.technical * 100 }) }}
+
+        <h3>Imperfect</h3>
+        {{ seedProfilePercentageInput({ id: "imperfectNormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][imperfect][normal]", label: "Normal", value: formProfile.imageSetSelection.contextualTagWeights.imperfect.normal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "imperfectAbnormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][imperfect][abnormal]", label: "Abnormal", value: formProfile.imageSetSelection.contextualTagWeights.imperfect.abnormal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "imperfectIndeterminate", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][imperfect][indeterminate]", label: "Indeterminate", value: formProfile.imageSetSelection.contextualTagWeights.imperfect.indeterminate * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "imperfectTechnical", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][imperfect][technical]", label: "Technical", value: formProfile.imageSetSelection.contextualTagWeights.imperfect.technical * 100 }) }}
+
+        <h3>Symptoms and imperfect</h3>
+        {{ seedProfilePercentageInput({ id: "symptomsAndImperfectNormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptomsAndImperfect][normal]", label: "Normal", value: formProfile.imageSetSelection.contextualTagWeights.symptomsAndImperfect.normal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "symptomsAndImperfectAbnormal", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptomsAndImperfect][abnormal]", label: "Abnormal", value: formProfile.imageSetSelection.contextualTagWeights.symptomsAndImperfect.abnormal * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "symptomsAndImperfectIndeterminate", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptomsAndImperfect][indeterminate]", label: "Indeterminate", value: formProfile.imageSetSelection.contextualTagWeights.symptomsAndImperfect.indeterminate * 100 }) }}
+        {{ seedProfilePercentageInput({ id: "symptomsAndImperfectTechnical", name: "settings[seedProfiles][customForm][imageSetSelection][contextualTagWeights][symptomsAndImperfect][technical]", label: "Technical", value: formProfile.imageSetSelection.contextualTagWeights.symptomsAndImperfect.technical * 100 }) }}
+      </div>
+    </details>
+  {% endset %}
 
   <h1>
     {{ pageHeading }}
@@ -20,67 +113,27 @@
 
   <p class="nhsuk-hint">Start from a profile, change a few key probabilities, then regenerate data using “custom”.</p>
 
-  {% if flash.error %}
-    <div class="nhsuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="nhsuk-error-summary">
-      <h2 class="nhsuk-error-summary__title" id="error-summary-title">Error</h2>
-      <div class="nhsuk-error-summary__body">
-        <p>{{ flash.error }}</p>
-      </div>
-    </div>
-  {% endif %}
+  <div class="nhsuk-form-group">
+    <label class="nhsuk-label" for="customBaseKey">
+      Start from profile
+    </label>
+    <select class="nhsuk-select" id="customBaseKey" name="settings[seedProfiles][customForm][baseKey]" onchange="window.location.href='/settings/seed-profiles/custom?baseProfile=' + encodeURIComponent(this.value)">
+      {% for profile in seedProfiles.options %}
+        {% if profile.key and profile.divider != true %}
+          <option value="{{ profile.key }}" {{ "selected" if selectedBaseProfileKey == profile.key }}>{{ profile.label }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+  </div>
 
-  {% if flash.success %}
-    {% set successMessage %}
-      <p>{{ flash.success }}</p>
-    {% endset %}
+  {{ customSeedProfileFieldsHtml | safe }}
 
-    {{ insetText({
-      html: successMessage
-    }) }}
-  {% endif %}
+  <button class="nhsuk-button" data-module="nhsuk-button" name="settings[seedProfiles][customForm][action]" value="save-and-regenerate" type="submit">
+    Save profile and regenerate data
+  </button>
 
-  <form action="/settings/seed-profiles/custom" method="post">
-    <div class="nhsuk-form-group">
-      <label class="nhsuk-label" for="customBaseKey">
-        Start from profile
-      </label>
-      <select class="nhsuk-select" id="customBaseKey" name="settings[seedProfiles][customForm][baseKey]">
-        {% for profile in seedProfiles.options %}
-          {% if profile.key and profile.key != "custom" %}
-            <option value="{{ profile.key }}" {{ "selected" if seedProfiles.customBaseKey == profile.key }}>{{ profile.label }}</option>
-          {% endif %}
-        {% endfor %}
-      </select>
-    </div>
-
-    <div class="nhsuk-form-group">
-      <label class="nhsuk-label" for="probabilityOfSymptoms">
-        Probability of symptoms
-      </label>
-      <input class="nhsuk-input nhsuk-input--width-5" id="probabilityOfSymptoms" name="settings[seedProfiles][customForm][medicalInformation][probabilityOfSymptoms]" type="number" min="0" max="1" step="0.01" value="{{ customProfile.medicalInformation.probabilityOfSymptoms }}">
-    </div>
-
-    <div class="nhsuk-form-group">
-      <label class="nhsuk-label" for="specialAppointmentProbability">
-        Probability of special appointment requirements
-      </label>
-      <input class="nhsuk-input nhsuk-input--width-5" id="specialAppointmentProbability" name="settings[seedProfiles][customForm][specialAppointment][probability]" type="number" min="0" max="1" step="0.01" value="{{ customProfile.specialAppointment.probability }}">
-    </div>
-
-    <div class="nhsuk-form-group">
-      <label class="nhsuk-label" for="previousMammogramsRate">
-        Probability of previous mammograms
-      </label>
-      <input class="nhsuk-input nhsuk-input--width-5" id="previousMammogramsRate" name="settings[seedProfiles][customForm][previousMammograms][rate]" type="number" min="0" max="1" step="0.01" value="{{ customProfile.previousMammograms.rate }}">
-    </div>
-
-    <button class="nhsuk-button" data-module="nhsuk-button" name="settings[seedProfiles][customForm][action]" value="save-and-regenerate" type="submit">
-      Save profile and regenerate data
-    </button>
-
-    <button class="nhsuk-button nhsuk-button--secondary" data-module="nhsuk-button" name="settings[seedProfiles][customForm][action]" value="save-only" type="submit">
-      Save profile only
-    </button>
-  </form>
+  <button class="nhsuk-button nhsuk-button--secondary" data-module="nhsuk-button" name="settings[seedProfiles][customForm][action]" value="save-only" type="submit">
+    Save profile only
+  </button>
 
 {% endblock %}
