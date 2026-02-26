@@ -1,0 +1,86 @@
+{# app/views/settings/seed-profiles/custom.html #}
+
+{% extends "layout-app.html" %}
+
+{% set pageHeading = "Custom seed profile" %}
+
+{% set back = {
+  href: "/settings",
+  text: "Settings"
+} %}
+
+{% block pageContent %}
+
+  {% set seedProfiles = data.settings.seedProfiles or data.defaultSettings.seedProfiles %}
+  {% set customProfile = seedProfiles.profiles.custom %}
+
+  <h1>
+    {{ pageHeading }}
+  </h1>
+
+  <p class="nhsuk-hint">Start from a profile, change a few key probabilities, then regenerate data using “custom”.</p>
+
+  {% if flash.error %}
+    <div class="nhsuk-error-summary" aria-labelledby="error-summary-title" role="alert" tabindex="-1" data-module="nhsuk-error-summary">
+      <h2 class="nhsuk-error-summary__title" id="error-summary-title">Error</h2>
+      <div class="nhsuk-error-summary__body">
+        <p>{{ flash.error }}</p>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if flash.success %}
+    {% set successMessage %}
+      <p>{{ flash.success }}</p>
+    {% endset %}
+
+    {{ insetText({
+      html: successMessage
+    }) }}
+  {% endif %}
+
+  <form action="/settings/seed-profiles/custom" method="post">
+    <div class="nhsuk-form-group">
+      <label class="nhsuk-label" for="customBaseKey">
+        Start from profile
+      </label>
+      <select class="nhsuk-select" id="customBaseKey" name="settings[seedProfiles][customForm][baseKey]">
+        {% for profile in seedProfiles.options %}
+          {% if profile.key and profile.key != "custom" %}
+            <option value="{{ profile.key }}" {{ "selected" if seedProfiles.customBaseKey == profile.key }}>{{ profile.label }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="nhsuk-form-group">
+      <label class="nhsuk-label" for="probabilityOfSymptoms">
+        Probability of symptoms
+      </label>
+      <input class="nhsuk-input nhsuk-input--width-5" id="probabilityOfSymptoms" name="settings[seedProfiles][customForm][medicalInformation][probabilityOfSymptoms]" type="number" min="0" max="1" step="0.01" value="{{ customProfile.medicalInformation.probabilityOfSymptoms }}">
+    </div>
+
+    <div class="nhsuk-form-group">
+      <label class="nhsuk-label" for="specialAppointmentProbability">
+        Probability of special appointment requirements
+      </label>
+      <input class="nhsuk-input nhsuk-input--width-5" id="specialAppointmentProbability" name="settings[seedProfiles][customForm][specialAppointment][probability]" type="number" min="0" max="1" step="0.01" value="{{ customProfile.specialAppointment.probability }}">
+    </div>
+
+    <div class="nhsuk-form-group">
+      <label class="nhsuk-label" for="previousMammogramsRate">
+        Probability of previous mammograms
+      </label>
+      <input class="nhsuk-input nhsuk-input--width-5" id="previousMammogramsRate" name="settings[seedProfiles][customForm][previousMammograms][rate]" type="number" min="0" max="1" step="0.01" value="{{ customProfile.previousMammograms.rate }}">
+    </div>
+
+    <button class="nhsuk-button" data-module="nhsuk-button" name="settings[seedProfiles][customForm][action]" value="save-and-regenerate" type="submit">
+      Save profile and regenerate data
+    </button>
+
+    <button class="nhsuk-button nhsuk-button--secondary" data-module="nhsuk-button" name="settings[seedProfiles][customForm][action]" value="save-only" type="submit">
+      Save profile only
+    </button>
+  </form>
+
+{% endblock %}

@@ -4,12 +4,25 @@ const generateData = require('../generate-seed-data')
 const { join, resolve } = require('path')
 const dayjs = require('dayjs')
 const fs = require('fs')
-const { getSeedDataProfile } = require('../generators/seed-profiles')
+const {
+  DEFAULT_SEED_DATA_PROFILE,
+  ensureSeedProfilesState,
+  getSeedDataProfileFromState
+} = require('../generators/seed-profiles')
 
 async function regenerateData(req, options = {}) {
-  const profileFromSession = req?.session?.data?.settings?.seedDataProfile
-  const requestedProfileName = options.seedDataProfile || profileFromSession
-  const resolvedProfile = getSeedDataProfile(requestedProfileName)
+  if (!req.session.data.settings) {
+    req.session.data.settings = {}
+  }
+
+  const seedProfiles = ensureSeedProfilesState(req.session.data.settings)
+  const profileFromSession = seedProfiles.selectedKey
+  const requestedProfileName =
+    options.seedDataProfile || profileFromSession || DEFAULT_SEED_DATA_PROFILE
+  const resolvedProfile = getSeedDataProfileFromState(
+    seedProfiles,
+    requestedProfileName
+  )
 
   const dataDirectory = join(__dirname, '../../data')
   const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
@@ -17,7 +30,10 @@ async function regenerateData(req, options = {}) {
   const generationInfoPath = join(generatedDataPath, 'generation-info.json')
 
   // Generate new data
-  await generateData({ seedDataProfile: resolvedProfile.key })
+  await generateData({
+    seedDataProfile: resolvedProfile.key,
+    seedDataProfileObject: resolvedProfile
+  })
 
   // Clear the require cache for session data defaults
   delete require.cache[require.resolve(sessionDataPath)]
@@ -72,11 +88,10 @@ async function regenerateData(req, options = {}) {
     req.session.data.settings = {}
   }
 
-  req.session.data.settings.seedDataProfile = resolvedProfile.key
+  const refreshedSeedProfiles = ensureSeedProfilesState(req.session.data.settings)
+  refreshedSeedProfiles.selectedKey = resolvedProfile.key
 
-  if (!req.session.data.generationInfo.seedDataProfile) {
-    req.session.data.generationInfo.seedDataProfile = resolvedProfile.key
-  }
+  req.session.data.generationInfo.seedDataProfile = resolvedProfile.key
 }
 
 function needsRegeneration(generationInfo) {

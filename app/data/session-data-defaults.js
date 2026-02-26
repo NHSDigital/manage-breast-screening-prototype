@@ -17,7 +17,7 @@ const symptomTypes = require('./symptom-types')
 const {
   DEFAULT_SEED_DATA_PROFILE,
   SEED_DATA_PROFILES,
-  getSeedDataProfileOptions
+  createSeedProfilesState
 } = require('../lib/generators/seed-profiles')
 
 // Check if generated data folder exists and create if needed
@@ -46,6 +46,10 @@ if (fs.existsSync(generationInfoPath)) {
 }
 
 if (!generationInfo.seedDataProfile) {
+  generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
+}
+
+if (!SEED_DATA_PROFILES[generationInfo.seedDataProfile]) {
   generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
 }
 
@@ -83,8 +87,11 @@ const defaultSettings = {
   darkMode: 'false',
   debugMode: 'false',
   showEnvironmentBanner: 'true',
-  seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
   mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
+  seedProfiles: {
+    ...createSeedProfilesState(),
+    selectedKey: generationInfo.seedDataProfile
+  },
   screening: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
@@ -113,8 +120,6 @@ const defaults = {
   clinics,
   events,
   generationInfo,
-  seedDataProfiles: getSeedDataProfileOptions(),
-  seedDataProfileSettings: SEED_DATA_PROFILES,
   config,
   settings: defaultSettings,
   defaultSettings,

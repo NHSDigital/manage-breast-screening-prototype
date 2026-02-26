@@ -291,7 +291,8 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
 }
 
 const generateData = async (options = {}) => {
-  const selectedSeedDataProfile = getSeedDataProfile(options.seedDataProfile)
+  const selectedSeedDataProfile =
+    options.seedDataProfileObject || getSeedDataProfile(options.seedDataProfile)
 
   if (!fs.existsSync(config.paths.generatedData)) {
     fs.mkdirSync(config.paths.generatedData, { recursive: true })
@@ -439,7 +440,8 @@ const generateData = async (options = {}) => {
   console.log('Generating sample reading data...')
   const eventsWithReadingData = generateReadingData(
     sortedEvents,
-    require('../data/users')
+    require('../data/users'),
+    selectedSeedDataProfile
   )
 
   // breastScreeningUnits.forEach(unit => {

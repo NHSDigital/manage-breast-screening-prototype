@@ -1,6 +1,7 @@
 // app/lib/generators/seed-profiles.js
 
 const DEFAULT_SEED_DATA_PROFILE = 'medium'
+const CUSTOM_SEED_DATA_PROFILE = 'custom'
 
 const isObject = (value) => {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -29,6 +30,9 @@ const mergeDeep = (base, override) => {
 }
 
 const SEED_DATA_PROFILE_DEFAULTS = {
+  imageReading: {
+    probabilityFirstReaderOpinionMatchesImages: 0.95
+  },
   medicalInformation: {
     probabilityOfSymptoms: 0.05,
     probabilityOfHRT: 0.2,
@@ -85,12 +89,13 @@ const SEED_DATA_PROFILE_DEFAULTS = {
   }
 }
 
-const SEED_DATA_PROFILE_DEFINITIONS = {
-  low: {
+const SEED_DATA_PROFILE_DEFINITIONS = [
+  {
     key: 'low',
-    label: 'Low'
+    label: 'Low',
+    settings: {}
   },
-  medium: {
+  {
     key: 'medium',
     label: 'Medium',
     settings: {
@@ -132,23 +137,7 @@ const SEED_DATA_PROFILE_DEFINITIONS = {
       }
     }
   },
-  highAbnormalities: {
-    key: 'highAbnormalities',
-    label: 'High abnormalities',
-    settings: {
-      imageSetSelection: {
-        contextualTagWeights: {
-          default: {
-            normal: 0.5,
-            abnormal: 0.35,
-            indeterminate: 0.1,
-            technical: 0.05
-          }
-        }
-      }
-    }
-  },
-  high: {
+  {
     key: 'high',
     label: 'High',
     settings: {
@@ -189,22 +178,53 @@ const SEED_DATA_PROFILE_DEFINITIONS = {
         }
       }
     }
+  },
+  {
+    divider: true,
+    label: '---'
+  },
+  {
+    key: 'highAbnormalities',
+    label: 'High abnormalities',
+    settings: {
+      imageSetSelection: {
+        contextualTagWeights: {
+          default: {
+            normal: 0.5,
+            abnormal: 0.35,
+            indeterminate: 0.1,
+            technical: 0.05
+          }
+        }
+      }
+    }
+  },
+  {
+    key: 'highSymptoms',
+    label: 'High symptoms',
+    settings: {
+      medicalInformation: {
+        probabilityOfSymptoms: 1
+      }
+    }
   }
-}
+]
 
 const SEED_DATA_PROFILES = Object.fromEntries(
-  Object.entries(SEED_DATA_PROFILE_DEFINITIONS).map(([key, profile]) => {
-    const profileSettings = profile.settings || {}
+  SEED_DATA_PROFILE_DEFINITIONS.filter((definition) => !definition.divider).map(
+    (profile) => {
+      const profileSettings = profile.settings || {}
 
-    return [
-      key,
-      {
-        key: profile.key,
-        label: profile.label,
-        ...mergeDeep(SEED_DATA_PROFILE_DEFAULTS, profileSettings)
-      }
-    ]
-  })
+      return [
+        profile.key,
+        {
+          key: profile.key,
+          label: profile.label,
+          ...mergeDeep(SEED_DATA_PROFILE_DEFAULTS, profileSettings)
+        }
+      ]
+    }
+  )
 )
 
 const getSeedDataProfile = (profileName = DEFAULT_SEED_DATA_PROFILE) => {
@@ -214,11 +234,107 @@ const getSeedDataProfile = (profileName = DEFAULT_SEED_DATA_PROFILE) => {
   )
 }
 
+const cloneDeep = (value) => {
+  return JSON.parse(JSON.stringify(value))
+}
+
+const getSeedDataProfileOptionsWithCustom = () => {
+  return [
+    ...getSeedDataProfileOptions(),
+    {
+      key: CUSTOM_SEED_DATA_PROFILE,
+      label: 'Custom'
+    }
+  ]
+}
+
+const createDefaultCustomProfile = (baseProfileKey = DEFAULT_SEED_DATA_PROFILE) => {
+  const baseProfile = getSeedDataProfile(baseProfileKey)
+
+  return {
+    ...cloneDeep(baseProfile),
+    key: CUSTOM_SEED_DATA_PROFILE,
+    label: 'Custom'
+  }
+}
+
+const createSeedProfilesState = () => {
+  return {
+    selectedKey: DEFAULT_SEED_DATA_PROFILE,
+    customBaseKey: DEFAULT_SEED_DATA_PROFILE,
+    options: getSeedDataProfileOptionsWithCustom(),
+    profiles: {
+      ...cloneDeep(SEED_DATA_PROFILES),
+      [CUSTOM_SEED_DATA_PROFILE]: createDefaultCustomProfile()
+    }
+  }
+}
+
+const ensureSeedProfilesState = (settings = {}) => {
+  if (!isObject(settings.seedProfiles)) {
+    settings.seedProfiles = createSeedProfilesState()
+    return settings.seedProfiles
+  }
+
+  const state = settings.seedProfiles
+
+  if (!state.selectedKey) {
+    state.selectedKey = DEFAULT_SEED_DATA_PROFILE
+  }
+
+  if (!state.customBaseKey) {
+    state.customBaseKey = DEFAULT_SEED_DATA_PROFILE
+  }
+
+  if (!Array.isArray(state.options) || state.options.length === 0) {
+    state.options = getSeedDataProfileOptionsWithCustom()
+  }
+
+  if (!isObject(state.profiles)) {
+    state.profiles = cloneDeep(SEED_DATA_PROFILES)
+  }
+
+  if (!isObject(state.profiles[CUSTOM_SEED_DATA_PROFILE])) {
+    state.profiles[CUSTOM_SEED_DATA_PROFILE] = createDefaultCustomProfile(
+      state.customBaseKey
+    )
+  }
+
+  return state
+}
+
+const getSeedDataProfileFromState = (
+  seedProfilesState,
+  profileName = DEFAULT_SEED_DATA_PROFILE
+) => {
+  if (isObject(seedProfilesState?.profiles)) {
+    const selectedProfile = seedProfilesState.profiles[profileName]
+    if (selectedProfile) {
+      return {
+        ...selectedProfile,
+        key: selectedProfile.key || profileName,
+        label: selectedProfile.label || profileName
+      }
+    }
+  }
+
+  return getSeedDataProfile(profileName)
+}
+
 const getSeedDataProfileOptions = () => {
-  return Object.values(SEED_DATA_PROFILES).map((profile) => ({
-    key: profile.key,
-    label: profile.label
-  }))
+  return SEED_DATA_PROFILE_DEFINITIONS.map((definition) => {
+    if (definition.divider) {
+      return {
+        divider: true,
+        label: definition.label || '---'
+      }
+    }
+
+    return {
+      key: definition.key,
+      label: definition.label
+    }
+  })
 }
 
 module.exports = {
@@ -226,6 +342,12 @@ module.exports = {
   SEED_DATA_PROFILE_DEFINITIONS,
   SEED_DATA_PROFILE_DEFAULTS,
   DEFAULT_SEED_DATA_PROFILE,
+  CUSTOM_SEED_DATA_PROFILE,
+  mergeDeep,
+  createSeedProfilesState,
+  ensureSeedProfilesState,
+  getSeedDataProfileFromState,
   getSeedDataProfile,
-  getSeedDataProfileOptions
+  getSeedDataProfileOptions,
+  getSeedDataProfileOptionsWithCustom
 }

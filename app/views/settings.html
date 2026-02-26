@@ -135,11 +135,12 @@
 
     <h2>Generated data</h2>
 
+    {% set seedProfiles = data.settings.seedProfiles or data.defaultSettings.seedProfiles %}
     {% set generatedSeedProfileKey = data.generationInfo.seedDataProfile %}
-    {% set selectedSeedProfileKey = generatedSeedProfileKey or data.settings.seedDataProfile or data.defaultSettings.seedDataProfile %}
+    {% set selectedSeedProfileKey = generatedSeedProfileKey or seedProfiles.selectedKey %}
 
     {% set generatedSeedProfileLabel = generatedSeedProfileKey %}
-    {% for profile in data.seedDataProfiles %}
+    {% for profile in seedProfiles.options %}
       {% if profile.key == generatedSeedProfileKey %}
         {% set generatedSeedProfileLabel = profile.label %}
       {% endif %}
@@ -176,14 +177,22 @@
 
     <p class="nhsuk-hint">Choose a profile, then regenerate data to apply it.</p>
 
+    <p>
+      <a class="nhsuk-link--no-visited-state" href="/settings/seed-profiles/custom">Edit custom profile</a>
+    </p>
+
     <form action="/settings/regenerate" method="post">
       <div class="nhsuk-form-group">
         <label class="nhsuk-label" for="seedDataProfile">
           Regenerate with seed data profile:
         </label>
-        <select class="nhsuk-select" id="seedDataProfile" name="settings[seedDataProfile]">
-          {% for profile in data.seedDataProfiles %}
-            <option value="{{ profile.key }}" {{ "selected" if selectedSeedProfileKey == profile.key }}>{{ profile.label }}</option>
+        <select class="nhsuk-select" id="seedDataProfile" name="settings[seedProfiles][selectedKey]">
+          {% for profile in seedProfiles.options %}
+            {% if profile.divider %}
+              <option value="" disabled>{{ profile.label or "---" }}</option>
+            {% else %}
+              <option value="{{ profile.key }}" {{ "selected" if selectedSeedProfileKey == profile.key }}>{{ profile.label }}</option>
+            {% endif %}
           {% endfor %}
         </select>
       </div>
@@ -193,13 +202,7 @@
       </button>
     </form>
 
-    <div class="nhsuk-warning-callout">
-      <h3 class="nhsuk-warning-callout__label">
-        <span role="text">
-          <span class="nhsuk-u-visually-hidden">Important: </span>
-          About data regeneration
-        </span>
-      </h3>
+    {% set warningCalloutHtml %}
       <p>Data is automatically regenerated each day to keep dates current. Manual regeneration will:</p>
       <ul>
         <li>create new test participants</li>
@@ -207,7 +210,12 @@
         <li>reset all events and appointments</li>
         <li>clear any changes you've made to the data</li>
       </ul>
-    </div>
+    {% endset %}
+
+    {{ warningCallout({
+      heading: "About data regeneration",
+      html: warningCalloutHtml
+    }) }}
   </div>
 </div>
 

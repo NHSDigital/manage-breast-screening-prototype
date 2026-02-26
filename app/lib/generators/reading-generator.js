@@ -10,8 +10,9 @@ const {
 } = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
 
-// Alignment probability - how often reads match the image set's tag
-const ALIGNMENT_PROBABILITY = 1
+// Default alignment probability - how often reads match the image set's tag
+// This can be overridden by seed data profile settings
+const DEFAULT_ALIGNMENT_PROBABILITY = 0.95
 
 // Default read result weights when no set or misaligned
 const DEFAULT_READ_WEIGHTS = {
@@ -73,7 +74,9 @@ const generateSingleRead = (
   } else if (set) {
     // Decide if this read aligns with the set
     const shouldAlign =
-      options.forceAlignment || Math.random() < ALIGNMENT_PROBABILITY
+      options.forceAlignment ||
+      Math.random() <
+        (options.alignmentProbability ?? DEFAULT_ALIGNMENT_PROBABILITY)
 
     if (shouldAlign) {
       opinion = TAG_TO_RESULT[set.tag] || 'normal'
@@ -314,7 +317,10 @@ const generatePlaceholderAnnotation = (side, breastData) => {
  * @param {Array} users - Array of system users
  * @returns {Array} Updated events with reading data
  */
-const generateReadingData = (events, users) => {
+const generateReadingData = (events, users, seedProfile = {}) => {
+  const alignmentProbability =
+    seedProfile?.imageReading?.probabilityFirstReaderOpinionMatchesImages ??
+    DEFAULT_ALIGNMENT_PROBABILITY
   if (!events || !events.length || !users || users.length < 2) {
     console.log('No events or not enough users to generate reading data')
     return events
@@ -409,7 +415,7 @@ const generateReadingData = (events, users) => {
           secondReader.id,
           secondReader.role,
           firstReadTime,
-          { readNumber: 1 }
+          { readNumber: 1, alignmentProbability }
         )
         updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
           firstRead
@@ -434,7 +440,11 @@ const generateReadingData = (events, users) => {
           firstReader.id,
           firstReader.role,
           secondReadTime,
-          { forceOpinion: forceSecondOpinion, readNumber: 2 }
+          {
+            forceOpinion: forceSecondOpinion,
+            readNumber: 2,
+            alignmentProbability
+          }
         )
         updatedEvents[eventIndex].imageReading.reads[firstReader.id] =
           secondRead
@@ -484,7 +494,7 @@ const generateReadingData = (events, users) => {
         thirdReader.id,
         thirdReader.role,
         firstReadTime,
-        { readNumber: 1 }
+        { readNumber: 1, alignmentProbability }
       )
       updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
 
@@ -531,7 +541,11 @@ const generateReadingData = (events, users) => {
         secondReader.id,
         secondReader.role,
         secondReadTime,
-        { forceOpinion: forceSecondOpinion, readNumber: 2 }
+        {
+          forceOpinion: forceSecondOpinion,
+          readNumber: 2,
+          alignmentProbability
+        }
       )
       updatedEvents[eventIndex].imageReading.reads[secondReader.id] = secondRead
     })
@@ -574,7 +588,7 @@ const generateReadingData = (events, users) => {
           firstReader.id,
           firstReader.role,
           firstReadTime,
-          { readNumber: 1 }
+          { readNumber: 1, alignmentProbability }
         )
         updatedEvents[eventIndex].imageReading.reads[firstReader.id] = firstRead
 
@@ -620,7 +634,7 @@ const generateReadingData = (events, users) => {
           secondReader.id,
           secondReader.role,
           firstReadTime,
-          { readNumber: 1 }
+          { readNumber: 1, alignmentProbability }
         )
         updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
           firstRead
@@ -669,7 +683,7 @@ const generateReadingData = (events, users) => {
           thirdReader.id,
           thirdReader.role,
           firstReadTime,
-          { readNumber: 1 }
+          { readNumber: 1, alignmentProbability }
         )
         updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
 

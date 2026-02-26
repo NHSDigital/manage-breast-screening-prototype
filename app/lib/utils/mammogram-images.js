@@ -663,7 +663,9 @@ const getImagesForEvent = function (
   if (!options.contextualWeights && this && this.ctx) {
     const profileName = this.ctx.data?.generationInfo?.seedDataProfile
     if (profileName) {
-      const profile = this.ctx.data?.seedDataProfileSettings?.[profileName]
+      const profile =
+        this.ctx.data?.settings?.seedProfiles?.profiles?.[profileName] ||
+        this.ctx.data?.seedDataProfileSettings?.[profileName]
       const profileWeights = profile?.imageSetSelection?.contextualTagWeights
       if (profileWeights) {
         options = Object.assign({}, options, {
