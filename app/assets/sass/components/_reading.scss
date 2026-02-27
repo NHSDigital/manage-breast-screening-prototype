@@ -291,3 +291,94 @@
   font-weight: 400;
   opacity: 0.8;
 }
+
+// Compare opinions: card colours by read opinion
+.app-reading-compare-card.nhsuk-card--feature {
+  outline: 2px solid nhsuk-colour("grey-3");
+  outline-offset: -2px;
+
+  .nhsuk-card__heading {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+  }
+
+  &.app-reading-compare-card--normal {
+    outline-color: nhsuk-shade(nhsuk-colour("green"), 40%);
+
+    .nhsuk-card__heading {
+      background-color: nhsuk-tint(nhsuk-colour("green"), 80%);
+      color: nhsuk-shade(nhsuk-colour("green"), 40%);
+      outline-color: nhsuk-shade(nhsuk-colour("green"), 40%);
+    }
+  }
+
+  &.app-reading-compare-card--technical-recall {
+    outline-color: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
+
+    .nhsuk-card__heading {
+      background-color: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
+      color: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
+      outline-color: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
+    }
+  }
+
+  &.app-reading-compare-card--recall-for-assessment {
+    outline-color: nhsuk-shade(nhsuk-colour("red"), 50%);
+
+    .nhsuk-card__heading {
+      background-color: nhsuk-tint(nhsuk-colour("red"), 80%);
+      color: nhsuk-shade(nhsuk-colour("red"), 50%);
+      outline-color: nhsuk-shade(nhsuk-colour("red"), 50%);
+    }
+  }
+}
+
+.app-reading-compare-card__action {
+  .nhsuk-button {
+    width: 100%;
+  }
+}
+
+.app-reading-compare-card__action--top {
+  margin-bottom: nhsuk-spacing(4);
+}
+
+.app-reading-compare-card__action--bottom {
+  margin-top: nhsuk-spacing(4);
+}
+
+.app-reading-compare-grid--bottom-actions {
+  // Use direct-child selectors in this block.
+  // Nested summary rows also use .nhsuk-grid-column-one-half and must keep
+  // the default float-based grid layout so left/right breast details stay side by side.
+  display: flex;
+  flex-wrap: wrap;
+
+  > .nhsuk-grid-column-one-half {
+    float: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  > .nhsuk-grid-column-one-half > .app-reading-compare-card.nhsuk-card--feature {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+
+    .nhsuk-card__heading {
+      align-self: flex-start;
+    }
+
+    .nhsuk-card__content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+  }
+
+  .app-reading-compare-card__action--bottom {
+    margin-top: auto;
+    padding-top: nhsuk-spacing(4);
+  }
+}

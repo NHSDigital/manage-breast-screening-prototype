@@ -1,7 +1,7 @@
-$nhsuk-page-width: 1260px;
-
 // Import NHS.UK frontend library
-@forward "nhsuk-frontend/dist/nhsuk/nhsuk";
+@forward "nhsuk-frontend/dist/nhsuk/nhsuk" with (
+  $nhsuk-page-width: 960px
+);
 
 // Components that are not in the NHS.UK frontend library
 
@@ -34,8 +34,6 @@ $nhsuk-page-width: 1260px;
 
 @forward "typography";
 @forward "utils";
-
-$nhsuk-page-width: 1260px;
 
 ///////////////////////////////////////////
 // Add your custom CSS/Sass styles below...
