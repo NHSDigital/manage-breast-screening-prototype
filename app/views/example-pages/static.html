@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Manage breast screening – NHS</title>
+    <style>
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      :after,
+      :before {
+        box-sizing: inherit;
+      }
+      a {
+        color: #005eb8;
+        text-decoration: underline;
+      }
+      a:visited {
+        color: #330072;
+      }
+      a:hover,
+      a:hover:visited {
+        color: #7c2855;
+        text-decoration: none;
+      }
+      a:active,
+      a:active:visited {
+        color: #002f5c;
+      }
+      a:focus,
+      a:focus:visited {
+        background-color: #ffeb3b;
+        box-shadow:
+          0 -2px #ffeb3b,
+          0 4px #212b32;
+        color: #212b32;
+        fill: #212b32;
+        outline: 4px solid transparent;
+        text-decoration: none;
+      }
+      a:focus:hover,
+      a:focus:visited:hover {
+        text-decoration: none;
+      }
+      .nhsuk-link--no-visited-state a:visited,
+      .nhsuk-link--no-visited-state:visited {
+        color: #005eb8;
+      }
+      .nhsuk-link--no-visited-state a:visited .nhsuk-icon,
+      .nhsuk-link--no-visited-state:visited .nhsuk-icon {
+        fill: #005eb8;
+      }
+      html {
+        background-color: #d8dde0;
+        overflow-y: scroll;
+        -webkit-text-size-adjust: 100%;
+        -moz-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        font-family:
+          Frutiger W01,
+          arial,
+          sans-serif;
+      }
+      @font-face {
+        font-display: fallback;
+        font-family: Frutiger W01;
+        font-style: normal;
+        font-weight: 400;
+        src:
+          url(https://assets.nhs.uk/fonts/FrutigerLTW01-55Roman.woff2) format("woff2"),
+          url(https://assets.nhs.uk/fonts/FrutigerLTW01-55Roman.woff) format("woff");
+      }
+      @font-face {
+        font-display: fallback;
+        font-family: Frutiger W01;
+        font-style: normal;
+        font-weight: 600;
+        src:
+          url(https://assets.nhs.uk/fonts/FrutigerLTW01-65Bold.woff2) format("woff2"),
+          url(https://assets.nhs.uk/fonts/FrutigerLTW01-65Bold.woff) format("woff");
+      }
+      body {
+        background-color: #f0f4f5;
+        margin: 0;
+        min-height: 100%;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-font-smoothing: antialiased;
+        color: #212b32;
+      }
+      .nhsuk-grid-row {
+        margin-left: -16px;
+        margin-right: -16px;
+      }
+      .nhsuk-grid-row:after {
+        clear: both;
+        content: "";
+        display: block;
+      }
+      .nhsuk-grid-column-one-quarter {
+        box-sizing: border-box;
+        padding: 0 16px;
+        width: 100%;
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-grid-column-one-quarter {
+          float: left;
+          width: 25%;
+        }
+      }
+      .nhsuk-grid-column-one-third {
+        box-sizing: border-box;
+        padding: 0 16px;
+        width: 100%;
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-grid-column-one-third {
+          float: left;
+          width: 33.3333333333%;
+        }
+      }
+      .nhsuk-grid-column-one-half {
+        box-sizing: border-box;
+        padding: 0 16px;
+        width: 100%;
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-grid-column-one-half {
+          float: left;
+          width: 50%;
+        }
+      }
+      .nhsuk-grid-column-two-thirds {
+        box-sizing: border-box;
+        padding: 0 16px;
+        width: 100%;
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-grid-column-two-thirds {
+          float: left;
+          width: 66.6666666667%;
+        }
+      }
+      .nhsuk-grid-column-three-quarters {
+        box-sizing: border-box;
+        padding: 0 16px;
+        width: 100%;
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-grid-column-three-quarters {
+          float: left;
+          width: 75%;
+        }
+      }
+      .nhsuk-grid-column-full {
+        box-sizing: border-box;
+        padding: 0 16px;
+        width: 100%;
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-grid-column-full {
+          float: left;
+          width: 100%;
+        }
+      }
+      .nhsuk-main-wrapper {
+        display: block;
+        padding-bottom: 24px;
+        padding-top: 24px;
+      }
+      .nhsuk-main-wrapper > :first-child {
+        margin-top: 0;
+      }
+      .nhsuk-main-wrapper > :last-child {
+        margin-bottom: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-main-wrapper {
+          padding-bottom: 48px;
+          padding-top: 48px;
+        }
+      }
+      .nhsuk-width-container {
+        margin-left: 16px;
+        margin-right: 16px;
+        max-width: 960px;
+      }
+      @supports (margin: max(calc(0px))) {
+        .nhsuk-width-container {
+          margin-left: max(16px, calc(16px + env(safe-area-inset-left)));
+          margin-right: max(16px, calc(16px + env(safe-area-inset-right)));
+        }
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-width-container {
+          margin-left: 32px;
+          margin-right: 32px;
+        }
+        @supports (margin: max(calc(0px))) {
+          .nhsuk-width-container {
+            margin-left: max(32px, calc(16px + env(safe-area-inset-left)));
+            margin-right: max(32px, calc(16px + env(safe-area-inset-right)));
+          }
+        }
+      }
+      @media (min-width: 1024px) {
+        .nhsuk-width-container {
+          margin-left: auto;
+          margin-right: auto;
+        }
+        @supports (margin: max(calc(0px))) {
+          .nhsuk-width-container {
+            margin-left: auto;
+            margin-right: auto;
+          }
+        }
+      }
+      .nhsuk-list {
+        font-size: 1rem;
+        line-height: 1.5;
+        list-style-type: none;
+        margin-top: 0;
+        padding-left: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-list {
+          font-size: 1.1875rem;
+          line-height: 1.4736842105;
+        }
+      }
+      .nhsuk-list {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-list {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-list .nhsuk-list,
+      .nhsuk-list ol,
+      .nhsuk-list ul {
+        margin-bottom: 0;
+        margin-top: 8px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-list .nhsuk-list,
+        .nhsuk-list ol,
+        .nhsuk-list ul {
+          margin-top: 8px;
+        }
+      }
+      .nhsuk-list > li {
+        margin-bottom: 8px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-list > li {
+          margin-bottom: 8px;
+        }
+      }
+      .nhsuk-list > li:last-child {
+        margin-bottom: 0;
+      }
+      .nhsuk-list--bullet {
+        list-style-type: disc;
+        padding-left: 1.25rem;
+      }
+      .nhsuk-list--number {
+        list-style-type: decimal;
+        padding-left: 1.25rem;
+      }
+      .nhsuk-list + .nhsuk-heading-l,
+      .nhsuk-list + h2 {
+        padding-top: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-list + .nhsuk-heading-l,
+        .nhsuk-list + h2 {
+          padding-top: 24px;
+        }
+      }
+      .nhsuk-list + .nhsuk-heading-m,
+      .nhsuk-list + .nhsuk-heading-s,
+      .nhsuk-list + h3,
+      .nhsuk-list + h4 {
+        padding-top: 4px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-list + .nhsuk-heading-m,
+        .nhsuk-list + .nhsuk-heading-s,
+        .nhsuk-list + h3,
+        .nhsuk-list + h4 {
+          padding-top: 8px;
+        }
+      }
+      .nhsuk-heading-xl,
+      h1 {
+        display: block;
+        font-size: 2rem;
+        font-weight: 600;
+        line-height: 1.1875;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-xl,
+        h1 {
+          font-size: 3rem;
+          line-height: 1.125;
+        }
+      }
+      .nhsuk-heading-xl,
+      h1 {
+        margin-bottom: 40px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-xl,
+        h1 {
+          margin-bottom: 48px;
+        }
+      }
+      .nhsuk-heading-l,
+      h1 {
+        display: block;
+        font-size: 1.6875rem;
+        font-weight: 600;
+        line-height: 1.2222222222;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-l,
+        h1 {
+          font-size: 2.25rem;
+          line-height: 1.1666666667;
+        }
+      }
+      .nhsuk-heading-l,
+      h1 {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-l,
+        h1 {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-heading-m {
+        display: block;
+        font-size: 1.375rem;
+        font-weight: 600;
+        line-height: 1.3181818182;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-m {
+          font-size: 1.625rem;
+          line-height: 1.2307692308;
+        }
+      }
+      .nhsuk-heading-m {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-m {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-heading-s {
+        display: block;
+        font-size: 1.1875rem;
+        font-weight: 600;
+        line-height: 1.4210526316;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-s {
+          font-size: 1.375rem;
+          line-height: 1.3636363636;
+        }
+      }
+      .nhsuk-heading-s {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-s {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-heading-xs {
+        display: block;
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.5;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-xs {
+          font-size: 1.1875rem;
+          line-height: 1.4736842105;
+        }
+      }
+      .nhsuk-heading-xs {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-heading-xs {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-body-l {
+        display: block;
+        font-size: 1.375rem;
+        font-weight: 400;
+        line-height: 1.3181818182;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-l {
+          font-size: 1.625rem;
+          line-height: 1.2307692308;
+        }
+      }
+      .nhsuk-body-l {
+        margin-bottom: 24px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-l {
+          margin-bottom: 32px;
+        }
+      }
+      .nhsuk-body-m,
+      p {
+        display: block;
+        font-size: 1rem;
+        font-weight: 400;
+        line-height: 1.5;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-m,
+        p {
+          font-size: 1.1875rem;
+          line-height: 1.4736842105;
+        }
+      }
+      .nhsuk-body-m,
+      p {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-m,
+        p {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-body-m,
+      p {
+        color: inherit;
+      }
+      .nhsuk-body-s {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.7142857143;
+        margin-top: 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-s {
+          font-size: 1rem;
+          line-height: 1.5;
+        }
+      }
+      .nhsuk-body-s {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-s {
+          margin-bottom: 24px;
+        }
+      }
+      .nhsuk-body-l + .nhsuk-heading-l,
+      .nhsuk-body-l + h1,
+      .nhsuk-body-l + h2 {
+        padding-top: 4px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-l + .nhsuk-heading-l,
+        .nhsuk-body-l + h1,
+        .nhsuk-body-l + h2 {
+          padding-top: 8px;
+        }
+      }
+      .nhsuk-body-m + .nhsuk-heading-l,
+      .nhsuk-body-m + h1,
+      .nhsuk-body-m + h2,
+      .nhsuk-body-s + .nhsuk-heading-l,
+      .nhsuk-body-s + h1,
+      .nhsuk-body-s + h2,
+      p + .nhsuk-heading-l,
+      p + h1 {
+        padding-top: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-m + .nhsuk-heading-l,
+        .nhsuk-body-m + h1,
+        .nhsuk-body-m + h2,
+        .nhsuk-body-s + .nhsuk-heading-l,
+        .nhsuk-body-s + h1,
+        .nhsuk-body-s + h2,
+        p + .nhsuk-heading-l,
+        p + h1 {
+          padding-top: 24px;
+        }
+      }
+      .nhsuk-body-m + .nhsuk-heading-m,
+      .nhsuk-body-m + .nhsuk-heading-s,
+      .nhsuk-body-m + h2,
+      .nhsuk-body-m + h3,
+      .nhsuk-body-m + h4,
+      .nhsuk-body-s + .nhsuk-heading-m,
+      .nhsuk-body-s + .nhsuk-heading-s,
+      .nhsuk-body-s + h2,
+      .nhsuk-body-s + h3,
+      .nhsuk-body-s + h4,
+      p + .nhsuk-heading-m,
+      p + .nhsuk-heading-s {
+        padding-top: 4px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-body-m + .nhsuk-heading-m,
+        .nhsuk-body-m + .nhsuk-heading-s,
+        .nhsuk-body-m + h2,
+        .nhsuk-body-m + h3,
+        .nhsuk-body-m + h4,
+        .nhsuk-body-s + .nhsuk-heading-m,
+        .nhsuk-body-s + .nhsuk-heading-s,
+        .nhsuk-body-s + h2,
+        .nhsuk-body-s + h3,
+        .nhsuk-body-s + h4,
+        p + .nhsuk-heading-m,
+        p + .nhsuk-heading-s {
+          padding-top: 8px;
+        }
+      }
+      .nhsuk-list--border li {
+        padding: 0.5rem 0 1rem;
+      }
+      .nhsuk-inset-text {
+        border-left: 8px solid #005eb8;
+        box-sizing: border-box;
+        max-width: 44em;
+      }
+      .nhsuk-inset-text > :first-child {
+        margin-top: 0;
+      }
+      .nhsuk-inset-text > :last-child {
+        margin-bottom: 0;
+      }
+      .nhsuk-inset-text {
+        margin-bottom: 40px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-inset-text {
+          margin-bottom: 48px;
+        }
+      }
+      .nhsuk-inset-text {
+        margin-top: 40px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-inset-text {
+          margin-top: 48px;
+        }
+      }
+      .nhsuk-inset-text {
+        padding: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-inset-text {
+          padding: 24px;
+        }
+      }
+      .nhsuk-footer {
+        background-color: #d8dde0;
+        border-top: 4px solid #005eb8;
+        padding-bottom: 24px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-footer {
+          padding-bottom: 32px;
+        }
+      }
+      .nhsuk-footer {
+        padding-top: 24px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-footer {
+          padding-top: 32px;
+        }
+      }
+      .nhsuk-footer__heading {
+        margin-bottom: 8px;
+      }
+      .nhsuk-footer__list {
+        list-style-type: none;
+        margin-bottom: 24px;
+        padding: 0;
+      }
+      .nhsuk-footer__list-item {
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.7142857143;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-footer__list-item {
+          font-size: 1rem;
+          line-height: 1.5;
+        }
+      }
+      .nhsuk-footer__list-item-link,
+      .nhsuk-footer__list-item-link:visited {
+        color: #003087;
+      }
+      .nhsuk-footer__navigation + .nhsuk-footer__meta {
+        border-top: 1px solid #aeb7bd;
+        padding-top: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-footer__navigation + .nhsuk-footer__meta {
+          padding-top: 24px;
+        }
+      }
+      @media (min-width: 48.0625em) {
+        .nhsuk-footer__meta .nhsuk-footer__list-item {
+          display: inline-block;
+          margin-right: 32px;
+        }
+      }
+      .nhsuk-footer__meta :last-child {
+        margin-bottom: 0;
+      }
+      .nhsuk-skip-link {
+        left: 16px;
+        padding: 0.5rem;
+        position: absolute;
+        top: 16px;
+        z-index: 2;
+      }
+      .nhsuk-skip-link:not(:active):not(:focus):not(.\:focus) {
+        height: 1px !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        position: absolute !important;
+        width: 1px !important;
+        clip: rect(0 0 0 0) !important;
+        border: 0 !important;
+        clip-path: inset(50%) !important;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        white-space: nowrap !important;
+      }
+      @supports (left: max(calc(0px))) {
+        .nhsuk-skip-link {
+          left: max(16px, calc(16px + env(safe-area-inset-left)));
+        }
+      }
+      .nhsuk-header {
+        background-color: #005eb8;
+        color: #fff;
+        outline: 1px solid transparent;
+      }
+      .nhsuk-header__container {
+        padding: 16px 0;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-header__container {
+          display: flex;
+          flex-flow: row wrap;
+          gap: 16px;
+        }
+      }
+      .nhsuk-header__logo {
+        height: auto;
+        min-width: 6.25rem;
+      }
+      .nhsuk-header__service,
+      .nhsuk-header__service-logo {
+        gap: 8px 16px;
+        margin-right: auto;
+      }
+      .nhsuk-header__service {
+        display: flex;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-header__service {
+          flex-grow: 999;
+        }
+      }
+      .nhsuk-header__service-name {
+        display: inline-flex;
+        flex-direction: column;
+        flex-grow: 0;
+        font-size: 1rem;
+        font-weight: 400;
+        justify-content: center;
+        line-height: 1.1;
+        margin-right: auto;
+        max-width: 54ch;
+        text-wrap: balance;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-header__service-name {
+          font-size: 1.1875rem;
+          line-height: 1.1;
+        }
+      }
+      .nhsuk-header__service-name:only-child {
+        display: block;
+      }
+      .nhsuk-header__service-logo {
+        display: inline-flex;
+        flex-grow: 0;
+        line-height: 0;
+        margin-right: 0;
+        position: relative;
+        text-decoration: none;
+      }
+      .nhsuk-header__service-logo:only-child {
+        display: flex;
+      }
+      .nhsuk-header__service-logo:has(svg):not(:focus):hover:before {
+        border-bottom: 0.1rem solid;
+        box-sizing: border-box;
+        content: "";
+        display: inline;
+        height: 2.5rem;
+        position: absolute;
+        top: 0.2rem;
+        width: 6.25rem;
+      }
+      .nhsuk-header__service-logo,
+      .nhsuk-header__service-logo:visited,
+      .nhsuk-header__service-name[href],
+      .nhsuk-header__service-name[href]:visited {
+        color: #fff;
+      }
+      .nhsuk-header__service-logo:hover,
+      .nhsuk-header__service-logo:hover:visited,
+      .nhsuk-header__service-name[href]:hover,
+      .nhsuk-header__service-name[href]:hover:visited {
+        color: #fff;
+        text-decoration: none;
+      }
+      .nhsuk-header__service-logo:active,
+      .nhsuk-header__service-logo:active:visited,
+      .nhsuk-header__service-name[href]:active,
+      .nhsuk-header__service-name[href]:active:visited {
+        color: #fff;
+      }
+      .nhsuk-header__service-logo:focus,
+      .nhsuk-header__service-logo:focus:visited,
+      .nhsuk-header__service-name[href]:focus,
+      .nhsuk-header__service-name[href]:focus:visited {
+        background-color: #ffeb3b;
+        box-shadow:
+          0 -2px #ffeb3b,
+          0 4px #212b32;
+        fill: #212b32;
+        outline: 4px solid transparent;
+        text-decoration: none;
+      }
+      .nhsuk-header__service-logo:focus:hover,
+      .nhsuk-header__service-logo:focus:visited:hover,
+      .nhsuk-header__service-name[href]:focus:hover,
+      .nhsuk-header__service-name[href]:focus:visited:hover {
+        text-decoration: none;
+      }
+      .nhsuk-header__service-logo:focus,
+      .nhsuk-header__service-logo:focus:visited,
+      .nhsuk-header__service-name[href]:focus,
+      .nhsuk-header__service-name[href]:focus:visited {
+        box-shadow: inset 0 -4px #212b32;
+        color: #212b32;
+      }
+      .nhsuk-header .nhsuk-header__service-name[href] {
+        text-decoration: none;
+      }
+      .nhsuk-header .nhsuk-header__service-logo:not(:focus):hover,
+      .nhsuk-header .nhsuk-header__service-logo:not(:focus):hover .nhsuk-header__service-name,
+      .nhsuk-header .nhsuk-header__service-name[href]:not(:focus):hover {
+        text-decoration: underline;
+      }
+      .nhsuk-header .nhsuk-header__service-logo:focus {
+        box-shadow:
+          0 0 0 4px #ffeb3b,
+          0 0 0 8px #212b32;
+        outline: 4px solid transparent;
+      }
+      .nhsuk-list--border li {
+        border-bottom: 1px solid #d8dde0;
+        padding: 8px 0 16px;
+      }
+      html {
+        scroll-padding-top: 192px;
+      }
+      .nhsuk-inset-text {
+        margin-top: 8px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-inset-text {
+          margin-top: 16px;
+        }
+      }
+      .nhsuk-inset-text {
+        margin-bottom: 16px;
+      }
+      @media (min-width: 40.0625em) {
+        .nhsuk-inset-text {
+          margin-bottom: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="nhsuk-skip-link" href="#maincontent" data-module="nhsuk-skip-link">Skip to main content</a>
+
+    <header class="nhsuk-header" role="banner" data-module="nhsuk-header">
+      <div class="nhsuk-header__container nhsuk-width-container">
+        <div class="nhsuk-header__service">
+          <svg
+            class="nhsuk-header__logo"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 200 80"
+            height="40"
+            width="100"
+            focusable="false"
+            role="img"
+            aria-label="NHS"
+          >
+            <title>NHS</title>
+            <path
+              fill="currentcolor"
+              d="M200 0v80H0V0h200Zm-27.5 5.5c-14.5 0-29 5-29 22 0 10.2 7.7 13.5 14.7 16.3l.7.3c5.4 2 10.1 3.9 10.1 8.4 0 6.5-8.5 7.5-14 7.5s-12.5-1.5-16-3.5L135 70c5.5 2 13.5 3.5 20 3.5 15.5 0 32-4.5 32-22.5 0-19.5-25.5-16.5-25.5-25.5 0-5.5 5.5-6.5 12.5-6.5a35 35 0 0 1 14.5 3l4-13.5c-4.5-2-12-3-20-3Zm-131 2h-22l-14 65H22l9-45h.5l13.5 45h21.5l14-65H64l-9 45h-.5l-13-45Zm63 0h-18l-13 65h17l6-28H117l-5.5 28H129l13.5-65H125L119.5 32h-20l5-24.5Z"
+            />
+          </svg>
+
+          <span class="nhsuk-header__service-name">Manage breast screening</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="nhsuk-width-container">
+      <main class="nhsuk-main-wrapper" id="maincontent">
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-two-thirds">
+            <h1>The service is unavailable</h1>
+            <p>Try again later.</p>
+            <p>
+              Email
+              <a
+                href="mailto:england.digitalscreening@nhs.net?subject=Manage%20breast%20screening%20query"
+              >england.digitalscreening@nhs.net</a>
+              if you're still unable to access the required information.
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <footer class="nhsuk-footer" role="contentinfo">
+      <div class="nhsuk-width-container">
+        <div class="nhsuk-footer__meta">
+          <p class="nhsuk-body-s">© NHS England</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+{# app/views/example-pages/static-template.html #}
+
+{% extends "layout.html" %}
+
+{% set pageHeading = "The service is unavailable" %}
+
+{% block header %}
+  {{ header({
+    service: {
+      text: serviceName
+    }
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <h1>{{ pageHeading }}</h1>
+      <p>Try again later.</p>
+      <p>Email <a href="mailto:england.digitalscreening@nhs.net?subject=Manage%20breast%20screening%20query">england.digitalscreening@nhs.net</a> if you're still unable to access the required information.</p>
+    </div>
+  </div>
+{% endblock %}
+
+{% block footer %}
+  {{ footer() }}
+{% endblock footer %}
