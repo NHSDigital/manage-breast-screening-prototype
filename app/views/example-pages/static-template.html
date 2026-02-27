@@ -1,11 +1,8 @@
-{# app/views/example-pages/500.html #}
+{# app/views/example-pages/static-template.html #}
 
 {% extends "layout.html" %}
 
 {% set pageHeading = "The service is unavailable" %}
-{% set useMinimalNav = true %}
-{% set hideBackLink = true %}
-{% set hideAccountMenu = true %}
 
 {% block header %}
   {{ header({
@@ -16,22 +13,15 @@
 {% endblock %}
 
 {% block content %}
-
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
-
       <p>Try again later.</p>
-
       <p>Email <a href="mailto:england.digitalscreening@nhs.net?subject=Manage%20breast%20screening%20query">england.digitalscreening@nhs.net</a> if you're still unable to access the required information.</p>
-
     </div>
   </div>
-
 {% endblock %}
 
 {% block footer %}
-  {{ footer({
-    
-  }) }}
+  {{ footer() }}
 {% endblock footer %}
