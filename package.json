@@ -4,7 +4,8 @@
   "description": "Rapidly create HTML prototypes of NHS websites and services.",
   "main": "app.js",
   "scripts": {
-    "start": "node ."
+    "start": "node .",
+    "build:static-error-page": "node scripts/build-static-error-page.js"
   },
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
@@ -22,5 +23,11 @@
   "engines": {
     "node": "^22.16.0 || ^24.11.0",
     "npm": "^11.6.1"
+  },
+  "devDependencies": {
+    "cssnano": "^7.1.1",
+    "prettier": "^3.6.2",
+    "postcss": "^8.5.6",
+    "purgecss": "^7.0.2"
   }
 }
