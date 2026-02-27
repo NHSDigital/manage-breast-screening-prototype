@@ -250,9 +250,7 @@ const stripMediaPrintBlocks = (css) => {
 
 const optimiseCss = async (css) => {
   const result = await postcss([
-    cssnano({
-      preset: ['default', { discardComments: { removeAll: true } }]
-    })
+    cssnano({ preset: ['default', { env: 'stylesheets' }] })
   ]).process(css, { from: undefined })
 
   return result.css
