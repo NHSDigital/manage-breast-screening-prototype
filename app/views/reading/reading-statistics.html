@@ -1,0 +1,556 @@
+{# app/views/reading/reading-statistics.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Reading statistics" %}
+{% set hideBackLink = true %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageContent %}
+  {{ backLink({
+    href: "/reading",
+    text: "Back",
+    classes: "nhsuk-u-margin-bottom-4"
+  }) }}
+
+  <h1>{{ pageHeading }}</h1>
+  <p>View reading statistics for you and your BSO</p>
+
+  {% set currentUserName = "Name Surname" %}
+  {% if data.currentUser and data.currentUser.firstName and data.currentUser.lastName %}
+    {% set currentUserName = data.currentUser.firstName + " " + data.currentUser.lastName %}
+  {% endif %}
+
+  {% set bsoName = "BSO name" %}
+  {% if data.currentUser and data.currentUser.breastScreeningUnit and data.breastScreeningUnits %}
+    {% for breastScreeningUnit in data.breastScreeningUnits %}
+      {% if breastScreeningUnit.id == data.currentUser.breastScreeningUnit %}
+        {% set bsoName = breastScreeningUnit.name %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  <form method="get">
+    {{ radios({
+      name: "readingStatisticsFilterScope",
+      fieldset: {
+        legend: {
+          text: "Show statistics for",
+          classes: "nhsuk-fieldset__legend--m"
+        }
+      },
+      items: [
+        {
+          value: "me",
+          text: "Me (" + currentUserName + ")"
+        },
+        {
+          value: "bso",
+          text: "BSO (" + bsoName + ")",
+          checked: true
+        }
+      ]
+    }) }}
+
+    {{ button({
+      text: "Update filter",
+      classes: "nhsuk-button--secondary"
+    }) }}
+  </form>
+
+  {% set pastWeekContent %}
+    <h2>Past week</h2>
+    <p>23 February to 1 March 2026</p>
+    <p>
+      <a href="#" class="nhsuk-link">Download CSV</a>
+    </p>
+
+    <h3>Reading</h3>
+
+    {% set cardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> 1086
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set cardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 157h
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total reading time</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set cardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Per read:</span> 4m 20s
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Per read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set cardFourContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">First reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">First reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">1086 of 2172 cases</p>
+    {% endset %}
+
+    {% set cardFiveContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Second reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Second reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">1086 of 2172 cases</p>
+    {% endset %}
+
+    {% set recallsCardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total recalls:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">52 of 1086 cases</p>
+    {% endset %}
+
+    {% set recallsCardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Assessment recalls:</span> 4%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Assessment recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">43 of 1086 cases</p>
+    {% endset %}
+
+    {% set recallsCardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Technical recalls:</span> 1%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Technical recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">9 of 1086 cases</p>
+    {% endset %}
+
+    {% set arbitrationCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Arbitration cases:</span> 6%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Arbitration cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">65 of 1086 cases</p>
+    {% endset %}
+
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: cardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: cardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: cardThreeContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: cardFourContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: cardFiveContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Recalls</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: recallsCardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: recallsCardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: recallsCardThreeContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Arbitration</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: arbitrationCardContent
+        }) }}
+      </li>
+    </ul>
+  {% endset %}
+
+  {% set pastMonthContent %}
+    <h2>Past month</h2>
+    <p>2 February to 1 March 2026</p>
+    <p>
+      <a href="#" class="nhsuk-link">Download CSV</a>
+    </p>
+
+    <h3>Reading</h3>
+
+    {% set monthCardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> 4344
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set monthCardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 628h
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total reading time</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set monthCardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Per read:</span> 4m 20s
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Per read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set monthCardFourContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">First reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">First reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">4344 of 8688 cases</p>
+    {% endset %}
+
+    {% set monthCardFiveContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Second reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Second reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">4344 of 8688 cases</p>
+    {% endset %}
+
+    {% set monthRecallsCardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total recalls:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">217 of 4344 cases</p>
+    {% endset %}
+
+    {% set monthRecallsCardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Assessment recalls:</span> 4%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Assessment recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">174 of 4344 cases</p>
+    {% endset %}
+
+    {% set monthRecallsCardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Technical recalls:</span> 1%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Technical recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">43 of 4344 cases</p>
+    {% endset %}
+
+    {% set monthArbitrationCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Arbitration cases:</span> 6%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Arbitration cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">261 of 4344 cases</p>
+    {% endset %}
+
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthCardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthCardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthCardThreeContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthCardFourContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthCardFiveContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Recalls</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthRecallsCardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthRecallsCardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthRecallsCardThreeContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Arbitration</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: monthArbitrationCardContent
+        }) }}
+      </li>
+    </ul>
+  {% endset %}
+
+  {% set pastYearContent %}
+    <h2>Past year</h2>
+    <p>2 March 2025 to 1 March 2026</p>
+    <p>
+      <a href="#" class="nhsuk-link">Download CSV</a>
+    </p>
+
+    <h3>Reading</h3>
+
+    {% set yearCardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> 56472
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set yearCardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 8164h
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total reading time</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set yearCardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Per read:</span> 4m 20s
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Per read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+    {% endset %}
+
+    {% set yearCardFourContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">First reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">First reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">56472 of 112944 cases</p>
+    {% endset %}
+
+    {% set yearCardFiveContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Second reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Second reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">56472 of 112944 cases</p>
+    {% endset %}
+
+    {% set yearRecallsCardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total recalls:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">2824 of 56472 cases</p>
+    {% endset %}
+
+    {% set yearRecallsCardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Assessment recalls:</span> 4%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Assessment recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">2259 of 56472 cases</p>
+    {% endset %}
+
+    {% set yearRecallsCardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Technical recalls:</span> 1%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Technical recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">565 of 56472 cases</p>
+    {% endset %}
+
+    {% set yearArbitrationCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Arbitration cases:</span> 6%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Arbitration cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">3388 of 56472 cases</p>
+    {% endset %}
+
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearCardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearCardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearCardThreeContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearCardFourContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearCardFiveContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Recalls</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearRecallsCardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearRecallsCardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearRecallsCardThreeContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Arbitration</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: yearArbitrationCardContent
+        }) }}
+      </li>
+    </ul>
+  {% endset %}
+
+  {{ tabs({
+    items: [
+      {
+        label: "Past week",
+        id: "past-week",
+        panel: {
+          html: pastWeekContent
+        }
+      },
+      {
+        label: "Past month",
+        id: "past-month",
+        panel: {
+          html: pastMonthContent
+        }
+      },
+      {
+        label: "Past year",
+        id: "past-year",
+        panel: {
+          html: pastYearContent
+        }
+      }
+    ]
+  }) }}
+
+
+{% endblock %}
