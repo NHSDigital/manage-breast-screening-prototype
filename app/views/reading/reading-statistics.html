@@ -30,6 +30,15 @@
     {% endfor %}
   {% endif %}
 
+  {% set readingStatisticsFilterScope = "bso" %}
+  {% if query and query.readingStatisticsFilterScope %}
+    {% set readingStatisticsFilterScope = query.readingStatisticsFilterScope %}
+  {% elseif data.readingStatisticsFilterScope %}
+    {% set readingStatisticsFilterScope = data.readingStatisticsFilterScope %}
+  {% endif %}
+
+  {% set isPersonalStatistics = readingStatisticsFilterScope == "me" %}
+
   <form method="get">
     {{ radios({
       name: "readingStatisticsFilterScope",
@@ -42,12 +51,13 @@
       items: [
         {
           value: "me",
-          text: "Me (" + currentUserName + ")"
+          text: "Me (" + currentUserName + ")",
+          checked: readingStatisticsFilterScope == "me"
         },
         {
           value: "bso",
           text: "BSO (" + bsoName + ")",
-          checked: true
+          checked: readingStatisticsFilterScope == "bso"
         }
       ]
     }) }}
@@ -59,7 +69,7 @@
   </form>
 
   {% set pastWeekContent %}
-    <h2>Past week</h2>
+    <h2>Past 7 days</h2>
     <p>23 February to 1 March 2026</p>
     <p>
       <a href="#" class="nhsuk-link">Download CSV</a>
@@ -70,17 +80,21 @@
     {% set cardOneContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Cases read:</span> 1086
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> {{ "272" if isPersonalStatistics else "1086" }}
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Cases read</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% if isPersonalStatistics %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">25% of BSO total</p>
+      {% else %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% endif %}
     {% endset %}
 
     {% set cardTwoContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 157h
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> {{ "39h" if isPersonalStatistics else "157h" }}
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Total reading time</p>
@@ -104,7 +118,7 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">First reads</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">1086 of 2172 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "136 of 272 cases" if isPersonalStatistics else "1086 of 2172 cases" }}</p>
     {% endset %}
 
     {% set cardFiveContent %}
@@ -114,17 +128,17 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Second reads</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">1086 of 2172 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "136 of 272 cases" if isPersonalStatistics else "1086 of 2172 cases" }}</p>
     {% endset %}
 
     {% set recallsCardOneContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Total recalls:</span> 5%
+          <span class="nhsuk-u-visually-hidden">Total cases recalled:</span> {{ "5%" if isPersonalStatistics else "5%" }}
         </span>
       </h2>
-      <p class="nhsuk-u-font-size-16">Total recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">52 of 1086 cases</p>
+      <p class="nhsuk-u-font-size-16">Total cases recalled</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "13 of 272 cases" if isPersonalStatistics else "52 of 1086 cases" }}</p>
     {% endset %}
 
     {% set recallsCardTwoContent %}
@@ -134,7 +148,7 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Assessment recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">43 of 1086 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "11 of 272 cases" if isPersonalStatistics else "43 of 1086 cases" }}</p>
     {% endset %}
 
     {% set recallsCardThreeContent %}
@@ -144,41 +158,61 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Technical recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">9 of 1086 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "2 of 272 cases" if isPersonalStatistics else "9 of 1086 cases" }}</p>
     {% endset %}
 
     {% set arbitrationCardContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Arbitration cases:</span> 6%
+          <span class="nhsuk-u-visually-hidden">Cases sent for arbitration:</span> 6%
         </span>
       </h2>
-      <p class="nhsuk-u-font-size-16">Arbitration cases</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">65 of 1086 cases</p>
+      <p class="nhsuk-u-font-size-16">Cases sent for arbitration</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "16 of 272 cases" if isPersonalStatistics else "65 of 1086 cases" }}</p>
+    {% endset %}
+
+    {% set arbitratedCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases arbitrated:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases arbitrated</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">58 of 1086 cases</p>
+    {% endset %}
+
+    {% set agreedWithOpinionCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Agreed with your opinion:</span> 92%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Agreed with your opinion</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">149 of 162 cases</p>
     {% endset %}
 
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: cardOneContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: cardTwoContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: cardThreeContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: cardFourContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: cardFiveContent
         }) }}
@@ -187,17 +221,17 @@
 
     <h3>Recalls</h3>
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: recallsCardOneContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: recallsCardTwoContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: recallsCardThreeContent
         }) }}
@@ -206,16 +240,30 @@
 
     <h3>Arbitration</h3>
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: arbitrationCardContent
         }) }}
       </li>
+      {% if isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: agreedWithOpinionCardContent
+          }) }}
+        </li>
+      {% endif %}
+      {% if not isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: arbitratedCardContent
+          }) }}
+        </li>
+      {% endif %}
     </ul>
   {% endset %}
 
   {% set pastMonthContent %}
-    <h2>Past month</h2>
+    <h2>Past 28 days</h2>
     <p>2 February to 1 March 2026</p>
     <p>
       <a href="#" class="nhsuk-link">Download CSV</a>
@@ -226,17 +274,21 @@
     {% set monthCardOneContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Cases read:</span> 4344
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> {{ "1086" if isPersonalStatistics else "4344" }}
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Cases read</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% if isPersonalStatistics %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">25% of BSO total</p>
+      {% else %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% endif %}
     {% endset %}
 
     {% set monthCardTwoContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 628h
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> {{ "157h" if isPersonalStatistics else "628h" }}
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Total reading time</p>
@@ -260,7 +312,7 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">First reads</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">4344 of 8688 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "543 of 1086 cases" if isPersonalStatistics else "4344 of 8688 cases" }}</p>
     {% endset %}
 
     {% set monthCardFiveContent %}
@@ -270,17 +322,17 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Second reads</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">4344 of 8688 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "543 of 1086 cases" if isPersonalStatistics else "4344 of 8688 cases" }}</p>
     {% endset %}
 
     {% set monthRecallsCardOneContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Total recalls:</span> 5%
+          <span class="nhsuk-u-visually-hidden">Total cases recalled:</span> 5%
         </span>
       </h2>
-      <p class="nhsuk-u-font-size-16">Total recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">217 of 4344 cases</p>
+      <p class="nhsuk-u-font-size-16">Total cases recalled</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "54 of 1086 cases" if isPersonalStatistics else "217 of 4344 cases" }}</p>
     {% endset %}
 
     {% set monthRecallsCardTwoContent %}
@@ -290,7 +342,7 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Assessment recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">174 of 4344 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "43 of 1086 cases" if isPersonalStatistics else "174 of 4344 cases" }}</p>
     {% endset %}
 
     {% set monthRecallsCardThreeContent %}
@@ -300,41 +352,61 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Technical recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">43 of 4344 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "11 of 1086 cases" if isPersonalStatistics else "43 of 4344 cases" }}</p>
     {% endset %}
 
     {% set monthArbitrationCardContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Arbitration cases:</span> 6%
+          <span class="nhsuk-u-visually-hidden">Cases sent for arbitration:</span> 6%
         </span>
       </h2>
-      <p class="nhsuk-u-font-size-16">Arbitration cases</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">261 of 4344 cases</p>
+      <p class="nhsuk-u-font-size-16">Cases sent for arbitration</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "65 of 1086 cases" if isPersonalStatistics else "261 of 4344 cases" }}</p>
+    {% endset %}
+
+    {% set monthArbitratedCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases arbitrated:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases arbitrated</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">232 of 4344 cases</p>
+    {% endset %}
+
+    {% set monthAgreedWithOpinionCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Agreed with your opinion:</span> 92%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Agreed with your opinion</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">595 of 648 cases</p>
     {% endset %}
 
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthCardOneContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthCardTwoContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthCardThreeContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthCardFourContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthCardFiveContent
         }) }}
@@ -343,17 +415,17 @@
 
     <h3>Recalls</h3>
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthRecallsCardOneContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthRecallsCardTwoContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthRecallsCardThreeContent
         }) }}
@@ -362,16 +434,30 @@
 
     <h3>Arbitration</h3>
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: monthArbitrationCardContent
         }) }}
       </li>
+      {% if isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: monthAgreedWithOpinionCardContent
+          }) }}
+        </li>
+      {% endif %}
+      {% if not isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: monthArbitratedCardContent
+          }) }}
+        </li>
+      {% endif %}
     </ul>
   {% endset %}
 
   {% set pastYearContent %}
-    <h2>Past year</h2>
+    <h2>Past 365 days</h2>
     <p>2 March 2025 to 1 March 2026</p>
     <p>
       <a href="#" class="nhsuk-link">Download CSV</a>
@@ -382,17 +468,21 @@
     {% set yearCardOneContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Cases read:</span> 56472
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> {{ "14118" if isPersonalStatistics else "56472" }}
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Cases read</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% if isPersonalStatistics %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">25% of BSO total</p>
+      {% else %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% endif %}
     {% endset %}
 
     {% set yearCardTwoContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 8164h
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> {{ "2041h" if isPersonalStatistics else "8164h" }}
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Total reading time</p>
@@ -416,7 +506,7 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">First reads</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">56472 of 112944 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "7059 of 14118 cases" if isPersonalStatistics else "56472 of 112944 cases" }}</p>
     {% endset %}
 
     {% set yearCardFiveContent %}
@@ -426,17 +516,17 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Second reads</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">56472 of 112944 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "7059 of 14118 cases" if isPersonalStatistics else "56472 of 112944 cases" }}</p>
     {% endset %}
 
     {% set yearRecallsCardOneContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Total recalls:</span> 5%
+          <span class="nhsuk-u-visually-hidden">Total cases recalled:</span> 5%
         </span>
       </h2>
-      <p class="nhsuk-u-font-size-16">Total recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">2824 of 56472 cases</p>
+      <p class="nhsuk-u-font-size-16">Total cases recalled</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "706 of 14118 cases" if isPersonalStatistics else "2824 of 56472 cases" }}</p>
     {% endset %}
 
     {% set yearRecallsCardTwoContent %}
@@ -446,7 +536,7 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Assessment recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">2259 of 56472 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "565 of 14118 cases" if isPersonalStatistics else "2259 of 56472 cases" }}</p>
     {% endset %}
 
     {% set yearRecallsCardThreeContent %}
@@ -456,41 +546,61 @@
         </span>
       </h2>
       <p class="nhsuk-u-font-size-16">Technical recalls</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">565 of 56472 cases</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "141 of 14118 cases" if isPersonalStatistics else "565 of 56472 cases" }}</p>
     {% endset %}
 
     {% set yearArbitrationCardContent %}
       <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
         <span role="text">
-          <span class="nhsuk-u-visually-hidden">Arbitration cases:</span> 6%
+          <span class="nhsuk-u-visually-hidden">Cases sent for arbitration:</span> 6%
         </span>
       </h2>
-      <p class="nhsuk-u-font-size-16">Arbitration cases</p>
-      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">3388 of 56472 cases</p>
+      <p class="nhsuk-u-font-size-16">Cases sent for arbitration</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ "847 of 14118 cases" if isPersonalStatistics else "3388 of 56472 cases" }}</p>
+    {% endset %}
+
+    {% set yearArbitratedCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases arbitrated:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases arbitrated</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">3049 of 56472 cases</p>
+    {% endset %}
+
+    {% set yearAgreedWithOpinionCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Agreed with your opinion:</span> 92%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Agreed with your opinion</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">7737 of 8412 cases</p>
     {% endset %}
 
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearCardOneContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearCardTwoContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearCardThreeContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearCardFourContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearCardFiveContent
         }) }}
@@ -499,17 +609,17 @@
 
     <h3>Recalls</h3>
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearRecallsCardOneContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearRecallsCardTwoContent
         }) }}
       </li>
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearRecallsCardThreeContent
         }) }}
@@ -518,35 +628,250 @@
 
     <h3>Arbitration</h3>
     <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-      <li class="nhsuk-grid-column-one-quarter app-reading-statistics-card">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
         {{ card({
           descriptionHtml: yearArbitrationCardContent
         }) }}
       </li>
+      {% if isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: yearAgreedWithOpinionCardContent
+          }) }}
+        </li>
+      {% endif %}
+      {% if not isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: yearArbitratedCardContent
+          }) }}
+        </li>
+      {% endif %}
+    </ul>
+  {% endset %}
+
+  {% set last1000ReadsContent %}
+    <h2>Last 1000 reads</h2>
+    <p>Most recent completed reads</p>
+    <p>
+      <a href="#" class="nhsuk-link">Download CSV</a>
+    </p>
+
+    <h3>Reading</h3>
+
+    {% set last1000CardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases read:</span> 1000
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases read</p>
+      {% if isPersonalStatistics %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">25% of BSO total</p>
+      {% else %}
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">— of — cases</p>
+      {% endif %}
+    {% endset %}
+
+    {% set last1000CardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total reading time:</span> 72h
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total reading time</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">- of - cases</p>
+    {% endset %}
+
+    {% set last1000CardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Per read:</span> 4m 20s
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Per read</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta app-reading-statistics-meta--placeholder">- of - cases</p>
+    {% endset %}
+
+    {% set last1000CardFourContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">First reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">First reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">500 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000CardFiveContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Second reads:</span> 50%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Second reads</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">500 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000RecallsCardOneContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Total cases recalled:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Total cases recalled</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">50 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000RecallsCardTwoContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Assessment recalls:</span> 4%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Assessment recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">40 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000RecallsCardThreeContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Technical recalls:</span> 1%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Technical recalls</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">10 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000ArbitrationCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases sent for arbitration:</span> 6%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases sent for arbitration</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">60 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000ArbitratedCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Cases arbitrated:</span> 5%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Cases arbitrated</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">54 of 1000 cases</p>
+    {% endset %}
+
+    {% set last1000AgreedWithOpinionCardContent %}
+      <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+        <span role="text">
+          <span class="nhsuk-u-visually-hidden">Agreed with your opinion:</span> 92%
+        </span>
+      </h2>
+      <p class="nhsuk-u-font-size-16">Agreed with your opinion</p>
+      <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">138 of 150 cases</p>
+    {% endset %}
+
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000CardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000CardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000CardThreeContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000CardFourContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000CardFiveContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Recalls</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000RecallsCardOneContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000RecallsCardTwoContent
+        }) }}
+      </li>
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000RecallsCardThreeContent
+        }) }}
+      </li>
+    </ul>
+
+    <h3>Arbitration</h3>
+    <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+      <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+        {{ card({
+          descriptionHtml: last1000ArbitrationCardContent
+        }) }}
+      </li>
+      {% if isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: last1000AgreedWithOpinionCardContent
+          }) }}
+        </li>
+      {% endif %}
+      {% if not isPersonalStatistics %}
+        <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          {{ card({
+            descriptionHtml: last1000ArbitratedCardContent
+          }) }}
+        </li>
+      {% endif %}
     </ul>
   {% endset %}
 
   {{ tabs({
     items: [
       {
-        label: "Past week",
-        id: "past-week",
+        label: "Past 7 days",
+        id: "past-7-days",
         panel: {
           html: pastWeekContent
         }
       },
       {
-        label: "Past month",
-        id: "past-month",
+        label: "Past 28 days",
+        id: "past-28-days",
         panel: {
           html: pastMonthContent
         }
       },
       {
-        label: "Past year",
-        id: "past-year",
+        label: "Past 365 days",
+        id: "past-365-days",
         panel: {
           html: pastYearContent
+        }
+      },
+      {
+        label: "Last 1000 reads",
+        id: "last-1000-reads",
+        panel: {
+          html: last1000ReadsContent
         }
       }
     ]
