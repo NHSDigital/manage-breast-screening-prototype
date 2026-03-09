@@ -4,8 +4,8 @@
 
 .app-appointment-header--sticky {
   position: sticky;
-  top: 0;
   z-index: 100;
+  top: 0;
   border-bottom: 1px solid $nhsuk-border-colour;
   background-color: $nhsuk-body-background-colour;
 
@@ -26,8 +26,8 @@
   }
 
   .app-secondary-navigation__link {
-    font-size: 16px;
     padding: 8px 0;
+    font-size: 16px;
 
     &:first-child {
       padding-left: 0;

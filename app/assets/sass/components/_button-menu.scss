@@ -31,13 +31,17 @@
 .app-button-menu__wrapper {
   position: absolute;
   z-index: 10;
+
   width: 300px;
   margin: 5px 0 0; // 2px shadow, 3px gap
   padding: 0;
+
   list-style: none;
-  background-color: nhsuk-colour("white");
+
   border: 1px solid $nhsuk-border-colour;
   border-bottom: nhsuk-spacing(1) solid $nhsuk-border-colour;
+
+  background-color: nhsuk-colour("white");
   // box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   @include nhsuk-print-hide;
 
@@ -67,7 +71,9 @@
 .app-button-menu li > .app-button-menu__item {
   box-sizing: border-box;
   display: inline-block;
+
   position: relative;
+
   width: 100%;
   margin-top: 0;
   margin-right: 0;
@@ -82,9 +88,12 @@
   // color: $nhsuk-text-colour;
   color: nhsuk-colour("blue");
   background-color: nhsuk-colour("white");
+
   text-align: left;
   vertical-align: top;
+
   cursor: pointer;
+
   -webkit-appearance: none;
   appearance: none;
   @include nhsuk-font(19);

@@ -9,10 +9,10 @@
 
 // Style the tick SVG specifically
 .app-secondary-navigation .app-icon--tick {
-  vertical-align: middle;
+  flex-shrink: 0; // Prevent SVG from shrinking
   width: 20px;
   height: 20px;
-  flex-shrink: 0; // Prevent SVG from shrinking
+  vertical-align: middle;
 
   // Style the tick path
   path {

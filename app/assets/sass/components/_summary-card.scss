@@ -63,8 +63,8 @@
 
 .nhsuk-summary-card__title {
   @include nhsuk-font($size: 19, $weight: bold);
-  color: $nhsuk-text-colour;
   margin: nhsuk-spacing(1) nhsuk-spacing(4) nhsuk-spacing(2) 0;
+  color: $nhsuk-text-colour;
 
   @include nhsuk-media-query($from: "tablet") {
     margin-bottom: nhsuk-spacing(1);
@@ -75,16 +75,19 @@
   @include nhsuk-font-size($size: 19);
   @include nhsuk-typography-weight-bold;
   display: flex;
+
   flex-wrap: wrap;
   row-gap: 10px;
+
   margin: nhsuk-spacing(1) 0;
   padding: 0;
+
   list-style: none;
 
   @include nhsuk-media-query($from: "tablet") {
     justify-content: right;
-    text-align: right;
     margin-left: auto; // Added so actions are always aligned right
+    text-align: right;
   }
 }
 

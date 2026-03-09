@@ -38,14 +38,18 @@ h3 {
 }
 
 .app-button-link {
-  background: none;
-  border: none;
-  color: $nhsuk-link-colour;
-  cursor: pointer;
-  font: inherit;
   padding: 0;
+
+  border: none;
+
+  color: $nhsuk-link-colour;
+  background: none;
+
+  font: inherit;
   text-align: left;
   text-decoration: underline;
+
+  cursor: pointer;
 
   &:hover,
   &:focus {
