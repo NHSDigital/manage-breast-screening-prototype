@@ -4,7 +4,20 @@
 // https://github.com/alphagov/govuk-frontend/blob/main/packages/govuk-frontend/src/govuk/components/summary-list/_index.scss
 
 .nhsuk-summary-card__action {
-  display: inline-block;
+  display: inline;
+
+  // We use the following media query to target IE11 and 10 only to add margin
+  // between actions.
+  //
+  // We do this because we're using row-gap to create space between actions on
+  // more evergreen browsers which IE doesn't support. @supports currently isn't
+  // a viable solution, see https://github.com/w3c/csswg-drafts/issues/3559.
+  //
+  // Solution taken from https://stackoverflow.com/questions/11173106/apply-style-only-on-ie#answer-36448860
+  // which also includes an explanation of why this works
+  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+    margin-bottom: nhsuk-spacing(1);
+  }
 }
 
 @include nhsuk-media-query($until: tablet) {
@@ -63,8 +76,8 @@
 
 .nhsuk-summary-card__title {
   @include nhsuk-font($size: 19, $weight: bold);
-  color: $nhsuk-text-colour;
   margin: nhsuk-spacing(1) nhsuk-spacing(4) nhsuk-spacing(2) 0;
+  color: $nhsuk-text-colour;
 
   @include nhsuk-media-query($from: "tablet") {
     margin-bottom: nhsuk-spacing(1);
@@ -75,33 +88,19 @@
   @include nhsuk-font-size($size: 19);
   @include nhsuk-typography-weight-bold;
   display: flex;
+
   flex-wrap: wrap;
   row-gap: 10px;
+
   margin: nhsuk-spacing(1) 0;
   padding: 0;
+
   list-style: none;
 
   @include nhsuk-media-query($from: "tablet") {
     justify-content: right;
-    text-align: right;
     margin-left: auto; // Added so actions are always aligned right
-  }
-}
-
-.nhsuk-summary-card__action {
-  display: inline;
-
-  // We use the following media query to target IE11 and 10 only to add margin
-  // between actions.
-  //
-  // We do this because we're using row-gap to create space between actions on
-  // more evergreen browsers which IE doesn't support. @supports currently isn't
-  // a viable solution, see https://github.com/w3c/csswg-drafts/issues/3559.
-  //
-  // Solution taken from https://stackoverflow.com/questions/11173106/apply-style-only-on-ie#answer-36448860
-  // which also includes an explanation of why this works
-  @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
-    margin-bottom: nhsuk-spacing(1);
+    text-align: right;
   }
 }
 

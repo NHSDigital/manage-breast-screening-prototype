@@ -13,13 +13,18 @@
   $_font-size: 16;
 
   .nhsuk-forward-link {
-    background: none;
-    border: 0;
-    cursor: pointer;
     display: inline-block;
+
+    position: relative;
+
     padding: 0;
     padding-right: nhsuk-em($_font-size, $nhsuk-base-font-size);
-    position: relative;
+
+    border: 0;
+
+    background: none;
+
+    cursor: pointer;
 
     @include nhsuk-font($_font-size);
     @include nhsuk-link-style-default;
@@ -28,12 +33,14 @@
     @include nhsuk-print-hide; // [2]
 
     &::before {
-      bottom: 0;
       content: "";
-      right: 0;
-      margin: auto;
+
       position: absolute;
       top: 0;
+      right: 0;
+      bottom: 0;
+
+      margin: auto;
 
       @include nhsuk-shape-chevron(right, $colour: currentcolor, $font-size: 19);
     }

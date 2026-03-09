@@ -964,7 +964,11 @@ const getFirstUserReadableEvent = function (events, userId = null) {
 
 // Get the next event the user can read after a given event, wrapping to the
 // start of the list if nothing follows. Returns null if nothing is readable.
-const getNextUserReadableEvent = function (events, currentEventId, userId = null) {
+const getNextUserReadableEvent = function (
+  events,
+  currentEventId,
+  userId = null
+) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
   const currentIndex = events.findIndex((e) => e.id === currentEventId)
   const eventsFromNext = [

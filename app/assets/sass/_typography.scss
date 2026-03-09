@@ -17,7 +17,7 @@ h3 {
 }
 
 .nhsuk-link--no-visited-state a {
-  @extend .nhsuk-link--no-visited-state;
+  @include nhsuk-link-style-no-visited-state;
 }
 
 .app-link--error,
@@ -38,14 +38,18 @@ h3 {
 }
 
 .app-button-link {
-  background: none;
-  border: none;
-  color: $nhsuk-link-colour;
-  cursor: pointer;
-  font: inherit;
   padding: 0;
+
+  border: none;
+
+  color: $nhsuk-link-colour;
+  background: none;
+
+  font: inherit;
   text-align: left;
   text-decoration: underline;
+
+  cursor: pointer;
 
   &:hover,
   &:focus {

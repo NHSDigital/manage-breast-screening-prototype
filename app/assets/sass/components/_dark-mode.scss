@@ -1,3 +1,5 @@
+// stylelint-disable declaration-no-important
+
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 $app-dark-mode-blue: #348de0;
@@ -13,7 +15,7 @@ $app-dark-mode-banner-border: #015eb8;
 // Links
 $app-dark-mode-link-colour: #3892e0;
 $app-dark-mode-link-hover-colour: #ffeb3b;
-$app-dark-mode-link-active-colour: #000;
+$app-dark-mode-link-active-colour: #000000;
 $app-dark-mode-link-visited-colour: #d055a5;
 
 // Tags
@@ -34,15 +36,15 @@ $app-tag--blue-dark-border: nhsuk-tint(nhsuk-colour("blue"), 80%);
 $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 
 @mixin app-dark-mode-focused-text {
-  background-color: $nhsuk-focus-colour;
-  box-shadow:
-    0 -2px $nhsuk-focus-colour,
-    0 $nhsuk-focus-width $nhsuk-focus-text-colour;
-  color: $nhsuk-focus-text-colour;
   // When colours are overridden, for example when users have a dark mode,
   // backgrounds and box-shadows disappear, so we need to ensure there's a
   // transparent outline which will be set to a visible colour.
   outline: $nhsuk-focus-width solid transparent;
+  color: $nhsuk-focus-text-colour;
+  background-color: $nhsuk-focus-colour;
+  box-shadow:
+    0 -2px $nhsuk-focus-colour,
+    0 $nhsuk-focus-width $nhsuk-focus-text-colour;
   // When link is focussed, hide the default underline since the
   // box shadow adds the "underline"
   text-decoration: none;
@@ -61,7 +63,7 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   }
 
   &:focus {
-    @include nhsuk-focused-text();
+    @include nhsuk-focused-text;
 
     &:hover {
       text-decoration: none;
@@ -82,8 +84,8 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 }
 
 .app-dark-mode {
-  background: $app-dark-mode-background;
   color: $app-dark-mode-text-colour;
+  background: $app-dark-mode-background;
 
   // Text colour
   .nhsuk-fieldset__legend {
@@ -113,6 +115,7 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 
   .app-secondary-navigation__link:link {
     color: $app-dark-mode-link-colour;
+
     &:focus {
       @include app-dark-mode-focused-text;
     }
@@ -129,12 +132,12 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 
   .app-secondary-navigation__link:focus,
   .app-secondary-navigation__link:focus:hover {
+    outline: $nhsuk-focus-width solid transparent !important;
     color: $nhsuk-focus-text-colour !important;
     background-color: $nhsuk-focus-colour !important;
     box-shadow:
       0 -2px $nhsuk-focus-colour,
       0 $nhsuk-focus-width $nhsuk-focus-text-colour !important;
-    outline: $nhsuk-focus-width solid transparent !important;
     text-decoration: none !important;
   }
 
@@ -151,18 +154,19 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     }
 
     &:focus {
+      outline: $nhsuk-focus-width solid transparent !important;
       color: $nhsuk-focus-text-colour !important;
       background-color: $nhsuk-focus-colour !important;
       box-shadow:
         0 -2px $nhsuk-focus-colour,
         0 $nhsuk-focus-width $nhsuk-focus-text-colour !important;
-      outline: $nhsuk-focus-width solid transparent !important;
       text-decoration: none !important;
     }
   }
 
   .nhsuk-link--no-visited-state {
     color: $app-dark-mode-link-colour;
+
     &:focus {
       @include app-dark-mode-focused-text;
     }
@@ -186,13 +190,13 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     &:visited,
     &:active,
     &:hover {
-      color: white;
+      color: #ffffff;
     }
   }
 
   .nhsuk-button--secondary {
-    box-shadow: 0 4px 0 $app-dark-mode-link-colour;
     color: $app-dark-mode-link-colour;
+    box-shadow: 0 4px 0 $app-dark-mode-link-colour;
 
     &:link,
     &:visited,
@@ -201,9 +205,9 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     }
 
     &:hover {
+      color: $app-dark-mode-link-colour;
       background-color: $app-dark-mode-surface;
       box-shadow: 0 4px 0 $app-dark-mode-link-colour;
-      color: $app-dark-mode-link-colour;
     }
   }
 
@@ -214,6 +218,7 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
       &:visited {
         color: #ffffff;
       }
+
       &:focus {
         @include app-dark-mode-focused-text;
       }
@@ -229,38 +234,38 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   }
 
   .app-count {
-    background: $app-dark-mode-background-secondary;
     color: $app-dark-mode-text-colour;
+    background: $app-dark-mode-background-secondary;
   }
 
   .nhsuk-tag--red {
-    background-color: $app-tag--red-dark-background;
     border-color: $app-tag--red-dark-border;
     color: $app-tag--red-dark-text;
+    background-color: $app-tag--red-dark-background;
   }
 
   .nhsuk-tag--green {
-    background-color: $app-tag--green-dark-background;
     border-color: $app-tag--green-dark-border;
     color: $app-tag--green-dark-text;
+    background-color: $app-tag--green-dark-background;
   }
 
   .nhsuk-tag--orange {
-    background-color: $app-tag--orange-dark-background;
     border-color: $app-tag--orange-dark-border;
     color: $app-tag--orange-dark-text;
+    background-color: $app-tag--orange-dark-background;
   }
 
   .nhsuk-tag--yellow {
-    background-color: $app-tag--yellow-dark-background;
     border-color: $app-tag--yellow-dark-border;
     color: $app-tag--yellow-dark-text;
+    background-color: $app-tag--yellow-dark-background;
   }
 
   .nhsuk-tag--blue {
-    background-color: $app-tag--blue-dark-background;
     border-color: $app-tag--blue-dark-border;
     color: $app-tag--blue-dark-text;
+    background-color: $app-tag--blue-dark-background;
   }
 
   .nhsuk-error-summary__title {
@@ -268,9 +273,9 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   }
   // Component overrides
   .nhsuk-card {
-    background: $app-dark-mode-surface;
     border: 1px solid $app-dark-mode-border;
     color: $app-dark-mode-text-colour;
+    background: $app-dark-mode-surface;
 
     .nhsuk-card__heading--feature {
       // background: $app-dark-mode-blue;
@@ -280,8 +285,8 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 
   .nhsuk-footer,
   .nhsuk-footer-container {
-    background: $app-dark-mode-surface;
     color: $app-dark-mode-text-colour;
+    background: $app-dark-mode-surface;
 
     .nhsuk-footer__list-item-link,
     .nhsuk-footer__copyright {
@@ -294,17 +299,19 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
       border-color: $app-dark-mode-white;
       background-color: transparent;
     }
+
     .nhsuk-radios__input + .nhsuk-radios__label::after {
-      background: $app-dark-mode-white;
       border: 10px solid $app-dark-mode-white;
+      background: $app-dark-mode-white;
     }
   }
 
   .nhsuk-checkboxes {
     .nhsuk-checkboxes__input + .nhsuk-checkboxes__label::before {
-      background: transparent;
       border-color: $app-dark-mode-white;
+      background: transparent;
     }
+
     .nhsuk-checkboxes__input + .nhsuk-checkboxes__label::after {
       // Checkmark styling
     }
@@ -318,9 +325,9 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   .nhsuk-input,
   .nhsuk-textarea,
   .nhsuk-select {
-    background-color: transparent;
     border-color: $app-dark-mode-white;
     color: $app-dark-mode-text-colour;
+    background-color: transparent;
   }
 
   .nhsuk-notification-banner__content {
@@ -333,8 +340,8 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   }
 
   .app-reading-opinion-banner {
-    background: $app-dark-mode-surface;
     border: 2px solid $app-dark-mode-banner-border;
+    background: $app-dark-mode-surface;
     filter: drop-shadow(2px 3px 3px $app-dark-mode-surface);
   }
 
@@ -346,8 +353,8 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   }
 
   .app-mammogram-thumbnail__missing {
-    background-color: $app-dark-mode-surface;
     border-color: $app-dark-mode-text-colour-secondary;
+    background-color: $app-dark-mode-surface;
   }
 
   .app-mammogram-thumbnail__missing-text {
@@ -356,7 +363,7 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
 }
 
 html:has(.app-dark-mode) {
-  background-color: $app-dark-mode-background-secondary;
-  background: $app-dark-mode-background-secondary;
   color: $app-dark-mode-text-colour;
+  background: $app-dark-mode-background-secondary;
+  background-color: $app-dark-mode-background-secondary;
 }

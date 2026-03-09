@@ -3,10 +3,10 @@
 // app/assets/sass/components/_reading.scss
 
 .app-status-bar {
-  background-color: nhsuk-shade($nhsuk-brand-colour, 40%);
-  color: $nhsuk-reverse-text-colour;
   padding: 8px 0;
   border-bottom: 1px solid #d8dde0;
+  color: $nhsuk-reverse-text-colour;
+  background-color: nhsuk-shade($nhsuk-brand-colour, 40%);
 }
 
 .app-status-bar a {
@@ -16,6 +16,7 @@
   &:active {
     color: $nhsuk-reverse-text-colour;
   }
+
   &:focus {
     color: $nhsuk-text-colour;
   }
@@ -52,8 +53,8 @@
 is-sticky {
   display: block;
   position: sticky;
-  top: 0;
   z-index: 999;
+  top: 0;
 }
 
 // Sass variables for header height calculations

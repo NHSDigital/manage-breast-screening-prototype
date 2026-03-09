@@ -102,9 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       opinionBanner.classList.add('app-reading-opinion-banner--fade-out')
       // Remove from DOM after the CSS transition (0.2s) completes
-      opinionBanner.addEventListener('transitionend', () => {
-        opinionBanner.remove()
-      }, { once: true })
+      opinionBanner.addEventListener(
+        'transitionend',
+        () => {
+          opinionBanner.remove()
+        },
+        { once: true }
+      )
     }, delay)
   }
 

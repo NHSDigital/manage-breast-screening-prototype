@@ -19,21 +19,30 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 // ELEMENT: Side labels above the diagram
 .breast-features__side-labels {
   display: flex;
+
   justify-content: space-between;
+
   margin-bottom: $breast-features-spacing-small;
-  font-weight: 600;
-  font-size: 19px;
+
   color: $nhsuk-text-colour;
+
+  font-size: 19px;
+  font-weight: 600;
 }
 
 // ELEMENT: SVG diagram container
 .breast-features__diagram {
   position: relative;
-  border: 3px solid $nhsuk-text-colour;
-  background: nhsuk-colour("white");
+
   margin: 0;
-  cursor: crosshair;
+
   overflow: hidden;
+
+  border: 3px solid $nhsuk-text-colour;
+
+  background: nhsuk-colour("white");
+
+  cursor: crosshair;
 }
 
 // MODIFIER: Read-only diagram
@@ -43,44 +52,57 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: SVG element itself (targets the SVG inside the diagram container)
 .breast-features__diagram svg {
+  display: block;
+
   width: 100%;
   height: auto;
-  aspect-ratio: 2 / 1;
-  cursor: inherit;
+
   pointer-events: all;
-  display: block;
+
+  cursor: inherit;
+
+  aspect-ratio: 2 / 1;
 }
 
 // ELEMENT: Interactive markers on the diagram
 .breast-features__marker {
-  position: absolute;
-  width: $breast-features-marker-size;
-  height: $breast-features-marker-size;
-  background-color: $nhsuk-link-colour;
-  border: $breast-features-border-width solid nhsuk-colour("white");
-  border-radius: $breast-features-border-radius;
-  z-index: $breast-features-z-index-marker;
-  pointer-events: all;
   display: flex;
+
+  position: absolute;
+  z-index: $breast-features-z-index-marker;
+
   align-items: center;
   justify-content: center;
+
+  width: $breast-features-marker-size;
+  height: $breast-features-marker-size;
+
+  border: $breast-features-border-width solid nhsuk-colour("white");
+  border-radius: $breast-features-border-radius;
+
+  pointer-events: all;
+
   color: nhsuk-colour("white");
+  background-color: $nhsuk-link-colour;
+
   font-size: $breast-features-marker-font-size;
   font-weight: bold;
-  cursor: pointer;
-  user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
+  user-select: none;
+
+  cursor: pointer;
+
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 // MODIFIER: Dragging marker state
 .breast-features__marker--dragging {
-  cursor: grabbing;
-  opacity: 0.8;
   transform: scale(1.05);
+  opacity: 0.8;
   box-shadow: 0 4px 12px rgba(33, 43, 50, 0.3);
+  cursor: grabbing;
 }
 
 // MODIFIER: Read-only marker
@@ -90,21 +112,26 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: Text labels next to markers
 .breast-features__marker-label {
-  background: nhsuk-colour("white");
-  border: $breast-features-border-width solid $nhsuk-text-colour;
+  position: absolute;
+  z-index: 100;
+  top: -10px;
+  left: 45px;
+
   padding: 4px $breast-features-spacing-small;
+
+  border: $breast-features-border-width solid $nhsuk-text-colour;
+  border-radius: $breast-features-border-radius;
+
+  color: $nhsuk-text-colour;
+  background: nhsuk-colour("white");
+
   font-size: 14px;
   font-weight: 600;
-  color: $nhsuk-text-colour;
-  position: absolute;
-  white-space: nowrap;
-  z-index: 100;
   line-height: 1.2;
-  cursor: grab;
+  white-space: nowrap;
   user-select: none;
-  border-radius: $breast-features-border-radius;
-  left: 45px;
-  top: -10px;
+
+  cursor: grab;
 }
 
 .breast-features__marker-label:hover {
@@ -113,30 +140,35 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // MODIFIER: Dragging label state
 .breast-features__marker-label--dragging {
-  cursor: grabbing;
-  opacity: 0.8;
   z-index: $breast-features-z-index-dragging;
   transform: scale(1.05);
+  opacity: 0.8;
   box-shadow: 0 4px 12px rgba(33, 43, 50, 0.3);
+  cursor: grabbing;
 }
 
 // ELEMENT: Popover for adding/editing features
 .breast-features__popover {
+  display: none;
+
   position: fixed;
-  background: nhsuk-colour("white");
-  border: 4px solid $nhsuk-link-colour;
+  z-index: $breast-features-z-index-popover;
+
+  min-width: $breast-features-popover-min-width;
+  max-width: $breast-features-popover-max-width;
+  max-height: 80vh;
   padding: $breast-features-spacing-large;
   padding-bottom: calc(
     $breast-features-spacing-large - 20px
   ); // reduce padding by margin size on buttons. Ideally this would be dynamically generated.
-  box-shadow: 0 4px 16px rgba(33, 43, 50, 0.16);
-  z-index: $breast-features-z-index-popover;
-  min-width: $breast-features-popover-min-width;
-  max-width: $breast-features-popover-max-width;
-  display: none;
-  border-radius: 4px;
-  max-height: 80vh;
+
   overflow-y: auto;
+
+  border: 4px solid $nhsuk-link-colour;
+  border-radius: 4px;
+
+  background: nhsuk-colour("white");
+  box-shadow: 0 4px 16px rgba(33, 43, 50, 0.16);
 }
 
 // ELEMENT: Features list component
@@ -147,8 +179,8 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 // ELEMENT: List header
 .breast-features__list-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: $breast-features-spacing-medium;
 }
 
@@ -164,18 +196,22 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: List items container
 .breast-features__list-items {
-  list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 // ELEMENT: Individual feature item in the list
 .breast-features__item {
   display: flex;
+
   align-items: center;
   justify-content: space-between;
+
   padding: 12px 0;
+
   border-bottom: 1px solid $nhsuk-secondary-text-colour;
+
   gap: 12px;
 }
 
@@ -197,26 +233,32 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: Feature number badge
 .breast-features__item-number {
-  position: relative;
-  width: $breast-features-marker-size;
-  height: $breast-features-marker-size;
-  flex-shrink: 0;
-  background-color: $nhsuk-link-colour;
-  border: $breast-features-border-width solid nhsuk-colour("white");
-  border-radius: $breast-features-border-radius;
   display: flex;
+
+  position: relative;
+
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+
+  width: $breast-features-marker-size;
+  height: $breast-features-marker-size;
+
+  border: $breast-features-border-width solid nhsuk-colour("white");
+  border-radius: $breast-features-border-radius;
+
   color: nhsuk-colour("white");
+  background-color: $nhsuk-link-colour;
+
   font-size: $breast-features-marker-font-size;
   font-weight: bold;
 }
 
 // ELEMENT: Feature text label
 .breast-features__item-label {
-  font-weight: 600;
   color: $nhsuk-text-colour;
   font-size: 16px;
+  font-weight: 600;
 }
 
 // ELEMENT: Feature position/location
@@ -228,8 +270,8 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: Anatomical region container (from processed SVG)
 .app-breast-diagram__regions {
-  opacity: 0;
   pointer-events: all;
+  opacity: 0;
 }
 
 // MODIFIER: Visible regions
@@ -239,12 +281,14 @@ $breast-features-z-index-dragging: 60; // Still below sticky nav but above norma
 
 // ELEMENT: Individual anatomical region (from processed SVG)
 .app-breast-diagram__region {
+  pointer-events: all;
+  opacity: 0;
+
+  fill: none;
+
   stroke: $nhsuk-secondary-text-colour;
   stroke-width: 1px;
   stroke-dasharray: 5, 5;
-  fill: none;
-  opacity: 0;
-  pointer-events: all;
 }
 
 // When regions are visible, show them

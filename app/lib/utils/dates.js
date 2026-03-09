@@ -692,13 +692,15 @@ const calculateDurationMinutes = (startTime, endTime) => {
   if (!startTime || !endTime) return 0
 
   // If it looks like just a time (contains no date), prefix with dummy date
-  const startDatetime = startTime.includes('T') || startTime.includes('-')
-    ? startTime
-    : `2000-01-01T${startTime}`
-  
-  const endDatetime = endTime.includes('T') || endTime.includes('-')
-    ? endTime
-    : `2000-01-01T${endTime}`
+  const startDatetime =
+    startTime.includes('T') || startTime.includes('-')
+      ? startTime
+      : `2000-01-01T${startTime}`
+
+  const endDatetime =
+    endTime.includes('T') || endTime.includes('-')
+      ? endTime
+      : `2000-01-01T${endTime}`
 
   const start = dayjs(startDatetime)
   const end = dayjs(endDatetime)
