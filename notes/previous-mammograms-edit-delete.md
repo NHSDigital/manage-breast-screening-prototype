@@ -1,11 +1,13 @@
 # Previous Mammograms - Add Edit/Delete Functionality
 
 ## Overview
+
 Implement add/edit/delete functionality for previous mammograms following the established patterns used in symptoms and medical history.
 
 ## Task List
 
 ### 1. Data Structure Changes
+
 **File:** `app/routes/events.js` (lines 396-527)
 
 - [x] Add unique ID generation using `generateId()` when creating new mammograms
@@ -14,6 +16,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 - [x] Detect new vs edit using `!previousMammogramTemp.id`
 
 ### 2. Update Save Route Logic
+
 **File:** `app/routes/events.js` (lines 396-527)
 
 - [x] Replace `.push()` with findIndex/update or push pattern
@@ -21,6 +24,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 - [x] Ensure all special flows (recent mammogram warning, proceed anyway, end immediately) still work with new structure
 
 ### 3. Add Edit Route
+
 **File:** `app/routes/events.js` (add after line 527)
 
 - [x] Add GET route: `/clinics/:clinicId/events/:eventId/previous-mammograms/edit/:mammogramId`
@@ -30,6 +34,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 - [x] Handle case where mammogram not found
 
 ### 4. Add Delete Route
+
 **File:** `app/routes/events.js` (add after edit route)
 
 - [x] Add GET route: `/clinics/:clinicId/events/:eventId/previous-mammograms/delete/:mammogramId`
@@ -38,6 +43,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 - [x] Redirect back using referrerChain and scrollTo
 
 ### 5. Update Edit Form
+
 **File:** `app/views/events/previous-mammograms/edit.html`
 
 - [x] Add delete link at bottom of form
@@ -46,6 +52,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 - [x] Include referrerChain and scrollTo in delete href
 
 ### 6. Update Display Template
+
 **File:** `app/views/_includes/summary-lists/rows/last-known-mammogram.njk`
 
 - [x] Separate display into two sections (system record vs user-added)
@@ -57,6 +64,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 ## Testing Checklist
 
 After implementation:
+
 - [ ] Can add a new previous mammogram
 - [ ] Can edit an existing user-added mammogram
 - [ ] Can delete a user-added mammogram

@@ -6,11 +6,11 @@ const weighted = require('weighted')
 // Categories of appointment notes with realistic examples
 const NOTE_CATEGORIES = {
   medical: {
-    weight: 0.10,
+    weight: 0.1,
     notes: [
       `Pain in left breast, GP thinks it's blocked ducts and has given antibiotics`,
       'Aching on left side',
-      'Shoulder pain',
+      'Shoulder pain'
     ]
   },
 
@@ -20,7 +20,7 @@ const NOTE_CATEGORIES = {
       'Family history of breast cancer (both sisters)',
       'Maternal cousin breast cancer at 46 years',
       'Sister breast cancer at 50 years',
-      'Family history of cancer - grandma at 40 years old',
+      'Family history of cancer - grandma at 40 years old'
     ]
   },
 
@@ -30,10 +30,9 @@ const NOTE_CATEGORIES = {
       'Very nervous',
       'Unable to tolerate full compression',
       'Difficulty with compression, consent given to complete',
-      'Difficult, kept moving, pulled out of machine, compression sensitive',
+      'Difficult, kept moving, pulled out of machine, compression sensitive'
     ]
   },
-
 
   communication: {
     weight: 0.2,
@@ -60,7 +59,7 @@ const NOTE_CATEGORIES = {
 
 /**
  * Generate an appointment note for an event
- * 
+ *
  * @param {object} options - Generation options
  * @param {boolean} options.isScheduled - Whether the event is scheduled (not yet happened)
  * @param {boolean} options.isCompleted - Whether the event is completed

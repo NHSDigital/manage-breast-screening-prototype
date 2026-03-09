@@ -50,9 +50,9 @@ const generateHRT = (options = {}) => {
 
   // Weighted selection of HRT status
   const hrtQuestion = weighted.select({
-    'yes': 0.5,                    // Currently taking
-    'no-recently-stopped': 0.3,    // Recently stopped
-    'no': 0.2                      // No HRT
+    'yes': 0.5, // Currently taking
+    'no-recently-stopped': 0.3, // Recently stopped
+    'no': 0.2 // No HRT
   })
 
   const hrt = { hrtQuestion }
@@ -60,10 +60,11 @@ const generateHRT = (options = {}) => {
   // Add conditional fields based on status
   if (hrtQuestion === 'yes') {
     hrt.hrtDuration = faker.helpers.arrayElement(CURRENT_HRT_DURATIONS)
-  }
-  else if (hrtQuestion === 'no-recently-stopped') {
+  } else if (hrtQuestion === 'no-recently-stopped') {
     hrt.hrtDurationSinceStopped = faker.helpers.arrayElement(STOPPED_TIMEFRAMES)
-    hrt.hrtDurationBeforeStopping = faker.helpers.arrayElement(DURATION_BEFORE_STOPPING)
+    hrt.hrtDurationBeforeStopping = faker.helpers.arrayElement(
+      DURATION_BEFORE_STOPPING
+    )
   }
 
   return hrt
