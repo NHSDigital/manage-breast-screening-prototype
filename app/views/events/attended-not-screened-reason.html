@@ -20,6 +20,14 @@
     {{ pageHeading }}
   </h1>
 
+  {% set insetHtml %}
+    <p><a href="{{ './previous-mammograms/add' | urlWithReferrer(currentUrl) }}">Add details of a previous mammogram</a> if the appointment is being stopped because the participant has had one within the past 6 months</p>
+  {% endset %}
+  
+  {{ insetText({
+    html: insetHtml
+  }) }}
+
   {{ checkboxes({
     name: "event[appointmentStopped][stoppedReason]",
     values: event.appointmentStopped.stoppedReason,
