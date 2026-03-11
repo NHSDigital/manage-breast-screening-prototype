@@ -236,7 +236,7 @@
   color: $nhsuk-text-colour;
 }
 
-.app-reading-statistics-card .nhsuk-card {
+.app-reading-statistics-card > .nhsuk-card {
   background-color: nhsuk-colour("blue");
   border: 0;
   color: nhsuk-colour("white");
@@ -264,7 +264,7 @@
   padding-right: 8px;
 }
 
-.app-reading-statistics-card .nhsuk-card {
+.app-reading-statistics-card > .nhsuk-card {
   width: 100%;
   max-width: 320px;
   height: 185px;
@@ -273,7 +273,7 @@
   display: flex;
 }
 
-.app-reading-statistics-card .nhsuk-card__content {
+.app-reading-statistics-card > .nhsuk-card .nhsuk-card__content {
   display: flex;
   flex-direction: column;
   width: 100%;

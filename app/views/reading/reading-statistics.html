@@ -3,32 +3,15 @@
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = "Reading statistics" %}
-{% set hideBackLink = true %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% block pageContent %}
-  {{ backLink({
-    href: "/reading",
-    text: "Back",
-    classes: "nhsuk-u-margin-bottom-4"
-  }) }}
-
   <h1>{{ pageHeading }}</h1>
   <p>View reading statistics for you and your BSO</p>
 
-  {% set currentUserName = "Name Surname" %}
-  {% if data.currentUser and data.currentUser.firstName and data.currentUser.lastName %}
-    {% set currentUserName = data.currentUser.firstName + " " + data.currentUser.lastName %}
-  {% endif %}
+  {% set currentUserName = data.currentUserId | getUsername %}
 
-  {% set bsoName = "BSO name" %}
-  {% if data.currentUser and data.currentUser.breastScreeningUnit and data.breastScreeningUnits %}
-    {% for breastScreeningUnit in data.breastScreeningUnits %}
-      {% if breastScreeningUnit.id == data.currentUser.breastScreeningUnit %}
-        {% set bsoName = breastScreeningUnit.name %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
+  {% set bsoName = currentBSU.name %}
 
   {% set readingStatisticsFilterScope = "bso" %}
   {% if query and query.readingStatisticsFilterScope %}
@@ -70,7 +53,7 @@
 
   {% set pastWeekContent %}
     <h2>Past 7 days</h2>
-    <p>23 February to 1 March 2026</p>
+    <p>{{ today() | remove(7, "days") | formatDate }} to {{ today() | formatDate }}</p>
     <p>
       <a href="#" class="nhsuk-link">Download CSV</a>
     </p>
@@ -264,7 +247,7 @@
 
   {% set pastMonthContent %}
     <h2>Past 28 days</h2>
-    <p>2 February to 1 March 2026</p>
+    <p>{{ today() | remove(28, "days") | formatDate }} to {{ today() | formatDate }}</p>
     <p>
       <a href="#" class="nhsuk-link">Download CSV</a>
     </p>
@@ -458,7 +441,7 @@
 
   {% set pastYearContent %}
     <h2>Past 365 days</h2>
-    <p>2 March 2025 to 1 March 2026</p>
+    <p>{{ today() | remove(1, "year") | formatDate }} to {{ today() | formatDate }}</p>
     <p>
       <a href="#" class="nhsuk-link">Download CSV</a>
     </p>
