@@ -38,7 +38,15 @@ const formatAnswer = (value, options = {}) => {
   return yesValue ? `${yesPrefix} - ${yesValue}` : yesPrefix
 }
 
-// Convert an integer to its ordinal name (first, second, third, etc)
+/**
+ * Convert a 1-based integer to its ordinal name
+ *
+ * @param {number} integer - Integer between 1 and 10
+ * @returns {string} Ordinal name
+ * @example
+ * getOrdinalName(1) // 'first'
+ * getOrdinalName(3) // 'third'
+ */
 const getOrdinalName = (integer) =>
 {
   const ordinals = [
@@ -66,7 +74,15 @@ const getOrdinalName = (integer) =>
   return ordinals[parsedInteger]
 }
 
-// Convert a zero-based index to its ordinal name (0 => first, 1 => second, etc)
+/**
+ * Convert a 0-based index to its ordinal name (0 → 'first', 1 → 'second', etc)
+ *
+ * @param {number} integer - 0-based index
+ * @returns {string} Ordinal name
+ * @example
+ * getOrdinalNameIndex0(0) // 'first'
+ * getOrdinalNameIndex0(2) // 'third'
+ */
 const getOrdinalNameIndex0 = (integer) => getOrdinalName(Number(integer) + 1)
 
 module.exports = {

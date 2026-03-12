@@ -14,6 +14,13 @@ const findById = (array, id) => {
   return array.find((item) => item.id === id)
 }
 
+/**
+ * Append an item to an array, returning a new array (deep clones the item)
+ *
+ * @param {Array} array - Array to append to
+ * @param {*} item - Item to append (will be deep cloned)
+ * @returns {Array} New array with item appended
+ */
 const push = (array, item) => {
   const newArray = [...array]
   newArray.push(_.cloneDeep(item)) // clone needed to stop this mutating original

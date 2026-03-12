@@ -8,6 +8,7 @@ const config = require('../../config')
  * Get today's clinics
  *
  * @param {Array} clinics - Array of all clinics
+ * @returns {Array} Clinics scheduled for today
  */
 const getTodaysClinics = (clinics) => {
   const today = dayjs().startOf('day')
@@ -19,6 +20,7 @@ const getTodaysClinics = (clinics) => {
  *
  * @param {Array} events - Array of all events
  * @param {string} clinicId - Clinic ID to filter by
+ * @returns {Array} Events belonging to the given clinic
  */
 const getClinicEvents = (events, clinicId) => {
   if (!events || !clinicId) return []
@@ -31,6 +33,7 @@ const getClinicEvents = (events, clinicId) => {
  * Format clinic time slot
  *
  * @param {string} dateTime - ISO date string
+ * @returns {string} Time formatted as HH:MM
  */
 const formatTimeSlot = (dateTime) => {
   const date = new Date(dateTime)
@@ -74,7 +77,8 @@ const getClinicHours = (clinic) => {
  * Get clinics filtered by time period
  *
  * @param {Array} clinics - Array of all clinics
- * @param {string} filter - Filter to apply (today, upcoming, completed, all)
+ * @param {string} [filter='all'] - Filter to apply: 'today', 'upcoming', 'completed', or 'all'; excludes clinics older than 2 weeks
+ * @returns {Array} Filtered and sorted clinics
  */
 const getFilteredClinics = (clinics, filter = 'all') => {
   const today = dayjs().startOf('day')

@@ -146,7 +146,8 @@ const isValidDate = (dateInput) => {
  * Format a date in UK format
  *
  * @param {string | Array | object} dateString - ISO date string, array [day, month, year], [month, year], or object {day, month, year}, {month, year}
- * @param {string} format - Optional format string
+ * @param {string} [format='D MMMM YYYY'] - Optional format string
+ * @returns {string} Formatted date string, or empty string if invalid
  */
 const formatDate = (dateString, format = 'D MMMM YYYY') => {
   if (!dateString) return ''
@@ -262,7 +263,8 @@ const formatMonthYear = (input, format = 'MMMM YYYY') => {
  * Format a time in UK format
  *
  * @param {string} dateString - ISO date string
- * @param {string} format - Optional format string
+ * @param {string} [format='H:mm'] - Optional format string
+ * @returns {string} Formatted time string
  */
 const formatTime = (dateString, format = 'H:mm') => {
   if (!dateString) return ''
@@ -312,7 +314,8 @@ const formatTimeRange = (times) => {
  * Format a date and time
  *
  * @param {string} dateString - ISO date string
- * @param {string} format - Optional format string
+ * @param {string} [format='D MMMM YYYY, HH:mm'] - Optional format string
+ * @returns {string} Formatted date-time string
  */
 const formatDateTime = (dateString, format = 'D MMMM YYYY, HH:mm') => {
   if (!dateString) return ''
@@ -385,8 +388,12 @@ const formatRelativeDate = (dateInput, withoutSuffix = false) => {
 
 /**
  * Format a year as relative to the current year
+ *
  * @param {string|number|object} yearInput - Year as number, string, or object {year: 2024}
- * @returns {string} Relative year description (e.g., "this year", "last year", "3 years ago")
+ * @returns {string} Relative year description
+ * @example
+ * relativeYear(2025) // 'last year' (if current year is 2026)
+ * relativeYear(2020) // '6 years ago'
  */
 const relativeYear = (yearInput) => {
   if (!yearInput) return ''
@@ -436,10 +443,14 @@ const relativeYear = (yearInput) => {
 }
 
 /**
- * Calculate the number of days since a given date
- * @param {string | object | array } dateInput - Input date in one of ISO date string, keyed object, array of [day, month, year], [month, year], or {month, year}
+ * Calculate the number of days since a given date (positive = past, negative = future)
+ *
+ * @param {string | object | Array} dateInput - ISO date string, array [day, month, year], or object {day, month, year}
  * @param {string | Dayjs | null} [compareDate] - Optional reference date (defaults to today)
- * @returns {number} Number of days since the date (positive integer for past dates)
+ * @returns {number} Days since the date (positive for past dates)
+ * @example
+ * daysSince('2026-03-05') // 7 (if today is 2026-03-12)
+ * daysSince('2026-03-15') // -3 (future date)
  */
 const daysSince = (dateInput, compareDate = null) => {
   if (!dateInput) return 0
@@ -592,10 +603,11 @@ const now = () => {
 }
 
 /**
- * Format a date range
+ * Format a date range, collapsing shared day/month/year as appropriate
  *
- * @param {string} startDate - ISO date string
- * @param {string} endDate - ISO date string
+ * @param {string} startDate - ISO date string for range start
+ * @param {string} endDate - ISO date string for range end
+ * @returns {string} Formatted range, e.g. '1 - 5 March 2026' or '1 March - 5 April 2026'
  */
 const formatDateRange = (startDate, endDate) => {
   if (!startDate || !endDate) return ''

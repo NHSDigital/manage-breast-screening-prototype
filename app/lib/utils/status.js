@@ -192,10 +192,13 @@ const eligibleForReading = (event) => {
 }
 
 /**
- * Map a status to its corresponding tag colour in NHS.UK frontend
+ * Map a status key to its NHS tag colour string
  *
  * @param {string} status - The status to map
- * @returns {string} The tag colour
+ * @returns {string} NHS tag colour (e.g. 'green', 'red', 'orange') or empty string for default blue
+ * @example
+ * getStatusTagColour('event_complete') // 'green'
+ * getStatusTagColour('event_did_not_attend') // 'red'
  */
 const getStatusTagColour = (status) => {
   const colourMap = {
@@ -286,10 +289,13 @@ const getStatusTagColour = (status) => {
 }
 
 /**
- * Map a status to its corresponding text
+ * Map a status key to its display text
  *
  * @param {string} status - The status to map
- * @returns {string} The tag text
+ * @returns {string} Human-readable status text, or empty string if unknown
+ * @example
+ * getStatusText('event_complete') // 'Screened'
+ * getStatusText('event_did_not_attend') // 'Did not attend'
  */
 const getStatusText = (status) => {
   const statusMap = {
@@ -325,6 +331,13 @@ const getStatusText = (status) => {
   return statusMap[status] || ''
 }
 
+/**
+ * Filter events by status category
+ *
+ * @param {Array} events - Events to filter
+ * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
+ * @returns {Array} Filtered events
+ */
 const filterEventsByStatus = (events, filter) => {
   switch (filter) {
     case 'scheduled':
@@ -365,10 +378,10 @@ const hasAppointmentNote = (event) => {
 }
 
 /**
- * Check if an event has an appointment note
+ * Check if an event has recorded symptoms
  *
  * @param {object} event - Event object to check
- * @returns {boolean} Whether the event has an appointment note
+ * @returns {boolean} Whether the event has any symptoms
  */
 const hasSymptoms = (event) => {
   // symptoms stored at event.medicalInformation.symptoms[]

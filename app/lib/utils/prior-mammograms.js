@@ -6,7 +6,7 @@
 
 const { formatDate, formatRelativeDate } = require('./dates')
 
-// Check if an event has any reported mammograms
+/** Returns true if the event has any previously reported mammograms */
 const hasReportedMammograms = (event) => {
   if (!event) return false
   return (
@@ -15,14 +15,13 @@ const hasReportedMammograms = (event) => {
   )
 }
 
-// Check if an event is awaiting priors (any mammogram has status 'requested')
-// Only 'requested' status holds a case from reading
+/** Returns true if any prior mammogram has requestStatus 'requested' (holds case from reading) */
 const awaitingPriors = (event) => {
   if (!hasReportedMammograms(event)) return false
   return event.previousMammograms.some((m) => m.requestStatus === 'requested')
 }
 
-// Check if an event has unrequested priors that a reader might want to request
+/** Returns true if any prior mammogram has requestStatus 'not_requested' */
 const hasUnrequestedPriors = (event) => {
   if (!hasReportedMammograms(event)) return false
   return event.previousMammograms.some(
@@ -30,8 +29,12 @@ const hasUnrequestedPriors = (event) => {
   )
 }
 
-// Get a summary of prior mammogram statuses for display
-// Returns an object with counts by status and overall state
+/**
+ * Get a summary of prior mammogram statuses for display
+ *
+ * @param {object} event - Event object
+ * @returns {{total: number, counts: object, hasAwaiting: boolean, hasUnrequested: boolean, allResolved: boolean}}
+ */
 const getPriorsSummary = (event) => {
   if (!hasReportedMammograms(event)) {
     return {
@@ -74,7 +77,7 @@ const getPriorsSummary = (event) => {
   }
 }
 
-// Get unrequested mammograms from an event (for the request priors UI)
+/** Get priors with requestStatus 'not_requested' (for the request priors UI) */
 const getUnrequestedPriors = (event) => {
   if (!hasReportedMammograms(event)) return []
   return event.previousMammograms.filter(
@@ -82,13 +85,13 @@ const getUnrequestedPriors = (event) => {
   )
 }
 
-// Get requested (awaiting) mammograms from an event
+/** Get priors with requestStatus 'requested' (awaiting arrival) */
 const getAwaitingPriors = (event) => {
   if (!hasReportedMammograms(event)) return []
   return event.previousMammograms.filter((m) => m.requestStatus === 'requested')
 }
 
-// Check if a specific user requested priors on this event
+/** Returns true if the given user has an outstanding prior request on this event */
 const userRequestedPriors = (event, userId) => {
   if (!hasReportedMammograms(event)) return false
   return event.previousMammograms.some(
