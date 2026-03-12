@@ -2,6 +2,13 @@
 
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 
+/**
+ * Render a value to the browser console via an inline script tag (for template debugging)
+ *
+ * @param {*} a - Value to log
+ * @param {string | null} [description] - Optional label shown before the value
+ * @returns {string} Safe HTML containing an inline script
+ */
 const log = (a, description = null) => {
   if (description) {
     description = `console.log("${description}:");`
@@ -127,8 +134,9 @@ const getUsername = function (userId, options = {}) {
 }
 
 /**
+ * Return the full Nunjucks template context — useful for debugging
  *
- * @returns {object} The context data
+ * @returns {object} The current Nunjucks context object
  */
 const getContext = function () {
   return this.ctx

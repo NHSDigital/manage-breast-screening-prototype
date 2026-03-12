@@ -8,6 +8,9 @@ const pluralizeLib = require('pluralize')
  *
  * @param {string} input - String to convert
  * @returns {string} Trimmed sentence case string
+ * @example
+ * sentenceCase('hello world') // 'Hello world'
+ * sentenceCase('SCREENED') // 'SCREENED'
  */
 const sentenceCase = (input) => {
   if (!input) return ''
@@ -116,6 +119,9 @@ const split = (input, separator) => {
  *
  * @param {string} input - Word to prefix
  * @returns {string} Word with appropriate article
+ * @example
+ * addIndefiniteArticle('apple') // 'an apple'
+ * addIndefiniteArticle('banana') // 'a banana'
  */
 const addIndefiniteArticle = (input) => {
   if (!input) return ''
@@ -127,6 +133,9 @@ const addIndefiniteArticle = (input) => {
  *
  * @param {string} input - String to make possessive
  * @returns {string} Possessive form of string
+ * @example
+ * possessive('Smith') // "Smith's"
+ * possessive('Jones') // "Jones'"
  */
 const possessive = (input) => {
   if (!input) return ''
@@ -214,15 +223,14 @@ const isString = (input) => {
 }
 
 /**
- * Format separated words as a sentence, preserving acronyms
- * Example: 'in_progress' becomes 'In progress'
- * Example: 'not_in_PACS' becomes 'Not in PACS'
- * Example: 'IBMs_server' becomes 'IBMs server'
- * Example: 'IBM's_mainframe' becomes 'IBM's mainframe'
+ * Format underscore/separator-separated words as readable text, preserving acronyms
  *
  * @param {string} input - String to format
- * @param {string} [separator] - Character that separates words
+ * @param {string} [separator='_'] - Character that separates words
  * @returns {string} Formatted string as words
+ * @example
+ * formatWords('in_progress') // 'in progress'
+ * formatWords('not_in_PACS') // 'not in PACS'
  */
 const formatWords = (input, separator = '_') => {
   if (!input) return ''
@@ -329,6 +337,8 @@ const formatPhoneNumber = (phoneNumber) => {
  *
  * @param {string|number} input - NHS number to format
  * @returns {string} Formatted NHS number or original input if invalid
+ * @example
+ * formatNhsNumber('9997773456') // '999 777 3456'
  */
 const formatNhsNumber = (input) => {
   if (!input) return ''
@@ -371,29 +381,14 @@ const pluralise = (word, ...args) => {
 
 /**
  * Format mammogram view code for display
- * Converts "REklund" or "LEklund" to "Right Eklund" or "Left Eklund"
- * Leaves standard codes like "RCC", "RMLO", "LCC", "LMLO" unchanged
+ * Leaves standard codes like "RCC", "RMLO", "RCCID", "LMLOID" unchanged
  *
  * @param {string} code - View code to format
  * @returns {string} Formatted view code
- * @example
- * formatMammogramViewCode('RCC') // returns 'RCC'
- * formatMammogramViewCode('REklund') // returns 'Right Eklund'
- * formatMammogramViewCode('Left Eklund') // returns 'Left Eklund' (already formatted)
  */
 const formatMammogramViewCode = (code) => {
   if (!code || typeof code !== 'string') return code
 
-  // Already in the correct format (has a space)
-  if (code.includes(' ')) return code
-
-  // Handle REklund -> Right Eklund
-  if (code === 'REklund') return 'Right Eklund'
-
-  // Handle LEklund -> Left Eklund
-  if (code === 'LEklund') return 'Left Eklund'
-
-  // Return standard codes unchanged (RCC, RMLO, LCC, LMLO, etc)
   return code
 }
 

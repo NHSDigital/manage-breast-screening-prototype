@@ -12,6 +12,14 @@ const getEvent = (data, eventId) => {
   return data.events.find((e) => e.id === eventId) || null
 }
 
+/**
+ * Get event data bundle for a given clinic and event ID
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @param {string} eventId - Event ID
+ * @returns {object | null} Bundle of {clinic, event, participant, location, unit} or null if not found
+ */
 const getEventData = (data, clinicId, eventId) => {
   const clinic = data.clinics.find((c) => c.id === clinicId)
   if (!clinic) return null
