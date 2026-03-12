@@ -2166,7 +2166,7 @@ module.exports = (router) => {
    */
   function needsRepeatQuestions(mammogramDataTemp) {
     const views = ['viewsRightBreast', 'viewsLeftBreast']
-    const viewTypes = ['CC', 'MLO', 'Eklund']
+    const viewTypes = ['CC', 'MLO', 'CCID', 'MLOID']
 
     for (const breastView of views) {
       if (!mammogramDataTemp[breastView]) continue
@@ -2295,9 +2295,16 @@ module.exports = (router) => {
       {
         side: 'right',
         sideCode: 'R',
-        viewType: 'Eklund',
-        viewName: 'Eklund',
-        viewKey: 'rightEklund'
+        viewType: 'CCID',
+        viewName: 'craniocaudal implant displaced',
+        viewKey: 'rightCCID'
+      },
+      {
+        side: 'right',
+        sideCode: 'R',
+        viewType: 'MLOID',
+        viewName: 'mediolateral oblique implant displaced',
+        viewKey: 'rightMLOID'
       },
       {
         side: 'left',
@@ -2316,9 +2323,16 @@ module.exports = (router) => {
       {
         side: 'left',
         sideCode: 'L',
-        viewType: 'Eklund',
-        viewName: 'Eklund',
-        viewKey: 'leftEklund'
+        viewType: 'CCID',
+        viewName: 'craniocaudal implant displaced',
+        viewKey: 'leftCCID'
+      },
+      {
+        side: 'left',
+        sideCode: 'L',
+        viewType: 'MLOID',
+        viewName: 'mediolateral oblique implant displaced',
+        viewKey: 'leftMLOID'
       }
     ]
 
@@ -2332,12 +2346,8 @@ module.exports = (router) => {
 
       // Only add view if count > 0
       if (count > 0) {
-        // For Eklund views, use full form like "Right Eklund" or "Left Eklund"
-        // For standard views, use abbreviated form like "RCC" or "LMLO"
-        const code =
-          config.viewType === 'Eklund'
-            ? `${config.side.charAt(0).toUpperCase() + config.side.slice(1)} ${config.viewType}`
-            : `${config.sideCode}${config.viewType}`
+        // Use abbreviated form like "RCC", "LMLO", "RCCID", "LMLOID"
+        const code = `${config.sideCode}${config.viewType}`
 
         // Get repeat data if this view has count > 1
         let repeatCount = 0
@@ -2536,7 +2546,7 @@ module.exports = (router) => {
       const formData = data.event?.mammogramDataTemp || {}
 
       // Validate at least one view has a count > 0
-      const viewTypes = ['CC', 'MLO', 'Eklund']
+      const viewTypes = ['CC', 'MLO', 'CCID', 'MLOID']
       const breasts = ['Right', 'Left']
       let hasAnyImages = false
 
@@ -2607,10 +2617,12 @@ module.exports = (router) => {
       const viewCodes = [
         'RCC',
         'RMLO',
-        'Right Eklund',
+        'RCCID',
+        'RMLOID',
         'LCC',
         'LMLO',
-        'Left Eklund'
+        'LCCID',
+        'LMLOID'
       ]
 
       viewCodes.forEach((code) => {

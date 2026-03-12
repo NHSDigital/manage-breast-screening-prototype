@@ -55,12 +55,21 @@
       }) %}
     {% endif %}
     
-    {% if (mammogramData.viewsRightBreastEklundCount | int) > 1 %}
-      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+    {% if (mammogramData.viewsRightBreastCCIDCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({
         side: 'Right',
-        view: 'Eklund',
-        code: 'Right Eklund',
-        count: mammogramData.viewsRightBreastEklundCount 
+        view: 'CCID',
+        code: 'RCCID',
+        count: mammogramData.viewsRightBreastCCIDCount
+      }) %}
+    {% endif %}
+
+    {% if (mammogramData.viewsRightBreastMLOIDCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({
+        side: 'Right',
+        view: 'MLOID',
+        code: 'RMLOID',
+        count: mammogramData.viewsRightBreastMLOIDCount
       }) %}
     {% endif %}
 
@@ -82,12 +91,21 @@
       }) %}
     {% endif %}
     
-    {% if (mammogramData.viewsLeftBreastEklundCount | int) > 1 %}
-      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({ 
+    {% if (mammogramData.viewsLeftBreastCCIDCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({
         side: 'Left',
-        view: 'Eklund',
-        code: 'Left Eklund',
-        count: mammogramData.viewsLeftBreastEklundCount 
+        view: 'CCID',
+        code: 'LCCID',
+        count: mammogramData.viewsLeftBreastCCIDCount
+      }) %}
+    {% endif %}
+
+    {% if (mammogramData.viewsLeftBreastMLOIDCount | int) > 1 %}
+      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({
+        side: 'Left',
+        view: 'MLOID',
+        code: 'LMLOID',
+        count: mammogramData.viewsLeftBreastMLOIDCount
       }) %}
     {% endif %}
   {% else %}

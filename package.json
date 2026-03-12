@@ -4,7 +4,8 @@
   "description": "Rapidly create HTML prototypes of NHS websites and services.",
   "main": "app.js",
   "scripts": {
-    "start": "node ."
+    "start": "node .",
+    "docs": "node scripts/generate-utils-reference.js"
   },
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
