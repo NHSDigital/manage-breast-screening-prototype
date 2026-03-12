@@ -137,7 +137,6 @@ const parseReferrerChain = (referrerChain) => {
  * @param {string|false} [scrollToId] - Optional element ID to scroll to on return
  * @returns {string} URL to use for back link
  * @example
- * // In templates:
  * <a href="{{ '/default-path' | getReturnUrl(referrerChain) }}">Back</a>
  *
  * // In routes with scrollTo:
@@ -220,7 +219,6 @@ const getReturnUrl = function (url, referrerChain, scrollToId = false) {
  * @param {string} [scrollToId] - Optional element ID to scroll to on return
  * @returns {string} URL with referrer query param and optional scrollTo
  * @example
- * // In templates:
  * <a href="{{ '/next-page' | urlWithReferrer(referrer) }}">Continue</a>
  * <a href="{{ '/next-page' | urlWithReferrer(referrer, 'current-symptoms') }}">Continue</a>
  */
@@ -246,7 +244,6 @@ const urlWithReferrer = (url, referrerChain, scrollToId = false) => {
  * @param {string} newUrl - URL to append
  * @returns {string} Combined referrer chain
  * @example
- * // In templates:
  * {% set updatedReferrer = referrerChain | appendReferrer(currentUrl) %}
  */
 const appendReferrer = (existingReferrerChain, newUrl) => {

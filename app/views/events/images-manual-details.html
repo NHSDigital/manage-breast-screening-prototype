@@ -29,10 +29,12 @@
   
   {% set viewsRightBreastCCCount = mammogramTemp.viewsRightBreastCCCount or mammogramViews.rightCraniocaudal.count or "1" %}
   {% set viewsRightBreastMLOCount = mammogramTemp.viewsRightBreastMLOCount or mammogramViews.rightMediolateralOblique.count or "1" %}
-  {% set viewsRightBreastEklundCount = mammogramTemp.viewsRightBreastEklundCount or mammogramViews.rightEklund.count or "0" %}
+  {% set viewsRightBreastCCIDCount = mammogramTemp.viewsRightBreastCCIDCount or mammogramViews.rightCCID.count or "0" %}
+  {% set viewsRightBreastMLOIDCount = mammogramTemp.viewsRightBreastMLOIDCount or mammogramViews.rightMLOID.count or "0" %}
   {% set viewsLeftBreastCCCount = mammogramTemp.viewsLeftBreastCCCount or mammogramViews.leftCraniocaudal.count or "1" %}
   {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "1" %}
-  {% set viewsLeftBreastEklundCount = mammogramTemp.viewsLeftBreastEklundCount or mammogramViews.leftEklund.count or "0" %}
+  {% set viewsLeftBreastCCIDCount = mammogramTemp.viewsLeftBreastCCIDCount or mammogramViews.leftCCID.count or "0" %}
+  {% set viewsLeftBreastMLOIDCount = mammogramTemp.viewsLeftBreastMLOIDCount or mammogramViews.leftMLOID.count or "0" %}
   {% set additionalDetails = mammogramTemp.additionalDetails or event.mammogramData.additionalDetails or "" %}
   {% set notesForReader = mammogramTemp.notesForReader or event.mammogramData.notesForReader or "" %}
   
@@ -115,23 +117,9 @@
               max: 9
             }) }}
           {% endif %}
-          
-          {{ appStepperInput({
-            label: {
-              text: "Right Eklund"
-            },
-            hint: {
-              text: "Used with breast implants"
-            },
-            name: "event[mammogramDataTemp][viewsRightBreastEklundCount]",
-            value: viewsRightBreastEklundCount | default("0"),
-            id: "views-right-breast-eklund-count",
-            min: 0,
-            max: 9
-          }) }}
         </fieldset>
       </div>
-      
+
       <div class="nhsuk-grid-column-one-half">
         <fieldset class="nhsuk-fieldset">
           <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
@@ -195,32 +183,161 @@
               max: 9
             }) }}
           {% endif %}
-          
-          {{ appStepperInput({
-            label: {
-              text: "Left Eklund"
-            },
-            hint: {
-              text: "Used with breast implants"
-            },
-            name: "event[mammogramDataTemp][viewsLeftBreastEklundCount]",
-            value: viewsLeftBreastEklundCount | default("0"),
-            id: "views-left-breast-eklund-count",
-            min: 0,
-            max: 9
-          }) }}
         </fieldset>
       </div>
     </div>
+
+  {# Implant displaced (Eklund) views – collapsible, open if any data already present #}
+  {% set hasImplantDisplacedData = (viewsRightBreastCCIDCount | int) > 0 or (viewsRightBreastMLOIDCount | int) > 0 or (viewsLeftBreastCCIDCount | int) > 0 or (viewsLeftBreastMLOIDCount | int) > 0 %}
+  {% call details({
+    summaryText: "Other views",
+    open: hasImplantDisplacedData
+  }) %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-one-half">
+          <fieldset class="nhsuk-fieldset">
+            <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
+              {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Right breast
+            </legend>
+
+            {% if data.settings.mammogramViewOrder == 'mlo-first' %}
+              {{ appStepperInput({
+                label: {
+                  text: "RMLOID"
+                },
+                _hint: {
+                  text: "Eklund RMLO"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastMLOIDCount]",
+                value: viewsRightBreastMLOIDCount | default("0"),
+                id: "views-right-breast-mloid-count",
+                min: 0,
+                max: 9
+              }) }}
+
+              {{ appStepperInput({
+                label: {
+                  text: "RCCID"
+                },
+                _hint: {
+                  text: "Eklund RCC"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastCCIDCount]",
+                value: viewsRightBreastCCIDCount | default("0"),
+                id: "views-right-breast-ccid-count",
+                min: 0,
+                max: 9
+              }) }}
+            {% else %}
+              {{ appStepperInput({
+                label: {
+                  text: "RCCID"
+                },
+                _hint: {
+                  text: "Eklund RCC"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastCCIDCount]",
+                value: viewsRightBreastCCIDCount | default("0"),
+                id: "views-right-breast-ccid-count",
+                min: 0,
+                max: 9
+              }) }}
+
+              {{ appStepperInput({
+                label: {
+                  text: "RMLOID"
+                },
+                _hint: {
+                  text: "Eklund RMLO"
+                },
+                name: "event[mammogramDataTemp][viewsRightBreastMLOIDCount]",
+                value: viewsRightBreastMLOIDCount | default("0"),
+                id: "views-right-breast-mloid-count",
+                min: 0,
+                max: 9
+              }) }}
+            {% endif %}
+          </fieldset>
+        </div>
+
+        <div class="nhsuk-grid-column-one-half">
+          <fieldset class="nhsuk-fieldset">
+            <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
+              {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Left breast
+            </legend>
+
+            {% if data.settings.mammogramViewOrder == 'mlo-first' %}
+              {{ appStepperInput({
+                label: {
+                  text: "LMLOID"
+                },
+                _hint: {
+                  text: "Eklund LMLO"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastMLOIDCount]",
+                value: viewsLeftBreastMLOIDCount | default("0"),
+                id: "views-left-breast-mloid-count",
+                min: 0,
+                max: 9
+              }) }}
+
+              {{ appStepperInput({
+                label: {
+                  text: "LCCID"
+                },
+                _hint: {
+                  text: "Eklund LCC"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastCCIDCount]",
+                value: viewsLeftBreastCCIDCount | default("0"),
+                id: "views-left-breast-ccid-count",
+                min: 0,
+                max: 9
+              }) }}
+            {% else %}
+              {{ appStepperInput({
+                label: {
+                  text: "LCCID"
+                },
+                _hint: {
+                  text: "Eklund LCC"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastCCIDCount]",
+                value: viewsLeftBreastCCIDCount | default("0"),
+                id: "views-left-breast-ccid-count",
+                min: 0,
+                max: 9
+              }) }}
+
+              {{ appStepperInput({
+                label: {
+                  text: "LMLOID"
+                },
+                _hint: {
+                  text: "Eklund LMLO"
+                },
+                name: "event[mammogramDataTemp][viewsLeftBreastMLOIDCount]",
+                value: viewsLeftBreastMLOIDCount | default("0"),
+                id: "views-left-breast-mloid-count",
+                min: 0,
+                max: 9
+              }) }}
+            {% endif %}
+          </fieldset>
+        </div>
+      </div>
+  {% endcall %}
 
   {# Calculate initial total count from form data #}
   {% set initialTotalCount = 0 %}
   {% set initialTotalCount = initialTotalCount + (viewsRightBreastCCCount | int(0)) %}
   {% set initialTotalCount = initialTotalCount + (viewsRightBreastMLOCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsRightBreastEklundCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastCCIDCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsRightBreastMLOIDCount | int(0)) %}
   {% set initialTotalCount = initialTotalCount + (viewsLeftBreastCCCount | int(0)) %}
   {% set initialTotalCount = initialTotalCount + (viewsLeftBreastMLOCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastEklundCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastCCIDCount | int(0)) %}
+  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastMLOIDCount | int(0)) %}
 
   <p class="_nhsuk-u-font-weight-bold app-js-only app-text-grey nhsuk-u-margin-bottom-4 nhsuk-u-font-size-22" id="total-images-count">
     Images taken: <span data-total-count>{{ initialTotalCount }}</span>
@@ -266,10 +383,12 @@
         return [
           document.getElementById('views-right-breast-cc-count'),
           document.getElementById('views-right-breast-mlo-count'),
-          document.getElementById('views-right-breast-eklund-count'),
+          document.getElementById('views-right-breast-ccid-count'),
+          document.getElementById('views-right-breast-mloid-count'),
           document.getElementById('views-left-breast-cc-count'),
           document.getElementById('views-left-breast-mlo-count'),
-          document.getElementById('views-left-breast-eklund-count')
+          document.getElementById('views-left-breast-ccid-count'),
+          document.getElementById('views-left-breast-mloid-count')
         ].filter(Boolean) // Remove any null values
       }
 
