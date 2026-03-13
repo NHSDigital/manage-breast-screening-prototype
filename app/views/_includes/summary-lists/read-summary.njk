@@ -13,6 +13,7 @@
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
 {% set hideEmptyRows = hideEmptyRows if hideEmptyRows is defined else false %}
+{% set hideOpinionRow = hideOpinionRow if hideOpinionRow is defined else false %}
 {# Support legacy opinionOnly parameter #}
 {% if opinionOnly is defined and opinionOnly %}
   {% set hideEmptyRows = true %}
@@ -77,24 +78,26 @@
 {# Build rows based on result type #}
 {% set rows = [] %}
 
-{# Opinion row - always shown #}
-{% set rows = rows | push({
-  key: {
-    text: "Opinion"
-  },
-  value: {
-    html: read.opinion | toTag
-  },
-  actions: {
-    items: [
-      {
-        href: changeOpinionUrl,
-        text: "Change",
-        visuallyHiddenText: "opinion"
-      }
-    ]
-  } if allowEdits and changeOpinionUrl
-}) %}
+{# Opinion row #}
+{% if not hideOpinionRow %}
+  {% set rows = rows | push({
+    key: {
+      text: "Opinion"
+    },
+    value: {
+      html: read.opinion | toTag
+    },
+    actions: {
+      items: [
+        {
+          href: changeOpinionUrl,
+          text: "Change",
+          visuallyHiddenText: "opinion"
+        }
+      ]
+    } if allowEdits and changeOpinionUrl
+  }) %}
+{% endif %}
 
 {# Determine if detail rows have data #}
 {% set hasNormalDetails = read.opinion == 'normal' and read.normalDetails %}
