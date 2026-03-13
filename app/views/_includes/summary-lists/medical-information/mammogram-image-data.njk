@@ -6,8 +6,12 @@
 {% set isManualEntry = event.mammogramData.isManualEntry %}
 {% set mammogramViews = event.mammogramData.views | getObjectValues %}
 
-{# Define view order for consistent display (CC, MLO, Eklund) #}
-{% set viewOrder = ['CC', 'MLO', 'Eklund'] %}
+{# Define view order based on config - groups implant displaced views next to their regular counterpart #}
+{% if data.settings.mammogramViewOrder == 'mlo-first' %}
+  {% set viewOrder = ['MLO', 'MLOID', 'CC', 'CCID'] %}
+{% else %}
+  {% set viewOrder = ['CC', 'CCID', 'MLO', 'MLOID'] %}
+{% endif %}
 
 {# Group views by side and sort by standard order #}
 {% set rightViewsUnsorted = [] %}

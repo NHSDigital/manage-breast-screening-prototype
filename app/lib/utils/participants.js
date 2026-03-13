@@ -15,9 +15,10 @@ const getParticipant = (data, participantId) => {
 }
 
 /**
- * Get full name of participant
+ * Get full name (first, middle, last) of a participant as a Nunjucks-safe string
  *
  * @param {object} participant - Participant object
+ * @returns {string} Full name, or empty string if unavailable
  */
 const getFullName = (participant) => {
   if (!participant?.demographicInformation) return ''
@@ -28,9 +29,12 @@ const getFullName = (participant) => {
 }
 
 /**
- * Get full name of participant
+ * Get full name in reversed 'Last, First Middle' format
  *
  * @param {object} participant - Participant object
+ * @returns {string} Reversed full name, or empty string if unavailable
+ * @example
+ * getFullNameReversed(participant) // 'Smith, Jane Louise'
  */
 const getFullNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
@@ -39,9 +43,10 @@ const getFullNameReversed = (participant) => {
 }
 
 /**
- * Get short name (first + last) of participant
+ * Get short name (first + last only) of participant as a Nunjucks-safe string
  *
  * @param {object} participant - Participant object
+ * @returns {string} Short name, or empty string if unavailable
  */
 const getShortName = (participant) => {
   if (!participant?.demographicInformation) return ''
@@ -54,6 +59,7 @@ const getShortName = (participant) => {
  *
  * @param {Array} participants - Array of all participants
  * @param {string} sxNumber - SX number to search for
+ * @returns {object | undefined} Matching participant or undefined
  */
 const findBySXNumber = (participants, sxNumber) => {
   return participants.find((p) => p.sxNumber === sxNumber)
@@ -157,12 +163,14 @@ const getParticipantClinicHistory = (data, participantId, options = {}) => {
 }
 
 // Helper functions for common use cases
+/** Get the most recent historic clinic/event pair for a participant */
 const getParticipantMostRecentClinic = (data, participantId) =>
   getParticipantClinicHistory(data, participantId, {
     filter: 'historic',
     mostRecent: true
   })
 
+/** Get the start time of the participant's most recent clinic, or false if none */
 const getParticipantMostRecentClinicDate = (data, participantId) => {
   const clinic = getParticipantClinicHistory(data, participantId, {
     filter: 'historic',
@@ -173,9 +181,11 @@ const getParticipantMostRecentClinicDate = (data, participantId) => {
   } else return false
 }
 
+/** Get all past clinic/event pairs for a participant */
 const getParticipantHistoricClinics = (data, participantId) =>
   getParticipantClinicHistory(data, participantId, { filter: 'historic' })
 
+/** Get all upcoming clinic/event pairs for a participant */
 const getParticipantUpcomingClinics = (data, participantId) =>
   getParticipantClinicHistory(data, participantId, { filter: 'upcoming' })
 
