@@ -25,7 +25,7 @@
 {%- from "_components/environment/macro.njk" import appEnvironment -%}
 
 {% block head %}
-  <!-- Add your custom CSS or Sass in /app/assets/sass/main.scss -->
+  {# Add your custom CSS or Sass in /app/assets/sass/main.scss #}
   <link href="/assets/sass/main.css" rel="stylesheet">
 {% endblock %}
 
@@ -72,9 +72,9 @@
 {% block bodyEnd %}
   {{ super() }}
   {% block scripts %}
-    <!-- Custom JavaScript files can be added to this file -->
+    {# Custom JavaScript files can be added to this file #}
     {% include "_includes/scripts.html" %}
-    <!-- For adding page specific JavaScript -->
+    {# For adding page specific JavaScript #}
     {% block pageScripts %}{% endblock %}
   {% endblock %}
 {% endblock %}

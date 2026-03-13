@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
-    "build:static-error-page": "node scripts/build-static-error-page.js"
+    "build:static-error-page": "node scripts/build-static-error-page.js",
     "docs": "node scripts/generate-utils-reference.js"
   },
   "author": "https://github.com/nhsuk/",

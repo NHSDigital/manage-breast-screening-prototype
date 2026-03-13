@@ -102,6 +102,7 @@ const blocklist = [/^app-/, /\.app-dark-mode/, /^js-/, /:has\(/]
 
 const cssRuleRemovalPatterns = [
   /:root\s*{[^{}]*}/g,
+  /@font-face\s*{[^{}]*}/g,
   /[^{}]*:has\([^{}]*\)\s*{[^{}]*}/g,
   /[^{}]*app-dark-mode[^{}]*\s*{[^{}]*}/g,
   /[^{}]*--reverse[^{}]*\s*{[^{}]*}/g,
@@ -154,65 +155,27 @@ const getStylesheetUrls = (renderedHtml, sourceUrl) => {
     .filter((url) => url.endsWith('.css'))
 }
 
-const extractBlock = (html, pattern, name) => {
-  const match = html.match(pattern)
+const buildHtmlTemplateFromRenderedPage = (renderedHtml) => {
+  const hasHead = /<head[\s\S]*?>[\s\S]*?<\/head>/i.test(renderedHtml)
 
-  if (!match) {
-    throw new Error(`Could not find ${name} in rendered source HTML`)
+  if (!hasHead) {
+    throw new Error('Could not find <head> in rendered source HTML')
   }
 
-  return match[0]
-}
+  // Keep the rendered page structure, but remove runtime assets.
+  let templateHtml = renderedHtml
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<link\b[^>]*>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
 
-const buildStaticHtmlFromRenderedPage = (renderedHtml) => {
-  const titleMatch = renderedHtml.match(/<title>[\s\S]*?<\/title>/i)
-
-  if (!titleMatch) {
-    throw new Error('Could not find page title in rendered source HTML')
+  if (!templateHtml.includes('/* INLINE_STYLES */')) {
+    templateHtml = templateHtml.replace(
+      /<\/head>/i,
+      '  <style>\n/* INLINE_STYLES */\n  </style>\n</head>'
+    )
   }
 
-  const skipLink = extractBlock(
-    renderedHtml,
-    /<a class="nhsuk-skip-link"[\s\S]*?<\/a>/i,
-    'skip link'
-  )
-  const header = extractBlock(
-    renderedHtml,
-    /<header class="nhsuk-header"[\s\S]*?<\/header>/i,
-    'header'
-  )
-  const mainContainer = extractBlock(
-    renderedHtml,
-    /<div class="nhsuk-width-container">[\s\S]*?<\/main>[\s\S]*?<\/div>/i,
-    'main content container'
-  )
-  const footer = extractBlock(
-    renderedHtml,
-    /<footer class="nhsuk-footer"[\s\S]*?<\/footer>/i,
-    'footer'
-  )
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  ${titleMatch[0]}
-  <style>
-/* INLINE_STYLES */
-  </style>
-</head>
-<body>
-  ${skipLink}
-
-  ${header}
-
-  ${mainContainer}
-
-  ${footer}
-</body>
-</html>
-`
+  return templateHtml
 }
 
 const stripMediaPrintBlocks = (css) => {
@@ -337,7 +300,7 @@ const run = async () => {
 
   const renderedHtml = await fetchRenderedSourceHtml(cliOptions.sourceUrl)
   const stylesheetUrls = getStylesheetUrls(renderedHtml, cliOptions.sourceUrl)
-  const html = buildStaticHtmlFromRenderedPage(renderedHtml)
+  const html = buildHtmlTemplateFromRenderedPage(renderedHtml)
   const css = await getPurgedCss(html, stylesheetUrls)
 
   if (!css) {
