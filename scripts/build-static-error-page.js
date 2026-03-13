@@ -102,7 +102,6 @@ const blocklist = [/^app-/, /\.app-dark-mode/, /^js-/, /:has\(/]
 
 const cssRuleRemovalPatterns = [
   /:root\s*{[^{}]*}/g,
-  /@font-face\s*{[^{}]*}/g,
   /[^{}]*:has\([^{}]*\)\s*{[^{}]*}/g,
   /[^{}]*app-dark-mode[^{}]*\s*{[^{}]*}/g,
   /[^{}]*--reverse[^{}]*\s*{[^{}]*}/g,
