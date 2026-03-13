@@ -253,8 +253,7 @@ const seededFaker = function (name, seed) {
   return localFaker
 }
 
-// Reset the call sequence for each new page render
-// This should be called once per page load - eg by middleware in routes file
+/** Reset the per-render call sequence counter — call once per page load (via middleware) */
 const resetCallSequence = () => {
   callSequence = {}
 }

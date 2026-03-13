@@ -236,6 +236,63 @@
   color: $nhsuk-text-colour;
 }
 
+.app-reading-statistics-card > .nhsuk-card {
+  background-color: nhsuk-colour("blue");
+  border: 0;
+  color: nhsuk-colour("white");
+}
+
+.app-reading-statistics-card .nhsuk-card__heading,
+.app-reading-statistics-card p,
+.app-reading-statistics-card a,
+.app-reading-statistics-card a:visited,
+.app-reading-statistics-card a:hover,
+.app-reading-statistics-card a:focus {
+  color: nhsuk-colour("white");
+}
+
+.app-reading-statistics-cards {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.app-reading-statistics-card {
+  display: flex;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.app-reading-statistics-card > .nhsuk-card {
+  width: 100%;
+  max-width: 320px;
+  height: 185px;
+  margin-right: 0;
+  margin-bottom: nhsuk-spacing(2);
+  display: flex;
+}
+
+.app-reading-statistics-card > .nhsuk-card .nhsuk-card__content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.app-reading-statistics-value {
+  font-size: 2.25rem;
+  line-height: 1.1;
+}
+
+.app-reading-statistics-meta {
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.app-reading-statistics-meta--placeholder {
+  visibility: hidden;
+}
+
 // Reading workflow: styling for locked state
 // When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
 .js-enabled {

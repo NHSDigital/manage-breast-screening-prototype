@@ -4,14 +4,16 @@
   "description": "Rapidly create HTML prototypes of NHS websites and services.",
   "main": "app.js",
   "scripts": {
-    "start": "node ."
+    "start": "node .",
+    "build:static-error-page": "node scripts/build-static-error-page.js",
+    "docs": "node scripts/generate-utils-reference.js"
   },
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
     "cookie-parser": "^1.4.7",
-    "dayjs": "^1.11.19",
+    "dayjs": "^1.11.20",
     "lodash": "^4.17.23",
     "markdown-it": "^14.1.1",
     "nhsuk-frontend": "^10.3.1",
@@ -22,5 +24,11 @@
   "engines": {
     "node": "^22.16.0 || ^24.11.0",
     "npm": "^11.6.1"
+  },
+  "devDependencies": {
+    "cssnano": "^7.1.1",
+    "prettier": "^3.6.2",
+    "postcss": "^8.5.6",
+    "purgecss": "^7.0.2"
   }
 }

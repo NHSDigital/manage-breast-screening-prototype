@@ -684,7 +684,10 @@ const sortEventsByScreeningDate = (events) => {
 //***********************************************************************
 
 /**
- * Get first clinic available for reading
+ * Get the first clinic that still has events needing reads
+ *
+ * @param {object} data - Session data
+ * @returns {object | null} First clinic with remaining reads, or null
  */
 const getFirstAvailableClinic = (data) => {
   const clinics = getReadingClinics(data)
@@ -692,8 +695,11 @@ const getFirstAvailableClinic = (data) => {
 }
 
 /**
- * Get all recent clinics that are available for reading
- * Includes completed screening events and reading progress
+ * Get all clinics available for reading, enriched with unit, location, and reading status
+ *
+ * @param {object} data - Session data
+ * @param {object} [options] - Options (currently unused, reserved for future filters)
+ * @returns {Array} Clinics with added `unit`, `location`, and `readingStatus` properties
  */
 const getReadingClinics = (data, options = {}) => {
   const {} = options
@@ -936,7 +942,13 @@ const getPreviousEvent = (events, currentEventId, wrap = true) => {
 / User functions
 /***********************************************************************/
 
-// Get read for a specific user
+/**
+ * Get the read object for a specific user on an event
+ *
+ * @param {object} event - The event to check
+ * @param {string | null} [userId] - User ID (falls back to current user from context)
+ * @returns {object | null} The read object, or null if not found
+ */
 const getReadForUser = function (event, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
@@ -962,8 +974,14 @@ const getFirstUserReadableEvent = function (events, userId = null) {
   return readableEvents.length > 0 ? readableEvents[0] : null
 }
 
-// Get the next event the user can read after a given event, wrapping to the
-// start of the list if nothing follows. Returns null if nothing is readable.
+/**
+ * Get the next event the user can read after the current event, wrapping to start if needed
+ *
+ * @param {Array} events - Array of all events
+ * @param {string} currentEventId - ID of the current event
+ * @param {string | null} [userId] - User ID (falls back to current user from context)
+ * @returns {object | null} Next readable event, or null if none
+ */
 const getNextUserReadableEvent = function (events, currentEventId, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
   const currentIndex = events.findIndex((e) => e.id === currentEventId)

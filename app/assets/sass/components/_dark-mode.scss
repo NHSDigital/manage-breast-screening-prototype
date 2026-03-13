@@ -298,6 +298,60 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   .nhsuk-error-summary__title {
     color: $app-dark-mode-text-colour;
   }
+
+  .nhsuk-tabs__title {
+    color: $app-dark-mode-text-colour;
+  }
+
+  .nhsuk-tabs__list {
+    border-color: $app-dark-mode-border;
+  }
+
+  .nhsuk-tabs__list-item {
+    background-color: nhsuk-tint($app-dark-mode-surface, 10%);
+    border-color: $app-dark-mode-border;
+  }
+
+  .nhsuk-tabs__list-item--selected {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-border;
+    border-bottom-color: $app-dark-mode-surface;
+  }
+
+  .nhsuk-tabs__list-item--selected .nhsuk-tabs__tab,
+  .nhsuk-tabs__list-item--selected .nhsuk-tabs__tab:visited {
+    color: $app-dark-mode-text-colour;
+    text-decoration: none;
+  }
+
+  .nhsuk-tabs__tab,
+  .nhsuk-tabs__tab:visited {
+    color: $app-dark-mode-link-colour;
+  }
+
+  .nhsuk-tabs__tab:hover,
+  .nhsuk-tabs__tab:visited:hover,
+  .nhsuk-tabs__tab:active {
+    color: $app-dark-mode-link-hover-colour !important;
+  }
+
+  .nhsuk-tabs__tab:focus {
+    @include app-dark-mode-focused-text;
+    color: $nhsuk-focus-text-colour !important;
+  }
+
+  .nhsuk-tabs__tab:visited:focus,
+  .nhsuk-tabs__tab:hover:focus,
+  .nhsuk-tabs__tab:active:focus {
+    color: $nhsuk-focus-text-colour !important;
+  }
+
+  .nhsuk-tabs__panel {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-border;
+    color: $app-dark-mode-text-colour;
+  }
+
   // Component overrides
   .nhsuk-card {
     background: $app-dark-mode-surface;

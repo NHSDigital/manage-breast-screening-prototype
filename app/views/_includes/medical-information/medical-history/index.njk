@@ -1,7 +1,7 @@
 {# app/views/_includes/medical-information/medical-history/index.njk #}
 
 {# Need to manually inmport these as this is an include #}
-{% from '_components/summary-list/macro.njk' import appSummaryList as summaryList %}
+{% from '_components/summary-list/macro.njk' import appSummaryList %}
 {% from '_components/summary-list/macro.njk' import appSummaryListRow as summaryListRow %}
 
 {# ============================================================ #}
@@ -498,7 +498,7 @@
       {# ============================================================ #}
 
       {% set historyItemContents %}
-        {% call summaryList() %}
+        {% call appSummaryList() %}
 
           {# Breast cancer #}
           {% if typeData.type == 'breastCancer' %}

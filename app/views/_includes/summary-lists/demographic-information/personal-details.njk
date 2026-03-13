@@ -1,4 +1,4 @@
-{% call summaryList(
+{% call appSummaryList(
 ) %}
   {% include "_includes/summary-lists/rows/nhs-number.njk" %}
   {% include "_includes/summary-lists/rows/full-name.njk" %}
@@ -8,5 +8,6 @@
     {% set noBorder = true %}
   {% endif %}
   {% include "_includes/summary-lists/rows/ethnicity.njk" %}
-  {% include "_includes/summary-lists/rows/gp.njk" %}
+  {# GP disabled until we're confident we need it #}
+  {# {% include "_includes/summary-lists/rows/gp.njk" %} #}
 {% endcall %}
