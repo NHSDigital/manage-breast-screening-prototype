@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "build:static-error-page": "node scripts/build-static-error-page.js",
     "docs": "node scripts/generate-utils-reference.js"
   },
   "author": "https://github.com/nhsuk/",
@@ -23,5 +24,11 @@
   "engines": {
     "node": "^22.16.0 || ^24.11.0",
     "npm": "^11.6.1"
+  },
+  "devDependencies": {
+    "cssnano": "^7.1.1",
+    "prettier": "^3.6.2",
+    "postcss": "^8.5.6",
+    "purgecss": "^7.0.2"
   }
 }
