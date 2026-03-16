@@ -2,7 +2,7 @@
 
 {% set imageCount = event.mammogramData.metadata.totalImages %}
 
-{% set pageHeading = "Review image details" %}
+{% set pageHeading = "Image transfer in progress" %}
 
 {% set mammogramSource = event.mammogramData %}
 {% set namePrefix = "event[mammogramData]" %}
@@ -40,12 +40,18 @@
     html: insetTextHtml
   }) }}
 
-  
-
   {# Convert object to an array of views and get machine room #}
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}
   {% set machineRoom = event.mammogramData.machineRoom %}
-  
+
+  {# Show notice if any view has multiple images - repeats will be captured on the next page #}
+  {% set hasMultipleImages = false %}
+  {% for view in mammogramViews %}
+    {% if (view.images | length) > 1 %}
+      {% set hasMultipleImages = true %}
+    {% endif %}
+  {% endfor %}
+
   {# HACK: Remove RCC view to test missing placeholder #}
   {# {% set filteredViews = [] %}
   {% for viewItem in mammogramViews %}
@@ -100,6 +106,7 @@
       {% set rightViewsHtml %}
         {% for viewItem in rightViews %}
           {% set isManualEntry = false %}
+          {% set hideAdditionalDetails = true %}
           {% include "_includes/mammogram-image-display.njk" %}
         {% endfor %}
       {% endset %}
@@ -117,6 +124,7 @@
       {% set leftViewsHtml %}
         {% for viewItem in leftViews %}
           {% set isManualEntry = false %}
+          {% set hideAdditionalDetails = true %}
           {% include "_includes/mammogram-image-display.njk" %}
         {% endfor %}
       {% endset %}
@@ -132,48 +140,18 @@
 
   <p><a href="#">View imported image metadata</a></p>
 
-    {% include "_includes/images/image-troubleshooting.njk" %}
-
-
-
-  {# Build array of views needing repeat questions (count > 1) #}
-  {% set viewsNeedingRepeats = [] %}
-  {% for view in mammogramViews %}
-    {% if (view.images | length) > 1 %}
-      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({
-        side: view.side | capitalize,
-        view: view.viewShort,
-        code: view.viewShortWithSide,
-        count: view.images | length
-      }) %}
-    {% endif %}
-  {% endfor %}
-
-  {# Show repeat questions if any views have multiple images #}
-  {% if viewsNeedingRepeats | length > 0 %}
-    <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
-
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
-        <h2>Additional images</h2>
-        {# <p>Some views have multiple images. Please provide information about why additional images were taken.</p> #}
-
-        {% for viewItem in viewsNeedingRepeats %}
-          {% set namePrefix = "event[mammogramData]" %}
-          {% set dataSource = event.mammogramData %}
-          {% set radioQuestionSize = "s" %}
-          {% include "_includes/images-repeat-question.njk" %}
-        {% endfor %}
-      </div>
-    </div>
-  {% endif %}
-
-  
-
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible nhsuk-u-margin-top-0">
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
+
+      {% if hasMultipleImages %}
+        {% set repeatsInsetHtml %}
+          <p>Repeat or extra image details captured on the next screen</p>
+        {% endset %}
+        {{ insetText({ html: repeatsInsetHtml }) }}
+      {% endif %}
+  
 
       <h2>Additional details</h2>
 
@@ -182,13 +160,13 @@
       {% include "_includes/additional-image-details.njk" %}
 
       {{ button({
-        text: "Confirm images"
+        text: "Confirm all images received"
       }) }}
 
     </div>
   </div>
 
-
+  {% include "_includes/images/image-troubleshooting.njk" %}
 
 {% endblock %}
 

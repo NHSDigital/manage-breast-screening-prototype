@@ -52,7 +52,7 @@
       </div>
 
       {# Show additional image details if there are repeats or multiple images #}
-      {% if viewItem.repeatCount > 0 or (viewItem.images | length) > 1 %}
+      {% if not hideAdditionalDetails and (viewItem.repeatCount > 0 or (viewItem.images | length) > 1) %}
         {% set additionalCount = (viewItem.images | length) - 1 %}
         {% set repeatCount = viewItem.repeatCount or 0 %}
         {% set extraCount = additionalCount - repeatCount %}

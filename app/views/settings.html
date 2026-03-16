@@ -62,7 +62,14 @@
 
     {# Manual image collection #}
     <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]={{'true' if data.settings.screening.manualImageCollection !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.screening.manualImageCollection=='false' else 'Disable'}} manual image collection</a>
+      Image collection method:
+      {% if data.settings.screening.manualImageCollection == 'true' %}
+        <strong>Manual</strong> |
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]=false&clearQuery=true">Automatic</a>
+      {% else %}
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]=true&clearQuery=true">Manual</a> |
+        <strong>Automatic</strong>
+      {% endif %}
     </p>
 
     {# Use condensed review summaries #}

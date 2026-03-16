@@ -1942,97 +1942,26 @@ module.exports = (router) => {
         }
       }
 
-      // Process repeat data from form submission for automatic flow
-      // The form fields are named like "event[mammogramData][repeatNeeded-RCC]"
-      // and are already in data.event.mammogramData
+      // If any view has multiple images, ask about repeats on a separate page
       const mammogramData = data.event.mammogramData
-      if (mammogramData.views) {
-        for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
-          const code = viewData.viewShortWithSide
-          const imageCount = viewData.images ? viewData.images.length : 0
-
-          if (imageCount > 1) {
-            const repeatNeeded = mammogramData[`repeatNeeded-${code}`]
-            const extraImageCount = imageCount - 1
-            let repeatCount = 0
-            let repeatReasons = null
-
-            if (repeatNeeded === 'yes') {
-              // Single extra image answered "yes"
-              repeatCount = 1
-              const reasons = mammogramData[`repeatReasons-${code}`]
-              if (reasons && reasons.length > 0) {
-                repeatReasons = reasons
-              }
-            } else if (repeatNeeded === 'all-repeats') {
-              // All extra images were repeats
-              repeatCount = extraImageCount
-              const reasons = mammogramData[`repeatReasons-${code}`]
-              if (reasons && reasons.length > 0) {
-                repeatReasons = reasons
-              }
-            } else if (repeatNeeded === 'some-repeats') {
-              // Some were repeats, some were additional
-              repeatCount = parseInt(mammogramData[`repeatCount-${code}`]) || 0
-              const reasons = mammogramData[`repeatReasons-${code}`]
-              if (reasons && reasons.length > 0) {
-                repeatReasons = reasons
-              }
-            }
-
-            // Update view with repeat information
-            viewData.repeatCount = repeatCount
-            viewData.repeatReasons = repeatReasons
-          }
-        }
-
-        // Recalculate metadata booleans after processing repeat data
-        // hasAdditionalImages: true if any view has count > 1
-        const hasAdditionalImages = Object.values(mammogramData.views).some(
-          (view) => (view.images ? view.images.length : view.count) > 1
+      const hasMultipleImages =
+        mammogramData.views &&
+        Object.values(mammogramData.views).some(
+          (view) => view.images && view.images.length > 1
         )
 
-        // hasRepeat: true if any view has repeatCount > 0 (technical issue)
-        const hasRepeat = Object.values(mammogramData.views).some(
-          (view) => view.repeatCount > 0
+      if (hasMultipleImages) {
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/images-repeats`
         )
-
-        // hasExtraImages: true if additional images exist that are NOT repeats (large breasts)
-        const hasExtraImages = Object.values(mammogramData.views).some(
-          (view) => {
-            const imageCount = view.images ? view.images.length : view.count
-            const additionalCount = imageCount - 1
-            const extraCount = additionalCount - (view.repeatCount || 0)
-            return extraCount > 0
-          }
-        )
-
-        // Update metadata
-        if (!mammogramData.metadata) {
-          mammogramData.metadata = {}
-        }
-        mammogramData.metadata.hasAdditionalImages = hasAdditionalImages
-        mammogramData.metadata.hasRepeat = hasRepeat
-        mammogramData.metadata.hasExtraImages = hasExtraImages
       }
 
-      const isIncompleteMammography =
-        data.event.mammogramData.isIncompleteMammography
-
-      // Check if array includes 'yes' (checkbox format) or equals 'yes' (string format from manual entry)
-      const hasIncompleteMammography = Array.isArray(isIncompleteMammography)
-        ? isIncompleteMammography.includes('yes')
-        : isIncompleteMammography === 'yes'
-
-      // Initialize workflowStatus if it doesn't exist
+      // No additional images - mark workflow step as completed
       if (!data.event.workflowStatus) {
         data.event.workflowStatus = {}
       }
-
-      // Mark the workflow step as completed regardless of incomplete mammography status
       data.event.workflowStatus['take-images'] = 'completed'
 
-      // Redirect to check information page
       res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
@@ -2045,7 +1974,7 @@ module.exports = (router) => {
     const data = req.session.data
 
     const isManualImageCollection =
-      data.settings?.screening?.manualImageCollection
+      data.settings?.screening?.manualImageCollection === 'true'
     const imagesStageCompleted =
       data.event?.workflowStatus?.['take-images'] === 'completed'
 
@@ -2136,9 +2065,9 @@ module.exports = (router) => {
     }
   )
 
-  // Direct link to repeats page - also prepopulates if editing
+  // Direct link to repeats page - prepopulates temp data for manual editing
   router.get(
-    '/clinics/:clinicId/events/:eventId/images-manual-repeats',
+    '/clinics/:clinicId/events/:eventId/images-repeats',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
@@ -2157,7 +2086,7 @@ module.exports = (router) => {
       }
 
       // Let the dynamic routing handle the actual rendering
-      res.render('events/images-manual-repeats')
+      res.render('events/images-repeats')
     }
   )
 
@@ -2584,7 +2513,7 @@ module.exports = (router) => {
       if (needsRepeats) {
         // Keep temp data for repeats page
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/images-manual-repeats`
+          `/clinics/${clinicId}/events/${eventId}/images-repeats`
         )
       }
 
@@ -2605,15 +2534,14 @@ module.exports = (router) => {
     }
   )
 
-  // Handle repeat reasons form
+  // Handle repeat reasons form - used by both manual and automatic flows
   router.post(
-    '/clinics/:clinicId/events/:eventId/images-manual-repeats-answer',
+    '/clinics/:clinicId/events/:eventId/images-repeats-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
+      const isManualEntry = data.event?.mammogramData?.isManualEntry
 
-      // Clean up and normalize repeat reasons based on which option was selected
-      const formData = data.event?.mammogramDataTemp || {}
       const viewCodes = [
         'RCC',
         'RMLO',
@@ -2625,42 +2553,129 @@ module.exports = (router) => {
         'LMLOID'
       ]
 
-      viewCodes.forEach((code) => {
-        const repeatNeeded = formData[`repeatNeeded-${code}`]
+      if (isManualEntry) {
+        // Manual flow - normalize temp data and convert to final format
+        const formData = data.event?.mammogramDataTemp || {}
 
-        // Pick the correct set of repeatReasons based on which radio option was selected
-        if (repeatNeeded === 'yes' || repeatNeeded === 'all-repeats') {
-          // Use the 'all' checkbox values if they exist
-          if (formData[`repeatReasonsAll-${code}`]) {
-            formData[`repeatReasons-${code}`] =
-              formData[`repeatReasonsAll-${code}`]
+        viewCodes.forEach((code) => {
+          const repeatNeeded = formData[`repeatNeeded-${code}`]
+
+          // Pick the correct set of repeatReasons based on which radio option was selected
+          if (repeatNeeded === 'yes' || repeatNeeded === 'all-repeats') {
+            if (formData[`repeatReasonsAll-${code}`]) {
+              formData[`repeatReasons-${code}`] =
+                formData[`repeatReasonsAll-${code}`]
+            }
+            delete formData[`repeatReasonsAll-${code}`]
+            delete formData[`repeatReasonsSome-${code}`]
+          } else if (repeatNeeded === 'some-repeats') {
+            if (formData[`repeatReasonsSome-${code}`]) {
+              formData[`repeatReasons-${code}`] =
+                formData[`repeatReasonsSome-${code}`]
+            }
+            delete formData[`repeatReasonsAll-${code}`]
+            delete formData[`repeatReasonsSome-${code}`]
+          } else if (repeatNeeded === 'no') {
+            delete formData[`repeatReasons-${code}`]
+            delete formData[`repeatReasonsAll-${code}`]
+            delete formData[`repeatReasonsSome-${code}`]
+            delete formData[`repeatCount-${code}`]
           }
-          // Clean up temporary fields
-          delete formData[`repeatReasonsAll-${code}`]
-          delete formData[`repeatReasonsSome-${code}`]
-        } else if (repeatNeeded === 'some-repeats') {
-          // Use the 'some' checkbox values if they exist
-          if (formData[`repeatReasonsSome-${code}`]) {
-            formData[`repeatReasons-${code}`] =
-              formData[`repeatReasonsSome-${code}`]
+        })
+
+        // Convert form data (including repeat information) to final format and save
+        data.event.mammogramData = convertManualDataToMammogramFormat(formData)
+
+        // Clear temp data
+        delete data.event.mammogramDataTemp
+      } else {
+        // Automatic flow - normalize and process repeat data directly in mammogramData
+        const mammogramData = data.event.mammogramData
+
+        // Normalize repeatReasons fields (same logic as manual flow)
+        viewCodes.forEach((code) => {
+          const repeatNeeded = mammogramData[`repeatNeeded-${code}`]
+
+          if (repeatNeeded === 'yes' || repeatNeeded === 'all-repeats') {
+            if (mammogramData[`repeatReasonsAll-${code}`]) {
+              mammogramData[`repeatReasons-${code}`] =
+                mammogramData[`repeatReasonsAll-${code}`]
+            }
+            delete mammogramData[`repeatReasonsAll-${code}`]
+            delete mammogramData[`repeatReasonsSome-${code}`]
+          } else if (repeatNeeded === 'some-repeats') {
+            if (mammogramData[`repeatReasonsSome-${code}`]) {
+              mammogramData[`repeatReasons-${code}`] =
+                mammogramData[`repeatReasonsSome-${code}`]
+            }
+            delete mammogramData[`repeatReasonsAll-${code}`]
+            delete mammogramData[`repeatReasonsSome-${code}`]
+          } else if (repeatNeeded === 'no') {
+            delete mammogramData[`repeatReasons-${code}`]
+            delete mammogramData[`repeatReasonsAll-${code}`]
+            delete mammogramData[`repeatReasonsSome-${code}`]
+            delete mammogramData[`repeatCount-${code}`]
           }
-          // Clean up temporary fields
-          delete formData[`repeatReasonsAll-${code}`]
-          delete formData[`repeatReasonsSome-${code}`]
-        } else if (repeatNeeded === 'no') {
-          // Clear all repeat-related data
-          delete formData[`repeatReasons-${code}`]
-          delete formData[`repeatReasonsAll-${code}`]
-          delete formData[`repeatReasonsSome-${code}`]
-          delete formData[`repeatCount-${code}`]
+        })
+
+        // Process repeat data into view objects and recalculate metadata
+        if (mammogramData.views) {
+          for (const [viewKey, viewData] of Object.entries(
+            mammogramData.views
+          )) {
+            const code = viewData.viewShortWithSide
+            const imageCount = viewData.images ? viewData.images.length : 0
+
+            if (imageCount > 1) {
+              const repeatNeeded = mammogramData[`repeatNeeded-${code}`]
+              const extraImageCount = imageCount - 1
+              let repeatCount = 0
+              let repeatReasons = null
+
+              if (repeatNeeded === 'yes') {
+                repeatCount = 1
+                const reasons = mammogramData[`repeatReasons-${code}`]
+                if (reasons && reasons.length > 0) repeatReasons = reasons
+              } else if (repeatNeeded === 'all-repeats') {
+                repeatCount = extraImageCount
+                const reasons = mammogramData[`repeatReasons-${code}`]
+                if (reasons && reasons.length > 0) repeatReasons = reasons
+              } else if (repeatNeeded === 'some-repeats') {
+                repeatCount =
+                  parseInt(mammogramData[`repeatCount-${code}`]) || 0
+                const reasons = mammogramData[`repeatReasons-${code}`]
+                if (reasons && reasons.length > 0) repeatReasons = reasons
+              }
+
+              viewData.repeatCount = repeatCount
+              viewData.repeatReasons = repeatReasons
+            }
+          }
+
+          // Recalculate metadata booleans after processing repeat data
+          const hasAdditionalImages = Object.values(mammogramData.views).some(
+            (view) => (view.images ? view.images.length : view.count) > 1
+          )
+          const hasRepeat = Object.values(mammogramData.views).some(
+            (view) => view.repeatCount > 0
+          )
+          const hasExtraImages = Object.values(mammogramData.views).some(
+            (view) => {
+              const imageCount = view.images ? view.images.length : view.count
+              const additionalCount = imageCount - 1
+              const extraCount = additionalCount - (view.repeatCount || 0)
+              return extraCount > 0
+            }
+          )
+
+          if (!mammogramData.metadata) {
+            mammogramData.metadata = {}
+          }
+          mammogramData.metadata.hasAdditionalImages = hasAdditionalImages
+          mammogramData.metadata.hasRepeat = hasRepeat
+          mammogramData.metadata.hasExtraImages = hasExtraImages
         }
-      })
-
-      // Convert form data (including repeat information) to final format and save
-      data.event.mammogramData = convertManualDataToMammogramFormat(formData)
-
-      // Clear temp data
-      delete data.event.mammogramDataTemp
+      }
 
       // Mark workflow as complete
       if (!data.event.workflowStatus) {

@@ -361,8 +361,8 @@
 
 
 
-{# OLD Repeats and additional images (separate row) - keeping for reference #}
-{# {% if hasRepeatsOrExtras %}
+{# Repeats and additional images #}
+{% if hasRepeatsOrExtras %}
   {% set summaryRows = summaryRows | push({
     key: {
       text: "Additional images"
@@ -373,14 +373,14 @@
     actions: {
       items: [
         {
-          href: ("./images-manual-repeats" if isManualEntry else defaultHref) | urlWithReferrer(referrerChain, scrollTo),
+          href: "./images-repeats" | urlWithReferrer(referrerChain, scrollTo),
           text: "Change",
           visuallyHiddenText: "additional images"
         }
       ]
-    }
+    } if allowEdits
   }) %}
-{% endif %} #}
+{% endif %}
 
 {# Notes for reader #}
 {# {% if event.mammogramData.notesForReader %} #}
