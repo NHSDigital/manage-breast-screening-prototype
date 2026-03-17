@@ -45,6 +45,21 @@
   align-items: flex-start;
 }
 
+.app-mammogram-thumbnail__image-wrapper--large {
+  width: 200px;
+  height: 250px;
+
+  .app-mammogram-thumbnail__label {
+    font-size: 18px;
+    padding: 3px 10px;
+  }
+}
+
+// Headings (view labels) align towards centre: right breast right-aligns
+.app-mammogram-view--right h3 {
+  text-align: right;
+}
+
 // Right breast images align right (inwards), left breast align left (inwards)
 .app-mammogram-thumbnail--right .app-mammogram-thumbnail__image-wrapper {
   justify-content: flex-end;
@@ -99,7 +114,7 @@
 }
 
 .app-mammogram-thumbnail__missing-text {
-  font-size: 12px;
+  font-size: 16px;
   color: nhsuk-colour("grey-2");
 }
 

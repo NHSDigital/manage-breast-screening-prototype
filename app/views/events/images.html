@@ -17,78 +17,8 @@
 
   {# Only show image thumbnails for automatic entry #}
   {% if not isManualEntry %}
-    {# Define standard views that should always be shown #}
-    {% set standardViews = [
-      { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
-      { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
-      { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' },
-      { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' }
-    ] %}
-
-    {# Build complete view lists with placeholders for missing views #}
-    {% set rightViews = [] %}
-    {% set leftViews = [] %}
-    {% for standardView in standardViews %}
-      {# Find if this view exists in the data #}
-      {% set viewData = null %}
-      {% for viewItem in mammogramViews %}
-        {% if viewItem.viewShortWithSide == standardView.viewShortWithSide %}
-          {% set viewData = viewItem %}
-        {% endif %}
-      {% endfor %}
-      
-      {% if not viewData %}
-        {# Create placeholder for missing view #}
-        {% set viewData = {
-          side: standardView.side,
-          viewShort: standardView.viewShort,
-          viewShortWithSide: standardView.viewShortWithSide,
-          images: [],
-          isMissing: true
-        } %}
-      {% endif %}
-      
-      {% if standardView.side == 'right' %}
-        {% set rightViews = rightViews | push(viewData) %}
-      {% else %}
-        {% set leftViews = leftViews | push(viewData) %}
-      {% endif %}
-    {% endfor %}
-
-    {# Display in two columns: right breast on left, left breast on right #}
-    <div class="nhsuk-grid-row">
-      {# Right views on the left #}
-      <div class="nhsuk-grid-column-one-half">
-        {% set rightViewsHtml %}
-          {% for viewItem in rightViews %}
-            {% include "_includes/mammogram-image-display.njk" %}
-          {% endfor %}
-        {% endset %}
-
-        {{ card({
-          heading: "Right breast",
-          headingLevel: "2",
-          feature: true,
-          descriptionHtml: rightViewsHtml
-        }) }}
-      </div>
-
-      {# Left views on the right #}
-      <div class="nhsuk-grid-column-one-half">
-        {% set leftViewsHtml %}
-          {% for viewItem in leftViews %}
-            {% include "_includes/mammogram-image-display.njk" %}
-          {% endfor %}
-        {% endset %}
-
-        {{ card({
-          heading: "Left breast",
-          headingLevel: "2",
-          feature: true,
-          descriptionHtml: leftViewsHtml
-        }) }}
-      </div>
-    </div>
+    {% set thumbnailSize = "large" %}
+    {% include "_includes/mammogram-image-cards.njk" %}
   {% endif %}
 
   {# Summary of mammogram data #}
