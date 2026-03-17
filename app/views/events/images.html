@@ -13,6 +13,7 @@
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}
   {% set machineRoom = event.mammogramData.machineRoom %}
   {% set isManualEntry = event.mammogramData.isManualEntry %}
+  {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
 
   {# Only show image thumbnails for automatic entry #}
   {% if not isManualEntry %}

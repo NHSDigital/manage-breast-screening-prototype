@@ -45,7 +45,9 @@
       <div class="">
         {% for image in viewItem.images %}
           <div class="app-mammogram-image--placeholder nhsuk-u-margin-right-3" style="float:left">
-            <img class="nhsuk-image__img" src="/assets/images/mammogram-diagrams/{{ viewItem.viewShortWithSide | lower }}.png" alt="">
+            {% set viewKey = viewItem.viewShortWithSide | lower %}
+            {% set imageSrc = mammogramImages.paths[viewKey] if (mammogramImages and mammogramImages.paths and mammogramImages.paths[viewKey]) else "/assets/images/mammogram-diagrams/set-01/" + viewKey + ".png" %}
+            <img class="nhsuk-image__img" src="{{ imageSrc }}" alt="">
           </div>
         {% endfor %}
         <div style="clear:both"></div>

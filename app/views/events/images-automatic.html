@@ -19,6 +19,8 @@
 
 {% set activeTab = 'images' %}
 
+{% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+
 {% block pageContent %}
 
   <h1>{{ pageHeading }}</h1>

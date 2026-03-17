@@ -25,6 +25,7 @@ const {
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
 const { sentenceCase } = require('../lib/utils/strings')
+const { getImageSetForEvent } = require('../lib/utils/mammogram-images')
 // Load symptom types data
 const symptomTypes = require('../data/symptom-types')
 
@@ -1950,6 +1951,14 @@ module.exports = (router) => {
           (view) => view.images && view.images.length > 1
         )
 
+      // Select and store image set based on event context now available (including isImperfect)
+      if (!data.event.mammogramData.selectedSetId) {
+        const selectedSet = getImageSetForEvent(eventId, 'diagrams', { event: data.event })
+        if (selectedSet) {
+          data.event.mammogramData.selectedSetId = selectedSet.id
+        }
+      }
+
       if (hasMultipleImages) {
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/images-repeats`
@@ -2675,6 +2684,12 @@ module.exports = (router) => {
           mammogramData.metadata.hasRepeat = hasRepeat
           mammogramData.metadata.hasExtraImages = hasExtraImages
         }
+      }
+
+      // Now repeat metadata is final, select and store the image set
+      const selectedSet = getImageSetForEvent(eventId, 'diagrams', { event: data.event })
+      if (selectedSet) {
+        data.event.mammogramData.selectedSetId = selectedSet.id
       }
 
       // Mark workflow as complete
