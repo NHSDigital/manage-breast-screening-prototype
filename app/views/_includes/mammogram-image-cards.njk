@@ -56,9 +56,10 @@
   {% endif %}
 {% endfor %}
 
-{# Display in two columns: right breast on left, left breast on right #}
-<div class="nhsuk-grid-row">
-  <div class="nhsuk-grid-column-one-half">
+{# Display side by side: right breast on left, left breast on right #}
+{# Using flex rather than the NHS grid so cards shrink to fit their content #}
+<div class="app-mammogram-cards">
+  <div class="app-mammogram-card">
     {% set rightViewsHtml %}
       {% for viewItem in rightViews %}
         {% include "_includes/mammogram-image-display.njk" %}
@@ -72,7 +73,7 @@
     }) }}
   </div>
 
-  <div class="nhsuk-grid-column-one-half">
+  <div class="app-mammogram-card">
     {% set leftViewsHtml %}
       {% for viewItem in leftViews %}
         {% include "_includes/mammogram-image-display.njk" %}

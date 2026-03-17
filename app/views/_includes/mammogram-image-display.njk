@@ -48,9 +48,9 @@
       {# Present view with images #}
       {% set imageCount = 1 if allPaths is string else allPaths | length %}
 
-      <h3 class="nhsuk-u-margin-bottom-2">
+      {# <h3 class="nhsuk-u-margin-bottom-2">
         {{ imageCount }}× {{ viewItem.viewShortWithSide }}
-      </h3>
+      </h3> #}
 
       <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}">
         {% if allPaths is string %}
