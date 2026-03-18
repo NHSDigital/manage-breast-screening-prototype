@@ -247,6 +247,35 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
         probabilityOfSymptoms: 1
       }
     }
+  },
+  {
+    key: 'imageIssues',
+    label: 'Image issues',
+    description:
+      'High rates of extra images, technical repeats, incomplete and imperfect mammograms',
+    settings: {
+      mammogram: {
+        scenarioWeights: {
+          standard: 0.1,
+          extraImages: 0.25,
+          technicalRepeat: 0.25,
+          incomplete: 0.25,
+          incompleteImperfect: 0.15
+        },
+        imperfectChanceForTechnicalOrIncomplete: 0.6,
+        notesForReaderChanceWithoutImperfect: 0.2
+      },
+      imageSetSelection: {
+        contextualTagWeights: {
+          default: {
+            normal: 0.3,
+            abnormal: 0.2,
+            indeterminate: 0.1,
+            technical: 0.4
+          }
+        }
+      }
+    }
   }
 ]
 

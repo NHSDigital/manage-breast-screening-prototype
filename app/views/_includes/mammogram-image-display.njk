@@ -1,13 +1,15 @@
 {# app/views/_includes/mammogram-image-display.njk #}
-{# 
+{#
   Display a single mammogram view with count/images
-  
+
   Parameters:
-  - viewItem: object with { side, view, viewShort, viewShortWithSide, count, images, etc }
-  - isManualEntry: boolean - true shows count only, false shows image details
+  - viewItem: object with { side, viewShort, viewShortWithSide, count, images, isMissing, repeatCount, repeatReasons, etc }
+  - mammogramImages: object from getImagesForEvent (needed for automated entry)
+  - isManualEntry: boolean - true shows count only, false shows image thumbnails
+  - hideAdditionalDetails: boolean - suppress repeat/extra image details
 #}
 
-<div class="{{ 'nhsuk-u-margin-bottom-3' if not loop.last }}">
+<div class="app-mammogram-view--{{ viewItem.side }}">
 
   {% if isManualEntry %}
     {# Manual entry - show count only #}
@@ -23,39 +25,53 @@
     {% endif %}
 
   {% else %}
-    {# Automated entry - show full image details #}
-    
-    {# Check if this is a missing view #}
-    {% if viewItem.isMissing %}
-      <h3 class="nhsuk-u-margin-bottom-2 nhsuk-u-secondary-text-color">
+    {# Automated entry - show image thumbnails #}
+    {% set viewKey = viewItem.viewShortWithSide | lower %}
+    {% set allPaths = mammogramImages.allPaths[viewKey] if (mammogramImages and mammogramImages.allPaths) else null %}
+
+    {% if viewItem.isMissing or not allPaths %}
+      {# Missing view placeholder #}
+      {# <h3 class="nhsuk-u-margin-bottom-2 nhsuk-u-secondary-text-color">
         0× {{ viewItem.viewShortWithSide }}
-      </h3>
-      
-      <div class="app-mammogram-image--placeholder app-mammogram-image--missing nhsuk-u-margin-bottom-3">
-        <div class="app-mammogram-image--missing-content">
-          <span class="nhsuk-u-secondary-text-color">No image</span>
+      </h3> #}
+
+      <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}">
+        <div class="app-mammogram-thumbnail__image-wrapper{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
+          <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
+          <div class="app-mammogram-thumbnail__missing">
+            <span class="app-mammogram-thumbnail__missing-text">No image</span>
+          </div>
         </div>
       </div>
-    {% else %}
-      <h3 class="nhsuk-u-margin-bottom-2">
-        {{ viewItem.images | length }}× {{ viewItem.viewShortWithSide }}
-      </h3>
 
-      {# Show thumbnails side by side #}
-      <div class="">
-        {% for image in viewItem.images %}
-          <div class="app-mammogram-image--placeholder nhsuk-u-margin-right-3" style="float:left">
-            <img class="nhsuk-image__img" src="/assets/images/mammogram-diagrams/{{ viewItem.viewShortWithSide | lower }}.png" alt="">
+    {% else %}
+      {# Present view with images #}
+      {% set imageCount = 1 if allPaths is string else allPaths | length %}
+
+      {# <h3 class="nhsuk-u-margin-bottom-2">
+        {{ imageCount }}× {{ viewItem.viewShortWithSide }}
+      </h3> #}
+
+      <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}">
+        {% if allPaths is string %}
+          <div class="app-mammogram-thumbnail__image-wrapper{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
+            <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
+            <img class="app-mammogram-thumbnail__image" src="{{ allPaths }}" alt="{{ viewItem.viewShortWithSide }} view">
           </div>
-        {% endfor %}
-        <div style="clear:both"></div>
+        {% else %}
+          {% for imagePath in allPaths %}
+            <div class="app-mammogram-thumbnail__image-wrapper{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
+              <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
+              <img class="app-mammogram-thumbnail__image" src="{{ imagePath }}" alt="{{ viewItem.viewShortWithSide }} view ({{ loop.index }} of {{ loop.length }})">
+            </div>
+          {% endfor %}
+        {% endif %}
       </div>
 
-      {# Show additional image details if there are repeats or multiple images #}
-      {% if viewItem.repeatCount > 0 or (viewItem.images | length) > 1 %}
-        {% set additionalCount = (viewItem.images | length) - 1 %}
+      {# Additional image details (repeats and extras) #}
+      {% if not hideAdditionalDetails and (viewItem.repeatCount > 0 or imageCount > 1) %}
         {% set repeatCount = viewItem.repeatCount or 0 %}
-        {% set extraCount = additionalCount - repeatCount %}
+        {% set extraCount = (imageCount - 1) - repeatCount %}
         
         {% set additionalDetailsHtml %}
           {# Show repeat information #}

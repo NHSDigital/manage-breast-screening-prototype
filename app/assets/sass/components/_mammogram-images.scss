@@ -1,0 +1,175 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// app/assets/sass/components/_mammogram-images.scss
+// Styles for mammogram image display - used across images, reading, and other views
+
+// Two-card flex layout for breast image cards - sizes to content not grid column
+.app-mammogram-cards {
+  display: flex;
+  flex-wrap: nowrap;
+  @include nhsuk-responsive-margin(4, "bottom");
+}
+
+.app-mammogram-card {
+  // Size to content (thumbnail + card padding), but cap at 50% on narrow viewports
+  width: fit-content;
+  max-width: 50%;
+  min-width: 0;
+
+  &:first-child {
+    @include nhsuk-responsive-margin(4, "right");
+  }
+}
+
+// View wrapper — one per standard mammogram view (e.g. RCC, RMLO)
+.app-mammogram-view--right,
+.app-mammogram-view--left {
+  // Spacing between consecutive views
+  &:not(:last-child) {
+    @include nhsuk-responsive-margin(4, "bottom");
+  }
+
+  // Spacing between multiple images of the same view
+  .app-mammogram-thumbnail__image-wrapper + .app-mammogram-thumbnail__image-wrapper {
+    @include nhsuk-responsive-margin(4, "top");
+  }
+}
+
+// Headings (view label text e.g. "1× RCC") align towards centre
+.app-mammogram-view--right h3 {
+  text-align: right;
+}
+
+// Thumbnail grid for the reading opinion page
+.app-mammogram-thumbnails {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 8px;
+}
+
+// Right and left breast thumbnail columns
+.app-mammogram-thumbnail--right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.app-mammogram-thumbnail--left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+// Individual image wrapper
+.app-mammogram-thumbnail__image-wrapper {
+  position: relative;
+  // Scales to fill card width, up to the natural thumbnail size
+  width: 100%;
+  max-width: 120px;
+  aspect-ratio: 4 / 5;
+  background-color: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+}
+
+// Right breast images align right (inwards), left breast align left (inwards)
+.app-mammogram-thumbnail--right .app-mammogram-thumbnail__image-wrapper {
+  justify-content: flex-end;
+}
+
+.app-mammogram-thumbnail--left .app-mammogram-thumbnail__image-wrapper {
+  justify-content: flex-start;
+}
+
+// Large size variant - used on dedicated image pages where thumbnails are primary content
+.app-mammogram-thumbnail__image-wrapper--large {
+  max-width: 200px;
+
+  .app-mammogram-thumbnail__label {
+    font-size: 18px;
+    padding: 3px 10px;
+  }
+}
+
+.app-mammogram-thumbnail__image {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  cursor: default;
+}
+
+// Slight smoothing for diagram thumbnails to reduce moiré
+.app-mammogram-thumbnail__image--diagram {
+  filter: blur(0.5px);
+}
+
+// Blue label badge overlaid on the image (e.g. "RCC")
+.app-mammogram-thumbnail__label {
+  position: absolute;
+  top: 4px;
+  background-color: nhsuk-colour("blue");
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 1;
+}
+
+// Labels align to outer edge - right breast labels on left, left breast labels on right
+.app-mammogram-thumbnail--right .app-mammogram-thumbnail__label {
+  left: 4px;
+}
+
+.app-mammogram-thumbnail--left .app-mammogram-thumbnail__label {
+  right: 4px;
+}
+
+// Missing image placeholder
+.app-mammogram-thumbnail__missing {
+  width: 100%;
+  height: 100%;
+  border: 2px dashed nhsuk-colour("grey-2");
+  background-color: nhsuk-colour("grey-5");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.app-mammogram-thumbnail__missing-text {
+  font-size: 16px;
+  color: nhsuk-colour("grey-2");
+}
+
+// Zoom overlay for expanded thumbnail view
+.app-mammogram-zoom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.app-mammogram-zoom__image {
+  max-width: 95%;
+  max-height: 95%;
+  object-fit: contain;
+}
+
+.app-mammogram-zoom__label {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background-color: nhsuk-colour("blue");
+  color: #fff;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
