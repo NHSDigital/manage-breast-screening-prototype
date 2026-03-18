@@ -26,6 +26,10 @@ const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
 const { sentenceCase } = require('../lib/utils/strings')
 const { getImageSetForEvent } = require('../lib/utils/mammogram-images')
+const {
+  ensureSeedProfilesState,
+  getSeedDataProfileFromState
+} = require('../lib/generators/seed-profiles')
 // Load symptom types data
 const symptomTypes = require('../data/symptom-types')
 
@@ -1855,10 +1859,24 @@ module.exports = (router) => {
       if (!data?.event?.mammogramData) {
         // Set start time to 3 minutes ago to simulate an in-progress screening
         const startTime = dayjs().subtract(3, 'minutes').toDate()
+
+        // Pick up mammogram scenario weights from the active seed profile
+        const seedProfiles = ensureSeedProfilesState(data.settings)
+        const activeProfile = getSeedDataProfileFromState(
+          seedProfiles,
+          seedProfiles.selectedKey
+        )
+        const mammogramProfile = activeProfile?.mammogram || {}
+
         const mammogramData = generateMammogramImages({
           startTime,
           isSeedData: false,
-          config: eventData?.participant?.config
+          config: eventData?.participant?.config,
+          scenarioWeights: mammogramProfile.scenarioWeights || null,
+          imperfectChanceForTechnicalOrIncomplete:
+            mammogramProfile.imperfectChanceForTechnicalOrIncomplete,
+          notesForReaderChanceWithoutImperfect:
+            mammogramProfile.notesForReaderChanceWithoutImperfect
         })
 
         // Add machine room from current screening room
@@ -1953,7 +1971,9 @@ module.exports = (router) => {
 
       // Select and store image set based on event context now available (including isImperfect)
       if (!data.event.mammogramData.selectedSetId) {
-        const selectedSet = getImageSetForEvent(eventId, 'diagrams', { event: data.event })
+        const selectedSet = getImageSetForEvent(eventId, 'diagrams', {
+          event: data.event
+        })
         if (selectedSet) {
           data.event.mammogramData.selectedSetId = selectedSet.id
         }
@@ -2687,7 +2707,9 @@ module.exports = (router) => {
       }
 
       // Now repeat metadata is final, select and store the image set
-      const selectedSet = getImageSetForEvent(eventId, 'diagrams', { event: data.event })
+      const selectedSet = getImageSetForEvent(eventId, 'diagrams', {
+        event: data.event
+      })
       if (selectedSet) {
         data.event.mammogramData.selectedSetId = selectedSet.id
       }
