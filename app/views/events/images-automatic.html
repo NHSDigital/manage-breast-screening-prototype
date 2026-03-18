@@ -60,7 +60,7 @@
   {% endif %}
 
   {% set insetTextHtml %}
-    {% if data.settings.screening.imageStreaming.enabled != 'false' %}
+    {% if data.settings.screening.imageStreaming.enabled != 'false' and data.event.workflowStatus['take-images'] != 'completed' %}
       <p>Receiving images&#8230;
         <span id="streaming-received-count">0 received</span>
       </p>
@@ -126,6 +126,7 @@
   <script type="application/json" id="image-streaming-config">
     {
       "enabled": {{ 'false' if data.settings.screening.imageStreaming.enabled == 'false' else 'true' }},
+      "alreadyReceived": {{ 'true' if data.event.workflowStatus['take-images'] == 'completed' else 'false' }},
       "intervalMs": {{ data.settings.screening.imageStreaming.intervalMs if data.settings.screening.imageStreaming.intervalMs else 3000 }},
       "totalImages": {{ imageCount }},
       "images": {{ streamingImages | dump | safe }}

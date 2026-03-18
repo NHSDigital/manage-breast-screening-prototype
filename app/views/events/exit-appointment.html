@@ -13,7 +13,8 @@
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
   {% set hasStartedImaging = (event.workflowStatus['confirm-identity'] == 'completed') and (event.workflowStatus['review-medical-information'] == 'completed') %}
-  {% set hasCompletedImaging = event.workflowStatus['take-images'] == 'completed' %}
+  {# Also treat automatic mammogram data being present as images confirmed taken #}
+  {% set hasCompletedImaging = (event.workflowStatus['take-images'] == 'completed') or (event.mammogramData and not event.mammogramData.isManualEntry) %}
   {% set confirmedNoImages = data.confirmedNoImages %}
   {% set confirmedImagesWereTaken = data.confirmedImagesWereTaken %}
 

@@ -12,7 +12,7 @@ if (configEl) {
     console.warn('image-streaming: could not parse config', e)
   }
 
-  if (config && config.enabled && config.images && config.images.length) {
+  if (config && config.enabled && !config.alreadyReceived && config.images && config.images.length) {
     initStreaming(config)
   }
 }
