@@ -42,11 +42,11 @@ function initStreaming (config) {
   let nextIndex = 0
   let timer = null
 
-  const revealNext = () => {
+  const revealNext = (immediate = false) => {
     if (nextIndex >= images.length) return
     const image = images[nextIndex]
     nextIndex++
-    revealImage(image, slotMap)
+    revealImage(image, slotMap, immediate)
 
     // Update received count
     if (countEl) {
@@ -64,7 +64,7 @@ function initStreaming (config) {
   }
 
   // First image arrives immediately — we navigated to this page because one was received
-  revealNext()
+  revealNext(true)
   scheduleNext()
 
   // Right arrow key immediately advances to the next image (useful for demos)
@@ -102,7 +102,8 @@ function setSlotAwaiting (slot) {
   const isLarge = firstWrapper.classList.contains('app-mammogram-thumbnail__image-wrapper--large')
   firstWrapper.style.width = isLarge ? '200px' : '120px'
 
-  // Replace inner content using the same markup as missing-image placeholders
+  // Show a spinner on every placeholder from the start — images may load too fast
+  // for a spinner added only at reveal time to be visible
   firstWrapper.innerHTML =
     `<span class="app-mammogram-thumbnail__label">${labelText}</span>` +
     `<div class="app-mammogram-thumbnail__missing">` +
@@ -110,8 +111,9 @@ function setSlotAwaiting (slot) {
     `</div>`
 }
 
-// Reveal an image in the appropriate slot
-function revealImage (imageData, slotMap) {
+// Reveal an image in the appropriate slot.
+// immediate=true skips the spinner delay (used for the first image, already received).
+function revealImage (imageData, slotMap, immediate = false) {
   const slotInfo = slotMap[imageData.view]
   if (!slotInfo) return
 
@@ -126,16 +128,30 @@ function revealImage (imageData, slotMap) {
     const labelEl = wrapper.querySelector('.app-mammogram-thumbnail__label')
     const labelText = labelEl ? labelEl.textContent.trim() : imageData.view
 
-    // Clear the whole wrapper (removes the missing/placeholder div cleanly)
-    wrapper.innerHTML = `<span class="app-mammogram-thumbnail__label">${labelText}</span>`
-    // Reset the explicit width we set in setSlotAwaiting
-    wrapper.style.width = ''
+    // Show a spinner briefly, then replace with the image.
+    // Skip the spinner for the first image (already received when we arrived on this page).
+    const showImage = () => {
+      wrapper.innerHTML = `<span class="app-mammogram-thumbnail__label">${labelText}</span>`
+      // Reset the explicit width we set in setSlotAwaiting
+      wrapper.style.width = ''
 
-    const img = document.createElement('img')
-    img.className = 'app-mammogram-thumbnail__image app-mammogram-thumbnail__image--diagram'
-    img.src = imageData.src
-    img.alt = `${imageData.view} view`
-    wrapper.appendChild(img)
+      const img = document.createElement('img')
+      img.className = 'app-mammogram-thumbnail__image app-mammogram-thumbnail__image--diagram'
+      img.src = imageData.src
+      img.alt = `${imageData.view} view`
+      wrapper.appendChild(img)
+    }
+
+    if (immediate) {
+      showImage()
+    } else {
+      wrapper.innerHTML =
+        `<span class="app-mammogram-thumbnail__label">${labelText}</span>` +
+        `<div class="app-mammogram-thumbnail__missing">` +
+        `<div class="app-mammogram-thumbnail__spinner"></div>` +
+        `</div>`
+      setTimeout(showImage, 500)
+    }
   } else {
     // Additional image for this view (repeat or extra) — append a new wrapper
     const existingWrapper = slot.querySelector('.app-mammogram-thumbnail__image-wrapper')
