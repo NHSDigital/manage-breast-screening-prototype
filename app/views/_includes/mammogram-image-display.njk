@@ -9,7 +9,7 @@
   - hideAdditionalDetails: boolean - suppress repeat/extra image details
 #}
 
-<div class="app-mammogram-view--{{ viewItem.side }}{{ ' nhsuk-u-margin-bottom-3' if not loop.last }}">
+<div class="app-mammogram-view--{{ viewItem.side }}">
 
   {% if isManualEntry %}
     {# Manual entry - show count only #}
