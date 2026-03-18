@@ -142,6 +142,22 @@
   color: nhsuk-colour("grey-2");
 }
 
+// Spinner shown briefly while an image loads during streaming
+@keyframes mammogram-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.app-mammogram-thumbnail__spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid nhsuk-colour("grey-3");
+  border-top-color: nhsuk-colour("blue");
+  border-radius: 50%;
+  animation: mammogram-spin 0.6s linear infinite;
+}
+
 // Zoom overlay for expanded thumbnail view
 .app-mammogram-zoom {
   position: fixed;
