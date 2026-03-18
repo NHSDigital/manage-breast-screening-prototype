@@ -35,7 +35,7 @@
         0× {{ viewItem.viewShortWithSide }}
       </h3> #}
 
-      <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}">
+      <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}" data-view="{{ viewItem.viewShortWithSide }}">
         <div class="app-mammogram-thumbnail__image-wrapper{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
           <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
           <div class="app-mammogram-thumbnail__missing">
@@ -52,7 +52,7 @@
         {{ imageCount }}× {{ viewItem.viewShortWithSide }}
       </h3> #}
 
-      <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}">
+      <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}" data-view="{{ viewItem.viewShortWithSide }}">
         {% if allPaths is string %}
           <div class="app-mammogram-thumbnail__image-wrapper{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
             <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
