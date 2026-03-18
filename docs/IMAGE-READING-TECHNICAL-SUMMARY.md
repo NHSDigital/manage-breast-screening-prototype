@@ -6,31 +6,6 @@ This document provides a technical overview of the image reading section of the 
 
 ## Refactoring Plan
 
-### Completed
-
-- [x] Created `reading/workflow/opinion.html` - main entry point with opinion UI inline
-- [x] Moved workflow pages to `reading/workflow/` folder
-- [x] Updated routes to render from `workflow/` subfolder
-- [x] Deleted `_includes/reading/opinion-ui.njk` (now inline in opinion.html)
-- [x] Removed opinion-ui include from layout
-- [x] Added `isReadingWorkflow` flag in routes middleware
-- [x] Extracted status bar to `_includes/reading/reading-status-bar.njk`
-- [x] Extracted navigation to `_includes/reading/workflow-navigation.njk`
-- [x] Simplified `layout-reading.html` (204 → 51 lines)
-- [x] Primary nav swap - shows "Batch list" link when in reading workflow
-- [x] Deleted legacy files: assessment.html, medical-information.html, images.html, participant-details.html, awaiting-annotations.html
-- [x] Removed legacy steps array from routes
-- [x] Deleted unused `_includes/reading/secondary-navigation.njk`
-- [x] Navigation refactor: `showWorkflowNav` flag for opinion page, back link default for child pages
-- [x] Removed `hideSecondaryNavigation` from child pages (replaced by unified back link logic)
-- [x] Created `review.html` - confirmation page before saving opinion
-- [x] Created `existing-read.html` - view saved read with option to change
-- [x] Route renamed: `/assessment-answer` → `/opinion-answer`
-- [x] Route renamed: `/result-:resultType` → `/save-opinion`
-- [x] Form data now saves directly to `imageReadingTemp` via form binding
-- [x] Base event route auto-redirects to `existing-read` or `opinion` based on read status
-- [x] Simplified workflow navigation - all links go to base event URL
-
 ### Future Work
 
 - [ ] Make sure fields correctly save to data.imageReadingTemp

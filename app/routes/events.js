@@ -679,9 +679,34 @@ module.exports = (router) => {
 
       // Helper function to build mammogram object with ID and metadata
       const buildMammogramObject = (tempData, additionalFields = {}) => {
+        const cleaned = { ...tempData }
+
+        // approximateDate can arrive as an array if both conditional inputs
+        // (moreThanSixMonths and lessThanSixMonths) are submitted together.
+        // Pick the first non-empty value.
+        if (Array.isArray(cleaned.approximateDate)) {
+          cleaned.approximateDate = cleaned.approximateDate.find(v => v) || ''
+        }
+
+        // Clear date fields not relevant to the selected dateType
+        if (cleaned.dateType === 'dateKnown') {
+          delete cleaned.approximateDate
+        }
+        else {
+          delete cleaned.dateTaken
+        }
+
+        // Clear location-specific fields that weren't selected
+        if (cleaned.location !== 'bsu') delete cleaned.bsu
+        if (cleaned.location !== 'otherUk') delete cleaned.otherUk
+        if (cleaned.location !== 'otherNonUk') delete cleaned.otherNonUk
+
+        // Clear previousName if the same name was used
+        if (cleaned.sameName !== 'differentName') delete cleaned.previousName
+
         const mammogram = {
-          id: tempData.id || generateId(),
-          ...tempData,
+          id: cleaned.id || generateId(),
+          ...cleaned,
           ...additionalFields
         }
 
