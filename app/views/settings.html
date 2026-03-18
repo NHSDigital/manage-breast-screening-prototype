@@ -62,8 +62,43 @@
 
     {# Manual image collection #}
     <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]={{'true' if data.settings.screening.manualImageCollection !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.screening.manualImageCollection=='false' else 'Disable'}} manual image collection</a>
+      Image collection method:
+      {% if data.settings.screening.manualImageCollection == 'true' %}
+        <strong>Manual</strong> |
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]=false&clearQuery=true">Automatic</a>
+      {% else %}
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]=true&clearQuery=true">Manual</a> |
+        <strong>Automatic</strong>
+      {% endif %}
     </p>
+
+    {# Image streaming simulation #}
+    <p>
+      Image streaming simulation:
+      {% if data.settings.screening.imageStreaming.enabled != 'false' %}
+        <strong>Enabled</strong> |
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][enabled]=false&clearQuery=true">Disable</a>
+      {% else %}
+        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][enabled]=true&clearQuery=true">Enable</a> |
+        <strong>Disabled</strong>
+      {% endif %}
+    </p>
+
+    {% if data.settings.screening.imageStreaming.enabled != 'false' %}
+      {% set streamIntervalMs = data.settings.screening.imageStreaming.intervalMs %}
+      <p>
+        Streaming interval:
+        {% if streamIntervalMs == '1000' %}<strong>1s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=1000&clearQuery=true">1s</a>{% endif %}
+        |
+        {% if streamIntervalMs == '2000' %}<strong>2s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=2000&clearQuery=true">2s</a>{% endif %}
+        |
+        {% if not streamIntervalMs or streamIntervalMs == '3000' %}<strong>3s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=3000&clearQuery=true">3s</a>{% endif %}
+        |
+        {% if streamIntervalMs == '5000' %}<strong>5s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=5000&clearQuery=true">5s</a>{% endif %}
+        |
+        {% if streamIntervalMs == '10000' %}<strong>10s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=10000&clearQuery=true">10s</a>{% endif %}
+      </p>
+    {% endif %}
 
     {# Use condensed review summaries #}
     <p>

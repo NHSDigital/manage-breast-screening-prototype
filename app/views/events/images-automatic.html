@@ -2,7 +2,7 @@
 
 {% set imageCount = event.mammogramData.metadata.totalImages %}
 
-{% set pageHeading = "Review image details" %}
+{% set pageHeading = "Image transfer in progress" %}
 
 {% set mammogramSource = event.mammogramData %}
 {% set namePrefix = "event[mammogramData]" %}
@@ -19,6 +19,33 @@
 
 {% set activeTab = 'images' %}
 
+{% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+
+{# Build ordered image list for streaming simulation - bookmatched arrival order #}
+{# CC first: RCC > RMLO > LMLO > LCC (right side then left mirrored) #}
+{# MLO first: RMLO > RCC > LCC > LMLO #}
+{% if data.settings.mammogramViewOrder == 'mlo-first' %}
+  {% set streamViewOrder = ['rmlo', 'rcc', 'lcc', 'lmlo'] %}
+{% else %}
+  {% set streamViewOrder = ['rcc', 'rmlo', 'lmlo', 'lcc'] %}
+{% endif %}
+
+{% set streamingImages = [] %}
+{% if mammogramImages and mammogramImages.allPaths %}
+  {% for viewKey in streamViewOrder %}
+    {% set paths = mammogramImages.allPaths[viewKey] %}
+    {% if paths %}
+      {% if paths is string %}
+        {% set streamingImages = streamingImages | push({ view: viewKey | upper, src: paths }) %}
+      {% else %}
+        {% for path in paths %}
+          {% set streamingImages = streamingImages | push({ view: viewKey | upper, src: path }) %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
 {% block pageContent %}
 
   <h1>{{ pageHeading }}</h1>
@@ -33,147 +60,50 @@
   {% endif %}
 
   {% set insetTextHtml %}
-    <p>{{ imageCount }} images have been received</p>
+    {% if data.settings.screening.imageStreaming.enabled != 'false' and data.event.workflowStatus['take-images'] != 'completed' %}
+      <p>Receiving images&#8230;
+        <span id="streaming-received-count">0 received</span>
+      </p>
+    {% else %}
+      <p>{{ imageCount }} images have been received</p>
+    {% endif %}
   {% endset %}
 
   {{ insetText({
     html: insetTextHtml
   }) }}
 
-  
-
   {# Convert object to an array of views and get machine room #}
   {% set mammogramViews = event.mammogramData.views | getObjectValues %}
   {% set machineRoom = event.mammogramData.machineRoom %}
-  
-  {# HACK: Remove RCC view to test missing placeholder #}
-  {# {% set filteredViews = [] %}
-  {% for viewItem in mammogramViews %}
-    {% if viewItem.viewShortWithSide != 'RCC' %}
-      {% set filteredViews = filteredViews | push(viewItem) %}
-    {% endif %}
-  {% endfor %}
-  {% set mammogramViews = filteredViews %} #}
 
-  {# Define standard views that should always be shown #}
-  {% set standardViews = [
-    { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
-    { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
-    { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' },
-    { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' }
-  ] %}
-
-  {# Build complete view lists with placeholders for missing views #}
-  {% set rightViews = [] %}
-  {% set leftViews = [] %}
-  {% for standardView in standardViews %}
-    {# Find if this view exists in the data #}
-    {% set viewData = null %}
-    {% for viewItem in mammogramViews %}
-      {% if viewItem.viewShortWithSide == standardView.viewShortWithSide %}
-        {% set viewData = viewItem %}
-      {% endif %}
-    {% endfor %}
-    
-    {% if not viewData %}
-      {# Create placeholder for missing view #}
-      {% set viewData = {
-        side: standardView.side,
-        viewShort: standardView.viewShort,
-        viewShortWithSide: standardView.viewShortWithSide,
-        images: [],
-        isMissing: true
-      } %}
-    {% endif %}
-    
-    {% if standardView.side == 'right' %}
-      {% set rightViews = rightViews | push(viewData) %}
-    {% else %}
-      {% set leftViews = leftViews | push(viewData) %}
-    {% endif %}
-  {% endfor %}
-
-  {# Display in two columns: right breast on left, left breast on right #}
-  <div class="nhsuk-grid-row">
-    {# Right views on the left #}
-    <div class="nhsuk-grid-column-one-half">
-      {% set rightViewsHtml %}
-        {% for viewItem in rightViews %}
-          {% set isManualEntry = false %}
-          {% include "_includes/mammogram-image-display.njk" %}
-        {% endfor %}
-      {% endset %}
-
-      {{ card({
-        heading: "Right breast",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: rightViewsHtml
-      }) }}
-    </div>
-
-    {# Left views on the right #}
-    <div class="nhsuk-grid-column-one-half">
-      {% set leftViewsHtml %}
-        {% for viewItem in leftViews %}
-          {% set isManualEntry = false %}
-          {% include "_includes/mammogram-image-display.njk" %}
-        {% endfor %}
-      {% endset %}
-
-      {{ card({
-        heading: "Left breast",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: leftViewsHtml
-      }) }}
-    </div>
-  </div>
-
-  <p><a href="#">View imported image metadata</a></p>
-
-    {% include "_includes/images/image-troubleshooting.njk" %}
-
-
-
-  {# Build array of views needing repeat questions (count > 1) #}
-  {% set viewsNeedingRepeats = [] %}
+  {# Show notice if any view has multiple images - repeats will be captured on the next page #}
+  {% set hasMultipleImages = false %}
   {% for view in mammogramViews %}
     {% if (view.images | length) > 1 %}
-      {% set viewsNeedingRepeats = viewsNeedingRepeats | push({
-        side: view.side | capitalize,
-        view: view.viewShort,
-        code: view.viewShortWithSide,
-        count: view.images | length
-      }) %}
+      {% set hasMultipleImages = true %}
     {% endif %}
   {% endfor %}
 
-  {# Show repeat questions if any views have multiple images #}
-  {% if viewsNeedingRepeats | length > 0 %}
-    <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+  {# Display images in two breast cards #}
+  {% set thumbnailSize = "large" %}
+  {% set hideAdditionalDetails = true %}
+  {% include "_includes/mammogram-image-cards.njk" %}
 
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
-        <h2>Additional images</h2>
-        {# <p>Some views have multiple images. Please provide information about why additional images were taken.</p> #}
-
-        {% for viewItem in viewsNeedingRepeats %}
-          {% set namePrefix = "event[mammogramData]" %}
-          {% set dataSource = event.mammogramData %}
-          {% set radioQuestionSize = "s" %}
-          {% include "_includes/images-repeat-question.njk" %}
-        {% endfor %}
-      </div>
-    </div>
-  {% endif %}
-
-  
+  <p><a href="#">View imported image metadata</a></p>
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible nhsuk-u-margin-top-0">
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
+
+      {% if hasMultipleImages %}
+        {% set repeatsInsetHtml %}
+          <p>Repeat or extra image details captured on the next screen</p>
+        {% endset %}
+        {{ insetText({ html: repeatsInsetHtml }) }}
+      {% endif %}
+  
 
       <h2>Additional details</h2>
 
@@ -182,14 +112,25 @@
       {% include "_includes/additional-image-details.njk" %}
 
       {{ button({
-        text: "Confirm images"
+        text: "Confirm all images received"
       }) }}
 
     </div>
   </div>
 
-
+  {% include "_includes/images/image-troubleshooting.njk" %}
 
 {% endblock %}
 
-
+{% block pageScripts %}
+  <script type="application/json" id="image-streaming-config">
+    {
+      "enabled": {{ 'false' if data.settings.screening.imageStreaming.enabled == 'false' else 'true' }},
+      "alreadyReceived": {{ 'true' if data.event.workflowStatus['take-images'] == 'completed' else 'false' }},
+      "intervalMs": {{ data.settings.screening.imageStreaming.intervalMs if data.settings.screening.imageStreaming.intervalMs else 3000 }},
+      "totalImages": {{ imageCount }},
+      "images": {{ streamingImages | dump | safe }}
+    }
+  </script>
+  <script type="module" src="/assets/javascript/image-streaming.js"></script>
+{% endblock %}
