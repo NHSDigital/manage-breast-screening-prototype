@@ -174,7 +174,7 @@
         text: "Approximate date"
       },
       hint: {
-        text: "For example, April 2018 or summer 2021"
+        text: "For example, " + (now() | remove(1, 'year') | formatDate('MMMM YYYY')) + " or " + (now() | remove(1, 'year') | toSeason)
       },
       classes: "nhsuk-u-width-two-thirds",
       value: event.previousMammogramTemp.approximateDate
@@ -191,7 +191,7 @@
         text: "Approximate date"
       },
       hint: {
-        text: "For example, April 2018 or summer 2021"
+        text: "For example, " + (now() | remove(3, 'months') | formatDate('MMMM YYYY')) + " or " + (now() | remove(3, 'months') | toSeason)
       },
       classes: "nhsuk-u-width-two-thirds",
       value: event.previousMammogramTemp.approximateDate

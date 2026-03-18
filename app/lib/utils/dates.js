@@ -704,13 +704,15 @@ const calculateDurationMinutes = (startTime, endTime) => {
   if (!startTime || !endTime) return 0
 
   // If it looks like just a time (contains no date), prefix with dummy date
-  const startDatetime = startTime.includes('T') || startTime.includes('-')
-    ? startTime
-    : `2000-01-01T${startTime}`
-  
-  const endDatetime = endTime.includes('T') || endTime.includes('-')
-    ? endTime
-    : `2000-01-01T${endTime}`
+  const startDatetime =
+    startTime.includes('T') || startTime.includes('-')
+      ? startTime
+      : `2000-01-01T${startTime}`
+
+  const endDatetime =
+    endTime.includes('T') || endTime.includes('-')
+      ? endTime
+      : `2000-01-01T${endTime}`
 
   const start = dayjs(startDatetime)
   const end = dayjs(endDatetime)
@@ -790,6 +792,34 @@ const remove = (dateInput, amount, unit) => {
   return add(dateInput, -amount, unit)
 }
 
+/**
+ * Get the season name and year for a given date
+ *
+ * @param {string} dateInput - ISO date string
+ * @returns {string} Season and year, e.g. 'winter 2025', 'summer 2026'
+ * @example
+ * toSeason('2025-12-01') // 'winter 2025'
+ * toSeason('2026-06-15') // 'summer 2026'
+ */
+const toSeason = (dateInput) => {
+  if (!dateInput) return ''
+
+  const date = dayjs(dateInput)
+  if (!date.isValid()) return ''
+
+  // dayjs month() is 0-based, convert to 1-based
+  const month = date.month() + 1
+  const year = date.year()
+
+  let season
+  if (month >= 3 && month <= 5) season = 'spring'
+  else if (month >= 6 && month <= 8) season = 'summer'
+  else if (month >= 9 && month <= 11) season = 'autumn'
+  else season = 'winter'
+
+  return `${season} ${year}`
+}
+
 module.exports = {
   arrayOrObjectToDateObject,
   monthYearToDateObject,
@@ -818,7 +848,8 @@ module.exports = {
   isWithinDayRange,
   calculateDurationMinutes,
   add,
-  remove
+  remove,
+  toSeason
 }
 
 /**
