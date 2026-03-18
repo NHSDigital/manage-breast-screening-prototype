@@ -46,13 +46,13 @@
         previousMammogram.dateTaken | formatDate + " (" + (previousMammogram.dateTaken | formatDate | formatRelativeDate | asHint) + ")"
       ) %}
     {% elseif previousMammogram.dateType == 'moreThanSixMonths' %}
-      {% set dateText = "Approximately taken 6 months or more ago" %}
+      {% set dateText = "Taken 6 months or more ago" %}
       {% if previousMammogram.approximateDate %}
         {% set dateText = dateText + ": " + previousMammogram.approximateDate %}
       {% endif %}
       {% set mammogramValueLines = mammogramValueLines | push(dateText) %}
     {% elseif previousMammogram.dateType == 'lessThanSixMonths' %}
-      {% set dateText = "Approximately taken less than 6 months ago" %}
+      {% set dateText = "Taken less than 6 months ago" %}
       {% if previousMammogram.approximateDate %}
         {% set dateText = dateText + ": " + previousMammogram.approximateDate %}
       {% endif %}
@@ -65,7 +65,7 @@
     {% if previousMammogram.location == "currentBsu" %}
       {% set mammogramValueLines = mammogramValueLines | push(unit.name) %}
     {% elseif previousMammogram.location == "bsu" %}
-      {% set mammogramValueLines = mammogramValueLines | push(previousMammogram.bsu) %}
+      {% set mammogramValueLines = mammogramValueLines | push("NHS BSU: " + previousMammogram.bsu) %}
     {% elseif previousMammogram.location == "otherUk" %}
       {% set mammogramValueLines = mammogramValueLines | push("In the UK: " + (previousMammogram.otherUk | nl2br | safe)) %}
     {% elseif previousMammogram.location == "otherNonUk" %}
