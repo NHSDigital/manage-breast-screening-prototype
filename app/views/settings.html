@@ -138,6 +138,24 @@
       <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][enableOpinionDelay]={{'true' if data.settings.reading.enableOpinionDelay !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.enableOpinionDelay !== 'true' else 'Disable'}} opinion delay</a>
     </p>
 
+    {# Lazy batches #}
+    <p>
+      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][lazyBatches]={{'true' if data.settings.reading.lazyBatches !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.lazyBatches !== 'true' else 'Disable'}} lazy batches</a>
+    </p>
+
+    {# Default batch target size #}
+    {% set batchTargetSize = data.settings.reading.defaultBatchTargetSize | string %}
+    <p>
+      Default batch target size:
+      {% if batchTargetSize == '10' %}<strong>10</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][defaultBatchTargetSize]=10&clearQuery=true">10</a>{% endif %}
+      |
+      {% if batchTargetSize == '25' or not batchTargetSize %}<strong>25</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][defaultBatchTargetSize]=25&clearQuery=true">25</a>{% endif %}
+      |
+      {% if batchTargetSize == '50' %}<strong>50</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][defaultBatchTargetSize]=50&clearQuery=true">50</a>{% endif %}
+      |
+      {% if batchTargetSize == '100' %}<strong>100</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][defaultBatchTargetSize]=100&clearQuery=true">100</a>{% endif %}
+    </p>
+
     {# Second reader comparison #}
     <p>
       Second reader comparison:

@@ -17,6 +17,7 @@ const {
   getOrCreateClinicBatch,
   getBatchReadingProgress,
   skipEventInBatch,
+  topUpBatch,
   getReadingMetadata,
   getComparisonInfo
 } = require('../lib/utils/reading')
@@ -235,7 +236,7 @@ module.exports = (router) => {
         type: type || 'custom',
         name,
         clinicId,
-        limit: limit ? parseInt(limit) : 25,
+        limit: limit ? parseInt(limit) : null,
         filters
       })
 
@@ -472,6 +473,9 @@ module.exports = (router) => {
 
     // Mark as skipped
     skipEventInBatch(data, batchId, eventId)
+
+    // Top up the batch with the next eligible event if under target size
+    topUpBatch(data, batchId)
 
     // Find next readable event
     const progress = getBatchReadingProgress(data, batchId, eventId)
@@ -1072,6 +1076,9 @@ module.exports = (router) => {
 
       // Write the reading (passing batch context to handle skipped events)
       writeReading(event, currentUserId, readResult, data, batchId)
+
+      // Top up the batch with the next eligible event if under target size
+      topUpBatch(data, batchId)
 
       // Find next unread event in batch after the current position, wrapping
       // to the start if needed. This mirrors the navigation in request-priors-answer.
