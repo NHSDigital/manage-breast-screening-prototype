@@ -22,20 +22,18 @@
 }
 
 // View wrapper — one per standard mammogram view (e.g. RCC, RMLO)
-.app-mammogram-view--right,
-.app-mammogram-view--left {
-  // Spacing between consecutive views
-  &:not(:last-child) {
-    @include nhsuk-responsive-margin(4, "bottom");
-  }
+// .app-mammogram-views is the flex container we own; gap handles spacing between views
+.app-mammogram-views {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
-  // Spacing between multiple images of the same view
-  .app-mammogram-thumbnail__image-wrapper + .app-mammogram-thumbnail__image-wrapper {
-    @include nhsuk-responsive-margin(4, "top");
+  @include nhsuk-media-query($from: tablet) {
+    gap: 24px;
   }
 }
 
-// Headings (view label text e.g. "1× RCC") align towards centre
+// --right and --left only needed for the h3 alignment (currently commented out)
 .app-mammogram-view--right h3 {
   text-align: right;
 }
@@ -45,18 +43,30 @@
   display: inline-grid;
   grid-template-columns: auto auto;
   gap: 8px;
+
+  // Match the tighter grid gap for same-view images within the reading layout
+  .app-mammogram-thumbnail {
+    gap: 8px;
+  }
 }
 
 // Right and left breast thumbnail columns
-.app-mammogram-thumbnail--right {
+// Base styles shared; --right/--left only vary on alignment
+.app-mammogram-thumbnail {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+
+  @include nhsuk-media-query($from: tablet) {
+    gap: 24px;
+  }
+}
+
+.app-mammogram-thumbnail--right {
   align-items: flex-end;
 }
 
 .app-mammogram-thumbnail--left {
-  display: flex;
-  flex-direction: column;
   align-items: flex-start;
 }
 

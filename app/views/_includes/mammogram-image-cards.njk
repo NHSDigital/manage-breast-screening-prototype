@@ -61,9 +61,11 @@
 <div class="app-mammogram-cards">
   <div class="app-mammogram-card">
     {% set rightViewsHtml %}
-      {% for viewItem in rightViews %}
-        {% include "_includes/mammogram-image-display.njk" %}
-      {% endfor %}
+      <div class="app-mammogram-views">
+        {% for viewItem in rightViews %}
+          {% include "_includes/mammogram-image-display.njk" %}
+        {% endfor %}
+      </div>
     {% endset %}
     {{ card({
       heading: "Right breast",
@@ -75,9 +77,11 @@
 
   <div class="app-mammogram-card">
     {% set leftViewsHtml %}
-      {% for viewItem in leftViews %}
-        {% include "_includes/mammogram-image-display.njk" %}
-      {% endfor %}
+      <div class="app-mammogram-views">
+        {% for viewItem in leftViews %}
+          {% include "_includes/mammogram-image-display.njk" %}
+        {% endfor %}
+      </div>
     {% endset %}
     {{ card({
       heading: "Left breast",
