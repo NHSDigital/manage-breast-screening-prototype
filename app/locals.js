@@ -1,5 +1,8 @@
 // app/locals.js
+const environmentMiddleware = require('./lib/middleware/environment')
+
 module.exports = (req, res, next) => {
+  environmentMiddleware(req, res, () => {})
 
   const currentUser = req.session.data.currentUser
   const currentBSU = currentUser
