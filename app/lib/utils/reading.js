@@ -1283,6 +1283,7 @@ const createReadingBatch = (data, options) => {
     clinicId,
     batchId = null,
     limit = null,
+    lazy = null, // explicit override; null means use settings
     filters = {}
   } = options
 
@@ -1295,7 +1296,8 @@ const createReadingBatch = (data, options) => {
 
   // Lazy loading: start with only the first event and top up as reads happen
   // Clinic batches are always fully populated upfront
-  const lazyEnabled = data.settings?.reading?.lazyBatches === 'true'
+  // Explicit lazy param overrides the setting
+  const lazyEnabled = lazy !== null ? lazy : data.settings?.reading?.lazyBatches === 'true'
   const isLazy = lazyEnabled && type !== 'clinic'
 
   // Get all eligible candidates using the shared helper

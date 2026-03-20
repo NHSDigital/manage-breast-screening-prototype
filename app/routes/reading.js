@@ -211,7 +211,7 @@ module.exports = (router) => {
     const currentUserId = data.currentUser.id
 
     // Get batch creation options from query params
-    const { type, clinicId, limit, name, redirect } = req.query
+    const { type, clinicId, limit, name, redirect, lazy } = req.query
 
     // Create filters from query params
     const filters = {}
@@ -237,6 +237,7 @@ module.exports = (router) => {
         name,
         clinicId,
         limit: limit ? parseInt(limit) : null,
+        lazy: lazy !== undefined ? lazy === 'true' : null,
         filters
       })
 

@@ -33,7 +33,7 @@
   }
 }
 
-// --right and --left only needed for the h3 alignment (currently commented out)
+// Right align text for images on the left as images get 'bookmatched' - aligned to inner edge.
 .app-mammogram-view--right h3 {
   text-align: right;
 }
@@ -51,7 +51,6 @@
 }
 
 // Right and left breast thumbnail columns
-// Base styles shared; --right/--left only vary on alignment
 .app-mammogram-thumbnail {
   display: flex;
   flex-direction: column;
@@ -126,7 +125,7 @@
   z-index: 1;
 }
 
-// Labels align to outer edge - right breast labels on left, left breast labels on right
+// Labels align to outer edge - right breast labels on left, left breast labels on right - so they're bookmatched.
 .app-mammogram-thumbnail--right .app-mammogram-thumbnail__label {
   left: 4px;
 }
@@ -136,6 +135,7 @@
 }
 
 // Missing image placeholder
+// Shown before an image has loaded in or where a standard view wasn't taken.
 .app-mammogram-thumbnail__missing {
   width: 100%;
   height: 100%;
@@ -148,11 +148,13 @@
 }
 
 .app-mammogram-thumbnail__missing-text {
+  // TODO: should we be doing something better for font sizing here?
   font-size: 16px;
   color: nhsuk-colour("grey-2");
 }
 
 // Spinner shown briefly while an image loads during streaming
+// TODO: is there a standard NHS spinner we should be using here?
 @keyframes mammogram-spin {
   to {
     transform: rotate(360deg);
