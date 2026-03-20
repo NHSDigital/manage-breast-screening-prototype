@@ -97,6 +97,32 @@
         }
       ]
     }) }}
+
+    {{ radios({
+      idPrefix: "lazy",
+      name: "lazy",
+      fieldset: {
+        legend: {
+          text: "Batch population (debug only)",
+          classes: "nhsuk-fieldset__legend--m"
+        }
+      },
+      hint: {
+        text: "Lazy batches start with one case and grow as you read. Eager batches are fully populated upfront."
+      },
+      items: [
+        {
+          value: "true",
+          text: "Lazy",
+          checked: true if data.settings.reading.lazyBatches | falsify else false
+        },
+        {
+          value: "false",
+          text: "Eager (fully populated)",
+          checked: true if not data.settings.reading.lazyBatches | falsify else false
+        }
+      ]
+    }) }}
   {% endif %}
   
 

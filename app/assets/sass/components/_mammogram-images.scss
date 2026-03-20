@@ -22,20 +22,18 @@
 }
 
 // View wrapper — one per standard mammogram view (e.g. RCC, RMLO)
-.app-mammogram-view--right,
-.app-mammogram-view--left {
-  // Spacing between consecutive views
-  &:not(:last-child) {
-    @include nhsuk-responsive-margin(4, "bottom");
-  }
+// .app-mammogram-views is the flex container we own; gap handles spacing between views
+.app-mammogram-views {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
-  // Spacing between multiple images of the same view
-  .app-mammogram-thumbnail__image-wrapper + .app-mammogram-thumbnail__image-wrapper {
-    @include nhsuk-responsive-margin(4, "top");
+  @include nhsuk-media-query($from: tablet) {
+    gap: 24px;
   }
 }
 
-// Headings (view label text e.g. "1× RCC") align towards centre
+// Right align text for images on the left as images get 'bookmatched' - aligned to inner edge.
 .app-mammogram-view--right h3 {
   text-align: right;
 }
@@ -45,18 +43,29 @@
   display: inline-grid;
   grid-template-columns: auto auto;
   gap: 8px;
+
+  // Match the tighter grid gap for same-view images within the reading layout
+  .app-mammogram-thumbnail {
+    gap: 8px;
+  }
 }
 
 // Right and left breast thumbnail columns
-.app-mammogram-thumbnail--right {
+.app-mammogram-thumbnail {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+
+  @include nhsuk-media-query($from: tablet) {
+    gap: 24px;
+  }
+}
+
+.app-mammogram-thumbnail--right {
   align-items: flex-end;
 }
 
 .app-mammogram-thumbnail--left {
-  display: flex;
-  flex-direction: column;
   align-items: flex-start;
 }
 
@@ -116,7 +125,7 @@
   z-index: 1;
 }
 
-// Labels align to outer edge - right breast labels on left, left breast labels on right
+// Labels align to outer edge - right breast labels on left, left breast labels on right - so they're bookmatched.
 .app-mammogram-thumbnail--right .app-mammogram-thumbnail__label {
   left: 4px;
 }
@@ -126,6 +135,7 @@
 }
 
 // Missing image placeholder
+// Shown before an image has loaded in or where a standard view wasn't taken.
 .app-mammogram-thumbnail__missing {
   width: 100%;
   height: 100%;
@@ -138,11 +148,13 @@
 }
 
 .app-mammogram-thumbnail__missing-text {
+  // TODO: should we be doing something better for font sizing here?
   font-size: 16px;
   color: nhsuk-colour("grey-2");
 }
 
 // Spinner shown briefly while an image loads during streaming
+// TODO: is there a standard NHS spinner we should be using here?
 @keyframes mammogram-spin {
   to {
     transform: rotate(360deg);

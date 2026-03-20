@@ -1,5 +1,31 @@
 {# app/views/settings.html #}
 
+{#
+  Renders a setting row as "Label: Option A | Option B" where the active option
+  is bold and inactive options are links.
+
+  params:
+    label      - display label for the setting
+    settingKey - the URL query param key (e.g. settings[darkMode])
+    options    - array of { value, label } objects
+    current    - the current value of the setting
+    default    - (optional) value to treat as active when current is falsy
+#}
+{% macro settingToggle(label, settingKey, options, current, default) %}
+  <p>
+    {{ label }}:
+    {% for option in options %}
+      {% set isActive = (current == option.value) or (not current and default == option.value) %}
+      {% if isActive %}
+        <strong>{{ option.label }}</strong>
+      {% else %}
+        <a class="nhsuk-link--no-visited-state" href="./settings?{{ settingKey }}={{ option.value }}&clearQuery=true">{{ option.label }}</a>
+      {% endif %}
+      {% if not loop.last %} | {% endif %}
+    {% endfor %}
+  </p>
+{% endmacro %}
+
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = "Settings" %}
@@ -42,131 +68,75 @@
 <div class="nhsuk-card">
   <div class="nhsuk-card__content">
     <h2>General</h2>
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[darkMode]={{'true' if data.settings.darkMode !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.darkMode=='false' else 'Disable'}} dark mode</a>
-    </p>
-
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[showEnvironmentBanner]={{'true' if data.settings.showEnvironmentBanner !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.showEnvironmentBanner=='false' else 'Hide'}} environment banner</a>
-    </p>
-
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[debugMode]={{'true' if data.settings.debugMode !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.debugMode !== 'true' else 'Disable'}} debug mode</a>
-    </p>
+    {{ settingToggle("Dark mode", "settings[darkMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.darkMode, "false") }}
+    {{ settingToggle("Environment banner", "settings[showEnvironmentBanner]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.showEnvironmentBanner, "true") }}
+    {{ settingToggle("Debug mode", "settings[debugMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.debugMode, "false") }}
 
     <h2>Screening</h2>
     {# Confirm identity on check-in #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][confirmIdentityOnCheckIn]={{'true' if data.settings.screening.confirmIdentityOnCheckIn !== 'true' else 'false'}}&clearQuery=true">{{ 'Require confirmation for identity on check-in' if data.settings.screening.confirmIdentityOnCheckIn=='false' else 'Do not require confirmation for identity on check-in'}}</a>
-    </p>
+    {{ settingToggle("Confirm identity on check-in", "settings[screening][confirmIdentityOnCheckIn]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.screening.confirmIdentityOnCheckIn, "true") }}
 
     {# Manual image collection #}
-    <p>
-      Image collection method:
-      {% if data.settings.screening.manualImageCollection == 'true' %}
-        <strong>Manual</strong> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]=false&clearQuery=true">Automatic</a>
-      {% else %}
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][manualImageCollection]=true&clearQuery=true">Manual</a> |
-        <strong>Automatic</strong>
-      {% endif %}
-    </p>
+    {{ settingToggle("Image collection method", "settings[screening][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic"}], data.settings.screening.manualImageCollection, "false") }}
 
     {# Image streaming simulation #}
-    <p>
-      Image streaming simulation:
-      {% if data.settings.screening.imageStreaming.enabled != 'false' %}
-        <strong>Enabled</strong> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][enabled]=false&clearQuery=true">Disable</a>
-      {% else %}
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][enabled]=true&clearQuery=true">Enable</a> |
-        <strong>Disabled</strong>
-      {% endif %}
-    </p>
+    {{ settingToggle("Image streaming simulation", "settings[screening][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.imageStreaming.enabled, "true") }}
 
     {% if data.settings.screening.imageStreaming.enabled != 'false' %}
-      {% set streamIntervalMs = data.settings.screening.imageStreaming.intervalMs %}
-      <p>
-        Streaming interval:
-        {% if streamIntervalMs == '1000' %}<strong>1s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=1000&clearQuery=true">1s</a>{% endif %}
-        |
-        {% if streamIntervalMs == '2000' %}<strong>2s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=2000&clearQuery=true">2s</a>{% endif %}
-        |
-        {% if not streamIntervalMs or streamIntervalMs == '3000' %}<strong>3s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=3000&clearQuery=true">3s</a>{% endif %}
-        |
-        {% if streamIntervalMs == '5000' %}<strong>5s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=5000&clearQuery=true">5s</a>{% endif %}
-        |
-        {% if streamIntervalMs == '10000' %}<strong>10s</strong>{% else %}<a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][imageStreaming][intervalMs]=10000&clearQuery=true">10s</a>{% endif %}
-      </p>
+      {{ settingToggle("Streaming interval", "settings[screening][imageStreaming][intervalMs]", [
+        {value: "1000", label: "1s"},
+        {value: "2000", label: "2s"},
+        {value: "3000", label: "3s"},
+        {value: "5000", label: "5s"},
+        {value: "10000", label: "10s"}
+      ], data.settings.screening.imageStreaming.intervalMs, "3000") }}
     {% endif %}
 
     {# Use condensed review summaries #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][useCondensedReviewSummaries]={{'true' if data.settings.screening.useCondensedReviewSummaries !== 'true' else 'false'}}&clearQuery=true">{{ 'Use condensed review summaries' if data.settings.screening.useCondensedReviewSummaries=='false' else 'Do not use condensed review summaries'}}</a>
-    </p>
+    {{ settingToggle("Condensed review summaries", "settings[screening][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.screening.useCondensedReviewSummaries, "false") }}
 
     {# Show participant section #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[screening][showParticipantSection]={{'true' if data.settings.screening.showParticipantSection !== 'true' else 'false'}}&clearQuery=true">{{ 'Show' if data.settings.screening.showParticipantSection=='false' else 'Hide'}} participant section</a>
-    </p>
+    {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
 
     <h2>Image reading</h2>
     {# One click normal #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][confirmNormal]={{'true' if data.settings.reading.confirmNormal !== 'true' else 'false'}}&clearQuery=true">{{ 'Require confirmation for normal results' if data.settings.reading.confirmNormal=='false' else 'Do not confirm normal results'}}</a>
-    </p>
+    {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
 
     {# Blind reading #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][blindReading]={{'true' if data.settings.reading.blindReading !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.blindReading=='false' else 'Disable'}} blind reading</a>
-    </p>
+    {{ settingToggle("Blind reading", "settings[reading][blindReading]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.blindReading, "false") }}
 
     {# Show remaining counts vs completed counts #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][showRemaining]={{'true' if data.settings.reading.showRemaining !== 'true' else 'false'}}&clearQuery=true">{{ 'Show remaining counts' if data.settings.reading.showRemaining=='false' else 'Show completed counts'}}</a>
-    </p>
-
-    
+    {{ settingToggle("Reading counts", "settings[reading][showRemaining]", [{value: "true", label: "Remaining"}, {value: "false", label: "Completed"}], data.settings.reading.showRemaining, "false") }}
 
     {# Auto-open PACS viewer #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][autoOpenPacsViewer]={{'true' if data.settings.reading.autoOpenPacsViewer !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.autoOpenPacsViewer !== 'true' else 'Disable'}} auto-open PACS viewer</a>
-    </p>
+    {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
 
     {# Opinion delay #}
-    <p>
-      <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][enableOpinionDelay]={{'true' if data.settings.reading.enableOpinionDelay !== 'true' else 'false'}}&clearQuery=true">{{ 'Enable' if data.settings.reading.enableOpinionDelay !== 'true' else 'Disable'}} opinion delay</a>
-    </p>
+    {{ settingToggle("Opinion delay", "settings[reading][enableOpinionDelay]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.enableOpinionDelay, "false") }}
+
+    {# Lazy batches #}
+    {{ settingToggle("Lazy batches", "settings[reading][lazyBatches]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.lazyBatches, "false") }}
+
+    {# Default batch target size #}
+    {{ settingToggle("Default batch target size", "settings[reading][defaultBatchTargetSize]", [
+      {value: "10", label: "10"},
+      {value: "25", label: "25"},
+      {value: "50", label: "50"},
+      {value: "100", label: "100"}
+    ], data.settings.reading.defaultBatchTargetSize, "25") }}
 
     {# Second reader comparison #}
-    <p>
-      Second reader comparison:
-      {% if data.settings.reading.secondReaderComparison == 'early' %}
-        <strong>Early</strong> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][secondReaderComparison]=late&clearQuery=true">Late</a> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][secondReaderComparison]=off&clearQuery=true">Off</a>
-      {% elseif data.settings.reading.secondReaderComparison == 'late' %}
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][secondReaderComparison]=early&clearQuery=true">Early</a> |
-        <strong>Late</strong> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][secondReaderComparison]=off&clearQuery=true">Off</a>
-      {% else %}
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][secondReaderComparison]=early&clearQuery=true">Early</a> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[reading][secondReaderComparison]=late&clearQuery=true">Late</a> |
-        <strong>Off</strong>
-      {% endif %}
-    </p>
+    {{ settingToggle("Second reader comparison", "settings[reading][secondReaderComparison]", [
+      {value: "early", label: "Early"},
+      {value: "late", label: "Late"},
+      {value: "off", label: "Off"}
+    ], data.settings.reading.secondReaderComparison, "off") }}
 
     {# Mammogram view order #}
-    <p>
-      Mammogram view order:
-      {% if data.settings.mammogramViewOrder == 'cc-first' %}
-        <strong>CC first</strong> |
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[mammogramViewOrder]=mlo-first&clearQuery=true">MLO first</a>
-      {% else %}
-        <a class="nhsuk-link--no-visited-state" href="./settings?settings[mammogramViewOrder]=cc-first&clearQuery=true">CC first</a> |
-        <strong>MLO first</strong>
-      {% endif %}
-    </p>
+    {{ settingToggle("Mammogram view order", "settings[mammogramViewOrder]", [
+      {value: "cc-first", label: "CC first"},
+      {value: "mlo-first", label: "MLO first"}
+    ], data.settings.mammogramViewOrder, "mlo-first") }}
 
     <h2>Generated data</h2>
 

@@ -55,6 +55,15 @@
   }
 }
 
+// Placeholder row tag — indicates a future case not yet loaded into the batch
+.app-placeholder-tag {
+  display: inline-block;
+  height: 22px;
+  width: 200px;
+  border-radius: 4px;
+  background-color: nhsuk-colour("grey-4");
+}
+
 // Toast message shown after giving an opinion
 .app-reading-opinion-banner {
   background-color: nhsuk-colour("blue");

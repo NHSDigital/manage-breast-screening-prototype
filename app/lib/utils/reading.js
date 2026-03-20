@@ -982,7 +982,11 @@ const getFirstUserReadableEvent = function (events, userId = null) {
  * @param {string | null} [userId] - User ID (falls back to current user from context)
  * @returns {object | null} Next readable event, or null if none
  */
-const getNextUserReadableEvent = function (events, currentEventId, userId = null) {
+const getNextUserReadableEvent = function (
+  events,
+  currentEventId,
+  userId = null
+) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
   const currentIndex = events.findIndex((e) => e.id === currentEventId)
   const eventsFromNext = [
@@ -1165,101 +1169,73 @@ const needsArbitration = (event) => {
 //***********************************************************************
 
 /**
- * Create a batch of events for reading based on specified criteria
- * @param {Object} data - Session data
- * @param {Object} options - Batch creation options
- * @param {string} options.type - Type of batch ('all_reads', 'first_reads', 'second_reads', 'awaiting_priors', 'clinic', 'custom')
- * @param {string} [options.name] - Display name for the batch
- * @param {string} [options.clinicId] - Clinic ID (for clinic-specific batches)
- * @param {string} [options.batchId] - Custom batch ID (if not provided, one will be generated)
- * @param {number} [options.limit] - Maximum number of events to include (defaults to 50)
- * @param {Object} [options.filters] - Additional filters to apply
- * @returns {Object} Created batch with ID and events
+ * Check if an event is a complex case
+ *
+ * @param {object} event - The event to check
+ * @returns {boolean} Whether the event is a complex case
  */
-const createReadingBatch = (data, options) => {
-  const {
-    type = 'custom',
-    name,
-    clinicId,
-    batchId = null, // Allow custom batch ID
-    limit = 25,
-    filters = {}
-  } = options
+const isComplexCase = (event) => {
+  const hasSymptoms = event?.medicalInformation?.symptoms?.length > 0
+  const hasAdditionalImages =
+    event?.mammogramData?.metadata?.hasAdditionalImages
+  const isImperfect =
+    event?.mammogramData?.isImperfectButBestPossible?.includes?.('yes')
+  const isIncomplete =
+    event?.mammogramData?.isIncompleteMammography?.includes?.('yes')
+  const hasImplants =
+    event?.medicalInformation?.medicalHistory?.breastImplantsAugmentation
+      ?.length > 0
 
+  return (
+    hasSymptoms ||
+    hasAdditionalImages ||
+    isImperfect ||
+    isIncomplete ||
+    hasImplants
+  )
+}
+
+/**
+ * Get eligible event candidates for a batch based on its type and filters
+ * Shared between createReadingBatch and topUpBatch to ensure consistent selection
+ *
+ * @param {object} data - Session data
+ * @param {object} batchOptions - Batch options ({ type, clinicId, filters })
+ * @returns {Array} Eligible events sorted oldest-first
+ */
+const getEligibleCandidatesForBatch = (data, batchOptions) => {
+  const { type = 'custom', clinicId, filters = {} } = batchOptions
   const currentUserId = data.currentUser.id
 
-  // Use provided batchId or generate a new one
-  const finalBatchId = batchId || generateBatchId()
-
-  // Start with all eligible events from the last 30 days
   let events = data.events.filter((event) => eligibleForReading(event))
 
-  // For clinic-specific batches
   if (type === 'clinic') {
-    if (!clinicId) {
+    if (!clinicId)
       throw new Error('Clinic ID is required for clinic-type batches')
-    }
     events = filterEventsByClinic(events, clinicId)
   } else {
-    // For all non-clinic batches, apply common filters:
-
-    // 1. By default, filter by events the user can read (unless explicitly overridden)
+    // 1. Filter to events the user can read (unless overridden)
     if (filters.userCanRead !== false) {
       events = filterEventsByUserCanRead(events, currentUserId)
     }
 
-    // 2. Apply the awaiting priors filter
+    // 2. Apply awaiting priors filter
     if (type === 'awaiting_priors') {
-      // Only include events that are awaiting priors
       events = events.filter((event) => awaitingPriors(event))
     } else if (!filters.includeAwaitingPriors) {
-      // By default, exclude events that are awaiting priors
       events = events.filter((event) => !awaitingPriors(event))
     }
 
-    // 3. Apply symptoms filter if specified
+    // 3. Symptoms filter
     if (filters.hasSymptoms) {
       events = events.filter(
-        (event) =>
-          event?.medicalInformation?.symptoms &&
-          event?.medicalInformation.symptoms?.length > 0
+        (event) => event?.medicalInformation?.symptoms?.length > 0
       )
     }
 
-    // 4. Apply complex case filter if specified
+    // 4. Complex case filter
     if (filters.complexOnly) {
-      const isComplexCase = (event) => {
-        const hasSymptoms =
-          event?.medicalInformation?.symptoms &&
-          event?.medicalInformation.symptoms?.length > 0
-
-        const hasAdditionalImages =
-          event?.mammogramData?.metadata?.hasAdditionalImages
-
-        const isImperfect =
-          event?.mammogramData?.isImperfectButBestPossible?.includes &&
-          event.mammogramData.isImperfectButBestPossible.includes('yes')
-
-        const isIncomplete =
-          event?.mammogramData?.isIncompleteMammography?.includes &&
-          event.mammogramData.isIncompleteMammography.includes('yes')
-
-        const hasImplants =
-          event?.medicalInformation?.medicalHistory
-            ?.breastImplantsAugmentation &&
-          event.medicalInformation.medicalHistory.breastImplantsAugmentation
-            .length > 0
-
-        return (
-          hasSymptoms ||
-          hasAdditionalImages ||
-          isImperfect ||
-          isIncomplete ||
-          hasImplants
-        )
-      }
-
-      events = events.filter((event) => isComplexCase(event))
+      events = events.filter(isComplexCase)
     }
   }
 
@@ -1268,34 +1244,90 @@ const createReadingBatch = (data, options) => {
     case 'first_reads':
       events = filterEventsByNeedsFirstRead(events)
       break
-
     case 'second_reads':
       events = filterEventsByNeedsSecondRead(events)
       break
-
     case 'all_reads':
     case 'awaiting_priors':
       events = filterEventsByNeedsAnyRead(events)
       break
   }
 
-  // Sort events (typically by date, oldest first)
-  events = [...events].sort(
+  // Sort oldest first
+  return [...events].sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
+}
 
-  // Apply limit
-  if (limit > 0 && events.length > limit) {
-    events = events.slice(0, limit)
-  }
+/**
+ * Create a batch of events for reading based on specified criteria
+ *
+ * When lazy batches are enabled (settings.reading.lazyBatches), non-clinic batches
+ * start with only the first eligible event. The batch is topped up one event at a
+ * time via topUpBatch() as reads and skips happen, until targetSize is reached.
+ *
+ * @param {object} data - Session data
+ * @param {object} options - Batch creation options
+ * @param {string} options.type - Type of batch ('all_reads', 'first_reads', 'second_reads', 'awaiting_priors', 'clinic', 'custom')
+ * @param {string} [options.name] - Display name for the batch
+ * @param {string} [options.clinicId] - Clinic ID (for clinic-specific batches)
+ * @param {string} [options.batchId] - Custom batch ID (auto-generated if omitted)
+ * @param {number} [options.limit] - Target size (defaults to settings value)
+ * @param {object} [options.filters] - Additional filters to apply
+ * @returns {object} Created batch
+ */
+const createReadingBatch = (data, options) => {
+  const {
+    type = 'custom',
+    name,
+    clinicId,
+    batchId = null,
+    limit = null,
+    lazy = null, // explicit override; null means use settings
+    filters = {}
+  } = options
+
+  const finalBatchId = batchId || generateBatchId()
+
+  // Determine target size: explicit limit > settings default > 25
+  const settingsTargetSize =
+    parseInt(data.settings?.reading?.defaultBatchTargetSize) || 25
+  const targetSize = limit !== null ? parseInt(limit) : settingsTargetSize
+
+  // Lazy loading: start with only the first event and top up as reads happen
+  // Clinic batches are always fully populated upfront
+  // Explicit lazy param overrides the setting
+  const lazyEnabled = lazy !== null ? lazy : data.settings?.reading?.lazyBatches === 'true'
+  const isLazy = lazyEnabled && type !== 'clinic'
+
+  // Get all eligible candidates using the shared helper
+  const allCandidates = getEligibleCandidatesForBatch(data, {
+    type,
+    clinicId,
+    filters
+  })
+
+  // Cap to target size
+  const cappedEvents =
+    targetSize > 0 && allCandidates.length > targetSize
+      ? allCandidates.slice(0, targetSize)
+      : allCandidates
+
+  // Lazy batches start with only the first event
+  const initialEvents =
+    isLazy && cappedEvents.length > 0 ? [cappedEvents[0]] : cappedEvents
+
+  // Clinic batches have no fixed target — their size is however many eligible events exist
+  const batchTargetSize = type === 'clinic' ? cappedEvents.length : targetSize
 
   // Create and store the batch
   const batch = {
     id: finalBatchId,
     name: name || getDefaultBatchName(type, clinicId, data),
     type,
-    events,
-    eventIds: events.map((e) => e.id),
+    events: initialEvents,
+    eventIds: initialEvents.map((e) => e.id),
+    targetSize: batchTargetSize,
     clinicId,
     createdAt: new Date().toISOString(),
     skippedEvents: [],
@@ -1445,6 +1477,44 @@ const skipEventInBatch = (data, batchId, eventId) => {
 }
 
 /**
+ * Add the next eligible event to a batch if it is under its target size
+ * Called after each read or skip to grow the batch one case at a time
+ *
+ * @param {object} data - Session data
+ * @param {string} batchId - Batch ID
+ * @returns {boolean} Whether an event was added
+ */
+const topUpBatch = (data, batchId) => {
+  const batch = getReadingBatch(data, batchId)
+  if (!batch) return false
+
+  // Clinic batches are fully populated at creation
+  if (batch.type === 'clinic') return false
+
+  // Already at or above target size
+  if (!batch.targetSize || batch.eventIds.length >= batch.targetSize)
+    return false
+
+  // Collect all event IDs currently in any batch to avoid overlap
+  const claimedEventIds = new Set(
+    Object.values(data.readingSessionBatches || {}).flatMap(
+      (b) => b.eventIds || []
+    )
+  )
+
+  // Get candidates using the same filters as at batch creation, excluding already-claimed events
+  const candidates = getEligibleCandidatesForBatch(data, batch).filter(
+    (event) => !claimedEventIds.has(event.id)
+  )
+
+  if (candidates.length === 0) return false
+
+  // Add the next eligible event
+  batch.eventIds.push(candidates[0].id)
+  return true
+}
+
+/**
  * Get reading progress for a batch
  *
  * @param {object} data - Session data
@@ -1467,13 +1537,24 @@ const getBatchReadingProgress = (
     .map((eventId) => data.events.find((e) => e.id === eventId))
     .filter(Boolean)
 
-  // Use existing function for progress tracking
-  return getReadingProgress(
+  // Use existing function for progress tracking, then add batch-level size info
+  const progress = getReadingProgress(
     batchEvents,
     currentEventId,
     batch.skippedEvents,
     userId || data.currentUser.id
   )
+
+  const resolvedTargetSize = batch.targetSize || batchEvents.length
+
+  return {
+    ...progress,
+    // How many events are currently loaded vs the overall target
+    populatedCount: batchEvents.length,
+    targetSize: resolvedTargetSize,
+    // Remaining reads against the target (not just currently loaded events)
+    targetRemaining: Math.max(0, resolvedTargetSize - progress.userReadCount)
+  }
 }
 
 module.exports = {
@@ -1532,5 +1613,6 @@ module.exports = {
   getOrCreateClinicBatch,
   getFirstReadableEventInBatch,
   skipEventInBatch,
+  topUpBatch,
   getBatchReadingProgress
 }
