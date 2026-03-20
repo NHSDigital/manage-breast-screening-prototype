@@ -2,47 +2,19 @@
 
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
+const dayjs = require('dayjs')
 
-// Example pregnancy details
-const PREGNANCY_DETAILS = [
-  'due in November',
-  'due in December',
-  'due in January',
-  'due next month',
-  '8 weeks pregnant',
-  '12 weeks pregnant',
-  '20 weeks pregnant',
-  '30 weeks pregnant'
-]
+// Generate a past date in 'MMMM YYYY' format
+const randomPastDate = (minMonthsAgo, maxMonthsAgo) => {
+  const monthsAgo = faker.number.int({ min: minMonthsAgo, max: maxMonthsAgo })
+  return dayjs().subtract(monthsAgo, 'month').format('MMMM YYYY')
+}
 
-// Example recent pregnancy details
-const RECENT_PREGNANCY_DETAILS = [
-  'gave birth two weeks ago',
-  'gave birth one month ago',
-  'gave birth six weeks ago',
-  'gave birth two months ago',
-  'gave birth three months ago'
-]
-
-// Example breastfeeding durations
-const BREASTFEEDING_DURATIONS = [
-  'since January',
-  'since March',
-  'for 2 weeks',
-  'for 6 weeks',
-  'for 3 months',
-  'for 6 months',
-  'for 1 year'
-]
-
-// Example recent breastfeeding stopped
-const RECENTLY_STOPPED_BREASTFEEDING = [
-  'two weeks ago',
-  'one month ago',
-  'two months ago',
-  'three months ago',
-  'stopped last week'
-]
+// Generate a future date in 'MMMM YYYY' format
+const randomFutureDate = (minMonthsAhead, maxMonthsAhead) => {
+  const monthsAhead = faker.number.int({ min: minMonthsAhead, max: maxMonthsAhead })
+  return dayjs().add(monthsAhead, 'month').format('MMMM YYYY')
+}
 
 /**
  * Generate pregnancy and breastfeeding information
@@ -70,10 +42,12 @@ const generatePregnancyAndBreastfeeding = (options = {}) => {
 
   // Add conditional fields based on pregnancy status
   if (info.pregnancyStatus === 'yes') {
-    info.currentlyPregnantDetails = faker.helpers.arrayElement(PREGNANCY_DETAILS)
+    // Due date 1-9 months in future
+    info.pregnancyDueDate = randomFutureDate(1, 9)
   }
   else if (info.pregnancyStatus === 'noButRecently') {
-    info.recentlyPregnantDetails = faker.helpers.arrayElement(RECENT_PREGNANCY_DETAILS)
+    // Pregnancy ended 1-5 months ago
+    info.pregnancyEndDate = randomPastDate(1, 5)
   }
 
   // Weighted selection of breastfeeding status
@@ -97,10 +71,12 @@ const generatePregnancyAndBreastfeeding = (options = {}) => {
 
   // Add conditional fields based on breastfeeding status
   if (info.breastfeedingStatus === 'yes') {
-    info.currentlyBreastfeedingDuration = faker.helpers.arrayElement(BREASTFEEDING_DURATIONS)
+    // Started breastfeeding 2 weeks to 18 months ago
+    info.breastfeedingStartDate = randomPastDate(0, 18)
   }
   else if (info.breastfeedingStatus === 'recentlyStopped') {
-    info.recentlyBreastfeedingDuration = faker.helpers.arrayElement(RECENTLY_STOPPED_BREASTFEEDING)
+    // Stopped breastfeeding 1-4 months ago
+    info.breastfeedingStopDate = randomPastDate(1, 4)
   }
 
   return info

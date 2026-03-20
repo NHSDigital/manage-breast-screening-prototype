@@ -372,11 +372,11 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
   if (hrt) {
     if (hrt.hrtQuestion === 'yes') {
       summaries.push(
-        `Taking HRT (${hrt.hrtDuration || 'duration not specified'})`
+        `Taking HRT (started ${hrt.hrtDateStarted || 'date not specified'})`
       )
     } else if (hrt.hrtQuestion === 'no-recently-stopped') {
-      if (hrt.hrtDurationSinceStopped) {
-        summaries.push(`Recently stopped HRT (${hrt.hrtDurationSinceStopped})`)
+      if (hrt.hrtDateStopped) {
+        summaries.push(`Recently stopped HRT (stopped ${hrt.hrtDateStopped})`)
       } else {
         summaries.push('Recently stopped HRT')
       }
@@ -389,14 +389,14 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
   if (pregBf) {
     // Pregnancy
     if (pregBf.pregnancyStatus === 'yes') {
-      if (pregBf.currentlyPregnantDetails) {
-        summaries.push(`Pregnant (${pregBf.currentlyPregnantDetails})`)
+      if (pregBf.pregnancyDueDate) {
+        summaries.push(`Pregnant (due ${pregBf.pregnancyDueDate})`)
       } else {
         summaries.push('Pregnant')
       }
     } else if (pregBf.pregnancyStatus === 'noButRecently') {
-      if (pregBf.recentlyPregnantDetails) {
-        summaries.push(`Recently pregnant (${pregBf.recentlyPregnantDetails})`)
+      if (pregBf.pregnancyEndDate) {
+        summaries.push(`Recently pregnant (ended ${pregBf.pregnancyEndDate})`)
       } else {
         summaries.push('Recently pregnant')
       }
@@ -404,17 +404,17 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
 
     // Breastfeeding
     if (pregBf.breastfeedingStatus === 'yes') {
-      if (pregBf.currentlyBreastfeedingDuration) {
+      if (pregBf.breastfeedingStartDate) {
         summaries.push(
-          `Breastfeeding (${pregBf.currentlyBreastfeedingDuration})`
+          `Breastfeeding (started ${pregBf.breastfeedingStartDate})`
         )
       } else {
         summaries.push('Breastfeeding')
       }
     } else if (pregBf.breastfeedingStatus === 'recentlyStopped') {
-      if (pregBf.recentlyBreastfeedingDuration) {
+      if (pregBf.breastfeedingStopDate) {
         summaries.push(
-          `Recently breastfeeding (stopped ${pregBf.recentlyBreastfeedingDuration})`
+          `Recently breastfeeding (stopped ${pregBf.breastfeedingStopDate})`
         )
       } else {
         summaries.push('Recently breastfeeding')
