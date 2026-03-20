@@ -9,8 +9,8 @@
         Currently taking HRT
       </p>
       <p>
-        {# Example: "Duration taken: 3 months" #}
-        Duration taken: {{ hrtData.hrtDuration }}
+        {# Example: "Date started: September 2022" #}
+        Date started: {{ hrtData.hrtDateStarted }}
       </p>
     {% elseif hrtData.hrtQuestion == 'no-recently-stopped' %}
       <p>
@@ -18,7 +18,7 @@
       </p>
       <p>
         Duration taken: {{ hrtData.hrtDurationBeforeStopping }}<br>
-        Stopped: {{ hrtData.hrtDurationSinceStopped }} ago<br>
+        Date stopped: {{ hrtData.hrtDateStopped }}<br>
       </p>
     {% elseif hrtData.hrtQuestion == 'no' %}
       Not taking HRT
@@ -39,15 +39,15 @@
         Currently pregnant
       </p>
       <p>
-        {# Example: "Duration taken: 3 months" #}
-        Timeframe: {{ pregnancyAndBreastfeedingData.currentlyPregnantDetails }}
+        {# Example: "Due date: June 2026" #}
+        Due date: {{ pregnancyAndBreastfeedingData.pregnancyDueDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.pregnancyStatus == 'noButRecently' %}
       <p>
         Recently pregnant
       </p>
       <p>
-        Details: {{ pregnancyAndBreastfeedingData.recentlyPregnantDetails }}
+        Pregnancy ended: {{ pregnancyAndBreastfeedingData.pregnancyEndDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.pregnancyStatus == 'noNotPregnant' %}
       <p>Not pregnant</p>
@@ -60,15 +60,15 @@
         Currently breastfeeding
       </p>
       <p>
-        {# Example: "Duration taken: 3 months" #}
-        Duration: {{ pregnancyAndBreastfeedingData.currentlyBreastfeedingDuration }}
+        {# Example: "Started: January 2026" #}
+        Started: {{ pregnancyAndBreastfeedingData.breastfeedingStartDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'recentlyStopped' %}
       <p>
         Recently breastfeeding
       </p>
       <p>
-        Details: {{ pregnancyAndBreastfeedingData.recentlyBreastfeedingDuration }}
+        Stopped: {{ pregnancyAndBreastfeedingData.breastfeedingStopDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'no' %}
       <p>Not breastfeeding</p>

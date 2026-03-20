@@ -2,26 +2,13 @@
 
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
+const dayjs = require('dayjs')
 
-// Example durations for current HRT use
-const CURRENT_HRT_DURATIONS = [
-  '6 months',
-  '18 months',
-  '2 years',
-  '3 years',
-  '5 years',
-  '7 years',
-  '10 years'
-]
-
-// Example timeframes for when stopped
-const STOPPED_TIMEFRAMES = [
-  'two weeks ago',
-  'one month ago',
-  'six weeks ago',
-  'three months ago',
-  'four months ago'
-]
+// Generate a past date in 'MMMM YYYY' format (e.g., 'September 2022')
+const randomPastDate = (minMonthsAgo, maxMonthsAgo) => {
+  const monthsAgo = faker.number.int({ min: minMonthsAgo, max: maxMonthsAgo })
+  return dayjs().subtract(monthsAgo, 'month').format('MMMM YYYY')
+}
 
 // Example durations before stopping
 const DURATION_BEFORE_STOPPING = [
@@ -59,10 +46,12 @@ const generateHRT = (options = {}) => {
 
   // Add conditional fields based on status
   if (hrtQuestion === 'yes') {
-    hrt.hrtDuration = faker.helpers.arrayElement(CURRENT_HRT_DURATIONS)
+    // Date HRT was started (6 months to 15 years ago)
+    hrt.hrtDateStarted = randomPastDate(6, 180)
   }
   else if (hrtQuestion === 'no-recently-stopped') {
-    hrt.hrtDurationSinceStopped = faker.helpers.arrayElement(STOPPED_TIMEFRAMES)
+    // Date HRT was stopped (1-11 months ago)
+    hrt.hrtDateStopped = randomPastDate(1, 11)
     hrt.hrtDurationBeforeStopping = faker.helpers.arrayElement(DURATION_BEFORE_STOPPING)
   }
 

@@ -201,9 +201,9 @@ module.exports = {
 {
   hrtQuestion: 'yes' | 'no-recently-stopped' | 'no',
   // If 'yes':
-  hrtDuration: string,                    // e.g., '3 years', '18 months'
+  hrtDateStarted: string,                 // e.g., 'September 2022'
   // If 'no-recently-stopped':
-  hrtDurationSinceStopped: string,        // e.g., 'two weeks ago'
+  hrtDateStopped: string,                 // e.g., 'January 2026'
   hrtDurationBeforeStopping: string       // e.g., '5 years'
 }
 ```
@@ -227,15 +227,15 @@ module.exports = {
 {
   pregnancyStatus: 'yes' | 'noButRecently' | 'noNotPregnant',
   // If 'yes':
-  currentlyPregnantDetails: string,       // e.g., 'due in November'
+  pregnancyDueDate: string,               // e.g., 'June 2026'
   // If 'noButRecently':
-  recentlyPregnantDetails: string,        // e.g., 'gave birth one month ago'
+  pregnancyEndDate: string,               // e.g., 'January 2026'
 
   breastfeedingStatus: 'yes' | 'recentlyStopped' | 'no',
   // If 'yes':
-  currentlyBreastfeedingDuration: string, // e.g., 'for 6 months'
+  breastfeedingStartDate: string,         // e.g., 'January 2026'
   // If 'recentlyStopped':
-  recentlyBreastfeedingDuration: string   // e.g., 'two weeks ago'
+  breastfeedingStopDate: string           // e.g., 'December 2025'
 }
 ```
 
