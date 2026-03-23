@@ -28,8 +28,8 @@
   {% set currentlyTakingHtml %}
 
     {{ input({
-      name: "event[medicalInformation][hrt][hrtDuration]",
-      value: event.medicalInformation.hrt.hrtDuration,
+      name: "event[medicalInformation][hrt][hrtDateStarted]",
+      value: event.medicalInformation.hrt.hrtDateStarted,
       label: {
         text: "Approximate date started"
       },
@@ -44,8 +44,8 @@
   {% set recentlyStoppedHtml %}
 
     {{ input({
-      name: "event[medicalInformation][hrt][hrtDurationSinceStopped]",
-      value: event.medicalInformation.hrt.hrtDurationSinceStopped,
+      name: "event[medicalInformation][hrt][hrtDateStopped]",
+      value: event.medicalInformation.hrt.hrtDateStopped,
       label: {
         text: "Approximate date stopped"
       },

@@ -96,7 +96,11 @@ const defaultSettings = {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
     showParticipantSection: 'false',
-    useCondensedReviewSummaries: 'true'
+    useCondensedReviewSummaries: 'true',
+    imageStreaming: {
+      enabled: 'true',
+      intervalMs: '3000'
+    }
   },
   reading: {
     blindReading: config.reading.blindReading,
@@ -104,7 +108,9 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    secondReaderComparison: 'early' // 'early' | 'late' | 'off'
+    secondReaderComparison: 'early', // 'early' | 'late' | 'off'
+    lazyBatches: 'true',
+    defaultBatchTargetSize: '25'
   }
 }
 

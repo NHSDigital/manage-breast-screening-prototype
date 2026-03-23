@@ -26,8 +26,8 @@
 
   {% set currentlyPregnant %}
     {{ input({
-      name: "event[medicalInformation][pregnancyAndBreastfeeding][currentlyPregnantDetails]",
-      value: event.medicalInformation.pregnancyAndBreastfeeding.currentlyPregnantDetails,
+      name: "event[medicalInformation][pregnancyAndBreastfeeding][pregnancyDueDate]",
+      value: event.medicalInformation.pregnancyAndBreastfeeding.pregnancyDueDate,
       label: {
         text: "Approximate due date"
       },
@@ -40,8 +40,8 @@
 
   {% set recentlyPregnant %}
     {{ input({
-      name: "event[medicalInformation][pregnancyAndBreastfeeding][recentlyPregnantDetails]",
-      value: event.medicalInformation.pregnancyAndBreastfeeding.recentlyPregnantDetails,
+      name: "event[medicalInformation][pregnancyAndBreastfeeding][pregnancyEndDate]",
+      value: event.medicalInformation.pregnancyAndBreastfeeding.pregnancyEndDate,
       label: {
         text: "Approximate date pregnancy ended"
       },
@@ -54,8 +54,8 @@
 
   {% set currentlyBreastfeeding %}
     {{ input({
-      name: "event[medicalInformation][pregnancyAndBreastfeeding][currentlyBreastfeedingDuration]",
-      value: event.medicalInformation.pregnancyAndBreastfeeding.currentlyBreastfeedingDuration,
+      name: "event[medicalInformation][pregnancyAndBreastfeeding][breastfeedingStartDate]",
+      value: event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStartDate,
       label: {
         text: "Approximate date started"
       },
@@ -68,8 +68,8 @@
 
   {% set recentlyBreastfeeding %}
     {{ input({
-      name: "event[medicalInformation][pregnancyAndBreastfeeding][recentlyBreastfeedingDuration]",
-      value: event.medicalInformation.pregnancyAndBreastfeeding.recentlyBreastfeedingDuration,
+      name: "event[medicalInformation][pregnancyAndBreastfeeding][breastfeedingStopDate]",
+      value: event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStopDate,
       label: {
         text: "Approximate date stopped"
       },

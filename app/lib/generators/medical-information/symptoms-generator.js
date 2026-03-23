@@ -2,6 +2,7 @@
 
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
+const dayjs = require('dayjs')
 const generateId = require('../../utils/id-generator')
 const symptomTypesData = require('../../../data/symptom-types.js')
 
@@ -143,13 +144,6 @@ const INVESTIGATION_DETAILS = [
   'Specialist examined, ordered further tests'
 ]
 
-const APPROXIMATE_STOP_DATES = [
-  '3 days ago',
-  '1 week ago',
-  'Few days ago',
-  'Last week',
-  '5 days ago'
-]
 
 const LOCATION_DESCRIPTIONS = {
   'right breast': [
@@ -253,9 +247,9 @@ const generateSymptom = (options = {}) => {
   // 30% chance the symptom has recently stopped
   symptom.hasStopped = Math.random() < 0.3
   if (symptom.hasStopped) {
-    symptom.approximateDateStopped = faker.helpers.arrayElement(
-      APPROXIMATE_STOP_DATES
-    )
+    // Stopped 1-6 months ago, formatted as month/year
+    const monthsAgo = faker.number.int({ min: 1, max: 6 })
+    symptom.approximateDateStopped = dayjs().subtract(monthsAgo, 'month').format('MMMM YYYY')
   }
 
   // 25% chance the symptom is intermittent

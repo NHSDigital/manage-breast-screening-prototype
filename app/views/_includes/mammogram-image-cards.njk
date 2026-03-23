@@ -1,0 +1,93 @@
+{# app/views/_includes/mammogram-image-cards.njk #}
+{#
+  Display mammogram images in two breast side cards (right breast, left breast)
+
+  Requires parent to set:
+  - mammogramViews: array from event.mammogramData.views | getObjectValues
+  - mammogramImages: from getImagesForEvent(...)
+
+  Optional:
+  - thumbnailSize: "large" for bigger thumbnails (default is standard size)
+  - hideAdditionalDetails: boolean - suppresses repeat/extra details in each view
+#}
+
+{# Build ordered standard views, respecting the mammogramViewOrder config #}
+{% if data.settings.mammogramViewOrder == 'mlo-first' %}
+  {% set standardViews = [
+    { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
+    { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
+    { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' },
+    { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' }
+  ] %}
+{% else %}
+  {% set standardViews = [
+    { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
+    { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
+    { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' },
+    { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' }
+  ] %}
+{% endif %}
+
+{# Build view lists with placeholders for missing views #}
+{% set rightViews = [] %}
+{% set leftViews = [] %}
+{% for standardView in standardViews %}
+  {% set viewData = null %}
+  {% for viewItem in mammogramViews %}
+    {% if viewItem.viewShortWithSide == standardView.viewShortWithSide %}
+      {% set viewData = viewItem %}
+    {% endif %}
+  {% endfor %}
+
+  {% if not viewData %}
+    {% set viewData = {
+      side: standardView.side,
+      viewShort: standardView.viewShort,
+      viewShortWithSide: standardView.viewShortWithSide,
+      images: [],
+      isMissing: true
+    } %}
+  {% endif %}
+
+  {% if standardView.side == 'right' %}
+    {% set rightViews = rightViews | push(viewData) %}
+  {% else %}
+    {% set leftViews = leftViews | push(viewData) %}
+  {% endif %}
+{% endfor %}
+
+{# Display side by side: right breast on left, left breast on right #}
+{# Using flex rather than the NHS grid so cards shrink to fit their content #}
+<div class="app-mammogram-cards">
+  <div class="app-mammogram-card">
+    {% set rightViewsHtml %}
+      <div class="app-mammogram-views">
+        {% for viewItem in rightViews %}
+          {% include "_includes/mammogram-image-display.njk" %}
+        {% endfor %}
+      </div>
+    {% endset %}
+    {{ card({
+      heading: "Right breast",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: rightViewsHtml
+    }) }}
+  </div>
+
+  <div class="app-mammogram-card">
+    {% set leftViewsHtml %}
+      <div class="app-mammogram-views">
+        {% for viewItem in leftViews %}
+          {% include "_includes/mammogram-image-display.njk" %}
+        {% endfor %}
+      </div>
+    {% endset %}
+    {{ card({
+      heading: "Left breast",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: leftViewsHtml
+    }) }}
+  </div>
+</div>

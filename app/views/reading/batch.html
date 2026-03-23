@@ -107,6 +107,10 @@
       items: secondaryNavItems
     }) }}
 
+    {# Number of slots not yet populated in a lazy batch #}
+    {% set pendingCount = (batch.targetSize - batch.eventIds | length) if batch.targetSize else 0 %}
+    {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
+
     {% if view == 'your-reads' %}
       {# YOUR READS VIEW - Shows cases from user's perspective #}
       {% set userReadableEvents = [] %}
@@ -116,7 +120,7 @@
         {% endif %}
       {% endfor %}
 
-      <h2>Your reads ({{ userReadableEvents | length }})</h2>
+      <h2>Your reads ({{ batch.targetSize or userReadableEvents | length }})</h2>
 
       {% if userReadableEvents | length == 0 %}
         <p>You don't have any cases you can read in this batch.</p>
@@ -205,12 +209,28 @@
               </td>
             </tr>
             {% endfor %}
+
+            {# Placeholder rows for pending lazy-batch slots #}
+            {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
+            {% for i in range(0, placeholderRowsShown) %}
+            <tr>
+              <td><span class="app-placeholder-tag"></span></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+            {% endfor %}
+            {% if pendingCount > 3 %}
+            <tr>
+              <td colspan="4" class="">and {{ pendingCount - 3 }} more in this batch</td>
+            </tr>
+            {% endif %}
           </tbody>
         </table>
       {% endif %}
     {% else %}
       {# ALL READS VIEW - Shows all reads with columns for each read #}
-      <h2>Cases ({{ events | length }})</h2>
+      <h2>Cases ({{ batch.targetSize or events | length }})</h2>
 
       <table class="nhsuk-table">
         <thead>
@@ -339,6 +359,23 @@
               </td>
             </tr>
           {% endfor %}
+
+          {# Placeholder rows for pending lazy-batch slots #}
+          {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
+          {% for i in range(0, placeholderRowsShown) %}
+          <tr>
+            <td><span class="app-placeholder-tag"></span></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          {% endfor %}
+          {% if pendingCount > 3 %}
+          <tr>
+            <td colspan="5" class="">and {{ pendingCount - 3 }} more in this batch</td>
+          </tr>
+          {% endif %}
         </tbody>
       </table>
     {% endif %}
