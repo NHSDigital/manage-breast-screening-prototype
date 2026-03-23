@@ -48,29 +48,11 @@
   <div class="nhsuk-grid-column-full">
 
     {% set currentUserHasRead = readingStatus.userReadCount > 0 %}
+    {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
 
     {% if firstUserReadableEvent %}
-      {# Reading progress #}
-      {% set insetTextHtml %}
-        <p>Reading status:</p>
-        <ul class="nhsuk-list">
-          <li>First read: {{ readingStatus.firstReadCount }} complete, {{ readingStatus.firstReadRemaining }} remaining</li>
-          <li>Second read: {{ readingStatus.secondReadCount }} complete, {{ readingStatus.secondReadReady }} ready for 2nd read</li>
-          {% if batch.skippedEvents | length > 0 %}
-            <li>{{ batch.skippedEvents | length }} cases skipped</li>
-          {% endif %}
-          {% if readingStatus.arbitrationCount > 0 %}
-            <li>{{ readingStatus.arbitrationCount }} cases need arbitration</li>
-          {% endif %}
-        </ul>
-      {% endset %}
-
-      {{ insetText({
-        html: insetTextHtml
-      }) }}
-
       <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button">
-        {{ "Resume reading" if currentUserHasRead else "Start reading" }}
+        {{ readingActionText }}
       </a>
     {% else %}
       {% set notificationBannerHtml %}
@@ -89,8 +71,8 @@
     {% set secondaryNavItems = [] %}
 
     {% for item in [
-      { id: 'your-reads', label: 'Your reads' },
-      { id: 'all-reads', label: 'All reads' }
+      { id: 'your-reads', label: 'Your opinion' },
+      { id: 'all-reads', label: "Other readers' opinion and outcome" }
     ] %}
       {% set href -%}
         /reading/batch/{{ batch.id }}/{{ item.id }}
@@ -120,29 +102,43 @@
         {% endif %}
       {% endfor %}
 
-      <h2>Your reads ({{ batch.targetSize or userReadableEvents | length }})</h2>
+      <h2>Your opinion ({{ batch.targetSize or userReadableEvents | length }} in batch)</h2>
 
       {% if userReadableEvents | length == 0 %}
         <p>You don't have any cases you can read in this batch.</p>
       {% else %}
-        <table class="nhsuk-table">
+        <table class="nhsuk-table app-reading-batch-table">
           <thead>
             <tr>
+              <th scope="col">No.</th>
               <th scope="col">Case</th>
-              <th scope="col">Screened</th>
-              <th scope="col">Read type</th>
+              <th scope="col">Screening date</th>
               <th scope="col">Your opinion</th>
+              <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
             </tr>
           </thead>
           <tbody>
             {% for event in userReadableEvents %}
             {% set metadata = event | getReadingMetadata %}
-            <tr>
+            <tr{% if firstUserReadableEvent and event.id == firstUserReadableEvent.id and not (event | userHasReadEvent) %} class="app-placeholder-row--next"{% endif %}>
+              <td>
+                <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
+              </td>
               <td>
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
+
+                <br>
+                <span class="app-text-grey app-nowrap nhsuk-body-s">
+                  {% set readCount = metadata.readCount %}
+                  {% if event | userHasReadEvent %}
+                    {{ "First read" if readCount == 1 else "Second read" }}
+                  {% else %}
+                    {{ "First read" if readCount == 0 else "Second read" }}
+                  {% endif %}
+                </span>
 
                 
                 {% if event.medicalInformation.symptoms | length %}
@@ -178,22 +174,6 @@
                 </span>
               </td>
               <td>
-                {% set readCount = metadata.readCount %}
-                {% if event | userHasReadEvent %}
-                  {% if readCount == 1 %}
-                    First read
-                  {% else %}
-                    Second read
-                  {% endif %}
-                {% else %}
-                  {% if readCount == 0 %}
-                    First read
-                  {% else %}
-                    Second read
-                  {% endif %}
-                {% endif %}
-              </td>
-              <td>
                 {% if event | userHasReadEvent %}
                   {% set read = event | getReadForUser %}
                   {% if read.opinion %}
@@ -207,36 +187,45 @@
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
+              <td class="app-placeholder-action-cell">
+                {% if firstUserReadableEvent and event.id == firstUserReadableEvent.id and not (event | userHasReadEvent) %}
+                  <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
 
             {# Placeholder rows for pending lazy-batch slots #}
             {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
             {% for i in range(0, placeholderRowsShown) %}
-            <tr>
-              <td><span class="app-placeholder-tag"></span></td>
+            <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
+              <td>
+                <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ (userReadableEvents | length) + loop.index }}.</span>
+              </td>
+              <td>
+                <span class="app-placeholder-tag"></span>
+                {% if pendingCount > 3 and loop.last %}
+                  <span class="app-placeholder-more app-text-grey nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
+                {% endif %}
+              </td>
               <td></td>
               <td></td>
               <td></td>
             </tr>
             {% endfor %}
-            {% if pendingCount > 3 %}
-            <tr>
-              <td colspan="4" class="">and {{ pendingCount - 3 }} more in this batch</td>
-            </tr>
-            {% endif %}
           </tbody>
         </table>
       {% endif %}
     {% else %}
       {# ALL READS VIEW - Shows all reads with columns for each read #}
-      <h2>Cases ({{ batch.targetSize or events | length }})</h2>
+      <h2>Other readers' opinion and outcome ({{ batch.targetSize or events | length }})</h2>
 
-      <table class="nhsuk-table">
+      <table class="nhsuk-table app-reading-batch-table">
         <thead>
           <tr>
+            <th scope="col">No.</th>
             <th scope="col">Case</th>
-            <th scope="col">Screened</th>
+            <th scope="col">Screening date</th>
             <th scope="col">First read</th>
             <th scope="col">Second read</th>
             <th scope="col">Outcome</th>
@@ -246,6 +235,9 @@
           {% for event in events %}
             {% set metadata = event | getReadingMetadata %}
             <tr>
+              <td>
+                <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
+              </td>
               <td>
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
@@ -363,19 +355,22 @@
           {# Placeholder rows for pending lazy-batch slots #}
           {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
           {% for i in range(0, placeholderRowsShown) %}
-          <tr>
-            <td><span class="app-placeholder-tag"></span></td>
+          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
+            <td>
+              <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ (events | length) + loop.index }}.</span>
+            </td>
+            <td>
+              <span class="app-placeholder-tag"></span>
+              {% if pendingCount > 3 and loop.last %}
+                <span class="app-placeholder-more app-text-grey nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
+              {% endif %}
+            </td>
             <td></td>
             <td></td>
             <td></td>
             <td></td>
           </tr>
           {% endfor %}
-          {% if pendingCount > 3 %}
-          <tr>
-            <td colspan="5" class="">and {{ pendingCount - 3 }} more in this batch</td>
-          </tr>
-          {% endif %}
         </tbody>
       </table>
     {% endif %}

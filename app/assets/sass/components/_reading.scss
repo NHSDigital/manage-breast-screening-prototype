@@ -58,10 +58,58 @@
 // Placeholder row tag — indicates a future case not yet loaded into the batch
 .app-placeholder-tag {
   display: inline-block;
-  height: 22px;
-  width: 200px;
-  border-radius: 4px;
+  height: 16px;
+  width: 160px;
+  max-width: 160px;
+  border-radius: 9999px;
   background-color: nhsuk-colour("grey-4");
+}
+
+.app-row-number {
+  display: inline-block;
+  line-height: 1;
+}
+
+.app-reading-batch-table th:first-child,
+.app-reading-batch-table td:first-child {
+  text-align: right;
+}
+
+.app-reading-batch-table td:first-child {
+  vertical-align: top;
+}
+
+.app-placeholder-row td {
+  vertical-align: middle;
+  padding-top: nhsuk-spacing(1);
+  padding-bottom: nhsuk-spacing(1);
+}
+
+.app-placeholder-row--with-more td {
+  padding-top: nhsuk-spacing(2);
+  border-bottom: 0;
+}
+
+.app-placeholder-row--next td {
+  background-color: nhsuk-colour("grey-4");
+  vertical-align: top;
+}
+
+.app-placeholder-more {
+  display: block;
+  margin-top: nhsuk-spacing(1);
+}
+
+.app-placeholder-action-cell {
+  padding-right: nhsuk-spacing(3);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.app-placeholder-action-button {
+  margin-top: nhsuk-spacing(1);
+  margin-right: nhsuk-spacing(2);
+  margin-bottom: nhsuk-spacing(1);
 }
 
 // Toast message shown after giving an opinion
