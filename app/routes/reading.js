@@ -1259,13 +1259,18 @@ module.exports = (router) => {
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
 
       const opinion = data.imageReadingTemp?.opinion
+      const comparisonInfo = getComparisonInfo(event, opinion, currentUserId)
+      const firstOpinion = comparisonInfo?.firstOpinion
+      const forceNormalDetailsForDiscordantNormal =
+        opinion === 'normal' &&
+        firstOpinion &&
+        firstOpinion !== 'normal'
 
       // Mark comparison as complete so save-opinion doesn't redirect back here
       data.imageReadingTemp.comparisonComplete = true
 
       if (decision === 'adopt') {
         // Copy first reader's data to our temp
-        const comparisonInfo = getComparisonInfo(event, opinion, currentUserId)
         if (comparisonInfo && comparisonInfo.firstRead) {
           const firstRead = comparisonInfo.firstRead
 
@@ -1327,7 +1332,7 @@ module.exports = (router) => {
       switch (opinion) {
         case 'normal':
           // Check if user originally wanted to add details
-          if (wantsNormalDetails) {
+          if (wantsNormalDetails || forceNormalDetailsForDiscordantNormal) {
             return res.redirect(
               `/reading/batch/${batchId}/events/${eventId}/normal-details`
             )

@@ -57,10 +57,16 @@
     - TR: always needs details (views to retake)
     - RFA: always needs details (breast assessments, annotations)
   #}
+  {% set forceNormalDetailsForDiscordantNormal = (
+    secondOpinion == "normal" and
+    firstOpinion != "normal"
+  ) %}
+
   {% set secondOpinionNeedsDetails = (
     secondOpinion == "technical_recall" or 
     secondOpinion == "recall_for_assessment" or 
-    data.imageReadingTemp.wantsNormalDetails
+    data.imageReadingTemp.wantsNormalDetails or
+    forceNormalDetailsForDiscordantNormal
   ) %}
   
   {% set firstOpinionHasDetails = (
@@ -138,8 +144,20 @@
     <div class="app-reading-compare-card__action app-reading-compare-card__action--{{ sideBySideCardActionPosition }}">
       <form action="./compare-answer" method="post" class="app-reading-compare-card__action-form">
         <input type="hidden" name="compareDecision" value="keep">
+        {% if secondOpinion == "normal" %}
+          <input type="hidden" name="imageReadingTemp[wantsNormalDetails]" value="{{ "true" if secondOpinionNeedsDetails else "false" }}">
+        {% endif %}
+        {% set buttonText %}
+          {% if secondHasDetails %}
+            Keep your opinion
+          {% elseif secondOpinionNeedsDetails %}
+            Keep your opinion and add details
+          {% else %}
+            Keep your opinion
+          {% endif %}
+        {% endset %}
         {{ button({
-          text: "Keep your opinion",
+          text: buttonText,
           classes: "nhsuk-button--secondary nhsuk-u-margin-bottom-0"
         }) }}
       </form>
