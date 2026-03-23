@@ -102,20 +102,15 @@
             </td>
             <td>
               {% set event = data.events | find('id', reading.eventId) %}
-              {% set metadata = event | getReadingMetadata %}
-              {% set allReads = event | getReadsAsArray %}
-              {{ metadata | log("metadata")}}
-              {% if metadata.readCount >= 2 %}
-                {% if metadata.hasDisagreement %}
-                  {{ "Arbitration" | toTag }}
-                {% else %}
-                  {% set opinion = allReads[0].opinion %}
-                  {{ opinion | toTag }}
-                {% endif %}
-              {% elif metadata.readCount == 1 %}
-                {{ "Waiting for 2nd read" | toTag }}
-              {% else %}
+              {% set outcome = event | getOutcome %}
+              {% if outcome == 'not_read' %}
                 {{ "Waiting for 1st read" | toTag }}
+              {% elseif outcome == 'pending_second_read' %}
+                {{ "Waiting for 2nd read" | toTag }}
+              {% elseif outcome == 'arbitration_pending' %}
+                {{ "Arbitration" | toTag }}
+              {% else %}
+                {{ outcome | toTag }}
               {% endif %}
             </td>
           </tr>

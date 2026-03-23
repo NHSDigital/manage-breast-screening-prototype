@@ -132,6 +132,12 @@
       {value: "off", label: "Off"}
     ], data.settings.reading.secondReaderComparison, "off") }}
 
+    {# Arbitration policy #}
+    {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [
+      {value: "discordant_only", label: "Discordant reads only"},
+      {value: "all_non_normal", label: "All non-normal outcomes"}
+    ], data.settings.reading.arbitrationPolicy, "discordant_only") }}
+
     {# Mammogram view order #}
     {{ settingToggle("Mammogram view order", "settings[mammogramViewOrder]", [
       {value: "cc-first", label: "CC first"},

@@ -109,6 +109,7 @@ const defaultSettings = {
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
     secondReaderComparison: 'late', // 'early' | 'late' | 'off'
+    arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_non_normal'
     lazyBatches: 'true',
     defaultBatchTargetSize: '25'
   }

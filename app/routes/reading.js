@@ -1189,7 +1189,7 @@ module.exports = (router) => {
         const currentUserId = data.currentUser?.id
         const comparisonInfo = getComparisonInfo(
           event,
-          normalisedOpinion,
+          data.imageReadingTemp,
           currentUserId
         )
         if (comparisonInfo) {
@@ -1208,7 +1208,7 @@ module.exports = (router) => {
           if (comparisonSetting === 'late') {
             const comparisonInfo = getComparisonInfo(
               event,
-              normalisedOpinion,
+              data.imageReadingTemp,
               data.currentUser?.id
             )
             if (comparisonInfo) {
@@ -1259,12 +1259,14 @@ module.exports = (router) => {
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
 
       const opinion = data.imageReadingTemp?.opinion
-      const comparisonInfo = getComparisonInfo(event, opinion, currentUserId)
+      const comparisonInfo = getComparisonInfo(
+        event,
+        data.imageReadingTemp,
+        currentUserId
+      )
       const firstOpinion = comparisonInfo?.firstOpinion
       const forceNormalDetailsForDiscordantNormal =
-        opinion === 'normal' &&
-        firstOpinion &&
-        firstOpinion !== 'normal'
+        opinion === 'normal' && comparisonInfo?.discordant
 
       // Mark comparison as complete so save-opinion doesn't redirect back here
       data.imageReadingTemp.comparisonComplete = true

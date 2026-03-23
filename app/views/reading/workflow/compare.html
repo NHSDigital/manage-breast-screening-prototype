@@ -19,9 +19,9 @@
 
 {% block pageContent %}
 
-  {# Get comparison info #}
+  {# Get comparison info — pass full imageReadingTemp so discordance can check TR views and RFA breast assessments #}
   {% set secondOpinion = data.imageReadingTemp.opinion %}
-  {% set comparisonInfo = event | getComparisonInfo(secondOpinion) %}
+  {% set comparisonInfo = event | getComparisonInfo(data.imageReadingTemp) %}
   {% set firstRead = comparisonInfo.firstRead %}
   {% set firstOpinion = comparisonInfo.firstOpinion %}
   {% set comparisonType = comparisonInfo.type %}
@@ -120,7 +120,7 @@
   {% endset %}
 
   {% set keepHint %}
-    {% if comparisonType == "discordant" %}
+    {% if comparisonInfo.goesToArbitration %}
       This case will go to arbitration
     {% endif %}
   {% endset %}
