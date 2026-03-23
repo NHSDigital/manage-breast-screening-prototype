@@ -61,14 +61,14 @@
       </p>
       <p>
         {# Example: "Started: January 2026" #}
-        Started: {{ pregnancyAndBreastfeedingData.breastfeedingStartDate }}
+        Date started: {{ pregnancyAndBreastfeedingData.breastfeedingStartDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'recentlyStopped' %}
       <p>
         Recently breastfeeding
       </p>
       <p>
-        Stopped: {{ pregnancyAndBreastfeedingData.breastfeedingStopDate }}
+        Date stopped: {{ pregnancyAndBreastfeedingData.breastfeedingStopDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'no' %}
       <p>Not breastfeeding</p>

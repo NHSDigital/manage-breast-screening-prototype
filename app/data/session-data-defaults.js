@@ -108,7 +108,7 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    secondReaderComparison: 'early', // 'early' | 'late' | 'off'
+    secondReaderComparison: 'late', // 'early' | 'late' | 'off'
     lazyBatches: 'true',
     defaultBatchTargetSize: '25'
   }

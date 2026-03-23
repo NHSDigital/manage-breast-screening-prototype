@@ -44,7 +44,20 @@
 <!-- Edit the footer -->
 <!-- Footer code examples can be found at https://service-manual.nhs.uk/design-system/components/footer -->
 {% block footer %}
+
+{# These items added separately to distingish service links from prototype only links #}
+{% set footerHtml %}
+  <ul class="nhsuk-footer__list">
+    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/">Home</a></li>
+    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings">Settings</a></li>
+    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/prototype-admin/reset?returnPage=' + (currentPage | urlencode) + '" data-reset-session>Reset data</a></li>
+    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="https://github.com/NHSDigital/manage-screening-events-prototype">Github</a></li>
+  </ul>
+{% endset %}
   {{ footer({
+    copyright: {
+      text: "© NHS England – Made for the NHS, by the NHS"
+    },
     meta: {
       items: [
         {
@@ -60,12 +73,7 @@
           text: "Terms and conditions"
         }
       ],
-      html: '<ul class="nhsuk-footer__list">
-        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/">Home</a></li>
-        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings">Settings</a></li>
-        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/prototype-admin/reset?returnPage=' + (currentPage | urlencode) + '" data-reset-session>Reset data</a></li>
-        <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="https://github.com/NHSDigital/manage-screening-events-prototype">Github</a></li>
-      </ul>'
+      html: footerHtml
     }
   }) }}
 {% endblock %}
