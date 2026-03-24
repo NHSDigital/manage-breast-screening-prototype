@@ -1231,6 +1231,44 @@ const getComparisonInfo = function (
 }
 
 /**
+ * Decide whether the compare page should be shown to the second reader.
+ *
+ * Combines the timing setting (secondReaderComparison) and the new show-when
+ * setting (compareWhen) to give a single boolean answer.
+ *
+ * compareWhen values (settings.reading.compareWhen):
+ * - 'non_normal' (default): show whenever either opinion is non-normal
+ *   (i.e. whenever getComparisonInfo returns a result — current behaviour)
+ * - 'discordant_only': only show when the two reads are discordant
+ *
+ * @param {object} event - The event being read
+ * @param {object} secondReadData - The second reader's data (imageReadingTemp or read object)
+ * @param {string} [userId] - Current user ID (optional, falls back to context)
+ * @param {object} [settings] - Site settings (optional, falls back to context)
+ * @returns {boolean}
+ */
+const shouldShowComparePage = function (event, secondReadData, userId = null, settings = null) {
+  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  const comparisonInfo = getComparisonInfo.call(this, event, secondReadData, currentUserId, resolvedSettings)
+
+  // getComparisonInfo returns false when no comparison needed
+  // (user is first reader, or both opinions are normal)
+  if (!comparisonInfo) return false
+
+  const compareWhen = resolvedSettings?.reading?.compareWhen || 'non_normal'
+
+  // 'non_normal': show for any non-normal combination — current behaviour
+  if (compareWhen === 'non_normal') return true
+
+  // 'discordant_only': only show when reads disagree in a clinically meaningful way
+  if (compareWhen === 'discordant_only') return comparisonInfo.discordant
+
+  return true
+}
+
+/**
  * Check if current user can read an event
  *
  * @param {object} event - The event to check
@@ -1744,6 +1782,7 @@ module.exports = {
   getReadForUser,
   getOtherReads,
   getComparisonInfo,
+  shouldShowComparePage,
   getReadsAsArray,
   getFirstUserReadableEvent,
   getNextUserReadableEvent,

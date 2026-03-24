@@ -132,6 +132,12 @@
       {value: "off", label: "Off"}
     ], data.settings.reading.secondReaderComparison, "off") }}
 
+    {# Show compare page when #}
+    {{ settingToggle("Show compare page", "settings[reading][compareWhen]", [
+      {value: "non_normal", label: "Any non-normal opinion"},
+      {value: "discordant_only", label: "Discordant reads only"}
+    ], data.settings.reading.compareWhen, "non_normal") }}
+
     {# Arbitration policy #}
     {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [
       {value: "discordant_only", label: "Discordant reads only"},

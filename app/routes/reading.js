@@ -19,7 +19,8 @@ const {
   skipEventInBatch,
   topUpBatch,
   getReadingMetadata,
-  getComparisonInfo
+  getComparisonInfo,
+  shouldShowComparePage
 } = require('../lib/utils/reading')
 const { getShortName } = require('../lib/utils/participants')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
@@ -1026,8 +1027,7 @@ module.exports = (router) => {
       // Check for late comparison if not already done
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
       if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
-        const comparisonInfo = getComparisonInfo(event, formData, currentUserId)
-        if (comparisonInfo) {
+        if (shouldShowComparePage(event, formData, currentUserId, data.settings)) {
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/compare`
           )
@@ -1200,12 +1200,7 @@ module.exports = (router) => {
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
       if (comparisonSetting === 'early') {
         const currentUserId = data.currentUser?.id
-        const comparisonInfo = getComparisonInfo(
-          event,
-          data.imageReadingTemp,
-          currentUserId
-        )
-        if (comparisonInfo) {
+        if (shouldShowComparePage(event, data.imageReadingTemp, currentUserId, data.settings)) {
           // Second reader with opinions that need comparison
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/compare`
@@ -1219,12 +1214,7 @@ module.exports = (router) => {
           // For late comparison, normal still needs to go through compare if discordant
           // (since there's no review page to intercept)
           if (comparisonSetting === 'late') {
-            const comparisonInfo = getComparisonInfo(
-              event,
-              data.imageReadingTemp,
-              data.currentUser?.id
-            )
-            if (comparisonInfo) {
+            if (shouldShowComparePage(event, data.imageReadingTemp, data.currentUser?.id, data.settings)) {
               return res.redirect(
                 `/reading/batch/${batchId}/events/${eventId}/compare`
               )
