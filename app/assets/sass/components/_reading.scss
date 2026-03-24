@@ -76,11 +76,17 @@
 
 .app-reading-batch-table th:first-child,
 .app-reading-batch-table td:first-child {
-  text-align: right;
+  padding-left: 0;
+  text-align: center;
 }
 
 .app-reading-batch-table td:first-child {
   vertical-align: top;
+}
+
+.app-reading-batch-table tbody td {
+  padding-top: 12px;
+  padding-bottom: 6px;
 }
 
 .app-placeholder-row td {

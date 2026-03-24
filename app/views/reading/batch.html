@@ -28,19 +28,6 @@
 {{ readingStatus | log("Reading status") }}
 {{ events | log("Events in batch") }}
 
-<style>
-  .app-reading-batch-table th:first-child,
-  .app-reading-batch-table td:first-child {
-    padding-left: 0;
-    text-align: center;
-  }
-
-  .app-reading-batch-table tbody td {
-    padding-top: 12px;
-    padding-bottom: 6px;
-  }
-</style>
-
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
     <div class="app-header-with-status">
@@ -85,7 +72,7 @@
 
     {% for item in [
       { id: 'your-reads', label: 'Your opinion' },
-      { id: 'all-reads', label: "Other readers‘ opinion and outcome" }
+      { id: 'all-reads', label: "Other reader's opinion and outcome" }
     ] %}
       {% set href -%}
         /reading/batch/{{ batch.id }}/{{ item.id }}
@@ -200,7 +187,7 @@
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
-              <td class="app-placeholder-action-cell" style="padding-right: 15px;">
+              <td class="app-placeholder-action-cell">
                 {% if firstUserReadableEvent and event.id == firstUserReadableEvent.id and not (event | userHasReadEvent) %}
                   <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% endif %}
@@ -231,7 +218,7 @@
       {% endif %}
     {% else %}
       {# ALL READS VIEW - Shows all reads with columns for each read #}
-      <h2>Other readers' opinion and outcome ({{ batch.targetSize or events | length }})</h2>
+      <h2>Other reader's opinion and outcome ({{ batch.targetSize or events | length }})</h2>
 
       <table class="nhsuk-table app-reading-batch-table">
         <thead>
