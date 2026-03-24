@@ -28,6 +28,19 @@
 {{ readingStatus | log("Reading status") }}
 {{ events | log("Events in batch") }}
 
+<style>
+  .app-reading-batch-table th:first-child,
+  .app-reading-batch-table td:first-child {
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .app-reading-batch-table tbody td {
+    padding-top: 12px;
+    padding-bottom: 6px;
+  }
+</style>
+
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
     <div class="app-header-with-status">
@@ -51,7 +64,7 @@
     {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
 
     {% if firstUserReadableEvent %}
-      <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button">
+      <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button app-reading-batch-primary-action">
         {{ readingActionText }}
       </a>
     {% else %}
@@ -187,7 +200,7 @@
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
-              <td class="app-placeholder-action-cell">
+              <td class="app-placeholder-action-cell" style="padding-right: 15px;">
                 {% if firstUserReadableEvent and event.id == firstUserReadableEvent.id and not (event | userHasReadEvent) %}
                   <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% endif %}

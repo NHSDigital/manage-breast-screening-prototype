@@ -70,6 +70,10 @@
   line-height: 1;
 }
 
+.app-reading-batch-primary-action {
+  margin-right: 15px;
+}
+
 .app-reading-batch-table th:first-child,
 .app-reading-batch-table td:first-child {
   text-align: right;
@@ -101,7 +105,7 @@
 }
 
 .app-placeholder-action-cell {
-  padding-right: nhsuk-spacing(3);
+  padding-right: 15px;
   text-align: right;
   white-space: nowrap;
 }

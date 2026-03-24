@@ -228,7 +228,7 @@ const getStatusTagColour = (status) => {
     // Image reading
     'not_started': 'grey',
     'not_provided': 'grey',
-    'not_read': 'grey',
+    'not_read': 'white',
     'skipped': 'white',
 
     // Image reading results
@@ -255,7 +255,7 @@ const getStatusTagColour = (status) => {
     'waiting_for_2nd_read': 'grey',
     'not_started': 'grey',
     'skipped': 'grey',
-    'not_read': 'grey',
+    'not_read': 'white',
     'complete': 'green',
     'partial_first_read': 'blue',
     'first_read_complete': 'yellow',
