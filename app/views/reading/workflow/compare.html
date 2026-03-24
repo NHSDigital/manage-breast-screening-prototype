@@ -158,7 +158,7 @@
         {% endset %}
         {{ button({
           text: buttonText,
-          classes: "nhsuk-button--secondary nhsuk-u-margin-bottom-0"
+          classes: "nhsuk-u-margin-bottom-0"
         }) }}
       </form>
       {# <p class="nhsuk-body nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">{{ keepLabelHtml | safe }}</p>
@@ -174,7 +174,7 @@
         <input type="hidden" name="compareDecision" value="adopt">
         {{ button({
           text: "Use their details" if comparisonType == "agreeing" else "Change to this opinion",
-          classes: "nhsuk-button--secondary nhsuk-u-margin-bottom-0"
+          classes: "nhsuk-u-margin-bottom-0"
         }) }}
       </form>
       {# <p class="nhsuk-body nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">{{ adoptLabelHtml | safe }}</p> #}

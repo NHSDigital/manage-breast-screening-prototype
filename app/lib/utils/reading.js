@@ -1247,11 +1247,22 @@ const getComparisonInfo = function (
  * @param {object} [settings] - Site settings (optional, falls back to context)
  * @returns {boolean}
  */
-const shouldShowComparePage = function (event, secondReadData, userId = null, settings = null) {
+const shouldShowComparePage = function (
+  event,
+  secondReadData,
+  userId = null,
+  settings = null
+) {
   const resolvedSettings = settings || this?.ctx?.data?.settings || {}
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  const comparisonInfo = getComparisonInfo.call(this, event, secondReadData, currentUserId, resolvedSettings)
+  const comparisonInfo = getComparisonInfo.call(
+    this,
+    event,
+    secondReadData,
+    currentUserId,
+    resolvedSettings
+  )
 
   // getComparisonInfo returns false when no comparison needed
   // (user is first reader, or both opinions are normal)
