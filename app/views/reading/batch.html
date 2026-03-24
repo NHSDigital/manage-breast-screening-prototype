@@ -85,7 +85,7 @@
 
     {% for item in [
       { id: 'your-reads', label: 'Your opinion' },
-      { id: 'all-reads', label: "Other readers' opinion and outcome" }
+      { id: 'all-reads', label: "Other readers‘ opinion and outcome" }
     ] %}
       {% set href -%}
         /reading/batch/{{ batch.id }}/{{ item.id }}
