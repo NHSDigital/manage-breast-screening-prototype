@@ -527,6 +527,9 @@ module.exports = (router) => {
         }
       }
 
+      // Top up the batch with the next eligible event if under target size
+      topUpBatch(data, batchId)
+
       // Find next readable event in batch after the current position, wrapping
       // to the start if needed. This mirrors the navigation in save-opinion.
       const batch = getReadingBatch(data, batchId)
