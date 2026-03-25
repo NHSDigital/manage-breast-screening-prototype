@@ -77,23 +77,25 @@
     {{ settingToggle("Confirm identity on check-in", "settings[screening][confirmIdentityOnCheckIn]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.screening.confirmIdentityOnCheckIn, "true") }}
 
     {# Manual image collection #}
-    {{ settingToggle("Image collection method", "settings[screening][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic"}], data.settings.screening.manualImageCollection, "false") }}
+    {{ settingToggle("Image collection method", "settings[screening][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic (via gateway)"}], data.settings.screening.manualImageCollection, "false") }}
 
     {# Image streaming simulation #}
-    {{ settingToggle("Image streaming simulation", "settings[screening][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.imageStreaming.enabled, "true") }}
+    {{ settingToggle("Simulate images streaming from gateway", "settings[screening][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.imageStreaming.enabled, "true") }}
 
     {% if data.settings.screening.imageStreaming.enabled != 'false' %}
-      {{ settingToggle("Streaming interval", "settings[screening][imageStreaming][intervalMs]", [
-        {value: "1000", label: "1s"},
-        {value: "2000", label: "2s"},
-        {value: "3000", label: "3s"},
-        {value: "5000", label: "5s"},
-        {value: "10000", label: "10s"}
-      ], data.settings.screening.imageStreaming.intervalMs, "3000") }}
+      {% call insetText() %}
+        {{ settingToggle("Streaming interval", "settings[screening][imageStreaming][intervalMs]", [
+          {value: "1000", label: "1s"},
+          {value: "2000", label: "2s"},
+          {value: "3000", label: "3s"},
+          {value: "5000", label: "5s"},
+          {value: "10000", label: "10s"}
+        ], data.settings.screening.imageStreaming.intervalMs, "3000") }}
+      {% endcall %}
     {% endif %}
 
     {# Use condensed review summaries #}
-    {{ settingToggle("Condensed review summaries", "settings[screening][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.screening.useCondensedReviewSummaries, "false") }}
+    {{ settingToggle("Review summaries", "settings[screening][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.screening.useCondensedReviewSummaries, "false") }}
 
     {# Show participant section #}
     {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
@@ -126,11 +128,28 @@
     ], data.settings.reading.defaultBatchTargetSize, "25") }}
 
     {# Second reader comparison #}
-    {{ settingToggle("Second reader comparison", "settings[reading][secondReaderComparison]", [
-      {value: "early", label: "Early"},
-      {value: "late", label: "Late"},
+    {{ settingToggle("Second reader compare page", "settings[reading][secondReaderComparison]", [
+      {value: "late", label: "Late (after details)"},
+      {value: "early", label: "Early (after initial opinion)"},
       {value: "off", label: "Off"}
-    ], data.settings.reading.secondReaderComparison, "off") }}
+    ], data.settings.reading.secondReaderComparison, "late") }}
+
+    {% if data.settings.reading.secondReaderComparison != "off" %}
+      {% call insetText() %}
+        {# Show compare page when #}
+        {{ settingToggle("Show compare page when", "settings[reading][compareWhen]", [
+          {value: "discordant_only", label: "Discordant reads only"},
+          {value: "non_normal", label: "Any non-normal opinion"}
+        ], data.settings.reading.compareWhen, "discordant_only") }}
+      {% endcall %}
+    {% endif %}
+    
+
+    {# Arbitration policy #}
+    {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [
+      {value: "discordant_only", label: "Discordant reads only"},
+      {value: "all_non_normal", label: "All non-normal outcomes"}
+    ], data.settings.reading.arbitrationPolicy, "discordant_only") }}
 
     {# Mammogram view order #}
     {{ settingToggle("Mammogram view order", "settings[mammogramViewOrder]", [

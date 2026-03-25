@@ -47,16 +47,16 @@ const getReadingMetadata = (event) => {
   const opinions = reads.map((read) => read.opinion)
   const uniqueOpinions = [...new Set(opinions)].filter(Boolean) // Filter out undefined
 
-  // Determine if there's disagreement between reads
-  const hasDisagreement = uniqueOpinions.length > 1
+  // Discordance: richer than just comparing opinion strings — also checks TR views and RFA breast assessments
+  const isDiscordant =
+    reads.length >= 2 ? areReadsDiscordant(reads[0], reads[1]) : false
 
   return {
     readCount: reads.length,
     uniqueReaderCount,
     firstReadComplete: reads.length >= 1,
     secondReadComplete: reads.length >= 2,
-    hasDisagreement,
-    needsArbitration: hasDisagreement && reads.length >= 2,
+    isDiscordant,
     opinions: uniqueOpinions
   }
 }
@@ -172,8 +172,9 @@ const calculateReadingMetrics = function (
   userId = null,
   skippedEvents = []
 ) {
-  // Get user ID from context if not provided and we're in a template context
+  // Get user ID and settings from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+  const settings = this?.ctx?.data?.settings || {}
 
   if (!events || events.length === 0) {
     return {
@@ -213,11 +214,10 @@ const calculateReadingMetrics = function (
     return metadata.readCount === 1 // Exactly one read means ready for second
   }).length
 
-  // Count events needing arbitration
-  const arbitrationCount = events.filter((event) => {
-    const metadata = getReadingMetadata(event)
-    return metadata.needsArbitration
-  }).length
+  // Count events needing arbitration (policy-aware via getOutcome)
+  const arbitrationCount = events.filter(
+    (event) => getOutcome(event, settings) === 'arbitration_pending'
+  ).length
 
   // User-specific counts
   let userReadCount = 0
@@ -1041,17 +1041,155 @@ const getOtherReads = function (event, userId = null) {
 }
 
 /**
- * Determine if a comparison page should be shown to the second reader
- * Returns false if user is first reader, or if both opinions are normal
- * Otherwise returns comparison info with the first read and comparison type
+ * Determine if two reads are discordant (disagree in a clinically meaningful way).
  *
- * @param {Object} event - The event being read
- * @param {string} secondReaderOpinion - The second reader's opinion
- * @param {string} userId - Current user ID (optional, falls back to context)
- * @returns {false | Object} False if no comparison needed, or { type, firstRead }
+ * Rules:
+ * - Different top-level opinions → always discordant
+ * - Both technical recall: discordant if the set of selected views differs
+ *   (reasons are ignored — same views = concordant even with different reasons)
+ * - Both recall for assessment: discordant if either per-breast assessment differs
+ *   (annotations and comments are ignored)
+ * - Both normal → concordant
+ *
+ * Handles partial data gracefully: if TR views or RFA breast assessments are not
+ * yet filled in, falls back to comparing only what's available.
+ *
+ * @param {object} readA - First read (saved read or imageReadingTemp)
+ * @param {object} readB - Second read (saved read or imageReadingTemp)
+ * @returns {boolean} Whether the reads are discordant
  */
-const getComparisonInfo = function (event, secondReaderOpinion, userId = null) {
+const areReadsDiscordant = (readA, readB) => {
+  if (!readA?.opinion || !readB?.opinion) return false
+
+  // Different top-level opinions → always discordant
+  if (readA.opinion !== readB.opinion) return true
+
+  const opinion = readA.opinion
+
+  // Both TR: compare the set of selected view keys
+  if (opinion === 'technical_recall') {
+    const viewsA = readA.technicalRecall?.views
+    const viewsB = readB.technicalRecall?.views
+    // If either side has no view data yet, can't compare further
+    if (!viewsA || !viewsB) return false
+    const keysA = new Set(Object.keys(viewsA))
+    const keysB = new Set(Object.keys(viewsB))
+    if (keysA.size !== keysB.size) return true
+    for (const view of keysA) {
+      if (!keysB.has(view)) return true
+    }
+    return false
+  }
+
+  // Both RFA: compare per-breast assessments
+  if (opinion === 'recall_for_assessment') {
+    const leftA = readA.left?.breastAssessment
+    const leftB = readB.left?.breastAssessment
+    const rightA = readA.right?.breastAssessment
+    const rightB = readB.right?.breastAssessment
+    // If no breast data on either side yet, can't compare further
+    if (!leftA && !leftB && !rightA && !rightB) return false
+    if ((leftA || leftB) && leftA !== leftB) return true
+    if ((rightA || rightB) && rightA !== rightB) return true
+    return false
+  }
+
+  return false
+}
+
+/**
+ * Determine whether two reads will result in arbitration, taking the site's
+ * arbitration policy into account.
+ *
+ * Policies (from settings.reading.arbitrationPolicy):
+ * - 'discordant_only' (default): only discordant reads go to arbitration
+ * - 'all_non_normal': any concordant non-normal outcome also goes to arbitration
+ *
+ * @param {object} readA - First read
+ * @param {object} readB - Second read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {boolean}
+ */
+const willGoToArbitration = (readA, readB, settings = {}) => {
+  if (!readA || !readB) return false
+
+  // Discordant reads always go to arbitration
+  if (areReadsDiscordant(readA, readB)) return true
+
+  // Concordant but non-normal: depends on policy
+  const policy = settings?.reading?.arbitrationPolicy || 'discordant_only'
+  if (policy === 'all_non_normal') {
+    return readA.opinion !== 'normal'
+  }
+
+  return false
+}
+
+/**
+ * Compute the overall outcome for an event based on its reads and site policy.
+ *
+ * Outcomes:
+ * - 'not_read'             — no reads yet
+ * - 'pending_second_read'  — one read, awaiting second
+ * - 'arbitration_pending'  — two reads that are discordant (or policy requires arbitration)
+ * - 'normal' / 'technical_recall' / 'recall_for_assessment'
+ *                          — concordant outcome (or resolved by an arbitration read)
+ *
+ * Note: outcome is computed on demand, not persisted. If you need to filter or
+ * report by outcome at scale, consider writing it to event.imageReading.outcome at
+ * save-opinion time.
+ *
+ * @param {object} event - The event
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {string} Outcome key
+ */
+const getOutcome = function (event, settings = null) {
+  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
+  const reads = getReadsAsArray(event)
+
+  if (reads.length === 0) return 'not_read'
+  if (reads.length === 1) return 'pending_second_read'
+
+  // Third read = arbitration read; its opinion resolves the case
+  if (reads.length >= 3) {
+    return reads[2].opinion
+  }
+
+  const [firstRead, secondRead] = reads
+
+  if (willGoToArbitration(firstRead, secondRead, resolvedSettings)) {
+    return 'arbitration_pending'
+  }
+
+  // Concordant reads — outcome is the shared opinion
+  return firstRead.opinion
+}
+
+/**
+ * Determine if a comparison page should be shown to the second reader.
+ * Returns false if user is first reader, or if both opinions are normal.
+ * Otherwise returns comparison info including discordance and arbitration flags.
+ *
+ * @param {object} event - The event being read
+ * @param {object} secondReadData - The second reader's data (imageReadingTemp or a read object)
+ * @param {string} [userId] - Current user ID (optional, falls back to context)
+ * @param {object} [settings] - Site settings (optional, falls back to context)
+ * @returns {false | object} False if no comparison needed, else comparison info
+ */
+const getComparisonInfo = function (
+  event,
+  secondReadData,
+  userId = null,
+  settings = null
+) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
+
+  // Support passing just an opinion string for backwards compatibility
+  const secondRead =
+    typeof secondReadData === 'string'
+      ? { opinion: secondReadData }
+      : secondReadData
 
   // Get the first read (from other users)
   const otherReads = getOtherReads.call(this, event, currentUserId)
@@ -1068,21 +1206,77 @@ const getComparisonInfo = function (event, secondReaderOpinion, userId = null) {
   })[0]
 
   const firstOpinion = firstRead.opinion
+  const secondOpinion = secondRead.opinion
 
   // Both normal - no comparison needed
-  if (firstOpinion === 'normal' && secondReaderOpinion === 'normal') {
+  if (firstOpinion === 'normal' && secondOpinion === 'normal') {
     return false
   }
 
-  // Determine comparison type
-  const type = firstOpinion === secondReaderOpinion ? 'agreeing' : 'discordant'
+  const discordant = areReadsDiscordant(firstRead, secondRead)
+  const type = discordant ? 'discordant' : 'agreeing'
 
   return {
     type,
+    discordant,
+    goesToArbitration: willGoToArbitration(
+      firstRead,
+      secondRead,
+      resolvedSettings
+    ),
     firstRead,
     firstOpinion,
-    secondOpinion: secondReaderOpinion
+    secondOpinion
   }
+}
+
+/**
+ * Decide whether the compare page should be shown to the second reader.
+ *
+ * Combines the timing setting (secondReaderComparison) and the new show-when
+ * setting (compareWhen) to give a single boolean answer.
+ *
+ * compareWhen values (settings.reading.compareWhen):
+ * - 'non_normal' (default): show whenever either opinion is non-normal
+ *   (i.e. whenever getComparisonInfo returns a result — current behaviour)
+ * - 'discordant_only': only show when the two reads are discordant
+ *
+ * @param {object} event - The event being read
+ * @param {object} secondReadData - The second reader's data (imageReadingTemp or read object)
+ * @param {string} [userId] - Current user ID (optional, falls back to context)
+ * @param {object} [settings] - Site settings (optional, falls back to context)
+ * @returns {boolean}
+ */
+const shouldShowComparePage = function (
+  event,
+  secondReadData,
+  userId = null,
+  settings = null
+) {
+  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  const comparisonInfo = getComparisonInfo.call(
+    this,
+    event,
+    secondReadData,
+    currentUserId,
+    resolvedSettings
+  )
+
+  // getComparisonInfo returns false when no comparison needed
+  // (user is first reader, or both opinions are normal)
+  if (!comparisonInfo) return false
+
+  const compareWhen = resolvedSettings?.reading?.compareWhen || 'non_normal'
+
+  // 'non_normal': show for any non-normal combination — current behaviour
+  if (compareWhen === 'non_normal') return true
+
+  // 'discordant_only': only show when reads disagree in a clinically meaningful way
+  if (compareWhen === 'discordant_only') return comparisonInfo.discordant
+
+  return true
 }
 
 /**
@@ -1157,11 +1351,12 @@ const needsSecondRead = (event) => {
 }
 
 /**
- * Check if an event needs arbitration
+ * Check if an event needs arbitration.
+ * Policy-aware: reads arbitrationPolicy from Nunjucks context if available.
  */
-const needsArbitration = (event) => {
-  const metadata = getReadingMetadata(event)
-  return metadata.needsArbitration
+const needsArbitration = function (event) {
+  const settings = this?.ctx?.data?.settings || {}
+  return getOutcome(event, settings) === 'arbitration_pending'
 }
 
 /************************************************************************
@@ -1297,7 +1492,8 @@ const createReadingBatch = (data, options) => {
   // Lazy loading: start with only the first event and top up as reads happen
   // Clinic batches are always fully populated upfront
   // Explicit lazy param overrides the setting
-  const lazyEnabled = lazy !== null ? lazy : data.settings?.reading?.lazyBatches === 'true'
+  const lazyEnabled =
+    lazy !== null ? lazy : data.settings?.reading?.lazyBatches === 'true'
   const isLazy = lazyEnabled && type !== 'clinic'
 
   // Get all eligible candidates using the shared helper
@@ -1563,6 +1759,9 @@ module.exports = {
 
   // Single event
   getReadingMetadata,
+  areReadsDiscordant,
+  willGoToArbitration,
+  getOutcome,
   writeReading,
 
   // Multiple events
@@ -1594,6 +1793,7 @@ module.exports = {
   getReadForUser,
   getOtherReads,
   getComparisonInfo,
+  shouldShowComparePage,
   getReadsAsArray,
   getFirstUserReadableEvent,
   getNextUserReadableEvent,

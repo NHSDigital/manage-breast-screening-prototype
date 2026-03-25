@@ -263,6 +263,38 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     color: $app-tag--blue-dark-text;
   }
 
+  .app-reading-compare-card.nhsuk-card--feature {
+    &.app-reading-compare-card--normal {
+      outline-color: $app-tag--green-dark-border;
+
+      .nhsuk-card__heading {
+        background-color: $app-tag--green-dark-background;
+        color: $app-tag--green-dark-text;
+        outline-color: $app-tag--green-dark-border;
+      }
+    }
+
+    &.app-reading-compare-card--technical-recall {
+      outline-color: $app-tag--orange-dark-border;
+
+      .nhsuk-card__heading {
+        background-color: $app-tag--orange-dark-background;
+        color: $app-tag--orange-dark-text;
+        outline-color: $app-tag--orange-dark-border;
+      }
+    }
+
+    &.app-reading-compare-card--recall-for-assessment {
+      outline-color: $app-tag--red-dark-border;
+
+      .nhsuk-card__heading {
+        background-color: $app-tag--red-dark-background;
+        color: $app-tag--red-dark-text;
+        outline-color: $app-tag--red-dark-border;
+      }
+    }
+  }
+
   .nhsuk-error-summary__title {
     color: $app-dark-mode-text-colour;
   }

@@ -21,6 +21,24 @@ const DEFAULT_READ_WEIGHTS = {
   recall_for_assessment: 0.2
 }
 
+// Normal opinion freetext reasons when participant has symptoms
+const NORMAL_DETAILS_WITH_SYMPTOMS = [
+  'Images reviewed carefully in the context of reported symptoms. No mammographic abnormality identified. Clinical follow-up recommended for symptoms.',
+  'Thorough review of all views performed. No significant mammographic findings. Symptoms noted but no corresponding imaging abnormality detected.',
+  'Normal mammographic appearance bilaterally. Symptoms have been considered in this assessment. No imaging correlate found.',
+  'Careful assessment undertaken given reported symptoms. Mammographic appearances are within normal limits. Clinical assessment advised.',
+  'No mammographic abnormality detected on careful review. Reported symptoms do not have a mammographic correlate. Recommend clinical follow-up.'
+]
+
+// Normal opinion freetext reasons without symptoms (used for a small proportion)
+const NORMAL_DETAILS_WITHOUT_SYMPTOMS = [
+  'Normal mammogram. No significant findings.',
+  'Bilateral mammograms reviewed. No abnormality detected.',
+  'Normal appearances. Good quality images.',
+  'No abnormality identified on careful review of all images.',
+  'Normal bilateral mammographic study.'
+]
+
 // Technical recall reasons (matches the form options)
 const TECHNICAL_RECALL_REASONS = [
   'Breast positioning',
@@ -104,9 +122,22 @@ const generateSingleRead = (
 
   // Add opinion-specific data
   if (opinion === 'normal') {
-    // Normal reads are simple - just per-breast assessment
+    // Normal reads - per-breast assessment, plus optional freetext reasoning
     read.left = { breastAssessment: 'normal' }
     read.right = { breastAssessment: 'normal' }
+
+    const hasSymptoms = event.medicalInformation?.symptoms?.length > 0
+    if (hasSymptoms) {
+      // Always provide a reason when participant has symptoms
+      read.normalDetails = faker.helpers.arrayElement(
+        NORMAL_DETAILS_WITH_SYMPTOMS
+      )
+    } else if (Math.random() < 0.1) {
+      // 10% of non-symptom normal reads include optional freetext
+      read.normalDetails = faker.helpers.arrayElement(
+        NORMAL_DETAILS_WITHOUT_SYMPTOMS
+      )
+    }
   } else if (opinion === 'technical_recall') {
     // Technical recall - determine which views need retaking
     read.technicalRecall = generateTechnicalRecallData(event, set)

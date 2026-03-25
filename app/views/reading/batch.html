@@ -334,19 +334,17 @@
                   {{ "Waiting for 1st read" | toTag }}
                 {% endif %}
               </td>
-              {# Outcome column #}
+              {# Outcome column — uses getOutcome which respects the site's arbitration policy #}
               <td>
-                {% if metadata.readCount >= 2 %}
-                  {% if metadata.hasDisagreement %}
-                    {{ "Arbitration" | toTag }}
-                  {% else %}
-                    {% set outcome = allReads[0].opinion %}
-                    {{ outcome | toTag }}
-                  {% endif %}
-                {% elif metadata.readCount == 1 %}
-                  {{ "Waiting for 2nd read" | toTag }}
-                {% else %}
+                {% set outcome = event | getOutcome %}
+                {% if outcome == 'not_read' %}
                   {{ "Waiting for 1st read" | toTag }}
+                {% elseif outcome == 'pending_second_read' %}
+                  {{ "Waiting for 2nd read" | toTag }}
+                {% elseif outcome == 'arbitration_pending' %}
+                  {{ "Arbitration" | toTag }}
+                {% else %}
+                  {{ outcome | toTag }}
                 {% endif %}
               </td>
             </tr>

@@ -19,7 +19,8 @@ const {
   skipEventInBatch,
   topUpBatch,
   getReadingMetadata,
-  getComparisonInfo
+  getComparisonInfo,
+  shouldShowComparePage
 } = require('../lib/utils/reading')
 const { getShortName } = require('../lib/utils/participants')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
@@ -591,44 +592,6 @@ module.exports = (router) => {
     }
   )
 
-  // Intercept review page for late comparison check
-  router.get(
-    '/reading/batch/:batchId/events/:eventId/review',
-    (req, res, next) => {
-      const { batchId, eventId } = req.params
-      const data = req.session.data
-      const currentUserId = data.currentUser?.id
-
-      const comparisonSetting = data.settings?.reading?.secondReaderComparison
-      const formData = data.imageReadingTemp
-
-      // Check for late comparison (if not already done)
-      if (
-        comparisonSetting === 'late' &&
-        formData &&
-        !formData.comparisonComplete
-      ) {
-        const event = data.events.find((e) => e.id === eventId)
-        if (event) {
-          const comparisonInfo = getComparisonInfo(
-            event,
-            formData.opinion,
-            currentUserId
-          )
-          if (comparisonInfo) {
-            // Second reader needs comparison - redirect to compare first
-            return res.redirect(
-              `/reading/batch/${batchId}/events/${eventId}/compare`
-            )
-          }
-        }
-      }
-
-      // No comparison needed - render review page
-      return res.render('reading/workflow/review')
-    }
-  )
-
   // Render appropriate template for reading views
   router.get(
     '/reading/batch/:batchId/events/:eventId/:step',
@@ -1039,7 +1002,59 @@ module.exports = (router) => {
         views: cleanViews
       }
 
-      res.redirect(`/reading/batch/${batchId}/events/${eventId}/review`)
+      res.redirect(
+        `/reading/batch/${batchId}/events/${eventId}/opinion-details-complete`
+      )
+    }
+  )
+
+  // Central routing point after all opinion detail pages are complete.
+  // Handles late comparison check and decides whether to show review or save directly.
+  // All detail pages (normal-details, technical-recall, recall-for-assessment-details)
+  // should route here on completion.
+  router.all(
+    '/reading/batch/:batchId/events/:eventId/opinion-details-complete',
+    (req, res) => {
+      const { batchId, eventId } = req.params
+      const data = req.session.data
+      const currentUserId = data.currentUser?.id
+      const formData = data.imageReadingTemp
+      const opinion = formData?.opinion
+
+      const event = data.events.find((e) => e.id === eventId)
+      if (!event) return res.redirect(`/reading/batch/${batchId}`)
+
+      // Check for late comparison if not already done
+      const comparisonSetting = data.settings?.reading?.secondReaderComparison
+      if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
+        if (
+          shouldShowComparePage(event, formData, currentUserId, data.settings)
+        ) {
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/compare`
+          )
+        }
+      }
+
+      // Route based on opinion type
+      switch (opinion) {
+        case 'normal':
+          if (data.settings?.reading?.confirmNormal === 'true') {
+            return res.redirect(
+              `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
+            )
+          }
+          return res.redirect(
+            307,
+            `/reading/batch/${batchId}/events/${eventId}/save-opinion`
+          )
+        case 'technical_recall':
+        case 'recall_for_assessment':
+        default:
+          return res.redirect(
+            `/reading/batch/${batchId}/events/${eventId}/review`
+          )
+      }
     }
   )
 
@@ -1187,12 +1202,14 @@ module.exports = (router) => {
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
       if (comparisonSetting === 'early') {
         const currentUserId = data.currentUser?.id
-        const comparisonInfo = getComparisonInfo(
-          event,
-          normalisedOpinion,
-          currentUserId
-        )
-        if (comparisonInfo) {
+        if (
+          shouldShowComparePage(
+            event,
+            data.imageReadingTemp,
+            currentUserId,
+            data.settings
+          )
+        ) {
           // Second reader with opinions that need comparison
           return res.redirect(
             `/reading/batch/${batchId}/events/${eventId}/compare`
@@ -1206,12 +1223,14 @@ module.exports = (router) => {
           // For late comparison, normal still needs to go through compare if discordant
           // (since there's no review page to intercept)
           if (comparisonSetting === 'late') {
-            const comparisonInfo = getComparisonInfo(
-              event,
-              normalisedOpinion,
-              data.currentUser?.id
-            )
-            if (comparisonInfo) {
+            if (
+              shouldShowComparePage(
+                event,
+                data.imageReadingTemp,
+                data.currentUser?.id,
+                data.settings
+              )
+            ) {
               return res.redirect(
                 `/reading/batch/${batchId}/events/${eventId}/compare`
               )
@@ -1259,13 +1278,20 @@ module.exports = (router) => {
       if (!event) return res.redirect(`/reading/batch/${batchId}`)
 
       const opinion = data.imageReadingTemp?.opinion
+      const comparisonInfo = getComparisonInfo(
+        event,
+        data.imageReadingTemp,
+        currentUserId
+      )
+      const firstOpinion = comparisonInfo?.firstOpinion
+      const forceNormalDetailsForDiscordantNormal =
+        opinion === 'normal' && comparisonInfo?.discordant
 
       // Mark comparison as complete so save-opinion doesn't redirect back here
       data.imageReadingTemp.comparisonComplete = true
 
       if (decision === 'adopt') {
         // Copy first reader's data to our temp
-        const comparisonInfo = getComparisonInfo(event, opinion, currentUserId)
         if (comparisonInfo && comparisonInfo.firstRead) {
           const firstRead = comparisonInfo.firstRead
 
@@ -1327,7 +1353,7 @@ module.exports = (router) => {
       switch (opinion) {
         case 'normal':
           // Check if user originally wanted to add details
-          if (wantsNormalDetails) {
+          if (wantsNormalDetails || forceNormalDetailsForDiscordantNormal) {
             return res.redirect(
               `/reading/batch/${batchId}/events/${eventId}/normal-details`
             )

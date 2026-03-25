@@ -16,12 +16,14 @@
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
+{% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
+
 {% set mammogramHistoryHtml %}
   {% include "_includes/medical-information/mammogram-history.njk" %}
 
   {% if allowEdits %}
     {{ button({
-      text: "Add another mammogram",
+      text: "Add another mammogram" if hasAdditionalMammograms else "Add mammogram",
       href: './previous-mammograms/add' | urlWithReferrer(currentUrl, scrollTo),
       classes: "nhsuk-button--secondary nhsuk-button--small"
     }) }}
@@ -32,7 +34,7 @@
   {# Last mammogrogram {{ "2022-03-23" | formatDate | formatRelativeDate | asHint }} #}
 {% endset %}
 
-{% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
+
 
 {% if hasAdditionalMammograms %}
   {% set mammogramHistoryContentsSummary = ((event.previousMammograms | length)) ~ " new " + ("mammogram" | pluralise(event.previousMammograms | length)) + " added" %}
