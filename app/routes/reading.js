@@ -3,6 +3,7 @@ const { getEventData } = require('../lib/utils/event-data')
 const {
   getFirstUserReadableEvent,
   getNextUserReadableEvent,
+  getResumeEventForUser,
   getReadableEventsForClinic,
   getReadingStatusForEvents,
   getReadingClinics,
@@ -315,10 +316,12 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
-    // Find first event user can read
-    const firstUserReadableEvent = getFirstUserReadableEvent(
+    // Find where the user should resume — first readable after the furthest
+    // point they've reached (reads or skips), falling back to first readable
+    const resumeEvent = getResumeEventForUser(
       enhancedEvents,
-      data.currentUser.id
+      data.currentUser.id,
+      batch.skippedEvents || []
     )
 
     // Clear any lingering opinion banner from a previous batch
@@ -334,7 +337,7 @@ module.exports = (router) => {
       batch,
       events: enhancedEvents,
       readingStatus,
-      firstUserReadableEvent,
+      resumeEvent,
       clinic,
       view: selectedView
     })

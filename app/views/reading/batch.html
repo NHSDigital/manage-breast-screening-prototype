@@ -50,8 +50,8 @@
     {% set currentUserHasRead = readingStatus.userReadCount > 0 %}
     {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
 
-    {% if firstUserReadableEvent %}
-      <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button app-reading-batch-primary-action">
+    {% if resumeEvent %}
+      <a href="/reading/batch/{{ batch.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button app-reading-batch-primary-action">
         {{ readingActionText }}
       </a>
     {% else %}
@@ -120,7 +120,7 @@
           <tbody>
             {% for event in userReadableEvents %}
             {% set metadata = event | getReadingMetadata %}
-            <tr{% if firstUserReadableEvent and event.id == firstUserReadableEvent.id and not (event | userHasReadEvent) %} class="app-placeholder-row--next"{% endif %}>
+            <tr{% if resumeEvent and event.id == resumeEvent.id and not (event | userHasReadEvent) %} class="app-placeholder-row--next"{% endif %}>
               <td>
                 <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
@@ -188,8 +188,8 @@
                 {% endif %}
               </td>
               <td class="app-placeholder-action-cell">
-                {% if firstUserReadableEvent and event.id == firstUserReadableEvent.id and not (event | userHasReadEvent) %}
-                  <a href="/reading/batch/{{ batch.id }}/events/{{ firstUserReadableEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
+                {% if resumeEvent and event.id == resumeEvent.id and not (event | userHasReadEvent) %}
+                  <a href="/reading/batch/{{ batch.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% endif %}
               </td>
             </tr>

@@ -996,6 +996,54 @@ const getNextUserReadableEvent = function (
   return getFirstUserReadableEvent(eventsFromNext, currentUserId)
 }
 
+/**
+ * Get the event the user should resume reading from.
+ *
+ * Finds the furthest point the user has reached by looking at the highest-index
+ * event they have either read or that has been skipped in the batch. Returns
+ * the first readable event after that position, wrapping to the start if needed.
+ *
+ * Using position (index) rather than timestamps lets us account for skipped
+ * events, which have no timestamps. (perhaps they should do)
+ *
+ * Falls back to getFirstUserReadableEvent if the user has no reads or skips yet.
+ *
+ * @param {Array} events - Array of all events in the batch, in batch order
+ * @param {string | null} [userId] - User ID (falls back to current user from context)
+ * @param {Array} [skippedEvents] - Array of skipped event IDs from the batch
+ * @returns {object | null} The event to resume from, or null if nothing to read
+ */
+const getResumeEventForUser = function (
+  events,
+  userId = null,
+  skippedEvents = []
+) {
+  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
+
+  // Find the highest-index event the user has read or that has been skipped
+  let lastActedIndex = -1
+
+  events.forEach((event, index) => {
+    const wasReadByUser = !!event.imageReading?.reads?.[currentUserId]
+    const wasSkipped = skippedEvents.includes(event.id)
+    if (wasReadByUser || wasSkipped) {
+      lastActedIndex = index
+    }
+  })
+
+  // Nothing acted on yet — fall back to first readable
+  if (lastActedIndex === -1) {
+    return getFirstUserReadableEvent(events, currentUserId)
+  }
+
+  // Search for the first readable event after lastActedIndex, wrapping around
+  const eventsFromNext = [
+    ...events.slice(lastActedIndex + 1),
+    ...events.slice(0, lastActedIndex + 1)
+  ]
+  return getFirstUserReadableEvent(eventsFromNext, currentUserId)
+}
+
 /************************************************************************
 // Booleans
 //***********************************************************************
@@ -1797,6 +1845,7 @@ module.exports = {
   getReadsAsArray,
   getFirstUserReadableEvent,
   getNextUserReadableEvent,
+  getResumeEventForUser,
   // Booleans
   userHasReadEvent,
   canUserReadEvent,
