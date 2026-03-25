@@ -106,7 +106,7 @@
 {% set hasAnnotations = read.opinion == 'recall_for_assessment' and (totalAnnotations > 0) %}
 
 {# Normal - additional details #}
-{% if read.opinion == 'normal' and read.normalDetails %}
+{% if read.opinion == 'normal' and (not hideEmptyRows or hasNormalDetails) %}
   {% set rows = rows | push({
     key: {
       text: "Details"
@@ -256,4 +256,4 @@
 
 {{ summaryList({
   rows: rows | removeLastRowBorder
-}) }}
+}  | handleSummaryListMissingInformation) }}
