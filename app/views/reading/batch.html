@@ -232,9 +232,9 @@
                 <span class="app-text-grey app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
                   {% if event | userHasReadEvent %}
-                    {{ "First read" if readCount == 1 else "Second read" }}
+                    {{ "1st read" if readCount == 1 else "2nd read" }}
                   {% else %}
-                    {{ "First read" if readCount == 0 else "Second read" }}
+                    {{ "1st read" if readCount == 0 else "2nd read" }}
                   {% endif %}
                 </span>
 
@@ -352,10 +352,10 @@
       {% set awaitingCardContent %}
         <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
           <span role="text">
-            <span class="nhsuk-u-visually-hidden">Awaiting second read:</span> {{ (awaitingCount / allTotalDenominator * 100) | round }}%
+            <span class="nhsuk-u-visually-hidden">Awaiting 2nd read:</span> {{ (awaitingCount / allTotalDenominator * 100) | round }}%
           </span>
         </h2>
-        <p class="nhsuk-u-font-size-16">Awaiting second read</p>
+        <p class="nhsuk-u-font-size-16">Awaiting 2nd read</p>
         <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ awaitingCount }} cases</p>
       {% endset %}
 
@@ -447,8 +447,8 @@
             <th scope="col">No.</th>
             <th scope="col">Case</th>
             <th scope="col">Screening date</th>
-            <th scope="col">First read</th>
-            <th scope="col">Second read</th>
+            <th scope="col">1st read</th>
+            <th scope="col">2nd read</th>
             <th scope="col">Outcome</th>
           </tr>
         </thead>
@@ -502,7 +502,7 @@
                   {{ event.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
-              {# First read column #}
+              {# 1st read column #}
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
@@ -530,7 +530,7 @@
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
-              {# Second read column #}
+              {# 2nd read column #}
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
