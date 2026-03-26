@@ -285,7 +285,7 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
     const firstSkippedEventId = batch.skippedEvents[0] || null
-    res.render('reading/batch-skipped-review', {
+    res.render('reading/skipped-review', {
       batch,
       batchId,
       firstSkippedEventId
