@@ -90,6 +90,11 @@
         {% endif %}
       {% endif %}
 
+      {# Previously skipped tag #}
+      {% if batch and batch.skippedEvents | includes(event.id) %}
+        {{ "Previously skipped" | toTag }}
+      {% endif %}
+
       {# Prior mammogram status tags #}
       {% set priorsSummary = event | getPriorsSummary %}
       {% if priorsSummary.total > 0 %}
@@ -110,7 +115,7 @@
 
       {% if (data.settings.debugMode | falsify) %}
         {% if event | hasReportedMammograms %}
-          <br>{{ "Has priors" | toTag }}
+          {{ "Has priors" | toTag }}
         {% endif %}
         {% if event.mammogramData.metadata.hasAdditionalImages %}
           <br>{{ "Has additional" | toTag }}

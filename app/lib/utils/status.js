@@ -229,7 +229,8 @@ const getStatusTagColour = (status) => {
     'not_started': 'grey',
     'not_provided': 'grey',
     'not_read': 'white',
-    'skipped': 'white',
+    'skipped': 'grey',
+    'previously_skipped': 'grey',
 
     // Image reading results
     'normal': 'green',

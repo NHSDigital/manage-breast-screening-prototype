@@ -231,8 +231,8 @@
   {% endif %}
 
 
-  {# Show status bar only in workflow mode #}
-  {% if isReadingWorkflow %}
+  {# Show status bar only in workflow mode, unless page explicitly hides it #}
+  {% if isReadingWorkflow and not hideStatusBar %}
     {% include "_includes/reading/reading-status-bar.njk" %}
   {% endif %}
 {% endblock header %}
