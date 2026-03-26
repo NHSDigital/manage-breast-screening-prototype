@@ -4,11 +4,6 @@
 
 {% set isClinicContext = batch.clinicId %}
 
-{% set back = {
-  href: "/reading",
-  text: "Leave session"
-} %}
-
 {% if isClinicContext %}
   {% set back = {
     href: "/reading/clinics",
@@ -57,7 +52,7 @@
     {% else %}
       {% set notificationBannerHtml %}
         <h3 class="nhsuk-notification-banner__heading">
-          {{ "All cases in this batch have been read" if not currentUserHasRead else "You have read all available cases" }}
+          All cases in this session have been read
         </h3>
       {% endset %}
 
@@ -102,11 +97,114 @@
         {% endif %}
       {% endfor %}
 
-      <h2>Your opinion ({{ batch.targetSize or userReadableEvents | length }} in batch)</h2>
-
       {% if userReadableEvents | length == 0 %}
         <p>You don't have any cases you can read in this batch.</p>
       {% else %}
+
+        {# Build opinion counts from events the user has read #}
+        {% set normalEvents = [] %}
+        {% set technicalRecallEvents = [] %}
+        {% set recallForAssessmentEvents = [] %}
+        {% set priorsRequestedEvents = [] %}
+
+        {% for event in userReadableEvents %}
+          {% if event | userHasReadEvent %}
+            {% set read = event | getReadForUser %}
+            {% if read.opinion == 'normal' %}
+              {% set normalEvents = normalEvents | push(event) %}
+            {% elseif read.opinion == 'technical_recall' %}
+              {% set technicalRecallEvents = technicalRecallEvents | push(event) %}
+            {% elseif read.opinion == 'recall_for_assessment' %}
+              {% set recallForAssessmentEvents = recallForAssessmentEvents | push(event) %}
+            {% endif %}
+          {% elseif event | userRequestedPriors(data.currentUser.id) %}
+            {% set priorsRequestedEvents = priorsRequestedEvents | push(event) %}
+          {% endif %}
+        {% endfor %}
+
+        {% set totalCount = userReadableEvents | length %}
+        {% set normalCount = normalEvents | length %}
+        {% set technicalRecallCount = technicalRecallEvents | length %}
+        {% set recallForAssessmentCount = recallForAssessmentEvents | length %}
+        {% set priorsRequestedCount = priorsRequestedEvents | length %}
+
+        {% set normalPercent = (normalCount / totalCount * 100) | round %}
+        {% set technicalRecallPercent = (technicalRecallCount / totalCount * 100) | round %}
+        {% set recallForAssessmentPercent = (recallForAssessmentCount / totalCount * 100) | round %}
+        {% set priorsRequestedPercent = (priorsRequestedCount / totalCount * 100) | round %}
+
+        {% set normalCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Normal:</span> {{ normalPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Normal</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ normalCount }} cases</p>
+        {% endset %}
+
+        {% set technicalRecallCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Technical recall:</span> {{ technicalRecallPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Technical recall</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ technicalRecallCount }} cases</p>
+        {% endset %}
+
+        {% set recallForAssessmentCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Recall for assessment:</span> {{ recallForAssessmentPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Recall for assessment</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ recallForAssessmentCount }} cases</p>
+        {% endset %}
+
+        {% set priorsRequestedCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Priors requested:</span> {{ priorsRequestedPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Priors requested</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ priorsRequestedCount }} cases</p>
+        {% endset %}
+
+        {% if not resumeEvent %}
+          <h2>Opinion summary</h2>
+
+          <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: normalCardContent
+              }) }}
+            </li>
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: technicalRecallCardContent
+              }) }}
+            </li>
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: recallForAssessmentCardContent
+              }) }}
+            </li>
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: priorsRequestedCardContent
+              }) }}
+            </li>
+          </ul>
+        {% endif %}
+
+        <h2>Reading session cases</h2>
+        {% set userSessionRemainingCount = (userReadableEvents | length) - readingStatus.userReadCount %}
+        {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
+        <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read, {{ userSessionRemainingCount }} remaining</p>
+
         <table class="nhsuk-table app-reading-batch-table">
           <thead>
             <tr>
@@ -217,8 +315,131 @@
         </table>
       {% endif %}
     {% else %}
-      {# ALL READS VIEW - Shows all reads with columns for each read #}
-      <h2>Other reader's opinion and outcome ({{ batch.targetSize or events | length }})</h2>
+      {# ALL READS VIEW - Shows outcome stats and all cases #}
+
+      {# Build outcome counts for stats cards #}
+      {% set awaitingSecondReadEvents = [] %}
+      {% set allViewNormalEvents = [] %}
+      {% set allViewTechnicalRecallEvents = [] %}
+      {% set allViewRecallForAssessmentEvents = [] %}
+      {% set allViewArbitrationEvents = [] %}
+
+      {% for event in events %}
+        {% set eventOutcome = event | getOutcome %}
+        {% if eventOutcome == 'pending_second_read' %}
+          {% set awaitingSecondReadEvents = awaitingSecondReadEvents | push(event) %}
+        {% elseif eventOutcome == 'normal' %}
+          {% set allViewNormalEvents = allViewNormalEvents | push(event) %}
+        {% elseif eventOutcome == 'technical_recall' %}
+          {% set allViewTechnicalRecallEvents = allViewTechnicalRecallEvents | push(event) %}
+        {% elseif eventOutcome == 'recall_for_assessment' %}
+          {% set allViewRecallForAssessmentEvents = allViewRecallForAssessmentEvents | push(event) %}
+        {% elseif eventOutcome == 'arbitration_pending' %}
+          {% set allViewArbitrationEvents = allViewArbitrationEvents | push(event) %}
+        {% endif %}
+      {% endfor %}
+
+      {% set allTotal = events | length %}
+      {% set allTotalDenominator = allTotal if allTotal > 0 else 1 %}
+      {% set awaitingCount = awaitingSecondReadEvents | length %}
+      {% set allViewNormalCount = allViewNormalEvents | length %}
+      {% set allViewTechnicalRecallCount = allViewTechnicalRecallEvents | length %}
+      {% set allViewRecallForAssessmentCount = allViewRecallForAssessmentEvents | length %}
+      {% set allViewArbitrationCount = allViewArbitrationEvents | length %}
+      {% set twiceReadTotal = allViewNormalCount + allViewTechnicalRecallCount + allViewRecallForAssessmentCount + allViewArbitrationCount %}
+      {% set twiceReadDenominator = twiceReadTotal if twiceReadTotal > 0 else 1 %}
+
+      {% set awaitingCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Awaiting second read:</span> {{ (awaitingCount / allTotalDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Awaiting second read</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ awaitingCount }} cases</p>
+      {% endset %}
+
+      {% set allViewNormalCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Normal:</span> {{ (allViewNormalCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Normal</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewNormalCount }} cases</p>
+      {% endset %}
+
+      {% set allViewTechnicalRecallCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Technical recall:</span> {{ (allViewTechnicalRecallCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Technical recall</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewTechnicalRecallCount }} cases</p>
+      {% endset %}
+
+      {% set allViewRecallForAssessmentCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Recall for assessment:</span> {{ (allViewRecallForAssessmentCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Recall for assessment</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewRecallForAssessmentCount }} cases</p>
+      {% endset %}
+
+      {% set allViewArbitrationCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Require arbitration:</span> {{ (allViewArbitrationCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Require arbitration</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewArbitrationCount }} cases</p>
+      {% endset %}
+
+      {% if not resumeEvent %}
+        <h2>All reads ({{ allTotal }})</h2>
+
+        <h3>Outcome summary</h3>
+
+        <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            {{ card({
+              descriptionHtml: awaitingCardContent
+            }) }}
+          </li>
+        </ul>
+
+        <h3>Case outcomes after 2nd reads</h3>
+
+        <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            {{ card({
+              descriptionHtml: allViewNormalCardContent
+            }) }}
+          </li>
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            {{ card({
+              descriptionHtml: allViewTechnicalRecallCardContent
+            }) }}
+          </li>
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            {{ card({
+              descriptionHtml: allViewRecallForAssessmentCardContent
+            }) }}
+          </li>
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            {{ card({
+              descriptionHtml: allViewArbitrationCardContent
+            }) }}
+          </li>
+        </ul>
+      {% endif %}
+
+      <h2>Reading session cases</h2>
+      <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.firstReadCount }} read, {{ readingStatus.firstReadRemaining }} remaining</p>
 
       <table class="nhsuk-table app-reading-batch-table">
         <thead>

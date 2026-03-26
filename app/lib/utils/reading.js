@@ -1603,7 +1603,7 @@ const createReadingBatch = (data, options) => {
 const getDefaultBatchName = (type, clinicId, data) => {
   switch (type) {
     case 'all_reads':
-      return 'All cases needing reads'
+      return 'Session overview'
     case 'first_reads':
       return '1st reads batch'
     case 'second_reads':
