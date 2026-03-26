@@ -276,24 +276,6 @@ module.exports = (router) => {
     res.redirect(`/reading/batch/${req.params.batchId}/your-reads`)
   })
 
-  // Route for batch complete page (shown when all cases have been read with none skipped)
-  router.get('/reading/batch/:batchId/complete', (req, res) => {
-    const data = req.session.data
-    const { batchId } = req.params
-    const batch = getReadingBatch(data, batchId)
-    if (!batch) {
-      return res.redirect('/reading')
-    }
-    const currentUserId = data.currentUser.id
-    const batchEvents = batch.eventIds
-      .map((id) => data.events.find((e) => e.id === id))
-      .filter(Boolean)
-    const userReadCount = batchEvents.filter((e) =>
-      userHasReadEvent(e, currentUserId)
-    ).length
-    res.render('reading/batch-complete', { batch, batchId, userReadCount })
-  })
-
   // Route for skipped-review page (shown at end of batch when skipped cases remain)
   router.get('/reading/batch/:batchId/skipped-review', (req, res) => {
     const data = req.session.data
@@ -534,7 +516,7 @@ module.exports = (router) => {
     } else if (batch.skippedEvents.length > 0) {
       res.redirect(`/reading/batch/${batchId}/skipped-review`)
     } else {
-      res.redirect(`/reading/batch/${batchId}/complete`)
+      res.redirect(`/reading/batch/${batchId}`)
     }
   })
 
@@ -605,7 +587,7 @@ module.exports = (router) => {
       } else if (batch.skippedEvents.length > 0) {
         res.redirect(`/reading/batch/${batchId}/skipped-review`)
       } else {
-        res.redirect(`/reading/batch/${batchId}/complete`)
+        res.redirect(`/reading/batch/${batchId}`)
       }
     }
   )
@@ -1190,7 +1172,7 @@ module.exports = (router) => {
       } else if (batch.skippedEvents.length > 0) {
         res.redirect(`/reading/batch/${batchId}/skipped-review`)
       } else {
-        res.redirect(`/reading/batch/${batchId}/complete`)
+        res.redirect(`/reading/batch/${batchId}`)
       }
     }
   )
