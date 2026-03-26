@@ -985,14 +985,15 @@ const getFirstUserReadableEvent = function (events, userId = null) {
 const getNextUserReadableEvent = function (
   events,
   currentEventId,
-  userId = null
+  userId = null,
+  options = {}
 ) {
+  const { wrap = true } = options
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
   const currentIndex = events.findIndex((e) => e.id === currentEventId)
-  const eventsFromNext = [
-    ...events.slice(currentIndex + 1),
-    ...events.slice(0, currentIndex)
-  ]
+  const eventsFromNext = wrap
+    ? [...events.slice(currentIndex + 1), ...events.slice(0, currentIndex)]
+    : events.slice(currentIndex + 1)
   return getFirstUserReadableEvent(eventsFromNext, currentUserId)
 }
 

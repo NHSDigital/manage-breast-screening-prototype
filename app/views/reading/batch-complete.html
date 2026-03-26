@@ -1,0 +1,32 @@
+{# /app/views/reading/batch-complete.html #}
+
+{% extends 'layout-reading.html' %}
+
+{% set isReadingWorkflow = true %}
+{% set hideStatusBar = true %}
+{% set hideBackLink = true %}
+
+{% set pageHeading = "Batch complete" %}
+
+{% block pageContent %}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-two-thirds">
+
+    <span class="nhsuk-caption-l">Image reading</span>
+    <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+    <p>You've completed all {{ userReadCount }} {{ "case" | pluralise(userReadCount) }} in this session.</p>
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Image reading home",
+        href: "/reading"
+      }) }}
+      <a href="/reading/batches" class="nhsuk-link nhsuk-button-group__item">Review batch list</a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

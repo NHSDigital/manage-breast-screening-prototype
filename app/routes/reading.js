@@ -276,6 +276,40 @@ module.exports = (router) => {
     res.redirect(`/reading/batch/${req.params.batchId}/your-reads`)
   })
 
+  // Route for batch complete page (shown when all cases have been read with none skipped)
+  router.get('/reading/batch/:batchId/complete', (req, res) => {
+    const data = req.session.data
+    const { batchId } = req.params
+    const batch = getReadingBatch(data, batchId)
+    if (!batch) {
+      return res.redirect('/reading')
+    }
+    const currentUserId = data.currentUser.id
+    const batchEvents = batch.eventIds
+      .map((id) => data.events.find((e) => e.id === id))
+      .filter(Boolean)
+    const userReadCount = batchEvents.filter((e) =>
+      userHasReadEvent(e, currentUserId)
+    ).length
+    res.render('reading/batch-complete', { batch, batchId, userReadCount })
+  })
+
+  // Route for skipped-review page (shown at end of batch when skipped cases remain)
+  router.get('/reading/batch/:batchId/skipped-review', (req, res) => {
+    const data = req.session.data
+    const { batchId } = req.params
+    const batch = getReadingBatch(data, batchId)
+    if (!batch) {
+      return res.redirect('/reading')
+    }
+    const firstSkippedEventId = batch.skippedEvents[0] || null
+    res.render('reading/batch-skipped-review', {
+      batch,
+      batchId,
+      firstSkippedEventId
+    })
+  })
+
   // Route for viewing a batch with specific view
   router.get('/reading/batch/:batchId/:view', (req, res) => {
     const data = req.session.data
@@ -482,15 +516,25 @@ module.exports = (router) => {
     // Top up the batch with the next eligible event if under target size
     topUpBatch(data, batchId)
 
-    // Find next readable event
-    const progress = getBatchReadingProgress(data, batchId, eventId)
+    // Find next readable event after current position (no wrap)
+    const currentUserId = data.currentUser.id
+    const batch = getReadingBatch(data, batchId)
+    const batchEvents = batch.eventIds
+      .map((id) => data.events.find((e) => e.id === id))
+      .filter(Boolean)
+    const nextUnreadEvent = getNextUserReadableEvent(
+      batchEvents,
+      eventId,
+      currentUserId,
+      { wrap: false }
+    )
 
-    if (progress.hasNextUserReadable) {
-      res.redirect(
-        `/reading/batch/${batchId}/events/${progress.nextUserReadableId}`
-      )
+    if (nextUnreadEvent) {
+      res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
+    } else if (batch.skippedEvents.length > 0) {
+      res.redirect(`/reading/batch/${batchId}/skipped-review`)
     } else {
-      res.redirect(`/reading/batch/${batchId}`)
+      res.redirect(`/reading/batch/${batchId}/complete`)
     }
   })
 
@@ -542,7 +586,8 @@ module.exports = (router) => {
       const nextUnreadEvent = getNextUserReadableEvent(
         batchEvents,
         eventId,
-        currentUserId
+        currentUserId,
+        { wrap: false }
       )
 
       // Only store the banner if there is a next case to show it on
@@ -557,8 +602,10 @@ module.exports = (router) => {
           editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
         }
         res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
+      } else if (batch.skippedEvents.length > 0) {
+        res.redirect(`/reading/batch/${batchId}/skipped-review`)
       } else {
-        res.redirect(`/reading/batch/${batchId}`)
+        res.redirect(`/reading/batch/${batchId}/complete`)
       }
     }
   )
@@ -1102,8 +1149,7 @@ module.exports = (router) => {
       // Top up the batch with the next eligible event if under target size
       topUpBatch(data, batchId)
 
-      // Find next unread event in batch after the current position, wrapping
-      // to the start if needed. This mirrors the navigation in request-priors-answer.
+      // Find next unread event in batch after the current position (no wrap)
       const batch = getReadingBatch(data, batchId)
       const batchEvents = batch.eventIds
         .map((id) => data.events.find((e) => e.id === id))
@@ -1111,7 +1157,8 @@ module.exports = (router) => {
       const nextUnreadEvent = getNextUserReadableEvent(
         batchEvents,
         eventId,
-        currentUserId
+        currentUserId,
+        { wrap: false }
       )
 
       // Store banner message for the next case, but only if there is one
@@ -1137,11 +1184,13 @@ module.exports = (router) => {
         }
       }
 
-      // Redirect to next unread event or batch view if all done
+      // Redirect to next unread event or end-of-batch page
       if (nextUnreadEvent) {
         res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
+      } else if (batch.skippedEvents.length > 0) {
+        res.redirect(`/reading/batch/${batchId}/skipped-review`)
       } else {
-        res.redirect(`/reading/batch/${batchId}`)
+        res.redirect(`/reading/batch/${batchId}/complete`)
       }
     }
   )
