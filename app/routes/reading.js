@@ -24,6 +24,7 @@ const {
   shouldShowComparePage
 } = require('../lib/utils/reading')
 const { getShortName } = require('../lib/utils/participants')
+const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
@@ -1506,8 +1507,33 @@ module.exports = (router) => {
       readings = recentReadings
     }
 
+    // Build batch list for the batches tab
+    const batches = Object.values(data.readingSessionBatches || {})
+      .map((batch) => {
+        const progress = getBatchReadingProgress(data, batch.id, null, currentUserId)
+
+        // Count cases the user has "dealt with" — either given an opinion or requested priors
+        // This is separate from userReadCount so the utility stays semantically pure
+        const batchEvents = batch.eventIds
+          .map((id) => data.events.find((e) => e.id === id))
+          .filter(Boolean)
+        const userCompletedCount = batchEvents.filter(
+          (event) =>
+            userHasReadEvent(event, currentUserId) ||
+            userRequestedPriors(event, currentUserId)
+        ).length
+
+        return {
+          ...batch,
+          progress,
+          userCompletedCount
+        }
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
     res.render('reading/history', {
       readings,
+      batches,
       view
     })
   })

@@ -1,0 +1,16 @@
+{# app/views/_components/notification-banner/macro.njk #}
+
+{#
+  Compact-aware notification banner.
+  Use appNotificationBanner in place of notificationBanner when you want compact mode support.
+  If params.compact is true or params.size is "compact", renders a slimmer
+  alert-style banner. Otherwise falls through to the standard NHS banner template.
+#}
+
+{% macro appNotificationBanner(params) %}
+  {% if params.compact or params.size == "compact" %}
+    {%- include "_components/notification-banner/_compact-template.njk" -%}
+  {% else %}
+    {%- include "notification-banner/template.njk" -%}
+  {% endif %}
+{% endmacro %}

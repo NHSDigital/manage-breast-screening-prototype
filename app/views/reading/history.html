@@ -18,7 +18,8 @@
 
   {% for item in [
     { id: 'mine', label: 'My readings' },
-    { id: 'all', label: 'All readings' }
+    { id: 'all', label: 'All readings' },
+    { id: 'batches', label: 'Batches' }
   ] %}
     {% set href -%}
       /reading/history/{{ item.id }}
@@ -35,9 +36,74 @@
     items: secondaryNavItems
   }) }}
 
-  {% if readings | length === 0 %}
-    <p>No readings found.</p>
+  {% if view === 'batches' %}
+
+    {% if batches | length === 0 %}
+      <p>No batches found.</p>
+    {% else %}
+      <table class="nhsuk-table">
+        <thead class="nhsuk-table__head">
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Created</th>
+            <th scope="col">Cases</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody class="nhsuk-table__body">
+          {% for batch in batches %}
+            {% set p = batch.progress %}
+            {% set isComplete = p and batch.userCompletedCount >= p.targetSize %}
+            <tr>
+              <td>
+                <a href="/reading/batch/{{ batch.id }}">
+                  {%- if batch.type === 'first_reads' -%}
+                    1st reads
+                  {%- elseif batch.type === 'second_reads' -%}
+                    2nd reads
+                  {%- elseif batch.type === 'all_reads' -%}
+                    All reads
+                  {%- elseif batch.type === 'awaiting_priors' -%}
+                    Awaiting priors
+                  {%- elseif batch.type === 'clinic' -%}
+                    {{ batch.name }}
+                  {%- else -%}
+                    Custom
+                  {%- endif -%}
+                </a>
+              </td>
+              <td>
+                {{ batch.createdAt | formatDate }}<br>
+                <strong>{{ batch.createdAt | formatTime }}</strong>
+              </td>
+              <td>
+                {% if p %}
+                  {{ p.targetSize }} total
+                  {% if not isComplete %}
+                    <br>{{ batch.userCompletedCount }} read
+                  {% endif %}
+                {% else %}
+                  —
+                {% endif %}
+              </td>
+              <td>
+                {% if isComplete %}
+                  {{ "complete" | toTag }}
+                {% else %}
+                  {{ "incomplete" | toTag }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
   {% else %}
+
+    {% if readings | length === 0 %}
+      <p>No readings found.</p>
+    {% else %}
     <table class="nhsuk-table">
       <thead class="nhsuk-table__head">
         <tr>
@@ -118,4 +184,7 @@
       </tbody>
     </table>
   {% endif %}
+
+  {% endif %}
+
 {% endblock %}
