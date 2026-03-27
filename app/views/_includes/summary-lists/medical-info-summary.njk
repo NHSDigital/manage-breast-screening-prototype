@@ -94,11 +94,31 @@
     <p>No additional mammograms added</p>
   {% elif additionalMammogramsCount == 1 %}
     {% set mammogram = event.previousMammograms[0] %}
-    <p>{{ mammogram | summarisePriorMammogram }} {{ ("prior_" + mammogram.requestStatus) | toTag }}{% if mammogram.requestedBy or mammogram.requestReason %}<br><span class="nhsuk-body-s">{% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}{% if mammogram.requestReason %} – {{ mammogram.requestReason }}{% endif %}</span>{% endif %}</p>
+    <p>
+      {{ mammogram | summarisePriorMammogram }}
+      {{ ("prior_" + mammogram.requestStatus) | toTag }}
+      {% if mammogram.requestedBy or mammogram.requestReason %}
+        <br>
+        <span class="app-text-grey">
+          {% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+          {%- if mammogram.requestReason %}. Request reason: {{ mammogram.requestReason }}{% endif %}
+        </span>
+      {% endif %}
+    </p>
   {% else %}
     <ul class="nhsuk-list">
       {% for mammogram in event.previousMammograms %}
-        <li>{{ mammogram | summarisePriorMammogram }} {{ ("prior_" + mammogram.requestStatus) | toTag }}{% if mammogram.requestedBy or mammogram.requestReason %}<br><span class="nhsuk-body-s">{% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}{% if mammogram.requestReason %} – {{ mammogram.requestReason }}{% endif %}</span>{% endif %}</li>
+        <li>
+          {{ mammogram | summarisePriorMammogram }}
+          {{ ("prior_" + mammogram.requestStatus) | toTag }}
+          {% if mammogram.requestedBy or mammogram.requestReason %}
+            <br>
+            <span class="app-text-grey">
+              {% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+              {%- if mammogram.requestReason %}. Request reason: {{ mammogram.requestReason }}{% endif %}
+            </span>
+          {% endif %}
+        </li>
       {% endfor %}
     </ul>
   {% endif %}

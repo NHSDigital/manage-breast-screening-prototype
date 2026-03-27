@@ -18,6 +18,61 @@
 
 <p class="nhsuk-body-l">This is not a user facing page. Use this for quick testing of code.</p>
 
+<h2 class="nhsuk-heading-m">Compact notification banners</h2>
+
+{{ appNotificationBanner({
+  compact: true,
+  titleText: "Important information",
+  text: "This is the default (important/info) style."
+}) }}
+
+{{ appNotificationBanner({
+  compact: true,
+  type: "success",
+  titleText: "Record saved",
+  text: "The participant record has been updated successfully."
+}) }}
+
+{{ appNotificationBanner({
+  compact: true,
+  type: "warning",
+  titleText: "Priors reported — not yet requested",
+  html: "<p>Most recent mammogram: St Thomas' Hospital, June 2022</p><p class='nhsuk-u-margin-bottom-0'><a href='#' class='nhsuk-link--no-visited-state'>Request priors</a></p>"
+}) }}
+
+{{ appNotificationBanner({
+  compact: true,
+  type: "error",
+  titleText: "Something went wrong",
+  text: "The action could not be completed. Try again or contact support."
+}) }}
+
+{{ appNotificationBanner({
+  compact: true,
+  titleText: "Title only, no body"
+}) }}
+
+{{ appNotificationBanner({
+  compact: true,
+  text: "No title, body only."
+}) }}
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h2 class="nhsuk-heading-m">Status message</h2>
+
+{{ appStatusMessage({ text: "Complete" }) }}
+{{ appStatusMessage({ text: "Recall recommended", colour: "blue", icon: "information" }) }}
+{{ appStatusMessage({ text: "No abnormality detected", colour: "green", icon: "tick" }) }}
+{{ appStatusMessage({ text: "Technical recall", colour: "red", icon: "alert" }) }}
+{{ appStatusMessage({ text: "Action needed", colour: "red", icon: "warning" }) }}
+
+<h3 class="nhsuk-heading-s">Small variant</h3>
+{{ appStatusMessage({ text: "No abnormality detected", colour: "green", icon: "tick", classes: "app-status-message--small" }) }}
+{{ appStatusMessage({ text: "Technical recall", colour: "red", icon: "alert", classes: "app-status-message--small" }) }}
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
 <p>
   {{ now() | add(1, 'day') | formatTime("HH:mm:ss") }}
 </p>
