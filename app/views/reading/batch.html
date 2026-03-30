@@ -177,22 +177,22 @@
           <h2>Opinion summary</h2>
 
           <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if normalPercent == 0 }}">
               {{ card({
                 descriptionHtml: normalCardContent
               }) }}
             </li>
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if technicalRecallPercent == 0 }}">
               {{ card({
                 descriptionHtml: technicalRecallCardContent
               }) }}
             </li>
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if recallForAssessmentPercent == 0 }}">
               {{ card({
                 descriptionHtml: recallForAssessmentCardContent
               }) }}
             </li>
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if priorsRequestedPercent == 0 }}">
               {{ card({
                 descriptionHtml: priorsRequestedCardContent
               }) }}
@@ -405,7 +405,7 @@
         <h3>Outcome summary</h3>
 
         <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if awaitingCount == 0 }}">
             {{ card({
               descriptionHtml: awaitingCardContent
             }) }}
@@ -415,22 +415,22 @@
         <h3>Case outcomes after 2nd reads</h3>
 
         <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewNormalCount == 0 }}">
             {{ card({
               descriptionHtml: allViewNormalCardContent
             }) }}
           </li>
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewTechnicalRecallCount == 0 }}">
             {{ card({
               descriptionHtml: allViewTechnicalRecallCardContent
             }) }}
           </li>
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewRecallForAssessmentCount == 0 }}">
             {{ card({
               descriptionHtml: allViewRecallForAssessmentCardContent
             }) }}
           </li>
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewArbitrationCount == 0 }}">
             {{ card({
               descriptionHtml: allViewArbitrationCardContent
             }) }}

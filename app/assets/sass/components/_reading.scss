@@ -191,6 +191,20 @@
   color: nhsuk-colour("white");
 }
 
+.app-reading-statistics-card--zero > .nhsuk-card {
+  background-color: nhsuk-colour("grey-3");
+  color: nhsuk-colour("black");
+}
+
+.app-reading-statistics-card--zero .nhsuk-card__heading,
+.app-reading-statistics-card--zero p,
+.app-reading-statistics-card--zero a,
+.app-reading-statistics-card--zero a:visited,
+.app-reading-statistics-card--zero a:hover,
+.app-reading-statistics-card--zero a:focus {
+  color: nhsuk-colour("black");
+}
+
 .app-reading-statistics-cards {
   display: flex;
   flex-wrap: wrap;

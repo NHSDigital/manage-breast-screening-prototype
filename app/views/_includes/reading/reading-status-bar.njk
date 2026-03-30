@@ -9,8 +9,8 @@
 {# Context item (Batch or Clinic) #}
 {% if isBatchContext %}
   {% set firstRowItems = firstRowItems | push({
-    key: "Batch:",
-    value: batch.name
+    key: "Session:",
+    value: "All cases needing reads"
   }) %}
 {% else %}
   {% set locationName %}
@@ -42,14 +42,16 @@
   }) %}
 {% endif %}
 
-{% set firstRowItems = firstRowItems | push({
+{% set progressRowItems = [] %}
+{% set progressRowItems = progressRowItems | push({
   key: "Progress:",
   value: progressText | trim
 }) %}
 
 {# Build rows array #}
 {% set statusBarRows = [
-  { items: firstRowItems }
+  { items: firstRowItems },
+  { items: progressRowItems }
 ] %}
 
 {# Add participant row if participant exists #}
