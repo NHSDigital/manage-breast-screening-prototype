@@ -233,7 +233,6 @@ const calculateReadingMetrics = function (
   let userReadableCount = 0
   let userFirstReadableCount = 0
   let userSecondReadableCount = 0
-  let userAwaitingPriorsCount = 0
 
   if (currentUserId) {
     // Events this user has read

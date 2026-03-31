@@ -201,9 +201,9 @@
         {% endif %}
 
         <h2>Reading session cases</h2>
-        {% set userSessionRemainingCount = (userReadableEvents | length) - readingStatus.userReadCount %}
+        {% set userSessionRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
-        <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read, {{ userSessionRemainingCount }} remaining</p>
+        <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
 
         <table class="nhsuk-table app-reading-batch-table">
           <thead>
@@ -401,7 +401,9 @@
       {% endif %}
 
       <h2>Reading session cases</h2>
-      <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.firstReadCount }} read, {{ readingStatus.firstReadRemaining }} remaining</p>
+      {% set allViewRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
+      {% set allViewRemainingCount = 0 if allViewRemainingCount < 0 else allViewRemainingCount %}
+      <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ allViewRemainingCount }} remaining</p>
 
       <table class="nhsuk-table app-reading-batch-table">
         <thead>
