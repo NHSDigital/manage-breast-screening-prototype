@@ -1,0 +1,23 @@
+{# app/views/_components/icon/macro.njk #}
+{%- from "nhsuk/macros/icon.njk" import nhsukIcon -%}
+
+{% macro appIcon(name, params) -%}
+{%- if name == "alert" -%}
+<svg class="nhsuk-icon nhsuk-icon--alert{% if params and params.classes %} {{ params.classes }}{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" focusable="false"{% if params and params.title %} role="img" aria-label="{{ params.title }}"{% else %} aria-hidden="true"{% endif %}>
+  {%- if params and params.title %}<title>{{ params.title }}</title>{% endif %}
+  <path d="m13.7 3 9.1 16a2 2 0 0 1-1.7 3H2.9a2 2 0 0 1-1.7-3l9-16a2 2 0 0 1 3.5 0M12 17a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m-1.5-9.5V14a1.5 1.5 0 0 0 3 0V7.5a1.5 1.5 0 0 0-3 0">
+</svg>
+{%- elseif name == "warning" -%}
+<svg class="nhsuk-icon nhsuk-icon--warning{% if params and params.classes %} {{ params.classes }}{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" focusable="false"{% if params and params.title %} role="img" aria-label="{{ params.title }}"{% else %} aria-hidden="true"{% endif %}>
+  {%- if params and params.title %}<title>{{ params.title }}</title>{% endif %}
+  <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 14a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm-1.5-9.5V13a1.5 1.5 0 0 0 3 0V6.5a1.5 1.5 0 0 0-3 0Z">
+</svg>
+{%- elseif name == "information" -%}
+<svg class="nhsuk-icon nhsuk-icon--information{% if params and params.classes %} {{ params.classes }}{% endif %}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" focusable="false"{% if params and params.title %} role="img" aria-label="{{ params.title }}"{% else %} aria-hidden="true"{% endif %}>
+  {%- if params and params.title %}<title>{{ params.title }}</title>{% endif %}
+  <path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm-1.5 6.5V17a1.5 1.5 0 0 0 3 0V12a1.5 1.5 0 0 0-3 0Z">
+</svg>
+{%- else -%}
+  {{- nhsukIcon(name) -}}
+{%- endif -%}
+{%- endmacro %}

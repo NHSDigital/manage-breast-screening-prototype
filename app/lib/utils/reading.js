@@ -190,6 +190,7 @@ const calculateReadingMetrics = function (
       userReadCount: 0,
       userFirstReadCount: 0,
       userSecondReadCount: 0,
+      userAwaitingPriorsCount: 0,
       userReadableCount: 0,
       userFirstReadableCount: 0,
       userSecondReadableCount: 0,
@@ -228,6 +229,7 @@ const calculateReadingMetrics = function (
   let userReadCount = 0
   let userFirstReadCount = 0
   let userSecondReadCount = 0
+  let userAwaitingPriorsCount = 0
   let userReadableCount = 0
   let userFirstReadableCount = 0
   let userSecondReadableCount = 0
@@ -262,6 +264,11 @@ const calculateReadingMetrics = function (
         }
       }
     })
+
+    // Events where this user has an outstanding priors request
+    userAwaitingPriorsCount = events.filter(
+      (event) => awaitingPriors(event) && userRequestedPriors(event, currentUserId)
+    ).length
 
     // Events this user can read
     userReadableCount = events.filter((event) =>
@@ -302,6 +309,7 @@ const calculateReadingMetrics = function (
     userReadCount,
     userFirstReadCount,
     userSecondReadCount,
+    userAwaitingPriorsCount,
     userReadableCount,
     userFirstReadableCount,
     userSecondReadableCount,

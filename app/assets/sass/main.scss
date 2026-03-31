@@ -18,12 +18,14 @@
 @forward "components/forward-link";
 @forward "components/status";
 @forward "components/status-bar";
+@forward "components/status-message";
 @forward "components/summary-card";
 @forward "components/reading";
 @forward "components/mammogram-images";
 @forward "components/environment";
 
 @forward "components/overrides";
+@forward "components/notification-banner";
 @forward "components/checkboxes";
 @forward "components/breast-features";
 @forward "components/sticky-appointment-bar";

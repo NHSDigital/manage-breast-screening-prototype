@@ -19,18 +19,19 @@ const locationWeights = {
 // Request statuses for seed data
 // Represents state after admin triage
 const requestStatusWeights = {
-  not_requested: 0.35, // Not yet triaged
-  requested: 0.25, // Admin has requested, awaiting arrival
-  received: 0.15, // Images have arrived
-  not_available: 0.15, // Can't get them (abroad, too old, etc.)
-  not_needed: 0.1 // Decided we don't need them
+  not_requested: 0.6, // Not yet triaged
+  pending: 0.1, // Reader flagged, awaiting admin to send IEP request
+  requested: 0.1, // Admin has sent IEP request, awaiting arrival
+  received: 0.1, // Images have arrived
+  not_available: 0.05, // Can't get them (abroad, too old, etc.)
+  not_needed: 0.05 // Decided we don't need them
 }
 
 // For mammograms from abroad, status is limited
 const abroadStatusWeights = {
-  not_requested: 0.3,
-  not_available: 0.5, // Most abroad mammograms can't be obtained
-  not_needed: 0.2
+  not_requested: 0.7,
+  not_available: 0.2, // Most abroad mammograms can't be obtained
+  not_needed: 0.1
 }
 
 // Generate a single previous mammogram entry
@@ -131,7 +132,11 @@ const generatePreviousMammogram = ({
     requestStatus
   }
 
-  if (requestStatus === 'requested' || requestStatus === 'received') {
+  if (
+    requestStatus === 'pending' ||
+    requestStatus === 'requested' ||
+    requestStatus === 'received'
+  ) {
     // Pick an admin user who made the request
     const adminUsers = users.filter((user) =>
       user.role.some((r) => ['administrator', 'service_manager'].includes(r))
@@ -141,7 +146,7 @@ const generatePreviousMammogram = ({
         ? faker.helpers.arrayElement(adminUsers)
         : { id: addedByUserId }
 
-    // Request was made 1-5 days after the event
+    // Request was flagged 1-5 days after the event
     const requestedDate = dayjs(eventDate).add(
       faker.number.int({ min: 1, max: 5 }),
       'day'
