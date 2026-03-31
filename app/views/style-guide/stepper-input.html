@@ -1,0 +1,105 @@
+{# app/views/style-guide/stepper-input.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/stepper-input/macro.njk' import appStepperInput %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "stepper-input" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Stepper input</h2>
+
+<p>A number input with increment (＋) and decrement (−) buttons. Requires JavaScript; the plain number input is shown without JavaScript (progressive enhancement).</p>
+
+<p>Macro: <code>appStepperInput(params)</code></p>
+
+<h3>Basic</h3>
+
+<div class="sg-example">
+  {{ appStepperInput({
+    id: "images-count",
+    name: "imagesCount",
+    value: 4,
+    label: { text: "Number of images" }
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStepperInput({
+  id: "images-count",
+  name: "imagesCount",
+  value: 4,
+  label: { text: "Number of images" }
+}) }}{% endraw %}</code></pre>
+
+<h3>With hint</h3>
+
+<div class="sg-example">
+  {{ appStepperInput({
+    id: "repeat-count",
+    name: "repeatCount",
+    value: 1,
+    label: { text: "Repeats needed" },
+    hint: { text: "Enter the total number of images to retake." }
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStepperInput({
+  id: "repeat-count",
+  name: "repeatCount",
+  value: 1,
+  label: { text: "Repeats needed" },
+  hint: { text: "Enter the total number of images to retake." }
+}) }}{% endraw %}</code></pre>
+
+<h3>With min and max</h3>
+
+<p>Use <code>min</code> and <code>max</code> to constrain the value. The decrement button is disabled when the current value equals the minimum, and the increment button is disabled when it equals the maximum.</p>
+
+<div class="sg-example">
+  {{ appStepperInput({
+    id: "room-capacity",
+    name: "roomCapacity",
+    value: 1,
+    min: 1,
+    max: 10,
+    label: { text: "Rooms available" }
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStepperInput({
+  id: "room-capacity",
+  name: "roomCapacity",
+  value: 1,
+  min: 1,
+  max: 10,
+  label: { text: "Rooms available" }
+}) }}{% endraw %}</code></pre>
+
+<h3>With non-default step</h3>
+
+<p>Use <code>step</code> to change the increment amount (default is 1).</p>
+
+<div class="sg-example">
+  {{ appStepperInput({
+    id: "exposure-time",
+    name: "exposureTime",
+    value: 10,
+    step: 5,
+    min: 0,
+    label: { text: "Exposure (ms)" }
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStepperInput({
+  id: "exposure-time",
+  name: "exposureTime",
+  value: 10,
+  step: 5,
+  min: 0,
+  label: { text: "Exposure (ms)" }
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

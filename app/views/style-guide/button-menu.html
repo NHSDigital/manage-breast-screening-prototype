@@ -1,0 +1,91 @@
+{# app/views/style-guide/button-menu.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/button-menu/macro.njk' import buttonMenu %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "button-menu" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Button menu</h2>
+
+<p>A toggle button that reveals a group of secondary action buttons. Uses <code>data-module="app-button-menu"</code> to wire up the toggle behaviour.</p>
+
+<p>Macro: <code>buttonMenu(params)</code></p>
+
+<h3>Default</h3>
+
+<p>The primary visible button is configured via <code>params.button</code>. Menu items are listed in <code>params.items</code>.</p>
+
+<div class="sg-example">
+  {{ buttonMenu({
+    button: {
+      text: "Actions"
+    },
+    items: [
+      { text: "Edit", href: "#" },
+      { text: "Duplicate", href: "#" },
+      { text: "Delete", href: "#" }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ buttonMenu({
+  button: { text: "Actions" },
+  items: [
+    { text: "Edit", href: "#" },
+    { text: "Duplicate", href: "#" },
+    { text: "Delete", href: "#" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>Fewer items</h3>
+
+<div class="sg-example">
+  {{ buttonMenu({
+    button: {
+      text: "More options"
+    },
+    items: [
+      { text: "Reschedule", href: "#" },
+      { text: "Cancel appointment", href: "#" }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ buttonMenu({
+  button: { text: "More options" },
+  items: [
+    { text: "Reschedule", href: "#" },
+    { text: "Cancel appointment", href: "#" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>Right-aligned menu</h3>
+
+<p>Use <code>alignMenu: "right"</code> to align the dropdown to the right edge of the button.</p>
+
+<div class="sg-example">
+  {{ buttonMenu({
+    button: {
+      text: "Actions"
+    },
+    alignMenu: "right",
+    items: [
+      { text: "Edit", href: "#" },
+      { text: "Archive", href: "#" }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ buttonMenu({
+  button: { text: "Actions" },
+  alignMenu: "right",
+  items: [...]
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

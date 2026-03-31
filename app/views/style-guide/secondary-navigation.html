@@ -1,0 +1,90 @@
+{# app/views/style-guide/secondary-navigation.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/secondary-navigation/macro.njk' import appSecondaryNavigation %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "secondary-navigation" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Secondary navigation</h2>
+
+<p>Tab-style navigation for moving between sections of a page or workflow. Typically placed in the <code>pageNavigation</code> block so it spans the full width above the main content area.</p>
+
+<p>Macro: <code>appSecondaryNavigation(params)</code></p>
+
+<p>Items can be <code>current</code> (active page, adds <code>aria-current="page"</code>), <code>active</code> (visually bold but not the current page), or <code>disabled</code>.</p>
+
+<h3>Basic with current item</h3>
+
+<div class="sg-example">
+  {{ appSecondaryNavigation({
+    items: [
+      { text: "Appointment", href: "#", current: true },
+      { text: "Participant", href: "#" },
+      { text: "Medical information", href: "#" }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appSecondaryNavigation({
+  items: [
+    { text: "Appointment", href: "#", current: true },
+    { text: "Participant", href: "#" },
+    { text: "Medical information", href: "#" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>With disabled item</h3>
+
+<div class="sg-example">
+  {{ appSecondaryNavigation({
+    items: [
+      { text: "Appointment", href: "#" },
+      { text: "Participant", href: "#", current: true },
+      { text: "Images", href: "#", disabled: true }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{ text: "Images", href: "#", disabled: true }{% endraw %}</code></pre>
+
+<h3>Active but not current</h3>
+
+<p>Use <code>active: true</code> to show a tab as bold (for example, when its sub-section is active) without marking it as the current page.</p>
+
+<div class="sg-example">
+  {{ appSecondaryNavigation({
+    items: [
+      { text: "Appointment", href: "#", active: true },
+      { text: "Participant", href: "#" },
+      { text: "Medical information", href: "#" }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{ text: "Appointment", href: "#", active: true }{% endraw %}</code></pre>
+
+<h3>Custom accessible label</h3>
+
+<p>Use <code>visuallyHiddenTitle</code> to provide a descriptive <code>aria-label</code> for the <code>&lt;nav&gt;</code> element.</p>
+
+<div class="sg-example">
+  {{ appSecondaryNavigation({
+    visuallyHiddenTitle: "Appointment sections",
+    items: [
+      { text: "Summary", href: "#", current: true },
+      { text: "Details", href: "#" }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appSecondaryNavigation({
+  visuallyHiddenTitle: "Appointment sections",
+  items: [...]
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

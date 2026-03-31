@@ -1,0 +1,106 @@
+{# app/views/style-guide/details.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/details/macro.njk' import appDetails %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "details" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Details</h2>
+
+<p>An extended version of the NHS <code>&lt;details&gt;</code> component. Adds support for a subtitle beneath the summary, a contents summary line, and an optional status tag overlay.</p>
+
+<p>Macro: <code>appDetails(params)</code></p>
+
+<h3>Basic</h3>
+
+<p>Behaves identically to the standard NHS details component.</p>
+
+<div class="sg-example">
+  {{ appDetails({
+    summaryText: "Help with this question",
+    text: "This is the body text of the details element."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appDetails({
+  summaryText: "Help with this question",
+  text: "This is the body text of the details element."
+}) }}{% endraw %}</code></pre>
+
+<h3>With subtitle</h3>
+
+<p>Use <code>subtitle</code> to show secondary text beneath the summary label — useful for showing a date range or count.</p>
+
+<div class="sg-example">
+  {{ appDetails({
+    summaryText: "Previous mammogram",
+    subtitle: "St Thomas' Hospital, 2022",
+    text: "Full details about the previous mammogram would appear here."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appDetails({
+  summaryText: "Previous mammogram",
+  subtitle: "St Thomas' Hospital, 2022",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+<h3>With contents summary</h3>
+
+<p>Use <code>contentsSummary</code> (text) or <code>contentsSummaryHtml</code> to show a summary of what's inside. This appears on the same line as the subtitle.</p>
+
+<div class="sg-example">
+  {{ appDetails({
+    summaryText: "Medical history",
+    contentsSummary: "3 items",
+    html: "<p>Three items of medical history would appear here.</p>"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appDetails({
+  summaryText: "Medical history",
+  contentsSummary: "3 items",
+  html: "<p>...</p>"
+}) }}{% endraw %}</code></pre>
+
+<h3>Open by default</h3>
+
+<p>Use <code>open: true</code> to render the details element expanded.</p>
+
+<div class="sg-example">
+  {{ appDetails({
+    summaryText: "Expanded by default",
+    open: true,
+    text: "This content is visible without interaction."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appDetails({
+  summaryText: "Expanded by default",
+  open: true,
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+<h3>With status tag</h3>
+
+<p>Use <code>status</code> (a status string passed through the <code>toTag</code> filter) to overlay a status tag on the summary. Used to show the completion state of a section.</p>
+
+<div class="sg-example">
+  {{ appDetails({
+    summaryText: "Consent",
+    status: "complete",
+    text: "Consent has been recorded."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appDetails({
+  summaryText: "Consent",
+  status: "complete",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

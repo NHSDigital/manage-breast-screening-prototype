@@ -122,7 +122,7 @@
             {% set metadata = event | getReadingMetadata %}
             <tr{% if resumeEvent and event.id == resumeEvent.id and not (event | userHasReadEvent) %} class="app-placeholder-row--next"{% endif %}>
               <td>
-                <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
+                <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
               <td>
                 {% set readingHref -%}
@@ -131,7 +131,7 @@
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 <br>
-                <span class="app-text-grey app-nowrap nhsuk-body-s">
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
                   {% if event | userHasReadEvent %}
                     {{ "First read" if readCount == 1 else "Second read" }}
@@ -169,7 +169,7 @@
                   <br>
                 {% endif %}
                 {{ event.timing.startTime | formatDate }}<br>
-                <span class="app-text-grey app-nowrap nhsuk-body-s">
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {{ event.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
@@ -200,12 +200,12 @@
             {% for i in range(0, placeholderRowsShown) %}
             <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
               <td>
-                <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ (userReadableEvents | length) + loop.index }}.</span>
+                <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (userReadableEvents | length) + loop.index }}.</span>
               </td>
               <td>
                 <span class="app-placeholder-tag"></span>
                 {% if pendingCount > 3 and loop.last %}
-                  <span class="app-placeholder-more app-text-grey nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
+                  <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
                 {% endif %}
               </td>
               <td></td>
@@ -236,7 +236,7 @@
             {% set metadata = event | getReadingMetadata %}
             <tr>
               <td>
-                <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
+                <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
               <td>
                 {% set readingHref -%}
@@ -277,7 +277,7 @@
                   <br>
                 {% endif %}
                 {{ event.timing.startTime | formatDate }}<br>
-                <span class="app-text-grey app-nowrap nhsuk-body-s">
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {{ event.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
@@ -299,7 +299,7 @@
                   {% endif %}
 
                   <br>
-                  <span class="app-text-grey app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
@@ -320,7 +320,7 @@
                   {# Force tags to grey #}
                   {{ secondRead.opinion | toTag({colour: "grey"}) }}
                   <br>
-                  <span class="app-text-grey app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
@@ -355,12 +355,12 @@
           {% for i in range(0, placeholderRowsShown) %}
           <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
             <td>
-              <span class="app-row-number app-text-grey app-nowrap nhsuk-body-s">{{ (events | length) + loop.index }}.</span>
+              <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (events | length) + loop.index }}.</span>
             </td>
             <td>
               <span class="app-placeholder-tag"></span>
               {% if pendingCount > 3 and loop.last %}
-                <span class="app-placeholder-more app-text-grey nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
+                <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
               {% endif %}
             </td>
             <td></td>

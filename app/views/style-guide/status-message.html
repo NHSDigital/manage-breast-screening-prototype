@@ -1,0 +1,70 @@
+{# app/views/style-guide/status-message.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/status-message/macro.njk' import appStatusMessage %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "status-message" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Status message</h2>
+
+<p>A bold inline status line with an optional icon. Used to show the current state of something — for example, an opinion in the reading workflow.</p>
+
+<p>Macro: <code>appStatusMessage(params)</code></p>
+
+<p>Colour variants: <code>blue</code>, <code>green</code>, <code>red</code>. Size variant: <code>small</code> (via classes).</p>
+
+<h3>No colour (default)</h3>
+
+<div class="sg-example">
+  {{ appStatusMessage({ text: "Status message" }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStatusMessage({ text: "Status message" }) }}{% endraw %}</code></pre>
+
+<h3>Colour variants</h3>
+
+<div class="sg-example">
+  {{ appStatusMessage({ text: "Blue status", colour: "blue" }) }}
+  {{ appStatusMessage({ text: "Green status", colour: "green" }) }}
+  {{ appStatusMessage({ text: "Red status", colour: "red" }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStatusMessage({ text: "Blue status", colour: "blue" }) }}
+{{ appStatusMessage({ text: "Green status", colour: "green" }) }}
+{{ appStatusMessage({ text: "Red status", colour: "red" }) }}{% endraw %}</code></pre>
+
+<h3>With icons</h3>
+
+<p>Pass an icon name to <code>icon</code>. Icons are rendered via <code>appIcon</code>.</p>
+
+<div class="sg-example">
+  {{ appStatusMessage({ text: "Recall recommended", colour: "red", icon: "alert" }) }}
+  {{ appStatusMessage({ text: "Routine recall", colour: "blue", icon: "information" }) }}
+  {{ appStatusMessage({ text: "Normal — no recall", colour: "green", icon: "tick" }) }}
+  {{ appStatusMessage({ text: "Technical repeat needed", colour: "red", icon: "warning" }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStatusMessage({ text: "Recall recommended", colour: "red", icon: "alert" }) }}
+{{ appStatusMessage({ text: "Normal — no recall", colour: "green", icon: "tick" }) }}{% endraw %}</code></pre>
+
+<h3>Small size</h3>
+
+<p>Pass <code>classes: "app-status-message--small"</code> to use a smaller text size.</p>
+
+<div class="sg-example">
+  {{ appStatusMessage({ text: "Recall recommended", colour: "red", classes: "app-status-message--small" }) }}
+  {{ appStatusMessage({ text: "Normal", colour: "green", classes: "app-status-message--small" }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStatusMessage({
+  text: "Recall recommended",
+  colour: "red",
+  classes: "app-status-message--small"
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}
