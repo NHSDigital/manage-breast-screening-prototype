@@ -177,22 +177,22 @@
           <h2>Opinion summary</h2>
 
           <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if normalPercent == 0 }}">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
               {{ card({
                 descriptionHtml: normalCardContent
               }) }}
             </li>
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if technicalRecallPercent == 0 }}">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
               {{ card({
                 descriptionHtml: technicalRecallCardContent
               }) }}
             </li>
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if recallForAssessmentPercent == 0 }}">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
               {{ card({
                 descriptionHtml: recallForAssessmentCardContent
               }) }}
             </li>
-            <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if priorsRequestedPercent == 0 }}">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
               {{ card({
                 descriptionHtml: priorsRequestedCardContent
               }) }}
@@ -226,6 +226,9 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
+                {% if event.medicalInformation.symptoms | length %}
+                  <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
+                {% endif %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 <br>
@@ -237,12 +240,6 @@
                     {{ "1st read" if readCount == 0 else "2nd read" }}
                   {% endif %}
                 </span>
-
-                
-                {% if event.medicalInformation.symptoms | length %}
-                <br>
-                  {{ "Has symptoms" | toTag }}
-                {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
                   {% if event | hasReportedMammograms %}
                     <br>{{ "Has priors" | toTag }}
@@ -401,41 +398,6 @@
 
       {% if not resumeEvent %}
         <h2>All reads ({{ allTotal }})</h2>
-
-        <h3>Outcome summary</h3>
-
-        <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if awaitingCount == 0 }}">
-            {{ card({
-              descriptionHtml: awaitingCardContent
-            }) }}
-          </li>
-        </ul>
-
-        <h3>Case outcomes after 2nd reads</h3>
-
-        <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewNormalCount == 0 }}">
-            {{ card({
-              descriptionHtml: allViewNormalCardContent
-            }) }}
-          </li>
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewTechnicalRecallCount == 0 }}">
-            {{ card({
-              descriptionHtml: allViewTechnicalRecallCardContent
-            }) }}
-          </li>
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewRecallForAssessmentCount == 0 }}">
-            {{ card({
-              descriptionHtml: allViewRecallForAssessmentCardContent
-            }) }}
-          </li>
-          <li class="nhsuk-grid-column-one-third app-reading-statistics-card{{ ' app-reading-statistics-card--zero' if allViewArbitrationCount == 0 }}">
-            {{ card({
-              descriptionHtml: allViewArbitrationCardContent
-            }) }}
-          </li>
-        </ul>
       {% endif %}
 
       <h2>Reading session cases</h2>
@@ -463,15 +425,14 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
+                {% if event.medicalInformation.symptoms | length %}
+                  <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
+                {% endif %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 {% if event | awaitingPriors %}
                 <br>
                   {{ "Awaiting priors" | toTag }}
-                {% endif %}
-                {% if event.medicalInformation.symptoms | length %}
-                <br>
-                  {{ "Has symptoms" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
                   {% if event | hasReportedMammograms %}

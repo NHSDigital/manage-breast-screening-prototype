@@ -74,6 +74,11 @@
   margin-right: 15px;
 }
 
+.app-reading-case-tag {
+  display: block;
+  margin-bottom: nhsuk-spacing(1);
+}
+
 .app-reading-batch-table th:first-child,
 .app-reading-batch-table td:first-child {
   padding-left: 0;
@@ -191,39 +196,31 @@
   color: nhsuk-colour("white");
 }
 
-.app-reading-statistics-card--zero > .nhsuk-card {
-  background-color: nhsuk-colour("grey-3");
-  color: nhsuk-colour("black");
-}
-
-.app-reading-statistics-card--zero .nhsuk-card__heading,
-.app-reading-statistics-card--zero p,
-.app-reading-statistics-card--zero a,
-.app-reading-statistics-card--zero a:visited,
-.app-reading-statistics-card--zero a:hover,
-.app-reading-statistics-card--zero a:focus {
-  color: nhsuk-colour("black");
-}
-
 .app-reading-statistics-cards {
   display: flex;
   flex-wrap: wrap;
-  margin-left: -8px;
-  margin-right: -8px;
+  gap: 10px;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .app-reading-statistics-card {
   display: flex;
-  padding-left: 8px;
-  padding-right: 8px;
+  padding-left: 0;
+  padding-right: 0;
+  float: none;
+  width: calc((100% - 30px) / 4);
+  flex: 0 0 calc((100% - 30px) / 4);
+  max-width: calc((100% - 30px) / 4);
 }
 
 .app-reading-statistics-card > .nhsuk-card {
   width: 100%;
-  max-width: 320px;
-  height: 185px;
+  max-width: 100%;
+  min-height: 180px;
+  height: 180px;
   margin-right: 0;
-  margin-bottom: nhsuk-spacing(2);
+  margin-bottom: 0;
   display: flex;
 }
 
@@ -234,7 +231,7 @@
 }
 
 .app-reading-statistics-value {
-  font-size: 2.25rem;
+  font-size: 1.75rem;
   line-height: 1.1;
 }
 

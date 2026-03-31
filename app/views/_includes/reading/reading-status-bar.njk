@@ -6,13 +6,13 @@
 
 {% set firstRowItems = [] %}
 
-{# Context item (Batch or Clinic) #}
-{% if isBatchContext %}
-  {% set firstRowItems = firstRowItems | push({
-    key: "Session:",
-    value: "All cases needing reads"
-  }) %}
-{% else %}
+{# Environment tag - always first item #}
+{% set firstRowItems = firstRowItems | push({
+  html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
+}) %}
+
+{# Clinic context item (batch context has no label, just the environment tag) #}
+{% if isClinicContext %}
   {% set locationName %}
     {% if location.type === 'mobile_unit' %}
       {{ location.name }} at {{ clinic.siteName }}
@@ -26,7 +26,7 @@
   }) %}
 {% endif %}
 
-{# Progress item #}
+{# Progress text #}
 {% set progressText %}
   {{ progress.userReadCount }} read, {{ progress.targetRemaining }} remaining
   {%- if progress.skippedEvents | length > 0 -%}
@@ -34,7 +34,7 @@
   {% endif %}
 {% endset %}
 
-{# Screened date #}
+{# Screened date and progress on same row as environment tag #}
 {% if event %}
   {% set firstRowItems = firstRowItems | push({
     key: "Screened:",
@@ -42,16 +42,14 @@
   }) %}
 {% endif %}
 
-{% set progressRowItems = [] %}
-{% set progressRowItems = progressRowItems | push({
+{% set firstRowItems = firstRowItems | push({
   key: "Progress:",
   value: progressText | trim
 }) %}
 
 {# Build rows array #}
 {% set statusBarRows = [
-  { items: firstRowItems },
-  { items: progressRowItems }
+  { items: firstRowItems }
 ] %}
 
 {# Add participant row if participant exists #}
