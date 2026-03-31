@@ -3,7 +3,7 @@
 const dayjs = require('dayjs')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
-const { awaitingPriors } = require('./prior-mammograms')
+const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
 
 // /**
 //  * Get first unread event in a clinic
@@ -194,6 +194,8 @@ const calculateReadingMetrics = function (
       userFirstReadableCount: 0,
       userSecondReadableCount: 0,
       userCanRead: false,
+      awaitingPriorsCount: 0,
+      userAwaitingPriorsCount: 0,
       skippedCount: skippedEvents?.length || 0
     }
   }
@@ -219,6 +221,9 @@ const calculateReadingMetrics = function (
     (event) => getOutcome(event, settings) === 'arbitration_pending'
   ).length
 
+  // Global awaiting priors count (events with any outstanding prior request)
+  const awaitingPriorsCount = events.filter((event) => awaitingPriors(event)).length
+
   // User-specific counts
   let userReadCount = 0
   let userFirstReadCount = 0
@@ -226,6 +231,7 @@ const calculateReadingMetrics = function (
   let userReadableCount = 0
   let userFirstReadableCount = 0
   let userSecondReadableCount = 0
+  let userAwaitingPriorsCount = 0
 
   if (currentUserId) {
     // Events this user has read
@@ -271,6 +277,11 @@ const calculateReadingMetrics = function (
     userSecondReadableCount = filterEventsByNeedsSecondRead(events).filter(
       (event) => canUserReadEvent(event, currentUserId)
     ).length
+
+    // Events where this user has an outstanding prior request
+    userAwaitingPriorsCount = events.filter((event) =>
+      userRequestedPriors(event, currentUserId)
+    ).length
   }
 
   return {
@@ -295,6 +306,9 @@ const calculateReadingMetrics = function (
     userFirstReadableCount,
     userSecondReadableCount,
     userCanRead: userReadableCount > 0,
+    // Awaiting priors
+    awaitingPriorsCount,
+    userAwaitingPriorsCount,
     // Skipped events
     skippedCount: skippedEvents?.length || 0
   }
@@ -1798,7 +1812,7 @@ const getBatchReadingProgress = (
     populatedCount: batchEvents.length,
     targetSize: resolvedTargetSize,
     // Remaining reads against the target (not just currently loaded events)
-    targetRemaining: Math.max(0, resolvedTargetSize - progress.userReadCount)
+    targetRemaining: Math.max(0, resolvedTargetSize - progress.userReadCount - progress.userAwaitingPriorsCount)
   }
 }
 
