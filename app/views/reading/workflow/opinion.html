@@ -156,12 +156,13 @@
             <a href="./request-priors" class="nhsuk-link--no-visited-state">Request priors</a>
           </p>
         {% endset %}
-        {{ appNotificationBanner({
-          compact: true,
-          type: "info",
-          titleText: "Recent " + ("mammogram" | pluralise(priorsSummary.counts.not_requested)) + " reported — not yet requested",
-          html: unrequestedHtml
-        }) }}
+
+        {% call insetText({
+          classes: "app-inset-text--compact"
+        }) %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
+          {{ unrequestedHtml | safe }}
+        {% endcall %}
       </div>
     </div>
   {% endif %}
@@ -190,12 +191,15 @@
               </p>
             {% endfor %}
           {% endset %}
-          
-          {{ appNotificationBanner({
-            compact: true,
-            titleText: "Priors recently received",
-            html: receivedHtml
-          }) }}
+        
+
+          {% call insetText({
+            classes: "app-inset-text--compact"
+          }) %}
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors recently received</p>
+            {{ receivedHtml | safe }}
+          {% endcall %}
+
         </div>
       </div>
     {% endif %}

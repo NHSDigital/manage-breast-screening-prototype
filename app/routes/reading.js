@@ -136,7 +136,13 @@ module.exports = (router) => {
   /***********************************************************************/
 
   // Priors management page with optional tab filter
-  const VALID_PRIOR_FILTERS = ['all', 'not-requested', 'requested', 'resolved']
+  const VALID_PRIOR_FILTERS = [
+    'all',
+    'not-requested',
+    'pending',
+    'requested',
+    'resolved'
+  ]
 
   router.get(
     ['/reading/priors', '/reading/priors/:filter'],
@@ -182,6 +188,7 @@ module.exports = (router) => {
 
     // Set additional fields based on status
     if (newStatus === 'requested') {
+      // Admin is formally sending the IEP request
       mammogram.requestedDate = new Date().toISOString()
       mammogram.requestedBy = currentUserId
     } else if (newStatus === 'received') {
@@ -542,7 +549,7 @@ module.exports = (router) => {
       if (event && event.previousMammograms) {
         event.previousMammograms.forEach((mammogram) => {
           if (requestPriorIds.includes(mammogram.id)) {
-            mammogram.requestStatus = 'requested'
+            mammogram.requestStatus = 'pending'
             mammogram.requestedDate = new Date().toISOString()
             mammogram.requestedBy = currentUserId
             if (reason) {
@@ -607,7 +614,7 @@ module.exports = (router) => {
       if (event && event.previousMammograms) {
         event.previousMammograms.forEach((mammogram) => {
           if (
-            mammogram.requestStatus === 'requested' &&
+            mammogram.requestStatus === 'pending' &&
             mammogram.requestedBy === currentUserId
           ) {
             mammogram.requestStatus = 'not_requested'
@@ -1510,7 +1517,12 @@ module.exports = (router) => {
     // Build batch list for the batches tab
     const batches = Object.values(data.readingSessionBatches || {})
       .map((batch) => {
-        const progress = getBatchReadingProgress(data, batch.id, null, currentUserId)
+        const progress = getBatchReadingProgress(
+          data,
+          batch.id,
+          null,
+          currentUserId
+        )
 
         // Count cases the user has "dealt with" — either given an opinion or requested priors
         // This is separate from userReadCount so the utility stays semantically pure

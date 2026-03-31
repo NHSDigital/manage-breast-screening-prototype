@@ -18,6 +18,7 @@
   {# Build flat list of mammogram rows with their parent event #}
   {% set allRows = [] %}
   {% set notRequestedRows = [] %}
+  {% set pendingRows = [] %}
   {% set requestedRows = [] %}
   {% set resolvedRows = [] %}
 
@@ -27,6 +28,9 @@
         {% set row = { event: thisEvent, mammogram: mammogram } %}
         {% if mammogram.requestStatus == "not_requested" %}
           {% set notRequestedRows = notRequestedRows | push(row) %}
+          {% set allRows = allRows | push(row) %}
+        {% elseif mammogram.requestStatus == "pending" %}
+          {% set pendingRows = pendingRows | push(row) %}
           {% set allRows = allRows | push(row) %}
         {% elseif mammogram.requestStatus == "requested" %}
           {% set requestedRows = requestedRows | push(row) %}
@@ -42,6 +46,8 @@
   {% set priorsFilter = priorsFilter if priorsFilter else "all" %}
   {% if priorsFilter == "not-requested" %}
     {% set displayRows = notRequestedRows %}
+  {% elseif priorsFilter == "pending" %}
+    {% set displayRows = pendingRows %}
   {% elseif priorsFilter == "requested" %}
     {% set displayRows = requestedRows %}
   {% elseif priorsFilter == "resolved" %}
@@ -58,6 +64,7 @@
   {% set tabItems = [
     { id: "all", label: "All", count: allRows | length },
     { id: "not-requested", label: "Not requested", count: notRequestedRows | length },
+    { id: "pending", label: "Needs requesting", count: pendingRows | length },
     { id: "requested", label: "Requested", count: requestedRows | length },
     { id: "resolved", label: "Recently resolved", count: resolvedRows | length }
   ] %}
@@ -82,7 +89,7 @@
     <p>No prior mammograms in this view.</p>
   {% else %}
 
-    <table class="nhsuk-table">
+    <table class="nhsuk-table" data-current-username="{{ data.currentUser.id | getUsername({ format: 'short', identifyCurrentUser: true }) }}">
       <thead class="nhsuk-table__head">
         <tr>
           <th scope="col">Participant</th>
@@ -127,7 +134,8 @@
                 {# Status #}
                 <td data-mammogram-status="{{ mammogram.id }}">
                   {{ ("prior_" + mammogram.requestStatus) | toTag }}
-                  {% if mammogram.requestStatus == "requested" %}
+                  {% if mammogram.requestStatus == "pending" %}
+                    {# Flagged by reader — show who requested and reason #}
                     {% if mammogram.requestedDate %}
                       <br>
                       <span class="app-text-grey nhsuk-body-s">
@@ -139,9 +147,22 @@
                     {% endif %}
                     {% if mammogram.requestReason %}
                       <br>
+                      <span class="nhsuk-body-s js-prior-reason"><strong>Reason:</strong> {{ mammogram.requestReason }}</span>
+                    {% endif %}
+                  {% elseif mammogram.requestStatus == "requested" %}
+                    {# Admin has sent IEP request — show when admin actioned it #}
+                    {% if mammogram.statusChangedDate %}
+                      <br>
                       <span class="app-text-grey nhsuk-body-s">
-                        {{ mammogram.requestReason }}
+                        {{ mammogram.statusChangedDate | formatDate("D MMM YYYY") }}
+                        {% if mammogram.statusChangedBy %}
+                          by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                        {% endif %}
                       </span>
+                    {% endif %}
+                    {% if mammogram.requestReason %}
+                      <br>
+                      <span class="nhsuk-body-s js-prior-reason"><strong>Reason:</strong> {{ mammogram.requestReason }}</span>
                     {% endif %}
                   {% elseif mammogram.requestStatus == "received" or mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed" %}
                     {% if mammogram.statusChangedDate %}
@@ -157,22 +178,22 @@
                 </td>
 
                 {# Actions #}
-                <td data-mammogram-actions="{{ mammogram.id }}">
-                  {% if mammogram.requestStatus == "not_requested" %}
-                    {# Can mark as requested, not available, or not needed #}
-                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                <td data-mammogram-actions="{{ mammogram.id }}" style="vertical-align: top; text-align: left">
+                  {% if mammogram.requestStatus == "not_requested" or mammogram.requestStatus == "pending" %}
+                    {# Can mark as requested (sent to IEP), not available, or not needed #}
+                    <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
                       <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="requested">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as requested</button>
                     </form>
-                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                    <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
                       <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_available">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
                     </form>
-                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                    <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
                       <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_needed">
@@ -180,19 +201,19 @@
                     </form>
                   {% elseif mammogram.requestStatus == "requested" %}
                     {# Can mark as received, not available, or not needed #}
-                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                    <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
                       <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="received">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as received</button>
                     </form>
-                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                    <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
                       <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_available">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
                     </form>
-                    <form action="/reading/priors/update-status" method="POST" class="app-inline-form js-prior-status-form">
+                    <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
                       <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_needed">
@@ -214,6 +235,7 @@
   // Mirrors the check-in pattern used on clinic show page
   document.addEventListener('DOMContentLoaded', () => {
     const statusLabels = {
+      pending: 'Needs requesting',
       requested: 'Requested',
       received: 'Received',
       not_available: 'Not available',
@@ -222,6 +244,7 @@
     }
 
     const statusColours = {
+      pending: 'nhsuk-tag--orange',
       requested: 'nhsuk-tag--yellow',
       received: 'nhsuk-tag--green',
       not_available: 'nhsuk-tag--grey',
@@ -231,6 +254,7 @@
 
     // Actions available after updating to a given status
     const actionsForStatus = {
+      pending: ['requested', 'not_available', 'not_needed'],
       requested: ['received', 'not_available', 'not_needed'],
       not_requested: ['requested', 'not_available', 'not_needed'],
       received: [],
@@ -268,15 +292,34 @@
           return response.json()
         })
         .then(() => {
-          // Update the status tag in-place
+          // Update the status tag in-place, preserving reason text if present
           const statusCell = document.querySelector(
             '[data-mammogram-status="' + mammogramId + '"]'
           )
           if (statusCell) {
+            const reasonEl = statusCell.querySelector('.js-prior-reason')
+            const existingReason = reasonEl ? reasonEl.textContent.trim() : ''
+
             const colourClass = statusColours[newStatus] || ''
-            statusCell.innerHTML =
-              '<strong class="nhsuk-tag ' + colourClass + '">' +
-              statusLabels[newStatus] + '</strong>'
+            const today = new Date().toLocaleDateString('en-GB', {
+              day: 'numeric', month: 'short', year: 'numeric'
+            })
+            const table = document.querySelector('[data-current-username]')
+            const username = table ? table.getAttribute('data-current-username') : 'you'
+
+            let statusHtml = '<strong class="nhsuk-tag ' + colourClass + '">' + statusLabels[newStatus] + '</strong>'
+
+            // Show date and attribution after admin actions
+            if (['requested', 'received', 'not_available', 'not_needed'].includes(newStatus)) {
+              statusHtml += '<br><span class="app-text-grey nhsuk-body-s">' + today + ' by ' + username + '</span>'
+            }
+
+            // Preserve reason when moving from pending to requested
+            if (existingReason && newStatus === 'requested') {
+              statusHtml += '<br><span class="nhsuk-body-s js-prior-reason"><strong>Reason:</strong> ' + existingReason + '</span>'
+            }
+
+            statusCell.innerHTML = statusHtml
           }
 
           // Update the actions cell with new available actions
@@ -290,7 +333,7 @@
             } else {
               actionsCell.innerHTML = newActions.map(function (action) {
                 return '<form action="/reading/priors/update-status" method="POST"' +
-                  ' class="app-inline-form js-prior-status-form">' +
+                  ' class="js-prior-status-form">' +
                   '<input type="hidden" name="eventId" value="' + eventId + '">' +
                   '<input type="hidden" name="mammogramId" value="' + mammogramId + '">' +
                   '<input type="hidden" name="newStatus" value="' + action + '">' +

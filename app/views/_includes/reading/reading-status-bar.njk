@@ -28,10 +28,14 @@
 
 {# Progress item #}
 {% set progressText %}
-  {{ progress.userReadCount }} read, {{ progress.targetRemaining }} remaining
+  {{ progress.userReadCount }} read
+  {%- if progress.userAwaitingPriorsCount > 0 -%}
+    , {{ progress.userAwaitingPriorsCount }} awaiting priors
+  {%- endif -%}
+  , {{ progress.targetRemaining }} remaining
   {%- if progress.skippedEvents | length > 0 -%}
     , {{ progress.skippedEvents | length }} skipped
-  {% endif %}
+  {%- endif %}
 {% endset %}
 
 {# Screened date #}
