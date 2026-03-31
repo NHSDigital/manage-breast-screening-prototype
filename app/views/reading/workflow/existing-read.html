@@ -21,10 +21,10 @@
 
     {% set canUndo = event | userRequestedPriors(data.currentUser.id) %}
 
-    {# Get the request reason from any requested mammogram (same reason applied to all) #}
+    {# Get the request reason from any pending or requested mammogram (same reason applied to all) #}
     {% set requestReason = "" %}
     {% for mammogram in event.previousMammograms %}
-      {% if mammogram.requestStatus == "requested" and mammogram.requestReason %}
+      {% if (mammogram.requestStatus == "pending" or mammogram.requestStatus == "requested") and mammogram.requestReason %}
         {% set requestReason = mammogram.requestReason %}
       {% endif %}
     {% endfor %}

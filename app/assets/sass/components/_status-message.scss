@@ -1,0 +1,38 @@
+// app/assets/sass/components/_status-message.scss
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+.app-status-message {
+  display: flex;
+  align-items: start;
+  font-weight: bold;
+  gap: nhsuk-spacing(1);
+}
+
+.app-status-message .nhsuk-icon {
+  flex-shrink: 0;
+  margin-top: nhsuk-px-to-rem(-2px);
+  margin-left: nhsuk-px-to-rem(-4px);
+}
+
+.app-status-message--blue {
+  color: nhsuk-colour("blue");
+}
+
+.app-status-message--green {
+  color: nhsuk-colour("green");
+}
+
+.app-status-message--red {
+  color: nhsuk-colour("red");
+}
+
+.app-status-message--small {
+  @include nhsuk-font(16, $weight: bold);
+}
+
+.app-status-message--small .nhsuk-icon {
+  width: 1.25em;
+  height: 1.25em;
+  margin-top: 1px;
+  margin-left: -2px;
+}

@@ -1,0 +1,8 @@
+{# app/views/_components/status-message/template.njk #}
+{%- from "_components/icon/macro.njk" import appIcon -%}
+
+{% if params %}
+<p class="app-status-message{% if params.colour %} app-status-message--{{ params.colour }}{% endif %}{% if params.classes %} {{ params.classes }}{% endif %}">
+  {{- appIcon(params.icon) if params.icon -}}{{ params.text }}
+</p>
+{% endif %}

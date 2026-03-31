@@ -15,10 +15,12 @@ const hasReportedMammograms = (event) => {
   )
 }
 
-/** Returns true if any prior mammogram has requestStatus 'requested' (holds case from reading) */
+/** Returns true if any prior mammogram has requestStatus 'pending' or 'requested' (holds case from reading) */
 const awaitingPriors = (event) => {
   if (!hasReportedMammograms(event)) return false
-  return event.previousMammograms.some((m) => m.requestStatus === 'requested')
+  return event.previousMammograms.some(
+    (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
+  )
 }
 
 /** Returns true if any prior mammogram has requestStatus 'not_requested' */
@@ -48,6 +50,7 @@ const getPriorsSummary = (event) => {
 
   const counts = {
     not_requested: 0,
+    pending: 0,
     requested: 0,
     received: 0,
     not_available: 0,
@@ -62,7 +65,7 @@ const getPriorsSummary = (event) => {
   })
 
   const total = event.previousMammograms.length
-  const hasAwaiting = counts.requested > 0
+  const hasAwaiting = counts.pending > 0 || counts.requested > 0
   const hasUnrequested = counts.not_requested > 0
   const resolvedCount =
     counts.received + counts.not_available + counts.not_needed
@@ -85,17 +88,22 @@ const getUnrequestedPriors = (event) => {
   )
 }
 
-/** Get priors with requestStatus 'requested' (awaiting arrival) */
+/** Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) */
 const getAwaitingPriors = (event) => {
   if (!hasReportedMammograms(event)) return []
-  return event.previousMammograms.filter((m) => m.requestStatus === 'requested')
+  return event.previousMammograms.filter(
+    (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
+  )
 }
 
-/** Returns true if the given user has an outstanding prior request on this event */
+/**
+ * Returns true if the given user has a pending prior request on this event.
+ * Only 'pending' is checked — once admin moves to 'requested', the reader can no longer undo.
+ */
 const userRequestedPriors = (event, userId) => {
   if (!hasReportedMammograms(event)) return false
   return event.previousMammograms.some(
-    (m) => m.requestStatus === 'requested' && m.requestedBy === userId
+    (m) => m.requestStatus === 'pending' && m.requestedBy === userId
   )
 }
 

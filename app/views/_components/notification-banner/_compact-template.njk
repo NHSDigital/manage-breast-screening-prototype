@@ -1,0 +1,63 @@
+{# app/views/_components/notification-banner/_compact-template.njk #}
+{%- from "_components/icon/macro.njk" import appIcon -%}
+
+{#
+  Compact notification banner, inspired by the MOJ alert component.
+  Supports the same params as the standard notificationBanner:
+  - type/variant: "success", "warning", "error", or unset (important/info)
+  - text or html
+  - titleText or titleHtml (optional for compact)
+  - classes, attributes
+#}
+
+{%- set variant = params.variant or params.type -%}
+
+{%- set modifierClass = "" -%}
+{%- if variant == "success" %}
+  {%- set modifierClass = " app-notification-banner--compact--success" -%}
+{%- elseif variant == "warning" %}
+  {%- set modifierClass = " app-notification-banner--compact--warning" -%}
+{%- elseif variant == "error" %}
+  {%- set modifierClass = " app-notification-banner--compact--error" -%}
+{%- else %}
+  {%- set modifierClass = " app-notification-banner--compact--important" -%}
+{%- endif -%}
+
+{%- set role = params.role if params.role else ("alert" if variant == "success" else "region") -%}
+
+{%- if variant == "success" %}
+  {%- set iconName = "tick" -%}
+{%- elseif variant == "warning" %}
+  {%- set iconName = "alert" -%}
+{%- elseif variant == "error" %}
+  {%- set iconName = "cross" -%}
+{%- else %}
+  {%- set iconName = "information" -%}
+{%- endif -%}
+
+{%- set titleContent = params.titleHtml | safe if params.titleHtml else params.titleText -%}
+
+<div
+  class="app-notification-banner--compact{{ modifierClass }}{% if params.classes %} {{ params.classes }}{% endif %}"
+  role="{{ role }}"
+  {% if params.id %}id="{{ params.id }}"{% endif %}>
+
+  <div class="app-notification-banner--compact__header">
+    <span class="app-notification-banner--compact__icon">{{ appIcon(iconName) }}</span>
+    <div class="app-notification-banner--compact__body">
+      {%- if titleContent %}
+        <p class="app-notification-banner--compact__title">{{ titleContent }}</p>
+      {%- endif %}
+      {%- if params.html or params.text %}
+        <div class="app-notification-banner--compact__content {{ "app-notification-banner--compact__content--no-title" if not titleContent }}">
+          {%- if params.html %}
+            {{ params.html | safe }}
+          {%- elif params.text %}
+            {{ params.text }}
+          {%- endif %}
+        </div>
+      {%- endif %}
+    </div>
+  </div>
+
+</div>

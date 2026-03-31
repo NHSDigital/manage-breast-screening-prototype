@@ -138,60 +138,72 @@
     </div>
   </div>
 
-  {# Reported mammograms callout - only shown if there are unrequested priors #}
+  {# Reported mammograms banners - shown if there are unrequested or received priors #}
   {% set priorsSummary = event | getPriorsSummary %}
+
+  {# Warning: priors reported but not yet requested #}
   {% if priorsSummary.hasUnrequested %}
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-full">
-        {% set priorsCalloutHtml %}
-          {% for mammogram in event.previousMammograms %}
+        {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
+        {% set unrequestedHtml %}
+          {% for mammogram in unrequestedPriors %}
             <p class="nhsuk-u-margin-bottom-1">
               {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-
-              {# Request status #}
-              <br>
-              {{ ("prior_" + mammogram.requestStatus) | toTag }}
-              {% if mammogram.requestStatus == "requested" %}
-                {% if mammogram.requestedDate %}
-                  {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
-                {% endif %}
-                {% if mammogram.requestReason %}
-                  – {{ mammogram.requestReason }}
-                {% endif %}
-              {% elseif mammogram.requestStatus == "received" %}
-                {% if mammogram.receivedDate %}
-                  {{ mammogram.receivedDate | formatDate("D MMM YYYY") }}
-                {% endif %}
-              {% endif %}
             </p>
           {% endfor %}
-
+          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+            <a href="./request-priors" class="nhsuk-link--no-visited-state">Request priors</a>
+          </p>
         {% endset %}
 
-        {% set warningHeading %}
-          Recent {{ "mammogram" | pluralise(priorsSummary.total) }} reported
-        {% endset %}
-
-        {{ warningCallout({
-          heading: warningHeading,
-          html: priorsCalloutHtml,
-          classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-5",
-          actions: {
-            items: [
-               {
-                text: "Request priors",
-                href: "./request-priors",
-                classes: "nhsuk-link--no-visited-state"
-              }
-            ]
-          } if priorsSummary.hasUnrequested else null
-        }) }}
-
+        {% call insetText({
+          classes: "app-inset-text--compact"
+        }) %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
+          {{ unrequestedHtml | safe }}
+        {% endcall %}
       </div>
     </div>
   {% endif %}
 
+  {# Info: received priors that have a message (request reason) #}
+  {% if priorsSummary.counts.received > 0 %}
+    {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
+    {% set receivedWithMessage = [] %}
+    {% for mammogram in receivedMammograms %}
+      {% if mammogram.requestReason %}
+        {% set receivedWithMessage = receivedWithMessage | push(mammogram) %}
+      {% endif %}
+    {% endfor %}
+    {% if receivedWithMessage | length > 0 %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-full">
+          {% set receivedHtml %}
+            {% for mammogram in receivedWithMessage %}
+              <p class="nhsuk-u-margin-bottom-1">
+                {% if mammogram.requestedBy %}
+                 Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}. Request reason:
+                {% endif %}
+                {% if not mammogram.requestedBy %}
+                  Request reason:
+                {% endif %} {{ mammogram.requestReason }}
+              </p>
+            {% endfor %}
+          {% endset %}
+        
 
+          {% call insetText({
+            classes: "app-inset-text--compact"
+          }) %}
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors recently received</p>
+            {{ receivedHtml | safe }}
+          {% endcall %}
+
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
 
   {# Opinion form with thumbnails #}
   {% set questionText = "What is your opinion of these images?" %}

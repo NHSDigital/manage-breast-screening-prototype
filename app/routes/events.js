@@ -685,14 +685,13 @@ module.exports = (router) => {
         // (moreThanSixMonths and lessThanSixMonths) are submitted together.
         // Pick the first non-empty value.
         if (Array.isArray(cleaned.approximateDate)) {
-          cleaned.approximateDate = cleaned.approximateDate.find(v => v) || ''
+          cleaned.approximateDate = cleaned.approximateDate.find((v) => v) || ''
         }
 
         // Clear date fields not relevant to the selected dateType
         if (cleaned.dateType === 'dateKnown') {
           delete cleaned.approximateDate
-        }
-        else {
+        } else {
           delete cleaned.dateTaken
         }
 
@@ -867,7 +866,7 @@ module.exports = (router) => {
 
           // Flash success message
           const successMessage = `
-    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+    Appointment cancelled. ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
           req.flash('success', { wrapWithHeading: successMessage })
 
           // Return to clinic list
@@ -2826,10 +2825,10 @@ module.exports = (router) => {
         let successMessage
         if (needsReschedule === 'no-invite') {
           successMessage = `
-    ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
+    Appointment cancelled. ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         } else if (needsReschedule === 'no-opt-out') {
           successMessage = `
-    An opt out request has been submitted for ${participantName}`
+    Appointment cancelled. An opt out request has been submitted for ${participantName}. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         }
 
         req.flash('success', { wrapWithHeading: successMessage })

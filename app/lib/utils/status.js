@@ -280,6 +280,7 @@ const getStatusTagColour = (status) => {
 
     // Prior mammogram request statuses
     'prior_not_requested': 'white',
+    'prior_pending': 'orange',
     'prior_requested': 'yellow',
     'priors_requested': 'yellow',
     'prior_received': 'green',
@@ -321,6 +322,7 @@ const getStatusText = (status) => {
 
     // Prior mammogram request statuses
     prior_not_requested: 'Not requested',
+    prior_pending: 'Needs requesting',
     prior_requested: 'Requested',
     prior_received: 'Received',
     prior_not_available: 'Not available',
