@@ -1,0 +1,118 @@
+{# app/views/style-guide/summary-card.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/summary-card/macro.njk' import appSummaryCard %}
+{% from '_components/summary-list/macro.njk' import appSummaryList %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "summary-card" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Summary card</h2>
+
+<p>A summary card with a title bar and freeform content area. Uses the Nunjucks <code>caller()</code> pattern — wrap the content in a <code>{% raw %}{% call appSummaryCard(...) %}...{% endcall %}{% endraw %}</code> block.</p>
+
+<p>Macro: <code>appSummaryCard(params)</code></p>
+
+<h3>Basic</h3>
+
+<div class="sg-example">
+  {% call appSummaryCard({
+    title: { text: "Previous mammogram" }
+  }) %}
+    {{ appSummaryList({
+      rows: [
+        { key: { text: "Date" }, value: { text: "June 2022" } },
+        { key: { text: "Location" }, value: { text: "St Thomas' Hospital" } }
+      ]
+    }) }}
+  {% endcall %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% call appSummaryCard({
+  title: { text: "Previous mammogram" }
+}) %}
+  {{ appSummaryList({ rows: [...] }) }}
+{% endcall %}{% endraw %}</code></pre>
+
+<h3>With single action</h3>
+
+<div class="sg-example">
+  {% call appSummaryCard({
+    title: { text: "Implant — left breast" },
+    actions: {
+      items: [
+        { text: "Edit", href: "#", visuallyHiddenText: "implant details" }
+      ]
+    }
+  }) %}
+    {{ appSummaryList({
+      rows: [
+        { key: { text: "Type" }, value: { text: "Silicone" } },
+        { key: { text: "Inserted" }, value: { text: "2018" } }
+      ]
+    }) }}
+  {% endcall %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% call appSummaryCard({
+  title: { text: "Implant — left breast" },
+  actions: {
+    items: [
+      { text: "Edit", href: "#", visuallyHiddenText: "implant details" }
+    ]
+  }
+}) %}
+  ...
+{% endcall %}{% endraw %}</code></pre>
+
+<h3>With multiple actions</h3>
+
+<div class="sg-example">
+  {% call appSummaryCard({
+    title: { text: "Biopsy — right breast" },
+    actions: {
+      items: [
+        { text: "Edit", href: "#", visuallyHiddenText: "biopsy record" },
+        { text: "Delete", href: "#", visuallyHiddenText: "biopsy record" }
+      ]
+    }
+  }) %}
+    {{ appSummaryList({
+      rows: [
+        { key: { text: "Date" }, value: { text: "March 2021" } },
+        { key: { text: "Outcome" }, value: { text: "Benign" } }
+      ]
+    }) }}
+  {% endcall %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}actions: {
+  items: [
+    { text: "Edit", href: "#", visuallyHiddenText: "biopsy record" },
+    { text: "Delete", href: "#", visuallyHiddenText: "biopsy record" }
+  ]
+}{% endraw %}</code></pre>
+
+<h3>Custom heading level</h3>
+
+<p>Use <code>title.headingLevel</code> to change the heading element (default: <code>h2</code>).</p>
+
+<div class="sg-example">
+  {% call appSummaryCard({
+    title: { text: "Previous mammogram", headingLevel: 3 }
+  }) %}
+    <p class="nhsuk-body nhsuk-u-margin-bottom-0">This card uses an <code>h3</code> title.</p>
+  {% endcall %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% call appSummaryCard({
+  title: { text: "Previous mammogram", headingLevel: 3 }
+}) %}
+  ...
+{% endcall %}{% endraw %}</code></pre>
+
+{% endblock %}

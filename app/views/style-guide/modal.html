@@ -1,0 +1,129 @@
+{# app/views/style-guide/modal.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/modal/macro.njk' import appModal, appConfirmationModal %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "modal" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Modal</h2>
+
+<p>A modal dialog for confirmations and other inline decisions. Toggled by calling <code>openModal('modal-id')</code> from JavaScript. Closed by any action button with <code>data-modal-action="close"</code>.</p>
+
+<p>Macros: <code>appModal(params)</code>, <code>appConfirmationModal(params)</code></p>
+
+<h3>Confirmation modal (preset)</h3>
+
+<p><code>appConfirmationModal</code> provides a standard two-button confirm/cancel layout.</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Open confirmation modal",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-confirm'); return false;" }
+  }) }}
+
+  {{ appConfirmationModal({
+    id: "demo-confirm",
+    title: "Are you sure?",
+    content: "<p>This action cannot be undone. The record will be permanently removed.</p>",
+    confirmText: "Yes, delete",
+    cancelText: "Cancel"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appConfirmationModal({
+  id: "demo-confirm",
+  title: "Are you sure?",
+  content: "<p>...</p>",
+  confirmText: "Yes, delete",
+  cancelText: "Cancel"
+}) }}{% endraw %}</code></pre>
+
+<h3>Custom actions</h3>
+
+<p>Use <code>appModal</code> with a custom <code>actions</code> array for more control. Actions can be buttons (<code>element: "button"</code>) or links (<code>element: "link"</code>).</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Open custom modal",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-custom'); return false;" }
+  }) }}
+
+  {{ appModal({
+    id: "demo-custom",
+    title: "Choose an action",
+    content: "<p>Select what you would like to do with this appointment.</p>",
+    actions: [
+      {
+        text: "Reschedule",
+        element: "button",
+        action: "close"
+      },
+      {
+        text: "Cancel appointment",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      },
+      {
+        text: "Go back",
+        element: "link",
+        action: "close",
+        href: "#"
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appModal({
+  id: "demo-custom",
+  title: "Choose an action",
+  content: "<p>...</p>",
+  actions: [
+    { text: "Reschedule", element: "button", action: "close" },
+    { text: "Cancel", element: "button", classes: "nhsuk-button--secondary", action: "close" },
+    { text: "Go back", element: "link", action: "close", href: "#" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>Content-only modal</h3>
+
+<p>A modal with no title — content fills the dialog directly.</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Open content modal",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-content'); return false;" }
+  }) }}
+
+  {{ appModal({
+    id: "demo-content",
+    content: "<p>This modal has no title. The content area fills the full width of the dialog.</p>",
+    actions: [
+      {
+        text: "Close",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appModal({
+  id: "demo-content",
+  content: "<p>...</p>",
+  actions: [
+    { text: "Close", element: "button", classes: "nhsuk-button--secondary", action: "close" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

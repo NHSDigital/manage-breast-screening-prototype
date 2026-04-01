@@ -1,0 +1,157 @@
+{# app/views/style-guide/notification-banner.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "notification-banner" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Notification banner</h2>
+
+<p>Wraps the NHS notification banner with a compact (inline) variant. Use <code>appNotificationBanner</code> in place of the standard <code>notificationBanner</code> when you need compact mode support.</p>
+
+<p>Macro: <code>appNotificationBanner(params)</code></p>
+
+<p>Set <code>size: "compact"</code> (or <code>compact: true</code>) to use the compact template. Otherwise renders the standard NHS banner.</p>
+
+<h3>Standard banners</h3>
+
+<h4>Important / info (default)</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    titleText: "Important",
+    text: "This is a standard important notification banner."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  titleText: "Important",
+  text: "This is a standard important notification banner."
+}) }}{% endraw %}</code></pre>
+
+<h4>Success</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    type: "success",
+    titleText: "Changes saved",
+    text: "The participant record has been updated."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  type: "success",
+  titleText: "Changes saved",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+<h3>Compact banners</h3>
+
+<p>Compact banners are slimmer and suited for inline contextual alerts — for example, showing the status of a record within a larger page.</p>
+
+<h4>Important / info</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    size: "compact",
+    titleText: "Important information",
+    text: "This is the default (important/info) compact style."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  size: "compact",
+  titleText: "Important information",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+<h4>Success</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    size: "compact",
+    type: "success",
+    titleText: "Record saved",
+    text: "The participant record has been updated successfully."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  size: "compact",
+  type: "success",
+  titleText: "Record saved",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+<h4>Warning</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    size: "compact",
+    type: "warning",
+    titleText: "Priors reported — not yet requested",
+    html: "<p>Most recent mammogram: St Thomas' Hospital, June 2022</p><p class='nhsuk-u-margin-bottom-0'><a href='#' class='nhsuk-link--no-visited-state'>Request priors</a></p>"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  size: "compact",
+  type: "warning",
+  titleText: "Priors reported",
+  html: "<p>...</p>"
+}) }}{% endraw %}</code></pre>
+
+<h4>Error</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    size: "compact",
+    type: "error",
+    titleText: "Something went wrong",
+    text: "The action could not be completed. Try again or contact support."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  size: "compact",
+  type: "error",
+  titleText: "Something went wrong",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+<h4>Title only</h4>
+
+<p>The title alone is sufficient — body text is optional.</p>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    size: "compact",
+    type: "success",
+    titleText: "Check-in confirmed"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  size: "compact",
+  type: "success",
+  titleText: "Check-in confirmed"
+}) }}{% endraw %}</code></pre>
+
+<h4>Body only (no title)</h4>
+
+<div class="sg-example">
+  {{ appNotificationBanner({
+    size: "compact",
+    type: "warning",
+    text: "This participant has outstanding medical history items."
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appNotificationBanner({
+  size: "compact",
+  type: "warning",
+  text: "..."
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

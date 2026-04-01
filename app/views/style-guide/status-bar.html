@@ -1,0 +1,108 @@
+{# app/views/style-guide/status-bar.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/status-bar/macro.njk' import appStatusBar %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "status-bar" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Status bar</h2>
+
+<p>A full-width sticky bar showing contextual key/value information. Used to keep participant or appointment context visible while scrolling through a long page.</p>
+
+<p>Macro: <code>appStatusBar(params)</code></p>
+
+<p>In production usage, the status bar is rendered via the <code>pageNavigation</code> block so it appears above the main content and sticks to the top of the viewport on scroll. The examples below are rendered inline for demonstration.</p>
+
+<p>The bar accepts one or more <code>rows</code>, each containing an array of <code>items</code>. Items can have a <code>key</code>/<code>value</code> pair, a plain <code>text</code>, or raw <code>html</code>.</p>
+
+<h3>Single row</h3>
+
+<div class="sg-example">
+  {{ appStatusBar({
+    classes: "",
+    rows: [
+      {
+        items: [
+          { key: "Participant:", value: "Janet Williams" },
+          { key: "DOB:", value: "12 March 1965 (61)" },
+          { key: "NHS number:", value: "485 777 3456" }
+        ]
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStatusBar({
+  rows: [
+    {
+      items: [
+        { key: "Participant:", value: "Janet Williams" },
+        { key: "DOB:", value: "12 March 1965 (61)" },
+        { key: "NHS number:", value: "485 777 3456" }
+      ]
+    }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>Two rows</h3>
+
+<p>Use two rows to separate appointment-level from participant-level information.</p>
+
+<div class="sg-example">
+  {{ appStatusBar({
+    classes: "",
+    rows: [
+      {
+        items: [
+          { key: "Clinic:", value: "Morning clinic, 31 March 2026" },
+          { key: "Unit:", value: "St Thomas' Hospital BSU" },
+          { key: "Status:", value: "In progress" }
+        ]
+      },
+      {
+        items: [
+          { key: "Participant:", value: "Janet Williams" },
+          { key: "DOB:", value: "12 March 1965 (61)" },
+          { key: "NHS number:", value: "485 777 3456" }
+        ]
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appStatusBar({
+  rows: [
+    { items: [...] },
+    { items: [...] }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>With HTML content</h3>
+
+<p>Use <code>html</code> on an item for rich content such as status tags.</p>
+
+<div class="sg-example">
+  {{ appStatusBar({
+    classes: "",
+    rows: [
+      {
+        items: [
+          { key: "Participant:", value: "Janet Williams" },
+          {
+            html: "<strong class='nhsuk-tag nhsuk-tag--blue'>Checked in</strong>"
+          }
+        ]
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{ html: "<strong class='nhsuk-tag nhsuk-tag--blue'>Checked in</strong>" }{% endraw %}</code></pre>
+
+{% endblock %}
