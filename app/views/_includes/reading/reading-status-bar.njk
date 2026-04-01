@@ -6,13 +6,13 @@
 
 {% set firstRowItems = [] %}
 
-{# Context item (Batch or Clinic) #}
-{% if isBatchContext %}
-  {% set firstRowItems = firstRowItems | push({
-    key: "Batch:",
-    value: batch.name
-  }) %}
-{% else %}
+{# Environment tag - always first item #}
+{% set firstRowItems = firstRowItems | push({
+  html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
+}) %}
+
+{# Clinic context item (batch context has no label, just the environment tag) #}
+{% if isClinicContext %}
   {% set locationName %}
     {% if location.type === 'mobile_unit' %}
       {{ location.name }} at {{ clinic.siteName }}
@@ -26,7 +26,7 @@
   }) %}
 {% endif %}
 
-{# Progress item #}
+{# Progress text #}
 {% set progressText %}
   {{ progress.userReadCount }} read
   {%- if progress.userAwaitingPriorsCount > 0 -%}
@@ -38,7 +38,7 @@
   {%- endif %}
 {% endset %}
 
-{# Screened date #}
+{# Screened date and progress on same row as environment tag #}
 {% if event %}
   {% set firstRowItems = firstRowItems | push({
     key: "Screened:",

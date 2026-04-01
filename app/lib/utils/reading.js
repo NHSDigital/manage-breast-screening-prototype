@@ -195,6 +195,8 @@ const calculateReadingMetrics = function (
       userFirstReadableCount: 0,
       userSecondReadableCount: 0,
       userCanRead: false,
+      awaitingPriorsCount: 0,
+      userAwaitingPriorsCount: 0,
       skippedCount: skippedEvents?.length || 0
     }
   }
@@ -219,6 +221,9 @@ const calculateReadingMetrics = function (
   const arbitrationCount = events.filter(
     (event) => getOutcome(event, settings) === 'arbitration_pending'
   ).length
+
+  // Global awaiting priors count (events with any outstanding prior request)
+  const awaitingPriorsCount = events.filter((event) => awaitingPriors(event)).length
 
   // User-specific counts
   let userReadCount = 0
@@ -278,6 +283,11 @@ const calculateReadingMetrics = function (
     userSecondReadableCount = filterEventsByNeedsSecondRead(events).filter(
       (event) => canUserReadEvent(event, currentUserId)
     ).length
+
+    // Events where this user has an outstanding prior request
+    userAwaitingPriorsCount = events.filter((event) =>
+      userRequestedPriors(event, currentUserId)
+    ).length
   }
 
   return {
@@ -303,6 +313,9 @@ const calculateReadingMetrics = function (
     userFirstReadableCount,
     userSecondReadableCount,
     userCanRead: userReadableCount > 0,
+    // Awaiting priors
+    awaitingPriorsCount,
+    userAwaitingPriorsCount,
     // Skipped events
     skippedCount: skippedEvents?.length || 0
   }
@@ -1611,7 +1624,7 @@ const createReadingBatch = (data, options) => {
 const getDefaultBatchName = (type, clinicId, data) => {
   switch (type) {
     case 'all_reads':
-      return 'All cases needing reads'
+      return 'Session overview'
     case 'first_reads':
       return '1st reads batch'
     case 'second_reads':

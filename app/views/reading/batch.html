@@ -4,11 +4,6 @@
 
 {% set isClinicContext = batch.clinicId %}
 
-{% set back = {
-  href: "/reading",
-  text: "Leave session"
-} %}
-
 {% if isClinicContext %}
   {% set back = {
     href: "/reading/clinics",
@@ -55,15 +50,9 @@
         {{ readingActionText }}
       </a>
     {% else %}
-      {% set notificationBannerHtml %}
-        <h3 class="nhsuk-notification-banner__heading">
-          {{ "All cases in this batch have been read" if not currentUserHasRead else "You have read all available cases" }}
-        </h3>
-      {% endset %}
-
-      {{ notificationBanner({
-        html: notificationBannerHtml,
-        type: "success"
+      {{ panel({
+        titleText: "Session complete",
+        html: '<p class="nhsuk-body-s nhsuk-u-margin-bottom-0">All cases in this session have been read</p>'
       }) }}
     {% endif %}
 
@@ -102,11 +91,114 @@
         {% endif %}
       {% endfor %}
 
-      <h2>Your opinion ({{ batch.targetSize or userReadableEvents | length }} in batch)</h2>
-
       {% if userReadableEvents | length == 0 %}
         <p>You don't have any cases you can read in this batch.</p>
       {% else %}
+
+        {# Build opinion counts from events the user has read #}
+        {% set normalEvents = [] %}
+        {% set technicalRecallEvents = [] %}
+        {% set recallForAssessmentEvents = [] %}
+        {% set priorsRequestedEvents = [] %}
+
+        {% for event in userReadableEvents %}
+          {% if event | userHasReadEvent %}
+            {% set read = event | getReadForUser %}
+            {% if read.opinion == 'normal' %}
+              {% set normalEvents = normalEvents | push(event) %}
+            {% elseif read.opinion == 'technical_recall' %}
+              {% set technicalRecallEvents = technicalRecallEvents | push(event) %}
+            {% elseif read.opinion == 'recall_for_assessment' %}
+              {% set recallForAssessmentEvents = recallForAssessmentEvents | push(event) %}
+            {% endif %}
+          {% elseif event | userRequestedPriors(data.currentUser.id) %}
+            {% set priorsRequestedEvents = priorsRequestedEvents | push(event) %}
+          {% endif %}
+        {% endfor %}
+
+        {% set totalCount = userReadableEvents | length %}
+        {% set normalCount = normalEvents | length %}
+        {% set technicalRecallCount = technicalRecallEvents | length %}
+        {% set recallForAssessmentCount = recallForAssessmentEvents | length %}
+        {% set priorsRequestedCount = priorsRequestedEvents | length %}
+
+        {% set normalPercent = (normalCount / totalCount * 100) | round %}
+        {% set technicalRecallPercent = (technicalRecallCount / totalCount * 100) | round %}
+        {% set recallForAssessmentPercent = (recallForAssessmentCount / totalCount * 100) | round %}
+        {% set priorsRequestedPercent = (priorsRequestedCount / totalCount * 100) | round %}
+
+        {% set normalCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Normal:</span> {{ normalPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Normal</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ normalCount }} cases</p>
+        {% endset %}
+
+        {% set technicalRecallCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Technical recall:</span> {{ technicalRecallPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Technical recall</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ technicalRecallCount }} cases</p>
+        {% endset %}
+
+        {% set recallForAssessmentCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Recall for assessment:</span> {{ recallForAssessmentPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Recall for assessment</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ recallForAssessmentCount }} cases</p>
+        {% endset %}
+
+        {% set priorsRequestedCardContent %}
+          <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+            <span role="text">
+              <span class="nhsuk-u-visually-hidden">Priors requested:</span> {{ priorsRequestedPercent }}%
+            </span>
+          </h2>
+          <p class="nhsuk-u-font-size-16">Priors requested</p>
+          <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ priorsRequestedCount }} cases</p>
+        {% endset %}
+
+        {% if not resumeEvent %}
+          <h2>Opinion summary</h2>
+
+          <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: normalCardContent
+              }) }}
+            </li>
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: technicalRecallCardContent
+              }) }}
+            </li>
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: recallForAssessmentCardContent
+              }) }}
+            </li>
+            <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+              {{ card({
+                descriptionHtml: priorsRequestedCardContent
+              }) }}
+            </li>
+          </ul>
+        {% endif %}
+
+        <h2>Reading session cases</h2>
+        {% set userSessionRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
+        {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
+        <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
+
         <table class="nhsuk-table app-reading-batch-table">
           <thead>
             <tr>
@@ -128,23 +220,20 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
+                {% if event.medicalInformation.symptoms | length %}
+                  <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
+                {% endif %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 <br>
                 <span class="app-text-grey app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
                   {% if event | userHasReadEvent %}
-                    {{ "First read" if readCount == 1 else "Second read" }}
+                    {{ "1st read" if readCount == 1 else "2nd read" }}
                   {% else %}
-                    {{ "First read" if readCount == 0 else "Second read" }}
+                    {{ "1st read" if readCount == 0 else "2nd read" }}
                   {% endif %}
                 </span>
-
-                
-                {% if event.medicalInformation.symptoms | length %}
-                <br>
-                  {{ "Has symptoms" | toTag }}
-                {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
                   {% if event | hasReportedMammograms %}
                     <br>{{ "Has priors" | toTag }}
@@ -217,8 +306,98 @@
         </table>
       {% endif %}
     {% else %}
-      {# ALL READS VIEW - Shows all reads with columns for each read #}
-      <h2>Other reader's opinion and outcome ({{ batch.targetSize or events | length }})</h2>
+      {# ALL READS VIEW - Shows outcome stats and all cases #}
+
+      {# Build outcome counts for stats cards #}
+      {% set awaitingSecondReadEvents = [] %}
+      {% set allViewNormalEvents = [] %}
+      {% set allViewTechnicalRecallEvents = [] %}
+      {% set allViewRecallForAssessmentEvents = [] %}
+      {% set allViewArbitrationEvents = [] %}
+
+      {% for event in events %}
+        {% set eventOutcome = event | getOutcome %}
+        {% if eventOutcome == 'pending_second_read' %}
+          {% set awaitingSecondReadEvents = awaitingSecondReadEvents | push(event) %}
+        {% elseif eventOutcome == 'normal' %}
+          {% set allViewNormalEvents = allViewNormalEvents | push(event) %}
+        {% elseif eventOutcome == 'technical_recall' %}
+          {% set allViewTechnicalRecallEvents = allViewTechnicalRecallEvents | push(event) %}
+        {% elseif eventOutcome == 'recall_for_assessment' %}
+          {% set allViewRecallForAssessmentEvents = allViewRecallForAssessmentEvents | push(event) %}
+        {% elseif eventOutcome == 'arbitration_pending' %}
+          {% set allViewArbitrationEvents = allViewArbitrationEvents | push(event) %}
+        {% endif %}
+      {% endfor %}
+
+      {% set allTotal = events | length %}
+      {% set allTotalDenominator = allTotal if allTotal > 0 else 1 %}
+      {% set awaitingCount = awaitingSecondReadEvents | length %}
+      {% set allViewNormalCount = allViewNormalEvents | length %}
+      {% set allViewTechnicalRecallCount = allViewTechnicalRecallEvents | length %}
+      {% set allViewRecallForAssessmentCount = allViewRecallForAssessmentEvents | length %}
+      {% set allViewArbitrationCount = allViewArbitrationEvents | length %}
+      {% set twiceReadTotal = allViewNormalCount + allViewTechnicalRecallCount + allViewRecallForAssessmentCount + allViewArbitrationCount %}
+      {% set twiceReadDenominator = twiceReadTotal if twiceReadTotal > 0 else 1 %}
+
+      {% set awaitingCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Awaiting 2nd read:</span> {{ (awaitingCount / allTotalDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Awaiting 2nd read</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ awaitingCount }} cases</p>
+      {% endset %}
+
+      {% set allViewNormalCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Normal:</span> {{ (allViewNormalCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Normal</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewNormalCount }} cases</p>
+      {% endset %}
+
+      {% set allViewTechnicalRecallCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Technical recall:</span> {{ (allViewTechnicalRecallCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Technical recall</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewTechnicalRecallCount }} cases</p>
+      {% endset %}
+
+      {% set allViewRecallForAssessmentCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Recall for assessment:</span> {{ (allViewRecallForAssessmentCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Recall for assessment</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewRecallForAssessmentCount }} cases</p>
+      {% endset %}
+
+      {% set allViewArbitrationCardContent %}
+        <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+          <span role="text">
+            <span class="nhsuk-u-visually-hidden">Require arbitration:</span> {{ (allViewArbitrationCount / twiceReadDenominator * 100) | round }}%
+          </span>
+        </h2>
+        <p class="nhsuk-u-font-size-16">Require arbitration</p>
+        <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewArbitrationCount }} cases</p>
+      {% endset %}
+
+      {% if not resumeEvent %}
+        <h2>All reads ({{ allTotal }})</h2>
+      {% endif %}
+
+      <h2>Reading session cases</h2>
+      {% set allViewRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
+      {% set allViewRemainingCount = 0 if allViewRemainingCount < 0 else allViewRemainingCount %}
+      <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ allViewRemainingCount }} remaining</p>
 
       <table class="nhsuk-table app-reading-batch-table">
         <thead>
@@ -226,8 +405,8 @@
             <th scope="col">No.</th>
             <th scope="col">Case</th>
             <th scope="col">Screening date</th>
-            <th scope="col">First read</th>
-            <th scope="col">Second read</th>
+            <th scope="col">1st read</th>
+            <th scope="col">2nd read</th>
             <th scope="col">Outcome</th>
           </tr>
         </thead>
@@ -242,15 +421,14 @@
                 {% set readingHref -%}
                   /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
+                {% if event.medicalInformation.symptoms | length %}
+                  <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
+                {% endif %}
                 <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
 
                 {% if event | awaitingPriors %}
                 <br>
                   {{ "Awaiting priors" | toTag }}
-                {% endif %}
-                {% if event.medicalInformation.symptoms | length %}
-                <br>
-                  {{ "Has symptoms" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
                   {% if event | hasReportedMammograms %}
@@ -281,7 +459,7 @@
                   {{ event.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
-              {# First read column #}
+              {# 1st read column #}
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
@@ -309,7 +487,7 @@
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
-              {# Second read column #}
+              {# 2nd read column #}
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}

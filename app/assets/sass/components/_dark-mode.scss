@@ -32,6 +32,9 @@ $app-tag--yellow-dark-text: nhsuk-tint(nhsuk-colour("yellow"), 50%);
 $app-tag--blue-dark-background: nhsuk-shade(nhsuk-colour("blue"), 30%);
 $app-tag--blue-dark-border: nhsuk-tint(nhsuk-colour("blue"), 80%);
 $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
+$app-tag--aqua-green-dark-background: nhsuk-shade(nhsuk-colour("aqua-green"), 50%);
+$app-tag--aqua-green-dark-border: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
+$app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
 
 @mixin app-dark-mode-focused-text {
   background-color: $nhsuk-focus-colour;
@@ -263,6 +266,12 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     color: $app-tag--blue-dark-text;
   }
 
+  .nhsuk-tag--aqua-green {
+    background-color: $app-tag--aqua-green-dark-background;
+    border-color: $app-tag--aqua-green-dark-border;
+    color: $app-tag--aqua-green-dark-text;
+  }
+
   .app-reading-compare-card.nhsuk-card--feature {
     &.app-reading-compare-card--normal {
       outline-color: $app-tag--green-dark-border;
@@ -364,6 +373,17 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
     }
   }
 
+  // Reading batch: highlighted "next case" row uses card surface colour so it
+  // appears as a raised grey slab on top of the dark background
+  .app-placeholder-row--next td {
+    background-color: $app-dark-mode-surface;
+  }
+
+  // Reading batch: placeholder rectangle for pending lazy-batch slots
+  .app-placeholder-tag {
+    background-color: nhsuk-shade($app-dark-mode-text-colour, 60%);
+  }
+
   .nhsuk-footer,
   .nhsuk-footer-container {
     background: $app-dark-mode-surface;
@@ -376,6 +396,10 @@ $app-tag--blue-dark-text: nhsuk-tint(nhsuk-colour("blue"), 80%);
   }
 
   .nhsuk-radios {
+    .nhsuk-radios__divider {
+      color: $app-dark-mode-text-colour-secondary;
+    }
+
     .nhsuk-radios__input + .nhsuk-radios__label::before {
       border-color: $app-dark-mode-white;
       background-color: transparent;
