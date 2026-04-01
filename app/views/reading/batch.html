@@ -50,15 +50,9 @@
         {{ readingActionText }}
       </a>
     {% else %}
-      {% set notificationBannerHtml %}
-        <h3 class="nhsuk-notification-banner__heading">
-          All cases in this session have been read
-        </h3>
-      {% endset %}
-
-      {{ notificationBanner({
-        html: notificationBannerHtml,
-        type: "success"
+      {{ panel({
+        titleText: "Session complete",
+        html: '<p class="nhsuk-body-s nhsuk-u-margin-bottom-0">All cases in this session have been read</p>'
       }) }}
     {% endif %}
 
