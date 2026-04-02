@@ -14,7 +14,7 @@
     "@faker-js/faker": "^10.4.0",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.20",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.1",
     "markdown-it": "^14.1.1",
     "nhsuk-frontend": "^10.4.2",
     "nhsuk-prototype-kit": "^8.1.0",
