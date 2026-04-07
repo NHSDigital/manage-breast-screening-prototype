@@ -158,7 +158,7 @@
         {% endset %}
 
         {% call insetText({
-          classes: "app-inset-text--compact"
+          classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
         }) %}
           <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
           {{ unrequestedHtml | safe }}
@@ -194,7 +194,7 @@
         
 
           {% call insetText({
-            classes: "app-inset-text--compact"
+            classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
           }) %}
             <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors recently received</p>
             {{ receivedHtml | safe }}

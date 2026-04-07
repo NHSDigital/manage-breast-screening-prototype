@@ -568,7 +568,7 @@
             text: "Item " ~ loop.index,
             headingLevel: 4
           } if historyItemArray | length > 1,
-          classes: "nhsuk-summary-card--compact nhsuk-u-margin-bottom-2",
+          classes: ("nhsuk-summary-card--compact " if data.settings.compactMode in ["true", true]) + "nhsuk-u-margin-bottom-2",
           actions: {
             items: [
               {

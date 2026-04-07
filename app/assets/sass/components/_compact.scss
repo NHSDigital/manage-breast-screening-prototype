@@ -1,0 +1,132 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// app/assets/sass/components/_compact.scss
+// Compact mode styles are only active when compact mode is enabled.
+
+.app-compact-mode {
+  background-color: #fff7f9;
+
+  .nhsuk-table {
+    th,
+    td,
+    .nhsuk-table__header,
+    .nhsuk-table__cell {
+      padding-top: nhsuk-spacing(2);
+      padding-bottom: nhsuk-spacing(2);
+      padding-left: nhsuk-spacing(2);
+      padding-right: nhsuk-spacing(2);
+    }
+
+    p {
+      margin-bottom: nhsuk-spacing(1);
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .app-notification-banner--compact {
+    border: $nhsuk-border-width solid $nhsuk-brand-colour;
+    padding: nhsuk-spacing(2);
+    @include nhsuk-responsive-margin(4, "bottom");
+  }
+
+  .app-notification-banner--compact--important {
+    border-color: $nhsuk-brand-colour;
+  }
+
+  .app-notification-banner--compact--success {
+    border-color: nhsuk-colour("green");
+  }
+
+  .app-notification-banner--compact--warning {
+    border-color: nhsuk-colour("orange");
+  }
+
+  .app-notification-banner--compact--error {
+    border-color: nhsuk-colour("red");
+  }
+
+  .app-notification-banner--compact--important .app-notification-banner--compact__icon {
+    color: $nhsuk-brand-colour;
+  }
+
+  .app-notification-banner--compact--success .app-notification-banner--compact__icon {
+    color: nhsuk-colour("green");
+  }
+
+  .app-notification-banner--compact--warning .app-notification-banner--compact__icon {
+    color: nhsuk-colour("orange");
+    color: #df6e1a;
+  }
+
+  .app-notification-banner--compact--error .app-notification-banner--compact__icon {
+    color: nhsuk-colour("red");
+  }
+
+  .app-notification-banner--compact__header {
+    display: flex;
+    align-items: flex-start;
+    gap: nhsuk-spacing(2);
+  }
+
+  .app-notification-banner--compact__icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    line-height: 0;
+
+    .nhsuk-icon {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .app-notification-banner--compact__body {
+    flex: 1;
+  }
+
+  .app-notification-banner--compact__title {
+    @include nhsuk-font($size: 19, $weight: bold);
+    color: inherit;
+    margin: 0;
+  }
+
+  .app-notification-banner--compact__content {
+    @include nhsuk-font($size: 19);
+    color: $nhsuk-text-colour;
+    margin: nhsuk-spacing(1) 0 0;
+
+    p:last-child,
+    ul:last-child,
+    ol:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .app-notification-banner--compact__content--no-title {
+    margin-top: 0;
+  }
+
+  .nhsuk-summary-card--compact {
+    .nhsuk-summary-card__actions {
+      @include nhsuk-typography-weight-normal;
+    }
+
+    .nhsuk-summary-card__action {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-card__title-wrapper,
+    .nhsuk-summary-card__content {
+      padding: nhsuk-spacing(1) nhsuk-spacing(2);
+    }
+  }
+
+  .app-inset-text--compact {
+    @include nhsuk-responsive-padding(2, "top");
+    @include nhsuk-responsive-padding(2, "bottom");
+    @include nhsuk-responsive-margin(3, "top");
+    @include nhsuk-responsive-margin(4, "bottom");
+  }
+}
