@@ -1,33 +1,6 @@
 // Import NHS.UK frontend library
 @forward "nhsuk-frontend/dist/nhsuk/nhsuk" with (
-  $nhsuk-page-width: 960px,
-
-  // Tighten spacing scale - each point uses the value of the point below
-  $nhsuk-spacing-points: (
-    0: 0,
-    1: 4px,
-    2: 4px,
-    3: 8px,
-    4: 16px,
-    5: 24px,
-    6: 32px,
-    7: 40px,
-    8: 48px,
-    9: 56px
-  ),
-
-  $nhsuk-spacing-responsive-scale: (
-    0: (null: 0, tablet: 0),
-    1: (null: 4px, tablet: 4px),
-    2: (null: 4px, tablet: 4px),
-    3: (null: 4px, tablet: 8px),
-    4: (null: 8px, tablet: 16px),
-    5: (null: 16px, tablet: 24px),
-    6: (null: 24px, tablet: 32px),
-    7: (null: 32px, tablet: 40px),
-    8: (null: 40px, tablet: 48px),
-    9: (null: 48px, tablet: 56px)
-  )
+  $nhsuk-page-width: 960px
 );
 
 // Components that are not in the NHS.UK frontend library
@@ -47,6 +20,7 @@
 @forward "components/status-bar";
 @forward "components/status-message";
 @forward "components/summary-card";
+@forward "./components/compact";
 @forward "components/reading";
 @forward "components/mammogram-images";
 @forward "components/environment";

@@ -71,7 +71,7 @@
     {{ settingToggle("Dark mode", "settings[darkMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.darkMode, "false") }}
     {{ settingToggle("Environment banner", "settings[showEnvironmentBanner]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.showEnvironmentBanner, "true") }}
     {{ settingToggle("Debug mode", "settings[debugMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.debugMode, "false") }}
-    {{ settingToggle("Compact mode", "settings[compactMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.compactMode, "false") }}
+    {{ settingToggle("Compact mode", "settings[compactMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], "true" if data.settings.compactMode in ["true", true] else "false", "false") }}
 
     <h2>Screening</h2>
     {# Confirm identity on check-in #}
