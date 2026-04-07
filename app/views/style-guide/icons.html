@@ -1,0 +1,101 @@
+{# app/views/style-guide/icons.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/icon/macro.njk' import appIcon %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "icons" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Icons</h2>
+
+<p>Custom icons that are not part of the NHS icon set. For standard NHS icons, <code>appIcon</code> falls through to the <code>nhsukIcon</code> macro.</p>
+
+<p>Macro: <code>appIcon(name, params)</code></p>
+
+<h3>Custom icons</h3>
+
+<p>These are inline SVGs defined directly in the component.</p>
+
+<div class="sg-example">
+  <table class="nhsuk-table">
+    <thead class="nhsuk-table__head">
+      <tr>
+        <th class="nhsuk-table__header">Name</th>
+        <th class="nhsuk-table__header">Icon</th>
+        <th class="nhsuk-table__header">Usage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell"><code>alert</code></td>
+        <td class="nhsuk-table__cell">{{ appIcon("alert") }}</td>
+        <td class="nhsuk-table__cell">Warning — triangular alert shape</td>
+      </tr>
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell"><code>warning</code></td>
+        <td class="nhsuk-table__cell">{{ appIcon("warning") }}</td>
+        <td class="nhsuk-table__cell">Caution — circular exclamation mark</td>
+      </tr>
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell"><code>information</code></td>
+        <td class="nhsuk-table__cell">{{ appIcon("information") }}</td>
+        <td class="nhsuk-table__cell">Info — circular 'i' symbol</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appIcon("alert") }}
+{{ appIcon("warning") }}
+{{ appIcon("information") }}{% endraw %}</code></pre>
+
+<h3>Standard NHS icons (via fallback)</h3>
+
+<p>Any name not listed above is passed straight to <code>nhsukIcon</code>.</p>
+
+<div class="sg-example">
+  <table class="nhsuk-table">
+    <thead class="nhsuk-table__head">
+      <tr>
+        <th class="nhsuk-table__header">Name</th>
+        <th class="nhsuk-table__header">Icon</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell"><code>tick</code></td>
+        <td class="nhsuk-table__cell">{{ appIcon("tick") }}</td>
+      </tr>
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell"><code>cross</code></td>
+        <td class="nhsuk-table__cell">{{ appIcon("cross") }}</td>
+      </tr>
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell"><code>chevron-right</code></td>
+        <td class="nhsuk-table__cell">{{ appIcon("chevron-right") }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appIcon("tick") }}
+{{ appIcon("cross") }}
+{{ appIcon("chevron-right") }}{% endraw %}</code></pre>
+
+<h3>With accessible title</h3>
+
+<p>Pass <code>params.title</code> to add a <code>&lt;title&gt;</code> element and expose the icon to screen readers.</p>
+
+<div class="sg-example">
+  {{ appIcon("alert", { title: "Warning" }) }}
+  <span>Alert icon with screen-reader title "Warning"</span>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appIcon("alert", { title: "Warning" }) }}{% endraw %}</code></pre>
+
+{% endblock %}

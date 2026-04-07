@@ -12,10 +12,6 @@ h3 {
   @extend %nhsuk-heading-s;
 }
 
-.app-text-grey {
-  color: $nhsuk-secondary-text-colour;
-}
-
 .nhsuk-link--no-visited-state a {
   @extend .nhsuk-link--no-visited-state;
 }

@@ -1,0 +1,64 @@
+{# app/views/style-guide/forward-link.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/forward-link/macro.njk' import appForwardLink %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "forward-link" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Forward link</h2>
+
+<p>A directional link pointing forward — the visual counterpart to the NHS back link. Renders as an anchor by default.</p>
+
+<p>Macro: <code>appForwardLink(params)</code></p>
+
+<h3>As a link (default)</h3>
+
+<div class="sg-example">
+  {{ appForwardLink({
+    text: "Continue to next step",
+    href: "#"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appForwardLink({
+  text: "Continue to next step",
+  href: "#"
+}) }}{% endraw %}</code></pre>
+
+<h3>As a button</h3>
+
+<p>Use <code>element: "button"</code> to render as a <code>&lt;button&gt;</code> for use inside forms where no href is available.</p>
+
+<div class="sg-example">
+  {{ appForwardLink({
+    text: "Continue",
+    element: "button"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appForwardLink({
+  text: "Continue",
+  element: "button"
+}) }}{% endraw %}</code></pre>
+
+<h3>With custom text</h3>
+
+<div class="sg-example">
+  {{ appForwardLink({
+    text: "Go to participant record",
+    href: "#"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appForwardLink({
+  text: "Go to participant record",
+  href: "#"
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

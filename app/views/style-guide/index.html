@@ -1,0 +1,41 @@
+{# app/views/style-guide/index.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "index" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<p>Custom components and utilities built for this prototype that are not part of the NHS design system.</p>
+
+<h2>Components</h2>
+
+<ul>
+  <li><a href="/style-guide/button-menu">Button menu</a> — a toggle button that reveals a group of secondary actions</li>
+  <li><a href="/style-guide/count">Count</a> — a small badge used to show a number alongside a label</li>
+  <li><a href="/style-guide/details">Details</a> — an extended version of the NHS details component with subtitle, contents summary, and status tag</li>
+  <li><a href="/style-guide/forward-link">Forward link</a> — a directional link or button pointing forward</li>
+  <li><a href="/style-guide/icons">Icons</a> — custom icons not found in the NHS icon set</li>
+  <li><a href="/style-guide/modal">Modal</a> — a modal dialog for confirmations and actions</li>
+  <li><a href="/style-guide/notification-banner">Notification banner</a> — the NHS notification banner extended with a compact/inline variant</li>
+  <li><a href="/style-guide/secondary-navigation">Secondary navigation</a> — tab-style navigation within a section</li>
+  <li><a href="/style-guide/status-bar">Status bar</a> — a sticky full-width bar showing contextual key/value information</li>
+  <li><a href="/style-guide/status-message">Status message</a> — a bold status line with optional icon and colour variants</li>
+  <li><a href="/style-guide/stepper-input">Stepper input</a> — a number input with increment and decrement buttons</li>
+  <li><a href="/style-guide/summary-card">Summary card</a> — a summary card with a title and freeform content area</li>
+  <li><a href="/style-guide/summary-list">Summary list</a> — an extended summary list that accepts HTML values and supports caller content</li>
+</ul>
+
+<h2>Utilities</h2>
+
+<ul>
+  <li><a href="/style-guide/typography">Typography &amp; CSS utilities</a> — button-link, error/warning links, secondary text, inset text compact</li>
+</ul>
+
+{% endblock %}

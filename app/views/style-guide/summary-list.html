@@ -1,0 +1,100 @@
+{# app/views/style-guide/summary-list.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/summary-list/macro.njk' import appSummaryList, appSummaryListRow %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "summary-list" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Summary list</h2>
+
+<p>An extended version of the NHS summary list. When all values are plain text, the macro falls through to the standard NHS component. The custom template is used when any row uses <code>row.html</code> for a value, or when using the <code>caller()</code> pattern.</p>
+
+<p>Macros: <code>appSummaryList(params)</code>, <code>appSummaryListRow(row)</code></p>
+
+<h3>Standard (falls through to NHS component)</h3>
+
+<p>When all values are plain text, this is identical to the NHS <code>summaryList</code>.</p>
+
+<div class="sg-example">
+  {{ appSummaryList({
+    rows: [
+      { key: { text: "Name" }, value: { text: "Janet Williams" } },
+      { key: { text: "Date of birth" }, value: { text: "12 March 1965" } },
+      { key: { text: "NHS number" }, value: { text: "485 777 3456" } }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appSummaryList({
+  rows: [
+    { key: { text: "Name" }, value: { text: "Janet Williams" } },
+    { key: { text: "Date of birth" }, value: { text: "12 March 1965" } }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>With HTML values</h3>
+
+<p>Use <code>row.html</code> instead of <code>row.value</code> when the value needs to contain HTML — for example, a tag or a list.</p>
+
+{% set statusTagHtml %}
+  <strong class="nhsuk-tag nhsuk-tag--blue">Checked in</strong>
+{% endset %}
+
+<div class="sg-example">
+  {{ appSummaryList({
+    rows: [
+      { key: { text: "Status" }, html: statusTagHtml },
+      { key: { text: "Appointment" }, value: { text: "10:30, 31 March 2026" } },
+      {
+        key: { text: "Screening room" },
+        html: "<a href='#' class='nhsuk-link--no-visited-state'>Room 2</a>"
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{ key: { text: "Status" }, html: "<strong class='nhsuk-tag nhsuk-tag--blue'>Checked in</strong>" }{% endraw %}</code></pre>
+
+<h3>Using appSummaryListRow</h3>
+
+<p>Use <code>appSummaryListRow</code> to build individual rows independently — useful when rows are generated conditionally.</p>
+
+<div class="sg-example">
+  <dl class="nhsuk-summary-list">
+    {{ appSummaryListRow({ key: { text: "Left breast" }, value: { text: "Normal" } }) }}
+    {{ appSummaryListRow({ key: { text: "Right breast" }, html: "<strong class='nhsuk-tag nhsuk-tag--red'>Recall</strong>" }) }}
+  </dl>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<dl class="nhsuk-summary-list">
+  {{ appSummaryListRow({ key: { text: "Left breast" }, value: { text: "Normal" } }) }}
+  {{ appSummaryListRow({ key: { text: "Right breast" }, html: "..." }) }}
+</dl>{% endraw %}</code></pre>
+
+<h3>With actions</h3>
+
+<div class="sg-example">
+  {{ appSummaryList({
+    rows: [
+      {
+        key: { text: "Name" },
+        value: { text: "Janet Williams" },
+        actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "name" }] }
+      },
+      {
+        key: { text: "Date of birth" },
+        value: { text: "12 March 1965" },
+        actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "date of birth" }] }
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "name" }] }{% endraw %}</code></pre>
+
+{% endblock %}

@@ -8,17 +8,14 @@ This document provides a technical overview of the image reading section of the 
 
 ### Future Work
 
-- [ ] Make sure fields correctly save to data.imageReadingTemp
 - [ ] Clean up data storage of technical recall and recall for assessment
 - [ ] Improve data display on review summary list
 - [ ] Make location where full medical info can be shown including breast features diagram
-- [ ] existing read ui assumes you're in a batch - might not always be true if retrostpecitvely editing
-- [ ] Move away from 'batch' language. 'Session' instead?
+- [ ] Existing read UI assumes you're in a batch — might not always be true if retrospectively editing
 
 #### Ideas
 
-- [ ] Think about moving to a lazy batch system - don't pre-fill the batch, but add to it as we go until full.
-- [ ] Should we have UI to let you return to a batch? index of batches you've worked on?
+- [ ] Should we have UI to let you return to a batch? Index of batches you've worked on?
 - [ ] No good way to navigate by person / see people in general
 - [ ] No good way to see the size and age of the backlog
 
@@ -28,7 +25,6 @@ Need pages to view completed readings outside the workflow:
 
 - View a single event's readings (both readers' opinions, annotations)
 - View all readings for a participant
-- Reporting/statistics pages
 
 ---
 
@@ -36,22 +32,12 @@ Need pages to view completed readings outside the workflow:
 
 The image reading section allows radiologists to review mammogram images from screening appointments and record their assessments (opinions). Key features include:
 
-- Batch-based reading sessions
+- Batch-based reading sessions (note: 'batch' is being renamed to 'session')
 - Clinic-based reading workflows
 - First/second read opinion tracking (double-reading requirement)
 - Annotation system for marking abnormalities
 - Skip functionality and progress tracking
-- Keyboard shortcuts for rapid opinion entry
-
-### Keyboard Shortcuts
-
-On the opinion page, keyboard shortcuts allow quick opinion selection:
-
-- **N** - Normal (or Normal with details if participant has symptoms)
-- **T** - Technical recall
-- **R** - Recall for assessment
-
-These shortcuts work from both the reading page and the PACS viewer window. During the initial lockout period (if enabled), shortcuts are blocked and an alert sound plays.
+- Keyboard shortcuts on the opinion page, usable from both the reading page and the PACS viewer window
 
 ---
 
@@ -60,16 +46,20 @@ These shortcuts work from both the reading page and the PACS viewer window. Duri
 ```
 app/
 ├── routes/
-│   └── reading.js                    # All reading routes (~1000 lines)
+│   └── reading.js                    # All reading routes
 ├── lib/utils/
-│   └── reading.js                    # Reading utility functions (~1360 lines)
+│   ├── reading.js                    # Reading utility functions
+│   └── prior-mammograms.js           # Prior mammogram utilities
 ├── views/
 │   ├── reading/
 │   │   ├── index.html               # Reading dashboard/home
 │   │   ├── clinics.html             # Clinic list view
 │   │   ├── batch.html               # Batch view with event list
+│   │   ├── skipped-review.html      # End-of-batch page when skipped cases remain
 │   │   ├── history.html             # Reading history
+│   │   ├── reading-statistics.html  # Reading statistics dashboard
 │   │   ├── create-custom-batch.html # Custom batch creation
+│   │   ├── priors.html              # Prior mammogram management (admin/co-ordinator view)
 │   │   ├── workflow/                # Reading workflow pages
 │   │   │   ├── opinion.html         # Main opinion page (entry point)
 │   │   │   ├── normal-details.html  # Optional details for normal opinion
@@ -78,14 +68,19 @@ app/
 │   │   │   ├── recall-for-assessment-details.html  # Per-breast assessment
 │   │   │   ├── annotation.html      # Add/edit annotations
 │   │   │   ├── confirm-abnormal.html
-│   │   │   ├── recommended-assessment.html  # Assessment type selection (old / not currently used)
-│   │   │   ├── review.html          # Review before saving (new opinions)
+│   │   │   ├── recommended-assessment.html  # Not currently used in routing
+│   │   │   ├── compare.html         # Second-reader comparison page
+│   │   │   ├── request-priors.html  # Request prior images during reading
+│   │   │   ├── review.html          # Review before saving (non-normal opinions)
 │   │   │   └── existing-read.html   # View saved read with change option
 │   ├── _includes/reading/
 │   │   ├── reading-status-bar.njk   # Batch/clinic context bar
-│   │   └── workflow-navigation.njk  # Prev/next case links
+│   │   ├── workflow-navigation.njk  # Prev/next case links
+│   │   ├── opinion-banner.njk       # Success banner shown on next case after saving
+│   │   ├── opinion-ui.njk           # Opinion selection UI component
+│   │   └── image-warnings.njk       # Warnings about image quality
 │   └── _templates/
-│       └── layout-reading.html      # Reading-specific layout (~60 lines)
+│       └── layout-reading.html      # Reading-specific layout
 ```
 
 ---
@@ -119,7 +114,7 @@ event.imageReading = {
 
 - Keyed by userId - each user can have one reading per event
 - Written via `writeReading()` utility function
-- `readNumber` indicates order (1 = first, 2 = second read)
+- `readNumber` indicates order (1 = first, 2 = second read, 3 = arbitration read)
 
 ### 2. Temporary Storage: `data.imageReadingTemp`
 
@@ -163,7 +158,7 @@ data.imageReadingTemp = {
         side: 'right',
         abnormalityType: ['Mass well-defined'],
         levelOfConcern: '4',
-        markerPositions: { ... },
+        positions: { viewKey: [{ x, y }, ...] },  // keyed by mammogram view (e.g. 'RCC')
         comment: ''
       }
     ]
@@ -175,9 +170,18 @@ data.imageReadingTemp = {
     side: 'right',
     abnormalityType: [],
     levelOfConcern: '',
-    markerPositions: {},
+    positions: {},   // JSON string from hidden input, parsed on save
     comment: ''
-  }
+  },
+
+  // Set after compare page shown; prevents re-showing on save-opinion
+  comparisonComplete: true,
+
+  // Set when user wants to add normal details (even if normal is the opinion)
+  wantsNormalDetails: true,
+
+  // Set when second reader adopts first reader's opinion via compare page
+  adoptedFromFirstReader: true
 }
 ```
 
@@ -195,15 +199,18 @@ data.readingSessionBatches = {
   [batchId]: {
     id: 'abc123',
     name: 'All cases needing reads',
-    type: 'all_reads' | 'first_reads' | 'second_reads' | 'clinic' | 'custom',
-    eventIds: ['event1', 'event2', ...],
+    type: 'all_reads' | 'first_reads' | 'second_reads' | 'awaiting_priors' | 'clinic' | 'custom',
+    eventIds: ['event1', 'event2', ...],  // grows one-at-a-time for lazy batches
+    targetSize: 25,                        // desired final size (0 = unlimited for clinic batches)
     clinicId: null,  // Only for clinic batches
     createdAt: '2025-01-15T10:00:00.000Z',
     skippedEvents: ['event3'],
-    filters: { ... }
+    filters: { hasSymptoms, includeAwaitingPriors, complexOnly }
   }
 }
 ```
+
+**Lazy batches**: When `data.settings.reading.lazyBatches === 'true'` (default), non-clinic batches start with only the first event. `topUpBatch()` is called after each read or skip to add the next eligible event, growing the batch one case at a time up to `targetSize`. Clinic batches are always fully populated at creation.
 
 ---
 
@@ -214,21 +221,33 @@ data.readingSessionBatches = {
 ```
 /reading                              # Dashboard
 /reading/clinics                      # Clinic list (redirects to /mine)
-/reading/clinics/:clinicId            # Creates batch, redirects to batch view
-/reading/clinics/:clinicId/start      # Creates batch, starts first event
-/reading/create-batch                 # Creates batch from query params
+/reading/clinics/mine                 # Clinics with cases user can read
+/reading/clinics/all                  # All clinics
+/reading/clinics/:clinicId            # Loads/creates clinic batch, redirects to batch view
+/reading/clinics/:clinicId/start      # Creates clinic batch, starts first event
+/reading/priors                       # Prior mammogram management (redirects to /all)
+/reading/priors/:filter               # Filter: all | not-requested | pending | requested | resolved
+/reading/priors/update-status         # POST: Update mammogram request status
+/reading/create-batch                 # Creates batch from query params, redirects to first event
 /reading/batch/:batchId               # Batch overview (redirects to /your-reads)
+/reading/batch/:batchId/skipped-review  # End-of-batch page when skipped cases remain
 /reading/batch/:batchId/:view         # Batch with view (your-reads | all-reads)
-/reading/batch/:batchId/events/:eventId              # Event entry (redirects to opinion or existing-read)
-/reading/batch/:batchId/events/:eventId/:step        # Workflow step pages
-/reading/batch/:batchId/events/:eventId/skip         # Skip current event
-/reading/batch/:batchId/events/:eventId/opinion-answer     # POST: Handle opinion selection
-/reading/batch/:batchId/events/:eventId/save-opinion       # POST: Save final opinion
-/reading/batch/:batchId/events/:eventId/annotation/add     # Start new annotation
-/reading/batch/:batchId/events/:eventId/annotation/edit/:id  # Edit annotation
-/reading/batch/:batchId/events/:eventId/annotation/save    # Save annotation (POST)
-/reading/batch/:batchId/events/:eventId/annotation/delete/:id  # Delete annotation
-/reading/history                      # Reading history
+/reading/batch/:batchId/events/:eventId              # Event entry (redirects to opinion, existing-read, or request-priors)
+/reading/batch/:batchId/events/:eventId/:step        # GET: Render workflow step template
+/reading/batch/:batchId/events/:eventId/skip         # Skip current event, advance batch
+/reading/batch/:batchId/events/:eventId/opinion-answer           # POST: Handle opinion selection → compare or details
+/reading/batch/:batchId/events/:eventId/opinion-details-complete # POST: After details → compare (late) or review/save
+/reading/batch/:batchId/events/:eventId/technical-recall-answer  # POST: Clean up TR view data
+/reading/batch/:batchId/events/:eventId/compare-answer           # POST: Handle comparison decision
+/reading/batch/:batchId/events/:eventId/save-opinion             # POST: Persist read, advance batch
+/reading/batch/:batchId/events/:eventId/request-priors-answer    # POST: Record prior requests, advance batch
+/reading/batch/:batchId/events/:eventId/undo-priors              # GET/POST: Undo user's pending prior requests
+/reading/batch/:batchId/events/:eventId/annotation/add           # Clear temp, redirect to annotation form
+/reading/batch/:batchId/events/:eventId/annotation/edit/:id      # Load annotation into temp, redirect to form
+/reading/batch/:batchId/events/:eventId/annotation/save          # POST: Save annotation with validation
+/reading/batch/:batchId/events/:eventId/annotation/delete/:id    # Delete annotation
+/reading/history                      # Reading history (redirects to /mine)
+/reading/history/:view                # History view (mine | all)
 ```
 
 ### Middleware
@@ -249,71 +268,68 @@ The route file includes middleware at `/reading/batch/:batchId/events/:eventId` 
 
 ### Event Entry
 
-The base event URL (`/events/:eventId`) auto-redirects based on whether the user has already read:
+The base event URL (`/events/:eventId`) auto-redirects:
 
-- **Not read yet**: Redirects to `/opinion` (clears `imageReadingTemp`)
+- **Not read yet, no priors pending**: Redirects to `/opinion` (clears `imageReadingTemp`)
 - **Already read**: Redirects to `/existing-read` (shows saved read with change option)
+- **Awaiting priors** (any mammogram has `requestStatus` = `'pending'` or `'requested'`): Redirects to `/existing-read` (shows priors status)
 
-### Normal opinion flow
-
-```
-/events/:eventId (redirect to /opinion)
-    ↓
-/opinion - Select "Normal"
-    ↓
-POST /opinion-answer
-    ↓
-[If has symptoms or wants to add details] → /normal-details → POST to /review
-    ↓
-[Otherwise] → /review
-    ↓
-POST /save-opinion → writeReading() → next event or batch
-```
-
-### Technical Recall Flow
+### Normal opinion flow (first reader, or second reader with off/no comparison)
 
 ```
-/opinion - Select "Technical recall"
-    ↓
-POST /opinion-answer
-    ↓
-/technical-recall (select views to retake)
-    ↓
-POST to /review
-    ↓
-POST /save-opinion → writeReading() → next event or batch
+/opinion → POST /opinion-answer → [if confirmNormal] /confirm-normal → POST /save-opinion
+                                   [otherwise] POST /save-opinion → writeReading() → next event
 ```
 
-### Abnormal (Recall for Assessment) Flow
+If user selects "Normal – add details": opinion normalised to `normal`, `wantsNormalDetails` set, redirects to `/normal-details` → POST `/opinion-details-complete` → save.
+
+### Technical Recall flow
 
 ```
-/opinion - Select "Recall for assessment"
-    ↓
-POST /opinion-answer
-    ↓
-/recall-for-assessment-details (per-breast radios, annotation list)
-    ↓
-[User adds annotations] → /annotation/add → /annotation → POST /annotation/save
-    ↓
-[Back to details page]
-    ↓
-/recommended-assessment (select assessment types)
-    ↓
-POST to /review
-    ↓
-POST /save-opinion → writeReading() → next event or batch
+/opinion → POST /opinion-answer → /technical-recall → POST /technical-recall-answer
+    → POST /opinion-details-complete → /review → POST /save-opinion
+```
+
+### Recall for Assessment flow
+
+```
+/opinion → POST /opinion-answer → /recall-for-assessment-details
+    [add annotation] → /annotation/add → /annotation → POST /annotation/save → back to details
+    → POST /opinion-details-complete → /review → POST /save-opinion
+```
+
+### Second-reader comparison
+
+After a first read exists, the second reader may see a `/compare` page. Timing is controlled by `settings.reading.secondReaderComparison`:
+
+- **`'early'`**: `/compare` shown immediately after `opinion-answer`, before detail pages.
+- **`'late'`** (default): `/compare` shown after details, via `opinion-details-complete`.
+  - Exception: normal opinions (which have no review page) intercept at `opinion-answer`.
+- **`'off'`**: comparison page never shown.
+
+The `compareWhen` setting controls when to show the page:
+
+- **`'non_normal'`** (default): whenever either opinion is non-normal
+- **`'discordant_only'`**: only when reads disagree meaningfully
+
+On `/compare`, the second reader can:
+
+- **Keep own opinion** → continue to appropriate detail page (or skip to review if details already entered)
+- **Adopt first reader's opinion** → copy all first reader data, go straight to `/review`
+
+### Requesting priors during reading
+
+```
+/existing-read (shows unrequested priors) → /request-priors
+    → POST /request-priors-answer → advances batch, marks mammograms as 'pending'
+/existing-read → /undo-priors → rolls back 'pending' requests, redirects to /opinion
 ```
 
 ### Returning to Existing Read
 
 ```
-/events/:eventId (redirect to /existing-read)
-    ↓
-/existing-read - View saved read with medical summary
-    ↓
-[Use "Change" link] → /opinion (pre-populated from saved read)
-    ↓
-[Follow normal flow for selected opinion type]
+/existing-read - View saved read; also shown for awaiting-priors cases
+    [Change link] → /opinion (pre-populated from saved read) → normal flow
 ```
 
 ---
@@ -356,42 +372,71 @@ Templates receive via `res.locals`:
 
 ---
 
-## Utility Functions (reading.js)
+## Utility Functions
 
-### Single Event Functions
+### reading.js — Single Event
 
-- `getReadingMetadata(event)` - Returns read counts, disagreement status (computed on demand)
-- `getReadsAsArray(event)` - Returns reads sorted by readNumber
-- `writeReading(event, userId, reading, data, batchId)` - Saves a reading (auto-assigns readNumber)
+- `getReadingMetadata(event)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions }` (computed on demand)
+- `getReadsAsArray(event)` - Returns reads sorted by readNumber (or timestamp fallback)
+- `getReadsForUser(event, userId)` - Get this user's read object
+- `getOtherReads(event, userId)` - Get reads from other users (for comparison)
+- `writeReading(event, userId, reading, data, batchId)` - Saves a reading, assigns readNumber, removes from skipped list
+- `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
+- `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `arbitrationPolicy`
+- `getOutcome(event, settings)` - Computes outcome: `not_read` | `pending_second_read` | `arbitration_pending` | `normal` | `technical_recall` | `recall_for_assessment`. Third read (readNumber 3) is the arbitration read and its opinion resolves the case.
+- `getComparisonInfo(event, secondReadData, userId, settings)` - Returns comparison data for second reader, or `false` if not applicable
+- `shouldShowComparePage(event, secondReadData, userId, settings)` - Boolean: whether to show compare page given timing/filter settings
 
-### Multiple Event Functions
+### reading.js — Multiple Events
 
 - `getReadingStatusForEvents(events, userId)` - Aggregated status with counts
 - `getReadingProgress(events, currentEventId, skippedEvents, userId)` - Navigation progress
 - `enhanceEventsWithReadingData(events, participants, userId)` - Adds metadata to events
+- `sortEventsByScreeningDate(events)` - Oldest-first sort
+- `getReadingClinics(data, options)` - All clinics with reading status attached
+- `getReadableEventsForClinic(data, clinicId)` - Events in a clinic the user can read
 
-### Filter Functions
+### reading.js — Filter Functions
 
-- `filterEventsByEligibleForReading(events)` - Events ready for reading
+- `filterEventsByEligibleForReading(events)` - Events within reading window
 - `filterEventsByNeedsFirstRead(events)` - No reads yet
-- `filterEventsByNeedsSecondRead(events)` - Has first read, needs second
-- `filterEventsByUserCanRead(events, userId)` - Events user can read
+- `filterEventsByNeedsSecondRead(events)` - Exactly one read, needs second
+- `filterEventsByNeedsAnyRead(events)` - Needs first or second read
+- `filterEventsByFullyRead(events, requiredReads)` - Has required number of reads
+- `filterEventsByUserCanRead(events, userId)` - Events this user can read
+- `filterEventsByUserCanReadOrHasRead(events, userId, options)` - User can read or has read
 - `filterEventsByClinic(events, clinicId)` - Filter by clinic
+- `filterEventsByDayRange(events, minDays, maxDays)` - Filter by days since screening
 
-### Batch Functions
+### reading.js — Batch Functions
 
-- `createReadingBatch(data, options)` - Creates a batch
+- `createReadingBatch(data, options)` - Creates a batch; lazy batches start with one event
+- `topUpBatch(data, batchId)` - Adds next eligible event if batch is below target size
 - `getReadingBatch(data, batchId)` - Retrieves batch
-- `getOrCreateClinicBatch(data, clinicId)` - Gets/creates clinic-based batch
-- `getBatchReadingProgress(data, batchId, currentEventId, userId)` - Batch progress
+- `getOrCreateClinicBatch(data, clinicId)` - Gets/creates clinic-based batch (batched by clinicId)
+- `getFirstReadableEventInBatch(data, batchId, userId)` - First event user can read
+- `getFirstUserReadableEvent(events, userId)` - First readable event in array
+- `getNextUserReadableEvent(events, currentEventId, userId, options)` - Next readable event
+- `getResumeEventForUser(events, userId, skippedEvents)` - Resume point (first readable after furthest progress)
+- `getBatchReadingProgress(data, batchId, currentEventId, userId)` - Progress including `targetSize` and `targetRemaining`
 - `skipEventInBatch(data, batchId, eventId)` - Marks event as skipped
 
-### Boolean Checks
+### reading.js — Boolean Checks
 
 - `hasReads(event)` - Has any reads
-- `canUserReadEvent(event, userId)` - Can this user read
-- `userHasReadEvent(event, userId)` - Has user already read
-- `needsFirstRead(event)`, `needsSecondRead(event)`, `needsArbitration(event)`
+- `canUserReadEvent(event, userId)` - User can read (not already read, not awaiting priors, under max reads)
+- `userHasReadEvent(event, userId)` - User has already read
+- `needsFirstRead(event)`, `needsSecondRead(event)`, `needsArbitration(event)` (policy-aware context function)
+
+### prior-mammograms.js
+
+- `awaitingPriors(event)` - Any mammogram has `requestStatus` = `'pending'` or `'requested'`
+- `hasUnrequestedPriors(event)` - Any mammogram has `requestStatus` = `'not_requested'`
+- `userRequestedPriors(event, userId)` - User has pending requests on this event
+- `getPriorsSummary(event)` - Count breakdown by status; `hasAwaiting`, `allResolved` flags
+- `getUnrequestedPriors(event)`, `getAwaitingPriors(event)` - Filtered subsets
+- `summarisePriorMammogram(mammogram, options)` - One-line display string (location + date)
+- `summarisePriorMammograms(event, options)` - Array of display strings
 
 ---
 
@@ -420,8 +465,10 @@ Each event needs two independent reads:
 - `readCount` - Total reads
 - `uniqueReaderCount` - Different readers
 - `firstReadComplete`, `secondReadComplete`
-- `hasDisagreement`, `needsArbitration`
+- `isDiscordant` - Whether existing reads disagree meaningfully (not just opinion string)
 - `opinions` - Array of unique opinion values
+
+For arbitration state, use `getOutcome(event, settings)` or the `needsArbitration` filter.
 
 Use in templates: `{% set metadata = event | getReadingMetadata %}`
 
@@ -442,52 +489,68 @@ Reading behavior is configured via:
 - `confirmNormal` - Require confirmation for normal results
 - `showRemaining` - Show remaining counts
 - `autoOpenPacsViewer` - Auto-open PACS viewer when entering reading workflow (once per session)
+- `enableOpinionDelay` - Enforce lockout period before shortcuts/buttons become active
+- `secondReaderComparison` - When to show compare page: `'early'` | `'late'` (default) | `'off'`
+- `compareWhen` - Which cases trigger compare: `'non_normal'` (default) | `'discordant_only'`
+- `arbitrationPolicy` - When reads go to arbitration: `'discordant_only'` (default) | `'all_non_normal'`
+- `lazyBatches` - Build batches lazily one case at a time: `'true'` (default) | `'false'`
+- `defaultBatchTargetSize` - Default batch size (default: 25)
 
 **Hard config** (in `config.reading`):
 
 - `priorityThreshold` - Days until "due soon"
 - `urgentThreshold` - Days until "urgent"
-- `mammogramImageSource` - Image source: "diagrams" or "real"
-- `mammogramTagWeights` - Distribution weights for image set tags (normal/abnormal/indeterminate)
+- `mammogramImageSource` - Image source: `'diagrams'` or `'real'`
+- `mammogramViewOrder` - View display order: `'cc-first'` or `'mlo-first'`
+- `mammogramTagWeights` - Distribution weights for image set tags (normal/abnormal/indeterminate/technical)
 
 ---
 
 ## Awaiting Priors
 
-"Priors" are previous mammogram images for a participant. Typically from prior screening episodes, but they could have come from elsewhere (symptomatic mammogram).
+"Priors" are previous mammogram images for a participant from prior screening episodes or other sources (symptomatic mammograms, other BSUs, non-UK facilities). Readers typically want to view priors alongside current images before giving an opinion.
 
-When the inital screening happens, participants are asked if they've had any additional mammograms the BSU doesn't know about - and if so, those are recorded. These may be symptomatic or from another BSU or non-uk. Some BSUs will proactively try to get these mammograms, whereas some will wait for image readers to request them. Readers typically want to view priors alongside current images before giving an opinion.
+When a reader encounters a case with unrequested priors, they can request them via `/request-priors` in the workflow. The case is then held from reading until the priors arrive or are marked not available.
 
-Once these priors have been requested they are 'awaiting priors'. Image reading won't happen until they have been received, or a time limit has passed.
+### Data Model
 
-### Data
-
-The flag is stored as a string boolean on the event object:
+Priors are stored as an array on the event. Each prior mammogram has its own request status:
 
 ```javascript
-event.hasRequestedImages = 'true' | 'false'
+event.previousMammograms = [
+  {
+    id: 'abc123',
+    location: 'bsu' | 'otherUk' | 'otherNonUk' | 'currentBsu' | 'preferNotToSay',
+    bsu: 'St James Hospital',       // if location === 'bsu'
+    dateTaken: '2020-03-15',
+    requestStatus: 'not_requested' | 'pending' | 'requested' | 'received' | 'not_available' | 'not_needed',
+    requestedBy: userId,
+    requestedDate: '2025-02-10T...',
+    requestReason: 'optional free text'
+  }
+]
 ```
 
-There is no stored request date — the date shown in the UI ("Requested 10 Feb 2025") is hardcoded.
+A case is "awaiting priors" (`awaitingPriors(event)`) when any mammogram has `requestStatus` = `'pending'` or `'requested'`. This blocks the event from reading queues.
+
+**Status lifecycle**: `not_requested` → `pending` (reader requests via workflow) → `requested` (admin sends IEP request) → `received` | `not_available` | `not_needed`. Once a reader marks status as `pending`, only they can undo it (via `/undo-priors`); once admin moves to `requested`, undo is no longer possible.
 
 ### Generation
 
-Set randomly at seed time in `event-generator.js` with a 30% probability of `true`:
-
-```javascript
-event.hasRequestedImages = weighted.select({ true: 0.3, false: 0.7 })
-```
+Prior mammograms are generated at seed time in `event-generator.js` using `generatePreviousMammograms()`. Generation rate is configurable via seed profiles in `seed-profiles.js`.
 
 ### Batch behaviour
 
-- By default, awaiting-priors events are **excluded** from all reading batches (first reads, second reads, all reads)
+- By default, awaiting-priors events are **excluded** from all reading batches
 - The `awaiting_priors` batch type **only** includes these events
 - The `includeAwaitingPriors` filter flag overrides the default exclusion (used by the custom batch creator)
 
 ### UI
 
-- The reading dashboard shows an "Awaiting priors" count card linking to a dedicated batch of those cases
-- Within a case, the opinion page shows an "Images requested" tag alongside the hardcoded request date
+- The reading dashboard shows an "Awaiting priors" count card linking to a dedicated batch
+- Within a batch, awaiting-priors cases show their status on `/existing-read`
+- `/reading/priors` is a management view (for co-ordinators) showing all pending requests filterable by status
+- Readers can undo their own `pending` requests via `/undo-priors`
 
 ---
 
@@ -501,41 +564,13 @@ The mammogram viewer simulates a PACS viewer on a separate monitor, displaying m
 - **Image selection utility**: `app/lib/utils/mammogram-images.js` - weighted seeded random selection based on event ID
 - **Viewer page**: `app/views/reading/mammogram-viewer.html` - standalone dark-themed page with 2×2 grid
 
-### How It Works
+Reading workflow pages broadcast participant/image data to the viewer via `BroadcastChannel` (`mammogram-channel.js`). The viewer updates on each navigation; a ping/pong mechanism prevents duplicate windows from opening. A `clear` message is sent when leaving the workflow. The viewer can be opened manually (header nav link) or automatically on workflow entry if `autoOpenPacsViewer` is enabled.
 
-1. Reading workflow pages include meta tags with participant/image data
-2. `mammogram-channel.js` auto-broadcasts participant data on page load
-3. Viewer window listens on BroadcastChannel and updates display
-4. Same eventId messages are ignored (prevents flash on navigation within same case)
-5. When leaving reading workflow, `clear` message shows placeholder in viewer
-6. **Ping/pong mechanism**: Before auto-opening, parent page pings to check if viewer is already open
-7. **Request/response**: When viewer opens, it requests current participant data from parent pages
-
-### Opening the Viewer
-
-- **Manual**: "Open PACS viewer" link in header navigation (within reading workflow)
-- **Auto-open**: If `autoOpenPacsViewer` setting is enabled, viewer opens automatically when entering reading workflow (only if not already open, detected via ping/pong)
-
-### Image Sets
-
-- Images stored in `app/assets/images/mammogram-diagrams/set-XX/` (or `mammogram-sets/` for real images)
-- Each set contains: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.png`
-- `manifest.json` lists available sets with tags (normal/abnormal/indeterminate) and descriptions
-- **Weighted selection**: Image sets selected based on configurable tag weights (default: 70% normal, 20% abnormal, 10% indeterminate)
-- Selection is deterministic per event ID (seeded random ensures same participant always gets same images)
-
-### Missing Views
-
-- If a mammogram view is missing from `event.mammogramData.views`, the viewer shows "No image" placeholder instead of that view
-- This allows realistic simulation of incomplete mammograms
+Image sets are in `app/assets/images/mammogram-diagrams/` with a `manifest.json` listing sets by tag (normal/abnormal/indeterminate/technical). Selection is weighted and deterministic per event ID. Missing views show a placeholder.
 
 ### Files
 
-- `app/lib/utils/mammogram-images.js` - Image selection utility (weighted random, path generation)
-- `app/assets/javascript/mammogram-channel.js` - BroadcastChannel communication (broadcast, listen, ping/pong, auto-open)
-- `app/views/reading/mammogram-viewer.html` - Viewer page (dark theme, 2×2 grid, placeholder states)
-- `app/views/_templates/layout-reading.html` - Meta tags for viewer data
-- `app/views/_templates/layout-base.html` - "Open PACS viewer" link in header nav
-- `app/assets/images/mammogram-diagrams/manifest.json` - Image set metadata (25 sets with tags/descriptions)
-- `scripts/process-mammogram-sets.sh` - Process raw mammogram set screenshots (rename, grayscale, compress)
-- `scripts/process-mammogram-images.sh` - Process individual mammogram images (grayscale, compress)
+- `app/lib/utils/mammogram-images.js` - Weighted seeded image selection
+- `app/assets/javascript/mammogram-channel.js` - BroadcastChannel communication
+- `app/views/reading/mammogram-viewer.html` - Standalone viewer page (dark theme, 2×2 grid)
+- `app/assets/images/mammogram-diagrams/manifest.json` - Image set metadata

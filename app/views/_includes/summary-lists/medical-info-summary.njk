@@ -99,7 +99,7 @@
       {{ ("prior_" + mammogram.requestStatus) | toTag }}
       {% if mammogram.requestedBy or mammogram.requestReason %}
         <br>
-        <span class="app-text-grey">
+        <span class="nhsuk-u-secondary-text-colour">
           {% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
           {%- if mammogram.requestReason %}. Request reason: {{ mammogram.requestReason }}{% endif %}
         </span>
@@ -113,7 +113,7 @@
           {{ ("prior_" + mammogram.requestStatus) | toTag }}
           {% if mammogram.requestedBy or mammogram.requestReason %}
             <br>
-            <span class="app-text-grey">
+            <span class="nhsuk-u-secondary-text-colour">
               {% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
               {%- if mammogram.requestReason %}. Request reason: {{ mammogram.requestReason }}{% endif %}
             </span>

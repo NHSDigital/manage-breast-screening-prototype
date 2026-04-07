@@ -1,0 +1,28 @@
+{# app/views/style-guide/_nav.njk #}
+{# Shared secondary navigation for all style guide pages.
+   Set `currentPage` in the parent template to highlight the active item. #}
+
+{% from '_components/secondary-navigation/macro.njk' import appSecondaryNavigation %}
+
+<h1 class="nhsuk-heading-xl nhsuk-u-margin-bottom-3">Style guide</h1>
+
+{{ appSecondaryNavigation({
+  visuallyHiddenTitle: "Style guide sections",
+  items: [
+    { text: "Overview", href: "/style-guide", current: currentPage == "index" },
+    { text: "Button menu", href: "/style-guide/button-menu", current: currentPage == "button-menu" },
+    { text: "Count", href: "/style-guide/count", current: currentPage == "count" },
+    { text: "Details", href: "/style-guide/details", current: currentPage == "details" },
+    { text: "Forward link", href: "/style-guide/forward-link", current: currentPage == "forward-link" },
+    { text: "Icons", href: "/style-guide/icons", current: currentPage == "icons" },
+    { text: "Modal", href: "/style-guide/modal", current: currentPage == "modal" },
+    { text: "Notification banner", href: "/style-guide/notification-banner", current: currentPage == "notification-banner" },
+    { text: "Secondary navigation", href: "/style-guide/secondary-navigation", current: currentPage == "secondary-navigation" },
+    { text: "Status bar", href: "/style-guide/status-bar", current: currentPage == "status-bar" },
+    { text: "Status message", href: "/style-guide/status-message", current: currentPage == "status-message" },
+    { text: "Stepper input", href: "/style-guide/stepper-input", current: currentPage == "stepper-input" },
+    { text: "Summary card", href: "/style-guide/summary-card", current: currentPage == "summary-card" },
+    { text: "Summary list", href: "/style-guide/summary-list", current: currentPage == "summary-list" },
+    { text: "Typography", href: "/style-guide/typography", current: currentPage == "typography" }
+  ]
+}) }}

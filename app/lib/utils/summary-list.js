@@ -70,7 +70,7 @@ const handleSummaryListMissingInformation = (
       return {
         ...row,
         value: {
-          html: `<span class="app-text-grey">Not provided</span>`
+          html: `<span class="nhsuk-u-secondary-text-colour">Not provided</span>`
         }
         // Keep existing actions if they exist (for showNotProvidedText case)
       }

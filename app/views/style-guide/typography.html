@@ -1,0 +1,77 @@
+{# app/views/style-guide/typography.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "typography" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Typography &amp; CSS utilities</h2>
+
+<p>CSS-only utilities built for this prototype.</p>
+
+<h3>Button link</h3>
+
+<p><code>.app-button-link</code> — a <code>&lt;button&gt;</code> element styled to look like a link. Use in forms where a link is needed but a GET request is not appropriate.</p>
+
+<div class="sg-example">
+  <p>
+    <button type="button" class="app-button-link">Delete this record</button>
+  </p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<button type="button" class="app-button-link">Delete this record</button>{% endraw %}</code></pre>
+
+<h3>Error and warning links</h3>
+
+<p><code>.app-link--error</code> and <code>.app-link--warning</code> — links coloured with the NHS error colour. Use sparingly for destructive or critical actions.</p>
+
+<div class="sg-example">
+  <p>
+    <a href="#" class="app-link--error">Remove participant</a>
+  </p>
+  <p>
+    <a href="#" class="app-link--warning">Flag for review</a>
+  </p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<a href="#" class="app-link--error">Remove participant</a>
+<a href="#" class="app-link--warning">Flag for review</a>{% endraw %}</code></pre>
+
+<h3>Secondary text colour</h3>
+
+<p>Use the NHS design system utility class <code>nhsuk-u-secondary-text-colour</code> to apply secondary (grey) text colour.</p>
+
+<div class="sg-example">
+  <p>Primary text — <span class="nhsuk-u-secondary-text-colour">secondary text alongside it</span>.</p>
+  <p class="nhsuk-u-secondary-text-colour">A full paragraph in secondary text colour.</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<span class="nhsuk-u-secondary-text-colour">secondary text</span>
+<p class="nhsuk-u-secondary-text-colour">A full paragraph in secondary text colour.</p>{% endraw %}</code></pre>
+
+<h3>Compact inset text</h3>
+
+<p><code>.app-inset-text--compact</code> — reduces the top/bottom padding and margin of the NHS inset text component. Use when vertical space is tight.</p>
+
+<div class="sg-example">
+  <p>Standard inset text:</p>
+  <div class="nhsuk-inset-text">
+    <span class="nhsuk-u-visually-hidden">Information: </span>
+    <p>This participant has a note on their record. Review before proceeding.</p>
+  </div>
+  <p>Compact inset text:</p>
+  <div class="nhsuk-inset-text app-inset-text--compact">
+    <span class="nhsuk-u-visually-hidden">Information: </span>
+    <p>This participant has a note on their record. Review before proceeding.</p>
+  </div>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<div class="nhsuk-inset-text app-inset-text--compact">
+  <span class="nhsuk-u-visually-hidden">Information: </span>
+  <p>...</p>
+</div>{% endraw %}</code></pre>
+
+{% endblock %}

@@ -1,0 +1,45 @@
+{# app/views/style-guide/count.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/count/macro.njk' import appCount %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "count" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Count</h2>
+
+<p>A small grey badge used to show a number alongside a label — typically in headings or navigation items. The number is surrounded by visually hidden parentheses for screen readers.</p>
+
+<p>Macro: <code>appCount(number)</code></p>
+
+<h3>In a heading</h3>
+
+<div class="sg-example">
+  <h4>Clinics {{ appCount(3) }}</h4>
+  <h4>Participants {{ appCount(12) }}</h4>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<h2>Clinics {{ appCount(3) }}</h2>{% endraw %}</code></pre>
+
+<h3>Zero count</h3>
+
+<div class="sg-example">
+  <p>Clinics {{ appCount(0) }}</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appCount(0) }}{% endraw %}</code></pre>
+
+<h3>Inline in body text</h3>
+
+<div class="sg-example">
+  <p>Clinics {{ appCount(7) }} are listed below.</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}<p>Clinics {{ appCount(7) }} are listed below.</p>{% endraw %}</code></pre>
+
+{% endblock %}
