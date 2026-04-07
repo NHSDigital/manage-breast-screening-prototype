@@ -101,6 +101,9 @@
     {# Show participant section #}
     {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
 
+    {# Modal forms — open medical info forms in a modal dialog rather than a new page #}
+    {{ settingToggle("Modal forms (spike)", "settings[screening][modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.modalForms, "false") }}
+
     <h2>Image reading</h2>
     {# One click normal #}
     {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
