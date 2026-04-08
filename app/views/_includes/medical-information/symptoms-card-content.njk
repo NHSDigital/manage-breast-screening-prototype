@@ -33,11 +33,37 @@
 
   <div class="nhsuk-button-group app-button-group--small">
     {% for symptomType in data.symptomTypes %}
-      {{ button({
-        text: symptomType.name | sentenceCase,
-        href: (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-        classes: "nhsuk-button--secondary nhsuk-button--small"
-      }) }}
+
+      {% set addUrl = (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo) %}
+
+      {% if data.settings.screening.modalForms == 'true' %}
+        {# Modal mode: button triggers a modal that fetches the form as a fragment #}
+        {% set modalId = "symptom-modal-" + sectionId %}
+        {{ button({
+          text: symptomType.name | sentenceCase,
+          classes: "nhsuk-button--secondary nhsuk-button--small",
+          attributes: {
+            type: "button",
+            onclick: "openModal('" + modalId + "', { loadUrl: '" + addUrl + "' }); return false;"
+          }
+        }) }}
+      {% else %}
+        {# Standard mode: button navigates to the add symptom page #}
+        {{ button({
+          text: symptomType.name | sentenceCase,
+          href: addUrl,
+          classes: "nhsuk-button--secondary nhsuk-button--small"
+        }) }}
+      {% endif %}
+
     {% endfor %}
   </div>
+
+  {# Single shared modal shell — only rendered when modal forms are enabled.
+     Content is loaded at open time via the loadUrl option. #}
+  {% if data.settings.screening.modalForms == 'true' %}
+    {% from '_components/modal/macro.njk' import appModal %}
+    {{ appModal({ id: "symptom-modal-" + sectionId }) }}
+  {% endif %}
+
 {% endif %}

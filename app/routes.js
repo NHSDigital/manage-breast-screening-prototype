@@ -163,6 +163,29 @@ router.get('/modal-examples', (req, res) => {
   res.render('_components/modal/examples')
 })
 
+// Style guide demo: form-in-modal example
+router.post('/style-guide/modal-form-demo/save', (req, res) => {
+  const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  const note = (req.body['demo-note'] || '').trim()
+
+  if (!note) {
+    const context = {
+      errors: { 'demo-note': 'Enter a note' },
+      values: { 'demo-note': req.body['demo-note'] }
+    }
+    if (isAjax) {
+      // Render the fragment directly — errors passed as template context
+      return res.status(422).render('style-guide/modal-form-demo', context)
+    }
+    // Non-JS fallback: flash uses the name field so populateErrors can match
+    req.flash('error', { name: 'demo-note', text: 'Enter a note' })
+    return res.redirect('/style-guide/modal')
+  }
+
+  req.flash('success', `Note saved (demo \u2014 nothing was actually stored)`)
+  res.redirect('/style-guide/modal')
+})
+
 // Workaround for Chrome DevTools requesting a specific URL
 router.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   // Either return an empty JSON object

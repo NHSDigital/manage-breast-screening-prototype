@@ -974,10 +974,53 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
+      const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
       const action = req.body?.action || req.query.action // 'save' or 'save-and-add'
       const nextSymptomType = req.query.symptomType // camelCase symptom type
       const referrerChain = req.query.referrerChain
       const scrollTo = req.query.scrollTo
+
+      // Validate required fields
+      const symptomType = data.event?.symptomTemp?.type
+      const validationErrors = []
+
+      if (symptomType === 'Nipple change') {
+        const loc = data.event?.symptomTemp?.nippleChangeLocation
+        if (!loc || !loc.length) {
+          validationErrors.push({
+            name: 'event[symptomTemp][nippleChangeLocation]',
+            text: 'Select which nipple has changed',
+            href: '#nippleChangeLocationRight'
+          })
+        }
+      } else if (symptomType) {
+        if (!data.event?.symptomTemp?.location) {
+          validationErrors.push({
+            name: 'event[symptomTemp][location]',
+            text: 'Select a location',
+            href: '#locationRightBreast'
+          })
+        }
+      }
+
+      if (validationErrors.length) {
+        if (isAjax) {
+          // Return 422 with fragment — errors shown inside the modal
+          return res
+            .status(422)
+            .render('events/medical-information/symptoms/details-fragment', {
+              errors: validationErrors,
+              // Also set flash so populateErrors works on field-level errors
+              flash: { error: validationErrors }
+            })
+        }
+        // Non-JS path: flash errors and redirect back to the form
+        validationErrors.forEach((err) => req.flash('error', err))
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/details` +
+            (referrerChain ? `?referrerChain=${referrerChain}` : '')
+        )
+      }
 
       // Save temp symptom to array
       if (data.event?.symptomTemp) {
@@ -1044,8 +1087,6 @@ module.exports = (router) => {
         } else if (symptomTemp.dateType === 'notSure') {
           delete symptom.approximateDuration
         }
-
-        console.log('symptomTemp', symptomTemp)
 
         if (symptomTemp.isIntermittent) {
           symptom.isIntermittent = true
@@ -1135,7 +1176,6 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        console.log('Redirecting to:', returnUrl, 'scrollTo:', scrollTo)
         res.redirect(returnUrl)
       }
     }
@@ -1216,8 +1256,8 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const { symptomType } = req.query
-      console.log('Adding symptom type:', symptomType)
       const data = req.session.data
+      const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
 
       // Clear any existing temp symptom data
       delete data.event?.symptomTemp
@@ -1233,6 +1273,13 @@ module.exports = (router) => {
           // Pre-populate symptomTemp with the selected type
           data.event.symptomTemp = {
             type: sentenceCase(symptomTypeConfig.name)
+          }
+
+          // For AJAX requests (modal), render the fragment directly — no redirect
+          if (isAjax) {
+            return res.render(
+              'events/medical-information/symptoms/details-fragment'
+            )
           }
 
           // Redirect to details page

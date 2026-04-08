@@ -126,4 +126,56 @@
   ]
 }) }}{% endraw %}</code></pre>
 
+<h3>Form in modal (load URL)</h3>
+
+<p>Pass <code>{ loadUrl: '/path' }</code> to <code>openModal()</code> to fetch an HTML fragment and inject it into the modal when it opens. The fragment should be a page extending <code>layout-fragment.html</code>.</p>
+
+<p>On form submission inside the modal:</p>
+<ul>
+  <li>a <code>422</code> response re-renders the fragment with validation errors inside the modal</li>
+  <li>any successful response closes the modal and reloads the page</li>
+</ul>
+
+<p>The server can distinguish AJAX requests via the <code>X-Requested-With: XMLHttpRequest</code> request header.</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Add a note",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-form', { loadUrl: '/style-guide/modal-form-demo' }); return false;" }
+  }) }}
+
+  {{ appModal({
+    id: "demo-form"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{# Empty modal shell — content is loaded at open time #}
+{{ appModal({ id: "demo-form" }) }}
+
+{# Trigger #}
+<button onclick="openModal('demo-form', { loadUrl: '/path/to/form' })">
+  Open form
+</button>{% endraw %}</code></pre>
+
+<pre class="sg-snippet"><code>{% raw %}{# Form fragment — extends layout-fragment.html #}
+{% extends "layout-fragment.html" %}
+
+{% block content %}
+  <h2 class="app-modal__title nhsuk-heading-m">Form title</h2>
+  <div class="app-modal__body">
+    <form action="/save" method="post">...</form>
+  </div>
+{% endblock %}{% endraw %}</code></pre>
+
+<pre class="sg-snippet"><code>// Route — return 422 + fragment for validation errors, redirect for success
+router.post('/save', (req, res) => {
+  const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  if (!valid) {
+    if (isAjax) return res.status(422).render('fragment', { errors })
+    req.flash('error', '...')
+    return res.redirect('back')
+  }
+  res.redirect('/success')
+})</code></pre>
+
 {% endblock %}

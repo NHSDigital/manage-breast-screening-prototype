@@ -6,6 +6,7 @@ class AppModal {
     this.previousActiveElement = null
     this.scrollPosition = 0
     this.isOpen = false
+    this._onSuccessCallback = null
 
     this.bindEvents()
   }
@@ -23,76 +24,259 @@ class AppModal {
       }
     })
 
-    // Handle action buttons and links
+    // Handle action buttons and links inside the modal
     this.modal.addEventListener('click', (e) => {
-      // Find the element with data-modal-action (might be the target or a parent)
       let actionElement = e.target
       let action = actionElement.getAttribute('data-modal-action')
 
-      // If target doesn't have action, check if it's inside an element that does
       if (!action && actionElement.closest('[data-modal-action]')) {
         actionElement = actionElement.closest('[data-modal-action]')
         action = actionElement.getAttribute('data-modal-action')
       }
 
       if (action) {
-        console.log('Modal action triggered:', action, actionElement) // Debug log
         this.handleAction(action, e, actionElement)
+      }
+    })
+
+    // Trap focus within dialog — bound once, focusable elements queried dynamically
+    this.dialog.addEventListener('keydown', (e) => {
+      if (!this.isOpen || e.key !== 'Tab') return
+
+      const focusableElements = this.dialog.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusableElements.length === 0) return
+
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement.focus()
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement.focus()
+        }
       }
     })
   }
 
-  open() {
-    console.log('Opening modal:', this.modal.id) // Debug log
+  // Open the modal. Pass { loadUrl } to fetch and inject content, or leave empty
+  // for static content already in the DOM. Pass { onSuccess } to override the
+  // default page reload that happens after a successful form submission.
+  open(options = {}) {
+    const { loadUrl, onSuccess } = options
+    this._onSuccessCallback = onSuccess || null
 
-    // Store current scroll position
     this.scrollPosition =
       window.pageYOffset || document.documentElement.scrollTop
-
     this.previousActiveElement = document.activeElement
+
     this.modal.hidden = false
     this.modal.classList.add('app-modal--open')
 
-    // Prevent body scrolling and maintain scroll position
     document.body.classList.add('app-modal-open')
     document.body.style.top = `-${this.scrollPosition}px`
     document.body.style.position = 'fixed'
     document.body.style.width = '100%'
 
-    // Focus the dialog
-    this.dialog.focus()
     this.isOpen = true
 
-    // Trap focus within modal
-    this.trapFocus()
+    // Restore tabindex so the dialog can receive programmatic focus on open.
+    // setContent removes it again once content is loaded.
+    this.dialog.setAttribute('tabindex', '-1')
+
+    if (loadUrl) {
+      this.loadContent(loadUrl)
+    } else {
+      this.dialog.focus()
+    }
   }
 
   close() {
-    console.log('Closing modal:', this.modal.id) // Debug log
-
     this.modal.hidden = true
     this.modal.classList.remove('app-modal--open')
 
-    // Restore body scrolling and scroll position
     document.body.classList.remove('app-modal-open')
     document.body.style.position = ''
     document.body.style.top = ''
     document.body.style.width = ''
 
-    // Restore scroll position
     window.scrollTo(0, this.scrollPosition)
 
-    // Restore focus
     if (this.previousActiveElement) {
       this.previousActiveElement.focus()
     }
 
     this.isOpen = false
+    this._onSuccessCallback = null
+  }
+
+  // Fetch a URL as an HTML fragment and inject it into the modal content area.
+  // After injection, any form container inside the dialog is wired up for AJAX submission.
+  loadContent(url) {
+    // Clear stale content immediately so previous answers are never visible
+    // while the new content is loading.
+    const contentArea = this.dialog.querySelector('.app-modal__content')
+    if (contentArea) contentArea.innerHTML = ''
+
+    // Only show a loading indicator if the request takes longer than 300ms,
+    // avoiding a flicker on fast connections.
+    const loadingTimer = setTimeout(() => {
+      this.setContent('<p aria-live="polite">Loading…</p>')
+      this.dialog.focus()
+    }, 300)
+
+    fetch(url, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to load content')
+        return response.text()
+      })
+      .then((html) => {
+        clearTimeout(loadingTimer)
+        this.setContent(html)
+        this.bindFormSubmit()
+      })
+      .catch(() => {
+        clearTimeout(loadingTimer)
+        this.setContent(
+          '<p>Sorry, there was a problem loading this content.</p>'
+        )
+      })
+  }
+
+  // Replace the content area of the dialog
+  setContent(html) {
+    const content = this.dialog.querySelector('.app-modal__content')
+    if (content) {
+      content.innerHTML = html
+    } else {
+      this.dialog.innerHTML = html
+    }
+
+    // Keep aria-labelledby pointing at the first heading in injected content
+    const heading = this.dialog.querySelector('h1, h2, h3')
+    if (heading) {
+      if (!heading.id) heading.id = this.modal.id + '-content-title'
+      this.dialog.setAttribute('aria-labelledby', heading.id)
+    }
+
+    // Once content is loaded, remove tabindex from the dialog so that clicks
+    // on non-interactive areas don't pull focus back to the dialog container.
+    // The dialog only needs tabindex="-1" to receive programmatic focus on open.
+    this.dialog.removeAttribute('tabindex')
+
+    // Focus the error summary container itself (not a child link).
+    // Mirrors NHS Frontend's setFocus pattern: add tabindex="-1" temporarily,
+    // focus it, then remove tabindex on blur so it's no longer a focus target.
+    const errorSummary = this.dialog.querySelector('.nhsuk-error-summary')
+    if (errorSummary) {
+      errorSummary.setAttribute('tabindex', '-1')
+      errorSummary.addEventListener(
+        'blur',
+        () => {
+          errorSummary.removeAttribute('tabindex')
+        },
+        { once: true }
+      )
+      errorSummary.focus()
+    } else {
+      this.dialog.focus()
+    }
+  }
+
+  // Wire up form submission handling inside the dialog.
+  // Prefers a [data-form-action] container over a <form> element — necessary when
+  // the fragment is injected into a page that already has an outer <form>, because
+  // browsers make nested <form> elements invalid: inputs and buttons end up owned
+  // by the outer form, so the inner form's submit event never fires and FormData
+  // on it is empty. Using a <div data-form-action> sidesteps this entirely.
+  bindFormSubmit() {
+    const container =
+      this.dialog.querySelector('[data-form-action]') ||
+      this.dialog.querySelector('form')
+    if (!container) return
+
+    const action = container.dataset.formAction || container.action
+    const method = (
+      container.dataset.formMethod ||
+      container.method ||
+      'POST'
+    ).toUpperCase()
+
+    // Intercept clicks on submit buttons rather than listening for the form's
+    // submit event — button clicks are reliable whether or not the form is nested.
+    container.querySelectorAll('[type="submit"]').forEach((button) => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault()
+        this.submitForm(container, action, method, button)
+      })
+    })
+  }
+
+  // Submit injected form content via fetch. On 422 re-injects the response HTML
+  // so errors are shown inside the modal. On success, closes and reloads.
+  submitForm(container, action, method, clickedButton) {
+    if (clickedButton) clickedButton.disabled = true
+
+    // Serialize inputs manually — works for both <form> and non-form containers,
+    // and avoids the empty-FormData problem with nested forms.
+    const body = new URLSearchParams()
+    container.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (!el.name || el.disabled) return
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        if (el.checked) body.append(el.name, el.value)
+      } else {
+        body.append(el.name, el.value)
+      }
+    })
+    // Include the clicked button's name/value (e.g. action: 'save')
+    if (clickedButton?.name) {
+      body.append(clickedButton.name, clickedButton.value || '')
+    }
+
+    // redirect: 'manual' prevents fetch silently following a redirect and returning
+    // a 200, which would be indistinguishable from a genuine success response.
+    fetch(action, {
+      method,
+      body,
+      redirect: 'manual',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then((response) => {
+        if (response.status === 422) {
+          return response.text().then((html) => {
+            this.setContent(html)
+            this.bindFormSubmit()
+          })
+        } else if (response.ok || response.type === 'opaqueredirect') {
+          // opaqueredirect means the server redirected (e.g. after a successful save)
+          this.close()
+          if (this._onSuccessCallback) {
+            this._onSuccessCallback()
+          } else {
+            window.location.reload()
+          }
+        } else {
+          throw new Error(`Form submission failed: ${response.status}`)
+        }
+      })
+      .catch((error) => {
+        console.error('Modal form submission error:', error)
+        if (clickedButton) clickedButton.disabled = false
+        this.setContent(
+          '<p class="nhsuk-body">Sorry, there was a problem submitting the form. Please try again.</p>'
+        )
+      })
   }
 
   handleAction(action, event, actionElement) {
-    console.log('Handling action:', action) // Debug log
-
     switch (action) {
       case 'close':
         event.preventDefault()
@@ -100,13 +284,11 @@ class AppModal {
         break
 
       case 'navigate':
-        // Let default behavior happen for links
         if (actionElement.tagName === 'A') {
-          // Handle POST navigation if needed
           const method = actionElement.getAttribute('data-method')
           if (method && method.toUpperCase() === 'POST') {
             event.preventDefault()
-            this.submitForm(actionElement.href, 'POST')
+            this.navigateViaPost(actionElement.href)
           }
         }
         break
@@ -117,16 +299,17 @@ class AppModal {
         break
 
       default:
-        // Fire custom event for other action types
-        const customEvent = new CustomEvent('modal:action', {
-          detail: {
-            action,
-            target: actionElement,
-            originalEvent: event,
-            modal: this
-          }
-        })
-        this.modal.dispatchEvent(customEvent)
+        // Fire custom event for other action types (e.g. the check-in 'custom' action)
+        this.modal.dispatchEvent(
+          new CustomEvent('modal:action', {
+            detail: {
+              action,
+              target: actionElement,
+              originalEvent: event,
+              modal: this
+            }
+          })
+        )
     }
   }
 
@@ -138,15 +321,12 @@ class AppModal {
 
     if (!href) return
 
-    // Show loading state
     this.setButtonLoading(target, true)
 
-    // Collect any data from modal data attributes
     const modalData = this.getModalData()
 
-    // Make AJAX request
     fetch(href, {
-      method: method,
+      method,
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
@@ -155,24 +335,22 @@ class AppModal {
     })
       .then((response) => {
         if (response.ok) {
-          if (closeOnSuccess) {
-            this.close()
-          }
-          // Fire success event
-          const successEvent = new CustomEvent('modal:ajax:success', {
-            detail: { response, target, modal: this }
-          })
-          this.modal.dispatchEvent(successEvent)
+          if (closeOnSuccess) this.close()
+          this.modal.dispatchEvent(
+            new CustomEvent('modal:ajax:success', {
+              detail: { response, target, modal: this }
+            })
+          )
         } else {
           throw new Error('Request failed')
         }
       })
       .catch((error) => {
-        // Fire error event
-        const errorEvent = new CustomEvent('modal:ajax:error', {
-          detail: { error, target, modal: this }
-        })
-        this.modal.dispatchEvent(errorEvent)
+        this.modal.dispatchEvent(
+          new CustomEvent('modal:ajax:error', {
+            detail: { error, target, modal: this }
+          })
+        )
       })
       .finally(() => {
         this.setButtonLoading(target, false)
@@ -182,77 +360,45 @@ class AppModal {
   setButtonLoading(button, isLoading) {
     if (isLoading) {
       button.disabled = true
-      button.textContent = button.textContent + ' ...'
+      button.setAttribute('data-original-text', button.textContent)
+      button.textContent = button.textContent + ' …'
     } else {
       button.disabled = false
-      button.textContent = button.textContent.replace(' ...', '')
+      const originalText = button.getAttribute('data-original-text')
+      if (originalText) button.textContent = originalText
     }
   }
 
   getModalData() {
     const data = {}
-    const attributes = this.modal.dataset
-
-    // Copy all data attributes
-    Object.keys(attributes).forEach((key) => {
-      data[key] = attributes[key]
+    Object.keys(this.modal.dataset).forEach((key) => {
+      data[key] = this.modal.dataset[key]
     })
-
     return data
   }
 
-  submitForm(url, method) {
+  // Create and submit a temporary form for POST-based navigation
+  navigateViaPost(url) {
     const form = document.createElement('form')
-    form.method = method
+    form.method = 'POST'
     form.action = url
     document.body.appendChild(form)
     form.submit()
   }
-
-  trapFocus() {
-    const focusableElements = this.dialog.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    )
-
-    if (focusableElements.length === 0) return
-
-    const firstElement = focusableElements[0]
-    const lastElement = focusableElements[focusableElements.length - 1]
-
-    this.dialog.addEventListener('keydown', (e) => {
-      if (e.key === 'Tab') {
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
-            e.preventDefault()
-            lastElement.focus()
-          }
-        } else {
-          if (document.activeElement === lastElement) {
-            e.preventDefault()
-            firstElement.focus()
-          }
-        }
-      }
-    })
-  }
 }
 
-// Initialize modals
+// Initialize modals on page load
 document.addEventListener('DOMContentLoaded', () => {
-  // console.log('Initializing modals...') // Debug log
-  const modals = document.querySelectorAll('.app-modal')
-  // console.log('Found modals:', modals.length) // Debug log
-  modals.forEach((modal) => {
+  document.querySelectorAll('.app-modal').forEach((modal) => {
     modal.appModal = new AppModal(modal)
   })
 })
 
-// Global functions
-window.openModal = function (modalId) {
-  // console.log('Opening modal via global function:', modalId) // Debug log
+// Global helpers — openModal accepts an optional options object (see AppModal.open)
+window.openModal = function (modalId, options = {}) {
   const modal = document.getElementById(modalId)
   if (modal && modal.appModal) {
-    modal.appModal.open()
+    modal.appModal.open(options)
   } else {
     console.error('Modal not found or not initialized:', modalId)
   }
