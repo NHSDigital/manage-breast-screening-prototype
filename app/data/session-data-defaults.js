@@ -85,7 +85,7 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
-  compactMode: 'false',
+  compactMode: 'true',
   debugMode: 'false',
   showEnvironmentBanner: 'true',
   mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'

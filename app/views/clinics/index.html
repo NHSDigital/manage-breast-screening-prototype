@@ -51,14 +51,14 @@
   {% if filteredClinics | length === 0 %}
     <p>No clinics found.</p>
   {% else %}
-    <table class="nhsuk-table">
+    <table class="nhsuk-table app-clinics-table">
       <thead class="nhsuk-table__head">
         <tr>
-          <th scope="col">Location</th>
-          <th scope="col">Date and time</th>
-          <th scope="col">Clinic type</th>
-          <th scope="col" class="nhsuk-table__cell--numeric">Participants</th>
-          <th scope="col">Status</th>
+          <th scope="col" class="app-clinics-table__location-column">Location</th>
+          <th scope="col" class="app-clinics-table__date-time-column">Date and time</th>
+          <th scope="col" class="app-clinics-table__clinic-type-column">Clinic type</th>
+          <th scope="col" class="app-clinics-table__participants-column nhsuk-table__cell--numeric">Participants</th>
+          <th scope="col" class="app-clinics-table__status-column">Status</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
@@ -68,7 +68,7 @@
           {% set location = clinic.location %}
           {% set events = clinic.events %}
           <tr>
-            <td>
+            <td class="app-clinics-table__location-column">
               <a href="/clinics/{{ clinic.id }}" class="nhsuk-link">
                 {% if location.type === 'mobile_unit' %}
                   {{ location.name }} at {{ clinic.siteName }}
@@ -79,10 +79,10 @@
                 ({{ clinic.sessionType | sentenceCase }})
               </a>
             </td>
-            <td>{{ clinic.date | formatDate |  noWrap }}<br>
+            <td class="app-clinics-table__date-time-column">{{ clinic.date | formatDate |  noWrap }}<br>
               {{clinic.sessionTimes | formatTimeRange | asHint }}
             </td>
-            <td>
+            <td class="app-clinics-table__clinic-type-column">
               {{ clinic.clinicType | sentenceCase }}
               {# <br>
               {% set clinicRiskType %}
@@ -96,10 +96,10 @@
 
             </td>
 
-            <td class="nhsuk-table__cell--numeric">
+            <td class="app-clinics-table__participants-column nhsuk-table__cell--numeric">
               {{ events.length }}
             </td>
-            <td class="nhsuk-table__cell--numeric">
+            <td class="app-clinics-table__status-column">
               {{ clinic.status | toTag }}
             </td>
           </tr>

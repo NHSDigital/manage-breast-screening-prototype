@@ -6,6 +6,125 @@
 .app-compact-mode {
   background-color: #fff7f9;
 
+  .nhsuk-main-wrapper {
+    @include nhsuk-responsive-padding(4, "top");
+    @include nhsuk-responsive-padding(4, "bottom");
+  }
+
+  .nhsuk-form-group {
+    @include nhsuk-responsive-margin(3, "bottom");
+  }
+
+  .nhsuk-checkboxes {
+    .nhsuk-checkboxes__item {
+      margin-top: 0;
+    }
+
+    .nhsuk-checkboxes__input {
+      margin-left: -0.625rem;
+    }
+
+    .nhsuk-checkboxes__label {
+      padding-left: 1px;
+    }
+
+    .nhsuk-checkboxes__label::before {
+      top: 0.625rem;
+      left: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .nhsuk-checkboxes__label::after {
+      top: 1.125rem;
+      left: 0.375rem;
+      width: 0.75rem;
+      height: 0.375rem;
+      border-width: 0 0 0.1875rem 0.1875rem;
+    }
+
+    .nhsuk-checkboxes__hint {
+      padding-left: 2.125rem;
+    }
+
+    .nhsuk-checkboxes__conditional {
+      margin-left: 0.625rem;
+      padding-left: 1.25rem;
+    }
+
+    .nhsuk-checkboxes__divider {
+      width: 1.5rem;
+      margin: 2px 0;
+      padding: 0;
+    }
+
+    .nhsuk-checkboxes__input:not(:disabled):hover + .nhsuk-checkboxes__label::before,
+    .nhsuk-checkboxes__input:not(:disabled) + .nhsuk-checkboxes__label:hover::before {
+      outline: 4px dashed transparent;
+      outline-offset: 1px;
+      box-shadow: 0 0 0 10px #aeb7bd;
+    }
+
+    .nhsuk-checkboxes__input:focus:hover + .nhsuk-checkboxes__label::before,
+    .nhsuk-checkboxes__input:focus + .nhsuk-checkboxes__label:hover::before {
+      box-shadow: 0 0 0 4px #ffeb3b, 0 0 0 10px #aeb7bd;
+    }
+  }
+
+  .nhsuk-radios {
+    .nhsuk-radios__item {
+      margin-top: 0;
+    }
+
+    .nhsuk-radios__input {
+      margin-left: -0.625rem;
+    }
+
+    .nhsuk-radios__label {
+      padding-left: 1px;
+    }
+
+    .nhsuk-radios__label::before {
+      top: 0.625rem;
+      left: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .nhsuk-radios__label::after {
+      top: 1.0625rem;
+      left: 0.4375rem;
+      border-width: 0.3125rem;
+    }
+
+    .nhsuk-radios__hint {
+      padding-left: 2.125rem;
+    }
+
+    .nhsuk-radios__conditional {
+      margin-left: 0.625rem;
+      padding-left: 1.25rem;
+    }
+
+    .nhsuk-radios__divider {
+      width: 1.5rem;
+      margin: 2px 0;
+      padding: 0;
+    }
+
+    .nhsuk-radios__input:not(:disabled):hover + .nhsuk-radios__label::before,
+    .nhsuk-radios__input:not(:disabled) + .nhsuk-radios__label:hover::before {
+      outline: 0.3125rem dashed transparent;
+      outline-offset: 1px;
+      box-shadow: 0 0 0 10px #aeb7bd;
+    }
+
+    .nhsuk-radios__input:focus:hover + .nhsuk-radios__label::before,
+    .nhsuk-radios__input:focus + .nhsuk-radios__label:hover::before {
+      box-shadow: 0 0 0 0.3125rem #ffeb3b, 0 0 0 10px #aeb7bd;
+    }
+  }
+
   .nhsuk-table {
     th,
     td,
@@ -23,6 +142,114 @@
 
     p:last-child {
       margin-bottom: 0;
+    }
+  }
+
+  .nhsuk-button {
+    font-weight: 600;
+    @include nhsuk-responsive-margin(4, "bottom");
+
+    &.nhsuk-button--small {
+      @include nhsuk-responsive-margin(4, "bottom");
+    }
+  }
+
+  .nhsuk-button:not(.nhsuk-button--small) {
+    min-height: nhsuk-px-to-rem(40px);
+    padding: nhsuk-px-to-rem(8px) nhsuk-px-to-rem(14px);
+
+    @include nhsuk-media-query($from: tablet) {
+      min-height: nhsuk-px-to-rem(46px);
+      padding: nhsuk-px-to-rem(10px) nhsuk-px-to-rem(14px);
+    }
+  }
+
+  .app-clinics-table {
+    table-layout: fixed;
+    width: 100%;
+
+    .app-clinics-table__location-column {
+      width: 33.333%;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .app-clinics-table__date-time-column,
+    .app-clinics-table__clinic-type-column,
+    .app-clinics-table__participants-column,
+    .app-clinics-table__status-column {
+      width: 16.667%;
+    }
+
+    .app-clinics-table__status-column {
+      text-align: left;
+    }
+
+    .app-clinics-table__participants-column {
+      text-align: left;
+    }
+  }
+
+  .app-clinic-events-table {
+    table-layout: fixed;
+    width: 100%;
+
+    .app-clinic-events-table__time-column {
+      width: 22%;
+    }
+
+    .app-clinic-events-table__time-column .nhsuk-tag {
+      display: inline-block;
+      max-width: 100%;
+      white-space: nowrap;
+    }
+  }
+
+  .nhsuk-summary-list {
+    margin-bottom: 0;
+  }
+
+  .nhsuk-summary-list__row {
+    margin-bottom: 0;
+  }
+
+  .nhsuk-summary-list__row--no-actions::after {
+    content: none !important;
+    display: none !important;
+    width: 0 !important;
+  }
+
+  .nhsuk-summary-list__key,
+  .nhsuk-summary-list__value,
+  .nhsuk-summary-list__actions {
+    margin-bottom: 0;
+    padding-top: nhsuk-spacing(1);
+    padding-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-summary-list__key {
+    margin-bottom: nhsuk-px-to-rem(4px);
+  }
+
+  .nhsuk-summary-list__value {
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-summary-list__value > p {
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-summary-list__actions {
+    margin-top: 0;
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  @include nhsuk-media-query($from: tablet) {
+    .nhsuk-summary-list__key,
+    .nhsuk-summary-list__value,
+    .nhsuk-summary-list__actions {
+      padding-top: nhsuk-spacing(1);
+      padding-bottom: nhsuk-spacing(1);
     }
   }
 
@@ -108,18 +335,41 @@
     margin-top: 0;
   }
 
-  .nhsuk-summary-card--compact {
+  .nhsuk-summary-card {
     .nhsuk-summary-card__actions {
       @include nhsuk-typography-weight-normal;
+      margin: 0;
+      row-gap: 0;
     }
 
     .nhsuk-summary-card__action {
       margin-bottom: 0;
     }
 
+    .nhsuk-summary-card__title {
+      margin: 0;
+    }
+
     .nhsuk-summary-card__title-wrapper,
     .nhsuk-summary-card__content {
-      padding: nhsuk-spacing(1) nhsuk-spacing(2);
+      padding: nhsuk-px-to-rem(12px);
+    }
+
+    .nhsuk-summary-list__key,
+    .nhsuk-summary-list__value,
+    .nhsuk-summary-list__actions {
+      @include nhsuk-font-size(16);
+      margin-bottom: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .nhsuk-summary-card__content p {
+      margin-bottom: 0;
+    }
+
+    .nhsuk-summary-card__content p:last-child {
+      margin-bottom: 0;
     }
   }
 
@@ -129,4 +379,32 @@
     @include nhsuk-responsive-margin(3, "top");
     @include nhsuk-responsive-margin(4, "bottom");
   }
+
+  // Warning callout: reduce large margins and internal padding
+    // Feature card headings: reduce font size (equivalent to nhsuk-heading-s)
+    .nhsuk-card--feature .nhsuk-card__heading {
+      font-size: nhsuk-px-to-rem(19px);
+
+      @include nhsuk-media-query($from: tablet) {
+        font-size: nhsuk-px-to-rem(22px);
+      }
+    }
+
+    // Buttons that are direct children of card content (e.g. "Add mammogram" after a summary list)
+    .nhsuk-card__content > .nhsuk-button {
+      margin-top: nhsuk-spacing(2);
+    }
+
+    // Warning callout: reduce large margins and internal padding
+  // Label margin-left must equal -(padding + 1px border) to stay flush with the left edge
+  .nhsuk-warning-callout {
+    padding: nhsuk-spacing(3); // 16px (padding-top: 0 !important is preserved by NHS styles)
+    margin-top: nhsuk-spacing(4); // 24px (down from 40/48px)
+    margin-bottom: nhsuk-spacing(4);
+
+    .nhsuk-warning-callout__label {
+      margin-left: nhsuk-px-to-rem(-17px); // 16px padding + 1px border
+    }
+  }
+
 }
