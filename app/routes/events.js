@@ -974,7 +974,7 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
-      const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
+      const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
       const action = req.body?.action || req.query.action // 'save' or 'save-and-add'
       const nextSymptomType = req.query.symptomType // camelCase symptom type
       const referrerChain = req.query.referrerChain
@@ -1004,11 +1004,13 @@ module.exports = (router) => {
       }
 
       if (validationErrors.length) {
-        if (isAjax) {
-          // Return 422 with fragment — errors shown inside the modal
+        if (isModal) {
+          // Return 422 with the details page rendered as a modal fragment
           return res
             .status(422)
-            .render('events/medical-information/symptoms/details-fragment', {
+            .render('events/medical-information/symptoms/details', {
+              parentLayout: '_templates/layout-modal-form.html',
+              isModal: true,
               errors: validationErrors,
               // Also set flash so populateErrors works on field-level errors
               flash: { error: validationErrors }
@@ -1257,7 +1259,7 @@ module.exports = (router) => {
       const { clinicId, eventId } = req.params
       const { symptomType } = req.query
       const data = req.session.data
-      const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
+      const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
 
       // Clear any existing temp symptom data
       delete data.event?.symptomTemp
@@ -1275,11 +1277,12 @@ module.exports = (router) => {
             type: sentenceCase(symptomTypeConfig.name)
           }
 
-          // For AJAX requests (modal), render the fragment directly — no redirect
-          if (isAjax) {
-            return res.render(
-              'events/medical-information/symptoms/details-fragment'
-            )
+          // For modal (AJAX) requests, render the details page as a fragment
+          if (isModal) {
+            return res.render('events/medical-information/symptoms/details', {
+              parentLayout: '_templates/layout-modal-form.html',
+              isModal: true
+            })
           }
 
           // Redirect to details page

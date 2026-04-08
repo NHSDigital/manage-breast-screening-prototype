@@ -1,6 +1,6 @@
 {# app/views/events/mammography/medical-information/symptoms/details.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {% set type = event.symptomTemp.type %}
 {% if type != "Other" %}
@@ -11,14 +11,20 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
+{% if isModal %}
+  {% set formAction = eventUrl + '/medical-information/symptoms/save' %}
+{% else %}
+  {% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
+{% endif %}
 
 {% block pageContent %}
  
   <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span>
+    {% if not isModal %}
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+    {% endif %}
     {{ pageHeading }}
   </h1>
 
@@ -26,8 +32,6 @@
   <input type="hidden" name="event[symptomTemp][type]" value="{{ event.symptomTemp.type }}">
 
   {% set symptomType = data.symptomTypes | find("name", event.symptomTemp.type | lower) %}
-
-  {{ symptomType | log("Symptom type")}}
 
   {% if symptomType.isSignificantByDefault %}
     {# Special case for lumps, otherwise all other types work with '[name] is a' #}

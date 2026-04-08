@@ -165,17 +165,20 @@ router.get('/modal-examples', (req, res) => {
 
 // Style guide demo: form-in-modal example
 router.post('/style-guide/modal-form-demo/save', (req, res) => {
-  const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
   const note = (req.body['demo-note'] || '').trim()
 
   if (!note) {
-    const context = {
-      errors: { 'demo-note': 'Enter a note' },
-      values: { 'demo-note': req.body['demo-note'] }
-    }
-    if (isAjax) {
-      // Render the fragment directly — errors passed as template context
-      return res.status(422).render('style-guide/modal-form-demo', context)
+    const validationErrors = [
+      { name: 'demo-note', text: 'Enter a note', href: '#demo-note' }
+    ]
+    if (isModal) {
+      // Render the fragment with errors inside the modal
+      return res.status(422).render('style-guide/modal-form-demo', {
+        errors: validationErrors,
+        flash: { error: validationErrors },
+        values: { 'demo-note': req.body['demo-note'] }
+      })
     }
     // Non-JS fallback: flash uses the name field so populateErrors can match
     req.flash('error', { name: 'demo-note', text: 'Enter a note' })

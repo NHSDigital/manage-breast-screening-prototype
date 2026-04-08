@@ -1,50 +1,30 @@
 {# app/views/style-guide/modal-form-demo.html #}
 {# Demo form fragment for the style guide modal examples.
-   Extends layout-fragment so it renders as bare HTML for AJAX loading into a modal.
-   Also works as a standalone page for the no-JS path. #}
+   Extends layout-modal-form so it renders as a modal-ready AJAX fragment. #}
 
-{% extends "layout-fragment.html" %}
+{% extends "layout-modal-form.html" %}
 
-{% from 'button/macro.njk' import button %}
-{% from 'input/macro.njk' import input %}
-{% from 'error-summary/macro.njk' import errorSummary %}
+{% set formAction = "/style-guide/modal-form-demo/save" %}
 
-{% block content %}
+{% block pageContent %}
 
-{% set noteError = errors["demo-note"] if errors else false %}
+{% set noteError = (flash.error | findWhere({name: "demo-note"})).text if flash.error else false %}
 
-{% if noteError %}
-  {{ errorSummary({
-    titleText: "There is a problem",
-    errorList: [
-      {
-        text: noteError,
-        href: "#demo-note"
-      }
-    ]
-  }) }}
-{% endif %}
+<h1 class="nhsuk-heading-l">Add a note</h1>
 
-<h2 class="app-modal__title nhsuk-heading-m">Add a note</h2>
+{{ input({
+  label: {
+    text: "Note",
+    classes: "nhsuk-label--s"
+  },
+  id: "demo-note",
+  name: "demo-note",
+  value: values["demo-note"] if values else "",
+  errorMessage: { text: noteError } if noteError
+}) }}
 
-<div class="app-modal__body">
-  <form action="/style-guide/modal-form-demo/save" method="post">
-    {{ input({
-      label: {
-        text: "Note",
-        classes: "nhsuk-label--s"
-      },
-      id: "demo-note",
-      name: "demo-note",
-      value: values["demo-note"] if values else "",
-      errorMessage: { text: noteError } if noteError
-    }) }}
-
-    <div class="nhsuk-button-group">
-      {{ button({ text: "Save note" }) }}
-      <a href="#" class="nhsuk-link" data-modal-action="close">Cancel</a>
-    </div>
-  </form>
+<div class="nhsuk-button-group">
+  {{ button({ text: "Save note" }) }}
 </div>
 
 {% endblock %}

@@ -160,6 +160,36 @@ class AppModal {
       this.dialog.innerHTML = html
     }
 
+    // Bump all headings down one level so page-level h1s become modal h2s etc.
+    // Also swap NHS heading size classes and add app-modal__title to promoted h1s.
+    const headingTags = { H1: 'h2', H2: 'h3', H3: 'h4', H4: 'h5', H5: 'h6' }
+    const headingSizes = {
+      'nhsuk-heading-xl': 'nhsuk-heading-l',
+      'nhsuk-heading-l': 'nhsuk-heading-m',
+      'nhsuk-heading-m': 'nhsuk-heading-s'
+    }
+    const container = content || this.dialog
+    // Reverse so nested headings aren't double-bumped
+    Array.from(container.querySelectorAll('h1, h2, h3, h4, h5'))
+      .reverse()
+      .forEach((heading) => {
+        const newTag = headingTags[heading.tagName]
+        if (!newTag) return
+        const newHeading = document.createElement(newTag)
+        Array.from(heading.attributes).forEach((attr) =>
+          newHeading.setAttribute(attr.name, attr.value)
+        )
+        Object.entries(headingSizes).forEach(([from, to]) => {
+          if (newHeading.classList.contains(from))
+            newHeading.classList.replace(from, to)
+        })
+        // Mark promoted h1s as modal titles (removes top margin)
+        if (heading.tagName === 'H1')
+          newHeading.classList.add('app-modal__title')
+        newHeading.innerHTML = heading.innerHTML
+        heading.replaceWith(newHeading)
+      })
+
     // Keep aria-labelledby pointing at the first heading in injected content
     const heading = this.dialog.querySelector('h1, h2, h3')
     if (heading) {
