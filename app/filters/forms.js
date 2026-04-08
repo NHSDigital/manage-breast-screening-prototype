@@ -33,6 +33,23 @@ const populateErrors = function (component) {
   }
 }
 
+/**
+ * Get a flash error object for a specific field name from the template context.
+ * Useful for components like dateInput that use namePrefix rather than name.
+ *
+ * @param {string} name - The field name to look up
+ * @returns {object|null} The matching error object or null if not found
+ */
+const getFlashError = function (name) {
+  const flash = this.ctx.flash || {}
+  const errors = flash.error || []
+  if (Array.isArray(errors)) {
+    return errors.find((err) => err.name === name) || null
+  }
+  return errors.name === name ? errors : null
+}
+
 module.exports = {
-  populateErrors
+  populateErrors,
+  getFlashError
 }

@@ -19,6 +19,7 @@ const viewsPath = [
 
 const entryPoints = [
   'app/assets/sass/main.scss',
+  'app/assets/sass/main-compact.scss',
   'app/assets/javascript/*.js',
   'app/data/generated/**/*.json'
 ]

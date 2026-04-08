@@ -1,0 +1,76 @@
+// app/assets/sass/main-compact.scss
+// Compact mode variant - identical to main.scss but with tighter spacing scale.
+// Loaded instead of main.css when compact mode is enabled (data.settings.compactMode).
+
+// Import NHS.UK frontend library with tightened spacing scale
+@forward "nhsuk-frontend/dist/nhsuk/nhsuk" with (
+  $nhsuk-page-width: 960px,
+
+  // Only reduce larger spacing points (5–9) used for layout and whitespace.
+  // Points 0–4 stay at NHS defaults to avoid breaking component geometry
+  // (radios, checkboxes etc that rely on them for circle/box sizing).
+  // Point 6 is kept at the NHS default (40px) because radios and checkboxes use it
+  // for their circle/box size. Reducing it breaks component geometry.
+  // Long-term: use the NHS small radio/checkbox variants instead of relying on this.
+  $nhsuk-spacing-points: (
+      0: 0,
+      1: 4px,
+      2: 8px,
+      3: 16px,
+      4: 24px,
+      5: 24px,
+      6: 40px,
+      7: 40px,
+      8: 48px,
+      9: 56px
+    ),
+
+  $nhsuk-spacing-responsive-scale: (
+    0: (
+      null: 0,
+      tablet: 0
+    ),
+    1: (
+      null: 4px,
+      tablet: 4px
+    ),
+    2: (
+      null: 8px,
+      tablet: 8px
+    ),
+    3: (
+      null: 8px,
+      tablet: 16px
+    ),
+    4: (
+      null: 16px,
+      tablet: 24px
+    ),
+    5: (
+      null: 16px,
+      tablet: 24px
+    ),
+    6: (
+      null: 24px,
+      tablet: 32px
+    ),
+    7: (
+      null: 32px,
+      tablet: 40px
+    ),
+    8: (
+      null: 40px,
+      tablet: 48px
+    ),
+    9: (
+      null: 48px,
+      tablet: 56px
+    )
+  )
+);
+// All app component and utility styles
+@use "app-styles";
+
+///////////////////////////////////////////
+// Add your custom CSS/Sass styles below...
+///////////////////////////////////////////

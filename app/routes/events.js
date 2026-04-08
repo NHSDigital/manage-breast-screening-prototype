@@ -994,13 +994,172 @@ module.exports = (router) => {
           })
         }
       } else if (symptomType) {
-        if (!data.event?.symptomTemp?.location) {
+        const loc = data.event?.symptomTemp?.location
+        if (!loc) {
           validationErrors.push({
             name: 'event[symptomTemp][location]',
             text: 'Select a location',
             href: '#locationRightBreast'
           })
+        } else {
+          // Validate conditional description fields
+          if (
+            loc === 'right breast' &&
+            !data.event.symptomTemp.rightBreastDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][rightBreastDescription]',
+              text: 'Describe the specific area for the right breast',
+              href: '#rightBreastDescription'
+            })
+          }
+          if (
+            loc === 'left breast' &&
+            !data.event.symptomTemp.leftBreastDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][leftBreastDescription]',
+              text: 'Describe the specific area for the left breast',
+              href: '#leftBreastDescription'
+            })
+          }
+          if (
+            loc === 'both breasts' &&
+            !data.event.symptomTemp.bothBreastsDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][bothBreastsDescription]',
+              text: 'Describe the specific areas',
+              href: '#bothBreastsDescription'
+            })
+          }
+          if (
+            loc === 'other' &&
+            !data.event.symptomTemp.otherLocationDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][otherLocationDescription]',
+              text: 'Describe the specific area',
+              href: '#otherLocationDescription'
+            })
+          }
         }
+      }
+
+      // Validate type-specific description fields
+      if (
+        symptomType === 'Other' &&
+        !data.event?.symptomTemp?.otherDescription
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][otherDescription]',
+          text: 'Describe the symptom',
+          href: '#otherDescription'
+        })
+      }
+
+      if (symptomType === 'Nipple change') {
+        if (!data.event?.symptomTemp?.nippleChangeType) {
+          validationErrors.push({
+            name: 'event[symptomTemp][nippleChangeType]',
+            text: 'Select the type of nipple change',
+            href: '#nippleChangeType'
+          })
+        } else if (
+          data.event.symptomTemp.nippleChangeType === 'other' &&
+          !data.event.symptomTemp.nippleChangeDescription
+        ) {
+          validationErrors.push({
+            name: 'event[symptomTemp][nippleChangeDescription]',
+            text: 'Provide details of the nipple change',
+            href: '#nippleChangeDescription'
+          })
+        }
+      }
+
+      if (symptomType === 'Skin change') {
+        if (!data.event?.symptomTemp?.skinChangeType) {
+          validationErrors.push({
+            name: 'event[symptomTemp][skinChangeType]',
+            text: 'Select how the skin has changed',
+            href: '#skinChangeType'
+          })
+        } else if (
+          data.event.symptomTemp.skinChangeType === 'other' &&
+          !data.event.symptomTemp.skinChangeDescription
+        ) {
+          validationErrors.push({
+            name: 'event[symptomTemp][skinChangeDescription]',
+            text: 'Describe the skin change',
+            href: '#skinChangeDescription'
+          })
+        }
+      }
+
+      // Validate how long the symptom has existed (required)
+      if (!data.event?.symptomTemp?.dateType) {
+        validationErrors.push({
+          name: 'event[symptomTemp][dateType]',
+          text: 'Select how long this symptom has existed',
+          href: '#dateType'
+        })
+      } else if (data.event.symptomTemp.dateType === 'dateKnown') {
+        const ds = data.event.symptomTemp.dateStarted
+        if (!ds?.month && !ds?.year) {
+          validationErrors.push({
+            name: 'event[symptomTemp][dateStarted]',
+            text: 'Enter the date the symptom started',
+            href: '#dateStarted-month'
+          })
+        }
+      }
+
+      // Validate approximate date stopped if symptom has resolved
+      const hasStopped = data.event?.symptomTemp?.hasStopped
+      if (
+        Array.isArray(hasStopped) &&
+        hasStopped.includes('yes') &&
+        !data.event?.symptomTemp?.approximateDateStopped
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][approximateDateStopped]',
+          text: 'Enter an approximate date the symptom stopped',
+          href: '#approximateDateStopped'
+        })
+      }
+
+      // Validate whether the symptom has been investigated (required)
+      if (!data.event?.symptomTemp?.hasBeenInvestigated) {
+        validationErrors.push({
+          name: 'event[symptomTemp][hasBeenInvestigated]',
+          text: 'Select whether this has been investigated',
+          href: '#hasBeenInvestigated'
+        })
+      } else if (
+        data.event.symptomTemp.hasBeenInvestigated === 'yes' &&
+        !data.event.symptomTemp.investigatedDescription
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][investigatedDescription]',
+          text: 'Provide details of the investigation',
+          href: '#investigatedDescription'
+        })
+      }
+
+      // Validate isSignificant for non-default significant types (breast pain, other)
+      const typeConfig = symptomTypes.find(
+        (st) => st.name === symptomType?.toLowerCase()
+      )
+      if (
+        typeConfig &&
+        !typeConfig.isSignificantByDefault &&
+        !data.event?.symptomTemp?.isSignificant
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][isSignificant]',
+          text: 'Select whether this symptom should be highlighted to image readers',
+          href: '#isSignificant'
+        })
       }
 
       if (validationErrors.length) {

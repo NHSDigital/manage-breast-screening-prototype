@@ -28,8 +28,12 @@
 {%- from '_components/status-message/macro.njk' import appStatusMessage %}
 
 {% block head %}
-  {# Add your custom CSS or Sass in /app/assets/sass/main.scss #}
+  {# Load compact or default stylesheet based on compact mode setting #}
+  {% if data.settings.compactMode == 'true' %}
+  <link href="/assets/sass/main-compact.css" rel="stylesheet">
+  {% else %}
   <link href="/assets/sass/main.css" rel="stylesheet">
+  {% endif %}
 {% endblock %}
 
 <!-- Edit the header -->
