@@ -6,20 +6,19 @@
 @forward "nhsuk-frontend/dist/nhsuk/nhsuk" with (
   $nhsuk-page-width: 960px,
 
-  // Only reduce larger spacing points (5–9) used for layout and whitespace.
-  // Points 0–4 stay at NHS defaults to avoid breaking component geometry
-  // (radios, checkboxes etc that rely on them for circle/box sizing).
-  // Point 6 is kept at the NHS default (40px) because radios and checkboxes use it
-  // for their circle/box size. Reducing it breaks component geometry.
-  // Long-term: use the NHS small radio/checkbox variants instead of relying on this.
+  // Reduce layout spacing points (5–9). Points 0–4 stay at NHS defaults.
+  // Point 6 is reduced from 40px to 32px - this is the radio/checkbox circle size.
+  // The broken geometry this causes is fixed in _compact.scss by applying the
+  // equivalent of .nhsuk-radios--small and .nhsuk-checkboxes--small to all
+  // radios/checkboxes within .app-compact-mode.
   $nhsuk-spacing-points: (
       0: 0,
       1: 4px,
       2: 8px,
       3: 16px,
-      4: 24px,
+      4: 20px,
       5: 24px,
-      6: 40px,
+      6: 32px,
       7: 40px,
       8: 48px,
       9: 56px
@@ -44,7 +43,7 @@
     ),
     4: (
       null: 16px,
-      tablet: 24px
+      tablet: 20px
     ),
     5: (
       null: 16px,
