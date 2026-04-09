@@ -153,6 +153,49 @@ router.post(
 )
 
 require('./routes/settings')(router)
+
+// Modal fragment middleware — threads the _modal param through redirect chains
+// and form submissions so any page can render as a modal fragment without
+// per-route changes.
+//
+// Detection: XHR request (X-Requested-With header, set by modal.js fetch) OR
+//            _modal=1 query/body param (survives server-side redirects and form posts).
+//
+// On detection:
+//   - Sets res.locals.parentLayout so templates use the modal fragment layout
+//   - Wraps res.redirect() to append ?_modal=1 to the target URL, threading
+//     the param through any server-side redirects in the request chain
+router.use((req, res, next) => {
+  const isXhr = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  const hasModalParam = req.query._modal === '1' || req.body?._modal === '1'
+
+  if (!isXhr && !hasModalParam) return next()
+
+  res.locals.parentLayout = '_templates/layout-modal-form.html'
+
+  // Wrap redirect to carry _modal=1 through server-side redirect chains.
+  // The X-Requested-With header is stripped by the browser when following
+  // redirects, so without this the fragment layout would be lost after a redirect.
+  const originalRedirect = res.redirect.bind(res)
+  res.redirect = (...args) => {
+    let status, url
+    if (typeof args[0] === 'number') {
+      ;[status, url] = args
+    } else {
+      status = 302
+      ;[url] = args
+    }
+    // Only thread through app-relative URLs, not external ones or already-tagged ones
+    if (url && !url.startsWith('http') && !url.includes('_modal=')) {
+      const separator = url.includes('?') ? '&' : '?'
+      url = `${url}${separator}_modal=1`
+    }
+    originalRedirect(status, url)
+  }
+
+  next()
+})
+
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
 require('./routes/events')(router)

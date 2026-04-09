@@ -1164,12 +1164,11 @@ module.exports = (router) => {
 
       if (validationErrors.length) {
         if (isModal) {
-          // Return 422 with the details page rendered as a modal fragment
+          // Return 422 with the details page rendered as a modal fragment.
+          // parentLayout is already set in res.locals by the modal middleware.
           return res
             .status(422)
             .render('events/medical-information/symptoms/details', {
-              parentLayout: '_templates/layout-modal-form.html',
-              isModal: true,
               errors: validationErrors,
               // Also set flash so populateErrors works on field-level errors
               flash: { error: validationErrors }
@@ -1436,11 +1435,10 @@ module.exports = (router) => {
             type: sentenceCase(symptomTypeConfig.name)
           }
 
-          // For modal (AJAX) requests, render the details page as a fragment
+          // For modal (AJAX) requests, render the details page as a fragment.
+          // parentLayout is already set in res.locals by the modal middleware.
           if (isModal) {
-            return res.render('events/medical-information/symptoms/details', {
-              parentLayout: '_templates/layout-modal-form.html'
-            })
+            return res.render('events/medical-information/symptoms/details')
           }
 
           // Redirect to details page

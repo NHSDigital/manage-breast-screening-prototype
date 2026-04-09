@@ -99,12 +99,6 @@ body.app-modal-open {
 
   @include nhsuk-responsive-padding(5);
 
-  // Remove bottom margin from the last element so only the padding provides spacing
-  > *:last-child,
-  > *:last-child > *:last-child {
-    margin-bottom: 0;
-  }
-
   // CSS-only scroll shadows using background-attachment: local/scroll.
   // 'local' cover gradients (matching background colour) hide the shadow when at an edge.
   // 'scroll' shadow gradients stay fixed, revealed when content extends beyond the viewport.

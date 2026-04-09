@@ -142,6 +142,9 @@ class AppModal {
     })
       .then((response) => {
         if (!response.ok) throw new Error('Failed to load content')
+        // Use the final URL after any server-side redirects (e.g. edit → details)
+        // so that relative form actions like './save' resolve to the right endpoint.
+        this._loadUrl = response.url
         return response.text()
       })
       .then((html) => {
@@ -165,6 +168,24 @@ class AppModal {
       content.innerHTML = html
     } else {
       this.dialog.innerHTML = html
+    }
+
+    // Rewrite relative hrefs using the fragment's original URL as the base.
+    // Injected content is parsed relative to the current page URL by the browser,
+    // so './delete/abc' on a review page would resolve to the wrong path.
+    // This fixes links like the 'Delete this symptom' anchor in details.html.
+    if (this._loadUrl) {
+      const base = new URL(this._loadUrl)
+      const container = content || this.dialog
+      container.querySelectorAll('a[href]').forEach((link) => {
+        const href = link.getAttribute('href')
+        // Only rewrite relative URLs (not absolute, hash-only, or already data: etc.)
+        if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('/')) {
+          link.setAttribute('href', new URL(href, base).pathname +
+            (new URL(href, base).search || '') +
+            (new URL(href, base).hash || ''))
+        }
+      })
     }
 
     // Bump all headings down one level so page-level h1s become modal h2s etc.
@@ -278,11 +299,6 @@ class AppModal {
       this.dialog.setAttribute('aria-labelledby', heading.id)
     }
 
-    // Once content is loaded, remove tabindex from the dialog so that clicks
-    // on non-interactive areas don't pull focus back to the dialog container.
-    // The dialog only needs tabindex="-1" to receive programmatic focus on open.
-    this.dialog.removeAttribute('tabindex')
-
     // Focus the error summary container itself (not a child link).
     // Mirrors NHS Frontend's setFocus pattern: add tabindex="-1" temporarily,
     // focus it, then remove tabindex on blur so it's no longer a focus target.
@@ -298,12 +314,68 @@ class AppModal {
       )
       errorSummary.focus()
     } else {
+      // Once content is loaded, remove tabindex from the dialog so that clicks
+      // on non-interactive areas don't pull focus back to the dialog container.
+      // The dialog only needs tabindex="-1" to receive programmatic focus on open.
+      this.dialog.addEventListener(
+        'blur',
+        () => {
+          this.dialog.removeAttribute('tabindex')
+        },
+        { once: true }
+      )
       this.dialog.focus()
     }
 
     // Re-initialise NHS Frontend components (radios, checkboxes etc.) for the
     // newly injected content — initAll scoped to the dialog only.
     initAll({ scope: this.dialog })
+
+    // Trim trailing margin so only the modal's own padding provides bottom spacing.
+    this.trimBottomSpacing()
+  }
+
+  // Walk the last-visible-child chain and zero margins at each level, so that
+  // whatever ends up at the bottom of the content doesn't double up with the
+  // modal's own padding. If a button is at the bottom, add 4px back for its
+  // drop shadow ($nhsuk-button-shadow-size) which extends beyond the element.
+  trimBottomSpacing() {
+    const contentEl = this.dialog.querySelector('.app-modal__content')
+    if (!contentEl) return
+
+    // Reset any inline padding-bottom from a previous call
+    contentEl.style.paddingBottom = ''
+
+    let hasButton = false
+    let el = contentEl
+
+    while (el) {
+      const visibleChildren = Array.from(el.children).filter(
+        (child) => child.offsetHeight > 0
+      )
+      if (!visibleChildren.length) break
+
+      const last = visibleChildren[visibleChildren.length - 1]
+      last.style.marginBottom = '0'
+
+      if (
+        last.matches('.nhsuk-button') ||
+        last.querySelector('.nhsuk-button')
+      ) {
+        hasButton = true
+      }
+
+      el = last
+    }
+
+    // Add 4px back for the NHS button drop shadow
+    if (hasButton) {
+      const currentPadding = parseInt(
+        getComputedStyle(contentEl).paddingBottom,
+        10
+      )
+      contentEl.style.paddingBottom = `${currentPadding + 4}px`
+    }
   }
 
   // Wire up form submission handling inside the dialog.
