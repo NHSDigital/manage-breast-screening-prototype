@@ -50,6 +50,7 @@
           ]
         }
       }) }}
+      {% set noBorder = true %}
       {% include "_includes/summary-lists/rows/ethnicity.njk" %}
     {% endcall %}
   {% endset %}
@@ -236,7 +237,7 @@
           }
         }
       ]
-    } | handleSummaryListMissingInformation) }}
+    } | openInModal | handleSummaryListMissingInformation) }}
   {% endset %}
 
   {{ card({

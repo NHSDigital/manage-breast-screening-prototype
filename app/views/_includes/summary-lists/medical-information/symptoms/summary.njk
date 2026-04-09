@@ -119,24 +119,13 @@
     {# Join all value lines with line breaks #}
     {% set symptomValueHtml = valueLines | join('<br>') %}
 
-    {# Build the Change action — modal or standard link depending on settings #}
+    {# Build the Change action #}
     {% set editUrl = contextUrl + "/medical-information/symptoms/edit/" + symptom.id %}
-    {% if data.settings.screening.modalForms == 'true' %}
-      {% set changeItem = {
-        href: "#",
-        text: "Change",
-        visuallyHiddenText: symptom.type | lower,
-        attributes: {
-          onclick: "openModal('symptom-modal-" + sectionId + "', { loadUrl: '" + editUrl + "' }); return false;"
-        }
-      } %}
-    {% else %}
-      {% set changeItem = {
-        href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
-        text: "Change",
-        visuallyHiddenText: symptom.type | lower
-      } %}
-    {% endif %}
+    {% set changeItem = {
+      href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+      text: "Change",
+      visuallyHiddenText: symptom.type | lower
+    } %}
 
     {% set rows = rows | push({
       key: {
@@ -154,5 +143,5 @@
 
   {{ summaryList({
     rows: rows
-  }) }}
+  } | openInModal) }}
 {% endif %}

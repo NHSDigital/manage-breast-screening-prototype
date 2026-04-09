@@ -167,6 +167,9 @@ class AppModal {
         this.bindFormSubmit()
         this.bindLinkNavigation()
         this.show()
+        // Re-run now that the modal is visible — offsetHeight is 0 while hidden,
+        // so the call inside setContent() is a no-op on fast connections.
+        this.trimBottomSpacing()
       })
       .catch((error) => {
         clearTimeout(loadingTimer)
@@ -410,14 +413,16 @@ class AppModal {
   // trigger a full-page navigation when clicked (handled by submitForm's
   // breakout logic does not apply here, so we let the browser navigate).
   bindLinkNavigation() {
-    const container = this.dialog.querySelector('.app-modal__content') || this.dialog
+    const container =
+      this.dialog.querySelector('.app-modal__content') || this.dialog
     container.querySelectorAll('a[href]').forEach((link) => {
       // Skip already-bound links, action links (data-modal-action), and opt-outs
       if (
         link._modalBound ||
         link.hasAttribute('data-modal-action') ||
         link.getAttribute('data-modal-link') === 'false'
-      ) return
+      )
+        return
 
       const href = link.getAttribute('href')
       // Skip hash-only and external links
@@ -426,7 +431,10 @@ class AppModal {
       link._modalBound = true
       link.addEventListener('click', (e) => {
         e.preventDefault()
-        const absoluteUrl = new URL(link.getAttribute('href'), window.location.href).href
+        const absoluteUrl = new URL(
+          link.getAttribute('href'),
+          window.location.href
+        ).href
         if (absoluteUrl.includes('_modal_breakout')) {
           window.location.href = absoluteUrl
         } else {
@@ -515,29 +523,32 @@ class AppModal {
           throw new Error(`Form submission failed: ${response.status}`)
         }
 
-        // The server may have redirected us. Check the final URL:
-        // - ?_modal_breakout: explicit opt-out — navigate the full browser to that URL.
+        // The server may have redirected us. Detect the outcome from the response HTML:
+        // - data-modal-navigate: server intercepted a breakout redirect and sent a
+        //   navigation instruction — navigate the full browser to the destination URL.
+        //   The flash was NOT consumed because express-flash is bypassed for these responses.
         // - Response HTML contains a modal form body: another step in the flow —
         //   inject it into the modal and continue.
         // - Otherwise: success — close the modal and reload (or invoke callback).
         const finalUrl = response.url
 
-        if (
-          finalUrl &&
-          new URL(finalUrl).searchParams.get('_modal_breakout') === '1'
-        ) {
-          // Route has explicitly requested a full-page navigation.
-          // Strip _modal and _modal_breakout params so the destination page
-          // loads cleanly without modal middleware activating.
-          const dest = new URL(finalUrl)
-          dest.searchParams.delete('_modal')
-          dest.searchParams.delete('_modal_breakout')
-          this.close()
-          window.location.href = dest.toString()
-          return
-        }
-
         return response.text().then((html) => {
+          // Check for a breakout navigation instruction first
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = html
+          const navEl = tempDiv.querySelector('[data-modal-navigate]')
+          if (navEl) {
+            const dest = new URL(
+              navEl.dataset.modalNavigate,
+              window.location.href
+            )
+            dest.searchParams.delete('_modal')
+            dest.searchParams.delete('_modal_breakout')
+            this.close()
+            window.location.href = dest.toString()
+            return
+          }
+
           if (
             html.includes('app-modal__body') ||
             html.includes('data-form-action')
@@ -683,6 +694,22 @@ class AppModal {
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.app-modal').forEach((modal) => {
     modal.appModal = new AppModal(modal)
+  })
+
+  // Global delegated click handler for [data-load-modal-url] — used by the
+  // openInModal filter to progressively enhance action links and buttons.
+  // The real href is preserved for non-JS navigation; this intercepts clicks
+  // with JS to open the modal instead.
+  // Skips clicks inside .app-modal__dialog — those are handled by bindLinkNavigation.
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-load-modal-url]')
+    if (!link) return
+    if (link.closest('.app-modal__dialog')) return
+
+    e.preventDefault()
+    const url = link.dataset.loadModalUrl
+    const modalId = link.dataset.modalId || 'app-form-modal'
+    window.openModal(modalId, { loadUrl: url })
   })
 })
 

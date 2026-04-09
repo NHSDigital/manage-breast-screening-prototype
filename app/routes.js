@@ -176,6 +176,9 @@ router.use((req, res, next) => {
   // Wrap redirect to carry _modal=1 through server-side redirect chains.
   // The X-Requested-With header is stripped by the browser when following
   // redirects, so without this the fragment layout would be lost after a redirect.
+  // For _modal_breakout redirects, send a special 200 fragment instead of a real
+  // redirect — this prevents fetch from following the redirect and calling res.render,
+  // which would consume the flash before the browser navigates to the destination.
   const originalRedirect = res.redirect.bind(res)
   res.redirect = (...args) => {
     let status, url
@@ -185,9 +188,16 @@ router.use((req, res, next) => {
       status = 302
       ;[url] = args
     }
-    // Only thread through app-relative URLs, not external ones, already-tagged ones,
-    // or breakout URLs (which are intentionally leaving the modal context).
-    if (url && !url.startsWith('http') && !url.includes('_modal=') && !url.includes('_modal_breakout')) {
+
+    if (url && url.includes('_modal_breakout')) {
+      // Intercept breakout redirects — send a minimal fragment that tells modal.js
+      // to navigate the browser to the destination. The flash is not consumed here
+      // because we bypass res.render (which is where express-flash reads req.flash()).
+      return res.status(200).send(`<div data-modal-navigate="${url}"></div>`)
+    }
+
+    // Only thread _modal=1 through app-relative URLs, not external ones or already-tagged ones
+    if (url && !url.startsWith('http') && !url.includes('_modal=')) {
       const separator = url.includes('?') ? '&' : '?'
       url = `${url}${separator}_modal=1`
     }

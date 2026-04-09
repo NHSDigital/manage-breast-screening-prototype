@@ -63,17 +63,19 @@ const openInModal = function (component, modalId, loadUrl) {
 
   const id = modalId || 'app-form-modal'
 
-  // Helper to rewire a single action item or button
+  // Add data attributes for modal behaviour while keeping the real href intact.
+  // This is progressively enhanced — without JS the link navigates normally;
+  // with JS a global delegated listener (in modal.js) intercepts [data-load-modal-url]
+  // clicks and opens the modal instead.
   const rewireItem = (item, overrideUrl) => {
     if (!item || !item.href) return item
     const url = overrideUrl || item.href
     return {
       ...item,
-      href: '#',
       attributes: {
         ...(item.attributes || {}),
-        type: 'button',
-        onclick: `openModal('${id}', { loadUrl: '${url}' }); return false;`
+        'data-load-modal-url': url,
+        'data-modal-id': id
       }
     }
   }
@@ -92,6 +94,17 @@ const openInModal = function (component, modalId, loadUrl) {
           }
         }
       })
+    }
+  }
+
+  // Single summary list row (has actions.items but no top-level href)
+  if (component.actions?.items && Array.isArray(component.actions.items)) {
+    return {
+      ...component,
+      actions: {
+        ...component.actions,
+        items: component.actions.items.map((item) => rewireItem(item))
+      }
     }
   }
 

@@ -45,21 +45,30 @@ const handleSummaryListMissingInformation = (
 
     // Value is empty - always show something
     if (hasAction && !showNotProvidedText) {
-      // Default behavior - show "Enter X" link and remove actions
+      // Default behavior - show "Enter X" link and remove actions.
+      // Propagate any data-* attributes from the first action item (e.g. data-load-modal-url
+      // added by the openInModal filter) so modal behaviour carries through.
+      const actionItem = row.actions?.items?.[0]
       const keyText =
-        row.actions?.items?.[0]?.visuallyHiddenText ||
+        actionItem?.visuallyHiddenText ||
         row.key.text.toLowerCase()
-      const href = row.actions?.items?.[0]?.href || '#'
+      const href = actionItem?.href || '#'
 
       const endText =
         keyText.endsWith('note') || keyText.endsWith('details')
           ? ''
           : ' details'
 
+      // Serialize data-* attributes from the action item into the link
+      const extraAttrs = Object.entries(actionItem?.attributes || {})
+        .filter(([k]) => k.startsWith('data-'))
+        .map(([k, v]) => ` ${k}="${v}"`)
+        .join('')
+
       return {
         ...row,
         value: {
-          html: `<a href="${href}" class="nhsuk-link">Enter ${keyText}${endText}</a>`
+          html: `<a href="${href}" class="nhsuk-link"${extraAttrs}>Enter ${keyText}${endText}</a>`
         },
         actions: {
           items: []

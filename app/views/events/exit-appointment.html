@@ -1,6 +1,6 @@
 {# app/views/events/exit-appointment.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {% set pageHeading = "Exit appointment" %}
 {% set formAction = (eventUrl + "/exit-appointment-answer") | urlWithReferrer(referrerChain) %}

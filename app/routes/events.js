@@ -369,7 +369,7 @@ module.exports = (router) => {
 
         // Redirect to appointment page with paused status
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/appointment`
+          `/clinics/${clinicId}/events/${eventId}/appointment?_modal_breakout=1`
         )
       } else if (pauseAction === 'no') {
         // Return to appointment - use referrer chain
@@ -381,8 +381,12 @@ module.exports = (router) => {
           `/clinics/${clinicId}/events/${eventId}/appointment`,
           req.query.referrerChain
         )
+        const returnUrlWithBreakout =
+          returnUrl +
+          (returnUrl.includes('?') ? '&' : '?') +
+          '_modal_breakout=1'
 
-        return res.redirect(returnUrl)
+        return res.redirect(returnUrlWithBreakout)
       }
 
       // Handle the initial question about whether images were taken
@@ -443,14 +447,18 @@ module.exports = (router) => {
           delete data.returnTo
           const destination =
             returnTo || `/clinics/${clinicId}/events/${eventId}/appointment`
-          return res.redirect(destination)
+          const destWithBreakout =
+            destination +
+            (destination.includes('?') ? '&' : '?') +
+            '_modal_breakout=1'
+          return res.redirect(destWithBreakout)
         } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
           delete data.exitAction
           delete data.confirmedNoImages
           delete data.confirmedImagesWereTaken
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason?_modal_breakout=1`
           )
         } else if (exitAction === 'save') {
           // Save changes and pause the appointment
@@ -493,7 +501,7 @@ module.exports = (router) => {
 
           // Redirect to appointment page with paused status
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/appointment`
+            `/clinics/${clinicId}/events/${eventId}/appointment?_modal_breakout=1`
           )
         }
       }
@@ -504,7 +512,9 @@ module.exports = (router) => {
       delete data.confirmedImagesWereTaken
 
       // Fallback redirect
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+      res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/appointment?_modal_breakout=1`
+      )
     }
   )
 
