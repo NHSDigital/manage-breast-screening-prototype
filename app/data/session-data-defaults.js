@@ -98,7 +98,7 @@ const defaultSettings = {
     manualImageCollection: 'true',
     showParticipantSection: 'false',
     useCondensedReviewSummaries: 'true',
-    modalForms: 'false',
+    modalForms: 'true',
     imageStreaming: {
       enabled: 'true',
       intervalMs: '3000'
