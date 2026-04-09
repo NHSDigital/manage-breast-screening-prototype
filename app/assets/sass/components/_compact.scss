@@ -5,8 +5,6 @@
 // Compact mode styles are only active when compact mode is enabled.
 
 .app-compact-mode {
-  background-color: #fff7f9;
-
   .nhsuk-main-wrapper {
     @include nhsuk-responsive-padding(4, "top");
     @include nhsuk-responsive-padding(4, "bottom");
@@ -274,6 +272,18 @@
     }
   }
 
+  .nhsuk-list {
+    margin-bottom: 0;
+  }
+
+  .nhsuk-list > li {
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-list > li:last-child {
+    margin-bottom: 0;
+  }
+
   .nhsuk-summary-list {
     margin-bottom: 0;
   }
@@ -427,7 +437,6 @@
     .nhsuk-summary-list__key,
     .nhsuk-summary-list__value,
     .nhsuk-summary-list__actions {
-      @include nhsuk-font-size(16);
       margin-bottom: 0;
       padding-top: 0;
       padding-bottom: 0;
@@ -443,10 +452,10 @@
   }
 
   .app-inset-text--compact {
-    @include nhsuk-responsive-padding(2, "top");
-    @include nhsuk-responsive-padding(2, "bottom");
-    @include nhsuk-responsive-margin(3, "top");
-    @include nhsuk-responsive-margin(4, "bottom");
+    @include nhsuk-responsive-padding(1, "top");
+    @include nhsuk-responsive-padding(1, "bottom");
+    @include nhsuk-responsive-margin(1, "top");
+    @include nhsuk-responsive-margin(2, "bottom");
   }
 
   // Warning callout: reduce large margins and internal padding
@@ -461,6 +470,11 @@
 
   // Buttons that are direct children of card content (e.g. "Add mammogram" after a summary list)
   .nhsuk-card__content > .nhsuk-button {
+    margin-top: nhsuk-spacing(2);
+  }
+
+  // Add a small gap when a button sits immediately after a summary list
+  .nhsuk-summary-list + .nhsuk-button {
     margin-top: nhsuk-spacing(2);
   }
 
