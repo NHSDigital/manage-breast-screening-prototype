@@ -1,6 +1,6 @@
 {# app/views/events/previous-mammograms/appointment-should-not-proceed.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or 'layout-appointment.html' %}
 
 {% set previousMammogramCount = event.previousMammograms | length %}
 
