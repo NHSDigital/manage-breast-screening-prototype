@@ -63,7 +63,7 @@
      Content is loaded at open time via the loadUrl option. #}
   {% if data.settings.screening.modalForms == 'true' %}
     {% from '_components/modal/macro.njk' import appModal %}
-    {{ appModal({ id: "symptom-modal-" + sectionId }) }}
+    {{ appModal({ id: "symptom-modal-" + sectionId, showCloseButton: true }) }}
   {% endif %}
 
 {% endif %}
