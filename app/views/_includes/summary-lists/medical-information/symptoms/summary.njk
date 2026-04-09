@@ -119,6 +119,25 @@
     {# Join all value lines with line breaks #}
     {% set symptomValueHtml = valueLines | join('<br>') %}
 
+    {# Build the Change action — modal or standard link depending on settings #}
+    {% set editUrl = contextUrl + "/medical-information/symptoms/edit/" + symptom.id %}
+    {% if data.settings.screening.modalForms == 'true' %}
+      {% set changeItem = {
+        href: "#",
+        text: "Change",
+        visuallyHiddenText: symptom.type | lower,
+        attributes: {
+          onclick: "openModal('symptom-modal-" + sectionId + "', { loadUrl: '" + editUrl + "' }); return false;"
+        }
+      } %}
+    {% else %}
+      {% set changeItem = {
+        href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+        text: "Change",
+        visuallyHiddenText: symptom.type | lower
+      } %}
+    {% endif %}
+
     {% set rows = rows | push({
       key: {
         html: keyText
@@ -127,13 +146,7 @@
         html: symptomValueHtml
       },
       actions: {
-        items: [
-          {
-            href: contextUrl + "/medical-information/symptoms/edit/" + symptom.id | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
-            text: "Change",
-            visuallyHiddenText: symptom.type | lower
-          }
-        ]
+        items: [changeItem]
       } if allowEdits,
       classes: "nhsuk-summary-list__row--no-border" if loop.last
     }) %}

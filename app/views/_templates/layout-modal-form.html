@@ -34,6 +34,8 @@
 
 <div class="app-modal__body">
   <div data-form-action="{{ formAction }}" data-form-method="post">
+    {# Thread _modal=1 through multi-step form flows so POST submissions carry the param forward #}
+    <input type="hidden" name="_modal" value="1">
     {% block modalContent %}
       {% block pageContent %}{% endblock %}
     {% endblock %}

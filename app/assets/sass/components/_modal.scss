@@ -52,7 +52,7 @@ body.app-modal-open {
   }
 
   @include nhsuk-media-query($from: tablet) {
-    width: $app-modal-width;
+    max-height: 90vh;
   }
 }
 

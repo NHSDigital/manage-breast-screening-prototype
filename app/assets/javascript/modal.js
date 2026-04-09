@@ -121,6 +121,10 @@ class AppModal {
   // Fetch a URL as an HTML fragment and inject it into the modal content area.
   // After injection, any form container inside the dialog is wired up for AJAX submission.
   loadContent(url) {
+    // Store the absolute URL so relative form actions in fragments can be resolved correctly.
+    // Fragments use './save' style actions — these must be resolved against the fragment's URL,
+    // not the current page URL, otherwise they'd POST to the wrong endpoint.
+    this._loadUrl = new URL(url, window.location.href).href
     // Clear stale content immediately so previous answers are never visible
     // while the new content is loading.
     const contentArea = this.dialog.querySelector('.app-modal__content')
@@ -138,6 +142,9 @@ class AppModal {
     })
       .then((response) => {
         if (!response.ok) throw new Error('Failed to load content')
+        // Use the final URL after any server-side redirects (e.g. edit → details)
+        // so that relative form actions like './save' resolve to the right endpoint.
+        this._loadUrl = response.url
         return response.text()
       })
       .then((html) => {
@@ -161,6 +168,24 @@ class AppModal {
       content.innerHTML = html
     } else {
       this.dialog.innerHTML = html
+    }
+
+    // Rewrite relative hrefs using the fragment's original URL as the base.
+    // Injected content is parsed relative to the current page URL by the browser,
+    // so './delete/abc' on a review page would resolve to the wrong path.
+    // This fixes links like the 'Delete this symptom' anchor in details.html.
+    if (this._loadUrl) {
+      const base = new URL(this._loadUrl)
+      const container = content || this.dialog
+      container.querySelectorAll('a[href]').forEach((link) => {
+        const href = link.getAttribute('href')
+        // Only rewrite relative URLs (not absolute, hash-only, or already data: etc.)
+        if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('/')) {
+          link.setAttribute('href', new URL(href, base).pathname +
+            (new URL(href, base).search || '') +
+            (new URL(href, base).hash || ''))
+        }
+      })
     }
 
     // Bump all headings down one level so page-level h1s become modal h2s etc.
@@ -187,15 +212,81 @@ class AppModal {
               // Some attributes (e.g. certain ARIA attrs) may not be settable — skip them
             }
           })
-          Object.entries(headingSizes).forEach(([from, to]) => {
-            if (newHeading.classList.contains(from))
+          for (const [from, to] of Object.entries(headingSizes)) {
+            if (newHeading.classList.contains(from)) {
               newHeading.classList.replace(from, to)
-          })
+              break
+            }
+          }
           // Mark promoted h1s as modal titles (removes top margin)
           if (heading.tagName === 'H1')
             newHeading.classList.add('app-modal__title')
           newHeading.innerHTML = heading.innerHTML
           heading.replaceWith(newHeading)
+        })
+
+      // Bump legend sizes (fieldset question headers)
+      const legendSizes = {
+        'nhsuk-fieldset__legend--xl': 'nhsuk-fieldset__legend--l',
+        'nhsuk-fieldset__legend--l': 'nhsuk-fieldset__legend--m',
+        'nhsuk-fieldset__legend--m': 'nhsuk-fieldset__legend--s'
+      }
+      container.querySelectorAll('legend').forEach((legend) => {
+        for (const [from, to] of Object.entries(legendSizes)) {
+          if (legend.classList.contains(from)) {
+            legend.classList.replace(from, to)
+            break
+          }
+        }
+      })
+
+      // Bump label sizes
+      const labelSizes = {
+        'nhsuk-label--xl': 'nhsuk-label--l',
+        'nhsuk-label--l': 'nhsuk-label--m',
+        'nhsuk-label--m': 'nhsuk-label--s'
+      }
+      container.querySelectorAll('label').forEach((label) => {
+        for (const [from, to] of Object.entries(labelSizes)) {
+          if (label.classList.contains(from)) {
+            label.classList.replace(from, to)
+            break
+          }
+        }
+      })
+
+      // Bump caption sizes
+      const captionSizes = {
+        'nhsuk-caption-xl': 'nhsuk-caption-l',
+        'nhsuk-caption-l': 'nhsuk-caption-m'
+        // 'nhsuk-caption-m': 'nhsuk-caption-s' // no such thing as caption-s
+      }
+      container
+        .querySelectorAll(
+          '.nhsuk-caption-xl, .nhsuk-caption-l, .nhsuk-caption-m'
+        )
+        .forEach((el) => {
+          for (const [from, to] of Object.entries(captionSizes)) {
+            if (el.classList.contains(from)) {
+              el.classList.replace(from, to)
+              break
+            }
+          }
+        })
+
+      // Bump non-heading elements carrying NHS heading size classes (e.g. <p class="nhsuk-heading-l">)
+      container
+        .querySelectorAll(
+          '.nhsuk-heading-xl, .nhsuk-heading-l, .nhsuk-heading-m'
+        )
+        .forEach((el) => {
+          if (/^H[1-6]$/.test(el.tagName)) return // already handled by tag replacement above
+          for (const [from, to] of Object.entries(headingSizes)) {
+            if (el.classList.contains(from)) {
+              el.classList.replace(from, to)
+              break
+            }
+          }
         })
     } catch (e) {
       console.warn('Modal: heading bump failed', e)
@@ -207,11 +298,6 @@ class AppModal {
       if (!heading.id) heading.id = this.modal.id + '-content-title'
       this.dialog.setAttribute('aria-labelledby', heading.id)
     }
-
-    // Once content is loaded, remove tabindex from the dialog so that clicks
-    // on non-interactive areas don't pull focus back to the dialog container.
-    // The dialog only needs tabindex="-1" to receive programmatic focus on open.
-    this.dialog.removeAttribute('tabindex')
 
     // Focus the error summary container itself (not a child link).
     // Mirrors NHS Frontend's setFocus pattern: add tabindex="-1" temporarily,
@@ -228,12 +314,68 @@ class AppModal {
       )
       errorSummary.focus()
     } else {
+      // Once content is loaded, remove tabindex from the dialog so that clicks
+      // on non-interactive areas don't pull focus back to the dialog container.
+      // The dialog only needs tabindex="-1" to receive programmatic focus on open.
+      this.dialog.addEventListener(
+        'blur',
+        () => {
+          this.dialog.removeAttribute('tabindex')
+        },
+        { once: true }
+      )
       this.dialog.focus()
     }
 
     // Re-initialise NHS Frontend components (radios, checkboxes etc.) for the
     // newly injected content — initAll scoped to the dialog only.
     initAll({ scope: this.dialog })
+
+    // Trim trailing margin so only the modal's own padding provides bottom spacing.
+    this.trimBottomSpacing()
+  }
+
+  // Walk the last-visible-child chain and zero margins at each level, so that
+  // whatever ends up at the bottom of the content doesn't double up with the
+  // modal's own padding. If a button is at the bottom, add 4px back for its
+  // drop shadow ($nhsuk-button-shadow-size) which extends beyond the element.
+  trimBottomSpacing() {
+    const contentEl = this.dialog.querySelector('.app-modal__content')
+    if (!contentEl) return
+
+    // Reset any inline padding-bottom from a previous call
+    contentEl.style.paddingBottom = ''
+
+    let hasButton = false
+    let el = contentEl
+
+    while (el) {
+      const visibleChildren = Array.from(el.children).filter(
+        (child) => child.offsetHeight > 0
+      )
+      if (!visibleChildren.length) break
+
+      const last = visibleChildren[visibleChildren.length - 1]
+      last.style.marginBottom = '0'
+
+      if (
+        last.matches('.nhsuk-button') ||
+        last.querySelector('.nhsuk-button')
+      ) {
+        hasButton = true
+      }
+
+      el = last
+    }
+
+    // Add 4px back for the NHS button drop shadow
+    if (hasButton) {
+      const currentPadding = parseInt(
+        getComputedStyle(contentEl).paddingBottom,
+        10
+      )
+      contentEl.style.paddingBottom = `${currentPadding + 4}px`
+    }
   }
 
   // Wire up form submission handling inside the dialog.
@@ -248,7 +390,11 @@ class AppModal {
       this.dialog.querySelector('form')
     if (!container) return
 
-    const action = container.dataset.formAction || container.action
+    // Resolve relative action URLs (e.g. './save') against the fragment's original URL,
+    // not the current page URL. Falls back to the current page if no fragment was loaded.
+    const rawAction = container.dataset.formAction || container.action
+    const baseUrl = this._loadUrl || window.location.href
+    const action = new URL(rawAction, baseUrl).href
     const method = (
       container.dataset.formMethod ||
       container.method ||

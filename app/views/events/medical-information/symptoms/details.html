@@ -11,20 +11,14 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% if isModal %}
-  {% set formAction = eventUrl + '/medical-information/symptoms/save' %}
-{% else %}
-  {% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
-{% endif %}
+{% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
  
   <h1 class="nhsuk-heading-l">
-    {% if not isModal %}
-      <span class="nhsuk-caption-l">
-        {{ participant | getFullName }}
-      </span>
-    {% endif %}
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
     {{ pageHeading }}
   </h1>
 
