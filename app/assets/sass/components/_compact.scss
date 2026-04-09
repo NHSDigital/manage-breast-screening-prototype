@@ -231,6 +231,19 @@
     }
   }
 
+  .nhsuk-tag {
+    padding-top: nhsuk-px-to-rem(2px);
+    padding-right: nhsuk-px-to-rem(6px);
+    padding-bottom: nhsuk-px-to-rem(2px);
+    padding-left: nhsuk-px-to-rem(6px);
+    font-size: nhsuk-px-to-rem(13px);
+    line-height: 1;
+
+    @include nhsuk-media-query($from: tablet) {
+      font-size: nhsuk-px-to-rem(14px);
+    }
+  }
+
   .app-clinics-table {
     table-layout: fixed;
     width: 100%;
