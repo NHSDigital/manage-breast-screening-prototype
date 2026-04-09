@@ -203,7 +203,7 @@
       padding-right: nhsuk-spacing(2);
     }
 
-    p {
+    > p {
       margin-bottom: nhsuk-spacing(1);
     }
 
@@ -285,20 +285,12 @@
     }
   }
 
-  .nhsuk-list {
-    margin-bottom: 0;
-  }
-
   .nhsuk-list > li {
     margin-bottom: nhsuk-spacing(1);
   }
 
   .nhsuk-list > li:last-child {
     margin-bottom: 0;
-  }
-
-  .nhsuk-summary-list {
-    // margin-bottom: 0;
   }
 
   .nhsuk-summary-list__row {
@@ -427,43 +419,6 @@
     margin-top: 0;
   }
 
-  .nhsuk-summary-card {
-    .nhsuk-summary-card__actions {
-      @include nhsuk-typography-weight-normal;
-      margin: 0;
-      row-gap: 0;
-    }
-
-    .nhsuk-summary-card__action {
-      margin-bottom: 0;
-    }
-
-    .nhsuk-summary-card__title {
-      margin: 0;
-    }
-
-    .nhsuk-summary-card__title-wrapper,
-    .nhsuk-summary-card__content {
-      padding: nhsuk-px-to-rem(12px);
-    }
-
-    .nhsuk-summary-list__key,
-    .nhsuk-summary-list__value,
-    .nhsuk-summary-list__actions {
-      margin-bottom: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-    }
-
-    .nhsuk-summary-card__content p {
-      margin-bottom: 0;
-    }
-
-    .nhsuk-summary-card__content p:last-child {
-      margin-bottom: 0;
-    }
-  }
-
   .app-inset-text--compact {
     @include nhsuk-responsive-padding(1, "top");
     @include nhsuk-responsive-padding(1, "bottom");
@@ -471,35 +426,9 @@
     @include nhsuk-responsive-margin(2, "bottom");
   }
 
-  // Warning callout: reduce large margins and internal padding
-  // Feature card headings: reduce font size (equivalent to nhsuk-heading-s)
+  // Reduce heading sizes on feature and warning callouts
+  .nhsuk-card--warning .nhsuk-card__heading,
   .nhsuk-card--feature .nhsuk-card__heading {
-    font-size: nhsuk-px-to-rem(19px);
-
-    @include nhsuk-media-query($from: tablet) {
-      font-size: nhsuk-px-to-rem(22px);
-    }
+    @include nhsuk-font($size: 22, $weight: bold);
   }
-
-  // Buttons that are direct children of card content (e.g. "Add mammogram" after a summary list)
-  .nhsuk-card__content > .nhsuk-button {
-    margin-top: nhsuk-spacing(2);
-  }
-
-  // Add a small gap when a button sits immediately after a summary list
-  .nhsuk-summary-list + .nhsuk-button {
-    margin-top: nhsuk-spacing(2);
-  }
-
-  // Warning callout: reduce large margins and internal padding
-  // Label margin-left must equal -(padding + 1px border) to stay flush with the left edge
-  // .nhsuk-warning-callout {
-  //   padding: nhsuk-spacing(3); // 16px (padding-top: 0 !important is preserved by NHS styles)
-  //   margin-top: nhsuk-spacing(4); // 24px (down from 40/48px)
-  //   margin-bottom: nhsuk-spacing(4);
-
-  //   .nhsuk-warning-callout__label {
-  //     margin-left: nhsuk-px-to-rem(-17px); // 16px padding + 1px border
-  //   }
-  // }
 }

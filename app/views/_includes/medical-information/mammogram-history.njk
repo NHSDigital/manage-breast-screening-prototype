@@ -30,7 +30,7 @@
       }
     }
   ]
-}) }}
+} | removeLastRowBorder) }}
 
 {# User-added unverified mammograms #}
 {% if hasAdditionalMammograms %}
@@ -125,5 +125,5 @@
 
   {{ summaryList({
     rows: userMammogramRows
-  } | openInModal) }}
+  } | openInModal | removeLastRowBorder) }}
 {% endif %}
