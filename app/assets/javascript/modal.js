@@ -165,6 +165,7 @@ class AppModal {
         clearTimeout(loadingTimer)
         this.setContent(html)
         this.bindFormSubmit()
+        this.bindLinkNavigation()
         this.show()
       })
       .catch((error) => {
@@ -402,6 +403,40 @@ class AppModal {
     }
   }
 
+  // Wire up plain <a> links inside the dialog so they load their target as a
+  // modal step rather than navigating the full page. Only intercepts links that
+  // are same-origin and don't explicitly opt out via data-modal-link="false".
+  // Links that resolve to a _modal_breakout URL are left alone — they will
+  // trigger a full-page navigation when clicked (handled by submitForm's
+  // breakout logic does not apply here, so we let the browser navigate).
+  bindLinkNavigation() {
+    const container = this.dialog.querySelector('.app-modal__content') || this.dialog
+    container.querySelectorAll('a[href]').forEach((link) => {
+      // Skip already-bound links, action links (data-modal-action), and opt-outs
+      if (
+        link._modalBound ||
+        link.hasAttribute('data-modal-action') ||
+        link.getAttribute('data-modal-link') === 'false'
+      ) return
+
+      const href = link.getAttribute('href')
+      // Skip hash-only and external links
+      if (!href || href.startsWith('#') || href.startsWith('http')) return
+
+      link._modalBound = true
+      link.addEventListener('click', (e) => {
+        e.preventDefault()
+        const absoluteUrl = new URL(link.getAttribute('href'), window.location.href).href
+        if (absoluteUrl.includes('_modal_breakout')) {
+          window.location.href = absoluteUrl
+        } else {
+          this.loadContent(absoluteUrl)
+          this.bindFormSubmit()
+        }
+      })
+    })
+  }
+
   // Wire up form submission handling inside the dialog.
   // Prefers a [data-form-action] container over a <form> element — necessary when
   // the fragment is injected into a page that already has an outer <form>, because
@@ -487,19 +522,32 @@ class AppModal {
         // - Otherwise: success — close the modal and reload (or invoke callback).
         const finalUrl = response.url
 
-        if (finalUrl && new URL(finalUrl).searchParams.get('_modal_breakout') === '1') {
-          // Route has explicitly requested a full-page navigation
+        if (
+          finalUrl &&
+          new URL(finalUrl).searchParams.get('_modal_breakout') === '1'
+        ) {
+          // Route has explicitly requested a full-page navigation.
+          // Strip _modal and _modal_breakout params so the destination page
+          // loads cleanly without modal middleware activating.
+          const dest = new URL(finalUrl)
+          dest.searchParams.delete('_modal')
+          dest.searchParams.delete('_modal_breakout')
           this.close()
-          window.location.href = finalUrl
+          window.location.href = dest.toString()
           return
         }
 
         return response.text().then((html) => {
-          if (html.includes('app-modal__body') || html.includes('data-form-action')) {
-            // Another modal step — update _loadUrl so relative links/actions resolve correctly
+          if (
+            html.includes('app-modal__body') ||
+            html.includes('data-form-action')
+          ) {
+            // Another modal step — update _loadUrl so relative links/actions resolve correctly,
+            // then inject and rewire the form and any plain links.
             this._loadUrl = finalUrl
             this.setContent(html)
             this.bindFormSubmit()
+            this.bindLinkNavigation()
           } else {
             // Flow complete — close and refresh
             this.close()

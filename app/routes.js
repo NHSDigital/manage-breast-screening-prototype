@@ -185,8 +185,9 @@ router.use((req, res, next) => {
       status = 302
       ;[url] = args
     }
-    // Only thread through app-relative URLs, not external ones or already-tagged ones
-    if (url && !url.startsWith('http') && !url.includes('_modal=')) {
+    // Only thread through app-relative URLs, not external ones, already-tagged ones,
+    // or breakout URLs (which are intentionally leaving the modal context).
+    if (url && !url.startsWith('http') && !url.includes('_modal=') && !url.includes('_modal_breakout')) {
       const separator = url.includes('?') ? '&' : '?'
       url = `${url}${separator}_modal=1`
     }

@@ -797,8 +797,8 @@ module.exports = (router) => {
       ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         req.flash('success', { wrapWithHeading: successMessage })
 
-        // Return to clinic list
-        return res.redirect(`/clinics/${clinicId}/`)
+        // Return to clinic list — break out of any modal so the browser navigates fully
+        return res.redirect(`/clinics/${clinicId}/?_modal_breakout=1`)
       }
 
       // Check if this is a recent mammogram (within 6 months)
@@ -869,8 +869,8 @@ module.exports = (router) => {
     Appointment cancelled. ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
           req.flash('success', { wrapWithHeading: successMessage })
 
-          // Return to clinic list
-          return res.redirect(`/clinics/${clinicId}/`)
+          // Return to clinic list — break out of any modal
+          return res.redirect(`/clinics/${clinicId}/?_modal_breakout=1`)
         }
       }
 
@@ -3314,8 +3314,8 @@ module.exports = (router) => {
 
       req.flash('success', { wrapWithHeading: successMessage })
 
-      // Return to clinic page
-      res.redirect(`/clinics/${clinicId}`)
+      // Return to clinic page — break out of any modal so the browser navigates fully
+      res.redirect(`/clinics/${clinicId}?_modal_breakout=1`)
     }
   )
 

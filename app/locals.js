@@ -11,7 +11,10 @@ module.exports = (req, res, next) => {
 
   const locals = {
     currentUrl: req.path,
-    flash: req.flash(),
+    // Don't consume flash for AJAX (XHR) requests — fetch with redirect:'follow' makes
+    // an internal GET to the destination which would clear flash before the browser
+    // navigates there. Only real browser requests should read and clear flash.
+    flash: req.headers['x-requested-with'] === 'XMLHttpRequest' ? {} : req.flash(),
     query: req.query,
     referrerChain: req.query.referrerChain,
     currentUser: currentUser,
