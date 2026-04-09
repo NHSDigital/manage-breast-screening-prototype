@@ -34,6 +34,72 @@ const populateErrors = function (component) {
 }
 
 /**
+ * Transform a button, summary list action item, or full summary list component
+ * to open links in a modal when modal forms are enabled, otherwise return unchanged.
+ *
+ * Accepts three shapes:
+ * - Button config object (has `href`) — rewires for modal
+ * - Action item config object (has `href`) — rewires for modal
+ * - Summary list config object (has `rows`) — rewires all action item hrefs in all rows
+ *
+ * In most cases the existing `href` is used as the modal loadUrl. Pass a second
+ * `loadUrl` argument when they differ — for example when the standard-mode href
+ * includes a referrer chain that the modal fragment doesn't need.
+ *
+ * @param {object} component - Button, action item, or summary list config
+ * @param {string} modalId - The id of the modal to open
+ * @param {string} [loadUrl] - Override URL for the modal loadUrl (defaults to href, ignored for summary lists)
+ * @returns {object} Updated config wired for modal, or the original if modal mode is off
+ * @example
+ * {{ button({ text: "Add", href: addUrl } | openInModal(modalId)) }}
+ * {% set item = { href: linkedUrl, text: "Change" } | openInModal("my-modal", bareUrl) %}
+ * {{ summaryList(params | openInModal("my-modal")) }}
+ */
+const openInModal = function (component, modalId, loadUrl) {
+  const isModalEnabled =
+    this.ctx?.data?.settings?.screening?.modalForms === 'true'
+
+  if (!isModalEnabled) return component
+
+  const id = modalId || 'app-form-modal'
+
+  // Helper to rewire a single action item or button
+  const rewireItem = (item, overrideUrl) => {
+    if (!item || !item.href) return item
+    const url = overrideUrl || item.href
+    return {
+      ...item,
+      href: '#',
+      attributes: {
+        ...(item.attributes || {}),
+        type: 'button',
+        onclick: `openModal('${id}', { loadUrl: '${url}' }); return false;`
+      }
+    }
+  }
+
+  // Summary list — rewire all action items across all rows
+  if (component.rows && Array.isArray(component.rows)) {
+    return {
+      ...component,
+      rows: component.rows.map((row) => {
+        if (!row?.actions?.items) return row
+        return {
+          ...row,
+          actions: {
+            ...row.actions,
+            items: row.actions.items.map((item) => rewireItem(item))
+          }
+        }
+      })
+    }
+  }
+
+  // Single button or action item
+  return rewireItem(component, loadUrl)
+}
+
+/**
  * Get a flash error object for a specific field name from the template context.
  * Useful for components like dateInput that use namePrefix rather than name.
  *
@@ -51,5 +117,6 @@ const getFlashError = function (name) {
 
 module.exports = {
   populateErrors,
-  getFlashError
+  getFlashError,
+  openInModal
 }

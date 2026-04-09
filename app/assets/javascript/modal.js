@@ -78,25 +78,38 @@ class AppModal {
       window.pageYOffset || document.documentElement.scrollTop
     this.previousActiveElement = document.activeElement
 
+    // When loading remote content, keep the modal hidden until content is ready
+    // to avoid a flash of the empty dialog shell (overlay + close button only).
+    // The loadContent method calls show() once content arrives, or after 300ms
+    // on slow connections so there's always visible feedback.
+    if (!loadUrl) {
+      this.show()
+      this.dialog.focus()
+    } else {
+      // Lock body scroll immediately so the page doesn't shift while loading,
+      // but keep the modal visually hidden until content is injected.
+      document.body.classList.add('app-modal-open')
+      document.body.style.top = `-${this.scrollPosition}px`
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
+      this.isOpen = true
+      this.dialog.setAttribute('tabindex', '-1')
+      this.loadContent(loadUrl)
+    }
+  }
+
+  // Make the modal visually visible. Called immediately for static modals,
+  // or deferred until content is loaded for remote (loadUrl) modals.
+  show() {
     this.modal.hidden = false
     this.modal.classList.add('app-modal--open')
-
-    document.body.classList.add('app-modal-open')
-    document.body.style.top = `-${this.scrollPosition}px`
-    document.body.style.position = 'fixed'
-    document.body.style.width = '100%'
-
-    this.isOpen = true
-
-    // Restore tabindex so the dialog can receive programmatic focus on open.
-    // setContent removes it again once content is loaded.
-    this.dialog.setAttribute('tabindex', '-1')
-
-    if (loadUrl) {
-      this.loadContent(loadUrl)
-    } else {
-      this.dialog.focus()
+    if (!document.body.classList.contains('app-modal-open')) {
+      document.body.classList.add('app-modal-open')
+      document.body.style.top = `-${this.scrollPosition}px`
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
     }
+    this.isOpen = true
   }
 
   close() {
@@ -134,6 +147,7 @@ class AppModal {
     // avoiding a flicker on fast connections.
     const loadingTimer = setTimeout(() => {
       this.setContent('<p aria-live="polite">Loading…</p>')
+      this.show()
       this.dialog.focus()
     }, 300)
 
@@ -151,6 +165,7 @@ class AppModal {
         clearTimeout(loadingTimer)
         this.setContent(html)
         this.bindFormSubmit()
+        this.show()
       })
       .catch((error) => {
         clearTimeout(loadingTimer)
@@ -158,6 +173,7 @@ class AppModal {
         this.setContent(
           '<p>Sorry, there was a problem loading this content.</p>'
         )
+        this.show()
       })
   }
 
@@ -180,10 +196,18 @@ class AppModal {
       container.querySelectorAll('a[href]').forEach((link) => {
         const href = link.getAttribute('href')
         // Only rewrite relative URLs (not absolute, hash-only, or already data: etc.)
-        if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('/')) {
-          link.setAttribute('href', new URL(href, base).pathname +
-            (new URL(href, base).search || '') +
-            (new URL(href, base).hash || ''))
+        if (
+          href &&
+          !href.startsWith('http') &&
+          !href.startsWith('#') &&
+          !href.startsWith('/')
+        ) {
+          link.setAttribute(
+            'href',
+            new URL(href, base).pathname +
+              (new URL(href, base).search || '') +
+              (new URL(href, base).hash || '')
+          )
         }
       })
     }
@@ -432,31 +456,60 @@ class AppModal {
       body.append(clickedButton.name, clickedButton.value || '')
     }
 
-    // redirect: 'manual' prevents fetch silently following a redirect and returning
-    // a 200, which would be indistinguishable from a genuine success response.
+    // Use redirect: 'follow' so we can read the final URL and response body after
+    // any server-side redirects. This allows multi-step flows (e.g. a warning page
+    // after saving a recent mammogram) to continue inside the modal rather than
+    // silently closing it.
     fetch(action, {
       method,
       body,
-      redirect: 'manual',
+      redirect: 'follow',
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
       .then((response) => {
         if (response.status === 422) {
+          // Validation failure — re-render the current step inside the modal.
           return response.text().then((html) => {
+            this._loadUrl = response.url
             this.setContent(html)
             this.bindFormSubmit()
           })
-        } else if (response.ok || response.type === 'opaqueredirect') {
-          // opaqueredirect means the server redirected (e.g. after a successful save)
-          this.close()
-          if (this._onSuccessCallback) {
-            this._onSuccessCallback()
-          } else {
-            window.location.reload()
-          }
-        } else {
+        }
+
+        if (!response.ok) {
           throw new Error(`Form submission failed: ${response.status}`)
         }
+
+        // The server may have redirected us. Check the final URL:
+        // - ?_modal_breakout: explicit opt-out — navigate the full browser to that URL.
+        // - Response HTML contains a modal form body: another step in the flow —
+        //   inject it into the modal and continue.
+        // - Otherwise: success — close the modal and reload (or invoke callback).
+        const finalUrl = response.url
+
+        if (finalUrl && new URL(finalUrl).searchParams.get('_modal_breakout') === '1') {
+          // Route has explicitly requested a full-page navigation
+          this.close()
+          window.location.href = finalUrl
+          return
+        }
+
+        return response.text().then((html) => {
+          if (html.includes('app-modal__body') || html.includes('data-form-action')) {
+            // Another modal step — update _loadUrl so relative links/actions resolve correctly
+            this._loadUrl = finalUrl
+            this.setContent(html)
+            this.bindFormSubmit()
+          } else {
+            // Flow complete — close and refresh
+            this.close()
+            if (this._onSuccessCallback) {
+              this._onSuccessCallback()
+            } else {
+              window.location.reload()
+            }
+          }
+        })
       })
       .catch((error) => {
         console.error('Modal form submission error:', error)

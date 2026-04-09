@@ -1,64 +1,64 @@
 {% set medicalInformationCardHtml %}
-    {{ summaryList({
-      rows: [
-        {
-          key: {
-            text: "Breast cancer history"
-          },
-          value: {
-            html: valueHtml
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "breast cancer history"
-              }
-            ]
-          }
+  {{ summaryList({
+    rows: [
+      {
+        key: {
+          text: "Breast cancer history"
         },
-        {
-          key: {
-            text: "Non-cancerous lump disagnoses"
-          },
-          value: {
-            html: valueHtml
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "non-cancerous lump disagnoses"
-              }
-            ]
-          }
+        value: {
+          html: valueHtml
         },
-        {
-          key: {
-            text: "Other breast or chest procedures"
-          },
-          value: {
-            html: valueHtml
-          },
-          actions: {
-            items: [
-              {
-                href: "#",
-                text: "Change",
-                visuallyHiddenText: "other breast or chest procedures"
-              }
-            ]
-          }
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Change",
+              visuallyHiddenText: "breast cancer history"
+            }
+          ]
         }
-      ]
-    } | handleSummaryListMissingInformation) }}
-  {% endset %}
+      },
+      {
+        key: {
+          text: "Non-cancerous lump disagnoses"
+        },
+        value: {
+          html: valueHtml
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Change",
+              visuallyHiddenText: "non-cancerous lump disagnoses"
+            }
+          ]
+        }
+      },
+      {
+        key: {
+          text: "Other breast or chest procedures"
+        },
+        value: {
+          html: valueHtml
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Change",
+              visuallyHiddenText: "other breast or chest procedures"
+            }
+          ]
+        }
+      }
+    ]
+  } | handleSummaryListMissingInformation) }}
+{% endset %}
 
-  {{ card({
-    heading: "Medical history",
-    headingLevel: "2",
-    feature: false,
-    descriptionHtml: medicalInformationCardHtml
-  }) }}
+{{ card({
+  heading: "Medical history",
+  headingLevel: "2",
+  feature: false,
+  descriptionHtml: medicalInformationCardHtml
+}) }}
