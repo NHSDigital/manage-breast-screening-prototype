@@ -1,6 +1,6 @@
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
-$app-modal-width: 700px !default; // Default width for the modal
+$app-modal-width: 800px !default;
 
 // Prevent background scrolling when modal is open
 body.app-modal-open {
@@ -29,24 +29,23 @@ body.app-modal-open {
   background-color: rgba(nhsuk-colour("black"), 0.8);
 }
 
-// Modal dialog container
+// Modal dialog container — flex column so close button stays above scrolling content
 .app-modal__dialog {
   position: fixed;
   z-index: 1002;
   top: 50%;
   left: 50%;
-  width: calc(100vw - #{nhsuk-spacing(4)});
+  width: calc(100vw - #{nhsuk-spacing(6)});
   max-width: $app-modal-width;
-  max-height: 90vh;
+  max-height: calc(100vh - #{nhsuk-spacing(6)});
 
   transform: translate(-50%, -50%);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // content area handles its own overflow
 
-  // background-color: nhsuk-colour("white");
   background-color: $nhsuk-body-background-colour;
   border: $nhsuk-focus-width solid nhsuk-colour("black");
-
-  @include nhsuk-responsive-padding(5);
 
   &:focus {
     outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
@@ -57,6 +56,66 @@ body.app-modal-open {
   }
 }
 
+// Optional header row containing the close button
+// (removed — close button is now position: absolute)
+
+// Close button — black square with white ×, flush with top-right of modal border
+.app-modal__close {
+  position: absolute;
+  top: -$nhsuk-focus-width;
+  right: -$nhsuk-focus-width;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: nhsuk-spacing(7);
+  height: nhsuk-spacing(7);
+  padding: 0;
+  cursor: pointer;
+  color: nhsuk-colour("white");
+  background-color: nhsuk-colour("black");
+  border: 0;
+
+  &:hover {
+    background-color: $nhsuk-secondary-text-colour;
+  }
+
+  &:focus {
+    background-color: $nhsuk-focus-colour;
+    color: $nhsuk-focus-text-colour;
+    outline: $nhsuk-border-width solid $nhsuk-focus-text-colour;
+    outline-offset: 0;
+  }
+
+  svg {
+    pointer-events: none;
+  }
+}
+
+// Scrollable content area — padding moved here from dialog
+.app-modal__content {
+  flex: 1 1 auto;
+  min-height: 0; // allows flex child to shrink below natural height so overflow-y works
+  overflow-y: auto;
+
+  @include nhsuk-responsive-padding(5);
+
+  // CSS-only scroll shadows using background-attachment: local/scroll.
+  // 'local' cover gradients (matching background colour) hide the shadow when at an edge.
+  // 'scroll' shadow gradients stay fixed, revealed when content extends beyond the viewport.
+  background-image:
+    linear-gradient($nhsuk-body-background-colour, $nhsuk-body-background-colour),
+    linear-gradient($nhsuk-body-background-colour, $nhsuk-body-background-colour),
+    linear-gradient(rgba(0, 0, 0, 0.12), transparent), linear-gradient(transparent, rgba(0, 0, 0, 0.12));
+  background-size:
+    100% nhsuk-spacing(5),
+    100% nhsuk-spacing(5),
+    100% nhsuk-spacing(4),
+    100% nhsuk-spacing(4);
+  background-position: top, bottom, top, bottom;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+
 // Modal content
 .app-modal__title {
   margin-top: 0;
@@ -65,7 +124,6 @@ body.app-modal-open {
 .app-modal__body {
   margin-bottom: nhsuk-spacing(4);
 
-  // Remove bottom margin for the last child to avoid extra space
   &:last-child {
     margin-bottom: 0;
   }

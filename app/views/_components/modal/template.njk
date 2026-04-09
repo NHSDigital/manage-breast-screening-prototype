@@ -11,6 +11,15 @@
      {% endif %}>
   <div class="app-modal__overlay" data-modal-overlay></div>
   <div class="app-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="{{ modalId }}-title" tabindex="-1">
+
+    {% if params.showCloseButton %}
+      <button class="app-modal__close" type="button" data-modal-action="close" aria-label="Close">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z"/>
+        </svg>
+      </button>
+    {% endif %}
+
     <div class="app-modal__content">
       {% if params.title %}
         <h2 id="{{ modalId }}-title" class="app-modal__title nhsuk-heading-m">

@@ -30,14 +30,10 @@
   {% endif %}
 {% endset %}
 
-{% set mammogramHistoryContentsSummary %}
-  {# Last mammogrogram {{ "2022-03-23" | formatDate | formatRelativeDate | asHint }} #}
-{% endset %}
-
-
-
 {% if hasAdditionalMammograms %}
-  {% set mammogramHistoryContentsSummary = ((event.previousMammograms | length)) ~ " new " + ("mammogram" | pluralise(event.previousMammograms | length)) + " added" %}
+  {% set mammogramHistoryContentsSummary = (event.previousMammograms | length) ~ " reported " + ("mammogram" | pluralise(event.previousMammograms | length)) + " added" %}
+{% else %}
+  {% set mammogramHistoryContentsSummary = "No reported mammograms added" %}
 {% endif %}
 
 
@@ -137,6 +133,9 @@
 {% set subHeading = "Any problems or symptoms, including lumps, swelling, rashes or nipple changes" %}
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
+
+{% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+{% set symptomsContentsSummaryText %}{{ symptomsCount or "No" }} {{ "symptom" | pluralise(symptomsCount) }} recorded{% endset %}
 
 {% set symptomsCardContent %}
   {% include "_includes/medical-information/symptoms-card-content.njk" %}
