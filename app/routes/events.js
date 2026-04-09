@@ -1439,8 +1439,7 @@ module.exports = (router) => {
           // For modal (AJAX) requests, render the details page as a fragment
           if (isModal) {
             return res.render('events/medical-information/symptoms/details', {
-              parentLayout: '_templates/layout-modal-form.html',
-              isModal: true
+              parentLayout: '_templates/layout-modal-form.html'
             })
           }
 

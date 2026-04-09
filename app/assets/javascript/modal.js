@@ -121,6 +121,10 @@ class AppModal {
   // Fetch a URL as an HTML fragment and inject it into the modal content area.
   // After injection, any form container inside the dialog is wired up for AJAX submission.
   loadContent(url) {
+    // Store the absolute URL so relative form actions in fragments can be resolved correctly.
+    // Fragments use './save' style actions — these must be resolved against the fragment's URL,
+    // not the current page URL, otherwise they'd POST to the wrong endpoint.
+    this._loadUrl = new URL(url, window.location.href).href
     // Clear stale content immediately so previous answers are never visible
     // while the new content is loading.
     const contentArea = this.dialog.querySelector('.app-modal__content')
@@ -187,15 +191,81 @@ class AppModal {
               // Some attributes (e.g. certain ARIA attrs) may not be settable — skip them
             }
           })
-          Object.entries(headingSizes).forEach(([from, to]) => {
-            if (newHeading.classList.contains(from))
+          for (const [from, to] of Object.entries(headingSizes)) {
+            if (newHeading.classList.contains(from)) {
               newHeading.classList.replace(from, to)
-          })
+              break
+            }
+          }
           // Mark promoted h1s as modal titles (removes top margin)
           if (heading.tagName === 'H1')
             newHeading.classList.add('app-modal__title')
           newHeading.innerHTML = heading.innerHTML
           heading.replaceWith(newHeading)
+        })
+
+      // Bump legend sizes (fieldset question headers)
+      const legendSizes = {
+        'nhsuk-fieldset__legend--xl': 'nhsuk-fieldset__legend--l',
+        'nhsuk-fieldset__legend--l': 'nhsuk-fieldset__legend--m',
+        'nhsuk-fieldset__legend--m': 'nhsuk-fieldset__legend--s'
+      }
+      container.querySelectorAll('legend').forEach((legend) => {
+        for (const [from, to] of Object.entries(legendSizes)) {
+          if (legend.classList.contains(from)) {
+            legend.classList.replace(from, to)
+            break
+          }
+        }
+      })
+
+      // Bump label sizes
+      const labelSizes = {
+        'nhsuk-label--xl': 'nhsuk-label--l',
+        'nhsuk-label--l': 'nhsuk-label--m',
+        'nhsuk-label--m': 'nhsuk-label--s'
+      }
+      container.querySelectorAll('label').forEach((label) => {
+        for (const [from, to] of Object.entries(labelSizes)) {
+          if (label.classList.contains(from)) {
+            label.classList.replace(from, to)
+            break
+          }
+        }
+      })
+
+      // Bump caption sizes
+      const captionSizes = {
+        'nhsuk-caption-xl': 'nhsuk-caption-l',
+        'nhsuk-caption-l': 'nhsuk-caption-m'
+        // 'nhsuk-caption-m': 'nhsuk-caption-s' // no such thing as caption-s
+      }
+      container
+        .querySelectorAll(
+          '.nhsuk-caption-xl, .nhsuk-caption-l, .nhsuk-caption-m'
+        )
+        .forEach((el) => {
+          for (const [from, to] of Object.entries(captionSizes)) {
+            if (el.classList.contains(from)) {
+              el.classList.replace(from, to)
+              break
+            }
+          }
+        })
+
+      // Bump non-heading elements carrying NHS heading size classes (e.g. <p class="nhsuk-heading-l">)
+      container
+        .querySelectorAll(
+          '.nhsuk-heading-xl, .nhsuk-heading-l, .nhsuk-heading-m'
+        )
+        .forEach((el) => {
+          if (/^H[1-6]$/.test(el.tagName)) return // already handled by tag replacement above
+          for (const [from, to] of Object.entries(headingSizes)) {
+            if (el.classList.contains(from)) {
+              el.classList.replace(from, to)
+              break
+            }
+          }
         })
     } catch (e) {
       console.warn('Modal: heading bump failed', e)
@@ -248,7 +318,11 @@ class AppModal {
       this.dialog.querySelector('form')
     if (!container) return
 
-    const action = container.dataset.formAction || container.action
+    // Resolve relative action URLs (e.g. './save') against the fragment's original URL,
+    // not the current page URL. Falls back to the current page if no fragment was loaded.
+    const rawAction = container.dataset.formAction || container.action
+    const baseUrl = this._loadUrl || window.location.href
+    const action = new URL(rawAction, baseUrl).href
     const method = (
       container.dataset.formMethod ||
       container.method ||

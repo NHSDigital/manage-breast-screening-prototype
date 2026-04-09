@@ -52,7 +52,7 @@ body.app-modal-open {
   }
 
   @include nhsuk-media-query($from: tablet) {
-    width: $app-modal-width;
+    max-height: 90vh;
   }
 }
 
@@ -98,6 +98,12 @@ body.app-modal-open {
   overflow-y: auto;
 
   @include nhsuk-responsive-padding(5);
+
+  // Remove bottom margin from the last element so only the padding provides spacing
+  > *:last-child,
+  > *:last-child > *:last-child {
+    margin-bottom: 0;
+  }
 
   // CSS-only scroll shadows using background-attachment: local/scroll.
   // 'local' cover gradients (matching background colour) hide the shadow when at an edge.
