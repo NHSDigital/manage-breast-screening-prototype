@@ -131,6 +131,7 @@ class AppModal {
     this.isOpen = false
     this._onSuccessCallback = null
     this._urlStack = []
+    this._loadUrl = null
   }
 
   // Fetch a URL as an HTML fragment and inject it into the modal content area.
@@ -178,7 +179,10 @@ class AppModal {
         tempDiv.innerHTML = html
         const navEl = tempDiv.querySelector('[data-modal-navigate]')
         if (navEl) {
-          const dest = new URL(navEl.dataset.modalNavigate, window.location.href)
+          const dest = new URL(
+            navEl.dataset.modalNavigate,
+            window.location.href
+          )
           dest.searchParams.delete('_modal')
           dest.searchParams.delete('_modal_breakout')
           this.close()
@@ -545,7 +549,13 @@ class AppModal {
     const body = new URLSearchParams()
     container.querySelectorAll('input, select, textarea').forEach((el) => {
       if (!el.name || el.disabled) return
-      if (el.type === 'checkbox' || el.type === 'radio') {
+      if (el.type === 'checkbox') {
+        if (el.checked) body.append(el.name, el.value)
+        // Mirror send-unchecked-checkboxes.js: always append the sentinel so
+        // body-parser sees multiple values and creates an array. auto-store-data
+        // strips '_unchecked' entries, but the array shape is preserved.
+        body.append(el.name, '_unchecked')
+      } else if (el.type === 'radio') {
         if (el.checked) body.append(el.name, el.value)
       } else {
         body.append(el.name, el.value)
@@ -612,10 +622,13 @@ class AppModal {
           ) {
             // Another modal step — update _loadUrl so relative links/actions resolve correctly,
             // then inject and rewire the form and any plain links.
+            // Push current URL to stack so the back link can return here.
+            if (this._loadUrl) this._urlStack.push(this._loadUrl)
             this._loadUrl = finalUrl
             this.setContent(html)
             this.bindFormSubmit()
             this.bindLinkNavigation()
+            this.updateBackLink()
           } else {
             // Flow complete — close and refresh
             this.close()

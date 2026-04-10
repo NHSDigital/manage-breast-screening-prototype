@@ -20,7 +20,8 @@ const generateId = require('../lib/utils/id-generator')
 const {
   getReturnUrl,
   urlWithReferrer,
-  appendReferrer
+  appendReferrer,
+  modalBreakout
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
@@ -369,9 +370,8 @@ module.exports = (router) => {
 
         // Redirect to appointment page with paused status
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/appointment?_modal_breakout=1`
+          modalBreakout(`/clinics/${clinicId}/events/${eventId}/appointment`)
         )
-      } else if (pauseAction === 'no') {
         // Return to appointment - use referrer chain
         delete data.pauseAction
         delete data.confirmedImagesWereTaken
@@ -381,12 +381,7 @@ module.exports = (router) => {
           `/clinics/${clinicId}/events/${eventId}/appointment`,
           req.query.referrerChain
         )
-        const returnUrlWithBreakout =
-          returnUrl +
-          (returnUrl.includes('?') ? '&' : '?') +
-          '_modal_breakout=1'
-
-        return res.redirect(returnUrlWithBreakout)
+        return res.redirect(modalBreakout(returnUrl))
       }
 
       // Handle the initial question about whether images were taken
@@ -447,18 +442,16 @@ module.exports = (router) => {
           delete data.returnTo
           const destination =
             returnTo || `/clinics/${clinicId}/events/${eventId}/appointment`
-          const destWithBreakout =
-            destination +
-            (destination.includes('?') ? '&' : '?') +
-            '_modal_breakout=1'
-          return res.redirect(destWithBreakout)
+          return res.redirect(modalBreakout(destination))
         } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
           delete data.exitAction
           delete data.confirmedNoImages
           delete data.confirmedImagesWereTaken
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason?_modal_breakout=1`
+            modalBreakout(
+              `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+            )
           )
         } else if (exitAction === 'save') {
           // Save changes and pause the appointment
@@ -501,7 +494,7 @@ module.exports = (router) => {
 
           // Redirect to appointment page with paused status
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/appointment?_modal_breakout=1`
+            modalBreakout(`/clinics/${clinicId}/events/${eventId}/appointment`)
           )
         }
       }
@@ -513,7 +506,7 @@ module.exports = (router) => {
 
       // Fallback redirect
       res.redirect(
-        `/clinics/${clinicId}/events/${eventId}/appointment?_modal_breakout=1`
+        modalBreakout(`/clinics/${clinicId}/events/${eventId}/appointment`)
       )
     }
   )
@@ -589,7 +582,7 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -776,7 +769,7 @@ module.exports = (router) => {
           scrollTo
         )
 
-        return res.redirect(returnUrl)
+        return res.redirect(modalBreakout(returnUrl))
       }
 
       // Handle the direct cancel action from appointment-should-not-proceed.html
@@ -808,7 +801,7 @@ module.exports = (router) => {
         req.flash('success', { wrapWithHeading: successMessage })
 
         // Return to clinic list — break out of any modal so the browser navigates fully
-        return res.redirect(`/clinics/${clinicId}/?_modal_breakout=1`)
+        return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
       }
 
       // Check if this is a recent mammogram (within 6 months)
@@ -880,7 +873,7 @@ module.exports = (router) => {
           req.flash('success', { wrapWithHeading: successMessage })
 
           // Return to clinic list — break out of any modal
-          return res.redirect(`/clinics/${clinicId}/?_modal_breakout=1`)
+          return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
         }
       }
 
@@ -891,7 +884,7 @@ module.exports = (router) => {
         referrerChain,
         scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -946,7 +939,7 @@ module.exports = (router) => {
         req.query.referrerChain,
         req.query.scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1346,7 +1339,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
     }
   )
@@ -1416,7 +1409,7 @@ module.exports = (router) => {
         req.query.referrerChain,
         req.query.scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1519,7 +1512,7 @@ module.exports = (router) => {
         referrerChain,
         scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1759,7 +1752,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
     }
   )
@@ -1842,7 +1835,7 @@ module.exports = (router) => {
         req.query.referrerChain,
         req.query.scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1895,7 +1888,7 @@ module.exports = (router) => {
       req.flash('success', successMessage)
 
       // Return to clinic page
-      res.redirect(`/clinics/${clinicId}`)
+      res.redirect(modalBreakout(`/clinics/${clinicId}`))
     }
   )
 
@@ -1991,7 +1984,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
       // Handle "No, but scan unaffected breast"
       else if (consentGiven.startsWith('no-continue-')) {
@@ -2070,7 +2063,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
       // Handle "No, end appointment"
       else if (consentGiven === 'no') {
@@ -3169,7 +3162,7 @@ module.exports = (router) => {
       saveTempParticipantToParticipant(data)
 
       req.flash('success', 'Special appointment requirements confirmed')
-      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+      res.redirect(modalBreakout(`/clinics/${clinicId}/events/${eventId}`))
     }
   )
 
@@ -3189,8 +3182,7 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      const returnUrlWithBreakout = returnUrl + (returnUrl.includes('?') ? '&' : '?') + '_modal_breakout=1'
-      res.redirect(returnUrlWithBreakout)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -3213,8 +3205,7 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      const returnUrlWithBreakout = returnUrl + (returnUrl.includes('?') ? '&' : '?') + '_modal_breakout=1'
-      res.redirect(returnUrlWithBreakout)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
   // General purpose dynamic template route for events
@@ -3280,7 +3271,7 @@ module.exports = (router) => {
         req.flash('success', { wrapWithHeading: successMessage })
 
         // Return to clinic page
-        res.redirect(`/clinics/${clinicId}`)
+        res.redirect(modalBreakout(`/clinics/${clinicId}`))
       }
     }
   )
@@ -3327,7 +3318,7 @@ module.exports = (router) => {
       req.flash('success', { wrapWithHeading: successMessage })
 
       // Return to clinic page — break out of any modal so the browser navigates fully
-      res.redirect(`/clinics/${clinicId}?_modal_breakout=1`)
+      res.redirect(modalBreakout(`/clinics/${clinicId}`))
     }
   )
 

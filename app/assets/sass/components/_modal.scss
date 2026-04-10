@@ -122,11 +122,17 @@ body.app-modal-open {
 }
 
 // Back link inside modal fragments — sits above the body, needs top spacing
-// since there's no nhsuk-main-wrapper padding to provide it
+// since there's no nhsuk-main-wrapper padding to provide it.
+// [hidden] override needed because .nhsuk-back-link sets display: block,
+// which beats the browser UA stylesheet's [hidden] { display: none }.
 .app-modal__back-link {
   display: block;
   margin-top: nhsuk-spacing(0);
   margin-bottom: nhsuk-spacing(4);
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .app-modal__body {
