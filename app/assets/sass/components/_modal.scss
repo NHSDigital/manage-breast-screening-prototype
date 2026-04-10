@@ -121,6 +121,14 @@ body.app-modal-open {
   margin-top: 0;
 }
 
+// Back link inside modal fragments — sits above the body, needs top spacing
+// since there's no nhsuk-main-wrapper padding to provide it
+.app-modal__back-link {
+  display: block;
+  margin-top: nhsuk-spacing(0);
+  margin-bottom: nhsuk-spacing(4);
+}
+
 .app-modal__body {
   margin-bottom: nhsuk-spacing(4);
 

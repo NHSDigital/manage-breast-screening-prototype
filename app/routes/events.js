@@ -3189,7 +3189,8 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      res.redirect(returnUrl)
+      const returnUrlWithBreakout = returnUrl + (returnUrl.includes('?') ? '&' : '?') + '_modal_breakout=1'
+      res.redirect(returnUrlWithBreakout)
     }
   )
 
@@ -3209,10 +3210,11 @@ module.exports = (router) => {
       req.flash('success', 'Appointment note deleted')
 
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/events/${eventId}/appointment-note`,
+        `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      res.redirect(returnUrl)
+      const returnUrlWithBreakout = returnUrl + (returnUrl.includes('?') ? '&' : '?') + '_modal_breakout=1'
+      res.redirect(returnUrlWithBreakout)
     }
   )
   // General purpose dynamic template route for events

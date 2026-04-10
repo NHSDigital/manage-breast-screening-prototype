@@ -9,6 +9,7 @@ class AppModal {
     this.scrollPosition = 0
     this.isOpen = false
     this._onSuccessCallback = null
+    this._urlStack = [] // tracks previous URLs for back-link navigation
 
     this.bindEvents()
   }
@@ -129,11 +130,18 @@ class AppModal {
 
     this.isOpen = false
     this._onSuccessCallback = null
+    this._urlStack = []
   }
 
   // Fetch a URL as an HTML fragment and inject it into the modal content area.
   // After injection, any form container inside the dialog is wired up for AJAX submission.
   loadContent(url) {
+    // Push the current URL onto the stack before navigating, so the back link
+    // can return to it. Don't push if there's no current URL (first load).
+    if (this._loadUrl) {
+      this._urlStack.push(this._loadUrl)
+    }
+
     // Store the absolute URL so relative form actions in fragments can be resolved correctly.
     // Fragments use './save' style actions — these must be resolved against the fragment's URL,
     // not the current page URL, otherwise they'd POST to the wrong endpoint.
@@ -163,6 +171,21 @@ class AppModal {
       })
       .then((html) => {
         clearTimeout(loadingTimer)
+
+        // Check for a breakout navigation instruction (e.g. from a delete GET route).
+        // Same logic as submitForm — close modal and navigate to destination.
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = html
+        const navEl = tempDiv.querySelector('[data-modal-navigate]')
+        if (navEl) {
+          const dest = new URL(navEl.dataset.modalNavigate, window.location.href)
+          dest.searchParams.delete('_modal')
+          dest.searchParams.delete('_modal_breakout')
+          this.close()
+          window.location.href = dest.toString()
+          return
+        }
+
         this.setContent(html)
         this.bindFormSubmit()
         this.bindLinkNavigation()
@@ -359,8 +382,42 @@ class AppModal {
     // newly injected content — initAll scoped to the dialog only.
     initAll({ scope: this.dialog })
 
+    // Show/hide and wire the back link based on navigation stack depth.
+    this.updateBackLink()
+
     // Trim trailing margin so only the modal's own padding provides bottom spacing.
     this.trimBottomSpacing()
+  }
+
+  // Show the back link if there's a previous URL in the stack, hide it otherwise.
+  // The back link element lives in the injected fragment (layout-modal-form.html).
+  updateBackLink() {
+    const backLink = this.dialog.querySelector('[data-modal-back]')
+    if (!backLink) return
+
+    if (this._urlStack.length > 0) {
+      backLink.removeAttribute('hidden')
+      backLink.href = this._urlStack[this._urlStack.length - 1]
+      if (!backLink._modalBackBound) {
+        backLink._modalBackBound = true
+        backLink.addEventListener('click', (e) => {
+          e.preventDefault()
+          this.goBack()
+        })
+      }
+    } else {
+      backLink.setAttribute('hidden', '')
+    }
+  }
+
+  // Navigate back one step — pop the stack and load the previous URL without
+  // pushing the current URL back onto the stack again.
+  goBack() {
+    const previousUrl = this._urlStack.pop()
+    if (!previousUrl) return
+    // Temporarily clear _loadUrl so loadContent doesn't push it
+    this._loadUrl = null
+    this.loadContent(previousUrl)
   }
 
   // Walk the last-visible-child chain and zero margins at each level, so that

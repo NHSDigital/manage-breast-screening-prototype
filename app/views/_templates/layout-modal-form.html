@@ -5,6 +5,7 @@
    the full prototype kit template chain. #}
 
 {%- from 'action-link/macro.njk' import actionLink %}
+{%- from 'back-link/macro.njk' import backLink %}
 {%- from 'button/macro.njk' import button %}
 {%- from 'card/macro.njk' import card %}
 {%- from 'character-count/macro.njk' import characterCount %}
@@ -47,6 +48,17 @@
     errorList: errors
   }) }}
 {% endif %}
+
+{# Back link — hidden by default, shown and wired up by modal.js when navigating deeper #}
+{# Margin manually applied to simulate positioning it would normally get when placed before main element with nhsuk-main-wrapper padding #}
+{{ backLink({
+  href: "#",
+  classes: "app-modal__back-link",
+  attributes: {
+    "hidden": "true",
+    "data-modal-back": "true"
+  }
+}) }}
 
 <div class="app-modal__body">
   <div data-form-action="{{ formAction }}" data-form-method="post">
