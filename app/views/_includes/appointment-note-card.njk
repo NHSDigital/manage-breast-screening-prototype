@@ -1,16 +1,24 @@
 {# app/views/_includes/appointment-note-card.njk #}
 
+{% set item = {
+  href: (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain),
+  text: "Change",
+  visuallyHiddenText: "note"
+} %}
+
+{# Awkwardly support temporarily bypssing modal from calling page
+TODO: make this cleaner #}
+{% if not noModals %}
+  {% set item = item | openInModal %}
+{% endif %}
+
 {% if event | hasAppointmentNote %}
   {% call warningCallout({
     heading: "Appointment note",
     classes: "nhsuk-u-margin-bottom-4",
     actions: {
       items: [
-        {
-          href: (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain),
-          text: "Change",
-          visuallyHiddenText: "note"
-        } | openInModal
+        item
       ]
     } if allowEdits
   }) %}

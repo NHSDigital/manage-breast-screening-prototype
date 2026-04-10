@@ -10,7 +10,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./confirm-answer" %}
+{% set formAction = "./confirm-answer" | urlWithReferrer(referrerChain) %}
 
 {% set back = {
   href: "./edit",

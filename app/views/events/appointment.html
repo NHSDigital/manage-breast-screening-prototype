@@ -8,6 +8,8 @@
 {% set formAction = "./start" %}
 {% set allowEdits = event | hasNotStarted %}
 
+{% set referrerChain = currentUrl %}
+
 {# Force view mode on this page, never workflow mode.
    
    Background: isAppointmentWorkflow is normally calculated from event state (in progress + 
@@ -32,7 +34,11 @@
   {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
 
   {% include "_includes/special-appointment-warning-card.njk" %}
+
+  {# Temporarily disable modals as we have a notes tab. #}
+  {% set noModals = true %}
   {% include "_includes/appointment-note-card.njk" %}
+  {% set noModals = null %}
 
 
   {% set statusHtml %}

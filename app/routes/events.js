@@ -3112,17 +3112,31 @@ module.exports = (router) => {
       // If user selected "yes", redirect to temporary reasons selection page
       if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`,
+            req.query.referrerChain
+          )
         )
-      } else if (temporaryReasons === 'no' || supportTypes?.length === 0) {
-        // If "no", redirect to confirm page to show what they selected
-        delete data.event.specialAppointment.temporaryReasonsList
+      } else if (isAppointmentWorkflow(data.event, data.currentUser)) {
+        // In workflow — skip confirm, leave data in temp store, return to workflow
+        if (temporaryReasons === 'no') {
+          delete data.event.specialAppointment.temporaryReasonsList
+        }
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
+          modalBreakout(
+            getReturnUrl(
+              `/clinics/${clinicId}/events/${eventId}`,
+              req.query.referrerChain
+            )
+          )
         )
       } else {
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/edit`
+        // Standalone — go to confirm page which will save
+        if (temporaryReasons === 'no') {
+          delete data.event.specialAppointment.temporaryReasonsList
+        }
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
         )
       }
     }
@@ -3133,11 +3147,24 @@ module.exports = (router) => {
     '/clinics/:clinicId/events/:eventId/special-appointment/temporary-reasons-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-      // After saving temporary reasons data, redirect to confirm page
-      res.redirect(
-        `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
-      )
+      if (isAppointmentWorkflow(data.event, data.currentUser)) {
+        // In workflow — skip confirm, leave data in temp store, return to workflow
+        res.redirect(
+          modalBreakout(
+            getReturnUrl(
+              `/clinics/${clinicId}/events/${eventId}`,
+              req.query.referrerChain
+            )
+          )
+        )
+      } else {
+        // Standalone — go to confirm page which will save
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
+        )
+      }
     }
   )
 
@@ -3162,7 +3189,11 @@ module.exports = (router) => {
       saveTempParticipantToParticipant(data)
 
       req.flash('success', 'Special appointment requirements confirmed')
-      res.redirect(modalBreakout(`/clinics/${clinicId}/events/${eventId}`))
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        req.query.referrerChain
+      )
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
