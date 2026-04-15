@@ -3098,30 +3098,33 @@ module.exports = (router) => {
       const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
 
       // Validate that temporaryReasons was answered
-      if (!temporaryReasons && supportTypes) {
-        req.flash('error', {
-          text: 'Select whether any of these reasons are temporary',
-          name: 'event[specialAppointment][temporaryReasons]',
-          href: '#temporaryReasons'
-        })
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/edit`
-        )
-      }
+      // if (!temporaryReasons && supportTypes) {
+      //   req.flash('error', {
+      //     text: 'Select whether any of these reasons are temporary',
+      //     name: 'event[specialAppointment][temporaryReasons]',
+      //     href: '#temporaryReasons'
+      //   })
+      //   return res.redirect(
+      //     `/clinics/${clinicId}/events/${eventId}/special-appointment/edit`
+      //   )
+      // }
 
-      // If user selected "yes", redirect to temporary reasons selection page
-      if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
-        res.redirect(
-          urlWithReferrer(
-            `/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`,
-            req.query.referrerChain
-          )
-        )
-      } else if (isAppointmentWorkflow(data.event, data.currentUser)) {
+      // // If user selected "yes", redirect to temporary reasons selection page
+      // if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
+      //   res.redirect(
+      //     urlWithReferrer(
+      //       `/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`,
+      //       req.query.referrerChain
+      //     )
+      //   )
+      // } else
+
+      // Return user during workflow
+      if (isAppointmentWorkflow(data.event, data.currentUser)) {
         // In workflow — skip confirm, leave data in temp store, return to workflow
-        if (temporaryReasons === 'no') {
-          delete data.event.specialAppointment.temporaryReasonsList
-        }
+        // if (temporaryReasons === 'no') {
+        //   delete data.event.specialAppointment.temporaryReasonsList
+        // }
         res.redirect(
           modalBreakout(
             getReturnUrl(

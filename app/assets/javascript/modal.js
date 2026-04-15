@@ -384,6 +384,10 @@ class AppModal {
 
     // Re-initialise NHS Frontend components (radios, checkboxes etc.) for the
     // newly injected content — initAll scoped to the dialog only.
+    // Must run BEFORE namespaceIds so NHS Frontend initialises with the original
+    // IDs it generated. If IDs are renamed first, NHS Frontend constructs the
+    // conditional panel selector as "conditional-{input.id}" which no longer
+    // matches the renamed panel ID, breaking conditional reveal.
     initAll({ scope: this.dialog })
 
     // Show/hide and wire the back link based on navigation stack depth.
@@ -391,6 +395,19 @@ class AppModal {
 
     // Trim trailing margin so only the modal's own padding provides bottom spacing.
     this.trimBottomSpacing()
+
+    // Namespace IDs after NHS Frontend has initialised. NHS Frontend caches DOM
+    // node references during init, so renaming afterward doesn't affect conditional
+    // reveal — but it does prevent duplicate-ID hover-bleed with same-named fields
+    // on the parent page (hovering a label triggers :hover on every input sharing
+    // the same id, including ones on the page behind the modal).
+    this.namespaceIds(content || this.dialog)
+
+    // Re-point aria-labelledby at the now-namespaced heading ID.
+    const renamedHeading = this.dialog.querySelector('h1, h2, h3')
+    if (renamedHeading && renamedHeading.id) {
+      this.dialog.setAttribute('aria-labelledby', renamedHeading.id)
+    }
   }
 
   // Show the back link if there's a previous URL in the stack, hide it otherwise.
@@ -748,6 +765,42 @@ class AppModal {
       data[key] = this.modal.dataset[key]
     })
     return data
+  }
+
+  // Prefix all IDs within a container and update all attributes that reference
+  // them (for, aria-controls, aria-labelledby, aria-describedby). Prevents
+  // duplicate-ID conflicts when the modal shares field names with the parent page.
+  namespaceIds(container) {
+    const prefix = 'modal-'
+    const idMap = new Map()
+
+    // First pass: rename all IDs
+    container.querySelectorAll('[id]').forEach((el) => {
+      const id = el.getAttribute('id')
+      if (id) {
+        const newId = prefix + id
+        idMap.set(id, newId)
+        el.setAttribute('id', newId)
+      }
+    })
+
+    if (idMap.size === 0) return
+
+    // Second pass: update all attributes that reference IDs.
+    // Values may be space-separated lists (e.g. aria-labelledby="id1 id2").
+    const refAttrs = ['for', 'aria-controls', 'aria-labelledby', 'aria-describedby', 'aria-owns']
+    const selector = refAttrs.map((a) => `[${a}]`).join(', ')
+    container.querySelectorAll(selector).forEach((el) => {
+      refAttrs.forEach((attr) => {
+        const val = el.getAttribute(attr)
+        if (!val) return
+        const updated = val
+          .split(' ')
+          .map((id) => (idMap.has(id) ? idMap.get(id) : id))
+          .join(' ')
+        if (updated !== val) el.setAttribute(attr, updated)
+      })
+    })
   }
 
   // Create and submit a temporary form for POST-based navigation
