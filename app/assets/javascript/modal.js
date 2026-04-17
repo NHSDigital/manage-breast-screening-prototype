@@ -213,6 +213,9 @@ class AppModal {
     const content = this.dialog.querySelector('.app-modal__content')
     if (content) {
       content.innerHTML = html
+      // Always reset scroll to top when content changes — step transitions and
+      // validation re-renders should start from the top, not the previous position.
+      content.scrollTop = 0
     } else {
       this.dialog.innerHTML = html
     }
@@ -367,7 +370,12 @@ class AppModal {
         },
         { once: true }
       )
-      errorSummary.focus()
+      // preventScroll stops the browser auto-scrolling any ancestor (including
+      // .app-modal__dialog which is overflow:hidden — scrollable programmatically
+      // but invisible, so auto-scroll shifts content behind the top edge).
+      // The error summary is always at the top; content.scrollTop = 0 ensures it
+      // is visible without any scrolling needed.
+      errorSummary.focus({ preventScroll: true })
     } else {
       // Once content is loaded, remove tabindex from the dialog so that clicks
       // on non-interactive areas don't pull focus back to the dialog container.
@@ -503,8 +511,18 @@ class AppModal {
         return
 
       const href = link.getAttribute('href')
-      // Skip hash-only and external links
-      if (!href || href.startsWith('#') || href.startsWith('http')) return
+      // Hash links (e.g. error summary → input anchors): mark as bound and leave
+      // them to the browser and NHS Frontend's error summary component. With
+      // overflow:clip on .app-modal__dialog, focus() calls cannot scroll the
+      // dialog container, so NHS Frontend focusing the target input naturally
+      // scrolls only .app-modal__content — the intended scroll container.
+      if (href && href.startsWith('#')) {
+        link._modalBound = true
+        return
+      }
+
+      // Skip external links
+      if (!href || href.startsWith('http')) return
 
       link._modalBound = true
       link.addEventListener('click', (e) => {
@@ -800,6 +818,15 @@ class AppModal {
           .join(' ')
         if (updated !== val) el.setAttribute(attr, updated)
       })
+    })
+
+    // Third pass: update hash-only href anchors (e.g. error summary links like
+    // href="#field-id" that jump to the associated input on click).
+    container.querySelectorAll('a[href^="#"]').forEach((link) => {
+      const hash = link.getAttribute('href').slice(1) // strip leading '#'
+      if (idMap.has(hash)) {
+        link.setAttribute('href', '#' + idMap.get(hash))
+      }
     })
   }
 
