@@ -43,8 +43,8 @@ body.app-modal-open {
   display: flex;
   flex-direction: column;
   overflow: clip; // content area handles its own overflow; clip (unlike hidden) prevents
-                  // programmatic scrolling of this container, so focus() calls inside never
-                  // shift content behind the top edge of the modal
+  // programmatic scrolling of this container, so focus() calls inside never
+  // shift content behind the top edge of the modal
 
   background-color: $nhsuk-body-background-colour;
   border: $nhsuk-focus-width solid nhsuk-colour("black");

@@ -806,7 +806,13 @@ class AppModal {
 
     // Second pass: update all attributes that reference IDs.
     // Values may be space-separated lists (e.g. aria-labelledby="id1 id2").
-    const refAttrs = ['for', 'aria-controls', 'aria-labelledby', 'aria-describedby', 'aria-owns']
+    const refAttrs = [
+      'for',
+      'aria-controls',
+      'aria-labelledby',
+      'aria-describedby',
+      'aria-owns'
+    ]
     const selector = refAttrs.map((a) => `[${a}]`).join(', ')
     container.querySelectorAll(selector).forEach((el) => {
       refAttrs.forEach((attr) => {
