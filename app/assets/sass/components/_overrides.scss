@@ -9,10 +9,3 @@
 p:has(+ .nhsuk-inset-text) {
   margin-bottom: 0;
 }
-
-.app-inset-text--compact {
-  @include nhsuk-responsive-padding(2, "top");
-  @include nhsuk-responsive-padding(2, "bottom");
-  @include nhsuk-responsive-margin(3, "top");
-  @include nhsuk-responsive-margin(4, "bottom");
-}

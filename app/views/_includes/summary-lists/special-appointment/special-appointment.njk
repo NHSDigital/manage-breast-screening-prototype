@@ -71,17 +71,10 @@
   {% endfor %}
 {% endif %}
 
-{# Display the Change link above the summary list if edits are allowed and there are appointments #}
-{% if allowEdits and showChangeLink %}
-  <div style="text-align: right;">
-    <a href="{{ eventUrl }}/special-appointment/edit{{ ('?referrerChain=' + referrerChain) if referrerChain }}" style="font-size: 19px;">Change<span class="nhsuk-u-visually-hidden"> special appointment requirements</span></a>
-  </div>
-{% endif %}
-
 {# Only display the summary list if there are rows to show #}
 {% if specialAppointmentRows | length > 0 %}
   {{ summaryList({
     rows: specialAppointmentRows,
     classes: summaryListClasses if summaryListClasses else "nhsuk-summary-list"
-  }) }}
+  } | removeLastRowBorder) }}
 {% endif %}

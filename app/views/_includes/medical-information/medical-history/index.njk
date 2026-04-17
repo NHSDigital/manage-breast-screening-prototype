@@ -66,7 +66,6 @@
   {% if historyItemArray and historyItemArray | length %}
 
     {% set hasAnyMedicalHistoryData = true %}
-    <h3 class="nhsuk-u-margin-bottom-2">{{ typeData.name }}</h3>
 
     {% for historyItem in historyItemArray %}
 
@@ -562,26 +561,23 @@
       {% endset %}
 
       {# Container for history item #}
-      <div class="nhsuk-u-margin-bottom-4">
-        {% call appSummaryCard({
-          title: {
-            text: "Item " ~ loop.index,
-            headingLevel: 4
-          } if historyItemArray | length > 1,
-          classes: "nhsuk-summary-card--compact nhsuk-u-margin-bottom-2",
-          actions: {
-            items: [
-              {
-                href: changeHref,
-                text: "Change",
-                visuallyHiddenText: typeData.name ~ " item " ~ loop.index
-              }
-            ]
-          }
-        }) %}
-          {{ historyItemContents | safe }}
-        {% endcall %}
-      </div>
+      {%- set cardHeading = typeData.name ~ ": item " ~ loop.index if historyItemArray | length > 1 else typeData.name %}
+      {% call card({
+        heading: cardHeading,
+        headingLevel: 4,
+        headingSize: "s",
+        classes: "nhsuk-u-margin-bottom-4",
+        actions: {
+          items: [
+            {
+              href: changeHref,
+              text: "Change"
+            } | openInModal
+          ]
+        }
+      }) %}
+        {{ historyItemContents | safe }}
+      {% endcall %}
 
     {% endfor %}
 
@@ -617,7 +613,7 @@
           text: typeData.name,
           href: contextUrl + "/medical-information/medical-history/" + typeData.slug + "/add" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
           classes: "nhsuk-button--secondary nhsuk-button--small"
-        }) }}
+        } | openInModal) }}
       {% endif %}
       
     {% endfor %}

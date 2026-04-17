@@ -20,7 +20,8 @@ const generateId = require('../lib/utils/id-generator')
 const {
   getReturnUrl,
   urlWithReferrer,
-  appendReferrer
+  appendReferrer,
+  modalBreakout
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
@@ -369,9 +370,8 @@ module.exports = (router) => {
 
         // Redirect to appointment page with paused status
         return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/appointment`
+          modalBreakout(`/clinics/${clinicId}/events/${eventId}/appointment`)
         )
-      } else if (pauseAction === 'no') {
         // Return to appointment - use referrer chain
         delete data.pauseAction
         delete data.confirmedImagesWereTaken
@@ -381,8 +381,7 @@ module.exports = (router) => {
           `/clinics/${clinicId}/events/${eventId}/appointment`,
           req.query.referrerChain
         )
-
-        return res.redirect(returnUrl)
+        return res.redirect(modalBreakout(returnUrl))
       }
 
       // Handle the initial question about whether images were taken
@@ -443,14 +442,16 @@ module.exports = (router) => {
           delete data.returnTo
           const destination =
             returnTo || `/clinics/${clinicId}/events/${eventId}/appointment`
-          return res.redirect(destination)
+          return res.redirect(modalBreakout(destination))
         } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
           delete data.exitAction
           delete data.confirmedNoImages
           delete data.confirmedImagesWereTaken
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+            modalBreakout(
+              `/clinics/${clinicId}/events/${eventId}/attended-not-screened-reason`
+            )
           )
         } else if (exitAction === 'save') {
           // Save changes and pause the appointment
@@ -493,7 +494,7 @@ module.exports = (router) => {
 
           // Redirect to appointment page with paused status
           return res.redirect(
-            `/clinics/${clinicId}/events/${eventId}/appointment`
+            modalBreakout(`/clinics/${clinicId}/events/${eventId}/appointment`)
           )
         }
       }
@@ -504,7 +505,9 @@ module.exports = (router) => {
       delete data.confirmedImagesWereTaken
 
       // Fallback redirect
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/appointment`)
+      res.redirect(
+        modalBreakout(`/clinics/${clinicId}/events/${eventId}/appointment`)
+      )
     }
   )
 
@@ -579,7 +582,7 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -766,7 +769,7 @@ module.exports = (router) => {
           scrollTo
         )
 
-        return res.redirect(returnUrl)
+        return res.redirect(modalBreakout(returnUrl))
       }
 
       // Handle the direct cancel action from appointment-should-not-proceed.html
@@ -797,8 +800,8 @@ module.exports = (router) => {
       ${participantName} has been 'attended not screened'. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
         req.flash('success', { wrapWithHeading: successMessage })
 
-        // Return to clinic list
-        return res.redirect(`/clinics/${clinicId}/`)
+        // Return to clinic list — break out of any modal so the browser navigates fully
+        return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
       }
 
       // Check if this is a recent mammogram (within 6 months)
@@ -869,8 +872,8 @@ module.exports = (router) => {
     Appointment cancelled. ${participantName} will be invited to the next routine appointment. <a href="${participantEventUrl}" class="app-nowrap">View their appointment</a>`
           req.flash('success', { wrapWithHeading: successMessage })
 
-          // Return to clinic list
-          return res.redirect(`/clinics/${clinicId}/`)
+          // Return to clinic list — break out of any modal
+          return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
         }
       }
 
@@ -881,7 +884,7 @@ module.exports = (router) => {
         referrerChain,
         scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -936,7 +939,7 @@ module.exports = (router) => {
         req.query.referrerChain,
         req.query.scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -974,10 +977,213 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const data = req.session.data
+      const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
       const action = req.body?.action || req.query.action // 'save' or 'save-and-add'
       const nextSymptomType = req.query.symptomType // camelCase symptom type
       const referrerChain = req.query.referrerChain
       const scrollTo = req.query.scrollTo
+
+      // Validate required fields
+      const symptomType = data.event?.symptomTemp?.type
+      const validationErrors = []
+
+      if (symptomType === 'Nipple change') {
+        const loc = data.event?.symptomTemp?.nippleChangeLocation
+        if (!loc || !loc.length) {
+          validationErrors.push({
+            name: 'event[symptomTemp][nippleChangeLocation]',
+            text: 'Select which nipple has changed',
+            href: '#nippleChangeLocationRight'
+          })
+        }
+      } else if (symptomType) {
+        const loc = data.event?.symptomTemp?.location
+        if (!loc) {
+          validationErrors.push({
+            name: 'event[symptomTemp][location]',
+            text: 'Select a location',
+            href: '#locationRightBreast'
+          })
+        } else {
+          // Validate conditional description fields
+          if (
+            loc === 'right breast' &&
+            !data.event.symptomTemp.rightBreastDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][rightBreastDescription]',
+              text: 'Describe the specific area for the right breast',
+              href: '#rightBreastDescription'
+            })
+          }
+          if (
+            loc === 'left breast' &&
+            !data.event.symptomTemp.leftBreastDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][leftBreastDescription]',
+              text: 'Describe the specific area for the left breast',
+              href: '#leftBreastDescription'
+            })
+          }
+          if (
+            loc === 'both breasts' &&
+            !data.event.symptomTemp.bothBreastsDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][bothBreastsDescription]',
+              text: 'Describe the specific areas',
+              href: '#bothBreastsDescription'
+            })
+          }
+          if (
+            loc === 'other' &&
+            !data.event.symptomTemp.otherLocationDescription
+          ) {
+            validationErrors.push({
+              name: 'event[symptomTemp][otherLocationDescription]',
+              text: 'Describe the specific area',
+              href: '#otherLocationDescription'
+            })
+          }
+        }
+      }
+
+      // Validate type-specific description fields
+      if (
+        symptomType === 'Other' &&
+        !data.event?.symptomTemp?.otherDescription
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][otherDescription]',
+          text: 'Describe the symptom',
+          href: '#otherDescription'
+        })
+      }
+
+      if (symptomType === 'Nipple change') {
+        if (!data.event?.symptomTemp?.nippleChangeType) {
+          validationErrors.push({
+            name: 'event[symptomTemp][nippleChangeType]',
+            text: 'Select the type of nipple change',
+            href: '#nippleChangeType'
+          })
+        } else if (
+          data.event.symptomTemp.nippleChangeType === 'other' &&
+          !data.event.symptomTemp.nippleChangeDescription
+        ) {
+          validationErrors.push({
+            name: 'event[symptomTemp][nippleChangeDescription]',
+            text: 'Provide details of the nipple change',
+            href: '#nippleChangeDescription'
+          })
+        }
+      }
+
+      if (symptomType === 'Skin change') {
+        if (!data.event?.symptomTemp?.skinChangeType) {
+          validationErrors.push({
+            name: 'event[symptomTemp][skinChangeType]',
+            text: 'Select how the skin has changed',
+            href: '#skinChangeType'
+          })
+        } else if (
+          data.event.symptomTemp.skinChangeType === 'other' &&
+          !data.event.symptomTemp.skinChangeDescription
+        ) {
+          validationErrors.push({
+            name: 'event[symptomTemp][skinChangeDescription]',
+            text: 'Describe the skin change',
+            href: '#skinChangeDescription'
+          })
+        }
+      }
+
+      // Validate how long the symptom has existed (required)
+      if (!data.event?.symptomTemp?.dateType) {
+        validationErrors.push({
+          name: 'event[symptomTemp][dateType]',
+          text: 'Select how long this symptom has existed',
+          href: '#dateType'
+        })
+      } else if (data.event.symptomTemp.dateType === 'dateKnown') {
+        const ds = data.event.symptomTemp.dateStarted
+        if (!ds?.month && !ds?.year) {
+          validationErrors.push({
+            name: 'event[symptomTemp][dateStarted]',
+            text: 'Enter the date the symptom started',
+            href: '#dateStarted-month'
+          })
+        }
+      }
+
+      // Validate approximate date stopped if symptom has resolved
+      const hasStopped = data.event?.symptomTemp?.hasStopped
+      if (
+        Array.isArray(hasStopped) &&
+        hasStopped.includes('yes') &&
+        !data.event?.symptomTemp?.approximateDateStopped
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][approximateDateStopped]',
+          text: 'Enter an approximate date the symptom stopped',
+          href: '#approximateDateStopped'
+        })
+      }
+
+      // Validate whether the symptom has been investigated (required)
+      if (!data.event?.symptomTemp?.hasBeenInvestigated) {
+        validationErrors.push({
+          name: 'event[symptomTemp][hasBeenInvestigated]',
+          text: 'Select whether this has been investigated',
+          href: '#hasBeenInvestigated'
+        })
+      } else if (
+        data.event.symptomTemp.hasBeenInvestigated === 'yes' &&
+        !data.event.symptomTemp.investigatedDescription
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][investigatedDescription]',
+          text: 'Provide details of the investigation',
+          href: '#investigatedDescription'
+        })
+      }
+
+      // Validate isSignificant for non-default significant types (breast pain, other)
+      const typeConfig = symptomTypes.find(
+        (st) => st.name === symptomType?.toLowerCase()
+      )
+      if (
+        typeConfig &&
+        !typeConfig.isSignificantByDefault &&
+        !data.event?.symptomTemp?.isSignificant
+      ) {
+        validationErrors.push({
+          name: 'event[symptomTemp][isSignificant]',
+          text: 'Select whether this symptom should be highlighted to image readers',
+          href: '#isSignificant'
+        })
+      }
+
+      if (validationErrors.length) {
+        if (isModal) {
+          // Return 422 with the details page rendered as a modal fragment.
+          // parentLayout is already set in res.locals by the modal middleware.
+          return res
+            .status(422)
+            .render('events/medical-information/symptoms/details', {
+              errors: validationErrors,
+              // Also set flash so populateErrors works on field-level errors
+              flash: { error: validationErrors }
+            })
+        }
+        // Non-JS path: flash errors and redirect back to the form
+        validationErrors.forEach((err) => req.flash('error', err))
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/medical-information/symptoms/details` +
+            (referrerChain ? `?referrerChain=${referrerChain}` : '')
+        )
+      }
 
       // Save temp symptom to array
       if (data.event?.symptomTemp) {
@@ -1044,8 +1250,6 @@ module.exports = (router) => {
         } else if (symptomTemp.dateType === 'notSure') {
           delete symptom.approximateDuration
         }
-
-        console.log('symptomTemp', symptomTemp)
 
         if (symptomTemp.isIntermittent) {
           symptom.isIntermittent = true
@@ -1135,8 +1339,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        console.log('Redirecting to:', returnUrl, 'scrollTo:', scrollTo)
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
     }
   )
@@ -1206,7 +1409,7 @@ module.exports = (router) => {
         req.query.referrerChain,
         req.query.scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1216,8 +1419,8 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, eventId } = req.params
       const { symptomType } = req.query
-      console.log('Adding symptom type:', symptomType)
       const data = req.session.data
+      const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
 
       // Clear any existing temp symptom data
       delete data.event?.symptomTemp
@@ -1233,6 +1436,12 @@ module.exports = (router) => {
           // Pre-populate symptomTemp with the selected type
           data.event.symptomTemp = {
             type: sentenceCase(symptomTypeConfig.name)
+          }
+
+          // For modal (AJAX) requests, render the details page as a fragment.
+          // parentLayout is already set in res.locals by the modal middleware.
+          if (isModal) {
+            return res.render('events/medical-information/symptoms/details')
           }
 
           // Redirect to details page
@@ -1303,7 +1512,7 @@ module.exports = (router) => {
         referrerChain,
         scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1543,7 +1752,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
     }
   )
@@ -1626,7 +1835,7 @@ module.exports = (router) => {
         req.query.referrerChain,
         req.query.scrollTo
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -1679,7 +1888,7 @@ module.exports = (router) => {
       req.flash('success', successMessage)
 
       // Return to clinic page
-      res.redirect(`/clinics/${clinicId}`)
+      res.redirect(modalBreakout(`/clinics/${clinicId}`))
     }
   )
 
@@ -1775,7 +1984,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
       // Handle "No, but scan unaffected breast"
       else if (consentGiven.startsWith('no-continue-')) {
@@ -1854,7 +2063,7 @@ module.exports = (router) => {
           referrerChain,
           scrollTo
         )
-        res.redirect(returnUrl)
+        res.redirect(modalBreakout(returnUrl))
       }
       // Handle "No, end appointment"
       else if (consentGiven === 'no') {
@@ -2889,31 +3098,48 @@ module.exports = (router) => {
       const temporaryReasons = data.event?.specialAppointment?.temporaryReasons
 
       // Validate that temporaryReasons was answered
-      if (!temporaryReasons && supportTypes) {
-        req.flash('error', {
-          text: 'Select whether any of these reasons are temporary',
-          name: 'event[specialAppointment][temporaryReasons]',
-          href: '#temporaryReasons'
-        })
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/edit`
-        )
-      }
+      // if (!temporaryReasons && supportTypes) {
+      //   req.flash('error', {
+      //     text: 'Select whether any of these reasons are temporary',
+      //     name: 'event[specialAppointment][temporaryReasons]',
+      //     href: '#temporaryReasons'
+      //   })
+      //   return res.redirect(
+      //     `/clinics/${clinicId}/events/${eventId}/special-appointment/edit`
+      //   )
+      // }
 
-      // If user selected "yes", redirect to temporary reasons selection page
-      if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
+      // // If user selected "yes", redirect to temporary reasons selection page
+      // if (temporaryReasons === 'yes' && supportTypes?.length > 0) {
+      //   res.redirect(
+      //     urlWithReferrer(
+      //       `/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`,
+      //       req.query.referrerChain
+      //     )
+      //   )
+      // } else
+
+      // Return user during workflow
+      if (isAppointmentWorkflow(data.event, data.currentUser)) {
+        // In workflow — skip confirm, leave data in temp store, return to workflow
+        // if (temporaryReasons === 'no') {
+        //   delete data.event.specialAppointment.temporaryReasonsList
+        // }
         res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/temporary-reasons`
-        )
-      } else if (temporaryReasons === 'no' || supportTypes?.length === 0) {
-        // If "no", redirect to confirm page to show what they selected
-        delete data.event.specialAppointment.temporaryReasonsList
-        res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
+          modalBreakout(
+            getReturnUrl(
+              `/clinics/${clinicId}/events/${eventId}`,
+              req.query.referrerChain
+            )
+          )
         )
       } else {
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/special-appointment/edit`
+        // Standalone — go to confirm page which will save
+        if (temporaryReasons === 'no') {
+          delete data.event.specialAppointment.temporaryReasonsList
+        }
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
         )
       }
     }
@@ -2924,11 +3150,24 @@ module.exports = (router) => {
     '/clinics/:clinicId/events/:eventId/special-appointment/temporary-reasons-answer',
     (req, res) => {
       const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-      // After saving temporary reasons data, redirect to confirm page
-      res.redirect(
-        `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
-      )
+      if (isAppointmentWorkflow(data.event, data.currentUser)) {
+        // In workflow — skip confirm, leave data in temp store, return to workflow
+        res.redirect(
+          modalBreakout(
+            getReturnUrl(
+              `/clinics/${clinicId}/events/${eventId}`,
+              req.query.referrerChain
+            )
+          )
+        )
+      } else {
+        // Standalone — go to confirm page which will save
+        res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/special-appointment/confirm`
+        )
+      }
     }
   )
 
@@ -2953,7 +3192,11 @@ module.exports = (router) => {
       saveTempParticipantToParticipant(data)
 
       req.flash('success', 'Special appointment requirements confirmed')
-      res.redirect(`/clinics/${clinicId}/events/${eventId}`)
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}`,
+        req.query.referrerChain
+      )
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -2973,7 +3216,7 @@ module.exports = (router) => {
         `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 
@@ -2993,10 +3236,10 @@ module.exports = (router) => {
       req.flash('success', 'Appointment note deleted')
 
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/events/${eventId}/appointment-note`,
+        `/clinics/${clinicId}/events/${eventId}`,
         req.query.referrerChain
       )
-      res.redirect(returnUrl)
+      res.redirect(modalBreakout(returnUrl))
     }
   )
   // General purpose dynamic template route for events
@@ -3062,7 +3305,7 @@ module.exports = (router) => {
         req.flash('success', { wrapWithHeading: successMessage })
 
         // Return to clinic page
-        res.redirect(`/clinics/${clinicId}`)
+        res.redirect(modalBreakout(`/clinics/${clinicId}`))
       }
     }
   )
@@ -3108,8 +3351,8 @@ module.exports = (router) => {
 
       req.flash('success', { wrapWithHeading: successMessage })
 
-      // Return to clinic page
-      res.redirect(`/clinics/${clinicId}`)
+      // Return to clinic page — break out of any modal so the browser navigates fully
+      res.redirect(modalBreakout(`/clinics/${clinicId}`))
     }
   )
 

@@ -1,10 +1,10 @@
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or 'layout-appointment.html' %}
 
 {% set pageHeading = "Which of these reasons are temporary?" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./temporary-reasons-answer" %}
+{% set formAction = "./temporary-reasons-answer" | urlWithReferrer(referrerChain) %}
 
 {% set back = {
   href: "./edit",

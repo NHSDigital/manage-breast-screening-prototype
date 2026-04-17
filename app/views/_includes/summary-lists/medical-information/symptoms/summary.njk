@@ -119,6 +119,14 @@
     {# Join all value lines with line breaks #}
     {% set symptomValueHtml = valueLines | join('<br>') %}
 
+    {# Build the Change action #}
+    {% set editUrl = contextUrl + "/medical-information/symptoms/edit/" + symptom.id %}
+    {% set changeItem = {
+      href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+      text: "Change",
+      visuallyHiddenText: symptom.type | lower
+    } %}
+
     {% set rows = rows | push({
       key: {
         html: keyText
@@ -127,13 +135,7 @@
         html: symptomValueHtml
       },
       actions: {
-        items: [
-          {
-            href: contextUrl + "/medical-information/symptoms/edit/" + symptom.id | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
-            text: "Change",
-            visuallyHiddenText: symptom.type | lower
-          }
-        ]
+        items: [changeItem]
       } if allowEdits,
       classes: "nhsuk-summary-list__row--no-border" if loop.last
     }) %}
@@ -141,5 +143,5 @@
 
   {{ summaryList({
     rows: rows
-  }) }}
+  } | openInModal) }}
 {% endif %}

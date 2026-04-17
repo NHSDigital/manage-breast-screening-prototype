@@ -12,12 +12,7 @@
   value: {
     html: dob
   },
-  actions: {
-    items: [{
-
-    } if allowEdits
-    ]
-  }
+  anyRowHasActions: allowEdits
 } | handleSummaryListMissingInformation(showNotProvidedText) %}
 
 {{ appSummaryListRow(dobRow) }}

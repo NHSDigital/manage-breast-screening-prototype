@@ -153,6 +153,60 @@ router.post(
 )
 
 require('./routes/settings')(router)
+
+// Modal fragment middleware — threads the _modal param through redirect chains
+// and form submissions so any page can render as a modal fragment without
+// per-route changes.
+//
+// Detection: XHR request (X-Requested-With header, set by modal.js fetch) OR
+//            _modal=1 query/body param (survives server-side redirects and form posts).
+//
+// On detection:
+//   - Sets res.locals.parentLayout so templates use the modal fragment layout
+//   - Wraps res.redirect() to append ?_modal=1 to the target URL, threading
+//     the param through any server-side redirects in the request chain
+router.use((req, res, next) => {
+  const isXhr = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  const hasModalParam = req.query._modal === '1' || req.body?._modal === '1'
+
+  if (!isXhr && !hasModalParam) return next()
+
+  res.locals.parentLayout = '_templates/layout-modal-form.html'
+
+  // Wrap redirect to carry _modal=1 through server-side redirect chains.
+  // The X-Requested-With header is stripped by the browser when following
+  // redirects, so without this the fragment layout would be lost after a redirect.
+  // For _modal_breakout redirects, send a special 200 fragment instead of a real
+  // redirect — this prevents fetch from following the redirect and calling res.render,
+  // which would consume the flash before the browser navigates to the destination.
+  const originalRedirect = res.redirect.bind(res)
+  res.redirect = (...args) => {
+    let status, url
+    if (typeof args[0] === 'number') {
+      ;[status, url] = args
+    } else {
+      status = 302
+      ;[url] = args
+    }
+
+    if (url && url.includes('_modal_breakout')) {
+      // Intercept breakout redirects — send a minimal fragment that tells modal.js
+      // to navigate the browser to the destination. The flash is not consumed here
+      // because we bypass res.render (which is where express-flash reads req.flash()).
+      return res.status(200).send(`<div data-modal-navigate="${url}"></div>`)
+    }
+
+    // Only thread _modal=1 through app-relative URLs, not external ones or already-tagged ones
+    if (url && !url.startsWith('http') && !url.includes('_modal=')) {
+      const separator = url.includes('?') ? '&' : '?'
+      url = `${url}${separator}_modal=1`
+    }
+    originalRedirect(status, url)
+  }
+
+  next()
+})
+
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
 require('./routes/events')(router)
@@ -161,6 +215,32 @@ require('./routes/reports')(router)
 
 router.get('/modal-examples', (req, res) => {
   res.render('_components/modal/examples')
+})
+
+// Style guide demo: form-in-modal example
+router.post('/style-guide/modal-form-demo/save', (req, res) => {
+  const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  const note = (req.body['demo-note'] || '').trim()
+
+  if (!note) {
+    const validationErrors = [
+      { name: 'demo-note', text: 'Enter a note', href: '#demo-note' }
+    ]
+    if (isModal) {
+      // Render the fragment with errors inside the modal
+      return res.status(422).render('style-guide/modal-form-demo', {
+        errors: validationErrors,
+        flash: { error: validationErrors },
+        values: { 'demo-note': req.body['demo-note'] }
+      })
+    }
+    // Non-JS fallback: flash uses the name field so populateErrors can match
+    req.flash('error', { name: 'demo-note', text: 'Enter a note' })
+    return res.redirect('/style-guide/modal')
+  }
+
+  req.flash('success', `Note saved (demo \u2014 nothing was actually stored)`)
+  res.redirect('/style-guide/modal')
 })
 
 // Workaround for Chrome DevTools requesting a specific URL

@@ -149,18 +149,3 @@
     padding: 0;
   }
 }
-
-.nhsuk-summary-card--compact {
-  .nhsuk-summary-card__actions {
-    @include nhsuk-typography-weight-normal;
-  }
-
-  .nhsuk-summary-card__action {
-    margin-bottom: 0;
-  }
-
-  .nhsuk-summary-card__title-wrapper,
-  .nhsuk-summary-card__content {
-    padding: nhsuk-spacing(1) nhsuk-spacing(2);
-  }
-}

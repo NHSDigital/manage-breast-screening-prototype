@@ -85,6 +85,7 @@ try {
 
 const defaultSettings = {
   darkMode: 'false',
+  compactMode: 'false',
   debugMode: 'false',
   showEnvironmentBanner: 'true',
   mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
@@ -97,6 +98,7 @@ const defaultSettings = {
     manualImageCollection: 'true',
     showParticipantSection: 'false',
     useCondensedReviewSummaries: 'true',
+    modalForms: 'false',
     imageStreaming: {
       enabled: 'true',
       intervalMs: '3000'

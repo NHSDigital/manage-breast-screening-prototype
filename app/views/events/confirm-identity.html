@@ -56,8 +56,9 @@
       {% include "_includes/summary-lists/rows/address.njk" %}
       {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
       {% include "_includes/summary-lists/rows/email.njk" %}
+      {% set noBorder = true %}
       {% include "_includes/summary-lists/rows/ethnicity.njk" %}
-      {% include "_includes/summary-lists/rows/gp.njk" %}
+      {# {% include "_includes/summary-lists/rows/gp.njk" %} #}
     {% endcall %}
   {% endcall %}
 

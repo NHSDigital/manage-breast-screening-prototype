@@ -1,0 +1,27 @@
+{# app/views/_components/link/template.njk #}
+{#
+  Renders a plain <a> element. Use with the openInModal filter to progressively
+  enhance the link to open in a modal when modal forms are enabled.
+
+  Parameters:
+    text        {string}  Required if html not set. Link text.
+    html        {string}  Required if text not set. Link HTML content.
+    href        {string}  Required. The URL.
+    classes     {string}  Optional. Additional CSS classes.
+    id          {string}  Optional. ID attribute.
+    attributes  {object}  Optional. Additional HTML attributes (e.g. data attributes
+                          added by openInModal filter).
+
+  Example:
+    {{ appLink({ text: "Cancel appointment", href: cancelUrl } | openInModal) }}
+#}
+
+{%- from 'nhsuk/macros/attributes.njk' import nhsukAttributes -%}
+
+<a
+  {%- if params.id %} id="{{ params.id }}"{% endif %}
+  class="nhsuk-link{%- if params.classes %} {{ params.classes }}{% endif %}"
+  href="{{ params.href | default('#', true) }}"
+  {{- nhsukAttributes(params.attributes) }}>
+  {{- params.html | safe if params.html else params.text -}}
+</a>

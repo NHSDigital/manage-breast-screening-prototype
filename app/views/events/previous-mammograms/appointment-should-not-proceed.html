@@ -1,6 +1,6 @@
 {# app/views/events/previous-mammograms/appointment-should-not-proceed.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or 'layout-appointment.html' %}
 
 {% set previousMammogramCount = event.previousMammograms | length %}
 
@@ -72,7 +72,7 @@
   </div>
 
   <p>
-    <a href="./edit">Edit previous mammogram details</a>
+    <a href="../previous-mammograms/form">Edit previous mammogram details</a>
   </p>
 
   <p>

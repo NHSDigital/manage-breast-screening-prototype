@@ -38,7 +38,8 @@
          visuallyHiddenText: "home address"
        } if allowEdits
      ]
-   }
-} | handleSummaryListMissingInformation(showNotProvidedText) %}
+   } if allowEdits else null,
+   anyRowHasActions: allowEdits
+} | openInModal | handleSummaryListMissingInformation(showNotProvidedText) %}
 
 {{ appSummaryListRow(addressRow) }}

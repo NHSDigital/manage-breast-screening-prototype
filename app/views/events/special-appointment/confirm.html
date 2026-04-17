@@ -1,4 +1,4 @@
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or 'layout-appointment.html' %}
 
 {% set pageHeading = "Confirm special appointment requirements" %}
 
@@ -10,7 +10,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = "./confirm-answer" %}
+{% set formAction = "./confirm-answer" | urlWithReferrer(referrerChain) %}
 
 {% set back = {
   href: "./edit",

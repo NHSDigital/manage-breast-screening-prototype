@@ -1,6 +1,6 @@
 {# app/views/events/mammography/medical-information/symptoms/details.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {% set type = event.symptomTemp.type %}
 {% if type != "Other" %}
@@ -22,9 +22,10 @@
     {{ pageHeading }}
   </h1>
 
-  {% set symptomType = data.symptomTypes | find("name", event.symptomTemp.type | lower) %}
+  {# Preserve the symptom type through form submission #}
+  <input type="hidden" name="event[symptomTemp][type]" value="{{ event.symptomTemp.type }}">
 
-  {{ symptomType | log("Symptom type")}}
+  {% set symptomType = data.symptomTypes | find("name", event.symptomTemp.type | lower) %}
 
   {% if symptomType.isSignificantByDefault %}
     {# Special case for lumps, otherwise all other types work with '[name] is a' #}
@@ -95,7 +96,7 @@
                   text: "Right nipple"
                 }
               ]
-            }) }}
+            } | populateErrors) }}
           </div>
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
@@ -131,16 +132,23 @@
       {% endif %}
     {% endset %}
 
-    <div class="nhsuk-form-group">
+    {% set _locationError = 'event[symptomTemp][location]' | getFlashError %}
+
+    <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if _locationError else '' }}">
       {% call fieldset({
         legend: {
           text: radioQuestionText,
           classes: "nhsuk-fieldset__legend--m"
         },
-        attributes: {
-          "aria-describedby": "location-error" if errors.location else ""
-        }
+        describedBy: "location-error" if _locationError
       }) %}
+
+        {% if _locationError %}
+          {{ errorMessage({
+            id: "location-error",
+            text: _locationError.text
+          }) }}
+        {% endif %}
 
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
@@ -157,12 +165,13 @@
                   text: "Right breast",
                   conditional: {
                     html: input({
+                      id: "rightBreastDescription",
                       name: "event[symptomTemp][rightBreastDescription]",
                       label: {
                         text: "Describe the specific area"
                       },
                       value: event.symptomTemp.rightBreastDescription
-                    })
+                    } | populateErrors)
                   }
                 }
               ]
@@ -182,12 +191,13 @@
                   text: "Left breast",
                   conditional: {
                     html: input({
+                      id: "leftBreastDescription",
                       name: "event[symptomTemp][leftBreastDescription]",
                       label: {
                         text: "Describe the specific area"
                       },
                       value: event.symptomTemp.leftBreastDescription
-                    })
+                    } | populateErrors)
                   }
                 }
               ]
@@ -205,13 +215,14 @@
               text: "Both breasts",
               conditional: {
                 html: input({
+                  id: "bothBreastsDescription",
                   name: "event[symptomTemp][bothBreastsDescription]",
                   label: {
                     text: "Describe the specific areas"
                   },
                   value: event.symptomTemp.bothBreastsDescription,
                   classes: "nhsuk-u-width-two-thirds"
-                })
+                } | populateErrors)
               }
             } if event.symptomTemp.type == "Lumps" else {},
             {
@@ -225,6 +236,7 @@
               },
               conditional: {
                 html: input({
+                  id: "otherLocationDescription",
                   name: "event[symptomTemp][otherLocationDescription]",
                   label: {
                     text: "Describe the specific area",
@@ -236,7 +248,7 @@
                   },
                   value: event.symptomTemp.otherLocationDescription,
                   classes: "nhsuk-u-width-two-thirds"
-                })
+                } | populateErrors)
               }
             }
           ] | removeEmpty
@@ -251,6 +263,7 @@
   {% if event.symptomTemp.type == "Other" %}
 
     {{ input({
+      id: "otherDescription",
       name: "event[symptomTemp][otherDescription]",
       label: {
         text: "Describe the symptom",
@@ -258,7 +271,7 @@
       },
       value: event.symptomTemp.otherDescription,
       classes: "nhsuk-u-width-two-thirds"
-    }) }}
+    } | populateErrors) }}
 
   {# Nipple change type #}
   {% elseif event.symptomTemp.type == "Nipple change" %}
@@ -303,17 +316,18 @@
           text: "Other",
           conditional: {
             html: input({
+              id: "nippleChangeDescription",
               name: "event[symptomTemp][nippleChangeDescription]",
               label: {
                 text: "Provide details"
               },
               value: event.symptomTemp.nippleChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
-            })
+            } | populateErrors)
           }
         }
       ]
-    }) }}
+    } | populateErrors) }}
 
   {# Skin change type #}
   {% elseif event.symptomTemp.type == "Skin change" %}
@@ -351,24 +365,27 @@
           text: "Other",
           conditional: {
             html: input({
+              id: "skinChangeDescription",
               name: "event[symptomTemp][skinChangeDescription]",
               label: {
                 text: "Describe the change"
               },
               value: event.symptomTemp.skinChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
-            })
+            } | populateErrors)
           }
         }
       ]
-    }) }}
+    } | populateErrors) }}
   {% endif %}
 
   {# Dates #}
   {% set dateKnownHtml %}
+      {% set _dateStartedError = 'event[symptomTemp][dateStarted]' | getFlashError %}
       {{ dateInput({
         id: "dateStarted",
         namePrefix: "event[symptomTemp][dateStarted]",
+        errorMessage: { text: _dateStartedError.text } if _dateStartedError else null,
         fieldset: {
           legend: {
             text: "Date symptom started",
@@ -471,10 +488,11 @@
       },
       value: event.symptomTemp.dateType,
       items: dateRadioItems
-    }) }}
+    } | populateErrors) }}
 
     {% set stymptomStoppedHtml %}
       {{ input({
+        id: "approximateDateStopped",
         name: "event[symptomTemp][approximateDateStopped]",
         label: {
           text: "Approximate date symptom stopped"
@@ -484,7 +502,7 @@
         },
         value: event.symptomTemp.approximateDateStopped,
         classes: "nhsuk-u-width-two-thirds"
-      }) }}
+      } | populateErrors) }}
     {% endset %}
 
     {# TODO: don't use br for spacing! #}
@@ -536,6 +554,7 @@
         text: "Yes",
         conditional: {
           html: textarea({
+            id: "investigatedDescription",
             name: "event[symptomTemp][investigatedDescription]",
             label: {
               text: "Provide details"
@@ -545,7 +564,7 @@
             },
             value: event.symptomTemp.investigatedDescription,
             _classes: "nhsuk-u-width-two-thirds"
-          })
+          } | populateErrors)
         }
       },
       {
@@ -553,7 +572,7 @@
         text: "No"
       }
     ]
-  }) }}
+  } | populateErrors) }}
 
   {# Only show if not significant by default #}
     {% if not symptomType.isSignificantByDefault %}
@@ -592,7 +611,7 @@
             checked: true if event.symptomTemp.isSignificant == false
           }
         ]
-      }) }}
+      } | populateErrors) }}
 
       {# {{ checkboxes({
         idPrefix: "isSignificant",

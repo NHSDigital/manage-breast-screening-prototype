@@ -13,6 +13,7 @@
 {%- from '_components/event-status/macro.njk' import eventStatus %}
 {%- from '_components/forward-link/macro.njk' import appForwardLink %}
 {%- from '_components/hidden-input/macro.njk' import appHiddenInput %}
+{%- from '_components/link/macro.njk' import appLink %}
 {%- from '_components/modal/macro.njk' import appModal %}
 {%- from '_components/modal/macro.njk' import appConfirmationModal %}
 {%- from '_components/secondary-navigation/macro.njk' import appSecondaryNavigation %}
@@ -28,8 +29,12 @@
 {%- from '_components/status-message/macro.njk' import appStatusMessage %}
 
 {% block head %}
-  {# Add your custom CSS or Sass in /app/assets/sass/main.scss #}
+  {# Load compact or default stylesheet based on compact mode setting #}
+  {% if data.settings.compactMode == 'true' %}
+  <link href="/assets/sass/main-compact.css" rel="stylesheet">
+  {% else %}
   <link href="/assets/sass/main.css" rel="stylesheet">
+  {% endif %}
 {% endblock %}
 
 <!-- Edit the header -->
@@ -83,6 +88,10 @@
 
 {% block bodyEnd %}
   {{ super() }}
+  {# Single shared modal shell for all modal forms #}
+  {% if data.settings.screening.modalForms == 'true' %}
+    {{ appModal({ id: "app-form-modal", showCloseButton: true }) }}
+  {% endif %}
   {% block scripts %}
     {# Custom JavaScript files can be added to this file #}
     {% include "_includes/scripts.html" %}
