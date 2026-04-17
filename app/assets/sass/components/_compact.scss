@@ -14,6 +14,12 @@
     @include nhsuk-responsive-margin(3, "bottom");
   }
 
+  // Recreate small checkboxes and radios.
+
+  // Doing this for two reasons:
+  // 1. Means we can apply it globally with a setting rather than adjusting every macro usage
+  // 2. Our spacing ajdustments break the visual design of checkboxes and radios so this restores the correct geometry. Raised here: https://github.com/nhsuk/nhsuk-frontend/issues/1885
+
   // Apply .nhsuk-checkboxes--small equivalent to all checkboxes in compact mode.
   // spacing(6) = 32px (box size), small size fixed at 24px (NHS default for --small variant).
   // touch target = 36px, input-offset = (36 - 24) / 2 = 6px.
@@ -212,17 +218,17 @@
     }
   }
 
+  // Reduce spacing after buttons
   .nhsuk-button {
-    font-weight: 600;
-    @include nhsuk-responsive-margin(4, "bottom");
+    @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
 
     &.nhsuk-button--small {
-      @include nhsuk-responsive-margin(4, "bottom");
+      @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
     }
   }
 
+  // Make a medium sized button
   .nhsuk-button:not(.nhsuk-button--small) {
-    min-height: nhsuk-px-to-rem(40px);
     padding: nhsuk-px-to-rem(8px) nhsuk-px-to-rem(14px);
 
     @include nhsuk-media-query($from: tablet) {
@@ -231,18 +237,18 @@
     }
   }
 
-  .nhsuk-tag {
-    padding-top: nhsuk-px-to-rem(2px);
-    padding-right: nhsuk-px-to-rem(6px);
-    padding-bottom: nhsuk-px-to-rem(2px);
-    padding-left: nhsuk-px-to-rem(6px);
-    font-size: nhsuk-px-to-rem(13px);
-    line-height: 1;
+  // .nhsuk-tag {
+  //   padding-top: nhsuk-px-to-rem(2px);
+  //   padding-right: nhsuk-px-to-rem(6px);
+  //   padding-bottom: nhsuk-px-to-rem(2px);
+  //   padding-left: nhsuk-px-to-rem(6px);
+  //   font-size: nhsuk-px-to-rem(13px);
+  //   line-height: 1;
 
-    @include nhsuk-media-query($from: tablet) {
-      font-size: nhsuk-px-to-rem(14px);
-    }
-  }
+  //   @include nhsuk-media-query($from: tablet) {
+  //     font-size: nhsuk-px-to-rem(14px);
+  //   }
+  // }
 
   .app-clinics-table {
     table-layout: fixed;
@@ -291,16 +297,6 @@
 
   .nhsuk-list > li:last-child {
     margin-bottom: 0;
-  }
-
-  .nhsuk-summary-list__row {
-    margin-bottom: 0;
-  }
-
-  .nhsuk-summary-list__row--no-actions::after {
-    content: none !important;
-    display: none !important;
-    width: 0 !important;
   }
 
   .nhsuk-summary-list__key,
