@@ -119,10 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
           opinionForm.classList.remove('app-reading-opinion--locked')
           opinionForm.dataset.readingOpinionLocked = 'false'
         } else {
-          // Key by date + batch + event so resets and new batches re-lock
-          const batchId = opinionForm.dataset.batchId || 'no-batch'
+          // Key by date + session + event so resets and new sessions re-lock
+          const sessionId = opinionForm.dataset.sessionId || 'no-session'
           const todayKey = new Date().toISOString().slice(0, 10)
-          const unlockKey = `readingOpinionUnlocked:${todayKey}:${batchId}:${eventId}`
+          const unlockKey = `readingOpinionUnlocked:${todayKey}:${sessionId}:${eventId}`
 
           if (!sessionStorage.getItem(unlockKey)) {
             sessionStorage.setItem(unlockKey, 'true')

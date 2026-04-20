@@ -6,7 +6,7 @@
 {% set hideStatusBar = true %}
 {% set hideBackLink = true %}
 
-{% set pageHeading = "End of batch" %}
+{% set pageHeading = "End of session" %}
 
 {% block pageContent %}
 
@@ -16,16 +16,16 @@
     <span class="nhsuk-caption-l">Image reading</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-    <p>You’ve reached the end of this session. You have {{ batch.skippedEvents.length }} skipped {{ "case" | pluralise(batch.skippedEvents.length) }} to review.</p>
+    <p>You've reached the end of this session. You have {{ session.skippedEvents.length }} skipped {{ "case" | pluralise(session.skippedEvents.length) }} to review.</p>
 
     <div class="nhsuk-button-group">
       {% if firstSkippedEventId %}
         {{ button({
           text: "Read skipped cases",
-          href: "/reading/batch/" + batchId + "/events/" + firstSkippedEventId
+          href: "/reading/session/" + sessionId + "/events/" + firstSkippedEventId
         }) }}
       {% endif %}
-      <a href="/reading/batch/{{ batchId }}" class="nhsuk-link nhsuk-button-group__item">Back to batch</a>
+      <a href="/reading/session/{{ sessionId }}" class="nhsuk-link nhsuk-button-group__item">Back to session</a>
     </div>
 
   </div>

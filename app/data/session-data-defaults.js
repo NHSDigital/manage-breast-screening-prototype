@@ -113,8 +113,8 @@ const defaultSettings = {
     secondReaderComparison: 'late', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
     arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_non_normal'
-    lazyBatches: 'true',
-    defaultBatchTargetSize: '25'
+    lazySessions: 'true',
+    defaultSessionSize: '25'
   }
 }
 

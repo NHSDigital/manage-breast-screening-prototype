@@ -70,8 +70,8 @@
     </div>
   {% endif %}
 
-  {% set defaultBatchSize = 25 %}
-  {% set maxCases = allReadCount if allReadCount < defaultBatchSize else defaultBatchSize %}
+  {% set defaultSessionSize = 25 %}
+  {% set maxCases = allReadCount if allReadCount < defaultSessionSize else defaultSessionSize %}
 
   {% set actionLinkHtml %}
     Start session<br>
@@ -82,7 +82,7 @@
   {{ actionLink({
     classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
     text: actionLinkHtml | safe,
-    href: "/reading/create-batch?type=all_reads"
+    href: "/reading/create-session?type=all_reads"
   }) }}
 
 {% endset %}
@@ -93,7 +93,7 @@
 {{ actionLink({
   classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
   text: "Start custom session",
-  href: "/reading/create-custom-batch"
+  href: "/reading/create-custom-session"
 }) }}
 {% endset %}
 
