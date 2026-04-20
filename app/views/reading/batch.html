@@ -52,8 +52,15 @@
     {% else %}
       {{ panel({
         titleText: "Session complete",
-        html: '<p class="nhsuk-body-s nhsuk-u-margin-bottom-0">All cases in this session have been read</p>'
+        html: '<p class="nhsuk-body-s">All cases in this session have been read</p><p class="nhsuk-body-s nhsuk-u-margin-bottom-0"><a href="/reading" class="nhsuk-link nhsuk-link--reverse">Continue reading in a new session</a></p>'
       }) }}
+
+      <div class="nhsuk-button-group">
+        {{ button({
+          text: "Close session",
+          href: "/reading/clinics"
+        }) }}
+      </div>
     {% endif %}
 
     {# Secondary navigation for view tabs #}
