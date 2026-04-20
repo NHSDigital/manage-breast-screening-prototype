@@ -72,6 +72,8 @@
     {{ settingToggle("Environment banner", "settings[showEnvironmentBanner]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.showEnvironmentBanner, "true") }}
     {{ settingToggle("Debug mode", "settings[debugMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.debugMode, "false") }}
     {{ settingToggle("Compact mode", "settings[compactMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], "true" if data.settings.compactMode in ["true", true] else "false", "false") }}
+    {# Modal forms — open forms in a modal dialog rather than a new page #}
+    {{ settingToggle("Modal forms (spike)", "settings[modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.modalForms, "false") }}
 
     <h2>Screening</h2>
     {# Confirm identity on check-in #}
@@ -100,9 +102,6 @@
 
     {# Show participant section #}
     {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
-
-    {# Modal forms — open medical info forms in a modal dialog rather than a new page #}
-    {{ settingToggle("Modal forms (spike)", "settings[screening][modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.modalForms, "false") }}
 
     <h2>Image reading</h2>
     {# One click normal #}
