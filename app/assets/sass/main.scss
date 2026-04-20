@@ -1,42 +1,11 @@
 // Import NHS.UK frontend library
+// See main-compact.scss for the compact mode variant with a tighter spacing scale
 @forward "nhsuk-frontend/dist/nhsuk/nhsuk" with (
   $nhsuk-page-width: 960px
 );
 
-// Components that are not in the NHS.UK frontend library
-
-@forward "components/button-menu";
-@forward "components/details";
-@forward "components/dark-mode";
-@forward "components/appointment-header";
-@forward "components/list-border";
-@forward "components/modal";
-@forward "components/related-nav";
-@forward "components/secondary-navigation";
-@forward "components/secondary-navigation-overrides";
-@forward "components/count";
-@forward "components/forward-link";
-@forward "components/status";
-@forward "components/status-bar";
-@forward "components/status-message";
-@forward "components/summary-card";
-@forward "components/reading";
-@forward "components/mammogram-images";
-@forward "components/environment";
-
-@forward "components/overrides";
-@forward "components/notification-banner";
-@forward "components/checkboxes";
-@forward "components/breast-features";
-@forward "components/sticky-appointment-bar";
-@forward "components/annotation";
-@forward "components/stepper-input";
-
-@forward "misc";
-@forward "workflow";
-
-@forward "typography";
-@forward "utils";
+// All app component and utility styles
+@use "app-styles";
 
 ///////////////////////////////////////////
 // Add your custom CSS/Sass styles below...

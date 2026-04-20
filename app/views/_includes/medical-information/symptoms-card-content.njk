@@ -33,11 +33,16 @@
 
   <div class="nhsuk-button-group app-button-group--small">
     {% for symptomType in data.symptomTypes %}
+
+      {% set addUrl = (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo) %}
+
       {{ button({
         text: symptomType.name | sentenceCase,
-        href: (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
+        href: addUrl,
         classes: "nhsuk-button--secondary nhsuk-button--small"
-      }) }}
+      } | openInModal) }}
+
     {% endfor %}
   </div>
+
 {% endif %}

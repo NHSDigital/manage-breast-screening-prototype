@@ -58,9 +58,26 @@ body.js-enabled .app-no-js-only {
   @include nhsuk-responsive-margin(4, "bottom");
 }
 
-.nhsuk-card--feature {
-  @include nhsuk-responsive-margin(5, "top");
+// Style guide: rendered example container + code snippet
+.sg-example {
+  border: 1px solid $nhsuk-border-colour;
+  margin-bottom: 0;
+  padding: nhsuk-spacing(4);
 }
+
+.sg-snippet {
+  background: nhsuk-colour("grey-5");
+  border: 1px solid $nhsuk-border-colour;
+  border-top: none;
+  font-size: nhsuk-font-size(14);
+  margin-bottom: nhsuk-spacing(6);
+  overflow-x: auto;
+  padding: nhsuk-spacing(3);
+}
+
+// .nhsuk-card--feature {
+//   @include nhsuk-responsive-margin(5, "top");
+// }
 
 .app-page-width--wide .nhsuk-width-container {
   max-width: 1200px;
@@ -99,3 +116,4 @@ body.js-enabled .app-no-js-only {
 .app-inline-form {
   display: inline;
 }
+

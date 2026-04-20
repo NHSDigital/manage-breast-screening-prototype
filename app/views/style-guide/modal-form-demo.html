@@ -1,0 +1,30 @@
+{# app/views/style-guide/modal-form-demo.html #}
+{# Demo form fragment for the style guide modal examples.
+   Extends layout-modal-form so it renders as a modal-ready AJAX fragment. #}
+
+{% extends "layout-modal-form.html" %}
+
+{% set formAction = "/style-guide/modal-form-demo/save" %}
+
+{% block pageContent %}
+
+{% set noteError = (flash.error | findWhere({name: "demo-note"})).text if flash.error else false %}
+
+<h1 class="nhsuk-heading-l">Add a note</h1>
+
+{{ input({
+  label: {
+    text: "Note",
+    classes: "nhsuk-label--s"
+  },
+  id: "demo-note",
+  name: "demo-note",
+  value: values["demo-note"] if values else "",
+  errorMessage: { text: noteError } if noteError
+}) }}
+
+<div class="nhsuk-button-group">
+  {{ button({ text: "Save note" }) }}
+</div>
+
+{% endblock %}

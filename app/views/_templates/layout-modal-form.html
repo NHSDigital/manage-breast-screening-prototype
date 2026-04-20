@@ -1,0 +1,72 @@
+{# app/views/_templates/layout-modal-form.html #}
+{# Bare layout for forms loaded as AJAX fragments into modals.
+   Outputs only the content with error summary and modal body wrapper.
+   NHS Frontend macros are imported here since this layout does not extend
+   the full prototype kit template chain. #}
+
+{%- from 'action-link/macro.njk' import actionLink %}
+{%- from 'back-link/macro.njk' import backLink %}
+{%- from 'button/macro.njk' import button %}
+{%- from 'card/macro.njk' import card %}
+{%- from 'character-count/macro.njk' import characterCount %}
+{%- from 'checkboxes/macro.njk' import checkboxes %}
+{%- from 'date-input/macro.njk' import dateInput %}
+{%- from 'details/macro.njk' import details %}
+{%- from 'error-message/macro.njk' import errorMessage %}
+{%- from 'error-summary/macro.njk' import errorSummary %}
+{%- from 'fieldset/macro.njk' import fieldset %}
+{%- from 'input/macro.njk' import input %}
+{%- from 'inset-text/macro.njk' import insetText %}
+{%- from 'radios/macro.njk' import radios %}
+{%- from 'select/macro.njk' import select %}
+{%- from 'summary-list/macro.njk' import summaryList %}
+{%- from 'tag/macro.njk' import tag %}
+{%- from 'textarea/macro.njk' import textarea %}
+{%- from 'warning-callout/macro.njk' import warningCallout %}
+{%- from '_components/button-menu/macro.njk' import buttonMenu %}
+{%- from '_components/check-in/macro.njk' import appCheckIn %}
+{%- from '_components/count/macro.njk' import appCount %}
+{%- from '_components/details/macro.njk' import appDetails %}
+{%- from '_components/environment/macro.njk' import appEnvironment %}
+{%- from '_components/forward-link/macro.njk' import appForwardLink %}
+{%- from '_components/hidden-input/macro.njk' import appHiddenInput %}
+{%- from '_components/icon/macro.njk' import appIcon %}
+{%- from '_components/link/macro.njk' import appLink %}
+{%- from '_components/modal/macro.njk' import appModal %}
+{%- from '_components/modal/macro.njk' import appConfirmationModal %}
+{%- from '_components/notification-banner/macro.njk' import appNotificationBanner %}
+{%- from '_components/secondary-navigation/macro.njk' import appSecondaryNavigation %}
+{%- from '_components/status-bar/macro.njk' import appStatusBar %}
+{%- from '_components/status-message/macro.njk' import appStatusMessage %}
+{%- from '_components/stepper-input/macro.njk' import appStepperInput %}
+{%- from '_components/summary-card/macro.njk' import appSummaryCard %}
+{%- from '_components/summary-list/macro.njk' import appSummaryList %}
+{%- from '_components/summary-list/macro.njk' import appSummaryListRow %}
+
+{% if errors and errors | length %}
+  {{ errorSummary({
+    titleText: "There is a problem",
+    errorList: errors
+  }) }}
+{% endif %}
+
+{# Back link — hidden by default, shown and wired up by modal.js when navigating deeper #}
+{# Margin manually applied to simulate positioning it would normally get when placed before main element with nhsuk-main-wrapper padding #}
+{{ backLink({
+  href: "#",
+  classes: "app-modal__back-link",
+  attributes: {
+    "hidden": "true",
+    "data-modal-back": "true"
+  }
+}) }}
+
+<div class="app-modal__body">
+  <div data-form-action="{{ formAction }}" data-form-method="post">
+    {# Thread _modal=1 through multi-step form flows so POST submissions carry the param forward #}
+    <input type="hidden" name="_modal" value="1">
+    {% block modalContent %}
+      {% block pageContent %}{% endblock %}
+    {% endblock %}
+  </div>
+</div>

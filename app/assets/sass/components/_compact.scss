@@ -1,0 +1,430 @@
+@use "sass:math";
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// app/assets/sass/components/_compact.scss
+// Compact mode styles are only active when compact mode is enabled.
+
+.app-compact-mode {
+  .nhsuk-main-wrapper {
+    @include nhsuk-responsive-padding(4, "top");
+    @include nhsuk-responsive-padding(4, "bottom");
+  }
+
+  .nhsuk-form-group {
+    @include nhsuk-responsive-margin(3, "bottom");
+  }
+
+  // Recreate small checkboxes and radios.
+
+  // Doing this for two reasons:
+  // 1. Means we can apply it globally with a setting rather than adjusting every macro usage
+  // 2. Our spacing ajdustments break the visual design of checkboxes and radios so this restores the correct geometry. Raised here: https://github.com/nhsuk/nhsuk-frontend/issues/1885
+
+  // Apply .nhsuk-checkboxes--small equivalent to all checkboxes in compact mode.
+  // spacing(6) = 32px (box size), small size fixed at 24px (NHS default for --small variant).
+  // touch target = 36px, input-offset = (36 - 24) / 2 = 6px.
+  // Apply .nhsuk-checkboxes--small equivalent to all checkboxes in compact mode.
+  // The input (touch target) is kept at the NHS default 44px even though spacing(6) is
+  // reduced to 32px. This preserves correct geometry and matching the --small variant exactly.
+  // $small-size is hardcoded rather than using spacing(4) so it stays at the correct
+  // NHS small size even when spacing(4) is adjusted for layout.
+  .nhsuk-checkboxes {
+    $small-size: nhsuk-px-to-rem(24px); // 1.5rem — NHS small variant size, fixed
+    $touch-target: nhsuk-px-to-rem(44px); // matches NHS --small, overrides reduced spacing(6)
+    $input-offset: math.div($touch-target - $small-size, 2); // 0.625rem (10px)
+
+    .nhsuk-checkboxes__item {
+      margin-top: 0;
+    }
+
+    .nhsuk-checkboxes__input {
+      width: $touch-target;
+      height: $touch-target;
+      margin-left: $input-offset * -1;
+    }
+
+    .nhsuk-checkboxes__label {
+      // Touch target is 44px so label starts at 34px — same as NHS --small, so 1px gap suffices.
+      padding-left: 1px;
+    }
+
+    .nhsuk-checkboxes__label::before {
+      top: $input-offset;
+      left: 0;
+      width: $small-size;
+      height: $small-size;
+    }
+
+    // Tick mark positions from the NHS --small source (sized for 24px box)
+    .nhsuk-checkboxes__label::after {
+      top: nhsuk-px-to-rem(18px);
+      left: nhsuk-px-to-rem(6px); // 18px - 12px ($nhsuk-checkboxes-check-horizontal-position)
+      width: nhsuk-px-to-rem(12px);
+      height: nhsuk-px-to-rem(6px);
+      border-width: 0 0 nhsuk-px-to-rem(3px) nhsuk-px-to-rem(3px);
+    }
+
+    .nhsuk-checkboxes__hint {
+      padding-left: $small-size + $input-offset;
+    }
+
+    .nhsuk-checkboxes__conditional {
+      $margin-left: math.div($small-size, 2) - nhsuk-px-to-rem($nhsuk-border-width-form-element);
+      margin-left: $margin-left;
+      padding-left: ($touch-target - $input-offset) - ($margin-left + nhsuk-px-to-rem($nhsuk-border-width));
+    }
+
+    .nhsuk-checkboxes__divider {
+      width: $small-size;
+      margin: nhsuk-spacing(1) - $nhsuk-border-width-form-element 0;
+      padding: 0;
+    }
+
+    .nhsuk-checkboxes__input:not(:disabled):hover + .nhsuk-checkboxes__label::before,
+    .nhsuk-checkboxes__input:not(:disabled) + .nhsuk-checkboxes__label:hover::before {
+      outline: nhsuk-px-to-rem($nhsuk-focus-width) dashed transparent;
+      outline-offset: 1px;
+      box-shadow: 0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
+    }
+
+    .nhsuk-checkboxes__input:focus:hover + .nhsuk-checkboxes__label::before,
+    .nhsuk-checkboxes__input:focus + .nhsuk-checkboxes__label:hover::before {
+      box-shadow:
+        0 0 0 nhsuk-px-to-rem($nhsuk-focus-width) $nhsuk-focus-colour,
+        0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
+
+      @media screen and (forced-colors: active), (-ms-high-contrast: active) {
+        outline-color: Highlight;
+      }
+    }
+
+    @media (hover: none), (pointer: coarse) {
+      .nhsuk-checkboxes__input:not(:disabled):hover + .nhsuk-checkboxes__label::before,
+      .nhsuk-checkboxes__input:not(:disabled) + .nhsuk-checkboxes__label:hover::before {
+        box-shadow: initial;
+      }
+
+      .nhsuk-checkboxes__input:focus:hover + .nhsuk-checkboxes__label::before,
+      .nhsuk-checkboxes__input:focus + .nhsuk-checkboxes__label:hover::before {
+        box-shadow: 0 0 0 nhsuk-px-to-rem($nhsuk-focus-width) $nhsuk-focus-colour;
+      }
+    }
+  }
+
+  // Apply .nhsuk-radios--small equivalent to all radios in compact mode.
+  // The input (touch target) is kept at the NHS default 44px even though spacing(6) is
+  // reduced to 32px. This preserves correct geometry and matches the --small variant exactly.
+  // $small-size is hardcoded rather than using spacing(4) so it stays at the correct
+  // NHS small size even when spacing(4) is adjusted for layout.
+  .nhsuk-radios {
+    $small-size: nhsuk-px-to-rem(24px); // 1.5rem — NHS small variant size, fixed
+    $touch-target: nhsuk-px-to-rem(44px); // matches NHS --small, overrides reduced spacing(6)
+    $input-offset: math.div($touch-target - $small-size, 2); // 0.625rem (10px)
+    $focus-width: nhsuk-px-to-rem($nhsuk-focus-width + 1px); // 0.3125rem (bumped for curved edge)
+
+    .nhsuk-radios__item {
+      margin-top: 0;
+    }
+
+    .nhsuk-radios__input {
+      width: $touch-target;
+      height: $touch-target;
+      margin-left: $input-offset * -1;
+    }
+
+    .nhsuk-radios__label {
+      // Touch target is 44px so label starts at 34px — same as NHS --small, so 1px gap suffices.
+      padding-left: 1px;
+    }
+
+    .nhsuk-radios__label::before {
+      top: $input-offset;
+      left: 0;
+      width: $small-size;
+      height: $small-size;
+    }
+
+    .nhsuk-radios__label::after {
+      $dot-size: nhsuk-px-to-rem(5px); // small variant uses 5px dot vs 10px default
+      top: math.div($touch-target, 2) - $dot-size;
+      left: math.div($touch-target, 2) - $dot-size - $input-offset;
+      border-width: $dot-size;
+    }
+
+    .nhsuk-radios__hint {
+      padding-left: $small-size + $input-offset;
+    }
+
+    .nhsuk-radios__conditional {
+      $margin-left: math.div($small-size, 2) - nhsuk-px-to-rem($nhsuk-border-width-form-element);
+      margin-left: $margin-left;
+      padding-left: ($touch-target - $input-offset) - ($margin-left + nhsuk-px-to-rem($nhsuk-border-width));
+    }
+
+    .nhsuk-radios__divider {
+      width: $small-size;
+      margin: nhsuk-spacing(1) - $nhsuk-border-width-form-element 0;
+      padding: 0;
+    }
+
+    .nhsuk-radios__input:not(:disabled):hover + .nhsuk-radios__label::before,
+    .nhsuk-radios__input:not(:disabled) + .nhsuk-radios__label:hover::before {
+      outline: $focus-width dashed transparent;
+      outline-offset: 1px;
+      box-shadow: 0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
+    }
+
+    .nhsuk-radios__input:focus:hover + .nhsuk-radios__label::before,
+    .nhsuk-radios__input:focus + .nhsuk-radios__label:hover::before {
+      box-shadow:
+        0 0 0 $focus-width $nhsuk-focus-colour,
+        0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
+
+      @media screen and (forced-colors: active), (-ms-high-contrast: active) {
+        outline-color: Highlight;
+      }
+    }
+
+    @media (hover: none), (pointer: coarse) {
+      .nhsuk-radios__input:not(:disabled):hover + .nhsuk-radios__label::before,
+      .nhsuk-radios__input:not(:disabled) + .nhsuk-radios__label:hover::before {
+        box-shadow: initial;
+      }
+
+      .nhsuk-radios__input:focus:hover + .nhsuk-radios__label::before,
+      .nhsuk-radios__input:focus + .nhsuk-radios__label:hover::before {
+        box-shadow: 0 0 0 $focus-width $nhsuk-focus-colour;
+      }
+    }
+  }
+
+  .nhsuk-table {
+    th,
+    td,
+    .nhsuk-table__header,
+    .nhsuk-table__cell {
+      padding-top: nhsuk-spacing(2);
+      padding-bottom: nhsuk-spacing(2);
+      padding-left: nhsuk-spacing(2);
+      padding-right: nhsuk-spacing(2);
+    }
+
+    > p {
+      margin-bottom: nhsuk-spacing(1);
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // Reduce spacing after buttons
+  .nhsuk-button {
+    @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
+
+    &.nhsuk-button--small {
+      @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
+    }
+  }
+
+  // Make a medium sized button
+  .nhsuk-button:not(.nhsuk-button--small) {
+    padding: nhsuk-px-to-rem(8px) nhsuk-px-to-rem(14px);
+
+    @include nhsuk-media-query($from: tablet) {
+      min-height: nhsuk-px-to-rem(46px);
+      padding: nhsuk-px-to-rem(10px) nhsuk-px-to-rem(14px);
+    }
+  }
+
+  // .nhsuk-tag {
+  //   padding-top: nhsuk-px-to-rem(2px);
+  //   padding-right: nhsuk-px-to-rem(6px);
+  //   padding-bottom: nhsuk-px-to-rem(2px);
+  //   padding-left: nhsuk-px-to-rem(6px);
+  //   font-size: nhsuk-px-to-rem(13px);
+  //   line-height: 1;
+
+  //   @include nhsuk-media-query($from: tablet) {
+  //     font-size: nhsuk-px-to-rem(14px);
+  //   }
+  // }
+
+  .app-clinics-table {
+    table-layout: fixed;
+    width: 100%;
+
+    .app-clinics-table__location-column {
+      width: 33.333%;
+      word-break: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .app-clinics-table__date-time-column,
+    .app-clinics-table__clinic-type-column,
+    .app-clinics-table__participants-column,
+    .app-clinics-table__status-column {
+      width: 16.667%;
+    }
+
+    .app-clinics-table__status-column {
+      text-align: left;
+    }
+
+    .app-clinics-table__participants-column {
+      text-align: left;
+    }
+  }
+
+  .app-clinic-events-table {
+    table-layout: fixed;
+    width: 100%;
+
+    .app-clinic-events-table__time-column {
+      width: 22%;
+    }
+
+    .app-clinic-events-table__time-column .nhsuk-tag {
+      display: inline-block;
+      max-width: 100%;
+      white-space: nowrap;
+    }
+  }
+
+  .nhsuk-list > li {
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-list > li:last-child {
+    margin-bottom: 0;
+  }
+
+  .nhsuk-summary-list__key,
+  .nhsuk-summary-list__value,
+  .nhsuk-summary-list__actions {
+    margin-bottom: 0;
+    padding-top: nhsuk-spacing(1);
+    padding-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-summary-list__key {
+    margin-bottom: nhsuk-px-to-rem(4px);
+  }
+
+  .nhsuk-summary-list__value {
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-summary-list__value > p {
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  .nhsuk-summary-list__actions {
+    margin-top: 0;
+    margin-bottom: nhsuk-spacing(1);
+  }
+
+  @include nhsuk-media-query($from: tablet) {
+    .nhsuk-summary-list__key,
+    .nhsuk-summary-list__value,
+    .nhsuk-summary-list__actions {
+      padding-top: nhsuk-spacing(1);
+      padding-bottom: nhsuk-spacing(1);
+    }
+  }
+
+  .app-notification-banner--compact {
+    border: $nhsuk-border-width solid $nhsuk-brand-colour;
+    padding: nhsuk-spacing(2);
+    @include nhsuk-responsive-margin(4, "bottom");
+  }
+
+  .app-notification-banner--compact--important {
+    border-color: $nhsuk-brand-colour;
+  }
+
+  .app-notification-banner--compact--success {
+    border-color: nhsuk-colour("green");
+  }
+
+  .app-notification-banner--compact--warning {
+    border-color: nhsuk-colour("orange");
+  }
+
+  .app-notification-banner--compact--error {
+    border-color: nhsuk-colour("red");
+  }
+
+  .app-notification-banner--compact--important .app-notification-banner--compact__icon {
+    color: $nhsuk-brand-colour;
+  }
+
+  .app-notification-banner--compact--success .app-notification-banner--compact__icon {
+    color: nhsuk-colour("green");
+  }
+
+  .app-notification-banner--compact--warning .app-notification-banner--compact__icon {
+    color: nhsuk-colour("orange");
+    color: #df6e1a;
+  }
+
+  .app-notification-banner--compact--error .app-notification-banner--compact__icon {
+    color: nhsuk-colour("red");
+  }
+
+  .app-notification-banner--compact__header {
+    display: flex;
+    align-items: flex-start;
+    gap: nhsuk-spacing(2);
+  }
+
+  .app-notification-banner--compact__icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+    line-height: 0;
+
+    .nhsuk-icon {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .app-notification-banner--compact__body {
+    flex: 1;
+  }
+
+  .app-notification-banner--compact__title {
+    @include nhsuk-font($size: 19, $weight: bold);
+    color: inherit;
+    margin: 0;
+  }
+
+  .app-notification-banner--compact__content {
+    @include nhsuk-font($size: 19);
+    color: $nhsuk-text-colour;
+    margin: nhsuk-spacing(1) 0 0;
+
+    p:last-child,
+    ul:last-child,
+    ol:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .app-notification-banner--compact__content--no-title {
+    margin-top: 0;
+  }
+
+  .app-inset-text--compact {
+    @include nhsuk-responsive-padding(1, "top");
+    @include nhsuk-responsive-padding(1, "bottom");
+    @include nhsuk-responsive-margin(1, "top");
+    @include nhsuk-responsive-margin(2, "bottom");
+  }
+
+  // Reduce heading sizes on feature and warning callouts
+  .nhsuk-card--warning .nhsuk-card__heading,
+  .nhsuk-card--feature .nhsuk-card__heading {
+    @include nhsuk-font($size: 22, $weight: bold);
+  }
+}

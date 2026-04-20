@@ -251,18 +251,36 @@ const appendReferrer = (existingReferrerChain, newUrl) => {
   if (!existingReferrerChain) return newUrl
 
   const chain = parseReferrerChain(existingReferrerChain)
-  
+
   // Don't append if it's already the last item in the chain (prevents duplicates)
   if (chain.length > 0 && chain[chain.length - 1] === newUrl) {
     return existingReferrerChain
   }
-  
+
   chain.push(newUrl)
   return chain.join(',')
+}
+
+/**
+ * Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the
+ * modal middleware intercepts the redirect and sends a `data-modal-navigate`
+ * response instead, causing the modal to close and the browser to navigate
+ * fully to the destination with any flash messages intact.
+ *
+ * Use this on every terminal redirect from a route that may be reached from
+ * inside a modal — saves, deletes, and completed flows.
+ *
+ * @param {string} url - The destination URL
+ * @returns {string} The URL with `_modal_breakout=1` appended
+ */
+const modalBreakout = (url) => {
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}_modal_breakout=1`
 }
 
 module.exports = {
   getReturnUrl,
   urlWithReferrer,
-  appendReferrer
+  appendReferrer,
+  modalBreakout
 }

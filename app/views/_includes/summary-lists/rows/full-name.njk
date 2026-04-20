@@ -6,7 +6,8 @@
   },
   value: {
     text: participant | getFullName
-  }
+  },
+  anyRowHasActions: allowEdits
 } | handleSummaryListMissingInformation(showNotProvidedText) %}
 
 {{ appSummaryListRow(fullNameRow) }}

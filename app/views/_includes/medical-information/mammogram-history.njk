@@ -30,7 +30,7 @@
       }
     }
   ]
-}) }}
+} | removeLastRowBorder) }}
 
 {# User-added unverified mammograms #}
 {% if hasAdditionalMammograms %}
@@ -96,7 +96,7 @@
     {% set keyHtml %}
       Recorded {{ previousMammogram.dateAdded | formatDate }}
       {% if previousMammogram.addedBy %}
-        <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-font-weight-normal nhsuk-u-margin-bottom-0 ">by {{ previousMammogram.addedBy
+        <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-font-weight-normal nhsuk-u-margin-bottom-0 ">by {{ previousMammogram.addedBy
           | getUsername({
           format: 'short',
           identifyCurrentUser: true
@@ -125,5 +125,5 @@
 
   {{ summaryList({
     rows: userMammogramRows
-  }) }}
+  } | openInModal | removeLastRowBorder) }}
 {% endif %}

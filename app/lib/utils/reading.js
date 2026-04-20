@@ -266,7 +266,8 @@ const calculateReadingMetrics = function (
 
     // Events where this user has an outstanding priors request
     userAwaitingPriorsCount = events.filter(
-      (event) => awaitingPriors(event) && userRequestedPriors(event, currentUserId)
+      (event) =>
+        awaitingPriors(event) && userRequestedPriors(event, currentUserId)
     ).length
 
     // Events this user can read
@@ -1819,7 +1820,12 @@ const getBatchReadingProgress = (
     populatedCount: batchEvents.length,
     targetSize: resolvedTargetSize,
     // Remaining reads against the target (not just currently loaded events)
-    targetRemaining: Math.max(0, resolvedTargetSize - progress.userReadCount - progress.userAwaitingPriorsCount)
+    targetRemaining: Math.max(
+      0,
+      resolvedTargetSize -
+        progress.userReadCount -
+        progress.userAwaitingPriorsCount
+    )
   }
 }
 

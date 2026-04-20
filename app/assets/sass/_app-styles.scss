@@ -1,0 +1,38 @@
+// app/assets/sass/_app-styles.scss
+// All app component and utility styles, shared between main.scss and main-compact.scss.
+// The NHS frontend base is forwarded separately in each entry point so spacing config
+// can be set differently per mode.
+
+@forward "components/button-menu";
+@forward "components/details";
+@forward "components/dark-mode";
+@forward "components/appointment-header";
+@forward "components/list-border";
+@forward "components/modal";
+@forward "components/related-nav";
+@forward "components/secondary-navigation";
+@forward "components/secondary-navigation-overrides";
+@forward "components/count";
+@forward "components/forward-link";
+@forward "components/status";
+@forward "components/status-bar";
+@forward "components/status-message";
+@forward "components/summary-card";
+@forward "./components/compact";
+@forward "components/reading";
+@forward "components/mammogram-images";
+@forward "components/environment";
+
+@forward "components/overrides";
+@forward "components/notification-banner";
+@forward "components/checkboxes";
+@forward "components/breast-features";
+@forward "components/sticky-appointment-bar";
+@forward "components/annotation";
+@forward "components/stepper-input";
+
+@forward "misc";
+@forward "workflow";
+
+@forward "typography";
+@forward "utils";

@@ -14,7 +14,10 @@
     To check the participant in for the appointment, ask them to confirm the following information.
   </p>
 
+  {% set allowEditsTemp = allowEdits %}
+  {% set allowEdits = false %}
   {% set cardHtml %}
+  
     {% call appSummaryList() %}
       {% include "_includes/summary-lists/rows/full-name.njk" %}
       {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
@@ -25,6 +28,8 @@
       {% include "_includes/summary-lists/rows/email.njk" %}
     {% endcall %}
   {% endset %}
+
+  {% set allowEdits = allowEditsTemp %}
 
   {% from 'card/macro.njk' import card %}
 

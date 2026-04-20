@@ -99,7 +99,7 @@
       {{ ("prior_" + mammogram.requestStatus) | toTag }}
       {% if mammogram.requestedBy or mammogram.requestReason %}
         <br>
-        <span class="app-text-grey">
+        <span class="nhsuk-u-secondary-text-colour">
           {% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
           {%- if mammogram.requestReason %}. Request reason: {{ mammogram.requestReason }}{% endif %}
         </span>
@@ -113,7 +113,7 @@
           {{ ("prior_" + mammogram.requestStatus) | toTag }}
           {% if mammogram.requestedBy or mammogram.requestReason %}
             <br>
-            <span class="app-text-grey">
+            <span class="nhsuk-u-secondary-text-colour">
               {% if mammogram.requestedBy %}Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
               {%- if mammogram.requestReason %}. Request reason: {{ mammogram.requestReason }}{% endif %}
             </span>
@@ -147,6 +147,56 @@
   {% endif %}
 {% endset %}
 
+{# Pre-build action items. Form entry points (add journeys) open in modal;
+   view/index pages navigate normally. #}
+{% if additionalMammogramsCount == 0 %}
+  {% set mammogramsAction = {
+    href: "./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain),
+    text: "Add a mammogram",
+    visuallyHiddenText: "reported mammograms"
+  } | openInModal %}
+{% else %}
+  {% set mammogramsAction = {
+    href: "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl),
+    text: "View or change",
+    visuallyHiddenText: "reported mammograms"
+  } %}
+{% endif %}
+
+{% if medicalHistoryCount == 0 %}
+  {% set medicalHistoryAction = {
+    href: "./medical-information/medical-history/type" | urlWithReferrer(medicalHistoryAddReferrerChain),
+    text: "Add medical history",
+    visuallyHiddenText: "medical history"
+  } | openInModal %}
+{% else %}
+  {% set medicalHistoryAction = {
+    href: "./confirm-information/medical-history" | urlWithReferrer(currentUrl),
+    text: "View or change",
+    visuallyHiddenText: "medical history"
+  } %}
+{% endif %}
+
+{% if symptomsCount == 0 %}
+  {% set symptomsAction = {
+    href: "./medical-information/symptoms/add" | urlWithReferrer(symptomsAddReferrerChain),
+    text: "Add symptoms",
+    visuallyHiddenText: "symptoms"
+  } | openInModal %}
+{% else %}
+  {% set symptomsAction = {
+    href: "./confirm-information/symptoms" | urlWithReferrer(currentUrl),
+    text: "View or change",
+    visuallyHiddenText: "symptoms"
+  } %}
+{% endif %}
+
+{% set breastFeaturesAction = {
+  href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+  text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
+  visuallyHiddenText: "breast features"
+} %}
+
 {# Build summary list content #}
 {% set rows = [] %}
 
@@ -160,11 +210,7 @@
     },
     actions: {
       items: [
-        {
-          href: ("./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain) if additionalMammogramsCount == 0 else "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl)),
-          text: "Add a mammogram" if additionalMammogramsCount == 0 else "View or change",
-          visuallyHiddenText: "reported mammograms"
-        }
+        mammogramsAction
       ]
     } if allowEdits
   }) %}
@@ -180,11 +226,7 @@
     },
     actions: {
       items: [
-        {
-          href: ("./medical-information/medical-history/type" | urlWithReferrer(medicalHistoryAddReferrerChain) if medicalHistoryCount == 0 else "./confirm-information/medical-history" | urlWithReferrer(currentUrl)),
-          text: "Add medical history" if medicalHistoryCount == 0 else "View or change",
-          visuallyHiddenText: "medical history"
-        }
+        medicalHistoryAction
       ]
     } if allowEdits
   }) %}
@@ -200,11 +242,7 @@
     },
     actions: {
       items: [
-        {
-          href: ("./medical-information/symptoms/add" | urlWithReferrer(symptomsAddReferrerChain) if symptomsCount == 0 else "./confirm-information/symptoms" | urlWithReferrer(currentUrl)),
-          text: "Add symptoms" if symptomsCount == 0 else "View or change",
-          visuallyHiddenText: "symptoms"
-        }
+        symptomsAction
       ]
     } if allowEdits
   }) %}
@@ -220,11 +258,7 @@
     },
     actions: {
       items: [
-        {
-          href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
-          text: "Add breast features" if breastFeaturesCount == 0 else "View or change",
-          visuallyHiddenText: "breast features"
-        }
+        breastFeaturesAction
       ]
     } if allowEdits
   }) %}

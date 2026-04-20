@@ -1,7 +1,7 @@
 {% from "nhsuk/macros/attributes.njk" import nhsukAttributes %}
 
 {%- macro _link(action) %}
-  <a href="{{ action.href }}">
+  <a href="{{ action.href }}"{{ nhsukAttributes(action.attributes) }}>
     {{ action.html | safe if action.html else action.text }}
     {%- if action.visuallyHiddenText -%}
       <span class="nhsuk-u-visually-hidden"> {{ action.visuallyHiddenText }}</span>
@@ -13,7 +13,6 @@
 {# Unlike the native one we can't iterate through all rows, so we just default to
 true unless told otherwise #}
 {%- set anyRowHasActions = row.anyRowHasActions | default(true) %}
-
 {% if row %}
   <div class="nhsuk-summary-list__row {%- if not anyRowHasActions and not row.actions.items %} nhsuk-summary-list__row--no-actions{% endif %} {%- if row.classes %} {{ row.classes }}{% endif %}">
     <dt class="nhsuk-summary-list__key {%- if row.key.classes %} {{ row.key.classes }}{% endif %}">

@@ -1,6 +1,6 @@
 {# app/views/_templates/layout-medical-history-form.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or 'layout-appointment.html' %}
 
 {# Find the type data object from the array #}
 {% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}

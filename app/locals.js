@@ -6,7 +6,9 @@ module.exports = (req, res, next) => {
 
   const currentUser = req.session.data.currentUser
   const currentBSU = currentUser
-    ? req.session.data.breastScreeningUnits?.find(unit => unit.id === currentUser.breastScreeningUnit)
+    ? req.session.data.breastScreeningUnits?.find(
+        (unit) => unit.id === currentUser.breastScreeningUnit
+      )
     : null
 
   const locals = {

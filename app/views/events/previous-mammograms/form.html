@@ -1,6 +1,6 @@
 {# app/views/events/mammography/previous-mammograms/form.html #}
 
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {% set previousMammogramCount = event.previousMammograms | length %}
 

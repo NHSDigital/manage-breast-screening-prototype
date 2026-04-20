@@ -121,7 +121,7 @@
                     {{ "Due soon" | toTag }}<br>
                   {% endif %}
                   {{ thisEvent.timing.startTime | formatDate }}<br>
-                  <span class="app-text-grey nhsuk-body-s">
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
                     {{ thisEvent.timing.startTime | formatRelativeDate }}
                   </span>
                 </td>
@@ -138,7 +138,7 @@
                     {# Flagged by reader — show who requested and reason #}
                     {% if mammogram.requestedDate %}
                       <br>
-                      <span class="app-text-grey nhsuk-body-s">
+                      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
                         {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
                         {% if mammogram.requestedBy %}
                           by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
@@ -153,7 +153,7 @@
                     {# Admin has sent IEP request — show when admin actioned it #}
                     {% if mammogram.statusChangedDate %}
                       <br>
-                      <span class="app-text-grey nhsuk-body-s">
+                      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
                         {{ mammogram.statusChangedDate | formatDate("D MMM YYYY") }}
                         {% if mammogram.statusChangedBy %}
                           by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
@@ -167,7 +167,7 @@
                   {% elseif mammogram.requestStatus == "received" or mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed" %}
                     {% if mammogram.statusChangedDate %}
                       <br>
-                      <span class="app-text-grey nhsuk-body-s">
+                      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
                         {{ mammogram.statusChangedDate | formatDate("D MMM YYYY") }}
                         {% if mammogram.statusChangedBy %}
                           by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
@@ -311,7 +311,7 @@
 
             // Show date and attribution after admin actions
             if (['requested', 'received', 'not_available', 'not_needed'].includes(newStatus)) {
-              statusHtml += '<br><span class="app-text-grey nhsuk-body-s">' + today + ' by ' + username + '</span>'
+              statusHtml += '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">' + today + ' by ' + username + '</span>'
             }
 
             // Preserve reason when moving from pending to requested

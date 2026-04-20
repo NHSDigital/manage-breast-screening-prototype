@@ -95,10 +95,10 @@
 {% if filteredEvents.length === 0 %}
   <p>No participants scheduled for this clinic.</p>
 {% else %}
-  <table class="nhsuk-table">
+  <table class="nhsuk-table app-clinic-events-table">
     <thead class="nhsuk-table__head">
       <tr>
-        <th class="nhsuk-table__header">Time</th>
+        <th class="nhsuk-table__header app-clinic-events-table__time-column">Time</th>
         <th class="nhsuk-table__header">Details</th>
         <th class="nhsuk-table__header">Date of birth</th>
         <th class="nhsuk-table__header">Appointment</th>
@@ -114,7 +114,7 @@
         <tr class="event-row" id="event-row-{{event.id}}">
 
           {# Appointment time #}
-          <td class="nhsuk-table__cell">{{ event.statusHistory[0].timestamp | formatTimeString }}
+          <td class="nhsuk-table__cell app-clinic-events-table__time-column">{{ event.statusHistory[0].timestamp | formatTimeString }}
             <br>
             {% if event | isSpecialAppointment %}
               {{ tag({
@@ -149,7 +149,7 @@
                 </a> #}
                 {{ participant | getFullName }}
             </p>
-            <p class="app-text-grey nhsuk-u-margin-bottom-0">
+            <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
               {# DOB: {{ participant.demographicInformation.dateOfBirth | formatDate }} ({{
               participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }})
               <br> #}
@@ -162,7 +162,7 @@
 
           {# Date of birth #}
           <td class="nhsuk-table__cell">{{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
-            <span class="app-text-grey">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
+            <span class="nhsuk-u-secondary-text-colour">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
               }})</span>
           </td>
 
@@ -183,7 +183,7 @@
             {{ event.status | toTag({ id: statusTagId }) }}
 
             {% if event | isInProgressNotPaused %}
-              <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
+              <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
                 event.sessionDetails.startedBy | getUsername({
                 format: 'short',
                 identifyCurrentUser: true
@@ -191,7 +191,7 @@
 
             {% elseif (event | isFinal) %}
               {% if event.sessionDetails.startedBy %}
-                <span class="app-text-grey app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ event.sessionDetails.startedBy
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ event.sessionDetails.startedBy
                   | getUsername({
                   format: 'short',
                   identifyCurrentUser: true

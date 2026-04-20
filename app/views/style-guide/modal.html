@@ -1,0 +1,181 @@
+{# app/views/style-guide/modal.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/modal/macro.njk' import appModal, appConfirmationModal %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "modal" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Modal</h2>
+
+<p>A modal dialog for confirmations and other inline decisions. Toggled by calling <code>openModal('modal-id')</code> from JavaScript. Closed by any action button with <code>data-modal-action="close"</code>.</p>
+
+<p>Macros: <code>appModal(params)</code>, <code>appConfirmationModal(params)</code></p>
+
+<h3>Confirmation modal (preset)</h3>
+
+<p><code>appConfirmationModal</code> provides a standard two-button confirm/cancel layout.</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Open confirmation modal",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-confirm'); return false;" }
+  }) }}
+
+  {{ appConfirmationModal({
+    id: "demo-confirm",
+    title: "Are you sure?",
+    content: "<p>This action cannot be undone. The record will be permanently removed.</p>",
+    confirmText: "Yes, delete",
+    cancelText: "Cancel"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appConfirmationModal({
+  id: "demo-confirm",
+  title: "Are you sure?",
+  content: "<p>...</p>",
+  confirmText: "Yes, delete",
+  cancelText: "Cancel"
+}) }}{% endraw %}</code></pre>
+
+<h3>Custom actions</h3>
+
+<p>Use <code>appModal</code> with a custom <code>actions</code> array for more control. Actions can be buttons (<code>element: "button"</code>) or links (<code>element: "link"</code>).</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Open custom modal",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-custom'); return false;" }
+  }) }}
+
+  {{ appModal({
+    id: "demo-custom",
+    title: "Choose an action",
+    content: "<p>Select what you would like to do with this appointment.</p>",
+    actions: [
+      {
+        text: "Reschedule",
+        element: "button",
+        action: "close"
+      },
+      {
+        text: "Cancel appointment",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      },
+      {
+        text: "Go back",
+        element: "link",
+        action: "close",
+        href: "#"
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appModal({
+  id: "demo-custom",
+  title: "Choose an action",
+  content: "<p>...</p>",
+  actions: [
+    { text: "Reschedule", element: "button", action: "close" },
+    { text: "Cancel", element: "button", classes: "nhsuk-button--secondary", action: "close" },
+    { text: "Go back", element: "link", action: "close", href: "#" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>Content-only modal</h3>
+
+<p>A modal with no title — content fills the dialog directly.</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Open content modal",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-content'); return false;" }
+  }) }}
+
+  {{ appModal({
+    id: "demo-content",
+    content: "<p>This modal has no title. The content area fills the full width of the dialog.</p>",
+    actions: [
+      {
+        text: "Close",
+        element: "button",
+        classes: "nhsuk-button--secondary",
+        action: "close"
+      }
+    ]
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appModal({
+  id: "demo-content",
+  content: "<p>...</p>",
+  actions: [
+    { text: "Close", element: "button", classes: "nhsuk-button--secondary", action: "close" }
+  ]
+}) }}{% endraw %}</code></pre>
+
+<h3>Form in modal (load URL)</h3>
+
+<p>Pass <code>{ loadUrl: '/path' }</code> to <code>openModal()</code> to fetch an HTML fragment and inject it into the modal when it opens. The fragment should be a page extending <code>layout-fragment.html</code>.</p>
+
+<p>On form submission inside the modal:</p>
+<ul>
+  <li>a <code>422</code> response re-renders the fragment with validation errors inside the modal</li>
+  <li>any successful response closes the modal and reloads the page</li>
+</ul>
+
+<p>The server can distinguish AJAX requests via the <code>X-Requested-With: XMLHttpRequest</code> request header.</p>
+
+<div class="sg-example">
+  {{ button({
+    text: "Add a note",
+    classes: "nhsuk-button--secondary",
+    attributes: { onclick: "openModal('demo-form', { loadUrl: '/style-guide/modal-form-demo' }); return false;" }
+  }) }}
+
+  {{ appModal({
+    id: "demo-form"
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{# Empty modal shell — content is loaded at open time #}
+{{ appModal({ id: "demo-form" }) }}
+
+{# Trigger #}
+<button onclick="openModal('demo-form', { loadUrl: '/path/to/form' })">
+  Open form
+</button>{% endraw %}</code></pre>
+
+<pre class="sg-snippet"><code>{% raw %}{# Form fragment — extends layout-fragment.html #}
+{% extends "layout-fragment.html" %}
+
+{% block content %}
+  <h2 class="app-modal__title nhsuk-heading-m">Form title</h2>
+  <div class="app-modal__body">
+    <form action="/save" method="post">...</form>
+  </div>
+{% endblock %}{% endraw %}</code></pre>
+
+<pre class="sg-snippet"><code>// Route — return 422 + fragment for validation errors, redirect for success
+router.post('/save', (req, res) => {
+  const isAjax = req.headers['x-requested-with'] === 'XMLHttpRequest'
+  if (!valid) {
+    if (isAjax) return res.status(422).render('fragment', { errors })
+    req.flash('error', '...')
+    return res.redirect('back')
+  }
+  res.redirect('/success')
+})</code></pre>
+
+{% endblock %}

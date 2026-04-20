@@ -71,14 +71,16 @@
     {% if allowEdits %}
       <ul class="nhsuk-list">
         <li>
-          <a href="{{ (eventUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(eventUrl) }}">
-            Cancel or reschedule appointment
-          </a>
+          {{ appLink({
+            text: "Cancel or reschedule appointment",
+            href: (eventUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(eventUrl)
+          } | openInModal) }}
         </li>
         <li>
-          <a href="{{ (eventUrl + '/special-appointment/edit') | urlWithReferrer(eventUrl) }}">
-            {{ "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details" }}
-          </a>
+          {{ appLink({
+            text: "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details",
+            href: (eventUrl + '/special-appointment/edit') | urlWithReferrer(eventUrl)
+          } | openInModal) }}
         </li>
       </ul>
     {% endif %}
@@ -112,7 +114,7 @@
   </div>
 </div>
 
-<p class="app-text-grey">
+<p class="nhsuk-u-secondary-text-colour">
   <span>NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</span>
 </p>
 

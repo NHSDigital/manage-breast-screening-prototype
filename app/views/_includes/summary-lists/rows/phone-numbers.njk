@@ -21,7 +21,8 @@
         visuallyHiddenText: "phone number" if phoneNumbers | length < 2 else "phone numbers"
       } if allowEdits
      ]
-  }
-} | handleSummaryListMissingInformation(showNotProvidedText) %}
+  } if allowEdits,
+  anyRowHasActions: allowEdits
+} | openInModal | handleSummaryListMissingInformation(showNotProvidedText) %}
 
 {{ appSummaryListRow(phoneNumbersRow) }}

@@ -4,7 +4,7 @@
 
 {% extends "layout.html" %}
 
-{% set bodyClasses = (bodyClasses if bodyClasses) + (" app-dark-mode" if data.settings.darkMode == 'true') %}
+{% set bodyClasses = (bodyClasses if bodyClasses) + (" app-dark-mode" if data.settings.darkMode == 'true') + (" app-compact-mode" if data.settings.compactMode in ['true', true]) %}
 
 {% block beforeContent %}
   {% if not hideBackLink %}
@@ -73,7 +73,7 @@
       {
         href: (eventUrl ~ "/exit-appointment") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Exit appointment"
-      }
+      } | openInModal
     ] %}
   {% endif %}
 

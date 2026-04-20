@@ -1,11 +1,12 @@
-{% extends 'layout-appointment.html' %}
+{% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {% set pageHeading = "Provide special appointment details" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {# Change the form action to go to the special-appointment handler #}
-{% set formAction = "./edit-answer" | getReturnUrl(referrerChain) %}
+{# Append referrerChain so the route can thread it through to the final confirm step #}
+{% set formAction = "./edit-answer" | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 
@@ -161,7 +162,8 @@
       ]
     }) }}
 
-    {{ radios({
+    {# Temporary reasons not being built just yet #}
+    {# {{ radios({
       name: "event[specialAppointment][temporaryReasons]",
       value: data.event.specialAppointment.temporaryReasons,
       fieldset: {
@@ -184,7 +186,7 @@
           text: "No"
         }
       ]
-    } | populateErrors) }}
+    } | populateErrors) }} #}
 
     <div class="nhsuk-button-group">
       {{ button({
