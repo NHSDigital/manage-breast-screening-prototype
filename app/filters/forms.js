@@ -56,8 +56,7 @@ const populateErrors = function (component) {
  * {{ summaryList(params | openInModal("my-modal")) }}
  */
 const openInModal = function (component, modalId, loadUrl) {
-  const isModalEnabled =
-    this.ctx?.data?.settings?.screening?.modalForms === 'true'
+  const isModalEnabled = this.ctx?.data?.settings?.modalForms === 'true'
 
   if (!isModalEnabled) return component
 

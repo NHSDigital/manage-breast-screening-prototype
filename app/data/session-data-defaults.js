@@ -89,6 +89,7 @@ const defaultSettings = {
   debugMode: 'false',
   showEnvironmentBanner: 'true',
   mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
+  modalForms: 'false',
   seedProfiles: {
     ...createSeedProfilesState(),
     selectedKey: generationInfo.seedDataProfile
@@ -98,7 +99,6 @@ const defaultSettings = {
     manualImageCollection: 'true',
     showParticipantSection: 'false',
     useCondensedReviewSummaries: 'true',
-    modalForms: 'false',
     imageStreaming: {
       enabled: 'true',
       intervalMs: '3000'

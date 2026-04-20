@@ -89,7 +89,7 @@
 {% block bodyEnd %}
   {{ super() }}
   {# Single shared modal shell for all modal forms #}
-  {% if data.settings.screening.modalForms == 'true' %}
+  {% if data.settings.modalForms == 'true' %}
     {{ appModal({ id: "app-form-modal", showCloseButton: true }) }}
   {% endif %}
   {% block scripts %}
