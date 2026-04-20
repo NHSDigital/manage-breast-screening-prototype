@@ -88,10 +88,10 @@ const getReadsAsArray = function (event) {
  * @param {object} event - The event to update
  * @param {string} userId - User ID
  * @param {object} reading - Reading data to save
- * @param {object | null} [data] - Session data (needed for batch context)
- * @param {string | null} [batchId] - Batch ID (if in batch context)
+ * @param {object | null} [data] - Session data (needed for session context)
+ * @param {string | null} [sessionId] - Session ID (if in session context)
  */
-const writeReading = (event, userId, reading, data = null, batchId = null) => {
+const writeReading = (event, userId, reading, data = null, sessionId = null) => {
   // Ensure imageReading structure exists
   if (!event.imageReading) {
     event.imageReading = { reads: {} }
@@ -113,14 +113,14 @@ const writeReading = (event, userId, reading, data = null, batchId = null) => {
     timestamp: new Date().toISOString()
   }
 
-  // If we have batch context, remove this event from skipped events
-  if (data && batchId && data.readingSessionBatches?.[batchId]) {
-    const batch = data.readingSessionBatches[batchId]
+  // If we have session context, remove this event from skipped events
+  if (data && sessionId && data.readingSessions?.[sessionId]) {
+    const session = data.readingSessions[sessionId]
 
     // Remove event from skipped list if present
-    const skippedIndex = batch.skippedEvents.indexOf(event.id)
+    const skippedIndex = session.skippedEvents.indexOf(event.id)
     if (skippedIndex !== -1) {
-      batch.skippedEvents.splice(skippedIndex, 1)
+      session.skippedEvents.splice(skippedIndex, 1)
     }
   }
 }
@@ -1031,9 +1031,9 @@ const getNextUserReadableEvent = function (
  *
  * Falls back to getFirstUserReadableEvent if the user has no reads or skips yet.
  *
- * @param {Array} events - Array of all events in the batch, in batch order
+ * @param {Array} events - Array of all events in the session, in session order
  * @param {string | null} [userId] - User ID (falls back to current user from context)
- * @param {Array} [skippedEvents] - Array of skipped event IDs from the batch
+ * @param {Array} [skippedEvents] - Array of skipped event IDs from the session
  * @returns {object | null} The event to resume from, or null if nothing to read
  */
 const getResumeEventForUser = function (
@@ -1431,7 +1431,7 @@ const needsArbitration = function (event) {
 }
 
 /************************************************************************
-// Batches
+// Sessions
 //***********************************************************************
 
 /**
@@ -1462,22 +1462,22 @@ const isComplexCase = (event) => {
 }
 
 /**
- * Get eligible event candidates for a batch based on its type and filters
- * Shared between createReadingBatch and topUpBatch to ensure consistent selection
+ * Get eligible event candidates for a session based on its type and filters
+ * Shared between createReadingSession and topUpSession to ensure consistent selection
  *
  * @param {object} data - Session data
- * @param {object} batchOptions - Batch options ({ type, clinicId, filters })
+ * @param {object} sessionOptions - Session options ({ type, clinicId, filters })
  * @returns {Array} Eligible events sorted oldest-first
  */
-const getEligibleCandidatesForBatch = (data, batchOptions) => {
-  const { type = 'custom', clinicId, filters = {} } = batchOptions
+const getEligibleCandidatesForSession = (data, sessionOptions) => {
+  const { type = 'custom', clinicId, filters = {} } = sessionOptions
   const currentUserId = data.currentUser.id
 
   let events = data.events.filter((event) => eligibleForReading(event))
 
   if (type === 'clinic') {
     if (!clinicId)
-      throw new Error('Clinic ID is required for clinic-type batches')
+      throw new Error('Clinic ID is required for clinic-type sessions')
     events = filterEventsByClinic(events, clinicId)
   } else {
     // 1. Filter to events the user can read (unless overridden)
@@ -1526,49 +1526,49 @@ const getEligibleCandidatesForBatch = (data, batchOptions) => {
 }
 
 /**
- * Create a batch of events for reading based on specified criteria
+ * Create a session of events for reading based on specified criteria
  *
- * When lazy batches are enabled (settings.reading.lazyBatches), non-clinic batches
- * start with only the first eligible event. The batch is topped up one event at a
- * time via topUpBatch() as reads and skips happen, until targetSize is reached.
+ * When lazy sessions are enabled (settings.reading.lazySessions), non-clinic sessions
+ * start with only the first eligible event. The session is topped up one event at a
+ * time via topUpSession() as reads and skips happen, until targetSize is reached.
  *
  * @param {object} data - Session data
- * @param {object} options - Batch creation options
- * @param {string} options.type - Type of batch ('all_reads', 'first_reads', 'second_reads', 'awaiting_priors', 'clinic', 'custom')
- * @param {string} [options.name] - Display name for the batch
- * @param {string} [options.clinicId] - Clinic ID (for clinic-specific batches)
- * @param {string} [options.batchId] - Custom batch ID (auto-generated if omitted)
+ * @param {object} options - Session creation options
+ * @param {string} options.type - Type of session ('all_reads', 'first_reads', 'second_reads', 'awaiting_priors', 'clinic', 'custom')
+ * @param {string} [options.name] - Display name for the session
+ * @param {string} [options.clinicId] - Clinic ID (for clinic-specific sessions)
+ * @param {string} [options.sessionId] - Custom session ID (auto-generated if omitted)
  * @param {number} [options.limit] - Target size (defaults to settings value)
  * @param {object} [options.filters] - Additional filters to apply
- * @returns {object} Created batch
+ * @returns {object} Created session
  */
-const createReadingBatch = (data, options) => {
+const createReadingSession = (data, options) => {
   const {
     type = 'custom',
     name,
     clinicId,
-    batchId = null,
+    sessionId = null,
     limit = null,
     lazy = null, // explicit override; null means use settings
     filters = {}
   } = options
 
-  const finalBatchId = batchId || generateBatchId()
+  const finalSessionId = sessionId || generateSessionId()
 
   // Determine target size: explicit limit > settings default > 25
   const settingsTargetSize =
-    parseInt(data.settings?.reading?.defaultBatchTargetSize) || 25
+    parseInt(data.settings?.reading?.defaultSessionSize) || 25
   const targetSize = limit !== null ? parseInt(limit) : settingsTargetSize
 
   // Lazy loading: start with only the first event and top up as reads happen
-  // Clinic batches are always fully populated upfront
+  // Clinic sessions are always fully populated upfront
   // Explicit lazy param overrides the setting
   const lazyEnabled =
-    lazy !== null ? lazy : data.settings?.reading?.lazyBatches === 'true'
+    lazy !== null ? lazy : data.settings?.reading?.lazySessions === 'true'
   const isLazy = lazyEnabled && type !== 'clinic'
 
   // Get all eligible candidates using the shared helper
-  const allCandidates = getEligibleCandidatesForBatch(data, {
+  const allCandidates = getEligibleCandidatesForSession(data, {
     type,
     clinicId,
     filters
@@ -1580,21 +1580,21 @@ const createReadingBatch = (data, options) => {
       ? allCandidates.slice(0, targetSize)
       : allCandidates
 
-  // Lazy batches start with only the first event
+  // Lazy sessions start with only the first event
   const initialEvents =
     isLazy && cappedEvents.length > 0 ? [cappedEvents[0]] : cappedEvents
 
-  // Clinic batches have no fixed target — their size is however many eligible events exist
-  const batchTargetSize = type === 'clinic' ? cappedEvents.length : targetSize
+  // Clinic sessions have no fixed target — their size is however many eligible events exist
+  const sessionTargetSize = type === 'clinic' ? cappedEvents.length : targetSize
 
-  // Create and store the batch
-  const batch = {
-    id: finalBatchId,
-    name: name || getDefaultBatchName(type, clinicId, data),
+  // Create and store the session
+  const session = {
+    id: finalSessionId,
+    name: name || getDefaultSessionName(type, clinicId, data),
     type,
     events: initialEvents,
     eventIds: initialEvents.map((e) => e.id),
-    targetSize: batchTargetSize,
+    targetSize: sessionTargetSize,
     clinicId,
     createdAt: new Date().toISOString(),
     skippedEvents: [],
@@ -1603,38 +1603,38 @@ const createReadingBatch = (data, options) => {
     }
   }
 
-  // Initialize the reading session batches object if it doesn't exist
-  if (!data.readingSessionBatches) {
-    data.readingSessionBatches = {}
+  // Initialize the reading sessions object if it doesn't exist
+  if (!data.readingSessions) {
+    data.readingSessions = {}
   }
 
-  // Store the batch
-  data.readingSessionBatches[finalBatchId] = batch
+  // Store the session
+  data.readingSessions[finalSessionId] = session
 
-  return batch
+  return session
 }
 
 /**
- * Generate a default name for a batch based on its type
+ * Generate a default name for a session based on its type
  *
- * @param {string} type - Batch type
- * @param {string} clinicId - Clinic ID (for clinic batches)
+ * @param {string} type - Session type
+ * @param {string} clinicId - Clinic ID (for clinic sessions)
  * @param {object} data - Session data
- * @returns {string} Default batch name
+ * @returns {string} Default session name
  */
-const getDefaultBatchName = (type, clinicId, data) => {
+const getDefaultSessionName = (type, clinicId, data) => {
   switch (type) {
     case 'all_reads':
       return 'Session overview'
     case 'first_reads':
-      return '1st reads batch'
+      return '1st reads session'
     case 'second_reads':
-      return '2nd reads batch'
+      return '2nd reads session'
     case 'awaiting_priors':
-      return 'Awaiting priors batch'
+      return 'Awaiting priors session'
     case 'clinic': {
       const clinic = data.clinics.find((c) => c.id === clinicId)
-      if (!clinic) return 'Clinic batch'
+      if (!clinic) return 'Clinic session'
 
       const location = clinic.locationId
         ? data.breastScreeningUnits
@@ -1645,179 +1645,179 @@ const getDefaultBatchName = (type, clinicId, data) => {
       return `${location || 'Clinic'} - ${dayjs(clinic.date).format('D MMM YYYY')}`
     }
     default:
-      return 'Custom batch'
+      return 'Custom session'
   }
 }
 
 /**
- * Generate a unique ID for a batch
+ * Generate a unique ID for a session
  *
- * @returns {string} Unique batch ID
+ * @returns {string} Unique session ID
  */
-const generateBatchId = () => {
+const generateSessionId = () => {
   return Math.random().toString(36).substring(2, 10)
 }
 
 /**
- * Get a reading batch by ID
+ * Get a reading session by ID
  *
  * @param {object} data - Session data
- * @param {string} batchId - Batch ID to retrieve
- * @returns {object | null} Batch object or null if not found
+ * @param {string} sessionId - Session ID to retrieve
+ * @returns {object | null} Session object or null if not found
  */
-const getReadingBatch = (data, batchId) => {
-  if (!data.readingSessionBatches || !data.readingSessionBatches[batchId]) {
+const getReadingSession = (data, sessionId) => {
+  if (!data.readingSessions || !data.readingSessions[sessionId]) {
     return null
   }
 
-  return data.readingSessionBatches[batchId]
+  return data.readingSessions[sessionId]
 }
 
-// Add a helper function to create batches from clinics
-const getOrCreateClinicBatch = (data, clinicId) => {
-  // Check if a batch already exists for this clinic
-  const existingBatch = (data.readingSessionBatches || {})[clinicId]
+// Add a helper function to create sessions from clinics
+const getOrCreateClinicSession = (data, clinicId) => {
+  // Check if a session already exists for this clinic
+  const existingSession = (data.readingSessions || {})[clinicId]
 
   if (
-    existingBatch &&
-    existingBatch.type === 'clinic' &&
-    existingBatch.clinicId === clinicId
+    existingSession &&
+    existingSession.type === 'clinic' &&
+    existingSession.clinicId === clinicId
   ) {
-    return existingBatch
+    return existingSession
   }
 
-  // Create a new batch for this clinic
-  return createReadingBatch(data, {
+  // Create a new session for this clinic
+  return createReadingSession(data, {
     type: 'clinic',
     clinicId,
-    batchId: clinicId, // Use clinic ID as batch ID
+    sessionId: clinicId, // Use clinic ID as session ID
     name: null // Will use default clinic name
   })
 }
 
 /**
- * Get the first event in a batch that a user can read
+ * Get the first event in a session that a user can read
  *
  * @param {object} data - Session data
- * @param {string} batchId - Batch ID
+ * @param {string} sessionId - Session ID
  * @param {string | null} [userId] - User ID (defaults to current user)
  * @returns {object | null} First readable event or null if none found
  */
-const getFirstReadableEventInBatch = (data, batchId, userId = null) => {
-  const batch = getReadingBatch(data, batchId)
-  if (!batch) return null
+const getFirstReadableEventInSession = (data, sessionId, userId = null) => {
+  const session = getReadingSession(data, sessionId)
+  if (!session) return null
 
   const currentUserId = userId || data.currentUser.id
 
-  // Get all events for the batch
-  const batchEvents = batch.eventIds
+  // Get all events for the session
+  const sessionEvents = session.eventIds
     .map((eventId) => data.events.find((e) => e.id === eventId))
     .filter(Boolean)
 
   // Find the first one the user can read
   return (
-    batchEvents.find((event) => canUserReadEvent(event, currentUserId)) || null
+    sessionEvents.find((event) => canUserReadEvent(event, currentUserId)) || null
   )
 }
 
 /**
- * Mark an event as skipped in a batch
+ * Mark an event as skipped in a session
  *
  * @param {object} data - Session data
- * @param {string} batchId - Batch ID
+ * @param {string} sessionId - Session ID
  * @param {string} eventId - Event ID to mark as skipped
  * @returns {boolean} Whether the operation was successful
  */
-const skipEventInBatch = (data, batchId, eventId) => {
-  const batch = getReadingBatch(data, batchId)
-  if (!batch) return false
+const skipEventInSession = (data, sessionId, eventId) => {
+  const session = getReadingSession(data, sessionId)
+  if (!session) return false
 
-  // Check if event exists in this batch
-  if (!batch.eventIds.includes(eventId)) return false
+  // Check if event exists in this session
+  if (!session.eventIds.includes(eventId)) return false
 
   // Check if already skipped
-  if (batch.skippedEvents.includes(eventId)) return true
+  if (session.skippedEvents.includes(eventId)) return true
 
   // Add to skipped events
-  batch.skippedEvents.push(eventId)
+  session.skippedEvents.push(eventId)
   return true
 }
 
 /**
- * Add the next eligible event to a batch if it is under its target size
- * Called after each read or skip to grow the batch one case at a time
+ * Add the next eligible event to a session if it is under its target size
+ * Called after each read or skip to grow the session one case at a time
  *
  * @param {object} data - Session data
- * @param {string} batchId - Batch ID
+ * @param {string} sessionId - Session ID
  * @returns {boolean} Whether an event was added
  */
-const topUpBatch = (data, batchId) => {
-  const batch = getReadingBatch(data, batchId)
-  if (!batch) return false
+const topUpSession = (data, sessionId) => {
+  const session = getReadingSession(data, sessionId)
+  if (!session) return false
 
-  // Clinic batches are fully populated at creation
-  if (batch.type === 'clinic') return false
+  // Clinic sessions are fully populated at creation
+  if (session.type === 'clinic') return false
 
   // Already at or above target size
-  if (!batch.targetSize || batch.eventIds.length >= batch.targetSize)
+  if (!session.targetSize || session.eventIds.length >= session.targetSize)
     return false
 
-  // Collect all event IDs currently in any batch to avoid overlap
+  // Collect all event IDs currently in any session to avoid overlap
   const claimedEventIds = new Set(
-    Object.values(data.readingSessionBatches || {}).flatMap(
-      (b) => b.eventIds || []
+    Object.values(data.readingSessions || {}).flatMap(
+      (s) => s.eventIds || []
     )
   )
 
-  // Get candidates using the same filters as at batch creation, excluding already-claimed events
-  const candidates = getEligibleCandidatesForBatch(data, batch).filter(
+  // Get candidates using the same filters as at session creation, excluding already-claimed events
+  const candidates = getEligibleCandidatesForSession(data, session).filter(
     (event) => !claimedEventIds.has(event.id)
   )
 
   if (candidates.length === 0) return false
 
   // Add the next eligible event
-  batch.eventIds.push(candidates[0].id)
+  session.eventIds.push(candidates[0].id)
   return true
 }
 
 /**
- * Get reading progress for a batch
+ * Get reading progress for a session
  *
  * @param {object} data - Session data
- * @param {string} batchId - Batch ID
+ * @param {string} sessionId - Session ID
  * @param {string} currentEventId - Current event ID
  * @param {string} [userId] - User ID (defaults to current user)
  * @returns {object} Reading progress information
  */
-const getBatchReadingProgress = (
+const getSessionReadingProgress = (
   data,
-  batchId,
+  sessionId,
   currentEventId,
   userId = null
 ) => {
-  const batch = getReadingBatch(data, batchId)
-  if (!batch) return null
+  const session = getReadingSession(data, sessionId)
+  if (!session) return null
 
-  // Get all events for the batch
-  const batchEvents = batch.eventIds
+  // Get all events for the session
+  const sessionEvents = session.eventIds
     .map((eventId) => data.events.find((e) => e.id === eventId))
     .filter(Boolean)
 
-  // Use existing function for progress tracking, then add batch-level size info
+  // Use existing function for progress tracking, then add session-level size info
   const progress = getReadingProgress(
-    batchEvents,
+    sessionEvents,
     currentEventId,
-    batch.skippedEvents,
+    session.skippedEvents,
     userId || data.currentUser.id
   )
 
-  const resolvedTargetSize = batch.targetSize || batchEvents.length
+  const resolvedTargetSize = session.targetSize || sessionEvents.length
 
   return {
     ...progress,
     // How many events are currently loaded vs the overall target
-    populatedCount: batchEvents.length,
+    populatedCount: sessionEvents.length,
     targetSize: resolvedTargetSize,
     // Remaining reads against the target (not just currently loaded events)
     targetRemaining: Math.max(
@@ -1882,14 +1882,14 @@ module.exports = {
   needsFirstRead,
   needsSecondRead,
 
-  // Batches
-  createReadingBatch,
-  getDefaultBatchName,
-  generateBatchId,
-  getReadingBatch,
-  getOrCreateClinicBatch,
-  getFirstReadableEventInBatch,
-  skipEventInBatch,
-  topUpBatch,
-  getBatchReadingProgress
+  // Sessions
+  createReadingSession,
+  getDefaultSessionName,
+  generateSessionId,
+  getReadingSession,
+  getOrCreateClinicSession,
+  getFirstReadableEventInSession,
+  skipEventInSession,
+  topUpSession,
+  getSessionReadingProgress
 }

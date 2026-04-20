@@ -372,13 +372,13 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     }
   }
 
-  // Reading batch: highlighted "next case" row uses card surface colour so it
+  // Reading session: highlighted “next case” row uses card surface colour so it
   // appears as a raised grey slab on top of the dark background
   .app-placeholder-row--next td {
     background-color: $app-dark-mode-surface;
   }
 
-  // Reading batch: placeholder rectangle for pending lazy-batch slots
+  // Reading session: placeholder rectangle for pending lazy-session slots
   .app-placeholder-tag {
     background-color: nhsuk-shade($app-dark-mode-text-colour, 60%);
   }

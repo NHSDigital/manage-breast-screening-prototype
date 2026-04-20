@@ -119,16 +119,16 @@
     {# Opinion delay #}
     {{ settingToggle("Opinion delay", "settings[reading][enableOpinionDelay]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.enableOpinionDelay, "false") }}
 
-    {# Lazy batches #}
-    {{ settingToggle("Lazy batches", "settings[reading][lazyBatches]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.lazyBatches, "false") }}
+    {# Lazy sessions #}
+    {{ settingToggle("Lazy sessions", "settings[reading][lazySessions]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.lazySessions, "false") }}
 
-    {# Default batch target size #}
-    {{ settingToggle("Default batch target size", "settings[reading][defaultBatchTargetSize]", [
+    {# Default session size #}
+    {{ settingToggle("Default session size", "settings[reading][defaultSessionSize]", [
       {value: "10", label: "10"},
       {value: "25", label: "25"},
       {value: "50", label: "50"},
       {value: "100", label: "100"}
-    ], data.settings.reading.defaultBatchTargetSize, "25") }}
+    ], data.settings.reading.defaultSessionSize, "25") }}
 
     {# Second reader comparison #}
     {{ settingToggle("Second reader compare page", "settings[reading][secondReaderComparison]", [

@@ -55,7 +55,7 @@
   }
 }
 
-// Placeholder row tag — indicates a future case not yet loaded into the batch
+// Placeholder row tag — indicates a future case not yet loaded into the session
 .app-placeholder-tag {
   display: inline-block;
   height: 16px;
@@ -70,7 +70,7 @@
   line-height: 1;
 }
 
-.app-reading-batch-primary-action {
+.app-reading-session-primary-action {
   margin-right: 15px;
 }
 
@@ -79,17 +79,17 @@
   margin-bottom: nhsuk-spacing(1);
 }
 
-.app-reading-batch-table th:first-child,
-.app-reading-batch-table td:first-child {
+.app-reading-session-table th:first-child,
+.app-reading-session-table td:first-child {
   padding-left: 0;
   text-align: center;
 }
 
-.app-reading-batch-table td:first-child {
+.app-reading-session-table td:first-child {
   vertical-align: top;
 }
 
-.app-reading-batch-table tbody td {
+.app-reading-session-table tbody td {
   padding-top: 12px;
   padding-bottom: 6px;
 }
