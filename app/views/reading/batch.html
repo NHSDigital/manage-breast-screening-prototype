@@ -52,15 +52,22 @@
     {% else %}
       {{ panel({
         titleText: "Session complete",
-        html: '<p class="nhsuk-body-s">All cases in this session have been read</p><p class="nhsuk-body-s nhsuk-u-margin-bottom-0"><a href="/reading" class="nhsuk-link nhsuk-link--reverse">Continue reading in a new session</a></p>'
+        html: '<p class="nhsuk-body-s nhsuk-u-margin-bottom-0">All cases in this session have been read</p>'
       }) }}
 
       <div class="nhsuk-button-group">
         {{ button({
-          text: "Close session",
-          href: "/reading/clinics"
+          text: "Continue reading in new session",
+          href: "/reading"
         }) }}
+        <a href="/dashboard" class="nhsuk-link nhsuk-button-group__item">Stop reading and return to dashboard</a>
       </div>
+
+      {{ button({
+        text: "Finalise opinions",
+        href: "/reading/clinics",
+        classes: "nhsuk-button--secondary"
+      }) }}
     {% endif %}
 
     {# Secondary navigation for view tabs #}
