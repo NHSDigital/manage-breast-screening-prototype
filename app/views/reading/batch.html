@@ -50,23 +50,22 @@
         {{ readingActionText }}
       </a>
     {% else %}
+      {% set sessionCompletePanelHtml %}
+        <p class="nhsuk-body-s">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised in {{ autoFinaliseMinutesRemaining }} {{ "minute" | pluralise(autoFinaliseMinutesRemaining) }}.</p>
+        <p class="nhsuk-body-s"><a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+          {{ button({
+            text: "Start a new session",
+            href: "/reading",
+            classes: "nhsuk-button--reverse nhsuk-u-margin-bottom-0"
+          }) }}
+          <a href="/dashboard" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
+        </div>
+      {% endset %}
+
       {{ panel({
         titleText: "Session complete",
-        html: '<p class="nhsuk-body-s nhsuk-u-margin-bottom-0">All cases in this session have been read</p>'
-      }) }}
-
-      <div class="nhsuk-button-group">
-        {{ button({
-          text: "Continue reading in new session",
-          href: "/reading"
-        }) }}
-        <a href="/dashboard" class="nhsuk-link nhsuk-button-group__item">Stop reading and return to dashboard</a>
-      </div>
-
-      {{ button({
-        text: "Finalise opinions",
-        href: "/reading/clinics",
-        classes: "nhsuk-button--secondary"
+        html: sessionCompletePanelHtml
       }) }}
     {% endif %}
 
@@ -75,7 +74,7 @@
 
     {% for item in [
       { id: 'your-reads', label: 'Your opinion' },
-      { id: 'all-reads', label: "Other reader's opinion and outcome" }
+      { id: 'all-reads', label: 'All reads and outcomes' }
     ] %}
       {% set href -%}
         /reading/batch/{{ batch.id }}/{{ item.id }}
@@ -211,7 +210,9 @@
         <h2>Reading session cases</h2>
         {% set userSessionRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
-        <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
+        {% if userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 %}
+          <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
+        {% endif %}
 
         <table class="nhsuk-table app-reading-batch-table">
           <thead>
@@ -404,14 +405,7 @@
         <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ allViewArbitrationCount }} cases</p>
       {% endset %}
 
-      {% if not resumeEvent %}
-        <h2>All reads ({{ allTotal }})</h2>
-      {% endif %}
-
       <h2>Reading session cases</h2>
-      {% set allViewRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
-      {% set allViewRemainingCount = 0 if allViewRemainingCount < 0 else allViewRemainingCount %}
-      <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ allViewRemainingCount }} remaining</p>
 
       <table class="nhsuk-table app-reading-batch-table">
         <thead>

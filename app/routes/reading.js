@@ -304,6 +304,7 @@ module.exports = (router) => {
   router.get('/reading/batch/:batchId/:view', (req, res) => {
     const data = req.session.data
     const { batchId, view } = req.params
+    const autoFinaliseWindowMinutes = 30
     const validViews = ['your-reads', 'all-reads']
 
     // Validate view parameter
@@ -348,6 +349,21 @@ module.exports = (router) => {
       batch.skippedEvents || []
     )
 
+    // Countdown starts when the current user records their first opinion in this session
+    const firstUserReadTimestamp = enhancedEvents
+      .map((event) => event.imageReading?.reads?.[data.currentUser.id]?.timestamp)
+      .filter(Boolean)
+      .sort((a, b) => new Date(a) - new Date(b))[0]
+
+    let autoFinaliseMinutesRemaining = autoFinaliseWindowMinutes
+    if (firstUserReadTimestamp) {
+      const elapsedMinutes = dayjs().diff(dayjs(firstUserReadTimestamp), 'minute')
+      autoFinaliseMinutesRemaining = Math.max(
+        0,
+        autoFinaliseWindowMinutes - elapsedMinutes
+      )
+    }
+
     // Clear any lingering opinion banner from a previous batch
     delete data.readingOpinionBanner
 
@@ -362,6 +378,7 @@ module.exports = (router) => {
       events: enhancedEvents,
       readingStatus,
       resumeEvent,
+      autoFinaliseMinutesRemaining,
       clinic,
       view: selectedView
     })
