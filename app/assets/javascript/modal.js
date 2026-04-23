@@ -203,10 +203,10 @@ class AppModal {
           return
         }
 
+        this.show()
         this.setContent(html)
         this.bindFormSubmit()
         this.bindLinkNavigation()
-        this.show()
         // Re-run now that the modal is visible — offsetHeight is 0 while hidden,
         // so the call inside setContent() is a no-op on fast connections.
         this.trimBottomSpacing()
