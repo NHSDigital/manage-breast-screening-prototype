@@ -1,7 +1,7 @@
 {# app/views/reading/workflow/opinion.html #}
 {# Main reading opinion page - entry point for reading workflow #}
 
-{% extends 'layout-reading.html' %}
+{% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading = participant | getFullName %}
 {% set gridColumn = "none" %}
@@ -321,7 +321,7 @@
 
           {{ button({
             text: "Update opinion"
-          }) }}
+          } | openInModal) }}
 
         {% else %}
           {# Show buttons for initial assessment - vertically stacked #}
@@ -335,7 +335,7 @@
                 name: "imageReadingTemp[opinion]",
                 classes: "app-button-full-width nhsuk-u-margin-bottom-3",
                 attributes: { "data-shortcut": "n" }
-              }) }}
+              } | openInModal) }}
             {% else %}
               {{ button({
                 html: "Normal <span class='app-shortcut-hint'>(N)</span>",
@@ -346,7 +346,10 @@
               }) }}
 
               <p class="nhsuk-u-margin-bottom-4">
-                <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link">
+                {# Raw button element intentional — app-button-link styles it as a link,
+                   which doesn't work with the NHS button macro (adds conflicting styles).
+                   data-modal-submit added manually for modal support. #}
+                <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
                   Normal, but add details
                 </button>
               </p>
@@ -360,7 +363,7 @@
               name: "imageReadingTemp[opinion]",
               classes: "nhsuk-button--secondary app-button-full-width nhsuk-u-margin-bottom-3",
               attributes: { "data-shortcut": "t" }
-            }) }}
+            } | openInModal) }}
           </div>
 
           <div class="nhsuk-u-margin-bottom-4">
@@ -370,7 +373,7 @@
               name: "imageReadingTemp[opinion]",
               classes: "nhsuk-button--warning app-button-full-width",
               attributes: { "data-shortcut": "r" }
-            }) }}
+            } | openInModal) }}
           </div>
 
         {% endif %}

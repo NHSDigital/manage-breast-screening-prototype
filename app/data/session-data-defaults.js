@@ -107,6 +107,9 @@ const defaultSettings = {
   reading: {
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
+    confirmNormalWithDetails: 'false',
+    confirmTechnicalRecall: 'false',
+    confirmRecallForAssessment: 'true',
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',

@@ -1,6 +1,6 @@
 {# /app/views/reading/annotation.html #}
 
-{% extends 'layout-reading.html' %}
+{% extends parentLayout or 'layout-reading.html' %}
 
 {% set annotation = data.imageReadingTemp.annotationTemp %}
 
@@ -278,10 +278,10 @@
 
 
 {% block pageScripts %}
-  <script type="module">
+  <script>
 // Mammogram annotation functionality with coordinate saving
 // Positions are stored as 0-1 decimals, keyed by view name (e.g., 'rmlo', 'rcc')
-document.addEventListener('DOMContentLoaded', () => {
+function initAnnotation() {
   const mammogramImages = document.querySelectorAll('.app-mammogram-image')
   const positionsInput = document.getElementById('positions')
   const annotationNumberInput = document.getElementById('annotationNumber')
@@ -511,6 +511,14 @@ document.addEventListener('DOMContentLoaded', () => {
     activeMarker = null
     activeContainer = null
   })
-})
+}
+
+// Run immediately if the DOM is already ready (e.g. when loaded into a modal),
+// otherwise wait. DOMContentLoaded has already fired in modal context.
+if (document.readyState !== 'loading') {
+  initAnnotation()
+} else {
+  document.addEventListener('DOMContentLoaded', initAnnotation)
+}
   </script>
 {% endblock pageScripts %}

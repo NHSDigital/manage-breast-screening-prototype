@@ -190,6 +190,19 @@ class AppModal {
           return
         }
 
+        // If the response looks like a full HTML page, the template probably
+        // forgot 'parentLayout or'. Bail out to a direct navigation rather than
+        // injecting the full site into the modal.
+        if (this.isFullPage(html)) {
+          console.warn(
+            'Modal: full page returned — falling back to direct navigation',
+            this._loadUrl
+          )
+          this.close()
+          window.location.href = this._loadUrl
+          return
+        }
+
         this.setContent(html)
         this.bindFormSubmit()
         this.bindLinkNavigation()
@@ -403,6 +416,21 @@ class AppModal {
 
     // Trim trailing margin so only the modal's own padding provides bottom spacing.
     this.trimBottomSpacing()
+
+    // Execute any inline scripts in the fragment before namespacing IDs.
+    // Browsers don't run scripts injected via innerHTML — re-create each as a
+    // new element so they execute. Must happen before namespaceIds so that any
+    // script using getElementById() finds the original (un-namespaced) IDs.
+    ;(content || this.dialog)
+      .querySelectorAll('script')
+      .forEach((oldScript) => {
+        const newScript = document.createElement('script')
+        Array.from(oldScript.attributes).forEach((attr) => {
+          newScript.setAttribute(attr.name, attr.value)
+        })
+        newScript.textContent = oldScript.textContent
+        oldScript.replaceWith(newScript)
+      })
 
     // Namespace IDs after NHS Frontend has initialised. NHS Frontend caches DOM
     // node references during init, so renaming afterward doesn't affect conditional
@@ -664,6 +692,15 @@ class AppModal {
             this.bindFormSubmit()
             this.bindLinkNavigation()
             this.updateBackLink()
+          } else if (this.isFullPage(html)) {
+            // Full page returned — template probably forgot 'parentLayout or'.
+            // Bail out to direct navigation rather than injecting the full site.
+            console.warn(
+              'Modal: full page returned after POST — falling back to direct navigation',
+              finalUrl
+            )
+            this.close()
+            window.location.href = finalUrl
           } else {
             // Flow complete — close and refresh
             this.close()
@@ -785,6 +822,14 @@ class AppModal {
     return data
   }
 
+  // Returns true if html looks like a full page rather than a modal fragment.
+  // Used to detect templates that forgot 'parentLayout or', which would otherwise
+  // inject the entire site layout into the modal dialog.
+  isFullPage(html) {
+    const start = html.trimStart().slice(0, 200).toLowerCase()
+    return start.includes('<!doctype') || start.includes('<html')
+  }
+
   // Prefix all IDs within a container and update all attributes that reference
   // them (for, aria-controls, aria-labelledby, aria-describedby). Prevents
   // duplicate-ID conflicts when the modal shares field names with the parent page.
@@ -866,6 +911,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = link.dataset.loadModalUrl
     const modalId = link.dataset.modalId || 'app-form-modal'
     window.openModal(modalId, { loadUrl: url })
+  })
+
+  // Global delegated click handler for [data-modal-submit] — used by the
+  // openInModal filter to progressively enhance submit buttons that have no href.
+  // POSTs the containing form via fetch, then opens the redirect destination
+  // (server-threaded with ?_modal=1) in the modal as a fragment.
+  // Without JS the button submits the form normally — progressive enhancement.
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-modal-submit]')
+    if (!button) return
+    if (button.closest('.app-modal__dialog')) return
+    if (button.disabled) return
+
+    const form = button.closest('form')
+    if (!form) return
+
+    e.preventDefault()
+
+    const body = new URLSearchParams()
+    form.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (!el.name || el.disabled) return
+      if (el.type === 'checkbox') {
+        if (el.checked) body.append(el.name, el.value)
+        body.append(el.name, '_unchecked')
+      } else if (el.type === 'radio') {
+        if (el.checked) body.append(el.name, el.value)
+      } else {
+        body.append(el.name, el.value)
+      }
+    })
+    if (button.name) body.set(button.name, button.value || '')
+
+    const modalId = button.dataset.modalId || 'app-form-modal'
+
+    fetch(form.action, {
+      method: (form.method || 'POST').toUpperCase(),
+      body,
+      redirect: 'follow',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Submission failed')
+        window.openModal(modalId, { loadUrl: response.url })
+      })
+      .catch((err) => {
+        console.error('Modal submit error:', err)
+        form.submit()
+      })
   })
 })
 

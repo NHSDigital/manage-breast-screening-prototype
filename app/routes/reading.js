@@ -26,6 +26,7 @@ const {
 const { getShortName } = require('../lib/utils/participants')
 const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
+const { modalBreakout } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
@@ -368,98 +369,104 @@ module.exports = (router) => {
   })
 
   // Middleware to make sure pages have the right data
-  router.use('/reading/session/:sessionId/events/:eventId', (req, res, next) => {
-    const data = req.session.data
-    const { sessionId, eventId } = req.params
-    const currentUserId = data.currentUser?.id
+  router.use(
+    '/reading/session/:sessionId/events/:eventId',
+    (req, res, next) => {
+      const data = req.session.data
+      const { sessionId, eventId } = req.params
+      const currentUserId = data.currentUser?.id
 
-    // Get the batch
-    const session = getReadingSession(data, sessionId)
-    if (!session) {
-      // req.flash('error', 'Session not found')
-      console.log('Session not found')
-      return res.redirect('/reading')
-    }
+      // Get the batch
+      const session = getReadingSession(data, sessionId)
+      if (!session) {
+        // req.flash('error', 'Session not found')
+        console.log('Session not found')
+        return res.redirect('/reading')
+      }
 
-    // Check if event exists in this session
-    if (!session.eventIds.includes(eventId)) {
-      // req.flash('error', 'Event not found in this session')
-      console.log(`Event ${sessionId} not found in this session`)
-      return res.redirect(`/reading/session/${sessionId}`)
-    }
+      // Check if event exists in this session
+      if (!session.eventIds.includes(eventId)) {
+        // req.flash('error', 'Event not found in this session')
+        console.log(`Event ${sessionId} not found in this session`)
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
 
-    // Get the event data
-    const event = data.events.find((e) => e.id === eventId)
-    if (!event) {
-      // req.flash('error', 'Event not found')
-      console.log(`Event ${eventId} not found`)
-      return res.redirect(`/reading/session/${sessionId}`)
-    }
+      // Get the event data
+      const event = data.events.find((e) => e.id === eventId)
+      if (!event) {
+        // req.flash('error', 'Event not found')
+        console.log(`Event ${eventId} not found`)
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
 
-    // Get participant and clinic data
-    const participant = data.participants.find(
-      (p) => p.id === event.participantId
-    )
-    const clinic = data.clinics.find((c) => c.id === event.clinicId)
-    const unit = data.breastScreeningUnits.find(
-      (u) => u.id === clinic.breastScreeningUnitId
-    )
-    const location = unit.locations.find((l) => l.id === clinic.locationId)
+      // Get participant and clinic data
+      const participant = data.participants.find(
+        (p) => p.id === event.participantId
+      )
+      const clinic = data.clinics.find((c) => c.id === event.clinicId)
+      const unit = data.breastScreeningUnits.find(
+        (u) => u.id === clinic.breastScreeningUnitId
+      )
+      const location = unit.locations.find((l) => l.id === clinic.locationId)
 
-    // Get reading progress for this session
-    const progress = getSessionReadingProgress(data, sessionId, eventId)
+      // Get reading progress for this session
+      const progress = getSessionReadingProgress(data, sessionId, eventId)
 
-    // Initialise or update imageReadingTemp for this event
-    // Only do this on GET requests - POST requests should preserve form data
-    if (req.method === 'GET') {
-      if (!data.imageReadingTemp || data.imageReadingTemp.eventId !== eventId) {
-        const existingRead = event.imageReading?.reads?.[currentUserId]
-        if (existingRead) {
-          // User has already read this event - populate temp from saved read
-          console.log(
-            `Loading existing read for event ${eventId} into imageReadingTemp`
-          )
-          data.imageReadingTemp = {
-            eventId: eventId,
-            ...existingRead
+      // Initialise or update imageReadingTemp for this event
+      // Only do this on GET requests - POST requests should preserve form data
+      if (req.method === 'GET') {
+        if (
+          !data.imageReadingTemp ||
+          data.imageReadingTemp.eventId !== eventId
+        ) {
+          const existingRead = event.imageReading?.reads?.[currentUserId]
+          if (existingRead) {
+            // User has already read this event - populate temp from saved read
+            console.log(
+              `Loading existing read for event ${eventId} into imageReadingTemp`
+            )
+            data.imageReadingTemp = {
+              eventId: eventId,
+              ...existingRead
+            }
+          } else {
+            // No existing read - initialise empty temp with eventId
+            console.log(`Initialising imageReadingTemp for event ${eventId}`)
+            data.imageReadingTemp = { eventId: eventId }
           }
-        } else {
-          // No existing read - initialise empty temp with eventId
-          console.log(`Initialising imageReadingTemp for event ${eventId}`)
-          data.imageReadingTemp = { eventId: eventId }
+          // Update res.locals.data to reflect the change (it was set before this middleware)
+          res.locals.data.imageReadingTemp = data.imageReadingTemp
         }
-        // Update res.locals.data to reflect the change (it was set before this middleware)
-        res.locals.data.imageReadingTemp = data.imageReadingTemp
+
+        // Pass along opinion banner and remove from session
+        // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+        // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
+        if (
+          (req.path.endsWith('/opinion') ||
+            req.path.endsWith('/existing-read')) &&
+          data.readingOpinionBanner
+        ) {
+          res.locals.readingOpinionBanner = data.readingOpinionBanner
+          delete data.readingOpinionBanner
+        }
       }
 
-      // Pass along opinion banner and remove from session
-      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
-      // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
-      if (
-        (req.path.endsWith('/opinion') ||
-          req.path.endsWith('/existing-read')) &&
-        data.readingOpinionBanner
-      ) {
-        res.locals.readingOpinionBanner = data.readingOpinionBanner
-        delete data.readingOpinionBanner
-      }
+      // Set up locals for templates
+      res.locals.isReadingWorkflow = true
+      res.locals.session = session
+      res.locals.eventData = { clinic, event, participant, unit, location }
+      res.locals.clinic = clinic
+      res.locals.event = event
+      res.locals.participant = participant
+      res.locals.unit = unit
+      res.locals.location = location
+      res.locals.sessionId = sessionId
+      res.locals.eventId = eventId
+      res.locals.progress = progress
+
+      next()
     }
-
-    // Set up locals for templates
-    res.locals.isReadingWorkflow = true
-    res.locals.session = session
-    res.locals.eventData = { clinic, event, participant, unit, location }
-    res.locals.clinic = clinic
-    res.locals.event = event
-    res.locals.participant = participant
-    res.locals.unit = unit
-    res.locals.location = location
-    res.locals.sessionId = sessionId
-    res.locals.eventId = eventId
-    res.locals.progress = progress
-
-    next()
-  })
+  )
 
   // Route for event reading within a batch
   // Redirects to existing-read if user has already read, otherwise to opinion
@@ -591,7 +598,9 @@ module.exports = (router) => {
           participantName: `${shortName}`,
           editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
-        res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+        res.redirect(
+          `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+        )
       } else if (session.skippedEvents.length > 0) {
         res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
@@ -1045,7 +1054,10 @@ module.exports = (router) => {
         views: cleanViews
       }
 
+      // 307 preserves POST method so opinion-details-complete can 307 to save-opinion
+      // if the confirm-technical-recall setting is off
       res.redirect(
+        307,
         `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
       )
     }
@@ -1082,7 +1094,9 @@ module.exports = (router) => {
       // Route based on opinion type
       switch (opinion) {
         case 'normal':
-          if (data.settings?.reading?.confirmNormal === 'true') {
+          // opinion-details-complete is only reached for normal when the user
+          // went through the normal-details page, so use confirmNormalWithDetails
+          if (data.settings?.reading?.confirmNormalWithDetails === 'true') {
             return res.redirect(
               `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
             )
@@ -1092,7 +1106,25 @@ module.exports = (router) => {
             `/reading/session/${sessionId}/events/${eventId}/save-opinion`
           )
         case 'technical_recall':
+          if (data.settings?.reading?.confirmTechnicalRecall !== 'false') {
+            return res.redirect(
+              `/reading/session/${sessionId}/events/${eventId}/review`
+            )
+          }
+          return res.redirect(
+            307,
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+          )
         case 'recall_for_assessment':
+          if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
+            return res.redirect(
+              `/reading/session/${sessionId}/events/${eventId}/review`
+            )
+          }
+          return res.redirect(
+            307,
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+          )
         default:
           return res.redirect(
             `/reading/session/${sessionId}/events/${eventId}/review`
@@ -1176,11 +1208,17 @@ module.exports = (router) => {
 
       // Redirect to next unread event or end-of-session page
       if (nextUnreadEvent) {
-        res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+        res.redirect(
+          modalBreakout(
+            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+          )
+        )
       } else if (session.skippedEvents.length > 0) {
-        res.redirect(`/reading/session/${sessionId}/skipped-review`)
+        res.redirect(
+          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
+        )
       } else {
-        res.redirect(`/reading/session/${sessionId}`)
+        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
       }
     }
   )
@@ -1389,9 +1427,12 @@ module.exports = (router) => {
         (opinion === 'normal' && temp?.normalDetails)
 
       if (hasExistingDetails) {
-        // Skip to review - we already have details
+        // Route through opinion-details-complete to respect settings.
+        // Using 307 preserves POST so save-opinion can be reached directly if needed.
+        // This also fixes the bug where normal+normalDetails was sent to /review.
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/review`
+          307,
+          `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
         )
       }
 
@@ -1473,9 +1514,7 @@ module.exports = (router) => {
           // Get batch ID if available
           let sessionId = null
           if (data.readingSessions) {
-            for (const [id, session] of Object.entries(
-              data.readingSessions
-            )) {
+            for (const [id, session] of Object.entries(data.readingSessions)) {
               if (session.eventIds.includes(event.id)) {
                 sessionId = id
                 break
