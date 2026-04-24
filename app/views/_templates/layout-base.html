@@ -77,11 +77,11 @@
     ] %}
   {% endif %}
 
-  {# Reading workflow: replace nav with link back to batch and PACS viewer #}
+  {# Reading workflow: replace nav with link back to session and PACS viewer #}
   {% if isReadingWorkflow %}
     {% set navItems = [
       {
-        href: "/reading/batch/" ~ batchId,
+        href: "/reading/session/" ~ sessionId,
         text: "Session overview"
       },
       {

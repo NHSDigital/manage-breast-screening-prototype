@@ -1,14 +1,14 @@
-{# app/views/reading/create-custom-batch.html #}
+{# app/views/reading/create-custom-session.html #}
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Create custom reading batch" %}
+{% set pageHeading = "Create custom reading session" %}
 {% set back = {
   href: "/reading",
   text: "Back to reading"
 } %}
 
-{% set formAction = "/reading/create-batch" %}
+{% set formAction = "/reading/create-session" %}
 {% set formMethod = "GET" %}
 
 {% block pageContent %}
@@ -49,7 +49,7 @@
     name: "limit",
     fieldset: {
       legend: {
-        text: "Batch size",
+        text: "Session size",
         classes: "nhsuk-fieldset__legend--m"
       }
     },
@@ -103,23 +103,23 @@
       name: "lazy",
       fieldset: {
         legend: {
-          text: "Batch population (debug only)",
+          text: "Session population (debug only)",
           classes: "nhsuk-fieldset__legend--m"
         }
       },
       hint: {
-        text: "Lazy batches start with one case and grow as you read. Eager batches are fully populated upfront."
+        text: "Lazy sessions start with one case and grow as you read. Eager sessions are fully populated upfront."
       },
       items: [
         {
           value: "true",
           text: "Lazy",
-          checked: true if data.settings.reading.lazyBatches | falsify else false
+          checked: true if data.settings.reading.lazySessions | falsify else false
         },
         {
           value: "false",
           text: "Eager (fully populated)",
-          checked: true if not data.settings.reading.lazyBatches | falsify else false
+          checked: true if not data.settings.reading.lazySessions | falsify else false
         }
       ]
     }) }}
@@ -128,16 +128,16 @@
 
   {{ input({
     label: {
-      text: "Give your batch a name (optional)",
+      text: "Give your session a name (optional)",
       classes: "nhsuk-label--m"
     },
-    id: "batch-name",
+    id: "session-name",
     name: "name",
     classes: "nhsuk-input--width-20"
   }) }}
 
   {{ button({
-    text: "Create batch"
+    text: "Create session"
   }) }}
 
 {% endblock %}

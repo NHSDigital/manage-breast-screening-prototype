@@ -12,13 +12,13 @@ const {
   canUserReadEvent,
   userHasReadEvent,
   writeReading,
-  createReadingBatch,
-  getFirstReadableEventInBatch,
-  getReadingBatch,
-  getOrCreateClinicBatch,
-  getBatchReadingProgress,
-  skipEventInBatch,
-  topUpBatch,
+  createReadingSession,
+  getFirstReadableEventInSession,
+  getReadingSession,
+  getOrCreateClinicSession,
+  getSessionReadingProgress,
+  skipEventInSession,
+  topUpSession,
   getReadingMetadata,
   getComparisonInfo,
   shouldShowComparePage
@@ -76,7 +76,7 @@ module.exports = (router) => {
     })
   })
 
-  // Look up a clinic and redirect to appropraite batch
+  // Look up a clinic and redirect to appropriate session
   router.get('/reading/clinics/:clinicId', (req, res) => {
     const { clinicId } = req.params
     const data = req.session.data
@@ -85,18 +85,18 @@ module.exports = (router) => {
     if (!clinic) return res.redirect('/reading')
 
     try {
-      // Convert clinic to batch
-      const batch = getOrCreateClinicBatch(data, clinicId)
+      // Convert clinic to session
+      const session = getOrCreateClinicSession(data, clinicId)
 
-      // Redirect to the batch view
-      res.redirect(`/reading/batch/${batch.id}`)
+      // Redirect to the session view
+      res.redirect(`/reading/session/${session.id}`)
     } catch (error) {
       console.log('Could not load clinic for reading')
       res.redirect('/reading')
     }
   })
 
-  // Helper to immediately start reading a batch
+  // Helper to immediately start reading a session
   router.get('/reading/clinics/:clinicId/start', (req, res) => {
     const { clinicId } = req.params
     const data = req.session.data
@@ -106,24 +106,24 @@ module.exports = (router) => {
     if (!clinic) return res.redirect('/reading')
 
     try {
-      // Convert clinic to batch
-      const batch = getOrCreateClinicBatch(data, clinicId)
+      // Convert clinic to session
+      const session = getOrCreateClinicSession(data, clinicId)
 
-      // Find first readable event in the batch
-      const firstReadableEvent = getFirstReadableEventInBatch(
+      // Find first readable event in the session
+      const firstReadableEvent = getFirstReadableEventInSession(
         data,
-        batch.id,
+        session.id,
         currentUserId
       )
 
       if (firstReadableEvent) {
         // Redirect directly to the first readable event
         res.redirect(
-          `/reading/batch/${batch.id}/events/${firstReadableEvent.id}`
+          `/reading/session/${session.id}/events/${firstReadableEvent.id}`
         )
       } else {
         // No readable events, go to batch overview
-        res.redirect(`/reading/batch/${batch.id}`)
+        res.redirect(`/reading/session/${session.id}`)
       }
     } catch (error) {
       console.log('Could not start reading clinic')
@@ -213,10 +213,10 @@ module.exports = (router) => {
   })
 
   /************************************************************************
-  // Batches
+  // Sessions
   /***********************************************************************/
 
-  router.get('/reading/create-batch', (req, res) => {
+  router.get('/reading/create-session', (req, res) => {
     const data = req.session.data
     const currentUserId = data.currentUser.id
 
@@ -240,9 +240,9 @@ module.exports = (router) => {
       filters.complexOnly = true
     }
 
-    // Create the batch
+    // Create the session
     try {
-      const batch = createReadingBatch(data, {
+      const session = createReadingSession(data, {
         type: type || 'custom',
         name,
         clinicId,
@@ -254,56 +254,56 @@ module.exports = (router) => {
       // Check if the request includes the redirect parameter
       if (redirect === 'list') {
         // Redirect to batch view instead of starting reading
-        res.redirect(`/reading/batch/${batch.id}`)
+        res.redirect(`/reading/session/${session.id}`)
         return
       }
 
       // Redirect to batch view or first event if available
-      const firstReadableEvent = getFirstReadableEventInBatch(
+      const firstReadableEvent = getFirstReadableEventInSession(
         data,
-        batch.id,
+        session.id,
         currentUserId
       )
 
       if (firstReadableEvent) {
         res.redirect(
-          `/reading/batch/${batch.id}/events/${firstReadableEvent.id}`
+          `/reading/session/${session.id}/events/${firstReadableEvent.id}`
         )
       } else {
-        res.redirect(`/reading/batch/${batch.id}`)
+        res.redirect(`/reading/session/${session.id}`)
       }
     } catch (error) {
-      console.log('Error creating batch', error)
+      console.log('Error creating session', error)
       res.redirect('/reading')
     }
   })
 
   // Route for viewing a batch
-  router.get('/reading/batch/:batchId', (req, res) => {
+  router.get('/reading/session/:sessionId', (req, res) => {
     // Default to "your-reads" view
-    res.redirect(`/reading/batch/${req.params.batchId}/your-reads`)
+    res.redirect(`/reading/session/${req.params.sessionId}/your-reads`)
   })
 
   // Route for skipped-review page (shown at end of batch when skipped cases remain)
-  router.get('/reading/batch/:batchId/skipped-review', (req, res) => {
+  router.get('/reading/session/:sessionId/skipped-review', (req, res) => {
     const data = req.session.data
-    const { batchId } = req.params
-    const batch = getReadingBatch(data, batchId)
-    if (!batch) {
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
       return res.redirect('/reading')
     }
-    const firstSkippedEventId = batch.skippedEvents[0] || null
+    const firstSkippedEventId = session.skippedEvents[0] || null
     res.render('reading/skipped-review', {
-      batch,
-      batchId,
+      session,
+      sessionId,
       firstSkippedEventId
     })
   })
 
-  // Route for viewing a batch with specific view
-  router.get('/reading/batch/:batchId/:view', (req, res) => {
+  // Route for viewing a session with specific view
+  router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
-    const { batchId, view } = req.params
+    const { sessionId, view } = req.params
     const autoFinaliseWindowMinutes = 30
     const validViews = ['your-reads', 'all-reads']
 
@@ -311,14 +311,14 @@ module.exports = (router) => {
     const selectedView = validViews.includes(view) ? view : 'your-reads'
 
     // Get the batch
-    const batch = getReadingBatch(data, batchId)
-    if (!batch) {
-      // req.flash('error', 'Batch not found')
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      // req.flash('error', 'Session not found')
       return res.redirect('/reading')
     }
 
     // Get enhanced events with reading metadata
-    const enhancedEvents = batch.eventIds
+    const enhancedEvents = session.eventIds
       .map((eventId) => data.events.find((e) => e.id === eventId))
       .filter(Boolean)
       .map((event) => {
@@ -335,7 +335,7 @@ module.exports = (router) => {
         }
       })
 
-    // Get reading status for the batch
+    // Get reading status for the session
     const readingStatus = getReadingStatusForEvents(
       enhancedEvents,
       data.currentUser.id
@@ -346,7 +346,7 @@ module.exports = (router) => {
     const resumeEvent = getResumeEventForUser(
       enhancedEvents,
       data.currentUser.id,
-      batch.skippedEvents || []
+      session.skippedEvents || []
     )
 
     // Countdown starts when the current user records their first opinion in this session
@@ -364,17 +364,17 @@ module.exports = (router) => {
       )
     }
 
-    // Clear any lingering opinion banner from a previous batch
+    // Clear any lingering opinion banner from a previous session
     delete data.readingOpinionBanner
 
-    // Get clinic data if this is a clinic batch
+    // Get clinic data if this is a clinic session
     let clinic = null
-    if (batch.clinicId) {
-      clinic = data.clinics.find((c) => c.id === batch.clinicId)
+    if (session.clinicId) {
+      clinic = data.clinics.find((c) => c.id === session.clinicId)
     }
 
-    res.render('reading/batch', {
-      batch,
+    res.render('reading/session', {
+      session,
       events: enhancedEvents,
       readingStatus,
       resumeEvent,
@@ -385,24 +385,24 @@ module.exports = (router) => {
   })
 
   // Middleware to make sure pages have the right data
-  router.use('/reading/batch/:batchId/events/:eventId', (req, res, next) => {
+  router.use('/reading/session/:sessionId/events/:eventId', (req, res, next) => {
     const data = req.session.data
-    const { batchId, eventId } = req.params
+    const { sessionId, eventId } = req.params
     const currentUserId = data.currentUser?.id
 
     // Get the batch
-    const batch = getReadingBatch(data, batchId)
-    if (!batch) {
-      // req.flash('error', 'Batch not found')
-      console.log('Batch not found')
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      // req.flash('error', 'Session not found')
+      console.log('Session not found')
       return res.redirect('/reading')
     }
 
-    // Check if event exists in this batch
-    if (!batch.eventIds.includes(eventId)) {
-      // req.flash('error', 'Event not found in this batch')
-      console.log(`Event ${batchId} not found in this batch`)
-      return res.redirect(`/reading/batch/${batchId}`)
+    // Check if event exists in this session
+    if (!session.eventIds.includes(eventId)) {
+      // req.flash('error', 'Event not found in this session')
+      console.log(`Event ${sessionId} not found in this session`)
+      return res.redirect(`/reading/session/${sessionId}`)
     }
 
     // Get the event data
@@ -410,7 +410,7 @@ module.exports = (router) => {
     if (!event) {
       // req.flash('error', 'Event not found')
       console.log(`Event ${eventId} not found`)
-      return res.redirect(`/reading/batch/${batchId}`)
+      return res.redirect(`/reading/session/${sessionId}`)
     }
 
     // Get participant and clinic data
@@ -423,8 +423,8 @@ module.exports = (router) => {
     )
     const location = unit.locations.find((l) => l.id === clinic.locationId)
 
-    // Get reading progress for this batch
-    const progress = getBatchReadingProgress(data, batchId, eventId)
+    // Get reading progress for this session
+    const progress = getSessionReadingProgress(data, sessionId, eventId)
 
     // Initialise or update imageReadingTemp for this event
     // Only do this on GET requests - POST requests should preserve form data
@@ -464,14 +464,14 @@ module.exports = (router) => {
 
     // Set up locals for templates
     res.locals.isReadingWorkflow = true
-    res.locals.batch = batch
+    res.locals.session = session
     res.locals.eventData = { clinic, event, participant, unit, location }
     res.locals.clinic = clinic
     res.locals.event = event
     res.locals.participant = participant
     res.locals.unit = unit
     res.locals.location = location
-    res.locals.batchId = batchId
+    res.locals.sessionId = sessionId
     res.locals.eventId = eventId
     res.locals.progress = progress
 
@@ -480,21 +480,21 @@ module.exports = (router) => {
 
   // Route for event reading within a batch
   // Redirects to existing-read if user has already read, otherwise to opinion
-  router.get('/reading/batch/:batchId/events/:eventId', (req, res) => {
+  router.get('/reading/session/:sessionId/events/:eventId', (req, res) => {
     const data = req.session.data
-    const { batchId, eventId } = req.params
+    const { sessionId, eventId } = req.params
     const currentUserId = data.currentUser?.id
 
     // Find the event
     const event = data.events.find((e) => e.id === eventId)
     if (!event) {
-      return res.redirect(`/reading/batch/${batchId}`)
+      return res.redirect(`/reading/session/${sessionId}`)
     }
 
     // Check if user has already read this event
     if (userHasReadEvent(event, currentUserId)) {
       return res.redirect(
-        `/reading/batch/${batchId}/events/${eventId}/existing-read`
+        `/reading/session/${sessionId}/events/${eventId}/existing-read`
       )
     }
 
@@ -502,55 +502,55 @@ module.exports = (router) => {
     const { awaitingPriors } = require('../lib/utils/prior-mammograms')
     if (awaitingPriors(event)) {
       return res.redirect(
-        `/reading/batch/${batchId}/events/${eventId}/existing-read`
+        `/reading/session/${sessionId}/events/${eventId}/existing-read`
       )
     }
 
     // Delete temporary data from previous steps
     delete data.imageReadingTemp
 
-    res.redirect(`/reading/batch/${batchId}/events/${eventId}/opinion`)
+    res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
   })
 
   // Handle skipping an event in a batch
-  router.get('/reading/batch/:batchId/events/:eventId/skip', (req, res) => {
+  router.get('/reading/session/:sessionId/events/:eventId/skip', (req, res) => {
     const data = req.session.data
-    const { batchId, eventId } = req.params
+    const { sessionId, eventId } = req.params
 
     // Mark as skipped
-    skipEventInBatch(data, batchId, eventId)
+    skipEventInSession(data, sessionId, eventId)
 
     // Top up the batch with the next eligible event if under target size
-    topUpBatch(data, batchId)
+    topUpSession(data, sessionId)
 
     // Find next readable event after current position (no wrap)
     const currentUserId = data.currentUser.id
-    const batch = getReadingBatch(data, batchId)
-    const batchEvents = batch.eventIds
+    const session = getReadingSession(data, sessionId)
+    const sessionEvents = session.eventIds
       .map((id) => data.events.find((e) => e.id === id))
       .filter(Boolean)
     const nextUnreadEvent = getNextUserReadableEvent(
-      batchEvents,
+      sessionEvents,
       eventId,
       currentUserId,
       { wrap: false }
     )
 
     if (nextUnreadEvent) {
-      res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
-    } else if (batch.skippedEvents.length > 0) {
-      res.redirect(`/reading/batch/${batchId}/skipped-review`)
+      res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+    } else if (session.skippedEvents.length > 0) {
+      res.redirect(`/reading/session/${sessionId}/skipped-review`)
     } else {
-      res.redirect(`/reading/batch/${batchId}`)
+      res.redirect(`/reading/session/${sessionId}`)
     }
   })
 
   // Handle requesting prior images during reading
   router.post(
-    '/reading/batch/:batchId/events/:eventId/request-priors-answer',
+    '/reading/session/:sessionId/events/:eventId/request-priors-answer',
     (req, res) => {
       const data = req.session.data
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const currentUserId = data.currentUser?.id
 
       // Get the IDs of mammograms to request
@@ -582,16 +582,16 @@ module.exports = (router) => {
       }
 
       // Top up the batch with the next eligible event if under target size
-      topUpBatch(data, batchId)
+      topUpSession(data, sessionId)
 
       // Find next readable event in batch after the current position, wrapping
       // to the start if needed. This mirrors the navigation in save-opinion.
-      const batch = getReadingBatch(data, batchId)
-      const batchEvents = batch.eventIds
+      const session = getReadingSession(data, sessionId)
+      const sessionEvents = session.eventIds
         .map((id) => data.events.find((e) => e.id === id))
         .filter(Boolean)
       const nextUnreadEvent = getNextUserReadableEvent(
-        batchEvents,
+        sessionEvents,
         eventId,
         currentUserId,
         { wrap: false }
@@ -606,13 +606,13 @@ module.exports = (router) => {
         data.readingOpinionBanner = {
           text: `Prior images requested for ${shortName}`,
           participantName: `${shortName}`,
-          editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+          editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
-        res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
-      } else if (batch.skippedEvents.length > 0) {
-        res.redirect(`/reading/batch/${batchId}/skipped-review`)
+        res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+      } else if (session.skippedEvents.length > 0) {
+        res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
-        res.redirect(`/reading/batch/${batchId}`)
+        res.redirect(`/reading/session/${sessionId}`)
       }
     }
   )
@@ -621,10 +621,10 @@ module.exports = (router) => {
   // back to not_requested, allowing the reader to read the case
   // Supports GET (summary list action link) and POST
   router.all(
-    '/reading/batch/:batchId/events/:eventId/undo-priors',
+    '/reading/session/:sessionId/events/:eventId/undo-priors',
     (req, res) => {
       const data = req.session.data
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const currentUserId = data.currentUser?.id
 
       const event = data.events.find((e) => e.id === eventId)
@@ -648,15 +648,15 @@ module.exports = (router) => {
       }
 
       // Redirect to opinion page so the reader can now read the case
-      res.redirect(`/reading/batch/${batchId}/events/${eventId}/opinion`)
+      res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
     }
   )
 
   // Render appropriate template for reading views
   router.get(
-    '/reading/batch/:batchId/events/:eventId/:step',
+    '/reading/session/:sessionId/events/:eventId/:step',
     (req, res, next) => {
-      const { batchId, eventId, step } = req.params
+      const { sessionId, eventId, step } = req.params
 
       // Workflow steps (in reading/workflow/ folder)
       const workflowSteps = [
@@ -686,7 +686,7 @@ module.exports = (router) => {
 
   // Add annotation - clear temp data and redirect to form
   router.get(
-    '/reading/batch/:batchId/events/:eventId/annotation/add',
+    '/reading/session/:sessionId/events/:eventId/annotation/add',
     (req, res) => {
       const { side } = req.query
       const data = req.session.data
@@ -694,7 +694,7 @@ module.exports = (router) => {
       // Validate side parameter
       if (!side || !['left', 'right'].includes(side)) {
         return res.redirect(
-          `/reading/batch/${req.params.batchId}/events/${req.params.eventId}/recall-for-assessment-details`
+          `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/recall-for-assessment-details`
         )
       }
 
@@ -718,16 +718,16 @@ module.exports = (router) => {
       }
 
       res.redirect(
-        `/reading/batch/${req.params.batchId}/events/${req.params.eventId}/annotation`
+        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/annotation`
       )
     }
   )
 
   // Edit existing annotation
   router.get(
-    '/reading/batch/:batchId/events/:eventId/annotation/edit/:annotationId',
+    '/reading/session/:sessionId/events/:eventId/annotation/edit/:annotationId',
     (req, res) => {
-      const { batchId, eventId, annotationId } = req.params
+      const { sessionId, eventId, annotationId } = req.params
       const data = req.session.data
 
       // Find the annotation to edit and its number
@@ -756,15 +756,15 @@ module.exports = (router) => {
         }
       }
 
-      res.redirect(`/reading/batch/${batchId}/events/${eventId}/annotation`)
+      res.redirect(`/reading/session/${sessionId}/events/${eventId}/annotation`)
     }
   )
 
   // Save annotation - handles both 'save' and 'save-and-add'
   router.post(
-    '/reading/batch/:batchId/events/:eventId/annotation/save',
+    '/reading/session/:sessionId/events/:eventId/annotation/save',
     (req, res) => {
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const data = req.session.data
       const action = req.body.action || 'save'
 
@@ -790,7 +790,7 @@ module.exports = (router) => {
 
       if (!annotationTemp) {
         return res.redirect(
-          `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
         )
       }
 
@@ -910,7 +910,7 @@ module.exports = (router) => {
       if (errors.length > 0) {
         errors.forEach((error) => req.flash('error', error))
         return res.redirect(
-          `/reading/batch/${batchId}/events/${eventId}/annotation`
+          `/reading/session/${sessionId}/events/${eventId}/annotation`
         )
       }
 
@@ -922,7 +922,7 @@ module.exports = (router) => {
 
         if (!side) {
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
           )
         }
 
@@ -984,11 +984,11 @@ module.exports = (router) => {
         const side =
           req.body.side || data.imageReadingTemp?.annotationTemp?.side
         res.redirect(
-          `/reading/batch/${batchId}/events/${eventId}/annotation/add?side=${side}`
+          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}`
         )
       } else {
         res.redirect(
-          `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
         )
       }
     }
@@ -996,9 +996,9 @@ module.exports = (router) => {
 
   // Delete annotation
   router.get(
-    '/reading/batch/:batchId/events/:eventId/annotation/delete/:annotationId',
+    '/reading/session/:sessionId/events/:eventId/annotation/delete/:annotationId',
     (req, res) => {
-      const { batchId, eventId, annotationId } = req.params
+      const { sessionId, eventId, annotationId } = req.params
       const data = req.session.data
 
       // Remove annotation from both sides (we'll find it)
@@ -1015,7 +1015,7 @@ module.exports = (router) => {
       req.flash('success', 'Annotation deleted')
 
       res.redirect(
-        `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+        `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
       )
     }
   )
@@ -1025,9 +1025,9 @@ module.exports = (router) => {
   // Handle technical recall form submission
   // Cleans up the data structure to only include selected views, then redirects to review
   router.post(
-    '/reading/batch/:batchId/events/:eventId/technical-recall-answer',
+    '/reading/session/:sessionId/events/:eventId/technical-recall-answer',
     (req, res) => {
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const data = req.session.data
 
       // Form binding creates:
@@ -1063,7 +1063,7 @@ module.exports = (router) => {
       }
 
       res.redirect(
-        `/reading/batch/${batchId}/events/${eventId}/opinion-details-complete`
+        `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
       )
     }
   )
@@ -1073,16 +1073,16 @@ module.exports = (router) => {
   // All detail pages (normal-details, technical-recall, recall-for-assessment-details)
   // should route here on completion.
   router.all(
-    '/reading/batch/:batchId/events/:eventId/opinion-details-complete',
+    '/reading/session/:sessionId/events/:eventId/opinion-details-complete',
     (req, res) => {
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const data = req.session.data
       const currentUserId = data.currentUser?.id
       const formData = data.imageReadingTemp
       const opinion = formData?.opinion
 
       const event = data.events.find((e) => e.id === eventId)
-      if (!event) return res.redirect(`/reading/batch/${batchId}`)
+      if (!event) return res.redirect(`/reading/session/${sessionId}`)
 
       // Check for late comparison if not already done
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
@@ -1091,7 +1091,7 @@ module.exports = (router) => {
           shouldShowComparePage(event, formData, currentUserId, data.settings)
         ) {
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/compare`
+            `/reading/session/${sessionId}/events/${eventId}/compare`
           )
         }
       }
@@ -1101,18 +1101,18 @@ module.exports = (router) => {
         case 'normal':
           if (data.settings?.reading?.confirmNormal === 'true') {
             return res.redirect(
-              `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
+              `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
             )
           }
           return res.redirect(
             307,
-            `/reading/batch/${batchId}/events/${eventId}/save-opinion`
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
           )
         case 'technical_recall':
         case 'recall_for_assessment':
         default:
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/review`
+            `/reading/session/${sessionId}/events/${eventId}/review`
           )
       }
     }
@@ -1121,22 +1121,22 @@ module.exports = (router) => {
   // Handle recording a reading result
   // Save the reading opinion - reads opinion from imageReadingTemp.opinion
   router.post(
-    '/reading/batch/:batchId/events/:eventId/save-opinion',
+    '/reading/session/:sessionId/events/:eventId/save-opinion',
     (req, res) => {
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const data = req.session.data
       const currentUserId = data.currentUser.id
       const formData = data.imageReadingTemp
 
       if (!formData || !formData.opinion) {
         console.log('No opinion in imageReadingTemp - cannot save')
-        return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
+        return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
       }
 
       // Find the event
       const event = data.events.find((e) => e.id === eventId)
       if (!event) {
-        return res.redirect(`/reading/batch/${batchId}`)
+        return res.redirect(`/reading/session/${sessionId}`)
       }
 
       delete data.imageReadingTemp
@@ -1150,19 +1150,19 @@ module.exports = (router) => {
         timestamp: new Date().toISOString()
       }
 
-      // Write the reading (passing batch context to handle skipped events)
-      writeReading(event, currentUserId, readResult, data, batchId)
+      // Write the reading (passing session context to handle skipped events)
+      writeReading(event, currentUserId, readResult, data, sessionId)
 
-      // Top up the batch with the next eligible event if under target size
-      topUpBatch(data, batchId)
+      // Top up the session with the next eligible event if under target size
+      topUpSession(data, sessionId)
 
-      // Find next unread event in batch after the current position (no wrap)
-      const batch = getReadingBatch(data, batchId)
-      const batchEvents = batch.eventIds
+      // Find next unread event in session after the current position (no wrap)
+      const session = getReadingSession(data, sessionId)
+      const sessionEvents = session.eventIds
         .map((id) => data.events.find((e) => e.id === id))
         .filter(Boolean)
       const nextUnreadEvent = getNextUserReadableEvent(
-        batchEvents,
+        sessionEvents,
         eventId,
         currentUserId,
         { wrap: false }
@@ -1187,26 +1187,26 @@ module.exports = (router) => {
         data.readingOpinionBanner = {
           text: message,
           participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
-          editHref: `/reading/batch/${batchId}/events/${eventId}/existing-read`
+          editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
       }
 
-      // Redirect to next unread event or end-of-batch page
+      // Redirect to next unread event or end-of-session page
       if (nextUnreadEvent) {
-        res.redirect(`/reading/batch/${batchId}/events/${nextUnreadEvent.id}`)
-      } else if (batch.skippedEvents.length > 0) {
-        res.redirect(`/reading/batch/${batchId}/skipped-review`)
+        res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+      } else if (session.skippedEvents.length > 0) {
+        res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
-        res.redirect(`/reading/batch/${batchId}`)
+        res.redirect(`/reading/session/${sessionId}`)
       }
     }
   )
 
   // Handle opinion form submission - stores result and routes to appropriate next step
   router.post(
-    '/reading/batch/:batchId/events/:eventId/opinion-answer',
+    '/reading/session/:sessionId/events/:eventId/opinion-answer',
     (req, res) => {
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const data = req.session.data
 
       // Debug logging
@@ -1224,7 +1224,7 @@ module.exports = (router) => {
       console.log('previousOpinion:', previousOpinion)
 
       const event = data.events.find((e) => e.id === eventId)
-      if (!event) return res.redirect(`/reading/batch/${batchId}`)
+      if (!event) return res.redirect(`/reading/session/${sessionId}`)
 
       // Ensure eventId is set for tracking
       if (!data.imageReadingTemp) {
@@ -1274,7 +1274,7 @@ module.exports = (router) => {
         ) {
           // Second reader with opinions that need comparison
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/compare`
+            `/reading/session/${sessionId}/events/${eventId}/compare`
           )
         }
       }
@@ -1294,50 +1294,50 @@ module.exports = (router) => {
               )
             ) {
               return res.redirect(
-                `/reading/batch/${batchId}/events/${eventId}/compare`
+                `/reading/session/${sessionId}/events/${eventId}/compare`
               )
             }
           }
           if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
-              `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
+              `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
             )
           } else {
             return res.redirect(
               307,
-              `/reading/batch/${batchId}/events/${eventId}/save-opinion`
+              `/reading/session/${sessionId}/events/${eventId}/save-opinion`
             )
           }
         case 'normal_with_details':
           // Result already set to 'normal' above - go to details page
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/normal-details`
+            `/reading/session/${sessionId}/events/${eventId}/normal-details`
           )
         case 'technical_recall':
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/technical-recall`
+            `/reading/session/${sessionId}/events/${eventId}/technical-recall`
           )
         case 'recall_for_assessment':
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
           )
         default:
-          return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
+          return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
       }
     }
   )
 
   // Handle compare decision - keep opinion or adopt first reader's
   router.post(
-    '/reading/batch/:batchId/events/:eventId/compare-answer',
+    '/reading/session/:sessionId/events/:eventId/compare-answer',
     (req, res) => {
-      const { batchId, eventId } = req.params
+      const { sessionId, eventId } = req.params
       const data = req.session.data
       const decision = req.body.compareDecision
       const currentUserId = data.currentUser?.id
 
       const event = data.events.find((e) => e.id === eventId)
-      if (!event) return res.redirect(`/reading/batch/${batchId}`)
+      if (!event) return res.redirect(`/reading/session/${sessionId}`)
 
       const opinion = data.imageReadingTemp?.opinion
       const comparisonInfo = getComparisonInfo(
@@ -1390,7 +1390,7 @@ module.exports = (router) => {
 
         // Go straight to review since we have complete data
         return res.redirect(
-          `/reading/batch/${batchId}/events/${eventId}/review`
+          `/reading/session/${sessionId}/events/${eventId}/review`
         )
       }
 
@@ -1408,7 +1408,7 @@ module.exports = (router) => {
       if (hasExistingDetails) {
         // Skip to review - we already have details
         return res.redirect(
-          `/reading/batch/${batchId}/events/${eventId}/review`
+          `/reading/session/${sessionId}/events/${eventId}/review`
         )
       }
 
@@ -1417,28 +1417,28 @@ module.exports = (router) => {
           // Check if user originally wanted to add details
           if (wantsNormalDetails || forceNormalDetailsForDiscordantNormal) {
             return res.redirect(
-              `/reading/batch/${batchId}/events/${eventId}/normal-details`
+              `/reading/session/${sessionId}/events/${eventId}/normal-details`
             )
           } else if (data.settings.reading.confirmNormal === 'true') {
             return res.redirect(
-              `/reading/batch/${batchId}/events/${eventId}/confirm-normal`
+              `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
             )
           } else {
             return res.redirect(
               307,
-              `/reading/batch/${batchId}/events/${eventId}/save-opinion`
+              `/reading/session/${sessionId}/events/${eventId}/save-opinion`
             )
           }
         case 'technical_recall':
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/technical-recall`
+            `/reading/session/${sessionId}/events/${eventId}/technical-recall`
           )
         case 'recall_for_assessment':
           return res.redirect(
-            `/reading/batch/${batchId}/events/${eventId}/recall-for-assessment-details`
+            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
           )
         default:
-          return res.redirect(`/reading/batch/${batchId}/events/${eventId}`)
+          return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
       }
     }
   )
@@ -1488,13 +1488,13 @@ module.exports = (router) => {
           )
 
           // Get batch ID if available
-          let batchId = null
-          if (data.readingSessionBatches) {
-            for (const [id, batch] of Object.entries(
-              data.readingSessionBatches
+          let sessionId = null
+          if (data.readingSessions) {
+            for (const [id, session] of Object.entries(
+              data.readingSessions
             )) {
-              if (batch.eventIds.includes(event.id)) {
-                batchId = id
+              if (session.eventIds.includes(event.id)) {
+                sessionId = id
                 break
               }
             }
@@ -1503,7 +1503,7 @@ module.exports = (router) => {
           return {
             eventId: event.id,
             clinicId: event.clinicId,
-            batchId,
+            sessionId,
             readerId: reading.readerId,
             readType,
             opinion: reading.opinion,
@@ -1531,29 +1531,29 @@ module.exports = (router) => {
       readings = recentReadings
     }
 
-    // Build batch list for the batches tab
-    const batches = Object.values(data.readingSessionBatches || {})
-      .map((batch) => {
-        const progress = getBatchReadingProgress(
+    // Build session list for the sessions tab
+    const sessions = Object.values(data.readingSessions || {})
+      .map((session) => {
+        const progress = getSessionReadingProgress(
           data,
-          batch.id,
+          session.id,
           null,
           currentUserId
         )
 
         // Count cases the user has "dealt with" — either given an opinion or requested priors
         // This is separate from userReadCount so the utility stays semantically pure
-        const batchEvents = batch.eventIds
+        const sessionEvents = session.eventIds
           .map((id) => data.events.find((e) => e.id === id))
           .filter(Boolean)
-        const userCompletedCount = batchEvents.filter(
+        const userCompletedCount = sessionEvents.filter(
           (event) =>
             userHasReadEvent(event, currentUserId) ||
             userRequestedPriors(event, currentUserId)
         ).length
 
         return {
-          ...batch,
+          ...session,
           progress,
           userCompletedCount
         }
@@ -1562,7 +1562,7 @@ module.exports = (router) => {
 
     res.render('reading/history', {
       readings,
-      batches,
+      sessions,
       view
     })
   })

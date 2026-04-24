@@ -10,7 +10,7 @@
       {% if progress.hasPreviousUserReadable %}
         {# Link to event base URL - route handles redirect to existing-read or opinion #}
         {{ backLink({
-          href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.previousUserReadableId,
+          href: "/reading/session/" ~ sessionId ~ "/events/" ~ progress.previousUserReadableId,
           text: "Previous case"
         }) }}
       {% endif %}
@@ -20,13 +20,13 @@
       <div class="nhsuk-grid-column-one-third app-align-right">
         {% if event | canUserReadEvent %}
           {{ appForwardLink({
-            href: "/reading/batch/" ~ batchId ~ "/events/" ~ eventId ~ "/skip",
+            href: "/reading/session/" ~ sessionId ~ "/events/" ~ eventId ~ "/skip",
             text: "Skip to next"
           }) }}
         {% else %}
           {# We already have a reading so don't need to skip #}
           {{ appForwardLink({
-            href: "/reading/batch/" ~ batchId ~ "/events/" ~ progress.nextUserReadableId,
+            href: "/reading/session/" ~ sessionId ~ "/events/" ~ progress.nextUserReadableId,
             text: "Next case"
           }) }}
         {% endif %}

@@ -91,7 +91,7 @@
       {% endif %}
 
       {# Previously skipped tag #}
-      {% if batch and batch.skippedEvents | includes(event.id) %}
+      {% if session and session.skippedEvents | includes(event.id) %}
         {{ "Previously skipped" | toTag }}
       {% endif %}
 
@@ -225,7 +225,7 @@
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
   {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
   {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
-  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-batch-id="{{ batch.id if batch }}">
+  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-session-id="{{ session.id if session }}">
 
     {# Hidden field to track previous opinion for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">
