@@ -396,6 +396,9 @@
 
   {% set medicalSummaryHtml %}
     {% include "_includes/summary-lists/medical-info-summary.njk" %}
+    <p class="nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0">
+      {{ appLink({ text: "View full medical information", href: "./medical-information" } | openInModal) }}
+    </p>
   {% endset %}
 
   {{ card({

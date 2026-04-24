@@ -663,7 +663,8 @@ module.exports = (router) => {
         'review',
         'existing-read',
         'compare',
-        'request-priors'
+        'request-priors',
+        'medical-information'
       ]
 
       if (workflowSteps.includes(step)) {
