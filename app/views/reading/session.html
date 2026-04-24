@@ -51,7 +51,7 @@
       </a>
     {% else %}
       {% set sessionCompletePanelHtml %}
-        <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised in {{ autoFinaliseMinutesRemaining }} {{ "minute" | pluralise(autoFinaliseMinutesRemaining) }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised at {{ autoFinaliseAt | formatTime }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {{ button({
             text: "Start a new session",

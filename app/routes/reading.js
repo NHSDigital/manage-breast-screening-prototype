@@ -355,14 +355,11 @@ module.exports = (router) => {
       .filter(Boolean)
       .sort((a, b) => new Date(a) - new Date(b))[0]
 
-    let autoFinaliseMinutesRemaining = autoFinaliseWindowMinutes
-    if (firstUserReadTimestamp) {
-      const elapsedMinutes = dayjs().diff(dayjs(firstUserReadTimestamp), 'minute')
-      autoFinaliseMinutesRemaining = Math.max(
-        0,
-        autoFinaliseWindowMinutes - elapsedMinutes
-      )
-    }
+    const autoFinaliseAt = firstUserReadTimestamp
+      ? dayjs(firstUserReadTimestamp)
+          .add(autoFinaliseWindowMinutes, 'minute')
+          .toISOString()
+      : dayjs().add(autoFinaliseWindowMinutes, 'minute').toISOString()
 
     // Clear any lingering opinion banner from a previous session
     delete data.readingOpinionBanner
@@ -378,7 +375,7 @@ module.exports = (router) => {
       events: enhancedEvents,
       readingStatus,
       resumeEvent,
-      autoFinaliseMinutesRemaining,
+      autoFinaliseAt,
       clinic,
       view: selectedView
     })
