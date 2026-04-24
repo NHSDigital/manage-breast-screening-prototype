@@ -122,7 +122,9 @@ res.redirect(returnUrl)
 
 When a modal loads content onto a page, both the page and the modal fragment may have form fields with the same `name` attribute. NHS Frontend derives `id` attributes from `name`, which would produce duplicate IDs in the DOM — causing hover states and other CSS to bleed across.
 
-`modal.js` automatically prefixes all IDs inside modal content with `modal-` after loading, and updates all `for`, `aria-*`, and `href="#..."` references to match. This runs after `initAll()` so that NHS Frontend's conditional reveal initialises with the original IDs before they are renamed.
+`modal.js` prefixes **form control IDs** inside modal content with `modal-` after loading, and updates all `for`, `aria-*`, and `href="#..."` references to match. This runs after `initAll()` so that NHS Frontend's conditional reveal initialises with the original IDs before they are renamed.
+
+Only form controls (`input`, `select`, `textarea`), their associated labels, hint/error elements (via `aria-describedby`), and conditional reveal panels (via `aria-controls`) are renamed. Non-form IDs — such as container divs used as JS hooks — are left unchanged. This means external scripts that look up elements by ID (e.g. `#featuresListContainer`) will still find them even though they load asynchronously after `namespaceIds` runs.
 
 ## Checklist for wiring a page to a modal
 
