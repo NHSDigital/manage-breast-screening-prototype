@@ -1,8 +1,8 @@
-{# /app/views/reading/session.html #}
+{# /app/views/reading/batch.html #}
 
 {% extends 'layout-app.html' %}
 
-{% set isClinicContext = session.clinicId %}
+{% set isClinicContext = batch.clinicId %}
 
 {% if isClinicContext %}
   {% set back = {
@@ -12,16 +12,16 @@
 {% endif %}
 
 {% set pageHeading %}
-  {{ session.name }}
+  {{ batch.name }}
 {% endset %}
 
 {% set gridColumn = "none" %}
 
 {% block pageContent %}
 
-{{ session | log("Session data") }}
+{{ batch | log("Batch data") }}
 {{ readingStatus | log("Reading status") }}
-{{ events | log("Events in session") }}
+{{ events | log("Events in batch") }}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
@@ -30,7 +30,7 @@
       <h1 class="nhsuk-heading-l">
         {{ pageHeading }}
       </h1>
-      {% set isClinicContext = session.clinicId %}
+      {% set isClinicContext = batch.clinicId %}
       {% if isClinicContext %}
         <div class="app-header-with-status__status-tag">
           {{ readingStatus.status | formatWords | sentenceCase | toTag }}
@@ -46,16 +46,17 @@
     {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
 
     {% if resumeEvent %}
-      <a href="/reading/session/{{ session.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button app-reading-session-primary-action">
+      <a href="/reading/batch/{{ batch.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button app-reading-batch-primary-action">
         {{ readingActionText }}
       </a>
     {% else %}
       {% set sessionCompletePanelHtml %}
-        <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised at {{ autoFinaliseAt | formatTime("h:mma") }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised in {{ autoFinaliseMinutesRemaining }} {{ "minute" | pluralise(autoFinaliseMinutesRemaining) }}. 
+        <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {{ button({
             text: "Start a new session",
-            href: "/reading/create-session?type=all_reads",
+            href: "/reading",
             classes: "nhsuk-button--reverse nhsuk-u-margin-bottom-0"
           }) }}
           <a href="/dashboard" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
@@ -76,7 +77,7 @@
       { id: 'all-reads', label: 'All reads and outcomes' }
     ] %}
       {% set href -%}
-        /reading/session/{{ session.id }}/{{ item.id }}
+        /reading/batch/{{ batch.id }}/{{ item.id }}
       {% endset %}
       {% set secondaryNavItems = secondaryNavItems | push({
         text: item.label,
@@ -86,12 +87,12 @@
     {% endfor %}
 
     {{ appSecondaryNavigation({
-      visuallyHiddenTitle: "Session view modes",
+      visuallyHiddenTitle: "Batch view modes",
       items: secondaryNavItems
     }) }}
 
-    {# Number of slots not yet populated in a lazy session #}
-    {% set pendingCount = (session.targetSize - session.eventIds | length) if session.targetSize else 0 %}
+    {# Number of slots not yet populated in a lazy batch #}
+    {% set pendingCount = (batch.targetSize - batch.eventIds | length) if batch.targetSize else 0 %}
     {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
 
     {% if view == 'your-reads' %}
@@ -104,7 +105,7 @@
       {% endfor %}
 
       {% if userReadableEvents | length == 0 %}
-        <p>You don't have any cases you can read in this session.</p>
+        <p>You don't have any cases you can read in this batch.</p>
       {% else %}
 
         {# Build opinion counts from events the user has read #}
@@ -207,13 +208,13 @@
         {% endif %}
 
         <h2>Reading session cases</h2>
-        {% set userSessionRemainingCount = session.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
+        {% set userSessionRemainingCount = batch.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
         {% if userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 %}
           <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
         {% endif %}
 
-        <table class="nhsuk-table app-reading-session-table">
+        <table class="nhsuk-table app-reading-batch-table">
           <thead>
             <tr>
               <th scope="col">No.</th>
@@ -232,7 +233,7 @@
               </td>
               <td>
                 {% set readingHref -%}
-                  /reading/session/{{ session.id }}/events/{{ event.id }}
+                  /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
                 {% if event.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
@@ -284,7 +285,7 @@
                   {% endif %}
                 {% elseif event | userRequestedPriors(data.currentUser.id) %}
                   {{ "Priors requested" | toTag }}
-                {% elseif session.skippedEvents | includes(event.id) %}
+                {% elseif batch.skippedEvents | includes(event.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
@@ -292,13 +293,13 @@
               </td>
               <td class="app-placeholder-action-cell">
                 {% if resumeEvent and event.id == resumeEvent.id and not (event | userHasReadEvent) %}
-                  <a href="/reading/session/{{ session.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
+                  <a href="/reading/batch/{{ batch.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% endif %}
               </td>
             </tr>
             {% endfor %}
 
-            {# Placeholder rows for pending lazy session slots #}
+            {# Placeholder rows for pending lazy-batch slots #}
             {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
             {% for i in range(0, placeholderRowsShown) %}
             <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
@@ -308,7 +309,7 @@
               <td>
                 <span class="app-placeholder-tag"></span>
                 {% if pendingCount > 3 and loop.last %}
-                  <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
+                  <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
                 {% endif %}
               </td>
               <td></td>
@@ -406,7 +407,7 @@
 
       <h2>Reading session cases</h2>
 
-      <table class="nhsuk-table app-reading-session-table">
+      <table class="nhsuk-table app-reading-batch-table">
         <thead>
           <tr>
             <th scope="col">No.</th>
@@ -426,7 +427,7 @@
               </td>
               <td>
                 {% set readingHref -%}
-                  /reading/session/{{ session.id }}/events/{{ event.id }}
+                  /reading/batch/{{ batch.id }}/events/{{ event.id }}
                 {%- endset %}
                 {% if event.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
@@ -488,7 +489,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif session.skippedEvents | includes(event.id) %}
+                {% elif batch.skippedEvents | includes(event.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
@@ -510,7 +511,7 @@
                     identifyCurrentUser: true
                   }) }}</span>
                 {% elif metadata.readCount == 1 %}
-                  {% if session.skippedEvents | includes(event.id) %}
+                  {% if batch.skippedEvents | includes(event.id) %}
                     {{ "Skipped" | toTag }}
                   {% else %}
                     {{ "Not read" | toTag }}
@@ -535,7 +536,7 @@
             </tr>
           {% endfor %}
 
-          {# Placeholder rows for pending lazy session slots #}
+          {# Placeholder rows for pending lazy-batch slots #}
           {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
           {% for i in range(0, placeholderRowsShown) %}
           <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
@@ -545,7 +546,7 @@
             <td>
               <span class="app-placeholder-tag"></span>
               {% if pendingCount > 3 and loop.last %}
-                <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
+                <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this batch</span>
               {% endif %}
             </td>
             <td></td>

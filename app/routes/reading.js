@@ -304,6 +304,7 @@ module.exports = (router) => {
   router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
     const { sessionId, view } = req.params
+    const autoFinaliseWindowMinutes = 30
     const validViews = ['your-reads', 'all-reads']
 
     // Validate view parameter
@@ -348,6 +349,18 @@ module.exports = (router) => {
       session.skippedEvents || []
     )
 
+    // Countdown starts when the current user records their first opinion in this session
+    const firstUserReadTimestamp = enhancedEvents
+      .map((event) => event.imageReading?.reads?.[data.currentUser.id]?.timestamp)
+      .filter(Boolean)
+      .sort((a, b) => new Date(a) - new Date(b))[0]
+
+    const autoFinaliseAt = firstUserReadTimestamp
+      ? dayjs(firstUserReadTimestamp)
+          .add(autoFinaliseWindowMinutes, 'minute')
+          .toISOString()
+      : dayjs().add(autoFinaliseWindowMinutes, 'minute').toISOString()
+
     // Clear any lingering opinion banner from a previous session
     delete data.readingOpinionBanner
 
@@ -362,6 +375,7 @@ module.exports = (router) => {
       events: enhancedEvents,
       readingStatus,
       resumeEvent,
+      autoFinaliseAt,
       clinic,
       view: selectedView
     })
