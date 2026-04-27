@@ -43,10 +43,11 @@
 {%- from '_components/summary-list/macro.njk' import appSummaryList %}
 {%- from '_components/summary-list/macro.njk' import appSummaryListRow %}
 
-{% if errors and errors | length %}
+{% set _errorList = errors if (errors and errors | length) else flash.error %}
+{% if _errorList and _errorList | length %}
   {{ errorSummary({
     titleText: "There is a problem",
-    errorList: errors
+    errorList: _errorList
   }) }}
 {% endif %}
 
@@ -70,3 +71,7 @@
     {% endblock %}
   </div>
 </div>
+
+{# Page-specific scripts are included here so they are present in modal fragments.
+   modal.js re-executes script elements after injecting the fragment via innerHTML. #}
+{% block pageScripts %}{% endblock %}

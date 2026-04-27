@@ -190,10 +190,23 @@ class AppModal {
           return
         }
 
+        // If the response looks like a full HTML page, the template probably
+        // forgot 'parentLayout or'. Bail out to a direct navigation rather than
+        // injecting the full site into the modal.
+        if (this.isFullPage(html)) {
+          console.warn(
+            'Modal: full page returned — falling back to direct navigation',
+            this._loadUrl
+          )
+          this.close()
+          window.location.href = this._loadUrl
+          return
+        }
+
+        this.show()
         this.setContent(html)
         this.bindFormSubmit()
         this.bindLinkNavigation()
-        this.show()
         // Re-run now that the modal is visible — offsetHeight is 0 while hidden,
         // so the call inside setContent() is a no-op on fast connections.
         this.trimBottomSpacing()
@@ -403,6 +416,21 @@ class AppModal {
 
     // Trim trailing margin so only the modal's own padding provides bottom spacing.
     this.trimBottomSpacing()
+
+    // Execute any inline scripts in the fragment before namespacing IDs.
+    // Browsers don't run scripts injected via innerHTML — re-create each as a
+    // new element so they execute. Must happen before namespaceIds so that any
+    // script using getElementById() finds the original (un-namespaced) IDs.
+    ;(content || this.dialog)
+      .querySelectorAll('script')
+      .forEach((oldScript) => {
+        const newScript = document.createElement('script')
+        Array.from(oldScript.attributes).forEach((attr) => {
+          newScript.setAttribute(attr.name, attr.value)
+        })
+        newScript.textContent = oldScript.textContent
+        oldScript.replaceWith(newScript)
+      })
 
     // Namespace IDs after NHS Frontend has initialised. NHS Frontend caches DOM
     // node references during init, so renaming afterward doesn't affect conditional
@@ -664,6 +692,15 @@ class AppModal {
             this.bindFormSubmit()
             this.bindLinkNavigation()
             this.updateBackLink()
+          } else if (this.isFullPage(html)) {
+            // Full page returned — template probably forgot 'parentLayout or'.
+            // Bail out to direct navigation rather than injecting the full site.
+            console.warn(
+              'Modal: full page returned after POST — falling back to direct navigation',
+              finalUrl
+            )
+            this.close()
+            window.location.href = finalUrl
           } else {
             // Flow complete — close and refresh
             this.close()
@@ -785,17 +822,59 @@ class AppModal {
     return data
   }
 
-  // Prefix all IDs within a container and update all attributes that reference
-  // them (for, aria-controls, aria-labelledby, aria-describedby). Prevents
-  // duplicate-ID conflicts when the modal shares field names with the parent page.
+  // Returns true if html looks like a full page rather than a modal fragment.
+  // Used to detect templates that forgot 'parentLayout or', which would otherwise
+  // inject the entire site layout into the modal dialog.
+  isFullPage(html) {
+    const start = html.trimStart().slice(0, 200).toLowerCase()
+    return start.includes('<!doctype') || start.includes('<html')
+  }
+
+  // Prefix IDs of form controls and their associated elements within a container,
+  // then update all attributes referencing those IDs. This prevents the label
+  // :hover bleed that occurs when a modal shares field names (and thus IDs) with
+  // the parent page. Only form-related IDs are namespaced — non-form IDs (e.g.
+  // JS hook elements like #featuresListContainer) are left alone so that external
+  // scripts loaded asynchronously can still find them by their original IDs.
   namespaceIds(container) {
     const prefix = 'modal-'
-    const idMap = new Map()
 
-    // First pass: rename all IDs
+    // Collect IDs that need namespacing. Start with form controls whose IDs
+    // are the source of duplicate-ID hover-bleed (NHS Frontend derives id from
+    // name, so any shared field name produces a shared ID).
+    const idsToNamespace = new Set()
+    container.querySelectorAll('input, select, textarea').forEach((el) => {
+      const id = el.getAttribute('id')
+      if (id) idsToNamespace.add(id)
+    })
+
+    // Labels reference form control IDs via the 'for' attribute — also collect
+    // IDs referenced by 'for' in case any label targets a non-control element.
+    container.querySelectorAll('[for]').forEach((el) => {
+      const val = el.getAttribute('for')
+      if (val) idsToNamespace.add(val)
+    })
+
+    // Conditional reveal panels (id="conditional-{input-id}") are referenced by
+    // aria-controls from radio/checkbox inputs. Include them so aria-controls
+    // stays consistent after the input ID is renamed.
+    container.querySelectorAll('[aria-controls]').forEach((el) => {
+      const val = el.getAttribute('aria-controls')
+      if (val) val.split(' ').forEach((id) => idsToNamespace.add(id))
+    })
+
+    // Hint and error message elements referenced via aria-describedby from
+    // form controls — rename so their association stays intact.
+    container.querySelectorAll('[aria-describedby]').forEach((el) => {
+      const val = el.getAttribute('aria-describedby')
+      if (val) val.split(' ').forEach((id) => idsToNamespace.add(id))
+    })
+
+    // Rename the targeted IDs and build a map for updating references.
+    const idMap = new Map()
     container.querySelectorAll('[id]').forEach((el) => {
       const id = el.getAttribute('id')
-      if (id) {
+      if (id && idsToNamespace.has(id)) {
         const newId = prefix + id
         idMap.set(id, newId)
         el.setAttribute('id', newId)
@@ -804,7 +883,7 @@ class AppModal {
 
     if (idMap.size === 0) return
 
-    // Second pass: update all attributes that reference IDs.
+    // Update all attributes that reference the renamed IDs.
     // Values may be space-separated lists (e.g. aria-labelledby="id1 id2").
     const refAttrs = [
       'for',
@@ -826,7 +905,7 @@ class AppModal {
       })
     })
 
-    // Third pass: update hash-only href anchors (e.g. error summary links like
+    // Update hash-only href anchors (e.g. error summary links like
     // href="#field-id" that jump to the associated input on click).
     container.querySelectorAll('a[href^="#"]').forEach((link) => {
       const hash = link.getAttribute('href').slice(1) // strip leading '#'
@@ -866,6 +945,54 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = link.dataset.loadModalUrl
     const modalId = link.dataset.modalId || 'app-form-modal'
     window.openModal(modalId, { loadUrl: url })
+  })
+
+  // Global delegated click handler for [data-modal-submit] — used by the
+  // openInModal filter to progressively enhance submit buttons that have no href.
+  // POSTs the containing form via fetch, then opens the redirect destination
+  // (server-threaded with ?_modal=1) in the modal as a fragment.
+  // Without JS the button submits the form normally — progressive enhancement.
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-modal-submit]')
+    if (!button) return
+    if (button.closest('.app-modal__dialog')) return
+    if (button.disabled) return
+
+    const form = button.closest('form')
+    if (!form) return
+
+    e.preventDefault()
+
+    const body = new URLSearchParams()
+    form.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (!el.name || el.disabled) return
+      if (el.type === 'checkbox') {
+        if (el.checked) body.append(el.name, el.value)
+        body.append(el.name, '_unchecked')
+      } else if (el.type === 'radio') {
+        if (el.checked) body.append(el.name, el.value)
+      } else {
+        body.append(el.name, el.value)
+      }
+    })
+    if (button.name) body.set(button.name, button.value || '')
+
+    const modalId = button.dataset.modalId || 'app-form-modal'
+
+    fetch(form.action, {
+      method: (form.method || 'POST').toUpperCase(),
+      body,
+      redirect: 'follow',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Submission failed')
+        window.openModal(modalId, { loadUrl: response.url })
+      })
+      .catch((err) => {
+        console.error('Modal submit error:', err)
+        form.submit()
+      })
   })
 })
 
