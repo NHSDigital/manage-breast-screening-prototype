@@ -82,6 +82,19 @@
   @include nhsuk-font(19);
 }
 
+// Hint text shown on a second line beneath the option name
+.app-autocomplete__option-hint {
+  display: block;
+  color: $nhsuk-secondary-text-colour;
+
+  @include nhsuk-font(16);
+}
+
+// Append text shown inline after the option name (e.g. an abbreviation)
+.app-autocomplete__option-append {
+  color: $nhsuk-secondary-text-colour;
+}
+
 .app-autocomplete__option--no-results {
   color: $nhsuk-secondary-text-colour;
   background-color: $nhsuk-input-background-colour;
@@ -110,6 +123,11 @@
   outline: none;
   color: nhsuk-colour("white");
   background-color: $nhsuk-link-colour;
+
+  .app-autocomplete__option-hint,
+  .app-autocomplete__option-append {
+    color: nhsuk-colour("white");
+  }
 }
 
 @media (-ms-high-contrast: active), (forced-colors: active) {

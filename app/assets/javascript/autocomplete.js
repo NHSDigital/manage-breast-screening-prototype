@@ -5,7 +5,7 @@
 // Sort algorithm adapted from DFE Register Trainee Teachers:
 // https://github.com/DFE-Digital/register-trainee-teachers/tree/main/app/javascript/scripts/components/form_components/autocomplete
 
-import accessibleAutocomplete from "accessible-autocomplete"
+import accessibleAutocomplete from 'accessible-autocomplete'
 
 // ---------------------------------------------------------------------------
 // Sort algorithm
@@ -15,22 +15,22 @@ import accessibleAutocomplete from "accessible-autocomplete"
 const clean = (text) =>
   text
     .trim()
-    .replace(/['']/g, "")
-    .replace(/[.,"/#!$%^&*;:{}=\-_`~()]/g, " ")
+    .replace(/['']/g, '')
+    .replace(/[.,"/#!$%^&*;:{}=\-_`~()]/g, ' ')
     .toLowerCase()
 
-const stopWords = ["the", "of", "in", "and", "at", "&", "with"]
+const stopWords = ['the', 'of', 'in', 'and', 'at', '&', 'with']
 
 // Remove stop words from a string, unless the string is entirely stop words
 const removeStopWords = (text) => {
-  const words = text.trim().split(" ")
+  const words = text.trim().split(' ')
   const isAllStopWords = words.every((word) => stopWords.includes(word))
   if (isAllStopWords) return text
   const regex = new RegExp(
-    stopWords.map((word) => `(\\s+)?${word}(\\s+)?`).join("|"),
-    "gi"
+    stopWords.map((word) => `(\\s+)?${word}(\\s+)?`).join('|'),
+    'gi'
   )
-  return text.replace(regex, " ").trim()
+  return text.replace(regex, ' ').trim()
 }
 
 // Calculate how well a query matches an option (0 = no match, 100 = exact)
@@ -39,7 +39,7 @@ const calculateWeight = (
   query
 ) => {
   const queryWithoutStopWords = removeStopWords(query)
-  const startsWithRegExp = (q) => new RegExp("\\b" + q, "i")
+  const startsWithRegExp = (q) => new RegExp('\\b' + q, 'i')
 
   const exactMatch = (word, q) => word === q
   const startsWith = (word, q) => word.search(startsWithRegExp(q)) === 0
@@ -60,9 +60,7 @@ const calculateWeight = (
 
   const queryRegExps = queryWithoutStopWords.split(/\s+/).map(startsWithRegExp)
   if (wordsStartWith(nameWithoutStopWords, queryRegExps)) return 25
-  if (
-    synonymsWithoutStopWords.some((syn) => wordsStartWith(syn, queryRegExps))
-  )
+  if (synonymsWithoutStopWords.some((syn) => wordsStartWith(syn, queryRegExps)))
     return 10
 
   return 0
@@ -104,44 +102,85 @@ const sort = (query, options) => {
 // Map a <select> option element to a structured option object
 const enhanceSelectOption = ($option) => ({
   name: $option.label,
-  synonyms: $option.dataset.synonyms
-    ? $option.dataset.synonyms.split("|")
-    : [],
+  synonyms: $option.dataset.synonyms ? $option.dataset.synonyms.split('|') : [],
   append: $option.dataset.append || null,
   hint: $option.dataset.hint || null,
   boost: parseFloat($option.dataset.boost) || 1
 })
 
-// Render a suggestion item (used for select-based autocompletes)
-const renderSuggestion = (value, options) => {
-  const option = options.find((o) => o.name === value)
-  if (!option) return "No results found"
-  const label = option.append ? `${value} – ${option.append}` : value
-  return option.hint
-    ? `${label}<br><span class="app-autocomplete__option-hint">${option.hint}</span>`
-    : label
+// Normalize a source item (string or object) to a structured option object
+const normalizeSourceItem = (item) => {
+  if (typeof item === 'string') return { name: item }
+  return {
+    name: item.text,
+    synonyms: item.synonyms || [],
+    hint: item.hint || null,
+    append: item.append || null,
+    boost: item.boost || 1
+  }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+// Render a suggestion item — used for both select and input variants
+const renderSuggestion = (value, options) => {
+  const option = options.find((o) => o.name === value)
+  if (!option) return 'No results found'
+  const appendHtml = option.append
+    ? ` <span class="app-autocomplete__option-append">${option.append}</span>`
+    : ''
+  const hintHtml = option.hint
+    ? `<span class="app-autocomplete__option-hint">${option.hint}</span>`
+    : ''
+  return `${value}${appendHtml}${hintHtml}`
+}
+
+// Read autocomplete behaviour config from an element's data attributes.
+// Only overrides the library default when the attribute is explicitly set.
+const readAutocompleteConfig = ($el) => {
+  const config = {}
+  const ds = $el.dataset
+
+  if ('autoselect' in ds) config.autoselect = ds.autoselect === 'true'
+  if ('minLength' in ds) config.minLength = parseInt(ds.minLength, 10)
+  if ('confirmOnBlur' in ds) config.confirmOnBlur = ds.confirmOnBlur !== 'false'
+  if ('showNoOptionsFound' in ds)
+    config.showNoOptionsFound = ds.showNoOptionsFound !== 'false'
+
+  return config
+}
+
+document.addEventListener('DOMContentLoaded', () => {
   // Enhance select elements
   const selectElements = document.querySelectorAll(
     "select[data-module='app-autocomplete']"
   )
 
   selectElements.forEach(($select) => {
-    const defaultValue = $select.options[$select.selectedIndex]?.text || ""
+    const defaultValue = $select.options[$select.selectedIndex]?.text || ''
     const selectOptions = Array.from($select.options)
     const options = selectOptions.map(enhanceSelectOption)
+    const showAllValues = $select.dataset.showAllValues === 'true'
+    const config = readAutocompleteConfig($select)
+
+    // All named options (excluding the empty placeholder) for showAllValues mode
+    const allNames = options
+      .filter((o) => o.name)
+      .map((o) => o.name)
+      .sort()
 
     accessibleAutocomplete.enhanceSelectElement({
       selectElement: $select,
-      cssNamespace: "app-autocomplete",
+      cssNamespace: 'app-autocomplete',
       defaultValue: defaultValue,
-      inputClasses: "nhsuk-input",
+      inputClasses: 'nhsuk-input',
       showNoOptionsFound: true,
+      showAllValues,
+      ...config,
       source: (query, populateResults) => {
-        if (query.trim()) {
-          populateResults(sort(query, options))
+        const trimmedQuery = query.trim()
+        if (trimmedQuery) {
+          populateResults(sort(trimmedQuery, options))
+        } else if (showAllValues) {
+          populateResults(allNames)
         } else {
           populateResults([])
         }
@@ -167,42 +206,54 @@ document.addEventListener("DOMContentLoaded", () => {
   )
 
   inputElements.forEach(($input) => {
-    const sourceAttr = $input.getAttribute("data-source")
+    const sourceAttr = $input.getAttribute('data-source')
     if (!sourceAttr) return
 
-    let sourceStrings
+    let sourceItems
     try {
-      sourceStrings = JSON.parse(sourceAttr)
+      sourceItems = JSON.parse(sourceAttr)
     } catch (e) {
-      console.warn("app-autocomplete: could not parse data-source", e)
+      console.warn('app-autocomplete: could not parse data-source', e)
       return
     }
 
-    // Wrap plain strings as option objects for the sort algorithm
-    const options = sourceStrings.map((name) => ({ name }))
+    // Normalize source items — each can be a plain string or a structured object
+    const options = sourceItems.map(normalizeSourceItem)
 
     const id = $input.id
     const name = $input.name
     const defaultValue = $input.value
+    const showAllValues = $input.dataset.showAllValues === 'true'
+    const config = readAutocompleteConfig($input)
+
+    const allNames = options.map((o) => o.name).sort()
 
     // Create a wrapper div to mount the autocomplete into
-    const $wrapper = document.createElement("div")
+    const $wrapper = document.createElement('div')
     $input.replaceWith($wrapper)
 
     accessibleAutocomplete({
       element: $wrapper,
       id: id,
       name: name,
-      cssNamespace: "app-autocomplete",
+      cssNamespace: 'app-autocomplete',
       defaultValue: defaultValue,
-      inputClasses: "nhsuk-input",
+      inputClasses: 'nhsuk-input',
       showNoOptionsFound: true,
+      showAllValues,
+      ...config,
       source: (query, populateResults) => {
-        if (query.trim()) {
-          populateResults(sort(query, options))
+        const trimmedQuery = query.trim()
+        if (trimmedQuery) {
+          populateResults(sort(trimmedQuery, options))
+        } else if (showAllValues) {
+          populateResults(allNames)
         } else {
           populateResults([])
         }
+      },
+      templates: {
+        suggestion: (value) => renderSuggestion(value, options)
       }
     })
   })
