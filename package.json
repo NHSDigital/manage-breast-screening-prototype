@@ -12,6 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "@faker-js/faker": "^10.4.0",
+    "accessible-autocomplete": "^3.0.1",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.20",
     "lodash": "^4.17.23",

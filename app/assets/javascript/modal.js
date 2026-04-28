@@ -439,6 +439,18 @@ class AppModal {
     // the same id, including ones on the page behind the modal).
     this.namespaceIds(content || this.dialog)
 
+    // Signal to app components that new content has been injected and is ready to
+    // initialise. Components listen for this event (alongside DOMContentLoaded for
+    // the initial page load), scoping their queries to event.detail.scope. This
+    // means modal.js never needs to know about specific app components.
+    const initContainer = content || this.dialog
+    initContainer.dispatchEvent(
+      new CustomEvent('app:init', {
+        bubbles: true,
+        detail: { scope: initContainer }
+      })
+    )
+
     // Re-point aria-labelledby at the now-namespaced heading ID.
     const renamedHeading = this.dialog.querySelector('h1, h2, h3')
     if (renamedHeading && renamedHeading.id) {

@@ -1,0 +1,88 @@
+{# app/views/style-guide/autocomplete.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "autocomplete" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Autocomplete</h2>
+
+<p>An accessible autocomplete built on <a href="https://github.com/alphagov/accessible-autocomplete">accessible-autocomplete</a>. Add <code>data-module="app-autocomplete"</code> to a <code>&lt;select&gt;</code> or <code>&lt;input&gt;</code> to enhance it.</p>
+
+<p>Uses an improved sort algorithm (adapted from <a href="https://becoming-a-teacher.design-history.education.gov.uk/register-trainee-teachers/autocomplete-improvements/">DFE Register Trainee Teachers</a>) that prioritises closer matches, matches all words in any order, ignores punctuation and stop words (the, of, in…), and supports synonyms and boosts via data attributes.</p>
+
+<p>Both examples below use a form so you can verify the submitted value is correct.</p>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Enhancing a select element</h3>
+
+<p>The select is progressively enhanced. Without JavaScript, a standard dropdown is shown. With JavaScript, the select is replaced with an autocomplete input that filters the options.</p>
+
+<p>The submitted value is the <strong>option value</strong> (not the display text), matching the original select behaviour.</p>
+
+<form action="" method="POST">
+  <div class="nhsuk-form-group">
+    <label class="nhsuk-label" for="country-select">
+      Country or territory
+    </label>
+    <select class="nhsuk-select" id="country-select" name="country" data-module="app-autocomplete">
+      <option value=""></option>
+      <option value="eng" data-synonyms="Britain|Great Britain|UK|United Kingdom">England</option>
+      <option value="sco">Scotland</option>
+      <option value="wal">Wales</option>
+      <option value="nir">Northern Ireland</option>
+      <option value="fra">France</option>
+      <option value="deu">Germany</option>
+      <option value="irl">Ireland</option>
+      <option value="nld">Netherlands</option>
+      <option value="esp">Spain</option>
+      <option value="swe">Sweden</option>
+    </select>
+  </div>
+  <button class="nhsuk-button nhsuk-button--secondary" type="submit">Submit</button>
+</form>
+
+{% if data.country %}
+  <p>Submitted value: <strong>{{ data.country }}</strong></p>
+{% endif %}
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Enhancing an input element</h3>
+
+<p>An <code>&lt;input&gt;</code> can also be enhanced by providing a <code>data-source</code> attribute containing a JSON array of strings. The submitted value is whatever the user types or selects.</p>
+
+{% set sourceData = ["Breast screening unit A", "Breast screening unit B", "Breast screening unit C", "City Hospital", "County General Hospital", "Memorial Hospital", "Royal Infirmary", "St Mary's Hospital", "University Hospital", "Western General"] %}
+
+<form action="" method="POST">
+  <div class="nhsuk-form-group">
+    <label class="nhsuk-label" for="hospital-input">
+      Hospital name
+    </label>
+    <input
+      class="nhsuk-input"
+      id="hospital-input"
+      name="hospital"
+      type="text"
+      autocomplete="off"
+      data-module="app-autocomplete"
+      data-source="{{ sourceData | dump | escape }}"
+      value="{{ data.hospital or '' }}"
+    >
+  </div>
+  <button class="nhsuk-button nhsuk-button--secondary" type="submit">Submit</button>
+</form>
+
+{% if data.hospital %}
+  <p>Submitted value: <strong>{{ data.hospital }}</strong></p>
+{% endif %}
+
+{% endblock %}

@@ -1,5 +1,7 @@
 {# /app/views/reading/recall-for-assessment-details.html #}
 
+{% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+
 {% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading = "Recall for assessment" %}
@@ -54,15 +56,21 @@
       ] | removeEmpty
     }) }}
 
-    {{ input({
-      name: "imageReadingTemp[" + params.side + "][comment]",
-      value: data.imageReadingTemp[params.side].comment,
-      label: {
-        text: Side + " breast comment (optional)",
-        classes: "nhsuk-label--s"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
+    {% call appCollapsibleInput({ text: "Add " + params.side + " breast comment" }) %}
+      {{ input({
+        name: "imageReadingTemp[" + params.side + "][comment]",
+        value: data.imageReadingTemp[params.side].comment,
+        label: {
+          text: Side + " breast comment (optional)",
+          classes: "nhsuk-label--s"
+        },
+        classes: "",
+        formGroup: {
+          _comment: "Remove bottom margin as input inside card",
+          classes: "nhsuk-u-margin-bottom-0"
+        }
+      }) }}
+    {% endcall %}
 
     {% if (data.imageReadingTemp[params.side].annotations | default([])) | length > 0 %}
 

@@ -210,16 +210,18 @@
         ]
       } | populateErrors) }}
 
-      {{ input({
-        id: "comment",
-        name: "imageReadingTemp[annotationTemp][comment]",
-        value: data.imageReadingTemp.annotationTemp.comment,
-        label: {
-          text: "Comment about this abnormality (optional)",
-          classes: "nhsuk-label--s"
-        },
-        classes: "nhsuk-u-width-two-thirds"
-      } | populateErrors) }}
+      {% call appCollapsibleInput({ text: "Add a comment about this abnormality" }) %}
+        {{ input({
+          id: "comment",
+          name: "imageReadingTemp[annotationTemp][comment]",
+          value: data.imageReadingTemp.annotationTemp.comment,
+          label: {
+            text: "Comment about this abnormality (optional)",
+            classes: "nhsuk-label--s"
+          },
+          classes: "nhsuk-u-width-two-thirds"
+        }) }}
+      {% endcall %}
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
