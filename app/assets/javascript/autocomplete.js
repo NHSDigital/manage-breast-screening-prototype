@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })
 
   // Enhance input elements with a source provided via data-source attribute
-  // The source should be a JSON array of strings set as data-source="[...]"
+  // The source should be a JSON array (strings or objects) set as data-source="[...]"
   const inputElements = document.querySelectorAll(
     "input[data-module='app-autocomplete']"
   )

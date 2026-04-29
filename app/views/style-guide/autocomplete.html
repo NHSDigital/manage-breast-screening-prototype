@@ -16,17 +16,68 @@
 
 <h2>Autocomplete</h2>
 
-<p>An accessible autocomplete built on <a href="https://github.com/alphagov/accessible-autocomplete">accessible-autocomplete</a>. Progressively enhanced from a <code>&lt;select&gt;</code> or <code>&lt;input&gt;</code>.</p>
-
-<p>Uses an improved sort algorithm (adapted from <a href="https://becoming-a-teacher.design-history.education.gov.uk/register-trainee-teachers/autocomplete-improvements/">DFE Register Trainee Teachers</a>) that prioritises closer matches, matches all words in any order, ignores punctuation and stop words, and supports synonyms via <code>data-synonyms</code> attributes.</p>
+<p>Accessible autocomplete built on <a href="https://github.com/alphagov/accessible-autocomplete">accessible-autocomplete</a>. Progressive enhancement from <code>&lt;select&gt;</code> or <code>&lt;input&gt;</code>. Uses an improved sort algorithm from DFE that scores exact matches higher, ignores stop words, and supports synonyms.</p>
 
 <p>Macro: <code>appAutocomplete(params)</code></p>
 
 <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
-<h3>Select-based (default)</h3>
+<h3>Params reference</h3>
 
-<p>Renders a <code>&lt;select&gt;</code> progressively enhanced into an autocomplete. The submitted value is the option's <strong>value attribute</strong>, not its display text. Without JavaScript a standard dropdown is shown.</p>
+<pre class="sg-snippet"><code>{% raw %}{{ appAutocomplete({
+
+  {# --- Core --- #}
+  id: "...",           {# string; defaults to name #}
+  name: "...",         {# string; REQUIRED #}
+  type: "select",      {# "select" (default) or "input" #}
+  value: "...",        {# pre-selected value #}
+
+  {# --- Labels and messages --- #}
+  label: {             {# REQUIRED #}
+    text: "...",
+    isPageHeading: false,
+    classes: "...",
+    size: "s|m|l|xl"
+  },
+  hint: { text: "..." },
+  errorMessage: { text: "..." },
+  formGroup: { classes: "..." },
+  classes: "...",      {# extra classes on the select/input element #}
+  attributes: {},      {# extra HTML attributes on the select/input element #}
+
+  {# --- Behaviour (all optional, override library defaults only when set) --- #}
+  showAllValues: false,      {# show all options on focus + dropdown arrow #}
+  autoselect: false,         {# highlight first result as you type; disable with showAllValues #}
+  minLength: 0,              {# min chars before suggestions appear #}
+  confirmOnBlur: true,       {# confirm selection on blur #}
+  showNoOptionsFound: true,  {# show "No results found" message #}
+
+  {# --- Select variant (type: "select") --- #}
+  items: [
+    {
+      value: "...",        {# submitted value #}
+      text: "...",         {# display text #}
+      synonyms: ["..."],   {# alternative search terms #}
+      hint: "...",         {# secondary line in dropdown #}
+      append: "...",       {# text after name in dropdown #}
+      boost: 1,            {# relevance multiplier #}
+      disabled: false
+    }
+  ],
+
+  {# --- Input variant (type: "input") --- #}
+  source: [
+    "Plain string",                       {# or ... #}
+    { text: "...", hint: "...", append: "...", synonyms: [], boost: 1 }
+  ]
+
+}) }}{% endraw %}</code></pre>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Select (default)</h3>
+
+<p>Submitted value is the option's <code>value</code> attribute. Without JS a standard <code>&lt;select&gt;</code> is shown.</p>
 
 <form action="" method="POST">
   <div class="sg-example">
@@ -72,7 +123,7 @@
 
 <h3>With hint, append, and item hints</h3>
 
-<p>Use <code>hint</code> for field-level hint text. Use <code>append</code> on items to show extra text after the option name in the dropdown. Use <code>hint</code> on items to show a secondary line of text.</p>
+<p><code>hint</code> adds field-level hint text. <code>append</code> on an item shows extra text after the name in the dropdown. <code>hint</code> on an item shows a secondary line.</p>
 
 <div class="sg-example">
   {{ appAutocomplete({
@@ -103,9 +154,7 @@
 
 <h3>Show all values</h3>
 
-<p>Set <code>showAllValues: true</code> to show all options when the field is focused, like a dropdown. Adds a dropdown arrow. Typing still filters the list.</p>
-
-<p>Set <code>autoselect: false</code> alongside it — otherwise the first option is pre-highlighted when the list opens, which is usually unwanted in dropdown mode.</p>
+<p><code>showAllValues: true</code> shows all options on focus and adds a dropdown arrow. Use with <code>autoselect: false</code> — otherwise the first item is pre-highlighted when the list opens.</p>
 
 <div class="sg-example">
   {{ appAutocomplete({
@@ -134,11 +183,9 @@
 
 <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
-<h3>Input-based variant</h3>
+<h3>Input variant</h3>
 
-<p>Set <code>type: "input"</code> to render a free-text input with suggestions from a <code>source</code> array. The submitted value is whatever the user types or selects — not constrained to the list.</p>
-
-<p>Source items can be plain strings, or objects with <code>text</code>, <code>hint</code>, <code>append</code>, <code>synonyms</code>, and <code>boost</code> — the same shape as select items.</p>
+<p><code>type: "input"</code> renders a free-text input. Submitted value is whatever the user types — not constrained to the list. Source items can be plain strings or objects with <code>text</code>, <code>hint</code>, <code>append</code>, <code>synonyms</code>, <code>boost</code>.</p>
 
 {% set hospitalSource = [
   { text: "City Hospital", hint: "EC1A 1BB" },
