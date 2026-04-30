@@ -297,6 +297,8 @@
 
     row.querySelectorAll('.app-ann-v2__image-panel:not(.app-ann-v2__image-panel--no-image)').forEach(panel => {
       panel.addEventListener('click', handleImageClick)
+      panel.addEventListener('mousemove', function (e) { updateCursorPreview(this, e) })
+      panel.addEventListener('mouseleave', hideCursorPreview)
     })
 
     renderMarkers()
@@ -502,6 +504,54 @@
     scroll.innerHTML = html
   }
 
+  // ─── cursor preview ────────────────────────────────────────────────────────
+  // Shows a yellow circle+plus at the cursor position on image panels
+
+  const cursorPreview = document.createElement('div')
+  cursorPreview.className = 'app-ann-cursor-preview'
+  cursorPreview.setAttribute('aria-hidden', 'true')
+  cursorPreview.hidden = true
+
+  const cursorPreviewBadge = document.createElement('div')
+  cursorPreviewBadge.className = 'app-ann-cursor-preview__badge'
+  cursorPreviewBadge.hidden = true
+  cursorPreview.appendChild(cursorPreviewBadge)
+
+  function updateCursorPreview(panel, event) {
+    // Hide if hovering over an existing marker
+    if (event.target.closest('.app-ann-marker')) {
+      hideCursorPreview()
+      return
+    }
+    const rect = panel.getBoundingClientRect()
+    const x = ((event.clientX - rect.left) / rect.width) * 100
+    const y = ((event.clientY - rect.top) / rect.height) * 100
+    if (cursorPreview.parentElement !== panel) {
+      panel.appendChild(cursorPreview)
+    }
+    // Show badge: annotation number if click would add to active annotation,
+    // or '+' if click would create a new one
+    const viewKey = panel.dataset.view
+    const displayIndex = buildDisplayIndices()
+    const ann = activeAnnotationId ? getAnnotation(activeAnnotationId) : null
+    const wouldAddToActive = ann && ann.side === activeSide && (!ann.positions || !ann.positions[viewKey])
+
+    if (wouldAddToActive && displayIndex[activeAnnotationId]) {
+      cursorPreviewBadge.textContent = displayIndex[activeAnnotationId]
+      cursorPreviewBadge.hidden = false
+    } else {
+      cursorPreviewBadge.textContent = '+'
+      cursorPreviewBadge.hidden = false
+    }
+    cursorPreview.hidden = false
+    cursorPreview.style.left = x + '%'
+    cursorPreview.style.top = y + '%'
+  }
+
+  function hideCursorPreview() {
+    cursorPreview.hidden = true
+  }
+
   // ─── interaction handlers ───────────────────────────────────────────────────
 
   function handleThumbClick(event) {
@@ -524,11 +574,15 @@
     if (activeAnnotationId) {
       const ann = getAnnotation(activeAnnotationId)
       if (ann && ann.side === activeSide) {
-        if (!ann.positions) ann.positions = {}
-        ann.positions[viewKey] = { x: x, y: y }
-        renderMarkers()
-        renderSidebar()
-        return
+        // Only add to existing annotation if this view doesn't already have a marker
+        if (!ann.positions || !ann.positions[viewKey]) {
+          if (!ann.positions) ann.positions = {}
+          ann.positions[viewKey] = { x: x, y: y }
+          renderMarkers()
+          renderSidebar()
+          return
+        }
+        // View already has a marker — fall through to create a new annotation
       }
       activeAnnotationId = null
     }
@@ -566,7 +620,9 @@
       if (side !== activeSide) {
         activeSide = side
         renderThumbs()
-        renderMainImages()
+        renderMainImages() // also calls renderMarkers()
+      } else {
+        renderMarkers() // deselect without changing side
       }
       renderSidebar()
       return

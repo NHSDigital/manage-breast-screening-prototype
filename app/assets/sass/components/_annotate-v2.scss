@@ -230,12 +230,7 @@ body.app-annotate-v2 {
 
 .app-ann-v2__no-image {
   font-size: 19px;
-  border: 2px dashed nhsuk-colour("grey-3");
-  width: 90%;
-  height: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: nhsuk-colour("grey-3");
   text-align: center;
   padding: nhsuk-spacing(2);
 }
@@ -243,6 +238,60 @@ body.app-annotate-v2 {
 // ─── Annotation markers ───────────────────────────────────────────────────────
 // Inactive: blue circle (clear but not prominent)
 // Active: yellow circle + thicker stroke + larger blue badge
+
+// Cursor preview: yellow circle+plus that follows the mouse on image panels
+.app-ann-cursor-preview {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 4px solid $nhsuk-focus-colour;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+
+  // Plus icon
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: $nhsuk-focus-colour;
+    border-radius: 1px;
+  }
+
+  &::before {
+    width: 2px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+  }
+
+  &::after {
+    width: 14px;
+    height: 2px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+// Badge showing annotation number on cursor preview
+.app-ann-cursor-preview__badge {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  min-width: 24px;
+  height: 24px;
+  background: $nhsuk-focus-colour;
+  color: nhsuk-colour("black");
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px 2px; // 2px bottom padding corrects optical vertical alignment of + and digits
+  line-height: 1;
+}
 
 .app-ann-marker {
   position: absolute;
