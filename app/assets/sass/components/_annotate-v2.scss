@@ -277,8 +277,8 @@ body.app-annotate-v2 {
 // Badge showing annotation number on cursor preview
 .app-ann-cursor-preview__badge {
   position: absolute;
-  top: -16px;
-  left: -16px;
+  top: -26px;
+  left: -26px;
   min-width: 24px;
   height: 24px;
   background: $nhsuk-focus-colour;
@@ -323,8 +323,8 @@ body.app-annotate-v2 {
 // Badge sits top-left outside the circle
 .app-ann-marker__badge {
   position: absolute;
-  top: -16px;
-  left: -16px;
+  top: -26px;
+  left: -26px;
   min-width: 24px;
   height: 24px;
   background: nhsuk-colour("blue");
@@ -347,8 +347,8 @@ body.app-annotate-v2 {
   min-width: 28px;
   height: 28px;
   font-size: 16px;
-  top: -18px;
-  left: -18px;
+  top: -30px;
+  left: -30px;
 }
 
 // Remove button — shown on marker hover or focus only
@@ -392,7 +392,7 @@ body.app-annotate-v2 {
   flex: 0 0 320px;
   min-width: 0;
   max-width: 320px;
-  overflow: hidden auto; // clip horizontal, scroll vertical
+  overflow: hidden; // clip horizontal only; inner scroll div handles vertical
   border-left: 1px solid nhsuk-colour("grey-4");
   display: flex;
   flex-direction: column;
@@ -407,7 +407,9 @@ body.app-annotate-v2 {
   gap: nhsuk-spacing(4);
   padding: 0;
   min-width: 0;
-  overflow: hidden;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .app-ann-v2__sidebar-heading {
@@ -457,14 +459,23 @@ body.app-annotate-v2 {
 .app-ann-v2__annotation-header {
   display: flex;
   align-items: flex-start;
-  gap: nhsuk-spacing(2);
-  margin-bottom: nhsuk-spacing(1);
+  gap: nhsuk-spacing(3);
+  margin-bottom: nhsuk-spacing(2);
 }
 
 .app-ann-v2__annotation-number {
-  font-size: 19px;
-  font-weight: 700;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
+  background: nhsuk-colour("blue");
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .app-ann-v2__annotation-type {

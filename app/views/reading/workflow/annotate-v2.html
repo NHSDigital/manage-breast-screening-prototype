@@ -255,6 +255,22 @@
     })
   }
 
+  // Returns all expected panel view keys for a given side (expanding multi-image views)
+  function getPanelKeysForSide(side) {
+    const keys = []
+    SIDE_VIEWS[side].forEach(viewKey => {
+      const rawPath = V2.imagePaths[viewKey]
+      const paths = rawPath ? (Array.isArray(rawPath) ? rawPath : [rawPath]) : []
+      if (paths.length > 1) {
+        paths.forEach((_, idx) => keys.push(viewKey + '-' + (idx + 1)))
+      } else if (paths.length === 1) {
+        keys.push(viewKey)
+      }
+      // No image panels are excluded — can't place a marker there
+    })
+    return keys
+  }
+
   function renderMainImages() {
     const viewKeys = SIDE_VIEWS[activeSide]
     const row = document.getElementById('images-row')
@@ -348,6 +364,12 @@
           const targetAnn = getAnnotation(ann.id)
           if (targetAnn && targetAnn.positions) {
             delete targetAnn.positions[viewKey]
+            // If no markers remain, delete the whole annotation
+            if (Object.keys(targetAnn.positions).length === 0) {
+              const idx = annotations.findIndex(a => a.id === ann.id)
+              if (idx !== -1) annotations.splice(idx, 1)
+              if (activeAnnotationId === ann.id) activeAnnotationId = null
+            }
           }
           renderMarkers()
           renderSidebar()
@@ -435,8 +457,9 @@
   function buildDisplayIndices() {
     const indices = {}
     let n = 1
-    annotations.filter(a => a.side === 'right').forEach(a => { indices[a.id] = n++ })
-    annotations.filter(a => a.side === 'left').forEach(a => { indices[a.id] = n++ })
+    // Only number completed annotations (those with at least one detail filled in)
+    annotations.filter(a => a.side === 'right' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = n++ })
+    annotations.filter(a => a.side === 'left' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = n++ })
     return indices
   }
 
@@ -462,8 +485,6 @@
           typeLabel = (ann.abnormalityType === 'Other' && ann.otherDetails) ? 'Other: ' + ann.otherDetails : ann.abnormalityType
         }
         const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
-        const positionViews = ann.positions ? Object.keys(ann.positions).map(v => getViewLabel(v)).join(', ') : ''
-        const positionText = positionViews ? 'Marked on: ' + positionViews : 'No marker placed'
         const metaParts = [concernLabel].filter(Boolean)
 
         html += '<div class="app-ann-v2__annotation-card' +
@@ -471,10 +492,10 @@
           (isIncomplete ? ' is-incomplete' : '') +
           '" data-ann-id="' + ann.id + '" tabindex="0" role="button"' +
           ' aria-pressed="' + (isActive ? 'true' : 'false') + '"' +
-          ' aria-label="Annotation ' + (displayIndex[ann.id] || '?') + '">'
+          ' aria-label="Annotation ' + (displayIndex[ann.id] || '?') + '">'  
 
         html += '<div class="app-ann-v2__annotation-header">' +
-          '<span class="app-ann-v2__annotation-number">#' + (displayIndex[ann.id] || '?') + '</span>' +
+          '<span class="app-ann-v2__annotation-number">' + (displayIndex[ann.id] || '?') + '</span>' +
           '<span class="app-ann-v2__annotation-type">' + typeLabel + '</span>' +
           '</div>'
 
@@ -486,7 +507,10 @@
           html += '<p class="app-ann-v2__annotation-meta">' + ann.comment + '</p>'
         }
 
-        html += '<p class="app-ann-v2__annotation-positions">' + positionText + '</p>'
+        const hasPositions = ann.positions && Object.keys(ann.positions).length > 0
+        if (!hasPositions) {
+          html += '<p class="app-ann-v2__annotation-positions">No markers placed</p>'
+        }
 
         if (isIncomplete) {
           html += '<div class="app-ann-v2__annotation-actions"><button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button></div>'
@@ -497,7 +521,9 @@
       })
 
       const addBtnText = sideAnnotations.length > 0 ? 'Add another annotation' : 'Add annotation'
-      html += '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small app-ann-v2__add-annotation-btn" type="button" data-action="add-annotation" data-side="' + side + '">' + addBtnText + '</button>'
+      const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
+      const addBtnDisabled = hasIncomplete ? ' disabled title="Complete the current annotation before adding another"' : ''
+      html += '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small app-ann-v2__add-annotation-btn" type="button" data-action="add-annotation" data-side="' + side + '"' + addBtnDisabled + '>' + addBtnText + '</button>'
       html += '</div>'
     })
 
@@ -529,15 +555,16 @@
     if (cursorPreview.parentElement !== panel) {
       panel.appendChild(cursorPreview)
     }
-    // Show badge: annotation number if click would add to active annotation,
+    // Show badge: annotation number (or ?) if click would add to active annotation,
     // or '+' if click would create a new one
     const viewKey = panel.dataset.view
     const displayIndex = buildDisplayIndices()
     const ann = activeAnnotationId ? getAnnotation(activeAnnotationId) : null
-    const wouldAddToActive = ann && ann.side === activeSide && (!ann.positions || !ann.positions[viewKey])
+    const annIsIncomplete = ann && !ann.abnormalityType && !ann.levelOfConcern
+    const wouldAddToActive = ann && ann.side === activeSide && (!ann.positions || !ann.positions[viewKey] || annIsIncomplete)
 
-    if (wouldAddToActive && displayIndex[activeAnnotationId]) {
-      cursorPreviewBadge.textContent = displayIndex[activeAnnotationId]
+    if (wouldAddToActive) {
+      cursorPreviewBadge.textContent = annIsIncomplete ? '?' : (displayIndex[activeAnnotationId] || '?')
       cursorPreviewBadge.hidden = false
     } else {
       cursorPreviewBadge.textContent = '+'
@@ -574,9 +601,21 @@
     if (activeAnnotationId) {
       const ann = getAnnotation(activeAnnotationId)
       if (ann && ann.side === activeSide) {
-        // Only add to existing annotation if this view doesn't already have a marker
-        if (!ann.positions || !ann.positions[viewKey]) {
-          if (!ann.positions) ann.positions = {}
+        const isIncomplete = !ann.abnormalityType && !ann.levelOfConcern
+        if (!ann.positions) ann.positions = {}
+        if (isIncomplete) {
+          // Incomplete annotation: always update position on this view (never create new)
+          ann.positions[viewKey] = { x: x, y: y }
+          renderMarkers()
+          renderSidebar()
+          // Auto-open modal if all panels for this side now have a marker
+          const panelKeys = getPanelKeysForSide(activeSide)
+          const allCovered = panelKeys.length > 0 && panelKeys.every(k => ann.positions[k])
+          if (allCovered) openModal(ann.id)
+          return
+        }
+        // Complete annotation: only add if this view doesn't already have a marker
+        if (!ann.positions[viewKey]) {
           ann.positions[viewKey] = { x: x, y: y }
           renderMarkers()
           renderSidebar()
@@ -586,6 +625,10 @@
       }
       activeAnnotationId = null
     }
+
+    // Never create a new annotation while an incomplete one already exists
+    const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
+    if (hasIncomplete) return
 
     const newId = uid()
     annotations.push({
@@ -600,6 +643,11 @@
 
     renderMarkers()
     renderSidebar()
+    // Auto-open modal if this single click covers all panels for the side
+    const newAnn = getAnnotation(newId)
+    const panelKeys = getPanelKeysForSide(activeSide)
+    const allCovered = panelKeys.length > 0 && newAnn && panelKeys.every(k => newAnn.positions[k])
+    if (allCovered) openModal(newId)
   }
 
   // Sidebar event delegation
@@ -615,14 +663,29 @@
     }
 
     if (addBtn) {
-      activeAnnotationId = null
+      // Block if any incomplete annotation already exists
+      const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
+      if (hasIncomplete) return
+
       const side = addBtn.dataset.side
-      if (side !== activeSide) {
+      const switchingSide = side !== activeSide
+      if (switchingSide) {
         activeSide = side
+      }
+      // Create a new empty annotation and select it, ready for marker placement
+      const newId = uid()
+      annotations.push({
+        id: newId,
+        side: activeSide,
+        positions: {},
+        annotationNumber: ++annotationCounter
+      })
+      activeAnnotationId = newId
+      if (switchingSide) {
         renderThumbs()
         renderMainImages() // also calls renderMarkers()
       } else {
-        renderMarkers() // deselect without changing side
+        renderMarkers()
       }
       renderSidebar()
       return
