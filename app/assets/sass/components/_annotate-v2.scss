@@ -302,18 +302,54 @@ body.app-annotate-v2 {
   left: -18px;
 }
 
+// Remove button — shown on marker hover or focus only
+.app-ann-marker__remove {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 22px;
+  height: 22px;
+  background: $nhsuk-focus-colour;
+  color: nhsuk-colour("black");
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 2px;
+  }
+}
+
+.app-ann-marker.is-active:hover .app-ann-marker__remove,
+.app-ann-marker.is-active:focus-within .app-ann-marker__remove {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 // ─── Column 3: sidebar ───────────────────────────────────────────────────────
 
 .app-ann-v2__sidebar {
-  width: 320px;
-  flex-shrink: 0;
+  flex: 0 0 320px;
+  min-width: 0;
+  max-width: 320px;
+  overflow: hidden auto; // clip horizontal, scroll vertical
   border-left: 1px solid nhsuk-colour("grey-4");
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
   max-height: 100vh;
-  overflow-y: auto;
 }
 
 .app-ann-v2__sidebar-scroll {
@@ -321,6 +357,8 @@ body.app-annotate-v2 {
   flex-direction: column;
   gap: nhsuk-spacing(4);
   padding: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .app-ann-v2__sidebar-heading {
@@ -394,6 +432,8 @@ body.app-annotate-v2 {
 .app-ann-v2__annotation-positions {
   font-size: 19px;
   margin-bottom: nhsuk-spacing(2);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .app-ann-v2__annotation-actions {

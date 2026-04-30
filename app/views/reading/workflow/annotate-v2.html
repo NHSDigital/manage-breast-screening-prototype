@@ -336,6 +336,22 @@
         badge.setAttribute('aria-hidden', 'true')
         marker.appendChild(badge)
 
+        const removeBtn = document.createElement('button')
+        removeBtn.className = 'app-ann-marker__remove'
+        removeBtn.type = 'button'
+        removeBtn.setAttribute('aria-label', 'Remove marker from ' + getViewLabel(viewKey))
+        removeBtn.innerHTML = '&minus;'
+        removeBtn.addEventListener('click', function (e) {
+          e.stopPropagation()
+          const targetAnn = getAnnotation(ann.id)
+          if (targetAnn && targetAnn.positions) {
+            delete targetAnn.positions[viewKey]
+          }
+          renderMarkers()
+          renderSidebar()
+        })
+        marker.appendChild(removeBtn)
+
         attachMarkerHandlers(marker)
         panel.appendChild(marker)
       })
