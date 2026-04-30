@@ -5,6 +5,10 @@
 // The trigger button is styled as a link; the content wrapper has no visual style
 // of its own — all appearance comes from the wrapped form elements.
 
+.app-collapsible-input {
+  @include nhsuk-responsive-margin(4, "bottom");
+}
+
 .app-collapsible-input__trigger {
   appearance: none;
   background: none;

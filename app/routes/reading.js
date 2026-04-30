@@ -658,6 +658,8 @@ module.exports = (router) => {
         'technical-recall',
         'recall-for-assessment-details',
         'annotation',
+        'annotation-simple',
+        'annotate-v2',
         'confirm-abnormal',
         'recommended-assessment',
         'review',
@@ -710,8 +712,11 @@ module.exports = (router) => {
         annotationNumber: annotationNumber
       }
 
+      // Redirect to simple (no-image) view when requested
+      const target =
+        req.query.simple === 'true' ? 'annotation-simple' : 'annotation'
       res.redirect(
-        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/annotation`
+        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/${target}`
       )
     }
   )
@@ -749,7 +754,10 @@ module.exports = (router) => {
         }
       }
 
-      res.redirect(`/reading/session/${sessionId}/events/${eventId}/annotation`)
+      // Simple annotations have no positions — redirect to the simple form
+      const isSimple = !annotation?.positions || Object.keys(annotation.positions || {}).length === 0
+      const editTarget = isSimple ? 'annotation-simple' : 'annotation'
+      res.redirect(`/reading/session/${sessionId}/events/${eventId}/${editTarget}`)
     }
   )
 
@@ -1006,6 +1014,149 @@ module.exports = (router) => {
       }
 
       req.flash('success', 'Annotation deleted')
+
+      res.redirect(
+        `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+      )
+    }
+  )
+
+  // Save annotation without image markers
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/annotation-simple/save',
+    (req, res) => {
+      const { sessionId, eventId } = req.params
+      const data = req.session.data
+      const action = req.body.action || 'save'
+
+      const annotationTemp = data.imageReadingTemp?.annotationTemp
+
+      if (!annotationTemp) {
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
+      }
+
+      // Validate required fields (no position validation for this route)
+      const errors = []
+
+      if (!annotationTemp.location || annotationTemp.location.trim() === '') {
+        errors.push({
+          text: 'Enter a location for the abnormality',
+          name: 'imageReadingTemp[annotationTemp][location]',
+          href: '#location'
+        })
+      }
+
+      if (
+        !annotationTemp.abnormalityType ||
+        annotationTemp.abnormalityType.length === 0
+      ) {
+        errors.push({
+          text: 'Select an abnormality type',
+          name: 'imageReadingTemp[annotationTemp][abnormalityType]',
+          href: '#abnormalityType'
+        })
+      }
+
+      if (!annotationTemp.levelOfConcern) {
+        errors.push({
+          text: 'Select a level of concern',
+          name: 'imageReadingTemp[annotationTemp][levelOfConcern]',
+          href: '#levelOfConcern'
+        })
+      }
+
+      if (
+        annotationTemp.abnormalityType === 'Other' &&
+        (!annotationTemp.otherDetails ||
+          annotationTemp.otherDetails.trim() === '')
+      ) {
+        errors.push({
+          text: 'Provide details for other abnormality type',
+          name: 'imageReadingTemp[annotationTemp][otherDetails]',
+          href: '#otherDetails'
+        })
+      }
+
+      if (errors.length > 0) {
+        errors.forEach((error) => req.flash('error', error))
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/annotation-simple`
+        )
+      }
+
+      const side = annotationTemp.side
+      if (!side) {
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
+      }
+
+      if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
+      if (!data.imageReadingTemp[side].annotations)
+        data.imageReadingTemp[side].annotations = []
+
+      const annotation = {
+        id: annotationTemp.id || generateId(),
+        side,
+        location: annotationTemp.location || null,
+        abnormalityType: annotationTemp.abnormalityType,
+        levelOfConcern: annotationTemp.levelOfConcern,
+        comment: annotationTemp.comment || null,
+        positions: null,
+        ...Object.keys(annotationTemp)
+          .filter((key) => key.endsWith('Details'))
+          .reduce((acc, key) => {
+            acc[key] = annotationTemp[key]
+            return acc
+          }, {})
+      }
+
+      const existingIndex = data.imageReadingTemp[side].annotations.findIndex(
+        (a) => a.id === annotation.id
+      )
+      if (existingIndex !== -1) {
+        data.imageReadingTemp[side].annotations[existingIndex] = annotation
+      } else {
+        data.imageReadingTemp[side].annotations.push(annotation)
+      }
+
+      delete data.imageReadingTemp.annotationTemp
+
+      if (action === 'save-and-add') {
+        res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}&simple=true`
+        )
+      } else {
+        res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
+      }
+    }
+  )
+
+  // Save all annotations from the v2 3-column annotation tool
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/annotate-v2/save',
+    (req, res) => {
+      const { sessionId, eventId } = req.params
+      const data = req.session.data
+
+      let allAnnotations = []
+      try {
+        allAnnotations = JSON.parse(req.body.annotationsJson || '[]')
+      } catch (e) {
+        console.warn('annotate-v2/save: failed to parse annotationsJson', e)
+      }
+
+      // Split annotations by side and write to imageReadingTemp
+      ;['left', 'right'].forEach((side) => {
+        const sideAnnotations = allAnnotations.filter((a) => a.side === side)
+        if (!data.imageReadingTemp) data.imageReadingTemp = {}
+        if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
+        data.imageReadingTemp[side].annotations = sideAnnotations
+      })
 
       res.redirect(
         `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`

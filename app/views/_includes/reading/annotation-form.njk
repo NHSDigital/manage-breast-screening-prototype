@@ -1,0 +1,108 @@
+{# app/views/_includes/reading/annotation-form.njk #}
+{#
+  Reusable form fields for recording an image reading annotation/finding.
+  Reads from data.imageReadingTemp.annotationTemp.
+  Used by both annotation.html (with images) and annotation-simple.html (without images).
+#}
+
+{% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+
+{% set annotationTemp = data.imageReadingTemp.annotationTemp %}
+
+{% set abnormalityOptions = [
+  {
+    value: "",
+    text: "Select type",
+    disabled: true,
+    selected: true if not annotationTemp.abnormalityType
+  },
+  { value: "Mass well-defined",                  text: "Mass well-defined" },
+  { value: "Mass ill-defined",                   text: "Mass ill-defined" },
+  { value: "Architectural distortion",           text: "Architectural distortion" },
+  { value: "Asymetric density",                  text: "Asymetric density" },
+  { value: "Microcalcification outside a mass",  text: "Microcalcification outside a mass" },
+  { value: "Clinical abnormality",               text: "Clinical abnormality" },
+  { value: "Lymph node abnormality",             text: "Lymph node abnormality" },
+  { value: "Other",                              text: "Other" }
+] %}
+
+{{ select({
+  id: "abnormalityType",
+  name: "imageReadingTemp[annotationTemp][abnormalityType]",
+  value: annotationTemp.abnormalityType,
+  label: {
+    text: "Abnormality type",
+    classes: "nhsuk-label--s"
+  },
+  items: abnormalityOptions
+} | populateErrors) }}
+
+{# Conditional "other details" field — shown via JS when "Other" is selected #}
+<div id="other-details-wrapper" class="{{ 'nhsuk-u-visually-hidden' if annotationTemp.abnormalityType != 'Other' }}">
+  {{ input({
+    id: "otherDetails",
+    name: "imageReadingTemp[annotationTemp][otherDetails]",
+    value: annotationTemp.otherDetails,
+    label: {
+      text: "Provide details",
+      classes: "nhsuk-label--s"
+    },
+    classes: "nhsuk-u-width-two-thirds"
+  } | populateErrors) }}
+</div>
+
+{{ select({
+  id: "levelOfConcern",
+  name: "imageReadingTemp[annotationTemp][levelOfConcern]",
+  value: annotationTemp.levelOfConcern,
+  label: {
+    text: "Level of concern",
+    classes: "nhsuk-label--s"
+  },
+  items: [
+    {
+      value: "",
+      text: "Select level",
+      disabled: true,
+      selected: true if not annotationTemp.levelOfConcern
+    },
+    { value: "5", text: "5 – Highly suspicious" },
+    { value: "4", text: "4 – Suspicious" },
+    { value: "3", text: "3 – Indeterminate" },
+    { value: "2", text: "2 – Benign" },
+    { value: "1", text: "1 – Normal" }
+  ]
+} | populateErrors) }}
+
+{% call appCollapsibleInput({ text: "Add a comment about this abnormality" }) %}
+  {{ input({
+    id: "comment",
+    name: "imageReadingTemp[annotationTemp][comment]",
+    value: annotationTemp.comment,
+    label: {
+      text: "Comment (optional)",
+      classes: "nhsuk-label--s"
+    },
+    classes: "nhsuk-u-width-two-thirds"
+  }) }}
+{% endcall %}
+
+<script>
+  // Show/hide the "other details" field based on the abnormality type select
+  ;(function () {
+    const typeSelect = document.getElementById('abnormalityType')
+    const otherWrapper = document.getElementById('other-details-wrapper')
+
+    if (!typeSelect || !otherWrapper) return
+
+    function updateOtherVisibility() {
+      if (typeSelect.value === 'Other') {
+        otherWrapper.classList.remove('nhsuk-u-visually-hidden')
+      } else {
+        otherWrapper.classList.add('nhsuk-u-visually-hidden')
+      }
+    }
+
+    typeSelect.addEventListener('change', updateOtherVisibility)
+  })()
+</script>

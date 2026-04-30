@@ -1,0 +1,446 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// app/assets/sass/components/_annotate-v2.scss
+// 3-column image annotation tool (v2 prototype)
+
+// ─── Full-width layout override ───────────────────────────────────────────────
+
+body.app-annotate-v2 {
+  main .nhsuk-width-container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .nhsuk-main-wrapper {
+    padding-top: nhsuk-spacing(3);
+    padding-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+// ─── 3-column layout ─────────────────────────────────────────────────────────
+
+.app-ann-v2 {
+  display: flex;
+  align-items: start;
+  border-top: 1px solid nhsuk-colour("grey-4");
+}
+
+// ─── Column 1: thumbnails ─────────────────────────────────────────────────────
+
+.app-ann-v2__thumbs {
+  width: 140px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid nhsuk-colour("grey-4");
+  padding: nhsuk-spacing(2);
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(3);
+}
+
+.app-ann-v2__thumb-group {
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(1);
+}
+
+// Bookmatching: right breast thumbnails right-align, left breast thumbnails left-align
+.app-ann-v2__thumb-group[data-side="right"] {
+  align-items: flex-end;
+
+  .app-ann-v2__thumb img {
+    object-position: right center;
+  }
+}
+
+.app-ann-v2__thumb-group[data-side="left"] {
+  align-items: flex-start;
+
+  .app-ann-v2__thumb img {
+    object-position: left center;
+  }
+}
+
+.app-ann-v2__thumb-label {
+  font-size: 16px;
+  font-weight: 600;
+  padding: nhsuk-spacing(1) 0 0;
+  width: 100%;
+}
+
+.app-ann-v2__thumb {
+  position: relative;
+  cursor: pointer;
+  border: 1px solid nhsuk-colour("grey-3");
+  overflow: hidden;
+  aspect-ratio: 4/5;
+  background: #000;
+  padding: 0;
+  display: block;
+  width: 100%;
+  transition:
+    outline-color 0.1s,
+    opacity 0.1s;
+
+  &.is-active {
+    outline: 3px solid $nhsuk-focus-colour;
+    outline-offset: 0;
+  }
+
+  &.is-inactive {
+    opacity: 0.35;
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 2px;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+  }
+}
+
+.app-ann-v2__thumb-badge {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  background: nhsuk-colour("blue");
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 1px nhsuk-spacing(1);
+  pointer-events: none;
+  line-height: 1.4;
+}
+
+.app-ann-v2__thumb.is-inactive .app-ann-v2__thumb-badge {
+  background: nhsuk-colour("grey-1");
+}
+
+// Left breast: badge top-right (bookmatched)
+.app-ann-v2__thumb-group[data-side="left"] .app-ann-v2__thumb-badge {
+  left: auto;
+  right: 3px;
+}
+
+// ─── Column 2: images ────────────────────────────────────────────────────────
+
+.app-ann-v2__images {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-ann-v2__images-header {
+  display: flex;
+  align-items: center;
+  gap: nhsuk-spacing(4);
+  padding: nhsuk-spacing(3);
+  flex-shrink: 0;
+}
+
+.app-ann-v2__images-title {
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.app-ann-v2__images-hint {
+  font-size: 19px;
+  margin: 0;
+}
+
+.app-ann-v2__images-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: auto;
+  gap: nhsuk-spacing(3);
+  padding: 0 nhsuk-spacing(3) nhsuk-spacing(3);
+
+  // Single image: constrain so it doesn't stretch full width
+  &[data-panel-count="1"] {
+    grid-template-columns: minmax(0, 45%);
+  }
+
+  // Three images: use all three columns
+  &[data-panel-count="3"] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// Image panel: black background container with fixed portrait aspect ratio.
+// Images align to the inner breast edge (bookmatching).
+.app-ann-v2__image-panel {
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+  background: #000;
+  border: 1px solid nhsuk-colour("grey-3");
+  aspect-ratio: 4/5;
+  min-width: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: right top; // right breast: inner edge = right
+    display: block;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+.app-ann-v2__image-panel--left img {
+  object-position: left top; // left breast: inner edge = left
+}
+
+.app-ann-v2__image-panel--no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.app-ann-v2__view-label {
+  position: absolute;
+  top: nhsuk-spacing(1);
+  left: nhsuk-spacing(1);
+  right: auto;
+  background: rgba(0, 94, 184, 0.85);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 2px nhsuk-spacing(2);
+  pointer-events: none;
+}
+
+// Left breast: label top-right (bookmatched)
+.app-ann-v2__image-panel--left .app-ann-v2__view-label {
+  left: auto;
+  right: nhsuk-spacing(1);
+}
+
+.app-ann-v2__no-image {
+  font-size: 19px;
+  border: 2px dashed nhsuk-colour("grey-3");
+  width: 90%;
+  height: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: nhsuk-spacing(2);
+}
+
+// ─── Annotation markers ───────────────────────────────────────────────────────
+// Inactive: blue circle (clear but not prominent)
+// Active: yellow circle + thicker stroke + larger blue badge
+
+.app-ann-marker {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 4px solid nhsuk-colour("blue");
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 3px;
+  }
+
+  &.is-active {
+    border-color: $nhsuk-focus-colour;
+    border-width: 5px;
+  }
+
+  &.dragging {
+    cursor: grabbing;
+    opacity: 0.85;
+  }
+}
+
+// Badge sits top-left outside the circle
+.app-ann-marker__badge {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  min-width: 24px;
+  height: 24px;
+  background: nhsuk-colour("blue");
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+// Active: yellow badge, slightly larger
+.app-ann-marker.is-active .app-ann-marker__badge {
+  background: $nhsuk-focus-colour;
+  color: nhsuk-colour("black");
+  min-width: 28px;
+  height: 28px;
+  font-size: 16px;
+  top: -18px;
+  left: -18px;
+}
+
+// ─── Column 3: sidebar ───────────────────────────────────────────────────────
+
+.app-ann-v2__sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  border-left: 1px solid nhsuk-colour("grey-4");
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.app-ann-v2__sidebar-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(4);
+  padding: 0;
+}
+
+.app-ann-v2__sidebar-heading {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  padding: nhsuk-spacing(3) nhsuk-spacing(3) 0;
+}
+
+.app-ann-v2__breast-section {
+  padding: 0 nhsuk-spacing(3) nhsuk-spacing(3);
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(2);
+}
+
+.app-ann-v2__breast-heading {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0;
+  padding-bottom: nhsuk-spacing(2);
+  border-bottom: 2px solid nhsuk-colour("grey-4");
+}
+
+// Annotation card
+.app-ann-v2__annotation-card {
+  border: 2px solid nhsuk-colour("grey-4");
+  padding: nhsuk-spacing(3);
+  cursor: pointer;
+
+  &:hover {
+    border-color: nhsuk-colour("grey-2");
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 0;
+  }
+
+  &.is-active {
+    border-color: nhsuk-colour("blue");
+    background: nhsuk-tint(nhsuk-colour("blue"), 92%);
+  }
+}
+
+.app-ann-v2__annotation-header {
+  display: flex;
+  align-items: flex-start;
+  gap: nhsuk-spacing(2);
+  margin-bottom: nhsuk-spacing(1);
+}
+
+.app-ann-v2__annotation-number {
+  font-size: 19px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.app-ann-v2__annotation-type {
+  font-size: 19px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.app-ann-v2__annotation-meta {
+  font-size: 19px;
+  margin-bottom: nhsuk-spacing(1);
+}
+
+.app-ann-v2__annotation-positions {
+  font-size: 19px;
+  margin-bottom: nhsuk-spacing(2);
+}
+
+.app-ann-v2__annotation-actions {
+  display: flex;
+  gap: nhsuk-spacing(3);
+  align-items: center;
+  font-size: 19px;
+}
+
+.app-ann-v2__add-annotation-btn {
+  width: 100%;
+}
+
+.app-ann-v2__sidebar-footer {
+  padding: nhsuk-spacing(3);
+  border-top: 1px solid nhsuk-colour("grey-4");
+  flex-shrink: 0;
+
+  .nhsuk-button {
+    margin-bottom: 0;
+  }
+}
+
+.app-ann-v2__empty {
+  font-size: 19px;
+}
+
+// ─── Modal secondary actions ─────────────────────────────────────────────────
+
+.app-ann-modal__secondary-actions {
+  display: flex;
+  gap: nhsuk-spacing(4);
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 19px; // inherit to child app-link-buttons
+}
+
+// Dark mode: active annotation card uses dark blue tint instead of light blue
+.app-dark-mode .app-ann-v2__annotation-card.is-active {
+  background: rgba(52, 141, 224, 0.15);
+}
+
+// Warning link button variant — for destructive actions
+.app-link-button--warning {
+  color: nhsuk-colour("red") !important;
+
+  &:hover {
+    color: nhsuk-shade(nhsuk-colour("red"), 20%) !important;
+  }
+}

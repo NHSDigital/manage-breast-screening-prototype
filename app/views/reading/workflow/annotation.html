@@ -89,139 +89,8 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
-      {# {{ input({
-        id: "location",
-        name: "imageReadingTemp[annotationTemp][location]",
-        value: data.imageReadingTemp.annotationTemp.location,
-        label: {
-          text: "Location",
-          classes: "nhsuk-label--s"
-        },
-        hint: {
-          text: "For example, upper right quadrant"
-        },
-        classes: "nhsuk-u-width-two-thirds"
-      } | populateErrors) }} #}
 
-      {% set checkboxItems = [] %}
-
-      {# {% macro makeCheckboxConditionalItem(params) %}
-        {{ input({
-          name: "imageReadingTemp[annotationTemp][" + params.value + "Details]",
-          value: data.imageReadingTemp.annotationTemp[params.value + "Details"],
-          id: params.value + "Details",
-          label: {
-            text: "Provide details"
-          },
-          classes: "nhsuk-u-width-two-thirds"
-        } | populateErrors) }}
-      {% endmacro %} #}
-
-      {% set abnormalityList = [
-        "Mass well-defined",
-        "Mass ill-defined",
-        "Architectural distortion",
-        "Asymetric density",
-        "Microcalcification outside a mass",
-        "Clinical abnormality",
-        "Lymph node abnormality"
-        ] %}
-
-      {% for abnormality in abnormalityList %}
-        {% set checkboxItems = checkboxItems | push({
-          value: abnormality,
-          text: abnormality
-        }) %}
-      {% endfor %}
-
-      {# conditional: {
-            html: makeCheckboxConditionalItem({value: abnormality | camelCase})
-          } #}
-
-      {% set otherTextInputHtml %}
-        {{ input({
-          name: "imageReadingTemp[annotationTemp][otherDetails]",
-          value: data.imageReadingTemp.annotationTemp.otherDetails,
-          id: "otherDetails",
-          label: {
-            text: "Provide details"
-          },
-          classes: "nhsuk-u-width-two-thirds"
-        } | populateErrors) }}
-      {% endset %}
-
-      {% set checkboxItems = checkboxItems | push({
-        value: "Other",
-        text: "Other",
-        conditional: {
-          html: otherTextInputHtml
-        }
-      }) %}
-
-      {{ checkboxes({
-        idPrefix: "abnormalityType",
-        name: "imageReadingTemp[annotationTemp][abnormalityType]",
-        values: data.imageReadingTemp.annotationTemp.abnormalityType,
-        fieldset: {
-          legend: {
-            text: "Select abnormality type",
-            classes: "nhsuk-fieldset__legend--s",
-            isPageHeading: true
-          }
-        },
-        items: checkboxItems
-      } | populateErrors) }}
-
-      {{ select({
-        id: "levelOfConcern",
-        name: "imageReadingTemp[annotationTemp][levelOfConcern]",
-        value: data.imageReadingTemp.annotationTemp.levelOfConcern,
-        label: {
-          text: "Level of concern",
-          classes: "nhsuk-label--s"
-        },
-        items: [
-          {
-            value: "",
-            text: "Please select",
-            disabled: true,
-            selected: true if not data.imageReadingTemp.annotationTemp.levelOfConcern
-          },
-          {
-            value: "1",
-            text: "1 - Normal"
-          },
-          {
-            value: "2",
-            text: "2 - Benign"
-          },
-          {
-            value: "3",
-            text: "3 - Indeterminate"
-          },
-          {
-            value: "4",
-            text: "4 - Suspicious"
-          },
-          {
-            value: "5",
-            text: "5 - Highly suspicious"
-          }
-        ]
-      } | populateErrors) }}
-
-      {% call appCollapsibleInput({ text: "Add a comment about this abnormality" }) %}
-        {{ input({
-          id: "comment",
-          name: "imageReadingTemp[annotationTemp][comment]",
-          value: data.imageReadingTemp.annotationTemp.comment,
-          label: {
-            text: "Comment about this abnormality (optional)",
-            classes: "nhsuk-label--s"
-          },
-          classes: "nhsuk-u-width-two-thirds"
-        }) }}
-      {% endcall %}
+      {% include "_includes/reading/annotation-form.njk" %}
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
@@ -242,6 +111,7 @@
         }) }}
 
       </div>
+
       {# Only show link if this is a previously saved symptom #}
       {% if annotation.id %}
         {% set deleteHref %}

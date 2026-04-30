@@ -1,0 +1,689 @@
+{# app/views/reading/workflow/annotate-v2.html #}
+{# 3-column annotation tool prototype — click images to place markers, manage annotations in sidebar #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set gridColumn = "none" %}
+{% set bodyClasses = "app-annotate-v2 app-workflow-mode" %}
+
+{% block pageContent %}
+
+  {# Serialise image paths and existing annotations for JS #}
+  {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+  {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+
+  {% set existingLeft = data.imageReadingTemp.left.annotations if data.imageReadingTemp.left else [] %}
+  {% set existingRight = data.imageReadingTemp.right.annotations if data.imageReadingTemp.right else [] %}
+
+  <script>
+    const V2 = {}
+    V2.imagePaths = {{ allPaths | dump | safe }}
+    V2.initialAnnotations = {{ existingLeft | dump | safe }}.concat({{ existingRight | dump | safe }})
+    V2.sessionId = "{{ sessionId }}"
+    V2.eventId = "{{ eventId }}"
+    V2.viewOrder = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
+  </script>
+
+  <div class="app-ann-v2" id="app-ann-v2-root">
+
+    {# Column 1: thumbnails #}
+    <div class="app-ann-v2__thumbs" id="app-ann-v2-thumbs">
+
+      {% set mammogramViewOrder = data.settings.mammogramViewOrder or 'cc-first' %}
+
+      {% set viewGroups = [
+        {
+          label: "Right breast",
+          side: "right",
+          views: [
+            { key: "rcc",  label: "RCC" },
+            { key: "rmlo", label: "RMLO" }
+          ] if mammogramViewOrder == 'cc-first' else [
+            { key: "rmlo", label: "RMLO" },
+            { key: "rcc",  label: "RCC" }
+          ]
+        },
+        {
+          label: "Left breast",
+          side: "left",
+          views: [
+            { key: "lcc",  label: "LCC" },
+            { key: "lmlo", label: "LMLO" }
+          ] if mammogramViewOrder == 'cc-first' else [
+            { key: "lmlo", label: "LMLO" },
+            { key: "lcc",  label: "LCC" }
+          ]
+        }
+      ] %}
+
+      {% for group in viewGroups %}
+        <div class="app-ann-v2__thumb-group" data-side="{{ group.side }}">
+          <div class="app-ann-v2__thumb-label">{{ group.label }}</div>
+
+          {% for view in group.views %}
+            {% set viewPaths = allPaths[view.key] %}
+            {% if viewPaths %}
+              {% if viewPaths is string %}
+                {% set paths = [viewPaths] %}
+              {% else %}
+                {% set paths = viewPaths %}
+              {% endif %}
+              {% for path in paths %}
+                <button
+                  class="app-ann-v2__thumb"
+                  type="button"
+                  data-thumb-side="{{ group.side }}"
+                  data-thumb-view="{{ view.key }}"
+                  aria-label="View {{ view.label }}"
+                >
+                  <img src="{{ path }}" alt="{{ view.label }} view" draggable="false">
+                  <span class="app-ann-v2__thumb-badge">{{ view.label }}</span>
+                </button>
+              {% endfor %}
+            {% else %}
+              <button
+                class="app-ann-v2__thumb is-missing"
+                type="button"
+                data-thumb-side="{{ group.side }}"
+                data-thumb-view="{{ view.key }}"
+                aria-label="{{ view.label }} – no image"
+              >
+                <span class="app-ann-v2__thumb-badge">{{ view.label }}</span>
+              </button>
+            {% endif %}
+          {% endfor %}
+
+        </div>
+      {% endfor %}
+
+    </div>
+
+    {# Column 2: main images — JS-rendered #}
+    <div class="app-ann-v2__images" id="app-ann-v2-images">
+      <div class="app-ann-v2__images-header">
+        <span class="app-ann-v2__images-title" id="images-title">Right breast</span>
+        <span class="app-ann-v2__images-hint" id="images-hint">Click an image to add an annotation</span>
+      </div>
+      <div class="app-ann-v2__images-row" id="images-row">
+        {# Populated by JS #}
+      </div>
+    </div>
+
+    {# Column 3: sidebar — JS-rendered #}
+    <div class="app-ann-v2__sidebar" id="app-ann-v2-sidebar">
+      <div class="app-ann-v2__sidebar-scroll" id="sidebar-scroll">
+        {# Populated by JS — first item will be the h2 heading #}
+      </div>
+      <div class="app-ann-v2__sidebar-footer">
+        <a href="../recall-for-assessment-details" id="ann-save-return" class="nhsuk-button nhsuk-u-margin-bottom-0">
+          Save and return
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  {# Hidden form for persisting all annotations back to session on save #}
+  <form id="ann-save-form" action="./annotate-v2/save" method="POST" style="display:none">
+    <input type="hidden" name="annotationsJson" id="ann-json-field">
+  </form>
+
+  {# Annotation modal — uses the existing app-modal component structure #}
+  <div id="ann-annotation-modal" class="app-modal" hidden>
+    <div class="app-modal__overlay"></div>
+    <div class="app-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="ann-modal-title">
+
+      <button class="app-modal__close" type="button" id="ann-modal-close-x" aria-label="Close">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z"/>
+        </svg>
+      </button>
+
+      <div class="app-modal__content">
+
+        <h2 id="ann-modal-title" class="app-modal__title nhsuk-heading-m">Add annotation</h2>
+
+        <div class="nhsuk-form-group">
+          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-type">Abnormality type</label>
+          <select class="nhsuk-select" id="ann-modal-type">
+            <option value="">Select type</option>
+            <option value="Mass well-defined">Mass well-defined</option>
+            <option value="Mass ill-defined">Mass ill-defined</option>
+            <option value="Architectural distortion">Architectural distortion</option>
+            <option value="Asymetric density">Asymetric density</option>
+            <option value="Microcalcification outside a mass">Microcalcification outside a mass</option>
+            <option value="Clinical abnormality">Clinical abnormality</option>
+            <option value="Lymph node abnormality">Lymph node abnormality</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="nhsuk-form-group" id="ann-modal-other-group" hidden>
+          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-other">Other details</label>
+          <input class="nhsuk-input nhsuk-u-width-two-thirds" type="text" id="ann-modal-other">
+        </div>
+
+        <div class="nhsuk-form-group">
+          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-concern">Level of concern</label>
+          <select class="nhsuk-select" id="ann-modal-concern">
+            <option value="">Select level</option>
+            <option value="5">5 – Highly suspicious</option>
+            <option value="4">4 – Suspicious</option>
+            <option value="3">3 – Indeterminate</option>
+            <option value="2">2 – Benign</option>
+            <option value="1">1 – Normal</option>
+          </select>
+        </div>
+
+        <div class="nhsuk-form-group">
+          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-comment">Comment (optional)</label>
+          <input class="nhsuk-input nhsuk-u-width-two-thirds" type="text" id="ann-modal-comment">
+        </div>
+
+        <div class="nhsuk-button-group nhsuk-u-margin-top-4">
+          {{ button({
+            text: "Add annotation",
+            type: "button",
+            attributes: { id: "ann-modal-save" }
+          }) }}
+          <div class="app-ann-modal__secondary-actions">
+            <button class="app-link-button" type="button" id="ann-modal-cancel">Cancel</button>
+            <button class="app-link-button app-link-button--warning" type="button" id="ann-modal-delete" hidden>Delete annotation</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+
+{% block pageScripts %}
+<script>
+;(function () {
+  // ─── constants ─────────────────────────────────────────────────────────────
+
+  const ccFirst = V2.viewOrder === 'cc-first'
+  const SIDE_VIEWS = {
+    right: ccFirst ? ['rcc', 'rmlo'] : ['rmlo', 'rcc'],
+    left: ccFirst ? ['lcc', 'lmlo'] : ['lmlo', 'lcc']
+  }
+
+  const VIEW_LABELS = { rmlo: 'RMLO', rcc: 'RCC', lmlo: 'LMLO', lcc: 'LCC' }
+
+  // Resolves a view key (including subkeys like 'rcc-1') to a display label
+  function getViewLabel(key) {
+    const parts = key.match(/^([a-z]+)-(\d+)$/)
+    if (parts) {
+      const base = VIEW_LABELS[parts[1]] || parts[1].toUpperCase()
+      const rawPath = V2.imagePaths[parts[1]]
+      const total = rawPath ? (Array.isArray(rawPath) ? rawPath.length : 1) : 1
+      return base + ' (' + parts[2] + '/' + total + ')'
+    }
+    return VIEW_LABELS[key] || key.toUpperCase()
+  }
+
+  const CONCERN_LABELS = {
+    '1': '1 – Normal',
+    '2': '2 – Benign',
+    '3': '3 – Indeterminate',
+    '4': '4 – Suspicious',
+    '5': '5 – Highly suspicious'
+  }
+
+  // ─── state ─────────────────────────────────────────────────────────────────
+
+  let activeSide = 'right'
+  let activeAnnotationId = null
+  let modalAnnotationId = null
+  let annotationCounter = 0
+
+  const annotations = V2.initialAnnotations.map(a => ({ ...a }))
+  annotationCounter = annotations.length
+
+  const getAnnotation = (id) => annotations.find(a => a.id === id)
+  const uid = () => Math.random().toString(36).slice(2, 9)
+
+  // ─── rendering ─────────────────────────────────────────────────────────────
+
+  function renderThumbs() {
+    document.querySelectorAll('[data-thumb-side]').forEach(thumb => {
+      const side = thumb.dataset.thumbSide
+      thumb.classList.toggle('is-active', side === activeSide)
+      thumb.classList.toggle('is-inactive', side !== activeSide)
+    })
+  }
+
+  function renderMainImages() {
+    const viewKeys = SIDE_VIEWS[activeSide]
+    const row = document.getElementById('images-row')
+    const title = document.getElementById('images-title')
+    const hint = document.getElementById('images-hint')
+
+    title.textContent = (activeSide === 'right' ? 'Right' : 'Left') + ' breast'
+    hint.textContent = 'Click an image to add an annotation'
+
+    let html = ''
+    let panelCount = 0
+    viewKeys.forEach(viewKey => {
+      const rawPath = V2.imagePaths[viewKey]
+      const paths = rawPath ? (Array.isArray(rawPath) ? rawPath : [rawPath]) : []
+      panelCount += paths.length > 0 ? paths.length : 1
+    })
+    row.dataset.panelCount = panelCount
+
+    viewKeys.forEach(viewKey => {
+      const rawPath = V2.imagePaths[viewKey]
+      const paths = rawPath ? (Array.isArray(rawPath) ? rawPath : [rawPath]) : []
+
+      if (paths.length === 0) {
+        html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--no-image app-ann-v2__image-panel--' + activeSide + '" data-view="' + viewKey + '">' +
+          '<span class="app-ann-v2__view-label">' + VIEW_LABELS[viewKey] + '</span>' +
+          '<div class="app-ann-v2__no-image">No image</div></div>'
+      } else {
+        paths.forEach((path, idx) => {
+          const subKey = paths.length > 1 ? viewKey + '-' + (idx + 1) : viewKey
+          const label = paths.length > 1 ? VIEW_LABELS[viewKey] + ' (' + (idx + 1) + '/' + paths.length + ')' : VIEW_LABELS[viewKey]
+          html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--' + activeSide + '" data-view="' + subKey + '" data-base-view="' + viewKey + '">' +
+            '<img src="' + path + '" alt="' + label + '" draggable="false">' +
+            '<span class="app-ann-v2__view-label">' + label + '</span>' +
+            '</div>'
+        })
+      }
+    })
+
+    row.innerHTML = html
+
+    row.querySelectorAll('.app-ann-v2__image-panel:not(.app-ann-v2__image-panel--no-image)').forEach(panel => {
+      panel.addEventListener('click', handleImageClick)
+    })
+
+    renderMarkers()
+  }
+
+  function renderMarkers() {
+    const row = document.getElementById('images-row')
+    if (!row) return
+
+    row.querySelectorAll('.app-ann-marker').forEach(m => m.remove())
+
+    const sideAnnotations = annotations.filter(a => a.side === activeSide)
+    const displayIndex = buildDisplayIndices()
+
+    sideAnnotations.forEach(ann => {
+      if (!ann.positions) return
+      const isActive = ann.id === activeAnnotationId
+
+      Object.entries(ann.positions).forEach(([viewKey, pos]) => {
+        const panel = row.querySelector('[data-view="' + viewKey + '"]') ||
+          row.querySelector('[data-base-view="' + viewKey.split('-')[0] + '"]')
+        if (!panel) return
+
+        const marker = document.createElement('div')
+        marker.className = 'app-ann-marker' + (isActive ? ' is-active' : '')
+        marker.style.left = (pos.x <= 1 ? pos.x * 100 : pos.x) + '%'
+        marker.style.top = (pos.y <= 1 ? pos.y * 100 : pos.y) + '%'
+        marker.dataset.annId = ann.id
+        marker.dataset.viewKey = viewKey
+        marker.tabIndex = 0
+        marker.setAttribute('role', 'button')
+        marker.setAttribute('aria-label', 'Annotation ' + (displayIndex[ann.id] || '?'))
+
+        const badge = document.createElement('div')
+        badge.className = 'app-ann-marker__badge'
+        badge.textContent = displayIndex[ann.id] || '?'
+        badge.setAttribute('aria-hidden', 'true')
+        marker.appendChild(badge)
+
+        attachMarkerHandlers(marker)
+        panel.appendChild(marker)
+      })
+    })
+  }
+
+  function attachMarkerHandlers(marker) {
+    // Stop click events on markers from bubbling to the panel
+    // (prevents a click to activate from also triggering handleImageClick)
+    marker.addEventListener('click', function (e) { e.stopPropagation() })
+
+    marker.addEventListener('mousedown', function (e) {
+      e.stopPropagation()
+      const annId = this.dataset.annId
+      const viewKey = this.dataset.viewKey
+      const el = this
+
+      if (activeAnnotationId !== annId) {
+        activeAnnotationId = annId
+        renderMarkers()
+        renderSidebar()
+      }
+
+      let hasDragged = false
+      const startX = e.clientX
+      const startY = e.clientY
+
+      function onMove(moveEvent) {
+        const moved = Math.abs(moveEvent.clientX - startX) > 3 || Math.abs(moveEvent.clientY - startY) > 3
+        if (moved && !hasDragged) {
+          hasDragged = true
+          el.classList.add('dragging')
+        }
+        if (hasDragged) {
+          const panel = el.closest('.app-ann-v2__image-panel')
+          if (!panel) return
+          const rect = panel.getBoundingClientRect()
+          el.style.left = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100)) + '%'
+          el.style.top = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100)) + '%'
+        }
+      }
+
+      function onUp(upEvent) {
+        document.removeEventListener('mousemove', onMove)
+        document.removeEventListener('mouseup', onUp)
+        el.classList.remove('dragging')
+
+        if (hasDragged) {
+          const panel = el.closest('.app-ann-v2__image-panel')
+          if (panel) {
+            const rect = panel.getBoundingClientRect()
+            const x = Math.round(Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width)) * 1000) / 1000
+            const y = Math.round(Math.max(0, Math.min(1, (upEvent.clientY - rect.top) / rect.height)) * 1000) / 1000
+            const ann = getAnnotation(annId)
+            if (ann) {
+              if (!ann.positions) ann.positions = {}
+              ann.positions[viewKey] = { x: x, y: y }
+            }
+          }
+          renderMarkers()
+          renderSidebar()
+        }
+      }
+
+      document.addEventListener('mousemove', onMove)
+      document.addEventListener('mouseup', onUp)
+    })
+
+    marker.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return
+      e.stopPropagation()
+      e.preventDefault()
+      activeAnnotationId = this.dataset.annId
+      renderMarkers()
+      renderSidebar()
+    })
+  }
+
+  function buildDisplayIndices() {
+    const indices = {}
+    let n = 1
+    annotations.filter(a => a.side === 'right').forEach(a => { indices[a.id] = n++ })
+    annotations.filter(a => a.side === 'left').forEach(a => { indices[a.id] = n++ })
+    return indices
+  }
+
+  function renderSidebar() {
+    const scroll = document.getElementById('sidebar-scroll')
+    const displayIndex = buildDisplayIndices()
+
+    let html = '<h2 class="app-ann-v2__sidebar-heading">Annotations</h2>'
+    ;['right', 'left'].forEach(function(side) {
+      const sideAnnotations = annotations.filter(a => a.side === side)
+      const sideLabel = side === 'right' ? 'Right breast' : 'Left breast'
+      html += '<div class="app-ann-v2__breast-section"><h3 class="app-ann-v2__breast-heading">' + sideLabel + '</h3>'
+
+      if (sideAnnotations.length === 0) {
+        html += '<p class="app-ann-v2__empty">No annotations recorded</p>'
+      }
+
+      sideAnnotations.forEach(ann => {
+        const isActive = ann.id === activeAnnotationId
+        const isIncomplete = !ann.abnormalityType && !ann.levelOfConcern
+        let typeLabel = 'Type not set'
+        if (ann.abnormalityType) {
+          typeLabel = (ann.abnormalityType === 'Other' && ann.otherDetails) ? 'Other: ' + ann.otherDetails : ann.abnormalityType
+        }
+        const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
+        const positionViews = ann.positions ? Object.keys(ann.positions).map(v => getViewLabel(v)).join(', ') : ''
+        const positionText = positionViews ? 'Marked on: ' + positionViews : 'No marker placed'
+        const metaParts = [concernLabel].filter(Boolean)
+
+        html += '<div class="app-ann-v2__annotation-card' +
+          (isActive ? ' is-active' : '') +
+          (isIncomplete ? ' is-incomplete' : '') +
+          '" data-ann-id="' + ann.id + '" tabindex="0" role="button"' +
+          ' aria-pressed="' + (isActive ? 'true' : 'false') + '"' +
+          ' aria-label="Annotation ' + (displayIndex[ann.id] || '?') + '">'
+
+        html += '<div class="app-ann-v2__annotation-header">' +
+          '<span class="app-ann-v2__annotation-number">#' + (displayIndex[ann.id] || '?') + '</span>' +
+          '<span class="app-ann-v2__annotation-type">' + typeLabel + '</span>' +
+          '</div>'
+
+        if (metaParts.length) {
+          html += '<p class="app-ann-v2__annotation-meta">' + metaParts.join(' &middot; ') + '</p>'
+        }
+
+        if (ann.comment) {
+          html += '<p class="app-ann-v2__annotation-meta">' + ann.comment + '</p>'
+        }
+
+        html += '<p class="app-ann-v2__annotation-positions">' + positionText + '</p>'
+
+        if (isIncomplete) {
+          html += '<div class="app-ann-v2__annotation-actions"><button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button></div>'
+        } else {
+          html += '<div class="app-ann-v2__annotation-actions"><button class="app-link-button" type="button" data-action="edit" data-ann-id="' + ann.id + '">Edit</button></div>'
+        }
+        html += '</div>'
+      })
+
+      const addBtnText = sideAnnotations.length > 0 ? 'Add another annotation' : 'Add annotation'
+      html += '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small app-ann-v2__add-annotation-btn" type="button" data-action="add-annotation" data-side="' + side + '">' + addBtnText + '</button>'
+      html += '</div>'
+    })
+
+    scroll.innerHTML = html
+  }
+
+  // ─── interaction handlers ───────────────────────────────────────────────────
+
+  function handleThumbClick(event) {
+    const side = event.currentTarget.dataset.thumbSide
+    if (!side || side === activeSide) return
+    activeSide = side
+    activeAnnotationId = null
+    renderThumbs()
+    renderMainImages()
+    renderSidebar()
+  }
+
+  function handleImageClick(event) {
+    const panel = event.currentTarget
+    const viewKey = panel.dataset.view
+    const rect = panel.getBoundingClientRect()
+    const x = Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 1000
+    const y = Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 1000
+
+    if (activeAnnotationId) {
+      const ann = getAnnotation(activeAnnotationId)
+      if (ann && ann.side === activeSide) {
+        if (!ann.positions) ann.positions = {}
+        ann.positions[viewKey] = { x: x, y: y }
+        renderMarkers()
+        renderSidebar()
+        return
+      }
+      activeAnnotationId = null
+    }
+
+    const newId = uid()
+    annotations.push({
+      id: newId,
+      side: activeSide,
+      positions: {},
+      annotationNumber: ++annotationCounter
+    })
+    // Set position after push so we can use the id
+    annotations[annotations.length - 1].positions[viewKey] = { x: x, y: y }
+    activeAnnotationId = newId
+
+    renderMarkers()
+    renderSidebar()
+  }
+
+  // Sidebar event delegation
+  document.getElementById('sidebar-scroll').addEventListener('click', function (e) {
+    const editBtn = e.target.closest('[data-action="edit"]')
+    const addBtn = e.target.closest('[data-action="add-annotation"]')
+    const card = e.target.closest('.app-ann-v2__annotation-card')
+
+    if (editBtn) {
+      e.stopPropagation()
+      openModal(editBtn.dataset.annId)
+      return
+    }
+
+    if (addBtn) {
+      activeAnnotationId = null
+      const side = addBtn.dataset.side
+      if (side !== activeSide) {
+        activeSide = side
+        renderThumbs()
+        renderMainImages()
+      }
+      renderSidebar()
+      return
+    }
+
+    if (card && card.dataset.annId) {
+      const annId = card.dataset.annId
+      if (activeAnnotationId === annId) {
+        activeAnnotationId = null
+      } else {
+        activeAnnotationId = annId
+        const ann = getAnnotation(annId)
+        if (ann && ann.side !== activeSide) {
+          activeSide = ann.side
+          renderThumbs()
+          renderMainImages()
+        }
+      }
+      renderSidebar()
+      renderMarkers()
+    }
+  })
+
+  document.getElementById('sidebar-scroll').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return
+    const card = e.target.closest('.app-ann-v2__annotation-card')
+    if (!card || !card.dataset.annId) return
+    e.preventDefault()
+    activeAnnotationId = activeAnnotationId === card.dataset.annId ? null : card.dataset.annId
+    renderSidebar()
+    renderMarkers()
+  })
+
+  // ─── modal ──────────────────────────────────────────────────────────────────
+
+  const annModal = document.getElementById('ann-annotation-modal')
+
+  function openModal(annId) {
+    modalAnnotationId = annId
+    const ann = getAnnotation(annId)
+    const isIncomplete = !ann || (!ann.abnormalityType && !ann.levelOfConcern)
+
+    document.getElementById('ann-modal-title').textContent = isIncomplete ? 'Add annotation' : 'Update annotation'
+    document.getElementById('ann-modal-save').textContent = isIncomplete ? 'Add annotation' : 'Update annotation'
+    document.getElementById('ann-modal-type').value = ann && ann.abnormalityType ? ann.abnormalityType : ''
+    document.getElementById('ann-modal-other').value = ann && ann.otherDetails ? ann.otherDetails : ''
+    document.getElementById('ann-modal-concern').value = ann && ann.levelOfConcern ? ann.levelOfConcern : ''
+    document.getElementById('ann-modal-comment').value = ann && ann.comment ? ann.comment : ''
+    document.getElementById('ann-modal-other-group').hidden = !(ann && ann.abnormalityType === 'Other')
+    document.getElementById('ann-modal-delete').hidden = false
+
+    annModal.hidden = false
+    annModal.classList.add('app-modal--open')
+    document.getElementById('ann-modal-type').focus()
+  }
+
+  function closeModal() {
+    annModal.hidden = true
+    annModal.classList.remove('app-modal--open')
+    modalAnnotationId = null
+  }
+
+  function saveModal() {
+    if (!modalAnnotationId) return
+    const ann = getAnnotation(modalAnnotationId)
+    if (!ann) return
+
+    ann.abnormalityType = document.getElementById('ann-modal-type').value || null
+    ann.otherDetails = document.getElementById('ann-modal-other').value || null
+    ann.levelOfConcern = document.getElementById('ann-modal-concern').value || null
+    ann.comment = document.getElementById('ann-modal-comment').value || null
+    if (ann.abnormalityType !== 'Other') ann.otherDetails = null
+
+    activeAnnotationId = modalAnnotationId
+
+    closeModal()
+    renderMarkers()
+    renderSidebar()
+    renderMainImages()
+  }
+
+  function deleteModalAnnotation() {
+    if (!modalAnnotationId) return
+    const idx = annotations.findIndex(a => a.id === modalAnnotationId)
+    if (idx !== -1) annotations.splice(idx, 1)
+    if (activeAnnotationId === modalAnnotationId) activeAnnotationId = null
+    closeModal()
+    renderMarkers()
+    renderSidebar()
+    renderMainImages()
+  }
+
+  function cancelModal() {
+    closeModal()
+    renderMarkers()
+    renderSidebar()
+  }
+
+  document.getElementById('ann-modal-type').addEventListener('change', function () {
+    document.getElementById('ann-modal-other-group').hidden = this.value !== 'Other'
+  })
+  document.getElementById('ann-modal-save').addEventListener('click', saveModal)
+  document.getElementById('ann-modal-cancel').addEventListener('click', cancelModal)
+  document.getElementById('ann-modal-delete').addEventListener('click', deleteModalAnnotation)
+  document.getElementById('ann-modal-close-x').addEventListener('click', cancelModal)
+  annModal.querySelector('.app-modal__overlay').addEventListener('click', cancelModal)
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !annModal.hidden) cancelModal()
+  })
+
+  // ─── save ───────────────────────────────────────────────────────────────────
+
+  document.getElementById('ann-save-return').addEventListener('click', function (e) {
+    e.preventDefault()
+    document.getElementById('ann-json-field').value = JSON.stringify(annotations)
+    document.getElementById('ann-save-form').submit()
+  })
+
+  // ─── thumbnail clicks ────────────────────────────────────────────────────────
+
+  document.querySelectorAll('[data-thumb-side]').forEach(function(thumb) {
+    if (thumb.tagName === 'BUTTON') {
+      thumb.addEventListener('click', handleThumbClick)
+    }
+  })
+
+  // ─── init ───────────────────────────────────────────────────────────────────
+
+  renderThumbs()
+  renderMainImages()
+  renderSidebar()
+
+})()
+</script>
+{% endblock pageScripts %}

@@ -1,0 +1,90 @@
+{# app/views/reading/workflow/annotation-simple.html #}
+{# Annotation form without image markers — for recording findings when images are not available #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set annotation = data.imageReadingTemp.annotationTemp %}
+
+{% set side = annotation.side %}
+{% set pageHeading = ("Add" if not annotation.id else "Edit") + " " + side + " breast abnormality" %}
+
+{% set gridColumn = "none" %}
+
+{% set formAction = './annotation-simple/save' %}
+
+{% block pageContent %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+
+      <h1 class="nhsuk-heading-l">
+        {{ pageHeading }}
+      </h1>
+
+      {{ input({
+        id: "location",
+        name: "imageReadingTemp[annotationTemp][location]",
+        value: annotation.location,
+        label: {
+          text: "Location",
+          classes: "nhsuk-label--s"
+        },
+        hint: {
+          text: "Describe the location in the " + side + " breast, for example 'let upper outer quadrant' or 'LUOQ'"
+        },
+        classes: "nhsuk-u-width-two-thirds"
+      } | populateErrors) }}
+
+      {% include "_includes/reading/annotation-form.njk" %}
+
+      <div class="nhsuk-button-group nhsuk-u-margin-top-7">
+        {{ button({
+          text: "Save and close",
+          attributes: {
+            name: "action",
+            value: "save"
+          }
+        }) }}
+
+        {{ button({
+          text: "Save and add another " + side + " breast abnormality",
+          classes: "nhsuk-button--secondary",
+          attributes: {
+            name: "action",
+            value: "save-and-add"
+          }
+        }) }}
+      </div>
+
+      {# Only show link if this is a previously saved annotation #}
+      {% if annotation.id %}
+        {% set deleteHref %}
+          ./annotation/delete/{{ annotation.id }}
+        {% endset %}
+        <p class="nhsuk-u-margin-top-4">
+          <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+            Delete this annotation
+          </a>
+        </p>
+      {% endif %}
+
+      {# Hidden field to preserve the side #}
+      {{ appHiddenInput({
+        name: "side",
+        value: side
+      }) }}
+
+      {# Annotation number for display purposes #}
+      {{ appHiddenInput({
+        name: "annotationNumber",
+        value: annotation.annotationNumber or 1,
+        id: "annotationNumber"
+      }) }}
+
+    </div>
+  </div>
+
+{% endblock %}
