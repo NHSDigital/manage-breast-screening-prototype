@@ -14,7 +14,7 @@
 
 <h2>Option picker</h2>
 
-<p>An inline group of radio (or checkbox) options styled as buttons or tags, replacing a select element with a single-click interaction. No JavaScript required.</p>
+<p>An inline group of radio (or checkbox) options styled as buttons, replacing a select element with a single-click interaction. No JavaScript required.</p>
 
 <p>Under the hood this uses standard <code>&lt;input type="radio"&gt;</code> markup with visually-hidden inputs. The label is styled to look like a button or tag and its selected state is driven by the CSS <code>:checked</code> selector.</p>
 
@@ -129,173 +129,67 @@
 
 <hr>
 
-<h3>Tag variant</h3>
+<h3>Checkbox variant — buttons</h3>
 
-<p>Each option looks like a pill/tag. Selected state fills the tag with brand blue.</p>
+<p>Use <code>type="checkbox"</code> instead of <code>type="radio"</code> to allow multiple selections. The <code>name</code> attribute can be shared or unique per item.</p>
 
 <div class="sg-example">
-  <div class="app-option-picker app-option-picker--tag">
+  <div class="app-option-picker app-option-picker--button">
     <fieldset class="nhsuk-fieldset">
       <legend class="nhsuk-fieldset__legend app-option-picker__legend">
-        Sort order
+        Image views
       </legend>
       <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="tag-sort-asc" name="sort-demo-5" value="asc">
-        <label class="app-option-picker__label" for="tag-sort-asc">Ascending</label>
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-cc" name="views[]" value="cc" checked>
+        <label class="app-option-picker__label" for="cb-btn-cc">CC</label>
 
-        <input class="app-option-picker__input" type="radio" id="tag-sort-desc" name="sort-demo-5" value="desc" checked>
-        <label class="app-option-picker__label" for="tag-sort-desc">Descending</label>
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-mlo" name="views[]" value="mlo" checked>
+        <label class="app-option-picker__label" for="cb-btn-mlo">MLO</label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-mag" name="views[]" value="mag">
+        <label class="app-option-picker__label" for="cb-btn-mag">Mag</label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-special" name="views[]" value="special">
+        <label class="app-option-picker__label" for="cb-btn-special">Special</label>
       </div>
     </fieldset>
   </div>
 </div>
 
-<h3>Tag variant — more options</h3>
+<h3>Checkbox variant — buttons with checkmark</h3>
+
+<p>Add <code>app-option-picker--show-check</code> and include <code>&lt;span class="app-option-picker__check-mark"&gt;</code> inside each label to show a mini checkmark indicator when selected.</p>
 
 <div class="sg-example">
-  <div class="app-option-picker app-option-picker--tag">
+  <div class="app-option-picker app-option-picker--button app-option-picker--show-check">
     <fieldset class="nhsuk-fieldset">
       <legend class="nhsuk-fieldset__legend app-option-picker__legend">
-        Breast side
+        Image views
       </legend>
       <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="tag-side-both" name="sort-demo-6" value="both" checked>
-        <label class="app-option-picker__label" for="tag-side-both">Both</label>
-
-        <input class="app-option-picker__input" type="radio" id="tag-side-left" name="sort-demo-6" value="left">
-        <label class="app-option-picker__label" for="tag-side-left">Left</label>
-
-        <input class="app-option-picker__input" type="radio" id="tag-side-right" name="sort-demo-6" value="right">
-        <label class="app-option-picker__label" for="tag-side-right">Right</label>
-      </div>
-    </fieldset>
-  </div>
-</div>
-
-<h3>Tag variant with radio dot</h3>
-
-<div class="sg-example">
-  <div class="app-option-picker app-option-picker--tag app-option-picker--show-dot">
-    <fieldset class="nhsuk-fieldset">
-      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
-        Time period
-      </legend>
-      <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="tag-period-today" name="sort-demo-7" value="today" checked>
-        <label class="app-option-picker__label" for="tag-period-today">
-          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
-          Today
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-cc" name="views-chk[]" value="cc" checked>
+        <label class="app-option-picker__label" for="cb-chk-cc">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          CC
         </label>
 
-        <input class="app-option-picker__input" type="radio" id="tag-period-week" name="sort-demo-7" value="week">
-        <label class="app-option-picker__label" for="tag-period-week">
-          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
-          This week
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-mlo" name="views-chk[]" value="mlo" checked>
+        <label class="app-option-picker__label" for="cb-chk-mlo">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          MLO
         </label>
 
-        <input class="app-option-picker__input" type="radio" id="tag-period-month" name="sort-demo-7" value="month">
-        <label class="app-option-picker__label" for="tag-period-month">
-          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
-          This month
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-mag" name="views-chk[]" value="mag">
+        <label class="app-option-picker__label" for="cb-chk-mag">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          Mag
         </label>
 
-        <input class="app-option-picker__input" type="radio" id="tag-period-all" name="sort-demo-7" value="all">
-        <label class="app-option-picker__label" for="tag-period-all">
-          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
-          All time
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-special" name="views-chk[]" value="special">
+        <label class="app-option-picker__label" for="cb-chk-special">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          Special
         </label>
-      </div>
-    </fieldset>
-  </div>
-</div>
-
-<h3>Tag variant — small</h3>
-
-<div class="sg-example">
-  <div class="app-option-picker app-option-picker--tag app-option-picker--small">
-    <fieldset class="nhsuk-fieldset">
-      <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s app-option-picker__legend">
-        Status
-      </legend>
-      <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="tag-small-active" name="sort-demo-8" value="active" checked>
-        <label class="app-option-picker__label" for="tag-small-active">Active</label>
-
-        <input class="app-option-picker__input" type="radio" id="tag-small-closed" name="sort-demo-8" value="closed">
-        <label class="app-option-picker__label" for="tag-small-closed">Closed</label>
-
-        <input class="app-option-picker__input" type="radio" id="tag-small-pending" name="sort-demo-8" value="pending">
-        <label class="app-option-picker__label" for="tag-small-pending">Pending</label>
-      </div>
-    </fieldset>
-  </div>
-</div>
-
-<hr>
-
-<h3>Button variant — joined</h3>
-
-<p>Add <code>app-option-picker--joined</code> to remove the gap between options. Internal corners lose their radius; only the outer corners are rounded. Borders are shared rather than doubled.</p>
-
-<div class="sg-example">
-  <div class="app-option-picker app-option-picker--button app-option-picker--joined">
-    <fieldset class="nhsuk-fieldset">
-      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
-        Sort order
-      </legend>
-      <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="joined-sort-asc" name="sort-demo-9" value="asc">
-        <label class="app-option-picker__label" for="joined-sort-asc">Ascending</label>
-
-        <input class="app-option-picker__input" type="radio" id="joined-sort-desc" name="sort-demo-9" value="desc" checked>
-        <label class="app-option-picker__label" for="joined-sort-desc">Descending</label>
-      </div>
-    </fieldset>
-  </div>
-</div>
-
-<h3>Button variant — joined, more options</h3>
-
-<div class="sg-example">
-  <div class="app-option-picker app-option-picker--button app-option-picker--joined">
-    <fieldset class="nhsuk-fieldset">
-      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
-        Image status
-      </legend>
-      <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="joined-status-all" name="sort-demo-10" value="all" checked>
-        <label class="app-option-picker__label" for="joined-status-all">All</label>
-
-        <input class="app-option-picker__input" type="radio" id="joined-status-unread" name="sort-demo-10" value="unread">
-        <label class="app-option-picker__label" for="joined-status-unread">Unread</label>
-
-        <input class="app-option-picker__input" type="radio" id="joined-status-read" name="sort-demo-10" value="read">
-        <label class="app-option-picker__label" for="joined-status-read">Read</label>
-
-        <input class="app-option-picker__input" type="radio" id="joined-status-arbitrated" name="sort-demo-10" value="arbitrated">
-        <label class="app-option-picker__label" for="joined-status-arbitrated">Arbitrated</label>
-      </div>
-    </fieldset>
-  </div>
-</div>
-
-<h3>Tag variant — joined</h3>
-
-<div class="sg-example">
-  <div class="app-option-picker app-option-picker--tag app-option-picker--joined">
-    <fieldset class="nhsuk-fieldset">
-      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
-        Breast side
-      </legend>
-      <div class="app-option-picker__items">
-        <input class="app-option-picker__input" type="radio" id="joined-tag-both" name="sort-demo-11" value="both" checked>
-        <label class="app-option-picker__label" for="joined-tag-both">Both</label>
-
-        <input class="app-option-picker__input" type="radio" id="joined-tag-left" name="sort-demo-11" value="left">
-        <label class="app-option-picker__label" for="joined-tag-left">Left</label>
-
-        <input class="app-option-picker__input" type="radio" id="joined-tag-right" name="sort-demo-11" value="right">
-        <label class="app-option-picker__label" for="joined-tag-right">Right</label>
       </div>
     </fieldset>
   </div>
