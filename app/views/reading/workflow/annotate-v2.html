@@ -74,7 +74,7 @@
                 {% set paths = viewPaths %}
               {% endif %}
               {% for path in paths %}
-                <span class="app-ann-v2__tab-thumb" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
+                <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--{{ group.side }}" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
                   <img src="{{ path }}" alt="{{ view.label }}" draggable="false">
                 </span>
               {% endfor %}
@@ -819,6 +819,7 @@
     activeAnnotationId = modalAnnotationId
 
     closeModal()
+    renderThumbs()
     renderMarkers()
     renderSidebar()
     renderMainImages()
@@ -830,6 +831,7 @@
     if (idx !== -1) annotations.splice(idx, 1)
     if (activeAnnotationId === modalAnnotationId) activeAnnotationId = null
     closeModal()
+    renderThumbs()
     renderMarkers()
     renderSidebar()
     renderMainImages()

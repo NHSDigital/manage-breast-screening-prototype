@@ -24,7 +24,7 @@ body.app-annotate-v2 {
 .app-ann-v2__tab-bar {
   display: flex;
   align-items: flex-end;
-  padding-top: nhsuk-spacing(1); // 4px — space for active tab to protrude into above inactive tabs
+  padding-top: nhsuk-spacing(1); // 4px — space for active tab to protrude above inactive tabs
   border-bottom: 1px solid $nhsuk-border-colour;
 }
 
@@ -84,13 +84,9 @@ body.app-annotate-v2 {
 
 // Tab label: looks like a link
 .app-ann-v2__tab-label {
-  font-size: 19px;
+  @include nhsuk-font($size: 19); // responsive: 16px mobile, 19px tablet+
   white-space: nowrap;
   text-decoration: underline;
-}
-
-.app-ann-v2__tab.is-active .app-ann-v2__tab-label {
-  text-decoration: none;
 }
 
 // ─── Tab panel: bordered white box containing images + sidebar ────────────────
@@ -99,7 +95,7 @@ body.app-annotate-v2 {
   border: 1px solid $nhsuk-border-colour;
   border-top: 0;
   background: nhsuk-colour("white");
-  padding: nhsuk-spacing(4);
+  @include nhsuk-responsive-padding(4); // 16px mobile, 24px tablet+
 }
 
 // ─── 2-column layout (images + sidebar) ──────────────────────────────────────
@@ -129,7 +125,8 @@ body.app-annotate-v2 {
 
 .app-ann-v2__tab-thumb {
   position: relative;
-  display: block;
+  display: flex;
+  align-items: flex-start;
   width: 56px;
   aspect-ratio: 4/5;
   background: #000;
@@ -141,9 +138,15 @@ body.app-annotate-v2 {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    object-position: right top; // right breast: inner (medial) edge aligns right
     display: block;
     pointer-events: none;
   }
+}
+
+// Left breast: image aligns to left (inner) edge
+.app-ann-v2__tab-thumb--left img {
+  object-position: left top;
 }
 
 .app-ann-v2__tab-thumb--missing {
@@ -152,8 +155,18 @@ body.app-annotate-v2 {
   justify-content: center;
 }
 
-// Responsive: stack columns below desktop breakpoint
+// Responsive: below desktop (769px) — tabs resize to fill the bar equally, thumbnails shrink slightly
 @include mq($until: desktop) {
+  // Each tab takes half the tab bar; tabs resize instead of overflowing or wrapping
+  .app-ann-v2__tab {
+    flex: 1;
+  }
+
+  // Thumbnails scale down to fit the reduced tab width
+  .app-ann-v2__tab-thumb {
+    width: 40px;
+  }
+
   .app-ann-v2 {
     flex-direction: column;
   }
@@ -165,13 +178,26 @@ body.app-annotate-v2 {
   }
 
   .app-ann-v2__sidebar {
+    // Reset to plain block so sidebar content flows into the page and the page scrolls
+    display: block;
     position: static;
     max-height: none;
     overflow: visible;
+    height: auto;
   }
 
   .app-ann-v2__sidebar-scroll {
+    // Remove flex sizing so content flows rather than being scroll-clipped
+    flex: none;
+    height: auto;
     overflow: visible;
+  }
+}
+
+// Responsive: below tablet (641px) — hide thumbnails
+@include mq($until: tablet) {
+  .app-ann-v2__tab-thumbs {
+    display: none;
   }
 }
 
@@ -207,7 +233,11 @@ body.app-annotate-v2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: auto;
-  gap: nhsuk-spacing(4);
+  gap: nhsuk-spacing(3); // 16px mobile — matches nhsuk-responsive-padding(4)
+
+  @include mq($from: tablet) {
+    gap: nhsuk-spacing(4); // 24px tablet+ — matches nhsuk-responsive-padding(4)
+  }
 
   // Single image: constrain so it doesn't stretch full width
   &[data-panel-count="1"] {
@@ -436,7 +466,7 @@ body.app-annotate-v2 {
 .app-ann-v2__sidebar {
   flex: 1 1 0;
   min-width: 0;
-  overflow: hidden;
+  // overflow: hidden;
   display: flex;
   flex-direction: column;
   position: sticky;
@@ -447,12 +477,16 @@ body.app-annotate-v2 {
 .app-ann-v2__sidebar-scroll {
   display: flex;
   flex-direction: column;
-  gap: nhsuk-spacing(4);
+  gap: nhsuk-spacing(3); // 16px mobile — matches nhsuk-responsive-padding(4)
   // Horizontal padding gives card focus outlines room to paint without being clipped
   padding: 0 $nhsuk-focus-width;
   min-width: 0;
   flex: 1;
   overflow-y: auto;
+
+  @include mq($from: tablet) {
+    gap: nhsuk-spacing(4); // 24px tablet+
+  }
 }
 
 .app-ann-v2__sidebar-heading {
