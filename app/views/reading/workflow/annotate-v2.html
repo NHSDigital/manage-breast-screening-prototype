@@ -513,7 +513,10 @@
         }
 
         if (isIncomplete) {
-          html += '<div class="app-ann-v2__annotation-actions"><button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button></div>'
+          html += '<div class="app-ann-v2__annotation-actions">' +
+            '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button>' +
+            '<button class="app-link-button app-link-button--warning" type="button" data-action="delete-annotation" data-ann-id="' + ann.id + '">Remove</button>' +
+            '</div>'
         } else {
           html += '<div class="app-ann-v2__annotation-actions"><button class="app-link-button" type="button" data-action="edit" data-ann-id="' + ann.id + '">Edit</button></div>'
         }
@@ -659,6 +662,18 @@
     if (editBtn) {
       e.stopPropagation()
       openModal(editBtn.dataset.annId)
+      return
+    }
+
+    const deleteBtn = e.target.closest('[data-action="delete-annotation"]')
+    if (deleteBtn) {
+      e.stopPropagation()
+      const annId = deleteBtn.dataset.annId
+      const idx = annotations.findIndex(a => a.id === annId)
+      if (idx !== -1) annotations.splice(idx, 1)
+      if (activeAnnotationId === annId) activeAnnotationId = null
+      renderMarkers()
+      renderSidebar()
       return
     }
 
