@@ -1,6 +1,8 @@
 {# /app/views/reading/recall-for-assessment-details.html #}
 
-{% extends 'layout-reading.html' %}
+{% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+
+{% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading = "Recall for assessment" %}
 
@@ -22,6 +24,12 @@
         classes: "nhsuk-button--secondary",
         href: "./annotation/add?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
       }) }}
+
+      <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+        <a href="./annotation/add?side={{ params.side }}&simple=true" class="nhsuk-link nhsuk-link--no-visited-state">
+          Add abnormality without images
+        </a>
+      </p>
 
     {% endset %}
 
@@ -54,15 +62,21 @@
       ] | removeEmpty
     }) }}
 
-    {{ input({
-      name: "imageReadingTemp[" + params.side + "][comment]",
-      value: data.imageReadingTemp[params.side].comment,
-      label: {
-        text: Side + " breast comment (optional)",
-        classes: "nhsuk-label--s"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
+    {% call appCollapsibleInput({ text: "Add " + params.side + " breast comment" }) %}
+      {{ input({
+        name: "imageReadingTemp[" + params.side + "][comment]",
+        value: data.imageReadingTemp[params.side].comment,
+        label: {
+          text: Side + " breast comment (optional)",
+          classes: "nhsuk-label--s"
+        },
+        classes: "",
+        formGroup: {
+          _comment: "Remove bottom margin as input inside card",
+          classes: "nhsuk-u-margin-bottom-0"
+        }
+      }) }}
+    {% endcall %}
 
     {% if (data.imageReadingTemp[params.side].annotations | default([])) | length > 0 %}
 
@@ -139,6 +153,16 @@
         text: "Continue"
       }) }}
 
+    </div>
+  </div>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <p class="nhsuk-body-s nhsuk-u-color-secondary">
+        <a href="./annotate-v2" class="nhsuk-link nhsuk-link--no-visited-state">
+          Try the new annotation tool (prototype)
+        </a>
+      </p>
     </div>
   </div>
 

@@ -26,6 +26,7 @@ const {
 const { getShortName } = require('../lib/utils/participants')
 const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
+const { modalBreakout } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
@@ -382,98 +383,104 @@ module.exports = (router) => {
   })
 
   // Middleware to make sure pages have the right data
-  router.use('/reading/session/:sessionId/events/:eventId', (req, res, next) => {
-    const data = req.session.data
-    const { sessionId, eventId } = req.params
-    const currentUserId = data.currentUser?.id
+  router.use(
+    '/reading/session/:sessionId/events/:eventId',
+    (req, res, next) => {
+      const data = req.session.data
+      const { sessionId, eventId } = req.params
+      const currentUserId = data.currentUser?.id
 
-    // Get the batch
-    const session = getReadingSession(data, sessionId)
-    if (!session) {
-      // req.flash('error', 'Session not found')
-      console.log('Session not found')
-      return res.redirect('/reading')
-    }
+      // Get the batch
+      const session = getReadingSession(data, sessionId)
+      if (!session) {
+        // req.flash('error', 'Session not found')
+        console.log('Session not found')
+        return res.redirect('/reading')
+      }
 
-    // Check if event exists in this session
-    if (!session.eventIds.includes(eventId)) {
-      // req.flash('error', 'Event not found in this session')
-      console.log(`Event ${sessionId} not found in this session`)
-      return res.redirect(`/reading/session/${sessionId}`)
-    }
+      // Check if event exists in this session
+      if (!session.eventIds.includes(eventId)) {
+        // req.flash('error', 'Event not found in this session')
+        console.log(`Event ${sessionId} not found in this session`)
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
 
-    // Get the event data
-    const event = data.events.find((e) => e.id === eventId)
-    if (!event) {
-      // req.flash('error', 'Event not found')
-      console.log(`Event ${eventId} not found`)
-      return res.redirect(`/reading/session/${sessionId}`)
-    }
+      // Get the event data
+      const event = data.events.find((e) => e.id === eventId)
+      if (!event) {
+        // req.flash('error', 'Event not found')
+        console.log(`Event ${eventId} not found`)
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
 
-    // Get participant and clinic data
-    const participant = data.participants.find(
-      (p) => p.id === event.participantId
-    )
-    const clinic = data.clinics.find((c) => c.id === event.clinicId)
-    const unit = data.breastScreeningUnits.find(
-      (u) => u.id === clinic.breastScreeningUnitId
-    )
-    const location = unit.locations.find((l) => l.id === clinic.locationId)
+      // Get participant and clinic data
+      const participant = data.participants.find(
+        (p) => p.id === event.participantId
+      )
+      const clinic = data.clinics.find((c) => c.id === event.clinicId)
+      const unit = data.breastScreeningUnits.find(
+        (u) => u.id === clinic.breastScreeningUnitId
+      )
+      const location = unit.locations.find((l) => l.id === clinic.locationId)
 
-    // Get reading progress for this session
-    const progress = getSessionReadingProgress(data, sessionId, eventId)
+      // Get reading progress for this session
+      const progress = getSessionReadingProgress(data, sessionId, eventId)
 
-    // Initialise or update imageReadingTemp for this event
-    // Only do this on GET requests - POST requests should preserve form data
-    if (req.method === 'GET') {
-      if (!data.imageReadingTemp || data.imageReadingTemp.eventId !== eventId) {
-        const existingRead = event.imageReading?.reads?.[currentUserId]
-        if (existingRead) {
-          // User has already read this event - populate temp from saved read
-          console.log(
-            `Loading existing read for event ${eventId} into imageReadingTemp`
-          )
-          data.imageReadingTemp = {
-            eventId: eventId,
-            ...existingRead
+      // Initialise or update imageReadingTemp for this event
+      // Only do this on GET requests - POST requests should preserve form data
+      if (req.method === 'GET') {
+        if (
+          !data.imageReadingTemp ||
+          data.imageReadingTemp.eventId !== eventId
+        ) {
+          const existingRead = event.imageReading?.reads?.[currentUserId]
+          if (existingRead) {
+            // User has already read this event - populate temp from saved read
+            console.log(
+              `Loading existing read for event ${eventId} into imageReadingTemp`
+            )
+            data.imageReadingTemp = {
+              eventId: eventId,
+              ...existingRead
+            }
+          } else {
+            // No existing read - initialise empty temp with eventId
+            console.log(`Initialising imageReadingTemp for event ${eventId}`)
+            data.imageReadingTemp = { eventId: eventId }
           }
-        } else {
-          // No existing read - initialise empty temp with eventId
-          console.log(`Initialising imageReadingTemp for event ${eventId}`)
-          data.imageReadingTemp = { eventId: eventId }
+          // Update res.locals.data to reflect the change (it was set before this middleware)
+          res.locals.data.imageReadingTemp = data.imageReadingTemp
         }
-        // Update res.locals.data to reflect the change (it was set before this middleware)
-        res.locals.data.imageReadingTemp = data.imageReadingTemp
+
+        // Pass along opinion banner and remove from session
+        // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
+        // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
+        if (
+          (req.path.endsWith('/opinion') ||
+            req.path.endsWith('/existing-read')) &&
+          data.readingOpinionBanner
+        ) {
+          res.locals.readingOpinionBanner = data.readingOpinionBanner
+          delete data.readingOpinionBanner
+        }
       }
 
-      // Pass along opinion banner and remove from session
-      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
-      // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
-      if (
-        (req.path.endsWith('/opinion') ||
-          req.path.endsWith('/existing-read')) &&
-        data.readingOpinionBanner
-      ) {
-        res.locals.readingOpinionBanner = data.readingOpinionBanner
-        delete data.readingOpinionBanner
-      }
+      // Set up locals for templates
+      res.locals.isReadingWorkflow = true
+      res.locals.session = session
+      res.locals.eventData = { clinic, event, participant, unit, location }
+      res.locals.clinic = clinic
+      res.locals.event = event
+      res.locals.participant = participant
+      res.locals.unit = unit
+      res.locals.location = location
+      res.locals.sessionId = sessionId
+      res.locals.eventId = eventId
+      res.locals.progress = progress
+
+      next()
     }
-
-    // Set up locals for templates
-    res.locals.isReadingWorkflow = true
-    res.locals.session = session
-    res.locals.eventData = { clinic, event, participant, unit, location }
-    res.locals.clinic = clinic
-    res.locals.event = event
-    res.locals.participant = participant
-    res.locals.unit = unit
-    res.locals.location = location
-    res.locals.sessionId = sessionId
-    res.locals.eventId = eventId
-    res.locals.progress = progress
-
-    next()
-  })
+  )
 
   // Route for event reading within a batch
   // Redirects to existing-read if user has already read, otherwise to opinion
@@ -605,7 +612,9 @@ module.exports = (router) => {
           participantName: `${shortName}`,
           editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
-        res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+        res.redirect(
+          `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+        )
       } else if (session.skippedEvents.length > 0) {
         res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
@@ -663,12 +672,15 @@ module.exports = (router) => {
         'technical-recall',
         'recall-for-assessment-details',
         'annotation',
+        'annotation-simple',
+        'annotate-v2',
         'confirm-abnormal',
         'recommended-assessment',
         'review',
         'existing-read',
         'compare',
-        'request-priors'
+        'request-priors',
+        'medical-information'
       ]
 
       if (workflowSteps.includes(step)) {
@@ -714,8 +726,11 @@ module.exports = (router) => {
         annotationNumber: annotationNumber
       }
 
+      // Redirect to simple (no-image) view when requested
+      const target =
+        req.query.simple === 'true' ? 'annotation-simple' : 'annotation'
       res.redirect(
-        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/annotation`
+        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/${target}`
       )
     }
   )
@@ -753,7 +768,10 @@ module.exports = (router) => {
         }
       }
 
-      res.redirect(`/reading/session/${sessionId}/events/${eventId}/annotation`)
+      // Simple annotations have no positions — redirect to the simple form
+      const isSimple = !annotation?.positions || Object.keys(annotation.positions || {}).length === 0
+      const editTarget = isSimple ? 'annotation-simple' : 'annotation'
+      res.redirect(`/reading/session/${sessionId}/events/${eventId}/${editTarget}`)
     }
   )
 
@@ -1017,6 +1035,149 @@ module.exports = (router) => {
     }
   )
 
+  // Save annotation without image markers
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/annotation-simple/save',
+    (req, res) => {
+      const { sessionId, eventId } = req.params
+      const data = req.session.data
+      const action = req.body.action || 'save'
+
+      const annotationTemp = data.imageReadingTemp?.annotationTemp
+
+      if (!annotationTemp) {
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
+      }
+
+      // Validate required fields (no position validation for this route)
+      const errors = []
+
+      if (!annotationTemp.location || annotationTemp.location.trim() === '') {
+        errors.push({
+          text: 'Enter a location for the abnormality',
+          name: 'imageReadingTemp[annotationTemp][location]',
+          href: '#location'
+        })
+      }
+
+      if (
+        !annotationTemp.abnormalityType ||
+        annotationTemp.abnormalityType.length === 0
+      ) {
+        errors.push({
+          text: 'Select an abnormality type',
+          name: 'imageReadingTemp[annotationTemp][abnormalityType]',
+          href: '#abnormalityType'
+        })
+      }
+
+      if (!annotationTemp.levelOfConcern) {
+        errors.push({
+          text: 'Select a level of concern',
+          name: 'imageReadingTemp[annotationTemp][levelOfConcern]',
+          href: '#levelOfConcern'
+        })
+      }
+
+      if (
+        annotationTemp.abnormalityType === 'Other' &&
+        (!annotationTemp.otherDetails ||
+          annotationTemp.otherDetails.trim() === '')
+      ) {
+        errors.push({
+          text: 'Provide details for other abnormality type',
+          name: 'imageReadingTemp[annotationTemp][otherDetails]',
+          href: '#otherDetails'
+        })
+      }
+
+      if (errors.length > 0) {
+        errors.forEach((error) => req.flash('error', error))
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/annotation-simple`
+        )
+      }
+
+      const side = annotationTemp.side
+      if (!side) {
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
+      }
+
+      if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
+      if (!data.imageReadingTemp[side].annotations)
+        data.imageReadingTemp[side].annotations = []
+
+      const annotation = {
+        id: annotationTemp.id || generateId(),
+        side,
+        location: annotationTemp.location || null,
+        abnormalityType: annotationTemp.abnormalityType,
+        levelOfConcern: annotationTemp.levelOfConcern,
+        comment: annotationTemp.comment || null,
+        positions: null,
+        ...Object.keys(annotationTemp)
+          .filter((key) => key.endsWith('Details'))
+          .reduce((acc, key) => {
+            acc[key] = annotationTemp[key]
+            return acc
+          }, {})
+      }
+
+      const existingIndex = data.imageReadingTemp[side].annotations.findIndex(
+        (a) => a.id === annotation.id
+      )
+      if (existingIndex !== -1) {
+        data.imageReadingTemp[side].annotations[existingIndex] = annotation
+      } else {
+        data.imageReadingTemp[side].annotations.push(annotation)
+      }
+
+      delete data.imageReadingTemp.annotationTemp
+
+      if (action === 'save-and-add') {
+        res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}&simple=true`
+        )
+      } else {
+        res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
+      }
+    }
+  )
+
+  // Save all annotations from the v2 3-column annotation tool
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/annotate-v2/save',
+    (req, res) => {
+      const { sessionId, eventId } = req.params
+      const data = req.session.data
+
+      let allAnnotations = []
+      try {
+        allAnnotations = JSON.parse(req.body.annotationsJson || '[]')
+      } catch (e) {
+        console.warn('annotate-v2/save: failed to parse annotationsJson', e)
+      }
+
+      // Split annotations by side and write to imageReadingTemp
+      ;['left', 'right'].forEach((side) => {
+        const sideAnnotations = allAnnotations.filter((a) => a.side === side)
+        if (!data.imageReadingTemp) data.imageReadingTemp = {}
+        if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
+        data.imageReadingTemp[side].annotations = sideAnnotations
+      })
+
+      res.redirect(
+        `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+      )
+    }
+  )
+
   // Annotations end
 
   // Handle technical recall form submission
@@ -1059,7 +1220,10 @@ module.exports = (router) => {
         views: cleanViews
       }
 
+      // 307 preserves POST method so opinion-details-complete can 307 to save-opinion
+      // if the confirm-technical-recall setting is off
       res.redirect(
+        307,
         `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
       )
     }
@@ -1096,7 +1260,9 @@ module.exports = (router) => {
       // Route based on opinion type
       switch (opinion) {
         case 'normal':
-          if (data.settings?.reading?.confirmNormal === 'true') {
+          // opinion-details-complete is only reached for normal when the user
+          // went through the normal-details page, so use confirmNormalWithDetails
+          if (data.settings?.reading?.confirmNormalWithDetails === 'true') {
             return res.redirect(
               `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
             )
@@ -1106,7 +1272,25 @@ module.exports = (router) => {
             `/reading/session/${sessionId}/events/${eventId}/save-opinion`
           )
         case 'technical_recall':
+          if (data.settings?.reading?.confirmTechnicalRecall !== 'false') {
+            return res.redirect(
+              `/reading/session/${sessionId}/events/${eventId}/review`
+            )
+          }
+          return res.redirect(
+            307,
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+          )
         case 'recall_for_assessment':
+          if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
+            return res.redirect(
+              `/reading/session/${sessionId}/events/${eventId}/review`
+            )
+          }
+          return res.redirect(
+            307,
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+          )
         default:
           return res.redirect(
             `/reading/session/${sessionId}/events/${eventId}/review`
@@ -1190,11 +1374,17 @@ module.exports = (router) => {
 
       // Redirect to next unread event or end-of-session page
       if (nextUnreadEvent) {
-        res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+        res.redirect(
+          modalBreakout(
+            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+          )
+        )
       } else if (session.skippedEvents.length > 0) {
-        res.redirect(`/reading/session/${sessionId}/skipped-review`)
+        res.redirect(
+          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
+        )
       } else {
-        res.redirect(`/reading/session/${sessionId}`)
+        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
       }
     }
   )
@@ -1403,9 +1593,12 @@ module.exports = (router) => {
         (opinion === 'normal' && temp?.normalDetails)
 
       if (hasExistingDetails) {
-        // Skip to review - we already have details
+        // Route through opinion-details-complete to respect settings.
+        // Using 307 preserves POST so save-opinion can be reached directly if needed.
+        // This also fixes the bug where normal+normalDetails was sent to /review.
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/review`
+          307,
+          `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
         )
       }
 
@@ -1487,9 +1680,7 @@ module.exports = (router) => {
           // Get batch ID if available
           let sessionId = null
           if (data.readingSessions) {
-            for (const [id, session] of Object.entries(
-              data.readingSessions
-            )) {
+            for (const [id, session] of Object.entries(data.readingSessions)) {
               if (session.eventIds.includes(event.id)) {
                 sessionId = id
                 break

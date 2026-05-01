@@ -120,7 +120,7 @@
           href: "./normal-details",
           text: "Change",
           visuallyHiddenText: "details"
-        }
+        } | openInModal
       ]
     } if allowEdits
   }) %}
@@ -157,7 +157,7 @@
             href: "./technical-recall",
             text: "Change",
             visuallyHiddenText: "views"
-          }
+          } | openInModal
         ]
       } if allowEdits
     }) %}
@@ -211,7 +211,7 @@
             href: "./recall-for-assessment-details",
             text: "Change",
             visuallyHiddenText: "detailed opinion"
-          }
+          } | openInModal
         ]
       } if allowEdits
     }) %}
@@ -232,7 +232,7 @@
             href: "./recall-for-assessment-details",
             text: "Change",
             visuallyHiddenText: "annotations"
-          }
+          } | openInModal
         ]
       } if allowEdits
     }) %}
@@ -256,4 +256,4 @@
 
 {{ summaryList({
   rows: rows | removeLastRowBorder
-}  | handleSummaryListMissingInformation) }}
+} | handleSummaryListMissingInformation) }}

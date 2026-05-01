@@ -1,0 +1,151 @@
+// app/assets/sass/components/_autocomplete.scss
+// Styles for the accessible-autocomplete component, adapted from
+// https://github.com/NHSDigital/manage-vaccinations-in-schools-prototype
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+.app-autocomplete__wrapper {
+  position: relative;
+}
+
+.app-autocomplete__input {
+  position: relative;
+}
+
+.app-autocomplete__input--focused {
+  @include nhsuk-focused-input;
+}
+
+.app-autocomplete__input--show-all-values {
+  padding: nhsuk-spacing(1) nhsuk-spacing(5) nhsuk-spacing(1) nhsuk-spacing(1);
+  cursor: pointer;
+}
+
+.app-autocomplete__hint {
+  position: absolute;
+  color: $nhsuk-secondary-text-colour;
+}
+
+.app-autocomplete__dropdown-arrow-down {
+  display: inline-block;
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: nhsuk-spacing(2);
+  width: nhsuk-spacing(4);
+  height: nhsuk-spacing(4);
+}
+
+.app-autocomplete__menu {
+  position: relative;
+  width: 100%;
+  width: calc(100% - #{$nhsuk-border-width-form-element * 2});
+  max-height: 342px;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  border: $nhsuk-border-width-form-element solid $nhsuk-input-border-colour;
+  border-top: 0;
+  color: $nhsuk-text-colour;
+  background-color: $nhsuk-input-background-colour;
+}
+
+.app-autocomplete__menu--visible {
+  display: block;
+}
+
+.app-autocomplete__menu--hidden {
+  display: none;
+}
+
+.app-autocomplete__menu--overlay {
+  position: absolute;
+  z-index: 100;
+  top: 100%;
+  left: 0;
+  box-shadow: rgba(0, 0, 0, 0.25) 0 2px 6px;
+}
+
+.app-autocomplete__menu--inline {
+  position: relative;
+}
+
+.app-autocomplete__option {
+  display: block;
+  position: relative;
+  margin: 0;
+  padding: nhsuk-spacing(1);
+  border-bottom: solid $nhsuk-border-colour;
+  border-width: 1px 0;
+  cursor: pointer;
+
+  @include nhsuk-font(19);
+}
+
+// Hint text shown on a second line beneath the option name
+.app-autocomplete__option-hint {
+  display: block;
+  color: $nhsuk-secondary-text-colour;
+
+  @include nhsuk-font(16);
+}
+
+// Append text shown inline after the option name (e.g. an abbreviation)
+.app-autocomplete__option-append {
+  color: $nhsuk-secondary-text-colour;
+}
+
+.app-autocomplete__option--no-results {
+  color: $nhsuk-secondary-text-colour;
+  background-color: $nhsuk-input-background-colour;
+  cursor: not-allowed;
+}
+
+.app-autocomplete__option > * {
+  pointer-events: none;
+}
+
+.app-autocomplete__option:first-of-type {
+  border-top-width: 0;
+}
+
+.app-autocomplete__option:last-of-type {
+  border-bottom-width: 0;
+}
+
+.app-autocomplete__option--odd {
+  background-color: nhsuk-colour("grey-5");
+}
+
+.app-autocomplete__option--focused,
+.app-autocomplete__option:hover {
+  border-color: $nhsuk-link-colour;
+  outline: none;
+  color: nhsuk-colour("white");
+  background-color: $nhsuk-link-colour;
+
+  .app-autocomplete__option-hint,
+  .app-autocomplete__option-append {
+    color: nhsuk-colour("white");
+  }
+}
+
+@media (-ms-high-contrast: active), (forced-colors: active) {
+  .app-autocomplete__menu {
+    border-color: FieldText;
+  }
+
+  .app-autocomplete__option {
+    color: FieldText;
+    background-color: Field;
+  }
+
+  .app-autocomplete__option--focused,
+  .app-autocomplete__option:hover {
+    border-color: SelectedItem;
+    outline-color: SelectedItemText;
+    color: SelectedItemText;
+    background-color: SelectedItem;
+    forced-color-adjust: none;
+  }
+}

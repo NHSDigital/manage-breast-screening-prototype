@@ -1,0 +1,255 @@
+// Option picker component
+// A row of radio or checkbox options styled as buttons.
+// No JavaScript required - uses :checked + sibling CSS.
+//
+// Modifiers:
+//   app-option-picker--show-dot    show a radio circle inside each option
+//   app-option-picker--show-check  show a checkbox inside each option
+//   app-option-picker--small       compact sizing
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// =========================================================
+// Base
+// =========================================================
+
+.app-option-picker {
+  margin-bottom: nhsuk-spacing(4);
+}
+
+.app-option-picker__legend {
+  margin-bottom: nhsuk-spacing(2);
+}
+
+.app-option-picker__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: nhsuk-spacing(2);
+  align-items: stretch;
+}
+
+// The real input is visually hidden but remains keyboard/screen-reader accessible
+.app-option-picker__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-option-picker__label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: nhsuk-spacing(1);
+  cursor: pointer;
+  user-select: none;
+}
+
+// =========================================================
+// Radio dot indicator (optional)
+// Hidden by default; shown with --show-dot modifier.
+// The inner circle fills when the option is selected.
+// =========================================================
+
+.app-option-picker__radio-dot {
+  display: none;
+  flex-shrink: 0;
+  align-self: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+
+  &::after {
+    content: "";
+    display: block;
+    width: 8px;
+    height: 8px;
+    margin: 3px;
+    border-radius: 50%;
+    background: transparent;
+  }
+}
+
+.app-option-picker--show-dot .app-option-picker__radio-dot {
+  display: block;
+}
+
+.app-option-picker__input:checked + .app-option-picker__label .app-option-picker__radio-dot::after {
+  background: currentColor;
+}
+
+// =========================================================
+// Checkmark indicator (optional)
+// Hidden by default; shown with --show-check modifier.
+// Unselected: empty square outline.
+// Selected: NHS tick icon via CSS mask-image — inherits currentColor so it
+// works on any background (white on blue selected, black on yellow focus).
+// =========================================================
+
+// NHS tick SVG path (from nhsuk-frontend icon macro, viewBox 0 0 24 24)
+$_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M11.4 18.8a2 2 0 0 1-2.7.1h-.1L4 14.1a1.5 1.5 0 0 1 2.1-2L10 16l8.1-8.1a1.5 1.5 0 1 1 2.2 2l-8.9 9Z'/%3E%3C/svg%3E");
+
+.app-option-picker__check-mark {
+  display: none;
+  flex-shrink: 0;
+  align-self: center;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+
+  // Tick icon, hidden until checked. Uses mask so fill = currentColor.
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px; // slight bleed to fill visual box edge-to-edge
+    background: currentColor;
+    mask-image: $_tick-svg;
+    mask-repeat: no-repeat;
+    mask-position: center calc(50% - 1px);
+    mask-size: contain;
+    opacity: 0;
+  }
+}
+
+.app-option-picker--show-check .app-option-picker__check-mark {
+  display: block;
+}
+
+.app-option-picker__input:checked + .app-option-picker__label .app-option-picker__check-mark::after {
+  opacity: 1;
+}
+
+// =========================================================
+// Button variant
+// Mirrors nhsuk-button--secondary exactly.
+// The visible border lives on a ::before pseudo-element that extends
+// -(border-width + shadow-size) below the element, so the border wraps
+// cleanly around the bottom corners of the drop shadow with no gap.
+// The label itself has a transparent border to preserve the same layout
+// dimensions as a real border. This matches the NHS button technique.
+// =========================================================
+
+.app-option-picker--button .app-option-picker__label {
+  min-height: nhsuk-px-to-rem(44px);
+  padding: nhsuk-px-to-rem(6px) nhsuk-px-to-rem(12px);
+  border: $nhsuk-border-width-form-element solid transparent;
+  border-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  background-color: $nhsuk-secondary-button-colour;
+  box-shadow: 0 $nhsuk-button-shadow-size 0 $nhsuk-secondary-button-shadow-colour;
+  color: $nhsuk-secondary-button-text-colour;
+  font-weight: bold;
+  text-decoration: none;
+  box-sizing: border-box;
+
+  // Visible border on pseudo-element. Extends below shadow so the border
+  // colour wraps around the bottom shadow corners without a visible gap.
+  &::before {
+    content: "";
+    position: absolute;
+    top: -$nhsuk-border-width-form-element;
+    right: -$nhsuk-border-width-form-element;
+    bottom: -($nhsuk-border-width-form-element + $nhsuk-button-shadow-size);
+    left: -$nhsuk-border-width-form-element;
+    border: $nhsuk-border-width-form-element solid $nhsuk-secondary-button-border-colour;
+    border-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+    pointer-events: none;
+  }
+
+  &:hover {
+    background-color: $nhsuk-secondary-button-hover-colour;
+    text-decoration: none;
+  }
+}
+
+// Active — shift down, remove shadow; ::before bottom no longer needs to extend below shadow
+.app-option-picker--button .app-option-picker__label:active {
+  top: $nhsuk-button-shadow-size;
+  box-shadow: none;
+
+  &::before {
+    bottom: -$nhsuk-border-width-form-element;
+  }
+}
+
+// Selected — filled with brand blue
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label {
+  background-color: $nhsuk-brand-colour;
+  box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($nhsuk-brand-colour, 50%);
+  color: nhsuk-colour("white");
+}
+
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label::before {
+  border-color: $nhsuk-brand-colour;
+}
+
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:hover {
+  background-color: nhsuk-shade($nhsuk-brand-colour, 20%);
+  box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($nhsuk-brand-colour, 60%);
+}
+
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:hover::before {
+  border-color: nhsuk-shade($nhsuk-brand-colour, 20%);
+}
+
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:active {
+  top: $nhsuk-button-shadow-size;
+  box-shadow: none;
+}
+
+// Focus — last so it overrides checked state; includes :hover to beat checked+hover specificity
+.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label,
+.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label:hover {
+  outline: $nhsuk-focus-width solid transparent;
+  background-color: $nhsuk-focus-colour;
+  box-shadow: 0 $nhsuk-focus-width 0 0 $nhsuk-focus-text-colour;
+  color: $nhsuk-focus-text-colour;
+}
+
+// Hide ::before on focus — no visible border in focus state, matching NHS button
+.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label::before,
+.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label:hover::before {
+  border-color: transparent;
+}
+
+// =========================================================
+// Small modifier — compact sizing, drops min-height
+// =========================================================
+
+.app-option-picker--small .app-option-picker__items {
+  gap: nhsuk-spacing(1);
+}
+
+.app-option-picker--small.app-option-picker--button .app-option-picker__label {
+  min-height: auto;
+  padding: nhsuk-spacing(1) nhsuk-spacing(2);
+
+  @include nhsuk-font($size: 16, $weight: bold);
+}
+
+// =========================================================
+// Inline radios utility
+// Makes standard nhsuk-radios flow horizontally instead of stacking
+// =========================================================
+
+.app-radios--inline {
+  @include nhsuk-media-query($from: tablet) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: nhsuk-spacing(1) nhsuk-spacing(4);
+    align-items: flex-start;
+    margin: 0;
+
+    .nhsuk-radios__item {
+      margin-top: 0;
+    }
+  }
+}

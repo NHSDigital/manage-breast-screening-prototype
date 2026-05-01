@@ -1,0 +1,228 @@
+{# app/views/style-guide/option-picker.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "option-picker" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Option picker</h2>
+
+<p>An inline group of radio (or checkbox) options styled as buttons, replacing a select element with a single-click interaction. No JavaScript required.</p>
+
+<p>Under the hood this uses standard <code>&lt;input type="radio"&gt;</code> markup with visually-hidden inputs. The label is styled to look like a button or tag and its selected state is driven by the CSS <code>:checked</code> selector.</p>
+
+<h3>Button variant</h3>
+
+<p>Each option looks like an NHS secondary button. The selected option fills with the brand blue.</p>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Sort order
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="sort-asc" name="sort-demo-1" value="asc">
+        <label class="app-option-picker__label" for="sort-asc">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Ascending
+        </label>
+
+        <input class="app-option-picker__input" type="radio" id="sort-desc" name="sort-demo-1" value="desc" checked>
+        <label class="app-option-picker__label" for="sort-desc">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Descending
+        </label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Button variant — more options</h3>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Image status
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="status-all" name="sort-demo-2" value="all" checked>
+        <label class="app-option-picker__label" for="status-all">All</label>
+
+        <input class="app-option-picker__input" type="radio" id="status-unread" name="sort-demo-2" value="unread">
+        <label class="app-option-picker__label" for="status-unread">Unread</label>
+
+        <input class="app-option-picker__input" type="radio" id="status-read" name="sort-demo-2" value="read">
+        <label class="app-option-picker__label" for="status-read">Read</label>
+
+        <input class="app-option-picker__input" type="radio" id="status-arbitrated" name="sort-demo-2" value="arbitrated">
+        <label class="app-option-picker__label" for="status-arbitrated">Arbitrated</label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Button variant with radio dot</h3>
+
+<p>Add <code>app-option-picker--show-dot</code> to show a radio circle indicator inside each option.</p>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--show-dot">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Priority
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="priority-routine" name="sort-demo-3" value="routine" checked>
+        <label class="app-option-picker__label" for="priority-routine">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Routine
+        </label>
+
+        <input class="app-option-picker__input" type="radio" id="priority-urgent" name="sort-demo-3" value="urgent">
+        <label class="app-option-picker__label" for="priority-urgent">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Urgent
+        </label>
+
+        <input class="app-option-picker__input" type="radio" id="priority-immediate" name="sort-demo-3" value="immediate">
+        <label class="app-option-picker__label" for="priority-immediate">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Immediate
+        </label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Button variant — small</h3>
+
+<p>Add <code>app-option-picker--small</code> for a compact version.</p>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--small">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s app-option-picker__legend">
+        View
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="view-day" name="sort-demo-4" value="day" checked>
+        <label class="app-option-picker__label" for="view-day">Day</label>
+
+        <input class="app-option-picker__input" type="radio" id="view-week" name="sort-demo-4" value="week">
+        <label class="app-option-picker__label" for="view-week">Week</label>
+
+        <input class="app-option-picker__input" type="radio" id="view-month" name="sort-demo-4" value="month">
+        <label class="app-option-picker__label" for="view-month">Month</label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<hr>
+
+<h3>Checkbox variant — buttons</h3>
+
+<p>Use <code>type="checkbox"</code> instead of <code>type="radio"</code> to allow multiple selections. The <code>name</code> attribute can be shared or unique per item.</p>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Image views
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-cc" name="views[]" value="cc" checked>
+        <label class="app-option-picker__label" for="cb-btn-cc">CC</label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-mlo" name="views[]" value="mlo" checked>
+        <label class="app-option-picker__label" for="cb-btn-mlo">MLO</label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-mag" name="views[]" value="mag">
+        <label class="app-option-picker__label" for="cb-btn-mag">Mag</label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-btn-special" name="views[]" value="special">
+        <label class="app-option-picker__label" for="cb-btn-special">Special</label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Checkbox variant — buttons with checkmark</h3>
+
+<p>Add <code>app-option-picker--show-check</code> and include <code>&lt;span class="app-option-picker__check-mark"&gt;</code> inside each label to show a mini checkmark indicator when selected.</p>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--show-check">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Image views
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-cc" name="views-chk[]" value="cc" checked>
+        <label class="app-option-picker__label" for="cb-chk-cc">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          CC
+        </label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-mlo" name="views-chk[]" value="mlo" checked>
+        <label class="app-option-picker__label" for="cb-chk-mlo">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          MLO
+        </label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-mag" name="views-chk[]" value="mag">
+        <label class="app-option-picker__label" for="cb-chk-mag">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          Mag
+        </label>
+
+        <input class="app-option-picker__input" type="checkbox" id="cb-chk-special" name="views-chk[]" value="special">
+        <label class="app-option-picker__label" for="cb-chk-special">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          Special
+        </label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<hr>
+
+<h3>Inline radios</h3>
+
+<p>A utility class that makes standard NHS radios flow horizontally. Add <code>app-radios--inline</code> to any <code>nhsuk-radios</code> wrapper.</p>
+
+<div class="sg-example">
+  <div class="nhsuk-form-group">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend">
+        Which breast?
+      </legend>
+      <div class="nhsuk-radios app-radios--inline">
+        <div class="nhsuk-radios__item">
+          <input class="nhsuk-radios__input" id="inline-left" type="radio" name="inline-demo" value="left">
+          <label class="nhsuk-label nhsuk-radios__label" for="inline-left">Left</label>
+        </div>
+        <div class="nhsuk-radios__item">
+          <input class="nhsuk-radios__input" id="inline-right" type="radio" name="inline-demo" value="right" checked>
+          <label class="nhsuk-label nhsuk-radios__label" for="inline-right">Right</label>
+        </div>
+        <div class="nhsuk-radios__item">
+          <input class="nhsuk-radios__input" id="inline-both" type="radio" name="inline-demo" value="both">
+          <label class="nhsuk-label nhsuk-radios__label" for="inline-both">Both</label>
+        </div>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+{% endblock %}

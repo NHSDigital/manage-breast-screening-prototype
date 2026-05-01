@@ -21,6 +21,7 @@
 @forward "./components/compact";
 @forward "components/reading";
 @forward "components/mammogram-images";
+@forward "components/annotate-v2";
 @forward "components/environment";
 
 @forward "components/overrides";
@@ -30,6 +31,9 @@
 @forward "components/sticky-appointment-bar";
 @forward "components/annotation";
 @forward "components/stepper-input";
+@forward "components/collapsible-input";
+@forward "components/autocomplete";
+@forward "components/option-picker";
 
 @forward "misc";
 @forward "workflow";

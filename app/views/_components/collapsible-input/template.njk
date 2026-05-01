@@ -1,0 +1,29 @@
+{# app/views/_components/collapsible-input/template.njk #}
+
+{#
+  Collapsible input component
+  Wraps an input, textarea, or other form element behind an "Add a comment" toggle link.
+  Progressively enhanced: without JS the content renders as normal.
+
+  Params:
+    text        - trigger link text (default: "Add a comment")
+    html        - inner HTML (alternative to caller())
+    classes     - additional classes on the wrapper element
+    attributes  - additional HTML attributes on the wrapper element
+#}
+
+{% from "nhsuk/macros/attributes.njk" import nhsukAttributes %}
+
+<div class="app-collapsible-input
+  {%- if params.classes %} {{ params.classes }}{% endif %}"
+  data-module="app-collapsible-input"
+  {%- if params.text %} data-trigger-text="{{ params.text }}"{% endif %}
+  {{- nhsukAttributes(params.attributes) }}>
+  <div class="app-collapsible-input__content">
+    {%- if caller -%}
+      {{ caller() }}
+    {%- elif params.html -%}
+      {{ params.html | safe }}
+    {%- endif -%}
+  </div>
+</div>

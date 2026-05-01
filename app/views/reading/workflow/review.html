@@ -1,9 +1,11 @@
 {# app/views/reading/workflow/review.html #}
 {# Review page for technical recall and recall for assessment #}
 
-{% extends 'layout-reading.html' %}
+{% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading = "Confirm your opinion" %}
+
+{% set formAction = './save-opinion' %}
 
 {% block pageContent %}
 
@@ -31,11 +33,9 @@
       }) }}
 
       {# Confirm and save form #}
-      <form action="./save-opinion" method="POST">
-        {{ button({
-          text: "Confirm and save"
-        }) }}
-      </form>
+      {{ button({
+        text: "Confirm and save"
+      }) }}
 
     </div>
   </div>

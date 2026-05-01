@@ -1,0 +1,23 @@
+{# app/views/reading/workflow/medical-information.html #}
+{# Full medical information view for image reading workflow #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set pageHeading = "Medical information" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set displayFormat = "card" %}
+{% set allowEdits = false %}
+{% set isAppointmentWorkflow = false %}
+
+{% set back = { href: "./opinion", text: "Back to reading" } %}
+
+{% block pageContent %}
+
+  <span class="nhsuk-caption-l">
+    {{ participant | getFullName }}
+  </span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% include "_includes/medical-information/index.njk" %}
+
+{% endblock %}

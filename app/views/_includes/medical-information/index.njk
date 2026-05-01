@@ -8,7 +8,7 @@
 {% set referrerChain = currentUrl %}
 
 {# Force edits enabled for mammogram history #}
-{% set allowEdits = true if (currentUser | isClinician) else false %}
+{% set allowEdits = allowEdits | default(true if (currentUser | isClinician) else false) %}
 
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
