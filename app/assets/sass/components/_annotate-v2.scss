@@ -19,84 +19,123 @@ body.app-annotate-v2 {
   }
 }
 
-// ─── 3-column layout ─────────────────────────────────────────────────────────
+// ─── Tab bar: horizontal breast switcher with thumbnails ─────────────────────
+
+.app-ann-v2__tab-bar {
+  display: flex;
+  align-items: flex-end;
+  padding-top: nhsuk-spacing(1); // 4px — space for active tab to protrude into above inactive tabs
+  border-bottom: 1px solid $nhsuk-border-colour;
+}
+
+.app-ann-v2__tab {
+  display: flex;
+  align-items: center;
+  gap: nhsuk-spacing(3);
+  padding: nhsuk-spacing(2) nhsuk-spacing(4); // 8px 24px
+  margin-right: nhsuk-spacing(1);
+  // 4px bottom margin: (1) creates gap before border-bottom line (visual bottom inset)
+  // (2) shifts content up by 4px to match active tab's content position
+  margin-bottom: nhsuk-spacing(1);
+  flex-shrink: 0;
+  background: nhsuk-colour("grey-4");
+  border: none;
+  cursor: pointer;
+  text-align: left;
+
+  &.is-active {
+    $bw: 1px;
+
+    position: relative;
+    z-index: 1;
+    // NHS formula: compensate padding for the border so content stays at the same Y position.
+    // See nhsuk-frontend tabs: "Compensation for border (otherwise we get a shift)".
+    padding-top: (nhsuk-spacing(2) * 1.5) - $bw; // 11px
+    padding-right: nhsuk-spacing(4) - $bw; // 23px
+    padding-bottom: (nhsuk-spacing(2) * 1.5) + $bw; // 13px
+    padding-left: nhsuk-spacing(4) - $bw; // 23px
+    margin-top: nhsuk-spacing(-1); // -4px: protrudes 4px above inactive tabs
+    margin-bottom: -$bw; // -1px: connects flush to panel border-top
+    border: $bw solid $nhsuk-border-colour;
+    border-bottom: 0;
+    background: nhsuk-colour("white");
+  }
+
+  // NHS focus: yellow background on the whole tab
+  &:focus {
+    outline: 3px solid transparent;
+    background-color: $nhsuk-focus-colour;
+    color: nhsuk-colour("black");
+    box-shadow:
+      0 -2px $nhsuk-focus-colour,
+      0 4px nhsuk-colour("black");
+  }
+
+  &:focus:not(:focus-visible) {
+    outline: none;
+    background-color: nhsuk-colour("grey-4");
+    box-shadow: none;
+  }
+
+  &.is-active:focus:not(:focus-visible) {
+    background-color: nhsuk-colour("white");
+  }
+}
+
+// Tab label: looks like a link
+.app-ann-v2__tab-label {
+  font-size: 19px;
+  white-space: nowrap;
+  text-decoration: underline;
+}
+
+.app-ann-v2__tab.is-active .app-ann-v2__tab-label {
+  text-decoration: none;
+}
+
+// ─── Tab panel: bordered white box containing images + sidebar ────────────────
+
+.app-ann-v2__panel {
+  border: 1px solid $nhsuk-border-colour;
+  border-top: 0;
+  background: nhsuk-colour("white");
+  padding: nhsuk-spacing(4);
+}
+
+// ─── 2-column layout (images + sidebar) ──────────────────────────────────────
 
 .app-ann-v2 {
   display: flex;
   align-items: start;
-  border-top: 1px solid nhsuk-colour("grey-4");
+  gap: nhsuk-spacing(4);
 }
 
-// ─── Column 1: thumbnails ─────────────────────────────────────────────────────
-
-.app-ann-v2__thumbs {
-  width: 140px;
-  flex-shrink: 0;
-  overflow-y: auto;
-  border-right: 1px solid nhsuk-colour("grey-4");
-  padding: nhsuk-spacing(2);
-  display: flex;
-  flex-direction: column;
-  gap: nhsuk-spacing(3);
-}
-
-.app-ann-v2__thumb-group {
-  display: flex;
-  flex-direction: column;
-  gap: nhsuk-spacing(1);
-}
-
-// Bookmatching: right breast thumbnails right-align, left breast thumbnails left-align
-.app-ann-v2__thumb-group[data-side="right"] {
-  align-items: flex-end;
-
-  .app-ann-v2__thumb img {
-    object-position: right center;
-  }
-}
-
-.app-ann-v2__thumb-group[data-side="left"] {
-  align-items: flex-start;
-
-  .app-ann-v2__thumb img {
-    object-position: left center;
-  }
-}
-
-.app-ann-v2__thumb-label {
+.app-ann-v2__tab-count {
   font-size: 16px;
-  font-weight: 600;
-  padding: nhsuk-spacing(1) 0 0;
-  width: 100%;
+  background: nhsuk-colour("blue");
+  color: nhsuk-colour("white");
+  border-radius: 2px;
+  padding: 1px nhsuk-spacing(1);
+  white-space: nowrap;
+  min-width: 1.5em;
+  text-align: center;
 }
 
-.app-ann-v2__thumb {
+.app-ann-v2__tab-thumbs {
+  display: flex;
+  gap: nhsuk-spacing(1);
+  align-items: center;
+}
+
+.app-ann-v2__tab-thumb {
   position: relative;
-  cursor: pointer;
-  border: 1px solid nhsuk-colour("grey-3");
-  overflow: hidden;
+  display: block;
+  width: 56px;
   aspect-ratio: 4/5;
   background: #000;
-  padding: 0;
-  display: block;
-  width: 100%;
-  transition:
-    outline-color 0.1s,
-    opacity 0.1s;
-
-  &.is-active {
-    outline: 3px solid $nhsuk-focus-colour;
-    outline-offset: 0;
-  }
-
-  &.is-inactive {
-    opacity: 0.35;
-  }
-
-  &:focus-visible {
-    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
-    outline-offset: 2px;
-  }
+  border: 1px solid nhsuk-colour("grey-3");
+  overflow: hidden;
+  flex-shrink: 0;
 
   img {
     width: 100%;
@@ -107,33 +146,39 @@ body.app-annotate-v2 {
   }
 }
 
-.app-ann-v2__thumb-badge {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  background: nhsuk-colour("blue");
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  padding: 1px nhsuk-spacing(1);
-  pointer-events: none;
-  line-height: 1.4;
+.app-ann-v2__tab-thumb--missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.app-ann-v2__thumb.is-inactive .app-ann-v2__thumb-badge {
-  background: nhsuk-colour("grey-1");
+// Responsive: stack columns below desktop breakpoint
+@include mq($until: desktop) {
+  .app-ann-v2 {
+    flex-direction: column;
+  }
+
+  .app-ann-v2__images,
+  .app-ann-v2__sidebar {
+    flex: none;
+    width: 100%;
+  }
+
+  .app-ann-v2__sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .app-ann-v2__sidebar-scroll {
+    overflow: visible;
+  }
 }
 
-// Left breast: badge top-right (bookmatched)
-.app-ann-v2__thumb-group[data-side="left"] .app-ann-v2__thumb-badge {
-  left: auto;
-  right: 3px;
-}
-
-// ─── Column 2: images ────────────────────────────────────────────────────────
+// ─── Column 1: images ────────────────────────────────────────────────────────
 
 .app-ann-v2__images {
-  flex: 1;
+  flex: 2 1 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -143,7 +188,7 @@ body.app-annotate-v2 {
   display: flex;
   align-items: center;
   gap: nhsuk-spacing(4);
-  padding: nhsuk-spacing(3);
+  padding: nhsuk-spacing(3) 0;
   flex-shrink: 0;
 }
 
@@ -162,8 +207,7 @@ body.app-annotate-v2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: auto;
-  gap: nhsuk-spacing(3);
-  padding: 0 nhsuk-spacing(3) nhsuk-spacing(3);
+  gap: nhsuk-spacing(4);
 
   // Single image: constrain so it doesn't stretch full width
   &[data-panel-count="1"] {
@@ -312,6 +356,7 @@ body.app-annotate-v2 {
   &.is-active {
     border-color: $nhsuk-focus-colour;
     border-width: 5px;
+    z-index: 2;
   }
 
   &.dragging {
@@ -386,14 +431,12 @@ body.app-annotate-v2 {
   pointer-events: auto;
 }
 
-// ─── Column 3: sidebar ───────────────────────────────────────────────────────
+// ─── Column 2: sidebar ───────────────────────────────────────────────────────
 
 .app-ann-v2__sidebar {
-  flex: 0 0 320px;
+  flex: 1 1 0;
   min-width: 0;
-  max-width: 320px;
-  overflow: hidden; // clip horizontal only; inner scroll div handles vertical
-  border-left: 1px solid nhsuk-colour("grey-4");
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   position: sticky;
@@ -405,25 +448,25 @@ body.app-annotate-v2 {
   display: flex;
   flex-direction: column;
   gap: nhsuk-spacing(4);
-  padding: 0;
+  // Horizontal padding gives card focus outlines room to paint without being clipped
+  padding: 0 $nhsuk-focus-width;
   min-width: 0;
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .app-ann-v2__sidebar-heading {
-  font-size: 22px;
-  font-weight: 700;
+  // font-size: 22px;
+  // font-weight: 700;
   margin: 0;
-  padding: nhsuk-spacing(3) nhsuk-spacing(3) 0;
+  // padding: nhsuk-spacing(3) 0 0;
 }
 
 .app-ann-v2__breast-section {
-  padding: 0 nhsuk-spacing(3) nhsuk-spacing(3);
+  padding: 0 0 nhsuk-spacing(3);
   display: flex;
   flex-direction: column;
-  gap: nhsuk-spacing(2);
+  gap: nhsuk-spacing(3);
 }
 
 .app-ann-v2__breast-heading {
@@ -436,7 +479,8 @@ body.app-annotate-v2 {
 
 // Annotation card
 .app-ann-v2__annotation-card {
-  border: 2px solid nhsuk-colour("grey-4");
+  border: 1px solid nhsuk-colour("grey-3");
+  background: nhsuk-colour("white");
   padding: nhsuk-spacing(3);
   cursor: pointer;
 
@@ -444,29 +488,29 @@ body.app-annotate-v2 {
     border-color: nhsuk-colour("grey-2");
   }
 
-  &:focus,
   &:focus-visible {
     outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
     outline-offset: 0;
   }
 
   &.is-active {
-    border-color: nhsuk-colour("blue");
-    background: nhsuk-tint(nhsuk-colour("blue"), 92%);
+    // Left-only thick blue border via inset box-shadow (no layout shift)
+    box-shadow: inset 4px 0 0 nhsuk-colour("blue");
   }
 }
 
+// Two-column card layout: number badge left, content column right
 .app-ann-v2__annotation-header {
   display: flex;
   align-items: flex-start;
   gap: nhsuk-spacing(3);
-  margin-bottom: nhsuk-spacing(2);
 }
 
 .app-ann-v2__annotation-number {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
+  align-self: flex-start;
   background: nhsuk-colour("blue");
   color: #fff;
   font-size: 18px;
@@ -478,20 +522,28 @@ body.app-annotate-v2 {
   line-height: 1;
 }
 
+// Right-hand content column: type, meta, actions all left-aligned together
+.app-ann-v2__annotation-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(1);
+}
+
 .app-ann-v2__annotation-type {
   font-size: 19px;
   font-weight: 600;
-  flex: 1;
 }
 
 .app-ann-v2__annotation-meta {
   font-size: 19px;
-  margin-bottom: nhsuk-spacing(1);
+  margin: 0;
 }
 
 .app-ann-v2__annotation-positions {
   font-size: 19px;
-  margin-bottom: nhsuk-spacing(2);
+  margin: 0;
   overflow-wrap: break-word;
   word-break: break-word;
 }
@@ -501,20 +553,11 @@ body.app-annotate-v2 {
   gap: nhsuk-spacing(3);
   align-items: center;
   font-size: 19px;
+  margin-top: nhsuk-spacing(2);
 }
 
 .app-ann-v2__add-annotation-btn {
   width: 100%;
-}
-
-.app-ann-v2__sidebar-footer {
-  padding: nhsuk-spacing(3);
-  border-top: 1px solid nhsuk-colour("grey-4");
-  flex-shrink: 0;
-
-  .nhsuk-button {
-    margin-bottom: 0;
-  }
 }
 
 .app-ann-v2__empty {
@@ -531,9 +574,50 @@ body.app-annotate-v2 {
   font-size: 19px; // inherit to child app-link-buttons
 }
 
-// Dark mode: active annotation card uses dark blue tint instead of light blue
-.app-dark-mode .app-ann-v2__annotation-card.is-active {
-  background: rgba(52, 141, 224, 0.15);
+// Dark mode: annotation cards
+
+.app-dark-mode .app-ann-v2__annotation-card {
+  background: transparent;
+  border-color: #909090; // $app-dark-mode-text-colour-secondary
+
+  &.is-active {
+    box-shadow: inset 4px 0 0 nhsuk-colour("blue");
+  }
+}
+
+// Dark mode: tabs and panel
+.app-dark-mode {
+  .app-ann-v2__tab-bar {
+    border-bottom-color: #cfcfcf; // $app-dark-mode-border
+  }
+
+  .app-ann-v2__tab {
+    background: #2a2a2a; // raised surface: distinct from page bg and panel
+    color: #cfcfcf; // $app-dark-mode-text-colour
+    box-shadow: inset 0 0 0 1px #909090; // $app-dark-mode-text-colour-secondary — subtle outline
+
+    &.is-active {
+      background: #1f1f1f; // $app-dark-mode-surface — same as panel, visually connected
+      color: #cfcfcf; // $app-dark-mode-text-colour
+      border-color: #cfcfcf; // $app-dark-mode-border
+      box-shadow: none;
+    }
+
+    // Override the light-mode focus-reset that hard-codes white/black
+    &.is-active:focus:not(:focus-visible) {
+      background-color: #1f1f1f; // $app-dark-mode-surface
+      color: #cfcfcf; // $app-dark-mode-text-colour
+    }
+
+    &:focus:not(:focus-visible) {
+      background-color: #2a2a2a; // raised surface
+    }
+  }
+
+  .app-ann-v2__panel {
+    background: #1f1f1f; // $app-dark-mode-surface
+    border-color: #cfcfcf; // $app-dark-mode-border
+  }
 }
 
 // Warning link button variant — for destructive actions

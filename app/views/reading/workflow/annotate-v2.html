@@ -24,42 +24,47 @@
     V2.viewOrder = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
   </script>
 
-  <div class="app-ann-v2" id="app-ann-v2-root">
+  {% set mammogramViewOrder = data.settings.mammogramViewOrder or 'cc-first' %}
 
-    {# Column 1: thumbnails #}
-    <div class="app-ann-v2__thumbs" id="app-ann-v2-thumbs">
+    {% set viewGroups = [
+      {
+        label: "Right breast",
+        side: "right",
+        views: [
+          { key: "rcc",  label: "RCC" },
+          { key: "rmlo", label: "RMLO" }
+        ] if mammogramViewOrder == 'cc-first' else [
+          { key: "rmlo", label: "RMLO" },
+          { key: "rcc",  label: "RCC" }
+        ]
+      },
+      {
+        label: "Left breast",
+        side: "left",
+        views: [
+          { key: "lcc",  label: "LCC" },
+          { key: "lmlo", label: "LMLO" }
+        ] if mammogramViewOrder == 'cc-first' else [
+          { key: "lmlo", label: "LMLO" },
+          { key: "lcc",  label: "LCC" }
+        ]
+      }
+    ] %}
 
-      {% set mammogramViewOrder = data.settings.mammogramViewOrder or 'cc-first' %}
+  <h1 class="nhsuk-heading-l">Annotate images</h1>
 
-      {% set viewGroups = [
-        {
-          label: "Right breast",
-          side: "right",
-          views: [
-            { key: "rcc",  label: "RCC" },
-            { key: "rmlo", label: "RMLO" }
-          ] if mammogramViewOrder == 'cc-first' else [
-            { key: "rmlo", label: "RMLO" },
-            { key: "rcc",  label: "RCC" }
-          ]
-        },
-        {
-          label: "Left breast",
-          side: "left",
-          views: [
-            { key: "lcc",  label: "LCC" },
-            { key: "lmlo", label: "LMLO" }
-          ] if mammogramViewOrder == 'cc-first' else [
-            { key: "lmlo", label: "LMLO" },
-            { key: "lcc",  label: "LCC" }
-          ]
-        }
-      ] %}
-
-      {% for group in viewGroups %}
-        <div class="app-ann-v2__thumb-group" data-side="{{ group.side }}">
-          <div class="app-ann-v2__thumb-label">{{ group.label }}</div>
-
+  {# Horizontal tab bar: breast tabs with inline thumbnails #}
+  <div class="app-ann-v2__tab-bar" id="app-ann-v2-thumbs">
+    {% for group in viewGroups %}
+      <button
+        class="app-ann-v2__tab"
+        type="button"
+        data-thumb-side="{{ group.side }}"
+        aria-label="Switch to {{ group.label }}"
+      >
+        <span class="app-ann-v2__tab-label" data-side="{{ group.side }}">{{ group.label }}</span>
+        <span class="app-ann-v2__tab-count" data-side-count="{{ group.side }}">0</span>
+        <span class="app-ann-v2__tab-thumbs">
           {% for view in group.views %}
             {% set viewPaths = allPaths[view.key] %}
             {% if viewPaths %}
@@ -69,58 +74,47 @@
                 {% set paths = viewPaths %}
               {% endif %}
               {% for path in paths %}
-                <button
-                  class="app-ann-v2__thumb"
-                  type="button"
-                  data-thumb-side="{{ group.side }}"
-                  data-thumb-view="{{ view.key }}"
-                  aria-label="View {{ view.label }}"
-                >
-                  <img src="{{ path }}" alt="{{ view.label }} view" draggable="false">
-                  <span class="app-ann-v2__thumb-badge">{{ view.label }}</span>
-                </button>
+                <span class="app-ann-v2__tab-thumb" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
+                  <img src="{{ path }}" alt="{{ view.label }}" draggable="false">
+                </span>
               {% endfor %}
             {% else %}
-              <button
-                class="app-ann-v2__thumb is-missing"
-                type="button"
-                data-thumb-side="{{ group.side }}"
-                data-thumb-view="{{ view.key }}"
-                aria-label="{{ view.label }} – no image"
-              >
-                <span class="app-ann-v2__thumb-badge">{{ view.label }}</span>
-              </button>
+              <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--missing" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
+              </span>
             {% endif %}
           {% endfor %}
+        </span>
+      </button>
+    {% endfor %}
+  </div>
 
+  <div class="app-ann-v2__panel">
+    <div class="app-ann-v2" id="app-ann-v2-root">
+
+      {# Column 1: main images — JS-rendered #}
+      <div class="app-ann-v2__images" id="app-ann-v2-images">
+        <div class="app-ann-v2__images-row" id="images-row">
+          {# Populated by JS #}
         </div>
-      {% endfor %}
+      </div>
+
+      {# Column 2: sidebar — JS-rendered #}
+      <div class="app-ann-v2__sidebar" id="app-ann-v2-sidebar">
+        <div class="app-ann-v2__sidebar-scroll" id="sidebar-scroll">
+          {# Populated by JS — first item will be the h2 heading #}
+        </div>
+      </div>
 
     </div>
+  </div>
 
-    {# Column 2: main images — JS-rendered #}
-    <div class="app-ann-v2__images" id="app-ann-v2-images">
-      <div class="app-ann-v2__images-header">
-        <span class="app-ann-v2__images-title" id="images-title">Right breast</span>
-        <span class="app-ann-v2__images-hint" id="images-hint">Click an image to add an annotation</span>
-      </div>
-      <div class="app-ann-v2__images-row" id="images-row">
-        {# Populated by JS #}
-      </div>
+  {# Save button sits below the annotation columns, like a regular page action #}
+  <div class="nhsuk-width-container">
+    <div class="nhsuk-main-wrapper nhsuk-u-padding-top-4 nhsuk-u-padding-bottom-4">
+      <a href="../recall-for-assessment-details" id="ann-save-return" class="nhsuk-button nhsuk-u-margin-bottom-0">
+        Save and return
+      </a>
     </div>
-
-    {# Column 3: sidebar — JS-rendered #}
-    <div class="app-ann-v2__sidebar" id="app-ann-v2-sidebar">
-      <div class="app-ann-v2__sidebar-scroll" id="sidebar-scroll">
-        {# Populated by JS — first item will be the h2 heading #}
-      </div>
-      <div class="app-ann-v2__sidebar-footer">
-        <a href="../recall-for-assessment-details" id="ann-save-return" class="nhsuk-button nhsuk-u-margin-bottom-0">
-          Save and return
-        </a>
-      </div>
-    </div>
-
   </div>
 
   {# Hidden form for persisting all annotations back to session on save #}
@@ -175,15 +169,15 @@
           </select>
         </div>
 
-        <div class="nhsuk-form-group">
+        {% call appCollapsibleInput({ text: "Add annotation comment" }) %}
           <label class="nhsuk-label nhsuk-label--s" for="ann-modal-comment">Comment (optional)</label>
           <input class="nhsuk-input nhsuk-u-width-two-thirds" type="text" id="ann-modal-comment">
-        </div>
+        {% endcall %}
 
-        <div class="nhsuk-button-group nhsuk-u-margin-top-4">
+        <div class="nhsuk-button-group nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
           {{ button({
             text: "Add annotation",
-            type: "button",
+            classes: "nhsuk-u-margin-bottom-0",
             attributes: { id: "ann-modal-save" }
           }) }}
           <div class="app-ann-modal__secondary-actions">
@@ -248,10 +242,19 @@
   // ─── rendering ─────────────────────────────────────────────────────────────
 
   function renderThumbs() {
-    document.querySelectorAll('[data-thumb-side]').forEach(thumb => {
-      const side = thumb.dataset.thumbSide
-      thumb.classList.toggle('is-active', side === activeSide)
-      thumb.classList.toggle('is-inactive', side !== activeSide)
+    // Update tab active/inactive state
+    document.querySelectorAll('.app-ann-v2__tab').forEach(tab => {
+      const side = tab.dataset.thumbSide
+      tab.classList.toggle('is-active', side === activeSide)
+      tab.classList.toggle('is-inactive', side !== activeSide)
+    })
+
+    // Update per-breast annotation counts on all tabs
+    ;['right', 'left'].forEach(side => {
+      const countEl = document.querySelector('[data-side-count="' + side + '"]')
+      if (!countEl) return
+      const count = annotations.filter(a => a.side === side && (a.abnormalityType || a.levelOfConcern)).length
+      countEl.textContent = count
     })
   }
 
@@ -274,11 +277,6 @@
   function renderMainImages() {
     const viewKeys = SIDE_VIEWS[activeSide]
     const row = document.getElementById('images-row')
-    const title = document.getElementById('images-title')
-    const hint = document.getElementById('images-hint')
-
-    title.textContent = (activeSide === 'right' ? 'Right' : 'Left') + ' breast'
-    hint.textContent = 'Click an image to add an annotation'
 
     let html = ''
     let panelCount = 0
@@ -313,6 +311,10 @@
 
     row.querySelectorAll('.app-ann-v2__image-panel:not(.app-ann-v2__image-panel--no-image)').forEach(panel => {
       panel.addEventListener('click', handleImageClick)
+      panel.addEventListener('mouseenter', function () {
+        // Fresh entry: allow floating preview again for this view
+        placedThisHover.delete(this.dataset.view)
+      })
       panel.addEventListener('mousemove', function (e) { updateCursorPreview(this, e) })
       panel.addEventListener('mouseleave', hideCursorPreview)
     })
@@ -385,7 +387,17 @@
   function attachMarkerHandlers(marker) {
     // Stop click events on markers from bubbling to the panel
     // (prevents a click to activate from also triggering handleImageClick)
-    marker.addEventListener('click', function (e) { e.stopPropagation() })
+    // For incomplete annotations: if all panels are covered, clicking the marker opens the modal
+    marker.addEventListener('click', function (e) {
+      e.stopPropagation()
+      const targetAnn = getAnnotation(this.dataset.annId)
+      if (targetAnn && !targetAnn.abnormalityType && !targetAnn.levelOfConcern) {
+        const panelKeys = getPanelKeysForSide(targetAnn.side)
+        if (panelKeys.length > 0 && panelKeys.every(k => targetAnn.positions && targetAnn.positions[k])) {
+          openModal(targetAnn.id)
+        }
+      }
+    })
 
     marker.addEventListener('mousedown', function (e) {
       e.stopPropagation()
@@ -455,11 +467,12 @@
   }
 
   function buildDisplayIndices() {
+    // Number completed annotations independently per breast (right: 1,2,3; left: 1,2,3)
     const indices = {}
-    let n = 1
-    // Only number completed annotations (those with at least one detail filled in)
-    annotations.filter(a => a.side === 'right' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = n++ })
-    annotations.filter(a => a.side === 'left' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = n++ })
+    let rn = 1
+    let ln = 1
+    annotations.filter(a => a.side === 'right' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = rn++ })
+    annotations.filter(a => a.side === 'left' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = ln++ })
     return indices
   }
 
@@ -467,24 +480,24 @@
     const scroll = document.getElementById('sidebar-scroll')
     const displayIndex = buildDisplayIndices()
 
+    // Only show annotations for the active side
     let html = '<h2 class="app-ann-v2__sidebar-heading">Annotations</h2>'
-    ;['right', 'left'].forEach(function(side) {
-      const sideAnnotations = annotations.filter(a => a.side === side)
-      const sideLabel = side === 'right' ? 'Right breast' : 'Left breast'
-      html += '<div class="app-ann-v2__breast-section"><h3 class="app-ann-v2__breast-heading">' + sideLabel + '</h3>'
 
-      if (sideAnnotations.length === 0) {
-        html += '<p class="app-ann-v2__empty">No annotations recorded</p>'
+    const sideAnnotations = annotations.filter(a => a.side === activeSide)
+    html += '<div class="app-ann-v2__breast-section">'
+
+    if (sideAnnotations.length === 0) {
+      html += '<p class="app-ann-v2__empty">No annotations recorded</p>'
+    }
+
+    sideAnnotations.forEach(ann => {
+      const isActive = ann.id === activeAnnotationId
+      const isIncomplete = !ann.abnormalityType && !ann.levelOfConcern
+      let typeLabel = 'Type not set'
+      if (ann.abnormalityType) {
+        typeLabel = (ann.abnormalityType === 'Other' && ann.otherDetails) ? 'Other: ' + ann.otherDetails : ann.abnormalityType
       }
-
-      sideAnnotations.forEach(ann => {
-        const isActive = ann.id === activeAnnotationId
-        const isIncomplete = !ann.abnormalityType && !ann.levelOfConcern
-        let typeLabel = 'Type not set'
-        if (ann.abnormalityType) {
-          typeLabel = (ann.abnormalityType === 'Other' && ann.otherDetails) ? 'Other: ' + ann.otherDetails : ann.abnormalityType
-        }
-        const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
+      const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
         const metaParts = [concernLabel].filter(Boolean)
 
         html += '<div class="app-ann-v2__annotation-card' +
@@ -496,8 +509,8 @@
 
         html += '<div class="app-ann-v2__annotation-header">' +
           '<span class="app-ann-v2__annotation-number">' + (displayIndex[ann.id] || '?') + '</span>' +
-          '<span class="app-ann-v2__annotation-type">' + typeLabel + '</span>' +
-          '</div>'
+          '<div class="app-ann-v2__annotation-body">' +
+          '<span class="app-ann-v2__annotation-type">' + typeLabel + '</span>'
 
         if (metaParts.length) {
           html += '<p class="app-ann-v2__annotation-meta">' + metaParts.join(' &middot; ') + '</p>'
@@ -520,18 +533,24 @@
         } else {
           html += '<div class="app-ann-v2__annotation-actions"><button class="app-link-button" type="button" data-action="edit" data-ann-id="' + ann.id + '">Edit</button></div>'
         }
-        html += '</div>'
+        html += '</div>'  // body
+        html += '</div>'  // header
+        html += '</div>'  // card
       })
 
       const addBtnText = sideAnnotations.length > 0 ? 'Add another annotation' : 'Add annotation'
       const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
       const addBtnDisabled = hasIncomplete ? ' disabled title="Complete the current annotation before adding another"' : ''
-      html += '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small app-ann-v2__add-annotation-btn" type="button" data-action="add-annotation" data-side="' + side + '"' + addBtnDisabled + '>' + addBtnText + '</button>'
+      html += '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small app-ann-v2__add-annotation-btn" type="button" data-action="add-annotation" data-side="' + activeSide + '"' + addBtnDisabled + '>' + addBtnText + '</button>'
       html += '</div>'
-    })
 
     scroll.innerHTML = html
   }
+
+  // Track which views had a marker placed during the current hover session.
+  // If a view is in this set, clicking placed a marker there and it should stay fixed
+  // until the user leaves and re-enters the panel.
+  const placedThisHover = new Set()
 
   // ─── cursor preview ────────────────────────────────────────────────────────
   // Shows a yellow circle+plus at the cursor position on image panels
@@ -547,7 +566,7 @@
   cursorPreview.appendChild(cursorPreviewBadge)
 
   function updateCursorPreview(panel, event) {
-    // Hide if hovering over an existing marker
+    // Hide if hovering over an existing marker (that isn't being hidden for move-mode)
     if (event.target.closest('.app-ann-marker')) {
       hideCursorPreview()
       return
@@ -558,18 +577,40 @@
     if (cursorPreview.parentElement !== panel) {
       panel.appendChild(cursorPreview)
     }
-    // Show badge: annotation number (or ?) if click would add to active annotation,
-    // or '+' if click would create a new one
+
     const viewKey = panel.dataset.view
     const displayIndex = buildDisplayIndices()
-    const ann = activeAnnotationId ? getAnnotation(activeAnnotationId) : null
-    const annIsIncomplete = ann && !ann.abnormalityType && !ann.levelOfConcern
-    const wouldAddToActive = ann && ann.side === activeSide && (!ann.positions || !ann.positions[viewKey] || annIsIncomplete)
 
-    if (wouldAddToActive) {
-      cursorPreviewBadge.textContent = annIsIncomplete ? '?' : (displayIndex[activeAnnotationId] || '?')
+    // If there's an incomplete annotation on this side, clicking will always move/place it.
+    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityType && !a.levelOfConcern)
+    if (incompleteAnn) {
+      // If we just placed a marker here this hover session, keep it fixed
+      if (placedThisHover.has(viewKey)) {
+        hideCursorPreview()
+        return
+      }
+      // Show ? preview; ghost the existing marker at 0.3 opacity so user can see previous position
+      const existingMarker = panel.querySelector('.app-ann-marker[data-ann-id="' + incompleteAnn.id + '"]')
+      if (existingMarker) {
+        existingMarker.style.opacity = '0.3'
+        existingMarker.style.pointerEvents = 'none'
+      }
+      cursorPreviewBadge.textContent = '?'
+      cursorPreviewBadge.hidden = false
+      cursorPreview.hidden = false
+      cursorPreview.style.left = x + '%'
+      cursorPreview.style.top = y + '%'
+      return
+    }
+
+    // No incomplete annotation: show badge based on what clicking would do
+    const ann = activeAnnotationId ? getAnnotation(activeAnnotationId) : null
+    if (ann && ann.side === activeSide && (!ann.positions || !ann.positions[viewKey])) {
+      // Will add a marker to the active complete annotation
+      cursorPreviewBadge.textContent = displayIndex[ann.id] || '?'
       cursorPreviewBadge.hidden = false
     } else {
+      // Will create a new annotation
       cursorPreviewBadge.textContent = '+'
       cursorPreviewBadge.hidden = false
     }
@@ -579,6 +620,12 @@
   }
 
   function hideCursorPreview() {
+    // Restore any marker that was hidden for the "move" preview
+    const hiddenMarker = document.querySelector('.app-ann-marker[style*="opacity: 0"]')
+    if (hiddenMarker) {
+      hiddenMarker.style.opacity = ''
+      hiddenMarker.style.pointerEvents = ''
+    }
     cursorPreview.hidden = true
   }
 
@@ -601,23 +648,26 @@
     const x = Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 1000
     const y = Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 1000
 
+    // If there's an incomplete annotation on this side, ALL clicks update it (never create new)
+    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityType && !a.levelOfConcern)
+    if (incompleteAnn) {
+      if (!incompleteAnn.positions) incompleteAnn.positions = {}
+      incompleteAnn.positions[viewKey] = { x: x, y: y }
+      activeAnnotationId = incompleteAnn.id
+      placedThisHover.add(viewKey) // freeze this view's marker until user re-enters
+      renderMarkers()
+      renderSidebar()
+      const panelKeys = getPanelKeysForSide(activeSide)
+      const allCovered = panelKeys.length > 0 && panelKeys.every(k => incompleteAnn.positions[k])
+      if (allCovered) openModal(incompleteAnn.id)
+      return
+    }
+
+    // No incomplete annotation — try to add to the active complete annotation
     if (activeAnnotationId) {
       const ann = getAnnotation(activeAnnotationId)
       if (ann && ann.side === activeSide) {
-        const isIncomplete = !ann.abnormalityType && !ann.levelOfConcern
         if (!ann.positions) ann.positions = {}
-        if (isIncomplete) {
-          // Incomplete annotation: always update position on this view (never create new)
-          ann.positions[viewKey] = { x: x, y: y }
-          renderMarkers()
-          renderSidebar()
-          // Auto-open modal if all panels for this side now have a marker
-          const panelKeys = getPanelKeysForSide(activeSide)
-          const allCovered = panelKeys.length > 0 && panelKeys.every(k => ann.positions[k])
-          if (allCovered) openModal(ann.id)
-          return
-        }
-        // Complete annotation: only add if this view doesn't already have a marker
         if (!ann.positions[viewKey]) {
           ann.positions[viewKey] = { x: x, y: y }
           renderMarkers()
@@ -628,10 +678,6 @@
       }
       activeAnnotationId = null
     }
-
-    // Never create a new annotation while an incomplete one already exists
-    const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
-    if (hasIncomplete) return
 
     const newId = uid()
     annotations.push({
@@ -708,17 +754,13 @@
 
     if (card && card.dataset.annId) {
       const annId = card.dataset.annId
-      if (activeAnnotationId === annId) {
-        activeAnnotationId = null
-      } else {
-        activeAnnotationId = annId
-        const ann = getAnnotation(annId)
+      activeAnnotationId = annId
+      const ann = getAnnotation(annId)
         if (ann && ann.side !== activeSide) {
           activeSide = ann.side
           renderThumbs()
           renderMainImages()
         }
-      }
       renderSidebar()
       renderMarkers()
     }
@@ -729,7 +771,7 @@
     const card = e.target.closest('.app-ann-v2__annotation-card')
     if (!card || !card.dataset.annId) return
     e.preventDefault()
-    activeAnnotationId = activeAnnotationId === card.dataset.annId ? null : card.dataset.annId
+    activeAnnotationId = card.dataset.annId
     renderSidebar()
     renderMarkers()
   })

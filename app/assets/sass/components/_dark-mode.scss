@@ -465,7 +465,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
 
   // Image container borders — light grey so visible against dark backgrounds
   .app-ann-v2__image-panel,
-  .app-ann-v2__thumb {
+  .app-ann-v2__tab-thumb {
     border-color: $app-dark-mode-text-colour-secondary;
   }
 
