@@ -43,6 +43,10 @@ body.app-annotate-v2 {
   cursor: pointer;
   text-align: left;
 
+  & .app-count {
+    border: 1px solid nhsuk-colour("grey-3");
+  }
+
   &.is-active {
     $bw: 1px;
 
@@ -87,18 +91,6 @@ body.app-annotate-v2 {
   @include nhsuk-font($size: 19); // responsive: 16px mobile, 19px tablet+
   white-space: nowrap;
   text-decoration: underline;
-}
-
-// Tab count badge: shows number of annotations for this breast
-.app-ann-v2__tab-count {
-  font-size: 16px;
-  background: nhsuk-colour("blue");
-  color: nhsuk-colour("white");
-  border-radius: 2px;
-  padding: 1px nhsuk-spacing(1);
-  white-space: nowrap;
-  min-width: 1.5em;
-  text-align: center;
 }
 
 // Thumbnail strip: small previews of each view within the tab

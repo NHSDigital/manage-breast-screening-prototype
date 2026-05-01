@@ -63,7 +63,7 @@
         aria-label="Switch to {{ group.label }}"
       >
         <span class="app-ann-v2__tab-label" data-side="{{ group.side }}">{{ group.label }}</span>
-        <span class="app-ann-v2__tab-count" data-side-count="{{ group.side }}">0</span>
+        <span class="app-count" data-side-count="{{ group.side }}">0</span>
         <span class="app-ann-v2__tab-thumbs">
           {% for view in group.views %}
             {% set viewPaths = allPaths[view.key] %}
