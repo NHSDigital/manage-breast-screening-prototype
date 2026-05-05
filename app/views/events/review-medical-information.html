@@ -15,7 +15,12 @@
 
 {% block pageContent %}
 
-  <h1>{{ pageHeading }}</h1>
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
 
   {{ appHiddenInput({
     name: "event[workflowStatus][review-medical-information]",
