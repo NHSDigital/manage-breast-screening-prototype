@@ -381,7 +381,7 @@
           Implanted in
         {% endif %}{{ historyItem.year }} ({{ historyItem.year | relativeYear }})
         {% if isRemoved %}
-          <br>Device removed {% if historyItem.yearRemoved %} in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }}){% endif %}
+          <br>Removed {% if historyItem.yearRemoved %} in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }}){% endif %}
         {% endif %}
       {% endset %}
 
@@ -588,7 +588,7 @@
 {% if not hasAnyMedicalHistoryData %}
   {% set insetTextHtml %}
     <p>
-      No medical history has been added yet.
+      No medical history has been added.
     </p>
   {% endset %}
 
