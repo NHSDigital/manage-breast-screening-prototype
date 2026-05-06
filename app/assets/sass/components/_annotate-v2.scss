@@ -137,6 +137,7 @@ body.app-annotate-v2 {
   border-top: 0;
   background: nhsuk-colour("white");
   @include nhsuk-responsive-padding(4); // 16px mobile, 24px tablet+
+  @include nhsuk-responsive-margin(4, "bottom"); // 16px mobile, 24px tablet+
 }
 
 // ─── 2-column layout (images + sidebar) ──────────────────────────────────────
@@ -575,12 +576,10 @@ $ann-marker-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); // contrast on dark mammogram 
 
 // ─── Modal secondary actions ─────────────────────────────────────────────────
 
-.app-ann-modal__secondary-actions {
-  display: flex;
-  gap: nhsuk-spacing(4);
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 19px; // inherit to child app-link-buttons
+// Delete row: forces 'Delete annotation' onto its own line below button + Cancel
+.app-ann-modal__delete-row {
+  flex-basis: 100%;
+  font-size: 19px;
 }
 
 // Dark mode: tabs, panel, annotation cards

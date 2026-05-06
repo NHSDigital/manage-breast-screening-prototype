@@ -3,7 +3,7 @@
 
 {% extends parentLayout or 'layout-reading.html' %}
 
-{% set gridColumn = "none" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
 {% set bodyClasses = "app-annotate-v2 app-workflow-mode" %}
 
 {% block pageContent %}
@@ -51,6 +51,9 @@
       }
     ] %}
 
+  <span class="nhsuk-caption-l">
+    {{ participant | getFullName }}
+  </span>
   <h1 class="nhsuk-heading-l">Annotate images</h1>
 
   {# Horizontal tab bar: breast tabs with inline thumbnails #}
@@ -109,13 +112,21 @@
   </div>
 
   {# Save button sits below the annotation columns, like a regular page action #}
-  <div class="nhsuk-width-container">
-    <div class="nhsuk-main-wrapper nhsuk-u-padding-top-4 nhsuk-u-padding-bottom-4">
-      <a href="../recall-for-assessment-details" id="ann-save-return" class="nhsuk-button nhsuk-u-margin-bottom-0">
-        Save and return
-      </a>
-    </div>
-  </div>
+  {# <div class="nhsuk-width-container">
+    <div class="nhsuk-main-wrapper nhsuk-u-padding-top-4 nhsuk-u-padding-bottom-4"> #}
+      <div class="nhsuk-form-group">
+        {# <a href="../recall-for-assessment-details" id="ann-save-return" class="nhsuk-button nhsuk-u-margin-bottom-0">
+          Save annotations
+        </a> #}
+        {{ button({
+          text: "Save annotations",
+          href: "../recall-for-assessment-details",
+          id: "ann-save-return"
+        }) }}
+      </div>
+      
+    {# </div> #}
+  {# </div> #}
 
   {# Hidden form for persisting all annotations back to session on save #}
   <form id="ann-save-form" action="./annotate-v2/save" method="POST" style="display:none">
@@ -177,11 +188,10 @@
         <div class="nhsuk-button-group nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
           {{ button({
             text: "Add annotation",
-            classes: "nhsuk-u-margin-bottom-0",
             attributes: { id: "ann-modal-save" }
           }) }}
-          <div class="app-ann-modal__secondary-actions">
-            <button class="app-link-button" type="button" id="ann-modal-cancel">Cancel</button>
+          <button class="app-link-button" type="button" id="ann-modal-cancel">Cancel</button>
+          <div class="app-ann-modal__delete-row">
             <button class="app-link-button app-link-button--warning" type="button" id="ann-modal-delete" hidden>Delete annotation</button>
           </div>
         </div>

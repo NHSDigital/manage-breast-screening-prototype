@@ -100,7 +100,7 @@ body.js-enabled .app-no-js-only {
   text-decoration: underline;
   text-align: left;
   cursor: pointer;
-  font-size: inherit;
+  @include nhsuk-font(19);
   font-family: inherit;
 
   &:hover {
@@ -116,4 +116,3 @@ body.js-enabled .app-no-js-only {
 .app-inline-form {
   display: inline;
 }
-

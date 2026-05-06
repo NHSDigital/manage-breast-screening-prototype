@@ -755,9 +755,13 @@ module.exports = (router) => {
       }
 
       // Simple annotations have no positions — redirect to the simple form
-      const isSimple = !annotation?.positions || Object.keys(annotation.positions || {}).length === 0
+      const isSimple =
+        !annotation?.positions ||
+        Object.keys(annotation.positions || {}).length === 0
       const editTarget = isSimple ? 'annotation-simple' : 'annotation'
-      res.redirect(`/reading/session/${sessionId}/events/${eventId}/${editTarget}`)
+      res.redirect(
+        `/reading/session/${sessionId}/events/${eventId}/${editTarget}`
+      )
     }
   )
 
@@ -1494,7 +1498,9 @@ module.exports = (router) => {
           // Break out of modal immediately — recall for assessment is a complex
           // multi-step flow that should run as a full page journey
           return res.redirect(
-            modalBreakout(`/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`)
+            modalBreakout(
+              `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+            )
           )
         default:
           return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
