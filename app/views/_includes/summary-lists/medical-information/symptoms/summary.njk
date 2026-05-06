@@ -74,7 +74,7 @@
       {% elseif symptom.location == "both breasts" and symptom.bothBreastsDescription %}
         {% set locationText = locationText + ": " + symptom.bothBreastsDescription %}
       {% elseif symptom.location == "other" and symptom.otherLocationDescription %}
-        {% set locationText = symptom.otherLocationDescription | sentenceCase %}
+        {% set locationText = "Other location: " + symptom.otherLocationDescription | sentenceCase %}
       {% endif %}
       {% set valueLines = valueLines | push(locationText) %}
     {% endif %}
