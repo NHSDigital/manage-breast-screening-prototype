@@ -1491,8 +1491,10 @@ module.exports = (router) => {
             `/reading/session/${sessionId}/events/${eventId}/technical-recall`
           )
         case 'recall_for_assessment':
+          // Break out of modal immediately — recall for assessment is a complex
+          // multi-step flow that should run as a full page journey
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+            modalBreakout(`/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`)
           )
         default:
           return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)

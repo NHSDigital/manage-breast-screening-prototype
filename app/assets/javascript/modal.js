@@ -999,7 +999,25 @@ document.addEventListener('DOMContentLoaded', () => {
     })
       .then((response) => {
         if (!response.ok) throw new Error('Submission failed')
-        window.openModal(modalId, { loadUrl: response.url })
+        return response.text().then((html) => {
+          // Check for a breakout navigation instruction — the server may have
+          // returned a 200 fragment instead of a redirect (see modalBreakout()).
+          // In this case navigate the browser directly rather than opening a modal.
+          const tempDiv = document.createElement('div')
+          tempDiv.innerHTML = html
+          const navEl = tempDiv.querySelector('[data-modal-navigate]')
+          if (navEl) {
+            const dest = new URL(
+              navEl.dataset.modalNavigate,
+              window.location.href
+            )
+            dest.searchParams.delete('_modal')
+            dest.searchParams.delete('_modal_breakout')
+            window.location.href = dest.toString()
+            return
+          }
+          window.openModal(modalId, { loadUrl: response.url })
+        })
       })
       .catch((err) => {
         console.error('Modal submit error:', err)
