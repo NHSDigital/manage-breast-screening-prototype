@@ -129,6 +129,128 @@
 
 <hr>
 
+<h3>Button variant — joined</h3>
+
+<p>Add <code>app-option-picker--joined</code> to remove gaps between options. Adjacent borders overlap by the border width so there's no doubling. Only the outer corners are rounded.</p>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--joined">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Sort order
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="joined-sort-asc" name="sort-demo-9" value="asc">
+        <label class="app-option-picker__label" for="joined-sort-asc">Ascending</label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-sort-desc" name="sort-demo-9" value="desc" checked>
+        <label class="app-option-picker__label" for="joined-sort-desc">Descending</label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Button variant — joined, more options</h3>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--joined">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Image status
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="joined-status-all" name="sort-demo-10" value="all" checked>
+        <label class="app-option-picker__label" for="joined-status-all">All</label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-status-unread" name="sort-demo-10" value="unread">
+        <label class="app-option-picker__label" for="joined-status-unread">Unread</label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-status-read" name="sort-demo-10" value="read">
+        <label class="app-option-picker__label" for="joined-status-read">Read</label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-status-arbitrated" name="sort-demo-10" value="arbitrated">
+        <label class="app-option-picker__label" for="joined-status-arbitrated">Arbitrated</label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Button variant — joined with radio dot</h3>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--joined app-option-picker--show-dot">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Image status
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="radio" id="joined-dot-all" name="sort-demo-11" value="all" checked>
+        <label class="app-option-picker__label" for="joined-dot-all">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          All
+        </label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-dot-unread" name="sort-demo-11" value="unread">
+        <label class="app-option-picker__label" for="joined-dot-unread">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Unread
+        </label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-dot-read" name="sort-demo-11" value="read">
+        <label class="app-option-picker__label" for="joined-dot-read">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Read
+        </label>
+
+        <input class="app-option-picker__input" type="radio" id="joined-dot-arb" name="sort-demo-11" value="arbitrated">
+        <label class="app-option-picker__label" for="joined-dot-arb">
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+          Arbitrated
+        </label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<h3>Button variant — joined with checkmark (checkbox)</h3>
+
+<div class="sg-example">
+  <div class="app-option-picker app-option-picker--button app-option-picker--joined app-option-picker--show-check">
+    <fieldset class="nhsuk-fieldset">
+      <legend class="nhsuk-fieldset__legend app-option-picker__legend">
+        Image views
+      </legend>
+      <div class="app-option-picker__items">
+        <input class="app-option-picker__input" type="checkbox" id="joined-chk-cc" name="joined-views[]" value="cc" checked>
+        <label class="app-option-picker__label" for="joined-chk-cc">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          CC
+        </label>
+
+        <input class="app-option-picker__input" type="checkbox" id="joined-chk-mlo" name="joined-views[]" value="mlo" checked>
+        <label class="app-option-picker__label" for="joined-chk-mlo">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          MLO
+        </label>
+
+        <input class="app-option-picker__input" type="checkbox" id="joined-chk-mag" name="joined-views[]" value="mag">
+        <label class="app-option-picker__label" for="joined-chk-mag">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          Mag
+        </label>
+
+        <input class="app-option-picker__input" type="checkbox" id="joined-chk-special" name="joined-views[]" value="special">
+        <label class="app-option-picker__label" for="joined-chk-special">
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+          Special
+        </label>
+      </div>
+    </fieldset>
+  </div>
+</div>
+
+<hr>
+
 <h3>Checkbox variant — buttons</h3>
 
 <p>Use <code>type="checkbox"</code> instead of <code>type="radio"</code> to allow multiple selections. The <code>name</code> attribute can be shared or unique per item.</p>

@@ -5,6 +5,7 @@
 // Modifiers:
 //   app-option-picker--show-dot    show a radio circle inside each option
 //   app-option-picker--show-check  show a checkbox inside each option
+//   app-option-picker--joined      options sit flush with shared/overlapping borders
 //   app-option-picker--small       compact sizing
 
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
@@ -170,17 +171,20 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
   }
 }
 
-// Active — shift down, remove shadow; ::before bottom no longer needs to extend below shadow
+// Active — shift down, remove shadow, show active background colour
 .app-option-picker--button .app-option-picker__label:active {
   top: $nhsuk-button-shadow-size;
   box-shadow: none;
+  background-color: $nhsuk-secondary-button-active-colour;
 
   &::before {
     bottom: -$nhsuk-border-width-form-element;
   }
 }
 
-// Selected — filled with brand blue
+// Selected — filled with brand blue. No ::before border — matches the NHS login button pattern
+// where a filled solid button has no visible border; the shadow provides the 3D edge.
+// Keeping the border on a filled button causes the side borders to sit over the shadow corners.
 .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label {
   background-color: $nhsuk-brand-colour;
   box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($nhsuk-brand-colour, 50%);
@@ -188,7 +192,7 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 }
 
 .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label::before {
-  border-color: $nhsuk-brand-colour;
+  border-color: transparent;
 }
 
 .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:hover {
@@ -197,12 +201,13 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 }
 
 .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:hover::before {
-  border-color: nhsuk-shade($nhsuk-brand-colour, 20%);
+  border-color: transparent;
 }
 
 .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:active {
   top: $nhsuk-button-shadow-size;
   box-shadow: none;
+  background-color: nhsuk-shade($nhsuk-brand-colour, 50%);
 }
 
 // Focus — last so it overrides checked state; includes :hover to beat checked+hover specificity
@@ -218,6 +223,86 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 .app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label::before,
 .app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label:hover::before {
   border-color: transparent;
+}
+
+// =========================================================
+// Joined modifier
+// Options sit flush with no gap. Each label overlaps the previous by the
+// border width so adjacent borders share rather than double. Only the
+// outer corners keep their radius; all internal corners are square.
+// =========================================================
+
+.app-option-picker--joined .app-option-picker__items {
+  gap: 0;
+}
+
+// All labels: overlap left edge by 2px to share the border with the previous item
+.app-option-picker--joined.app-option-picker--button .app-option-picker__label {
+  margin-left: -$nhsuk-border-width-form-element;
+  border-radius: 0;
+
+  &::before {
+    border-radius: 0;
+  }
+}
+
+// First label: no overlap, restore left-side radii
+.app-option-picker--joined.app-option-picker--button .app-option-picker__label:first-of-type {
+  margin-left: 0;
+  border-top-left-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  border-bottom-left-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+
+  &::before {
+    border-top-left-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+    border-bottom-left-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  }
+}
+
+// Last label: restore right-side radii
+.app-option-picker--joined.app-option-picker--button .app-option-picker__label:last-of-type {
+  border-top-right-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  border-bottom-right-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+
+  &::before {
+    border-top-right-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+    border-bottom-right-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
+  }
+}
+
+// Raise hovered/active/checked/focused items so their full border shows over adjacent items
+.app-option-picker--joined.app-option-picker--button .app-option-picker__label:hover,
+.app-option-picker--joined.app-option-picker--button .app-option-picker__label:active,
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label,
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label {
+  z-index: 1;
+}
+
+// Focus in joined context:
+// - Keep ::before border black so the dividing lines to adjacent buttons stay visible
+// - Raise to z-index: 2 so a hovered neighbour (z-index: 1) can't bleed its blue border over the focus state
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label,
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label:hover {
+  z-index: 2;
+}
+
+// Only show left and right borders — these are the dividers to adjacent buttons.
+// Top and bottom stay transparent; top would visually frame the yellow, bottom would
+// appear below the focus shadow. Also hide the exterior side on first and last buttons.
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label::before,
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label:hover::before {
+  border-color: transparent;
+  border-left-color: $nhsuk-focus-text-colour;
+  border-right-color: $nhsuk-focus-text-colour;
+}
+
+// First button: no neighbour to the left, hide exterior left divider
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:first-of-type:focus + .app-option-picker__label::before {
+  border-left-color: transparent;
+}
+
+// Last button: no neighbour to the right, hide exterior right divider
+.app-option-picker--joined.app-option-picker--button .app-option-picker__input:last-of-type:focus + .app-option-picker__label::before {
+  border-right-color: transparent;
 }
 
 // =========================================================
