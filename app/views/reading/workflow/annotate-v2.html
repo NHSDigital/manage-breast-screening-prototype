@@ -446,6 +446,7 @@
         activeAnnotationId = annId
         renderMarkers()
         renderSidebar()
+        if (!lightbox.hidden) renderLightboxMarker()
       }
 
       let hasDragged = false

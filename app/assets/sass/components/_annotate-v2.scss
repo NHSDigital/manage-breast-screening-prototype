@@ -435,8 +435,8 @@ $ann-marker-shadow:
 // Remove button — shown on marker hover or focus only
 .app-ann-marker__remove {
   position: absolute;
-  top: -14px;
-  right: -14px;
+  top: -18px;
+  right: -18px;
   width: 22px;
   height: 22px;
   background: $nhsuk-focus-colour;
@@ -450,7 +450,7 @@ $ann-marker-shadow:
   font-size: 16px;
   font-weight: 700;
   line-height: 1;
-  padding: 0;
+  padding: 2px 0 0; // top nudge to optically centre the − glyph
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.1s;
