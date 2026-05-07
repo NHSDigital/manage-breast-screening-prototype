@@ -155,6 +155,21 @@
     </div>
   </div>
 
+  {# Image lightbox — zoomed single image for fine-tuning annotation placement #}
+  <div id="ann-lightbox" class="app-ann-v2__lightbox" hidden aria-modal="true" role="dialog" aria-label="Zoomed image">
+    <div class="app-ann-v2__lightbox-overlay" id="ann-lightbox-overlay"></div>
+    <div class="app-ann-v2__lightbox-dialog">
+      <button class="app-ann-v2__lightbox-close" type="button" id="ann-lightbox-close" aria-label="Close zoomed view">
+        <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true" focusable="false">
+          <path d="M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z"/>
+        </svg>
+      </button>
+      <div class="app-ann-v2__lightbox-panel" id="ann-lightbox-panel">
+        {# Populated by JS — contains <img> and any marker #}
+      </div>
+    </div>
+  </div>
+
 {% endblock %}
 
 
@@ -261,6 +276,9 @@
           html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--' + activeSide + '" data-view="' + subKey + '" data-base-view="' + viewKey + '">' +
             '<img src="' + path + '" alt="' + label + '" draggable="false">' +
             '<span class="app-ann-v2__view-label">' + label + '</span>' +
+            '<button class="app-ann-v2__zoom-btn" type="button" aria-label="Zoom ' + label + '" data-zoom-view="' + subKey + '">' +
+              '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path d="M1 1h5v1.5H2.5V6H1V1zm9 0h5v5h-1.5V2.5H10V1zM1 10h1.5v3.5H6V15H1v-5zm13.5 3.5H11V15h5v-5h-1.5v3.5z"/></svg>' +
+            '</button>' +
             '</div>'
         })
       }
@@ -276,6 +294,14 @@
       })
       panel.addEventListener('mousemove', function (e) { updateCursorPreview(this, e) })
       panel.addEventListener('mouseleave', hideCursorPreview)
+    })
+
+    row.querySelectorAll('.app-ann-v2__zoom-btn').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        const panel = this.closest('.app-ann-v2__image-panel')
+        if (panel) openLightbox(panel)
+      })
     })
 
     // Re-render markers once each image loads (natural dimensions needed for coordinate conversion)
@@ -433,7 +459,7 @@
           el.classList.add('dragging')
         }
         if (hasDragged) {
-          const panel = el.closest('.app-ann-v2__image-panel')
+          const panel = el.closest('.app-ann-v2__image-panel, .app-ann-v2__lightbox-panel')
           if (!panel) return
           const rect = panel.getBoundingClientRect()
           el.style.left = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100)) + '%'
@@ -447,7 +473,7 @@
         el.classList.remove('dragging')
 
         if (hasDragged) {
-          const panel = el.closest('.app-ann-v2__image-panel')
+          const panel = el.closest('.app-ann-v2__image-panel, .app-ann-v2__lightbox-panel')
           if (panel) {
             const rect = panel.getBoundingClientRect()
             const cx = Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width))
@@ -463,6 +489,7 @@
           }
           renderMarkers()
           renderSidebar()
+          if (!lightbox.hidden) renderLightboxMarker()
         }
       }
 
@@ -566,6 +593,215 @@
   // until the user leaves and re-enters the panel.
   const placedThisHover = new Set()
 
+  // ─── lightbox ──────────────────────────────────────────────────────────────
+  // Zoomed single image view for fine-tuning annotation placement.
+  // Clicking places/moves a marker and auto-closes. Esc or X closes without placing.
+
+  let lightboxViewKey = null
+
+  const lightbox = document.getElementById('ann-lightbox')
+  const lightboxPanel = document.getElementById('ann-lightbox-panel')
+
+  function openLightbox(sourcePanel) {
+    lightboxViewKey = sourcePanel.dataset.view
+    const img = sourcePanel.querySelector('img')
+    if (!img) return
+
+    const isLeft = sourcePanel.classList.contains('app-ann-v2__image-panel--left')
+
+    // Build panel contents
+    lightboxPanel.innerHTML = ''
+    lightboxPanel.className = 'app-ann-v2__lightbox-panel' + (isLeft ? ' app-ann-v2__image-panel--left' : '')
+
+    const lightboxImg = document.createElement('img')
+    lightboxImg.src = img.src
+    lightboxImg.alt = img.alt
+    lightboxImg.draggable = false
+    lightboxPanel.appendChild(lightboxImg)
+
+    // Place any existing marker for this view
+    lightboxImg.addEventListener('load', function () {
+      renderLightboxMarker()
+    }, { once: true })
+    if (lightboxImg.complete) renderLightboxMarker()
+
+    lightbox.hidden = false
+    document.getElementById('ann-lightbox-close').focus()
+
+    // Cursor preview inside lightbox
+    lightboxPanel.addEventListener('mousemove', onLightboxMouseMove)
+    lightboxPanel.addEventListener('mouseleave', hideLightboxPreview)
+    lightboxPanel.addEventListener('click', onLightboxClick)
+  }
+
+  function closeLightbox() {
+    lightbox.hidden = true
+    lightboxPanel.removeEventListener('mousemove', onLightboxMouseMove)
+    lightboxPanel.removeEventListener('mouseleave', hideLightboxPreview)
+    lightboxPanel.removeEventListener('click', onLightboxClick)
+    lightboxPanel.innerHTML = ''
+    lightboxViewKey = null
+  }
+
+  function renderLightboxMarker() {
+    lightboxPanel.querySelectorAll('.app-ann-marker').forEach(m => m.remove())
+    if (!lightboxViewKey) return
+
+    const sideAnnotations = annotations.filter(a => a.side === activeSide)
+    const displayIndex = buildDisplayIndices()
+
+    sideAnnotations.forEach(ann => {
+      if (!ann.positions || !ann.positions[lightboxViewKey]) return
+      const pos = ann.positions[lightboxViewKey]
+      const isActive = ann.id === activeAnnotationId
+
+      const marker = document.createElement('div')
+      marker.className = 'app-ann-marker' + (isActive ? ' is-active' : '')
+      const containerPos = imageFractionToContainerPercent(pos, lightboxPanel)
+      marker.style.left = containerPos.x + '%'
+      marker.style.top = containerPos.y + '%'
+      marker.dataset.annId = ann.id
+      marker.dataset.viewKey = lightboxViewKey
+      marker.tabIndex = 0
+      marker.setAttribute('role', 'button')
+      marker.setAttribute('aria-label', 'Annotation ' + (displayIndex[ann.id] || '?'))
+
+      const badge = document.createElement('div')
+      badge.className = 'app-ann-marker__badge'
+      badge.textContent = displayIndex[ann.id] || '?'
+      badge.setAttribute('aria-hidden', 'true')
+      marker.appendChild(badge)
+
+      const removeBtn = document.createElement('button')
+      removeBtn.className = 'app-ann-marker__remove'
+      removeBtn.type = 'button'
+      removeBtn.setAttribute('aria-label', 'Remove marker from ' + getViewLabel(lightboxViewKey))
+      removeBtn.innerHTML = '&minus;'
+      removeBtn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        const targetAnn = getAnnotation(ann.id)
+        if (targetAnn && targetAnn.positions) {
+          delete targetAnn.positions[lightboxViewKey]
+          if (Object.keys(targetAnn.positions).length === 0) {
+            const idx = annotations.findIndex(a => a.id === ann.id)
+            if (idx !== -1) annotations.splice(idx, 1)
+            if (activeAnnotationId === ann.id) activeAnnotationId = null
+          }
+        }
+        renderMarkers()
+        renderSidebar()
+        renderLightboxMarker()
+      })
+      marker.appendChild(removeBtn)
+
+      attachMarkerHandlers(marker)
+      lightboxPanel.appendChild(marker)
+    })
+  }
+
+  const lightboxCursorPreview = document.createElement('div')
+  lightboxCursorPreview.className = 'app-ann-cursor-preview'
+  lightboxCursorPreview.setAttribute('aria-hidden', 'true')
+  lightboxCursorPreview.hidden = true
+
+  const lightboxCursorPreviewBadge = document.createElement('div')
+  lightboxCursorPreviewBadge.className = 'app-ann-cursor-preview__badge'
+  lightboxCursorPreviewBadge.hidden = true
+  lightboxCursorPreview.appendChild(lightboxCursorPreviewBadge)
+
+  function onLightboxMouseMove(e) {
+    // Hide preview when hovering over an existing marker
+    if (e.target.closest('.app-ann-marker')) {
+      hideLightboxPreview()
+      return
+    }
+    if (!lightboxCursorPreview.parentElement) lightboxPanel.appendChild(lightboxCursorPreview)
+    const rect = lightboxPanel.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    lightboxCursorPreview.style.left = x + '%'
+    lightboxCursorPreview.style.top = y + '%'
+
+    // Show badge: ? for incomplete, number for active complete, + for new
+    const displayIndex = buildDisplayIndices()
+    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityTypes?.length && !a.levelOfConcern)
+    if (incompleteAnn) {
+      lightboxCursorPreviewBadge.textContent = '?'
+      lightboxCursorPreviewBadge.hidden = false
+    } else {
+      const ann = activeAnnotationId ? getAnnotation(activeAnnotationId) : null
+      if (ann && ann.side === activeSide && (!ann.positions || !ann.positions[lightboxViewKey])) {
+        lightboxCursorPreviewBadge.textContent = displayIndex[ann.id] || '?'
+        lightboxCursorPreviewBadge.hidden = false
+      } else {
+        lightboxCursorPreviewBadge.textContent = '+'
+        lightboxCursorPreviewBadge.hidden = false
+      }
+    }
+    lightboxCursorPreview.hidden = false
+  }
+
+  function hideLightboxPreview() {
+    lightboxCursorPreview.hidden = true
+    lightboxCursorPreviewBadge.hidden = true
+  }
+
+  function onLightboxClick(e) {
+    if (!lightboxViewKey) return
+    const rect = lightboxPanel.getBoundingClientRect()
+    const cx = (e.clientX - rect.left) / rect.width
+    const cy = (e.clientY - rect.top) / rect.height
+    const imagePos = containerFractionToImageFraction(cx, cy, lightboxPanel)
+    const x = Math.round(imagePos.x * 1000) / 1000
+    const y = Math.round(imagePos.y * 1000) / 1000
+
+    // Find or create the annotation to update
+    let targetAnn = null
+    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityTypes?.length && !a.levelOfConcern)
+    if (incompleteAnn) {
+      targetAnn = incompleteAnn
+    } else if (activeAnnotationId) {
+      const ann = getAnnotation(activeAnnotationId)
+      if (ann && ann.side === activeSide) targetAnn = ann
+    }
+
+    if (!targetAnn) {
+      // Create a new annotation
+      const newId = uid()
+      annotations.push({ id: newId, side: activeSide, positions: {}, annotationNumber: ++annotationCounter })
+      activeAnnotationId = newId
+      targetAnn = annotations[annotations.length - 1]
+    }
+
+    if (!targetAnn.positions) targetAnn.positions = {}
+    targetAnn.positions[lightboxViewKey] = { x: x, y: y }
+    activeAnnotationId = targetAnn.id
+
+    renderLightboxMarker()
+
+    // Auto-close after a brief moment so user sees the placed marker
+    setTimeout(function () {
+      closeLightbox()
+      renderMarkers()
+      renderSidebar()
+
+      // Open the annotation modal if all panels are now covered and annotation is still incomplete
+      const updated = getAnnotation(targetAnn.id)
+      if (updated && !updated.abnormalityTypes?.length && !updated.levelOfConcern) {
+        const panelKeys = getPanelKeysForSide(activeSide)
+        if (panelKeys.length > 0 && panelKeys.every(k => updated.positions && updated.positions[k])) {
+          openModal(updated.id)
+        }
+      }
+    }, 300)
+  }
+
+  document.getElementById('ann-lightbox-close').addEventListener('click', closeLightbox)
+  document.getElementById('ann-lightbox-overlay').addEventListener('click', closeLightbox)
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !lightbox.hidden) closeLightbox()
+  })
+
   // ─── cursor preview ────────────────────────────────────────────────────────
   // Shows a yellow circle+plus at the cursor position on image panels
 
@@ -580,8 +816,8 @@
   cursorPreview.appendChild(cursorPreviewBadge)
 
   function updateCursorPreview(panel, event) {
-    // Hide if hovering over an existing marker (that isn't being hidden for move-mode)
-    if (event.target.closest('.app-ann-marker')) {
+    // Hide if hovering over an existing marker or the zoom button
+    if (event.target.closest('.app-ann-marker') || event.target.closest('.app-ann-v2__zoom-btn')) {
       hideCursorPreview()
       return
     }
