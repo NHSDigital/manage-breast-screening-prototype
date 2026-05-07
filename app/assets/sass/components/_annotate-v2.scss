@@ -269,7 +269,7 @@ body.app-annotate-v2 {
   top: nhsuk-spacing(1);
   left: nhsuk-spacing(1);
   right: auto;
-  background: rgba(nhsuk-colour("blue"), 0.85); // NHS blue at 85% opacity
+  background: nhsuk-colour("blue"); // NHS blue at 85% opacity
   color: nhsuk-colour("white");
   font-size: 16px;
   font-weight: 700;
@@ -657,9 +657,9 @@ $ann-marker-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); // contrast on dark mammogram 
   left: nhsuk-spacing(1);
   width: 32px;
   height: 32px;
-  background: rgba(0, 0, 0, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 3px;
+  background: nhsuk-colour("blue");
+  border: none;
+  // border-radius: 3px;
   color: nhsuk-colour("white");
   cursor: pointer;
   display: flex;
@@ -745,29 +745,11 @@ $ann-marker-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); // contrast on dark mammogram 
   }
 }
 
-// The enlarged image panel inside the lightbox
-// Matches image-panel structure but fills the available space
+// The enlarged image panel inside the lightbox.
+// Reuses app-ann-v2__image-panel for aspect-ratio, object-fit, alignment, and background.
+// Just constrains the size to the viewport.
 .app-ann-v2__lightbox-panel {
-  position: relative;
-  overflow: hidden;
-  cursor: crosshair;
-  background: #000;
-  width: min(80vw, 70vh * 0.8);
-  height: min(100vh - nhsuk-spacing(6), 80vw * 1.25);
-  max-width: 900px;
-  max-height: 90vh;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: right top;
-    display: block;
-    pointer-events: none;
-    user-select: none;
-  }
-
-  &.app-ann-v2__image-panel--left img {
-    object-position: left top;
-  }
+  height: 85vh;
+  max-width: calc(85vh * 4 / 5); // 4:5 aspect ratio — matches app-ann-v2__image-panel
+  border: none;
 }

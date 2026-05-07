@@ -611,7 +611,7 @@
 
     // Build panel contents
     lightboxPanel.innerHTML = ''
-    lightboxPanel.className = 'app-ann-v2__lightbox-panel' + (isLeft ? ' app-ann-v2__image-panel--left' : '')
+    lightboxPanel.className = 'app-ann-v2__lightbox-panel app-ann-v2__image-panel app-ann-v2__image-panel--' + (isLeft ? 'left' : 'right')
 
     const lightboxImg = document.createElement('img')
     lightboxImg.src = img.src
