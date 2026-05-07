@@ -24,7 +24,9 @@
 .app-option-picker__items {
   display: flex;
   flex-wrap: wrap;
-  gap: nhsuk-spacing(2);
+  // Column gap as normal; row gap compensates for the button shadow which eats into vertical space
+  column-gap: nhsuk-spacing(2);
+  row-gap: calc(nhsuk-spacing(2) + #{$nhsuk-button-shadow-size});
   align-items: stretch;
 }
 
@@ -46,7 +48,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: nhsuk-spacing(1);
+  gap: nhsuk-spacing(2);
   cursor: pointer;
   user-select: none;
 }

@@ -250,7 +250,7 @@ const generateAbnormalData = (event, set) => {
         targetBreast.annotations.push({
           id: generateId(),
           side: annotation.side,
-          abnormalityType: Array.isArray(annotation.abnormalityType)
+          abnormalityTypes: Array.isArray(annotation.abnormalityType)
             ? annotation.abnormalityType
             : [annotation.abnormalityType],
           levelOfConcern: annotation.levelOfConcern || '4',
@@ -334,7 +334,7 @@ const generatePlaceholderAnnotation = (side, breastData) => {
   return {
     id: generateId(),
     side,
-    abnormalityType: [abnormalityType],
+    abnormalityTypes: [abnormalityType],
     levelOfConcern: faker.helpers.arrayElement(['3', '4', '5']),
     positions,
     comment: ''

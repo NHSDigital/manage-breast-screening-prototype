@@ -1,4 +1,6 @@
 {# app/views/_components/option-picker/template.njk #}
+{% from "nhsuk/components/hint/macro.njk" import hint %}
+{% from "nhsuk/components/error-message/macro.njk" import errorMessage %}
 
 {#-
   Option picker component
@@ -21,10 +23,10 @@
     label.classes {string}   - Extra classes on the label element.
     label.attributes {object} - Extra attributes on the label element.
   fieldset      {object}   - Wraps items in a fieldset. Same API as nhsuk fieldset.
-  hint          {object}   - Hint text/html above the items.
-  errorMessage  {object}   - Error message text/html.
+  hint          {object}   - Hint text/html. Rendered inside the fieldset before items.
+  errorMessage  {object}   - Error message. text or html. Triggers error state on form group.
   id            {string}   - Id on the items wrapper div.
-  classes       {string}   - Extra classes on the items wrapper div.
+  classes       {string}   - Extra classes on the wrapper div.
   attributes    {object}   - Extra attributes on the items wrapper div.
 
   value         {string}   - Pre-select this value (radio). Matched against item.value.
@@ -41,6 +43,23 @@
 {#- Id prefix fallback -#}
 {% set idPrefix = params.idPrefix if params.idPrefix else params.name %}
 
+{#- Build aria-describedby from hint and error ids -#}
+{% set describedBy = params.fieldset.describedBy if params.fieldset.describedBy else "" %}
+{% if params.hint.text or params.hint.html %}
+  {% set hintId = idPrefix ~ "-hint" %}
+  {% set describedBy = (describedBy ~ " " ~ hintId) | trim %}
+{% endif %}
+{% if params.errorMessage %}
+  {% set errorId = idPrefix ~ "-error" %}
+  {% set describedBy = (describedBy ~ " " ~ errorId) | trim %}
+{% endif %}
+
+{#- Form group class — error state when errorMessage is present -#}
+{% set formGroupClasses = "nhsuk-form-group" %}
+{% if params.errorMessage %}
+  {% set formGroupClasses = formGroupClasses ~ " nhsuk-form-group--error" %}
+{% endif %}
+
 {#- Build wrapper class list -#}
 {% set wrapperClasses = "app-option-picker app-option-picker--button" %}
 {% if params.joined %}
@@ -56,6 +75,33 @@
 {% if params.classes %}
   {% set wrapperClasses = wrapperClasses ~ " " ~ params.classes %}
 {% endif %}
+
+{#- Build hint HTML -#}
+{% set hintHtml %}
+  {% if params.hint.text or params.hint.html %}
+    {{ hint({
+      id: hintId,
+      classes: params.hint.classes,
+      attributes: params.hint.attributes,
+      html: params.hint.html,
+      text: params.hint.text
+    }) | trim }}
+  {% endif %}
+{% endset %}
+
+{#- Build error message HTML -#}
+{% set errorHtml %}
+  {% if params.errorMessage %}
+    {{ errorMessage({
+      id: errorId,
+      classes: params.errorMessage.classes,
+      attributes: params.errorMessage.attributes,
+      html: params.errorMessage.html,
+      text: params.errorMessage.text if params.errorMessage.text else params.errorMessage,
+      visuallyHiddenText: params.errorMessage.visuallyHiddenText
+    }) | trim }}
+  {% endif %}
+{% endset %}
 
 {#- Build inner items HTML -#}
 {% set itemsHtml %}
@@ -110,26 +156,31 @@
   </div>
 {% endset %}
 
-{#- Wrap in fieldset if provided, otherwise render items directly -#}
-{% if params.fieldset %}
+{#- Render: form group > picker wrapper > optional fieldset > hint + error + items -#}
+<div class="{{ formGroupClasses }}">
   <div class="{{ wrapperClasses }}">
-    <fieldset class="nhsuk-fieldset"
-      {%- if params.fieldset.attributes %}
-        {%- for attr, val in params.fieldset.attributes %} {{ attr }}="{{ val }}"{% endfor %}
-      {%- endif %}>
-      {%- if params.fieldset.legend %}
-        <legend class="nhsuk-fieldset__legend{% if params.fieldset.legend.size %} nhsuk-fieldset__legend--{{ params.fieldset.legend.size }}{% endif %}{% if params.fieldset.legend.classes %} {{ params.fieldset.legend.classes }}{% endif %} app-option-picker__legend"
-          {%- if params.fieldset.legend.attributes %}
-            {%- for attr, val in params.fieldset.legend.attributes %} {{ attr }}="{{ val }}"{% endfor %}
-          {%- endif %}>
-          {{- params.fieldset.legend.html | safe if params.fieldset.legend.html else params.fieldset.legend.text -}}
-        </legend>
-      {%- endif %}
+    {% if params.fieldset %}
+      <fieldset class="nhsuk-fieldset{% if params.fieldset.classes %} {{ params.fieldset.classes }}{% endif %}"
+        {%- if describedBy %} aria-describedby="{{ describedBy }}"{% endif %}
+        {%- if params.fieldset.attributes %}
+          {%- for attr, val in params.fieldset.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+        {%- endif %}>
+        {%- if params.fieldset.legend %}
+          <legend class="nhsuk-fieldset__legend{% if params.fieldset.legend.size %} nhsuk-fieldset__legend--{{ params.fieldset.legend.size }}{% endif %}{% if params.fieldset.legend.classes %} {{ params.fieldset.legend.classes }}{% endif %} app-option-picker__legend"
+            {%- if params.fieldset.legend.attributes %}
+              {%- for attr, val in params.fieldset.legend.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+            {%- endif %}>
+            {{- params.fieldset.legend.html | safe if params.fieldset.legend.html else params.fieldset.legend.text -}}
+          </legend>
+        {%- endif %}
+        {{ hintHtml | safe | trim }}
+        {{ errorHtml | safe | trim }}
+        {{ itemsHtml | safe }}
+      </fieldset>
+    {% else %}
+      {{ hintHtml | safe | trim }}
+      {{ errorHtml | safe | trim }}
       {{ itemsHtml | safe }}
-    </fieldset>
+    {% endif %}
   </div>
-{% else %}
-  <div class="{{ wrapperClasses }}">
-    {{ itemsHtml | safe }}
-  </div>
-{% endif %}
+</div>

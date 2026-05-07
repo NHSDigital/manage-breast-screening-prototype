@@ -27,9 +27,9 @@
 ] %}
 
 {{ select({
-  id: "abnormalityType",
-  name: "imageReadingTemp[annotationTemp][abnormalityType]",
-  value: annotationTemp.abnormalityType,
+  id: "abnormalityTypes",
+  name: "imageReadingTemp[annotationTemp][abnormalityTypes]",
+  value: annotationTemp.abnormalityTypes,
   label: {
     text: "Abnormality type",
     classes: "nhsuk-label--s"
@@ -38,7 +38,7 @@
 } | populateErrors) }}
 
 {# Conditional "other details" field — shown via JS when "Other" is selected #}
-<div id="other-details-wrapper" class="{{ 'nhsuk-u-visually-hidden' if annotationTemp.abnormalityType != 'Other' }}">
+<div id="other-details-wrapper" class="{{ 'nhsuk-u-visually-hidden' if annotationTemp.abnormalityTypes != 'Other' }}">
   {{ input({
     id: "otherDetails",
     name: "imageReadingTemp[annotationTemp][otherDetails]",
@@ -51,7 +51,30 @@
   } | populateErrors) }}
 </div>
 
-{{ select({
+{# {{ appOptionPicker({
+  idPrefix: "abnormalityTypes",
+  name: "imageReadingTemp[annotationTemp][abnormalityTypes]",
+  values: annotationTemp.abnormalityTypes,
+  allowMultiple: true,
+  fieldset: {
+    legend: {
+      text: "Abnormality type",
+      size: "s"
+    }
+  },
+  items: [
+    { value: "Mass well-defined",                 text: "Mass well-defined" },
+    { value: "Mass ill-defined",                  text: "Mass ill-defined" },
+    { value: "Architectural distortion",          text: "Architectural distortion" },
+    { value: "Asymmetric density",                text: "Asymmetric density" },
+    { value: "Microcalcification outside a mass", text: "Microcalcification outside a mass" },
+    { value: "Clinical abnormality",              text: "Clinical abnormality" },
+    { value: "Lymph node abnormality",            text: "Lymph node abnormality" },
+    { value: "Other",                             text: "Other" }
+  ]
+} | populateErrors) }} #}
+
+{# {{ select({
   id: "levelOfConcern",
   name: "imageReadingTemp[annotationTemp][levelOfConcern]",
   value: annotationTemp.levelOfConcern,
@@ -72,7 +95,30 @@
     { value: "2", text: "2 – Benign" },
     { value: "1", text: "1 – Normal" }
   ]
-} | populateErrors) }}
+} | populateErrors) }} #}
+
+  {{ appOptionPicker({
+    id: "levelOfConcern",
+    name: "imageReadingTemp[annotationTemp][levelOfConcern]",
+    value: annotationTemp.levelOfConcern,
+    joined: true,
+    fieldset: {
+      legend: { 
+        text: "Level of concern",
+        size: "s"
+       }
+    },
+    hint: {
+      text: "From ‘5 - highly suspicious’ to ‘1 - normal’"
+    },
+    items: [
+      { value: "5", text: "5" },
+      { value: "4", text: "4" },
+      { value: "3", text: "3" },
+      { value: "2", text: "2" },
+      { value: "1", text: "1" }
+    ]
+  } | populateErrors) }}
 
 {% call appCollapsibleInput({ text: "Add a comment about this abnormality" }) %}
   {{ input({
@@ -86,23 +132,3 @@
     classes: "nhsuk-u-width-two-thirds"
   }) }}
 {% endcall %}
-
-<script>
-  // Show/hide the "other details" field based on the abnormality type select
-  ;(function () {
-    const typeSelect = document.getElementById('abnormalityType')
-    const otherWrapper = document.getElementById('other-details-wrapper')
-
-    if (!typeSelect || !otherWrapper) return
-
-    function updateOtherVisibility() {
-      if (typeSelect.value === 'Other') {
-        otherWrapper.classList.remove('nhsuk-u-visually-hidden')
-      } else {
-        otherWrapper.classList.add('nhsuk-u-visually-hidden')
-      }
-    }
-
-    typeSelect.addEventListener('change', updateOtherVisibility)
-  })()
-</script>

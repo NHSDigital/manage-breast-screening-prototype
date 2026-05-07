@@ -860,13 +860,13 @@ module.exports = (router) => {
       // }
 
       if (
-        !annotationTemp.abnormalityType ||
-        annotationTemp.abnormalityType.length === 0
+        !annotationTemp.abnormalityTypes ||
+        annotationTemp.abnormalityTypes.length === 0
       ) {
         errors.push({
           text: 'Select at least one abnormality type',
-          name: 'imageReadingTemp[annotationTemp][abnormalityType]',
-          href: '#abnormalityType'
+          name: 'imageReadingTemp[annotationTemp][abnormalityTypes]',
+          href: '#abnormalityTypes'
         })
       }
 
@@ -880,12 +880,12 @@ module.exports = (router) => {
 
       // Validate conditional detail fields for selected abnormality types
       if (
-        annotationTemp.abnormalityType &&
-        annotationTemp.abnormalityType.length > 0
+        annotationTemp.abnormalityTypes &&
+        annotationTemp.abnormalityTypes.length > 0
       ) {
-        const abnormalityTypes = Array.isArray(annotationTemp.abnormalityType)
-          ? annotationTemp.abnormalityType
-          : [annotationTemp.abnormalityType]
+        const abnormalityTypes = Array.isArray(annotationTemp.abnormalityTypes)
+          ? annotationTemp.abnormalityTypes
+          : [annotationTemp.abnormalityTypes]
 
         abnormalityTypes.forEach((type) => {
           if (
@@ -972,7 +972,7 @@ module.exports = (router) => {
           side: side,
           comment: comment,
           location: annotationTemp.location,
-          abnormalityType: annotationTemp.abnormalityType,
+          abnormalityTypes: annotationTemp.abnormalityTypes,
           levelOfConcern: annotationTemp.levelOfConcern,
           positions: positions,
           // Include any conditional detail fields
@@ -1067,13 +1067,13 @@ module.exports = (router) => {
       }
 
       if (
-        !annotationTemp.abnormalityType ||
-        annotationTemp.abnormalityType.length === 0
+        !annotationTemp.abnormalityTypes ||
+        annotationTemp.abnormalityTypes.length === 0
       ) {
         errors.push({
           text: 'Select an abnormality type',
-          name: 'imageReadingTemp[annotationTemp][abnormalityType]',
-          href: '#abnormalityType'
+          name: 'imageReadingTemp[annotationTemp][abnormalityTypes]',
+          href: '#abnormalityTypes'
         })
       }
 
@@ -1086,7 +1086,8 @@ module.exports = (router) => {
       }
 
       if (
-        annotationTemp.abnormalityType === 'Other' &&
+        Array.isArray(annotationTemp.abnormalityTypes) &&
+        annotationTemp.abnormalityTypes.includes('Other') &&
         (!annotationTemp.otherDetails ||
           annotationTemp.otherDetails.trim() === '')
       ) {
@@ -1119,7 +1120,7 @@ module.exports = (router) => {
         id: annotationTemp.id || generateId(),
         side,
         location: annotationTemp.location || null,
-        abnormalityType: annotationTemp.abnormalityType,
+        abnormalityTypes: annotationTemp.abnormalityTypes,
         levelOfConcern: annotationTemp.levelOfConcern,
         comment: annotationTemp.comment || null,
         positions: null,

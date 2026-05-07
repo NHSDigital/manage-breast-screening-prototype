@@ -218,8 +218,9 @@
     ;['right', 'left'].forEach(side => {
       const countEl = document.querySelector('[data-side-count="' + side + '"]')
       if (!countEl) return
-      const count = annotations.filter(a => a.side === side && (a.abnormalityType || a.levelOfConcern)).length
+      const count = annotations.filter(a => a.side === side && (a.abnormalityTypes?.length || a.levelOfConcern)).length
       countEl.textContent = count
+      countEl.classList.toggle('app-count--blue', count > 0)
     })
   }
 
@@ -277,7 +278,58 @@
       panel.addEventListener('mouseleave', hideCursorPreview)
     })
 
+    // Re-render markers once each image loads (natural dimensions needed for coordinate conversion)
+    row.querySelectorAll('img').forEach(img => {
+      if (!img.complete) {
+        img.addEventListener('load', renderMarkers, { once: true })
+      }
+    })
+
     renderMarkers()
+  }
+
+  // Compute the actual rendered image bounds within its panel container.
+  // With object-fit: contain, the image may not fill the full panel.
+  // Returns { offsetX, offsetY, renderedW, renderedH, panelW, panelH } or null if image not yet loaded.
+  function getImageRect(panel) {
+    const img = panel.querySelector('img')
+    if (!img || !img.naturalWidth || !img.naturalHeight) return null
+
+    const panelW = panel.clientWidth
+    const panelH = panel.clientHeight
+    const scale = Math.min(panelW / img.naturalWidth, panelH / img.naturalHeight)
+    const renderedW = img.naturalWidth * scale
+    const renderedH = img.naturalHeight * scale
+
+    // Left breast: image aligns left (object-position: left top)
+    // Right breast: image aligns right (object-position: right top)
+    const isLeft = panel.classList.contains('app-ann-v2__image-panel--left')
+    const offsetX = isLeft ? 0 : (panelW - renderedW)
+    const offsetY = 0
+
+    return { offsetX, offsetY, renderedW, renderedH, panelW, panelH }
+  }
+
+  // Convert a stored position (image fraction 0–1) to container % for CSS left/top.
+  function imageFractionToContainerPercent(pos, panel) {
+    const rect = getImageRect(panel)
+    if (!rect) return { x: pos.x * 100, y: pos.y * 100 }
+
+    return {
+      x: (rect.offsetX + pos.x * rect.renderedW) / rect.panelW * 100,
+      y: (rect.offsetY + pos.y * rect.renderedH) / rect.panelH * 100
+    }
+  }
+
+  // Convert a container-relative click (fractions 0–1) to image fraction (0–1) for storage.
+  function containerFractionToImageFraction(cx, cy, panel) {
+    const rect = getImageRect(panel)
+    if (!rect) return { x: cx, y: cy }
+
+    return {
+      x: Math.max(0, Math.min(1, (cx * rect.panelW - rect.offsetX) / rect.renderedW)),
+      y: Math.max(0, Math.min(1, (cy * rect.panelH - rect.offsetY) / rect.renderedH))
+    }
   }
 
   function renderMarkers() {
@@ -300,8 +352,9 @@
 
         const marker = document.createElement('div')
         marker.className = 'app-ann-marker' + (isActive ? ' is-active' : '')
-        marker.style.left = (pos.x <= 1 ? pos.x * 100 : pos.x) + '%'
-        marker.style.top = (pos.y <= 1 ? pos.y * 100 : pos.y) + '%'
+        const containerPos = imageFractionToContainerPercent(pos, panel)
+        marker.style.left = containerPos.x + '%'
+        marker.style.top = containerPos.y + '%'
         marker.dataset.annId = ann.id
         marker.dataset.viewKey = viewKey
         marker.tabIndex = 0
@@ -349,7 +402,7 @@
     marker.addEventListener('click', function (e) {
       e.stopPropagation()
       const targetAnn = getAnnotation(this.dataset.annId)
-      if (targetAnn && !targetAnn.abnormalityType && !targetAnn.levelOfConcern) {
+      if (targetAnn && !targetAnn.abnormalityTypes?.length && !targetAnn.levelOfConcern) {
         const panelKeys = getPanelKeysForSide(targetAnn.side)
         if (panelKeys.length > 0 && panelKeys.every(k => targetAnn.positions && targetAnn.positions[k])) {
           openModal(targetAnn.id)
@@ -397,8 +450,11 @@
           const panel = el.closest('.app-ann-v2__image-panel')
           if (panel) {
             const rect = panel.getBoundingClientRect()
-            const x = Math.round(Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width)) * 1000) / 1000
-            const y = Math.round(Math.max(0, Math.min(1, (upEvent.clientY - rect.top) / rect.height)) * 1000) / 1000
+            const cx = Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width))
+            const cy = Math.max(0, Math.min(1, (upEvent.clientY - rect.top) / rect.height))
+            const imagePos = containerFractionToImageFraction(cx, cy, panel)
+            const x = Math.round(imagePos.x * 1000) / 1000
+            const y = Math.round(imagePos.y * 1000) / 1000
             const ann = getAnnotation(annId)
             if (ann) {
               if (!ann.positions) ann.positions = {}
@@ -429,8 +485,8 @@
     const indices = {}
     let rn = 1
     let ln = 1
-    annotations.filter(a => a.side === 'right' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = rn++ })
-    annotations.filter(a => a.side === 'left' && (a.abnormalityType || a.levelOfConcern)).forEach(a => { indices[a.id] = ln++ })
+    annotations.filter(a => a.side === 'right' && (a.abnormalityTypes?.length || a.levelOfConcern)).forEach(a => { indices[a.id] = rn++ })
+    annotations.filter(a => a.side === 'left' && (a.abnormalityTypes?.length || a.levelOfConcern)).forEach(a => { indices[a.id] = ln++ })
     return indices
   }
 
@@ -450,10 +506,10 @@
 
     sideAnnotations.forEach(ann => {
       const isActive = ann.id === activeAnnotationId
-      const isIncomplete = !ann.abnormalityType && !ann.levelOfConcern
+      const isIncomplete = !ann.abnormalityTypes?.length && !ann.levelOfConcern
       let typeLabel = 'Type not set'
-      if (ann.abnormalityType) {
-        typeLabel = (ann.abnormalityType === 'Other' && ann.otherDetails) ? 'Other: ' + ann.otherDetails : ann.abnormalityType
+      if (ann.abnormalityTypes?.length) {
+        typeLabel = ann.abnormalityTypes.join(', ')
       }
       const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
       const metaParts = [concernLabel].filter(Boolean)
@@ -497,7 +553,7 @@
       })
 
       const addBtnText = sideAnnotations.length > 0 ? 'Add another annotation' : 'Add annotation'
-      const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
+      const hasIncomplete = annotations.some(a => !a.abnormalityTypes?.length && !a.levelOfConcern)
       const addBtnDisabled = hasIncomplete ? ' disabled title="Complete the current annotation before adding another"' : ''
       html += '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small app-ann-v2__add-annotation-btn" type="button" data-action="add-annotation" data-side="' + activeSide + '"' + addBtnDisabled + '>' + addBtnText + '</button>'
       html += '</div>'
@@ -540,7 +596,7 @@
     const displayIndex = buildDisplayIndices()
 
     // If there's an incomplete annotation on this side, clicking will always move/place it.
-    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityType && !a.levelOfConcern)
+    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityTypes?.length && !a.levelOfConcern)
     if (incompleteAnn) {
       // If we just placed a marker here this hover session, keep it fixed
       if (placedThisHover.has(viewKey)) {
@@ -599,11 +655,14 @@
     const panel = event.currentTarget
     const viewKey = panel.dataset.view
     const rect = panel.getBoundingClientRect()
-    const x = Math.round(((event.clientX - rect.left) / rect.width) * 1000) / 1000
-    const y = Math.round(((event.clientY - rect.top) / rect.height) * 1000) / 1000
+    const cx = (event.clientX - rect.left) / rect.width
+    const cy = (event.clientY - rect.top) / rect.height
+    const imagePos = containerFractionToImageFraction(cx, cy, panel)
+    const x = Math.round(imagePos.x * 1000) / 1000
+    const y = Math.round(imagePos.y * 1000) / 1000
 
     // If there's an incomplete annotation on this side, ALL clicks update it (never create new)
-    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityType && !a.levelOfConcern)
+    const incompleteAnn = annotations.find(a => a.side === activeSide && !a.abnormalityTypes?.length && !a.levelOfConcern)
     if (incompleteAnn) {
       if (!incompleteAnn.positions) incompleteAnn.positions = {}
       incompleteAnn.positions[viewKey] = { x: x, y: y }
@@ -679,7 +738,7 @@
 
     if (addBtn) {
       // Block if any incomplete annotation already exists
-      const hasIncomplete = annotations.some(a => !a.abnormalityType && !a.levelOfConcern)
+      const hasIncomplete = annotations.some(a => !a.abnormalityTypes?.length && !a.levelOfConcern)
       if (hasIncomplete) return
 
       const side = addBtn.dataset.side
@@ -737,25 +796,34 @@
   function openModal(annId) {
     modalAnnotationId = annId
     const ann = getAnnotation(annId)
-    const isIncomplete = !ann || (!ann.abnormalityType && !ann.levelOfConcern)
+    const isIncomplete = !ann || (!ann.abnormalityTypes?.length && !ann.levelOfConcern)
 
     document.getElementById('ann-modal-title').textContent = isIncomplete ? 'Add annotation' : 'Update annotation'
     document.getElementById('ann-modal-save').textContent = isIncomplete ? 'Add annotation' : 'Update annotation'
-    document.getElementById('abnormalityType').value = ann && ann.abnormalityType ? ann.abnormalityType : ''
-    document.getElementById('otherDetails').value = ann && ann.otherDetails ? ann.otherDetails : ''
-    document.getElementById('levelOfConcern').value = ann && ann.levelOfConcern ? ann.levelOfConcern : ''
-    document.getElementById('comment').value = ann && ann.comment ? ann.comment : ''
-    const otherWrapper = document.getElementById('other-details-wrapper')
-    if (ann && ann.abnormalityType === 'Other') {
-      otherWrapper.classList.remove('nhsuk-u-visually-hidden')
+
+    // Set abnormality types — works for either a <select> or checkboxes
+    const currentTypes = (ann && ann.abnormalityTypes) ? (Array.isArray(ann.abnormalityTypes) ? ann.abnormalityTypes : [ann.abnormalityTypes]) : []
+    const abTypesEl = document.querySelector('[name="imageReadingTemp[annotationTemp][abnormalityTypes]"]')
+    if (abTypesEl && abTypesEl.tagName === 'SELECT') {
+      abTypesEl.value = currentTypes[0] || ''
     } else {
-      otherWrapper.classList.add('nhsuk-u-visually-hidden')
+      document.querySelectorAll('[name="imageReadingTemp[annotationTemp][abnormalityTypes]"]').forEach(cb => {
+        cb.checked = currentTypes.includes(cb.value)
+      })
     }
+
+    // Set radio for level of concern
+    document.querySelectorAll('[name="imageReadingTemp[annotationTemp][levelOfConcern]"]').forEach(radio => {
+      radio.checked = radio.value === (ann && ann.levelOfConcern ? ann.levelOfConcern : '')
+    })
+
+    document.getElementById('comment').value = ann && ann.comment ? ann.comment : ''
     document.getElementById('ann-modal-delete').hidden = false
 
     annModal.hidden = false
     annModal.classList.add('app-modal--open')
-    document.getElementById('abnormalityType').focus()
+    const firstTypeInput = document.querySelector('[name="imageReadingTemp[annotationTemp][abnormalityTypes]"]')
+    if (firstTypeInput) firstTypeInput.focus()
   }
 
   function closeModal() {
@@ -769,11 +837,17 @@
     const ann = getAnnotation(modalAnnotationId)
     if (!ann) return
 
-    ann.abnormalityType = document.getElementById('abnormalityType').value || null
-    ann.otherDetails = document.getElementById('otherDetails').value || null
-    ann.levelOfConcern = document.getElementById('levelOfConcern').value || null
+    // Read abnormality types — works for either a <select> or checkboxes
+    const abTypesElSave = document.querySelector('[name="imageReadingTemp[annotationTemp][abnormalityTypes]"]')
+    let savedTypes
+    if (abTypesElSave && abTypesElSave.tagName === 'SELECT') {
+      savedTypes = abTypesElSave.value ? [abTypesElSave.value] : []
+    } else {
+      savedTypes = Array.from(document.querySelectorAll('[name="imageReadingTemp[annotationTemp][abnormalityTypes]"]:checked')).map(cb => cb.value)
+    }
+    ann.abnormalityTypes = savedTypes.length ? savedTypes : null
+    ann.levelOfConcern = document.querySelector('[name="imageReadingTemp[annotationTemp][levelOfConcern]"]:checked')?.value || null
     ann.comment = document.getElementById('comment').value || null
-    if (ann.abnormalityType !== 'Other') ann.otherDetails = null
 
     activeAnnotationId = modalAnnotationId
 

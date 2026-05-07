@@ -47,6 +47,13 @@ body.app-annotate-v2 {
     border: 1px solid nhsuk-colour("grey-3");
   }
 
+  // Coloured badge for non-zero counts
+  & .app-count--blue {
+    background-color: nhsuk-colour("blue");
+    color: nhsuk-colour("white");
+    border: none;
+  }
+
   &.is-active {
     $bw: 1px;
 
