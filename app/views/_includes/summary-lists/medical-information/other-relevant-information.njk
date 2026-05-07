@@ -9,8 +9,8 @@
         Currently taking HRT
       </p>
       <p>
-        {# Example: "Date started: September 2022" #}
-        Date started: {{ hrtData.hrtDateStarted }}
+        {# Example: "Started: September 2022" #}
+        Started: {{ hrtData.hrtDateStarted }}
       </p>
     {% elseif hrtData.hrtQuestion == 'no-recently-stopped' %}
       <p>
@@ -61,7 +61,7 @@
       </p>
       <p>
         {# Example: "Started: January 2026" #}
-        Date started: {{ pregnancyAndBreastfeedingData.breastfeedingStartDate }}
+        Started: {{ pregnancyAndBreastfeedingData.breastfeedingStartDate }}
       </p>
     {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'recentlyStopped' %}
       <p>

@@ -195,10 +195,10 @@
       {# Treatment - breast cancer #}
       {% set treatmentHtml %}
         {% set rightBreastContent %}
-          {{ breastItemsList(historyItem.treatmentRightBreast, "No treatment") }}
+          {{ breastItemsList(historyItem.treatmentRightBreast, "No radiotherapy") }}
         {% endset %}
         {% set leftBreastContent %}
-          {{ breastItemsList(historyItem.treatmentLeftBreast, "No treatment") }}
+          {{ breastItemsList(historyItem.treatmentLeftBreast, "No radiotherapy") }}
         {% endset %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
@@ -291,10 +291,10 @@
       {# Other surgery - used by breast cancer #}
       {% set otherSurgeryHtml %}
         {% set rightBreastContent %}
-          {{ breastItemsList(historyItem.otherSurgeryRightBreast, "No surgery") }}
+          {{ breastItemsList(historyItem.otherSurgeryRightBreast, "No other surgery") }}
         {% endset %}
         {% set leftBreastContent %}
-          {{ breastItemsList(historyItem.otherSurgeryLeftBreast, "No surgery") }}
+          {{ breastItemsList(historyItem.otherSurgeryLeftBreast, "No other surgery") }}
         {% endset %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
       {% endset %}
@@ -381,7 +381,7 @@
           Implanted in
         {% endif %}{{ historyItem.year }} ({{ historyItem.year | relativeYear }})
         {% if isRemoved %}
-          <br>Device removed {% if historyItem.yearRemoved %} in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }}){% endif %}
+          <br>Removed {% if historyItem.yearRemoved %} in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }}){% endif %}
         {% endif %}
       {% endset %}
 
@@ -588,7 +588,7 @@
 {% if not hasAnyMedicalHistoryData %}
   {% set insetTextHtml %}
     <p>
-      No medical history has been added yet.
+      No medical history has been added.
     </p>
   {% endset %}
 
