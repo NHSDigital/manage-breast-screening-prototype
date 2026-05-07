@@ -26,7 +26,7 @@
 
   {% set mammogramViewOrder = data.settings.mammogramViewOrder or 'cc-first' %}
 
-    {% set viewGroups = [
+  {% set viewGroups = [
       {
         label: "Right breast",
         side: "right",
@@ -112,21 +112,11 @@
   </div>
 
   {# Save button sits below the annotation columns, like a regular page action #}
-  {# <div class="nhsuk-width-container">
-    <div class="nhsuk-main-wrapper nhsuk-u-padding-top-4 nhsuk-u-padding-bottom-4"> #}
-      <div class="nhsuk-form-group">
-        {# <a href="../recall-for-assessment-details" id="ann-save-return" class="nhsuk-button nhsuk-u-margin-bottom-0">
-          Save annotations
-        </a> #}
-        {{ button({
-          text: "Save annotations",
-          href: "../recall-for-assessment-details",
-          id: "ann-save-return"
-        }) }}
-      </div>
-      
-    {# </div> #}
-  {# </div> #}
+  {{ button({
+    text: "Save annotations",
+    href: "../recall-for-assessment-details",
+    id: "ann-save-return"
+  }) }}
 
   {# Hidden form for persisting all annotations back to session on save #}
   <form id="ann-save-form" action="./annotate-v2/save" method="POST" style="display:none">
@@ -148,42 +138,7 @@
 
         <h2 id="ann-modal-title" class="app-modal__title nhsuk-heading-m">Add annotation</h2>
 
-        <div class="nhsuk-form-group">
-          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-type">Abnormality type</label>
-          <select class="nhsuk-select" id="ann-modal-type">
-            <option value="">Select type</option>
-            <option value="Mass well-defined">Mass well-defined</option>
-            <option value="Mass ill-defined">Mass ill-defined</option>
-            <option value="Architectural distortion">Architectural distortion</option>
-            <option value="Asymetric density">Asymetric density</option>
-            <option value="Microcalcification outside a mass">Microcalcification outside a mass</option>
-            <option value="Clinical abnormality">Clinical abnormality</option>
-            <option value="Lymph node abnormality">Lymph node abnormality</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div class="nhsuk-form-group" id="ann-modal-other-group" hidden>
-          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-other">Other details</label>
-          <input class="nhsuk-input nhsuk-u-width-two-thirds" type="text" id="ann-modal-other">
-        </div>
-
-        <div class="nhsuk-form-group">
-          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-concern">Level of concern</label>
-          <select class="nhsuk-select" id="ann-modal-concern">
-            <option value="">Select level</option>
-            <option value="5">5 – Highly suspicious</option>
-            <option value="4">4 – Suspicious</option>
-            <option value="3">3 – Indeterminate</option>
-            <option value="2">2 – Benign</option>
-            <option value="1">1 – Normal</option>
-          </select>
-        </div>
-
-        {% call appCollapsibleInput({ text: "Add annotation comment" }) %}
-          <label class="nhsuk-label nhsuk-label--s" for="ann-modal-comment">Comment (optional)</label>
-          <input class="nhsuk-input nhsuk-u-width-two-thirds" type="text" id="ann-modal-comment">
-        {% endcall %}
+        {% include "_includes/reading/annotation-form.njk" %}
 
         <div class="nhsuk-button-group nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
           {{ button({
@@ -289,13 +244,6 @@
     const row = document.getElementById('images-row')
 
     let html = ''
-    let panelCount = 0
-    viewKeys.forEach(viewKey => {
-      const rawPath = V2.imagePaths[viewKey]
-      const paths = rawPath ? (Array.isArray(rawPath) ? rawPath : [rawPath]) : []
-      panelCount += paths.length > 0 ? paths.length : 1
-    })
-    row.dataset.panelCount = panelCount
 
     viewKeys.forEach(viewKey => {
       const rawPath = V2.imagePaths[viewKey]
@@ -508,44 +456,44 @@
         typeLabel = (ann.abnormalityType === 'Other' && ann.otherDetails) ? 'Other: ' + ann.otherDetails : ann.abnormalityType
       }
       const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
-        const metaParts = [concernLabel].filter(Boolean)
+      const metaParts = [concernLabel].filter(Boolean)
 
-        html += '<div class="app-ann-v2__annotation-card' +
-          (isActive ? ' is-active' : '') +
-          (isIncomplete ? ' is-incomplete' : '') +
-          '" data-ann-id="' + ann.id + '" tabindex="0" role="button"' +
-          ' aria-pressed="' + (isActive ? 'true' : 'false') + '"' +
-          ' aria-label="Annotation ' + (displayIndex[ann.id] || '?') + '">'  
+      html += '<div class="app-ann-v2__annotation-card' +
+        (isActive ? ' is-active' : '') +
+        (isIncomplete ? ' is-incomplete' : '') +
+        '" data-ann-id="' + ann.id + '" tabindex="0" role="button"' +
+        ' aria-pressed="' + (isActive ? 'true' : 'false') + '"' +
+        ' aria-label="Annotation ' + (displayIndex[ann.id] || '?') + '">'
 
-        html += '<div class="app-ann-v2__annotation-header">' +
-          '<span class="app-ann-v2__annotation-number">' + (displayIndex[ann.id] || '?') + '</span>' +
-          '<div class="app-ann-v2__annotation-body">' +
-          '<span class="app-ann-v2__annotation-type">' + typeLabel + '</span>'
+      html += '<div class="app-ann-v2__annotation-header">' +
+        '<span class="app-ann-v2__annotation-number">' + (displayIndex[ann.id] || '?') + '</span>' +
+        '<div class="app-ann-v2__annotation-body">' +
+        '<span class="app-ann-v2__annotation-type">' + typeLabel + '</span>'
 
-        if (metaParts.length) {
-          html += '<p class="app-ann-v2__annotation-meta">' + metaParts.join(' &middot; ') + '</p>'
-        }
+      if (metaParts.length) {
+        html += '<p class="app-ann-v2__annotation-meta">' + metaParts.join(' &middot; ') + '</p>'
+      }
 
-        if (ann.comment) {
-          html += '<p class="app-ann-v2__annotation-meta">' + ann.comment + '</p>'
-        }
+      if (ann.comment) {
+        html += '<p class="app-ann-v2__annotation-meta">' + ann.comment + '</p>'
+      }
 
-        const hasPositions = ann.positions && Object.keys(ann.positions).length > 0
-        if (!hasPositions) {
-          html += '<p class="app-ann-v2__annotation-positions">No markers placed</p>'
-        }
+      const hasPositions = ann.positions && Object.keys(ann.positions).length > 0
+      if (!hasPositions) {
+        html += '<p class="app-ann-v2__annotation-positions">No markers placed</p>'
+      }
 
-        if (isIncomplete) {
-          html += '<div class="app-ann-v2__annotation-actions">' +
-            '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button>' +
-            '<button class="app-link-button app-link-button--warning" type="button" data-action="delete-annotation" data-ann-id="' + ann.id + '">Remove</button>' +
-            '</div>'
-        } else {
-          html += '<div class="app-ann-v2__annotation-actions"><button class="app-link-button" type="button" data-action="edit" data-ann-id="' + ann.id + '">Edit</button></div>'
-        }
-        html += '</div>'  // body
-        html += '</div>'  // header
-        html += '</div>'  // card
+      if (isIncomplete) {
+        html += '<div class="app-ann-v2__annotation-actions">' +
+          '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button>' +
+          '<button class="app-link-button app-link-button--warning" type="button" data-action="delete-annotation" data-ann-id="' + ann.id + '">Remove</button>' +
+          '</div>'
+      } else {
+        html += '<div class="app-ann-v2__annotation-actions"><button class="app-link-button" type="button" data-action="edit" data-ann-id="' + ann.id + '">Edit</button></div>'
+      }
+      html += '</div>'  // body
+      html += '</div>'  // header
+      html += '</div>'  // card
       })
 
       const addBtnText = sideAnnotations.length > 0 ? 'Add another annotation' : 'Add annotation'
@@ -602,8 +550,7 @@
       // Show ? preview; ghost the existing marker at 0.3 opacity so user can see previous position
       const existingMarker = panel.querySelector('.app-ann-marker[data-ann-id="' + incompleteAnn.id + '"]')
       if (existingMarker) {
-        existingMarker.style.opacity = '0.3'
-        existingMarker.style.pointerEvents = 'none'
+        existingMarker.classList.add('is-ghost')
       }
       cursorPreviewBadge.textContent = '?'
       cursorPreviewBadge.hidden = false
@@ -630,12 +577,9 @@
   }
 
   function hideCursorPreview() {
-    // Restore any marker that was hidden for the "move" preview
-    const hiddenMarker = document.querySelector('.app-ann-marker[style*="opacity: 0"]')
-    if (hiddenMarker) {
-      hiddenMarker.style.opacity = ''
-      hiddenMarker.style.pointerEvents = ''
-    }
+    // Restore any marker that was ghosted for the "move" preview
+    const ghostMarker = document.querySelector('.app-ann-marker.is-ghost')
+    if (ghostMarker) ghostMarker.classList.remove('is-ghost')
     cursorPreview.hidden = true
   }
 
@@ -797,16 +741,21 @@
 
     document.getElementById('ann-modal-title').textContent = isIncomplete ? 'Add annotation' : 'Update annotation'
     document.getElementById('ann-modal-save').textContent = isIncomplete ? 'Add annotation' : 'Update annotation'
-    document.getElementById('ann-modal-type').value = ann && ann.abnormalityType ? ann.abnormalityType : ''
-    document.getElementById('ann-modal-other').value = ann && ann.otherDetails ? ann.otherDetails : ''
-    document.getElementById('ann-modal-concern').value = ann && ann.levelOfConcern ? ann.levelOfConcern : ''
-    document.getElementById('ann-modal-comment').value = ann && ann.comment ? ann.comment : ''
-    document.getElementById('ann-modal-other-group').hidden = !(ann && ann.abnormalityType === 'Other')
+    document.getElementById('abnormalityType').value = ann && ann.abnormalityType ? ann.abnormalityType : ''
+    document.getElementById('otherDetails').value = ann && ann.otherDetails ? ann.otherDetails : ''
+    document.getElementById('levelOfConcern').value = ann && ann.levelOfConcern ? ann.levelOfConcern : ''
+    document.getElementById('comment').value = ann && ann.comment ? ann.comment : ''
+    const otherWrapper = document.getElementById('other-details-wrapper')
+    if (ann && ann.abnormalityType === 'Other') {
+      otherWrapper.classList.remove('nhsuk-u-visually-hidden')
+    } else {
+      otherWrapper.classList.add('nhsuk-u-visually-hidden')
+    }
     document.getElementById('ann-modal-delete').hidden = false
 
     annModal.hidden = false
     annModal.classList.add('app-modal--open')
-    document.getElementById('ann-modal-type').focus()
+    document.getElementById('abnormalityType').focus()
   }
 
   function closeModal() {
@@ -820,10 +769,10 @@
     const ann = getAnnotation(modalAnnotationId)
     if (!ann) return
 
-    ann.abnormalityType = document.getElementById('ann-modal-type').value || null
-    ann.otherDetails = document.getElementById('ann-modal-other').value || null
-    ann.levelOfConcern = document.getElementById('ann-modal-concern').value || null
-    ann.comment = document.getElementById('ann-modal-comment').value || null
+    ann.abnormalityType = document.getElementById('abnormalityType').value || null
+    ann.otherDetails = document.getElementById('otherDetails').value || null
+    ann.levelOfConcern = document.getElementById('levelOfConcern').value || null
+    ann.comment = document.getElementById('comment').value || null
     if (ann.abnormalityType !== 'Other') ann.otherDetails = null
 
     activeAnnotationId = modalAnnotationId
@@ -832,7 +781,6 @@
     renderThumbs()
     renderMarkers()
     renderSidebar()
-    renderMainImages()
   }
 
   function deleteModalAnnotation() {
@@ -844,7 +792,6 @@
     renderThumbs()
     renderMarkers()
     renderSidebar()
-    renderMainImages()
   }
 
   function cancelModal() {
@@ -853,9 +800,7 @@
     renderSidebar()
   }
 
-  document.getElementById('ann-modal-type').addEventListener('change', function () {
-    document.getElementById('ann-modal-other-group').hidden = this.value !== 'Other'
-  })
+  // Other-details show/hide handled by annotation-form.njk's inline script
   document.getElementById('ann-modal-save').addEventListener('click', saveModal)
   document.getElementById('ann-modal-cancel').addEventListener('click', cancelModal)
   document.getElementById('ann-modal-delete').addEventListener('click', deleteModalAnnotation)
@@ -876,10 +821,8 @@
 
   // ─── thumbnail clicks ────────────────────────────────────────────────────────
 
-  document.querySelectorAll('[data-thumb-side]').forEach(function(thumb) {
-    if (thumb.tagName === 'BUTTON') {
-      thumb.addEventListener('click', handleThumbClick)
-    }
+  document.querySelectorAll('button[data-thumb-side]').forEach(function(thumb) {
+    thumb.addEventListener('click', handleThumbClick)
   })
 
   // ─── init ───────────────────────────────────────────────────────────────────

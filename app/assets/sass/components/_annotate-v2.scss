@@ -374,6 +374,12 @@ $ann-marker-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); // contrast on dark mammogram 
     cursor: grabbing;
     opacity: 0.85;
   }
+
+  // Ghosted while the user is previewing a move to a new position
+  &.is-ghost {
+    opacity: 0.3;
+    pointer-events: none;
+  }
 }
 
 // Badge sits top-left outside the circle

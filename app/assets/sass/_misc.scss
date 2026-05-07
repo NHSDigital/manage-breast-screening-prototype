@@ -93,6 +93,7 @@ body.js-enabled .app-no-js-only {
 
 // Button styled as a link - for inline form submissions
 .app-link-button {
+  @include nhsuk-font(19);
   background: none;
   border: none;
   padding: 0;
@@ -100,7 +101,7 @@ body.js-enabled .app-no-js-only {
   text-decoration: underline;
   text-align: left;
   cursor: pointer;
-  @include nhsuk-font(19);
+
   font-family: inherit;
 
   &:hover {
