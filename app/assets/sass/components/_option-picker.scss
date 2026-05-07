@@ -285,18 +285,26 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
   z-index: 2;
 }
 
-.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label::before,
-.app-option-picker--joined.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label:hover::before {
+.app-option-picker--joined.app-option-picker--button
+  .app-option-picker__input:focus
+  + .app-option-picker__label::before,
+.app-option-picker--joined.app-option-picker--button
+  .app-option-picker__input:focus
+  + .app-option-picker__label:hover::before {
   border-color: transparent;
   border-left-color: $nhsuk-secondary-button-border-colour;
   border-right-color: $nhsuk-secondary-button-border-colour;
 }
 
-.app-option-picker--joined.app-option-picker--button .app-option-picker__input:first-of-type:focus + .app-option-picker__label::before {
+.app-option-picker--joined.app-option-picker--button
+  .app-option-picker__input:first-of-type:focus
+  + .app-option-picker__label::before {
   border-left-color: transparent;
 }
 
-.app-option-picker--joined.app-option-picker--button .app-option-picker__input:last-of-type:focus + .app-option-picker__label::before {
+.app-option-picker--joined.app-option-picker--button
+  .app-option-picker__input:last-of-type:focus
+  + .app-option-picker__label::before {
   border-right-color: transparent;
 }
 
@@ -355,8 +363,7 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 }
 
 // Left neighbour — use :has() to look backwards
-.app-option-picker--joined.app-option-picker--button
-  .app-option-picker__label:has(+ .app-option-picker__input:active) {
+.app-option-picker--joined.app-option-picker--button .app-option-picker__label:has(+ .app-option-picker__input:active) {
   border-top-right-radius: nhsuk-px-to-rem($nhsuk-button-border-radius);
 
   &::before {

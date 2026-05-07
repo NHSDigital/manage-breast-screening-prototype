@@ -1,0 +1,135 @@
+{# app/views/_components/option-picker/template.njk #}
+
+{#-
+  Option picker component
+  Renders a row of radio or checkbox options styled as buttons.
+
+  Parameters (mirrors the NHS radios/checkboxes API):
+
+  name          {string}   - Required. Shared name attribute for all inputs.
+  idPrefix      {string}   - Prefix for generated input ids. Defaults to name.
+  items         {array}    - Required. Each item:
+    value         {string}   - Input value attribute.
+    text          {string}   - Label text. Use html for richer content.
+    html          {string}   - Label HTML. Overrides text.
+    id            {string}   - Override the generated input id.
+    checked       {boolean}  - Override checked state.
+    disabled      {boolean}  - Disable this item.
+    classes       {string}   - Extra classes on the input.
+    attributes    {object}   - Extra attributes on the input.
+    label.id      {string}   - Override id on the label element.
+    label.classes {string}   - Extra classes on the label element.
+    label.attributes {object} - Extra attributes on the label element.
+  fieldset      {object}   - Wraps items in a fieldset. Same API as nhsuk fieldset.
+  hint          {object}   - Hint text/html above the items.
+  errorMessage  {object}   - Error message text/html.
+  id            {string}   - Id on the items wrapper div.
+  classes       {string}   - Extra classes on the items wrapper div.
+  attributes    {object}   - Extra attributes on the items wrapper div.
+
+  value         {string}   - Pre-select this value (radio). Matched against item.value.
+  values        {array}    - Pre-select these values (checkbox). Matched against item.value.
+
+  allowMultiple {boolean}  - Use checkboxes (true) instead of radios (false). Default false.
+  joined        {boolean}  - Remove gap between items, flush borders. Default false.
+  showIcons     {boolean}  - Show a radio dot or checkmark indicator. Default true.
+-#}
+
+{#- Determine input type -#}
+{% set inputType = "checkbox" if params.allowMultiple else "radio" %}
+
+{#- Id prefix fallback -#}
+{% set idPrefix = params.idPrefix if params.idPrefix else params.name %}
+
+{#- Build wrapper class list -#}
+{% set wrapperClasses = "app-option-picker app-option-picker--button" %}
+{% if params.joined %}
+  {% set wrapperClasses = wrapperClasses ~ " app-option-picker--joined" %}
+{% endif %}
+{% if params.showIcons != false %}
+  {% if params.allowMultiple %}
+    {% set wrapperClasses = wrapperClasses ~ " app-option-picker--show-check" %}
+  {% else %}
+    {% set wrapperClasses = wrapperClasses ~ " app-option-picker--show-dot" %}
+  {% endif %}
+{% endif %}
+{% if params.classes %}
+  {% set wrapperClasses = wrapperClasses ~ " " ~ params.classes %}
+{% endif %}
+
+{#- Build inner items HTML -#}
+{% set itemsHtml %}
+  <div class="app-option-picker__items"
+    {%- if params.id %} id="{{ params.id }}"{% endif %}
+    {%- if params.attributes %}
+      {%- for attr, val in params.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+    {%- endif %}>
+  {% for item in params.items %}
+    {#- Determine id for this item -#}
+    {% set itemId = item.id if item.id else idPrefix ~ ("-" ~ loop.index if loop.index > 1 else "") %}
+
+    {#- Determine checked state -#}
+    {% if item.checked != undefined %}
+      {% set isChecked = item.checked %}
+    {% elseif params.allowMultiple and params.values %}
+      {% set isChecked = item.value in params.values %}
+    {% elseif not params.allowMultiple and params.value %}
+      {% set isChecked = item.value == params.value %}
+    {% else %}
+      {% set isChecked = false %}
+    {% endif %}
+
+    <input
+      class="app-option-picker__input{% if item.classes %} {{ item.classes }}{% endif %}"
+      type="{{ inputType }}"
+      id="{{ itemId }}"
+      name="{{ params.name }}"
+      value="{{ item.value }}"
+      {{- " checked" if isChecked }}
+      {{- " disabled" if item.disabled }}
+      {%- if item.attributes %}
+        {%- for attr, val in item.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+      {%- endif %}>
+    <label
+      class="app-option-picker__label{% if item.label.classes %} {{ item.label.classes }}{% endif %}"
+      for="{{ itemId }}"
+      {%- if item.label.id %} id="{{ item.label.id }}"{% endif %}
+      {%- if item.label.attributes %}
+        {%- for attr, val in item.label.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+      {%- endif %}>
+      {%- if params.showIcons != false %}
+        {%- if params.allowMultiple %}
+          <span class="app-option-picker__check-mark" aria-hidden="true"></span>
+        {%- else %}
+          <span class="app-option-picker__radio-dot" aria-hidden="true"></span>
+        {%- endif %}
+      {%- endif %}
+      {{- item.html | safe if item.html else item.text -}}
+    </label>
+  {% endfor %}
+  </div>
+{% endset %}
+
+{#- Wrap in fieldset if provided, otherwise render items directly -#}
+{% if params.fieldset %}
+  <div class="{{ wrapperClasses }}">
+    <fieldset class="nhsuk-fieldset"
+      {%- if params.fieldset.attributes %}
+        {%- for attr, val in params.fieldset.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+      {%- endif %}>
+      {%- if params.fieldset.legend %}
+        <legend class="nhsuk-fieldset__legend{% if params.fieldset.legend.size %} nhsuk-fieldset__legend--{{ params.fieldset.legend.size }}{% endif %}{% if params.fieldset.legend.classes %} {{ params.fieldset.legend.classes }}{% endif %} app-option-picker__legend"
+          {%- if params.fieldset.legend.attributes %}
+            {%- for attr, val in params.fieldset.legend.attributes %} {{ attr }}="{{ val }}"{% endfor %}
+          {%- endif %}>
+          {{- params.fieldset.legend.html | safe if params.fieldset.legend.html else params.fieldset.legend.text -}}
+        </legend>
+      {%- endif %}
+      {{ itemsHtml | safe }}
+    </fieldset>
+  </div>
+{% else %}
+  <div class="{{ wrapperClasses }}">
+    {{ itemsHtml | safe }}
+  </div>
+{% endif %}
