@@ -352,7 +352,9 @@ module.exports = (router) => {
 
     // Countdown starts when the current user records their first opinion in this session
     const firstUserReadTimestamp = enhancedEvents
-      .map((event) => event.imageReading?.reads?.[data.currentUser.id]?.timestamp)
+      .map(
+        (event) => event.imageReading?.reads?.[data.currentUser.id]?.timestamp
+      )
       .filter(Boolean)
       .sort((a, b) => new Date(a) - new Date(b))[0]
 
@@ -1034,7 +1036,9 @@ module.exports = (router) => {
       req.flash('success', 'Annotation deleted')
 
       res.redirect(
-        modalBreakout(`/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`)
+        modalBreakout(
+          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        )
       )
     }
   )
@@ -1151,7 +1155,9 @@ module.exports = (router) => {
       } else {
         // Break out of modal and return to recall-for-assessment-details
         res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`)
+          modalBreakout(
+            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          )
         )
       }
     }

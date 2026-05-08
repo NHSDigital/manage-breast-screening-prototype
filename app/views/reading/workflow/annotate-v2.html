@@ -12,8 +12,8 @@
   {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
   {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
 
-  {% set existingLeft = data.imageReadingTemp.left.annotations if data.imageReadingTemp.left else [] %}
-  {% set existingRight = data.imageReadingTemp.right.annotations if data.imageReadingTemp.right else [] %}
+  {% set existingLeft = data.imageReadingTemp.left.annotations | default([]) %}
+  {% set existingRight = data.imageReadingTemp.right.annotations | default([]) %}
 
   <script>
     const V2 = {}

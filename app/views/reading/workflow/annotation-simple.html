@@ -6,7 +6,7 @@
 {% set annotation = data.imageReadingTemp.annotationTemp %}
 
 {% set side = annotation.side %}
-{% set pageHeading = ("Add" if not annotation.id else "Edit") + " " + side + " breast abnormality" %}
+{% set pageHeading = ("Add" if not annotation.id else "Edit") + " " + side + " breast annotation" %}
 
 {% set gridColumn = "none" %}
 
@@ -42,7 +42,7 @@
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
-          text: "Save and close",
+          text: "Save",
           attributes: {
             name: "action",
             value: "save"
