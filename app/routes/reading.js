@@ -1034,7 +1034,7 @@ module.exports = (router) => {
       req.flash('success', 'Annotation deleted')
 
       res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        modalBreakout(`/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`)
       )
     }
   )
@@ -1144,12 +1144,14 @@ module.exports = (router) => {
       delete data.imageReadingTemp.annotationTemp
 
       if (action === 'save-and-add') {
+        // Stay in modal — load the add form for another annotation
         res.redirect(
           `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}&simple=true`
         )
       } else {
+        // Break out of modal and return to recall-for-assessment-details
         res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          modalBreakout(`/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`)
         )
       }
     }
@@ -1184,6 +1186,25 @@ module.exports = (router) => {
   )
 
   // Annotations end
+
+  // Persist a single breast assessment value to imageReadingTemp without a full form submit.
+  // Called via fire-and-forget fetch when a radio is selected — ensures the value survives
+  // the page reload that follows a modal annotation save.
+  router.get(
+    '/reading/session/:sessionId/events/:eventId/save-breast-assessment',
+    (req, res) => {
+      const { side, value } = req.query
+      const data = req.session.data
+
+      if (side && ['left', 'right'].includes(side) && value) {
+        if (!data.imageReadingTemp) data.imageReadingTemp = {}
+        if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
+        data.imageReadingTemp[side].breastAssessment = value
+      }
+
+      res.status(200).end()
+    }
+  )
 
   // Handle technical recall form submission
   // Cleans up the data structure to only include selected views, then redirects to review

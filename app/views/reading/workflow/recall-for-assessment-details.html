@@ -1,4 +1,4 @@
-{# /app/views/reading/recall-for-assessment-details.html #}
+{# /app/views/reading/workflow/recall-for-assessment-details.html #}
 
 {% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
 
@@ -11,27 +11,12 @@
 {% set formAction = './opinion-details-complete' %}
 
 
+{# Breast opinion card — radios only, annotations are collected in the section below #}
 {% macro breastDetails(params) %}
 
+  {% set Side = params.side | capitalize %}
+
   {% set breastDetailsHtml %}
-
-    {% set Side = params.side | capitalize %}
-
-    {% set abnormalDetailsHtml %}
-
-      {{ button({
-        text: "Mark an abnormality" if not ((data.imageReadingTemp[params.side].annotations | default([])) | length > 0) else "Mark another abnormality",
-        classes: "nhsuk-button--secondary",
-        href: "./annotation/add?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
-      }) }}
-
-      <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
-        <a href="./annotation/add?side={{ params.side }}&simple=true" class="nhsuk-link nhsuk-link--no-visited-state">
-          Add abnormality without images
-        </a>
-      </p>
-
-    {% endset %}
 
     {{ radios({
       name: "imageReadingTemp[" + params.side + "][breastAssessment]",
@@ -54,10 +39,7 @@
         } if event.medicalInformation.symptoms | length > 0,
         {
           value: "abnormal",
-          text: "Abnormal, recall for assessment",
-          conditional: {
-            html: abnormalDetailsHtml
-          }
+          text: "Abnormal, recall for assessment"
         }
       ] | removeEmpty
     }) }}
@@ -70,35 +52,11 @@
           text: Side + " breast comment (optional)",
           classes: "nhsuk-label--s"
         },
-        classes: "",
         formGroup: {
-          _comment: "Remove bottom margin as input inside card",
           classes: "nhsuk-u-margin-bottom-0"
         }
       }) }}
     {% endcall %}
-
-    {% if (data.imageReadingTemp[params.side].annotations | default([])) | length > 0 %}
-
-      <h3>Abnormalities</h3>
-
-      <ul class="nhsuk-list nhsuk-list--bullet">
-        {% for annotation in data.imageReadingTemp[params.side].annotations %}
-          {% set annotationSummary = annotation | summariseAnnotation %}
-          {% set changeLinkText = "Change" %}
-          {% set changeLinkHiddenText = "annotation" %}
-          {% if annotationSummary %}
-            {% set changeLinkHiddenText = annotationSummary %}
-          {% endif %}
-          <li>
-            {{ annotationSummary }}
-            <span class="nhsuk-u-visually-hidden"> </span>
-            <a href="./annotation/edit/{{ annotation.id }}">{{ changeLinkText }}</a>
-            <span class="nhsuk-u-visually-hidden"> {{ changeLinkHiddenText }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
 
   {% endset %}
 
@@ -111,6 +69,7 @@
 
 {% endmacro %}
 
+
 {% block pageContent %}
 
   <div class="nhsuk-grid-row">
@@ -118,7 +77,6 @@
       <span class="nhsuk-caption-l">
         {{ participant | getFullName }}
       </span>
-
       <h1 class="nhsuk-heading-l js-image-count">
         {{ pageHeading }}
       </h1>
@@ -127,43 +85,140 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-
       {% set symptoms = event.medicalInformation.symptoms %}
       {% include "symptomsWarningCard.njk" %}
-
     </div>
   </div>
 
+  {# Breast opinion cards #}
   <div class="nhsuk-grid-row">
-
     {% for breastSide in ["right", "left"] %}
       <div class="nhsuk-grid-column-one-half">
-        {{ breastDetails({
-          side: breastSide
-        }) }}
+        {{ breastDetails({ side: breastSide }) }}
       </div>
     {% endfor %}
-
   </div>
 
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
+  {# Annotations section — shown for both with-images and without-images modes.
+     In without-images mode the add link goes to the annotation-simple form.
+     In with-images mode it goes to the marker-based annotation form. #}
 
-      {{ button({
-        text: "Continue"
+  {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+  {% set annotationFormParam = "" if withImages else "&simple=true" %}
+
+  {% set annotationsSectionHtml %}
+
+    {# Annotation columns — one per breast side, each with its own add button #}
+    <div class="nhsuk-grid-row">
+
+      {% for breastSide in ["right", "left"] %}
+        {% set Side = breastSide | capitalize %}
+        {% set sideAnnotations = data.imageReadingTemp[breastSide].annotations | default([]) %}
+
+        <div class="nhsuk-grid-column-one-half">
+
+          <h3 class="nhsuk-heading-s">{{ Side }} breast</h3>
+
+          {% if sideAnnotations | length > 0 %}
+            <ul class="nhsuk-list nhsuk-u-margin-bottom-3">
+              {% for annotation in sideAnnotations %}
+                {% set annotationSummary = annotation | summariseAnnotation %}
+                <li class="app-annotation-item">
+                  <span class="app-annotation-item__number">{{ loop.index }}.</span>
+                  <span class="app-annotation-item__summary">{{ annotationSummary or "Annotation" }}</span>
+                  <a href="./annotation/edit/{{ annotation.id }}"
+                     data-load-modal-url="./annotation/edit/{{ annotation.id }}"
+                     class="nhsuk-link nhsuk-link--no-visited-state app-annotation-item__change">Change<span class="nhsuk-u-visually-hidden"> annotation {{ loop.index }}</span></a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="nhsuk-body nhsuk-u-color-secondary"
+               data-annotation-empty="{{ breastSide }}">No annotations</p>
+          {% endif %}
+
+          <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+
+          {{ button({
+            text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
+            classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0",
+            href: "./annotation/add?side=" + breastSide + annotationFormParam,
+            attributes: {
+              "data-load-modal-url": "./annotation/add?side=" + breastSide + annotationFormParam
+            }
+          }) }}
+
+        </div>
+      {% endfor %}
+
+    </div>
+
+  {% endset %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      {{ card({
+        heading: "Annotations",
+        headingLevel: "2",
+        descriptionHtml: annotationsSectionHtml
       }) }}
-
     </div>
   </div>
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
-      <p class="nhsuk-body-s nhsuk-u-color-secondary">
-        <a href="./annotate-v2" class="nhsuk-link nhsuk-link--no-visited-state">
-          Try the new annotation tool (prototype)
-        </a>
-      </p>
+      {{ button({ text: "Continue" }) }}
     </div>
   </div>
+
+  {% if withImages %}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        <p class="nhsuk-body-s nhsuk-u-color-secondary">
+          <a href="./annotate-v2" class="nhsuk-link nhsuk-link--no-visited-state">
+            Try the new annotation tool (prototype)
+          </a>
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  {# Auto-open annotation form in modal when "abnormal" is selected and no
+     annotation exists yet for that side.
+     Also persists the breast assessment value to session so it survives the
+     page reload that happens after the modal save.
+     Uses window.openModal (always present) — works with or without modalForms setting. #}
+  <script>
+    (function () {
+      // Use a boolean to avoid HTML-escaping '&' when Nunjucks outputs into a script block
+      var useSimpleForm = {{ "false" if withImages else "true" }}
+
+      document.addEventListener('change', function (e) {
+        if (!e.target.matches('input[type="radio"]')) return
+
+        var nameMatch = e.target.name.match(/imageReadingTemp\[(\w+)\]\[breastAssessment\]/)
+        if (!nameMatch) return
+
+        var side = nameMatch[1]
+        var value = e.target.value
+
+        // Persist the breast assessment to session immediately so it survives
+        // the page reload that follows a modal annotation save.
+        // Fire-and-forget — no response handling needed.
+        fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
+
+        if (value !== 'abnormal') return
+
+        var countEl = document.querySelector('[data-annotation-count="' + side + '"]')
+        var count = countEl ? parseInt(countEl.dataset.count || '0', 10) : 0
+
+        if (count === 0 && typeof window.openModal === 'function') {
+          var url = './annotation/add?side=' + side + (useSimpleForm ? '&simple=true' : '')
+          window.openModal('app-form-modal', { loadUrl: url })
+        }
+      })
+    })()
+  </script>
 
 {% endblock %}
+

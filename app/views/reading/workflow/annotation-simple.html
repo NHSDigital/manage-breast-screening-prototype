@@ -33,7 +33,7 @@
           classes: "nhsuk-label--s"
         },
         hint: {
-          text: "Describe the location in the " + side + " breast, for example 'let upper outer quadrant' or 'LUOQ'"
+          text: "Describe the location in the " + side + " breast, for example 'upper outer quadrant' or 'UOQ'"
         },
         classes: "nhsuk-u-width-two-thirds"
       } | populateErrors) }}
@@ -49,6 +49,7 @@
           }
         }) }}
 
+        {# Commented out — adding further annotations is done from the main page instead
         {{ button({
           text: "Save and add another " + side + " breast abnormality",
           classes: "nhsuk-button--secondary",
@@ -57,6 +58,7 @@
             value: "save-and-add"
           }
         }) }}
+        #}
       </div>
 
       {# Only show link if this is a previously saved annotation #}

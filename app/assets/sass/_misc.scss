@@ -117,3 +117,29 @@ body.js-enabled .app-no-js-only {
 .app-inline-form {
   display: inline;
 }
+
+// Annotation list item — number, summary text, and change link on one line
+.app-annotation-item {
+  display: flex;
+  align-items: baseline;
+  gap: nhsuk-spacing(2);
+  padding: nhsuk-spacing(2) 0;
+  border-top: 1px solid $nhsuk-border-colour;
+
+  &__number {
+    flex-shrink: 0;
+    @include nhsuk-font(16, $weight: bold);
+    color: $nhsuk-secondary-text-colour;
+  }
+
+  &__summary {
+    flex: 1;
+    @include nhsuk-font(16);
+  }
+
+  &__change {
+    flex-shrink: 0;
+    @include nhsuk-font(16);
+    white-space: nowrap;
+  }
+}
