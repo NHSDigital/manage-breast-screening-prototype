@@ -1,0 +1,43 @@
+{# app/views/_includes/reading/annotation-modal.njk #}
+{#
+  Inline annotation modal for adding/editing annotation details.
+  Used by annotation tool pages that manage annotations client-side.
+
+  Includes the annotation form fields and save/cancel/delete buttons.
+  All interaction is handled by JS (annotation-markers.js).
+#}
+
+{% from 'button/macro.njk' import button %}
+
+{# Annotation modal — uses the existing app-modal component structure #}
+<div id="ann-annotation-modal" class="app-modal" hidden>
+  <div class="app-modal__overlay"></div>
+  <div class="app-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="ann-modal-title">
+
+    <button class="app-modal__close" type="button" id="ann-modal-close-x" aria-label="Close">
+      <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true" focusable="false">
+        <path d="M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z"/>
+      </svg>
+    </button>
+
+    <div class="app-modal__content">
+
+      <h2 id="ann-modal-title" class="app-modal__title nhsuk-heading-m">Add annotation</h2>
+
+      {% include "_includes/reading/annotation-form.njk" %}
+
+      <div class="nhsuk-button-group nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-0">
+        {{ button({
+          text: "Add annotation",
+          type: "button",
+          attributes: { id: "ann-modal-save" }
+        }) }}
+        <button class="app-link-button" type="button" id="ann-modal-cancel">Cancel</button>
+        <div class="app-ann-modal__delete-row">
+          <button class="app-link-button app-link-button--warning" type="button" id="ann-modal-delete" hidden>Delete annotation</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

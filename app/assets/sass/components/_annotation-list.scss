@@ -22,6 +22,20 @@
   border: 1px solid nhsuk-colour("grey-3");
   background: nhsuk-colour("white");
   padding: nhsuk-spacing(3);
+  cursor: pointer;
+
+  &:hover {
+    border-color: nhsuk-colour("grey-2");
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 0;
+  }
+
+  &.is-active {
+    box-shadow: inset 4px 0 0 nhsuk-colour("blue");
+  }
 }
 
 // Two-column layout: number badge left, content right

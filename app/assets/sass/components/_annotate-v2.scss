@@ -498,6 +498,19 @@ $ann-marker-shadow:
   margin: 0;
 }
 
+// Embedded variant: sidebar flows with the page instead of being sticky/scrollable.
+// Used when the annotation UI is embedded in a larger page (e.g. recall-for-assessment-details).
+.app-ann-v2__sidebar--embedded {
+  position: static;
+  max-height: none;
+
+  .app-ann-v2__sidebar-scroll {
+    flex: none;
+    height: auto;
+    overflow: visible;
+  }
+}
+
 .app-ann-v2__breast-section {
   padding: 0 0 nhsuk-spacing(3);
   display: flex;

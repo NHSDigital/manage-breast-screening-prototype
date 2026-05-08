@@ -1191,6 +1191,33 @@ module.exports = (router) => {
     }
   )
 
+  // Save annotations via fetch (JSON body) — fire-and-forget auto-save from interactive JS.
+  // Unlike the annotate-v2/save route, this returns a 200 status instead of redirecting.
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/save-annotations-json',
+    (req, res) => {
+      const data = req.session.data
+
+      let allAnnotations = []
+      try {
+        allAnnotations = JSON.parse(req.body.annotationsJson || '[]')
+      } catch (e) {
+        console.warn('save-annotations-json: failed to parse annotationsJson', e)
+        return res.status(400).end()
+      }
+
+      // Split annotations by side and write to imageReadingTemp
+      ;['left', 'right'].forEach((side) => {
+        const sideAnnotations = allAnnotations.filter((a) => a.side === side)
+        if (!data.imageReadingTemp) data.imageReadingTemp = {}
+        if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
+        data.imageReadingTemp[side].annotations = sideAnnotations
+      })
+
+      res.status(200).end()
+    }
+  )
+
   // Annotations end
 
   // Persist a single breast assessment value to imageReadingTemp without a full form submit.
