@@ -198,9 +198,18 @@
         var viewKey = this.dataset.viewKey
         var el = this
 
+        // Activate this marker visually without re-rendering (which would
+        // destroy the DOM element and break the drag). Full re-render on mouseup.
         if (activeAnnotationId !== annId) {
           activeAnnotationId = annId
-          renderMarkers()
+          // Toggle classes across ALL panels (so the corresponding marker on
+          // the other image also highlights immediately)
+          container.querySelectorAll(".app-ann-marker.is-active").forEach(function (m) {
+            m.classList.remove("is-active")
+          })
+          container.querySelectorAll('.app-ann-marker[data-ann-id="' + annId + '"]').forEach(function (m) {
+            m.classList.add("is-active")
+          })
           renderSidebar()
         }
 
@@ -241,10 +250,11 @@
                 ann.positions[viewKey] = { x: Math.round(imagePos.x * 1000) / 1000, y: Math.round(imagePos.y * 1000) / 1000 }
               }
             }
-            renderMarkers()
-            renderSidebar()
             autoSave()
           }
+          // Always do a full re-render on mouseup to sync state
+          renderMarkers()
+          renderSidebar()
         }
 
         document.addEventListener("mousemove", onMove)
@@ -589,8 +599,18 @@
 
       annModal.hidden = false
       annModal.classList.add("app-modal--open")
-      var firstInput = document.querySelector('[name="imageReadingTemp[annotationTemp][abnormalityTypes]"]')
-      if (firstInput) firstInput.focus()
+      // Focus the dialog element itself so screen readers announce it.
+      // Remove tabindex on first blur so it doesn't steal focus back
+      // when the user clicks inside the modal.
+      var dialogEl = annModal.querySelector(".app-modal__dialog")
+      if (dialogEl) {
+        dialogEl.setAttribute("tabindex", "-1")
+        dialogEl.focus()
+        dialogEl.addEventListener("blur", function onBlur() {
+          dialogEl.removeAttribute("tabindex")
+          dialogEl.removeEventListener("blur", onBlur)
+        })
+      }
     }
 
     function closeModal() {
