@@ -1,6 +1,7 @@
 {# /app/views/reading/workflow/recall-for-assessment-details.html #}
 
 {% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -119,34 +120,15 @@
 
           <h3 class="nhsuk-heading-s">{{ Side }} breast</h3>
 
-          {% if sideAnnotations | length > 0 %}
-            <ul class="nhsuk-list nhsuk-u-margin-bottom-3">
-              {% for annotation in sideAnnotations %}
-                {% set annotationSummary = annotation | summariseAnnotation %}
-                <li class="app-annotation-item">
-                  <span class="app-annotation-item__number">{{ loop.index }}.</span>
-                  <span class="app-annotation-item__summary">{{ annotationSummary or "Annotation" }}</span>
-                  <a href="./annotation/edit/{{ annotation.id }}"
-                     data-load-modal-url="./annotation/edit/{{ annotation.id }}"
-                     class="nhsuk-link nhsuk-link--no-visited-state app-annotation-item__change">Change<span class="nhsuk-u-visually-hidden"> annotation {{ loop.index }}</span></a>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="nhsuk-body nhsuk-u-color-secondary"
-               data-annotation-empty="{{ breastSide }}">No annotations</p>
-          {% endif %}
+          {{ appAnnotationList({
+            annotations: sideAnnotations,
+            editable: true,
+            editHrefPrefix: "./annotation/edit/",
+            addHref: "./annotation/add?side=" + breastSide + annotationFormParam,
+            useModals: true
+          }) }}
 
           <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
-
-          {{ button({
-            text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
-            classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0",
-            href: "./annotation/add?side=" + breastSide + annotationFormParam,
-            attributes: {
-              "data-load-modal-url": "./annotation/add?side=" + breastSide + annotationFormParam
-            }
-          }) }}
 
         </div>
       {% endfor %}
