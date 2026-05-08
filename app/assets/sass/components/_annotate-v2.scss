@@ -435,8 +435,8 @@ $ann-marker-shadow:
 // Remove button — shown on marker hover or focus only
 .app-ann-marker__remove {
   position: absolute;
-  top: -18px;
-  right: -18px;
+  top: -14px;
+  right: -14px;
   width: 22px;
   height: 22px;
   background: $nhsuk-focus-colour;
@@ -459,6 +459,13 @@ $ann-marker-shadow:
     outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
     outline-offset: 2px;
   }
+}
+
+// Enlarge hover area of active marker so remove button is reachable
+.app-ann-marker.is-active::after {
+  content: "";
+  position: absolute;
+  inset: -16px;
 }
 
 .app-ann-marker.is-active:hover .app-ann-marker__remove,

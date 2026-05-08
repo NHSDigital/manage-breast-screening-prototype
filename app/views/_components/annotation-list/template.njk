@@ -1,11 +1,12 @@
 {# app/views/_components/annotation-list/template.njk #}
 {% from 'button/macro.njk' import button %}
 {#
-  Displays a list of annotation cards with blue numbered badges.
+  Displays a numbered list of annotations with blue badges.
 
   Params:
     annotations    — array of annotation objects (required)
     startNumber    — number to start counting from (default: 1)
+    interactive    — boolean, show bordered cards with hover effects (default: false)
     editable       — boolean, show edit/delete links (default: false)
     editHrefPrefix — URL prefix for edit links, annotation id appended (e.g. "./annotation/edit/")
     addHref        — URL for "Add annotation" button (optional, only shown if editable)
@@ -17,59 +18,64 @@
 
 {% set _annotations = params.annotations | default([]) %}
 {% set _startNumber = params.startNumber | default(1) %}
+{% set _interactive = params.interactive | default(false) %}
 {% set _editable = params.editable | default(false) %}
 {% set _useModals = params.useModals | default(false) %}
 {% set _emptyText = params.emptyText | default("No annotations") %}
 
-<div class="app-annotation-list{{ ' ' + params.classes if params.classes }}">
+<div class="app-annotation-list{{ ' app-annotation-list--interactive' if _interactive }}{{ ' ' + params.classes if params.classes }}">
 
   {% if _annotations | length == 0 %}
     <p class="app-annotation-list__empty">{{ _emptyText }}</p>
   {% endif %}
 
-  {% for annotation in _annotations %}
-    {% set _number = _startNumber + loop.index0 %}
-    {# Handle abnormalityTypes as either a string (from select) or array (from checkboxes) #}
-    {% if annotation.abnormalityTypes is string %}
-      {% set _typeLabel = annotation.abnormalityTypes if annotation.abnormalityTypes else "Type not set" %}
-    {% elseif annotation.abnormalityTypes | length %}
-      {% set _typeLabel = annotation.abnormalityTypes | join(", ") %}
-    {% else %}
-      {% set _typeLabel = "Type not set" %}
-    {% endif %}
-    {% set _concernLabel = annotation.levelOfConcern | formatLevelOfConcern if annotation.levelOfConcern %}
+  {% if _annotations | length > 0 %}
+  <ol class="app-annotation-list__items">
+    {% for annotation in _annotations %}
+      {% set _number = _startNumber + loop.index0 %}
+      {# Handle abnormalityTypes as either a string (from select) or array (from checkboxes) #}
+      {% if annotation.abnormalityTypes is string %}
+        {% set _typeLabel = annotation.abnormalityTypes if annotation.abnormalityTypes else "Type not set" %}
+      {% elseif annotation.abnormalityTypes | length %}
+        {% set _typeLabel = annotation.abnormalityTypes | join(", ") %}
+      {% else %}
+        {% set _typeLabel = "Type not set" %}
+      {% endif %}
+      {% set _concernLabel = annotation.levelOfConcern | formatLevelOfConcern if annotation.levelOfConcern %}
 
-    <div class="app-annotation-list__card">
-      <div class="app-annotation-list__header">
-        <span class="app-annotation-list__number">{{ _number }}</span>
-        <div class="app-annotation-list__body">
-          <span class="app-annotation-list__type">{{ _typeLabel }}</span>
+      <li class="app-annotation-list__item" value="{{ _number }}">
+        <div class="app-annotation-list__header">
+          <span class="app-annotation-list__number">{{ _number }}</span>
+          <div class="app-annotation-list__body">
+            <span class="app-annotation-list__type">{{ _typeLabel }}</span>
 
-          {% if _concernLabel %}
-            <p class="app-annotation-list__meta">{{ _concernLabel }}</p>
-          {% endif %}
+            {% if _concernLabel %}
+              <p class="app-annotation-list__meta">{{ _concernLabel }}</p>
+            {% endif %}
 
-          {% if annotation.location %}
-            <p class="app-annotation-list__meta">{{ annotation.location }}</p>
-          {% endif %}
+            {% if annotation.location %}
+              <p class="app-annotation-list__meta">{{ annotation.location }}</p>
+            {% endif %}
 
-          {% if annotation.comment %}
-            <p class="app-annotation-list__meta">{{ annotation.comment }}</p>
-          {% endif %}
+            {% if annotation.comment %}
+              <p class="app-annotation-list__meta">{{ annotation.comment }}</p>
+            {% endif %}
 
-          {% if _editable and params.editHrefPrefix %}
-            <div class="app-annotation-list__actions">
-              <a href="{{ params.editHrefPrefix }}{{ annotation.id }}"
-                 class="nhsuk-link nhsuk-link--no-visited-state"
-                 {% if _useModals %}data-load-modal-url="{{ params.editHrefPrefix }}{{ annotation.id }}"{% endif %}>
-                Change<span class="nhsuk-u-visually-hidden"> annotation {{ _number }}</span>
-              </a>
-            </div>
-          {% endif %}
+            {% if _editable and params.editHrefPrefix %}
+              <div class="app-annotation-list__actions">
+                <a href="{{ params.editHrefPrefix }}{{ annotation.id }}"
+                   class="nhsuk-link nhsuk-link--no-visited-state"
+                   {% if _useModals %}data-load-modal-url="{{ params.editHrefPrefix }}{{ annotation.id }}"{% endif %}>
+                  Change<span class="nhsuk-u-visually-hidden"> annotation {{ _number }}</span>
+                </a>
+              </div>
+            {% endif %}
+          </div>
         </div>
-      </div>
-    </div>
-  {% endfor %}
+      </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
 
   {% if _editable and params.addHref %}
     {% set _addButtonAttributes = {} %}

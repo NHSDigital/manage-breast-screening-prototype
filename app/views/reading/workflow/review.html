@@ -18,10 +18,18 @@
       <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
       {# Assessment summary card #}
+      {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+      {% if withImages %}
+        {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+        {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+      {% endif %}
+
       {% set readSummaryHtml %}
         {% set read = data.imageReadingTemp %}
         {% set allowEdits = true %}
         {% set changeOpinionUrl = "./opinion" %}
+        {% set showAnnotationImages = withImages %}
+        {% set annotationImagePaths = allPaths %}
         {% include "_includes/summary-lists/read-summary.njk" %}
       {% endset %}
 
@@ -39,5 +47,10 @@
 
     </div>
   </div>
+
+  {% if withImages %}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>AnnotationMarkers.correctAll()</script>
+  {% endif %}
 
 {% endblock %}

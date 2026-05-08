@@ -109,32 +109,39 @@
 }
 
 // Thumbnail: small inline images
+.app-annotation-images--thumbnail .app-annotation-images__row {
+  grid-template-columns: repeat(2, auto);
+  justify-content: start;
+  gap: nhsuk-spacing(2);
+}
+
 .app-annotation-images--thumbnail .app-annotation-images__panel {
   max-width: 120px;
 }
 
-.app-annotation-images--thumbnail .app-annotation-images__row {
-  gap: nhsuk-spacing(2);
-}
-
 .app-annotation-images--thumbnail .app-annotation-images__label {
-  font-size: 12px;
+  font-size: 16px;
   padding: 1px nhsuk-spacing(1);
 }
 
+// Thumbnail markers: just show the number badge (no circle marker)
 .app-annotation-images--thumbnail .app-ann-marker {
-  width: 20px;
-  height: 20px;
-  border-width: 2px;
+  width: auto;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+  cursor: default;
+  pointer-events: none;
 }
 
 .app-annotation-images--thumbnail .app-ann-marker__badge {
-  width: 14px;
-  height: 14px;
-  min-width: 14px;
-  font-size: 10px;
-  top: -14px;
-  left: -14px;
+  position: static;
+  min-width: 20px;
+  height: 20px;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 // ─── Dimmed markers (when highlighting a single annotation) ───────────────────

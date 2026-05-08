@@ -165,6 +165,7 @@
                       <h3 class="app-ann-v2__sidebar-heading">Annotations</h3>
                       {{ appAnnotationList({
                         annotations: sideAnnotations,
+                        interactive: true,
                         editable: true,
                         editHrefPrefix: "./annotation/edit/",
                         addHref: "./annotation/add?side=" + breastSide,
@@ -214,6 +215,7 @@
 
             {{ appAnnotationList({
               annotations: sideAnnotations,
+              interactive: true,
               editable: true,
               editHrefPrefix: "./annotation/edit/",
               addHref: "./annotation/add?side=" + breastSide + "&simple=true",

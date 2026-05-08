@@ -1,5 +1,5 @@
 /* app/assets/sass/components/_annotation-list.scss */
-/* Annotation list cards with blue numbered badges — used across annotation views */
+/* Annotation list with blue numbered badges — used across annotation views */
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 // ─── List wrapper ─────────────────────────────────────────────────────────────
@@ -16,8 +16,46 @@
   margin: 0;
 }
 
-// ─── Annotation card ──────────────────────────────────────────────────────────
+// ─── OL reset ─────────────────────────────────────────────────────────────────
 
+.app-annotation-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(3);
+}
+
+// ─── Annotation item (default: no border, no hover) ───────────────────────────
+
+.app-annotation-list__item {
+  padding: 0;
+}
+
+// Interactive variant: bordered cards with hover effects
+.app-annotation-list--interactive .app-annotation-list__item {
+  border: 1px solid nhsuk-colour("grey-3");
+  background: nhsuk-colour("white");
+  padding: nhsuk-spacing(3);
+  cursor: pointer;
+
+  &:hover {
+    border-color: nhsuk-colour("grey-2");
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 0;
+  }
+
+  &.is-active {
+    box-shadow: inset 4px 0 0 nhsuk-colour("blue");
+  }
+}
+
+// JS-rendered sidebar uses .app-annotation-list__card (div not li)
+// Keep these styles for the interactive JS sidebar
 .app-annotation-list__card {
   border: 1px solid nhsuk-colour("grey-3");
   background: nhsuk-colour("white");

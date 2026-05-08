@@ -194,6 +194,11 @@
 
       marker.addEventListener("mousedown", function (e) {
         e.stopPropagation()
+
+        // If clicking the remove button, don't start a drag — let the
+        // click handler on the remove button fire instead
+        if (e.target.closest(".app-ann-marker__remove")) return
+
         var annId = this.dataset.annId
         var viewKey = this.dataset.viewKey
         var el = this
@@ -1134,6 +1139,8 @@
         marker.style.top = corrected.y + "%"
       })
     })
+    // Reveal markers now they're in the correct position
+    cont.classList.add("is-corrected")
   }
 
   // ─── Public API ──────────────────────────────────────────────────────────────
