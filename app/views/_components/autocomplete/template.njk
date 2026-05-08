@@ -1,0 +1,189 @@
+{# app/views/_components/autocomplete/template.njk #}
+
+{#
+  Accessible autocomplete component.
+
+  Renders a <select> or <input> that is progressively enhanced by
+  autocomplete.js into an accessible autocomplete widget.
+
+  params:
+    - id (string): id for the input. Defaults to name if not provided.
+    - name (string, required): name attribute for form submission.
+    - value (string): currently selected value (matched against item.value).
+    - type (string): "select" (default) or "input". Controls which element
+        is rendered. Use "input" for free-text with suggestions.
+    - label (object, required):
+        text (string): label text
+        classes (string): extra classes on the label
+        size (string): "s", "m", "l", or "xl"
+        isPageHeading (boolean): wrap label in an <h1>
+    - hint (object):
+        text (string): hint text
+        html (string): hint HTML
+    - errorMessage (object): works with | populateErrors
+        text (string): error message text
+    - formGroup (object):
+        classes (string): extra classes on the form group wrapper
+    - classes (string): extra classes on the select or input element
+    - attributes (object): additional HTML attributes on the select or input
+
+  Display options:
+    - showAllValues (boolean): show all options on focus, like a dropdown.
+        Adds a dropdown arrow. Default false.
+
+  Autocomplete behaviour options (map to accessible-autocomplete API):
+    - autoselect (boolean): highlight the first result as you type.
+        Default false. Consider disabling when using showAllValues.
+    - minLength (number): minimum characters before suggestions appear.
+        Default 0.
+    - confirmOnBlur (boolean): confirm selected option when clicking outside.
+        Default true.
+    - showNoOptionsFound (boolean): show "No results found" message.
+        Default true.
+
+  Select variant params (type: "select", the default):
+    - items (array, required): options for the select.
+        Each item:
+          value (string): option value submitted with the form
+          text (string): option display text
+          synonyms (array of strings): alternative search terms
+          hint (string): extra text shown below the option in the dropdown
+          append (string): text appended after the option name in the dropdown
+          boost (number): relevance boost multiplier (default 1)
+          disabled (boolean): disable this option
+
+  Input variant params (type: "input"):
+    - source (array): list of suggestions. Each item can be a plain string,
+        or an object with: text, hint, append, synonyms, boost.
+        Submitted value is whatever the user types or selects — not
+        constrained to the list.
+#}
+
+{% from 'label/macro.njk' import label %}
+{% from 'hint/macro.njk' import hint %}
+{% from 'error-message/macro.njk' import errorMessage as errorMessageMacro %}
+{% from "nhsuk/macros/attributes.njk" import nhsukAttributes %}
+
+{% set componentId = params.id if params.id else params.name %}
+{% set componentType = params.type if params.type else "select" %}
+
+{# Build aria-describedby from hint and error ids #}
+{% set describedBy = "" %}
+{% if params.hint %}
+  {% set describedBy = componentId ~ "-hint" %}
+{% endif %}
+{% if params.errorMessage %}
+  {% set describedBy = (describedBy ~ " " ~ componentId ~ "-error") | trim %}
+{% endif %}
+
+{# Build form-group classes #}
+{% set formGroupClasses = "nhsuk-form-group" %}
+{% if params.errorMessage %}
+  {% set formGroupClasses = formGroupClasses ~ " nhsuk-form-group--error" %}
+{% endif %}
+{% if params.formGroup and params.formGroup.classes %}
+  {% set formGroupClasses = formGroupClasses ~ " " ~ params.formGroup.classes %}
+{% endif %}
+
+<div class="{{ formGroupClasses }}">
+
+  {{ label({
+    text: params.label.text,
+    html: params.label.html,
+    classes: params.label.classes,
+    size: params.label.size,
+    isPageHeading: params.label.isPageHeading,
+    for: componentId
+  }) }}
+
+  {% if params.hint %}
+    {{ hint({
+      id: componentId ~ "-hint",
+      text: params.hint.text,
+      html: params.hint.html
+    }) }}
+  {% endif %}
+
+  {% if params.errorMessage %}
+    {{ errorMessageMacro({
+      id: componentId ~ "-error",
+      text: params.errorMessage.text,
+      html: params.errorMessage.html
+    }) }}
+  {% endif %}
+
+  {# -----------------------------------------------------------------------
+     Select-based variant
+  ----------------------------------------------------------------------- #}
+  {% if componentType == "select" %}
+
+    {% set selectClasses = "nhsuk-select" %}
+    {% if params.errorMessage %}
+      {% set selectClasses = selectClasses ~ " nhsuk-select--error" %}
+    {% endif %}
+    {% if params.classes %}
+      {% set selectClasses = selectClasses ~ " " ~ params.classes %}
+    {% endif %}
+
+    <select
+      class="{{ selectClasses }}"
+      id="{{ componentId }}"
+      name="{{ params.name }}"
+      data-module="app-autocomplete"
+      {%- if params.showAllValues %} data-show-all-values="true"{% endif %}
+      {%- if "autoselect" in params %} data-autoselect="{{ 'true' if params.autoselect else 'false' }}"{% endif %}
+      {%- if "minLength" in params %} data-min-length="{{ params.minLength }}"{% endif %}
+      {%- if "confirmOnBlur" in params %} data-confirm-on-blur="{{ 'true' if params.confirmOnBlur else 'false' }}"{% endif %}
+      {%- if "showNoOptionsFound" in params %} data-show-no-options-found="{{ 'true' if params.showNoOptionsFound else 'false' }}"{% endif %}
+      {%- if describedBy %} aria-describedby="{{ describedBy }}"{% endif %}
+      {{- nhsukAttributes(params.attributes) }}
+    >
+      {# Empty first option so the autocomplete input starts blank #}
+      <option value=""></option>
+      {%- for item in params.items %}
+        <option
+          value="{{ item.value }}"
+          {%- if item.value == params.value or item.text == params.value %} selected{% endif %}
+          {%- if item.disabled %} disabled{% endif %}
+          {%- if item.synonyms %} data-synonyms="{{ item.synonyms | join('|') | escape }}"{% endif %}
+          {%- if item.hint %} data-hint="{{ item.hint | escape }}"{% endif %}
+          {%- if item.append %} data-append="{{ item.append | escape }}"{% endif %}
+          {%- if item.boost %} data-boost="{{ item.boost }}"{% endif %}
+        >{{ item.text }}</option>
+      {%- endfor %}
+    </select>
+
+  {# -----------------------------------------------------------------------
+     Input-based variant
+  ----------------------------------------------------------------------- #}
+  {% elseif componentType == "input" %}
+
+    {% set inputClasses = "nhsuk-input" %}
+    {% if params.errorMessage %}
+      {% set inputClasses = inputClasses ~ " nhsuk-input--error" %}
+    {% endif %}
+    {% if params.classes %}
+      {% set inputClasses = inputClasses ~ " " ~ params.classes %}
+    {% endif %}
+
+    <input
+      class="{{ inputClasses }}"
+      id="{{ componentId }}"
+      name="{{ params.name }}"
+      type="text"
+      autocomplete="off"
+      value="{{ params.value or '' }}"
+      data-module="app-autocomplete"
+      data-source="{{ params.source | dump | escape }}"
+      {%- if params.showAllValues %} data-show-all-values="true"{% endif %}
+      {%- if "autoselect" in params %} data-autoselect="{{ 'true' if params.autoselect else 'false' }}"{% endif %}
+      {%- if "minLength" in params %} data-min-length="{{ params.minLength }}"{% endif %}
+      {%- if "confirmOnBlur" in params %} data-confirm-on-blur="{{ 'true' if params.confirmOnBlur else 'false' }}"{% endif %}
+      {%- if "showNoOptionsFound" in params %} data-show-no-options-found="{{ 'true' if params.showNoOptionsFound else 'false' }}"{% endif %}
+      {%- if describedBy %} aria-describedby="{{ describedBy }}"{% endif %}
+      {{- nhsukAttributes(params.attributes) }}
+    >
+
+  {% endif %}
+
+</div>

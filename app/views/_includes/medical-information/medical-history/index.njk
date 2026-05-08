@@ -60,7 +60,7 @@
 {% for typeData in data.medicalHistoryTypes %}
 
   {# Create a shortened name for the data #}
-  {% set historyItemArray = data.event.medicalInformation.medicalHistory[typeData.type] %}
+  {% set historyItemArray = event.medicalInformation.medicalHistory[typeData.type] %}
 
   {# Only run if we have some medical historythe #}
   {% if historyItemArray and historyItemArray | length %}
@@ -574,7 +574,7 @@
               text: "Change"
             } | openInModal
           ]
-        }
+        } if allowEdits
       }) %}
         {{ historyItemContents | safe }}
       {% endcall %}
@@ -604,7 +604,7 @@
 
   <div class="nhsuk-button-group app-button-group--small">
     {% for typeData in data.medicalHistoryTypes %}
-      {% set existingItems = data.event.medicalInformation.medicalHistory[typeData.type] %}
+      {% set existingItems = event.medicalInformation.medicalHistory[typeData.type] %}
       {% set hasExistingItem = existingItems and existingItems | length > 0 %}
       {% set canAdd = typeData.canHaveMultiple or not hasExistingItem %}
       

@@ -42,10 +42,10 @@ const summariseAnnotation = (annotation) => {
     return ''
   }
 
-  const abnormalityTypes = Array.isArray(annotation.abnormalityType)
-    ? annotation.abnormalityType
-    : annotation.abnormalityType
-      ? [annotation.abnormalityType]
+  const abnormalityTypes = Array.isArray(annotation.abnormalityTypes)
+    ? annotation.abnormalityTypes
+    : annotation.abnormalityTypes
+      ? [annotation.abnormalityTypes]
       : []
 
   const typeText = getAbnormalityTypeText(abnormalityTypes, annotation)

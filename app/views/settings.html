@@ -107,11 +107,23 @@
     {# One click normal #}
     {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
 
+    {# Confirm normal with details #}
+    {{ settingToggle("Confirm normal with details", "settings[reading][confirmNormalWithDetails]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormalWithDetails, "false") }}
+
+    {# Confirm technical recall #}
+    {{ settingToggle("Confirm technical recall details", "settings[reading][confirmTechnicalRecall]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmTechnicalRecall, "true") }}
+
+    {# Confirm recall for assessment #}
+    {{ settingToggle("Confirm recall for assessment details", "settings[reading][confirmRecallForAssessment]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmRecallForAssessment, "true") }}
+
     {# Blind reading #}
     {{ settingToggle("Blind reading", "settings[reading][blindReading]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.blindReading, "false") }}
 
     {# Show remaining counts vs completed counts #}
     {{ settingToggle("Reading counts", "settings[reading][showRemaining]", [{value: "true", label: "Remaining"}, {value: "false", label: "Completed"}], data.settings.reading.showRemaining, "false") }}
+
+    {# Annotations mode - inline form or marker-based flow #}
+    {{ settingToggle("Annotations mode", "settings[reading][annotationsMode]", [{value: "without-images", label: "Inline form (no image markers)"}, {value: "with-images", label: "Image marker tool"}], data.settings.reading.annotationsMode, "without-images") }}
 
     {# Auto-open PACS viewer #}
     {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}

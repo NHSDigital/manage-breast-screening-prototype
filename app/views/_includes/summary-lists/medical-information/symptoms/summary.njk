@@ -12,7 +12,7 @@
 
     {% set keyText %}
       {{ symptom.type | sentenceCase }}
-      {% if symptom.isSignificant %}
+      {% if symptom.isSignificant and not isReadingWorkflow %}
         <br>{{ "Highlight to image readers" | toTag }}
       {% endif %}
     {% endset %}

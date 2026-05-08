@@ -1,0 +1,185 @@
+{# app/views/style-guide/option-picker.html #}
+
+{% extends 'layout-app.html' %}
+{% from "_components/option-picker/macro.njk" import appOptionPicker %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "option-picker" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Option picker</h2>
+
+<p>An inline group of radio (or checkbox) options styled as buttons, replacing a select element with a single-click interaction. No JavaScript required.</p>
+
+<p>Under the hood this uses standard <code>&lt;input type="radio"&gt;</code> markup with visually-hidden inputs. The label is styled to look like a button and its selected state is driven by the CSS <code>:checked</code> selector.</p>
+
+<h3>Radio (default)</h3>
+
+<p>Icons default to on — a radio dot appears inside each option.</p>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "sort-demo-1",
+    value: "desc",
+    fieldset: {
+      legend: { text: "Sort order" }
+    },
+    items: [
+      { value: "asc", text: "Ascending" },
+      { value: "desc", text: "Descending" }
+    ]
+  }) }}
+</div>
+
+<h3>Radio — more options, no icons</h3>
+
+<p>Set <code>showIcons: false</code> to hide the radio dot.</p>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "sort-demo-2",
+    value: "all",
+    showIcons: false,
+    fieldset: {
+      legend: { text: "Image status" }
+    },
+    items: [
+      { value: "all", text: "All" },
+      { value: "unread", text: "Unread" },
+      { value: "read", text: "Read" },
+      { value: "arbitrated", text: "Arbitrated" }
+    ]
+  }) }}
+</div>
+
+<hr>
+
+<h3>Radio — joined</h3>
+
+<p>Set <code>joined: true</code> to remove gaps between options. Only the outer corners are rounded.</p>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "sort-demo-9",
+    value: "desc",
+    joined: true,
+    showIcons: false,
+    fieldset: {
+      legend: { text: "Sort order" }
+    },
+    items: [
+      { value: "asc", text: "Ascending" },
+      { value: "desc", text: "Descending" }
+    ]
+  }) }}
+</div>
+
+<h3>Radio — joined, more options</h3>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "sort-demo-10",
+    value: "all",
+    joined: true,
+    showIcons: false,
+    fieldset: {
+      legend: { text: "Image status" }
+    },
+    items: [
+      { value: "all", text: "All" },
+      { value: "unread", text: "Unread" },
+      { value: "read", text: "Read" },
+      { value: "arbitrated", text: "Arbitrated" }
+    ]
+  }) }}
+</div>
+
+<h3>Radio — joined with icons</h3>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "sort-demo-11",
+    value: "all",
+    joined: true,
+    fieldset: {
+      legend: { text: "Image status" }
+    },
+    items: [
+      { value: "all", text: "All" },
+      { value: "unread", text: "Unread" },
+      { value: "read", text: "Read" },
+      { value: "arbitrated", text: "Arbitrated" }
+    ]
+  }) }}
+</div>
+
+<hr>
+
+<h3>Checkbox</h3>
+
+<p>Set <code>allowMultiple: true</code> to use checkboxes. A tick mark indicator is shown by default.</p>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "views-chk[]",
+    allowMultiple: true,
+    values: ["cc", "mlo"],
+    fieldset: {
+      legend: { text: "Image views" }
+    },
+    items: [
+      { value: "cc", text: "CC" },
+      { value: "mlo", text: "MLO" },
+      { value: "mag", text: "Mag" },
+      { value: "special", text: "Special" }
+    ]
+  }) }}
+</div>
+
+<h3>Checkbox — no icons</h3>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "views[]",
+    allowMultiple: true,
+    showIcons: false,
+    values: ["cc", "mlo"],
+    fieldset: {
+      legend: { text: "Image views" }
+    },
+    items: [
+      { value: "cc", text: "CC" },
+      { value: "mlo", text: "MLO" },
+      { value: "mag", text: "Mag" },
+      { value: "special", text: "Special" }
+    ]
+  }) }}
+</div>
+
+<h3>Checkbox — joined with icons</h3>
+
+<div class="sg-example">
+  {{ appOptionPicker({
+    name: "joined-views[]",
+    allowMultiple: true,
+    joined: true,
+    values: ["cc", "mlo"],
+    fieldset: {
+      legend: { text: "Image views" }
+    },
+    items: [
+      { value: "cc", text: "CC" },
+      { value: "mlo", text: "MLO" },
+      { value: "mag", text: "Mag" },
+      { value: "special", text: "Special" }
+    ]
+  }) }}
+</div>
+
+{% endblock %}

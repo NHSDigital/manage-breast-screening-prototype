@@ -91,9 +91,23 @@
   }) }}
 {% endif %}
 
-{# This probably shouldn't occur #}
+{# Message shown when there are no events for the current tab #}
+{% if status == 'all' or not status %}
+  {% set noEventsMessage = "There are no participants in this clinic." %}
+{% elseif status == 'remaining' %}
+  {% set noEventsMessage = "There are no remaining participants." %}
+{% elseif status == 'checked-in' %}
+  {% set noEventsMessage = "There are no checked-in participants." %}
+{% elseif status == 'in-progress' %}
+  {% set noEventsMessage = "There are no in-progress participants." %}
+{% elseif status == 'complete' %}
+  {% set noEventsMessage = "There are no completed participants." %}
+{% else %}
+  {% set noEventsMessage = "There are no participants in this clinic." %}
+{% endif %}
+
 {% if filteredEvents.length === 0 %}
-  <p>No participants scheduled for this clinic.</p>
+  <p>{{ noEventsMessage }}</p>
 {% else %}
   <table class="nhsuk-table app-clinic-events-table">
     <thead class="nhsuk-table__head">

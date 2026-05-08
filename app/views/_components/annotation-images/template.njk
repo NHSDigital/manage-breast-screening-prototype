@@ -1,0 +1,150 @@
+{# app/views/_components/annotation-images/template.njk #}
+{#
+  Renders mammogram image panels for a given breast side with optional annotation markers.
+
+  Uses the same visual treatment as annotate-v2: fixed 4:5 aspect ratio containers,
+  bookmatched alignment (right breast → object-position: right, left → left),
+  and view labels positioned on the outer edge.
+
+  Params:
+    side          — "right" or "left" (required)
+    imagePaths    — object of image paths keyed by view (e.g. { rcc: "/path.jpg", rmlo: "/path.jpg" })
+                    Values can be a string (single image) or array (multiple images per view)
+    viewOrder     — "cc-first" (default) or "mlo-first"
+    annotations   — array of annotation objects for this side (optional, for rendering markers)
+    startNumber   — number to start annotation badge numbering from (default: 1)
+    mode          — "readonly" (default) or "interactive"
+    size          — "full" (default), "medium", or "thumbnail"
+    showLabels    — boolean, show view labels on images (default: true)
+    showOnlyAnnotated — boolean, only show images that have markers (default: false)
+    highlightAnnotationId — id of a single annotation to highlight (others greyed out)
+    classes       — additional CSS classes on the wrapper
+    id            — id attribute for the wrapper (useful for JS targeting)
+#}
+
+{% set _side = params.side | default("right") %}
+{% set _imagePaths = params.imagePaths | default({}) %}
+{% set _viewOrder = params.viewOrder | default("cc-first") %}
+{% set _annotations = params.annotations | default([]) %}
+{% set _startNumber = params.startNumber | default(1) %}
+{% set _mode = params.mode | default("readonly") %}
+{% set _size = params.size | default("full") %}
+{% set _showLabels = params.showLabels if params.showLabels is defined else true %}
+{% set _showOnlyAnnotated = params.showOnlyAnnotated | default(false) %}
+{% set _highlightId = params.highlightAnnotationId %}
+{% set _isInteractive = _mode == "interactive" %}
+
+{# Determine view keys for this side based on view order #}
+{% if _side == "right" %}
+  {% set _viewKeys = ["rcc", "rmlo"] if _viewOrder == "cc-first" else ["rmlo", "rcc"] %}
+{% else %}
+  {% set _viewKeys = ["lcc", "lmlo"] if _viewOrder == "cc-first" else ["lmlo", "lcc"] %}
+{% endif %}
+
+{# View labels lookup #}
+{% set _viewLabels = { "rmlo": "RMLO", "rcc": "RCC", "lmlo": "LMLO", "lcc": "LCC" } %}
+
+{# Build flat list of image panels to render #}
+{% set _panels = [] %}
+{% for viewKey in _viewKeys %}
+  {% set viewPath = _imagePaths[viewKey] %}
+  {% if viewPath %}
+    {% if viewPath is iterable and viewPath is not string %}
+      {# Multiple images for this view #}
+      {% for path in viewPath %}
+        {% set subKey = viewKey + "-" + loop.index if viewPath | length > 1 else viewKey %}
+        {% set subLabel = _viewLabels[viewKey] + " (" + loop.index + "/" + (viewPath | length) + ")" if viewPath | length > 1 else _viewLabels[viewKey] %}
+        {% set _panels = _panels | push({ path: path, viewKey: subKey, baseView: viewKey, label: subLabel }) %}
+      {% endfor %}
+    {% else %}
+      {# Single image #}
+      {% set _panels = _panels | push({ path: viewPath, viewKey: viewKey, baseView: viewKey, label: _viewLabels[viewKey] }) %}
+    {% endif %}
+  {% else %}
+    {# No image for this view — show placeholder unless filtering to annotated only #}
+    {% if not _showOnlyAnnotated %}
+      {% set _panels = _panels | push({ path: null, viewKey: viewKey, baseView: viewKey, label: _viewLabels[viewKey] }) %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{# If showOnlyAnnotated, filter panels to only those with at least one annotation marker #}
+{% if _showOnlyAnnotated %}
+  {% set _filteredPanels = [] %}
+  {% for panel in _panels %}
+    {% set _hasMarker = false %}
+    {% for ann in _annotations %}
+      {% if ann.positions and ann.positions[panel.viewKey] %}
+        {% set _hasMarker = true %}
+      {% endif %}
+    {% endfor %}
+    {% if _hasMarker %}
+      {% set _filteredPanels = _filteredPanels | push(panel) %}
+    {% endif %}
+  {% endfor %}
+  {% set _panels = _filteredPanels %}
+{% endif %}
+
+{# Size class #}
+{% set _sizeClass = "app-annotation-images--" + _size if _size != "full" else "" %}
+
+<div class="app-annotation-images{{ ' ' + _sizeClass if _sizeClass }}{{ ' app-annotation-images--interactive' if _isInteractive }}{{ ' ' + params.classes if params.classes }}"
+     {{ 'id="' + params.id + '"' if params.id }}
+     data-side="{{ _side }}"
+     data-mode="{{ _mode }}">
+  <div class="app-annotation-images__row" data-panel-count="{{ _panels | length }}">
+    {% for panel in _panels %}
+      {% if panel.path %}
+        <div class="app-annotation-images__panel app-annotation-images__panel--{{ _side }}"
+             data-view="{{ panel.viewKey }}"
+             data-base-view="{{ panel.baseView }}">
+          <img src="{{ panel.path }}" alt="{{ panel.label }}" draggable="false">
+          {% if _showLabels %}
+            <span class="app-annotation-images__label">{{ panel.label }}</span>
+          {% endif %}
+
+          {# Zoom button — shown on hover, opens lightbox #}
+          {% if _isInteractive %}
+            <button class="app-annotation-images__zoom-btn" type="button" aria-label="Zoom {{ panel.label }}" data-zoom-view="{{ panel.viewKey }}">
+              <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16" aria-hidden="true" focusable="false"><path d="M1 1h5v1.5H2.5V6H1V1zm9 0h5v5h-1.5V2.5H10V1zM1 10h1.5v3.5H6V15H1v-5zm13.5 3.5H11V15h5v-5h-1.5v3.5z"/></svg>
+            </button>
+          {% endif %}
+
+          {# Render static markers for annotations that have a position on this view #}
+          {% for annotation in _annotations %}
+            {% if annotation.positions and annotation.positions[panel.viewKey] %}
+              {% set _pos = annotation.positions[panel.viewKey] %}
+              {% set _annIndex = loop.index0 %}
+              {# Calculate display number — find this annotation's index in the full list #}
+              {% set _displayNum = _startNumber %}
+              {% for ann in _annotations %}
+                {% if ann.id == annotation.id %}
+                  {% set _displayNum = _startNumber + loop.index0 %}
+                {% endif %}
+              {% endfor %}
+              {% set _isHighlighted = not _highlightId or _highlightId == annotation.id %}
+              <div class="app-ann-marker{{ ' is-active' if _highlightId == annotation.id }}{{ ' is-dimmed' if _highlightId and _highlightId != annotation.id }}"
+                   style="left: {{ _pos.x * 100 }}%; top: {{ _pos.y * 100 }}%"
+                   data-ann-id="{{ annotation.id }}"
+                   data-view-key="{{ panel.viewKey }}"
+                   data-pos-x="{{ _pos.x * 100 }}"
+                   data-pos-y="{{ _pos.y * 100 }}"
+                   aria-label="Annotation {{ _displayNum }}">
+                <div class="app-ann-marker__badge" aria-hidden="true">{{ _displayNum }}</div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% else %}
+        {# No image placeholder #}
+        <div class="app-annotation-images__panel app-annotation-images__panel--{{ _side }} app-annotation-images__panel--no-image"
+             data-view="{{ panel.viewKey }}">
+          {% if _showLabels %}
+            <span class="app-annotation-images__label">{{ panel.label }}</span>
+          {% endif %}
+          <span class="app-annotation-images__no-image">No image</span>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>

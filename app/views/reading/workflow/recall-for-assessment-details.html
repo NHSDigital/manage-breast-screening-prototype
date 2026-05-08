@@ -1,6 +1,11 @@
-{# /app/views/reading/recall-for-assessment-details.html #}
+{# /app/views/reading/workflow/recall-for-assessment-details.html #}
 
-{% extends 'layout-reading.html' %}
+{% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
+{% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
+{% from '_components/annotation-tabs/macro.njk' import appAnnotationTabs %}
+
+{% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading = "Recall for assessment" %}
 
@@ -8,22 +13,17 @@
 
 {% set formAction = './opinion-details-complete' %}
 
+{% if data.settings.reading.annotationsMode == 'with-images' %}
+  {% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
+{% endif %}
 
+
+{# Breast opinion card — radios only, annotations are collected in the section below #}
 {% macro breastDetails(params) %}
 
+  {% set Side = params.side | capitalize %}
+
   {% set breastDetailsHtml %}
-
-    {% set Side = params.side | capitalize %}
-
-    {% set abnormalDetailsHtml %}
-
-      {{ button({
-        text: "Mark an abnormality" if not ((data.imageReadingTemp[params.side].annotations | default([])) | length > 0) else "Mark another abnormality",
-        classes: "nhsuk-button--secondary",
-        href: "./annotation/add?side=" + params.side + "&[imageReadingTemp][" + params.side + "][breastAssessment]=abnormal"
-      }) }}
-
-    {% endset %}
 
     {{ radios({
       name: "imageReadingTemp[" + params.side + "][breastAssessment]",
@@ -46,45 +46,24 @@
         } if event.medicalInformation.symptoms | length > 0,
         {
           value: "abnormal",
-          text: "Abnormal, recall for assessment",
-          conditional: {
-            html: abnormalDetailsHtml
-          }
+          text: "Abnormal, recall for assessment"
         }
       ] | removeEmpty
     }) }}
 
-    {{ input({
-      name: "imageReadingTemp[" + params.side + "][comment]",
-      value: data.imageReadingTemp[params.side].comment,
-      label: {
-        text: Side + " breast comment (optional)",
-        classes: "nhsuk-label--s"
-      },
-      classes: "nhsuk-u-width-two-thirds"
-    }) }}
-
-    {% if (data.imageReadingTemp[params.side].annotations | default([])) | length > 0 %}
-
-      <h3>Abnormalities</h3>
-
-      <ul class="nhsuk-list nhsuk-list--bullet">
-        {% for annotation in data.imageReadingTemp[params.side].annotations %}
-          {% set annotationSummary = annotation | summariseAnnotation %}
-          {% set changeLinkText = "Change" %}
-          {% set changeLinkHiddenText = "annotation" %}
-          {% if annotationSummary %}
-            {% set changeLinkHiddenText = annotationSummary %}
-          {% endif %}
-          <li>
-            {{ annotationSummary }}
-            <span class="nhsuk-u-visually-hidden"> </span>
-            <a href="./annotation/edit/{{ annotation.id }}">{{ changeLinkText }}</a>
-            <span class="nhsuk-u-visually-hidden"> {{ changeLinkHiddenText }}</span>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
+    {% call appCollapsibleInput({ text: "Add " + params.side + " breast comment" }) %}
+      {{ input({
+        name: "imageReadingTemp[" + params.side + "][comment]",
+        value: data.imageReadingTemp[params.side].comment,
+        label: {
+          text: Side + " breast comment (optional)",
+          classes: "nhsuk-label--s"
+        },
+        formGroup: {
+          classes: "nhsuk-u-margin-bottom-0"
+        }
+      }) }}
+    {% endcall %}
 
   {% endset %}
 
@@ -97,6 +76,7 @@
 
 {% endmacro %}
 
+
 {% block pageContent %}
 
   <div class="nhsuk-grid-row">
@@ -104,7 +84,6 @@
       <span class="nhsuk-caption-l">
         {{ participant | getFullName }}
       </span>
-
       <h1 class="nhsuk-heading-l js-image-count">
         {{ pageHeading }}
       </h1>
@@ -113,33 +92,225 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-
       {% set symptoms = event.medicalInformation.symptoms %}
       {% include "symptomsWarningCard.njk" %}
-
     </div>
   </div>
 
+  {# Breast opinion cards #}
   <div class="nhsuk-grid-row">
-
     {% for breastSide in ["right", "left"] %}
       <div class="nhsuk-grid-column-one-half">
-        {{ breastDetails({
-          side: breastSide
-        }) }}
+        {{ breastDetails({ side: breastSide }) }}
       </div>
     {% endfor %}
-
   </div>
+
+  {# Annotations section — shown for both with-images and without-images modes.
+     In without-images mode the add link goes to the annotation-simple form.
+     In with-images mode it shows image panels with markers alongside annotations. #}
+
+  {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+  {% set annotationFormParam = "" if withImages else "&simple=true" %}
+
+  {# Get image paths for the with-images mode #}
+  {% if withImages %}
+    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+    {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+    {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
+  {% endif %}
+
+  {% set leftAnnotations = data.imageReadingTemp.left.annotations | default([]) %}
+  {% set rightAnnotations = data.imageReadingTemp.right.annotations | default([]) %}
+
+  {% if withImages %}
+    {# With-images mode: tabbed interface with image panels + annotation list.
+       Not wrapped in a card — the tabs + panel provide the visual container. #}
+
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        <h2 class="nhsuk-heading-m">Annotations</h2>
+
+        <div id="annotation-container">
+          {{ appAnnotationTabs({
+            activeSide: "right",
+            imagePaths: allPaths,
+            viewOrder: mammogramViewOrder,
+            rightCount: rightAnnotations | length,
+            leftCount: leftAnnotations | length,
+            showThumbs: true
+          }) }}
+
+          {# Tab panels — JS shows/hides based on active tab #}
+          <div class="app-ann-v2__panel">
+            {% for breastSide in ["right", "left"] %}
+              {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+
+              <div class="app-annotation-panel" data-panel-side="{{ breastSide }}"{{ ' hidden' if breastSide != 'right' }}>
+                <div class="app-ann-v2">
+                  {# Images column #}
+                  <div class="app-ann-v2__images">
+                    {{ appAnnotationImages({
+                      side: breastSide,
+                      imagePaths: allPaths,
+                      viewOrder: mammogramViewOrder,
+                      annotations: sideAnnotations,
+                      mode: "interactive"
+                    }) }}
+                  </div>
+
+                  {# Sidebar: annotation list (JS will re-render this interactively) #}
+                  <div class="app-ann-v2__sidebar app-ann-v2__sidebar--embedded">
+                    <div class="app-ann-v2__sidebar-scroll">
+                      <h3 class="app-ann-v2__sidebar-heading">Annotations</h3>
+                      {{ appAnnotationList({
+                        annotations: sideAnnotations,
+                        interactive: true,
+                        editable: true,
+                        editHrefPrefix: "./annotation/edit/",
+                        addHref: "./annotation/add?side=" + breastSide,
+                        useModals: true
+                      }) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Annotation modal for inline editing #}
+    {% include "_includes/reading/annotation-modal.njk" %}
+
+    {# Image lightbox — zoomed single image for fine-tuning marker placement #}
+    <div id="ann-lightbox" class="app-ann-v2__lightbox" hidden aria-modal="true" role="dialog" aria-label="Zoomed image">
+      <div class="app-ann-v2__lightbox-overlay" id="ann-lightbox-overlay"></div>
+      <div class="app-ann-v2__lightbox-dialog">
+        <button class="app-ann-v2__lightbox-close" type="button" id="ann-lightbox-close" aria-label="Close zoomed view">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true" focusable="false">
+            <path d="M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z"/>
+          </svg>
+        </button>
+        <div class="app-ann-v2__lightbox-panel" id="ann-lightbox-panel">
+          {# Populated by JS — contains <img> and any marker #}
+        </div>
+      </div>
+    </div>
+
+  {% else %}
+    {# Simple mode (no images): annotation lists in two columns, inside a card #}
+
+    {% set annotationsSectionHtml %}
+      <div class="nhsuk-grid-row">
+        {% for breastSide in ["right", "left"] %}
+          {% set Side = breastSide | capitalize %}
+          {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+
+          <div class="nhsuk-grid-column-one-half">
+            <h3 class="nhsuk-heading-s">{{ Side }} breast</h3>
+
+            {{ appAnnotationList({
+              annotations: sideAnnotations,
+              editable: true,
+              editHrefPrefix: "./annotation/edit/",
+              addHref: "./annotation/add?side=" + breastSide + "&simple=true",
+              useModals: true
+            }) }}
+
+            <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endset %}
+
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {{ card({
+          heading: "Annotations",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: annotationsSectionHtml
+        }) }}
+      </div>
+    </div>
+  {% endif %}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
-
-      {{ button({
-        text: "Continue"
-      }) }}
-
+      {{ button({ text: "Continue" }) }}
     </div>
   </div>
 
+  {% if withImages %}
+    {# Interactive annotation tool — click to place, modal to edit #}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>
+      (function () {
+        // Merge left and right annotations into a single array for JS state
+        var allAnnotations = []
+        {% for breastSide in ["right", "left"] %}
+          {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+          {% for ann in sideAnnotations %}
+            allAnnotations.push({{ ann | dump | safe }})
+          {% endfor %}
+        {% endfor %}
+
+        AnnotationMarkers.init({
+          container: '#annotation-container',
+          annotations: allAnnotations,
+          activeSide: 'right',
+          saveUrl: './save-annotations-json'
+        })
+      })()
+    </script>
+  {% endif %}
+
+  {# Auto-open annotation form in modal when "abnormal" is selected and no
+     annotation exists yet for that side.
+     Also persists the breast assessment value to session so it survives the
+     page reload that happens after the modal save.
+     Uses window.openModal (always present) — works with or without modalForms setting. #}
+  <script>
+    (function () {
+      // Use a boolean to avoid HTML-escaping '&' when Nunjucks outputs into a script block
+      var useSimpleForm = {{ "false" if withImages else "true" }}
+
+      document.addEventListener('change', function (e) {
+        if (!e.target.matches('input[type="radio"]')) return
+
+        var nameMatch = e.target.name.match(/imageReadingTemp\[(\w+)\]\[breastAssessment\]/)
+        if (!nameMatch) return
+
+        var side = nameMatch[1]
+        var value = e.target.value
+
+        // Persist the breast assessment to session immediately so it survives
+        // the page reload that follows a modal annotation save.
+        // Fire-and-forget — no response handling needed.
+        fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
+
+        if (value !== 'abnormal') return
+
+        var countEl = document.querySelector('[data-annotation-count="' + side + '"]')
+        var count = countEl ? parseInt(countEl.dataset.count || '0', 10) : 0
+
+        if (count === 0 && !useSimpleForm) {
+          // With-images mode: user should click on images to place markers.
+          // No auto-open needed — the interactive annotation tool handles this.
+          return
+        }
+
+        if (count === 0 && typeof window.openModal === 'function') {
+          var url = './annotation/add?side=' + side + '&simple=true'
+          window.openModal('app-form-modal', { loadUrl: url })
+        }
+      })
+    })()
+  </script>
+
 {% endblock %}
+

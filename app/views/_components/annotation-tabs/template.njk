@@ -1,0 +1,90 @@
+{# app/views/_components/annotation-tabs/template.njk #}
+{#
+  Horizontal tab bar for switching between right and left breast.
+  Shows breast label, annotation count badge, and optional image thumbnails.
+
+  Designed to be paired with content panels that are shown/hidden by JS
+  based on the active side. Without JS, both panels are visible (stacked).
+
+  Params:
+    activeSide    — "right" or "left" (which tab is initially active, default: "right")
+    imagePaths    — object of all image paths (e.g. { rcc: "/path", rmlo: "/path", lcc: "/path", lmlo: "/path" })
+    viewOrder     — "cc-first" (default) or "mlo-first"
+    rightCount    — number of annotations for right breast (default: 0)
+    leftCount     — number of annotations for left breast (default: 0)
+    showThumbs    — boolean, show thumbnail previews in tabs (default: true)
+    id            — id attribute for the tab bar (default: "app-annotation-tabs")
+    classes       — additional CSS classes
+#}
+
+{% set _activeSide = params.activeSide | default("right") %}
+{% set _imagePaths = params.imagePaths | default({}) %}
+{% set _viewOrder = params.viewOrder | default("cc-first") %}
+{% set _rightCount = params.rightCount | default(0) %}
+{% set _leftCount = params.leftCount | default(0) %}
+{% set _showThumbs = params.showThumbs if params.showThumbs is defined else true %}
+{% set _id = params.id | default("app-annotation-tabs") %}
+
+{% set _groups = [
+  {
+    label: "Right breast",
+    side: "right",
+    count: _rightCount,
+    views: [
+      { key: "rcc", label: "RCC" },
+      { key: "rmlo", label: "RMLO" }
+    ] if _viewOrder == "cc-first" else [
+      { key: "rmlo", label: "RMLO" },
+      { key: "rcc", label: "RCC" }
+    ]
+  },
+  {
+    label: "Left breast",
+    side: "left",
+    count: _leftCount,
+    views: [
+      { key: "lcc", label: "LCC" },
+      { key: "lmlo", label: "LMLO" }
+    ] if _viewOrder == "cc-first" else [
+      { key: "lmlo", label: "LMLO" },
+      { key: "lcc", label: "LCC" }
+    ]
+  }
+] %}
+
+<div class="app-ann-v2__tab-bar" id="{{ _id }}">
+  {% for group in _groups %}
+    <button
+      class="app-ann-v2__tab{{ ' is-active' if group.side == _activeSide else ' is-inactive' }}"
+      type="button"
+      data-thumb-side="{{ group.side }}"
+      aria-label="Switch to {{ group.label }}"
+    >
+      <span class="app-ann-v2__tab-label" data-side="{{ group.side }}">{{ group.label }}</span>
+      <span class="app-count{{ ' app-count--blue' if group.count > 0 }}" data-side-count="{{ group.side }}">{{ group.count }}</span>
+      {% if _showThumbs %}
+        <span class="app-ann-v2__tab-thumbs">
+          {% for view in group.views %}
+            {% set viewPath = _imagePaths[view.key] %}
+            {% if viewPath %}
+              {% if viewPath is iterable and viewPath is not string %}
+                {% for path in viewPath %}
+                  <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--{{ group.side }}">
+                    <img src="{{ path }}" alt="{{ view.label }}" draggable="false">
+                  </span>
+                {% endfor %}
+              {% else %}
+                <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--{{ group.side }}">
+                  <img src="{{ viewPath }}" alt="{{ view.label }}" draggable="false">
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--missing">
+              </span>
+            {% endif %}
+          {% endfor %}
+        </span>
+      {% endif %}
+    </button>
+  {% endfor %}
+</div>

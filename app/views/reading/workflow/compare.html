@@ -12,10 +12,10 @@
 {# Side-by-side card action position: 'top' or 'bottom' #}
 {% set sideBySideCardActionPosition = "bottom" %}
 
-{% set back = {
+{# {% set back = {
   href: "./opinion",
   text: "Back"
-} %}
+} %} #}
 
 {% block pageContent %}
 
@@ -93,11 +93,20 @@
     </div>
   </div>
 
+  {# Get image paths for annotation thumbnails #}
+  {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+  {% if withImages %}
+    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+    {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+  {% endif %}
+
   {# First reader's opinion card #}
   {% set firstReadSummaryHtml %}
     {% set read = firstRead %}
     {% set allowEdits = false %}
     {% set hideOpinionRow = true %}
+    {% set showAnnotationImages = withImages %}
+    {% set annotationImagePaths = allPaths %}
     {% include "_includes/summary-lists/read-summary.njk" %}
   {% endset %}
 
@@ -108,6 +117,8 @@
     {% set allowEdits = false %}
     {% set hideEmptyRows = true %}
     {% set hideOpinionRow = true %}
+    {% set showAnnotationImages = withImages %}
+    {% set annotationImagePaths = allPaths %}
     {% include "_includes/summary-lists/read-summary.njk" %}
   {% endset %}
 
@@ -299,5 +310,10 @@
 
     </div>
   </div>
+
+  {% if withImages %}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>AnnotationMarkers.correctAll()</script>
+  {% endif %}
 
 {% endblock %}

@@ -1,0 +1,163 @@
+{# app/views/_includes/reading/annotation-form.njk #}
+{#
+  Reusable form fields for recording an image reading annotation/finding.
+  Reads from data.imageReadingTemp.annotationTemp by default.
+  Used by annotation.html (with images), annotation-simple.html (without images),
+  and the inline form on recall-for-assessment-details.html.
+
+  Optional parent-scope overrides:
+    annotationData       — object to read values from (defaults to imageReadingTemp.annotationTemp)
+    annotationNamePrefix — string prefix for form field names (defaults to "imageReadingTemp[annotationTemp]")
+    annotationIdPrefix   — string prefix for element ids, e.g. "right" (defaults to "")
+#}
+
+{% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+{% from '_components/option-picker/macro.njk' import appOptionPicker %}
+
+{# Resolve data source and name/id prefixes.
+   If annotationNamePrefix is provided by the calling template, we're in parameterised mode:
+   use annotationData as the data source and annotationNamePrefix for field names.
+   Otherwise fall back to the standard imageReadingTemp.annotationTemp path. #}
+{% if annotationNamePrefix is defined and annotationNamePrefix %}
+  {% set annotationTemp = annotationData %}
+  {% set _namePrefix = annotationNamePrefix %}
+{% else %}
+  {% set annotationTemp = data.imageReadingTemp.annotationTemp %}
+  {% set _namePrefix = "imageReadingTemp[annotationTemp]" %}
+{% endif %}
+
+{# Optional id prefix (e.g. "right" → ids become "right-abnormalityTypes") #}
+{% set _idSep = "-" if (annotationIdPrefix is defined and annotationIdPrefix) else "" %}
+{% set _idBase = (annotationIdPrefix + _idSep) if (annotationIdPrefix is defined and annotationIdPrefix) else "" %}
+
+{% set abnormalityUi = "options" %} {# Set to "select" for dropdown, "options" for option picker, or "none" to hide abnormality type input #}
+
+{% if abnormalityUi == "select" %}
+  {% set abnormalityOptions = [
+    {
+      value: "",
+      text: "Select type",
+      disabled: true,
+      selected: true if not annotationTemp.abnormalityType
+    },
+    { value: "Mass well-defined",                  text: "Mass well-defined" },
+    { value: "Mass ill-defined",                   text: "Mass ill-defined" },
+    { value: "Architectural distortion",           text: "Architectural distortion" },
+    { value: "Asymetric density",                  text: "Asymetric density" },
+    { value: "Microcalcification outside a mass",  text: "Microcalcification outside a mass" },
+    { value: "Clinical abnormality",               text: "Clinical abnormality" },
+    { value: "Lymph node abnormality",             text: "Lymph node abnormality" },
+    { value: "Other",                              text: "Other" }
+  ] %}
+
+  {{ select({
+    id: _idBase + "abnormalityType",
+    name: _namePrefix + "[abnormalityType]",
+    value: annotationTemp.abnormalityType,
+    label: {
+      text: "Abnormality type",
+      classes: "nhsuk-label--s"
+    },
+    items: abnormalityOptions
+  } | populateErrors) }}
+
+  Conditional "other details" field — shown via JS when "Other" is selected
+  <div id="{{ _idBase }}other-details-wrapper" class="{{ 'nhsuk-u-visually-hidden' if annotationTemp.abnormalityType != 'Other' }}">
+    {{ input({
+      id: _idBase + "otherDetails",
+      name: _namePrefix + "[otherDetails]",
+      value: annotationTemp.otherDetails,
+      label: {
+        text: "Provide details",
+        classes: "nhsuk-label--s"
+      },
+      classes: "nhsuk-u-width-two-thirds"
+    } | populateErrors) }}
+  </div>
+{% endif %}
+
+{% if abnormalityUi == "options" %}
+  {{ appOptionPicker({
+    idPrefix: _idBase + "abnormalityTypes",
+    name: _namePrefix + "[abnormalityTypes]",
+    values: annotationTemp.abnormalityTypes,
+    allowMultiple: true,
+    fieldset: {
+      legend: {
+        text: "Abnormality type",
+        size: "s"
+      }
+    },
+    items: [
+      { value: "Mass well-defined",                 text: "Mass well-defined" },
+      { value: "Mass ill-defined",                  text: "Mass ill-defined" },
+      { value: "Architectural distortion",          text: "Architectural distortion" },
+      { value: "Asymmetric density",                text: "Asymmetric density" },
+      { value: "Microcalcification outside a mass", text: "Microcalcification outside a mass" },
+      { value: "Clinical abnormality",              text: "Clinical abnormality" },
+      { value: "Lymph node abnormality",            text: "Lymph node abnormality" },
+      { value: "Other",                             text: "Other" }
+    ]
+  } | populateErrors) }}
+{% endif %}
+
+
+
+{# {{ select({
+  id: "levelOfConcern",
+  name: "imageReadingTemp[annotationTemp][levelOfConcern]",
+  value: annotationTemp.levelOfConcern,
+  label: {
+    text: "Level of concern",
+    classes: "nhsuk-label--s"
+  },
+  items: [
+    {
+      value: "",
+      text: "Select level",
+      disabled: true,
+      selected: true if not annotationTemp.levelOfConcern
+    },
+    { value: "5", text: "5 – Highly suspicious" },
+    { value: "4", text: "4 – Suspicious" },
+    { value: "3", text: "3 – Indeterminate" },
+    { value: "2", text: "2 – Benign" },
+    { value: "1", text: "1 – Normal" }
+  ]
+} | populateErrors) }} #}
+
+  {{ appOptionPicker({
+    id: _idBase + "levelOfConcern",
+    name: _namePrefix + "[levelOfConcern]",
+    value: annotationTemp.levelOfConcern,
+    joined: true,
+    fieldset: {
+      legend: { 
+        text: "Level of concern",
+        size: "s"
+       }
+    },
+    hint: {
+      text: "From ‘5 - highly suspicious’ to ‘1 - normal’"
+    },
+    items: [
+      { value: "5", text: "5" },
+      { value: "4", text: "4" },
+      { value: "3", text: "3" },
+      { value: "2", text: "2" },
+      { value: "1", text: "1" }
+    ]
+  } | populateErrors) }}
+
+{% call appCollapsibleInput({ text: "Add a comment about this abnormality" }) %}
+  {{ input({
+    id: _idBase + "comment",
+    name: _namePrefix + "[comment]",
+    value: annotationTemp.comment,
+    label: {
+      text: "Comment (optional)",
+      classes: "nhsuk-label--s"
+    },
+    classes: "nhsuk-u-width-two-thirds"
+  }) }}
+{% endcall %}

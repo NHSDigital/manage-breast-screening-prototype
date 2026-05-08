@@ -9,7 +9,12 @@
     href: "/reading/clinics",
     text: "Back to clinics"
   } %}
-{% endif %}
+  {% else %}
+  {% set back = {
+    href: "/reading",
+    text: "Back to image reading dashboard"
+  } %}
+  {% endif %}
 
 {% set pageHeading %}
   {{ session.name }}

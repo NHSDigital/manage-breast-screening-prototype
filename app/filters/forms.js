@@ -107,7 +107,20 @@ const openInModal = function (component, modalId, loadUrl) {
     }
   }
 
-  // Single button or action item
+  // Submit button (has no href) — POST the containing form via fetch and open
+  // the redirect destination in the modal. Without JS the button submits normally.
+  if (!component.href && !component.rows && !component.actions) {
+    return {
+      ...component,
+      attributes: {
+        ...(component.attributes || {}),
+        'data-modal-submit': 'true',
+        'data-modal-id': id
+      }
+    }
+  }
+
+  // Single link button or action item with href
   return rewireItem(component, loadUrl)
 }
 

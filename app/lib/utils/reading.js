@@ -91,7 +91,13 @@ const getReadsAsArray = function (event) {
  * @param {object | null} [data] - Session data (needed for session context)
  * @param {string | null} [sessionId] - Session ID (if in session context)
  */
-const writeReading = (event, userId, reading, data = null, sessionId = null) => {
+const writeReading = (
+  event,
+  userId,
+  reading,
+  data = null,
+  sessionId = null
+) => {
   // Ensure imageReading structure exists
   if (!event.imageReading) {
     event.imageReading = { reads: {} }
@@ -223,7 +229,9 @@ const calculateReadingMetrics = function (
   ).length
 
   // Global awaiting priors count (events with any outstanding prior request)
-  const awaitingPriorsCount = events.filter((event) => awaitingPriors(event)).length
+  const awaitingPriorsCount = events.filter((event) =>
+    awaitingPriors(event)
+  ).length
 
   // User-specific counts
   let userReadCount = 0
@@ -1716,7 +1724,8 @@ const getFirstReadableEventInSession = (data, sessionId, userId = null) => {
 
   // Find the first one the user can read
   return (
-    sessionEvents.find((event) => canUserReadEvent(event, currentUserId)) || null
+    sessionEvents.find((event) => canUserReadEvent(event, currentUserId)) ||
+    null
   )
 }
 
@@ -1764,9 +1773,7 @@ const topUpSession = (data, sessionId) => {
 
   // Collect all event IDs currently in any session to avoid overlap
   const claimedEventIds = new Set(
-    Object.values(data.readingSessions || {}).flatMap(
-      (s) => s.eventIds || []
-    )
+    Object.values(data.readingSessions || {}).flatMap((s) => s.eventIds || [])
   )
 
   // Get candidates using the same filters as at session creation, excluding already-claimed events

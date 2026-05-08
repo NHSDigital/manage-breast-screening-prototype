@@ -8,7 +8,13 @@
     - allowEdits: boolean - whether to show change links (default: false)
     - changeOpinionUrl: string - URL for change opinion link
     - hideEmptyRows: boolean - if true, only show rows that have data (default: false)
+    - showAnnotationImages: boolean - if true, show thumbnail images with markers (default: false)
+    - annotationImagePaths: object - image paths for thumbnails (required if showAnnotationImages)
+    - annotationViewOrder: string - view order for thumbnails (default: "cc-first")
 #}
+
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
+{% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
 
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
@@ -36,42 +42,45 @@
 {% set leftAnnotations = read.left.annotations if read.left and read.left.annotations else [] %}
 {% set rightAnnotations = read.right.annotations if read.right and read.right.annotations else [] %}
 {% set totalAnnotations = leftAnnotations | length + rightAnnotations | length %}
-{% set leftAnnotationSummaries = leftAnnotations | summariseAnnotations %}
-{% set rightAnnotationSummaries = rightAnnotations | summariseAnnotations %}
 
-{# Build annotation summary #}
+{% set showAnnotationImages = showAnnotationImages if showAnnotationImages is defined else false %}
+{% set annotationViewOrder = annotationViewOrder if annotationViewOrder is defined else (data.settings.mammogramViewOrder or "cc-first") %}
+
+{# Build annotation summary using components #}
 {% set annotationSummaryHtml %}
   {% if totalAnnotations == 0 %}
     No annotations added
   {% else %}
-    {% if leftAnnotationSummaries | length > 0 %}
-      <p class="nhsuk-u-margin-bottom-1">
-        <strong>Left breast:</strong>
-      </p>
-      {% if leftAnnotationSummaries | length == 1 %}
-        <p class="nhsuk-u-margin-bottom-2">{{ leftAnnotationSummaries[0] }}</p>
-      {% else %}
-        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
-          {% for summary in leftAnnotationSummaries %}
-            <li>{{ summary }}</li>
-          {% endfor %}
-        </ul>
+    {% for breastSide in ["right", "left"] %}
+      {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+      {% if sideAnnotations | length > 0 %}
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-2">{{ breastSide | capitalize }} breast</p>
+
+        {% if showAnnotationImages and annotationImagePaths %}
+          <div class="nhsuk-u-margin-bottom-3">
+            {{ appAnnotationImages({
+              side: breastSide,
+              imagePaths: annotationImagePaths,
+              viewOrder: annotationViewOrder,
+              annotations: sideAnnotations,
+              mode: "readonly",
+              size: "thumbnail",
+              showLabels: true
+            }) }}
+          </div>
+        {% endif %}
+
+        {{ appAnnotationList({
+          annotations: sideAnnotations,
+          editable: false
+        }) }}
+
+        {# Separator between breast groups when both sides have annotations #}
+        {% if breastSide == "right" and leftAnnotations | length > 0 %}
+          <hr class="nhsuk-u-margin-top-4 nhsuk-u-margin-bottom-4">
+        {% endif %}
       {% endif %}
-    {% endif %}
-    {% if rightAnnotationSummaries | length > 0 %}
-      <p class="nhsuk-u-margin-bottom-1">
-        <strong>Right breast:</strong>
-      </p>
-      {% if rightAnnotationSummaries | length == 1 %}
-        <p class="nhsuk-u-margin-bottom-2">{{ rightAnnotationSummaries[0] }}</p>
-      {% else %}
-        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
-          {% for summary in rightAnnotationSummaries %}
-            <li>{{ summary }}</li>
-          {% endfor %}
-        </ul>
-      {% endif %}
-    {% endif %}
+    {% endfor %}
   {% endif %}
 {% endset %}
 
@@ -120,7 +129,7 @@
           href: "./normal-details",
           text: "Change",
           visuallyHiddenText: "details"
-        }
+        } | openInModal
       ]
     } if allowEdits
   }) %}
@@ -157,7 +166,7 @@
             href: "./technical-recall",
             text: "Change",
             visuallyHiddenText: "views"
-          }
+          } | openInModal
         ]
       } if allowEdits
     }) %}
@@ -256,4 +265,4 @@
 
 {{ summaryList({
   rows: rows | removeLastRowBorder
-}  | handleSummaryListMissingInformation) }}
+} | handleSummaryListMissingInformation) }}

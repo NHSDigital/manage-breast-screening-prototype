@@ -1,0 +1,193 @@
+/* app/assets/sass/components/_annotation-images.scss */
+/* Mammogram image panels with annotation markers — reusable across pages */
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// ─── Image grid ───────────────────────────────────────────────────────────────
+
+.app-annotation-images__row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: auto;
+  gap: nhsuk-spacing(3);
+
+  @include nhsuk-media-query($from: tablet) {
+    gap: nhsuk-spacing(4);
+  }
+
+  // Single image: constrain width
+  &[data-panel-count="1"] {
+    grid-template-columns: minmax(0, 45%);
+  }
+
+  // Three images
+  &[data-panel-count="3"] {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+// ─── Image panel ──────────────────────────────────────────────────────────────
+
+.app-annotation-images__panel {
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid nhsuk-colour("grey-3");
+  aspect-ratio: 4/5;
+  min-width: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: right top; // right breast: inner edge aligns right
+    display: block;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+// Left breast: inner edge aligns left (bookmatched)
+.app-annotation-images__panel--left img {
+  object-position: left top;
+}
+
+// No image placeholder
+.app-annotation-images__panel--no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.app-annotation-images__no-image {
+  @include nhsuk-font(19);
+  color: nhsuk-colour("grey-3");
+  text-align: center;
+  padding: nhsuk-spacing(2);
+}
+
+// Interactive mode: crosshair cursor
+.app-annotation-images--interactive .app-annotation-images__panel:not(.app-annotation-images__panel--no-image) {
+  cursor: crosshair;
+}
+
+// ─── View labels ──────────────────────────────────────────────────────────────
+
+.app-annotation-images__label {
+  position: absolute;
+  top: nhsuk-spacing(1);
+  left: nhsuk-spacing(1);
+  right: auto;
+  background: nhsuk-colour("blue");
+  color: nhsuk-colour("white");
+  font-size: 16px;
+  font-weight: 700;
+  padding: 2px nhsuk-spacing(2);
+  pointer-events: none;
+}
+
+// Left breast: label top-right (bookmatched — outer edge)
+.app-annotation-images__panel--left .app-annotation-images__label {
+  left: auto;
+  right: nhsuk-spacing(1);
+}
+
+// ─── Size variants ────────────────────────────────────────────────────────────
+
+// Medium: constrained max size, useful in cards or half-width columns
+.app-annotation-images--medium .app-annotation-images__panel {
+  max-width: 200px;
+}
+
+.app-annotation-images--medium .app-annotation-images__row {
+  gap: nhsuk-spacing(2);
+}
+
+.app-annotation-images--medium .app-annotation-images__label {
+  font-size: 14px;
+  padding: 1px nhsuk-spacing(1);
+}
+
+// Thumbnail: small inline images
+.app-annotation-images--thumbnail .app-annotation-images__row {
+  grid-template-columns: repeat(2, auto);
+  justify-content: start;
+  gap: nhsuk-spacing(2);
+}
+
+.app-annotation-images--thumbnail .app-annotation-images__panel {
+  max-width: 120px;
+}
+
+.app-annotation-images--thumbnail .app-annotation-images__label {
+  font-size: 16px;
+  padding: 1px nhsuk-spacing(1);
+}
+
+// Thumbnail markers: just show the number badge (no circle marker)
+.app-annotation-images--thumbnail .app-ann-marker {
+  width: auto;
+  height: auto;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+  cursor: default;
+  pointer-events: none;
+}
+
+.app-annotation-images--thumbnail .app-ann-marker__badge {
+  position: static;
+  min-width: 20px;
+  height: 20px;
+  font-size: 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+// ─── Dimmed markers (when highlighting a single annotation) ───────────────────
+
+.app-ann-marker.is-dimmed {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+// ─── Zoom button ──────────────────────────────────────────────────────────────
+
+.app-annotation-images__zoom-btn {
+  position: absolute;
+  top: nhsuk-spacing(5);
+  left: nhsuk-spacing(1);
+  width: 32px;
+  height: 32px;
+  background: nhsuk-colour("blue");
+  border: none;
+  color: nhsuk-colour("white");
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  z-index: 3;
+
+  svg {
+    display: block;
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 2px;
+    opacity: 1;
+  }
+}
+
+.app-annotation-images__panel--left .app-annotation-images__zoom-btn {
+  left: auto;
+  right: nhsuk-spacing(1);
+}
+
+.app-annotation-images__panel:hover .app-annotation-images__zoom-btn {
+  opacity: 1;
+  pointer-events: auto;
+}

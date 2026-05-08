@@ -1,0 +1,30 @@
+// app/assets/sass/components/_collapsible-input.scss
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Collapsible input component
+// The trigger button is styled as a link; the content wrapper has no visual style
+// of its own — all appearance comes from the wrapped form elements.
+
+.app-collapsible-input {
+  @include nhsuk-responsive-margin(4, "bottom");
+}
+
+.app-collapsible-input__trigger {
+  appearance: none;
+  background: none;
+  border: none;
+  color: $nhsuk-link-colour;
+  @include nhsuk-font(19, $weight: normal);
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+
+  &:hover {
+    color: $nhsuk-link-hover-colour;
+  }
+
+  &:focus {
+    @include nhsuk-focused-text;
+  }
+}

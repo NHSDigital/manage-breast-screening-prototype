@@ -1,0 +1,232 @@
+{# app/views/style-guide/autocomplete.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/autocomplete/macro.njk' import appAutocomplete %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "autocomplete" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Autocomplete</h2>
+
+<p>Accessible autocomplete built on <a href="https://github.com/alphagov/accessible-autocomplete">accessible-autocomplete</a>. Progressive enhancement from <code>&lt;select&gt;</code> or <code>&lt;input&gt;</code>. Uses an improved sort algorithm from DFE that scores exact matches higher, ignores stop words, and supports synonyms.</p>
+
+<p>Macro: <code>appAutocomplete(params)</code></p>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Params reference</h3>
+
+<pre class="sg-snippet"><code>{% raw %}{{ appAutocomplete({
+
+  {# --- Core --- #}
+  id: "...",           {# string; defaults to name #}
+  name: "...",         {# string; REQUIRED #}
+  type: "select",      {# "select" (default) or "input" #}
+  value: "...",        {# pre-selected value #}
+
+  {# --- Labels and messages --- #}
+  label: {             {# REQUIRED #}
+    text: "...",
+    isPageHeading: false,
+    classes: "...",
+    size: "s|m|l|xl"
+  },
+  hint: { text: "..." },
+  errorMessage: { text: "..." },
+  formGroup: { classes: "..." },
+  classes: "...",      {# extra classes on the select/input element #}
+  attributes: {},      {# extra HTML attributes on the select/input element #}
+
+  {# --- Behaviour (all optional, override library defaults only when set) --- #}
+  showAllValues: false,      {# show all options on focus + dropdown arrow #}
+  autoselect: false,         {# highlight first result as you type; disable with showAllValues #}
+  minLength: 0,              {# min chars before suggestions appear #}
+  confirmOnBlur: true,       {# confirm selection on blur #}
+  showNoOptionsFound: true,  {# show "No results found" message #}
+
+  {# --- Select variant (type: "select") --- #}
+  items: [
+    {
+      value: "...",        {# submitted value #}
+      text: "...",         {# display text #}
+      synonyms: ["..."],   {# alternative search terms #}
+      hint: "...",         {# secondary line in dropdown #}
+      append: "...",       {# text after name in dropdown #}
+      boost: 1,            {# relevance multiplier #}
+      disabled: false
+    }
+  ],
+
+  {# --- Input variant (type: "input") --- #}
+  source: [
+    "Plain string",                       {# or ... #}
+    { text: "...", hint: "...", append: "...", synonyms: [], boost: 1 }
+  ]
+
+}) }}{% endraw %}</code></pre>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Select (default)</h3>
+
+<p>Submitted value is the option's <code>value</code> attribute. Without JS a standard <code>&lt;select&gt;</code> is shown.</p>
+
+<form action="" method="POST">
+  <div class="sg-example">
+    {{ appAutocomplete({
+      id: "country",
+      name: "country",
+      value: data.country,
+      label: { text: "Country or territory" },
+      items: [
+        { value: "eng", text: "England", synonyms: ["UK", "United Kingdom", "Britain", "Great Britain"] },
+        { value: "sco", text: "Scotland", synonyms: ["UK", "United Kingdom", "Britain"] },
+        { value: "wal", text: "Wales", synonyms: ["UK", "United Kingdom", "Britain"] },
+        { value: "nir", text: "Northern Ireland", synonyms: ["UK", "United Kingdom"] },
+        { value: "fra", text: "France" },
+        { value: "deu", text: "Germany" },
+        { value: "irl", text: "Ireland" },
+        { value: "nld", text: "Netherlands" },
+        { value: "esp", text: "Spain" },
+        { value: "swe", text: "Sweden" }
+      ]
+    }) }}
+  </div>
+  <button class="nhsuk-button nhsuk-button--secondary" type="submit">Submit</button>
+</form>
+
+{% if data.country %}
+  <p>Submitted value: <strong>{{ data.country }}</strong></p>
+{% endif %}
+
+<pre class="sg-snippet"><code>{% raw %}{{ appAutocomplete({
+  id: "country",
+  name: "country",
+  value: data.country,
+  label: { text: "Country or territory" },
+  items: [
+    { value: "eng", text: "England", synonyms: ["UK", "United Kingdom", "Britain"] },
+    { value: "sco", text: "Scotland" },
+    ...
+  ]
+}) }}{% endraw %}</code></pre>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>With hint, append, and item hints</h3>
+
+<p><code>hint</code> adds field-level hint text. <code>append</code> on an item shows extra text after the name in the dropdown. <code>hint</code> on an item shows a secondary line.</p>
+
+<div class="sg-example">
+  {{ appAutocomplete({
+    id: "screening-unit",
+    name: "screeningUnit",
+    label: { text: "Screening unit" },
+    hint: { text: "Start typing a unit name or location." },
+    items: [
+      { value: "bsu-01", text: "City Breast Screening Unit", append: "BSU-01", hint: "City Hospital, EC1A 1BB" },
+      { value: "bsu-02", text: "Northfield Breast Screening Unit", append: "BSU-02", hint: "Northfield General, N1 9GU" },
+      { value: "bsu-03", text: "Riverside Breast Screening Unit", append: "BSU-03", hint: "Riverside NHS Trust, SE1 7PB" }
+    ]
+  }) }}
+</div>
+
+<pre class="sg-snippet"><code>{% raw %}{{ appAutocomplete({
+  id: "screening-unit",
+  name: "screeningUnit",
+  label: { text: "Screening unit" },
+  hint: { text: "Start typing a unit name or location." },
+  items: [
+    { value: "bsu-01", text: "City Breast Screening Unit", append: "BSU-01", hint: "City Hospital, EC1A 1BB" },
+    ...
+  ]
+}) }}{% endraw %}</code></pre>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Show all values</h3>
+
+<p><code>showAllValues: true</code> shows all options on focus and adds a dropdown arrow. Use with <code>autoselect: false</code> — otherwise the first item is pre-highlighted when the list opens.</p>
+
+<div class="sg-example">
+  {{ appAutocomplete({
+    id: "risk-level",
+    name: "riskLevel",
+    label: { text: "Risk level" },
+    showAllValues: true,
+    autoselect: false,
+    items: [
+      { value: "routine", text: "Routine" },
+      { value: "moderate", text: "Moderate risk" },
+      { value: "high", text: "High risk" },
+      { value: "very-high", text: "Very high risk" }
+    ]
+  }) }}
+</div>
+
+<pre class="sg-snippet"><code>{% raw %}{{ appAutocomplete({
+  id: "risk-level",
+  name: "riskLevel",
+  label: { text: "Risk level" },
+  showAllValues: true,
+  autoselect: false,
+  items: [...]
+}) }}{% endraw %}</code></pre>
+
+<hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+<h3>Input variant</h3>
+
+<p><code>type: "input"</code> renders a free-text input. Submitted value is whatever the user types — not constrained to the list. Source items can be plain strings or objects with <code>text</code>, <code>hint</code>, <code>append</code>, <code>synonyms</code>, <code>boost</code>.</p>
+
+{% set hospitalSource = [
+  { text: "City Hospital", hint: "EC1A 1BB" },
+  { text: "County General Hospital", hint: "N1 9GU" },
+  { text: "Memorial Hospital", hint: "SE1 7PB", synonyms: ["Mem"] },
+  "Royal Infirmary",
+  "St Mary's Hospital",
+  "University Hospital",
+  "Western General"
+] %}
+
+<form action="" method="POST">
+  <div class="sg-example">
+    {{ appAutocomplete({
+      id: "hospital",
+      name: "hospital",
+      type: "input",
+      value: data.hospital,
+      label: { text: "Hospital name" },
+      source: hospitalSource
+    }) }}
+  </div>
+  <button class="nhsuk-button nhsuk-button--secondary" type="submit">Submit</button>
+</form>
+
+{% if data.hospital %}
+  <p>Submitted value: <strong>{{ data.hospital }}</strong></p>
+{% endif %}
+
+<pre class="sg-snippet"><code>{% raw %}{{ appAutocomplete({
+  id: "hospital",
+  name: "hospital",
+  type: "input",
+  value: data.hospital,
+  label: { text: "Hospital name" },
+  source: [
+    { text: "City Hospital", hint: "EC1A 1BB" },
+    "Royal Infirmary",
+    ...
+  ]
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}
+

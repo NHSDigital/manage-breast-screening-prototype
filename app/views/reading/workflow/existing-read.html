@@ -72,10 +72,18 @@
     <h1 class="nhsuk-heading-l">Your opinion</h1>
 
     {# Read summary card #}
+    {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+    {% if withImages %}
+      {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+      {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+    {% endif %}
+
     {% set readSummaryHtml %}
       {% set read = event | getReadForUser %}
       {% set allowEdits = true %}
       {% set changeOpinionUrl = "./opinion" %}
+      {% set showAnnotationImages = withImages %}
+      {% set annotationImagePaths = allPaths %}
       {% include "_includes/summary-lists/read-summary.njk" %}
     {% endset %}
 
@@ -94,6 +102,8 @@
         {% set otherReadSummaryHtml %}
           {% set read = otherRead %}
           {% set allowEdits = false %}
+          {% set showAnnotationImages = withImages %}
+          {% set annotationImagePaths = allPaths %}
           {% include "_includes/summary-lists/read-summary.njk" %}
         {% endset %}
 
@@ -122,5 +132,10 @@
     feature: true,
     descriptionHtml: medicalSummaryHtml
   }) }}
+
+  {% if withImages %}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>AnnotationMarkers.correctAll()</script>
+  {% endif %}
 
 {% endblock %}

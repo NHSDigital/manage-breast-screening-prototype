@@ -462,6 +462,42 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   .app-mammogram-thumbnail__missing-text {
     color: $app-dark-mode-text-colour;
   }
+
+  // Image container borders — light grey so visible against dark backgrounds
+  .app-ann-v2__image-panel,
+  .app-ann-v2__tab-thumb {
+    border-color: $app-dark-mode-text-colour-secondary;
+  }
+
+  .app-mammogram-thumbnail__image-wrapper,
+  .app-mammogram-container {
+    border-color: $app-dark-mode-text-colour-secondary;
+  }
+
+  // Modal
+  .app-modal__dialog {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-border;
+  }
+
+  // Update scroll shadow cover gradients to match dark surface background
+  .app-modal__content {
+    background-image:
+      linear-gradient($app-dark-mode-surface, $app-dark-mode-surface),
+      linear-gradient($app-dark-mode-surface, $app-dark-mode-surface),
+      linear-gradient(rgba(0, 0, 0, 0.25), transparent), linear-gradient(transparent, rgba(0, 0, 0, 0.25));
+  }
+
+  // Invert close button so it's visible against the dark dialog background
+  .app-modal__close {
+    background-color: $app-dark-mode-text-colour;
+    color: $app-dark-mode-background;
+
+    &:hover {
+      background-color: nhsuk-shade($app-dark-mode-text-colour, 20%);
+      color: $app-dark-mode-background;
+    }
+  }
 }
 
 html:has(.app-dark-mode) {

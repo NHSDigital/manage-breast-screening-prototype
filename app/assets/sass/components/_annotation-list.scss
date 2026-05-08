@@ -1,0 +1,127 @@
+/* app/assets/sass/components/_annotation-list.scss */
+/* Annotation list with blue numbered badges — used across annotation views */
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// ─── List wrapper ─────────────────────────────────────────────────────────────
+
+.app-annotation-list {
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(3);
+}
+
+.app-annotation-list__empty {
+  @include nhsuk-font(19);
+  color: $nhsuk-secondary-text-colour;
+  margin: 0;
+}
+
+// ─── OL reset ─────────────────────────────────────────────────────────────────
+
+.app-annotation-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(3);
+}
+
+// ─── Annotation item (default: no border, no hover) ───────────────────────────
+
+.app-annotation-list__item {
+  padding: 0;
+}
+
+// Interactive variant: bordered cards with hover effects
+.app-annotation-list--interactive .app-annotation-list__item {
+  border: 1px solid nhsuk-colour("grey-3");
+  background: nhsuk-colour("white");
+  padding: nhsuk-spacing(3);
+  cursor: pointer;
+
+  &:hover {
+    border-color: nhsuk-colour("grey-2");
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 0;
+  }
+
+  &.is-active {
+    box-shadow: inset 4px 0 0 nhsuk-colour("blue");
+  }
+}
+
+// JS-rendered sidebar uses .app-annotation-list__card (div not li)
+// Keep these styles for the interactive JS sidebar
+.app-annotation-list__card {
+  border: 1px solid nhsuk-colour("grey-3");
+  background: nhsuk-colour("white");
+  padding: nhsuk-spacing(3);
+  cursor: pointer;
+
+  &:hover {
+    border-color: nhsuk-colour("grey-2");
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+    outline-offset: 0;
+  }
+
+  &.is-active {
+    box-shadow: inset 4px 0 0 nhsuk-colour("blue");
+  }
+}
+
+// Two-column layout: number badge left, content right
+.app-annotation-list__header {
+  display: flex;
+  align-items: flex-start;
+  gap: nhsuk-spacing(3);
+}
+
+// Blue numbered square badge
+.app-annotation-list__number {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: nhsuk-colour("blue");
+  color: nhsuk-colour("white");
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+// Right-hand content column
+.app-annotation-list__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: nhsuk-spacing(1);
+}
+
+.app-annotation-list__type {
+  @include nhsuk-font(19, $weight: bold);
+}
+
+.app-annotation-list__meta {
+  @include nhsuk-font(19);
+  margin: 0;
+}
+
+.app-annotation-list__actions {
+  display: flex;
+  gap: nhsuk-spacing(3);
+  align-items: center;
+  @include nhsuk-font(19);
+  margin-top: nhsuk-spacing(1);
+}
