@@ -89,7 +89,7 @@ const defaultSettings = {
   debugMode: 'false',
   showEnvironmentBanner: 'true',
   mammogramViewOrder: 'cc-first', // 'cc-first' | 'mlo-first'
-  modalForms: 'false',
+  modalForms: 'true',
   seedProfiles: {
     ...createSeedProfilesState(),
     selectedKey: generationInfo.seedDataProfile
@@ -113,7 +113,7 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    annotationsMode: 'without-images', // 'with-images' | 'without-images'
+    annotationsMode: 'with-images', // 'with-images' | 'without-images'
     secondReaderComparison: 'late', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
     arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_non_normal'
