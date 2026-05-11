@@ -16,12 +16,12 @@
     <span class="nhsuk-caption-l">Image reading</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-    <p>You have reached the end of this reading session. An opinion must be given on all cases before the session can be completed.</p>
+    <p>An opinion must be given on all cases before this session can be completed.</p>
 
     <div class="nhsuk-button-group">
       {% if firstSkippedEventId %}
         {{ button({
-          text: "Read skipped cases",
+          text: "Read skipped {{ "case" | pluralise(session.skippedEvents.length) }}",
           href: "/reading/session/" + sessionId + "/events/" + firstSkippedEventId
         }) }}
       {% endif %}
