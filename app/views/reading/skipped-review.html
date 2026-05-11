@@ -6,7 +6,7 @@
 {% set hideStatusBar = true %}
 {% set hideBackLink = true %}
 
-{% set pageHeading = "End of session" %}
+{% set pageHeading = "You have skipped {{ session.skippedEvents.length }} {{ "case" | pluralise(session.skippedEvents.length) }}" %}
 
 {% block pageContent %}
 
@@ -16,7 +16,7 @@
     <span class="nhsuk-caption-l">Image reading</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-    <p>You've reached the end of this session. You have {{ session.skippedEvents.length }} skipped {{ "case" | pluralise(session.skippedEvents.length) }} to review.</p>
+    <p>You have reached the end of this reading session. An opinion must be given on all cases before the session can be completed.</p>
 
     <div class="nhsuk-button-group">
       {% if firstSkippedEventId %}
@@ -25,7 +25,7 @@
           href: "/reading/session/" + sessionId + "/events/" + firstSkippedEventId
         }) }}
       {% endif %}
-      <a href="/reading/session/{{ sessionId }}" class="nhsuk-link nhsuk-button-group__item">Back to session</a>
+      <a href="/reading/session/{{ sessionId }}" class="nhsuk-link nhsuk-button-group__item">Go to session overview</a>
     </div>
 
   </div>
