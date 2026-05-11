@@ -21,8 +21,7 @@
     <div class="nhsuk-button-group">
       {% if firstSkippedEventId %}
         {{ button({
-          text: "Read skipped {{ "case" | pluralise(session.skippedEvents.length) }}",
-          href: "/reading/session/" + sessionId + "/events/" + firstSkippedEventId
+        text: "Read skipped " + ("case" | pluralise(session.skippedEvents.length)),          href: "/reading/session/" + sessionId + "/events/" + firstSkippedEventId
         }) }}
       {% endif %}
       <a href="/reading/session/{{ sessionId }}" class="nhsuk-link nhsuk-button-group__item">Go to session overview</a>
