@@ -169,7 +169,7 @@
                         editable: true,
                         editHrefPrefix: "./annotation/edit/",
                         addHref: "./annotation/add?side=" + breastSide,
-                        useModals: true
+                        useModals: data.settings.modalForms == 'true'
                       }) }}
                     </div>
                   </div>
@@ -218,7 +218,7 @@
               editable: true,
               editHrefPrefix: "./annotation/edit/",
               addHref: "./annotation/add?side=" + breastSide + "&simple=true",
-              useModals: true
+              useModals: data.settings.modalForms == 'true'
             }) }}
 
             <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
@@ -233,6 +233,7 @@
           heading: "Annotations",
           headingLevel: "2",
           feature: true,
+          classes: "nhsuk-u-margin-top-4",
           descriptionHtml: annotationsSectionHtml
         }) }}
       </div>
@@ -276,8 +277,9 @@
      Uses window.openModal (always present) — works with or without modalForms setting. #}
   <script>
     (function () {
-      // Use a boolean to avoid HTML-escaping '&' when Nunjucks outputs into a script block
+      // Use booleans to avoid HTML-escaping '&' when Nunjucks outputs into a script block
       var useSimpleForm = {{ "false" if withImages else "true" }}
+      var useModals = {{ "true" if data.settings.modalForms == 'true' else "false" }}
 
       document.addEventListener('change', function (e) {
         if (!e.target.matches('input[type="radio"]')) return
@@ -304,9 +306,13 @@
           return
         }
 
-        if (count === 0 && typeof window.openModal === 'function') {
+        if (count === 0) {
           var url = './annotation/add?side=' + side + '&simple=true'
-          window.openModal('app-form-modal', { loadUrl: url })
+          if (useModals && typeof window.openModal === 'function') {
+            window.openModal('app-form-modal', { loadUrl: url })
+          } else {
+            window.location.href = url
+          }
         }
       })
     })()
