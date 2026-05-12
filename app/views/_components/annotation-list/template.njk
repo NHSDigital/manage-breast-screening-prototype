@@ -54,11 +54,11 @@
             {% endif %}
 
             {% if annotation.location %}
-              <p class="app-annotation-list__meta">{{ annotation.location }}</p>
+              <p class="app-annotation-list__meta">Location: {{ annotation.location }}</p>
             {% endif %}
 
             {% if annotation.comment %}
-              <p class="app-annotation-list__meta">{{ annotation.comment }}</p>
+              <p class="app-annotation-list__meta">Comment: {{ annotation.comment }}</p>
             {% endif %}
 
             {% if _editable and params.editHrefPrefix %}

@@ -76,6 +76,12 @@
   }
 }
 
+.app-dark-mode {
+  .app-annotation-list__card {
+    background: transparent;
+  }
+}
+
 // Two-column layout: number badge left, content right
 .app-annotation-list__header {
   display: flex;

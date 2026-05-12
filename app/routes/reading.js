@@ -1202,7 +1202,10 @@ module.exports = (router) => {
       try {
         allAnnotations = JSON.parse(req.body.annotationsJson || '[]')
       } catch (e) {
-        console.warn('save-annotations-json: failed to parse annotationsJson', e)
+        console.warn(
+          'save-annotations-json: failed to parse annotationsJson',
+          e
+        )
         return res.status(400).end()
       }
 

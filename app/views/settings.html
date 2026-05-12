@@ -65,8 +65,20 @@
 
 {% endif %}
 
-<div class="nhsuk-card">
-  <div class="nhsuk-card__content">
+{# v1 mode preset — sets compare pages off, review pages off, marker annotations off #}
+<p>
+  Presets:
+  <a class="nhsuk-link--no-visited-state" href="/settings/presets/v1">Enable image reading v1</a>
+  — sets:
+</p>
+<ul>
+  <li>Modal forms: off</li>
+  <li>Compare page: off</li>
+  <li>Review pages off</li>
+  <li>Annotations mode: inline form (no image markers)</li>
+</ul>
+
+
     <h2>General</h2>
     {{ settingToggle("Dark mode", "settings[darkMode]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.darkMode, "false") }}
     {{ settingToggle("Environment banner", "settings[showEnvironmentBanner]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.showEnvironmentBanner, "true") }}
@@ -255,8 +267,7 @@
       heading: "About data regeneration",
       html: warningCalloutHtml
     }) }}
-  </div>
-</div>
+
 
 
 {% endblock %}
