@@ -178,4 +178,25 @@ module.exports = (router) => {
     }
     return res.redirect(303, '/settings')
   })
+
+  // Apply v1 reading mode preset
+  router.get('/settings/presets/v1', (req, res) => {
+    if (!req.session.data.settings) {
+      req.session.data.settings = {}
+    }
+    if (!req.session.data.settings.reading) {
+      req.session.data.settings.reading = {}
+    }
+
+    req.session.data.settings.modalForms = 'false'
+    req.session.data.settings.reading.secondReaderComparison = 'off'
+    req.session.data.settings.reading.annotationsMode = 'without-images'
+    req.session.data.settings.reading.confirmNormal = 'false'
+    req.session.data.settings.reading.confirmNormalWithDetails = 'false'
+    req.session.data.settings.reading.confirmTechnicalRecall = 'false'
+    req.session.data.settings.reading.confirmRecallForAssessment = 'false'
+
+    req.flash('success', 'Image reading v1 mode enabled')
+    return res.redirect('/settings')
+  })
 }
