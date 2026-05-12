@@ -33,8 +33,8 @@
     , {{ progress.userAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
   , {{ progress.targetRemaining }} remaining
-  {%- if progress.skippedEvents | length > 0 -%}
-    , {{ progress.skippedEvents | length }} skipped
+  {%- if progress.skippedEvents | length > 0 %}
+     ({{ progress.skippedEvents | length }} skipped)
   {%- endif %}
 {% endset %}
 
