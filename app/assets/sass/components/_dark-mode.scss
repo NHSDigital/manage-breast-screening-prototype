@@ -93,11 +93,19 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     color: $app-dark-mode-text-colour;
   }
 
+  .nhsuk-expander,
+  .nhsuk-details__summary {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-border;
+    color: $app-dark-mode-text-colour;
+  }
+
   // Secondary text colour
   .nhsuk-hint,
   .nhsuk-caption-l,
   .nhsuk-caption-m,
   .nhsuk-caption-s,
+  .app-details__summary-subtitle,
   .app-suppress-link-styles * {
     color: $app-dark-mode-text-colour-secondary;
   }
@@ -203,9 +211,14 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     }
 
     &:hover {
-      background-color: $app-dark-mode-surface;
+      background-color: nhsuk-shade($app-dark-mode-blue, 70%);
       box-shadow: 0 4px 0 $app-dark-mode-link-colour;
       color: $app-dark-mode-link-colour;
+    }
+
+    &:active {
+      background-color: nhsuk-shade($app-dark-mode-blue, 50%);
+      box-shadow: 0 2px 0 $app-dark-mode-link-colour;
     }
   }
 
@@ -497,6 +510,40 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
       background-color: nhsuk-shade($app-dark-mode-text-colour, 20%);
       color: $app-dark-mode-background;
     }
+  }
+
+  // Option picker — mirrors dark mode secondary button treatment
+  .app-option-picker--button .app-option-picker__label {
+    box-shadow: 0 $nhsuk-button-shadow-size 0 $app-dark-mode-link-colour;
+    color: $app-dark-mode-link-colour;
+
+    &::before {
+      border-color: $app-dark-mode-link-colour;
+    }
+
+    &:hover {
+      background-color: nhsuk-shade($app-dark-mode-blue, 70%);
+    }
+
+    &:active {
+      background-color: nhsuk-shade($app-dark-mode-blue, 50%);
+    }
+  }
+
+  // Selected (filled) state — use dark mode blue instead of NHS brand colour
+  .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label {
+    background-color: $app-dark-mode-blue;
+    box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($app-dark-mode-blue, 50%);
+    color: $app-dark-mode-background;
+  }
+
+  .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:hover {
+    background-color: nhsuk-shade($app-dark-mode-blue, 20%);
+    box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($app-dark-mode-blue, 60%);
+  }
+
+  .app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label:active {
+    background-color: nhsuk-shade($app-dark-mode-blue, 50%);
   }
 }
 
