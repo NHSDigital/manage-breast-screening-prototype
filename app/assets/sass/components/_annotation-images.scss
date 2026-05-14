@@ -144,11 +144,12 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
-// ─── Dimmed markers (when highlighting a single annotation) ───────────────────
+// ─── Dimmed markers (context markers for other annotations) ──────────────────
 
 .app-ann-marker.is-dimmed {
-  opacity: 0.3;
+  opacity: 1;
   pointer-events: none;
+  filter: grayscale(1);
 }
 
 // ─── Zoom button ──────────────────────────────────────────────────────────────

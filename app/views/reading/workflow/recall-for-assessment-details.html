@@ -187,19 +187,7 @@
     {% include "_includes/reading/annotation-modal.njk" %}
 
     {# Image lightbox — zoomed single image for fine-tuning marker placement #}
-    <div id="ann-lightbox" class="app-ann-v2__lightbox" hidden aria-modal="true" role="dialog" aria-label="Zoomed image">
-      <div class="app-ann-v2__lightbox-overlay" id="ann-lightbox-overlay"></div>
-      <div class="app-ann-v2__lightbox-dialog">
-        <button class="app-ann-v2__lightbox-close" type="button" id="ann-lightbox-close" aria-label="Close zoomed view">
-          <svg viewBox="0 0 16 16" fill="currentColor" width="18" height="18" aria-hidden="true" focusable="false">
-            <path d="M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z"/>
-          </svg>
-        </button>
-        <div class="app-ann-v2__lightbox-panel" id="ann-lightbox-panel">
-          {# Populated by JS — contains <img> and any marker #}
-        </div>
-      </div>
-    </div>
+    {% include "_includes/reading/annotation-lightbox.njk" %}
 
   {% else %}
     {# Simple mode (no images): annotation lists in two columns, inside a card #}

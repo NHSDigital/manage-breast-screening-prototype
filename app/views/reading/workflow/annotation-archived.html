@@ -1,0 +1,396 @@
+{# /app/views/reading/annotation.html #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set annotation = data.imageReadingTemp.annotationTemp %}
+
+{% set side = annotation.side %}
+{% set pageHeading = ("Add" if not annotation.id else "Edit") + " " + side + " breast abnormality" %}
+
+{% set gridColumn = "none" %}
+
+{% set formAction = './annotation/save' %}
+
+
+
+{% block pageContent %}
+
+  {{ annotation | log("This annotation" )}}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <span class="nhsuk-caption-l">
+        {{ participant | getFullName }}
+      </span>
+
+      <h1 class="nhsuk-heading-l">
+        {{ pageHeading }}
+      </h1>
+
+    </div>
+  </div>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      {% set mammogramError = flash.error | find('name', 'positions') %}
+
+      <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if mammogramError }}">
+        <h2 class="nhsuk-label nhsuk-label--m" id="mammogram-section">Mark the location</h2>
+
+        {% if mammogramError %}
+          <span class="nhsuk-error-message" id="mammogram-section-error">
+            <span class="nhsuk-u-visually-hidden">Error:</span> {{ mammogramError.text }}
+          </span>
+        {% endif %}
+
+        {{ mammogramError | log("Mammogram error") }}
+        {# Get the event's selected mammogram set #}
+        {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+
+        {% if side == 'right' %}
+          {% set viewKeys = ['rmlo', 'rcc'] %}
+        {% else %}
+          {% set viewKeys = ['lmlo', 'lcc'] %}
+        {% endif %}
+
+        {# Build flat list of all images for this breast with their view keys #}
+        {% set imageList = [] %}
+        {% for viewKey in viewKeys %}
+          {% set viewPaths = mammogramImages.allPaths[viewKey] if mammogramImages and mammogramImages.allPaths else null %}
+          {% if viewPaths %}
+            {% if viewPaths is iterable and viewPaths is not string %}
+              {# Multiple images for this view #}
+              {% for imagePath in viewPaths %}
+                {% set imageIndex = loop.index %}
+                {% set imageViewKey = viewKey if imageIndex == viewPaths | length else viewKey + '-' + imageIndex %}
+                {% set imageList = imageList | push({ path: imagePath, view: viewKey, viewKey: imageViewKey }) %}
+              {% endfor %}
+            {% else %}
+              {# Single image #}
+              {% set imageList = imageList | push({ path: viewPaths, view: viewKey, viewKey: viewKey }) %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+
+        <div class="app-image-two-up nhsuk-u-margin-bottom-6">
+          {% for image in imageList %}
+            <div class="app-mammogram-container">
+              <img draggable="false" class="nhsuk-image__img app-mammogram-image" src="{{ image.path }}" alt="{{ image.view | upper }} view" data-view="{{ image.viewKey }}">
+            </div>
+          {% else %}
+            <div class="app-mammogram-placeholder">No images</div>
+          {% endfor %}
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      {% include "_includes/reading/annotation-form.njk" %}
+
+      <div class="nhsuk-button-group nhsuk-u-margin-top-7">
+        {{ button({
+          text: "Save and close",
+          attributes: {
+            name: "action",
+            value: "save"
+          }
+        }) }}
+
+        {{ button({
+          text: "Save and add another " + side + " breast abnormality",
+          classes: "nhsuk-button--secondary",
+          attributes: {
+            name: "action",
+            value: "save-and-add"
+          }
+        }) }}
+
+      </div>
+
+      {# Only show link if this is a previously saved symptom #}
+      {% if annotation.id %}
+        {% set deleteHref %}
+          ./annotation/delete/{{ annotation.id }}
+        {% endset %}
+        <p class="nhsuk-u-margin-top-4">
+          <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+            Delete this annotation
+          </a>
+        </p>
+      {% endif %}
+
+      {# Hidden field to preserve the side #}
+      {{ appHiddenInput({
+        name: "side",
+        value: side
+      }) }}
+
+      {# Used by js to store marker positions #}
+      {{ appHiddenInput({
+        name: "imageReadingTemp[annotationTemp][positions]",
+        value: (annotation.positions | dump) if annotation.positions,
+        id: "positions"
+      }) }}
+
+      {# Annotation number for display on markers #}
+      {{ appHiddenInput({
+        name: "annotationNumber",
+        value: annotation.annotationNumber or 1,
+        id: "annotationNumber"
+      }) }}
+    </div>
+  </div>
+
+{% endblock %}
+
+
+{% block pageScripts %}
+  <script>
+// Mammogram annotation functionality with coordinate saving
+// Positions are stored as 0-1 decimals, keyed by view name (e.g., 'rmlo', 'rcc')
+function initAnnotation() {
+  const mammogramImages = document.querySelectorAll('.app-mammogram-image')
+  const positionsInput = document.getElementById('positions')
+  const annotationNumberInput = document.getElementById('annotationNumber')
+  const annotationNumber = annotationNumberInput ? annotationNumberInput.value : '1'
+
+  // Keep track of markers for each view
+  const markers = {}
+
+  // Get existing positions if editing
+  const existingPositions = getExistingPositions()
+
+  // Track dragging state
+  let activeMarker = null
+  let isDragging = false
+  let activeContainer = null
+
+  // Track loaded images
+  let imagesLoaded = 0
+  const totalImages = mammogramImages.length
+
+  // Set up each mammogram image
+  mammogramImages.forEach((image, index) => {
+    // Use view name as identifier (from data-view attribute)
+    const viewKey = image.dataset.view
+    if (!viewKey) {
+      console.warn('Mammogram image missing data-view attribute')
+      return
+    }
+
+    // Make sure image container has position relative
+    const container = image.parentElement
+    if (container) {
+      container.style.position = 'relative'
+    }
+
+    // Apply custom cursor
+    image.style.cursor = 'crosshair'
+
+    // Wait for image to load before restoring markers
+    if (image.complete) {
+      handleImageLoaded()
+    } else {
+      image.addEventListener('load', () => handleImageLoaded())
+    }
+
+    // Add click handler to place/move marker
+    image.addEventListener('click', (event) => {
+      // Only place marker if we're not currently dragging
+      if (!isDragging) {
+        placeMarker(event, image, viewKey)
+      }
+    })
+  })
+
+  // Handle when an image is loaded
+  function handleImageLoaded() {
+    imagesLoaded++
+
+    // When all images are loaded, restore all existing markers
+    if (imagesLoaded === totalImages && existingPositions) {
+      // Small delay to ensure layout is settled
+      setTimeout(() => {
+        restoreAllMarkers()
+      }, 50)
+    }
+  }
+
+  // Restore all markers that have saved positions
+  function restoreAllMarkers() {
+    Object.entries(existingPositions).forEach(([viewKey, position]) => {
+      const image = document.querySelector(`[data-view="${viewKey}"]`)
+      if (image) {
+        restoreMarker(image, viewKey, position)
+      }
+    })
+  }
+
+  // Get existing positions from hidden field
+  function getExistingPositions() {
+    try {
+      const value = positionsInput?.value
+      return value ? JSON.parse(value) : null
+    } catch (e) {
+      return null
+    }
+  }
+
+  // Restore a marker at saved position (positions stored as 0-1 decimals)
+  function restoreMarker(image, viewKey, position) {
+    const container = image.parentElement
+
+    // Use the actual container dimensions at restore time
+    const containerRect = container.getBoundingClientRect()
+
+    // Convert 0-1 decimals to pixel positions
+    const x = position.x * containerRect.width
+    const y = position.y * containerRect.height
+
+    console.log(`Restoring marker for ${viewKey}:`, {
+      position: { x: position.x, y: position.y },
+      containerWidth: containerRect.width,
+      containerHeight: containerRect.height,
+      calculatedX: x,
+      calculatedY: y
+    })
+
+    createMarkerElement(container, viewKey, x, y)
+  }
+
+  // Place or move a marker
+  function placeMarker(event, image, viewKey) {
+    // Get position relative to the image container
+    const container = image.parentElement
+    const rect = container.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+
+    if (markers[viewKey]) {
+      // Update existing marker position
+      const marker = markers[viewKey]
+      marker.style.left = `${x}px`
+      marker.style.top = `${y}px`
+    } else {
+      // Create new marker
+      createMarkerElement(container, viewKey, x, y)
+    }
+
+    // Save coordinates to hidden field
+    savePositions()
+  }
+
+  // Create marker element
+  function createMarkerElement(container, viewKey, x, y) {
+    const marker = document.createElement('div')
+    marker.className = 'app-mammogram-marker'
+    marker.dataset.view = viewKey
+    marker.style.left = `${x}px`
+    marker.style.top = `${y}px`
+
+    // Add number badge
+    const badge = document.createElement('div')
+    badge.className = 'app-mammogram-marker__badge'
+    badge.textContent = annotationNumber
+
+    marker.appendChild(badge)
+
+    // Add marker to container
+    container.appendChild(marker)
+    markers[viewKey] = marker
+
+    // Add mousedown event for drag start
+    marker.addEventListener('mousedown', startDragging)
+  }
+
+  // Save positions as 0-1 decimals, keyed by view name
+  function savePositions() {
+    const positions = {}
+
+    Object.entries(markers).forEach(([viewKey, marker]) => {
+      const container = marker.parentElement
+      const rect = container.getBoundingClientRect()
+
+      // Get current marker position in pixels
+      const markerX = parseFloat(marker.style.left)
+      const markerY = parseFloat(marker.style.top)
+
+      // Convert to 0-1 decimals
+      const x = markerX / rect.width
+      const y = markerY / rect.height
+
+      positions[viewKey] = { x, y }
+
+      console.log(`Saving marker for ${viewKey}:`, {
+        pixelX: markerX,
+        pixelY: markerY,
+        containerWidth: rect.width,
+        containerHeight: rect.height,
+        x,
+        y
+      })
+    })
+
+    // Update hidden field
+    if (positionsInput) {
+      positionsInput.value = JSON.stringify(positions)
+    }
+  }
+
+  // Start dragging a marker
+  function startDragging(event) {
+    event.preventDefault()
+    activeMarker = event.currentTarget
+    activeContainer = activeMarker.parentElement
+    isDragging = true
+    activeMarker.style.cursor = 'grabbing'
+    activeMarker.classList.add('dragging')
+  }
+
+  // Handle mouse movement for dragging
+  document.addEventListener('mousemove', (event) => {
+    if (!isDragging || !activeMarker || !activeContainer) return
+
+    const rect = activeContainer.getBoundingClientRect()
+    let x = event.clientX - rect.left
+    let y = event.clientY - rect.top
+
+    // Constrain to container bounds
+    x = Math.max(15, Math.min(rect.width - 15, x)) // Keep marker center within bounds
+    y = Math.max(15, Math.min(rect.height - 15, y))
+
+    // Update marker position
+    activeMarker.style.left = `${x}px`
+    activeMarker.style.top = `${y}px`
+
+    // Save coordinates during drag
+    savePositions()
+  })
+
+  // End dragging
+  document.addEventListener('mouseup', () => {
+    if (activeMarker) {
+      activeMarker.style.cursor = 'grab'
+      activeMarker.classList.remove('dragging')
+    }
+
+    isDragging = false
+    activeMarker = null
+    activeContainer = null
+  })
+}
+
+// Run immediately if the DOM is already ready (e.g. when loaded into a modal),
+// otherwise wait. DOMContentLoaded has already fired in modal context.
+if (document.readyState !== 'loading') {
+  initAnnotation()
+} else {
+  document.addEventListener('DOMContentLoaded', initAnnotation)
+}
+  </script>
+{% endblock pageScripts %}
