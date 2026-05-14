@@ -12,6 +12,21 @@
       classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
     })}}
   {% endif %}
+  {% if data.settings.screening.addedToWorklist == 'false' %}
+    <span class="app-header-status app-header-status--fail">
+      <svg class="app-icon app-icon--cross app-header-status__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"></path>
+      </svg>
+      <span>Not added to worklist (<a href="#">Retry</a>)</span>
+    </span>
+  {% else %}
+    <span class="app-header-status">
+      <svg class="app-icon app-icon--tick app-header-status__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" d="M18.4 7.8l-8.5 8.4L5.6 12"></path>
+      </svg>
+      <span>Added to worklist</span>
+    </span>
+  {% endif %}
 {% endset %}
 {% set appointmentRowItems = appointmentRowItems | push({
   key: "Appointment:",

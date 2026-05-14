@@ -115,6 +115,9 @@
     {# Show participant section #}
     {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
 
+    {# Participant added to worklist — toggles success/fail state shown in appointment header #}
+    {{ settingToggle("Participant added to worklist", "settings[screening][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.screening.addedToWorklist, "true") }}
+
     <h2>Image reading</h2>
     {# One click normal #}
     {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
