@@ -33,7 +33,7 @@
 <div class="breast-features__popover" id="{{ popoverId }}">
   <span class="nhsuk-caption-m" id="popoverCaption">Add new feature</span>
   <h2 id="popoverHeading">What is the feature?</h2>
-  <p>This will be added to <span class="nhsuk-tag nhsuk-tag--white region-label" id="regionLabel"></span></p>
+  <p>Location <span class="nhsuk-tag nhsuk-tag--white region-label" id="regionLabel"></span></p>
 
   {% set radioItems = [] %}
 
@@ -73,6 +73,7 @@
         isPageHeading: false
       }
     },
+    classes: "nhsuk-radios--small",
     items: radioItems
   }) }}
 
@@ -81,6 +82,7 @@
       text: addButtonText,
       id: "addBtn",
       type: "button",
+      classes: "nhsuk-button--small",
       attributes: {
         "data-action": "add"
       }
@@ -88,7 +90,7 @@
 
     {{ button({
       text: "Cancel",
-      classes: "nhsuk-button--secondary",
+      classes: "nhsuk-button--secondary nhsuk-button--small",
       type: "button",
       attributes: {
         "data-action": "cancel"
@@ -98,7 +100,7 @@
     {% if showRemoveButton %}
     {{ button({
       text: "Remove",
-      classes: "nhsuk-button--warning",
+      classes: "nhsuk-button--warning nhsuk-button--small",
       type: "button",
       attributes: {
         "data-action": "remove"
