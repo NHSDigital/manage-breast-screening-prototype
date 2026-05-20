@@ -1,6 +1,7 @@
 // app/assets/sass/components/_workflow.scss
 
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
+@use "utils" as *;
 
 // Wider container for workflow mode
 .nhsuk-width-container--wide {
@@ -192,13 +193,13 @@ a.app-workflow-side-nav__link {
 
     path {
       fill: none;
-      stroke: #89E2A8;
+      stroke: tint(nhsuk-colour("green"), 55%);
       stroke-width: 4;
     }
   }
 }
 
 .app-header-status--fail .app-header-status__icon path {
-  stroke: #FF5B5B;
+  stroke: tint(nhsuk-colour("red"), 55%);
   stroke-width: 3;
 }

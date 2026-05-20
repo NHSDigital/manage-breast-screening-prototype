@@ -1,4 +1,15 @@
+@use "sass:color";
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Lighten a colour by mixing it with white
+@function tint($colour, $percentage) {
+  @return color.mix(#fff, $colour, $percentage);
+}
+
+// Darken a colour by mixing it with black
+@function shade($colour, $percentage) {
+  @return color.mix(#000, $colour, $percentage);
+}
 
 .app-nowrap {
   white-space: nowrap;
