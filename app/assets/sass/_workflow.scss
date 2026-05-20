@@ -193,13 +193,13 @@ a.app-workflow-side-nav__link {
 
     path {
       fill: none;
-      stroke: tint(nhsuk-colour("green"), 55%);
+      stroke: nhsuk-tint(nhsuk-colour("green"), 55%);
       stroke-width: 4;
     }
   }
 }
 
 .app-header-status--fail .app-header-status__icon path {
-  stroke: tint(nhsuk-colour("red"), 55%);
+  stroke: nhsuk-tint(nhsuk-colour("red"), 55%);
   stroke-width: 3;
 }
