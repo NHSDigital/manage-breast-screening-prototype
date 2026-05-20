@@ -99,6 +99,7 @@ const defaultSettings = {
     manualImageCollection: 'true',
     showParticipantSection: 'false',
     useCondensedReviewSummaries: 'true',
+    addedToWorklist: 'true',
     imageStreaming: {
       enabled: 'true',
       intervalMs: '3000'

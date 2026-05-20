@@ -179,3 +179,28 @@ a.app-workflow-side-nav__link {
     position: static;
   }
 }
+
+// Status text shown after the NHS number in the appointment header (e.g. "Added to worklist")
+.app-header-status {
+  margin-left: nhsuk-spacing(3);
+
+  .app-header-status__icon {
+    height: 1em;
+    width: 1em;
+    vertical-align: -0.15em;
+    margin-right: -1px;
+
+    path {
+      fill: none;
+      // Aiming for #48B788
+      stroke: nhsuk-tint(nhsuk-colour("green"), 40%);
+      stroke-width: 4;
+    }
+  }
+}
+
+.app-header-status--fail .app-header-status__icon path {
+  // Aiming for #E98881
+  stroke: nhsuk-tint(nhsuk-colour("red"), 44%);
+  stroke-width: 3;
+}
