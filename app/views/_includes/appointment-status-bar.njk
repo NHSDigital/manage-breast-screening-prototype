@@ -14,16 +14,12 @@
   {% endif %}
   {% if data.settings.screening.addedToWorklist == 'false' %}
     <span class="app-header-status app-header-status--fail">
-      <svg class="app-icon app-icon--cross app-header-status__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"></path>
-      </svg>
+      {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
       <span>Not added to worklist (<a href="#">Retry</a>)</span>
     </span>
   {% else %}
     <span class="app-header-status">
-      <svg class="app-icon app-icon--tick app-header-status__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" d="M18.4 7.8l-8.5 8.4L5.6 12"></path>
-      </svg>
+      {{ appIcon("tick", { classes: "app-header-status__icon" }) }}
       <span>Added to worklist</span>
     </span>
   {% endif %}

@@ -189,18 +189,12 @@ a.app-workflow-side-nav__link {
     width: 1em;
     vertical-align: -0.15em;
     margin-right: -1px;
-
-    path {
-      fill: none;
-      // Aiming for #48B788
-      stroke: nhsuk-tint(nhsuk-colour("green"), 40%);
-      stroke-width: 4;
-    }
+    // Aiming for #48B788
+    fill: nhsuk-tint(nhsuk-colour("green"), 40%);
   }
 }
 
-.app-header-status--fail .app-header-status__icon path {
+.app-header-status--fail .app-header-status__icon {
   // Aiming for #E98881
-  stroke: nhsuk-tint(nhsuk-colour("red"), 44%);
-  stroke-width: 3;
+  fill: nhsuk-tint(nhsuk-colour("red"), 44%);
 }
