@@ -285,6 +285,35 @@ module.exports = (router) => {
     res.redirect(`/reading/session/${req.params.sessionId}/your-reads`)
   })
 
+  // Route for resuming a session — jumps straight into the next readable case,
+  // falling back to the session overview if none exists.
+  router.get('/reading/session/:sessionId/resume', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    const sessionEvents = session.eventIds
+      .map((eventId) => data.events.find((e) => e.id === eventId))
+      .filter(Boolean)
+
+    const resumeEvent = getResumeEventForUser(
+      sessionEvents,
+      data.currentUser.id,
+      session.skippedEvents || []
+    )
+
+    if (resumeEvent) {
+      return res.redirect(
+        `/reading/session/${sessionId}/events/${resumeEvent.id}`
+      )
+    }
+
+    res.redirect(`/reading/session/${sessionId}`)
+  })
+
   // Route for skipped-review page (shown at end of batch when skipped cases remain)
   router.get('/reading/session/:sessionId/skipped-review', (req, res) => {
     const data = req.session.data

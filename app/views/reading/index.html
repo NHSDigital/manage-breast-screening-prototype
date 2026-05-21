@@ -1,187 +1,172 @@
-{# app/views/events/image-reading/index.html #}
+{# app/views/reading/index.html #}
 
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = "Image reading" %}
 {% set hideBackLink = true %}
-{% set gridColumn = "nhsuk-grid-column-full" %}
-{% set showRemaining = data.settings.reading.showRemaining | falsify %}
+{% set gridColumn = "none" %}
 
-{% block pageContent %}
-  <h1>{{ pageHeading }}</h1>
+{% set currentUserId = data.currentUser.id %}
+{% set defaultSessionSize = 25 %}
 
-<h2>Start new reading session</h2>
-
-{# Awaiting priors not automatically filtered #}
-{% set allReadsEventsWithAwaitingPriors = data.events | filterEventsByEligibleForReading | filterEventsByNeedsAnyRead | sortEventsByScreeningDate %}
-
-{# Split into awaiting priors and available for reading #}
-{# Events with 'requested' status mammograms are held from reading #}
-{% set allReadsEvents = [] %}
-{% set awaitingPriorsEvents = [] %}
-{% for thisEvent in allReadsEventsWithAwaitingPriors %}
-  {% if thisEvent | awaitingPriors %}
-    {% set awaitingPriorsEvents = awaitingPriorsEvents | push(thisEvent) %}
-  {% else %}
-    {% set allReadsEvents = allReadsEvents | push(thisEvent) %}
+{#
+  Build a list of the current user's sessions, most-recent first.
+  A session counts as "the user's" if they've already read at least one case in it.
+  Used both to detect an in-progress session and to list previous sessions.
+#}
+{% set userSessions = [] %}
+{% for sessionId, session in data.readingSessions %}
+  {% set userReadCount = 0 %}
+  {% for eventId in session.eventIds %}
+    {% set thisEvent = data.events | find('id', eventId) %}
+    {% if thisEvent and (thisEvent | userHasReadEvent(currentUserId)) %}
+      {% set userReadCount = userReadCount + 1 %}
+    {% endif %}
+  {% endfor %}
+  {% if userReadCount > 0 %}
+    {% set targetSize = session.targetSize or session.eventIds | length %}
+    {% set userSessions = userSessions | push({
+      id: session.id,
+      createdAt: session.createdAt,
+      targetSize: targetSize,
+      userReadCount: userReadCount,
+      isComplete: userReadCount >= targetSize
+    }) %}
   {% endif %}
 {% endfor %}
 
-{% set recentEvents = allReadsEvents | filterEventsByDayRange(0, data.config.reading.priorityThreshold) %}
+{% set userSessions = userSessions | sort(true, false, 'createdAt') %}
 
-{% set priorityEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) %}
-{% set urgentEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) %}
+{# In-progress = the user's most recent session that isn't complete #}
+{% set inProgressSession = null %}
+{% for session in userSessions %}
+  {% if not inProgressSession and not session.isComplete %}
+    {% set inProgressSession = session %}
+  {% endif %}
+{% endfor %}
 
+{# Previous (completed) sessions — show 3 most recent #}
+{% set previousSessions = [] %}
+{% for session in userSessions %}
+  {% if session.isComplete and previousSessions | length < 3 %}
+    {% set previousSessions = previousSessions | push(session) %}
+  {% endif %}
+{% endfor %}
 
+{#
+  Inset counts.
 
-{% set firstReadsEvents = allReadsEvents | filterEventsByNeedsFirstRead %}
-{% set secondReadsEvents = allReadsEvents | filterEventsByNeedsSecondRead %}
+  arbitrationCount is derived from real data — events whose computed outcome is
+  arbitration_pending.
 
-{# Filter for current user - currently not used #}
-{% set allReadsForUser = allReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
-{% set firstReadsForUser = firstReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
-{% set secondReadsForUser = secondReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
-{% set awaitingPriorsForUser = awaitingPriorsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
+  newlyArrivedPriorsCount is faked for the prototype. In a real implementation
+  this would be the count of cases where priors the reader requested or was
+  waiting on have since arrived. Edit the value below (or set it to 0) to see
+  the empty state of the inset.
+#}
+{% set arbitrationCount = 0 %}
+{% for thisEvent in data.events %}
+  {% if (thisEvent | getOutcome) == 'arbitration_pending' %}
+    {% set arbitrationCount = arbitrationCount + 1 %}
+  {% endif %}
+{% endfor %}
 
-{# Get oldest #}
-{% set oldestAllRead = allReadsEvents[0].timing.startTime if allReadsEvents.length > 0 %}
-{% set oldestFirstRead = firstReadsEvents[0].timing.startTime if firstReadsEvents.length > 0 %}
-{% set oldestSecondRead = secondReadsEvents[0].timing.startTime if secondReadsEvents.length > 0 %}
-{% set oldestAwaitingPrior = awaitingPriorsEvents[0].timing.startTime if awaitingPriorsEvents.length > 0 %}
+{% set newlyArrivedPriorsCount = 2 %}
 
-{# All reads card content #}
-{% set allReadsContent %}
+{% set actionTotal = arbitrationCount + newlyArrivedPriorsCount %}
 
-  {% set allReadCount = allReadsEvents | length %}
+{#
+  Backlog counts — all eligible cases that still need reading, banded by
+  age relative to the configured priority/urgent thresholds.
+#}
+{% set backlogEvents = data.events
+  | filterEventsByEligibleForReading
+  | filterEventsByNeedsAnyRead %}
+{% set backlogTotal = backlogEvents | length %}
+{% set urgentBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) | length %}
+{% set priorityBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) | length %}
 
-  {% set hasPriortyTags = priorityEvents or urgentEvents %}
-  <p class="{{ "nhsuk-u-margin-bottom-2" if hasPriortyTags }}">
-    {{ allReadCount }} cases needing reading
-  </p>
+{% block pageContent %}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <h1>{{ pageHeading }}</h1>
 
-  {% if hasPriortyTags %}
-    <div class="nhsuk-u-margin-bottom-4">
-      {% if urgentEvents | length %}
-        {{ ((urgentEvents | length) ~ " urgent cases") | toTag({colour: "red"}) }}
-      {% endif %}
-      {% if priorityEvents | length %}
-        {{ ((priorityEvents | length) ~ " cases due soon") | toTag({colour: "orange"}) }}
-      {% endif %}
-    </div>
+  {% if actionTotal > 0 %}
+    {% set insetHtml %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ actionTotal }} {{ "case" if actionTotal == 1 else "cases" }} need action</strong></p>
+      <ul class="nhsuk-u-margin-bottom-0">
+        {% if arbitrationCount > 0 %}
+          <li><a href="#">{{ arbitrationCount }} {{ "case has" if arbitrationCount == 1 else "cases have" }} issues that need resolving</a></li>
+        {% endif %}
+        {% if newlyArrivedPriorsCount > 0 %}
+          <li><a href="/reading/priors">{{ newlyArrivedPriorsCount }} {{ "case has" if newlyArrivedPriorsCount == 1 else "cases have" }} newly added prior mammograms</a></li>
+        {% endif %}
+      </ul>
+    {% endset %}
+    {{ insetText({
+      html: insetHtml | safe
+    }) }}
   {% endif %}
 
-  {% set defaultSessionSize = 25 %}
-  {% set maxCases = allReadCount if allReadCount < defaultSessionSize else defaultSessionSize %}
+  {% if inProgressSession %}
 
-  {% set actionLinkHtml %}
-    Start session<br>
-    <span class="nhsuk-u-font-size-19">
-      ({{ maxCases }} cases)
-    </span>
-  {% endset %}
-  {{ actionLink({
-    classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-    text: actionLinkHtml | safe,
-    href: "/reading/create-session?type=all_reads"
-  }) }}
+    <h2>Resume image reading</h2>
+    <p>You have an image reading session in progress. Finish it before starting a new one.</p>
+    <p>{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read.</p>
 
-{% endset %}
-
-{# Custom session card content #}
-{% set customSessionContent %}
-<p>Choose what cases to read</p>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "Start custom session",
-  href: "/reading/create-custom-session"
-}) }}
-{% endset %}
-
-{# Arbitration card content #}
-{% set arbitrationContent %}
-<p>53 cases need arbitration</p>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "See cases",
-  href: "#"
-}) }}
-{% endset %}
-
-{# Reading history card content #}
-{% set readingHistoryContent %}
-<p>View your reading history and all recently read cases</p>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "View history",
-  href: "/reading/history"
-}) }}
-{% endset %}
-
-<ul class="nhsuk-grid-row nhsuk-card-group">
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Start reading oldest cases",
-      headingClasses: "nhsuk-heading-s",
-      descriptionHtml: allReadsContent
+    {{ button({
+      text: "Resume session",
+      href: "/reading/session/" + inProgressSession.id + "/resume"
     }) }}
-  </li>
 
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Custom reading session",
-      headingClasses: "nhsuk-heading-s",
-      descriptionHtml: customSessionContent
+  {% else %}
+
+    <h2>Start image reading</h2>
+    <p>Start a new image reading session with {{ defaultSessionSize }} cases.</p>
+
+    {{ button({
+      text: "Start now",
+      href: "/reading/create-session?type=all_reads"
     }) }}
-  </li>
 
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Arbitration",
-      headingClasses: "nhsuk-heading-s",
-      descriptionHtml: arbitrationContent
-    }) }}
-  </li>
+  {% endif %}
 
+  {% if previousSessions | length > 0 %}
+    <h2>Your previous image reading sessions</h2>
+    <ul class="nhsuk-list">
+      {% for session in previousSessions %}
+        <li>
+          <a href="/reading/session/{{ session.id }}">
+            {{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.targetSize }} cases)
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <p><a href="/reading/history">See all</a></p>
+  {% endif %}
 
-</ul>
+    </div>
 
-<h2>Other options</h2>
-<ul class="nhsuk-grid-row nhsuk-card-group">
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "View by clinic",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/clinics"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Reading history",
-      headingClasses: "nhsuk-heading-s",
-      _descriptionHtml: readingHistoryContent,
-      clickable: true,
-      href: "/reading/history"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: (awaitingPriorsEvents | length) ~ " Awaiting priors",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/priors"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Reading statistics",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/reading-statistics"
-    }) }}
-  </li>
+    <div class="nhsuk-grid-column-one-third">
+      {% set backlogCardHtml %}
+        <p>{{ backlogTotal }} cases require reading</p>
+        <ul class="nhsuk-list">
+          {% if urgentBacklog > 0 %}
+            <li>{{ urgentBacklog }} cases {{ "urgent" | toTag({colour: "red"}) }}</li>
+          {% endif %}
+          {% if priorityBacklog > 0 %}
+            <li>{{ priorityBacklog }} cases {{ "due soon" | toTag({colour: "orange"}) }}</li>
+          {% endif %}
+        </ul>
+      {% endset %}
 
-</ul>
-
+      {{ card({
+        heading: "Backlog",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: backlogCardHtml
+      }) }}
+    </div>
+  </div>
 
 {% endblock %}
