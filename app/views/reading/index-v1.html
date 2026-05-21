@@ -1,0 +1,187 @@
+{# app/views/events/image-reading/index.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Image reading" %}
+{% set hideBackLink = true %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set showRemaining = data.settings.reading.showRemaining | falsify %}
+
+{% block pageContent %}
+  <h1>{{ pageHeading }}</h1>
+
+<h2>Start new reading session</h2>
+
+{# Awaiting priors not automatically filtered #}
+{% set allReadsEventsWithAwaitingPriors = data.events | filterEventsByEligibleForReading | filterEventsByNeedsAnyRead | sortEventsByScreeningDate %}
+
+{# Split into awaiting priors and available for reading #}
+{# Events with 'requested' status mammograms are held from reading #}
+{% set allReadsEvents = [] %}
+{% set awaitingPriorsEvents = [] %}
+{% for thisEvent in allReadsEventsWithAwaitingPriors %}
+  {% if thisEvent | awaitingPriors %}
+    {% set awaitingPriorsEvents = awaitingPriorsEvents | push(thisEvent) %}
+  {% else %}
+    {% set allReadsEvents = allReadsEvents | push(thisEvent) %}
+  {% endif %}
+{% endfor %}
+
+{% set recentEvents = allReadsEvents | filterEventsByDayRange(0, data.config.reading.priorityThreshold) %}
+
+{% set priorityEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) %}
+{% set urgentEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) %}
+
+
+
+{% set firstReadsEvents = allReadsEvents | filterEventsByNeedsFirstRead %}
+{% set secondReadsEvents = allReadsEvents | filterEventsByNeedsSecondRead %}
+
+{# Filter for current user - currently not used #}
+{% set allReadsForUser = allReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
+{% set firstReadsForUser = firstReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
+{% set secondReadsForUser = secondReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
+{% set awaitingPriorsForUser = awaitingPriorsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
+
+{# Get oldest #}
+{% set oldestAllRead = allReadsEvents[0].timing.startTime if allReadsEvents.length > 0 %}
+{% set oldestFirstRead = firstReadsEvents[0].timing.startTime if firstReadsEvents.length > 0 %}
+{% set oldestSecondRead = secondReadsEvents[0].timing.startTime if secondReadsEvents.length > 0 %}
+{% set oldestAwaitingPrior = awaitingPriorsEvents[0].timing.startTime if awaitingPriorsEvents.length > 0 %}
+
+{# All reads card content #}
+{% set allReadsContent %}
+
+  {% set allReadCount = allReadsEvents | length %}
+
+  {% set hasPriortyTags = priorityEvents or urgentEvents %}
+  <p class="{{ "nhsuk-u-margin-bottom-2" if hasPriortyTags }}">
+    {{ allReadCount }} cases needing reading
+  </p>
+
+  {% if hasPriortyTags %}
+    <div class="nhsuk-u-margin-bottom-4">
+      {% if urgentEvents | length %}
+        {{ ((urgentEvents | length) ~ " urgent cases") | toTag({colour: "red"}) }}
+      {% endif %}
+      {% if priorityEvents | length %}
+        {{ ((priorityEvents | length) ~ " cases due soon") | toTag({colour: "orange"}) }}
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% set defaultSessionSize = 25 %}
+  {% set maxCases = allReadCount if allReadCount < defaultSessionSize else defaultSessionSize %}
+
+  {% set actionLinkHtml %}
+    Start session<br>
+    <span class="nhsuk-u-font-size-19">
+      ({{ maxCases }} cases)
+    </span>
+  {% endset %}
+  {{ actionLink({
+    classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
+    text: actionLinkHtml | safe,
+    href: "/reading/create-session?type=all_reads"
+  }) }}
+
+{% endset %}
+
+{# Custom session card content #}
+{% set customSessionContent %}
+<p>Choose what cases to read</p>
+{{ actionLink({
+  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
+  text: "Start custom session",
+  href: "/reading/create-custom-session"
+}) }}
+{% endset %}
+
+{# Arbitration card content #}
+{% set arbitrationContent %}
+<p>53 cases need arbitration</p>
+{{ actionLink({
+  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
+  text: "See cases",
+  href: "#"
+}) }}
+{% endset %}
+
+{# Reading history card content #}
+{% set readingHistoryContent %}
+<p>View your reading history and all recently read cases</p>
+{{ actionLink({
+  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
+  text: "View history",
+  href: "/reading/history"
+}) }}
+{% endset %}
+
+<ul class="nhsuk-grid-row nhsuk-card-group">
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Start reading oldest cases",
+      headingClasses: "nhsuk-heading-s",
+      descriptionHtml: allReadsContent
+    }) }}
+  </li>
+
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Custom reading session",
+      headingClasses: "nhsuk-heading-s",
+      descriptionHtml: customSessionContent
+    }) }}
+  </li>
+
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Arbitration",
+      headingClasses: "nhsuk-heading-s",
+      descriptionHtml: arbitrationContent
+    }) }}
+  </li>
+
+
+</ul>
+
+<h2>Other options</h2>
+<ul class="nhsuk-grid-row nhsuk-card-group">
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "View by clinic",
+      headingClasses: "nhsuk-heading-s",
+      clickable: true,
+      href: "/reading/clinics"
+    }) }}
+  </li>
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Reading history",
+      headingClasses: "nhsuk-heading-s",
+      _descriptionHtml: readingHistoryContent,
+      clickable: true,
+      href: "/reading/history"
+    }) }}
+  </li>
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: (awaitingPriorsEvents | length) ~ " Awaiting priors",
+      headingClasses: "nhsuk-heading-s",
+      clickable: true,
+      href: "/reading/priors"
+    }) }}
+  </li>
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Reading statistics",
+      headingClasses: "nhsuk-heading-s",
+      clickable: true,
+      href: "/reading/reading-statistics"
+    }) }}
+  </li>
+
+</ul>
+
+
+{% endblock %}
