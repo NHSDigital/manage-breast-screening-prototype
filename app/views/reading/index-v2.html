@@ -91,23 +91,6 @@
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
 
-  {% if actionTotal > 0 %}
-    {% set insetHtml %}
-      <p class="nhsuk-u-margin-bottom-2"><strong>{{ actionTotal }} {{ "case" if actionTotal == 1 else "cases" }} need action</strong></p>
-      <ul class="nhsuk-u-margin-bottom-0">
-        {% if arbitrationCount > 0 %}
-          <li><a href="#">{{ arbitrationCount }} {{ "case has" if arbitrationCount == 1 else "cases have" }} issues that need resolving</a></li>
-        {% endif %}
-        {% if newlyArrivedPriorsCount > 0 %}
-          <li><a href="/reading/priors">{{ newlyArrivedPriorsCount }} {{ "case has" if newlyArrivedPriorsCount == 1 else "cases have" }} newly added prior mammograms</a></li>
-        {% endif %}
-      </ul>
-    {% endset %}
-    {{ insetText({
-      html: insetHtml | safe
-    }) }}
-  {% endif %}
-
   {% if inProgressSession %}
 
     <h2>Resume image reading</h2>
@@ -129,6 +112,23 @@
       href: "/reading/create-session?type=all_reads"
     }) }}
 
+  {% endif %}
+
+  {% if actionTotal > 0 %}
+    {% set insetHtml %}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ actionTotal }} flagged {{ "case" if actionTotal == 1 else "cases" }}</strong></p>
+      <ul class="nhsuk-u-margin-bottom-0">
+        {% if arbitrationCount > 0 %}
+          <li><a href="#">{{ arbitrationCount }} {{ "case has" if arbitrationCount == 1 else "cases have" }} issues that need resolving</a></li>
+        {% endif %}
+        {% if newlyArrivedPriorsCount > 0 %}
+          <li><a href="/reading/priors">{{ newlyArrivedPriorsCount }} {{ "case has" if newlyArrivedPriorsCount == 1 else "cases have" }} newly added prior mammograms</a></li>
+        {% endif %}
+      </ul>
+    {% endset %}
+    {{ insetText({
+      html: insetHtml | safe
+    }) }}
   {% endif %}
 
   {% if previousSessions | length > 0 %}
