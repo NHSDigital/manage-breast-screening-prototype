@@ -299,21 +299,16 @@ const generateAbnormalData = (event, set) => {
  * Generate a placeholder annotation when set doesn't have detailed annotations
  */
 const generatePlaceholderAnnotation = (side, breastData) => {
-  const abnormalityTypes = [
-    'Mass well-defined',
-    'Mass ill-defined',
-    'Microcalcification outside a mass',
-    'Microcalcification within a mass',
-    'Architectural distortion',
-    'Asymmetric density'
-  ]
+  const abnormalityTypes = require('../../data/abnormality-types').filter(
+    (t) => t !== 'Other'
+  )
 
   // Use finding from set if available
   let abnormalityType = faker.helpers.arrayElement(abnormalityTypes)
   if (breastData?.finding) {
     const findingMap = {
       'mass': 'Mass well-defined',
-      'calcification': 'Microcalcification outside a mass',
+      'calcification': 'Microcalcification',
       'distortion': 'Architectural distortion',
       'lymph-nodes': 'Asymmetric density',
       'asymmetric-density': 'Asymmetric density'

@@ -14,6 +14,7 @@ const { needsRegeneration } = require('../lib/utils/regenerate-data')
 const config = require('../config')
 const repeatReasons = require('./repeat-reasons')
 const symptomTypes = require('./symptom-types')
+const abnormalityTypes = require('./abnormality-types')
 const {
   DEFAULT_SEED_DATA_PROFILE,
   SEED_DATA_PROFILES,
@@ -139,7 +140,8 @@ const defaults = {
   defaultSettings,
   medicalHistoryTypes,
   repeatReasons,
-  symptomTypes
+  symptomTypes,
+  abnormalityTypes
 }
 
 // Load local overrides if they exist (gitignored, not committed)
