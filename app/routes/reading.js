@@ -674,7 +674,6 @@ module.exports = (router) => {
         'technical-recall',
         'recall-for-assessment-details',
         'annotation',
-        'annotation-simple',
         'annotate-v2',
         'confirm-abnormal',
         'recommended-assessment',
@@ -728,11 +727,8 @@ module.exports = (router) => {
         annotationNumber: annotationNumber
       }
 
-      // Redirect to simple (no-image) view when requested
-      const target =
-        req.query.simple === 'true' ? 'annotation-simple' : 'annotation'
       res.redirect(
-        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/${target}`
+        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/annotation`
       )
     }
   )
@@ -770,14 +766,8 @@ module.exports = (router) => {
         }
       }
 
-      // Simple annotations have no positions — redirect to the simple form
-      const isSimple =
-        !annotation?.positions ||
-        Object.keys(annotation.positions || {}).length === 0
-      const editTarget = isSimple ? 'annotation-simple' : 'annotation'
-      res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/${editTarget}`
-      )
+      // Always use the unified annotation page
+      res.redirect(`/reading/session/${sessionId}/events/${eventId}/annotation`)
     }
   )
 
@@ -806,8 +796,7 @@ module.exports = (router) => {
       // Validation
       const errors = []
       const annotationTemp = data.imageReadingTemp?.annotationTemp
-
-      console.log(`annotation temp: ${JSON.stringify(annotationTemp)}`)
+      const isImageMode = req.body.showImages === 'true'
 
       if (!annotationTemp) {
         return res.redirect(
@@ -815,51 +804,51 @@ module.exports = (router) => {
         )
       }
 
-      // Validate that positions are set for at least one view
-      if (
-        !annotationTemp.positions ||
-        annotationTemp.positions === '{}' ||
-        annotationTemp.positions === ''
-      ) {
-        errors.push({
-          text: `Mark the location on at least one ${annotationTemp.side} breast view`,
-          name: 'positions',
-          href: '#mammogram-section'
-        })
-      } else {
-        // Parse and validate positions have at least one marker
-        try {
-          const positions =
-            typeof annotationTemp.positions === 'string'
-              ? JSON.parse(annotationTemp.positions)
-              : annotationTemp.positions
+      // Mode-specific validation
+      if (isImageMode) {
+        // Validate that positions are set for at least one view
+        if (
+          !annotationTemp.positions ||
+          annotationTemp.positions === '{}' ||
+          annotationTemp.positions === ''
+        ) {
+          errors.push({
+            text: `Mark the location on at least one ${annotationTemp.side} breast view`,
+            name: 'positions',
+            href: '#mammogram-section'
+          })
+        } else {
+          try {
+            const positions =
+              typeof annotationTemp.positions === 'string'
+                ? JSON.parse(annotationTemp.positions)
+                : annotationTemp.positions
 
-          if (!positions || Object.keys(positions).length === 0) {
+            if (!positions || Object.keys(positions).length === 0) {
+              errors.push({
+                text: `Mark the location on at least one ${annotationTemp.side} breast view`,
+                name: 'positions',
+                href: '#mammogram-section'
+              })
+            }
+          } catch (e) {
             errors.push({
               text: `Mark the location on at least one ${annotationTemp.side} breast view`,
               name: 'positions',
               href: '#mammogram-section'
             })
           }
-        } catch (e) {
+        }
+      } else {
+        // Text location required when no images
+        if (!annotationTemp.location || annotationTemp.location.trim() === '') {
           errors.push({
-            text: `Mark the location on both ${annotationTemp.side} breast views`,
-            name: 'positions',
-            href: '#mammogram-section'
+            text: 'Enter a location for the abnormality',
+            name: 'imageReadingTemp[annotationTemp][location]',
+            href: '#location'
           })
         }
       }
-
-      // Validate required fields
-
-      // Text location not in use
-      // if (!annotationTemp.location || annotationTemp.location.trim() === '') {
-      //   errors.push({
-      //     text: 'Enter the location of the abnormality',
-      //     name: 'imageReadingTemp[annotationTemp][location]',
-      //     href: '#location'
-      //   })
-      // }
 
       if (
         !annotationTemp.abnormalityTypes ||
@@ -955,6 +944,12 @@ module.exports = (router) => {
           data.imageReadingTemp[side].annotations = []
         }
 
+        // Ensure breast assessment is set to abnormal — the fire-and-forget fetch
+        // from the radio change can race with this POST and lose its session write
+        if (!data.imageReadingTemp[side].breastAssessment) {
+          data.imageReadingTemp[side].breastAssessment = 'abnormal'
+        }
+
         // Parse positions if provided
         let positions = null
         if (annotationTemp.positions) {
@@ -998,6 +993,9 @@ module.exports = (router) => {
 
         // Clear temp data
         delete data.imageReadingTemp.annotationTemp
+
+        // Remember which side was last edited so the tab can be activated
+        data.imageReadingTemp.lastEditedSide = side
       }
 
       // Redirect based on action
@@ -1009,7 +1007,9 @@ module.exports = (router) => {
         )
       } else {
         res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          modalBreakout(
+            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          )
         )
       }
     }
@@ -1040,126 +1040,6 @@ module.exports = (router) => {
           `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
         )
       )
-    }
-  )
-
-  // Save annotation without image markers
-  router.post(
-    '/reading/session/:sessionId/events/:eventId/annotation-simple/save',
-    (req, res) => {
-      const { sessionId, eventId } = req.params
-      const data = req.session.data
-      const action = req.body.action || 'save'
-
-      const annotationTemp = data.imageReadingTemp?.annotationTemp
-
-      if (!annotationTemp) {
-        return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
-        )
-      }
-
-      // Validate required fields (no position validation for this route)
-      const errors = []
-
-      if (!annotationTemp.location || annotationTemp.location.trim() === '') {
-        errors.push({
-          text: 'Enter a location for the abnormality',
-          name: 'imageReadingTemp[annotationTemp][location]',
-          href: '#location'
-        })
-      }
-
-      if (
-        !annotationTemp.abnormalityTypes ||
-        annotationTemp.abnormalityTypes.length === 0
-      ) {
-        errors.push({
-          text: 'Select an abnormality type',
-          name: 'imageReadingTemp[annotationTemp][abnormalityTypes]',
-          href: '#abnormalityTypes'
-        })
-      }
-
-      if (!annotationTemp.levelOfConcern) {
-        errors.push({
-          text: 'Select a level of concern',
-          name: 'imageReadingTemp[annotationTemp][levelOfConcern]',
-          href: '#levelOfConcern'
-        })
-      }
-
-      if (
-        Array.isArray(annotationTemp.abnormalityTypes) &&
-        annotationTemp.abnormalityTypes.includes('Other') &&
-        (!annotationTemp.otherDetails ||
-          annotationTemp.otherDetails.trim() === '')
-      ) {
-        errors.push({
-          text: 'Provide details for other abnormality type',
-          name: 'imageReadingTemp[annotationTemp][otherDetails]',
-          href: '#otherDetails'
-        })
-      }
-
-      if (errors.length > 0) {
-        errors.forEach((error) => req.flash('error', error))
-        return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/annotation-simple`
-        )
-      }
-
-      const side = annotationTemp.side
-      if (!side) {
-        return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
-        )
-      }
-
-      if (!data.imageReadingTemp[side]) data.imageReadingTemp[side] = {}
-      if (!data.imageReadingTemp[side].annotations)
-        data.imageReadingTemp[side].annotations = []
-
-      const annotation = {
-        id: annotationTemp.id || generateId(),
-        side,
-        location: annotationTemp.location || null,
-        abnormalityTypes: annotationTemp.abnormalityTypes,
-        levelOfConcern: annotationTemp.levelOfConcern,
-        comment: annotationTemp.comment || null,
-        positions: null,
-        ...Object.keys(annotationTemp)
-          .filter((key) => key.endsWith('Details'))
-          .reduce((acc, key) => {
-            acc[key] = annotationTemp[key]
-            return acc
-          }, {})
-      }
-
-      const existingIndex = data.imageReadingTemp[side].annotations.findIndex(
-        (a) => a.id === annotation.id
-      )
-      if (existingIndex !== -1) {
-        data.imageReadingTemp[side].annotations[existingIndex] = annotation
-      } else {
-        data.imageReadingTemp[side].annotations.push(annotation)
-      }
-
-      delete data.imageReadingTemp.annotationTemp
-
-      if (action === 'save-and-add') {
-        // Stay in modal — load the add form for another annotation
-        res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}&simple=true`
-        )
-      } else {
-        // Break out of modal and return to recall-for-assessment-details
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
-          )
-        )
-      }
     }
   )
 
@@ -1303,6 +1183,58 @@ module.exports = (router) => {
       const currentUserId = data.currentUser?.id
       const formData = data.imageReadingTemp
       const opinion = formData?.opinion
+
+      // Validate recall for assessment details
+      if (opinion === 'recall_for_assessment') {
+        const rightAssessment = formData?.right?.breastAssessment
+        const leftAssessment = formData?.left?.breastAssessment
+        const errors = []
+
+        if (!rightAssessment) {
+          errors.push({
+            text: 'Select your opinion of the right breast',
+            name: 'imageReadingTemp[right][breastAssessment]',
+            href: '#right-breastAssessment'
+          })
+        }
+        if (!leftAssessment) {
+          errors.push({
+            text: 'Select your opinion of the left breast',
+            name: 'imageReadingTemp[left][breastAssessment]',
+            href: '#left-breastAssessment'
+          })
+        }
+
+        // Both breasts cannot be normal — at least one must be abnormal or clinical
+        if (
+          rightAssessment && leftAssessment &&
+          rightAssessment === 'normal' && leftAssessment === 'normal'
+        ) {
+          errors.push({
+            text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
+            name: 'imageReadingTemp[right][breastAssessment]',
+            href: '#right-breastAssessment'
+          })
+          errors.push({
+            text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
+            name: 'imageReadingTemp[left][breastAssessment]',
+            href: '#left-breastAssessment'
+          })
+        }
+
+        if (errors.length) {
+          const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
+          if (isModal) {
+            return res.status(422).render('reading/workflow/recall-for-assessment-details', {
+              flash: { error: errors }
+            })
+          }
+          errors.forEach((err) => req.flash('error', err))
+          return res.redirect(
+            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          )
+        }
+      }
 
       const event = data.events.find((e) => e.id === eventId)
       if (!event) return res.redirect(`/reading/session/${sessionId}`)

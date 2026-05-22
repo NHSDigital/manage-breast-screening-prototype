@@ -2,8 +2,7 @@
 {#
   Reusable form fields for recording an image reading annotation/finding.
   Reads from data.imageReadingTemp.annotationTemp by default.
-  Used by annotation.html (with images), annotation-simple.html (without images),
-  and the inline form on recall-for-assessment-details.html.
+  Used by annotation.html and the inline form on recall-for-assessment-details.html.
 
   Optional parent-scope overrides:
     annotationData       — object to read values from (defaults to imageReadingTemp.annotationTemp)
@@ -40,13 +39,13 @@
       disabled: true,
       selected: true if not annotationTemp.abnormalityType
     },
-    { value: "Mass well-defined",                  text: "Mass well-defined" },
-    { value: "Mass ill-defined",                   text: "Mass ill-defined" },
     { value: "Architectural distortion",           text: "Architectural distortion" },
-    { value: "Asymetric density",                  text: "Asymetric density" },
-    { value: "Microcalcification outside a mass",  text: "Microcalcification outside a mass" },
+    { value: "Asymmetric density",                 text: "Asymmetric density" },
     { value: "Clinical abnormality",               text: "Clinical abnormality" },
     { value: "Lymph node abnormality",             text: "Lymph node abnormality" },
+    { value: "Mass ill-defined",                   text: "Mass ill-defined" },
+    { value: "Mass well-defined",                  text: "Mass well-defined" },
+    { value: "Microcalcification outside a mass",  text: "Microcalcification outside a mass" },
     { value: "Other",                              text: "Other" }
   ] %}
 
@@ -89,13 +88,13 @@
       }
     },
     items: [
-      { value: "Mass well-defined",                 text: "Mass well-defined" },
-      { value: "Mass ill-defined",                  text: "Mass ill-defined" },
       { value: "Architectural distortion",          text: "Architectural distortion" },
       { value: "Asymmetric density",                text: "Asymmetric density" },
-      { value: "Microcalcification outside a mass", text: "Microcalcification outside a mass" },
       { value: "Clinical abnormality",              text: "Clinical abnormality" },
       { value: "Lymph node abnormality",            text: "Lymph node abnormality" },
+      { value: "Mass ill-defined",                  text: "Mass ill-defined" },
+      { value: "Mass well-defined",                 text: "Mass well-defined" },
+      { value: "Microcalcification outside a mass", text: "Microcalcification outside a mass" },
       { value: "Other",                             text: "Other" }
     ]
   } | populateErrors) }}

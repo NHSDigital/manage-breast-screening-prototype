@@ -1,0 +1,81 @@
+{# app/views/_includes/reading/annotations-with-images-simple.njk #}
+{# Mode: with-images-simple
+   Shows mini thumbnail images with readonly markers in a compact layout.
+   Add/edit opens the single annotation page (or modal) with full-size images. #}
+
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
+{% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
+
+{% set annotationsSectionHtml %}
+  <div class="nhsuk-grid-row">
+    {% for breastSide in ["right", "left"] %}
+      {% set Side = breastSide | capitalize %}
+      {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+
+      <div class="nhsuk-grid-column-one-half">
+        <h3 class="nhsuk-heading-s">{{ Side }} breast</h3>
+
+        {# Mini thumbnail images — only shown when at least one annotation has marker positions #}
+        {% set hasMarkers = false %}
+        {% for ann in sideAnnotations %}
+          {% if ann.positions and (ann.positions | length > 0) %}
+            {% set hasMarkers = true %}
+          {% endif %}
+        {% endfor %}
+
+        {% if allPaths and hasMarkers %}
+          <div class="nhsuk-u-margin-bottom-3">
+            {{ appAnnotationImages({
+              side: breastSide,
+              imagePaths: allPaths,
+              viewOrder: mammogramViewOrder,
+              annotations: sideAnnotations,
+              mode: "readonly",
+              size: "thumbnail"
+            }) }}
+          </div>
+        {% endif %}
+
+        {{ appAnnotationList({
+          annotations: sideAnnotations,
+          editable: true,
+          editHrefPrefix: "./annotation/edit/",
+          addHref: "./annotation/add?side=" + breastSide,
+          useModals: data.settings.modalForms == 'true'
+        }) }}
+
+        <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+      </div>
+    {% endfor %}
+  </div>
+{% endset %}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-full">
+    {{ card({
+      heading: "Annotations",
+      headingLevel: "2",
+      feature: true,
+      classes: "nhsuk-u-margin-top-4",
+      descriptionHtml: annotationsSectionHtml
+    }) }}
+  </div>
+</div>
+
+{# Readonly marker correction (positions from object-fit) #}
+<script src="/assets/javascript/annotation-markers.js"></script>
+<script>
+  (function () {
+    var allAnnotations = []
+    {% for breastSide in ["right", "left"] %}
+      {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+      {% for ann in sideAnnotations %}
+        allAnnotations.push({{ ann | dump | safe }})
+      {% endfor %}
+    {% endfor %}
+
+    AnnotationMarkers.correctAll({
+      annotations: allAnnotations
+    })
+  })()
+</script>

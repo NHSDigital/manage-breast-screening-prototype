@@ -9,15 +9,15 @@
 const populateErrors = function (component) {
   // Get flash messages from template context
   const flash = this.ctx.flash || {}
-  // console.log({flash})
   const errors = flash.error || []
 
-  // console.log({errors})
+  // Match on `name` or `namePrefix` (dateInput uses namePrefix)
+  const matchName = component.name || component.namePrefix
+  if (!matchName) return component
 
-  // Find error matching this component's name
   const error = Array.isArray(errors)
-    ? errors.find((err) => err.name === component.name)
-    : errors.name === component.name
+    ? errors.find((err) => err.name === matchName)
+    : errors.name === matchName
       ? errors
       : null
 

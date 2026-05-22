@@ -113,7 +113,8 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   // Links and link type things
   a,
   .app-secondary-navigation__link,
-  .app-button-link {
+  .app-button-link,
+  .app-collapsible-input__trigger {
     @include app-dark-mode-link-style-default;
 
     &:focus {
@@ -198,6 +199,9 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     &:hover {
       color: white;
     }
+    &:focus {
+      color: $nhsuk-text-colour;
+    }
   }
 
   .nhsuk-button--secondary {
@@ -208,6 +212,9 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     &:visited,
     &:active {
       color: $app-dark-mode-link-colour;
+    }
+    &:focus {
+      color: $nhsuk-text-colour;
     }
 
     &:hover {

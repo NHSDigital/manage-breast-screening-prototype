@@ -1,5 +1,6 @@
 {# app/views/reading/workflow/annotation.html #}
-{# Single annotation page — edit or add one annotation with interactive marker placement #}
+{# Single annotation page — add or edit one annotation.
+   Conditionally shows image markers or a text location field. #}
 
 {% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
 
@@ -11,6 +12,11 @@
 {% set pageHeading = ("Add" if not annotation.id else "Edit") + " " + side + " breast annotation" %}
 
 {% set gridColumn = "none" %}
+
+{# Determine whether to show images based on annotation mode and whether this
+   annotation has positions (editing a marker annotation always shows markers) #}
+{% set showImages = data.settings.reading.annotationsMode != 'without-images'
+  or (annotation.positions and (annotation.positions | length > 0)) %}
 
 {% set formAction = './annotation/save' %}
 
@@ -28,63 +34,74 @@
     </div>
   </div>
 
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
-      {% set mammogramError = flash.error | find('name', 'positions') %}
+  {% if showImages %}
+    {# ── Image marker mode ────────────────────────────────────────────────── #}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {% set mammogramError = flash.error | find('name', 'positions') %}
 
-      <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if mammogramError }}">
-        <h2 class="nhsuk-label nhsuk-label--m" id="mammogram-section">Mark the location</h2>
+        <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if mammogramError }}">
+          <h2 class="nhsuk-label nhsuk-label--m" id="mammogram-section">Mark the location</h2>
 
-        {% if mammogramError %}
-          <span class="nhsuk-error-message" id="mammogram-section-error">
-            <span class="nhsuk-u-visually-hidden">Error:</span> {{ mammogramError.text }}
-          </span>
-        {% endif %}
+          {% if mammogramError %}
+            <span class="nhsuk-error-message" id="mammogram-section-error">
+              <span class="nhsuk-u-visually-hidden">Error:</span> {{ mammogramError.text }}
+            </span>
+          {% endif %}
 
-        {# Get images for the annotation side #}
-        {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
-        {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
-        {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
+          {# Get images for the annotation side #}
+          {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+          {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+          {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
 
-        {# Collect all annotations for this side — the current one plus any existing ones for context #}
-        {% set sideAnnotations = data.imageReadingTemp[side].annotations | default([]) %}
+          {# All annotations for this side — used as context markers #}
+          {% set sideAnnotations = data.imageReadingTemp[side].annotations | default([]) %}
 
-        {# If editing, the current annotation is already in sideAnnotations.
-           If adding, create a temporary entry so the images component can render it. #}
-        {% if not annotation.id %}
-          {# New annotation — add it to the list so JS can track it #}
-          {% set contextAnnotations = sideAnnotations %}
-        {% else %}
-          {% set contextAnnotations = sideAnnotations %}
-        {% endif %}
-
-        <div id="annotation-container">
-          <div data-panel-side="{{ side }}">
-            {{ appAnnotationImages({
-              side: side,
-              imagePaths: allPaths,
-              viewOrder: mammogramViewOrder,
-              annotations: contextAnnotations,
-              mode: "interactive",
-              size: "full"
-            }) }}
+          <div id="annotation-container">
+            <div data-panel-side="{{ side }}">
+              {{ appAnnotationImages({
+                side: side,
+                imagePaths: allPaths,
+                viewOrder: mammogramViewOrder,
+                annotations: sideAnnotations,
+                mode: "interactive",
+                size: "full"
+              }) }}
+            </div>
           </div>
-        </div>
 
-        {# Lightbox for zoomed view #}
-        {% include "_includes/reading/annotation-lightbox.njk" %}
+          {# Lightbox for zoomed view #}
+          {% include "_includes/reading/annotation-lightbox.njk" %}
+        </div>
       </div>
     </div>
-  </div>
+  {% endif %}
 
   <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
+    <div class="nhsuk-grid-column-full">
+
+      {# Text location field — shown when images are not available #}
+      {% if not showImages %}
+        {{ input({
+          id: "location",
+          name: "imageReadingTemp[annotationTemp][location]",
+          value: annotation.location,
+          label: {
+            text: "Location",
+            classes: "nhsuk-label--s"
+          },
+          hint: {
+            text: "Describe the location in the " + side + " breast, for example 'upper outer quadrant' or 'UOQ'"
+          },
+          classes: "nhsuk-u-width-two-thirds"
+        } | populateErrors) }}
+      {% endif %}
 
       {% include "_includes/reading/annotation-form.njk" %}
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
-          text: "Save and close",
+          text: "Save",
           attributes: {
             name: "action",
             value: "save"
@@ -104,59 +121,63 @@
         </p>
       {% endif %}
 
-      {# Hidden field to preserve the side #}
+      {# Hidden fields #}
       {{ appHiddenInput({
         name: "side",
         value: side
       }) }}
 
-      {# Hidden field for marker positions — synced by JS #}
       {{ appHiddenInput({
         name: "imageReadingTemp[annotationTemp][positions]",
         value: (annotation.positions | dump) if annotation.positions,
         id: "positions"
       }) }}
 
-      {# Annotation number for display on markers #}
       {{ appHiddenInput({
         name: "annotationNumber",
         value: annotation.annotationNumber or 1,
         id: "annotationNumber"
       }) }}
+
+      {# Track whether this is a marker-mode annotation #}
+      {{ appHiddenInput({
+        name: "showImages",
+        value: "true" if showImages else "false"
+      }) }}
     </div>
   </div>
 
-  {# Interactive marker placement #}
-  <script src="/assets/javascript/annotation-markers.js"></script>
-  <script>
-    (function () {
-      // All annotations for this side — used for context markers
-      var allAnnotations = []
-      {% for ann in sideAnnotations %}
-        allAnnotations.push({{ ann | dump | safe }})
-      {% endfor %}
+  {% if showImages %}
+    {# Interactive marker placement #}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>
+      (function () {
+        var allAnnotations = []
+        {% for ann in sideAnnotations %}
+          allAnnotations.push({{ ann | dump | safe }})
+        {% endfor %}
 
-      // If adding a new annotation, create a temporary entry
-      {% if not annotation.id %}
-        var tempId = 'temp-' + Math.random().toString(36).slice(2, 9)
-        allAnnotations.push({
-          id: tempId,
-          side: '{{ side }}',
-          positions: {}
+        {% if not annotation.id %}
+          var tempId = 'temp-' + Math.random().toString(36).slice(2, 9)
+          allAnnotations.push({
+            id: tempId,
+            side: '{{ side }}',
+            positions: {}
+          })
+          var activeId = tempId
+        {% else %}
+          var activeId = '{{ annotation.id }}'
+        {% endif %}
+
+        AnnotationMarkers.init({
+          container: '#annotation-container',
+          annotations: allAnnotations,
+          activeSide: '{{ side }}',
+          singleAnnotationId: activeId,
+          positionsField: 'positions'
         })
-        var activeId = tempId
-      {% else %}
-        var activeId = '{{ annotation.id }}'
-      {% endif %}
-
-      AnnotationMarkers.init({
-        container: '#annotation-container',
-        annotations: allAnnotations,
-        activeSide: '{{ side }}',
-        singleAnnotationId: activeId,
-        positionsField: 'positions'
-      })
-    })()
-  </script>
+      })()
+    </script>
+  {% endif %}
 
 {% endblock %}

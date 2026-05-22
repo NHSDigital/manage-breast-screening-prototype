@@ -171,7 +171,13 @@
     // Write the active annotation's positions to a hidden form field
     function syncPositionsField() {
       if (!positionsFieldId) return
-      var field = document.getElementById(positionsFieldId)
+      // Look up by ID first, then fall back to name — the modal system
+      // prefixes IDs with 'modal-' which breaks getElementById lookups
+      var field =
+        document.getElementById(positionsFieldId) ||
+        document.querySelector(
+          '[name="imageReadingTemp[annotationTemp][positions]"]'
+        )
       if (!field) return
       var ann = getAnnotation(singleAnnotationId)
       field.value = ann && ann.positions ? JSON.stringify(ann.positions) : '{}'
@@ -667,6 +673,9 @@
         event.target.closest('.app-annotation-images__zoom-btn')
       )
         return
+
+      // Remove focus from dialog/container so focus outlines don't persist
+      if (document.activeElement) document.activeElement.blur()
 
       var panel = event.currentTarget
       var viewKey = panel.dataset.view

@@ -110,13 +110,13 @@
 
 // Thumbnail: small inline images
 .app-annotation-images--thumbnail .app-annotation-images__row {
-  grid-template-columns: repeat(2, auto);
-  justify-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  max-width: 520px;
   gap: nhsuk-spacing(2);
 }
 
 .app-annotation-images--thumbnail .app-annotation-images__panel {
-  max-width: 120px;
+  max-width: 140px;
 }
 
 .app-annotation-images--thumbnail .app-annotation-images__label {
