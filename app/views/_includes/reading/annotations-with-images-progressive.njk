@@ -26,7 +26,7 @@
         viewOrder: mammogramViewOrder,
         rightCount: rightAnnotations | length,
         leftCount: leftAnnotations | length,
-        showThumbs: hasAnyAnnotations
+        showThumbs: false
       }) }}
 
       <div class="app-ann-v2__panel">
@@ -65,13 +65,17 @@
               </div>
             {% else %}
               {# Empty state — just annotation list (which shows add link) #}
-              {{ appAnnotationList({
-                annotations: sideAnnotations,
-                editable: true,
-                editHrefPrefix: "./annotation/edit/",
-                addHref: "./annotation/add?side=" + breastSide,
-                useModals: data.settings.modalForms == 'true'
-              }) }}
+              <div class="nhsuk-grid-row">
+                <div class="nhsuk-grid-column-one-half">
+                  {{ appAnnotationList({
+                    annotations: sideAnnotations,
+                    editable: true,
+                    editHrefPrefix: "./annotation/edit/",
+                    addHref: "./annotation/add?side=" + breastSide,
+                    useModals: data.settings.modalForms == 'true'
+                  }) }}
+                </div>
+              </div>
             {% endif %}
           </div>
 
@@ -101,7 +105,7 @@
         {% endfor %}
       {% endfor %}
 
-      AnnotationMarkers.init({
+      window._annotationInstance = AnnotationMarkers.init({
         container: '#annotation-progressive-container',
         annotations: allAnnotations,
         activeSide: '{{ initialSide }}',

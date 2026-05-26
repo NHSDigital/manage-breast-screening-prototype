@@ -1,6 +1,8 @@
 {# /app/views/reading/workflow/recall-for-assessment-details.html #}
 
 {% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
+{% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -17,7 +19,7 @@
 {% endif %}
 
 
-{# Breast opinion card — radios only, annotations are collected in the section below #}
+{# Breast opinion card — includes per-breast annotations for non-tab modes #}
 {% macro breastDetails(params) %}
 
   {% set Side = params.side | capitalize %}
@@ -65,6 +67,13 @@
       }) }}
     {% endcall %}
 
+    {# Per-breast annotations (non-tab modes only) #}
+    {% if params.annotationsHtml %}
+      <hr class="nhsuk-section-break nhsuk-section-break--l nhsuk-section-break--visible">
+      <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">Annotations</h3>
+      {{ params.annotationsHtml | safe }}
+    {% endif %}
+
   {% endset %}
 
   {{ card({
@@ -97,20 +106,7 @@
     </div>
   </div>
 
-  {# Breast opinion cards — hidden in opinions-in-tabs mode where they appear inside the tabs #}
-  {% if annotationsMode != 'opinions-in-tabs' %}
-    <div class="nhsuk-grid-row">
-      {% for breastSide in ["right", "left"] %}
-        <div class="nhsuk-grid-column-one-half">
-          {{ breastDetails({ side: breastSide }) }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-
-  {# Annotations section — mode chosen by setting #}
-
-  {# Get image paths for modes that need them #}
+  {# Set up annotation data early — needed by both breast cards and tab modes #}
   {% if annotationsMode != 'without-images' %}
     {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
@@ -120,16 +116,92 @@
   {% set leftAnnotations = data.imageReadingTemp.left.annotations | default([]) %}
   {% set rightAnnotations = data.imageReadingTemp.right.annotations | default([]) %}
 
-  {% if annotationsMode == 'with-images' %}
-    {% include "_includes/reading/annotations-with-images-tabbed.njk" %}
-  {% elseif annotationsMode == 'with-images-simple' %}
-    {% include "_includes/reading/annotations-with-images-simple.njk" %}
-  {% elseif annotationsMode == 'with-images-progressive' %}
-    {% include "_includes/reading/annotations-with-images-progressive.njk" %}
-  {% elseif annotationsMode == 'opinions-in-tabs' %}
-    {% include "_includes/reading/annotations-opinions-in-tabs.njk" %}
-  {% else %}
-    {% include "_includes/reading/annotations-without-images.njk" %}
+  {# For non-tab modes, annotations go inside each breast card #}
+  {% set isInlineAnnotationsMode = annotationsMode == 'without-images' or annotationsMode == 'with-images-simple' %}
+
+  {# Breast opinion cards — hidden in opinions-in-tabs mode where they appear inside the tabs #}
+  {% if annotationsMode != 'opinions-in-tabs' %}
+    <div class="nhsuk-grid-row">
+      {% for breastSide in ["right", "left"] %}
+        {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+
+        {# Build per-side annotation HTML for inline modes #}
+        {% set sideAnnotationsHtml = "" %}
+        {% if isInlineAnnotationsMode %}
+
+          {% set sideAnnotationsHtml %}
+            {% if annotationsMode == 'with-images-simple' %}
+              {# Mini thumbnails — only when annotations have marker positions #}
+              {% set hasMarkers = false %}
+              {% for ann in sideAnnotations %}
+                {% if ann.positions and (ann.positions | length > 0) %}
+                  {% set hasMarkers = true %}
+                {% endif %}
+              {% endfor %}
+
+              {% if allPaths and hasMarkers %}
+                <div class="nhsuk-u-margin-bottom-3">
+                  {{ appAnnotationImages({
+                    side: breastSide,
+                    imagePaths: allPaths,
+                    viewOrder: mammogramViewOrder,
+                    annotations: sideAnnotations,
+                    mode: "readonly",
+                    size: "thumbnail"
+                  }) }}
+                </div>
+              {% endif %}
+            {% endif %}
+
+            {{ appAnnotationList({
+              annotations: sideAnnotations,
+              editable: true,
+              editHrefPrefix: "./annotation/edit/",
+              addHref: "./annotation/add?side=" + breastSide,
+              useModals: data.settings.modalForms == 'true'
+            }) }}
+
+            <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+          {% endset %}
+
+        {% endif %}
+
+        <div class="nhsuk-grid-column-one-half">
+          {{ breastDetails({ side: breastSide, annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode }) }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {# Annotations section for tab-based modes (rendered separately below the cards) #}
+  {% if not isInlineAnnotationsMode %}
+    {% if annotationsMode == 'with-images' %}
+      {% include "_includes/reading/annotations-with-images-tabbed.njk" %}
+    {% elseif annotationsMode == 'with-images-progressive' %}
+      {% include "_includes/reading/annotations-with-images-progressive.njk" %}
+    {% elseif annotationsMode == 'opinions-in-tabs' %}
+      {% include "_includes/reading/annotations-opinions-in-tabs.njk" %}
+    {% endif %}
+  {% endif %}
+
+  {# Readonly marker correction for with-images-simple thumbnails #}
+  {% if annotationsMode == 'with-images-simple' %}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>
+      (function () {
+        var allAnnotations = []
+        {% for breastSide in ["right", "left"] %}
+          {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+          {% for ann in sideAnnotations %}
+            allAnnotations.push({{ ann | dump | safe }})
+          {% endfor %}
+        {% endfor %}
+
+        AnnotationMarkers.correctAll({
+          annotations: allAnnotations
+        })
+      })()
+    </script>
   {% endif %}
 
   <div class="nhsuk-grid-row">
@@ -157,6 +229,23 @@
 
         // Persist the breast assessment to session immediately
         fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
+
+        // Switch the active tab to match the selected side (tab-based modes)
+        if (window._annotationInstance && window._annotationInstance.switchSide) {
+          window._annotationInstance.switchSide(side)
+        } else {
+          // Lightweight tab switching for progressive empty state
+          var container = document.getElementById('annotation-progressive-container')
+          if (container) {
+            container.querySelectorAll('[data-thumb-side]').forEach(function (t) {
+              t.classList.toggle('is-active', t.dataset.thumbSide === side)
+              t.classList.toggle('is-inactive', t.dataset.thumbSide !== side)
+            })
+            container.querySelectorAll('[data-panel-side]').forEach(function (panel) {
+              panel.hidden = panel.dataset.panelSide !== side
+            })
+          }
+        }
 
         if (value !== 'abnormal') return
 

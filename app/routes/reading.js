@@ -1207,8 +1207,10 @@ module.exports = (router) => {
 
         // Both breasts cannot be normal — at least one must be abnormal or clinical
         if (
-          rightAssessment && leftAssessment &&
-          rightAssessment === 'normal' && leftAssessment === 'normal'
+          rightAssessment &&
+          leftAssessment &&
+          rightAssessment === 'normal' &&
+          leftAssessment === 'normal'
         ) {
           errors.push({
             text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
@@ -1225,9 +1227,11 @@ module.exports = (router) => {
         if (errors.length) {
           const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
           if (isModal) {
-            return res.status(422).render('reading/workflow/recall-for-assessment-details', {
-              flash: { error: errors }
-            })
+            return res
+              .status(422)
+              .render('reading/workflow/recall-for-assessment-details', {
+                flash: { error: errors }
+              })
           }
           errors.forEach((err) => req.flash('error', err))
           return res.redirect(

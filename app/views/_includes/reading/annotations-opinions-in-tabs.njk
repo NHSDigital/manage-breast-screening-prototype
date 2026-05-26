@@ -22,7 +22,7 @@
         viewOrder: mammogramViewOrder,
         rightCount: rightAnnotations | length,
         leftCount: leftAnnotations | length,
-        showThumbs: true
+        showThumbs: false
       }) }}
 
       <div class="app-ann-v2__panel">
@@ -127,7 +127,7 @@
       {% endfor %}
     {% endfor %}
 
-    AnnotationMarkers.init({
+    window._annotationInstance = AnnotationMarkers.init({
       container: '#annotation-container',
       annotations: allAnnotations,
       activeSide: '{{ initialSide }}',
