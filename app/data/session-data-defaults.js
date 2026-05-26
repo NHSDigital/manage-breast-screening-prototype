@@ -114,7 +114,7 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    annotationsMode: 'with-images', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive' | 'opinions-in-tabs'
+    annotationsMode: 'with-images', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'late', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
     arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_non_normal'

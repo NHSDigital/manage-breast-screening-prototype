@@ -135,7 +135,7 @@
     {{ settingToggle("Reading counts", "settings[reading][showRemaining]", [{value: "true", label: "Remaining"}, {value: "false", label: "Completed"}], data.settings.reading.showRemaining, "false") }}
 
     {# Annotations mode - how annotations are displayed and edited #}
-    {{ settingToggle("Annotations mode", "settings[reading][annotationsMode]", [{value: "without-images", label: "Without images"}, {value: "with-images-simple", label: "With images (simple)"}, {value: "with-images", label: "With images (tabbed)"}, {value: "with-images-progressive", label: "With images (progressive)"}, {value: "opinions-in-tabs", label: "Opinions in tabs"}], data.settings.reading.annotationsMode, "without-images") }}
+    {{ settingToggle("Annotations mode", "settings[reading][annotationsMode]", [{value: "without-images", label: "Without images"}, {value: "with-images-simple", label: "With images (simple)"}, {value: "with-images", label: "With images (tabbed)"}, {value: "with-images-progressive", label: "With images (progressive)"}], data.settings.reading.annotationsMode, "without-images") }}
 
     {# Auto-open PACS viewer #}
     {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}

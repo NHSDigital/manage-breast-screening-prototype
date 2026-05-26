@@ -119,59 +119,57 @@
   {# For non-tab modes, annotations go inside each breast card #}
   {% set isInlineAnnotationsMode = annotationsMode == 'without-images' or annotationsMode == 'with-images-simple' %}
 
-  {# Breast opinion cards — hidden in opinions-in-tabs mode where they appear inside the tabs #}
-  {% if annotationsMode != 'opinions-in-tabs' %}
-    <div class="nhsuk-grid-row">
-      {% for breastSide in ["right", "left"] %}
-        {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+  {# Breast opinion cards #}
+  <div class="nhsuk-grid-row">
+    {% for breastSide in ["right", "left"] %}
+      {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
 
-        {# Build per-side annotation HTML for inline modes #}
-        {% set sideAnnotationsHtml = "" %}
-        {% if isInlineAnnotationsMode %}
+      {# Build per-side annotation HTML for inline modes #}
+      {% set sideAnnotationsHtml = "" %}
+      {% if isInlineAnnotationsMode %}
 
-          {% set sideAnnotationsHtml %}
-            {% if annotationsMode == 'with-images-simple' %}
-              {# Mini thumbnails — only when annotations have marker positions #}
-              {% set hasMarkers = false %}
-              {% for ann in sideAnnotations %}
-                {% if ann.positions and (ann.positions | length > 0) %}
-                  {% set hasMarkers = true %}
-                {% endif %}
-              {% endfor %}
-
-              {% if allPaths and hasMarkers %}
-                <div class="nhsuk-u-margin-bottom-3">
-                  {{ appAnnotationImages({
-                    side: breastSide,
-                    imagePaths: allPaths,
-                    viewOrder: mammogramViewOrder,
-                    annotations: sideAnnotations,
-                    mode: "readonly",
-                    size: "thumbnail"
-                  }) }}
-                </div>
+        {% set sideAnnotationsHtml %}
+          {% if annotationsMode == 'with-images-simple' %}
+            {# Mini thumbnails — only when annotations have marker positions #}
+            {% set hasMarkers = false %}
+            {% for ann in sideAnnotations %}
+              {% if ann.positions and (ann.positions | length > 0) %}
+                {% set hasMarkers = true %}
               {% endif %}
+            {% endfor %}
+
+            {% if allPaths and hasMarkers %}
+              <div class="nhsuk-u-margin-bottom-3">
+                {{ appAnnotationImages({
+                  side: breastSide,
+                  imagePaths: allPaths,
+                  viewOrder: mammogramViewOrder,
+                  annotations: sideAnnotations,
+                  mode: "readonly",
+                  size: "thumbnail"
+                }) }}
+              </div>
             {% endif %}
+          {% endif %}
 
-            {{ appAnnotationList({
-              annotations: sideAnnotations,
-              editable: true,
-              editHrefPrefix: "./annotation/edit/",
-              addHref: "./annotation/add?side=" + breastSide,
-              useModals: data.settings.modalForms == 'true'
-            }) }}
+          {{ appAnnotationList({
+            annotations: sideAnnotations,
+            editable: true,
+            editHrefPrefix: "./annotation/edit/",
+            addHref: "./annotation/add?side=" + breastSide,
+            useModals: data.settings.modalForms == 'true'
+          }) }}
 
-            <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
-          {% endset %}
+          <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+        {% endset %}
 
-        {% endif %}
+      {% endif %}
 
-        <div class="nhsuk-grid-column-one-half">
-          {{ breastDetails({ side: breastSide, annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode }) }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
+      <div class="nhsuk-grid-column-one-half">
+        {{ breastDetails({ side: breastSide, annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode }) }}
+      </div>
+    {% endfor %}
+  </div>
 
   {# Annotations section for tab-based modes (rendered separately below the cards) #}
   {% if not isInlineAnnotationsMode %}
@@ -179,8 +177,6 @@
       {% include "_includes/reading/annotations-with-images-tabbed.njk" %}
     {% elseif annotationsMode == 'with-images-progressive' %}
       {% include "_includes/reading/annotations-with-images-progressive.njk" %}
-    {% elseif annotationsMode == 'opinions-in-tabs' %}
-      {% include "_includes/reading/annotations-opinions-in-tabs.njk" %}
     {% endif %}
   {% endif %}
 
