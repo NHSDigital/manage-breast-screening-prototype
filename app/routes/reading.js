@@ -37,6 +37,15 @@ module.exports = (router) => {
     next()
   })
 
+  // Reading index — choose layout based on setting
+  router.get('/reading', (req, res) => {
+    const layout = req.session.data?.settings?.reading?.indexLayout || 'simple'
+    const template = layout === 'complex'
+      ? 'reading/index-complex'
+      : 'reading/index-simple'
+    res.render(template)
+  })
+
   // Default clinics list to "mine"
   router.get('/reading/clinics', (req, res) => {
     res.redirect('/reading/clinics/mine')

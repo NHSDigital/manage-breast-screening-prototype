@@ -189,6 +189,7 @@ module.exports = (router) => {
     }
 
     req.session.data.settings.modalForms = 'false'
+    req.session.data.settings.reading.indexLayout = 'simple'
     req.session.data.settings.reading.secondReaderComparison = 'off'
     req.session.data.settings.reading.annotationsMode = 'without-images'
     req.session.data.settings.reading.confirmNormal = 'false'

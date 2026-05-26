@@ -72,6 +72,7 @@
   — sets:
 </p>
 <ul>
+  <li>Reading index layout: simple</li>
   <li>Modal forms: off</li>
   <li>Compare page: off</li>
   <li>Review pages off</li>
@@ -116,6 +117,9 @@
     {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
 
     <h2>Image reading</h2>
+    {# Reading index layout #}
+    {{ settingToggle("Reading index layout", "settings[reading][indexLayout]", [{value: "simple", label: "Simple"}, {value: "complex", label: "Complex"}], data.settings.reading.indexLayout, "simple") }}
+
     {# One click normal #}
     {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
 
