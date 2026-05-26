@@ -124,7 +124,12 @@ router.use((req, res, next) => {
     }
 
     // Redirect to the same URL without query string
-    return res.redirect(req.path)
+    // Thread _modal=1 through so modal fragment detection survives the redirect
+    let redirectUrl = req.path
+    if (req.query._modal === '1') {
+      redirectUrl += '?_modal=1'
+    }
+    return res.redirect(redirectUrl)
   }
   next()
 })

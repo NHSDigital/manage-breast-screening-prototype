@@ -466,12 +466,20 @@ $ann-marker-shadow:
   content: "";
   position: absolute;
   inset: -16px;
+  z-index: 0;
 }
 
 .app-ann-marker.is-active:hover .app-ann-marker__remove,
-.app-ann-marker.is-active:focus-within .app-ann-marker__remove {
+.app-ann-marker.is-active:has(:focus-visible) .app-ann-marker__remove {
   opacity: 1;
   pointer-events: auto;
+  z-index: 1;
+}
+
+// Ghosted markers should not show the remove button
+.app-ann-marker.is-ghost .app-ann-marker__remove {
+  opacity: 0;
+  pointer-events: none;
 }
 
 // ─── Column 2: sidebar ───────────────────────────────────────────────────────

@@ -14,6 +14,7 @@ const { needsRegeneration } = require('../lib/utils/regenerate-data')
 const config = require('../config')
 const repeatReasons = require('./repeat-reasons')
 const symptomTypes = require('./symptom-types')
+const abnormalityTypes = require('./abnormality-types')
 const {
   DEFAULT_SEED_DATA_PROFILE,
   SEED_DATA_PROFILES,
@@ -114,7 +115,7 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     enableOpinionDelay: 'true',
-    annotationsMode: 'with-images', // 'with-images' | 'without-images'
+    annotationsMode: 'with-images', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'late', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
     arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_non_normal'
@@ -140,7 +141,8 @@ const defaults = {
   defaultSettings,
   medicalHistoryTypes,
   repeatReasons,
-  symptomTypes
+  symptomTypes,
+  abnormalityTypes
 }
 
 // Load local overrides if they exist (gitignored, not committed)

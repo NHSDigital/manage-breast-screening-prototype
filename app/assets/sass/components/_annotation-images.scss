@@ -110,13 +110,13 @@
 
 // Thumbnail: small inline images
 .app-annotation-images--thumbnail .app-annotation-images__row {
-  grid-template-columns: repeat(2, auto);
-  justify-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  max-width: 520px;
   gap: nhsuk-spacing(2);
 }
 
 .app-annotation-images--thumbnail .app-annotation-images__panel {
-  max-width: 120px;
+  max-width: 140px;
 }
 
 .app-annotation-images--thumbnail .app-annotation-images__label {
@@ -144,11 +144,12 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
-// ─── Dimmed markers (when highlighting a single annotation) ───────────────────
+// ─── Dimmed markers (context markers for other annotations) ──────────────────
 
 .app-ann-marker.is-dimmed {
-  opacity: 0.3;
+  opacity: 1;
   pointer-events: none;
+  filter: grayscale(1);
 }
 
 // ─── Zoom button ──────────────────────────────────────────────────────────────

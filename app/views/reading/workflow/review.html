@@ -18,7 +18,7 @@
       <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
       {# Assessment summary card #}
-      {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+      {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
       {% if withImages %}
         {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
         {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}

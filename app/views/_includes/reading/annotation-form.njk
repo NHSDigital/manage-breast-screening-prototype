@@ -2,8 +2,7 @@
 {#
   Reusable form fields for recording an image reading annotation/finding.
   Reads from data.imageReadingTemp.annotationTemp by default.
-  Used by annotation.html (with images), annotation-simple.html (without images),
-  and the inline form on recall-for-assessment-details.html.
+  Used by annotation.html and the inline form on recall-for-assessment-details.html.
 
   Optional parent-scope overrides:
     annotationData       — object to read values from (defaults to imageReadingTemp.annotationTemp)
@@ -33,22 +32,15 @@
 {% set abnormalityUi = "options" %} {# Set to "select" for dropdown, "options" for option picker, or "none" to hide abnormality type input #}
 
 {% if abnormalityUi == "select" %}
-  {% set abnormalityOptions = [
-    {
-      value: "",
-      text: "Select type",
-      disabled: true,
-      selected: true if not annotationTemp.abnormalityType
-    },
-    { value: "Mass well-defined",                  text: "Mass well-defined" },
-    { value: "Mass ill-defined",                   text: "Mass ill-defined" },
-    { value: "Architectural distortion",           text: "Architectural distortion" },
-    { value: "Asymetric density",                  text: "Asymetric density" },
-    { value: "Microcalcification outside a mass",  text: "Microcalcification outside a mass" },
-    { value: "Clinical abnormality",               text: "Clinical abnormality" },
-    { value: "Lymph node abnormality",             text: "Lymph node abnormality" },
-    { value: "Other",                              text: "Other" }
-  ] %}
+  {% set abnormalityOptions = [{
+    value: "",
+    text: "Select type",
+    disabled: true,
+    selected: true if not annotationTemp.abnormalityType
+  }] %}
+  {% for type in data.abnormalityTypes %}
+    {% set abnormalityOptions = abnormalityOptions | push({ value: type, text: type }) %}
+  {% endfor %}
 
   {{ select({
     id: _idBase + "abnormalityType",
@@ -77,6 +69,11 @@
 {% endif %}
 
 {% if abnormalityUi == "options" %}
+  {% set abnormalityItems = [] %}
+  {% for type in data.abnormalityTypes %}
+    {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
+  {% endfor %}
+
   {{ appOptionPicker({
     idPrefix: _idBase + "abnormalityTypes",
     name: _namePrefix + "[abnormalityTypes]",
@@ -88,16 +85,7 @@
         size: "s"
       }
     },
-    items: [
-      { value: "Mass well-defined",                 text: "Mass well-defined" },
-      { value: "Mass ill-defined",                  text: "Mass ill-defined" },
-      { value: "Architectural distortion",          text: "Architectural distortion" },
-      { value: "Asymmetric density",                text: "Asymmetric density" },
-      { value: "Microcalcification outside a mass", text: "Microcalcification outside a mass" },
-      { value: "Clinical abnormality",              text: "Clinical abnormality" },
-      { value: "Lymph node abnormality",            text: "Lymph node abnormality" },
-      { value: "Other",                             text: "Other" }
-    ]
+    items: abnormalityItems
   } | populateErrors) }}
 {% endif %}
 

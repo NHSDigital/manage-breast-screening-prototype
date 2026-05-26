@@ -381,11 +381,9 @@
 
   {# Dates #}
   {% set dateKnownHtml %}
-      {% set _dateStartedError = 'event[symptomTemp][dateStarted]' | getFlashError %}
       {{ dateInput({
         id: "dateStarted",
         namePrefix: "event[symptomTemp][dateStarted]",
-        errorMessage: { text: _dateStartedError.text } if _dateStartedError else null,
         fieldset: {
           legend: {
             text: "Date symptom started",
@@ -408,7 +406,7 @@
             value: event.symptomTemp.dateStarted.year
           }
         ]
-      }) }}
+      } | populateErrors) }}
     {% endset %}
 
     {% set approximateDateHtml %}

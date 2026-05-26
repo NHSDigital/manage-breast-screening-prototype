@@ -26,7 +26,7 @@
   </p>
 {% endmacro %}
 
-{% extends 'layout-app.html' %}
+{% extends parentLayout or 'layout-app.html' %}
 
 {% set pageHeading = "Settings" %}
 
@@ -137,8 +137,8 @@
     {# Show remaining counts vs completed counts #}
     {{ settingToggle("Reading counts", "settings[reading][showRemaining]", [{value: "true", label: "Remaining"}, {value: "false", label: "Completed"}], data.settings.reading.showRemaining, "false") }}
 
-    {# Annotations mode - inline form or marker-based flow #}
-    {{ settingToggle("Annotations mode", "settings[reading][annotationsMode]", [{value: "without-images", label: "Inline form (no image markers)"}, {value: "with-images", label: "Image marker tool"}], data.settings.reading.annotationsMode, "without-images") }}
+    {# Annotations mode - how annotations are displayed and edited #}
+    {{ settingToggle("Annotations mode", "settings[reading][annotationsMode]", [{value: "without-images", label: "Without images"}, {value: "with-images-simple", label: "With images (simple)"}, {value: "with-images", label: "With images (tabbed)"}, {value: "with-images-progressive", label: "With images (progressive)"}], data.settings.reading.annotationsMode, "without-images") }}
 
     {# Auto-open PACS viewer #}
     {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
@@ -271,6 +271,16 @@
       html: warningCalloutHtml
     }) }}
 
-
+{% if parentLayout %}
+  {# When loaded in a modal, show a Done button that closes and reloads the page #}
+  {{ button({
+    text: "Done",
+    classes: "nhsuk-button--secondary",
+    attributes: {
+      "data-modal-action": "close",
+      type: "button"
+    }
+  }) }}
+{% endif %}
 
 {% endblock %}

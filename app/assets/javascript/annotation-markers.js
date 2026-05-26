@@ -105,6 +105,14 @@
 
     // Config
     var saveUrl = opts.saveUrl || null // URL to POST annotations JSON to
+    var singleAnnotationId = opts.singleAnnotationId || null // Lock to editing one annotation
+    var positionsFieldId = opts.positionsField || null // Hidden field to write positions to
+    var isSingleMode = !!singleAnnotationId
+
+    // In single mode, lock the active annotation
+    if (isSingleMode) {
+      activeAnnotationId = singleAnnotationId
+    }
 
     // DOM references
     var annModal = document.getElementById('ann-annotation-modal')
@@ -160,6 +168,34 @@
       return indices
     }
 
+    // Check if cursor is near (within) a rendered marker element
+    function isMouseNearMarker(event, markerEl) {
+      var markerRect = markerEl.getBoundingClientRect()
+      // Expand the hit area slightly beyond the visual marker
+      var pad = 4
+      return (
+        event.clientX >= markerRect.left - pad &&
+        event.clientX <= markerRect.right + pad &&
+        event.clientY >= markerRect.top - pad &&
+        event.clientY <= markerRect.bottom + pad
+      )
+    }
+
+    // Write the active annotation's positions to a hidden form field
+    function syncPositionsField() {
+      if (!positionsFieldId) return
+      // Look up by ID first, then fall back to name — the modal system
+      // prefixes IDs with 'modal-' which breaks getElementById lookups
+      var field =
+        document.getElementById(positionsFieldId) ||
+        document.querySelector(
+          '[name="imageReadingTemp[annotationTemp][positions]"]'
+        )
+      if (!field) return
+      var ann = getAnnotation(singleAnnotationId)
+      field.value = ann && ann.positions ? JSON.stringify(ann.positions) : '{}'
+    }
+
     // ─── Rendering: markers ──────────────────────────────────────────────────
 
     function renderMarkers() {
@@ -180,6 +216,8 @@
       sideAnnotations.forEach(function (ann) {
         if (!ann.positions) return
         var isActive = ann.id === activeAnnotationId
+        // In single mode, other annotations are dimmed and non-interactive
+        var isDimmed = isSingleMode && ann.id !== singleAnnotationId
 
         Object.keys(ann.positions).forEach(function (viewKey) {
           var pos = ann.positions[viewKey]
@@ -195,17 +233,26 @@
           var containerPos = imageFractionToContainerPercent(pos, panelEl)
 
           var marker = document.createElement('div')
-          marker.className = 'app-ann-marker' + (isActive ? ' is-active' : '')
+          marker.className =
+            'app-ann-marker' +
+            (isActive ? ' is-active' : '') +
+            (isDimmed ? ' is-dimmed' : '')
           marker.style.left = containerPos.x + '%'
           marker.style.top = containerPos.y + '%'
           marker.dataset.annId = ann.id
           marker.dataset.viewKey = viewKey
-          marker.tabIndex = 0
-          marker.setAttribute('role', 'button')
-          marker.setAttribute(
-            'aria-label',
-            'Annotation ' + (displayIndex[ann.id] || '?')
-          )
+
+          // Dimmed markers are non-interactive
+          if (isDimmed) {
+            marker.setAttribute('aria-hidden', 'true')
+          } else {
+            marker.tabIndex = 0
+            marker.setAttribute('role', 'button')
+            marker.setAttribute(
+              'aria-label',
+              'Annotation ' + (displayIndex[ann.id] || '?')
+            )
+          }
 
           var badge = document.createElement('div')
           badge.className = 'app-ann-marker__badge'
@@ -213,31 +260,35 @@
           badge.setAttribute('aria-hidden', 'true')
           marker.appendChild(badge)
 
-          var removeBtn = document.createElement('button')
-          removeBtn.className = 'app-ann-marker__remove'
-          removeBtn.type = 'button'
-          removeBtn.setAttribute('aria-label', 'Remove marker')
-          removeBtn.innerHTML = '&minus;'
-          removeBtn.addEventListener('click', function (e) {
-            e.stopPropagation()
-            var targetAnn = getAnnotation(ann.id)
-            if (targetAnn && targetAnn.positions) {
-              delete targetAnn.positions[viewKey]
-              if (Object.keys(targetAnn.positions).length === 0) {
-                var idx = annotations.findIndex(function (a) {
-                  return a.id === ann.id
-                })
-                if (idx !== -1) annotations.splice(idx, 1)
-                if (activeAnnotationId === ann.id) activeAnnotationId = null
+          if (!isDimmed) {
+            var removeBtn = document.createElement('button')
+            removeBtn.className = 'app-ann-marker__remove'
+            removeBtn.type = 'button'
+            removeBtn.setAttribute('aria-label', 'Remove marker')
+            removeBtn.innerHTML = '&minus;'
+            removeBtn.addEventListener('click', function (e) {
+              e.stopPropagation()
+              var targetAnn = getAnnotation(ann.id)
+              if (targetAnn && targetAnn.positions) {
+                delete targetAnn.positions[viewKey]
+                if (Object.keys(targetAnn.positions).length === 0) {
+                  var idx = annotations.findIndex(function (a) {
+                    return a.id === ann.id
+                  })
+                  if (idx !== -1) annotations.splice(idx, 1)
+                  if (activeAnnotationId === ann.id) activeAnnotationId = null
+                }
               }
-            }
-            renderMarkers()
-            renderSidebar()
-            autoSave()
-          })
-          marker.appendChild(removeBtn)
+              renderMarkers()
+              renderSidebar()
+              autoSave()
+              syncPositionsField()
+            })
+            marker.appendChild(removeBtn)
 
-          attachMarkerHandlers(marker)
+            attachMarkerHandlers(marker)
+          } // end if (!isDimmed)
+
           panelEl.appendChild(marker)
         })
       })
@@ -277,7 +328,8 @@
 
         // Activate this marker visually without re-rendering (which would
         // destroy the DOM element and break the drag). Full re-render on mouseup.
-        if (activeAnnotationId !== annId) {
+        var wasAlreadyActive = activeAnnotationId === annId
+        if (!wasAlreadyActive) {
           activeAnnotationId = annId
           // Toggle classes across ALL panels (so the corresponding marker on
           // the other image also highlights immediately)
@@ -357,10 +409,15 @@
               }
             }
             autoSave()
+            syncPositionsField()
+            renderMarkers()
+            renderSidebar()
+          } else if (!wasAlreadyActive) {
+            // Activation already applied via class toggle in mousedown —
+            // only re-render sidebar, skip renderMarkers to avoid hover flash
+            renderSidebar()
           }
-          // Always do a full re-render on mouseup to sync state
-          renderMarkers()
-          renderSidebar()
+          // If was already active and no drag, do nothing (avoid hover flash)
         }
 
         document.addEventListener('mousemove', onMove)
@@ -460,6 +517,9 @@
             '<button class="app-link-button" type="button" data-action="edit" data-ann-id="' +
             ann.id +
             '">Edit</button>' +
+            ' <a class="nhsuk-link nhsuk-link--no-visited-state" href="./annotation/edit/' +
+            ann.id +
+            '">View standalone</a>' +
             '</div>'
         }
 
@@ -561,6 +621,27 @@
       var viewKey = panel.dataset.view
       var displayIndex = buildDisplayIndices()
 
+      // Single mode: ghost existing marker and show cursor preview at new
+      // position — but only when cursor is NOT near the existing marker, so the
+      // marker remains interactive (draggable, remove button accessible)
+      if (isSingleMode) {
+        var singleMarker = panel.querySelector(
+          '.app-ann-marker[data-ann-id="' + singleAnnotationId + '"]'
+        )
+        if (singleMarker && isMouseNearMarker(event, singleMarker)) {
+          // Cursor is over existing marker — keep it interactive
+          hideCursorPreview()
+          return
+        }
+        if (singleMarker) singleMarker.classList.add('is-ghost')
+        cursorPreviewBadge.textContent = displayIndex[singleAnnotationId] || '?'
+        cursorPreviewBadge.hidden = false
+        cursorPreview.hidden = false
+        cursorPreview.style.left = x + '%'
+        cursorPreview.style.top = y + '%'
+        return
+      }
+
       var incompleteAnn = annotations.find(function (a) {
         return (
           a.side === activeSide &&
@@ -618,6 +699,9 @@
       )
         return
 
+      // Remove focus from dialog/container so focus outlines don't persist
+      if (document.activeElement) document.activeElement.blur()
+
       var panel = event.currentTarget
       var viewKey = panel.dataset.view
       var rect = panel.getBoundingClientRect()
@@ -626,6 +710,19 @@
       var imagePos = containerFractionToImageFraction(cx, cy, panel)
       var x = Math.round(imagePos.x * 1000) / 1000
       var y = Math.round(imagePos.y * 1000) / 1000
+
+      // Single annotation mode: all clicks update the single annotation's position
+      if (isSingleMode) {
+        var singleAnn = getAnnotation(singleAnnotationId)
+        if (singleAnn) {
+          if (!singleAnn.positions) singleAnn.positions = {}
+          singleAnn.positions[viewKey] = { x: x, y: y }
+          renderMarkers()
+          autoSave()
+          syncPositionsField()
+        }
+        return
+      }
 
       // If there's an incomplete annotation on this side, all clicks update it
       var incompleteAnn = annotations.find(function (a) {
@@ -1140,6 +1237,7 @@
               renderSidebar()
               renderLightboxMarkers()
               autoSave()
+              syncPositionsField()
             }
           }
 
@@ -1218,31 +1316,36 @@
 
       // Find or create the annotation to update
       var targetAnn = null
-      var incompleteAnn = annotations.find(function (a) {
-        return (
-          a.side === activeSide &&
-          !(a.abnormalityTypes && a.abnormalityTypes.length) &&
-          !a.levelOfConcern
-        )
-      })
-      if (incompleteAnn) {
-        targetAnn = incompleteAnn
-      } else if (activeAnnotationId) {
-        var ann = getAnnotation(activeAnnotationId)
-        if (ann && ann.side === activeSide) targetAnn = ann
-      }
 
-      if (!targetAnn) {
-        var newId = uid()
-        annotations.push({
-          id: newId,
-          side: activeSide,
-          positions: {},
-          annotationNumber: ++annotationCounter
+      if (isSingleMode) {
+        targetAnn = getAnnotation(singleAnnotationId)
+      } else {
+        var incompleteAnn = annotations.find(function (a) {
+          return (
+            a.side === activeSide &&
+            !(a.abnormalityTypes && a.abnormalityTypes.length) &&
+            !a.levelOfConcern
+          )
         })
-        activeAnnotationId = newId
-        targetAnn = annotations[annotations.length - 1]
-      }
+        if (incompleteAnn) {
+          targetAnn = incompleteAnn
+        } else if (activeAnnotationId) {
+          var ann = getAnnotation(activeAnnotationId)
+          if (ann && ann.side === activeSide) targetAnn = ann
+        }
+
+        if (!targetAnn) {
+          var newId = uid()
+          annotations.push({
+            id: newId,
+            side: activeSide,
+            positions: {},
+            annotationNumber: ++annotationCounter
+          })
+          activeAnnotationId = newId
+          targetAnn = annotations[annotations.length - 1]
+        }
+      } // end else (not single mode)
 
       if (!targetAnn.positions) targetAnn.positions = {}
       targetAnn.positions[lightboxViewKey] = { x: x, y: y }
@@ -1274,6 +1377,7 @@
           }
         }
         autoSave()
+        syncPositionsField()
       }, 300)
     }
 
@@ -1412,6 +1516,9 @@
     renderSidebar()
     renderTabs()
     if (total === 0) renderMarkers()
+
+    // In single mode, sync the positions field on init
+    syncPositionsField()
 
     // Return public API for this instance
     return {

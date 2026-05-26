@@ -185,6 +185,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })
 
+// Quick settings modal — press backtick (`) to open settings in a modal overlay.
+// On close, the page reloads to pick up any changes.
+document.addEventListener('keydown', (e) => {
+  // Ignore when typing in a form field
+  const tag = e.target.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return
+
+  // Ignore if a modal is already open
+  const existingModal = document.querySelector('.app-modal--open')
+  if (existingModal) return
+
+  if (e.key !== '`') return
+
+  e.preventDefault()
+
+  const modal = document.getElementById('app-form-modal')
+  if (!modal || !modal.appModal) return
+
+  // Temporarily wrap close() to reload the page after dismissing the settings modal
+  const originalClose = modal.appModal.close.bind(modal.appModal)
+  modal.appModal.close = function () {
+    originalClose()
+    modal.appModal.close = originalClose
+    window.location.reload()
+  }
+
+  window.openModal('app-form-modal', { loadUrl: '/settings' })
+})
+
 function setupResetSessionLink() {
   if (window.resetSessionListenerAdded) {
     return

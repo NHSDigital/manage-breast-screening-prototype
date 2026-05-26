@@ -94,7 +94,7 @@
   </div>
 
   {# Get image paths for annotation thumbnails #}
-  {% set withImages = data.settings.reading.annotationsMode == 'with-images' %}
+  {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages %}
     {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}

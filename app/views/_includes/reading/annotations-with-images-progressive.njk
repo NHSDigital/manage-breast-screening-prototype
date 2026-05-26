@@ -1,0 +1,146 @@
+{# app/views/_includes/reading/annotations-with-images-progressive.njk #}
+{# Mode: with-images-progressive
+   Always shows tabs for right/left breast. Each tab panel starts with a
+   simple empty state (just annotation list with add link). Once a side has
+   annotations, it shows the full interactive images + sidebar UI. #}
+
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
+{% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
+{% from '_components/annotation-tabs/macro.njk' import appAnnotationTabs %}
+
+{% set hasRightAnnotations = rightAnnotations | length > 0 %}
+{% set hasLeftAnnotations = leftAnnotations | length > 0 %}
+{% set hasAnyAnnotations = hasRightAnnotations or hasLeftAnnotations %}
+
+{# Activate the tab for whichever side was last edited, defaulting to right #}
+{% set initialSide = data.imageReadingTemp.lastEditedSide or "right" %}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-full">
+    <h2 class="nhsuk-heading-m nhsuk-u-margin-bottom-2">Annotations</h2>
+
+    <div id="annotation-progressive-container">
+      {{ appAnnotationTabs({
+        activeSide: initialSide,
+        imagePaths: allPaths,
+        viewOrder: mammogramViewOrder,
+        rightCount: rightAnnotations | length,
+        leftCount: leftAnnotations | length,
+        showThumbs: false
+      }) }}
+
+      <div class="app-ann-v2__panel">
+        {% for breastSide in ["right", "left"] %}
+          {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+          {% set sideHasAnnotations = sideAnnotations | length > 0 %}
+
+          <div class="app-annotation-panel" data-panel-side="{{ breastSide }}"{{ ' hidden' if breastSide != initialSide }}>
+
+            {% if sideHasAnnotations %}
+              {# Full interactive UI with images and sidebar #}
+              <div class="app-ann-v2">
+                <div class="app-ann-v2__images">
+                  {{ appAnnotationImages({
+                    side: breastSide,
+                    imagePaths: allPaths,
+                    viewOrder: mammogramViewOrder,
+                    annotations: sideAnnotations,
+                    mode: "interactive"
+                  }) }}
+                </div>
+
+                <div class="app-ann-v2__sidebar app-ann-v2__sidebar--embedded">
+                  <div class="app-ann-v2__sidebar-scroll">
+                    <h3 class="app-ann-v2__sidebar-heading">Annotations</h3>
+                    {{ appAnnotationList({
+                      annotations: sideAnnotations,
+                      interactive: true,
+                      editable: true,
+                      editHrefPrefix: "./annotation/edit/",
+                      addHref: "./annotation/add?side=" + breastSide,
+                      useModals: data.settings.modalForms == 'true'
+                    }) }}
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              {# Empty state — just annotation list (which shows add link) #}
+              <div class="nhsuk-grid-row">
+                <div class="nhsuk-grid-column-one-half">
+                  {{ appAnnotationList({
+                    annotations: sideAnnotations,
+                    editable: true,
+                    editHrefPrefix: "./annotation/edit/",
+                    addHref: "./annotation/add?side=" + breastSide,
+                    useModals: data.settings.modalForms == 'true'
+                  }) }}
+                </div>
+              </div>
+            {% endif %}
+          </div>
+
+          <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if hasAnyAnnotations %}
+  {# Annotation modal for inline editing #}
+  {% include "_includes/reading/annotation-modal.njk" %}
+
+  {# Image lightbox #}
+  {% include "_includes/reading/annotation-lightbox.njk" %}
+
+  {# Full interactive annotation tool #}
+  <script src="/assets/javascript/annotation-markers.js"></script>
+  <script>
+    (function () {
+      var allAnnotations = []
+      {% for breastSide in ["right", "left"] %}
+        {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
+        {% for ann in sideAnnotations %}
+          allAnnotations.push({{ ann | dump | safe }})
+        {% endfor %}
+      {% endfor %}
+
+      window._annotationInstance = AnnotationMarkers.init({
+        container: '#annotation-progressive-container',
+        annotations: allAnnotations,
+        activeSide: '{{ initialSide }}',
+        saveUrl: './save-annotations-json'
+      })
+    })()
+  </script>
+{% else %}
+  {# Preload annotation-markers.js so it's available when the modal loads
+     the annotation page (which expects the global to already exist) #}
+  <script src="/assets/javascript/annotation-markers.js"></script>
+
+  {# Lightweight tab switching — no AnnotationMarkers.init() so it won't
+     conflict with the annotation page when opened in a modal #}
+  <script>
+    (function () {
+      var container = document.getElementById('annotation-progressive-container')
+      if (!container) return
+
+      container.querySelectorAll('[data-thumb-side]').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var side = tab.dataset.thumbSide
+
+          // Toggle tab active states
+          container.querySelectorAll('[data-thumb-side]').forEach(function (t) {
+            t.classList.toggle('is-active', t.dataset.thumbSide === side)
+            t.classList.toggle('is-inactive', t.dataset.thumbSide !== side)
+          })
+
+          // Show/hide panels
+          container.querySelectorAll('[data-panel-side]').forEach(function (panel) {
+            panel.hidden = panel.dataset.panelSide !== side
+          })
+        })
+      })
+    })()
+  </script>
+{% endif %}
