@@ -168,6 +168,19 @@
       return indices
     }
 
+    // Check if cursor is near (within) a rendered marker element
+    function isMouseNearMarker(event, markerEl) {
+      var markerRect = markerEl.getBoundingClientRect()
+      // Expand the hit area slightly beyond the visual marker
+      var pad = 4
+      return (
+        event.clientX >= markerRect.left - pad &&
+        event.clientX <= markerRect.right + pad &&
+        event.clientY >= markerRect.top - pad &&
+        event.clientY <= markerRect.bottom + pad
+      )
+    }
+
     // Write the active annotation's positions to a hidden form field
     function syncPositionsField() {
       if (!positionsFieldId) return
@@ -315,7 +328,8 @@
 
         // Activate this marker visually without re-rendering (which would
         // destroy the DOM element and break the drag). Full re-render on mouseup.
-        if (activeAnnotationId !== annId) {
+        var wasAlreadyActive = activeAnnotationId === annId
+        if (!wasAlreadyActive) {
           activeAnnotationId = annId
           // Toggle classes across ALL panels (so the corresponding marker on
           // the other image also highlights immediately)
@@ -396,10 +410,14 @@
             }
             autoSave()
             syncPositionsField()
+            renderMarkers()
+            renderSidebar()
+          } else if (!wasAlreadyActive) {
+            // Activation already applied via class toggle in mousedown —
+            // only re-render sidebar, skip renderMarkers to avoid hover flash
+            renderSidebar()
           }
-          // Always do a full re-render on mouseup to sync state
-          renderMarkers()
-          renderSidebar()
+          // If was already active and no drag, do nothing (avoid hover flash)
         }
 
         document.addEventListener('mousemove', onMove)
@@ -603,11 +621,18 @@
       var viewKey = panel.dataset.view
       var displayIndex = buildDisplayIndices()
 
-      // Single mode: always show the annotation number and ghost existing marker
+      // Single mode: ghost existing marker and show cursor preview at new
+      // position — but only when cursor is NOT near the existing marker, so the
+      // marker remains interactive (draggable, remove button accessible)
       if (isSingleMode) {
         var singleMarker = panel.querySelector(
           '.app-ann-marker[data-ann-id="' + singleAnnotationId + '"]'
         )
+        if (singleMarker && isMouseNearMarker(event, singleMarker)) {
+          // Cursor is over existing marker — keep it interactive
+          hideCursorPreview()
+          return
+        }
         if (singleMarker) singleMarker.classList.add('is-ghost')
         cursorPreviewBadge.textContent = displayIndex[singleAnnotationId] || '?'
         cursorPreviewBadge.hidden = false
