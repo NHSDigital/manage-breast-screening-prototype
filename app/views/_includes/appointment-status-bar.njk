@@ -16,12 +16,12 @@
   {% if data.settings.screening.addedToWorklist == 'false' %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
-      <span>Not added to worklist (<a href="#">Retry</a>)</span>
+      <span>Not added to worklist (ID: A123BC4) (<a href="#">Retry</a>)</span>
     </span>
   {% else %}
     <span class="app-header-status">
       {{ appIcon("tick", { classes: "app-header-status__icon" }) }}
-      <span>Added to worklist</span>
+      <span>Added to worklist (ID: A123BC4)</span>
     </span>
   {% endif %}
 {% endset %}
