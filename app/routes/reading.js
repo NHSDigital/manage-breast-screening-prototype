@@ -37,6 +37,15 @@ module.exports = (router) => {
     next()
   })
 
+  // Reading index — choose layout based on setting
+  router.get('/reading', (req, res) => {
+    const layout = req.session.data?.settings?.reading?.indexLayout || 'simple'
+    const template = layout === 'complex'
+      ? 'reading/index-complex'
+      : 'reading/index-simple'
+    res.render(template)
+  })
+
   // Default clinics list to "mine"
   router.get('/reading/clinics', (req, res) => {
     res.redirect('/reading/clinics/mine')
@@ -283,6 +292,35 @@ module.exports = (router) => {
   router.get('/reading/session/:sessionId', (req, res) => {
     // Default to "your-reads" view
     res.redirect(`/reading/session/${req.params.sessionId}/your-reads`)
+  })
+
+  // Route for resuming a session — jumps straight into the next readable case,
+  // falling back to the session overview if none exists.
+  router.get('/reading/session/:sessionId/resume', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    const sessionEvents = session.eventIds
+      .map((eventId) => data.events.find((e) => e.id === eventId))
+      .filter(Boolean)
+
+    const resumeEvent = getResumeEventForUser(
+      sessionEvents,
+      data.currentUser.id,
+      session.skippedEvents || []
+    )
+
+    if (resumeEvent) {
+      return res.redirect(
+        `/reading/session/${sessionId}/events/${resumeEvent.id}`
+      )
+    }
+
+    res.redirect(`/reading/session/${sessionId}`)
   })
 
   // Route for skipped-review page (shown at end of batch when skipped cases remain)

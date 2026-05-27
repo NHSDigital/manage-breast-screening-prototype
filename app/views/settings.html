@@ -72,6 +72,7 @@
   — sets:
 </p>
 <ul>
+  <li>Reading index layout: simple</li>
   <li>Modal forms: off</li>
   <li>Compare page: off</li>
   <li>Review pages off</li>
@@ -119,6 +120,9 @@
     {{ settingToggle("Participant added to worklist", "settings[screening][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.screening.addedToWorklist, "true") }}
 
     <h2>Image reading</h2>
+    {# Reading index layout #}
+    {{ settingToggle("Reading index layout", "settings[reading][indexLayout]", [{value: "simple", label: "Simple"}, {value: "complex", label: "Complex"}], data.settings.reading.indexLayout, "simple") }}
+
     {# One click normal #}
     {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
 
