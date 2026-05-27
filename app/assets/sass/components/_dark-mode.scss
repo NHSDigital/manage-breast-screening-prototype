@@ -480,7 +480,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   .nhsuk-input,
   .nhsuk-textarea,
   .nhsuk-select {
-    background-color: transparent;
+    background-color: $app-dark-mode-background;
     border-color: $app-dark-mode-white;
     color: $app-dark-mode-text-colour;
   }
