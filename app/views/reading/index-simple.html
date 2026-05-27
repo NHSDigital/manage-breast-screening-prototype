@@ -90,6 +90,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
+      <p>{{ backlogTotal }} cases require reading</p>
 
   {% if inProgressSession %}
 
@@ -116,15 +117,9 @@
 
   {% if actionTotal > 0 %}
     {% set insetHtml %}
-      <p class="nhsuk-u-margin-bottom-2"><strong>{{ actionTotal }} flagged {{ "case" if actionTotal == 1 else "cases" }}</strong></p>
-      <ul class="nhsuk-u-margin-bottom-0">
-        {% if arbitrationCount > 0 %}
-          <li><a href="#">{{ arbitrationCount }} {{ "case has" if arbitrationCount == 1 else "cases have" }} issues that need resolving</a></li>
-        {% endif %}
-        {% if newlyArrivedPriorsCount > 0 %}
-          <li><a href="/reading/priors">{{ newlyArrivedPriorsCount }} {{ "case has" if newlyArrivedPriorsCount == 1 else "cases have" }} newly added prior mammograms</a></li>
-        {% endif %}
-      </ul>
+      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ actionTotal }} flagged {{ "case" if actionTotal == 1 else "cases" }}</h2>
+      <p>Flagged cases require action before they can be read.</p>
+      <p class="nhsuk-u-margin-bottom-0"><a href="#">Review flagged cases</a></p>
     {% endset %}
     {{ insetText({
       html: insetHtml | safe
@@ -148,24 +143,6 @@
     </div>
 
     <div class="nhsuk-grid-column-one-third">
-      {% set backlogCardHtml %}
-        <p>{{ backlogTotal }} cases require reading</p>
-        <ul class="nhsuk-list">
-          {% if urgentBacklog > 0 %}
-            <li>{{ urgentBacklog }} cases {{ "urgent" | toTag({colour: "red"}) }}</li>
-          {% endif %}
-          {% if priorityBacklog > 0 %}
-            <li>{{ priorityBacklog }} cases {{ "due soon" | toTag({colour: "orange"}) }}</li>
-          {% endif %}
-        </ul>
-      {% endset %}
-
-      {{ card({
-        heading: "Backlog",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: backlogCardHtml
-      }) }}
     </div>
   </div>
 
