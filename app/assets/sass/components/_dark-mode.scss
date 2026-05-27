@@ -485,6 +485,12 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     color: $app-dark-mode-text-colour;
   }
 
+  // Windows Edge doesn't inherit select colours on option elements
+  .nhsuk-select option {
+    background-color: $app-dark-mode-background;
+    color: $app-dark-mode-text-colour;
+  }
+
   .nhsuk-notification-banner__content {
     color: $app-dark-mode-text-colour;
     background: $app-dark-mode-surface;
