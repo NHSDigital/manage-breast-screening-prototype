@@ -79,10 +79,13 @@
     ]
   }) }} #}
 
-  {# When the worklist connection failed and the user chose manual mode,
-     show the details they need to enter on the mammogram machine to set up
-     an unscheduled appointment. #}
-  {% if data.settings.screening.addedToWorklist == 'false' and data.settings.screening.manualImageCollection == 'true' %}
+  {# Show unscheduled-appointment setup details whenever the appointment is
+     being handled in manual image collection mode. The reason-for-switching
+     input is only shown when the user manually switched mid-appointment via
+     the troubleshooting link on the automatic images page (failover). #}
+  {% set isManualFailover = event.mammogramDataTemp.isManualFailover %}
+
+  {% if data.settings.screening.manualImageCollection == 'true' or isManualFailover %}
     <p>Set up an unscheduled appointment on the mammogram machine before taking images.</p>
     <p>Add the following details so your admin team can match mammograms to the correct participant once the appointment has been completed:</p>
     {{ summaryList({
@@ -105,6 +108,23 @@
         }
       ]
     }) }}
+
+    {% if isManualFailover %}
+      {% call details({
+        summaryText: "Add reason for switching to manual"
+      }) %}
+        {{ textarea({
+          label: {
+            text: "Reason for switching to manual",
+            classes: "nhsuk-label--s"
+          },
+          id: "manualImageModeReason",
+          name: "event[mammogramDataTemp][manualImageModeReason]",
+          rows: 3,
+          value: mammogramSource.manualImageModeReason
+        }) }}
+      {% endcall %}
+    {% endif %}
   {% endif %}
 
   {{ radios({

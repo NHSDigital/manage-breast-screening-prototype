@@ -2310,6 +2310,13 @@ module.exports = (router) => {
     delete data.worklistRetryReturnUrl
     delete data.settings.screening.worklistLastRetryAt
 
+    // Clear any failover flag from a prior automatic→manual switch so we
+    // don't incorrectly show the "Reason for switching" input here (the
+    // reason is implicit when arriving via the retry-connection flow).
+    if (data.event?.mammogramDataTemp) {
+      delete data.event.mammogramDataTemp.isManualFailover
+    }
+
     req.flash('success', {
       title: 'Success',
       html: '<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>'
