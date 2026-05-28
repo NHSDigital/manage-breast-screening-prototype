@@ -4,7 +4,7 @@
 {% set hideBackLink = true %}
 {% set activeWorkflowStep = 'take-images' %}
 
-{% set pageHeading = "Record images taken" %}
+{% set pageHeading = "Manually record image information" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
@@ -78,6 +78,34 @@
       }
     ]
   }) }} #}
+
+  {# When the worklist connection failed and the user chose manual mode,
+     show the details they need to enter on the mammogram machine to set up
+     an unscheduled appointment. #}
+  {% if data.settings.screening.addedToWorklist == 'false' and data.settings.screening.manualImageCollection == 'true' %}
+    <p>Set up an unscheduled appointment on the mammogram machine before taking images.</p>
+    <p>Add the following details so your admin team can match mammograms to the correct participant once the appointment has been completed:</p>
+    {{ summaryList({
+      rows: [
+        {
+          key: { text: "ID" },
+          value: { text: "KOX20260527A1246" }
+        },
+        {
+          key: { text: "NHS number" },
+          value: { text: participant.medicalInformation.nhsNumber | formatNhsNumber }
+        },
+        {
+          key: { text: "Full name" },
+          value: { text: participant | getFullName }
+        },
+        {
+          key: { text: "Date of birth" },
+          value: { text: participant.demographicInformation.dateOfBirth | formatDate }
+        }
+      ]
+    }) }}
+  {% endif %}
 
   {{ radios({
     idPrefix: "imagingComplete",

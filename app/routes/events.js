@@ -5,7 +5,6 @@ const _ = require('lodash')
 const {
   getParticipant,
   getFullName,
-  getAge,
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
 const {
@@ -26,7 +25,7 @@ const {
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
-const { sentenceCase, formatNhsNumber } = require('../lib/utils/strings')
+const { sentenceCase } = require('../lib/utils/strings')
 const { getImageSetForEvent } = require('../lib/utils/mammogram-images')
 const {
   ensureSeedProfilesState,
@@ -2311,40 +2310,9 @@ module.exports = (router) => {
     delete data.worklistRetryReturnUrl
     delete data.settings.screening.worklistLastRetryAt
 
-    const participant = data.participant || {}
-    const demographic = participant.demographicInformation || {}
-    const medical = participant.medicalInformation || {}
-    const participantName = getFullName(participant)
-    const nhsNumber = formatNhsNumber(medical.nhsNumber)
-    const dob = demographic.dateOfBirth
-    const dobFormatted = dob ? dayjs(dob).format('D MMMM YYYY') : ''
-    const age = getAge(participant)
-    const dobValue = dobFormatted
-      ? `${dobFormatted}${age ? ` (${age} years old)` : ''}`
-      : ''
-
-    const html = `
-<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>
-<p>Set up an unscheduled appointment for ${participantName} on the mammogram machine before taking images.</p>
-<p>Add the following details so mammograms can be matched to the correct participant:</p>
-<dl class="nhsuk-summary-list">
-  <div class="nhsuk-summary-list__row">
-    <dt class="nhsuk-summary-list__key">NHS number</dt>
-    <dd class="nhsuk-summary-list__value">${nhsNumber}</dd>
-  </div>
-  <div class="nhsuk-summary-list__row">
-    <dt class="nhsuk-summary-list__key">Full name</dt>
-    <dd class="nhsuk-summary-list__value">${participantName}</dd>
-  </div>
-  <div class="nhsuk-summary-list__row">
-    <dt class="nhsuk-summary-list__key">Date of birth</dt>
-    <dd class="nhsuk-summary-list__value">${dobValue}</dd>
-  </div>
-</dl>`
-
     req.flash('success', {
       title: 'Success',
-      html
+      html: '<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>'
     })
 
     res.redirect(returnUrl)
