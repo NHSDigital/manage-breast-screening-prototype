@@ -1249,13 +1249,18 @@ module.exports = (router) => {
           rightAssessment === 'normal' &&
           leftAssessment === 'normal'
         ) {
+          const event = data.events.find((e) => e.id === eventId)
+          const hasSymptoms = event?.medicalInformation?.symptoms?.length > 0
+          const errorText = hasSymptoms
+            ? 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment'
+            : 'At least one breast must be marked abnormal to recall for assessment'
           errors.push({
-            text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
+            text: errorText,
             name: 'imageReadingTemp[right][breastAssessment]',
             href: '#right-breastAssessment'
           })
           errors.push({
-            text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
+            text: errorText,
             name: 'imageReadingTemp[left][breastAssessment]',
             href: '#left-breastAssessment',
             hideFromSummary: true
