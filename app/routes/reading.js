@@ -1146,6 +1146,43 @@ module.exports = (router) => {
         selectedViews = [selectedViews]
       }
 
+      // Validate: at least one view selected, and each selected view has a reason
+      const errors = []
+
+      if (selectedViews.length === 0) {
+        errors.push({
+          text: 'Select at least one view to retake',
+          name: 'imageReadingTemp[technicalRecall][selectedViews]',
+          href: '#technicalRecall-selectedViews-right-1'
+        })
+      } else {
+        selectedViews.forEach((viewCode) => {
+          const viewData = allViewData[viewCode] || {}
+          if (!viewData.reason) {
+            errors.push({
+              text: `Select a reason for the ${viewCode} view`,
+              name: `imageReadingTemp[technicalRecall][views][${viewCode}][reason]`,
+              href: `#technicalRecall-${viewCode}-reason`
+            })
+          }
+        })
+      }
+
+      if (errors.length) {
+        const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
+        if (isModal) {
+          return res
+            .status(422)
+            .render('reading/workflow/technical-recall', {
+              flash: { error: errors }
+            })
+        }
+        errors.forEach((err) => req.flash('error', err))
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/technical-recall`
+        )
+      }
+
       // Build clean views object with only selected views
       const cleanViews = {}
       selectedViews.forEach((viewCode) => {
@@ -1162,10 +1199,12 @@ module.exports = (router) => {
         views: cleanViews
       }
 
-      // 307 preserves POST method so opinion-details-complete can 307 to save-opinion
-      // if the confirm-technical-recall setting is off
+      // Use a regular redirect (not 307) so the browser does not resend the original
+      // POST body. A 307 would cause the prototype kit middleware to re-save the raw
+      // form data (all views) at opinion-details-complete, overwriting the clean data.
+      // save-opinion reads from session (imageReadingTemp), not the POST body, so
+      // it works correctly when reached via GET through the skip-confirmation path.
       res.redirect(
-        307,
         `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
       )
     }
@@ -1299,7 +1338,9 @@ module.exports = (router) => {
 
   // Handle recording a reading result
   // Save the reading opinion - reads opinion from imageReadingTemp.opinion
-  router.post(
+  // Uses router.all (not router.post) so it can be reached via GET when the
+  // skip-confirmation path redirects without preserving a POST method.
+  router.all(
     '/reading/session/:sessionId/events/:eventId/save-opinion',
     (req, res) => {
       const { sessionId, eventId } = req.params
