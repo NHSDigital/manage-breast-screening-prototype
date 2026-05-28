@@ -5,6 +5,7 @@ const _ = require('lodash')
 const {
   getParticipant,
   getFullName,
+  getAge,
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
 const {
@@ -25,7 +26,7 @@ const {
 } = require('../lib/utils/referrers')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../lib/utils/status')
-const { sentenceCase } = require('../lib/utils/strings')
+const { sentenceCase, formatNhsNumber } = require('../lib/utils/strings')
 const { getImageSetForEvent } = require('../lib/utils/mammogram-images')
 const {
   ensureSeedProfilesState,
@@ -2228,10 +2229,133 @@ module.exports = (router) => {
     }
   )
 
+  // Worklist connection retry routes
+
+  // Helper: only allow same-origin app paths as return URLs.
+  const safeReturnUrl = (url) => {
+    if (typeof url !== 'string') return null
+    if (!url.startsWith('/')) return null
+    if (url.startsWith('//')) return null
+    return url
+  }
+
+  // GET the retry page - capture where the user came from so we can send them
+  // back after a successful reconnect.
+  router.get('/clinics/:clinicId/events/:eventId/retry-worklist-connection', (req, res) => {
+    const data = req.session.data
+
+    const fromQuery = safeReturnUrl(req.query.returnUrl)
+    if (fromQuery) {
+      data.worklistRetryReturnUrl = fromQuery
+    }
+
+    res.render('events/retry-worklist-connection')
+  })
+
+  // Handle "Retry connection" button.
+  // The first attempt always fails (updates the "last retry attempt" time).
+  // The second (and any subsequent) attempt succeeds: marks the appointment as
+  // added to the worklist, flashes a success message, and returns the user to
+  // wherever they clicked Retry from.
+  router.post('/clinics/:clinicId/events/:eventId/retry-worklist-connection', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    data.settings = data.settings || {}
+    data.settings.screening = data.settings.screening || {}
+
+    const attempts = (data.worklistRetryAttempts || 0) + 1
+
+    if (attempts >= 2) {
+      // Success: connection restored.
+      data.settings.screening.addedToWorklist = 'true'
+      delete data.settings.screening.worklistLastRetryAt
+      delete data.worklistRetryAttempts
+
+      const returnUrl =
+        safeReturnUrl(data.worklistRetryReturnUrl) ||
+        `/clinics/${clinicId}/events/${eventId}/take-images`
+      delete data.worklistRetryReturnUrl
+
+      const participantName = getFullName(data.participant)
+      req.flash('success', {
+        html: `<p class="nhsuk-notification-banner__heading">${participantName} is now on the worklist</p>
+<p>Image information will be sent automatically from the mammogram machine</p>`
+      })
+      return res.redirect(returnUrl)
+    }
+
+    // Failed attempt.
+    data.worklistRetryAttempts = attempts
+    data.settings.screening.worklistLastRetryAt = new Date().toISOString()
+
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/retry-worklist-connection`)
+  })
+
+  // Handle "Switch to manual image mode" button - enable manual mode, return
+  // the user to where they clicked Retry from, and flash a success banner
+  // explaining what they need to do on the mammogram machine.
+  router.post('/clinics/:clinicId/events/:eventId/switch-to-manual-image-mode', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+
+    data.settings = data.settings || {}
+    data.settings.screening = data.settings.screening || {}
+    data.settings.screening.manualImageCollection = 'true'
+
+    const returnUrl =
+      safeReturnUrl(data.worklistRetryReturnUrl) ||
+      `/clinics/${clinicId}/events/${eventId}/take-images`
+
+    delete data.worklistRetryAttempts
+    delete data.worklistRetryReturnUrl
+    delete data.settings.screening.worklistLastRetryAt
+
+    const participant = data.participant || {}
+    const demographic = participant.demographicInformation || {}
+    const medical = participant.medicalInformation || {}
+    const participantName = getFullName(participant)
+    const nhsNumber = formatNhsNumber(medical.nhsNumber)
+    const dob = demographic.dateOfBirth
+    const dobFormatted = dob ? dayjs(dob).format('D MMMM YYYY') : ''
+    const age = getAge(participant)
+    const dobValue = dobFormatted
+      ? `${dobFormatted}${age ? ` (${age} years old)` : ''}`
+      : ''
+
+    const html = `
+<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>
+<p>Set up an unscheduled appointment for ${participantName} on the mammogram machine before taking images.</p>
+<p>Add the following details so mammograms can be matched to the correct participant:</p>
+<dl class="nhsuk-summary-list">
+  <div class="nhsuk-summary-list__row">
+    <dt class="nhsuk-summary-list__key">NHS number</dt>
+    <dd class="nhsuk-summary-list__value">${nhsNumber}</dd>
+  </div>
+  <div class="nhsuk-summary-list__row">
+    <dt class="nhsuk-summary-list__key">Full name</dt>
+    <dd class="nhsuk-summary-list__value">${participantName}</dd>
+  </div>
+  <div class="nhsuk-summary-list__row">
+    <dt class="nhsuk-summary-list__key">Date of birth</dt>
+    <dd class="nhsuk-summary-list__value">${dobValue}</dd>
+  </div>
+</dl>`
+
+    req.flash('success', {
+      title: 'Success',
+      html
+    })
+
+    res.redirect(returnUrl)
+  })
+
   // Manual imaging routes
 
-  // Handle take-images route - redirect to appropriate page based on state
-  router.get('/clinics/:clinicId/events/:eventId/take-images', (req, res) => {
+  // Handle take-images route - redirect to appropriate page based on state.
+  // Use `all` so the gate applies to the POST from review-medical-information
+  // as well as direct GET navigation.
+  router.all('/clinics/:clinicId/events/:eventId/take-images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
 
@@ -2239,6 +2363,19 @@ module.exports = (router) => {
       data.settings?.screening?.manualImageCollection === 'true'
     const imagesStageCompleted =
       data.event?.workflowStatus?.['take-images'] === 'completed'
+
+    // Gate: if the appointment was not added to the worklist and the user
+    // hasn't yet switched to manual image mode, divert to the retry page
+    // before letting them into the image-taking step.
+    const isAddedToWorklist =
+      data.settings?.screening?.addedToWorklist !== 'false'
+
+    if (!isAddedToWorklist && !isManualImageCollection) {
+      return res.redirect(
+        `/clinics/${clinicId}/events/${eventId}/retry-worklist-connection?returnUrl=` +
+          encodeURIComponent(`/clinics/${clinicId}/events/${eventId}/take-images`)
+      )
+    }
 
     // If manual flow and images already completed, redirect to details page for editing
     if (

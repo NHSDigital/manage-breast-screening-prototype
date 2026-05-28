@@ -16,12 +16,16 @@
   {% if data.settings.screening.addedToWorklist == 'false' %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
-      <span>Not added to worklist (ID: A123BC4) (<a href="#">Retry</a>)</span>
+      {% if data.settings.screening.manualImageCollection == 'true' %}
+        <span>Not added to worklist (manual image mode enabled)</span>
+      {% else %}
+        <span>Not added to worklist (ID: KOX20260527A1246) <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/retry-worklist-connection?returnUrl={{ currentUrl | urlencode }}">Retry</a></span>
+      {% endif %}
     </span>
   {% else %}
     <span class="app-header-status">
       {{ appIcon("tick", { classes: "app-header-status__icon" }) }}
-      <span>Added to worklist (ID: A123BC4)</span>
+      <span>Added to worklist (ID: KOX20260527A1246)</span>
     </span>
   {% endif %}
 {% endset %}
