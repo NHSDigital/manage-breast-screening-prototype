@@ -7,6 +7,7 @@
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
 {% from '_components/annotation-tabs/macro.njk' import appAnnotationTabs %}
+{% from 'button/macro.njk' import button %}
 
 {% set hasRightAnnotations = rightAnnotations | length > 0 %}
 {% set hasLeftAnnotations = leftAnnotations | length > 0 %}
@@ -14,6 +15,13 @@
 
 {# Activate the tab for whichever side was last edited, defaulting to right #}
 {% set initialSide = data.imageReadingTemp.lastEditedSide or "right" %}
+
+{# If there's an annotation error, show the errored side first #}
+{% if rightAnnotationsError and not leftAnnotationsError %}
+  {% set initialSide = "right" %}
+{% elseif leftAnnotationsError and not rightAnnotationsError %}
+  {% set initialSide = "left" %}
+{% endif %}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
@@ -26,7 +34,9 @@
         viewOrder: mammogramViewOrder,
         rightCount: rightAnnotations | length,
         leftCount: leftAnnotations | length,
-        showThumbs: false
+        showThumbs: false,
+        rightError: rightAnnotationsError,
+        leftError: leftAnnotationsError
       }) }}
 
       <div class="app-ann-v2__panel">
@@ -35,6 +45,7 @@
           {% set sideHasAnnotations = sideAnnotations | length > 0 %}
 
           <div class="app-annotation-panel" data-panel-side="{{ breastSide }}"{{ ' hidden' if breastSide != initialSide }}>
+            {% set _sideAnnotationsError = rightAnnotationsError if breastSide == "right" else leftAnnotationsError %}
 
             {% if sideHasAnnotations %}
               {# Full interactive UI with images and sidebar #}
@@ -50,30 +61,50 @@
                 </div>
 
                 <div class="app-ann-v2__sidebar app-ann-v2__sidebar--embedded">
-                  <div class="app-ann-v2__sidebar-scroll">
+                  <div id="{{ breastSide }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if _sideAnnotationsError }}">
                     <h3 class="app-ann-v2__sidebar-heading">Annotations</h3>
-                    {{ appAnnotationList({
-                      annotations: sideAnnotations,
-                      interactive: true,
-                      editable: true,
-                      editHrefPrefix: "./annotation/edit/",
-                      addHref: "./annotation/add?side=" + breastSide,
-                      useModals: data.settings.modalForms == 'true'
+                    {% if _sideAnnotationsError %}
+                      <span class="app-annotation-section__error-message">
+                        <span class="nhsuk-u-visually-hidden">Error: </span>{{ _sideAnnotationsError.text }}
+                      </span>
+                    {% endif %}
+                    <div class="app-ann-v2__sidebar-scroll">
+                      {{ appAnnotationList({
+                        annotations: sideAnnotations,
+                        interactive: true,
+                        editable: true,
+                        editHrefPrefix: "./annotation/edit/",
+                        useModals: data.settings.modalForms == 'true'
+                      }) }}
+                    </div>
+                  </div>
+                  <div data-annotation-add-button>
+                    {{ button({
+                      text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
+                      classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0",
+                      href: "./annotation/add?side=" + breastSide
                     }) }}
                   </div>
                 </div>
               </div>
             {% else %}
               {# Empty state — just annotation list (which shows add link) #}
-              <div class="nhsuk-grid-row">
-                <div class="nhsuk-grid-column-one-half">
-                  {{ appAnnotationList({
-                    annotations: sideAnnotations,
-                    editable: true,
-                    editHrefPrefix: "./annotation/edit/",
-                    addHref: "./annotation/add?side=" + breastSide,
-                    useModals: data.settings.modalForms == 'true'
-                  }) }}
+              <div id="{{ breastSide }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if _sideAnnotationsError }}">
+                {% if _sideAnnotationsError %}
+                  <span class="app-annotation-section__error-message">
+                    <span class="nhsuk-u-visually-hidden">Error: </span>{{ _sideAnnotationsError.text }}
+                  </span>
+                {% endif %}
+                <div class="nhsuk-grid-row">
+                  <div class="nhsuk-grid-column-one-half">
+                    {{ appAnnotationList({
+                      annotations: sideAnnotations,
+                      editable: true,
+                      editHrefPrefix: "./annotation/edit/",
+                      addHref: "./annotation/add?side=" + breastSide,
+                      useModals: data.settings.modalForms == 'true'
+                    }) }}
+                  </div>
                 </div>
               </div>
             {% endif %}

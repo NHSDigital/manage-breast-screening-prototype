@@ -1171,11 +1171,9 @@ module.exports = (router) => {
       if (errors.length) {
         const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
         if (isModal) {
-          return res
-            .status(422)
-            .render('reading/workflow/technical-recall', {
-              flash: { error: errors }
-            })
+          return res.status(422).render('reading/workflow/technical-recall', {
+            flash: { error: errors }
+          })
         }
         errors.forEach((err) => req.flash('error', err))
         return res.redirect(
@@ -1261,6 +1259,51 @@ module.exports = (router) => {
             name: 'imageReadingTemp[left][breastAssessment]',
             href: '#left-breastAssessment'
           })
+        }
+
+        // Validate annotations match breast assessment
+        const rightAnnotations = formData?.right?.annotations || []
+        const leftAnnotations = formData?.left?.annotations || []
+
+        for (const side of ['right', 'left']) {
+          const assessment = side === 'right' ? rightAssessment : leftAssessment
+          const annotations = side === 'right' ? rightAnnotations : leftAnnotations
+          const sideLabel = side
+
+          if (!assessment) continue
+
+          const highLevelAnnotations = annotations.filter(
+            (a) => parseInt(a.levelOfConcern, 10) >= 3
+          )
+
+          if (assessment === 'abnormal') {
+            // Abnormal breast must have at least one annotation
+            if (annotations.length === 0) {
+              errors.push({
+                text: `Add at least one annotation for the ${sideLabel} breast`,
+                name: `annotations[${side}]`,
+                href: `#${side}-annotations`
+              })
+            }
+            // Abnormal breast must have at least one annotation of M3 or higher
+            else if (highLevelAnnotations.length === 0) {
+              errors.push({
+                text: `Add at least one annotation of level 3 or higher for the ${sideLabel} breast`,
+                name: `annotations[${side}]`,
+                href: `#${side}-annotations`
+              })
+            }
+          }
+          else if (assessment === 'normal' || assessment === 'clinical') {
+            // Normal/clinical breast must not have annotations of M3 or higher
+            if (highLevelAnnotations.length > 0) {
+              errors.push({
+                text: `Remove annotations of level 3 or higher from the ${sideLabel} breast, or change the opinion to abnormal`,
+                name: `annotations[${side}]`,
+                href: `#${side}-annotations`
+              })
+            }
+          }
         }
 
         if (errors.length) {

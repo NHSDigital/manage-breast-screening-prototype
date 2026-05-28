@@ -448,7 +448,13 @@
       )
       if (!sidebarScroll) return
 
-      var html = '<h3 class="app-ann-v2__sidebar-heading">Annotations</h3>'
+      // In embedded mode, heading is provided by the template (outside scroll area)
+      var isEmbedded = !!sidebarScroll.closest('.app-ann-v2__sidebar--embedded')
+
+      var html = ''
+      if (!isEmbedded) {
+        html += '<h3 class="app-ann-v2__sidebar-heading">Annotations</h3>'
+      }
       html += '<div class="app-annotation-list">'
 
       if (sideAnnotations.length === 0) {
@@ -538,7 +544,7 @@
       var addBtnDisabled = hasIncomplete
         ? ' disabled title="Complete the current annotation before adding another"'
         : ''
-      html +=
+      var addBtnHtml =
         '<button class="nhsuk-button nhsuk-button--secondary nhsuk-button--small" type="button" data-action="add-annotation" data-side="' +
         activeSide +
         '"' +
@@ -547,9 +553,24 @@
         addBtnText +
         '</button>'
 
+      if (!isEmbedded) {
+        // Non-embedded: button goes inside annotation-list
+        html += addBtnHtml
+      }
+
       html += '</div>'
 
       sidebarScroll.innerHTML = html
+
+      if (isEmbedded) {
+        // Embedded: button goes in a dedicated container outside the error wrapper
+        var btnContainer = sidebarScroll
+          .closest('.app-ann-v2__sidebar--embedded')
+          .querySelector('[data-annotation-add-button]')
+        if (btnContainer) {
+          btnContainer.innerHTML = addBtnHtml
+        }
+      }
     }
 
     // ─── Rendering: tabs ─────────────────────────────────────────────────────
@@ -1441,7 +1462,7 @@
 
     // Sidebar delegation
     container.addEventListener('click', function (e) {
-      if (e.target.closest('.app-ann-v2__sidebar-scroll')) {
+      if (e.target.closest('.app-ann-v2__sidebar-scroll') || e.target.closest('[data-annotation-add-button]')) {
         handleSidebarClick(e)
       }
     })
