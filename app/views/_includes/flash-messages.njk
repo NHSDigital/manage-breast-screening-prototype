@@ -10,9 +10,15 @@
 {% endif %}
 
 {% if flash.error %}
+  {% set _summaryErrors = [] %}
+  {% for err in flash.error %}
+    {% if not err.hideFromSummary %}
+      {% set _ = _summaryErrors.push(err) %}
+    {% endif %}
+  {% endfor %}
   {{ errorSummary({
     "titleText": "There is a problem",
-    "errorList": flash.error
+    "errorList": _summaryErrors
   }) }}
   {{ flash.error | log("Flash error") }}
 {% endif %}

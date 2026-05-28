@@ -1257,7 +1257,8 @@ module.exports = (router) => {
           errors.push({
             text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
             name: 'imageReadingTemp[left][breastAssessment]',
-            href: '#left-breastAssessment'
+            href: '#left-breastAssessment',
+            hideFromSummary: true
           })
         }
 
