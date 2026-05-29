@@ -366,6 +366,102 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
   display: none;
 }
 
+// =========================================================
+// Inline conditional
+// JS enhancement: text input appears inside the button when checked.
+// The label expands to contain the input inline with the label text.
+// =========================================================
+
+.app-option-picker__inline-input {
+  display: inline-flex;
+  align-items: center;
+  margin-left: nhsuk-spacing(1);
+  position: relative;
+
+  input {
+    // Height matches label content area so button doesn't grow.
+    // Label: min-height 44px - 2*6px padding - 2*2px border = 28px content.
+    height: nhsuk-px-to-rem(28px);
+    padding: 0 nhsuk-spacing(2);
+    border: $nhsuk-border-width-form-element solid nhsuk-shade($nhsuk-brand-colour, 50%);
+    border-radius: 0;
+    background: nhsuk-colour("white");
+    color: $color_nhsuk-black;
+    font-weight: normal;
+    font-size: inherit;
+    min-width: 60px;
+    width: auto;
+    box-sizing: border-box;
+
+    &:focus {
+      outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+      box-shadow: 0 0 0 $nhsuk-focus-width $nhsuk-focus-text-colour;
+    }
+
+    // Error state — red border matching NHS input error pattern
+    &.nhsuk-input--error {
+      border-color: $nhsuk-error-colour;
+      // Add right padding to make room for the warning icon inside
+      padding-right: nhsuk-spacing(5);
+    }
+  }
+
+  // Warning icon shown inside the input on validation error
+  .app-option-picker__inline-error-icon {
+    display: none;
+    position: absolute;
+    right: nhsuk-spacing(1);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    color: $nhsuk-error-colour;
+    pointer-events: none;
+
+    svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+  }
+
+  // Show error icon when input has error class
+  &--error .app-option-picker__inline-error-icon {
+    display: block;
+  }
+
+  // Hidden state (managed by JS via hidden attribute)
+  &[hidden] {
+    display: none;
+  }
+}
+
+// When inline active, allow content to flow
+.app-option-picker--button .app-option-picker__label--inline-active {
+  white-space: nowrap;
+  // Reduce right padding so space around input is consistent with vertical padding
+  padding-right: nhsuk-px-to-rem(6px);
+}
+
+// Suppress hover colour change only when the hidden input is also focused
+// (otherwise normal hover on the button is fine)
+.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label.app-option-picker__label--inline-active:hover {
+  background-color: $nhsuk-focus-colour;
+  box-shadow: 0 $nhsuk-focus-width 0 0 $nhsuk-focus-text-colour;
+  color: $nhsuk-focus-text-colour;
+}
+
+// Suppress hover/active colour changes only when the user is interacting with the
+// inline input itself — not when clicking or hovering the button/label area.
+// Uses :has() to detect hover/active on the inline input child.
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label.app-option-picker__label--inline-active:has(.app-option-picker__inline-input:hover),
+.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label.app-option-picker__label--inline-active:has(.app-option-picker__inline-input:active) {
+  top: 0;
+  box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($nhsuk-brand-colour, 50%);
+  background-color: $nhsuk-brand-colour;
+  color: nhsuk-colour("white");
+}
+
 // Also round the inner top corner of each neighbour adjacent to the active button,
 // so the exposed gap above the depressed button has clean curved edges on both sides.
 // Right neighbour — select via forward sibling chain

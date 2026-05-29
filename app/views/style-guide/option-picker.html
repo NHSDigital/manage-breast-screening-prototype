@@ -239,4 +239,30 @@
   }) }}
 </div>
 
+<h4>Checkbox with inline conditional</h4>
+
+<p>Add <code>conditional.inline: true</code> to reveal the input inside the button itself. This is a JS-only enhancement — without JS it falls back to the standard below-panel reveal.</p>
+
+<div class="sg-example">
+  {% set otherInlineHtml %}
+    <input class="nhsuk-input" id="other-inline-type" name="other-inline-type" type="text">
+  {% endset %}
+
+  {{ appOptionPicker({
+    idPrefix: "inline-demo",
+    name: "inline-demo[]",
+    allowMultiple: true,
+    values: ["mass"],
+    fieldset: {
+      legend: { text: "Abnormality type" }
+    },
+    items: [
+      { value: "mass", text: "Mass" },
+      { value: "calcification", text: "Calcification" },
+      { value: "distortion", text: "Distortion" },
+      { value: "other", text: "Other", conditional: { html: otherInlineHtml, inline: true } }
+    ]
+  }) }}
+</div>
+
 {% endblock %}

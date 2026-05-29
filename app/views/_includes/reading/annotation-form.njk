@@ -76,15 +76,14 @@
       value: annotationTemp.otherDetails,
       label: {
         text: "Describe the abnormality"
-      },
-      classes: "nhsuk-u-width-two-thirds"
+      }
     } | populateErrors) }}
   {% endset %}
 
   {% set abnormalityItems = [] %}
   {% for type in data.abnormalityTypes %}
     {% if type == "Other" %}
-      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type, conditional: { html: otherDetailsHtml } }) %}
+      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type, conditional: { html: otherDetailsHtml, inline: true } }) %}
     {% else %}
       {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
     {% endif %}

@@ -145,6 +145,7 @@
       {{- " checked" if isChecked }}
       {{- " disabled" if item.disabled }}
       {%- if item.conditional and item.conditional.html %} data-aria-controls="conditional-{{ itemId }}"{% endif %}
+      {%- if item.conditional and item.conditional.inline %} data-conditional-inline{% endif %}
       {%- if item.attributes %}
         {%- for attr, val in item.attributes %} {{ attr }}="{{ val }}"{% endfor %}
       {%- endif %}>
