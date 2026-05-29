@@ -182,4 +182,61 @@
   }) }}
 </div>
 
+<hr>
+
+<h3>Conditional reveal</h3>
+
+<p>Pass <code>conditional.html</code> on an item to reveal content below the options when that item is checked. Follows the same accessibility pattern as NHS checkboxes: <code>aria-controls</code> and <code>aria-expanded</code> are managed by JavaScript. Without JS the panel is always visible.</p>
+
+<h4>Radio with conditional</h4>
+
+<div class="sg-example">
+  {% set otherRadioHtml %}
+    <div class="nhsuk-form-group">
+      <label class="nhsuk-label" for="other-reason">Provide details</label>
+      <input class="nhsuk-input nhsuk-u-width-two-thirds" id="other-reason" name="other-reason" type="text">
+    </div>
+  {% endset %}
+
+  {{ appOptionPicker({
+    idPrefix: "reason-demo",
+    name: "reason-demo",
+    fieldset: {
+      legend: { text: "Reason for recall" }
+    },
+    items: [
+      { value: "technical", text: "Technical recall" },
+      { value: "clinical", text: "Clinical recall" },
+      { value: "other", text: "Other", conditional: { html: otherRadioHtml } }
+    ]
+  }) }}
+</div>
+
+<h4>Checkbox with conditional</h4>
+
+<div class="sg-example">
+  {% set otherCheckboxHtml %}
+    <div class="nhsuk-form-group">
+      <label class="nhsuk-label" for="other-type">Provide details</label>
+      <input class="nhsuk-input nhsuk-u-width-two-thirds" id="other-type" name="other-type" type="text">
+    </div>
+  {% endset %}
+
+  {{ appOptionPicker({
+    idPrefix: "type-demo",
+    name: "type-demo[]",
+    allowMultiple: true,
+    values: ["mass"],
+    fieldset: {
+      legend: { text: "Abnormality type" }
+    },
+    items: [
+      { value: "mass", text: "Mass" },
+      { value: "calcification", text: "Calcification" },
+      { value: "distortion", text: "Distortion" },
+      { value: "other", text: "Other", conditional: { html: otherCheckboxHtml } }
+    ]
+  }) }}
+</div>
+
 {% endblock %}

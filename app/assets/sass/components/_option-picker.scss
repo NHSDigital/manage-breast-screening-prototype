@@ -349,6 +349,23 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
   }
 }
 
+// =========================================================
+// Conditional reveal
+// Panel shown below the option-picker items when an option is checked.
+// Mirrors the NHS checkboxes conditional pattern: left border, indented.
+// Without JS the panel is always visible; JS adds --hidden to toggle.
+// =========================================================
+
+.app-option-picker__conditional {
+  margin-top: nhsuk-spacing(4);
+  padding-left: nhsuk-spacing(5);
+  border-left: $nhsuk-border-width solid $nhsuk-input-border-colour;
+}
+
+.app-option-picker__conditional--hidden {
+  display: none;
+}
+
 // Also round the inner top corner of each neighbour adjacent to the active button,
 // so the exposed gap above the depressed button has clean curved edges on both sides.
 // Right neighbour — select via forward sibling chain

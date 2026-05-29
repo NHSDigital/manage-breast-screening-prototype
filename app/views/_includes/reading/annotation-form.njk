@@ -69,9 +69,25 @@
 {% endif %}
 
 {% if abnormalityUi == "options" %}
+  {% set otherDetailsHtml %}
+    {{ input({
+      id: _idBase + "otherDetails",
+      name: _namePrefix + "[otherDetails]",
+      value: annotationTemp.otherDetails,
+      label: {
+        text: "Describe the abnormality"
+      },
+      classes: "nhsuk-u-width-two-thirds"
+    } | populateErrors) }}
+  {% endset %}
+
   {% set abnormalityItems = [] %}
   {% for type in data.abnormalityTypes %}
-    {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
+    {% if type == "Other" %}
+      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type, conditional: { html: otherDetailsHtml } }) %}
+    {% else %}
+      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
+    {% endif %}
   {% endfor %}
 
   {{ appOptionPicker({
