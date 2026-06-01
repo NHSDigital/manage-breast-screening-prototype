@@ -445,7 +445,9 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 
 // Suppress hover colour change only when the hidden input is also focused
 // (otherwise normal hover on the button is fine)
-.app-option-picker--button .app-option-picker__input:focus + .app-option-picker__label.app-option-picker__label--inline-active:hover {
+.app-option-picker--button
+  .app-option-picker__input:focus
+  + .app-option-picker__label.app-option-picker__label--inline-active:hover {
   background-color: $nhsuk-focus-colour;
   box-shadow: 0 $nhsuk-focus-width 0 0 $nhsuk-focus-text-colour;
   color: $nhsuk-focus-text-colour;
@@ -454,8 +456,12 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
 // Suppress hover/active colour changes only when the user is interacting with the
 // inline input itself — not when clicking or hovering the button/label area.
 // Uses :has() to detect hover/active on the inline input child.
-.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label.app-option-picker__label--inline-active:has(.app-option-picker__inline-input:hover),
-.app-option-picker--button .app-option-picker__input:checked + .app-option-picker__label.app-option-picker__label--inline-active:has(.app-option-picker__inline-input:active) {
+.app-option-picker--button
+  .app-option-picker__input:checked
+  + .app-option-picker__label.app-option-picker__label--inline-active:has(.app-option-picker__inline-input:hover),
+.app-option-picker--button
+  .app-option-picker__input:checked
+  + .app-option-picker__label.app-option-picker__label--inline-active:has(.app-option-picker__inline-input:active) {
   top: 0;
   box-shadow: 0 $nhsuk-button-shadow-size 0 nhsuk-shade($nhsuk-brand-colour, 50%);
   background-color: $nhsuk-brand-colour;

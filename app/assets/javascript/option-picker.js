@@ -134,7 +134,10 @@ class OptionPicker {
     this.inlineItems.forEach((item) => this.syncInline(item))
   }
 
-  syncInline({ $input, $label, $wrapper, $panel, $inlineInput, textNode, originalText }, { focusInput = false } = {}) {
+  syncInline(
+    { $input, $label, $wrapper, $panel, $inlineInput, textNode, originalText },
+    { focusInput = false } = {}
+  ) {
     const isChecked = $input.checked
 
     // Show/hide the inline input
