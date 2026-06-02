@@ -168,7 +168,8 @@
           {{ appAnnotationList({
             annotations: sideAnnotations,
             editable: true,
-            editHrefPrefix: "./annotation/edit/"
+            editHrefPrefix: "./annotation/edit/",
+            useModals: data.settings.modalForms == 'true'
           }) }}
 
           <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
