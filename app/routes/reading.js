@@ -1308,7 +1308,7 @@ module.exports = (router) => {
               // Abnormal breast must have at least one annotation of M3 or higher
               else if (highLevelAnnotations.length === 0) {
                 errors.push({
-                  text: `Add at least one annotation of level 3 or higher for the ${sideLabel} breast`,
+                  text: `Add an annotation of concern level 3 or higher for the ${sideLabel} breast`,
                   name: `annotations[${side}]`,
                   href: `#${side}-annotations`
                 })
