@@ -167,42 +167,33 @@
     </div>
   {% endif %}
 
-  {# Info: received priors that have a message (request reason) #}
+  {# Info: received priors #}
   {% if priorsSummary.counts.received > 0 %}
     {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
-    {% set receivedWithMessage = [] %}
-    {% for mammogram in receivedMammograms %}
-      {% if mammogram.requestReason %}
-        {% set receivedWithMessage = receivedWithMessage | push(mammogram) %}
-      {% endif %}
-    {% endfor %}
-    {% if receivedWithMessage | length > 0 %}
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-full">
-          {% set receivedHtml %}
-            {% for mammogram in receivedWithMessage %}
-              <p class="nhsuk-u-margin-bottom-1">
-                {% if mammogram.requestedBy %}
-                 Requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}. Request reason:
-                {% endif %}
-                {% if not mammogram.requestedBy %}
-                  Request reason:
-                {% endif %} {{ mammogram.requestReason }}
-              </p>
-            {% endfor %}
-          {% endset %}
-        
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        {% set receivedHtml %}
+          {% for mammogram in receivedMammograms %}
+            <p class="nhsuk-u-margin-bottom-1">
+              {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
+              {% if mammogram.requestedBy %}
+                – requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% if mammogram.requestReason %}: {{ mammogram.requestReason }}{% endif %}
+              {% elseif mammogram.requestReason %}
+                – {{ mammogram.requestReason }}
+              {% endif %}
+            </p>
+          {% endfor %}
+        {% endset %}
 
-          {% call insetText({
-            classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-          }) %}
-            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors recently received</p>
-            {{ receivedHtml | safe }}
-          {% endcall %}
+        {% call insetText({
+          classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
+        }) %}
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors received</p>
+          {{ receivedHtml | safe }}
+        {% endcall %}
 
-        </div>
       </div>
-    {% endif %}
+    </div>
   {% endif %}
 
   {# Opinion form with thumbnails #}
