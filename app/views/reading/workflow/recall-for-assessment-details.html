@@ -71,7 +71,7 @@
     {% if params.annotationsHtml %}
       <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
       <div id="{{ params.side }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if params.annotationError }}">
-        <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">${sideLabel} breast annotations</h3>
+        <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">{{ params.side | sentenceCase }} breast annotations</h3>
         {% if params.annotationError %}
           <span class="app-annotation-section__error-message">
             <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
