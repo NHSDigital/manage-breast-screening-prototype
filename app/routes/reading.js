@@ -1286,7 +1286,7 @@ module.exports = (router) => {
             // Abnormal breast must have at least one annotation
             if (annotations.length === 0) {
               errors.push({
-                text: `Add at least one annotation for the ${sideLabel} breast`,
+                text: `Add an annotation for the ${sideLabel} breast`,
                 name: `annotations[${side}]`,
                 href: `#${side}-annotations`
               })
