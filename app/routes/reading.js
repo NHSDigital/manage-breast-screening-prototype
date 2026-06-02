@@ -1229,7 +1229,7 @@ module.exports = (router) => {
 
         if (!rightAssessment) {
           errors.push({
-            text: 'Select your opinion of the right breast',
+            text: 'Give an opinion for the right breast',
             name: 'imageReadingTemp[right][breastAssessment]',
             href: '#right-breastAssessment'
           })
