@@ -112,7 +112,8 @@
       container: '#annotation-container',
       annotations: allAnnotations,
       activeSide: '{{ initialSide }}',
-      saveUrl: './save-annotations-json'
+      saveUrl: './save-annotations-json',
+      showIncompleteErrors: {{ "true" if (rightAnnotationsError or leftAnnotationsError) else "false" }}
     })
   })()
 </script>

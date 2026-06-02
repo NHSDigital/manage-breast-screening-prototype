@@ -108,6 +108,8 @@
     var singleAnnotationId = opts.singleAnnotationId || null // Lock to editing one annotation
     var positionsFieldId = opts.positionsField || null // Hidden field to write positions to
     var isSingleMode = !!singleAnnotationId
+    // When true, incomplete annotations get error styling and the modal shows field errors on open
+    var showIncompleteErrors = opts.showIncompleteErrors || false
 
     // In single mode, lock the active annotation
     if (isSingleMode) {
@@ -466,6 +468,16 @@
         var isIncomplete =
           !(ann.abnormalityTypes && ann.abnormalityTypes.length) &&
           !ann.levelOfConcern
+        // hasValidationError is true when we know the page has been submitted with errors
+        // and this annotation is missing at least one required field
+        var missingOtherDetails = ann.abnormalityTypes &&
+          ann.abnormalityTypes.includes('Other') &&
+          !ann.otherDetails
+        var hasValidationError = showIncompleteErrors && (
+          !(ann.abnormalityTypes && ann.abnormalityTypes.length) ||
+          !ann.levelOfConcern ||
+          missingOtherDetails
+        )
         var typeLabel = 'Type not set'
         if (ann.abnormalityTypes && ann.abnormalityTypes.length) {
           typeLabel = Array.isArray(ann.abnormalityTypes)
@@ -479,6 +491,7 @@
         html +=
           '<div class="app-annotation-list__card' +
           (isActive ? ' is-active' : '') +
+          (hasValidationError ? ' app-annotation-list__card--error' : '') +
           '" data-ann-id="' +
           ann.id +
           '" tabindex="0" role="button"' +
@@ -882,8 +895,51 @@
 
     // ─── Modal ───────────────────────────────────────────────────────────────
 
+    // ─── Modal error helpers ─────────────────────────────────────────────────
+
+    // Show an error message for a field inside the modal, identified by part of
+    // the field name (e.g. 'levelOfConcern'). Adds NHS error class and message.
+    function showModalFieldError(fieldNamePart, errorText) {
+      if (!annModal) return
+      var input = annModal.querySelector('[name*="[' + fieldNamePart + ']"]')
+      if (!input) return
+      var formGroup = input.closest('.nhsuk-form-group')
+      if (!formGroup) return
+      formGroup.classList.add('nhsuk-form-group--error')
+      var existing = formGroup.querySelector('.nhsuk-error-message[data-js-modal-error]')
+      if (existing) {
+        existing.innerHTML = '<span class="nhsuk-u-visually-hidden">Error:</span> ' + errorText
+        return
+      }
+      var errorMsg = document.createElement('span')
+      errorMsg.className = 'nhsuk-error-message'
+      errorMsg.setAttribute('data-js-modal-error', 'true')
+      errorMsg.innerHTML = '<span class="nhsuk-u-visually-hidden">Error:</span> ' + errorText
+      // Insert after legend (fieldset groups) or label (single inputs)
+      var fieldset = formGroup.querySelector('fieldset')
+      var insertParent = fieldset || formGroup
+      var anchor = insertParent.querySelector('legend, label')
+      if (anchor && anchor.nextSibling) {
+        insertParent.insertBefore(errorMsg, anchor.nextSibling)
+      } else {
+        insertParent.appendChild(errorMsg)
+      }
+    }
+
+    // Remove all JS-injected modal errors and error classes
+    function clearModalErrors() {
+      if (!annModal) return
+      annModal.querySelectorAll('.nhsuk-error-message[data-js-modal-error]').forEach(function (em) {
+        em.remove()
+      })
+      annModal.querySelectorAll('.nhsuk-form-group--error').forEach(function (fg) {
+        fg.classList.remove('nhsuk-form-group--error')
+      })
+    }
+
     function openModal(annId) {
       if (!annModal) return
+      clearModalErrors()
       modalAnnotationId = annId
       var ann = getAnnotation(annId)
       var isIncomplete =
@@ -939,6 +995,18 @@
 
       annModal.hidden = false
       annModal.classList.add('app-modal--open')
+
+      // When returning from a server validation error and this annotation is
+      // missing required fields, show field-level errors in the modal immediately
+      if (showIncompleteErrors && ann) {
+        if (!ann.abnormalityTypes || !ann.abnormalityTypes.length) {
+          showModalFieldError('abnormalityTypes', 'Select at least one abnormality type')
+        }
+        if (!ann.levelOfConcern) {
+          showModalFieldError('levelOfConcern', 'Select a level of concern')
+        }
+      }
+
       // Focus the dialog element itself so screen readers announce it.
       // Remove tabindex on first blur so it doesn't steal focus back
       // when the user clicks inside the modal.
@@ -955,6 +1023,7 @@
 
     function closeModal() {
       if (!annModal) return
+      clearModalErrors()
       annModal.hidden = true
       annModal.classList.remove('app-modal--open')
       modalAnnotationId = null
@@ -980,14 +1049,38 @@
           return cb.value
         })
       }
-      ann.abnormalityTypes = savedTypes.length ? savedTypes : null
-      ann.levelOfConcern =
+      var savedLevelOfConcern =
         (
           document.querySelector(
             '[name="imageReadingTemp[annotationTemp][levelOfConcern]"]:checked'
           ) || {}
         ).value || null
+      var otherDetailsEl = document.querySelector(
+        '[name="imageReadingTemp[annotationTemp][otherDetails]"]'
+      )
+      var savedOtherDetails = otherDetailsEl ? otherDetailsEl.value.trim() : ''
       var commentEl = document.getElementById('comment')
+
+      // Validate required fields before saving
+      clearModalErrors()
+      var hasErrors = false
+      if (!savedTypes.length) {
+        showModalFieldError('abnormalityTypes', 'Select at least one abnormality type')
+        hasErrors = true
+      }
+      if (savedTypes.includes('Other') && !savedOtherDetails) {
+        showModalFieldError('otherDetails', 'Provide details for other abnormality type')
+        hasErrors = true
+      }
+      if (!savedLevelOfConcern) {
+        showModalFieldError('levelOfConcern', 'Select a level of concern')
+        hasErrors = true
+      }
+      if (hasErrors) return
+
+      ann.abnormalityTypes = savedTypes
+      ann.otherDetails = savedTypes.includes('Other') ? savedOtherDetails : null
+      ann.levelOfConcern = savedLevelOfConcern
       ann.comment = commentEl ? commentEl.value || null : null
 
       activeAnnotationId = modalAnnotationId
@@ -997,6 +1090,53 @@
       renderMarkers()
       renderSidebar()
       autoSave()
+      clearSideErrors(ann.side)
+    }
+
+    // After a successful save, clear server-rendered error state for a breast side
+    // if all its annotations are now complete.
+    function clearSideErrors(side) {
+      var sideAnnotations = annotations.filter(function (a) { return a.side === side })
+      var hasIncomplete = sideAnnotations.some(function (a) {
+        var missingOther = a.abnormalityTypes &&
+          a.abnormalityTypes.includes('Other') &&
+          !a.otherDetails
+        return !(a.abnormalityTypes && a.abnormalityTypes.length) || !a.levelOfConcern || missingOther
+      })
+      if (hasIncomplete) return
+
+      // Clear the section-level error above the annotation list
+      var section = document.getElementById(side + '-annotations')
+      if (section) {
+        section.classList.remove('app-annotation-section--error')
+        var sectionError = section.querySelector('.app-annotation-section__error-message')
+        if (sectionError) sectionError.remove()
+      }
+
+      // Clear the tab error indicator
+      var tab = container.querySelector('[data-thumb-side="' + side + '"]')
+      if (tab) {
+        tab.classList.remove('app-ann-v2__tab--error')
+        var sideLabel = side === 'right' ? 'Right breast' : 'Left breast'
+        tab.setAttribute('aria-label', 'Switch to ' + sideLabel)
+        var errorIcon = tab.querySelector('.app-ann-v2__tab-error-icon')
+        if (errorIcon) errorIcon.remove()
+      }
+
+      // Remove the corresponding item from the page error summary
+      var errorSummary = document.querySelector('.nhsuk-error-summary__list')
+      if (errorSummary) {
+        var summaryLink = errorSummary.querySelector('a[href="#' + side + '-annotations"]')
+        if (summaryLink) {
+          var listItem = summaryLink.closest('li')
+          if (listItem) listItem.remove()
+        }
+        // Hide the whole error summary if it has no remaining items
+        if (!errorSummary.querySelector('li')) {
+          var summaryEl = document.querySelector('.nhsuk-error-summary')
+          if (summaryEl) summaryEl.hidden = true
+        }
+      }
     }
 
     function deleteModalAnnotation() {

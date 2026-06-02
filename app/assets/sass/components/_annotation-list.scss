@@ -74,6 +74,11 @@
   &.is-active {
     box-shadow: inset 4px 0 0 nhsuk-colour("blue");
   }
+
+  &.app-annotation-list__card--error {
+    border-color: $nhsuk-error-colour;
+    box-shadow: inset 4px 0 0 $nhsuk-error-colour;
+  }
 }
 
 .app-dark-mode {

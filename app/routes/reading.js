@@ -1290,14 +1290,29 @@ module.exports = (router) => {
                 name: `annotations[${side}]`,
                 href: `#${side}-annotations`
               })
-            }
-            // Abnormal breast must have at least one annotation of M3 or higher
-            else if (highLevelAnnotations.length === 0) {
-              errors.push({
-                text: `Add at least one annotation of level 3 or higher for the ${sideLabel} breast`,
-                name: `annotations[${side}]`,
-                href: `#${side}-annotations`
-              })
+            } else {
+              // All annotations must have required fields completed
+              const incompleteAnnotations = annotations.filter(
+                (a) =>
+                  !a.abnormalityTypes ||
+                  a.abnormalityTypes.length === 0 ||
+                  !a.levelOfConcern
+              )
+              if (incompleteAnnotations.length > 0) {
+                errors.push({
+                  text: `Complete the annotation details for the ${sideLabel} breast`,
+                  name: `annotations[${side}]`,
+                  href: `#${side}-annotations`
+                })
+              }
+              // Abnormal breast must have at least one annotation of M3 or higher
+              else if (highLevelAnnotations.length === 0) {
+                errors.push({
+                  text: `Add at least one annotation of level 3 or higher for the ${sideLabel} breast`,
+                  name: `annotations[${side}]`,
+                  href: `#${side}-annotations`
+                })
+              }
             }
           }
           else if (assessment === 'normal' || assessment === 'clinical') {

@@ -162,7 +162,8 @@
           allAnnotations.push({
             id: tempId,
             side: '{{ side }}',
-            positions: {}
+            {# Preserve positions from session if returning from a validation error #}
+            positions: {{ (annotation.positions | dump | safe) if annotation.positions else '{}' }}
           })
           var activeId = tempId
         {% else %}
