@@ -1184,6 +1184,41 @@ module.exports = (router) => {
         selectedViews = [selectedViews]
       }
 
+      // Validate: at least one view selected, and each selected view has a reason
+      const errors = []
+
+      if (selectedViews.length === 0) {
+        errors.push({
+          text: 'Select at least one view to retake',
+          name: 'imageReadingTemp[technicalRecall][selectedViews]',
+          href: '#technicalRecall-selectedViews-right-1'
+        })
+      } else {
+        selectedViews.forEach((viewCode) => {
+          const viewData = allViewData[viewCode] || {}
+          if (!viewData.reason) {
+            errors.push({
+              text: `Select a reason for the ${viewCode} view`,
+              name: `imageReadingTemp[technicalRecall][views][${viewCode}][reason]`,
+              href: `#technicalRecall-${viewCode}-reason`
+            })
+          }
+        })
+      }
+
+      if (errors.length) {
+        const isModal = req.headers['x-requested-with'] === 'XMLHttpRequest'
+        if (isModal) {
+          return res.status(422).render('reading/workflow/technical-recall', {
+            flash: { error: errors }
+          })
+        }
+        errors.forEach((err) => req.flash('error', err))
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/technical-recall`
+        )
+      }
+
       // Build clean views object with only selected views
       const cleanViews = {}
       selectedViews.forEach((viewCode) => {
@@ -1200,10 +1235,12 @@ module.exports = (router) => {
         views: cleanViews
       }
 
-      // 307 preserves POST method so opinion-details-complete can 307 to save-opinion
-      // if the confirm-technical-recall setting is off
+      // Use a regular redirect (not 307) so the browser does not resend the original
+      // POST body. A 307 would cause the prototype kit middleware to re-save the raw
+      // form data (all views) at opinion-details-complete, overwriting the clean data.
+      // save-opinion reads from session (imageReadingTemp), not the POST body, so
+      // it works correctly when reached via GET through the skip-confirmation path.
       res.redirect(
-        307,
         `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
       )
     }
@@ -1230,14 +1267,14 @@ module.exports = (router) => {
 
         if (!rightAssessment) {
           errors.push({
-            text: 'Select your opinion of the right breast',
+            text: 'Give an opinion for the right breast',
             name: 'imageReadingTemp[right][breastAssessment]',
             href: '#right-breastAssessment'
           })
         }
         if (!leftAssessment) {
           errors.push({
-            text: 'Select your opinion of the left breast',
+            text: 'Give an opinion for the left breast',
             name: 'imageReadingTemp[left][breastAssessment]',
             href: '#left-breastAssessment'
           })
@@ -1250,16 +1287,82 @@ module.exports = (router) => {
           rightAssessment === 'normal' &&
           leftAssessment === 'normal'
         ) {
+          const event = data.events.find((e) => e.id === eventId)
+          const hasSymptoms = event?.medicalInformation?.symptoms?.length > 0
+          const errorText = hasSymptoms
+            ? 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment'
+            : 'At least one breast must be marked abnormal to recall for assessment'
           errors.push({
-            text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
+            text: errorText,
             name: 'imageReadingTemp[right][breastAssessment]',
             href: '#right-breastAssessment'
           })
           errors.push({
-            text: 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment',
+            text: errorText,
             name: 'imageReadingTemp[left][breastAssessment]',
-            href: '#left-breastAssessment'
+            href: '#left-breastAssessment',
+            hideFromSummary: true
           })
+        }
+
+        // Validate annotations match breast assessment
+        const rightAnnotations = formData?.right?.annotations || []
+        const leftAnnotations = formData?.left?.annotations || []
+
+        for (const side of ['right', 'left']) {
+          const assessment = side === 'right' ? rightAssessment : leftAssessment
+          const annotations = side === 'right' ? rightAnnotations : leftAnnotations
+          const sideLabel = side
+
+          if (!assessment) continue
+
+          const highLevelAnnotations = annotations.filter(
+            (a) => parseInt(a.levelOfConcern, 10) >= 3
+          )
+
+          if (assessment === 'abnormal') {
+            // Abnormal breast must have at least one annotation
+            if (annotations.length === 0) {
+              errors.push({
+                text: `Add an annotation for the ${sideLabel} breast`,
+                name: `annotations[${side}]`,
+                href: `#${side}-annotations`
+              })
+            } else {
+              // All annotations must have required fields completed
+              const incompleteAnnotations = annotations.filter(
+                (a) =>
+                  !a.abnormalityTypes ||
+                  a.abnormalityTypes.length === 0 ||
+                  !a.levelOfConcern
+              )
+              if (incompleteAnnotations.length > 0) {
+                errors.push({
+                  text: `Complete the annotation details for the ${sideLabel} breast`,
+                  name: `annotations[${side}]`,
+                  href: `#${side}-annotations`
+                })
+              }
+              // Abnormal breast must have at least one annotation of M3 or higher
+              else if (highLevelAnnotations.length === 0) {
+                errors.push({
+                  text: `Add an annotation of concern level 3 or higher for the ${sideLabel} breast`,
+                  name: `annotations[${side}]`,
+                  href: `#${side}-annotations`
+                })
+              }
+            }
+          }
+          else if (assessment === 'normal' || assessment === 'clinical') {
+            // Normal/clinical breast must not have annotations of M3 or higher
+            if (highLevelAnnotations.length > 0) {
+              errors.push({
+                text: `A normal ${sideLabel} breast cannot have annotations with concern level 3 or higher`,
+                name: `annotations[${side}]`,
+                href: `#${side}-annotations`
+              })
+            }
+          }
         }
 
         if (errors.length) {
@@ -1337,7 +1440,9 @@ module.exports = (router) => {
 
   // Handle recording a reading result
   // Save the reading opinion - reads opinion from imageReadingTemp.opinion
-  router.post(
+  // Uses router.all (not router.post) so it can be reached via GET when the
+  // skip-confirmation path redirects without preserving a POST method.
+  router.all(
     '/reading/session/:sessionId/events/:eventId/save-opinion',
     (req, res) => {
       const { sessionId, eventId } = req.params

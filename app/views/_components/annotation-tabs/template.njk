@@ -15,6 +15,8 @@
     showThumbs    — boolean, show thumbnail previews in tabs (default: true)
     id            — id attribute for the tab bar (default: "app-annotation-tabs")
     classes       — additional CSS classes
+    rightError    — error object for right breast (truthy shows error indicator)
+    leftError     — error object for left breast (truthy shows error indicator)
 #}
 
 {% set _activeSide = params.activeSide | default("right") %}
@@ -30,6 +32,7 @@
     label: "Right breast",
     side: "right",
     count: _rightCount,
+    hasError: params.rightError,
     views: [
       { key: "rcc", label: "RCC" },
       { key: "rmlo", label: "RMLO" }
@@ -42,6 +45,7 @@
     label: "Left breast",
     side: "left",
     count: _leftCount,
+    hasError: params.leftError,
     views: [
       { key: "lcc", label: "LCC" },
       { key: "lmlo", label: "LMLO" }
@@ -55,12 +59,15 @@
 <div class="app-ann-v2__tab-bar" id="{{ _id }}">
   {% for group in _groups %}
     <button
-      class="app-ann-v2__tab{{ ' is-active' if group.side == _activeSide else ' is-inactive' }}"
+      class="app-ann-v2__tab{{ ' is-active' if group.side == _activeSide else ' is-inactive' }}{{ ' app-ann-v2__tab--error' if group.hasError }}"
       type="button"
       data-thumb-side="{{ group.side }}"
-      aria-label="Switch to {{ group.label }}"
+      aria-label="Switch to {{ group.label }}{{ ' (has errors)' if group.hasError }}"
     >
       <span class="app-ann-v2__tab-label" data-side="{{ group.side }}">{{ group.label }}</span>
+      {% if group.hasError %}
+        <span class="app-ann-v2__tab-error-icon" aria-hidden="true">!</span>
+      {% endif %}
       <span class="app-count{{ ' app-count--blue' if group.count > 0 }}" data-side-count="{{ group.side }}">{{ group.count }}</span>
       {% if _showThumbs %}
         <span class="app-ann-v2__tab-thumbs">

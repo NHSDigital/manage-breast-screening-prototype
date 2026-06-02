@@ -74,6 +74,11 @@
   &.is-active {
     box-shadow: inset 4px 0 0 nhsuk-colour("blue");
   }
+
+  &.app-annotation-list__card--error {
+    border-color: $nhsuk-error-colour;
+    box-shadow: inset 4px 0 0 $nhsuk-error-colour;
+  }
 }
 
 .app-dark-mode {
@@ -130,4 +135,28 @@
   align-items: center;
   @include nhsuk-font(19);
   margin-top: nhsuk-spacing(1);
+}
+
+// ─── Error state (used on parent wrappers around annotation sections) ─────────
+
+.app-annotation-section--error {
+  padding-left: nhsuk-spacing(3);
+  border-left: $nhsuk-border-width-form-group-error solid $nhsuk-error-colour;
+
+  &:focus {
+    outline: none;
+  }
+
+  // Pull add-annotation button out of the error bar area
+  > .nhsuk-button,
+  .app-annotation-list > .nhsuk-button {
+    margin-left: -(nhsuk-spacing(3));
+  }
+}
+
+.app-annotation-section__error-message {
+  @include nhsuk-font(19, $weight: bold);
+  display: block;
+  margin-bottom: nhsuk-spacing(3);
+  color: $nhsuk-error-colour;
 }

@@ -89,8 +89,40 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   color: $app-dark-mode-text-colour;
 
   // Text colour
-  .nhsuk-fieldset__legend {
+  .nhsuk-fieldset__legend,
+  .breast-features__side-labels,
+  .app-workflow-side-nav__link,
+  .app-workflow-side-nav__item--current .app-workflow-side-nav__link {
     color: $app-dark-mode-text-colour;
+  }
+
+  // Breast features diagram - invert for dark mode
+  .breast-features__diagram {
+    background: $app-dark-mode-background;
+    border-color: $app-dark-mode-border;
+
+    svg path,
+    svg circle {
+      stroke: $app-dark-mode-white;
+    }
+  }
+
+  // Breast features popover - dark background
+  .breast-features__popover {
+    background: $app-dark-mode-surface;
+    color: $app-dark-mode-text-colour;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+
+  // Marker labels on diagram
+  .breast-features__marker-label {
+    background: $app-dark-mode-surface;
+    border-color: $app-dark-mode-border;
+    color: $app-dark-mode-text-colour;
+
+    &:hover {
+      background: #2f2f2f;
+    }
   }
 
   .nhsuk-expander,
@@ -106,6 +138,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   .nhsuk-caption-m,
   .nhsuk-caption-s,
   .app-details__summary-subtitle,
+  .app-workflow-side-nav__link--disabled,
   .app-suppress-link-styles * {
     color: $app-dark-mode-text-colour-secondary;
   }
@@ -425,7 +458,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     }
     .nhsuk-radios__input + .nhsuk-radios__label::after {
       background: $app-dark-mode-white;
-      border: 10px solid $app-dark-mode-white;
+      border-color: $app-dark-mode-white;
     }
   }
 
@@ -447,8 +480,14 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   .nhsuk-input,
   .nhsuk-textarea,
   .nhsuk-select {
-    background-color: transparent;
+    background-color: $app-dark-mode-background;
     border-color: $app-dark-mode-white;
+    color: $app-dark-mode-text-colour;
+  }
+
+  // Windows Edge doesn't inherit select colours on option elements
+  .nhsuk-select option {
+    background-color: $app-dark-mode-background;
     color: $app-dark-mode-text-colour;
   }
 

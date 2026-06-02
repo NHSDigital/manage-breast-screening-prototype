@@ -61,9 +61,18 @@
   {% set leftCheckboxItems = [] %}
   {% set currentTechRecall = data.imageReadingTemp.technicalRecall.views | default({}) %}
 
+  {# Normalize selectedViews to array — needed to correctly pre-check boxes after a validation error,
+     where the user may have checked a view without selecting a reason (reason would be empty,
+     so checking viewData.reason alone would incorrectly uncheck the box on redirect) #}
+  {% set currentSelectedViews = data.imageReadingTemp.technicalRecall.selectedViews | default([]) %}
+  {% if currentSelectedViews is string %}
+    {% set currentSelectedViews = [] | push(currentSelectedViews) %}
+  {% endif %}
+
   {% for viewCode in views %}
     {% set viewData = currentTechRecall[viewCode] | default({}) %}
-    
+    {% set isChecked = viewData.reason or viewCode in currentSelectedViews %}
+
     {% set conditionalHtml %}
       {{ select({
         id: "technicalRecall-" + viewCode + "-reason",
@@ -73,23 +82,25 @@
           text: "Reason for recall"
         },
         items: selectItems
-      }) }}
+      } | populateErrors) }}
 
-      {{ input({
-        id: "technicalRecall-" + viewCode + "-additionalDetails",
-        name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
-        value: viewData.additionalDetails,
-        label: {
-          text: "Additional details (optional)",
-          classes: "nhsuk-label--s"
-        }
-      }) }}
+      {% call appCollapsibleInput({ text: "Add additional details" }) %}
+        {{ input({
+          id: "technicalRecall-" + viewCode + "-additionalDetails",
+          name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
+          value: viewData.additionalDetails,
+          label: {
+            text: "Additional details (optional)",
+            classes: "nhsuk-label--s"
+          }
+        }) }}
+      {% endcall %}
     {% endset %}
 
     {% set checkboxItem = {
       value: viewCode,
       text: viewCode,
-      checked: viewData.reason,
+      checked: isChecked,
       conditional: {
         html: conditionalHtml
       }
@@ -102,13 +113,24 @@
     {% endif %}
   {% endfor %}
 
+  {% set _viewsError = 'imageReadingTemp[technicalRecall][selectedViews]' | getFlashError %}
+
+  <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if _viewsError else '' }}">
   {% call fieldset({
     legend: {
       text: "Which views need to be retaken?",
       classes: "nhsuk-fieldset__legend--m",
       isPageHeading: false
-    }
+    },
+    describedBy: "selectedViews-error" if _viewsError
   }) %}
+
+    {% if _viewsError %}
+      {{ errorMessage({
+        id: "selectedViews-error",
+        text: _viewsError.text
+      }) }}
+    {% endif %}
 
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-one-half">
@@ -132,6 +154,7 @@
     </div>
 
   {% endcall %}
+  </div>
 
   {{ button({
     text: "Continue"

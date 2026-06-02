@@ -44,7 +44,7 @@
         },
         {
           value: "clinical",
-          text: "Normal, but symptoms need clinical assessment"
+          text: "Normal, symptoms need clinical assessment"
         } if event.medicalInformation.symptoms | length > 0,
         {
           value: "abnormal",
@@ -70,8 +70,16 @@
     {# Per-breast annotations (non-tab modes only) #}
     {% if params.annotationsHtml %}
       <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
-      <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">Annotations</h3>
-      {{ params.annotationsHtml | safe }}
+      <div id="{{ params.side }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if params.annotationError }}">
+        <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">{{ params.side | sentenceCase }} breast annotations</h3>
+        {% if params.annotationError %}
+          <span class="app-annotation-section__error-message">
+            <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
+          </span>
+        {% endif %}
+        {{ params.annotationsHtml | safe }}
+      </div>
+      {{ params.annotationsButtonHtml | safe }}
     {% endif %}
 
   {% endset %}
@@ -116,6 +124,10 @@
   {% set leftAnnotations = data.imageReadingTemp.left.annotations | default([]) %}
   {% set rightAnnotations = data.imageReadingTemp.right.annotations | default([]) %}
 
+  {# Annotation validation errors #}
+  {% set rightAnnotationsError = 'annotations[right]' | getFlashError %}
+  {% set leftAnnotationsError = 'annotations[left]' | getFlashError %}
+
   {# For non-tab modes, annotations go inside each breast card #}
   {% set isInlineAnnotationsMode = annotationsMode == 'without-images' or annotationsMode == 'with-images-simple' %}
 
@@ -126,6 +138,7 @@
 
       {# Build per-side annotation HTML for inline modes #}
       {% set sideAnnotationsHtml = "" %}
+      {% set _sideAnnotationsError = rightAnnotationsError if breastSide == "right" else leftAnnotationsError %}
       {% if isInlineAnnotationsMode %}
 
         {% set sideAnnotationsHtml %}
@@ -156,17 +169,31 @@
             annotations: sideAnnotations,
             editable: true,
             editHrefPrefix: "./annotation/edit/",
-            addHref: "./annotation/add?side=" + breastSide,
             useModals: data.settings.modalForms == 'true'
           }) }}
 
           <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
         {% endset %}
 
+        {# Button rendered separately so it sits outside the error bar #}
+        {% set sideAnnotationsButtonHtml %}
+          {{ button({
+            text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
+            classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3",
+            href: "./annotation/add?side=" + breastSide,
+            attributes: { "data-load-modal-url": "./annotation/add?side=" + breastSide } if data.settings.modalForms == 'true'
+          }) }}
+        {% endset %}
+
       {% endif %}
 
       <div class="nhsuk-grid-column-one-half">
-        {{ breastDetails({ side: breastSide, annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode }) }}
+        {{ breastDetails({
+          side: breastSide,
+          annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode,
+          annotationsButtonHtml: sideAnnotationsButtonHtml if isInlineAnnotationsMode,
+          annotationError: _sideAnnotationsError if isInlineAnnotationsMode
+        }) }}
       </div>
     {% endfor %}
   </div>
@@ -258,6 +285,47 @@
           } else {
             window.location.href = url
           }
+        }
+      })
+    })()
+  </script>
+
+  {# Handle annotation error summary links — focus target and switch tabs #}
+  <script>
+    (function () {
+      document.addEventListener('click', function (e) {
+        var link = e.target.closest('a[href="#right-annotations"], a[href="#left-annotations"]')
+        if (!link) return
+
+        var href = link.getAttribute('href')
+        var side = href === '#right-annotations' ? 'right' : 'left'
+        var target = document.getElementById(href.slice(1))
+
+        {% if not isInlineAnnotationsMode %}
+        // Switch tab using the annotation instance if available
+        if (window._annotationInstance && window._annotationInstance.switchSide) {
+          window._annotationInstance.switchSide(side)
+        } else {
+          // Lightweight tab switching for progressive / tabbed modes
+          var container = document.getElementById('annotation-progressive-container') ||
+                          document.getElementById('annotation-container')
+          if (container) {
+            container.querySelectorAll('[data-thumb-side]').forEach(function (t) {
+              t.classList.toggle('is-active', t.dataset.thumbSide === side)
+              t.classList.toggle('is-inactive', t.dataset.thumbSide !== side)
+            })
+            container.querySelectorAll('[data-panel-side]').forEach(function (panel) {
+              panel.hidden = panel.dataset.panelSide !== side
+            })
+          }
+        }
+        {% endif %}
+
+        // Scroll to and focus the target element
+        if (target) {
+          target.scrollIntoView()
+          target.focus({ preventScroll: true })
+          e.preventDefault()
         }
       })
     })()

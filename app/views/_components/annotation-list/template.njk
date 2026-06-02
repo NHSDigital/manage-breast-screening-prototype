@@ -12,8 +12,9 @@
     addHref        — URL for "Add annotation" button (optional, only shown if editable)
     addAttributes  — additional attributes for the add button (e.g. data-load-modal-url)
     useModals      — boolean, add data-load-modal-url to edit links and add button (default: false)
-    emptyText      — text shown when no annotations (default: "No annotations")
+    emptyText      — text shown when no annotations (default: "If abnormal, add an annotation (concern level 3 or higher)")
     classes        — additional CSS classes on the wrapper
+    id             — id attribute on the wrapper element
 #}
 
 {% set _annotations = params.annotations | default([]) %}
@@ -21,9 +22,9 @@
 {% set _interactive = params.interactive | default(false) %}
 {% set _editable = params.editable | default(false) %}
 {% set _useModals = params.useModals | default(false) %}
-{% set _emptyText = params.emptyText | default("No annotations") %}
+{% set _emptyText = params.emptyText | default("If abnormal, add an annotation (concern level 3 or higher)") %}
 
-<div class="app-annotation-list{{ ' app-annotation-list--interactive' if _interactive }}{{ ' ' + params.classes if params.classes }}">
+<div class="app-annotation-list{{ ' app-annotation-list--interactive' if _interactive }}{{ ' ' + params.classes if params.classes }}"{{ ' id="' + params.id + '"' if params.id }}>
 
   {% if _annotations | length == 0 %}
     <p class="app-annotation-list__empty">{{ _emptyText }}</p>
@@ -37,7 +38,16 @@
       {% if annotation.abnormalityTypes is string %}
         {% set _typeLabel = annotation.abnormalityTypes if annotation.abnormalityTypes else "Type not set" %}
       {% elseif annotation.abnormalityTypes | length %}
-        {% set _typeLabel = annotation.abnormalityTypes | join(", ") %}
+        {# Replace "Other" with "Other: details" when otherDetails is provided #}
+        {% set _typeItems = [] %}
+        {% for type in annotation.abnormalityTypes %}
+          {% if type == "Other" and annotation.otherDetails %}
+            {% set _typeItems = _typeItems | push("Other: " + annotation.otherDetails) %}
+          {% else %}
+            {% set _typeItems = _typeItems | push(type) %}
+          {% endif %}
+        {% endfor %}
+        {% set _typeLabel = _typeItems | join(", ") %}
       {% else %}
         {% set _typeLabel = "Type not set" %}
       {% endif %}

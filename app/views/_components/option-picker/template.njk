@@ -60,8 +60,19 @@
   {% set formGroupClasses = formGroupClasses ~ " nhsuk-form-group--error" %}
 {% endif %}
 
+{#- Determine if any item has conditional content -#}
+{% set hasConditional = false %}
+{% for item in params.items %}
+  {% if item.conditional and item.conditional.html %}
+    {% set hasConditional = true %}
+  {% endif %}
+{% endfor %}
+
 {#- Build wrapper class list -#}
 {% set wrapperClasses = "app-option-picker app-option-picker--button" %}
+{% if hasConditional %}
+  {% set wrapperClasses = wrapperClasses ~ " app-option-picker--conditional" %}
+{% endif %}
 {% if params.joined %}
   {% set wrapperClasses = wrapperClasses ~ " app-option-picker--joined" %}
 {% endif %}
@@ -133,6 +144,8 @@
       value="{{ item.value }}"
       {{- " checked" if isChecked }}
       {{- " disabled" if item.disabled }}
+      {%- if item.conditional and item.conditional.html %} data-aria-controls="conditional-{{ itemId }}"{% endif %}
+      {%- if item.conditional and item.conditional.inline %} data-conditional-inline{% endif %}
       {%- if item.attributes %}
         {%- for attr, val in item.attributes %} {{ attr }}="{{ val }}"{% endfor %}
       {%- endif %}>
@@ -154,11 +167,30 @@
     </label>
   {% endfor %}
   </div>
+  {#- Conditional reveal panels rendered below the items row -#}
+  {% for item in params.items %}
+    {% if item.conditional and item.conditional.html %}
+      {% set itemId = item.id if item.id else idPrefix ~ ("-" ~ loop.index if loop.index > 1 else "") %}
+      {% if item.checked != undefined %}
+        {% set isChecked = item.checked %}
+      {% elseif params.allowMultiple and params.values %}
+        {% set isChecked = item.value in params.values %}
+      {% elseif not params.allowMultiple and params.value %}
+        {% set isChecked = item.value == params.value %}
+      {% else %}
+        {% set isChecked = false %}
+      {% endif %}
+      <div class="app-option-picker__conditional{% if not isChecked and not item.conditional.inline %} app-option-picker__conditional--hidden{% endif %}"
+        id="conditional-{{ itemId }}">
+        {{ item.conditional.html | safe }}
+      </div>
+    {% endif %}
+  {% endfor %}
 {% endset %}
 
 {#- Render: form group > picker wrapper > optional fieldset > hint + error + items -#}
 <div class="{{ formGroupClasses }}">
-  <div class="{{ wrapperClasses }}">
+  <div class="{{ wrapperClasses }}"{% if hasConditional %} data-module="app-option-picker"{% endif %}>
     {% if params.fieldset %}
       <fieldset class="nhsuk-fieldset{% if params.fieldset.classes %} {{ params.fieldset.classes }}{% endif %}"
         {%- if describedBy %} aria-describedby="{{ describedBy }}"{% endif %}

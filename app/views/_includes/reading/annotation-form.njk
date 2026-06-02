@@ -69,9 +69,25 @@
 {% endif %}
 
 {% if abnormalityUi == "options" %}
+  {% set otherDetailsHtml %}
+    {{ input({
+      id: _idBase + "otherDetails",
+      name: _namePrefix + "[otherDetails]",
+      value: annotationTemp.otherDetails,
+      classes: "nhsuk-u-width-two-thirds",
+      label: {
+        text: "Describe the abnormality"
+      }
+    } | populateErrors) }}
+  {% endset %}
+
   {% set abnormalityItems = [] %}
   {% for type in data.abnormalityTypes %}
-    {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
+    {% if type == "Other" %}
+      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type, conditional: { html: otherDetailsHtml, inline: true } }) %}
+    {% else %}
+      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
+    {% endif %}
   {% endfor %}
 
   {{ appOptionPicker({
@@ -126,14 +142,14 @@
        }
     },
     hint: {
-      text: "From ‘5 - highly suspicious’ to ‘1 - normal’"
+      text: "1 = normal, 2 = benign, 3 = indeterminate, 4 = suspicious, 5 = highly suspicious"
     },
     items: [
-      { value: "5", text: "5" },
-      { value: "4", text: "4" },
-      { value: "3", text: "3" },
+      { value: "1", text: "1" },
       { value: "2", text: "2" },
-      { value: "1", text: "1" }
+      { value: "3", text: "3" },
+      { value: "4", text: "4" },
+      { value: "5", text: "5" }
     ]
   } | populateErrors) }}
 

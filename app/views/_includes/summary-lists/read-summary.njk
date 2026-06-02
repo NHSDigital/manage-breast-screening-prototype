@@ -144,11 +144,13 @@
     {% set viewsHtml %}
       <ul class="nhsuk-list">
         {% for viewCode, viewData in techRecallViews %}
-          <li>
-            <strong>{{ viewCode }}</strong>
-            {%- if viewData.reason %}: {{ viewData.reason }}{% endif %}
-            {%- if viewData.additionalDetails %} – {{ viewData.additionalDetails }}{% endif %}
-          </li>
+          {# Only show views that have a reason — unselected views are stored with an empty reason #}
+          {% if viewData.reason %}
+            <li>
+              <strong>{{ viewCode }}</strong>: {{ viewData.reason }}
+              {%- if viewData.additionalDetails %} – {{ viewData.additionalDetails }}{% endif %}
+            </li>
+          {% endif %}
         {% endfor %}
       </ul>
     {% endset %}

@@ -100,6 +100,30 @@ body.app-annotate-v2 {
   text-decoration: underline;
 }
 
+// Tab error state: left red border to indicate validation issue
+.app-ann-v2__tab--error {
+  border-left: $nhsuk-border-width-form-group-error solid $nhsuk-error-colour;
+
+  &.is-active {
+    border-left: $nhsuk-border-width-form-group-error solid $nhsuk-error-colour;
+  }
+}
+
+// Error exclamation mark icon in tab
+.app-ann-v2__tab-error-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: $nhsuk-error-colour;
+  color: nhsuk-colour("white");
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
 // Thumbnail strip: small previews of each view within the tab
 .app-ann-v2__tab-thumbs {
   display: flex;
@@ -519,10 +543,25 @@ $ann-marker-shadow:
   position: static;
   max-height: none;
 
+  .app-ann-v2__sidebar-heading {
+    margin-bottom: nhsuk-spacing(3);
+  }
+
   .app-ann-v2__sidebar-scroll {
     flex: none;
     height: auto;
     overflow: visible;
+    padding: 0; // No need for focus-outline padding when overflow is visible
+  }
+
+  // Button container sits outside the error wrapper
+  [data-annotation-add-button] {
+    margin-top: nhsuk-spacing(3);
+
+    .nhsuk-button {
+      width: 100%;
+      margin-bottom: 0;
+    }
   }
 }
 

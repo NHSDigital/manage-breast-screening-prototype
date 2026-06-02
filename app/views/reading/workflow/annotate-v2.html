@@ -537,7 +537,10 @@
       const isIncomplete = !ann.abnormalityTypes?.length && !ann.levelOfConcern
       let typeLabel = 'Type not set'
       if (ann.abnormalityTypes?.length) {
-        typeLabel = ann.abnormalityTypes.join(', ')
+        typeLabel = ann.abnormalityTypes.map(t => {
+          if (t === 'Other' && ann.otherDetails) return 'Other: ' + ann.otherDetails
+          return t
+        }).join(', ')
       }
       const concernLabel = ann.levelOfConcern ? CONCERN_LABELS[ann.levelOfConcern] : ''
       const metaParts = [concernLabel].filter(Boolean)

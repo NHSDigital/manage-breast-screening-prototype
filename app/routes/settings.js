@@ -195,7 +195,7 @@ module.exports = (router) => {
     req.session.data.settings.reading.confirmNormal = 'false'
     req.session.data.settings.reading.confirmNormalWithDetails = 'false'
     req.session.data.settings.reading.confirmTechnicalRecall = 'false'
-    req.session.data.settings.reading.confirmRecallForAssessment = 'false'
+    req.session.data.settings.reading.confirmRecallForAssessment = 'true'
 
     req.flash('success', 'Image reading v1 mode enabled')
     return res.redirect('/settings')
