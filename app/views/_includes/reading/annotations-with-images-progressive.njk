@@ -80,7 +80,7 @@
                   </div>
                   <div data-annotation-add-button>
                     {{ button({
-                      text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
+                      text: "Add another ${sideLabel} breast annotation" if sideAnnotations | length > 0 else "Add ${sideLabel} breast annotation",
                       classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0",
                       href: "./annotation/add?side=" + breastSide
                     }) }}

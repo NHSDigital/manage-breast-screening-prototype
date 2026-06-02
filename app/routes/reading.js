@@ -1319,7 +1319,7 @@ module.exports = (router) => {
             // Normal/clinical breast must not have annotations of M3 or higher
             if (highLevelAnnotations.length > 0) {
               errors.push({
-                text: `Remove annotations of level 3 or higher from the ${sideLabel} breast, or change the opinion to abnormal`,
+                text: `A normal ${sideLabel} breast cannot have annotations with concern level 3 or higher`,
                 name: `annotations[${side}]`,
                 href: `#${side}-annotations`
               })

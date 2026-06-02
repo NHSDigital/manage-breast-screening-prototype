@@ -12,7 +12,7 @@
     addHref        — URL for "Add annotation" button (optional, only shown if editable)
     addAttributes  — additional attributes for the add button (e.g. data-load-modal-url)
     useModals      — boolean, add data-load-modal-url to edit links and add button (default: false)
-    emptyText      — text shown when no annotations (default: "No annotations")
+    emptyText      — text shown when no annotations (default: "If abnormal, add an annotation (concern level 3 or higher)")
     classes        — additional CSS classes on the wrapper
     id             — id attribute on the wrapper element
 #}
@@ -22,7 +22,7 @@
 {% set _interactive = params.interactive | default(false) %}
 {% set _editable = params.editable | default(false) %}
 {% set _useModals = params.useModals | default(false) %}
-{% set _emptyText = params.emptyText | default("No annotations") %}
+{% set _emptyText = params.emptyText | default("If abnormal, add an annotation (concern level 3 or higher)") %}
 
 <div class="app-annotation-list{{ ' app-annotation-list--interactive' if _interactive }}{{ ' ' + params.classes if params.classes }}"{{ ' id="' + params.id + '"' if params.id }}>
 
