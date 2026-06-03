@@ -84,10 +84,14 @@
      input is only shown when the user manually switched mid-appointment via
      the troubleshooting link on the automatic images page (failover). #}
   {% set isManualFailover = event.mammogramDataTemp.isManualFailover %}
+  {% set troubleshootingIssue = event.mammogramDataTemp.troubleshootingIssue %}
+  {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
+  {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
+  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or isManualFailover %}
 
-  {% if data.settings.screening.manualImageCollection == 'true' or isManualFailover %}
-    <p>Set up an unscheduled appointment on the mammogram machine before taking images.</p>
-    <p>Add the following details so your admin team can match mammograms to the correct participant once the appointment has been completed:</p>
+  {% if (hasTroubleshootingIssue and showWorklistMatchingContent) or (not hasTroubleshootingIssue and showDefaultManualContent) %}
+    <h2>Manually add participant details</h2>
+    <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
     {{ summaryList({
       rows: [
         {

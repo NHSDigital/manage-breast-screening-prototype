@@ -2382,6 +2382,12 @@ module.exports = (router) => {
   router.get('/clinics/:clinicId/events/:eventId/images-manual', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
+    const validTroubleshootingIssues = [
+      'worklist-participant',
+      'wrong-image-count',
+      'incorrect-image-labels'
+    ]
+    const troubleshootingIssue = req.query.issue
 
     // If mammogramData exists and is manual entry, prepopulate temp for editing
     if (data.event?.mammogramData?.isManualEntry) {
@@ -2408,6 +2414,17 @@ module.exports = (router) => {
         }
         data.event.mammogramDataTemp.isManualFailover = true
       }
+    }
+
+    // Persist troubleshooting issue context when navigating from troubleshooting links
+    if (validTroubleshootingIssues.includes(troubleshootingIssue)) {
+      if (!data.event.mammogramDataTemp) {
+        data.event.mammogramDataTemp = {}
+      }
+      data.event.mammogramDataTemp.troubleshootingIssue = troubleshootingIssue
+    } else if (data.event?.mammogramDataTemp?.troubleshootingIssue) {
+      // Clear stale issue context for non-troubleshooting entry points
+      delete data.event.mammogramDataTemp.troubleshootingIssue
     }
 
     // Let the dynamic routing handle the actual rendering
