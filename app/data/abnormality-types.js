@@ -1,12 +1,14 @@
 // app/data/abnormality-types.js
 
 module.exports = [
-  'Architectural distortion',
-  'Asymmetric density',
-  'Clinical abnormality',
-  'Lymph node abnormality',
-  'Mass ill-defined',
-  'Mass well-defined',
+  // Order chosen specifically
+  'Ill-defined mass',
+  'Well-defined mass',
   'Microcalcification',
+  'Asymmetric density',
+  'Architectural distortion',
+
+  // 'Clinical abnormality',
+  'Lymph node',
   'Other'
 ]
