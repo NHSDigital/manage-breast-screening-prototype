@@ -53,7 +53,7 @@
     items: abnormalityOptions
   } | populateErrors) }}
 
-  Conditional "other details" field — shown via JS when "Other" is selected
+  {# Conditional "other details" field — shown via JS when "Other" is selected #}
   <div id="{{ _idBase }}other-details-wrapper" class="{{ 'nhsuk-u-visually-hidden' if annotationTemp.abnormalityType != 'Other' }}">
     {{ input({
       id: _idBase + "otherDetails",
@@ -84,7 +84,7 @@
   {% set abnormalityItems = [] %}
   {% for type in data.abnormalityTypes %}
     {% if type == "Other" %}
-      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type, conditional: { html: otherDetailsHtml, inline: true } }) %}
+      {% set abnormalityItems = abnormalityItems | push({ value: type, text: type, conditional: { html: otherDetailsHtml, inline: true }, newLine: true }) %}
     {% else %}
       {% set abnormalityItems = abnormalityItems | push({ value: type, text: type }) %}
     {% endif %}

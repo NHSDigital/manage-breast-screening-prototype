@@ -122,6 +122,8 @@
       {%- for attr, val in params.attributes %} {{ attr }}="{{ val }}"{% endfor %}
     {%- endif %}>
   {% for item in params.items %}
+    {#- Insert a flex break before this item if requested -#}
+    {% if item.newLine %}<span class="app-option-picker__flex-break" aria-hidden="true"></span>{% endif %}
     {#- Determine id for this item -#}
     {% set itemId = item.id if item.id else idPrefix ~ ("-" ~ loop.index if loop.index > 1 else "") %}
 

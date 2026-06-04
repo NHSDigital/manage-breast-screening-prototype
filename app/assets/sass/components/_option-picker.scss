@@ -6,6 +6,9 @@
 //   app-option-picker--show-dot    show a radio circle inside each option
 //   app-option-picker--show-check  show a checkbox inside each option
 //   app-option-picker--joined      options sit flush with shared/overlapping borders
+//
+// Item modifiers:
+//   item.newLine  insert a flex break before this item, pushing it to a new row
 
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
@@ -24,10 +27,11 @@
 .app-option-picker__items {
   display: flex;
   flex-wrap: wrap;
-  // Column gap as normal; row gap compensates for the button shadow which eats into vertical space
+  // Use margin-top on labels (not row-gap) so flex-break spans don't add extra row spacing
   column-gap: nhsuk-spacing(2);
-  row-gap: calc(nhsuk-spacing(2) + #{$nhsuk-button-shadow-size});
   align-items: stretch;
+  // Compensate for the margin-top on first-row labels
+  margin-top: calc(-1 * (nhsuk-spacing(2) + #{$nhsuk-button-shadow-size}));
 }
 
 // The real input is visually hidden but remains keyboard/screen-reader accessible
@@ -51,6 +55,14 @@
   gap: nhsuk-spacing(2);
   cursor: pointer;
   user-select: none;
+  // Row spacing via margin-top (not row-gap) so flex-break spans don't inherit extra space
+  margin-top: calc(nhsuk-spacing(2) + #{$nhsuk-button-shadow-size});
+}
+
+// Invisible full-width element that forces the next item onto a new row
+.app-option-picker__flex-break {
+  flex-basis: 100%;
+  height: 0;
 }
 
 // =========================================================

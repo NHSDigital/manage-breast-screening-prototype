@@ -167,8 +167,8 @@ class OptionPicker {
   // Dynamically resize inline input based on content, with min/max bounds
   resizeInput($input) {
     const hasError = $input.classList.contains('nhsuk-input--error')
-    const minWidth = hasError ? 120 : 80
-    const maxWidth = 220
+    const minWidth = hasError ? 180 : 140 // allow space for error icon
+    const maxWidth = 260
 
     // Use a canvas to measure text width — more reliable than DOM measurement
     const ctx = document.createElement('canvas').getContext('2d')
