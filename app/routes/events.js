@@ -2301,6 +2301,7 @@ module.exports = (router) => {
     data.settings = data.settings || {}
     data.settings.screening = data.settings.screening || {}
     data.settings.screening.manualImageCollection = 'true'
+    data.settings.screening.manualImageModeEnabledByUser = 'true'
 
     const returnUrl =
       safeReturnUrl(data.worklistRetryReturnUrl) ||

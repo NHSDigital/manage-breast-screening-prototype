@@ -19,33 +19,29 @@
   value: appointmentDateTimeHtml
 }) %}
 
-{# Worklist accession number #}
-{% set appointmentRowItems = appointmentRowItems | push({
-  key: '<abbr title="Accession number">Accn</abbr>:',
-  value: '<span class="app-code-font nhsuk-u-nowrap">KOX&#8201;20260527&#8201;A1246</span>'
-}) %}
-
 {# Worklist status #}
 {% set worklistStatusHtml %}
   {% if data.settings.screening.addedToWorklist == 'false' %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
-      {% if data.settings.screening.manualImageCollection == 'true' %}
-        <span>Not added to worklist (manual image mode enabled)</span>
+      {% if data.settings.screening.manualImageCollection == 'true' and data.settings.screening.manualImageModeEnabledByUser == 'true' %}
+        <span>Worklist issue, manual mode enabled</span>
       {% else %}
-        <span>Not added to worklist <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/retry-worklist-connection?returnUrl={{ currentUrl | urlencode }}">Retry</a></span>
+        <span>Not on worklist (<a href="/clinics/{{ clinicId }}/events/{{ event.id }}/retry-worklist-connection?returnUrl={{ currentUrl | urlencode }}">Retry</a>)</span>
       {% endif %}
     </span>
   {% else %}
     <span class="app-header-status">
       {{ appIcon("tick", { classes: "app-header-status__icon" }) }}
-      <span>Added to worklist</span>
+      <span>On worklist</span>
     </span>
   {% endif %}
 {% endset %}
+
+{# Worklist accession number with inline worklist status #}
 {% set appointmentRowItems = appointmentRowItems | push({
-  key: '<span class="nhsuk-u-visually-hidden">Worklist status</span>',
-  value: worklistStatusHtml
+  key: '<abbr title="Accession number">Accn</abbr>:',
+  value: '<span class="app-code-font nhsuk-u-nowrap">KOX&#8201;20260527&#8201;A1246</span><span class="app-status-bar__worklist-status">' + worklistStatusHtml + '</span>'
 }) %}
 
 {# Appointment type #}
