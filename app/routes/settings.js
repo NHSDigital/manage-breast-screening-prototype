@@ -64,6 +64,38 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
 }
 
 module.exports = (router) => {
+  // Keep worklist simulation settings consistent with image collection mode:
+  // - "Not successful": clear any stale "manual mode enabled by user" marker
+  //   so retry messaging is shown
+  // - "Successful": return to automatic image collection mode
+  router.get('/settings', (req, res, next) => {
+    const addedToWorklistFromQuery =
+      req.query?.settings?.screening?.addedToWorklist
+
+    if (addedToWorklistFromQuery === 'false') {
+      if (!req.session.data.settings) {
+        req.session.data.settings = {}
+      }
+      if (!req.session.data.settings.screening) {
+        req.session.data.settings.screening = {}
+      }
+
+      delete req.session.data.settings.screening.manualImageModeEnabledByUser
+    } else if (addedToWorklistFromQuery === 'true') {
+      if (!req.session.data.settings) {
+        req.session.data.settings = {}
+      }
+      if (!req.session.data.settings.screening) {
+        req.session.data.settings.screening = {}
+      }
+
+      req.session.data.settings.screening.manualImageCollection = 'false'
+      delete req.session.data.settings.screening.manualImageModeEnabledByUser
+    }
+
+    next()
+  })
+
   // Ensure any POST to settings resolves to a GET render
   router.post('/settings', (req, res) => {
     return res.redirect(303, '/settings')

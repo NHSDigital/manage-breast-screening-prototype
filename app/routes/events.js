@@ -2335,6 +2335,18 @@ module.exports = (router) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
 
+    const isAddedToWorklist =
+      data.settings?.screening?.addedToWorklist !== 'false'
+
+    // When a participant is on the worklist, image transfer should use the
+    // automatic flow. Clear any stale manual-mode state from prior actions.
+    if (isAddedToWorklist) {
+      data.settings = data.settings || {}
+      data.settings.screening = data.settings.screening || {}
+      data.settings.screening.manualImageCollection = 'false'
+      delete data.settings.screening.manualImageModeEnabledByUser
+    }
+
     const isManualImageCollection =
       data.settings?.screening?.manualImageCollection === 'true'
     const imagesStageCompleted =
@@ -2343,8 +2355,6 @@ module.exports = (router) => {
     // Gate: if the appointment was not added to the worklist and the user
     // hasn't yet switched to manual image mode, divert to the retry page
     // before letting them into the image-taking step.
-    const isAddedToWorklist =
-      data.settings?.screening?.addedToWorklist !== 'false'
 
     if (!isAddedToWorklist && !isManualImageCollection) {
       return res.redirect(
