@@ -95,12 +95,12 @@
     {{ summaryList({
       rows: [
         {
-          key: { text: "ID" },
-          value: { text: "KOX20260527A1246" }
+          key: { html: '<abbr title="Accession number">Accn</abbr>' },
+          value: { html: '<span class="app-code-font nhsuk-u-nowrap">KOX&#8201;20260527&#8201;A1246</span>' }
         },
         {
           key: { text: "NHS number" },
-          value: { text: participant.medicalInformation.nhsNumber | formatNhsNumber }
+          value: { html: '<span class="app-code-font nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber | replace(' ', '&#8201;')) + '</span>' }
         },
         {
           key: { text: "Full name" },
