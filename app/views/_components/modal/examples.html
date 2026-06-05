@@ -47,7 +47,7 @@
     {
       text: "Yes, delete record",
       element: "button",
-      classes: "nhsuk-button--warning",
+      variant: "warning",
       action: "navigate",
       href: "/participants/delete",
       method: "POST"
@@ -134,7 +134,7 @@
     {
       text: "Close",
       element: "button",
-      classes: "nhsuk-button--secondary",
+      variant: "secondary",
       action: "close"
     }
   ]
@@ -163,7 +163,7 @@
     <div class="nhsuk-form-group">
       {{ button({
         text: "Open delete modal",
-        classes: "nhsuk-button--warning",
+        variant: "warning",
         attributes: {
           onclick: "openModal('delete-modal')"
         }
@@ -173,7 +173,7 @@
     <div class="nhsuk-form-group">
       {{ button({
         text: "Open save confirmation",
-        classes: "nhsuk-button--secondary",
+        variant: "secondary",
         attributes: {
           onclick: "openModal('save-confirmation')"
         }
@@ -183,7 +183,7 @@
     <div class="nhsuk-form-group">
       {{ button({
         text: "Open participant modal",
-        classes: "nhsuk-button--secondary",
+        variant: "secondary",
         attributes: {
           onclick: "openModal('participant-modal')"
         }
@@ -193,7 +193,7 @@
     <div class="nhsuk-form-group">
       {{ button({
         text: "Open loading demo",
-        classes: "nhsuk-button--secondary",
+        variant: "secondary",
         attributes: {
           onclick: "openModal('loading-demo-modal')"
         }

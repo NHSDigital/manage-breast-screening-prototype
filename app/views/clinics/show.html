@@ -133,20 +133,23 @@
             {% if event | isSpecialAppointment %}
               {{ tag({
               text: "Special apppointment",
-              classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
+              colour: "yellow",
+              classes: "nhsuk-u-margin-top-2 app-nowrap"
               })}}
             {% endif %}
             {% if event | hasAppointmentNote %}
               {{ tag({
               text: "Appointment note",
-              classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
+              colour: "yellow",
+              classes: "nhsuk-u-margin-top-2 app-nowrap"
               })}}
             {% endif %}
             {# Symptoms tag used for testing to verify data is working #}
             {# {% if event | hasSymptoms %}
               {{ tag({
               text: "Has symptoms",
-              classes: "nhsuk-tag--yellow nhsuk-u-margin-top-2 app-nowrap"
+              colour: "yellow",
+              classes: "nhsuk-u-margin-top-2 app-nowrap"
               })}}
             {% endif %} #}
           </td>

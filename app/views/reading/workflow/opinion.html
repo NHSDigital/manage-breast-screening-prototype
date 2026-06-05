@@ -280,7 +280,7 @@
             fieldset: {
               legend: {
                 text: questionText,
-                classes: "nhsuk-fieldset__legend--m",
+                size: "m",
                 isPageHeading: false
               }
             },
@@ -352,7 +352,8 @@
               html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
               value: "technical_recall",
               name: "imageReadingTemp[opinion]",
-              classes: "nhsuk-button--secondary app-button-full-width nhsuk-u-margin-bottom-3",
+              variant: "secondary",
+              classes: "app-button-full-width nhsuk-u-margin-bottom-3",
               attributes: { "data-shortcut": "t" }
             } | openInModal) }}
           </div>
@@ -362,7 +363,8 @@
               html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
               value: "recall_for_assessment",
               name: "imageReadingTemp[opinion]",
-              classes: "nhsuk-button--warning app-button-full-width",
+              variant: "warning",
+              classes: "app-button-full-width",
               attributes: { "data-shortcut": "r" }
             } | openInModal) }}
           </div>

@@ -160,7 +160,7 @@
     {% if event | isSpecialAppointment %}
       {{ tag({
         text: "Special appointment",
-        classes: "nhsuk-tag--yellow"
+        colour: "yellow"
       })}}
     {% else %}
       {{ "Not a special appointment" | asHint }}

@@ -59,7 +59,8 @@
     {{ button({
       text: "Add a feature" if not hasBreastFeatures else "View or edit breast features",
       href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-      classes: "nhsuk-button--secondary nhsuk-button--small"
+      variant: "secondary",
+      small: true
     }) }}
   </div>
 {% endif %}

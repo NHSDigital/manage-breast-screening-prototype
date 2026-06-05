@@ -33,7 +33,7 @@
       fieldset: {
         legend: {
           text: "What is your opinion of the " + params.side + " breast?",
-          classes: "nhsuk-fieldset__legend--s",
+          size: "s",
           isPageHeading: false
         }
       },
@@ -60,7 +60,7 @@
         value: data.imageReadingTemp[params.side].comment,
         label: {
           text: Side + " breast comment (optional)",
-          classes: "nhsuk-label--s"
+          size: "s"
         },
         formGroup: {
           classes: "nhsuk-u-margin-bottom-0"
@@ -181,7 +181,9 @@
         {% set sideAnnotationsButtonHtml %}
           {{ button({
             text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
-            classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3",
+            variant: "secondary",
+            small: true,
+            classes: "nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3",
             href: "./annotation/add?side=" + breastSide,
             attributes: { "data-load-modal-url": "./annotation/add?side=" + breastSide } if data.settings.modalForms == 'true'
           }) }}

@@ -14,7 +14,8 @@
   {% set buttonMenuItems = buttonMenuItems | push({
     text: symptomType.name | sentenceCase,
     href: (methodUrl ~ symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-    classes: "nhsuk-button--secondary js-expand-parent-section"
+    variant: "secondary",
+    classes: "js-expand-parent-section"
   }) %}
 {% endfor %}
 
@@ -24,7 +25,7 @@
       items: buttonMenuItems,
       button: {
         text: "Add another symptom" if hasSymptoms or (saveSymptomFirst == true) else "Add a symptom",
-        classes: "nhsuk-button--secondary"
+        variant: "secondary"
       },
       alignMenu: "left"
     }) }}

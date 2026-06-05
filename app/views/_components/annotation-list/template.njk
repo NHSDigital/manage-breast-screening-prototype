@@ -95,7 +95,9 @@
 
     {{ button({
       text: "Add another annotation" if _annotations | length > 0 else "Add annotation",
-      classes: "nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0",
+      variant: "secondary",
+      small: true,
+      classes: "nhsuk-u-margin-bottom-0",
       href: params.addHref,
       attributes: _addButtonAttributes
     }) }}

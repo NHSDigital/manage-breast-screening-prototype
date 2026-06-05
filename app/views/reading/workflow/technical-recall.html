@@ -91,7 +91,7 @@
           value: viewData.additionalDetails,
           label: {
             text: "Additional details (optional)",
-            classes: "nhsuk-label--s"
+            size: "s"
           }
         }) }}
       {% endcall %}
@@ -119,7 +119,7 @@
   {% call fieldset({
     legend: {
       text: "Which views need to be retaken?",
-      classes: "nhsuk-fieldset__legend--m",
+      size: "m",
       isPageHeading: false
     },
     describedBy: "selectedViews-error" if _viewsError

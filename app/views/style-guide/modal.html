@@ -27,7 +27,7 @@
 <div class="sg-example">
   {{ button({
     text: "Open confirmation modal",
-    classes: "nhsuk-button--secondary",
+    variant: "secondary",
     attributes: { onclick: "openModal('demo-confirm'); return false;" }
   }) }}
 
@@ -54,7 +54,7 @@
 <div class="sg-example">
   {{ button({
     text: "Open custom modal",
-    classes: "nhsuk-button--secondary",
+    variant: "secondary",
     attributes: { onclick: "openModal('demo-custom'); return false;" }
   }) }}
 
@@ -71,7 +71,7 @@
       {
         text: "Cancel appointment",
         element: "button",
-        classes: "nhsuk-button--secondary",
+        variant: "secondary",
         action: "close"
       },
       {
@@ -101,7 +101,7 @@
 <div class="sg-example">
   {{ button({
     text: "Open content modal",
-    classes: "nhsuk-button--secondary",
+    variant: "secondary",
     attributes: { onclick: "openModal('demo-content'); return false;" }
   }) }}
 
@@ -112,7 +112,7 @@
       {
         text: "Close",
         element: "button",
-        classes: "nhsuk-button--secondary",
+        variant: "secondary",
         action: "close"
       }
     ]
@@ -141,7 +141,7 @@
 <div class="sg-example">
   {{ button({
     text: "Add a note",
-    classes: "nhsuk-button--secondary",
+    variant: "secondary",
     attributes: { onclick: "openModal('demo-form', { loadUrl: '/style-guide/modal-form-demo' }); return false;" }
   }) }}
 
