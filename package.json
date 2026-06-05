@@ -18,7 +18,7 @@
     "lodash": "^4.18.1",
     "markdown-it": "^14.1.1",
     "nhsuk-frontend": "^10.4.2",
-    "nhsuk-prototype-kit": "^8.1.0",
+    "nhsuk-prototype-kit": "^8.3.0",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
   },

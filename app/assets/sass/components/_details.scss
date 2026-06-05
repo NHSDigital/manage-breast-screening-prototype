@@ -9,11 +9,12 @@
 // Move underline from the summary element to just the summary text span,
 // so subtitle and contents summary spans don't inherit the underline decoration
 .app-details__container .nhsuk-details__summary {
+  // Avoid nhsuk-link-style-no-underline as it adds underline on hover
   text-decoration: none;
 }
 
 .app-details__container .nhsuk-details__summary-text {
-  text-decoration: underline;
+  @include nhsuk-link-style-default;
 }
 
 .app-details__status {
