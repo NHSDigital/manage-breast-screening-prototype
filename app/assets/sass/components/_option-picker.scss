@@ -398,7 +398,7 @@ $_tick-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' vi
     border: $nhsuk-border-width-form-element solid nhsuk-shade($nhsuk-brand-colour, 50%);
     border-radius: 0;
     background: nhsuk-colour("white");
-    color: $color_nhsuk-black;
+    color: nhsuk-colour("black");
     font-weight: normal;
     font-size: inherit;
     min-width: 60px;

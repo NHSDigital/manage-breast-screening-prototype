@@ -7,10 +7,9 @@
   $nhsuk-page-width: 960px,
 
   // Reduce layout spacing points (5–9). Points 0–4 stay at NHS defaults.
-  // Point 6 is reduced from 40px to 32px - this is the radio/checkbox circle size.
-  // The broken geometry this causes is fixed in _compact.scss by applying the
-  // equivalent of .nhsuk-radios--small and .nhsuk-checkboxes--small to all
-  // radios/checkboxes within .app-compact-mode.
+  // Note: checkbox and radio input sizes are decoupled from the spacing scale
+  // since nhsuk-frontend 10.5 (fix #1934), so spacing(6) no longer affects input geometry.
+  // _compact.scss intentionally applies the --small variant to all checkboxes/radios.
   $nhsuk-spacing-points: (
       0: 0,
       1: 4px,

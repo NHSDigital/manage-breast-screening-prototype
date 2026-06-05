@@ -25,7 +25,8 @@
     {{ button({
       text: "Add another mammogram" if hasAdditionalMammograms else "Add mammogram",
       href: './previous-mammograms/add' | urlWithReferrer(currentUrl, scrollTo),
-      classes: "nhsuk-button--secondary nhsuk-button--small"
+      variant: "secondary",
+      small: true
     } | openInModal) }}
   {% endif %}
 {% endset %}

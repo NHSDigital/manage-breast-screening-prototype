@@ -94,7 +94,7 @@
         fieldset: {
           legend: {
             text: questionText,
-            classes: "nhsuk-fieldset__legend--m",
+            size: "m",
             isPageHeading: false
           }
         },
@@ -157,7 +157,8 @@
     <div class="form-group">
       {{ button({
         text: "Technical recall",
-        classes: "nhsuk-button--secondary app-button-full-width",
+        variant: "secondary",
+        classes: "app-button-full-width",
         href: "./recall-reason"
       }) }}
     </div>
@@ -166,7 +167,8 @@
     <div class="form-group">
       {{ button({
         "text": "Recall for assessment",
-        "classes": "nhsuk-button--warning app-button-full-width",
+        variant: "warning",
+        classes: "app-button-full-width",
         href: "./recall-for-assessment-details"
       }) }}
     </div>

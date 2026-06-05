@@ -6,6 +6,16 @@
   position: relative;
 }
 
+// Move underline from the summary element to just the summary text span,
+// so subtitle and contents summary spans don't inherit the underline decoration
+.app-details__container .nhsuk-details__summary {
+  text-decoration: none;
+}
+
+.app-details__container .nhsuk-details__summary-text {
+  text-decoration: underline;
+}
+
 .app-details__status {
   position: absolute;
   top: 0;

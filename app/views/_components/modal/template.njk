@@ -49,6 +49,7 @@
               {% else %}
                 {{ button({
                   text: action.text,
+                  variant: action.variant,
                   classes: action.classes,
                   attributes: {
                     'data-modal-action': action.action or 'close',

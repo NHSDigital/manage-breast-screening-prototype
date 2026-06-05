@@ -14,20 +14,15 @@
     @include nhsuk-responsive-margin(3, "bottom");
   }
 
-  // Recreate small checkboxes and radios.
-
-  // Doing this for two reasons:
-  // 1. Means we can apply it globally with a setting rather than adjusting every macro usage
-  // 2. Our spacing ajdustments break the visual design of checkboxes and radios so this restores the correct geometry. Raised here: https://github.com/nhsuk/nhsuk-frontend/issues/1885
+  // Apply the equivalent of .nhsuk-checkboxes--small and .nhsuk-radios--small to all
+  // checkboxes and radios in compact mode, so tighter inputs are applied globally without
+  // needing to add small: true to every macro call.
+  //
+  // Since nhsuk-frontend 10.5 (fix #1934), checkbox and radio sizes are hardcoded in px
+  // and no longer depend on the spacing scale, so our spacing adjustments don't break
+  // input geometry. The values below match the nhsuk-frontend --small variant exactly.
 
   // Apply .nhsuk-checkboxes--small equivalent to all checkboxes in compact mode.
-  // spacing(6) = 32px (box size), small size fixed at 24px (NHS default for --small variant).
-  // touch target = 36px, input-offset = (36 - 24) / 2 = 6px.
-  // Apply .nhsuk-checkboxes--small equivalent to all checkboxes in compact mode.
-  // The input (touch target) is kept at the NHS default 44px even though spacing(6) is
-  // reduced to 32px. This preserves correct geometry and matching the --small variant exactly.
-  // $small-size is hardcoded rather than using spacing(4) so it stays at the correct
-  // NHS small size even when spacing(4) is adjusted for layout.
   .nhsuk-checkboxes {
     $small-size: nhsuk-px-to-rem(24px); // 1.5rem — NHS small variant size, fixed
     $touch-target: nhsuk-px-to-rem(44px); // matches NHS --small, overrides reduced spacing(6)
@@ -112,10 +107,6 @@
   }
 
   // Apply .nhsuk-radios--small equivalent to all radios in compact mode.
-  // The input (touch target) is kept at the NHS default 44px even though spacing(6) is
-  // reduced to 32px. This preserves correct geometry and matches the --small variant exactly.
-  // $small-size is hardcoded rather than using spacing(4) so it stays at the correct
-  // NHS small size even when spacing(4) is adjusted for layout.
   .nhsuk-radios {
     $small-size: nhsuk-px-to-rem(24px); // 1.5rem — NHS small variant size, fixed
     $touch-target: nhsuk-px-to-rem(44px); // matches NHS --small, overrides reduced spacing(6)

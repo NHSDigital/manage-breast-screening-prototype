@@ -324,13 +324,15 @@
       {% if followUpValue.startsWith("No") %}
         {{ tag({
           text: "Partial mammography",
-          classes: "nhsuk-tag--orange nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+          colour: "orange",
+          classes: "nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
         }) }}
         {# <p class="nhsuk-u-margin-bottom-0">Recorded as partial mammography.</p> #}
       {% else %}
         {{ tag({
           text: "Recall requested",
-          classes: "nhsuk-tag--orange nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+          colour: "orange",
+          classes: "nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
         }) }}
         {# <p class="nhsuk-u-margin-bottom-{% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}1{% else %}0{% endif %}">Participant to be invited to a recall appointment to take more images.</p> #}
         {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}

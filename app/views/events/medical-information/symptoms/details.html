@@ -74,7 +74,7 @@
       {% call fieldset({
         legend: {
           text: "Which nipple has changed?",
-          classes: "nhsuk-fieldset__legend--m"
+          size: "m"
         },
         attributes: {
           "aria-describedby": "nipple-change-location-error" if errors.nippleChangeLocation else ""
@@ -138,7 +138,7 @@
       {% call fieldset({
         legend: {
           text: radioQuestionText,
-          classes: "nhsuk-fieldset__legend--m"
+          size: "m"
         },
         describedBy: "location-error" if _locationError
       }) %}
@@ -267,7 +267,7 @@
       name: "event[symptomTemp][otherDescription]",
       label: {
         text: "Describe the symptom",
-        classes: "nhsuk-label--m"
+        size: "m"
       },
       value: event.symptomTemp.otherDescription,
       classes: "nhsuk-u-width-two-thirds"
@@ -282,7 +282,7 @@
       fieldset: {
         legend: {
           text: "Describe the change",
-          classes: "nhsuk-fieldset__legend--m",
+          size: "m",
           isPageHeading: false
         }
       },
@@ -339,7 +339,7 @@
       fieldset: {
         legend: {
           text: "How has the skin changed?",
-          classes: "nhsuk-fieldset__legend--m",
+          size: "m",
           isPageHeading: false
         }
       },
@@ -480,7 +480,7 @@
       fieldset: {
         legend: {
           text: "How long has this symptom existed?",
-          classes: "nhsuk-fieldset__legend--m",
+          size: "m",
           isPageHeading: false
         }
       },
@@ -542,7 +542,7 @@
     fieldset: {
       legend: {
         text: "Has this been investigated?",
-        classes: "nhsuk-fieldset__legend--m",
+          size: "m",
         isPageHeading: false
       }
     },
@@ -591,7 +591,7 @@
         fieldset: {
           legend: {
             text: significantSymptomLegend,
-            classes: "nhsuk-fieldset__legend--m"
+            size: "m"
           }
         },
         hint: {
@@ -630,7 +630,7 @@
     name: "event[symptomTemp][additionalInfo]",
     label: {
       text: "Additional info (optional)",
-      classes: "nhsuk-label--m"
+      size: "m"
     },
     rows: 4,
     value: event.symptomTemp.additionalInfo
@@ -647,7 +647,7 @@
 
     {# {{ button({
       text: "Save and add another",
-      classes: "nhsuk-button--secondary",
+      variant: "secondary",
       attributes: {
         name: "action",
         value: "save-and-add"

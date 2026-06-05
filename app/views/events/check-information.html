@@ -192,7 +192,8 @@
       {% if event | isSpecialAppointment %}
         {{ tag({
           text: "Special appointment",
-          classes: "nhsuk-tag--yellow nhsuk-u-margin-bottom-3"
+          colour: "yellow",
+          classes: "nhsuk-u-margin-bottom-3"
         })}}
         {% include "_includes/special-appointment-content.njk" %}
       {% else %}

@@ -9,7 +9,8 @@
   {% if event | isSpecialAppointment %}
     {{ tag({
       text: "Special appointment",
-      classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
+      colour: "yellow",
+      classes: "nhsuk-u-margin-left-1"
     })}}
   {% endif %}
   {% if data.settings.screening.addedToWorklist == 'false' %}
@@ -46,7 +47,8 @@
   {# <br> #}
     {{ tag({
       text: "Special appointment",
-      classes: "nhsuk-tag--yellow nhsuk-u-margin-left-1"
+      colour: "yellow",
+      classes: "nhsuk-u-margin-left-1"
     })}}
   {% endif %}
 {% endset %}

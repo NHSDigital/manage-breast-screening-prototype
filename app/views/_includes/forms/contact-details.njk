@@ -2,7 +2,7 @@
 {% call fieldset({
   legend: {
     text: "Address",
-    classes: "nhsuk-fieldset__legend--m",
+    size: "m",
     isPageHeading: true
   }
 }) %}
@@ -99,7 +99,7 @@
 {{ input({
   label: {
     text: "Email address (optional)",
-    classes: "nhsuk-label--m"
+    size: "m"
   },
   value: participant.demographicInformation.email,
   id: "email-address",

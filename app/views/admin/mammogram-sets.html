@@ -1,0 +1,1280 @@
+{# app/views/admin/mammogram-sets.html #}
+{# Admin page for tagging mammogram sets #}
+
+{% extends "layout-base.html" %}
+
+{% set pageTitle = "Mammogram set tagger" %}
+
+{% block head %}
+  {{ super() }}
+  <style>
+    body {
+      overflow-x: auto;
+    }
+    .nhsuk-width-container {
+      max-width: 1800px;
+    }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      border-bottom: 1px solid #d8dde0;
+      background: #f0f4f5;
+    }
+    .admin-header h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .admin-container {
+      display: flex;
+      gap: 0;
+      min-height: calc(100vh - 180px);
+    }
+    
+    /* Column 1: Set list */
+    .set-list {
+      width: 260px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      border-right: 1px solid #d8dde0;
+      background: #fff;
+      max-height: calc(100vh - 120px);
+      position: sticky;
+      top: 0;
+    }
+    .set-list-filters {
+      padding: 8px 12px;
+      background: #fff;
+      border-bottom: 1px solid #d8dde0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .set-list-filters select {
+      width: 100%;
+      padding: 4px 6px;
+      font-size: 12px;
+      margin-bottom: 6px;
+      border: 1px solid #d8dde0;
+      border-radius: 4px;
+    }
+    .set-list-filters select:last-child {
+      margin-bottom: 0;
+    }
+    .set-item {
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f4f5;
+      font-size: 13px;
+    }
+    .set-item:hover {
+      background: #f0f4f5;
+    }
+    .set-item.active {
+      background: #005eb8;
+      color: white;
+    }
+    .set-item .set-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 1px 6px;
+      border-radius: 2px;
+      margin-top: 2px;
+    }
+    .set-tag-normal {
+      background: #007f3b;
+      color: white;
+    }
+    .set-tag-abnormal {
+      background: #d5281b;
+      color: white;
+    }
+    .set-tag-technical {
+      background: #ffb81c;
+      color: #212b32;
+    }
+    .set-tag-indeterminate {
+      background: #4c6272;
+      color: white;
+    }
+    .set-item.active .set-tag {
+      opacity: 0.9;
+    }
+    .set-item .set-tag-text {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    .set-item .set-status {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+    .status-normal {
+      color: #007f3b;
+    }
+    .status-abnormal {
+      color: #d5281b;
+    }
+    .status-technical {
+      color: #ffb81c;
+    }
+    .set-item.active .status-normal,
+    .set-item.active .status-abnormal,
+    .set-item.active .status-technical {
+      opacity: 0.9;
+    }
+    .implants-indicator {
+      font-size: 9px;
+      background: #4c6272;
+      color: white;
+      padding: 1px 4px;
+      border-radius: 2px;
+      margin-left: 4px;
+    }
+    .composite-indicator {
+      font-size: 9px;
+      background: #7c2855;
+      color: white;
+      padding: 1px 4px;
+      border-radius: 2px;
+      margin-left: 4px;
+    }
+    .set-item.composite {
+      border-left: 3px solid #7c2855;
+    }
+    .set-list-section {
+      padding: 8px 12px 4px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #4c6272;
+      background: #f0f4f5;
+      border-bottom: 1px solid #d8dde0;
+    }
+    .set-item.disabled {
+      opacity: 0.5;
+    }
+    .set-item.disabled .set-tag::after {
+      content: ' (disabled)';
+      color: #d5281b;
+    }
+    .disabled-indicator {
+      font-size: 9px;
+      background: #d5281b;
+      color: white;
+      padding: 1px 4px;
+      border-radius: 2px;
+      margin-left: 4px;
+    }
+    
+    /* View references */
+    .view-ref-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .view-ref-item {
+      background: #f0f4f5;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .view-ref-item label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .view-ref-item select {
+      width: 100%;
+      padding: 4px 6px;
+      font-size: 12px;
+      border: 1px solid #d8dde0;
+      border-radius: 4px;
+    }
+    .view-ref-source {
+      font-size: 10px;
+      color: #4c6272;
+      margin-top: 4px;
+    }
+    .view-ref-array {
+      font-size: 11px;
+      color: #4c6272;
+      padding: 6px;
+      background: #fff;
+      border: 1px solid #d8dde0;
+      border-radius: 4px;
+      line-height: 1.5;
+    }
+    .image-count-badge {
+      display: inline-block;
+      background: #005eb8;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
+    
+    /* Column 2: Images */
+    .image-column {
+      flex: 1;
+      min-width: 400px;
+      background: #1d1d1b;
+      padding: 12px;
+      overflow-y: auto;
+    }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .image-grid-split {
+      display: flex;
+      gap: 8px;
+    }
+    .image-column-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .image-panel {
+      position: relative;
+    }
+    .image-panel img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .image-panel .view-label {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      background: rgba(0,0,0,0.5);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+    .image-count-badge {
+      display: inline-block;
+      background: #c80;
+      color: #000;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 8px;
+      margin-left: 4px;
+    }
+    .image-panel--earlier {
+      opacity: 0.7;
+    }
+    .image-panel--earlier .view-label {
+      background: rgba(200, 128, 0, 0.7);
+    }
+    .image-panel .click-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      cursor: crosshair;
+    }
+    .annotation-marker {
+      --marker-size: 24px;
+      position: absolute;
+      width: var(--marker-size);
+      height: var(--marker-size);
+      border: 2px solid #ffeb3b;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+      transition: width 0.15s, height 0.15s, opacity 0.1s;
+    }
+    .annotation-marker.active {
+      border-color: #00ff00;
+      box-shadow: 0 0 8px #00ff00;
+      pointer-events: auto;
+      cursor: grab;
+    }
+    .annotation-marker.active:active,
+    .annotation-marker.dragging {
+      cursor: grabbing;
+      opacity: 0.8;
+    }
+    .annotation-marker::after {
+      content: attr(data-index);
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffeb3b;
+      color: black;
+      font-size: 10px;
+      font-weight: bold;
+      padding: 1px 5px;
+      border-radius: 2px;
+    }
+    .annotation-marker.active::after {
+      background: #00ff00;
+    }
+    
+    /* Column 3: Editor */
+    .editor-column {
+      width: 480px;
+      flex-shrink: 0;
+      padding: 16px;
+      overflow-y: auto;
+      background: #fff;
+      border-left: 1px solid #d8dde0;
+    }
+    .editor-section {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #d8dde0;
+    }
+    .editor-section:last-child {
+      border-bottom: none;
+    }
+    .editor-section h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+    }
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .form-row label {
+      width: 80px;
+      font-size: 13px;
+      padding-top: 6px;
+    }
+    .form-row select,
+    .form-row input[type="text"] {
+      flex: 1;
+      padding: 6px 8px;
+      border: 1px solid #d8dde0;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .checkbox-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+    }
+    .per-breast-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .breast-panel {
+      background: #f0f4f5;
+      padding: 12px;
+      border-radius: 4px;
+    }
+    .breast-panel h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+    .breast-panel select {
+      width: 100%;
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      border: 1px solid #d8dde0;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    
+    /* Annotations */
+    .annotation-item {
+      background: #f0f4f5;
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      border-left: 4px solid #ffeb3b;
+    }
+    .annotation-item.active {
+      border-left-color: #00ff00;
+      background: #e8f5e9;
+    }
+    .annotation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .annotation-header strong {
+      font-size: 13px;
+    }
+    .annotation-positions {
+      font-size: 11px;
+      color: #4c6272;
+      margin-bottom: 8px;
+    }
+    .annotation-fields {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .annotation-fields select {
+      padding: 4px 6px;
+      font-size: 12px;
+      border: 1px solid #d8dde0;
+      border-radius: 4px;
+    }
+    .btn {
+      padding: 6px 12px;
+      background: #005eb8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .btn:hover {
+      background: #004f9b;
+    }
+    .btn-small {
+      padding: 3px 8px;
+      font-size: 11px;
+    }
+    .btn-secondary {
+      background: #4c6272;
+    }
+    .btn-danger {
+      background: #d5281b;
+    }
+    .btn-success {
+      background: #007f3b;
+    }
+    .help-text {
+      font-size: 12px;
+      color: #4c6272;
+      margin-bottom: 8px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="admin-header">
+    <h1>{{ pageTitle }}</h1>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button class="btn" id="saveToFile" title="Save changes back to manifest.json">💾 Save to file</button>
+      <button class="btn btn-secondary" id="copyJson">📋 Copy JSON</button>
+      <span id="saveStatus" style="font-size: 12px; color: #4c6272;"></span>
+    </div>
+  </div>
+
+  <div class="admin-container">
+    <div class="set-list" id="setList">
+      <p style="padding: 12px;">Loading...</p>
+    </div>
+
+    <div class="image-column" id="imageColumn">
+      <p style="color: #aaa;">Select a set</p>
+    </div>
+
+    <div class="editor-column" id="editorColumn">
+      <p>Select a set from the list to edit.</p>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const VIEWS = ['rmlo', 'lmlo', 'rcc', 'lcc']
+      const VIEW_LABELS = { rmlo: 'RMLO', lmlo: 'LMLO', rcc: 'RCC', lcc: 'LCC' }
+      const STATUS_OPTIONS = ['normal', 'abnormal', 'technical']
+      // Annotation abnormality types (matches radiologist workflow options)
+      const ABNORMALITY_TYPES = [
+        'Architectural distortion',
+        'Asymmetric density',
+        'Clinical abnormality',
+        'Lymph node abnormality',
+        'Mass ill-defined',
+        'Mass well-defined',
+        'Microcalcification'
+      ]
+      const CONCERN_OPTIONS = ['1', '2', '3', '4', '5']
+
+      let manifest = null
+      let currentSetId = null
+      let workingData = {}
+      let activeAnnotationIndex = null // Which annotation we're adding positions to
+      let filterType = 'all' // 'all', 'standard', 'composite'
+      let filterTag = 'all' // 'all', 'normal', 'abnormal', 'technical', 'indeterminate'
+
+      async function loadManifest() {
+        try {
+          const response = await fetch('/assets/images/mammogram-diagrams/manifest.json')
+          manifest = await response.json()
+          manifest.sets.forEach(set => {
+            workingData[set.id] = JSON.parse(JSON.stringify(set))
+          })
+          renderSetList()
+          setupFilters()
+        } catch (err) {
+          console.error('Failed to load manifest:', err)
+        }
+      }
+
+      function setupFilters() {
+        document.getElementById('filterType')?.addEventListener('change', e => {
+          filterType = e.target.value
+          renderSetList()
+        })
+        document.getElementById('filterTag')?.addEventListener('change', e => {
+          filterTag = e.target.value
+          renderSetList()
+        })
+      }
+
+      function isCompositeSet(data) {
+        return data.views && typeof data.views === 'object'
+      }
+
+      function renderSetList() {
+        const container = document.getElementById('setList')
+        
+        // Apply filters
+        let filteredSets = manifest.sets.filter(s => {
+          const data = workingData[s.id]
+          const isComposite = isCompositeSet(data)
+          
+          // Type filter
+          if (filterType === 'standard' && isComposite) return false
+          if (filterType === 'composite' && !isComposite) return false
+          
+          // Tag filter
+          if (filterTag !== 'all' && data.tag !== filterTag) return false
+          
+          return true
+        })
+        
+        const standardSets = filteredSets.filter(s => !isCompositeSet(workingData[s.id]))
+        const compositeSets = filteredSets.filter(s => isCompositeSet(workingData[s.id]))
+
+        let html = `
+          <div class="set-list-filters">
+            <select id="filterType">
+              <option value="all" ${filterType === 'all' ? 'selected' : ''}>All types</option>
+              <option value="standard" ${filterType === 'standard' ? 'selected' : ''}>Standard sets</option>
+              <option value="composite" ${filterType === 'composite' ? 'selected' : ''}>Composite sets</option>
+            </select>
+            <select id="filterTag">
+              <option value="all" ${filterTag === 'all' ? 'selected' : ''}>All tags</option>
+              <option value="normal" ${filterTag === 'normal' ? 'selected' : ''}>Normal</option>
+              <option value="abnormal" ${filterTag === 'abnormal' ? 'selected' : ''}>Abnormal</option>
+              <option value="technical" ${filterTag === 'technical' ? 'selected' : ''}>Technical</option>
+              <option value="indeterminate" ${filterTag === 'indeterminate' ? 'selected' : ''}>Indeterminate</option>
+            </select>
+          </div>
+        `
+
+        if (standardSets.length > 0) {
+          html += '<div class="set-list-section">Standard sets (' + standardSets.length + ')</div>'
+          html += standardSets.map(set => renderSetItem(set)).join('')
+        }
+
+        if (compositeSets.length > 0) {
+          html += '<div class="set-list-section">Composite sets (' + compositeSets.length + ')</div>'
+          html += compositeSets.map(set => renderSetItem(set)).join('')
+        }
+
+        container.innerHTML = html
+
+        container.querySelectorAll('.set-item').forEach(item => {
+          item.addEventListener('click', () => selectSet(item.dataset.setId))
+        })
+        
+        // Re-attach filter listeners after re-render
+        setupFilters()
+      }
+
+      function renderSetItem(set) {
+        const data = workingData[set.id]
+        const isActive = set.id === currentSetId
+        const isComposite = isCompositeSet(data)
+        const isDisabled = data.disabled === true
+        const rightStatus = data.right?.status || '–'
+        const leftStatus = data.left?.status || '–'
+        const rightClass = data.right?.status ? `status-${data.right.status}` : ''
+        const leftClass = data.left?.status ? `status-${data.left.status}` : ''
+        const indicators = []
+        if (isComposite) indicators.push('<span class="composite-indicator">composite</span>')
+        if (data.hasImplants) indicators.push('<span class="implants-indicator">implants</span>')
+        if (isDisabled) indicators.push('<span class="disabled-indicator">disabled</span>')
+        const tagClass = data.tag ? `set-tag-${data.tag}` : ''
+        return `
+          <div class="set-item ${isActive ? 'active' : ''} ${isComposite ? 'composite' : ''} ${isDisabled ? 'disabled' : ''}" data-set-id="${set.id}">
+            <div><strong>${set.id}</strong>${indicators.join('')}</div>
+            <div class="set-tag ${tagClass}">${data.tag}</div>
+            <div class="set-status">R: <span class="${rightClass}">${rightStatus}</span> | L: <span class="${leftClass}">${leftStatus}</span></div>
+          </div>
+        `
+      }
+
+      function selectSet(setId) {
+        currentSetId = setId
+        activeAnnotationIndex = null
+        renderSetList()
+        renderImages()
+        renderEditor()
+      }
+
+      function getImagePathForView(setId, view, data) {
+        // If this set has a views object (composite), resolve the reference
+        if (data && data.views && data.views[view]) {
+          const viewDef = data.views[view]
+          // Handle array format (repeat scenarios) - return array of paths
+          if (Array.isArray(viewDef)) {
+            return viewDef.map(item => resolveViewItem(setId, view, item, data))
+          }
+          return resolveViewItem(setId, view, viewDef, data)
+        }
+        // Standard set - image in set folder
+        return `/assets/images/mammogram-diagrams/${setId}/${view}.png`
+      }
+
+      function resolveViewItem(setId, view, viewDef, data) {
+        if (viewDef.image) {
+          // Image library reference
+          return `/assets/images/mammogram-diagrams/image-library/${viewDef.image}.png`
+        } else if (viewDef.from) {
+          // Reference to another set - get that set's path
+          const refData = workingData[viewDef.from]
+          return getImagePathForView(viewDef.from, view, refData)
+        }
+        return `/assets/images/mammogram-diagrams/${setId}/${view}.png`
+      }
+
+      function renderImages() {
+        if (!currentSetId) return
+        const data = workingData[currentSetId]
+        const container = document.getElementById('imageColumn')
+
+        // Helper to render images for a view
+        const renderViewImages = (view) => {
+          const imgPath = getImagePathForView(currentSetId, view, data)
+          const isArray = Array.isArray(imgPath)
+          const displayPaths = isArray ? imgPath : [imgPath]
+          
+          // Build source info text
+          let sourceInfo = ''
+          if (data.views && data.views[view]) {
+            const viewDef = data.views[view]
+            if (Array.isArray(viewDef)) {
+              sourceInfo = `${viewDef.length} images`
+            } else if (viewDef.image) {
+              sourceInfo = `image: ${viewDef.image}`
+            } else if (viewDef.from) {
+              sourceInfo = `from: ${viewDef.from}`
+            }
+          }
+          
+          // Render all images for this view
+          return displayPaths.map((path, idx) => {
+            const isLatest = idx === displayPaths.length - 1
+            const indexLabel = displayPaths.length > 1 ? ` (${idx + 1}/${displayPaths.length})` : ''
+            return `
+              <div class="image-panel ${isLatest ? '' : 'image-panel--earlier'}" data-view="${view}" data-index="${idx}">
+                <img src="${path}" alt="${view}" onerror="this.style.opacity='0.3'">
+                <div class="view-label">${VIEW_LABELS[view]}${indexLabel}${sourceInfo && isLatest ? '<br><small>' + sourceInfo + '</small>' : ''}</div>
+                <div class="click-area" data-view="${view}"></div>
+              </div>
+            `
+          }).join('')
+        }
+
+        // Render as two columns: right breast on left, left breast on right
+        container.innerHTML = `
+          <div class="image-grid-split">
+            <div class="image-column-side">
+              ${renderViewImages('rmlo')}
+              ${renderViewImages('rcc')}
+            </div>
+            <div class="image-column-side">
+              ${renderViewImages('lmlo')}
+              ${renderViewImages('lcc')}
+            </div>
+          </div>
+        `
+
+        renderAnnotationMarkers()
+        attachClickAreaHandlers()
+      }
+
+      function renderAnnotationMarkers() {
+        if (!currentSetId) return
+        const data = workingData[currentSetId]
+        const container = document.getElementById('imageColumn')
+
+        const normalisePercent = (value) => value <= 1 ? value * 100 : value
+
+        // Remove existing markers
+        container.querySelectorAll('.annotation-marker').forEach(m => m.remove())
+
+        // Render annotation markers
+        if (data.annotations) {
+          data.annotations.forEach((ann, annIndex) => {
+            if (ann.positions) {
+              Object.entries(ann.positions).forEach(([view, pos]) => {
+                const clickArea = container.querySelector(`.click-area[data-view="${view}"]`)
+                if (clickArea) {
+                  const marker = document.createElement('div')
+                  marker.className = 'annotation-marker' + (annIndex === activeAnnotationIndex ? ' active' : '')
+                  const xPercent = normalisePercent(pos.x)
+                  const yPercent = normalisePercent(pos.y)
+                  marker.style.left = `${xPercent}%`
+                  marker.style.top = `${yPercent}%`
+                  const scale = ann.scale || 1
+                  marker.style.setProperty('--marker-size', `${Math.round(24 * scale)}px`)
+                  marker.dataset.index = annIndex + 1
+                  marker.dataset.view = view
+                  marker.dataset.annIndex = annIndex
+                  
+                  // Add drag functionality for active markers
+                  if (annIndex === activeAnnotationIndex) {
+                    marker.addEventListener('mousedown', e => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      marker.classList.add('dragging')
+                      
+                      const onMouseMove = moveEvent => {
+                        const rect = clickArea.getBoundingClientRect()
+                        const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100))
+                        const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100))
+                        marker.style.left = `${x}%`
+                        marker.style.top = `${y}%`
+                      }
+                      
+                      const onMouseUp = upEvent => {
+                        marker.classList.remove('dragging')
+                        document.removeEventListener('mousemove', onMouseMove)
+                        document.removeEventListener('mouseup', onMouseUp)
+                        
+                        // Save final position in 0-1 format (3 decimal places)
+                        const rect = clickArea.getBoundingClientRect()
+                        const finalX = Math.round(Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width)) * 1000) / 1000
+                        const finalY = Math.round(Math.max(0, Math.min(1, (upEvent.clientY - rect.top) / rect.height)) * 1000) / 1000
+                        data.annotations[annIndex].positions[view] = { x: finalX, y: finalY }
+                        renderEditor()
+                      }
+                      
+                      document.addEventListener('mousemove', onMouseMove)
+                      document.addEventListener('mouseup', onMouseUp)
+                    })
+                  }
+                  
+                  clickArea.appendChild(marker)
+                }
+              })
+            }
+          })
+        }
+      }
+
+      function attachClickAreaHandlers() {
+        if (!currentSetId) return
+        const data = workingData[currentSetId]
+        const container = document.getElementById('imageColumn')
+
+        // Click handlers for adding positions
+        container.querySelectorAll('.click-area').forEach(area => {
+          area.addEventListener('click', e => {
+            const view = area.dataset.view
+            const rect = area.getBoundingClientRect()
+            // Save in 0-1 format (3 decimal places)
+            const x = Math.round(((e.clientX - rect.left) / rect.width) * 1000) / 1000
+            const y = Math.round(((e.clientY - rect.top) / rect.height) * 1000) / 1000
+            const side = view.startsWith('r') ? 'right' : 'left'
+
+            if (!data.annotations) data.annotations = []
+
+            if (activeAnnotationIndex !== null && data.annotations[activeAnnotationIndex]) {
+              // Add position to active annotation
+              const ann = data.annotations[activeAnnotationIndex]
+              if (ann.side === side) {
+                if (!ann.positions) ann.positions = {}
+                ann.positions[view] = { x, y }
+              } else {
+                // Different side - deselect current annotation and create new one
+                activeAnnotationIndex = null
+                data.annotations.push({
+                  side,
+                  positions: { [view]: { x, y } }
+                })
+                activeAnnotationIndex = data.annotations.length - 1
+              }
+            } else {
+              // Create new annotation
+              data.annotations.push({
+                side,
+                positions: { [view]: { x, y } }
+              })
+              activeAnnotationIndex = data.annotations.length - 1
+            }
+
+            renderAnnotationMarkers()
+            renderEditor()
+          })
+        })
+      }
+
+      function getStandardSetOptions() {
+        return manifest.sets
+          .filter(s => !isCompositeSet(workingData[s.id]))
+          .map(s => s.id)
+      }
+
+      function getImageLibraryOptions() {
+        return manifest.imageLibrary || []
+      }
+
+      function renderImageLibraryOptions(view, selectedValue) {
+        const allImages = getImageLibraryOptions()
+        const matchingView = allImages.filter(img => img.view === view)
+        const otherViews = allImages.filter(img => img.view !== view)
+
+        let html = '<option value="">Select...</option>'
+        if (matchingView.length > 0) {
+          html += `<optgroup label="${VIEW_LABELS[view]} images">`
+          html += matchingView.map(img => 
+            `<option value="${img.id}" ${selectedValue === img.id ? 'selected' : ''}>${img.id}</option>`
+          ).join('')
+          html += '</optgroup>'
+        }
+        if (otherViews.length > 0) {
+          html += '<optgroup label="Other views">'
+          html += otherViews.map(img => 
+            `<option value="${img.id}" ${selectedValue === img.id ? 'selected' : ''}>${img.id}</option>`
+          ).join('')
+          html += '</optgroup>'
+        }
+        return html
+      }
+
+      function renderEditor() {
+        if (!currentSetId) return
+        const data = workingData[currentSetId]
+        const container = document.getElementById('editorColumn')
+        const isComposite = isCompositeSet(data)
+        const standardSets = getStandardSetOptions()
+
+        container.innerHTML = `
+          <div class="editor-section">
+            <h3>${currentSetId}${isComposite ? ' <span class="composite-indicator">composite</span>' : ''}</h3>
+            <textarea id="setDescription" placeholder="Add description..." style="width: 100%; font-size: 13px; color: #4c6272; border: 1px solid #d8dde0; border-radius: 4px; padding: 6px 8px; resize: vertical; min-height: 40px;">${data.description || ''}</textarea>
+          </div>
+
+          <div class="editor-section">
+            <h3>View references</h3>
+            ${isComposite ? `
+            <p class="help-text">Each view can reference a standard set or an image library item.</p>
+            <div class="view-ref-grid">
+              ${VIEWS.map(view => {
+                const viewDef = data.views[view] || {}
+                const isArrayView = Array.isArray(viewDef)
+                
+                if (isArrayView) {
+                  // Array view - show read-only summary
+                  const items = viewDef.map((item, idx) => {
+                    if (item.image) return (idx + 1) + ". image: " + item.image
+                    if (item.from) return (idx + 1) + ". from: " + item.from
+                    return (idx + 1) + ". unknown"
+                  }).join('<br>')
+                  return '<div class="view-ref-item">' +
+                    '<label>' + VIEW_LABELS[view] + ' <span class="image-count-badge">' + viewDef.length + '</span></label>' +
+                    '<div class="view-ref-array">' + items + '</div>' +
+                  '</div>'
+                }
+                
+                const sourceType = viewDef.image ? 'image' : viewDef.from ? 'from' : ''
+                const sourceValue = viewDef.image || viewDef.from || ''
+                return `
+                  <div class="view-ref-item">
+                    <label>${VIEW_LABELS[view]}</label>
+                    <select data-view="${view}" data-source-type>
+                      <option value="">Select source...</option>
+                      <option value="from" ${sourceType === 'from' ? 'selected' : ''}>From set</option>
+                      <option value="image" ${sourceType === 'image' ? 'selected' : ''}>Image library</option>
+                    </select>
+                    <select data-view="${view}" data-source-value style="margin-top: 4px;">
+                      ${sourceType === 'from' ? 
+                        '<option value="">Select...</option>' + standardSets.map(s => `<option value="${s}" ${sourceValue === s ? 'selected' : ''}>${s}</option>`).join('') : 
+                        sourceType === 'image' ? 
+                        renderImageLibraryOptions(view, sourceValue) : 
+                        '<option value="">Select...</option>'}
+                    </select>
+                  </div>
+                `
+              }).join('')}
+            </div>
+            ` : `
+            <p class="help-text">Standard sets use images from their own folder (<code>${currentSetId}/</code>). View references cannot be changed.</p>
+            `}
+          </div>
+
+          <div class="editor-section">
+            <h3>Set metadata</h3>
+            <div class="form-row">
+              <label>Tag</label>
+              <select id="tag">
+                <option value="normal" ${data.tag === 'normal' ? 'selected' : ''}>normal</option>
+                <option value="abnormal" ${data.tag === 'abnormal' ? 'selected' : ''}>abnormal</option>
+                <option value="indeterminate" ${data.tag === 'indeterminate' ? 'selected' : ''}>indeterminate</option>
+                <option value="technical" ${data.tag === 'technical' ? 'selected' : ''}>technical</option>
+              </select>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="hasImplants" ${data.hasImplants ? 'checked' : ''}>
+              <label for="hasImplants">Has implants</label>
+            </div>
+            <div class="checkbox-row">
+              <input type="checkbox" id="disabled" ${data.disabled ? 'checked' : ''}>
+              <label for="disabled">Disabled (excluded from selection)</label>
+            </div>
+          </div>
+
+          <div class="editor-section">
+            <h3>Per-breast status</h3>
+            <div class="per-breast-grid">
+              <div class="breast-panel">
+                <h4>Right breast</h4>
+                <select id="right-status">
+                  <option value="">Status...</option>
+                  ${STATUS_OPTIONS.map(s => `<option value="${s}" ${data.right?.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+              </div>
+              <div class="breast-panel">
+                <h4>Left breast</h4>
+                <select id="left-status">
+                  <option value="">Status...</option>
+                  ${STATUS_OPTIONS.map(s => `<option value="${s}" ${data.left?.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="editor-section">
+            <h3>Annotations</h3>
+            <p class="help-text">Click an annotation to select it, then click on images to add positions. Or click directly on an image to create a new annotation.</p>
+            <div id="annotationList">
+              ${renderAnnotations(data.annotations || [])}
+            </div>
+            <button class="btn btn-secondary btn-small" id="newAnnotation">+ New annotation</button>
+            <button class="btn btn-danger btn-small" id="clearAnnotations" style="margin-left: 8px;">Clear all</button>
+          </div>
+        `
+
+        attachEditorListeners()
+      }
+
+      function renderAnnotations(annotations) {
+        if (!annotations || annotations.length === 0) {
+          return '<p class="help-text">No annotations. Click on an image to add one.</p>'
+        }
+        return annotations.map((ann, i) => {
+          const isActive = i === activeAnnotationIndex
+          const posViews = ann.positions ? Object.keys(ann.positions).map(v => VIEW_LABELS[v]).join(', ') : 'no positions'
+          return `
+            <div class="annotation-item ${isActive ? 'active' : ''}" data-ann-index="${i}">
+              <div class="annotation-header">
+                <strong>#${i + 1} – ${ann.side} breast</strong>
+                <div>
+                  <button class="btn btn-small ${isActive ? 'btn-success' : 'btn-secondary'}" data-select-ann="${i}">${isActive ? 'Deselect' : 'Select'}</button>
+                  <button class="btn btn-small btn-danger" data-delete-ann="${i}">×</button>
+                </div>
+              </div>
+              <div class="annotation-positions">Positions: ${posViews}</div>
+              <div class="annotation-fields">
+                <select data-ann-index="${i}" data-field="abnormalityType">
+                  <option value="">Type...</option>
+                  ${ABNORMALITY_TYPES.map(t => `<option value="${t}" ${ann.abnormalityType === t ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+                <select data-ann-index="${i}" data-field="levelOfConcern">
+                  <option value="">Concern...</option>
+                  ${CONCERN_OPTIONS.map(c => `<option value="${c}" ${ann.levelOfConcern === c ? 'selected' : ''}>${c}</option>`).join('')}
+                </select>
+              </div>
+              <div style="margin-top: 6px; display: flex; gap: 8px; align-items: center;">
+                <label style="font-size: 11px; color: #4c6272;">Size:</label>
+                <input type="range" data-ann-index="${i}" data-field="scale" min="0.5" max="8" step="0.25" value="${ann.scale || 1}" style="flex: 1;">
+                <span style="font-size: 11px; min-width: 28px;">${ann.scale || 1}×</span>
+              </div>
+              <div style="margin-top: 6px;">
+                <input type="text" data-ann-index="${i}" data-field="notes" placeholder="Notes (e.g. cancer, benign cyst...)" value="${ann.notes || ''}" style="width: 100%; padding: 4px 6px; font-size: 12px; border: 1px solid #d8dde0; border-radius: 4px;">
+              </div>
+            </div>
+          `
+        }).join('')
+      }
+
+      function attachEditorListeners() {
+        const data = workingData[currentSetId]
+        const standardSets = getStandardSetOptions()
+
+        // Description field
+        document.getElementById('setDescription')?.addEventListener('blur', e => {
+          if (e.target.value.trim()) {
+            data.description = e.target.value.trim()
+          } else {
+            delete data.description
+          }
+        })
+
+        // View reference source type changes
+        document.querySelectorAll('[data-source-type]').forEach(el => {
+          el.addEventListener('change', e => {
+            const view = e.target.dataset.view
+            const sourceType = e.target.value
+            if (!data.views) data.views = {}
+            if (!data.views[view]) data.views[view] = {}
+
+            // Clear existing and update options in sibling select
+            delete data.views[view].from
+            delete data.views[view].image
+
+            const valueSelect = document.querySelector(`[data-view="${view}"][data-source-value]`)
+            if (valueSelect) {
+              let options = '<option value="">Select...</option>'
+              if (sourceType === 'from') {
+                options += standardSets.map(s => `<option value="${s}">${s}</option>`).join('')
+              } else if (sourceType === 'image') {
+                options = renderImageLibraryOptions(view, '')
+              }
+              valueSelect.innerHTML = options
+            }
+            renderImages()
+          })
+        })
+
+        // View reference source value changes
+        document.querySelectorAll('[data-source-value]').forEach(el => {
+          el.addEventListener('change', e => {
+            const view = e.target.dataset.view
+            const value = e.target.value
+            const typeSelect = document.querySelector(`[data-view="${view}"][data-source-type]`)
+            const sourceType = typeSelect?.value
+
+            if (!data.views) data.views = {}
+            if (!data.views[view]) data.views[view] = {}
+
+            delete data.views[view].from
+            delete data.views[view].image
+
+            if (sourceType && value) {
+              data.views[view][sourceType] = value
+            }
+            renderImages()
+          })
+        })
+
+        // Tag
+        document.getElementById('tag')?.addEventListener('change', e => {
+          data.tag = e.target.value
+          renderSetList()
+        })
+
+        // Implants
+        document.getElementById('hasImplants')?.addEventListener('change', e => {
+          if (e.target.checked) data.hasImplants = true
+          else delete data.hasImplants
+          renderSetList()
+        })
+
+        // Disabled
+        document.getElementById('disabled')?.addEventListener('change', e => {
+          if (e.target.checked) data.disabled = true
+          else delete data.disabled
+          renderSetList()
+        })
+
+        // Per-breast status
+        ;['right', 'left'].forEach(side => {
+          document.getElementById(`${side}-status`)?.addEventListener('change', e => {
+            if (!data[side]) data[side] = {}
+            if (e.target.value) data[side].status = e.target.value
+            else delete data[side].status
+            if (Object.keys(data[side]).length === 0) delete data[side]
+            renderSetList()
+          })
+        })
+
+        // Select annotation (click anywhere on annotation card)
+        document.querySelectorAll('.annotation-item[data-ann-index]').forEach(item => {
+          item.addEventListener('click', e => {
+            // Don't auto-select if clicking the delete button
+            if (e.target.closest('[data-delete-ann]')) return
+            const idx = parseInt(item.dataset.annIndex)
+            if (activeAnnotationIndex !== idx) {
+              activeAnnotationIndex = idx
+              renderAnnotationMarkers()
+              renderEditor()
+            }
+          })
+        })
+
+        // Toggle annotation selection (explicit select button)
+        document.querySelectorAll('[data-select-ann]').forEach(btn => {
+          btn.addEventListener('click', e => {
+            e.stopPropagation()
+            const idx = parseInt(e.target.dataset.selectAnn)
+            activeAnnotationIndex = activeAnnotationIndex === idx ? null : idx
+            renderAnnotationMarkers()
+            renderEditor()
+          })
+        })
+
+        // Delete annotation
+        document.querySelectorAll('[data-delete-ann]').forEach(btn => {
+          btn.addEventListener('click', e => {
+            const idx = parseInt(e.target.dataset.deleteAnn)
+            data.annotations.splice(idx, 1)
+            if (data.annotations.length === 0) delete data.annotations
+            if (activeAnnotationIndex === idx) activeAnnotationIndex = null
+            else if (activeAnnotationIndex > idx) activeAnnotationIndex--
+            renderAnnotationMarkers()
+            renderEditor()
+          })
+        })
+
+        // Annotation field changes (selects)
+        document.querySelectorAll('select[data-ann-index][data-field]').forEach(el => {
+          el.addEventListener('change', e => {
+            const idx = parseInt(e.target.dataset.annIndex)
+            const field = e.target.dataset.field
+            if (data.annotations[idx]) {
+              if (e.target.value) data.annotations[idx][field] = e.target.value
+              else delete data.annotations[idx][field]
+            }
+          })
+        })
+
+        // Annotation text input changes (notes)
+        document.querySelectorAll('input[type="text"][data-ann-index][data-field]').forEach(el => {
+          el.addEventListener('blur', e => {
+            const idx = parseInt(e.target.dataset.annIndex)
+            const field = e.target.dataset.field
+            if (data.annotations[idx]) {
+              if (e.target.value) data.annotations[idx][field] = e.target.value
+              else delete data.annotations[idx][field]
+            }
+          })
+        })
+
+        // Annotation scale slider changes
+        document.querySelectorAll('input[type="range"][data-ann-index][data-field="scale"]').forEach(el => {
+          el.addEventListener('input', e => {
+            const idx = parseInt(e.target.dataset.annIndex)
+            const value = parseFloat(e.target.value)
+            if (data.annotations[idx]) {
+              if (value !== 1) data.annotations[idx].scale = value
+              else delete data.annotations[idx].scale
+              // Update the displayed value
+              const span = e.target.nextElementSibling
+              if (span) span.textContent = `${value}×`
+              renderAnnotationMarkers()
+            }
+          })
+        })
+
+        // New annotation button - deselects current so next click creates new
+        document.getElementById('newAnnotation')?.addEventListener('click', () => {
+          activeAnnotationIndex = null
+          renderImages()
+          renderEditor()
+        })
+
+        // Clear annotations
+        document.getElementById('clearAnnotations')?.addEventListener('click', () => {
+          delete data.annotations
+          activeAnnotationIndex = null
+          renderImages()
+          renderEditor()
+        })
+      }
+
+      // Generate formatted JSON output
+      function generateOutput() {
+        return {
+          imageLibrary: manifest.imageLibrary || [],
+          sets: manifest.sets.map(set => workingData[set.id])
+        }
+      }
+
+      // Copy JSON button with visual feedback
+      document.getElementById('copyJson').addEventListener('click', async () => {
+        const output = generateOutput()
+        const json = JSON.stringify(output, null, 2)
+        
+        try {
+          await navigator.clipboard.writeText(json)
+          const btn = document.getElementById('copyJson')
+          const originalText = btn.textContent
+          btn.textContent = '✓ Copied!'
+          btn.style.background = '#007f3b'
+          btn.style.color = 'white'
+          setTimeout(() => {
+            btn.textContent = originalText
+            btn.style.background = ''
+            btn.style.color = ''
+          }, 2000)
+        } catch (err) {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea')
+          textarea.value = json
+          document.body.appendChild(textarea)
+          textarea.select()
+          document.execCommand('copy')
+          document.body.removeChild(textarea)
+          alert('Copied!')
+        }
+      })
+
+      // Save to file button
+      document.getElementById('saveToFile').addEventListener('click', async () => {
+        const output = generateOutput()
+        const statusEl = document.getElementById('saveStatus')
+        const btn = document.getElementById('saveToFile')
+        
+        btn.disabled = true
+        statusEl.textContent = 'Saving...'
+        
+        try {
+          const response = await fetch('/admin/mammogram-sets/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(output)
+          })
+          
+          if (response.ok) {
+            statusEl.textContent = '✓ Saved!'
+            statusEl.style.color = '#007f3b'
+            setTimeout(() => {
+              statusEl.textContent = ''
+              statusEl.style.color = ''
+            }, 3000)
+          } else {
+            throw new Error('Save failed')
+          }
+        } catch (err) {
+          statusEl.textContent = '✗ Save failed'
+          statusEl.style.color = '#d5281b'
+        } finally {
+          btn.disabled = false
+        }
+      })
+
+      loadManifest()
+    })()
+  </script>
+{% endblock %}

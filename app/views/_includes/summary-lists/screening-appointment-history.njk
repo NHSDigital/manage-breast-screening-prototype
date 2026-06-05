@@ -36,7 +36,7 @@
            <td>
              {{ tag({
                text: event.status | getStatusText,
-               classes: "nhsuk-tag--" + event.status | getStatusTagColour
+               colour: event.status | getStatusTagColour
              }) }}
            </td>
            <td>
@@ -77,7 +77,7 @@
          <td>
            {{ tag({
              text: event.status | getStatusText,
-             classes: "nhsuk-tag--" + event.status | getStatusTagColour
+             colour: event.status | getStatusTagColour
            }) }}
          </td>
          {# <td>

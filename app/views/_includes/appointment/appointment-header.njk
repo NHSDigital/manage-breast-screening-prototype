@@ -44,7 +44,8 @@
     {% if event.status === "event_rescheduled" %}
       {{ tag({
         text: "Reschedule requested",
-        classes: "nhsuk-tag--red nhsuk-u-margin-bottom-2",
+        colour: "red",
+        classes: "nhsuk-u-margin-bottom-2",
         attributes: {
           id: statusTagId
         }
@@ -91,22 +92,22 @@
         {
           text: "Reschedule appointment",
           href: "#" | urlWithReferrer(currentUrl),
-          classes: "nhsuk-button--secondary"
+          variant: "secondary"
         },
         {
           text: "Cancel appointment",
           href: "#" | urlWithReferrer(currentUrl),
-          classes: "nhsuk-button--secondary"
+          variant: "secondary"
         },
         {
           text: "Make this appointment a special appointment" if not event | isSpecialAppointment else "Change special appointment details",
           href: eventUrl ~ "/special-appointment/edit" | urlWithReferrer(eventUrl),
-          classes: "nhsuk-button--secondary"
+          variant: "secondary"
         }
       ],
       button: {
         text: "Appointment actions",
-        classes: "nhsuk-button--secondary"
+        variant: "secondary"
       },
       alignMenu: "right"
     }) }}

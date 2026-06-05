@@ -10,7 +10,7 @@
   {% call fieldset({
     legend: {
       text: "Where was the cancer diagnosed?",
-      classes: "nhsuk-fieldset__legend--m"
+      size: "m"
     },
     attributes: {
       "aria-describedby": "breast-location-hint"
@@ -73,7 +73,7 @@
   {# {{ input({
     label: {
       text: "In what year was breast cancer first diagnosed?",
-      classes: "nhsuk-label--m"
+      size: "m"
     },
     name: "event[medicalHistoryTemp][diagnosisYear]",
     value: event.medicalHistoryTemp.diagnosisYear,
@@ -104,7 +104,7 @@
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
-            classes: "nhsuk-fieldset__legend--s",
+            size: "s",
             isPageHeading: false
           }
         },
@@ -139,7 +139,7 @@
         fieldset: {
           legend: {
             html: ((procedureQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
-            classes: "nhsuk-fieldset__legend--s",
+            size: "s",
             isPageHeading: false
           }
         },
@@ -184,7 +184,7 @@
         fieldset: {
           legend: {
             html: ((otherSurgeryQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
-            classes: "nhsuk-fieldset__legend--s",
+            size: "s",
             isPageHeading: false
           }
         },
@@ -220,7 +220,7 @@
         fieldset: {
           legend: {
             html: ((otherSurgeryQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
-            classes: "nhsuk-fieldset__legend--s",
+            size: "s",
             isPageHeading: false
           }
         },
@@ -266,7 +266,7 @@
         fieldset: {
           legend: {
             html: ((treatmentQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast (or axilla)",
-            classes: "nhsuk-fieldset__legend--s",
+            size: "s",
             isPageHeading: false
           }
         },
@@ -299,7 +299,7 @@
         fieldset: {
           legend: {
             html: ((treatmentQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast (or axilla)",
-            classes: "nhsuk-fieldset__legend--s",
+            size: "s",
             isPageHeading: false
           }
         },
@@ -332,7 +332,7 @@
   fieldset: {
     legend: {
       html: ((treatmentQuestionText + " that are ") | asVisuallyHiddenText) ~ "Systemic treatments",
-      classes: "nhsuk-fieldset__legend--s",
+      size: "s",
       isPageHeading: false
     }
   },
@@ -352,7 +352,7 @@
         html: input({
           label: {
             text: "Provide details",
-            classes: "nhsuk-label--s"
+            size: "s"
           },
           name: "event[medicalHistoryTemp][otherTreatmentDetails]",
           value: event.medicalHistoryTemp.otherTreatmentDetails,
