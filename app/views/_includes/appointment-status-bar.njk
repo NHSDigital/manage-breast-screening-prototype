@@ -4,7 +4,7 @@
 {% set appointmentRowItems = [] %}
 
 {# Date and time #}
-{% set appointmentHtml %}
+{% set appointmentDateTimeHtml %}
   {{ clinic.date | formatDate }} at {{ event.timing.startTime | formatTimeString }}
   {% if event | isSpecialAppointment %}
     {{ tag({
@@ -13,21 +13,36 @@
       classes: "nhsuk-u-margin-left-1"
     })}}
   {% endif %}
-  {% if data.settings.screening.addedToWorklist == 'false' %}
+{% endset %}
+{% set appointmentRowItems = appointmentRowItems | push({
+  key: '<abbr title="Appointment">Appt</abbr>:',
+  value: appointmentDateTimeHtml
+}) %}
+
+{# Worklist status #}
+{% set worklistStatusHtml %}
+  {% if data.settings.screening.addedToWorklist == 'false' and not data.event.isOnWorklist %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
-      <span>Not added to worklist (<a href="#">Retry</a>)</span>
+      {% if data.event.isManualImageCollection %}
+        <span>Worklist issue, manual mode enabled</span>
+      {% else %}
+        <span>Not on worklist (<a href="{{ ('/clinics/' + clinicId + '/events/' + event.id + '/retry-worklist-connection') | urlWithReferrer(currentUrl) }}">Retry</a>)</span>
+      {% endif %}
     </span>
   {% else %}
     <span class="app-header-status">
       {{ appIcon("tick", { classes: "app-header-status__icon" }) }}
-      <span>Added to worklist</span>
+      <span>On worklist</span>
     </span>
   {% endif %}
 {% endset %}
+
+{# Worklist accession number with inline worklist status #}
+{% set accessionNumberFormatted = event.accessionNumber | formatAccessionNumber %}
 {% set appointmentRowItems = appointmentRowItems | push({
-  key: "Appointment:",
-  value: appointmentHtml
+  key: '<abbr title="Accession number">Accn</abbr>:',
+  value: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + accessionNumberFormatted + '</span><span class="app-status-bar__worklist-status">' + worklistStatusHtml + '</span>'
 }) %}
 
 {# Appointment type #}
@@ -86,7 +101,7 @@
 {# NHS Number #}
 {% set participantRowItems = participantRowItems | push({
   key: "NHS:",
-  value: participant.medicalInformation.nhsNumber | formatNhsNumber
+  value: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>'
 }) %}
 
 {{ appStatusBar({

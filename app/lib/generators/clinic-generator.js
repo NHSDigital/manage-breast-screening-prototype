@@ -183,6 +183,7 @@ const generateClinic = (
     clinicCode: generateClinicCode(),
     date: clinicDate.format('YYYY-MM-DD'),
     breastScreeningUnitId: breastScreeningUnit.id,
+    bsuAbbreviation: breastScreeningUnit.abbreviation,
     locationType: location.type,
     clinicType,
     riskLevels,

@@ -2228,17 +2228,98 @@ module.exports = (router) => {
     }
   )
 
+  // Worklist connection retry routes
+  //
+  // The retry page is rendered as a simple GET (auto-routed or via this route).
+  // Retry counting is handled entirely client-side — the JS fakes a failed
+  // first attempt and a successful second attempt, then submits the form.
+  //
+  // POST retry-worklist-connection: marks worklist as connected and redirects
+  // back using the standard referrerChain system.
+  //
+  // POST switch-to-manual-image-mode: stores manual mode on the EVENT (not
+  // globally) and redirects back via referrerChain.
+
+  // Handle successful "Retry connection" — client-side JS only submits after
+  // simulating a successful reconnect.
+  router.post(
+    '/clinics/:clinicId/events/:eventId/retry-worklist-connection',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // Mark this event as reconnected (per-event, doesn't change the global setting)
+      data.event.isOnWorklist = true
+
+      const participantName = getFullName(data.participant)
+      req.flash('success', {
+        html: `<p class="nhsuk-notification-banner__heading">${participantName} is now on the worklist</p>
+<p>Image information will be sent automatically from the mammogram machine</p>`
+      })
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/take-images`,
+        req.query.referrerChain
+      )
+      return res.redirect(returnUrl)
+    }
+  )
+
+  // Handle "Switch to manual image mode" — stores override on the event only.
+  router.post(
+    '/clinics/:clinicId/events/:eventId/switch-to-manual-image-mode',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+
+      // Store manual mode on the event itself, not globally
+      data.event.isManualImageCollection = true
+
+      req.flash('success', {
+        html: '<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>'
+      })
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/take-images`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
+
   // Manual imaging routes
 
-  // Handle take-images route - redirect to appropriate page based on state
-  router.get('/clinics/:clinicId/events/:eventId/take-images', (req, res) => {
+  // Handle take-images route - redirect to appropriate page based on state.
+  // Use `all` so the gate applies to the POST from review-medical-information
+  // as well as direct GET navigation.
+  router.all('/clinics/:clinicId/events/:eventId/take-images', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
 
+    const isAddedToWorklist =
+      data.settings?.screening?.addedToWorklist !== 'false' ||
+      data.event?.isOnWorklist === true
+
+    // Manual mode is true if the global setting says so, OR this specific
+    // event was switched to manual (e.g. via the retry-connection page).
     const isManualImageCollection =
-      data.settings?.screening?.manualImageCollection === 'true'
+      data.settings?.screening?.manualImageCollection === 'true' ||
+      data.event?.isManualImageCollection === true
+
     const imagesStageCompleted =
       data.event?.workflowStatus?.['take-images'] === 'completed'
+
+    // Gate: if the appointment was not added to the worklist and the user
+    // hasn't yet switched to manual image mode, divert to the retry page
+    // before letting them into the image-taking step.
+    if (!isAddedToWorklist && !isManualImageCollection) {
+      return res.redirect(
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/retry-worklist-connection`,
+          `/clinics/${clinicId}/events/${eventId}/take-images`
+        )
+      )
+    }
 
     // If manual flow and images already completed, redirect to details page for editing
     if (
@@ -2270,6 +2351,12 @@ module.exports = (router) => {
   router.get('/clinics/:clinicId/events/:eventId/images-manual', (req, res) => {
     const { clinicId, eventId } = req.params
     const data = req.session.data
+    const validTroubleshootingIssues = [
+      'worklist-participant',
+      'wrong-image-count',
+      'incorrect-image-labels'
+    ]
+    const troubleshootingIssue = req.query.issue
 
     // If mammogramData exists and is manual entry, prepopulate temp for editing
     if (data.event?.mammogramData?.isManualEntry) {
@@ -2283,19 +2370,32 @@ module.exports = (router) => {
       // Clear any existing temp data for fresh start
       delete data.event.mammogramDataTemp
 
-      // Check if this is a failover from automatic mode
-      const isManualImageCollection =
+      // Check if this is a failover from automatic mode (event was switched
+      // to manual via the retry-connection page, or user navigated here from
+      // the troubleshooting link on the automatic images page).
+      const isGlobalManualSetting =
         data.settings?.screening?.manualImageCollection === 'true'
       const hadAutomaticData =
         !!data.event?.mammogramData && !data.event?.mammogramData?.isManualEntry
 
       // Set failover flag if switching from automatic to manual
-      if (!isManualImageCollection || hadAutomaticData) {
+      if (!isGlobalManualSetting || hadAutomaticData) {
         if (!data.event.mammogramDataTemp) {
           data.event.mammogramDataTemp = {}
         }
         data.event.mammogramDataTemp.isManualFailover = true
       }
+    }
+
+    // Persist troubleshooting issue context when navigating from troubleshooting links
+    if (validTroubleshootingIssues.includes(troubleshootingIssue)) {
+      if (!data.event.mammogramDataTemp) {
+        data.event.mammogramDataTemp = {}
+      }
+      data.event.mammogramDataTemp.troubleshootingIssue = troubleshootingIssue
+    } else if (data.event?.mammogramDataTemp?.troubleshootingIssue) {
+      // Clear stale issue context for non-troubleshooting entry points
+      delete data.event.mammogramDataTemp.troubleshootingIssue
     }
 
     // Let the dynamic routing handle the actual rendering

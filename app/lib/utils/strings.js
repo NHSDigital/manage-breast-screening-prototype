@@ -357,6 +357,29 @@ const formatNhsNumber = (input) => {
 // formatNhsNumber('485 777 3456') // returns '485 777 3456'
 
 /**
+ * Format an accession number for display with spaces (ABC YYYYMMDD ##### format)
+ *
+ * @param {string} input - Raw accession number, e.g. 'KOX2026052712345'
+ * @returns {string} Formatted accession number, e.g. 'KOX 20260527 12345'
+ * @example
+ * formatAccessionNumber('KOX2026052712345') // 'KOX 20260527 12345'
+ */
+const formatAccessionNumber = (input) => {
+  if (!input) return ''
+  const str = input.toString().replace(/\s/g, '')
+
+  // Expect 3 letters + 8 digits (date) + remaining digits
+  if (!/^[A-Z]{3}\d{13,}$/.test(str)) {
+    return input
+  }
+
+  const bsu = str.slice(0, 3)
+  const date = str.slice(3, 11)
+  const sequence = str.slice(11)
+  return `${bsu} ${date} ${sequence}`
+}
+
+/**
  * Make a word plural based on a count
  *
  * @param {string} word - Word to pluralise
@@ -394,6 +417,7 @@ const formatMammogramViewCode = (code) => {
 
 module.exports = {
   addIndefiniteArticle,
+  formatAccessionNumber,
   formatCurrency,
   formatCurrencyForCsv,
   formatNhsNumber,

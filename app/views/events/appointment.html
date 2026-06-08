@@ -252,6 +252,17 @@
               } | openInModal
             ] if event.status != "event_complete" else []
           }
+        },
+        {
+          key: {
+            text: "Accession number"
+          },
+          value: {
+            html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (event.accessionNumber | formatAccessionNumber) + '</span>'
+          },
+          actions: {
+            items: []
+          }
         }
       ]
     } | handleSummaryListMissingInformation) }}

@@ -28,6 +28,10 @@
   align-items: center;
 }
 
+// .app-status-bar__row--compact {
+//   gap: 10px;
+// }
+
 .app-status-bar__row + .app-status-bar__row {
   margin-top: 8px;
   padding-top: 8px;
@@ -43,6 +47,10 @@
 .app-status-bar__key {
   @include nhsuk-typography-weight-bold($important: true);
   opacity: 0.9;
+}
+
+.app-status-bar__worklist-status {
+  margin-left: 4px;
 }
 
 .app-status-bar__viewer-link {

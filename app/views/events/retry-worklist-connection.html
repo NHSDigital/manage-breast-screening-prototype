@@ -1,0 +1,44 @@
+{# app/views/events/retry-worklist-connection.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set activeWorkflowStep = 'take-images' %}
+{% set activeTab = 'images' %}
+{% set isForm = true %}
+
+{% set pageHeading = (participant | getFullName) + " has not been added to the worklist" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>Due to a connection issue, image information for this appointment cannot be transferred automatically from the mammogram machine.</p>
+
+  <div class="nhsuk-button-group">
+      {{ button({
+        text: "Retry connection",
+        attributes: {
+          formaction: "./retry-worklist-connection" | urlWithReferrer(referrerChain),
+          "data-retry-connection-button": ""
+        }
+      }) }}
+
+      {{ button({
+        text: "Switch to manual image mode",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          formaction: "./switch-to-manual-image-mode" | urlWithReferrer(referrerChain)
+        }
+      }) }}
+  </div>
+
+  {# Failure message rendered by client-side JS after first retry attempt #}
+  <p class="nhsuk-u-secondary-text-color" data-retry-failure-message style="display: none">
+    Connection failed on retry. Last attempt at <span data-retry-time></span>
+  </p>
+
+  <script src="/assets/javascript/retry-worklist-connection.js"></script>
+
+{% endblock %}

@@ -4,7 +4,7 @@
 {% set hideBackLink = true %}
 {% set activeWorkflowStep = 'take-images' %}
 
-{% set pageHeading = "Record images taken" %}
+{% set pageHeading = "Manually record image information" %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
@@ -78,6 +78,58 @@
       }
     ]
   }) }} #}
+
+  {# Show unscheduled-appointment setup details whenever the appointment is
+     being handled in manual image collection mode. The reason-for-switching
+     input is only shown when the user manually switched mid-appointment via
+     the troubleshooting link on the automatic images page (failover). #}
+  {% set isManualFailover = event.mammogramDataTemp.isManualFailover %}
+  {% set troubleshootingIssue = event.mammogramDataTemp.troubleshootingIssue %}
+  {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
+  {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
+  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or data.event.isManualImageCollection or isManualFailover %}
+
+  {% if (hasTroubleshootingIssue and showWorklistMatchingContent) or (not hasTroubleshootingIssue and showDefaultManualContent) %}
+    <h2>Manually add participant details</h2>
+    <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
+    {{ summaryList({
+      rows: [
+        {
+          key: { text: "Accession number" },
+          value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (event.accessionNumber | formatAccessionNumber) + '</span>' }
+        },
+        {
+          key: { text: "NHS number" },
+          value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>' }
+        },
+        {
+          key: { text: "Full name" },
+          value: { text: participant | getFullName }
+        },
+        {
+          key: { text: "Date of birth" },
+          value: { text: participant.demographicInformation.dateOfBirth | formatDate }
+        }
+      ]
+    }) }}
+
+    {# {% if isManualFailover %}
+      {% call details({
+        summaryText: "Add reason for switching to manual"
+      }) %}
+        {{ textarea({
+          label: {
+            text: "Reason for switching to manual",
+            classes: "nhsuk-label--s"
+          },
+          id: "manualImageModeReason",
+          name: "event[mammogramDataTemp][manualImageModeReason]",
+          rows: 3,
+          value: mammogramSource.manualImageModeReason
+        }) }}
+      {% endcall %}
+    {% endif %} #}
+  {% endif %}
 
   {{ radios({
     idPrefix: "imagingComplete",

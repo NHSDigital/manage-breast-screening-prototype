@@ -6,7 +6,7 @@
 <div class="app-status-bar {{ classes }}">
   <div class="nhsuk-width-container">
     {% for row in params.rows %}
-      <div class="app-status-bar__row">
+      <div class="app-status-bar__row{% if row.classes %} {{ row.classes }}{% endif %}">
         {% for item in row.items %}
           <div class="app-status-bar__item">
             {% if item.key and item.value %}

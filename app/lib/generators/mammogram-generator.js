@@ -145,6 +145,7 @@ const generateViewImages = ({
  *
  * @param {object} [options] - Generation options
  * @param {Date|string} [options.startTime] - Starting timestamp (defaults to now)
+ * @param {string} [options.accessionNumber] - Accession number for this study (from the event)
  * @param {boolean} [options.isSeedData] - Whether generating seed data
  * @param {object} [options.config] - Optional configuration for specific scenarios
  * @param {string} [options.config.scenario] - Force a specific scenario ('standard', 'extraImages', 'technicalRepeat', 'incomplete', 'incompleteImperfect')
@@ -155,13 +156,15 @@ const generateViewImages = ({
  */
 const generateMammogramImages = ({
   startTime = new Date(),
+  accessionNumber = null,
   isSeedData = false,
   config = {},
   scenarioWeights = null,
   imperfectChanceForTechnicalOrIncomplete = 0.15,
   notesForReaderChanceWithoutImperfect = 0.05
 } = {}) => {
-  const accessionBase = faker.number
+  // Use the provided accession number as base, or fall back to a random number
+  const accessionBase = accessionNumber || faker.number
     .int({ min: 100000000, max: 999999999 })
     .toString()
   let currentIndex = 1
@@ -359,7 +362,6 @@ const generateMammogramImages = ({
   }
 
   return {
-    accessionBase,
     views,
     ...incompleteMammographyData,
     ...imperfectData,
