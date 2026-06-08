@@ -121,9 +121,10 @@
 {% if isManualEntry %}
   {% set imageRecordingValueHtml %}
     <p>Manual</p>
-    {% if event.mammogramData.isManualFailover %}
+    {# Commented out until we decide how to collect a reason #}
+    {# {% if event.mammogramData.isManualFailover %}
       <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
-    {% endif %}
+    {% endif %} #}
   {% endset %}
 
   {% set summaryRows = summaryRows | push({

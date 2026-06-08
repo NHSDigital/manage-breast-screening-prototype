@@ -113,7 +113,7 @@
       ]
     }) }}
 
-    {% if isManualFailover %}
+    {# {% if isManualFailover %}
       {% call details({
         summaryText: "Add reason for switching to manual"
       }) %}
@@ -128,7 +128,7 @@
           value: mammogramSource.manualImageModeReason
         }) }}
       {% endcall %}
-    {% endif %}
+    {% endif %} #}
   {% endif %}
 
   {{ radios({
