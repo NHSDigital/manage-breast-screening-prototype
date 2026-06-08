@@ -101,7 +101,7 @@
 {# NHS Number #}
 {% set participantRowItems = participantRowItems | push({
   key: "NHS:",
-  value: '<span class="app-code-font nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber | replace(' ', '&#8201;')) + '</span>'
+  value: '<span class="app-code-font nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>'
 }) %}
 
 {{ appStatusBar({
