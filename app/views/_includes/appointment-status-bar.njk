@@ -21,13 +21,13 @@
 
 {# Worklist status #}
 {% set worklistStatusHtml %}
-  {% if data.settings.screening.addedToWorklist == 'false' %}
+  {% if data.settings.screening.addedToWorklist == 'false' and not data.event.isOnWorklist %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
-      {% if data.settings.screening.manualImageCollection == 'true' and data.settings.screening.manualImageModeEnabledByUser == 'true' %}
+      {% if data.event.isManualImageCollection %}
         <span>Worklist issue, manual mode enabled</span>
       {% else %}
-        <span>Not on worklist (<a href="/clinics/{{ clinicId }}/events/{{ event.id }}/retry-worklist-connection?returnUrl={{ currentUrl | urlencode }}">Retry</a>)</span>
+        <span>Not on worklist (<a href="{{ ('/clinics/' + clinicId + '/events/' + event.id + '/retry-worklist-connection') | urlWithReferrer(currentUrl) }}">Retry</a>)</span>
       {% endif %}
     </span>
   {% else %}

@@ -2229,102 +2229,63 @@ module.exports = (router) => {
   )
 
   // Worklist connection retry routes
+  //
+  // The retry page is rendered as a simple GET (auto-routed or via this route).
+  // Retry counting is handled entirely client-side — the JS fakes a failed
+  // first attempt and a successful second attempt, then submits the form.
+  //
+  // POST retry-worklist-connection: marks worklist as connected and redirects
+  // back using the standard referrerChain system.
+  //
+  // POST switch-to-manual-image-mode: stores manual mode on the EVENT (not
+  // globally) and redirects back via referrerChain.
 
-  // Helper: only allow same-origin app paths as return URLs.
-  const safeReturnUrl = (url) => {
-    if (typeof url !== 'string') return null
-    if (!url.startsWith('/')) return null
-    if (url.startsWith('//')) return null
-    return url
-  }
+  // Handle successful "Retry connection" — client-side JS only submits after
+  // simulating a successful reconnect.
+  router.post(
+    '/clinics/:clinicId/events/:eventId/retry-worklist-connection',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-  // GET the retry page - capture where the user came from so we can send them
-  // back after a successful reconnect.
-  router.get('/clinics/:clinicId/events/:eventId/retry-worklist-connection', (req, res) => {
-    const data = req.session.data
-
-    const fromQuery = safeReturnUrl(req.query.returnUrl)
-    if (fromQuery) {
-      data.worklistRetryReturnUrl = fromQuery
-    }
-
-    res.render('events/retry-worklist-connection')
-  })
-
-  // Handle "Retry connection" button.
-  // The first attempt always fails (updates the "last retry attempt" time).
-  // The second (and any subsequent) attempt succeeds: marks the appointment as
-  // added to the worklist, flashes a success message, and returns the user to
-  // wherever they clicked Retry from.
-  router.post('/clinics/:clinicId/events/:eventId/retry-worklist-connection', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
-
-    data.settings = data.settings || {}
-    data.settings.screening = data.settings.screening || {}
-
-    const attempts = (data.worklistRetryAttempts || 0) + 1
-
-    if (attempts >= 2) {
-      // Success: connection restored.
-      data.settings.screening.addedToWorklist = 'true'
-      delete data.settings.screening.worklistLastRetryAt
-      delete data.worklistRetryAttempts
-
-      const returnUrl =
-        safeReturnUrl(data.worklistRetryReturnUrl) ||
-        `/clinics/${clinicId}/events/${eventId}/take-images`
-      delete data.worklistRetryReturnUrl
+      // Mark this event as reconnected (per-event, doesn't change the global setting)
+      data.event.isOnWorklist = true
 
       const participantName = getFullName(data.participant)
       req.flash('success', {
         html: `<p class="nhsuk-notification-banner__heading">${participantName} is now on the worklist</p>
 <p>Image information will be sent automatically from the mammogram machine</p>`
       })
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/take-images`,
+        req.query.referrerChain
+      )
       return res.redirect(returnUrl)
     }
+  )
 
-    // Failed attempt.
-    data.worklistRetryAttempts = attempts
-    data.settings.screening.worklistLastRetryAt = new Date().toISOString()
+  // Handle "Switch to manual image mode" — stores override on the event only.
+  router.post(
+    '/clinics/:clinicId/events/:eventId/switch-to-manual-image-mode',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
 
-    res.redirect(`/clinics/${clinicId}/events/${eventId}/retry-worklist-connection`)
-  })
+      // Store manual mode on the event itself, not globally
+      data.event.isManualImageCollection = true
 
-  // Handle "Switch to manual image mode" button - enable manual mode, return
-  // the user to where they clicked Retry from, and flash a success banner
-  // explaining what they need to do on the mammogram machine.
-  router.post('/clinics/:clinicId/events/:eventId/switch-to-manual-image-mode', (req, res) => {
-    const { clinicId, eventId } = req.params
-    const data = req.session.data
+      req.flash('success', {
+        html: '<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>'
+      })
 
-    data.settings = data.settings || {}
-    data.settings.screening = data.settings.screening || {}
-    data.settings.screening.manualImageCollection = 'true'
-    data.settings.screening.manualImageModeEnabledByUser = 'true'
-
-    const returnUrl =
-      safeReturnUrl(data.worklistRetryReturnUrl) ||
-      `/clinics/${clinicId}/events/${eventId}/take-images`
-
-    delete data.worklistRetryAttempts
-    delete data.worklistRetryReturnUrl
-    delete data.settings.screening.worklistLastRetryAt
-
-    // Clear any failover flag from a prior automatic→manual switch so we
-    // don't incorrectly show the "Reason for switching" input here (the
-    // reason is implicit when arriving via the retry-connection flow).
-    if (data.event?.mammogramDataTemp) {
-      delete data.event.mammogramDataTemp.isManualFailover
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/events/${eventId}/take-images`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
     }
-
-    req.flash('success', {
-      title: 'Success',
-      html: '<p class="nhsuk-notification-banner__heading">Manual image mode enabled</p>'
-    })
-
-    res.redirect(returnUrl)
-  })
+  )
 
   // Manual imaging routes
 
@@ -2336,30 +2297,27 @@ module.exports = (router) => {
     const data = req.session.data
 
     const isAddedToWorklist =
-      data.settings?.screening?.addedToWorklist !== 'false'
+      data.settings?.screening?.addedToWorklist !== 'false' ||
+      data.event?.isOnWorklist === true
 
-    // When a participant is on the worklist, image transfer should use the
-    // automatic flow. Clear any stale manual-mode state from prior actions.
-    if (isAddedToWorklist) {
-      data.settings = data.settings || {}
-      data.settings.screening = data.settings.screening || {}
-      data.settings.screening.manualImageCollection = 'false'
-      delete data.settings.screening.manualImageModeEnabledByUser
-    }
-
+    // Manual mode is true if the global setting says so, OR this specific
+    // event was switched to manual (e.g. via the retry-connection page).
     const isManualImageCollection =
-      data.settings?.screening?.manualImageCollection === 'true'
+      data.settings?.screening?.manualImageCollection === 'true' ||
+      data.event?.isManualImageCollection === true
+
     const imagesStageCompleted =
       data.event?.workflowStatus?.['take-images'] === 'completed'
 
     // Gate: if the appointment was not added to the worklist and the user
     // hasn't yet switched to manual image mode, divert to the retry page
     // before letting them into the image-taking step.
-
     if (!isAddedToWorklist && !isManualImageCollection) {
       return res.redirect(
-        `/clinics/${clinicId}/events/${eventId}/retry-worklist-connection?returnUrl=` +
-          encodeURIComponent(`/clinics/${clinicId}/events/${eventId}/take-images`)
+        urlWithReferrer(
+          `/clinics/${clinicId}/events/${eventId}/retry-worklist-connection`,
+          `/clinics/${clinicId}/events/${eventId}/take-images`
+        )
       )
     }
 
@@ -2412,14 +2370,16 @@ module.exports = (router) => {
       // Clear any existing temp data for fresh start
       delete data.event.mammogramDataTemp
 
-      // Check if this is a failover from automatic mode
-      const isManualImageCollection =
+      // Check if this is a failover from automatic mode (event was switched
+      // to manual via the retry-connection page, or user navigated here from
+      // the troubleshooting link on the automatic images page).
+      const isGlobalManualSetting =
         data.settings?.screening?.manualImageCollection === 'true'
       const hadAutomaticData =
         !!data.event?.mammogramData && !data.event?.mammogramData?.isManualEntry
 
       // Set failover flag if switching from automatic to manual
-      if (!isManualImageCollection || hadAutomaticData) {
+      if (!isGlobalManualSetting || hadAutomaticData) {
         if (!data.event.mammogramDataTemp) {
           data.event.mammogramDataTemp = {}
         }

@@ -1,9 +1,11 @@
 // app/assets/javascript/retry-worklist-connection.js
 //
-// Adds a brief "Attempting to reconnect" transient state to the Retry
-// connection button so the user sees feedback before the page reloads.
+// Handles retry connection simulation entirely client-side.
+// First click: shows "Attempting to reconnect" then shows a failure message.
+// Second click: shows "Attempting to reconnect" then submits the form (server
+// marks worklist as connected and redirects via referrerChain).
 
-(function () {
+;(function () {
   const RECONNECT_DELAY_MS = 1500
   const button = document.querySelector('[data-retry-connection-button]')
   if (!button) return
@@ -11,12 +13,13 @@
   const form = button.form
   if (!form) return
 
+  const failureMessage = document.querySelector('[data-retry-failure-message]')
+  const retryTimeSpan = document.querySelector('[data-retry-time]')
   const originalText = button.textContent
+  let attempts = 0
 
-  // Reset the button on initial load and when restored from bfcache, so it
-  // doesn't get stuck in the "Attempting to reconnect" disabled state after
-  // the post-redirect page load.
-  const resetButton = function () {
+  // Reset button state on page load and bfcache restore
+  const resetButton = () => {
     button.disabled = false
     button.textContent = originalText
   }
@@ -25,13 +28,11 @@
 
   let isSubmitting = false
 
-  form.addEventListener('submit', function (event) {
-    // Only intercept when the user clicked the Retry button (not the
-    // secondary "Switch to manual" button, which uses its own formaction).
+  form.addEventListener('submit', (event) => {
+    // Only intercept the Retry button (not the secondary Switch to manual button)
     if (event.submitter !== button) return
 
-    // After the simulated reconnect delay we re-submit programmatically;
-    // let that submission through without re-intercepting it.
+    // After a successful retry we re-submit programmatically — let it through
     if (isSubmitting) return
 
     event.preventDefault()
@@ -39,16 +40,34 @@
     button.disabled = true
     button.textContent = 'Attempting to reconnect'
 
-    window.setTimeout(function () {
-      isSubmitting = true
-      // Re-enable so the value is submitted, then submit using the
-      // button's formaction.
-      button.disabled = false
-      if (typeof form.requestSubmit === 'function') {
-        form.requestSubmit(button)
-      } else {
-        form.submit()
+    setTimeout(() => {
+      attempts++
+
+      if (attempts >= 2) {
+        // Second attempt: simulate success — submit form to server
+        isSubmitting = true
+        button.disabled = false
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit(button)
+        } else {
+          form.submit()
+        }
+        return
       }
+
+      // First attempt: simulate failure — show message and re-enable button
+      if (failureMessage && retryTimeSpan) {
+        const now = new Date()
+        const timeString = now.toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
+        retryTimeSpan.textContent = timeString
+        failureMessage.style.display = ''
+      }
+
+      resetButton()
     }, RECONNECT_DELAY_MS)
   })
 })()

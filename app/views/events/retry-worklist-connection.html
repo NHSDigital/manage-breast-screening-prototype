@@ -20,7 +20,7 @@
       {{ button({
         text: "Retry connection",
         attributes: {
-          formaction: "./retry-worklist-connection",
+          formaction: "./retry-worklist-connection" | urlWithReferrer(referrerChain),
           "data-retry-connection-button": ""
         }
       }) }}
@@ -29,15 +29,15 @@
         text: "Switch to manual image mode",
         classes: "nhsuk-button--secondary",
         attributes: {
-          formaction: "./switch-to-manual-image-mode"
+          formaction: "./switch-to-manual-image-mode" | urlWithReferrer(referrerChain)
         }
       }) }}
   </div>
 
-  {% set lastRetryAt = data.settings.screening.worklistLastRetryAt %}
-  {% if lastRetryAt %}
-    <p class="nhsuk-u-secondary-text-color">Connection failed on retry. Last retry attempt at {{ lastRetryAt | formatTime('HH:mm:ss') }}</p>
-  {% endif %}
+  {# Failure message rendered by client-side JS after first retry attempt #}
+  <p class="nhsuk-u-secondary-text-color" data-retry-failure-message style="display: none">
+    Connection failed on retry. Last attempt at <span data-retry-time></span>
+  </p>
 
   <script src="/assets/javascript/retry-worklist-connection.js"></script>
 

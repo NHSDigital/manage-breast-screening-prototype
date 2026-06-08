@@ -87,7 +87,7 @@
   {% set troubleshootingIssue = event.mammogramDataTemp.troubleshootingIssue %}
   {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
   {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
-  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or isManualFailover %}
+  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or data.event.isManualImageCollection or isManualFailover %}
 
   {% if (hasTroubleshootingIssue and showWorklistMatchingContent) or (not hasTroubleshootingIssue and showDefaultManualContent) %}
     <h2>Manually add participant details</h2>
