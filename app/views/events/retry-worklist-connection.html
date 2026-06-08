@@ -2,9 +2,9 @@
 
 {% extends 'layout-appointment.html' %}
 
-{% set hideBackLink = true %}
 {% set activeWorkflowStep = 'take-images' %}
 {% set activeTab = 'images' %}
+{% set isForm = true %}
 
 {% set pageHeading = (participant | getFullName) + " has not been added to the worklist" %}
 
@@ -12,18 +12,11 @@
 
 {% block pageContent %}
 
-  {{ backLink({
-    href: "javascript:history.back();",
-    text: "Back",
-    classes: "nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-4"
-  }) }}
-
   <h1>{{ pageHeading }}</h1>
 
   <p>Due to a connection issue, image information for this appointment cannot be transferred automatically from the mammogram machine.</p>
 
-  <form method="post">
-    <div class="nhsuk-button-group">
+  <div class="nhsuk-button-group">
       {{ button({
         text: "Retry connection",
         attributes: {
@@ -39,8 +32,7 @@
           formaction: "./switch-to-manual-image-mode"
         }
       }) }}
-    </div>
-  </form>
+  </div>
 
   {% set lastRetryAt = data.settings.screening.worklistLastRetryAt %}
   {% if lastRetryAt %}
