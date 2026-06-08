@@ -39,9 +39,10 @@
 {% endset %}
 
 {# Worklist accession number with inline worklist status #}
+{% set accessionNumberFormatted = event.accessionNumber | formatAccessionNumber %}
 {% set appointmentRowItems = appointmentRowItems | push({
   key: '<abbr title="Accession number">Accn</abbr>:',
-  value: '<span class="app-code-font nhsuk-u-nowrap">KOX&#8201;20260527&#8201;A1246</span><span class="app-status-bar__worklist-status">' + worklistStatusHtml + '</span>'
+  value: '<span class="app-code-font nhsuk-u-nowrap">' + accessionNumberFormatted + '</span><span class="app-status-bar__worklist-status">' + worklistStatusHtml + '</span>'
 }) %}
 
 {# Appointment type #}

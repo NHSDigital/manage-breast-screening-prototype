@@ -258,7 +258,7 @@
             text: "Accession number"
           },
           value: {
-            html: '<span class="app-code-font nhsuk-u-nowrap">KOX&#8201;20260527&#8201;A1246</span>'
+            html: '<span class="app-code-font nhsuk-u-nowrap">' + (event.accessionNumber | formatAccessionNumber) + '</span>'
           },
           actions: {
             items: []

@@ -143,10 +143,19 @@ const generateEvent = ({
     eventStatus = 'event_in_progress'
   }
 
+  // Generate accession number for this appointment - format: ABCYYYYMMDD#####
+  // ABC = BSU abbreviation, YYYYMMDD = clinic date, ##### = random 5-digit sequence
+  const accessionNumber = [
+    clinic.bsuAbbreviation || 'BSU',
+    dayjs(clinic.date).format('YYYYMMDD'),
+    faker.number.int({ min: 10000, max: 99999 })
+  ].join('')
+
   const eventBase = {
     id: id || generateId(),
     participantId: participant.id,
     clinicId: clinic.id,
+    accessionNumber,
     slotId: slot.id,
     type: clinic.clinicType,
     timing: {
@@ -271,6 +280,7 @@ const generateEvent = ({
       // Add mammogram images for completed events
       event.mammogramData = generateMammogramImages({
         startTime: actualStartTime,
+        accessionNumber: eventBase.accessionNumber,
         isSeedData: true,
         config: participant.config,
         scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
@@ -347,6 +357,7 @@ const generateEvent = ({
       if (event.workflowStatus?.['take-images'] === 'completed') {
         event.mammogramData = generateMammogramImages({
           startTime: dayjs(event.sessionDetails.startedAt),
+          accessionNumber: event.accessionNumber,
           isSeedData: true,
           config: participant.config,
           scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
