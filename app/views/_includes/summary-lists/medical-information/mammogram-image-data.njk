@@ -117,6 +117,25 @@
 
 {% set defaultHref = "./images-automatic" %}
 
+{# Image recording method - only show if manual entry #}
+{% if isManualEntry %}
+  {% set imageRecordingValueHtml %}
+    <p>Manual</p>
+    {% if event.mammogramData.isManualFailover %}
+      <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
+    {% endif %}
+  {% endset %}
+
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Image recording method"
+    },
+    value: {
+      html: imageRecordingValueHtml
+    }
+  }) %}
+{% endif %}
+
 {# Machine room #}
 {% if event.mammogramData.machineRoom %}
   {# Check if this is a mobile clinic #}
@@ -142,25 +161,6 @@
     },
     actions: {
       items: machineRoomActions
-    }
-  }) %}
-{% endif %}
-
-{# Image recording method - only show if manual entry #}
-{% if isManualEntry %}
-  {% set imageRecordingValueHtml %}
-    <p>Manual</p>
-    {% if event.mammogramData.isManualFailover %}
-      <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
-    {% endif %}
-  {% endset %}
-
-  {% set summaryRows = summaryRows | push({
-    key: {
-      text: "Image recording method"
-    },
-    value: {
-      html: imageRecordingValueHtml
     }
   }) %}
 {% endif %}
