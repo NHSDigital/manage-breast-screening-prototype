@@ -129,21 +129,19 @@ const summarisePriorMammogram = (mammogram, options = {}) => {
   let location = ''
   switch (mammogram.location) {
     case 'bsu':
-      location = mammogram.bsu || 'NHS breast screening unit'
+      location = 'At another BSU'
       break
     case 'otherUk':
-      location = mammogram.otherUk || 'Other UK location'
+      location = 'Elsewhere in the UK'
       break
     case 'otherNonUk':
-      location = mammogram.otherNonUk
-        ? `Outside UK: ${mammogram.otherNonUk}`
-        : 'Outside UK'
+      location = 'Outside the UK'
       break
     case 'currentBsu':
-      location = unitName || 'Current BSU'
+      location = `At ${unitName || 'this BSU'}`
       break
     case 'preferNotToSay':
-      location = 'Location not given'
+      location = 'Location not provided'
       break
     default:
       location = ''
