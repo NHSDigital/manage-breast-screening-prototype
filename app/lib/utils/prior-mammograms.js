@@ -150,14 +150,14 @@ const summarisePriorMammogram = (mammogram, options = {}) => {
   // Date detail — combine formatted date and relative time into parenthesised suffix
   const dateParts = []
   if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
-    dateParts.push(formatDate(mammogram.dateTaken, 'MMMM YYYY'))
+    dateParts.push(formatDate(mammogram.dateTaken, 'MMM YYYY'))
     if (mammogram._rawDate) {
       dateParts.push(formatRelativeDate(mammogram._rawDate))
     }
   } else if (mammogram.dateType === 'moreThanSixMonths') {
-    dateParts.push(mammogram.approximateDate || 'over 6 months ago')
+    dateParts.push('over 6 months ago')
   } else if (mammogram.dateType === 'lessThanSixMonths') {
-    dateParts.push(mammogram.approximateDate || 'less than 6 months ago')
+    dateParts.push('less than 6 months ago')
   }
 
   const dateDetail = dateParts.length > 0 ? `(${dateParts.join(', ')})` : ''
