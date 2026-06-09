@@ -153,7 +153,7 @@
             </p>
           {% endfor %}
           <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-            <a href="./request-priors" class="nhsuk-link--no-visited-state">Request priors</a>
+            {{ appLink({ text: "Request priors", href: "./request-priors", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
           </p>
         {% endset %}
 
@@ -375,6 +375,14 @@
 
   </form>
 
+  {# Defer case option #}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      <p class="nhsuk-u-margin-top-2">
+        {{ appLink({ text: "Defer this case from reading", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+      </p>
+    </div>
+  </div>
 
   {# Image notes - moved above opinion section #}
   {% include "_includes/reading/image-warnings.njk" %}

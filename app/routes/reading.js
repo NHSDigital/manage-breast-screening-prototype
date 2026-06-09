@@ -550,6 +550,14 @@ module.exports = (router) => {
       )
     }
 
+    // Check if event has been deferred from reading
+    const { isDeferred } = require('../lib/utils/reading')
+    if (isDeferred(event)) {
+      return res.redirect(
+        `/reading/session/${sessionId}/events/${eventId}/existing-read`
+      )
+    }
+
     // Delete temporary data from previous steps
     delete data.imageReadingTemp
 
@@ -653,12 +661,12 @@ module.exports = (router) => {
           editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
         res.redirect(
-          `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+          modalBreakout(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
         )
       } else if (session.skippedEvents.length > 0) {
-        res.redirect(`/reading/session/${sessionId}/skipped-review`)
+        res.redirect(modalBreakout(`/reading/session/${sessionId}/skipped-review`))
       } else {
-        res.redirect(`/reading/session/${sessionId}`)
+        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
       }
     }
   )
@@ -698,6 +706,124 @@ module.exports = (router) => {
     }
   )
 
+  /************************************************************************
+  // Case deferral
+  /***********************************************************************/
+
+  // Handle deferring a case from reading
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/defer-case-answer',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, eventId } = req.params
+      const currentUserId = data.currentUser?.id
+
+      const reason = req.body.deferralReason || ''
+
+      // Find the event and save deferral data
+      const event = data.events.find((e) => e.id === eventId)
+      if (event) {
+        if (!event.imageReading) {
+          event.imageReading = {}
+        }
+
+        // Remove any existing read by this user — deferral replaces a prior opinion
+        if (event.imageReading.reads?.[currentUserId]) {
+          delete event.imageReading.reads[currentUserId]
+        }
+
+        event.imageReading.deferral = {
+          deferredAt: new Date().toISOString(),
+          deferredBy: currentUserId,
+          reason: reason || null
+        }
+
+        // Also update the mirrored event in data.event
+        if (data.event && data.event.id === eventId) {
+          data.event.imageReading = event.imageReading
+        }
+      }
+
+      // Top up the session with the next eligible event if under target size
+      topUpSession(data, sessionId)
+
+      // Find next readable event after current position
+      const session = getReadingSession(data, sessionId)
+      const sessionEvents = session.eventIds
+        .map((id) => data.events.find((e) => e.id === id))
+        .filter(Boolean)
+      const nextUnreadEvent = getNextUserReadableEvent(
+        sessionEvents,
+        eventId,
+        currentUserId,
+        { wrap: false }
+      )
+
+      // Show a banner on the next case if there is one
+      if (nextUnreadEvent) {
+        const participant = data.participants.find(
+          (person) => person.id === event?.participantId
+        )
+        const shortName = getShortName(participant)
+        data.readingOpinionBanner = {
+          text: `Case deferred for ${shortName}`,
+          participantName: shortName,
+          editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
+        }
+        res.redirect(
+          modalBreakout(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+        )
+      } else if (session.skippedEvents.length > 0) {
+        res.redirect(modalBreakout(`/reading/session/${sessionId}/skipped-review`))
+      } else {
+        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+      }
+    }
+  )
+
+  // Undo a case deferral — removes the deferral so the case returns to reading
+  router.all(
+    '/reading/session/:sessionId/events/:eventId/undo-defer',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, eventId } = req.params
+
+      const event = data.events.find((e) => e.id === eventId)
+      if (event?.imageReading?.deferral) {
+        delete event.imageReading.deferral
+
+        // Also update the mirrored event in data.event
+        if (data.event && data.event.id === eventId) {
+          data.event.imageReading = event.imageReading
+        }
+      }
+
+      res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
+    }
+  )
+
+  // Deferred cases management page
+  router.get('/reading/deferred', (req, res) => {
+    res.render('reading/deferred')
+  })
+
+  // Undo deferral from the deferred cases management page
+  router.post('/reading/deferred/undo', (req, res) => {
+    const data = req.session.data
+    const { eventId } = req.body
+
+    const event = data.events.find((e) => e.id === eventId)
+    if (event?.imageReading?.deferral) {
+      delete event.imageReading.deferral
+
+      if (data.event && data.event.id === eventId) {
+        data.event.imageReading = event.imageReading
+      }
+    }
+
+    res.redirect('/reading/deferred')
+  })
+
   // Render appropriate template for reading views
   router.get(
     '/reading/session/:sessionId/events/:eventId/:step',
@@ -719,6 +845,7 @@ module.exports = (router) => {
         'existing-read',
         'compare',
         'request-priors',
+        'defer-case',
         'medical-information'
       ]
 

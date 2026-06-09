@@ -1366,6 +1366,16 @@ const shouldShowComparePage = function (
  * @param {object} [options] - Options for determining eligibility
  * @returns {boolean} Whether the current user can read this event
  */
+/**
+ * Check if an event has been deferred from reading
+ *
+ * @param {object} event - The event to check
+ * @returns {boolean} Whether the event has been deferred
+ */
+const isDeferred = (event) => {
+  return !!(event?.imageReading?.deferral?.deferredAt)
+}
+
 const canUserReadEvent = function (event, userId = null, options = {}) {
   const { maxReadsPerEvent = 2 } = options
 
@@ -1380,6 +1390,11 @@ const canUserReadEvent = function (event, userId = null, options = {}) {
 
   // Can't read if event is awaiting priors
   if (awaitingPriors(event)) {
+    return false
+  }
+
+  // Can't read if event has been deferred
+  if (isDeferred(event)) {
     return false
   }
 
@@ -1821,17 +1836,23 @@ const getSessionReadingProgress = (
 
   const resolvedTargetSize = session.targetSize || sessionEvents.length
 
+  // Count deferred events so they count toward the session target
+  const deferredCount = sessionEvents.filter(isDeferred).length
+
   return {
     ...progress,
     // How many events are currently loaded vs the overall target
     populatedCount: sessionEvents.length,
     targetSize: resolvedTargetSize,
+    // Deferred events count as 'done' for session progress purposes
+    deferredCount,
     // Remaining reads against the target (not just currently loaded events)
     targetRemaining: Math.max(
       0,
       resolvedTargetSize -
         progress.userReadCount -
-        progress.userAwaitingPriorsCount
+        progress.userAwaitingPriorsCount -
+        deferredCount
     )
   }
 }
@@ -1884,6 +1905,7 @@ module.exports = {
   // Booleans
   userHasReadEvent,
   canUserReadEvent,
+  isDeferred,
   hasReads,
   needsArbitration,
   needsFirstRead,
