@@ -1373,7 +1373,7 @@ const shouldShowComparePage = function (
  * @returns {boolean} Whether the event has been deferred
  */
 const isDeferred = (event) => {
-  return !!(event?.imageReading?.deferral?.deferredAt)
+  return !!event?.imageReading?.deferral?.deferredAt
 }
 
 const canUserReadEvent = function (event, userId = null, options = {}) {

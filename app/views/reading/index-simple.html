@@ -7,7 +7,7 @@
 {% set gridColumn = "none" %}
 
 {% set currentUserId = data.currentUser.id %}
-{% set defaultSessionSize = 25 %}
+{% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 
 {#
   Build a list of the current user's sessions, most-recent first.
@@ -78,6 +78,13 @@
   {% endif %}
 {% endfor %}
 
+{% set awaitingPriorsCount = 0 %}
+{% for thisEvent in data.events | filterEventsByEligibleForReading %}
+  {% if thisEvent | awaitingPriors %}
+    {% set awaitingPriorsCount = awaitingPriorsCount + 1 %}
+  {% endif %}
+{% endfor %}
+
 {% set newlyArrivedPriorsCount = 2 %}
 
 {% set actionTotal = arbitrationCount + newlyArrivedPriorsCount %}
@@ -122,22 +129,31 @@
 
   {% endif %}
 
-  {% if actionTotal > 0 or deferredCount > 0 %}
+  {# Awaiting priors inset #}
+  {% if awaitingPriorsCount > 0 %}
     {% set insetHtml %}
-      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ actionTotal }} flagged {{ "case" if actionTotal == 1 else "cases" }}</h2>
-      <p>Flagged cases require action before they can be read.</p>
-      <p class="nhsuk-u-margin-bottom-0"><a href="#">Review flagged cases</a></p>
-      {% if deferredCount > 0 %}
-        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          <a href="/reading/deferred">{{ deferredCount }} deferred {{ "case" if deferredCount == 1 else "cases" }}</a>
-        </p>
-      {% endif %}
+      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ awaitingPriorsCount }} {{ "case" if awaitingPriorsCount == 1 else "cases" }} awaiting priors</h2>
+      <p>These cases are on hold pending prior mammogram images.</p>
+      <p class="nhsuk-u-margin-bottom-0"><a href="/reading/priors">Manage prior mammograms</a></p>
     {% endset %}
     {{ insetText({
       html: insetHtml | safe
     }) }}
   {% endif %}
 
+  {# Deferred cases inset #}
+  {% if deferredCount > 0 %}
+    {% set insetHtml %}
+      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ deferredCount }} deferred {{ "case" if deferredCount == 1 else "cases" }}</h2>
+      <p>Deferred cases require review before they can be returned to the reading queue.</p>
+      <p class="nhsuk-u-margin-bottom-0"><a href="/reading/deferred">Review deferred cases</a></p>
+    {% endset %}
+    {{ insetText({
+      html: insetHtml | safe
+    }) }}
+  {% endif %}
+
+  {# Previous sessions inset #}
   {% if previousSessions | length > 0 %}
     <h2>Your previous image reading sessions</h2>
     <ul class="nhsuk-list">
@@ -152,10 +168,8 @@
     <p><a href="/reading/history">See all</a></p>
   {% endif %}
 
-    </div>
-
-    <div class="nhsuk-grid-column-one-third">
-    </div>
   </div>
+
+</div>
 
 {% endblock %}

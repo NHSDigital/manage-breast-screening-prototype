@@ -1,0 +1,101 @@
+{# app/views/reading/deferred.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Deferred cases" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/reading",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {# Get all events that have been deferred #}
+  {% set deferredEvents = [] %}
+  {% for thisEvent in data.events %}
+    {% if thisEvent | isDeferred %}
+      {% set deferredEvents = deferredEvents | push(thisEvent) %}
+    {% endif %}
+  {% endfor %}
+
+  {# Sort by deferral date, most recent first #}
+  {% set deferredEvents = deferredEvents | sort(true, false, 'imageReading.deferral.deferredAt') %}
+
+  <span class="nhsuk-caption-l">Image reading</span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  <p>Cases deferred from reading require manual review before they can be returned to the reading queue.</p>
+
+  {% if deferredEvents | length == 0 %}
+    <p>No deferred cases.</p>
+  {% else %}
+
+    <table class="nhsuk-table">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th scope="col">Participant</th>
+          <th scope="col">Screening date</th>
+          <th scope="col">Deferred</th>
+          <th scope="col">Reason</th>
+          <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for thisEvent in deferredEvents %}
+          {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
+          {% set deferral = thisEvent.imageReading.deferral %}
+          <tr>
+            <td>
+              <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}">
+                {{ thisParticipant | getFullName }}
+              </a>
+            </td>
+
+            <td>
+              {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
+              {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+                {{ "Urgent" | toTag }}<br>
+              {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+                {{ "Due soon" | toTag }}<br>
+              {% endif %}
+              {{ thisEvent.timing.startTime | formatDate }}<br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                {{ thisEvent.timing.startTime | formatRelativeDate }}
+              </span>
+            </td>
+
+            <td>
+              {{ deferral.deferredAt | formatDate("D MMM YYYY") }}<br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                {% if deferral.deferredBy %}
+                  by {{ deferral.deferredBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                {% endif %}
+              </span>
+            </td>
+
+            <td>
+              {% if deferral.reason %}
+                {{ deferral.reason }}
+              {% else %}
+                <span class="nhsuk-u-secondary-text-colour">No reason given</span>
+              {% endif %}
+            </td>
+
+            <td>
+              <form action="/reading/deferred/undo" method="POST">
+                <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
+                  Unflag case
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% endif %}
+
+{% endblock %}

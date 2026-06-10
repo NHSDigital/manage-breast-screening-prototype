@@ -807,8 +807,12 @@ module.exports = (router) => {
       // Normalise approximateDate in session now, before any redirect, so the
       // warning page doesn't display a raw array (e.g. ",June 2025") caused by
       // both conditional inputs being submitted together.
-      if (previousMammogramTemp && Array.isArray(previousMammogramTemp.approximateDate)) {
-        previousMammogramTemp.approximateDate = previousMammogramTemp.approximateDate.find((v) => v) || ''
+      if (
+        previousMammogramTemp &&
+        Array.isArray(previousMammogramTemp.approximateDate)
+      ) {
+        previousMammogramTemp.approximateDate =
+          previousMammogramTemp.approximateDate.find((v) => v) || ''
       }
 
       // Check if this is a recent mammogram (within 6 months)

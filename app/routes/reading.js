@@ -40,9 +40,8 @@ module.exports = (router) => {
   // Reading index — choose layout based on setting
   router.get('/reading', (req, res) => {
     const layout = req.session.data?.settings?.reading?.indexLayout || 'simple'
-    const template = layout === 'complex'
-      ? 'reading/index-complex'
-      : 'reading/index-simple'
+    const template =
+      layout === 'complex' ? 'reading/index-complex' : 'reading/index-simple'
     res.render(template)
   })
 
@@ -661,10 +660,14 @@ module.exports = (router) => {
           editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
         res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+          modalBreakout(
+            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+          )
         )
       } else if (session.skippedEvents.length > 0) {
-        res.redirect(modalBreakout(`/reading/session/${sessionId}/skipped-review`))
+        res.redirect(
+          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
+        )
       } else {
         res.redirect(modalBreakout(`/reading/session/${sessionId}`))
       }
@@ -771,10 +774,14 @@ module.exports = (router) => {
           editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
         res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
+          modalBreakout(
+            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+          )
         )
       } else if (session.skippedEvents.length > 0) {
-        res.redirect(modalBreakout(`/reading/session/${sessionId}/skipped-review`))
+        res.redirect(
+          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
+        )
       } else {
         res.redirect(modalBreakout(`/reading/session/${sessionId}`))
       }
@@ -819,6 +826,12 @@ module.exports = (router) => {
       if (data.event && data.event.id === eventId) {
         data.event.imageReading = event.imageReading
       }
+
+      const participant = data.participants.find(
+        (p) => p.id === event.participantId
+      )
+      const shortName = getShortName(participant)
+      req.flash('success', `${shortName} returned to reading queue`)
     }
 
     res.redirect('/reading/deferred')
@@ -1438,7 +1451,8 @@ module.exports = (router) => {
 
         for (const side of ['right', 'left']) {
           const assessment = side === 'right' ? rightAssessment : leftAssessment
-          const annotations = side === 'right' ? rightAnnotations : leftAnnotations
+          const annotations =
+            side === 'right' ? rightAnnotations : leftAnnotations
           const sideLabel = side
 
           if (!assessment) continue
@@ -1479,8 +1493,7 @@ module.exports = (router) => {
                 })
               }
             }
-          }
-          else if (assessment === 'normal' || assessment === 'clinical') {
+          } else if (assessment === 'normal' || assessment === 'clinical') {
             // Normal/clinical breast must not have annotations of M3 or higher
             if (highLevelAnnotations.length > 0) {
               errors.push({
