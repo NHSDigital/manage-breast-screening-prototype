@@ -2,8 +2,10 @@
 
 {% extends 'layout-app.html' %}
 
+{% from '_components/summary-list/macro.njk' import appSummaryList %}
+
 {% set pageHeading = "Deferred cases" %}
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {% set back = {
   href: "/reading",
@@ -23,6 +25,15 @@
   {# Sort by deferral date, most recent first #}
   {% set deferredEvents = deferredEvents | sort(true, false, 'imageReading.deferral.deferredAt') %}
 
+  {# Collect resolved deferrals across all events, most recently resolved first #}
+  {% set resolvedDeferrals = [] %}
+  {% for thisEvent in data.events %}
+    {% for pastDeferral in thisEvent.imageReading.deferralHistory %}
+      {% set resolvedDeferrals = resolvedDeferrals | push({ event: thisEvent, deferral: pastDeferral }) %}
+    {% endfor %}
+  {% endfor %}
+  {% set resolvedDeferrals = resolvedDeferrals | sort(true, false, 'deferral.resolvedAt') %}
+
   <span class="nhsuk-caption-l">Image reading</span>
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
@@ -32,69 +43,125 @@
     <p>No deferred cases.</p>
   {% else %}
 
-    <table class="nhsuk-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col">Participant</th>
-          <th scope="col">Screening date</th>
-          <th scope="col">Deferred</th>
-          <th scope="col">Reason</th>
-          <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for thisEvent in deferredEvents %}
-          {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
-          {% set deferral = thisEvent.imageReading.deferral %}
-          <tr>
-            <td>
-              <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}">
-                {{ thisParticipant | getFullName }}
-              </a>
-            </td>
+    {% for thisEvent in deferredEvents %}
+      {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
+      {% set deferral = thisEvent.imageReading.deferral %}
 
-            <td>
-              {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
-              {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
-                {{ "Urgent" | toTag }}<br>
-              {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
-                {{ "Due soon" | toTag }}<br>
-              {% endif %}
-              {{ thisEvent.timing.startTime | formatDate }}<br>
-              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                {{ thisEvent.timing.startTime | formatRelativeDate }}
-              </span>
-            </td>
+      {% set screenedHtml %}
+        {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
+        {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+          {{ "Urgent" | toTag }}<br>
+        {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+          {{ "Due soon" | toTag }}<br>
+        {% endif %}
+        {{ thisEvent.timing.startTime | formatDate }}
+        <span class="nhsuk-u-secondary-text-colour">({{ thisEvent.timing.startTime | formatRelativeDate }})</span>
+      {% endset %}
 
-            <td>
-              {{ deferral.deferredAt | formatDate("D MMM YYYY") }}<br>
-              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                {% if deferral.deferredBy %}
-                  by {{ deferral.deferredBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
-                {% endif %}
-              </span>
-            </td>
+      {% set deferredHtml %}
+        {{ deferral.deferredAt | formatDate("D MMM YYYY") }}
+        <span class="nhsuk-u-secondary-text-colour">({{ deferral.deferredAt | formatRelativeDate }})</span>
+      {% endset %}
 
-            <td>
-              {% if deferral.reason %}
-                {{ deferral.reason }}
-              {% else %}
-                <span class="nhsuk-u-secondary-text-colour">No reason given</span>
-              {% endif %}
-            </td>
+      {% set reasonHtml %}
+        {% if deferral.reason %}
+          {{ deferral.reason }}
+        {% else %}
+          <span class="nhsuk-u-secondary-text-colour">No reason given</span>
+        {% endif %}
+        {% if deferral.deferredBy %}
+          <br>
+          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+            {{ deferral.deferredBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+          </span>
+        {% endif %}
+      {% endset %}
 
-            <td>
-              <form action="/reading/deferred/undo" method="POST">
-                <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
-                <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
-                  Unflag case
-                </button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <div class="nhsuk-summary-card">
+        <div class="nhsuk-summary-card__title-wrapper">
+          <h2 class="nhsuk-summary-card__title">
+            <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}" class="nhsuk-link--no-visited-state">
+              {{ thisParticipant | getFullName }}
+            </a>
+          </h2>
+          <div class="nhsuk-summary-card__actions">
+            <form action="/reading/deferred/undo" method="POST">
+              <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+              <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
+                Unflag case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+        <div class="nhsuk-summary-card__content">
+          {{ appSummaryList({
+            rows: [
+              { key: { text: "Screened" }, value: { html: screenedHtml } },
+              { key: { text: "Deferred" }, value: { html: deferredHtml } },
+              { key: { text: "Reason" }, value: { html: reasonHtml } }
+            ]
+          }) }}
+        </div>
+      </div>
+    {% endfor %}
+
+  {% endif %}
+
+  {% if resolvedDeferrals | length > 0 %}
+
+    <h2 class="nhsuk-heading-m nhsuk-u-margin-top-6">Recently resolved</h2>
+    <p>These cases have been unflagged and returned to the reading queue.</p>
+
+    {% for row in resolvedDeferrals %}
+      {% set thisEvent = row.event %}
+      {% set deferral = row.deferral %}
+      {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
+
+      {% set deferredHtml %}
+        {{ deferral.deferredAt | formatDate("D MMM YYYY") }}
+        <span class="nhsuk-u-secondary-text-colour">({{ deferral.deferredAt | formatRelativeDate }})</span>
+      {% endset %}
+
+      {% set reasonHtml %}
+        {% if deferral.reason %}
+          {{ deferral.reason }}
+        {% else %}
+          <span class="nhsuk-u-secondary-text-colour">No reason given</span>
+        {% endif %}
+        {% if deferral.deferredBy %}
+          <br>
+          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+            {{ deferral.deferredBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+          </span>
+        {% endif %}
+      {% endset %}
+
+      {% set resolvedHtml %}
+        {{ deferral.resolvedAt | formatDate("D MMM YYYY") }}
+        {% if deferral.resolvedBy %}
+          by {{ deferral.resolvedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+        {% endif %}
+      {% endset %}
+
+      <div class="nhsuk-summary-card">
+        <div class="nhsuk-summary-card__title-wrapper">
+          <h3 class="nhsuk-summary-card__title">
+            <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}" class="nhsuk-link--no-visited-state">
+              {{ thisParticipant | getFullName }}
+            </a>
+          </h3>
+        </div>
+        <div class="nhsuk-summary-card__content">
+          {{ appSummaryList({
+            rows: [
+              { key: { text: "Deferred" }, value: { html: deferredHtml } },
+              { key: { text: "Reason" }, value: { html: reasonHtml } },
+              { key: { text: "Returned to queue" }, value: { html: resolvedHtml } }
+            ]
+          }) }}
+        </div>
+      </div>
+    {% endfor %}
 
   {% endif %}
 

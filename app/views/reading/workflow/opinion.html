@@ -375,15 +375,6 @@
 
   </form>
 
-  {# Defer case option #}
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
-      <p class="nhsuk-u-margin-top-2">
-        {{ appLink({ text: "Defer this case from reading", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-      </p>
-    </div>
-  </div>
-
   {# Image notes - moved above opinion section #}
   {% include "_includes/reading/image-warnings.njk" %}
 
@@ -414,6 +405,15 @@
     ]
   }
   }) }}
+
+  {# Defer case option #}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      <p class="nhsuk-u-margin-top-2">
+        {{ appLink({ text: "Defer this case from reading", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+      </p>
+    </div>
+  </div>
 
 {% endblock %}
 

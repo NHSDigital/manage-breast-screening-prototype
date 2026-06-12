@@ -814,13 +814,22 @@ module.exports = (router) => {
     res.render('reading/deferred')
   })
 
-  // Undo deferral from the deferred cases management page
+  // Unflag a deferral from the deferred cases management page
+  // Keeps a record of the resolved deferral so the reason stays visible
   router.post('/reading/deferred/undo', (req, res) => {
     const data = req.session.data
     const { eventId } = req.body
 
     const event = data.events.find((e) => e.id === eventId)
     if (event?.imageReading?.deferral) {
+      if (!event.imageReading.deferralHistory) {
+        event.imageReading.deferralHistory = []
+      }
+      event.imageReading.deferralHistory.push({
+        ...event.imageReading.deferral,
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: data.currentUser?.id
+      })
       delete event.imageReading.deferral
 
       if (data.event && data.event.id === eventId) {
