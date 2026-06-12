@@ -27,7 +27,7 @@
     "npm": "^11.6.1"
   },
   "devDependencies": {
-    "cssnano": "^8.0.1",
+    "cssnano": "^8.0.2",
     "postcss": "^8.5.15",
     "prettier": "^3.8.4",
     "purgecss": "^8.0.0"
