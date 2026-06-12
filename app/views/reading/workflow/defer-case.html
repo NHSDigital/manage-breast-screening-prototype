@@ -2,7 +2,7 @@
 
 {% extends parentLayout or 'layout-reading.html' %}
 
-{% set pageHeading = "Defer case from reading" %}
+{% set pageHeading = "Defer this case" %}
 {% set formAction = './defer-case-answer' | urlWithReferrer(referrerChain) %}
 {% set back = {
   href: "./opinion",
@@ -24,7 +24,7 @@
       </h1>
 
       <p>
-        This case will be removed from the reading queue and will need to be manually reviewed before it can be read.
+        This case will be removed from the reading queue. It must be manually reviewed before it can be read.
       </p>
 
       {{ textarea({
@@ -35,7 +35,7 @@
           size: "s"
         },
         hint: {
-          text: "Explain why this case cannot be read at this time"
+          text: "Explain why you are unable to give an opinion on this case"
         },
         rows: 4
       }) }}
