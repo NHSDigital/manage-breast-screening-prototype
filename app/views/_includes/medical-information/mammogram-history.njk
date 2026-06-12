@@ -3,9 +3,6 @@
 {% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
 
 {# System record - last known mammogram from BSU records #}
-{% if hasAdditionalMammograms %}
-  <h3 class="nhsuk-heading-s">From screening records</h3>
-{% endif %}
 
 {% set systemRecordHtml %}
   {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
@@ -15,7 +12,7 @@
     {{ mostRecentClinic.location.name }}</br>
     {{ mostRecentClinic.event.type | sentenceCase }}
   {% else %}
-    {{ "Not known" | asHint }}
+    {{ "No information" | asHint }}
   {% endif %}
 {% endset %}
 
@@ -23,7 +20,7 @@
   rows: [
     {
       key: {
-        text: "Last known mammogram"
+        text: "Most recent mammogram on record"
       },
       value: {
         html: systemRecordHtml
