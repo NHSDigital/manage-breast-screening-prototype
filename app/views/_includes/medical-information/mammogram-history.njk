@@ -12,7 +12,7 @@
     {{ mostRecentClinic.location.name }}</br>
     {{ mostRecentClinic.event.type | sentenceCase }}
   {% else %}
-    {{ "Not applicable" | asHint }}
+    {{ "No information" | asHint }}
   {% endif %}
 {% endset %}
 
