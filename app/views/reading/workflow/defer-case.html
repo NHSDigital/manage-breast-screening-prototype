@@ -1,0 +1,50 @@
+{# app/views/reading/workflow/defer-case.html #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set pageHeading = "Defer this case" %}
+{% set formAction = './defer-case-answer' | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: "./opinion",
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {% set caption %}
+    {{ participant | getFullName }}
+  {% endset %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <h1 class="nhsuk-heading-l">
+        <span class="nhsuk-caption-l">{{ caption }}</span>
+        {{ pageHeading }}
+      </h1>
+
+      <p>
+        This case will be removed from the reading queue. It must be manually reviewed before it can be read.
+      </p>
+
+      {{ textarea({
+        name: "deferralReason",
+        id: "deferralReason",
+        label: {
+          text: "Reason for deferring",
+          size: "s"
+        },
+        hint: {
+          text: "Explain why you are unable to give an opinion on this case"
+        },
+        rows: 4
+      }) }}
+
+      {{ button({
+        text: "Confirm deferral"
+      }) }}
+
+    </div>
+  </div>
+
+{% endblock %}

@@ -32,6 +32,9 @@
   {%- if progress.userAwaitingPriorsCount > 0 -%}
     , {{ progress.userAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
+  {%- if progress.deferredCount > 0 -%}
+    , {{ progress.deferredCount }} deferred
+  {%- endif -%}
   , {{ progress.targetRemaining }} remaining
   {%- if progress.skippedEvents | length > 0 %}
      ({{ progress.skippedEvents | length }} skipped)
