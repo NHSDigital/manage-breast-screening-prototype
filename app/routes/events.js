@@ -3353,6 +3353,17 @@ module.exports = (router) => {
       res.redirect(modalBreakout(returnUrl))
     }
   )
+  // Save participant data when contact details are updated from the participant tab.
+  // The contact-details form posts back to the participant tab URL via referrerChain,
+  // so we need this POST handler to persist the temp participant to the participants array.
+  router.post('/clinics/:clinicId/events/:eventId/participant', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    saveTempParticipantToParticipant(data)
+    req.flash('success', 'Participant details updated')
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/participant`)
+  })
+
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(

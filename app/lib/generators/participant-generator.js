@@ -103,20 +103,20 @@ const generatePhoneNumbers = () => {
   })
 
   const result = {
-    mobilePhone: null,
-    homePhone: null
+    phone1: null,
+    phone2: null
   }
 
   switch (phoneConfig) {
     case 'mobile_only':
-      result.mobilePhone = generateUKMobileNumber()
+      result.phone1 = generateUKMobileNumber()
       break
     case 'both':
-      result.mobilePhone = generateUKMobileNumber()
-      result.homePhone = generateUKHomeNumber()
+      result.phone1 = generateUKMobileNumber()
+      result.phone2 = generateUKHomeNumber()
       break
     case 'home_only':
-      result.homePhone = generateUKHomeNumber()
+      result.phone2 = generateUKHomeNumber()
       break
   }
 
@@ -216,8 +216,8 @@ const generateParticipant = ({
       lastName: faker.person.lastName(),
       dateOfBirth: generateDateOfBirth(participantRiskLevel),
       address: generateBSUAppropriateAddress(assignedBSU),
-      mobilePhone: phoneNumbers.mobilePhone,
-      homePhone: phoneNumbers.homePhone,
+      phone1: phoneNumbers.phone1,
+      phone2: phoneNumbers.phone2,
       email: `${faker.internet.username().toLowerCase()}@example.com`,
       ethnicGroup: ethnicityData.ethnicGroup,
       ethnicBackground: ethnicityData.ethnicBackground

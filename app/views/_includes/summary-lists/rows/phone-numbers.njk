@@ -1,6 +1,6 @@
 {# /app/views/_includes/summary-lists/rows/phone-numbers.njk #}
 
-{% set phoneNumbers = [participant.demographicInformation.mobilePhone, participant.demographicInformation.homePhone] | removeEmpty %}
+{% set phoneNumbers = [participant.demographicInformation.phone1, participant.demographicInformation.phone2] | removeEmpty %}
 
 {% set phoneNumbersHtml %}
   {{ phoneNumbers | map("formatPhoneNumber") | join("<br>") | safe }}
