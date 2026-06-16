@@ -194,12 +194,15 @@ class AppModal {
         // forgot 'parentLayout or'. Bail out to a direct navigation rather than
         // injecting the full site into the modal.
         if (this.isFullPage(html)) {
+          // Capture the destination before close() — close() resets _loadUrl to
+          // null, so reading it after would navigate to a literal "null" URL.
+          const dest = this._loadUrl
           console.warn(
             'Modal: full page returned — falling back to direct navigation',
-            this._loadUrl
+            dest
           )
           this.close()
-          window.location.href = this._loadUrl
+          window.location.href = dest
           return
         }
 
