@@ -535,42 +535,34 @@
       ]
     }) }}
 
-  {{ radios({
+  {% set investigatedDescriptionHtml %}
+    {{ textarea({
+      id: "investigatedDescription",
+      name: "event[symptomTemp][investigatedDescription]",
+      label: {
+        text: "Provide details"
+      },
+      hint: {
+        text: "Include where, when and the outcome"
+      },
+      value: event.symptomTemp.investigatedDescription
+    } | populateErrors) }}
+  {% endset %}
+
+  {{ checkboxes({
     idPrefix: "hasBeenInvestigated",
     name: "event[symptomTemp][hasBeenInvestigated]",
-    value: event.symptomTemp.hasBeenInvestigated,
-    fieldset: {
-      legend: {
-        text: "Has this been investigated?",
-          size: "m",
-        isPageHeading: false
-      }
-    },
+    values: event.symptomTemp.hasBeenInvestigated,
     items: [
       {
         value: "yes",
-        text: "Yes",
+        text: "The symptom has been previously investigated",
         conditional: {
-          html: textarea({
-            id: "investigatedDescription",
-            name: "event[symptomTemp][investigatedDescription]",
-            label: {
-              text: "Provide details"
-            },
-            hint: {
-              text: "Include where, when and the outcome"
-            },
-            value: event.symptomTemp.investigatedDescription,
-            _classes: "nhsuk-u-width-two-thirds"
-          } | populateErrors)
+          html: investigatedDescriptionHtml
         }
-      },
-      {
-        value: "no",
-        text: "No"
       }
     ]
-  } | populateErrors) }}
+  }) }}
 
   {# Only show if not significant by default #}
     {% if not symptomType.isSignificantByDefault %}

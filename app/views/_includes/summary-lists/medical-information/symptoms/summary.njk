@@ -105,8 +105,8 @@
     {% endif %}
 
     {# Investigation status #}
-    {% if symptom.hasBeenInvestigated == "yes" and symptom.investigatedDescription %}
-      {% set valueLines = valueLines | push("Investigated: " + symptom.investigatedDescription) %}
+    {% if symptom.hasBeenInvestigated == "yes" %}
+      {% set valueLines = valueLines | push("Has been previously investigated: " + symptom.investigatedDescription) %}
     {% elseif symptom.hasBeenInvestigated == "no" %}
       {% set valueLines = valueLines | push("Not investigated") %}
     {% endif %}
