@@ -467,13 +467,13 @@
     }) %}
 
     {% set dateRadioItems = dateRadioItems | push({
-      value: "notSure",
-      text: "Not sure"
+      value: "notKnown",
+      text: "Not known"
     }) %}
 
 
 
-    {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not sure'  #}
+    {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not known'  #}
     {{ radios({
       idPrefix: "dateType",
       name: "event[symptomTemp][dateType]",

@@ -86,8 +86,8 @@
         {{ symptom.dateStarted | formatMonthYear }} ({{ symptom.dateStarted | formatRelativeDate }})
       {% elseif symptom.approximateDuration %}
         {{ symptom.approximateDuration }} ago
-      {% elseif symptom.dateType == 'notSure' %}
-        not sure
+      {% elseif symptom.dateType == 'notKnown' %}
+        not known
       {% else %}
         not provided
       {% endif %}

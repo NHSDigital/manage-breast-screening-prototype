@@ -199,7 +199,7 @@ const generateSymptom = (options = {}) => {
   const dateTypeWeights = {
     ...Object.fromEntries(DATE_RANGE_OPTIONS.map((range) => [range, 0.1])),
     dateKnown: 0.3,
-    notSure: 0.1
+    notKnown: 0.1
   }
 
   // Generate basic symptom data matching form structure
