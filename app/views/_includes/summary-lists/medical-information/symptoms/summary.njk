@@ -94,26 +94,27 @@
     {% endset %}
     {% set valueLines = valueLines | push(startText) %}
 
-    {# Stop date if applicable #}
+    {# Additional symptom information #}
     {% if symptom.isIntermittent %}
       {% set valueLines = valueLines | push("Symptom is intermittent") %}
     {% endif %}
 
-    {# Stop date if applicable #}
     {% if symptom.hasStopped and symptom.approximateDateStopped %}
-      {% set valueLines = valueLines | push("Stopped: " + symptom.approximateDateStopped) %}
+      {% set valueLines = valueLines | push("Recently resolved (" + symptom.approximateDateStopped + ")") %}
     {% endif %}
 
     {# Investigation status #}
     {% if symptom.hasBeenInvestigated == "yes" %}
-      {% set valueLines = valueLines | push("Has been previously investigated: " + symptom.investigatedDescription) %}
-    {% elseif symptom.hasBeenInvestigated == "no" %}
-      {% set valueLines = valueLines | push("Not investigated") %}
+      {% if symptom.investigatedDescription %}
+        {% set valueLines = valueLines | push("Previously investigated: " + symptom.investigatedDescription) %}
+      {% else %}
+        {% set valueLines = valueLines | push("Previously investigated") %}
+      {% endif %}
     {% endif %}
 
-    {# Additional info #}
-    {% if symptom.additionalInfo %}
-      {% set valueLines = valueLines | push("Additional info: " + symptom.additionalInfo) %}
+    {# Symptom notes #}
+    {% if symptom.symptomNotes %}
+      {% set valueLines = valueLines | push("Notes: " + symptom.symptomNotes) %}
     {% endif %}
 
     {# Join all value lines with line breaks #}

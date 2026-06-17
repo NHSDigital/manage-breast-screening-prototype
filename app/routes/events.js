@@ -1216,7 +1216,7 @@ module.exports = (router) => {
           id: symptomTemp.id || generateId(),
           type: symptomType,
           dateType: symptomTemp.dateType,
-          additionalInfo: symptomTemp.additionalInfo
+          symptomNotes: symptomTemp.symptomNotes
         }
 
         // For new symptoms, add the creation timestamp

@@ -332,16 +332,16 @@ const generateSymptom = (options = {}) => {
     }
   }
 
-  // 20% chance of additional info
+  // 20% chance of symptom notes
   if (Math.random() < 0.2) {
-    const additionalInfoOptions = [
+    const symptomNotesOptions = [
       'Noticed during self-examination',
       'Partner noticed the change',
       'Gets worse during certain times of month',
       'No family history of breast problems',
       'Concerned as mother had similar symptoms'
     ]
-    symptom.additionalInfo = faker.helpers.arrayElement(additionalInfoOptions)
+    symptom.symptomNotes = faker.helpers.arrayElement(symptomNotesOptions)
   }
 
   return symptom

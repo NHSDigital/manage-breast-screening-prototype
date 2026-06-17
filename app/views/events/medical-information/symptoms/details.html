@@ -471,8 +471,6 @@
       text: "Not known"
     }) %}
 
-
-
     {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not known'  #}
     {{ radios({
       idPrefix: "dateType",
@@ -503,38 +501,6 @@
       } | populateErrors) }}
     {% endset %}
 
-    {# TODO: don't use br for spacing! #}
-    <br>
-
-    
-
-    {{ checkboxes({
-      idPrefix: "isIntermittent",
-      name: "event[symptomTemp][isIntermittent]",
-      items: [
-        {
-          value: "yes",
-          text: "The symptom is intermittent",
-          checked: true if event.symptomTemp.isIntermittent else false
-        }
-      ]
-    }) }}
-
-    {{ checkboxes({
-      idPrefix: "hasStopped",
-      name: "event[symptomTemp][hasStopped]",
-      items: [
-        {
-          value: "yes",
-          text: "The symptom has recently resolved",
-          checked: true if event.symptomTemp.hasStopped else false,
-          conditional: {
-            html: stymptomStoppedHtml
-          }
-        }
-      ]
-    }) }}
-
   {% set investigatedDescriptionHtml %}
     {{ textarea({
       id: "investigatedDescription",
@@ -549,20 +515,63 @@
     } | populateErrors) }}
   {% endset %}
 
-  {{ checkboxes({
-    idPrefix: "hasBeenInvestigated",
-    name: "event[symptomTemp][hasBeenInvestigated]",
-    values: event.symptomTemp.hasBeenInvestigated,
-    items: [
-      {
-        value: "yes",
-        text: "The symptom has been previously investigated",
-        conditional: {
-          html: investigatedDescriptionHtml
+  {% call fieldset({
+    legend: {
+      text: "Additional symptom information",
+      size: "m",
+      isPageHeading: false
+    }
+  }) %}
+
+    {{ checkboxes({
+      idPrefix: "isIntermittent",
+      name: "event[symptomTemp][isIntermittent]",
+      formGroup: {
+        classes: "nhsuk-u-margin-bottom-3"
+      },
+      items: [
+        {
+          value: "yes",
+          text: "Intermittent",
+          checked: true if event.symptomTemp.isIntermittent else false
         }
-      }
-    ]
-  }) }}
+      ]
+    }) }}
+
+    {{ checkboxes({
+      idPrefix: "hasStopped",
+      name: "event[symptomTemp][hasStopped]",
+      formGroup: {
+        classes: "nhsuk-u-margin-bottom-3"
+      },
+      items: [
+        {
+          value: "yes",
+          text: "Recently resolved",
+          checked: true if event.symptomTemp.hasStopped else false,
+          conditional: {
+            html: stymptomStoppedHtml
+          }
+        }
+      ]
+    }) }}
+
+    {{ checkboxes({
+      idPrefix: "hasBeenInvestigated",
+      name: "event[symptomTemp][hasBeenInvestigated]",
+      values: event.symptomTemp.hasBeenInvestigated,
+      items: [
+        {
+          value: "yes",
+          text: "Investigated by a medical professional",
+          conditional: {
+            html: investigatedDescriptionHtml
+          }
+        }
+      ]
+    }) }}
+
+  {% endcall %}
 
   {# Only show if not significant by default #}
     {% if not symptomType.isSignificantByDefault %}
@@ -603,29 +612,16 @@
         ]
       } | populateErrors) }}
 
-      {# {{ checkboxes({
-        idPrefix: "isSignificant",
-        name: "event[symptomTemp][isSignificant]",
-        items: [
-          {
-            value: "yes",
-            text: "Highlight this symptom to image readers",
-            checked: true if event.symptomTemp.isSignificant else false
-          }
-        ]
-      }) }} #}
     {% endif %}
 
-
-
   {{ textarea({
-    name: "event[symptomTemp][additionalInfo]",
+    name: "event[symptomTemp][symptomNotes]",
     label: {
-      text: "Additional info (optional)",
+      text: "Symptom notes (optional)",
       size: "m"
     },
     rows: 4,
-    value: event.symptomTemp.additionalInfo
+    value: event.symptomTemp.symptomNotes
   }) }}
 
   <div class="nhsuk-button-group">
