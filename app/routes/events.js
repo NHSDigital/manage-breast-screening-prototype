@@ -1142,17 +1142,12 @@ module.exports = (router) => {
         })
       }
 
-      // Validate whether the symptom has been investigated (required)
-      if (!data.event?.symptomTemp?.hasBeenInvestigated) {
-        validationErrors.push({
-          name: 'event[symptomTemp][hasBeenInvestigated]',
-          text: 'Select whether this has been investigated',
-          href: '#hasBeenInvestigated'
-        })
-      } else if (
-        data.event.symptomTemp.hasBeenInvestigated === 'yes' &&
-        !data.event.symptomTemp.investigatedDescription
-      ) {
+      // Validate investigation details if the checkbox is checked
+      const hasBeenInvestigated = data.event?.symptomTemp?.hasBeenInvestigated
+      const isInvestigated = Array.isArray(hasBeenInvestigated)
+        ? hasBeenInvestigated.includes('yes')
+        : hasBeenInvestigated === 'yes'
+      if (isInvestigated && !data.event?.symptomTemp?.investigatedDescription) {
         validationErrors.push({
           name: 'event[symptomTemp][investigatedDescription]',
           text: 'Provide details of the investigation',
@@ -1221,8 +1216,7 @@ module.exports = (router) => {
           id: symptomTemp.id || generateId(),
           type: symptomType,
           dateType: symptomTemp.dateType,
-          hasBeenInvestigated: symptomTemp.hasBeenInvestigated,
-          additionalInfo: symptomTemp.additionalInfo
+          symptomNotes: symptomTemp.symptomNotes
         }
 
         // For new symptoms, add the creation timestamp
@@ -1240,8 +1234,13 @@ module.exports = (router) => {
           }
         }
 
-        // Add investigation details if investigated
-        if (symptomTemp.hasBeenInvestigated === 'yes') {
+        // Normalise checkbox value and add investigation details if checked
+        const savedHasBeenInvestigated = symptomTemp.hasBeenInvestigated
+        const savedIsInvestigated = Array.isArray(savedHasBeenInvestigated)
+          ? savedHasBeenInvestigated.includes('yes')
+          : savedHasBeenInvestigated === 'yes'
+        symptom.hasBeenInvestigated = savedIsInvestigated ? 'yes' : 'no'
+        if (savedIsInvestigated) {
           symptom.investigatedDescription = symptomTemp.investigatedDescription
         }
 
@@ -1258,7 +1257,7 @@ module.exports = (router) => {
           ].includes(symptomTemp.dateType)
         ) {
           symptom.approximateDuration = symptomTemp.dateType
-        } else if (symptomTemp.dateType === 'notSure') {
+        } else if (symptomTemp.dateType === 'notKnown') {
           delete symptom.approximateDuration
         }
 
