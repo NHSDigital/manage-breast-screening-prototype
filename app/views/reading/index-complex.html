@@ -12,17 +12,21 @@
 
 <h2>Start new reading session</h2>
 
-{# Awaiting priors not automatically filtered #}
-{% set allReadsEventsWithAwaitingPriors = data.events | filterEventsByEligibleForReading | filterEventsByNeedsAnyRead | sortEventsByScreeningDate %}
-
-{# Split into awaiting priors and available for reading #}
-{# Events with 'requested' status mammograms are held from reading #}
-{% set allReadsEvents = [] %}
+{# Awaiting priors — count across all eligible events, not just those needing reads #}
 {% set awaitingPriorsEvents = [] %}
-{% for thisEvent in allReadsEventsWithAwaitingPriors %}
+{% for thisEvent in data.events | filterEventsByEligibleForReading %}
   {% if thisEvent | awaitingPriors %}
     {% set awaitingPriorsEvents = awaitingPriorsEvents | push(thisEvent) %}
-  {% else %}
+  {% endif %}
+{% endfor %}
+
+{% set allReadsEventsWithAwaitingPriors = data.events | filterEventsByEligibleForReading | filterEventsByNeedsAnyRead | sortEventsByScreeningDate %}
+
+{# Split readable events into awaiting priors and available for reading #}
+{# Events with 'requested' status mammograms are held from reading #}
+{% set allReadsEvents = [] %}
+{% for thisEvent in allReadsEventsWithAwaitingPriors %}
+  {% if not (thisEvent | awaitingPriors) %}
     {% set allReadsEvents = allReadsEvents | push(thisEvent) %}
   {% endif %}
 {% endfor %}
@@ -70,7 +74,7 @@
     </div>
   {% endif %}
 
-  {% set defaultSessionSize = 25 %}
+  {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
   {% set maxCases = allReadCount if allReadCount < defaultSessionSize else defaultSessionSize %}
 
   {% set actionLinkHtml %}
@@ -170,6 +174,14 @@
       headingClasses: "nhsuk-heading-s",
       clickable: true,
       href: "/reading/priors"
+    }) }}
+  </li>
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Deferred cases",
+      headingClasses: "nhsuk-heading-s",
+      clickable: true,
+      href: "/reading/deferred"
     }) }}
   </li>
   <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">

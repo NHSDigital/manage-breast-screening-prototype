@@ -283,6 +283,7 @@ const getStatusTagColour = (status) => {
     'prior_pending': 'orange',
     'prior_requested': 'yellow',
     'priors_requested': 'yellow',
+    'deferred': 'orange',
     'prior_received': 'green',
     'prior_not_available': 'grey',
     'prior_not_needed': 'grey'

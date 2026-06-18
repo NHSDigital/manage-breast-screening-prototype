@@ -86,34 +86,35 @@
         {{ symptom.dateStarted | formatMonthYear }} ({{ symptom.dateStarted | formatRelativeDate }})
       {% elseif symptom.approximateDuration %}
         {{ symptom.approximateDuration }} ago
-      {% elseif symptom.dateType == 'notKnown' or symptom.dateType == 'notSure' %}
-        not known{% if symptom.dateNotKnownDetails %}: {{ symptom.dateNotKnownDetails }}{% endif %}
+      {% elseif symptom.dateType == 'notKnown' %}
+        not known
       {% else %}
         not provided
       {% endif %}
     {% endset %}
     {% set valueLines = valueLines | push(startText) %}
 
-    {# Stop date if applicable #}
+    {# Additional symptom information #}
     {% if symptom.isIntermittent %}
       {% set valueLines = valueLines | push("Symptom is intermittent") %}
     {% endif %}
 
-    {# Stop date if applicable #}
     {% if symptom.hasStopped and symptom.approximateDateStopped %}
-      {% set valueLines = valueLines | push("Stopped: " + symptom.approximateDateStopped) %}
+      {% set valueLines = valueLines | push("Recently resolved (" + symptom.approximateDateStopped + ")") %}
     {% endif %}
 
     {# Investigation status #}
-    {% if symptom.hasBeenInvestigated == "yes" and symptom.investigatedDescription %}
-      {% set valueLines = valueLines | push("Investigated: " + symptom.investigatedDescription) %}
-    {% elseif symptom.hasBeenInvestigated == "no" %}
-      {% set valueLines = valueLines | push("Not investigated") %}
+    {% if symptom.hasBeenInvestigated == "yes" %}
+      {% if symptom.investigatedDescription %}
+        {% set valueLines = valueLines | push("Previously investigated: " + symptom.investigatedDescription) %}
+      {% else %}
+        {% set valueLines = valueLines | push("Previously investigated") %}
+      {% endif %}
     {% endif %}
 
-    {# Additional info #}
-    {% if symptom.additionalInfo %}
-      {% set valueLines = valueLines | push("Additional info: " + symptom.additionalInfo) %}
+    {# Symptom notes #}
+    {% if symptom.symptomNotes %}
+      {% set valueLines = valueLines | push("Notes: " + symptom.symptomNotes) %}
     {% endif %}
 
     {# Join all value lines with line breaks #}

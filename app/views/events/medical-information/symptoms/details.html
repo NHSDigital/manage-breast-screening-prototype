@@ -486,9 +486,8 @@
       }
     }) %}
 
-    {% set symptomDateTypeValue = "notKnown" if event.symptomTemp.dateType == "notSure" else event.symptomTemp.dateType %}
 
-    {# Radios for how long symptom has existed #}
+    {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not known'  #}
     {{ radios({
       idPrefix: "dateType",
       name: "event[symptomTemp][dateType]",
@@ -518,18 +517,38 @@
       } | populateErrors) }}
     {% endset %}
 
-    {# TODO: don't use br for spacing! #}
-    <br>
+  {% set investigatedDescriptionHtml %}
+    {{ textarea({
+      id: "investigatedDescription",
+      name: "event[symptomTemp][investigatedDescription]",
+      label: {
+        text: "Provide details"
+      },
+      hint: {
+        text: "Include where, when and the outcome"
+      },
+      value: event.symptomTemp.investigatedDescription
+    } | populateErrors) }}
+  {% endset %}
 
-    
+  {% call fieldset({
+    legend: {
+      text: "Additional symptom information",
+      size: "m",
+      isPageHeading: false
+    }
+  }) %}
 
     {{ checkboxes({
       idPrefix: "isIntermittent",
       name: "event[symptomTemp][isIntermittent]",
+      formGroup: {
+        classes: "nhsuk-u-margin-bottom-3"
+      },
       items: [
         {
           value: "yes",
-          text: "The symptom is intermittent",
+          text: "Intermittent",
           checked: true if event.symptomTemp.isIntermittent else false
         }
       ]
@@ -538,10 +557,13 @@
     {{ checkboxes({
       idPrefix: "hasStopped",
       name: "event[symptomTemp][hasStopped]",
+      formGroup: {
+        classes: "nhsuk-u-margin-bottom-3"
+      },
       items: [
         {
           value: "yes",
-          text: "The symptom has recently resolved",
+          text: "Recently resolved",
           checked: true if event.symptomTemp.hasStopped else false,
           conditional: {
             html: stymptomStoppedHtml
@@ -550,42 +572,22 @@
       ]
     }) }}
 
-  {{ radios({
-    idPrefix: "hasBeenInvestigated",
-    name: "event[symptomTemp][hasBeenInvestigated]",
-    value: event.symptomTemp.hasBeenInvestigated,
-    fieldset: {
-      legend: {
-        text: "Has this been investigated?",
-          size: "m",
-        isPageHeading: false
-      }
-    },
-    items: [
-      {
-        value: "yes",
-        text: "Yes",
-        conditional: {
-          html: textarea({
-            id: "investigatedDescription",
-            name: "event[symptomTemp][investigatedDescription]",
-            label: {
-              text: "Provide details"
-            },
-            hint: {
-              text: "Include where, when and the outcome"
-            },
-            value: event.symptomTemp.investigatedDescription,
-            _classes: "nhsuk-u-width-two-thirds"
-          } | populateErrors)
+    {{ checkboxes({
+      idPrefix: "hasBeenInvestigated",
+      name: "event[symptomTemp][hasBeenInvestigated]",
+      values: event.symptomTemp.hasBeenInvestigated,
+      items: [
+        {
+          value: "yes",
+          text: "Investigated by a medical professional",
+          conditional: {
+            html: investigatedDescriptionHtml
+          }
         }
-      },
-      {
-        value: "no",
-        text: "No"
-      }
-    ]
-  } | populateErrors) }}
+      ]
+    }) }}
+
+  {% endcall %}
 
   {# Only show if not significant by default #}
     {% if not symptomType.isSignificantByDefault %}
@@ -626,29 +628,16 @@
         ]
       } | populateErrors) }}
 
-      {# {{ checkboxes({
-        idPrefix: "isSignificant",
-        name: "event[symptomTemp][isSignificant]",
-        items: [
-          {
-            value: "yes",
-            text: "Highlight this symptom to image readers",
-            checked: true if event.symptomTemp.isSignificant else false
-          }
-        ]
-      }) }} #}
     {% endif %}
 
-
-
   {{ textarea({
-    name: "event[symptomTemp][additionalInfo]",
+    name: "event[symptomTemp][symptomNotes]",
     label: {
-      text: "Additional info (optional)",
+      text: "Symptom notes (optional)",
       size: "m"
     },
     rows: 4,
-    value: event.symptomTemp.additionalInfo
+    value: event.symptomTemp.symptomNotes
   }) }}
 
   <div class="nhsuk-button-group">

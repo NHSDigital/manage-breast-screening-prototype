@@ -804,6 +804,17 @@ module.exports = (router) => {
         return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
       }
 
+      // Normalise approximateDate in session now, before any redirect, so the
+      // warning page doesn't display a raw array (e.g. ",June 2025") caused by
+      // both conditional inputs being submitted together.
+      if (
+        previousMammogramTemp &&
+        Array.isArray(previousMammogramTemp.approximateDate)
+      ) {
+        previousMammogramTemp.approximateDate =
+          previousMammogramTemp.approximateDate.find((v) => v) || ''
+      }
+
       // Check if this is a recent mammogram (within 6 months)
       const isRecentMammogram = checkIfRecentMammogram(previousMammogramTemp)
 
@@ -1131,17 +1142,12 @@ module.exports = (router) => {
         })
       }
 
-      // Validate whether the symptom has been investigated (required)
-      if (!data.event?.symptomTemp?.hasBeenInvestigated) {
-        validationErrors.push({
-          name: 'event[symptomTemp][hasBeenInvestigated]',
-          text: 'Select whether this has been investigated',
-          href: '#hasBeenInvestigated'
-        })
-      } else if (
-        data.event.symptomTemp.hasBeenInvestigated === 'yes' &&
-        !data.event.symptomTemp.investigatedDescription
-      ) {
+      // Validate investigation details if the checkbox is checked
+      const hasBeenInvestigated = data.event?.symptomTemp?.hasBeenInvestigated
+      const isInvestigated = Array.isArray(hasBeenInvestigated)
+        ? hasBeenInvestigated.includes('yes')
+        : hasBeenInvestigated === 'yes'
+      if (isInvestigated && !data.event?.symptomTemp?.investigatedDescription) {
         validationErrors.push({
           name: 'event[symptomTemp][investigatedDescription]',
           text: 'Provide details of the investigation',
@@ -1210,8 +1216,7 @@ module.exports = (router) => {
           id: symptomTemp.id || generateId(),
           type: symptomType,
           dateType: symptomTemp.dateType,
-          hasBeenInvestigated: symptomTemp.hasBeenInvestigated,
-          additionalInfo: symptomTemp.additionalInfo
+          symptomNotes: symptomTemp.symptomNotes
         }
 
         // For new symptoms, add the creation timestamp
@@ -1229,8 +1234,13 @@ module.exports = (router) => {
           }
         }
 
-        // Add investigation details if investigated
-        if (symptomTemp.hasBeenInvestigated === 'yes') {
+        // Normalise checkbox value and add investigation details if checked
+        const savedHasBeenInvestigated = symptomTemp.hasBeenInvestigated
+        const savedIsInvestigated = Array.isArray(savedHasBeenInvestigated)
+          ? savedHasBeenInvestigated.includes('yes')
+          : savedHasBeenInvestigated === 'yes'
+        symptom.hasBeenInvestigated = savedIsInvestigated ? 'yes' : 'no'
+        if (savedIsInvestigated) {
           symptom.investigatedDescription = symptomTemp.investigatedDescription
         }
 
@@ -1247,12 +1257,7 @@ module.exports = (router) => {
           ].includes(symptomTemp.dateType)
         ) {
           symptom.approximateDuration = symptomTemp.dateType
-        } else if (
-          symptomTemp.dateType === 'notKnown' ||
-          symptomTemp.dateType === 'notSure'
-        ) {
-          symptom.dateType = 'notKnown'
-          symptom.dateNotKnownDetails = symptomTemp.dateNotKnownDetails
+        } else if (symptomTemp.dateType === 'notKnown') {
           delete symptom.approximateDuration
         }
 
@@ -3347,6 +3352,17 @@ module.exports = (router) => {
       res.redirect(modalBreakout(returnUrl))
     }
   )
+  // Save participant data when contact details are updated from the participant tab.
+  // The contact-details form posts back to the participant tab URL via referrerChain,
+  // so we need this POST handler to persist the temp participant to the participants array.
+  router.post('/clinics/:clinicId/events/:eventId/participant', (req, res) => {
+    const { clinicId, eventId } = req.params
+    const data = req.session.data
+    saveTempParticipantToParticipant(data)
+    req.flash('success', 'Participant details updated')
+    res.redirect(`/clinics/${clinicId}/events/${eventId}/participant`)
+  })
+
   // General purpose dynamic template route for events
   // This should come after any more specific routes
   router.get(

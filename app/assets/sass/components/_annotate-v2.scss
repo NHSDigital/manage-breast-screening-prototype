@@ -335,6 +335,7 @@ $ann-marker-shadow:
 // Cursor preview: yellow circle+plus that follows the mouse on image panels
 .app-ann-cursor-preview {
   position: absolute;
+  z-index: 4; // above zoom button (z-index: 3) and active markers (z-index: 2)
   width: $ann-marker-size;
   height: $ann-marker-size;
   border: $ann-marker-border-width solid $nhsuk-focus-colour;

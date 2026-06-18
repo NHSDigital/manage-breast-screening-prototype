@@ -254,9 +254,6 @@
         var side = nameMatch[1]
         var value = e.target.value
 
-        // Persist the breast assessment to session immediately
-        fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
-
         // Switch the active tab to match the selected side (tab-based modes)
         if (window._annotationInstance && window._annotationInstance.switchSide) {
           window._annotationInstance.switchSide(side)
@@ -274,21 +271,43 @@
           }
         }
 
-        if (value !== 'abnormal') return
+        if (value !== 'abnormal') {
+          // Still persist the breast assessment for non-abnormal selections
+          fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
+          return
+        }
 
         var countEl = document.querySelector('[data-annotation-count="' + side + '"]')
         var count = countEl ? parseInt(countEl.dataset.count || '0', 10) : 0
 
         // In full tabbed mode, user clicks images directly — no auto-open
-        if (count === 0 && annotationsMode === 'with-images') return
+        if (count === 0 && annotationsMode === 'with-images') {
+          // Still persist the breast assessment to session
+          fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
+          return
+        }
 
         if (count === 0) {
-          var url = './annotation/add?side=' + side
-          if (useModals && typeof window.openModal === 'function') {
-            window.openModal('app-form-modal', { loadUrl: url })
-          } else {
-            window.location.href = url
-          }
+          // Wait for the save to complete before opening the modal,
+          // so the server has the breast side info in the session when rendering the annotation page
+          fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
+            .then(() => {
+              var url = './annotation/add?side=' + side
+              if (useModals && typeof window.openModal === 'function') {
+                window.openModal('app-form-modal', { loadUrl: url })
+              } else {
+                window.location.href = url
+              }
+            })
+            .catch(() => {
+              // Graceful degradation: open modal even if save fails
+              var url = './annotation/add?side=' + side
+              if (useModals && typeof window.openModal === 'function') {
+                window.openModal('app-form-modal', { loadUrl: url })
+              } else {
+                window.location.href = url
+              }
+            })
         }
       })
     })()

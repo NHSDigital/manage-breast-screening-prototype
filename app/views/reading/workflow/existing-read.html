@@ -10,12 +10,59 @@
 
   {% set isAwaitingPriors = event | awaitingPriors %}
   {% set hasUserRead = event | userHasReadEvent %}
+  {% set isDeferredCase = event | isDeferred %}
 
   <span class="nhsuk-caption-l">
     {{ participant | getFullName }}
   </span>
 
-  {% if isAwaitingPriors and not hasUserRead %}
+  {% if isDeferredCase and not hasUserRead %}
+    {# Event has been deferred - show deferral summary #}
+    <h1 class="nhsuk-heading-l">Your opinion</h1>
+
+    {% set deferral = event.imageReading.deferral %}
+    {% set canUndo = deferral.deferredBy == data.currentUser.id %}
+
+    {% set deferralSummaryHtml %}
+      {% call appSummaryList() %}
+        {{ appSummaryListRow({
+          key: {
+            text: "Opinion"
+          },
+          value: {
+            html: "Deferred" | toTag
+          },
+          actions: {
+            items: [{
+              href: "./undo-defer",
+              text: "Undo deferral",
+              visuallyHiddenText: "case deferral"
+            }]
+          } if canUndo
+        }) }}
+
+        {% if deferral.reason %}
+          {{ appSummaryListRow({
+            key: {
+              text: "Reason"
+            },
+            value: {
+              text: deferral.reason
+            }
+          }) }}
+        {% endif %}
+
+      {% endcall %}
+    {% endset %}
+
+    {{ card({
+      heading: "Your read",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: deferralSummaryHtml
+    }) }}
+
+  {% elseif isAwaitingPriors and not hasUserRead %}
     {# Event is awaiting priors - show as the reader's opinion #}
     <h1 class="nhsuk-heading-l">Your opinion</h1>
 

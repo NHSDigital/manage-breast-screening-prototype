@@ -325,6 +325,8 @@ const formatPhoneNumber = (phoneNumber) => {
   if (!phoneNumber) return ''
   if (typeof phoneNumber !== 'string') return phoneNumber
 
+  phoneNumber = phoneNumber.replace(/\s/g, '')
+
   if (phoneNumber.startsWith('07')) {
     return `${phoneNumber.slice(0, 5)} ${phoneNumber.slice(5)}`
   }
