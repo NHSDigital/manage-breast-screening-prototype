@@ -252,8 +252,8 @@ const generateBreastCancerItem = (options = {}) => {
   // Location (90% of the time)
   if (Math.random() < 0.9) {
     const locationChoice = weighted.select({
-      'At an NHS hospital': 0.6,
-      'At a private clinic in the UK': 0.2,
+      'At an NHS clinic or hospital': 0.6,
+      'Somewhere else in the UK': 0.2,
       'Outside the UK': 0.1,
       'Exact location unknown': 0.1
     })
@@ -261,14 +261,14 @@ const generateBreastCancerItem = (options = {}) => {
     item.location = locationChoice
 
     // Add conditional details for certain locations
-    if (locationChoice === 'At an NHS hospital') {
+    if (locationChoice === 'At an NHS clinic or hospital') {
       item.locationNhsHospitalDetails = faker.helpers.arrayElement([
         'Royal Marsden Hospital',
         'Christie Hospital Manchester',
         'University College Hospital London',
         "Addenbrooke's Hospital Cambridge"
       ])
-    } else if (locationChoice === 'At a private clinic in the UK') {
+    } else if (locationChoice === 'Somewhere else in the UK') {
       item.locationPrivateClinicDetails = faker.helpers.arrayElement([
         'Harley Street Clinic',
         'London Bridge Hospital',
@@ -645,8 +645,8 @@ const generateBenignLumpsItem = (options = {}) => {
   // Location (70% of the time)
   if (Math.random() < 0.7) {
     const locationChoice = weighted.select({
-      'At an NHS hospital': 0.7,
-      'At a private clinic in the UK': 0.2,
+      'At an NHS clinic or hospital': 0.7,
+      'Somewhere else in the UK': 0.2,
       'Outside the UK': 0.05,
       'Exact location unknown': 0.05
     })
@@ -654,13 +654,13 @@ const generateBenignLumpsItem = (options = {}) => {
     item.location = locationChoice
 
     // Add conditional details for certain locations
-    if (locationChoice === 'At an NHS hospital') {
+    if (locationChoice === 'At an NHS clinic or hospital') {
       item.locationNhsHospitalDetails = faker.helpers.arrayElement([
         'Local NHS hospital',
         'District general hospital',
         'Teaching hospital'
       ])
-    } else if (locationChoice === 'At a private clinic in the UK') {
+    } else if (locationChoice === 'Somewhere else in the UK') {
       item.locationPrivateClinicDetails = faker.helpers.arrayElement([
         'Private diagnostic clinic',
         'Independent hospital'
