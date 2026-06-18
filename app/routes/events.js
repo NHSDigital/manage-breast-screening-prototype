@@ -1247,7 +1247,12 @@ module.exports = (router) => {
           ].includes(symptomTemp.dateType)
         ) {
           symptom.approximateDuration = symptomTemp.dateType
-        } else if (symptomTemp.dateType === 'notSure') {
+        } else if (
+          symptomTemp.dateType === 'notKnown' ||
+          symptomTemp.dateType === 'notSure'
+        ) {
+          symptom.dateType = 'notKnown'
+          symptom.dateNotKnownDetails = symptomTemp.dateNotKnownDetails
           delete symptom.approximateDuration
         }
 

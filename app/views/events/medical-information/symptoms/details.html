@@ -466,14 +466,29 @@
       divider: "or"
     }) %}
 
+    {% set notKnownHtml %}
+      {{ input({
+        id: "dateNotKnownDetails",
+        name: "event[symptomTemp][dateNotKnownDetails]",
+        label: {
+          text: "Provide details (optional)"
+        },
+        value: event.symptomTemp.dateNotKnownDetails,
+        classes: "nhsuk-u-width-two-thirds"
+      }) }}
+    {% endset %}
+
     {% set dateRadioItems = dateRadioItems | push({
-      value: "notSure",
-      text: "Not sure"
+      value: "notKnown",
+      text: "Not known",
+      conditional: {
+        html: notKnownHtml
+      }
     }) %}
 
+    {% set symptomDateTypeValue = "notKnown" if event.symptomTemp.dateType == "notSure" else event.symptomTemp.dateType %}
 
-
-    {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not sure'  #}
+    {# Radios for how long symptom has existed #}
     {{ radios({
       idPrefix: "dateType",
       name: "event[symptomTemp][dateType]",
@@ -484,7 +499,7 @@
           isPageHeading: false
         }
       },
-      value: event.symptomTemp.dateType,
+      value: symptomDateTypeValue,
       items: dateRadioItems
     } | populateErrors) }}
 
