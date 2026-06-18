@@ -466,24 +466,9 @@
       divider: "or"
     }) %}
 
-    {% set notKnownHtml %}
-      {{ input({
-        id: "dateNotKnownDetails",
-        name: "event[symptomTemp][dateNotKnownDetails]",
-        label: {
-          text: "Provide details (optional)"
-        },
-        value: event.symptomTemp.dateNotKnownDetails,
-        classes: "nhsuk-u-width-two-thirds"
-      }) }}
-    {% endset %}
-
     {% set dateRadioItems = dateRadioItems | push({
       value: "notKnown",
-      text: "Not known",
-      conditional: {
-        html: notKnownHtml
-      }
+      text: "Not known"
     }) %}
 
 

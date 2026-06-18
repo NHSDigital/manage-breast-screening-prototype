@@ -8,16 +8,6 @@
 
 {% block formContent %}
 
-  {% set conditionalNotKnownDetails %}
-    {{ input({
-        name: "event[medicalHistoryTemp][typeNotKnownDetails]",
-        value: event.medicalHistoryTemp.typeNotKnownDetails,
-      label: {
-          text: "Provide details (optional)"
-      }
-    }) }}
-  {% endset %}
-
   {{ radios({
     name: "event[medicalHistoryTemp][type]",
     value: event.medicalHistoryTemp.type,
@@ -45,10 +35,7 @@
       },
       {
         value: "Not known",
-        text: "Not known",
-        conditional: {
-          html: conditionalNotKnownDetails
-        }
+        text: "Not known"
       }
     ]
   }) }}
