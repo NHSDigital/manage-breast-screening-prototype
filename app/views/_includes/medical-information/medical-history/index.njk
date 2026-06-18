@@ -438,9 +438,9 @@
         {{ historyItem.location }}
         
         {% switch historyItem.location %}
-          {% case 'At an NHS hospital' %}
+          {% case 'At an NHS clinic or hospital' %}
             {{ otherLocation(historyItem.locationNhsHospitalDetails) }}
-          {% case 'At a private clinic in the UK' %}
+          {% case 'Somewhere else in the UK' %}
             {{ otherLocation(historyItem.locationPrivateClinicDetails) }}
           {% case 'Outside the UK' %}
             {{ otherLocation(historyItem.locationOutsideUkDetails) }}
