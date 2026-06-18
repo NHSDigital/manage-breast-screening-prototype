@@ -38,11 +38,26 @@
             text: "Lump removed"
           },
           {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][proceduresRightBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.proceduresRightBreastNotKnownDetails,
+                id: "procedures-right-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -72,11 +87,26 @@
             text: "Lump removed"
           },
           {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][proceduresLeftBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.proceduresLeftBreastNotKnownDetails,
+                id: "procedures-left-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -84,10 +114,36 @@
     </div>
   </div>
 
-  {% set yearText = "Year of procedure (optional)" %}
-  {% include "_includes/medical-information/medical-history/year.njk" %}
+  {{ input({
+    label: {
+      text: "Year of procedure (optional)",
+      size: "m"
+    },
+    hint: {
+      text: "Add a year or date range"
+    },
+    name: "event[medicalHistoryTemp][year]",
+    value: event.medicalHistoryTemp.year,
+    id: "year",
+    classes: "nhsuk-input--width-10",
+    inputmode: "text"
+  }) }}
+
+  {{ checkboxes({
+    idPrefix: "yearIsApproximate",
+    name: "event[medicalHistoryTemp][yearIsApproximate]",
+    items: [
+      {
+        value: "yes",
+        text: "This date is approximate",
+        checked: true if event.medicalHistoryTemp.yearIsApproximate else false
+      }
+    ]
+  }) }}
 
   {% set treatmentLocationText = "Where were the tests and treatment done?" %}
+  {% set treatmentLocationShowUnknownDivider = true %}
+  {% set treatmentLocationUnknownDetailsLabel = "Provide details (optional)" %}
   {% include "_includes/medical-information/medical-history/location.njk" %}
 
   {% set additionalDetailsHintText = "Include any other relevant information about the procedure (optional)" %}

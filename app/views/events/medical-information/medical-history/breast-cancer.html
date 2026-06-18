@@ -61,8 +61,18 @@
           divider: "or"
         },
         {
-          value: "Does not know",
-          text: "Does not know",
+          value: "Not known",
+          text: "Not known",
+          conditional: {
+            html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+              name: "event[medicalHistoryTemp][cancerLocationNotKnownDetails]",
+              value: event.medicalHistoryTemp.cancerLocationNotKnownDetails,
+              id: "cancer-location-not-known-details"
+            })
+          },
           exclusive: true
         }
       ]
@@ -70,23 +80,32 @@
 
   {% endcall %}
 
-  {# {{ input({
+  {{ input({
     label: {
-      text: "In what year was breast cancer first diagnosed?",
+      text: "Year of diagnosis (optional)",
       size: "m"
+    },
+    hint: {
+      text: "Add a year or date range"
     },
     name: "event[medicalHistoryTemp][diagnosisYear]",
     value: event.medicalHistoryTemp.diagnosisYear,
     id: "diagnosis-year",
-    classes: "nhsuk-input--width-4",
-    hint: {
-      text: "For example, 2019"
-    },
-    inputmode: "numeric"
-  }) }} #}
+    classes: "nhsuk-input--width-10",
+    inputmode: "text"
+  }) }}
 
-  {% set yearText = "Year of diagnosis (optional)" %}
-  {% include "_includes/medical-information/medical-history/year.njk" %}
+  {{ checkboxes({
+    idPrefix: "diagnosisYearIsApproximate",
+    name: "event[medicalHistoryTemp][diagnosisYearIsApproximate]",
+    items: [
+      {
+        value: "yes",
+        text: "This date is approximate",
+        checked: true if event.medicalHistoryTemp.diagnosisYearIsApproximate else false
+      }
+    ]
+  }) }}
 
   {% set procedureQuestionText %}
     What procedure have they had
@@ -122,11 +141,25 @@
             text: "Mastectomy (no tissue remaining)"
           },
           {
+            value: "No procedure",
+            text: "No procedure"
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedure",
-            text: "No procedure"
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                  label: {
+                    text: "Provide details (optional)"
+                  },
+                name: "event[medicalHistoryTemp][proceduresRightBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.proceduresRightBreastNotKnownDetails,
+                id: "procedures-right-breast-not-known-details"
+              })
+            }
           }
         ]
       }) }}
@@ -157,11 +190,25 @@
             text: "Mastectomy (no tissue remaining)"
           },
           {
+            value: "No procedure",
+            text: "No procedure"
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures"
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][proceduresLeftBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.proceduresLeftBreastNotKnownDetails,
+                id: "procedures-left-breast-not-known-details"
+              })
+            }
           }
         ]
       }) }}
@@ -202,11 +249,26 @@
             text: "Symmetrisation"
           },
           {
+            value: "No surgery",
+            text: "No other surgery",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No surgery",
-            text: "No other surgery",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                  label: {
+                    text: "Provide details (optional)"
+                  },
+                name: "event[medicalHistoryTemp][otherSurgeryRightBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.otherSurgeryRightBreastNotKnownDetails,
+                id: "other-surgery-right-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -238,11 +300,26 @@
             text: "Symmetrisation"
           },
           {
+            value: "No surgery",
+            text: "No other surgery",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No surgery",
-            text: "No other surgery",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][otherSurgeryLeftBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.otherSurgeryLeftBreastNotKnownDetails,
+                id: "other-surgery-left-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -280,11 +357,26 @@
             text: "Lymph node radiotherapy"
           },
           {
+            value: "No radiotherapy",
+            text: "No radiotherapy",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No radiotherapy",
-            text: "No radiotherapy",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                  label: {
+                    text: "Provide details (optional)"
+                  },
+                name: "event[medicalHistoryTemp][treatmentRightBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.treatmentRightBreastNotKnownDetails,
+                id: "treatment-right-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -313,11 +405,26 @@
             text: "Lymph node radiotherapy"
           },
           {
+            value: "No radiotherapy",
+            text: "No radiotherapy",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No radiotherapy",
-            text: "No radiotherapy",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                  label: {
+                    text: "Provide details (optional)"
+                  },
+                name: "event[medicalHistoryTemp][treatmentLeftBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.treatmentLeftBreastNotKnownDetails,
+                id: "treatment-left-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -359,6 +466,24 @@
           id: "other-treatment-details"
         })
       }
+    },
+    {
+      divider: "or"
+    },
+    {
+      value: "Not known",
+      text: "Not known",
+      conditional: {
+        html: input({
+          label: {
+            text: "Provide details (optional)"
+          },
+          name: "event[medicalHistoryTemp][systemicTreatmentsNotKnownDetails]",
+          value: event.medicalHistoryTemp.systemicTreatmentsNotKnownDetails,
+          id: "systemic-treatments-not-known-details"
+        })
+      },
+      exclusive: true
     }
   ]
 }) }}

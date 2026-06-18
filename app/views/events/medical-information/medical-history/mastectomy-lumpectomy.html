@@ -47,11 +47,25 @@
             text: "Mastectomy (no tissue remaining)"
           },
           {
+            value: "No procedures",
+            text: "No procedures"
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures"
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][proceduresRightBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.proceduresRightBreastNotKnownDetails,
+                id: "procedures-right-breast-not-known-details"
+              })
+            }
           }
         ]
       }) }}
@@ -82,11 +96,25 @@
             text: "Mastectomy (no tissue remaining)"
           },
           {
+            value: "No procedures",
+            text: "No procedures"
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures"
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][proceduresLeftBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.proceduresLeftBreastNotKnownDetails,
+                id: "procedures-left-breast-not-known-details"
+              })
+            }
           }
         ]
       }) }}
@@ -123,11 +151,26 @@
             text: "Symmetrisation"
           },
           {
+            value: "No surgery",
+            text: "No surgery",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No surgery",
-            text: "No surgery",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][otherSurgeryRightBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.otherSurgeryRightBreastNotKnownDetails,
+                id: "other-surgery-right-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -155,11 +198,26 @@
             text: "Symmetrisation"
           },
           {
+            value: "No surgery",
+            text: "No surgery",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No surgery",
-            text: "No surgery",
+            value: "Not known",
+            text: "Not known",
+            conditional: {
+              html: input({
+                label: {
+                  text: "Provide details (optional)"
+                },
+                name: "event[medicalHistoryTemp][otherSurgeryLeftBreastNotKnownDetails]",
+                value: event.medicalHistoryTemp.otherSurgeryLeftBreastNotKnownDetails,
+                id: "other-surgery-left-breast-not-known-details"
+              })
+            },
             exclusive: true
           }
         ]
@@ -167,8 +225,32 @@
     </div>
   </div>
 
-  {% set yearText = "Year of surgery (optional)" %}
-  {% include "_includes/medical-information/medical-history/year.njk" %}
+  {{ input({
+    label: {
+      text: "Year of surgery (optional)",
+      size: "m"
+    },
+    hint: {
+      text: "Add a year or date range"
+    },
+    name: "event[medicalHistoryTemp][year]",
+    value: event.medicalHistoryTemp.year,
+    id: "year",
+    classes: "nhsuk-input--width-10",
+    inputmode: "text"
+  }) }}
+
+  {{ checkboxes({
+    idPrefix: "yearIsApproximate",
+    name: "event[medicalHistoryTemp][yearIsApproximate]",
+    items: [
+      {
+        value: "yes",
+        text: "This date is approximate",
+        checked: true if event.medicalHistoryTemp.yearIsApproximate else false
+      }
+    ]
+  }) }}
 
   {% set conditionalInputHtml %}
     {{ input({

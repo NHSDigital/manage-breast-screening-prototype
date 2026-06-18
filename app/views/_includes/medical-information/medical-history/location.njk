@@ -51,8 +51,7 @@
     name: "event[medicalHistoryTemp][locationUnknownLocationDetails]",
     value: event.medicalHistoryTemp.locationUnknownLocationDetails,
     label: {
-      text: "Provide details",
-      size: "s"
+      text: treatmentLocationUnknownDetailsLabel or "Provide details"
     }
   }) }}
 {% endset %}
@@ -100,8 +99,11 @@
       }
     },
     {
-      value: "Exact location unknown",
-      text: "Exact location unknown",
+      divider: "or"
+    } if treatmentLocationShowUnknownDivider,
+    {
+      value: "Not known",
+      text: "Not known",
       conditional: {
         html: unknownLocationConditionalHtml
       }

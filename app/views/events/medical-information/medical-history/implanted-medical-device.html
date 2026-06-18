@@ -8,12 +8,12 @@
 
 {% block formContent %}
 
-  {% set conditionalTypeDetails %}
+  {% set conditionalNotKnownDetails %}
     {{ input({
-      name: "event[medicalHistoryTemp][typeOtherDetails]",
-      value: event.medicalHistoryTemp.typeOtherDetails,
+        name: "event[medicalHistoryTemp][typeNotKnownDetails]",
+        value: event.medicalHistoryTemp.typeNotKnownDetails,
       label: {
-        text: "Provide details"
+          text: "Provide details (optional)"
       }
     }) }}
   {% endset %}
@@ -37,17 +37,48 @@
         text: "Hickman line"
       },
       {
-        value: "Other medical device",
-        text: "Other medical device (or does not know)",
+        value: "Other device",
+        text: "Other device"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "Not known",
+        text: "Not known",
         conditional: {
-          html: conditionalTypeDetails
+          html: conditionalNotKnownDetails
         }
       }
     ]
   }) }}
 
-  {% set yearText = "Year of procedure (optional)" %}
-  {% include "_includes/medical-information/medical-history/year.njk" %}
+  {{ input({
+    label: {
+      text: "Year of procedure (optional)",
+      size: "m"
+    },
+    hint: {
+      text: "Add a year or date range"
+    },
+    name: "event[medicalHistoryTemp][year]",
+    value: event.medicalHistoryTemp.year,
+    id: "year",
+    classes: "nhsuk-input--width-10",
+    inputmode: "text"
+  }) }}
+
+  {{ checkboxes({
+    idPrefix: "yearIsApproximate",
+    name: "event[medicalHistoryTemp][yearIsApproximate]",
+    items: [
+      {
+        value: "yes",
+        text: "This date is approximate",
+        checked: true if event.medicalHistoryTemp.yearIsApproximate else false
+      }
+    ]
+  }) }}
 
   <h2>Removed implants</h2>
 
