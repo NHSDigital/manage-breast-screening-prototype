@@ -37,11 +37,16 @@
             text: "Other augmentation"
           },
           {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -70,11 +75,16 @@
             text: "Other augmentation"
           },
           {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -82,7 +92,6 @@
     </div>
   </div>
 
-  {% set yearText = "Year of procedure (optional)" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
   <h2>Removed devices</h2>

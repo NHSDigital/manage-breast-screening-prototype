@@ -51,8 +51,7 @@
     name: "event[medicalHistoryTemp][locationUnknownLocationDetails]",
     value: event.medicalHistoryTemp.locationUnknownLocationDetails,
     label: {
-      text: "Provide details",
-      size: "s"
+      text: treatmentLocationUnknownDetailsLabel or "Provide details"
     }
   }) }}
 {% endset %}
@@ -72,15 +71,15 @@
   },
   items: [
     {
-      value: "At an NHS hospital",
-      text: "At an NHS hospital",
+      value: "At an NHS clinic or hospital",
+      text: "At an NHS clinic or hospital",
       conditional: {
         html: nhsHospitalConditionalHtml
       }
     },
     {
-      value: "At a private clinic in the UK",
-      text: "At a private clinic in the UK",
+      value: "Somewhere else in the UK",
+      text: "Somewhere else in the UK",
       conditional: {
         html: privateClinicConditionalHtml
       }
@@ -100,8 +99,11 @@
       }
     },
     {
-      value: "Exact location unknown",
-      text: "Exact location unknown",
+      divider: "or"
+    } if treatmentLocationShowUnknownDivider,
+    {
+      value: "Not known",
+      text: "Not known",
       conditional: {
         html: unknownLocationConditionalHtml
       }

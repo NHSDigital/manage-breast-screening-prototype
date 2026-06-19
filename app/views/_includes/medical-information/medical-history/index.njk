@@ -31,7 +31,6 @@
    @param items - Array or single item to display
    @param emptyText - Text to show when no items (e.g., "No surgery", "No procedure")
 #}
-{# Todo: should this be a standardised filter / macro? #}
 {% macro breastItemsList(items, emptyText) %}
   <ul class="nhsuk-list">
     {% if items %}
@@ -107,7 +106,9 @@
             {% endif %}
           {% else %}
             <p>
-              {% if historyItem.type | startsWith("Other") %}
+              {% if historyItem.type == "Not known" %}
+                {{ historyItem.type }}
+              {% elseif historyItem.type | startsWith("Other") %}
                 {{ historyItem.type }}: {{ historyItem.typeOtherDetails }}
               {% else %}
                 {{ historyItem.type }}
@@ -147,7 +148,7 @@
       {% endset %}
 
       {# Cancer location #}
-      {% set cancerLocationText %}
+      {% set cancerLocationHtml %}
         {% if historyItem.cancerLocation | includes("Right breast") and historyItem.cancerLocation | includes("Left breast") %}
           Both breasts
         {% else %}
@@ -162,7 +163,7 @@
               text: "Cancer location"
             },
             value: {
-              text: cancerLocationText
+              html: cancerLocationHtml
             }
           }) }}
         {% endif %}
@@ -204,14 +205,21 @@
 
         {% if historyItem.systemicTreatments %}
           <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Systemic treatments</p>
-          {% for treatment in historyItem.systemicTreatments %}
-            <p>{{ treatment }}</p>
-          {% endfor %}
+          <ul class="nhsuk-list">
+            {% for treatment in historyItem.systemicTreatments %}
+              <li>
+                {{ treatment }}
+                {%- if (treatment | startsWith("Other")) and historyItem.otherTreatmentDetails -%}
+                : {{ historyItem.otherTreatmentDetails }}
+                {%- endif -%}
+              </li>
+            {% endfor %}
+          </ul>
         {% endif %}
       {% endset %}
 
       {% set treatmentRow %}
-        {% if historyItem.treatmentRightBreast or historyItem.treatmentLeftBreast %}
+        {% if historyItem.treatmentRightBreast or historyItem.treatmentLeftBreast or historyItem.systemicTreatments %}
           {{ summaryListRow({
             key: {
               text: "Treatment"
@@ -226,26 +234,7 @@
       {# Procedures - used by breast implants, lump removal and biopsy, mastectomy lumpectomy #}
       {% set proceduresHtml %}
         {% set rightBreastContent %}
-          <ul class="nhsuk-list">
-            {% if historyItem.proceduresRightBreast %}
-              {% if historyItem.proceduresRightBreast | isArray %}
-                {% for procedure in historyItem.proceduresRightBreast %}
-                  <li>
-                    {{ procedure }}
-                    {%- if (procedure | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
-                    : {{ historyItem.proceduresRightBreastOtherDetails }}
-                    {% endif %}
-                  </li>
-                {% else %}
-                  <li>No procedure</li>
-                {% endfor %}
-              {% else %}
-                <li>{{ historyItem.proceduresRightBreast }}</li>
-              {% endif %}
-            {% else %}
-              <li>No procedure</li>
-            {% endif %}
-          </ul>
+          {{ breastItemsList(historyItem.proceduresRightBreast, "No procedure") }}
         {% endset %}
         {% set leftBreastContent %}
           {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures recorded") }}
@@ -375,24 +364,33 @@
       {% endset %}
 
       {# Year field - with optional removal year #}
+      {% set yearValue = historyItem.diagnosisYear or historyItem.year %}
+      {% set yearApprox = historyItem.diagnosisYearIsApproximate or historyItem.yearIsApproximate %}
       {% set yearText %}
         {% set isRemoved = historyItem.deviceRemoved or historyItem.implantsRemoved %}
+        {% if historyItem.diagnosisYear %}
+          {{ historyItem.diagnosisYear }}
+        {% else %}
+          {% if isRemoved %}
+            Implanted in
+          {% endif %}{{ historyItem.year }}
+          {% if historyItem.year | relativeYear %}
+            ({{ historyItem.year | relativeYear }})
+          {% endif %}
+        {% endif %}
         {% if isRemoved %}
-          Implanted in
-        {% endif %}{{ historyItem.year }} ({{ historyItem.year | relativeYear }})
-        {% if isRemoved %}
-          <br>Removed {% if historyItem.yearRemoved %} in {{ historyItem.yearRemoved }} ({{ historyItem.yearRemoved | relativeYear }}){% endif %}
+          <br>Removed {% if historyItem.yearRemoved %} in {{ historyItem.yearRemoved }}{% if historyItem.yearRemoved | relativeYear %} ({{ historyItem.yearRemoved | relativeYear }}){% endif %}{% endif %}
         {% endif %}
       {% endset %}
 
       {% set yearRow %}
-        {% if historyItem.year %}
+        {% if yearValue %}
           {{ summaryListRow({
             key: {
               text: typeData.yearLabel or "Year"
             },
             value: {
-              html: yearText
+              html: yearText + (" (approximate)" if yearApprox else "")
             }
           }) }}
         {% endif %}
@@ -438,14 +436,16 @@
         {{ historyItem.location }}
         
         {% switch historyItem.location %}
-          {% case 'At an NHS hospital' %}
+          {% case 'At an NHS clinic or hospital' %}
             {{ otherLocation(historyItem.locationNhsHospitalDetails) }}
-          {% case 'At a private clinic in the UK' %}
+          {% case 'Somewhere else in the UK' %}
             {{ otherLocation(historyItem.locationPrivateClinicDetails) }}
           {% case 'Outside the UK' %}
             {{ otherLocation(historyItem.locationOutsideUkDetails) }}
           {% case 'In multiple locations' %}
             {{ otherLocation(historyItem.locationMultipleLocationsDetails) }}
+          {% case 'Not known' %}
+            {{ otherLocation(historyItem.locationUnknownLocationDetails) }}
           {% case 'Exact location unknown' %}
             {{ otherLocation(historyItem.locationUnknownLocationDetails) }}
         {% endswitch %}

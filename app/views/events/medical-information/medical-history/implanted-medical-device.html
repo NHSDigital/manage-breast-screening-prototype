@@ -8,16 +8,6 @@
 
 {% block formContent %}
 
-  {% set conditionalTypeDetails %}
-    {{ input({
-      name: "event[medicalHistoryTemp][typeOtherDetails]",
-      value: event.medicalHistoryTemp.typeOtherDetails,
-      label: {
-        text: "Provide details"
-      }
-    }) }}
-  {% endset %}
-
   {{ radios({
     name: "event[medicalHistoryTemp][type]",
     value: event.medicalHistoryTemp.type,
@@ -37,16 +27,19 @@
         text: "Hickman line"
       },
       {
-        value: "Other medical device",
-        text: "Other medical device (or does not know)",
-        conditional: {
-          html: conditionalTypeDetails
-        }
+        value: "Other device",
+        text: "Other device"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "Not known",
+        text: "Not known"
       }
     ]
   }) }}
 
-  {% set yearText = "Year of procedure (optional)" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
   <h2>Removed implants</h2>

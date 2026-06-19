@@ -61,8 +61,8 @@
           divider: "or"
         },
         {
-          value: "Does not know",
-          text: "Does not know",
+          value: "Not known",
+          text: "Not known",
           exclusive: true
         }
       ]
@@ -70,22 +70,9 @@
 
   {% endcall %}
 
-  {# {{ input({
-    label: {
-      text: "In what year was breast cancer first diagnosed?",
-      size: "m"
-    },
-    name: "event[medicalHistoryTemp][diagnosisYear]",
-    value: event.medicalHistoryTemp.diagnosisYear,
-    id: "diagnosis-year",
-    classes: "nhsuk-input--width-4",
-    hint: {
-      text: "For example, 2019"
-    },
-    inputmode: "numeric"
-  }) }} #}
-
   {% set yearText = "Year of diagnosis (optional)" %}
+  {% set yearFieldName = "diagnosisYear" %}
+  {% set yearApproximateFieldName = "diagnosisYearIsApproximate" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% set procedureQuestionText %}
@@ -122,11 +109,15 @@
             text: "Mastectomy (no tissue remaining)"
           },
           {
+            value: "No procedure",
+            text: "No procedure"
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedure",
-            text: "No procedure"
+            value: "Not known",
+            text: "Not known"
           }
         ]
       }) }}
@@ -157,11 +148,15 @@
             text: "Mastectomy (no tissue remaining)"
           },
           {
+            value: "No procedure",
+            text: "No procedure"
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures"
+            value: "Not known",
+            text: "Not known"
           }
         ]
       }) }}
@@ -202,11 +197,16 @@
             text: "Symmetrisation"
           },
           {
+            value: "No surgery",
+            text: "No other surgery",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No surgery",
-            text: "No other surgery",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -238,11 +238,16 @@
             text: "Symmetrisation"
           },
           {
+            value: "No surgery",
+            text: "No other surgery",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No surgery",
-            text: "No other surgery",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -280,11 +285,16 @@
             text: "Lymph node radiotherapy"
           },
           {
+            value: "No radiotherapy",
+            text: "No radiotherapy",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No radiotherapy",
-            text: "No radiotherapy",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -313,11 +323,16 @@
             text: "Lymph node radiotherapy"
           },
           {
+            value: "No radiotherapy",
+            text: "No radiotherapy",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No radiotherapy",
-            text: "No radiotherapy",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -359,6 +374,14 @@
           id: "other-treatment-details"
         })
       }
+    },
+    {
+      divider: "or"
+    },
+    {
+      value: "Not known",
+      text: "Not known",
+      exclusive: true
     }
   ]
 }) }}

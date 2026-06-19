@@ -38,11 +38,16 @@
             text: "Lump removed"
           },
           {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -72,11 +77,16 @@
             text: "Lump removed"
           },
           {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
             divider: "or"
           },
           {
-            value: "No procedures",
-            text: "No procedures",
+            value: "Not known",
+            text: "Not known",
             exclusive: true
           }
         ]
@@ -84,10 +94,11 @@
     </div>
   </div>
 
-  {% set yearText = "Year of procedure (optional)" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% set treatmentLocationText = "Where were the tests and treatment done?" %}
+  {% set treatmentLocationShowUnknownDivider = true %}
+  {% set treatmentLocationUnknownDetailsLabel = "Provide details" %}
   {% include "_includes/medical-information/medical-history/location.njk" %}
 
   {% set additionalDetailsHintText = "Include any other relevant information about the procedure (optional)" %}
