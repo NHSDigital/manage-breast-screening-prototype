@@ -306,29 +306,32 @@ const generateSymptom = (options = {}) => {
 
   // Add location for symptoms that need it (not Nipple change)
   if (typeData.requiresLocation) {
-    const location = weighted.select({
-      'right breast': 0.4,
-      'left breast': 0.4,
-      'both breasts': 0.15,
+    const locationChoice = weighted.select({
+      'right': 0.4,
+      'left': 0.4,
+      'both': 0.15,
       'other': 0.05
     })
 
-    symptom.location = location
-
-    // Add location-specific descriptions
-    const locationDescriptions = LOCATION_DESCRIPTIONS[location]
-    if (locationDescriptions) {
-      const description = faker.helpers.arrayElement(locationDescriptions)
-
-      if (location === 'right breast') {
-        symptom.rightBreastDescription = description
-      } else if (location === 'left breast') {
-        symptom.leftBreastDescription = description
-      } else if (location === 'both breasts') {
-        symptom.bothBreastsDescription = description
-      } else if (location === 'other') {
-        symptom.otherLocationDescription = description
-      }
+    // Location is stored as an array to match the checkboxes UI
+    switch (locationChoice) {
+      case 'right':
+        symptom.location = ['right breast']
+        symptom.rightBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['right breast'])
+        break
+      case 'left':
+        symptom.location = ['left breast']
+        symptom.leftBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['left breast'])
+        break
+      case 'both':
+        symptom.location = ['right breast', 'left breast']
+        symptom.rightBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['right breast'])
+        symptom.leftBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['left breast'])
+        break
+      case 'other':
+        symptom.location = ['other']
+        symptom.otherLocationDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['other'])
+        break
     }
   }
 
