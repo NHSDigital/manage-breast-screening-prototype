@@ -387,10 +387,10 @@
         {% if yearValue %}
           {{ summaryListRow({
             key: {
-              text: (typeData.yearLabel or "Year") + (" (approximate)" if yearApprox else "")
+              text: typeData.yearLabel or "Year"
             },
             value: {
-              html: yearText
+              html: yearText + (" (approximate)" if yearApprox else "")
             }
           }) }}
         {% endif %}
