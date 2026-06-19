@@ -292,7 +292,25 @@ const summariseSymptom = (symptom) => {
       location = symptom.nippleChangeLocation[0]
     }
   } else if (symptom.location) {
-    location = symptom.location
+    // location is an array; derive a human-readable string
+    const locArray = Array.isArray(symptom.location) ? symptom.location : [symptom.location]
+    const hasRight = locArray.includes('right breast')
+    const hasLeft = locArray.includes('left breast')
+    const hasOther = locArray.includes('other')
+    const locationParts = []
+
+    if (hasRight && hasLeft) {
+      locationParts.push('both breasts')
+    } else {
+      if (hasRight) locationParts.push('right breast')
+      if (hasLeft) locationParts.push('left breast')
+    }
+
+    if (hasOther) {
+      locationParts.push(symptom.otherLocationDescription || 'other location')
+    }
+
+    location = locationParts.join(', ')
   }
 
   if (location) {

@@ -45,38 +45,54 @@
         {% set valueLines = valueLines | push(symptom.nippleChangeLocation[0] | sentenceCase) %}
       {% endif %}
     {% elseif symptom.location %}
-      {% set locationText = symptom.location | sentenceCase %}
+      {# Handle location as array (right breast, left breast, other); support legacy string values #}
+      {% set locArray = [symptom.location] if symptom.location is string else symptom.location %}
+      {% set hasRight = "right breast" in locArray %}
+      {% set hasLeft = "left breast" in locArray %}
+      {% set hasOther = "other" in locArray %}
 
-      {# {% if symptom.location | includes("right breast") and symptom.location | includes("left breast") %}
-        {% set locationText = "Both breasts" %}
-      {% elseif symptom.location | includes("right breast") %}
-        {% set locationText = "Right breast" %}
-      {% elseif symptom.location | includes("left breast") %}
-        {% set locationText = "Left breast" %}
-      {% endif %}
-
-      {% if symptom.location | includes("other") %}
-        {% set locationText %}
-          {% if locationText %}
-            {{ locationText }} plus
-          {% else %}
-            Location:
-          {% endif %}
-        {% endset %}
-        {% if symptom.otherLocationDescription %}
-          {% set locationText = locationText + " (" + symptom.otherLocationDescription | sentenceCase + ")" %}
+      {% if hasRight and hasLeft %}
+        {% if symptom.rightBreastDescription and symptom.leftBreastDescription %}
+          {% set locationText = "Both breasts (right: " + symptom.rightBreastDescription + ", left: " + symptom.leftBreastDescription + ")" %}
+        {% elseif symptom.rightBreastDescription %}
+          {% set locationText = "Both breasts (right: " + symptom.rightBreastDescription + ")" %}
+        {% elseif symptom.leftBreastDescription %}
+          {% set locationText = "Both breasts (left: " + symptom.leftBreastDescription + ")" %}
+        {% else %}
+          {% set locationText = "Both breasts" %}
         {% endif %}
-      {% endif %} #}
-      {% if symptom.location == "right breast" and symptom.rightBreastDescription %}
-        {% set locationText = locationText + ": " + symptom.rightBreastDescription %}
-      {% elseif symptom.location == "left breast" and symptom.leftBreastDescription %}
-        {% set locationText = locationText + ": " + symptom.leftBreastDescription %}
-      {% elseif symptom.location == "both breasts" and symptom.bothBreastsDescription %}
-        {% set locationText = locationText + ": " + symptom.bothBreastsDescription %}
-      {% elseif symptom.location == "other" and symptom.otherLocationDescription %}
-        {% set locationText = "Other location: " + symptom.otherLocationDescription | sentenceCase %}
+      {% elseif hasRight %}
+        {% if symptom.rightBreastDescription %}
+          {% set locationText = "Right breast: " + symptom.rightBreastDescription %}
+        {% else %}
+          {% set locationText = "Right breast" %}
+        {% endif %}
+      {% elseif hasLeft %}
+        {% if symptom.leftBreastDescription %}
+          {% set locationText = "Left breast: " + symptom.leftBreastDescription %}
+        {% else %}
+          {% set locationText = "Left breast" %}
+        {% endif %}
+      {% else %}
+        {% set locationText = "" %}
       {% endif %}
-      {% set valueLines = valueLines | push(locationText) %}
+
+      {% if hasOther %}
+        {% if symptom.otherLocationDescription %}
+          {% set otherText = "Other: " + symptom.otherLocationDescription %}
+        {% else %}
+          {% set otherText = "Other location" %}
+        {% endif %}
+        {% if locationText %}
+          {% set locationText = locationText + ", " + otherText %}
+        {% else %}
+          {% set locationText = otherText %}
+        {% endif %}
+      {% endif %}
+
+      {% if locationText %}
+        {% set valueLines = valueLines | push(locationText) %}
+      {% endif %}
     {% endif %}
 
     {# Start date #}

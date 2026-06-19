@@ -122,7 +122,7 @@
   {% else %}
 
     {# General symptom location #}
-    {% set radioQuestionText %}
+    {% set checkboxQuestionText %}
       {% if event.symptomTemp.type == "Other" %}
         Where is the symptom?
       {% elseif event.symptomTemp.type == "Breast pain" %}
@@ -137,7 +137,7 @@
     <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if _locationError else '' }}">
       {% call fieldset({
         legend: {
-          text: radioQuestionText,
+          text: checkboxQuestionText,
           size: "m"
         },
         describedBy: "location-error" if _locationError
@@ -152,12 +152,12 @@
 
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
-            {{ radios({
-              idPrefix: "locationRightBreast",
+            {{ checkboxes({
               name: "event[symptomTemp][location]",
-              value: event.symptomTemp.location,
+              values: event.symptomTemp.location,
+              idPrefix: "locationRightBreast",
               formGroup: {
-                classes: "nhsuk-u-margin-bottom-2"
+                classes: "nhsuk-u-margin-bottom-0"
               },
               items: [
                 {
@@ -168,22 +168,22 @@
                       id: "rightBreastDescription",
                       name: "event[symptomTemp][rightBreastDescription]",
                       label: {
-                        text: "Describe the specific area"
+                        text: "Describe the specific area (optional)"
                       },
                       value: event.symptomTemp.rightBreastDescription
-                    } | populateErrors)
+                    })
                   }
                 }
               ]
             }) }}
           </div>
           <div class="nhsuk-grid-column-one-half">
-            {{ radios({
-              idPrefix: "locationLeftBreast",
+            {{ checkboxes({
               name: "event[symptomTemp][location]",
-              value: event.symptomTemp.location,
+              values: event.symptomTemp.location,
+              idPrefix: "locationLeftBreast",
               formGroup: {
-                classes: "nhsuk-u-margin-bottom-2"
+                classes: "nhsuk-u-margin-bottom-0"
               },
               items: [
                 {
@@ -194,10 +194,10 @@
                       id: "leftBreastDescription",
                       name: "event[symptomTemp][leftBreastDescription]",
                       label: {
-                        text: "Describe the specific area"
+                        text: "Describe the specific area (optional)"
                       },
                       value: event.symptomTemp.leftBreastDescription
-                    } | populateErrors)
+                    })
                   }
                 }
               ]
@@ -205,53 +205,33 @@
           </div>
         </div>
 
-        {{ radios({
-          idPrefix: "locationOther",
+        {{ checkboxes({
           name: "event[symptomTemp][location]",
-          value: event.symptomTemp.location,
+          values: event.symptomTemp.location,
+          idPrefix: "locationOther",
           items: [
-            {
-              value: "both breasts",
-              text: "Both breasts",
-              conditional: {
-                html: input({
-                  id: "bothBreastsDescription",
-                  name: "event[symptomTemp][bothBreastsDescription]",
-                  label: {
-                    text: "Describe the specific areas"
-                  },
-                  value: event.symptomTemp.bothBreastsDescription,
-                  classes: "nhsuk-u-width-two-thirds"
-                } | populateErrors)
-              }
-            } if event.symptomTemp.type == "Lumps" else {},
             {
               divider: "or"
             },
             {
               value: "other",
               text: "Other",
-              _hint: {
-                text: "For example, the left armpit"
-              },
               conditional: {
                 html: input({
                   id: "otherLocationDescription",
                   name: "event[symptomTemp][otherLocationDescription]",
                   label: {
-                    text: "Describe the specific area",
-                    _classes: "nhsuk-u-visually-hidden"
+                    text: "Describe the specific area"
                   },
                   hint: {
-                    text: "For example, the left armpit",
-                    _classes: "nhsuk-u-visually-hidden"
+                    text: "For example, the left armpit"
                   },
                   value: event.symptomTemp.otherLocationDescription,
                   classes: "nhsuk-u-width-two-thirds"
                 } | populateErrors)
               }
             }
-          ] | removeEmpty
+          ]
         }) }}
 
       {% endcall %}
