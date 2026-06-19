@@ -30,37 +30,18 @@
    Creates a list of items for a single breast, handling arrays, single values, and empty states
    @param items - Array or single item to display
    @param emptyText - Text to show when no items (e.g., "No surgery", "No procedure")
-   @param historyItem - The history item being displayed, used for detail lookups
-   @param baseFieldName - Base field name for optional detail lookups
 #}
-{# Todo: should this be a standardised filter / macro? #}
-{% macro breastItemsList(items, emptyText, historyItem, baseFieldName) %}
+{% macro breastItemsList(items, emptyText) %}
   <ul class="nhsuk-list">
     {% if items %}
       {% if items | isArray %}
         {% for item in items %}
-          <li>
-            {{ item }}
-            {%- if historyItem and baseFieldName and item == "Not known" and historyItem[baseFieldName ~ "NotKnownDetails"] -%}
-            : {{ historyItem[baseFieldName ~ "NotKnownDetails"] }}
-            {%- endif -%}
-            {%- if historyItem and baseFieldName and (item | startsWith("Other")) and historyItem[baseFieldName ~ "OtherDetails"] -%}
-            : {{ historyItem[baseFieldName ~ "OtherDetails"] }}
-            {%- endif -%}
-          </li>
+          <li>{{ item }}</li>
         {% else %}
           <li>{{ emptyText or "None" }}</li>
         {% endfor %}
       {% else %}
-        <li>
-          {{ items }}
-          {%- if historyItem and baseFieldName and items == "Not known" and historyItem[baseFieldName ~ "NotKnownDetails"] -%}
-          : {{ historyItem[baseFieldName ~ "NotKnownDetails"] }}
-          {%- endif -%}
-          {%- if historyItem and baseFieldName and (items | startsWith("Other")) and historyItem[baseFieldName ~ "OtherDetails"] -%}
-          : {{ historyItem[baseFieldName ~ "OtherDetails"] }}
-          {%- endif -%}
-        </li>
+        <li>{{ items }}</li>
       {% endif %}
     {% else %}
       <li>{{ emptyText or "None" }}</li>
@@ -127,10 +108,6 @@
             <p>
               {% if historyItem.type == "Not known" %}
                 {{ historyItem.type }}
-                {% if historyItem.typeNotKnownDetails %}
-                  <br>
-                  Details: {{ historyItem.typeNotKnownDetails }}
-                {% endif %}
               {% elseif historyItem.type | startsWith("Other") %}
                 {{ historyItem.type }}: {{ historyItem.typeOtherDetails }}
               {% else %}
@@ -176,10 +153,6 @@
           Both breasts
         {% else %}
           {{ historyItem.cancerLocation[0] }}
-          {% if historyItem.cancerLocation[0] == "Not known" and historyItem.cancerLocationNotKnownDetails %}
-            <br>
-            Details: {{ historyItem.cancerLocationNotKnownDetails }}
-          {% endif %}
         {% endif %}
       {% endset %}
 
@@ -223,10 +196,10 @@
       {# Treatment - breast cancer #}
       {% set treatmentHtml %}
         {% set rightBreastContent %}
-          {{ breastItemsList(historyItem.treatmentRightBreast, "No radiotherapy", historyItem, "treatmentRightBreast") }}
+          {{ breastItemsList(historyItem.treatmentRightBreast, "No radiotherapy") }}
         {% endset %}
         {% set leftBreastContent %}
-          {{ breastItemsList(historyItem.treatmentLeftBreast, "No radiotherapy", historyItem, "treatmentLeftBreast") }}
+          {{ breastItemsList(historyItem.treatmentLeftBreast, "No radiotherapy") }}
         {% endset %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
@@ -236,9 +209,6 @@
             {% for treatment in historyItem.systemicTreatments %}
               <li>
                 {{ treatment }}
-                {%- if treatment == "Not known" and historyItem.systemicTreatmentsNotKnownDetails -%}
-                : {{ historyItem.systemicTreatmentsNotKnownDetails }}
-                {%- endif -%}
                 {%- if (treatment | startsWith("Other")) and historyItem.otherTreatmentDetails -%}
                 : {{ historyItem.otherTreatmentDetails }}
                 {%- endif -%}
@@ -264,40 +234,10 @@
       {# Procedures - used by breast implants, lump removal and biopsy, mastectomy lumpectomy #}
       {% set proceduresHtml %}
         {% set rightBreastContent %}
-          <ul class="nhsuk-list">
-            {% if historyItem.proceduresRightBreast %}
-              {% if historyItem.proceduresRightBreast | isArray %}
-                {% for procedure in historyItem.proceduresRightBreast %}
-                  <li>
-                    {{ procedure }}
-                    {%- if procedure == "Not known" and historyItem.proceduresRightBreastNotKnownDetails -%}
-                    : {{ historyItem.proceduresRightBreastNotKnownDetails }}
-                    {%- endif -%}
-                    {%- if (procedure | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
-                    : {{ historyItem.proceduresRightBreastOtherDetails }}
-                    {%- endif -%}
-                  </li>
-                {% else %}
-                  <li>No procedure</li>
-                {% endfor %}
-              {% else %}
-                <li>
-                  {{ historyItem.proceduresRightBreast }}
-                  {%- if historyItem.proceduresRightBreast == "Not known" and historyItem.proceduresRightBreastNotKnownDetails -%}
-                  : {{ historyItem.proceduresRightBreastNotKnownDetails }}
-                  {%- endif -%}
-                  {%- if (historyItem.proceduresRightBreast | startsWith("Other")) and historyItem.proceduresRightBreastOtherDetails -%}
-                  : {{ historyItem.proceduresRightBreastOtherDetails }}
-                  {%- endif -%}
-                </li>
-              {% endif %}
-            {% else %}
-              <li>No procedure</li>
-            {% endif %}
-          </ul>
+          {{ breastItemsList(historyItem.proceduresRightBreast, "No procedure") }}
         {% endset %}
         {% set leftBreastContent %}
-          {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures recorded", historyItem, "proceduresLeftBreast") }}
+          {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures recorded") }}
         {% endset %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
@@ -340,10 +280,10 @@
       {# Other surgery - used by breast cancer #}
       {% set otherSurgeryHtml %}
         {% set rightBreastContent %}
-          {{ breastItemsList(historyItem.otherSurgeryRightBreast, "No other surgery", historyItem, "otherSurgeryRightBreast") }}
+          {{ breastItemsList(historyItem.otherSurgeryRightBreast, "No other surgery") }}
         {% endset %}
         {% set leftBreastContent %}
-          {{ breastItemsList(historyItem.otherSurgeryLeftBreast, "No other surgery", historyItem, "otherSurgeryLeftBreast") }}
+          {{ breastItemsList(historyItem.otherSurgeryLeftBreast, "No other surgery") }}
         {% endset %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
       {% endset %}

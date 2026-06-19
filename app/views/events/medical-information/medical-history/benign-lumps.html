@@ -94,32 +94,7 @@
     </div>
   </div>
 
-  {{ input({
-    label: {
-      text: "Year of procedure (optional)",
-      size: "m"
-    },
-    hint: {
-      text: "Add a year or date range"
-    },
-    name: "event[medicalHistoryTemp][year]",
-    value: event.medicalHistoryTemp.year,
-    id: "year",
-    classes: "nhsuk-input--width-10",
-    inputmode: "text"
-  }) }}
-
-  {{ checkboxes({
-    idPrefix: "yearIsApproximate",
-    name: "event[medicalHistoryTemp][yearIsApproximate]",
-    items: [
-      {
-        value: "yes",
-        text: "This date is approximate",
-        checked: true if event.medicalHistoryTemp.yearIsApproximate else false
-      }
-    ]
-  }) }}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% set treatmentLocationText = "Where were the tests and treatment done?" %}
   {% set treatmentLocationShowUnknownDivider = true %}

@@ -1,16 +1,34 @@
 {# app/views/_includes/medical-information/medical-history/year.njk #}
 
+{% set _yearFieldName = yearFieldName or "year" %}
+{% set _yearApproximateFieldName = yearApproximateFieldName or "yearIsApproximate" %}
+
 {{ input({
   label: {
     text: yearText or "Year of procedure (optional)",
     size: "m"
   },
-  name: "event[medicalHistoryTemp][year]",
-  value: event.medicalHistoryTemp.year,
-  id: "year",
-  classes: "nhsuk-input--width-4",
+  name: "event[medicalHistoryTemp][" ~ _yearFieldName ~ "]",
+  value: event.medicalHistoryTemp[_yearFieldName],
+  id: _yearFieldName,
+  classes: "nhsuk-input--width-10",
   hint: {
-    text: "Leave blank if unknown"
+    text: "Add a year or date range"
   },
-  inputmode: "numeric"
+  inputmode: "text",
+  formGroup: {
+    classes: "nhsuk-u-margin-bottom-3"
+  }
+}) }}
+
+{{ checkboxes({
+  idPrefix: _yearApproximateFieldName,
+  name: "event[medicalHistoryTemp][" ~ _yearApproximateFieldName ~ "]",
+  items: [
+    {
+      value: "yes",
+      text: "This date is approximate",
+      checked: true if event.medicalHistoryTemp[_yearApproximateFieldName] else false
+    }
+  ]
 }) }}

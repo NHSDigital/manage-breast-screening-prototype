@@ -70,32 +70,10 @@
 
   {% endcall %}
 
-  {{ input({
-    label: {
-      text: "Year of diagnosis (optional)",
-      size: "m"
-    },
-    hint: {
-      text: "Add a year or date range"
-    },
-    name: "event[medicalHistoryTemp][diagnosisYear]",
-    value: event.medicalHistoryTemp.diagnosisYear,
-    id: "diagnosis-year",
-    classes: "nhsuk-input--width-10",
-    inputmode: "text"
-  }) }}
-
-  {{ checkboxes({
-    idPrefix: "diagnosisYearIsApproximate",
-    name: "event[medicalHistoryTemp][diagnosisYearIsApproximate]",
-    items: [
-      {
-        value: "yes",
-        text: "This date is approximate",
-        checked: true if event.medicalHistoryTemp.diagnosisYearIsApproximate else false
-      }
-    ]
-  }) }}
+  {% set yearText = "Year of diagnosis (optional)" %}
+  {% set yearFieldName = "diagnosisYear" %}
+  {% set yearApproximateFieldName = "diagnosisYearIsApproximate" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {% set procedureQuestionText %}
     What procedure have they had
