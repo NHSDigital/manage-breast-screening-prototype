@@ -1009,46 +1009,17 @@ module.exports = (router) => {
         }
       } else if (symptomType) {
         const loc = data.event?.symptomTemp?.location
-        if (!loc) {
+        if (!loc || !loc.length) {
           validationErrors.push({
             name: 'event[symptomTemp][location]',
             text: 'Select a location',
             href: '#locationRightBreast'
           })
         } else {
-          // Validate conditional description fields
+          // Only 'other' description is required when other is selected
+          const locArray = Array.isArray(loc) ? loc : [loc]
           if (
-            loc === 'right breast' &&
-            !data.event.symptomTemp.rightBreastDescription
-          ) {
-            validationErrors.push({
-              name: 'event[symptomTemp][rightBreastDescription]',
-              text: 'Describe the specific area for the right breast',
-              href: '#rightBreastDescription'
-            })
-          }
-          if (
-            loc === 'left breast' &&
-            !data.event.symptomTemp.leftBreastDescription
-          ) {
-            validationErrors.push({
-              name: 'event[symptomTemp][leftBreastDescription]',
-              text: 'Describe the specific area for the left breast',
-              href: '#leftBreastDescription'
-            })
-          }
-          if (
-            loc === 'both breasts' &&
-            !data.event.symptomTemp.bothBreastsDescription
-          ) {
-            validationErrors.push({
-              name: 'event[symptomTemp][bothBreastsDescription]',
-              text: 'Describe the specific areas',
-              href: '#bothBreastsDescription'
-            })
-          }
-          if (
-            loc === 'other' &&
+            locArray.includes('other') &&
             !data.event.symptomTemp.otherLocationDescription
           ) {
             validationErrors.push({
@@ -1294,21 +1265,21 @@ module.exports = (router) => {
 
         if (symptomType != 'Nipple change') {
           // For other symptom types (Lump, Swelling)
+          // location is stored as an array matching the checkboxes
           symptom.location = symptomTemp.location
 
-          // if (symptomTemp.location?.includes('other')) {
-          //   symptom.otherLocationDescription = symptomTemp.otherLocationDescription
-          // }
-          // Add location descriptions
-          if (symptomTemp.location === 'right breast') {
+          // Copy location-specific descriptions based on what was selected
+          const locArray = Array.isArray(symptomTemp.location)
+            ? symptomTemp.location
+            : [symptomTemp.location]
+          if (locArray.includes('right breast')) {
             symptom.rightBreastDescription = symptomTemp.rightBreastDescription
-          } else if (symptomTemp.location === 'left breast') {
+          }
+          if (locArray.includes('left breast')) {
             symptom.leftBreastDescription = symptomTemp.leftBreastDescription
-          } else if (symptomTemp.location === 'both breasts') {
-            symptom.bothBreastsDescription = symptomTemp.bothBreastsDescription
-          } else if (symptomTemp.location === 'other') {
-            symptom.otherLocationDescription =
-              symptomTemp.otherLocationDescription
+          }
+          if (locArray.includes('other')) {
+            symptom.otherLocationDescription = symptomTemp.otherLocationDescription
           }
         }
 
