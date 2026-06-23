@@ -1,13 +1,13 @@
 // app/lib/utils/prior-mammograms.js
 //
-// Utility functions for working with prior mammograms (previously reported
+// Utility functions for working with prior mammograms (previously recorded
 // mammograms from other facilities). These derive event-level state from
 // per-mammogram request tracking on event.previousMammograms[].
 
 const { formatDate, formatRelativeDate } = require('./dates')
 
-/** Returns true if the event has any previously reported mammograms */
-const hasReportedMammograms = (event) => {
+/** Returns true if the event has any previously recorded mammograms */
+const hasRecordedMammograms = (event) => {
   if (!event) return false
   return (
     Array.isArray(event.previousMammograms) &&
@@ -17,7 +17,7 @@ const hasReportedMammograms = (event) => {
 
 /** Returns true if any prior mammogram has requestStatus 'pending' or 'requested' (holds case from reading) */
 const awaitingPriors = (event) => {
-  if (!hasReportedMammograms(event)) return false
+  if (!hasRecordedMammograms(event)) return false
   return event.previousMammograms.some(
     (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
   )
@@ -25,7 +25,7 @@ const awaitingPriors = (event) => {
 
 /** Returns true if any prior mammogram has requestStatus 'not_requested' */
 const hasUnrequestedPriors = (event) => {
-  if (!hasReportedMammograms(event)) return false
+  if (!hasRecordedMammograms(event)) return false
   return event.previousMammograms.some(
     (m) => m.requestStatus === 'not_requested'
   )
@@ -38,7 +38,7 @@ const hasUnrequestedPriors = (event) => {
  * @returns {{total: number, counts: object, hasAwaiting: boolean, hasUnrequested: boolean, allResolved: boolean}}
  */
 const getPriorsSummary = (event) => {
-  if (!hasReportedMammograms(event)) {
+  if (!hasRecordedMammograms(event)) {
     return {
       total: 0,
       counts: {},
@@ -82,7 +82,7 @@ const getPriorsSummary = (event) => {
 
 /** Get priors with requestStatus 'not_requested' (for the request priors UI) */
 const getUnrequestedPriors = (event) => {
-  if (!hasReportedMammograms(event)) return []
+  if (!hasRecordedMammograms(event)) return []
   return event.previousMammograms.filter(
     (m) => m.requestStatus === 'not_requested'
   )
@@ -90,7 +90,7 @@ const getUnrequestedPriors = (event) => {
 
 /** Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) */
 const getAwaitingPriors = (event) => {
-  if (!hasReportedMammograms(event)) return []
+  if (!hasRecordedMammograms(event)) return []
   return event.previousMammograms.filter(
     (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
   )
@@ -101,7 +101,7 @@ const getAwaitingPriors = (event) => {
  * Only 'pending' is checked — once admin moves to 'requested', the reader can no longer undo.
  */
 const userRequestedPriors = (event, userId) => {
-  if (!hasReportedMammograms(event)) return false
+  if (!hasRecordedMammograms(event)) return false
   return event.previousMammograms.some(
     (m) => m.requestStatus === 'pending' && m.requestedBy === userId
   )
@@ -179,14 +179,14 @@ const summarisePriorMammogram = (mammogram, options = {}) => {
  * @returns {Array<string>} Array of summary strings
  */
 const summarisePriorMammograms = (event, options = {}) => {
-  if (!hasReportedMammograms(event)) return []
+  if (!hasRecordedMammograms(event)) return []
   return event.previousMammograms
     .map((m) => summarisePriorMammogram(m, options))
     .filter(Boolean)
 }
 
 module.exports = {
-  hasReportedMammograms,
+  hasRecordedMammograms,
   awaitingPriors,
   hasUnrequestedPriors,
   getPriorsSummary,
