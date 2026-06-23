@@ -31,7 +31,7 @@
 
 {# User-added unverified mammograms #}
 {% if hasAdditionalMammograms %}
-  <h3 class="nhsuk-heading-s">Reported mammograms</h3>
+  <h3 class="nhsuk-heading-s">Recorded mammograms</h3>
   {% set userMammogramRows = [] %}
 
   {% for previousMammogram in event.previousMammograms %}
@@ -113,7 +113,7 @@
           {
             href: contextUrl + "/previous-mammograms/edit/" + previousMammogram.id | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
             text: "Change",
-            visuallyHiddenText: "Participant reported mammogram"
+            visuallyHiddenText: "Participant disclosed mammogram"
           }
         ]
       } if allowEdits
