@@ -12,7 +12,7 @@
 
 {# Mammogram history #}
 {% set sectionHeading = "Mammogram history" %}
-{% set subHeading = "Previous mammograms from screening records and any reported by the participant" %}
+{% set subHeading = "Previous mammograms from screening records and any disclosed by the participant" %}
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
@@ -32,9 +32,9 @@
 {% endset %}
 
 {% if hasAdditionalMammograms %}
-  {% set mammogramHistoryContentsSummary = (event.previousMammograms | length) ~ " reported " + ("mammogram" | pluralise(event.previousMammograms | length)) + " added" %}
+  {% set mammogramHistoryContentsSummary = (event.previousMammograms | length) ~ " " ~ ("mammogram" | pluralise(event.previousMammograms | length)) ~ " added" %}
 {% else %}
-  {% set mammogramHistoryContentsSummary = "No reported mammograms added" %}
+  {% set mammogramHistoryContentsSummary = "No mammograms added" %}
 {% endif %}
 
 
