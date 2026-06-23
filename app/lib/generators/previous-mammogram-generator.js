@@ -259,7 +259,7 @@ const generatePreviousMammograms = ({ eventDate, addedByUserId, rate }) => {
       ? rate
       : (config.generation?.previousMammogramRate ?? 0.2)
 
-  // Decide whether this event has reported mammograms
+  // Decide whether this event has recorded mammograms
   if (Math.random() > effectiveRate) {
     return null
   }
