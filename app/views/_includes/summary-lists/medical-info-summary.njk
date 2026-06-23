@@ -153,13 +153,13 @@
   {% set mammogramsAction = {
     href: "./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain),
     text: "Add a mammogram",
-    visuallyHiddenText: "reported mammograms"
+    visuallyHiddenText: "recorded mammograms"
   } | openInModal %}
 {% else %}
   {% set mammogramsAction = {
     href: "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl),
     text: "View or change",
-    visuallyHiddenText: "reported mammograms"
+    visuallyHiddenText: "recorded mammograms"
   } %}
 {% endif %}
 
@@ -203,7 +203,7 @@
 {% if not showOnlyPopulated or additionalMammogramsCount > 0 %}
   {% set rows = rows | push({
     key: {
-      text: "Reported mammograms"
+      text: "Recorded mammograms"
     },
     value: {
       html: previousMammogramsHtml
