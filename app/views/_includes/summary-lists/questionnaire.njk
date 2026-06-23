@@ -227,14 +227,14 @@
       <li>Details: {{questionnaire.skinChangeDetails}}</li>
     </ul>
   {% else %}
-    {{ questionnaire.skinChanges | formatAnswer({ noText: "No changes reported" }) }}
+    {{ questionnaire.skinChanges | formatAnswer({ noText: "No changes disclosed" }) }}
   {% endif %}
 {% endset %}
 
 {% set nippleSymptomsValue %}
   {% if questionnaire.nippleSymptoms %}
     {% if questionnaire.nippleSymptoms.includes("none") %}
-      No symptoms reported
+      No symptoms disclosed
     {% else %}
       <ul class="nhsuk-list nhsuk-list--bullet">
       {% for symptom in questionnaire.nippleSymptoms %}
@@ -282,7 +282,7 @@
       value: {
         text: questionnaire.lumpsNoticed | formatAnswer({
           yesValue: questionnaire.lumpDetails,
-          noText: "No lumps reported"
+          noText: "No lumps disclosed"
         })
       },
       actions: {
@@ -302,7 +302,7 @@
       value: {
         text: questionnaire.shapeChanges | formatAnswer({
           yesValue: questionnaire.shapeChangeDetails,
-          noText: "No changes reported"
+          noText: "No changes disclosed"
         })
       },
       actions: {
