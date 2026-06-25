@@ -209,6 +209,11 @@
     }
   }
 
+  .nhsuk-back-link,
+  .nhsuk-forward-link {
+    @include nhsuk-responsive-margin(3, "top");
+  }
+
   // Reduce spacing after buttons
   .nhsuk-button {
     @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
