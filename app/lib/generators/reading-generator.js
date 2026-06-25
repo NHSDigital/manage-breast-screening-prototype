@@ -365,15 +365,17 @@ const generateReadingDataWithBacklogLimit = (
   const clampedLimit = Math.min(backlogLimit, sorted.length)
   const fullyReadEvents = sorted.slice(0, sorted.length - clampedLimit)
   const backlogEvents = sorted.slice(sorted.length - clampedLimit)
-  const partialCount = Math.floor(backlogEvents.length * backlogPartialReadRatio)
+  const partialCount = Math.floor(
+    backlogEvents.length * backlogPartialReadRatio
+  )
   const partialEvents = backlogEvents.slice(0, partialCount)
   const unreadEvents = backlogEvents.slice(partialCount)
 
   console.log(
     `Backlog limit: ${backlogLimit} cases — ` +
-    `${fullyReadEvents.length} fully read, ` +
-    `${partialEvents.length} partially read, ` +
-    `${unreadEvents.length} unread`
+      `${fullyReadEvents.length} fully read, ` +
+      `${partialEvents.length} partially read, ` +
+      `${unreadEvents.length} unread`
   )
 
   const updatedEvents = [...allEvents]
@@ -472,7 +474,8 @@ const generateReadingData = (events, users, seedProfile = {}) => {
       { firstReader, secondReader, thirdReader },
       {
         backlogLimit,
-        backlogPartialReadRatio: seedProfile?.reading?.backlogPartialReadRatio ?? 0.5,
+        backlogPartialReadRatio:
+          seedProfile?.reading?.backlogPartialReadRatio ?? 0.5,
         alignmentProbability
       }
     )

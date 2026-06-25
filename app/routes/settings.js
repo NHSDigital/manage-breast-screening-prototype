@@ -65,9 +65,10 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
   // reading.backlogLimit is a plain integer (not a probability), so handle separately
   const readingBody = body.reading || {}
   const rawLimit = readingBody.backlogLimit
-  const parsedLimit = rawLimit === '' || rawLimit === undefined || rawLimit === null
-    ? null
-    : Number(rawLimit)
+  const parsedLimit =
+    rawLimit === '' || rawLimit === undefined || rawLimit === null
+      ? null
+      : Number(rawLimit)
 
   converted.reading = {
     backlogLimit: Number.isNaN(parsedLimit) ? null : parsedLimit,
