@@ -58,13 +58,15 @@
       {% set sessionCompletePanelHtml %}
         <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised at {{ autoFinaliseAt | formatTime("h:mma") }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
-          {{ button({
-            text: "Start a new session",
-            href: "/reading/create-session?type=all_reads",
-            variant: "reverse",
-            classes: "nhsuk-u-margin-bottom-0"
-          }) }}
-          <a href="/dashboard" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
+          {% if backlogTotal > 0 %}
+            {{ button({
+              text: "Start a new session",
+              href: "/reading/create-session?type=all_reads",
+              variant: "reverse",
+              classes: "nhsuk-u-margin-bottom-0"
+            }) }}
+          {% endif %}
+          <a href="/reading" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
         </div>
       {% endset %}
 
@@ -97,7 +99,8 @@
     }) }}
 
     {# Number of slots not yet populated in a lazy session #}
-    {% set pendingCount = (session.targetSize - session.eventIds | length) if session.targetSize else 0 %}
+    {% set sessionTotalCount = sessionProgress.effectiveTargetSize if sessionProgress else session.targetSize %}
+    {% set pendingCount = (sessionTotalCount - (session.eventIds | length)) if sessionTotalCount else 0 %}
     {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
 
     {% if view == 'your-reads' %}
@@ -217,7 +220,7 @@
         {% endif %}
 
         <h2>Reading session cases</h2>
-        {% set userSessionRemainingCount = session.targetSize - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount - deferredCount %}
+        {% set userSessionRemainingCount = sessionTotalCount - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount - deferredCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
         {% if userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 or deferredCount > 0 %}
           <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if deferredCount > 0 -%}, {{ deferredCount }} deferred{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
