@@ -8,6 +8,7 @@
 
 {% set currentUserId = data.currentUser.id %}
 {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
+{% set sessionProgressById = sessionProgressById or {} %}
 
 {#
   Build a list of the current user's sessions, most-recent first.
@@ -24,7 +25,8 @@
     {% endif %}
   {% endfor %}
   {% if userReadCount > 0 %}
-    {% set targetSize = session.targetSize or session.eventIds | length %}
+    {% set progress = sessionProgressById[session.id] %}
+    {% set targetSize = progress.effectiveTargetSize if progress else (session.targetSize or session.eventIds | length) %}
     {% set userSessions = userSessions | push({
       id: session.id,
       createdAt: session.createdAt,
@@ -117,10 +119,20 @@
       href: "/reading/session/" + inProgressSession.id + "/resume"
     }) }}
 
+  {% elif backlogTotal == 0 %}
+
+    <h2>There are no cases to read</h2>
+    <p>All cases have been read.</p>
+
+    {{ button({
+      text: "Start now",
+      disabled: true
+    }) }}
+
   {% else %}
 
     <h2>Start image reading</h2>
-    <p>Give your opinion on the next {{ defaultSessionSize }} cases due for reading.</p>
+    <p>Give your opinion on cases due for reading (up to {{ defaultSessionSize }}).</p>
 
     {{ button({
       text: "Start now",

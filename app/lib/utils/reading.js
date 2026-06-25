@@ -1836,6 +1836,17 @@ const getSessionReadingProgress = (
 
   const resolvedTargetSize = session.targetSize || sessionEvents.length
 
+  // Work out how large this session can actually become right now once we
+  // account for unclaimed eligible cases. This prevents showing "25 remaining"
+  // when only (for example) 20 cases are available to read.
+  const claimedEventIds = new Set(
+    Object.values(data.readingSessions || {}).flatMap((s) => s.eventIds || [])
+  )
+  const availableTopUpCount = getEligibleCandidatesForSession(data, session)
+    .filter((event) => !claimedEventIds.has(event.id)).length
+  const reachableSessionSize = sessionEvents.length + availableTopUpCount
+  const effectiveTargetSize = Math.min(resolvedTargetSize, reachableSessionSize)
+
   // Count deferred events so they count toward the session target
   const deferredCount = sessionEvents.filter(isDeferred).length
 
@@ -1844,12 +1855,13 @@ const getSessionReadingProgress = (
     // How many events are currently loaded vs the overall target
     populatedCount: sessionEvents.length,
     targetSize: resolvedTargetSize,
+    effectiveTargetSize,
     // Deferred events count as 'done' for session progress purposes
     deferredCount,
     // Remaining reads against the target (not just currently loaded events)
     targetRemaining: Math.max(
       0,
-      resolvedTargetSize -
+      effectiveTargetSize -
         progress.userReadCount -
         progress.userAwaitingPriorsCount -
         deferredCount

@@ -39,10 +39,28 @@ module.exports = (router) => {
 
   // Reading index — choose layout based on setting
   router.get('/reading', (req, res) => {
+    const data = req.session.data
+    const currentUserId = data?.currentUser?.id
     const layout = req.session.data?.settings?.reading?.indexLayout || 'simple'
     const template =
       layout === 'complex' ? 'reading/index-complex' : 'reading/index-simple'
-    res.render(template)
+
+    const sessionProgressById = {}
+    Object.values(data.readingSessions || {}).forEach((session) => {
+      const progress = getSessionReadingProgress(
+        data,
+        session.id,
+        null,
+        currentUserId
+      )
+      if (progress) {
+        sessionProgressById[session.id] = progress
+      }
+    })
+
+    res.render(template, {
+      sessionProgressById
+    })
   })
 
   // Default clinics list to "mine"
@@ -319,7 +337,16 @@ module.exports = (router) => {
       )
     }
 
-    res.redirect(`/reading/session/${sessionId}`)
+    // Check if there are any readable cases left in the session
+    const firstReadable = getFirstUserReadableEvent(
+      sessionEvents,
+      data.currentUser.id
+    )
+    if (firstReadable) {
+      res.redirect(`/reading/session/${sessionId}`)
+    } else {
+      res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+    }
   })
 
   // Route for skipped-review page (shown at end of batch when skipped cases remain)
@@ -335,6 +362,19 @@ module.exports = (router) => {
       session,
       sessionId,
       firstSkippedEventId
+    })
+  })
+
+  // Route for no-more-cases page (shown when no more readable cases available in session)
+  router.get('/reading/session/:sessionId/no-more-cases', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+    res.render('reading/no-more-cases', {
+      sessionId
     })
   })
 
@@ -379,6 +419,13 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
+    const sessionProgress = getSessionReadingProgress(
+      data,
+      sessionId,
+      null,
+      data.currentUser.id
+    )
+
     // Find where the user should resume — first readable after the furthest
     // point they've reached (reads or skips), falling back to first readable
     const resumeEvent = getResumeEventForUser(
@@ -414,6 +461,7 @@ module.exports = (router) => {
       session,
       events: enhancedEvents,
       readingStatus,
+      sessionProgress,
       resumeEvent,
       autoFinaliseAt,
       clinic,
@@ -592,7 +640,16 @@ module.exports = (router) => {
     } else if (session.skippedEvents.length > 0) {
       res.redirect(`/reading/session/${sessionId}/skipped-review`)
     } else {
-      res.redirect(`/reading/session/${sessionId}`)
+      // Check if there are any readable cases left in the session
+      const firstReadable = getFirstUserReadableEvent(
+        sessionEvents,
+        currentUserId
+      )
+      if (firstReadable) {
+        res.redirect(`/reading/session/${sessionId}`)
+      } else {
+        res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+      }
     }
   })
 
@@ -669,7 +726,16 @@ module.exports = (router) => {
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)
         )
       } else {
-        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+        // Check if there are any readable cases left in the session
+        const firstReadable = getFirstUserReadableEvent(
+          sessionEvents,
+          currentUserId
+        )
+        if (firstReadable) {
+          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+        } else {
+          res.redirect(modalBreakout(`/reading/session/${sessionId}/no-more-cases`))
+        }
       }
     }
   )
@@ -783,7 +849,16 @@ module.exports = (router) => {
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)
         )
       } else {
-        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+        // Check if there are any readable cases left in the session
+        const firstReadable = getFirstUserReadableEvent(
+          sessionEvents,
+          currentUserId
+        )
+        if (firstReadable) {
+          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+        } else {
+          res.redirect(modalBreakout(`/reading/session/${sessionId}/no-more-cases`))
+        }
       }
     }
   )
@@ -1674,7 +1749,16 @@ module.exports = (router) => {
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)
         )
       } else {
-        res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+        // Check if there are any readable cases left in the session
+        const firstReadable = getFirstUserReadableEvent(
+          sessionEvents,
+          currentUserId
+        )
+        if (firstReadable) {
+          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
+        } else {
+          res.redirect(modalBreakout(`/reading/session/${sessionId}/no-more-cases`))
+        }
       }
     }
   )
