@@ -58,13 +58,15 @@
       {% set sessionCompletePanelHtml %}
         <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised at {{ autoFinaliseAt | formatTime("h:mma") }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
-          {{ button({
-            text: "Start a new session",
-            href: "/reading/create-session?type=all_reads",
-            variant: "reverse",
-            classes: "nhsuk-u-margin-bottom-0"
-          }) }}
-          <a href="/dashboard" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
+          {% if backlogTotal > 0 %}
+            {{ button({
+              text: "Start a new session",
+              href: "/reading/create-session?type=all_reads",
+              variant: "reverse",
+              classes: "nhsuk-u-margin-bottom-0"
+            }) }}
+          {% endif %}
+          <a href="/reading" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
         </div>
       {% endset %}
 

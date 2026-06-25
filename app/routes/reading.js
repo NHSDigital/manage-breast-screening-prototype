@@ -21,7 +21,10 @@ const {
   topUpSession,
   getReadingMetadata,
   getComparisonInfo,
-  shouldShowComparePage
+  shouldShowComparePage,
+  filterEventsByEligibleForReading,
+  filterEventsByNeedsAnyRead,
+  filterEventsByUserCanRead
 } = require('../lib/utils/reading')
 const { getShortName } = require('../lib/utils/participants')
 const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
@@ -457,6 +460,14 @@ module.exports = (router) => {
       clinic = data.clinics.find((c) => c.id === session.clinicId)
     }
 
+    // Overall backlog count — used to gate the 'Start a new session' button.
+    // Checks only cases the current user can actually read (not already read by them,
+    // not fully read by others, not deferred or awaiting priors).
+    const backlogTotal = filterEventsByUserCanRead(
+      filterEventsByEligibleForReading(data.events),
+      data.currentUser.id
+    ).length
+
     res.render('reading/session', {
       session,
       events: enhancedEvents,
@@ -465,6 +476,7 @@ module.exports = (router) => {
       resumeEvent,
       autoFinaliseAt,
       clinic,
+      backlogTotal,
       view: selectedView
     })
   })

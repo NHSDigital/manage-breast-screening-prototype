@@ -102,11 +102,17 @@
 {% set urgentBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) | length %}
 {% set priorityBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) | length %}
 
+{# Cases the current user can actually read — used to gate the start button #}
+{% set userReadableTotal = data.events
+  | filterEventsByEligibleForReading
+  | filterEventsByUserCanRead(currentUserId)
+  | length %}
+
 {% block pageContent %}
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
-      <p>{{ backlogTotal }} cases require reading</p>
+      <p>{{ userReadableTotal }} {{ "case" | pluralise(userReadableTotal) }} available to read</p>
 
   {% if inProgressSession %}
 
@@ -119,7 +125,7 @@
       href: "/reading/session/" + inProgressSession.id + "/resume"
     }) }}
 
-  {% elif backlogTotal == 0 %}
+  {% elif userReadableTotal == 0 %}
 
     <h2>There are no cases to read</h2>
     <p>All cases have been read.</p>
