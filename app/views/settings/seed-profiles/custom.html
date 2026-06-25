@@ -51,6 +51,33 @@
       value: formProfile.imageReading.probabilityFirstReaderOpinionMatchesImages * 100
     }) }}
 
+    <h2>Reading backlog</h2>
+    {{ input({
+      id: "backlogLimit",
+      name: "settings[seedProfiles][customForm][reading][backlogLimit]",
+      type: "number",
+      value: formProfile.reading.backlogLimit,
+      classes: "nhsuk-input--width-5",
+      label: {
+        text: "Backlog limit"
+      },
+      hint: {
+        text: "Maximum number of cases left unread. Leave blank for no limit (default behaviour)"
+      },
+      attributes: {
+        "min": "0",
+        "step": "1",
+        "inputmode": "numeric"
+      }
+    }) }}
+    {{ seedProfilePercentageInput({
+      id: "backlogPartialReadRatio",
+      name: "settings[seedProfiles][customForm][reading][backlogPartialReadRatio]",
+      label: "Already read by current user",
+      hint: "Of backlog cases, percentage already read by the current user (so unavailable to read again)",
+      value: formProfile.reading.backlogPartialReadRatio * 100
+    }) }}
+
     <h2>Medical information</h2>
     {{ seedProfilePercentageInput({ id: "probabilityOfSymptoms", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfSymptoms]", label: "Symptoms present", value: formProfile.medicalInformation.probabilityOfSymptoms * 100 }) }}
     {{ seedProfilePercentageInput({ id: "probabilityOfHRT", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfHRT]", label: "Hormone replacement therapy", value: formProfile.medicalInformation.probabilityOfHRT * 100 }) }}

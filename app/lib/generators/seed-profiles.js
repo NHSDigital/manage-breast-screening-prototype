@@ -33,6 +33,13 @@ const SEED_DATA_PROFILE_DEFAULTS = {
   imageReading: {
     probabilityFirstReaderOpinionMatchesImages: 0.95
   },
+  reading: {
+    // null = no limit (use default clinic-pattern behaviour)
+    // 0 = empty backlog, n = limit backlog to n cases
+    backlogLimit: null,
+    // Of backlog cases, what fraction have already been read once by someone else
+    backlogPartialReadRatio: 0.5
+  },
   medicalInformation: {
     probabilityOfSymptoms: 0.05,
     probabilityOfHRT: 0.2,
@@ -274,6 +281,43 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
             technical: 0.4
           }
         }
+      }
+    }
+  },
+  {
+    divider: true,
+    label: 'Reading backlog'
+  },
+  {
+    key: 'emptyBacklog',
+    label: 'Empty backlog',
+    description: 'No cases left to read',
+    settings: {
+      reading: {
+        backlogLimit: 0,
+        backlogPartialReadRatio: 0.5
+      }
+    }
+  },
+  {
+    key: 'smallBacklog',
+    label: 'Small backlog',
+    description: '20 cases to read, half already partially read',
+    settings: {
+      reading: {
+        backlogLimit: 20,
+        backlogPartialReadRatio: 0.5
+      }
+    }
+  },
+  {
+    key: 'mediumBacklog',
+    label: 'Medium backlog',
+    description: '50 cases to read, half already partially read',
+    settings: {
+      reading: {
+        backlogLimit: 50,
+        backlogPartialReadRatio: 0.5
       }
     }
   }

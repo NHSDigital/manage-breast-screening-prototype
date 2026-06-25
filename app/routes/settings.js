@@ -53,7 +53,7 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
     imageSetSelection: body.imageSetSelection
   }
 
-  return convertPercentageOverrides(rawOverrides, {
+  const converted = convertPercentageOverrides(rawOverrides, {
     imageReading: fallbackProfile.imageReading,
     medicalInformation: fallbackProfile.medicalInformation,
     specialAppointment: fallbackProfile.specialAppointment,
@@ -61,6 +61,23 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
     mammogram: fallbackProfile.mammogram,
     imageSetSelection: fallbackProfile.imageSetSelection
   })
+
+  // reading.backlogLimit is a plain integer (not a probability), so handle separately
+  const readingBody = body.reading || {}
+  const rawLimit = readingBody.backlogLimit
+  const parsedLimit = rawLimit === '' || rawLimit === undefined || rawLimit === null
+    ? null
+    : Number(rawLimit)
+
+  converted.reading = {
+    backlogLimit: Number.isNaN(parsedLimit) ? null : parsedLimit,
+    backlogPartialReadRatio: parsePercentageAsProbability(
+      readingBody.backlogPartialReadRatio,
+      fallbackProfile?.reading?.backlogPartialReadRatio
+    )
+  }
+
+  return converted
 }
 
 module.exports = (router) => {
