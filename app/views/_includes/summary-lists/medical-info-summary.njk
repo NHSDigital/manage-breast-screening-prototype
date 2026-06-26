@@ -45,7 +45,7 @@
 {# Build symptoms HTML #}
 {% set symptomsHtml %}
   {% if symptomsCount == 0 %}
-    <p>No symptoms recorded</p>
+    <p>No symptoms added</p>
   {% elif symptomsCount == 1 %}
     <p>{{ symptomSummaries[0] }}</p>
   {% else %}
@@ -72,7 +72,7 @@
 {# Build breast features HTML #}
 {% set breastFeaturesHtml %}
   {% if breastFeaturesCount == 0 %}
-    <p>No breast features recorded</p>
+    <p>No breast features added</p>
   {% elseif breastFeaturesCount == 1 %}
     <p>{{ breastFeatureSummaries[0] }}</p>
   {% else %}
@@ -153,13 +153,13 @@
   {% set mammogramsAction = {
     href: "./previous-mammograms/add" | urlWithReferrer(mammogramsAddReferrerChain),
     text: "Add a mammogram",
-    visuallyHiddenText: "recorded mammograms"
+    visuallyHiddenText: "mammograms added"
   } | openInModal %}
 {% else %}
   {% set mammogramsAction = {
     href: "./confirm-information/previous-mammograms" | urlWithReferrer(currentUrl),
     text: "View or change",
-    visuallyHiddenText: "recorded mammograms"
+    visuallyHiddenText: "mammograms added"
   } %}
 {% endif %}
 
@@ -203,7 +203,7 @@
 {% if not showOnlyPopulated or additionalMammogramsCount > 0 %}
   {% set rows = rows | push({
     key: {
-      text: "Recorded mammograms"
+      text: "Mammograms added"
     },
     value: {
       html: previousMammogramsHtml
@@ -285,7 +285,7 @@
 {% endif %}
 
 {% if rows | length == 0 %}
-  <p class="nhsuk-body">No medical information recorded.</p>
+  <p class="nhsuk-body">No medical information added.</p>
 {% else %}
   {{ summaryList({
     rows: rows | removeLastRowBorder
