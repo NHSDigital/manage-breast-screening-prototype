@@ -6,27 +6,41 @@
 {% set pageHeading = participant | getFullName %}
 {% set gridColumn = "none" %}
 {% set showWorkflowNav = true %}
+{% set bodyClasses = (bodyClasses or "") + " _app-page-width--wide" %}
+
+{# Reduce default top padding of main on opinion page to save on scrolling #}
+{% set mainClasses = "nhsuk-u-padding-top-1" %}
+
+{% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
+
 
 {% block pageContent %}
 
+  {# =========================================================
+     Setup: read state
+     ========================================================= #}
 
   {# Get existing read data for this user (saved read) #}
   {% set existingRead = event | getReadForUser %}
   {% set existingOpinion = existingRead.opinion %}
-  
+
   {# Also check for in-progress read in temp data #}
   {% set tempOpinion = data.imageReadingTemp.opinion if data.imageReadingTemp else null %}
-  
+
   {# Show update UI if there's either a saved read or an in-progress one #}
   {% set hasExistingOpinion = existingOpinion or tempOpinion %}
   {% set currentOpinion = tempOpinion or existingOpinion %}
-  
-  {% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
 
   {% set opinionHeading = "Review images" %}
   {% if hasExistingOpinion %}
     {% set opinionHeading = "Update review" %}
   {% endif %}
+
+  {% set questionText = "What is your opinion of these images?" %}
+
+  {# =========================================================
+     Setup: mammogram images and view order
+     ========================================================= #}
 
   {# Get mammogram images for thumbnails #}
   {% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
@@ -49,6 +63,226 @@
       { key: 'lmlo', label: 'LMLO', side: 'left' }
     ] %}
   {% endif %}
+
+  {# Count total images #}
+  {% set imageCount = 0 %}
+  {% for view in viewOrder %}
+    {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
+    {% if allPaths %}
+      {% if allPaths is string %}
+        {% set imageCount = imageCount + 1 %}
+      {% else %}
+        {% set imageCount = imageCount + allPaths | length %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {# =========================================================
+     Setup: priors and opinion delay
+     ========================================================= #}
+
+  {% set priorsSummary = event | getPriorsSummary %}
+
+  {# Opinion form data attributes are used to manage the first-load lockout #}
+  {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
+  {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
+
+  {# =========================================================
+     HTML content blocks
+     ========================================================= #}
+
+  {# Buttons or radios for giving an opinion #}
+  {% set opinionOptionsHtml %}
+    {% if hasExistingOpinion %}
+      {# Show radios when updating an existing or in-progress opinion #}
+      {{ radios({
+        name: "imageReadingTemp[opinion]",
+        fieldset: {
+          legend: {
+            text: questionText,
+            size: "m",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "normal",
+            html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+            checked: currentOpinion == 'normal' and not existingRead.normalDetails,
+            attributes: { "data-shortcut-radio": "n" }
+          },
+          {
+            value: "normal_with_details",
+            text: "Normal, but add details",
+            checked: (currentOpinion == 'normal' and existingRead.normalDetails) or currentOpinion == 'normal_with_details'
+          },
+          {
+            value: "technical_recall",
+            html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+            attributes: { "data-shortcut-radio": "t" }
+          },
+          {
+            value: "recall_for_assessment",
+            html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+            attributes: { "data-shortcut-radio": "r" }
+          }
+        ],
+        value: currentOpinion
+      }) }}
+
+      {{ button({
+        text: "Update opinion"
+      } | openInModal) }}
+
+    {% else %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-full">
+          {# Show buttons for initial assessment - vertically stacked #}
+          <h2 class="nhsuk-heading-m">{{ questionText }}</h2>
+
+          <div class="nhsuk-u-margin-bottom-4">
+            {% if hasSymptoms %}
+              {{ button({
+                html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+                value: "normal_with_details",
+                name: "imageReadingTemp[opinion]",
+                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+                attributes: { "data-shortcut": "n" }
+              } | openInModal) }}
+            {% else %}
+              {{ button({
+                html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+                value: "normal",
+                name: "imageReadingTemp[opinion]",
+                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+                attributes: { "data-shortcut": "n" }
+              }) }}
+
+              <p class="nhsuk-u-margin-bottom-4">
+                {# Raw button element intentional — app-button-link styles it as a link,
+                  which doesn't work with the NHS button macro (adds conflicting styles).
+                  data-modal-submit added manually for modal support. #}
+                <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+                  Normal, but add details
+                </button>
+              </p>
+            {% endif %}
+          </div>
+
+          <div class="nhsuk-u-margin-bottom-4">
+            {{ button({
+              html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+              value: "technical_recall",
+              name: "imageReadingTemp[opinion]",
+              variant: "secondary",
+              classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+              attributes: { "data-shortcut": "t" }
+            } | openInModal) }}
+          </div>
+
+          <div class="nhsuk-u-margin-bottom-0">
+            {{ button({
+              html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+              value: "recall_for_assessment",
+              name: "imageReadingTemp[opinion]",
+              variant: "warning",
+              classes: "app-button-full-width",
+              attributes: { "data-shortcut": "r" }
+            } | openInModal) }}
+          </div>
+        </div>
+
+      </div>
+
+    {% endif %}
+  {% endset %}
+
+  {# Medical information summary #}
+  {% set medicalSummaryHtml %}
+    {# Only show rows that have data #}
+    {% set showOnlyPopulated = true %}
+    {# No edits allowed in image reading #}
+    {% set allowEdits = false %}
+    {% set medicalSummaryListHtml %}
+      {% include "_includes/summary-lists/medical-info-summary.njk" %}
+    {% endset %}
+
+    {{ card({
+      heading: "Medical summary",
+      headingLevel: "2",
+      classes: "nhsuk-u-margin-top-4",
+      feature: true,
+      descriptionHtml: medicalSummaryListHtml,
+      actions: {
+      items: [
+        {
+          text: "View full medical information",
+          href: "./medical-information",
+          classes: "nhsuk-link--no-visited-state"
+        } | openInModal
+      ]
+    }
+    }) }}
+  {% endset %}
+
+  {# Symptoms warning #}
+  {% set symptomsWarningHtml %}
+    {% set symptoms = event.medicalInformation.symptoms %}
+    {% include "_includes/symptomsWarningCard.njk" %}
+  {% endset %}
+
+  {# Reported mammograms banners #}
+  {% set priorsWarningHtml %}
+    {# Warning: priors reported but not yet requested #}
+    {% if priorsSummary.hasUnrequested %}
+      {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
+      {% set unrequestedHtml %}
+        {% for mammogram in unrequestedPriors %}
+          <p class="nhsuk-u-margin-bottom-1">
+            {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
+          </p>
+        {% endfor %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ appLink({ text: "Request priors", href: "./request-priors", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+        </p>
+      {% endset %}
+
+      {% call insetText({
+        classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
+      }) %}
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
+        {{ unrequestedHtml | safe }}
+      {% endcall %}
+    {% endif %}
+
+    {# Info: received priors #}
+    {% if priorsSummary.counts.received > 0 %}
+      {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
+      {% set receivedHtml %}
+        {% for mammogram in receivedMammograms %}
+          <p class="nhsuk-u-margin-bottom-1">
+            {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
+            {% if mammogram.requestedBy %}
+              – requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% if mammogram.requestReason %}: {{ mammogram.requestReason }}{% endif %}
+            {% elseif mammogram.requestReason %}
+              – {{ mammogram.requestReason }}
+            {% endif %}
+          </p>
+        {% endfor %}
+      {% endset %}
+
+      {% call insetText({
+        classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
+      }) %}
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors received</p>
+        {{ receivedHtml | safe }}
+      {% endcall %}
+    {% endif %}
+  {% endset %}
+
+  {# =========================================================
+     Page layout
+     ========================================================= #}
 
   {# Page header with status tags #}
   <div class="nhsuk-grid-row app-header-with-status">
@@ -96,7 +330,6 @@
       {% endif %}
 
       {# Prior mammogram status tags #}
-      {% set priorsSummary = event | getPriorsSummary %}
       {% if priorsSummary.total > 0 %}
         {% if priorsSummary.hasAwaiting %}
           {% set awaitingPriorsList = event | getAwaitingPriors %}
@@ -130,115 +363,47 @@
     </div>
   </div>
 
-  {# Symptoms warning #}
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
-      {% set symptoms = event.medicalInformation.symptoms %}
-      {% include "symptomsWarningCard.njk" %}
-    </div>
-  </div>
-
-  {# Reported mammograms banners - shown if there are unrequested or received priors #}
-  {% set priorsSummary = event | getPriorsSummary %}
-
-  {# Warning: priors reported but not yet requested #}
-  {% if priorsSummary.hasUnrequested %}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-full">
-        {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
-        {% set unrequestedHtml %}
-          {% for mammogram in unrequestedPriors %}
-            <p class="nhsuk-u-margin-bottom-1">
-              {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-            </p>
-          {% endfor %}
-          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-            {{ appLink({ text: "Request priors", href: "./request-priors", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-          </p>
-        {% endset %}
-
-        {% call insetText({
-          classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-        }) %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
-          {{ unrequestedHtml | safe }}
-        {% endcall %}
-      </div>
-    </div>
-  {% endif %}
-
-  {# Info: received priors #}
-  {% if priorsSummary.counts.received > 0 %}
-    {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-full">
-        {% set receivedHtml %}
-          {% for mammogram in receivedMammograms %}
-            <p class="nhsuk-u-margin-bottom-1">
-              {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-              {% if mammogram.requestedBy %}
-                – requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% if mammogram.requestReason %}: {{ mammogram.requestReason }}{% endif %}
-              {% elseif mammogram.requestReason %}
-                – {{ mammogram.requestReason }}
-              {% endif %}
-            </p>
-          {% endfor %}
-        {% endset %}
-
-        {% call insetText({
-          classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-        }) %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors received</p>
-          {{ receivedHtml | safe }}
-        {% endcall %}
-
-      </div>
-    </div>
-  {% endif %}
-
   {# Opinion form with thumbnails #}
-  {% set questionText = "What is your opinion of these images?" %}
-
-  {# Count total images #}
-  {% set imageCount = 0 %}
-  {% for view in viewOrder %}
-    {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
-    {% if allPaths %}
-      {% if allPaths is string %}
-        {% set imageCount = imageCount + 1 %}
-      {% else %}
-        {% set imageCount = imageCount + allPaths | length %}
-      {% endif %}
-    {% endif %}
-  {% endfor %}
-
-  {# Opinion form data attributes are used to manage the first-load lockout #}
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
-  {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
-  {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-session-id="{{ session.id if session }}">
 
     {# Hidden field to track previous opinion for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">
 
+    {# Symptoms warning and priors banners - full width, only if content exists #}
+    {% if (symptomsWarningHtml | trim) or (priorsWarningHtml | trim) %}
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-full">
+          {% if symptomsWarningHtml | trim %}
+            {{ symptomsWarningHtml | safe }}
+          {% endif %}
+
+          {% if priorsWarningHtml | trim %}
+            {{ priorsWarningHtml | safe }}
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    {# Opinion and thumbnails #}
     <div class="nhsuk-grid-row">
 
-      {# Left column: Mammogram thumbnails #}
-      <div class="nhsuk-grid-column-one-third nhsuk-u-margin-bottom-4">
+      {# Mammogram thumbnails #}
+      <div class="nhsuk-grid-column-one-third">
         <h2 class="nhsuk-heading-s">Image thumbnails ({{ imageCount }})</h2>
-        <div class="app-mammogram-thumbnails">
+        <div class="app-mammogram-thumbnails nhsuk-u-margin-bottom-4">
           {% for view in viewOrder %}
             <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ view.side }}">
               {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
-              
+
               {% if allPaths %}
                 {# Handle both single path (string) and multiple paths (array) #}
                 {% if allPaths is string %}
                   <div class="app-mammogram-thumbnail__image-wrapper">
                     <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                    <img 
-                      class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}" 
-                      src="{{ allPaths }}" 
+                    <img
+                      class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
+                      src="{{ allPaths }}"
                       alt="{{ view.label }} view"
                       data-view="{{ view.label }}"
                     >
@@ -248,9 +413,9 @@
                   {% for imagePath in allPaths %}
                     <div class="app-mammogram-thumbnail__image-wrapper">
                       <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                      <img 
-                        class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}" 
-                        src="{{ imagePath }}" 
+                      <img
+                        class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
+                        src="{{ imagePath }}"
                         alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
                         data-view="{{ view.label }}"
                       >
@@ -271,149 +436,34 @@
         </div>
       </div>
 
-      {# Right column: Opinion buttons/radios #}
+      {# Opinion buttons/radios #}
       <div class="nhsuk-grid-column-two-thirds">
-        {% if hasExistingOpinion %}
-          {# Show radios when updating an existing or in-progress opinion #}
-          {{ radios({
-            name: "imageReadingTemp[opinion]",
-            fieldset: {
-              legend: {
-                text: questionText,
-                size: "m",
-                isPageHeading: false
-              }
-            },
-            items: [
-              {
-                value: "normal",
-                html: "Normal <span class='app-shortcut-hint'>(N)</span>",
-                checked: currentOpinion == 'normal' and not existingRead.normalDetails,
-                attributes: { "data-shortcut-radio": "n" }
-              },
-              {
-                value: "normal_with_details",
-                text: "Normal, but add details",
-                checked: (currentOpinion == 'normal' and existingRead.normalDetails) or currentOpinion == 'normal_with_details'
-              },
-              {
-                value: "technical_recall",
-                html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
-                attributes: { "data-shortcut-radio": "t" }
-              },
-              {
-                value: "recall_for_assessment",
-                html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
-                attributes: { "data-shortcut-radio": "r" }
-              }
-            ],
-            value: currentOpinion
-          }) }}
+        {{ opinionOptionsHtml | safe }}
+      </div>
 
-          {{ button({
-            text: "Update opinion"
-          } | openInModal) }}
+    </div>
 
-        {% else %}
-          {# Show buttons for initial assessment - vertically stacked #}
-          <h2 class="nhsuk-heading-m">{{ questionText }}</h2>
+    {# Image notes, medical summary and defer - full width #}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
 
-          <div class="nhsuk-u-margin-bottom-4">
-            {% if hasSymptoms %}
-              {{ button({
-                html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
-                value: "normal_with_details",
-                name: "imageReadingTemp[opinion]",
-                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-                attributes: { "data-shortcut": "n" }
-              } | openInModal) }}
-            {% else %}
-              {{ button({
-                html: "Normal <span class='app-shortcut-hint'>(N)</span>",
-                value: "normal",
-                name: "imageReadingTemp[opinion]",
-                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-                attributes: { "data-shortcut": "n" }
-              }) }}
+        {# Image notes #}
+        {% include "_includes/reading/image-warnings.njk" %}
 
-              <p class="nhsuk-u-margin-bottom-4">
-                {# Raw button element intentional — app-button-link styles it as a link,
-                   which doesn't work with the NHS button macro (adds conflicting styles).
-                   data-modal-submit added manually for modal support. #}
-                <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-                  Normal, but add details
-                </button>
-              </p>
-            {% endif %}
-          </div>
+        {# Medical information summary #}
+        {{ medicalSummaryHtml | safe }}
 
-          <div class="nhsuk-u-margin-bottom-4">
-            {{ button({
-              html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
-              value: "technical_recall",
-              name: "imageReadingTemp[opinion]",
-              variant: "secondary",
-              classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-              attributes: { "data-shortcut": "t" }
-            } | openInModal) }}
-          </div>
+        {# Defer case option #}
+        <p class="nhsuk-u-margin-top-2">
+          {{ appLink({ text: "Defer this case", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+        </p>
 
-          <div class="nhsuk-u-margin-bottom-4">
-            {{ button({
-              html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
-              value: "recall_for_assessment",
-              name: "imageReadingTemp[opinion]",
-              variant: "warning",
-              classes: "app-button-full-width",
-              attributes: { "data-shortcut": "r" }
-            } | openInModal) }}
-          </div>
-
-        {% endif %}
       </div>
     </div>
 
   </form>
 
-  {# Image notes - moved above opinion section #}
-  {% include "_includes/reading/image-warnings.njk" %}
 
-
-  {# Medical summary #}
-  {# Only show rows that have data #}
-  {% set showOnlyPopulated = true %}
-  {# No edits allowed in image reading #}
-
-  {% set allowEdits = false %}
-
-  {% set medicalSummaryHtml %}
-    {% include "_includes/summary-lists/medical-info-summary.njk" %}
-  {% endset %}
-
-  {{ card({
-    heading: "Medical summary",
-    headingLevel: "2",
-    feature: true,
-    descriptionHtml: medicalSummaryHtml,
-    actions: {
-    items: [
-      {
-        text: "View full medical information",
-        href: "./medical-information",
-        classes: "nhsuk-link--no-visited-state"
-      } | openInModal
-    ]
-  }
-  }) }}
-
-  {# Defer case option #}
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
-      <p class="nhsuk-u-margin-top-2">
-        {{ appLink({ text: "Defer this case", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-      </p>
-    </div>
-  </div>
 
 {% endblock %}
 

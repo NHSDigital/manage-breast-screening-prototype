@@ -27,7 +27,7 @@
   {% endset %}
   {% set warningsHtml %}
     {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Additional images</h3>
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-0' if warningsHtml }}">Additional images</h3>
     <p>{{ additionalImagesDetail | trim }}</p>
   {% endset %}
 {% endif %}
@@ -73,7 +73,7 @@
 
   {% set warningsHtml %}
     {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Not all mammograms taken</h3>
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-0' if warningsHtml }}">Not all mammograms taken</h3>
     {{ incompleteDetails | safe }}
   {% endset %}
 {% endif %}
@@ -82,7 +82,7 @@
 {% if event.mammogramData.notesForReader %}
   {% set warningsHtml %}
     {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-4' if warningsHtml }}">Notes for reader</h3>
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-0' if warningsHtml }}">Notes for reader</h3>
     <p>{{ event.mammogramData.notesForReader }}</p>
   {% endset %}
 {% endif %}
