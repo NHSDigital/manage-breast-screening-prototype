@@ -136,7 +136,7 @@
 {% set scrollTo = sectionId %}
 
 {% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
-{% set symptomsContentsSummaryText %}{{ symptomsCount or "No" }} {{ "symptom" | pluralise(symptomsCount) }} recorded{% endset %}
+{% set symptomsContentsSummaryText %}{{ symptomsCount or "No" }} {{ "symptom" | pluralise(symptomsCount) }} added{% endset %}
 
 {% set symptomsCardContent %}
   {% include "_includes/medical-information/symptoms-card-content.njk" %}
@@ -183,7 +183,7 @@
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
 
 {% set breastFeaturesContentsSummaryText %}
-  {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
+  {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} added
 {% endset %}
 
 {% set breastFeaturesHtml %}
@@ -244,9 +244,9 @@
 {% endif %}
 
 {% if otherRelevantInformationCount > 0 %}
-  {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information recorded" %}
+  {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information added" %}
 {% else %}
-  {% set otherRelevantInformationSummary = "No other relevant information recorded" %}
+  {% set otherRelevantInformationSummary = "No other relevant information added" %}
 {% endif %}
 
 {% switch displayFormat %}
