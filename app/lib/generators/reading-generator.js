@@ -23,11 +23,11 @@ const DEFAULT_READ_WEIGHTS = {
 
 // Normal opinion freetext reasons when participant has symptoms
 const NORMAL_DETAILS_WITH_SYMPTOMS = [
-  'Images reviewed carefully in the context of reported symptoms. No mammographic abnormality identified. Clinical follow-up recommended for symptoms.',
+  'Images reviewed carefully in the context of disclosed symptoms. No mammographic abnormality identified. Clinical follow-up recommended for symptoms.',
   'Thorough review of all views performed. No significant mammographic findings. Symptoms noted but no corresponding imaging abnormality detected.',
   'Normal mammographic appearance bilaterally. Symptoms have been considered in this assessment. No imaging correlate found.',
-  'Careful assessment undertaken given reported symptoms. Mammographic appearances are within normal limits. Clinical assessment advised.',
-  'No mammographic abnormality detected on careful review. Reported symptoms do not have a mammographic correlate. Recommend clinical follow-up.'
+  'Careful assessment undertaken given disclosed symptoms. Mammographic appearances are within normal limits. Clinical assessment advised.',
+  'No mammographic abnormality detected on careful review. Disclosed symptoms do not have a mammographic correlate. Recommend clinical follow-up.'
 ]
 
 // Normal opinion freetext reasons without symptoms (used for a small proportion)

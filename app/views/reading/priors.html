@@ -12,7 +12,7 @@
 
 {% block pageContent %}
 
-  {# Get all eligible events with reported mammograms, sorted by screening date #}
+  {# Get all eligible events with recorded mammograms, sorted by screening date #}
   {% set eligibleEvents = data.events | filterEventsByEligibleForReading | sortEventsByScreeningDate %}
 
   {# Build flat list of mammogram rows with their parent event #}
@@ -23,7 +23,7 @@
   {% set resolvedRows = [] %}
 
   {% for thisEvent in eligibleEvents %}
-    {% if thisEvent | hasReportedMammograms %}
+    {% if thisEvent | hasRecordedMammograms %}
       {% for mammogram in thisEvent.previousMammograms %}
         {% set row = { event: thisEvent, mammogram: mammogram } %}
         {% if mammogram.requestStatus == "not_requested" %}

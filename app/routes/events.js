@@ -1957,7 +1957,7 @@ module.exports = (router) => {
         }
 
         // Show combined success message
-        req.flash('success', 'Breast implants recorded and consent recorded')
+        req.flash('success', 'Breast implants added and consent recorded')
 
         // Continue to next step in the flow
         const returnUrl = getReturnUrl(

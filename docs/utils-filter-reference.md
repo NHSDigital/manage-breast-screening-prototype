@@ -248,7 +248,7 @@ Prior mammogram request state (awaiting, unrequested, resolved) and one-line sum
 
 | Function | Description | Line |
 |---|---|---|
-| `hasReportedMammograms(event)` | Returns true if the event has any previously reported mammograms | 9 |
+| `hasRecordedMammograms(event)` | Returns true if the event has any previously recorded mammograms | 9 |
 | `awaitingPriors(event)` | Returns true if any prior mammogram has requestStatus 'requested' (holds case from reading) | 18 |
 | `hasUnrequestedPriors(event)` | Returns true if any prior mammogram has requestStatus 'not_requested' | 24 |
 | `getPriorsSummary(event)` | Get a summary of prior mammogram statuses for display | 32 |

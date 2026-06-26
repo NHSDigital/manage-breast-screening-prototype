@@ -114,7 +114,7 @@
       {% endif %}
 
       {% if (data.settings.debugMode | falsify) %}
-        {% if event | hasReportedMammograms %}
+        {% if event | hasRecordedMammograms %}
           {{ "Has priors" | toTag }}
         {% endif %}
         {% if event.mammogramData.metadata.hasAdditionalImages %}
@@ -138,10 +138,10 @@
     </div>
   </div>
 
-  {# Reported mammograms banners - shown if there are unrequested or received priors #}
+  {# Recorded mammograms banners - shown if there are unrequested or received priors #}
   {% set priorsSummary = event | getPriorsSummary %}
 
-  {# Warning: priors reported but not yet requested #}
+  {# Warning: priors recorded but not yet requested #}
   {% if priorsSummary.hasUnrequested %}
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-full">
@@ -160,7 +160,7 @@
         {% call insetText({
           classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
         }) %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammogram added</p>
           {{ unrequestedHtml | safe }}
         {% endcall %}
       </div>

@@ -8,7 +8,7 @@
 {% if hasBreastFeatures %}
 
   <p>
-    {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} recorded
+    {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} added
   </p>
 
   <script>
@@ -38,7 +38,7 @@
 {% else %}
   {% set insetHtml %}
     <p>
-      No breast features have been recorded for this participant.
+      No breast features have been added for this participant.
     </p>
   {% endset %}
   {{ insetText({

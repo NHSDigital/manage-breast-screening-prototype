@@ -259,7 +259,7 @@
                   {% endif %}
                 </span>
                 {% if (data.settings.debugMode | falsify) %}
-                  {% if event | hasReportedMammograms %}
+                  {% if event | hasRecordedMammograms %}
                     <br>{{ "Has priors" | toTag }}
                   {% endif %}
                   {% if event.mammogramData.metadata.hasAdditionalImages %}
@@ -450,7 +450,7 @@
                   {{ "Awaiting priors" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
-                  {% if event | hasReportedMammograms %}
+                  {% if event | hasRecordedMammograms %}
                     <br>{{ "Has priors" | toTag }}
                   {% endif %}
                   {% if event.mammogramData.metadata.hasAdditionalImages %}
