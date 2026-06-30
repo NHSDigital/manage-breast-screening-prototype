@@ -104,13 +104,12 @@
         },
         {
           key: { text: "First names" },
-          value: { text: [participant.firstName, participant.middleName] | join(" ") }
+          value: { text: participant | getFirstNames }
         },
         {
           key: { text: "Last name" },
           value: { text: participant.lastName }
         },
-        {
         {
           key: { text: "Date of birth" },
           value: { text: participant.demographicInformation.dateOfBirth | formatDate }
