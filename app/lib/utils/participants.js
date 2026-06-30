@@ -287,6 +287,7 @@ const saveTempParticipantToParticipant = (data) => {
 module.exports = {
   getParticipant,
   getFullName,
+  getFirstNames,
   getFullNameReversed,
   getShortName,
   findBySXNumber,
