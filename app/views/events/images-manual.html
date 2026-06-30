@@ -103,8 +103,12 @@
           value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>' }
         },
         {
-          key: { text: "Full name" },
-          value: { text: participant | getFullName }
+          key: { text: "First names" },
+          value: { text: participant | getFirstNames }
+        },
+        {
+          key: { text: "Last name" },
+          value: { text: participant.demographicInformation.lastName }
         },
         {
           key: { text: "Date of birth" },
