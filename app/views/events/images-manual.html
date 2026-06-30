@@ -95,7 +95,7 @@
     {{ summaryList({
       rows: [
         {
-          key: { text: "Accession number" },
+          key: { html: "<span class='app-nowrap'>Accession number</span>" },
           value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (event.accessionNumber | formatAccessionNumber) + '</span>' }
         },
         {
