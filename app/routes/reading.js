@@ -632,6 +632,32 @@ module.exports = (router) => {
         }
       }
 
+      // If submitted from an existing-read page (e.g. editing reason), return there
+      const priorsReferrerChain = req.query.referrerChain
+      if (priorsReferrerChain) {
+        // In edit mode, also update reason on mammograms already pending/requested by this user
+        if (event && event.previousMammograms && reason) {
+          event.previousMammograms.forEach((mammogram) => {
+            if (
+              (mammogram.requestStatus === 'pending' ||
+                mammogram.requestStatus === 'requested') &&
+              mammogram.requestedBy === currentUserId
+            ) {
+              mammogram.requestReason = reason
+            }
+          })
+          if (data.event && data.event.id === eventId) {
+            data.event.previousMammograms = event.previousMammograms
+          }
+        }
+        const returnUrl = getReturnUrl(
+          `/reading/session/${sessionId}/events/${eventId}/existing-read`,
+          priorsReferrerChain
+        )
+        res.redirect(modalBreakout(returnUrl))
+        return
+      }
+
       // Top up the batch with the next eligible event if under target size
       topUpSession(data, sessionId)
 
@@ -1586,16 +1612,19 @@ module.exports = (router) => {
             `/reading/session/${sessionId}/events/${eventId}/save-opinion${trChainParam}`
           )
         }
-        case 'recall_for_assessment':
+        case 'recall_for_assessment': {
+          const rfaReferrer = req.query.referrerChain
+          const rfaChainParam = rfaReferrer ? `?referrerChain=${encodeURIComponent(rfaReferrer)}` : ''
           if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/review`
+              `/reading/session/${sessionId}/events/${eventId}/review${rfaChainParam}`
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion${rfaChainParam}`
           )
+        }
         default:
           return res.redirect(
             `/reading/session/${sessionId}/events/${eventId}/review`

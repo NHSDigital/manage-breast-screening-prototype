@@ -17,6 +17,14 @@
 
   {% set unrequestedPriors = event | getUnrequestedPriors %}
 
+  {# Get existing reason from any pending/requested mammogram for pre-filling when editing #}
+  {% set requestReason = "" %}
+  {% for mammogram in event.previousMammograms %}
+    {% if (mammogram.requestStatus == "pending" or mammogram.requestStatus == "requested") and mammogram.requestReason %}
+      {% set requestReason = mammogram.requestReason %}
+    {% endif %}
+  {% endfor %}
+
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
@@ -83,7 +91,8 @@
           hint: {
             text: "Add information that could be relevant to other readers."
           },
-          rows: 3
+          rows: 3,
+          value: data.requestPriorReason if data.requestPriorReason else requestReason
         }) }}
 
         {{ button({

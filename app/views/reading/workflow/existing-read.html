@@ -108,8 +108,15 @@
             },
             value: {
               text: requestReason
-            }
-          }) }}
+            },
+            actions: {
+              items: [{
+                href: "./request-priors" | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "priors request reason"
+              }]
+            } if canUndo
+          } | openInModal) }}
         {% endif %}
       {% endcall %}
     {% endset %}
