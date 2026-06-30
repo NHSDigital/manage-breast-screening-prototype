@@ -324,6 +324,15 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
 
+    // Fill any dead slots (events fully read by others) before looking for the
+    // next readable case. topUpSession adds one event at a time so loop until
+    // it can no longer add anything.
+    const maxTopUps = session.targetSize || 25
+    for (let count = 0; count < maxTopUps; count++) {
+      if (!topUpSession(data, sessionId)) break
+    }
+
+    // Rebuild after potential top-ups
     const sessionEvents = session.eventIds
       .map((eventId) => data.events.find((e) => e.id === eventId))
       .filter(Boolean)

@@ -1782,18 +1782,32 @@ const topUpSession = (data, sessionId) => {
   // Clinic sessions are fully populated at creation
   if (session.type === 'clinic') return false
 
-  // Already at or above target size
-  if (!session.targetSize || session.eventIds.length >= session.targetSize)
-    return false
+  const currentUserId = data.currentUser?.id
 
-  // Collect all event IDs currently in any session to avoid overlap
-  const claimedEventIds = new Set(
-    Object.values(data.readingSessions || {}).flatMap((s) => s.eventIds || [])
-  )
+  // Count events that are still actionable for this user — events they have read,
+  // can still read, deferred, or awaiting priors. Events fully read by other readers
+  // ('dead' slots) are excluded so the session can be topped up to replace them.
+  const actionableCount = session.eventIds.filter((eventId) => {
+    const event = data.events.find((e) => e.id === eventId)
+    if (!event) return false
+    return (
+      userHasReadEvent(event, currentUserId) ||
+      canUserReadEvent(event, currentUserId) ||
+      isDeferred(event) ||
+      awaitingPriors(event)
+    )
+  }).length
 
-  // Get candidates using the same filters as at session creation, excluding already-claimed events
+  if (!session.targetSize || actionableCount >= session.targetSize) return false
+
+  // Exclude events already in this session to avoid duplicates. Events that
+  // are in other sessions are allowed — the same event can appear in multiple
+  // sessions and canUserReadEvent enforces that each user reads it at most once.
+  const alreadyInSession = new Set(session.eventIds)
+
+  // Get candidates using the same filters as at session creation
   const candidates = getEligibleCandidatesForSession(data, session).filter(
-    (event) => !claimedEventIds.has(event.id)
+    (event) => !alreadyInSession.has(event.id)
   )
 
   if (candidates.length === 0) return false
@@ -1835,16 +1849,30 @@ const getSessionReadingProgress = (
   )
 
   const resolvedTargetSize = session.targetSize || sessionEvents.length
+  const resolvedUserId = userId || data.currentUser.id
 
   // Work out how large this session can actually become right now once we
   // account for unclaimed eligible cases. This prevents showing "25 remaining"
   // when only (for example) 20 cases are available to read.
-  const claimedEventIds = new Set(
-    Object.values(data.readingSessions || {}).flatMap((s) => s.eventIds || [])
-  )
+  // Mirror the same exclusion used in topUpSession: only exclude events already
+  // in this session, not events in other sessions.
+  const alreadyInSession = new Set(session.eventIds)
   const availableTopUpCount = getEligibleCandidatesForSession(data, session)
-    .filter((event) => !claimedEventIds.has(event.id)).length
-  const reachableSessionSize = sessionEvents.length + availableTopUpCount
+    .filter((event) => !alreadyInSession.has(event.id)).length
+
+  // Dead events — fully read by other users and not actionable by this user.
+  // They occupy session slots but can never be completed, so they don't count
+  // toward reachable size. topUpSession will replace them when events are read.
+  const deadCount = sessionEvents.filter((event) => {
+    return (
+      !userHasReadEvent(event, resolvedUserId) &&
+      !canUserReadEvent(event, resolvedUserId) &&
+      !isDeferred(event) &&
+      !awaitingPriors(event)
+    )
+  }).length
+
+  const reachableSessionSize = sessionEvents.length - deadCount + availableTopUpCount
   const effectiveTargetSize = Math.min(resolvedTargetSize, reachableSessionSize)
 
   // Count deferred events so they count toward the session target
