@@ -80,7 +80,7 @@ body.js-enabled .app-no-js-only {
 // }
 
 .app-page-width--wide .nhsuk-width-container {
-  max-width: 1200px;
+  @include nhsuk-width-container(1200px);
 }
 
 .event-row:focus {

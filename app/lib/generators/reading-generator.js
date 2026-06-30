@@ -337,6 +337,107 @@ const generatePlaceholderAnnotation = (side, breastData) => {
 }
 
 /**
+ * Apply reads when a backlogLimit is set.
+ *
+ * All eligible events except the last `backlogLimit` are fully read (2 reads
+ * by non-current users). Of the remaining `backlogLimit` events:
+ *   - The first `floor(backlogLimit × partialReadRatio)` get 1 read by a
+ *     non-current user (second read still available to current user)
+ *   - The rest get no reads (first read available to current user)
+ *
+ * @param {Array} allEvents - Full events array
+ * @param {Array} eligibleEvents - Events eligible for reading
+ * @param {object} readers - { firstReader, secondReader, thirdReader }
+ * @param {object} options - { backlogLimit, backlogPartialReadRatio, alignmentProbability }
+ * @returns {Array} Updated events array
+ */
+const generateReadingDataWithBacklogLimit = (
+  allEvents,
+  eligibleEvents,
+  { firstReader, secondReader, thirdReader },
+  { backlogLimit, backlogPartialReadRatio, alignmentProbability }
+) => {
+  // Sort oldest first so the oldest cases become fully read (they appear in history)
+  const sorted = [...eligibleEvents].sort(
+    (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
+  )
+
+  const clampedLimit = Math.min(backlogLimit, sorted.length)
+  const fullyReadEvents = sorted.slice(0, sorted.length - clampedLimit)
+  const backlogEvents = sorted.slice(sorted.length - clampedLimit)
+  const partialCount = Math.floor(
+    backlogEvents.length * backlogPartialReadRatio
+  )
+  const partialEvents = backlogEvents.slice(0, partialCount)
+  const unreadEvents = backlogEvents.slice(partialCount)
+
+  console.log(
+    `Backlog limit: ${backlogLimit} cases — ` +
+      `${fullyReadEvents.length} fully read, ` +
+      `${partialEvents.length} partially read, ` +
+      `${unreadEvents.length} unread`
+  )
+
+  const updatedEvents = [...allEvents]
+
+  let baseTime = dayjs().subtract(72, 'hours')
+
+  // Fully read: 2 reads by secondReader and thirdReader
+  fullyReadEvents.forEach((event) => {
+    const index = updatedEvents.findIndex((e) => e.id === event.id)
+    if (index === -1) return
+    if (!updatedEvents[index].imageReading) {
+      updatedEvents[index].imageReading = { reads: {} }
+    }
+
+    baseTime = baseTime.add(1, 'minute')
+    const firstRead = generateSingleRead(
+      updatedEvents[index],
+      secondReader.id,
+      secondReader.role,
+      baseTime.toISOString(),
+      { readNumber: 1, alignmentProbability }
+    )
+    updatedEvents[index].imageReading.reads[secondReader.id] = firstRead
+
+    const secondRead = generateSingleRead(
+      updatedEvents[index],
+      thirdReader.id,
+      thirdReader.role,
+      baseTime.add(15, 'minutes').toISOString(),
+      { forceOpinion: firstRead.opinion, readNumber: 2, alignmentProbability }
+    )
+    updatedEvents[index].imageReading.reads[thirdReader.id] = secondRead
+  })
+
+  baseTime = dayjs().subtract(24, 'hours')
+
+  // Partially read: 1 read by firstReader (the current user) — so the current
+  // user has already read these and cannot read them again
+  partialEvents.forEach((event) => {
+    const index = updatedEvents.findIndex((e) => e.id === event.id)
+    if (index === -1) return
+    if (!updatedEvents[index].imageReading) {
+      updatedEvents[index].imageReading = { reads: {} }
+    }
+
+    baseTime = baseTime.add(1, 'minute')
+    const firstRead = generateSingleRead(
+      updatedEvents[index],
+      firstReader.id,
+      firstReader.role,
+      baseTime.toISOString(),
+      { readNumber: 1, alignmentProbability }
+    )
+    updatedEvents[index].imageReading.reads[firstReader.id] = firstRead
+  })
+
+  // Unread events: no reads added
+
+  return updatedEvents
+}
+
+/**
  * Generate sample image reading data to simulate first and second reads
  *
  * @param {Array} events - Array of screening events
@@ -362,6 +463,23 @@ const generateReadingData = (events, users, seedProfile = {}) => {
   )
 
   const recentEvents = events.filter((event) => eligibleForReading(event))
+
+  // If a backlog limit is set, use a simplified reading pattern instead of the
+  // default clinic-by-clinic pattern. backlogLimit=0 means empty backlog.
+  const backlogLimit = seedProfile?.reading?.backlogLimit ?? null
+  if (backlogLimit !== null) {
+    return generateReadingDataWithBacklogLimit(
+      events,
+      recentEvents,
+      { firstReader, secondReader, thirdReader },
+      {
+        backlogLimit,
+        backlogPartialReadRatio:
+          seedProfile?.reading?.backlogPartialReadRatio ?? 0.5,
+        alignmentProbability
+      }
+    )
+  }
 
   // Sort by date (oldest first)
   const sortedEvents = [...recentEvents].sort(

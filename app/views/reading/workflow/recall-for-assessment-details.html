@@ -10,7 +10,7 @@
 
 {% set gridColumn = "none" %}
 
-{% set formAction = './opinion-details-complete' %}
+{% set formAction = './opinion-details-complete' | urlWithReferrer(referrerChain) %}
 
 {% set annotationsMode = data.settings.reading.annotationsMode or 'without-images' %}
 

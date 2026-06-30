@@ -11,7 +11,7 @@
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
   "dependencies": {
-    "@faker-js/faker": "^10.4.0",
+    "@faker-js/faker": "^10.5.0",
     "accessible-autocomplete": "^3.0.1",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.21",
@@ -28,8 +28,8 @@
   },
   "devDependencies": {
     "cssnano": "^8.0.2",
-    "postcss": "^8.5.15",
-    "prettier": "^3.8.4",
+    "postcss": "^8.5.16",
+    "prettier": "^3.9.1",
     "purgecss": "^8.0.0"
   }
 }
