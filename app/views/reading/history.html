@@ -53,7 +53,8 @@
         <tbody class="nhsuk-table__body">
           {% for session in sessions %}
             {% set p = session.progress %}
-            {% set isComplete = p and session.userCompletedCount >= p.targetSize %}
+            {% set sessionTotal = p.effectiveTargetSize if p else null %}
+            {% set isComplete = p and session.userCompletedCount >= sessionTotal %}
             <tr>
               <td>
                 <a href="/reading/session/{{ session.id }}">
@@ -78,7 +79,7 @@
               </td>
               <td>
                 {% if p %}
-                  {{ p.targetSize }} total
+                  {{ sessionTotal }} total
                   {% if not isComplete %}
                     <br>{{ session.userCompletedCount }} read
                   {% endif %}

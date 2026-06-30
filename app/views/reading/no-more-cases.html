@@ -1,0 +1,32 @@
+{# /app/views/reading/no-more-cases.html #}
+
+{% extends 'layout-reading.html' %}
+
+{% set isReadingWorkflow = true %}
+{% set hideStatusBar = true %}
+{% set hideBackLink = true %}
+
+{% set pageHeading = "Session complete" %}
+
+{% block pageContent %}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-two-thirds">
+
+    <span class="nhsuk-caption-l">Image reading</span>
+    <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+    <p>You have given an opinion on all available cases.</p>
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Review session overview",
+        href: "/reading/session/" + sessionId
+      }) }}
+      <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit reading</a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

@@ -8,6 +8,7 @@
 
 {% set currentUserId = data.currentUser.id %}
 {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
+{% set sessionProgressById = sessionProgressById or {} %}
 
 {#
   Build a list of the current user's sessions, most-recent first.
@@ -24,7 +25,8 @@
     {% endif %}
   {% endfor %}
   {% if userReadCount > 0 %}
-    {% set targetSize = session.targetSize or session.eventIds | length %}
+    {% set progress = sessionProgressById[session.id] %}
+    {% set targetSize = progress.effectiveTargetSize if progress else (session.targetSize or session.eventIds | length) %}
     {% set userSessions = userSessions | push({
       id: session.id,
       createdAt: session.createdAt,
@@ -100,32 +102,49 @@
 {% set urgentBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) | length %}
 {% set priorityBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) | length %}
 
+{# Cases the current user can actually read — used to gate the start button #}
+{% set userReadableTotal = data.events
+  | filterEventsByEligibleForReading
+  | filterEventsByUserCanRead(currentUserId)
+  | length %}
+
 {% block pageContent %}
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
-      <p>{{ backlogTotal }} cases require reading</p>
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-l">{{ userReadableTotal }} {{ "case" | pluralise(userReadableTotal) }} are awaiting an outcome</p>
 
   {% if inProgressSession %}
 
     <h2>Resume image reading</h2>
     <p>You have an image reading session in progress. Finish it before starting a new one.</p>
-    <p>{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read.</p>
 
     {{ button({
       text: "Resume session",
       href: "/reading/session/" + inProgressSession.id + "/resume"
     }) }}
 
+  {% elif userReadableTotal == 0 %}
+
+    <h2>>There are no more cases available</h2>
+    <p>You have completed all the cases you are eligible to read.</p>
+
+    {{ button({
+      text: "Start now",
+      disabled: true
+    }) }}
+
   {% else %}
 
     <h2>Start image reading</h2>
-    <p>Give your opinion on the next {{ defaultSessionSize }} cases due for reading.</p>
+    <p>Give your opinion on cases due for reading.</p>
 
     {{ button({
       text: "Start now",
       href: "/reading/create-session?type=all_reads"
     }) }}
+      <br>
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">Your reading session will include up to {{ defaultSessionSize }} cases</span>
 
   {% endif %}
 
