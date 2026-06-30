@@ -12,12 +12,18 @@ if (configEl) {
     console.warn('image-streaming: could not parse config', e)
   }
 
-  if (config && config.enabled && !config.alreadyReceived && config.images && config.images.length) {
+  if (
+    config &&
+    config.enabled &&
+    !config.alreadyReceived &&
+    config.images &&
+    config.images.length
+  ) {
     initStreaming(config)
   }
 }
 
-function initStreaming (config) {
+function initStreaming(config) {
   const { intervalMs = 3000, images = [], totalImages = images.length } = config
 
   // Find all view slots rendered by mammogram-image-display.njk
@@ -26,7 +32,7 @@ function initStreaming (config) {
 
   // Build a map of view code → { el, revealedCount }
   const slotMap = {}
-  slots.forEach(slot => {
+  slots.forEach((slot) => {
     const view = slot.dataset.view
     if (view) {
       slotMap[view] = { el: slot, revealedCount: 0 }
@@ -34,7 +40,7 @@ function initStreaming (config) {
   })
 
   // Set all slots to awaiting state before any images arrive
-  slots.forEach(slot => setSlotAwaiting(slot))
+  slots.forEach((slot) => setSlotAwaiting(slot))
 
   // Counter element in the inset text
   const countEl = document.getElementById('streaming-received-count')
@@ -68,7 +74,7 @@ function initStreaming (config) {
   scheduleNext()
 
   // Right arrow key immediately advances to the next image (useful for demos)
-  document.addEventListener('keydown', e => {
+  document.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowRight') return
     if (e.target.matches('input, textarea, select')) return
     if (timer) {
@@ -82,8 +88,10 @@ function initStreaming (config) {
 
 // Replace a slot's content with a placeholder, collapsing to a single wrapper.
 // Uses the existing missing-image markup so styles and sizing are consistent.
-function setSlotAwaiting (slot) {
-  const wrappers = slot.querySelectorAll('.app-mammogram-thumbnail__image-wrapper')
+function setSlotAwaiting(slot) {
+  const wrappers = slot.querySelectorAll(
+    '.app-mammogram-thumbnail__image-wrapper'
+  )
   if (!wrappers.length) return
 
   const firstWrapper = wrappers[0]
@@ -95,12 +103,17 @@ function setSlotAwaiting (slot) {
 
   // Capture label text before replacing inner content
   const labelEl = firstWrapper.querySelector('.app-mammogram-thumbnail__label')
-  const labelText = labelEl ? labelEl.textContent.trim() : (slot.dataset.view || '')
+  const labelText = labelEl
+    ? labelEl.textContent.trim()
+    : slot.dataset.view || ''
 
-  // Set an explicit width so the wrapper doesn't collapse when there's no image content.
-  // (width: 100% on the wrapper resolves to 0 when the flex parent has no intrinsic width)
-  const isLarge = firstWrapper.classList.contains('app-mammogram-thumbnail__image-wrapper--large')
-  firstWrapper.style.width = isLarge ? '200px' : '120px'
+  // Give the slot a preferred width so the wrapper's width: 100% can resolve.
+  // Keep max-width at 100% so placeholders still shrink on smaller screens.
+  const isLarge = firstWrapper.classList.contains(
+    'app-mammogram-thumbnail__image-wrapper--large'
+  )
+  slot.style.width = isLarge ? '200px' : '120px'
+  slot.style.maxWidth = '100%'
 
   // Show a spinner on every placeholder from the start — images may load too fast
   // for a spinner added only at reveal time to be visible
@@ -113,7 +126,7 @@ function setSlotAwaiting (slot) {
 
 // Reveal an image in the appropriate slot.
 // immediate=true skips the spinner delay (used for the first image, already received).
-function revealImage (imageData, slotMap, immediate = false) {
+function revealImage(imageData, slotMap, immediate = false) {
   const slotInfo = slotMap[imageData.view]
   if (!slotInfo) return
 
@@ -121,7 +134,9 @@ function revealImage (imageData, slotMap, immediate = false) {
 
   if (slotInfo.revealedCount === 0) {
     // First image for this view — replace placeholder content in the existing wrapper
-    const wrapper = slot.querySelector('.app-mammogram-thumbnail__image-wrapper')
+    const wrapper = slot.querySelector(
+      '.app-mammogram-thumbnail__image-wrapper'
+    )
     if (!wrapper) return
 
     // Re-read the label before wiping innerHTML
@@ -132,11 +147,13 @@ function revealImage (imageData, slotMap, immediate = false) {
     // Skip the spinner for the first image (already received when we arrived on this page).
     const showImage = () => {
       wrapper.innerHTML = `<span class="app-mammogram-thumbnail__label">${labelText}</span>`
-      // Reset the explicit width we set in setSlotAwaiting
-      wrapper.style.width = ''
+      // Reset placeholder-only sizing once a real image is shown.
+      slot.style.width = ''
+      slot.style.maxWidth = ''
 
       const img = document.createElement('img')
-      img.className = 'app-mammogram-thumbnail__image app-mammogram-thumbnail__image--diagram'
+      img.className =
+        'app-mammogram-thumbnail__image app-mammogram-thumbnail__image--diagram'
       img.src = imageData.src
       img.alt = `${imageData.view} view`
       wrapper.appendChild(img)
@@ -154,11 +171,18 @@ function revealImage (imageData, slotMap, immediate = false) {
     }
   } else {
     // Additional image for this view (repeat or extra) — append a new wrapper
-    const existingWrapper = slot.querySelector('.app-mammogram-thumbnail__image-wrapper')
-    const isLarge = existingWrapper && existingWrapper.classList.contains('app-mammogram-thumbnail__image-wrapper--large')
+    const existingWrapper = slot.querySelector(
+      '.app-mammogram-thumbnail__image-wrapper'
+    )
+    const isLarge =
+      existingWrapper &&
+      existingWrapper.classList.contains(
+        'app-mammogram-thumbnail__image-wrapper--large'
+      )
 
     const newWrapper = document.createElement('div')
-    newWrapper.className = 'app-mammogram-thumbnail__image-wrapper' +
+    newWrapper.className =
+      'app-mammogram-thumbnail__image-wrapper' +
       (isLarge ? ' app-mammogram-thumbnail__image-wrapper--large' : '')
 
     const label = document.createElement('span')
@@ -166,7 +190,8 @@ function revealImage (imageData, slotMap, immediate = false) {
     label.textContent = slot.dataset.view
 
     const img = document.createElement('img')
-    img.className = 'app-mammogram-thumbnail__image app-mammogram-thumbnail__image--diagram'
+    img.className =
+      'app-mammogram-thumbnail__image app-mammogram-thumbnail__image--diagram'
     img.src = imageData.src
     img.alt = `${imageData.view} view`
 

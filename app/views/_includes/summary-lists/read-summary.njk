@@ -165,7 +165,7 @@
       actions: {
         items: [
           {
-            href: "./technical-recall",
+            href: "./technical-recall" | urlWithReferrer(currentUrl),
             text: "Change",
             visuallyHiddenText: "views"
           } | openInModal
@@ -219,7 +219,7 @@
       actions: {
         items: [
           {
-            href: "./recall-for-assessment-details",
+            href: "./recall-for-assessment-details" | urlWithReferrer(currentUrl),
             text: "Change",
             visuallyHiddenText: "detailed opinion"
           }
@@ -240,7 +240,7 @@
       actions: {
         items: [
           {
-            href: "./recall-for-assessment-details",
+            href: "./recall-for-assessment-details" | urlWithReferrer(currentUrl),
             text: "Change",
             visuallyHiddenText: "annotations"
           }

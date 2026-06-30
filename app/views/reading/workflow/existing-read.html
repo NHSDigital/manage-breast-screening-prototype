@@ -48,8 +48,15 @@
             },
             value: {
               text: deferral.reason
-            }
-          }) }}
+            },
+            actions: {
+              items: [{
+                href: "./defer-case" | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "deferral reason"
+              }]
+            } if canUndo
+          } | openInModal) }}
         {% endif %}
 
       {% endcall %}
@@ -101,8 +108,15 @@
             },
             value: {
               text: requestReason
-            }
-          }) }}
+            },
+            actions: {
+              items: [{
+                href: "./request-priors" | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "priors request reason"
+              }]
+            } if canUndo
+          } | openInModal) }}
         {% endif %}
       {% endcall %}
     {% endset %}
