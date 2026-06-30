@@ -311,7 +311,7 @@ const generateEvent = ({
         }
       }
 
-      // Generate previous mammograms (reported mammograms from other facilities)
+      // Generate previous mammograms (recorded mammograms from other facilities)
       const previousMammograms = generatePreviousMammograms({
         eventDate: event.timing.actualEndTime || event.timing.actualStartTime,
         addedByUserId: event.sessionDetails.startedBy,

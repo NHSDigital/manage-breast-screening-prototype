@@ -5,7 +5,7 @@
 {% set hasSymptoms = symptomsCount > 0 %}
 
 {% set symptomsContentsSummaryText %}
-  {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} recorded
+  {{ symptomsCount or "No" }} {{ 'symptom' | pluralise(symptomsCount) }} added
 {% endset %}
 
 
@@ -13,7 +13,7 @@
 
 {% if not hasSymptoms %}
   {% set insetHtml %}
-    <p>No symptoms have been recorded for this participant.</p>
+    <p>No symptoms have been added for this participant.</p>
   {% endset %}
   {{ insetText({
     html: insetHtml
