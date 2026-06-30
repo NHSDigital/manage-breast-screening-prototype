@@ -112,13 +112,12 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
-      <p>{{ userReadableTotal }} {{ "case" | pluralise(userReadableTotal) }} available to read</p>
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-l">{{ userReadableTotal }} {{ "case" | pluralise(userReadableTotal) }} are awaiting an outcome</p>
 
   {% if inProgressSession %}
 
     <h2>Resume image reading</h2>
     <p>You have an image reading session in progress. Finish it before starting a new one.</p>
-    <p>{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read.</p>
 
     {{ button({
       text: "Resume session",
@@ -138,12 +137,14 @@
   {% else %}
 
     <h2>Start image reading</h2>
-    <p>Give your opinion on cases due for reading (up to {{ defaultSessionSize }}).</p>
+    <p>Give your opinion on cases due for reading.</p>
 
     {{ button({
       text: "Start now",
       href: "/reading/create-session?type=all_reads"
     }) }}
+      <br>
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">Your reading session will include up to {{ defaultSessionSize }} cases</span>
 
   {% endif %}
 
