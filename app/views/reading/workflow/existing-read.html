@@ -48,8 +48,15 @@
             },
             value: {
               text: deferral.reason
-            }
-          }) }}
+            },
+            actions: {
+              items: [{
+                href: "./defer-case" | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "deferral reason"
+              }]
+            } if canUndo
+          } | openInModal) }}
         {% endif %}
 
       {% endcall %}

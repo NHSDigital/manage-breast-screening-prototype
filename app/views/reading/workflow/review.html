@@ -5,7 +5,7 @@
 
 {% set pageHeading = "Confirm your opinion" %}
 
-{% set formAction = './save-opinion' %}
+{% set formAction = './save-opinion' | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 

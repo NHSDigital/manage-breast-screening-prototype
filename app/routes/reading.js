@@ -26,7 +26,7 @@ const {
 const { getShortName } = require('../lib/utils/participants')
 const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
-const { modalBreakout } = require('../lib/utils/referrers')
+const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
@@ -747,6 +747,17 @@ module.exports = (router) => {
         }
       }
 
+      // If submitted from an existing-read page (e.g. editing reason), return there
+      const referrerChain = req.query.referrerChain
+      if (referrerChain) {
+        const returnUrl = getReturnUrl(
+          `/reading/session/${sessionId}/events/${eventId}/existing-read`,
+          referrerChain
+        )
+        res.redirect(modalBreakout(returnUrl))
+        return
+      }
+
       // Top up the session with the next eligible event if under target size
       topUpSession(data, sessionId)
 
@@ -1389,8 +1400,11 @@ module.exports = (router) => {
       // form data (all views) at opinion-details-complete, overwriting the clean data.
       // save-opinion reads from session (imageReadingTemp), not the POST body, so
       // it works correctly when reached via GET through the skip-confirmation path.
+      // Pass referrer chain through so save-opinion can return to the origin page
+      const referrerChain = req.query.referrerChain
+      const chainParam = referrerChain ? `?referrerChain=${encodeURIComponent(referrerChain)}` : ''
       res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
+        `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete${chainParam}`
       )
     }
   )
@@ -1559,16 +1573,19 @@ module.exports = (router) => {
             307,
             `/reading/session/${sessionId}/events/${eventId}/save-opinion`
           )
-        case 'technical_recall':
+        case 'technical_recall': {
+          const trReferrer = req.query.referrerChain
+          const trChainParam = trReferrer ? `?referrerChain=${encodeURIComponent(trReferrer)}` : ''
           if (data.settings?.reading?.confirmTechnicalRecall !== 'false') {
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/review`
+              `/reading/session/${sessionId}/events/${eventId}/review${trChainParam}`
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+            `/reading/session/${sessionId}/events/${eventId}/save-opinion${trChainParam}`
           )
+        }
         case 'recall_for_assessment':
           if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
             return res.redirect(
@@ -1660,6 +1677,17 @@ module.exports = (router) => {
           participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
           editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
         }
+      }
+
+      // If submitted from an existing-read or review page (e.g. editing technical recall), return there
+      const saveReferrerChain = req.query.referrerChain
+      if (saveReferrerChain) {
+        const returnUrl = getReturnUrl(
+          `/reading/session/${sessionId}/events/${eventId}/existing-read`,
+          saveReferrerChain
+        )
+        res.redirect(modalBreakout(returnUrl))
+        return
       }
 
       // Redirect to next unread event or end-of-session page

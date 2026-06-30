@@ -14,7 +14,7 @@
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {# POST to route handler that cleans up unselected views before redirecting to review #}
-{% set formAction = './technical-recall-answer' %}
+{% set formAction = './technical-recall-answer' | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 

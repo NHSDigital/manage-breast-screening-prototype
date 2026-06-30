@@ -37,7 +37,8 @@
         hint: {
           text: "Explain why you are unable to give an opinion on this case"
         },
-        rows: 4
+        rows: 4,
+        value: data.deferralReason if data.deferralReason else event.imageReading.deferral.reason
       }) }}
 
       {{ button({
