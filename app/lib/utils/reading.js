@@ -1857,8 +1857,10 @@ const getSessionReadingProgress = (
   // Mirror the same exclusion used in topUpSession: only exclude events already
   // in this session, not events in other sessions.
   const alreadyInSession = new Set(session.eventIds)
-  const availableTopUpCount = getEligibleCandidatesForSession(data, session)
-    .filter((event) => !alreadyInSession.has(event.id)).length
+  const availableTopUpCount = getEligibleCandidatesForSession(
+    data,
+    session
+  ).filter((event) => !alreadyInSession.has(event.id)).length
 
   // Dead events — fully read by other users and not actionable by this user.
   // They occupy session slots but can never be completed, so they don't count
@@ -1872,7 +1874,8 @@ const getSessionReadingProgress = (
     )
   }).length
 
-  const reachableSessionSize = sessionEvents.length - deadCount + availableTopUpCount
+  const reachableSessionSize =
+    sessionEvents.length - deadCount + availableTopUpCount
   const effectiveTargetSize = Math.min(resolvedTargetSize, reachableSessionSize)
 
   // Count deferred events so they count toward the session target

@@ -144,6 +144,9 @@
     {# Annotations mode - how annotations are displayed and edited #}
     {{ settingToggle("Annotations mode", "settings[reading][annotationsMode]", [{value: "without-images", label: "Without images"}, {value: "with-images-simple", label: "With images (simple)"}, {value: "with-images", label: "With images (tabbed)"}, {value: "with-images-progressive", label: "With images (progressive)"}], data.settings.reading.annotationsMode, "without-images") }}
 
+    {# Auto-open annotation form when marking a breast as abnormal #}
+    {{ settingToggle("Auto-open annotation form on abnormal", "settings[reading][autoOpenAnnotationForm]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenAnnotationForm, "false") }}
+
     {# Auto-open PACS viewer #}
     {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
 

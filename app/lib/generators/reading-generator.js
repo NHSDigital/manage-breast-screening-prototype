@@ -362,9 +362,22 @@ const generateReadingDataWithBacklogLimit = (
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
 
-  const clampedLimit = Math.min(backlogLimit, sorted.length)
-  const fullyReadEvents = sorted.slice(0, sorted.length - clampedLimit)
-  const backlogEvents = sorted.slice(sorted.length - clampedLimit)
+  // Events with pending or requested priors cannot realistically have been read —
+  // they must remain unread regardless of the backlog limit. Exclude them from
+  // the fully-read and partially-read groups so that resolving the priors later
+  // actually makes them available to read.
+  const hasBlockingPriors = (event) =>
+    Array.isArray(event.previousMammograms) &&
+    event.previousMammograms.some(
+      (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
+    )
+
+  const sortedReadable = sorted.filter((e) => !hasBlockingPriors(e))
+  const blockedByPriorsEvents = sorted.filter(hasBlockingPriors)
+
+  const clampedLimit = Math.min(backlogLimit, sortedReadable.length)
+  const fullyReadEvents = sortedReadable.slice(0, sortedReadable.length - clampedLimit)
+  const backlogEvents = sortedReadable.slice(sortedReadable.length - clampedLimit)
   const partialCount = Math.floor(
     backlogEvents.length * backlogPartialReadRatio
   )
@@ -375,7 +388,8 @@ const generateReadingDataWithBacklogLimit = (
     `Backlog limit: ${backlogLimit} cases — ` +
       `${fullyReadEvents.length} fully read, ` +
       `${partialEvents.length} partially read, ` +
-      `${unreadEvents.length} unread`
+      `${unreadEvents.length} unread, ` +
+      `${blockedByPriorsEvents.length} unread (awaiting priors)`
   )
 
   const updatedEvents = [...allEvents]
