@@ -316,13 +316,13 @@
             {# Placeholder rows for pending lazy session slots #}
             {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
             {% for i in range(0, placeholderRowsShown) %}
-            <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
+            <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeEvent and pendingCount > 3 and loop.last }}">
               <td>
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (userReadableEvents | length) + loop.index }}.</span>
               </td>
               <td>
                 <span class="app-placeholder-tag"></span>
-                {% if pendingCount > 3 and loop.last %}
+                {% if resumeEvent and pendingCount > 3 and loop.last %}
                   <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
                 {% endif %}
               </td>
@@ -553,13 +553,13 @@
           {# Placeholder rows for pending lazy session slots #}
           {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
           {% for i in range(0, placeholderRowsShown) %}
-          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if pendingCount > 3 and loop.last }}">
+          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeEvent and pendingCount > 3 and loop.last }}">
             <td>
               <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (events | length) + loop.index }}.</span>
             </td>
             <td>
               <span class="app-placeholder-tag"></span>
-              {% if pendingCount > 3 and loop.last %}
+              {% if resumeEvent and pendingCount > 3 and loop.last %}
                 <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
               {% endif %}
             </td>

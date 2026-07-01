@@ -12,6 +12,7 @@ const {
   canUserReadEvent,
   userHasReadEvent,
   writeReading,
+  getEligibleCandidatesForSession,
   createReadingSession,
   getFirstReadableEventInSession,
   getReadingSession,
@@ -270,16 +271,25 @@ module.exports = (router) => {
       filters.complexOnly = true
     }
 
+    const sessionOptions = {
+      type: type || 'custom',
+      name,
+      clinicId,
+      limit: limit ? parseInt(limit) : null,
+      lazy: lazy !== undefined ? lazy === 'true' : null,
+      filters
+    }
+
+    const candidates = getEligibleCandidatesForSession(data, sessionOptions)
+
+    if (candidates.length === 0) {
+      res.redirect('/reading')
+      return
+    }
+
     // Create the session
     try {
-      const session = createReadingSession(data, {
-        type: type || 'custom',
-        name,
-        clinicId,
-        limit: limit ? parseInt(limit) : null,
-        lazy: lazy !== undefined ? lazy === 'true' : null,
-        filters
-      })
+      const session = createReadingSession(data, sessionOptions)
 
       // Check if the request includes the redirect parameter
       if (redirect === 'list') {
