@@ -124,6 +124,8 @@
       href: "/reading/session/" + inProgressSession.id + "/resume"
     }) }}
 
+    <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read</span>
+
   {% elif userReadableTotal == 0 %}
 
     <h2>>There are no more cases available</h2>

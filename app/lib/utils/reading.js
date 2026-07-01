@@ -1952,6 +1952,7 @@ module.exports = {
   needsSecondRead,
 
   // Sessions
+  getEligibleCandidatesForSession,
   createReadingSession,
   getDefaultSessionName,
   generateSessionId,
