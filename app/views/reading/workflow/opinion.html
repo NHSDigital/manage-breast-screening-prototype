@@ -250,7 +250,7 @@
       {% call insetText({
         classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
       }) %}
-        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammograms reported</p>
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammogram added</p>
         {{ unrequestedHtml | safe }}
       {% endcall %}
     {% endif %}
@@ -362,72 +362,6 @@
       {% endif %}
     </div>
   </div>
-
-  {# Symptoms warning #}
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
-      {% set symptoms = event.medicalInformation.symptoms %}
-      {% include "symptomsWarningCard.njk" %}
-    </div>
-  </div>
-
-  {# Recorded mammograms banners - shown if there are unrequested or received priors #}
-  {% set priorsSummary = event | getPriorsSummary %}
-
-  {# Warning: priors recorded but not yet requested #}
-  {% if priorsSummary.hasUnrequested %}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-full">
-        {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
-        {% set unrequestedHtml %}
-          {% for mammogram in unrequestedPriors %}
-            <p class="nhsuk-u-margin-bottom-1">
-              {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-            </p>
-          {% endfor %}
-          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-            {{ appLink({ text: "Request priors", href: "./request-priors", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-          </p>
-        {% endset %}
-
-        {% call insetText({
-          classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-        }) %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammogram added</p>
-          {{ unrequestedHtml | safe }}
-        {% endcall %}
-      </div>
-    </div>
-  {% endif %}
-
-  {# Info: received priors #}
-  {% if priorsSummary.counts.received > 0 %}
-    {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-full">
-        {% set receivedHtml %}
-          {% for mammogram in receivedMammograms %}
-            <p class="nhsuk-u-margin-bottom-1">
-              {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-              {% if mammogram.requestedBy %}
-                – requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% if mammogram.requestReason %}: {{ mammogram.requestReason }}{% endif %}
-              {% elseif mammogram.requestReason %}
-                – {{ mammogram.requestReason }}
-              {% endif %}
-            </p>
-          {% endfor %}
-        {% endset %}
-
-        {% call insetText({
-          classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-        }) %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors received</p>
-          {{ receivedHtml | safe }}
-        {% endcall %}
-
-      </div>
-    </div>
-  {% endif %}
 
   {# Opinion form with thumbnails #}
   {# Todo: do we need a form here? is the parent layout's form not enough? #}

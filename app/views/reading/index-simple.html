@@ -32,7 +32,7 @@
       createdAt: session.createdAt,
       targetSize: targetSize,
       userReadCount: userReadCount,
-      isComplete: userReadCount >= targetSize
+      isComplete: progress and progress.targetRemaining == 0
     }) %}
   {% endif %}
 {% endfor %}
@@ -117,6 +117,7 @@
   {% if inProgressSession %}
 
     <h2>Resume image reading</h2>
+
     <p>You have an image reading session in progress. Finish it before starting a new one.</p>
 
     {{ button({
@@ -124,11 +125,12 @@
       href: "/reading/session/" + inProgressSession.id + "/resume"
     }) }}
 
-    <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read</span>
+    <p class="nhsuk-u-secondary-text-colour">{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read</p>
 
   {% elif userReadableTotal == 0 %}
 
-    <h2>>There are no more cases available</h2>
+    <h2>There are no more cases available</h2>
+
     <p>You have completed all the cases you are eligible to read.</p>
 
     {{ button({
@@ -145,8 +147,8 @@
       text: "Start now",
       href: "/reading/create-session?type=all_reads"
     }) }}
-      <br>
-      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">Your reading session will include up to {{ defaultSessionSize }} cases</span>
+
+    <p class="nhsuk-u-secondary-text-colour">Your reading session will include up to {{ defaultSessionSize }} cases</p>
 
   {% endif %}
 

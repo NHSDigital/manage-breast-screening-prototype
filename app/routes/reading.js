@@ -791,7 +791,9 @@ module.exports = (router) => {
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}/no-more-cases`))
+          res.redirect(
+            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
+          )
         }
       }
     }
@@ -925,7 +927,9 @@ module.exports = (router) => {
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}/no-more-cases`))
+          res.redirect(
+            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
+          )
         }
       }
     }
@@ -1452,6 +1456,33 @@ module.exports = (router) => {
     }
   )
 
+  // Handle recall-for-assessment form submission.
+  // If the "Add annotation" button was clicked (identified by addAnnotationSide in the body),
+  // redirect to the annotation add page for that side. Otherwise, proceed to opinion-details-complete.
+  // The prototype kit middleware automatically saves all form data to session on POST,
+  // so radio selections are preserved regardless of which button triggered the submit.
+  router.post(
+    '/reading/session/:sessionId/events/:eventId/recall-for-assessment-answer',
+    (req, res) => {
+      const { sessionId, eventId } = req.params
+      const referrerChain = req.query.referrerChain
+      const chainParam = referrerChain
+        ? `?referrerChain=${encodeURIComponent(referrerChain)}`
+        : ''
+
+      const addAnnotationSide = req.body.addAnnotationSide
+      if (addAnnotationSide && ['left', 'right'].includes(addAnnotationSide)) {
+        return res.redirect(
+          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${addAnnotationSide}`
+        )
+      }
+
+      res.redirect(
+        `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete${chainParam}`
+      )
+    }
+  )
+
   // Handle technical recall form submission
   // Cleans up the data structure to only include selected views, then redirects to review
   router.post(
@@ -1534,7 +1565,9 @@ module.exports = (router) => {
       // it works correctly when reached via GET through the skip-confirmation path.
       // Pass referrer chain through so save-opinion can return to the origin page
       const referrerChain = req.query.referrerChain
-      const chainParam = referrerChain ? `?referrerChain=${encodeURIComponent(referrerChain)}` : ''
+      const chainParam = referrerChain
+        ? `?referrerChain=${encodeURIComponent(referrerChain)}`
+        : ''
       res.redirect(
         `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete${chainParam}`
       )
@@ -1707,7 +1740,9 @@ module.exports = (router) => {
           )
         case 'technical_recall': {
           const trReferrer = req.query.referrerChain
-          const trChainParam = trReferrer ? `?referrerChain=${encodeURIComponent(trReferrer)}` : ''
+          const trChainParam = trReferrer
+            ? `?referrerChain=${encodeURIComponent(trReferrer)}`
+            : ''
           if (data.settings?.reading?.confirmTechnicalRecall !== 'false') {
             return res.redirect(
               `/reading/session/${sessionId}/events/${eventId}/review${trChainParam}`
@@ -1720,7 +1755,9 @@ module.exports = (router) => {
         }
         case 'recall_for_assessment': {
           const rfaReferrer = req.query.referrerChain
-          const rfaChainParam = rfaReferrer ? `?referrerChain=${encodeURIComponent(rfaReferrer)}` : ''
+          const rfaChainParam = rfaReferrer
+            ? `?referrerChain=${encodeURIComponent(rfaReferrer)}`
+            : ''
           if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
             return res.redirect(
               `/reading/session/${sessionId}/events/${eventId}/review${rfaChainParam}`
@@ -1845,7 +1882,9 @@ module.exports = (router) => {
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}/no-more-cases`))
+          res.redirect(
+            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
+          )
         }
       }
     }

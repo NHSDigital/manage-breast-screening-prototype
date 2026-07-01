@@ -10,7 +10,7 @@
 
 {% set gridColumn = "none" %}
 
-{% set formAction = './opinion-details-complete' | urlWithReferrer(referrerChain) %}
+{% set formAction = './recall-for-assessment-answer' | urlWithReferrer(referrerChain) %}
 
 {% set annotationsMode = data.settings.reading.annotationsMode or 'without-images' %}
 
@@ -177,15 +177,18 @@
           <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
         {% endset %}
 
-        {# Button rendered separately so it sits outside the error bar #}
+        {# Button rendered separately so it sits outside the error bar.
+           Submitting the form (rather than following a link) ensures all radio selections
+           are saved to session before navigating to the annotation page. #}
         {% set sideAnnotationsButtonHtml %}
           {{ button({
             text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
             variant: "secondary",
             small: true,
             classes: "nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3",
-            href: "./annotation/add?side=" + breastSide,
-            attributes: { "data-load-modal-url": "./annotation/add?side=" + breastSide } if data.settings.modalForms == 'true'
+            name: "addAnnotationSide",
+            value: breastSide,
+            attributes: { "data-modal-submit": "" } if data.settings.modalForms == 'true'
           }) }}
         {% endset %}
 
@@ -244,6 +247,7 @@
     (function () {
       var annotationsMode = '{{ annotationsMode }}'
       var useModals = {{ "true" if data.settings.modalForms == 'true' else "false" }}
+      var autoOpenAnnotationForm = {{ "true" if data.settings.reading.autoOpenAnnotationForm == 'true' else "false" }}
 
       document.addEventListener('change', function (e) {
         if (!e.target.matches('input[type="radio"]')) return
@@ -271,24 +275,15 @@
           }
         }
 
-        if (value !== 'abnormal') {
-          // Still persist the breast assessment for non-abnormal selections
-          fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
-          return
-        }
-
         var countEl = document.querySelector('[data-annotation-count="' + side + '"]')
         var count = countEl ? parseInt(countEl.dataset.count || '0', 10) : 0
 
-        // In full tabbed mode, user clicks images directly — no auto-open
-        if (count === 0 && annotationsMode === 'with-images') {
-          // Still persist the breast assessment to session
-          fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
-          return
-        }
-
-        if (count === 0) {
-          // Wait for the save to complete before opening the modal,
+        // Auto-open the annotation form when marking as abnormal, only when:
+        // - the autoOpenAnnotationForm setting is enabled
+        // - no annotations exist yet for this side
+        // - not in full tabbed mode (user clicks images there directly)
+        if (value === 'abnormal' && autoOpenAnnotationForm && count === 0 && annotationsMode !== 'with-images') {
+          // Wait for the save to complete before opening the annotation form,
           // so the server has the breast side info in the session when rendering the annotation page
           fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
             .then(() => {
@@ -300,7 +295,7 @@
               }
             })
             .catch(() => {
-              // Graceful degradation: open modal even if save fails
+              // Graceful degradation: open even if save fails
               var url = './annotation/add?side=' + side
               if (useModals && typeof window.openModal === 'function') {
                 window.openModal('app-form-modal', { loadUrl: url })
@@ -308,7 +303,12 @@
                 window.location.href = url
               }
             })
+          return
         }
+
+        // Always persist the breast assessment on change so the value survives
+        // navigation away to add annotations and back again
+        fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
       })
     })()
   </script>

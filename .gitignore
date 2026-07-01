@@ -79,5 +79,8 @@ coverage
 .github
 CLAUDE.md
 
+# Reference assets (local only, not for committing)
+reference/
+
 # Local setting overrides (personal dev preferences, not for committing)
 *.local.js
