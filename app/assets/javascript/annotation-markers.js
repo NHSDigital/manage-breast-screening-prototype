@@ -668,8 +668,9 @@
           return
         }
         if (singleMarker) singleMarker.classList.add('is-ghost')
-        cursorPreviewBadge.textContent = displayIndex[singleAnnotationId] || '?'
-        cursorPreviewBadge.hidden = false
+        // Hide the badge on the cursor preview in single mode — showing '?'
+        // before placement confuses users into thinking they need to place it
+        cursorPreviewBadge.hidden = true
         cursorPreview.hidden = false
         cursorPreview.style.left = x + '%'
         cursorPreview.style.top = y + '%'
