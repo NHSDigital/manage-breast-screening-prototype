@@ -186,7 +186,7 @@
               value: "recall_for_assessment",
               name: "imageReadingTemp[opinion]",
               variant: "warning",
-              classes: "app-button-full-width",
+              classes: "app-button-full-width nhsuk-u-margin-bottom-1",
               attributes: { "data-shortcut": "r" }
             } | openInModal) }}
           </div>
@@ -224,10 +224,17 @@
     }) }}
   {% endset %}
 
+  {# Image warnings (captured so we can check if content exists) #}
+  {% set imageWarningsHtml %}
+    {% include "_includes/reading/image-warnings.njk" %}
+  {% endset %}
+
   {# Symptoms warning #}
   {% set symptomsWarningHtml %}
-    {% set symptoms = event.medicalInformation.symptoms %}
-    {% include "_includes/symptomsWarningCard.njk" %}
+    {% if event.medicalInformation.symptoms | length %}
+      {% set symptoms = event.medicalInformation.symptoms %}
+      {% include "_includes/symptomsWarningCard.njk" %}
+    {% endif %}
   {% endset %}
 
   {# Reported mammograms banners #}
@@ -417,17 +424,11 @@
     {# Hidden field to track previous opinion for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">
 
-    {# Symptoms warning and priors banners - full width, only if content exists #}
+    {# Symptoms warning and priors banners - full width #}
     {% if (symptomsWarningHtml | trim) or (priorsWarningHtml | trim) %}
       <div class="nhsuk-grid-row">
         <div class="nhsuk-grid-column-full">
-          {% if symptomsWarningHtml | trim %}
-            {{ symptomsWarningHtml | safe }}
-          {% endif %}
-
-          {% if priorsWarningHtml | trim %}
-            {{ priorsWarningHtml | safe }}
-          {% endif %}
+          
         </div>
       </div>
     {% endif %}
@@ -435,34 +436,44 @@
     {# Opinion and thumbnails #}
     <div class="nhsuk-grid-row">
 
-      {# Mammogram thumbnails #}
-      <div class="nhsuk-grid-column-one-third">
-        {{ thumbnailsHtml | safe }}
-      </div>
+
 
       {# Opinion buttons/radios #}
-      <div class="nhsuk-grid-column-two-thirds">
+      <div class="nhsuk-grid-column-three-quarters">
+
+        {# Conditional stuff #}
+        {{ symptomsWarningHtml | safe }}
+        {{ priorsWarningHtml | safe }}
+
+        {# Main opinion stuff #}
         {{ opinionOptionsHtml | safe }}
-      </div>
 
-    </div>
-
-    {# Image notes, medical summary and defer - full width #}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-full">
-
-        {# Image notes #}
-        {% include "_includes/reading/image-warnings.njk" %}
-
-        {# Medical information summary #}
-        {{ medicalSummaryHtml | safe }}
+        {# Image notes and medical summary — 50/50 if both present, full width otherwise #}
+        {# {% if (imageWarningsHtml | trim) and (medicalSummaryHtml | trim) %}
+          <div class="nhsuk-grid-row">
+            <div class="nhsuk-grid-column-one-half">
+              {{ imageWarningsHtml | safe }}
+            </div>
+            <div class="nhsuk-grid-column-one-half">
+              {{ medicalSummaryHtml | safe }}
+            </div>
+          </div>
+        {% else %} #}
+          {{ imageWarningsHtml | safe }}
+          {{ medicalSummaryHtml | safe }}
+        {# {% endif %} #}
 
         {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">
           {{ appLink({ text: "Defer this case", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
         </p>
-
       </div>
+
+      {# Mammogram thumbnails #}
+      <div class="nhsuk-grid-column-one-quarter">
+        {{ thumbnailsHtml | safe }}
+      </div>
+
     </div>
 
   </form>
