@@ -85,5 +85,16 @@
         </li>
       {% endfor %}
     </ol>
+
+    <div class="nhsuk-u-margin-top-7">
+      <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-3">
+      <p class="nhsuk-u-margin-bottom-0 nhsuk-body-s">
+        {% set appointmentNoteUrl = '/clinics/' + clinicId + '/events/' + event.id + '/appointment-note' %}
+        {{ appLink({
+          text: "Add appointment note",
+          href: appointmentNoteUrl | urlWithReferrer(currentUrl)
+        } | openInModal) }}
+      </p>
+    </div>
   </nav>
 </div>
