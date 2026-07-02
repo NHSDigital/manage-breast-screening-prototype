@@ -6,7 +6,7 @@
 {% set pageHeading = participant | getFullName %}
 {% set gridColumn = "none" %}
 {% set showWorkflowNav = true %}
-{% set bodyClasses = (bodyClasses or "") + " _app-page-width--wide" %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
 
 {# Reduce default top padding of main on opinion page to save on scrolling #}
 {% set mainClasses = "nhsuk-u-padding-top-1" %}
@@ -279,6 +279,54 @@
     {% endif %}
   {% endset %}
 
+  {# Mammogram thumbnails #}
+  {% set thumbnailsHtml %}
+    <h2 class="nhsuk-heading-s">Image thumbnails ({{ imageCount }})</h2>
+    <div class="app-mammogram-thumbnails nhsuk-u-margin-bottom-4">
+      {% for view in viewOrder %}
+        <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ view.side }}">
+          {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
+
+          {% if allPaths %}
+            {# Handle both single path (string) and multiple paths (array) #}
+            {% if allPaths is string %}
+              <div class="app-mammogram-thumbnail__image-wrapper">
+                <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+                <img
+                  class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
+                  src="{{ allPaths }}"
+                  alt="{{ view.label }} view"
+                  data-view="{{ view.label }}"
+                >
+              </div>
+            {% else %}
+              {# Multiple images - each with its own wrapper and label #}
+              {% for imagePath in allPaths %}
+                <div class="app-mammogram-thumbnail__image-wrapper">
+                  <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+                  <img
+                    class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
+                    src="{{ imagePath }}"
+                    alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
+                    data-view="{{ view.label }}"
+                  >
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% else %}
+            {# Missing image placeholder #}
+            <div class="app-mammogram-thumbnail__image-wrapper">
+              <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+              <div class="app-mammogram-thumbnail__missing">
+                <span class="app-mammogram-thumbnail__missing-text">No image</span>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endset %}
+
   {# =========================================================
      Page layout
      ========================================================= #}
@@ -389,50 +437,7 @@
 
       {# Mammogram thumbnails #}
       <div class="nhsuk-grid-column-one-third">
-        <h2 class="nhsuk-heading-s">Image thumbnails ({{ imageCount }})</h2>
-        <div class="app-mammogram-thumbnails nhsuk-u-margin-bottom-4">
-          {% for view in viewOrder %}
-            <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ view.side }}">
-              {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
-
-              {% if allPaths %}
-                {# Handle both single path (string) and multiple paths (array) #}
-                {% if allPaths is string %}
-                  <div class="app-mammogram-thumbnail__image-wrapper">
-                    <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                    <img
-                      class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
-                      src="{{ allPaths }}"
-                      alt="{{ view.label }} view"
-                      data-view="{{ view.label }}"
-                    >
-                  </div>
-                {% else %}
-                  {# Multiple images - each with its own wrapper and label #}
-                  {% for imagePath in allPaths %}
-                    <div class="app-mammogram-thumbnail__image-wrapper">
-                      <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                      <img
-                        class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
-                        src="{{ imagePath }}"
-                        alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
-                        data-view="{{ view.label }}"
-                      >
-                    </div>
-                  {% endfor %}
-                {% endif %}
-              {% else %}
-                {# Missing image placeholder #}
-                <div class="app-mammogram-thumbnail__image-wrapper">
-                  <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                  <div class="app-mammogram-thumbnail__missing">
-                    <span class="app-mammogram-thumbnail__missing-text">No image</span>
-                  </div>
-                </div>
-              {% endif %}
-            </div>
-          {% endfor %}
-        </div>
+        {{ thumbnailsHtml | safe }}
       </div>
 
       {# Opinion buttons/radios #}
