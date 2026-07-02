@@ -90,8 +90,9 @@
       <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-3">
       <p class="nhsuk-u-margin-bottom-0 nhsuk-body-s">
         {% set appointmentNoteUrl = '/clinics/' + clinicId + '/events/' + event.id + '/appointment-note' %}
+        {% set appointmentNoteLinkText = 'View or change appointment note' if event.appointmentNote else 'Add appointment note' %}
         {{ appLink({
-          text: "Add appointment note",
+          text: appointmentNoteLinkText,
           href: appointmentNoteUrl | urlWithReferrer(currentUrl)
         } | openInModal) }}
       </p>
