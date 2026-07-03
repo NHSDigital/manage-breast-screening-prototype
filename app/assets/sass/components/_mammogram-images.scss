@@ -40,13 +40,19 @@
 
 // Thumbnail grid for the reading opinion page
 .app-mammogram-thumbnails {
-  display: inline-grid;
-  grid-template-columns: auto auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
   gap: 8px;
 
   // Match the tighter grid gap for same-view images within the reading layout
   .app-mammogram-thumbnail {
     gap: 8px;
+  }
+
+  // Allow thumbnails to scale to fill the available column width
+  .app-mammogram-thumbnail__image-wrapper {
+    max-width: none;
   }
 }
 
@@ -121,7 +127,7 @@
   background-color: nhsuk-colour("blue");
   color: #fff;
   padding: 2px 6px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   z-index: 1;
 }
