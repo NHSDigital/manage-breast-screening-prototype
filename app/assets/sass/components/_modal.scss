@@ -1,6 +1,6 @@
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
-$app-modal-width: 800px !default;
+$app-modal-width: 900px !default;
 
 // Prevent background scrolling when modal is open
 body.app-modal-open {
