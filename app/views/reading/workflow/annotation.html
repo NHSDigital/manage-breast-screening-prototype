@@ -107,19 +107,17 @@
             value: "save"
           }
         }) }}
-      </div>
 
-      {# Only show delete link if this is a previously saved annotation #}
-      {% if annotation.id %}
-        {% set deleteHref %}
-          ./annotation/delete/{{ annotation.id }}
-        {% endset %}
-        <p class="nhsuk-u-margin-top-4">
+        {# Only show delete link if this is a previously saved annotation #}
+        {% if annotation.id %}
+          {% set deleteHref %}
+            ./annotation/delete/{{ annotation.id }}
+          {% endset %}
           <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
             Delete this annotation
           </a>
-        </p>
-      {% endif %}
+        {% endif %}
+      </div>
 
       {# Hidden fields #}
       {{ appHiddenInput({
