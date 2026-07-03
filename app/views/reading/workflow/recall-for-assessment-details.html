@@ -171,7 +171,8 @@
             annotations: sideAnnotations,
             editable: true,
             editHrefPrefix: "./annotation/edit/",
-            useModals: data.settings.modalForms == 'true'
+            useModals: data.settings.modalForms == 'true',
+            classes: "nhsuk-u-margin-bottom-3" if sideAnnotations | length > 0
           }) }}
 
           <span hidden data-annotation-count="{{ breastSide }}" data-count="{{ sideAnnotations | length }}"></span>
@@ -181,6 +182,9 @@
            Submitting the form (rather than following a link) ensures all radio selections
            are saved to session before navigating to the annotation page. #}
         {% set sideAnnotationsButtonHtml %}
+
+          {# Original single button — commented out in favour of per-type buttons below #}
+          {#
           {{ button({
             text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
             variant: "secondary",
@@ -190,6 +194,27 @@
             value: breastSide,
             attributes: { "data-modal-submit": "" } if data.settings.modalForms == 'true'
           }) }}
+          #}
+
+          {# Per-type annotation buttons — one per abnormality type.
+             The value encodes side and type separated by "|", parsed in the route. #}
+          {# <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible nhsuk-u-margin-top-3"> #}
+          {% if sideAnnotations | length > 0 %}
+            <h4 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">Add another annotation</h4>
+          {% endif %}
+          <div class="nhsuk-button-group app-button-group--small">
+            {% for abnormalityType in data.abnormalityTypes %}
+              {{ button({
+                text: abnormalityType,
+                variant: "secondary",
+                small: true,
+                name: "addAnnotationSideType",
+                value: breastSide + "|" + abnormalityType,
+                attributes: { "data-modal-submit": "" } if data.settings.modalForms == 'true'
+              }) }}
+            {% endfor %}
+          </div>
+
         {% endset %}
 
       {% endif %}

@@ -1056,9 +1056,13 @@ module.exports = (router) => {
       const totalAnnotations = leftAnnotations.length + rightAnnotations.length
       const annotationNumber = totalAnnotations + 1
 
+      // Pre-populate abnormality type if passed from per-type button
+      const { abnormalityType } = req.query
+
       data.imageReadingTemp.annotationTemp = {
         side: side,
-        annotationNumber: annotationNumber
+        annotationNumber: annotationNumber,
+        abnormalityTypes: abnormalityType ? [abnormalityType] : undefined
       }
 
       res.redirect(
@@ -1475,6 +1479,26 @@ module.exports = (router) => {
         return res.redirect(
           `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${addAnnotationSide}`
         )
+      }
+
+      // Per-type annotation button — value is "side|abnormality type"
+      const addAnnotationSideType = req.body.addAnnotationSideType
+      if (addAnnotationSideType) {
+        const pipeIndex = addAnnotationSideType.indexOf('|')
+        const side =
+          pipeIndex > -1
+            ? addAnnotationSideType.slice(0, pipeIndex)
+            : addAnnotationSideType
+        const abnormalityType =
+          pipeIndex > -1 ? addAnnotationSideType.slice(pipeIndex + 1) : ''
+        if (['left', 'right'].includes(side)) {
+          const typeParam = abnormalityType
+            ? `&abnormalityType=${encodeURIComponent(abnormalityType)}`
+            : ''
+          return res.redirect(
+            `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}${typeParam}`
+          )
+        }
       }
 
       res.redirect(
