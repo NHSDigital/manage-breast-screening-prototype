@@ -38,6 +38,35 @@
   text-align: right;
 }
 
+// Two-column layout for the reading opinion page: main content + images sidebar.
+// Flexbox approach so the images column has a fixed max-width and main takes the rest.
+.app-reading-opinion-columns {
+  @include nhsuk-media-query($from: 900px) {
+    display: flex;
+    gap: $nhsuk-gutter;
+    align-items: flex-start;
+  }
+}
+
+.app-grid-column-main {
+  min-width: 0;
+
+  @include nhsuk-media-query($from: 900px) {
+    flex: 1;
+  }
+}
+
+.app-grid-column-images {
+  display: none;
+
+  @include nhsuk-media-query($from: 900px) {
+    display: block;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
 // Thumbnail grid for the reading opinion page
 .app-mammogram-thumbnails {
   display: grid;

@@ -1,0 +1,6 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+.nhsuk-card--feature.app-card--feature-subtle .nhsuk-card__heading {
+  background-color: nhsuk-colour("grey-4");
+  color: $nhsuk-text-colour;
+}

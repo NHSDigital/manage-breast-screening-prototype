@@ -239,7 +239,8 @@
       {% call card({
         heading: questionText,
         headingLevel: 2,
-        headingSize: "m"
+        headingSize: "m",
+        feature: true
       }) %}
         <div class="app-opinion-buttons--stacked">
           {{ opinionButtonsStackedHtml | safe }}
@@ -265,7 +266,8 @@
     {{ card({
       heading: "Medical summary",
       headingLevel: "2",
-      feature: false,
+      feature: true,
+      classes: "app-card--feature-subtle",
       descriptionHtml: medicalSummaryListHtml,
       actions: {
       items: [
@@ -494,12 +496,12 @@
     {% endif %}
 
     {# Opinion and thumbnails #}
-    <div class="nhsuk-grid-row">
+    <div class="app-reading-opinion-columns">
 
 
 
       {# Opinion buttons/radios #}
-      <div class="nhsuk-grid-column-three-quarters">
+      <div class="app-grid-column-main">
 
         {# Conditional stuff #}
         {{ symptomsWarningHtml | safe }}
@@ -530,7 +532,7 @@
       </div>
 
       {# Mammogram thumbnails #}
-      <div class="nhsuk-grid-column-one-quarter">
+      <div class="app-grid-column-images">
         {{ thumbnailsHtml | safe }}
       </div>
 

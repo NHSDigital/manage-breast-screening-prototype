@@ -9,7 +9,7 @@
   {% set pageHeading = "Symptom details" %}
 {% endif %}
 
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
 
@@ -63,7 +63,8 @@
 
   {% endif %}
 
-  
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
 
   {# Location #}
 
@@ -496,6 +497,9 @@
     } | populateErrors) }}
   {% endset %}
 
+    </div>
+    <div class="nhsuk-grid-column-one-half">
+
   {% call fieldset({
     legend: {
       text: "Additional symptom information",
@@ -604,6 +608,9 @@
     rows: 4,
     value: event.symptomTemp.symptomNotes
   }) }}
+
+    </div>
+  </div>
 
   <div class="nhsuk-button-group">
     {{ button({
