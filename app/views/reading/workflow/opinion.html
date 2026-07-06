@@ -135,64 +135,119 @@
       } | openInModal) }}
 
     {% else %}
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-full">
-          {# Show buttons for initial assessment - vertically stacked #}
-          <h2 class="nhsuk-heading-m">{{ questionText }}</h2>
 
-          <div class="nhsuk-u-margin-bottom-4">
-            {% if hasSymptoms %}
-              {{ button({
-                html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
-                value: "normal_with_details",
-                name: "imageReadingTemp[opinion]",
-                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-                attributes: { "data-shortcut": "n" }
-              } | openInModal) }}
-            {% else %}
-              {{ button({
-                html: "Normal <span class='app-shortcut-hint'>(N)</span>",
-                value: "normal",
-                name: "imageReadingTemp[opinion]",
-                classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-                attributes: { "data-shortcut": "n" }
-              }) }}
+      {# Stacked (vertical) button layout #}
+      {% set opinionButtonsStackedHtml %}
+        {% if hasSymptoms %}
+          {{ button({
+            html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+            value: "normal_with_details",
+            name: "imageReadingTemp[opinion]",
+            classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+            attributes: { "data-shortcut": "n" }
+          } | openInModal) }}
+        {% else %}
+          {{ button({
+            html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+            value: "normal",
+            name: "imageReadingTemp[opinion]",
+            classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+            attributes: { "data-shortcut": "n" }
+          }) }}
+          <p class="nhsuk-u-margin-bottom-4">
+            {# Raw button element intentional — app-button-link styles it as a link,
+              which doesn't work with the NHS button macro (adds conflicting styles).
+              data-modal-submit added manually for modal support. #}
+            <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+              Normal, but add details
+            </button>
+          </p>
+        {% endif %}
+        {{ button({
+          html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+          value: "technical_recall",
+          name: "imageReadingTemp[opinion]",
+          variant: "secondary",
+          classes: "app-button-full-width nhsuk-u-margin-bottom-3",
+          attributes: { "data-shortcut": "t" }
+        } | openInModal) }}
+        {{ button({
+          html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+          value: "recall_for_assessment",
+          name: "imageReadingTemp[opinion]",
+          variant: "warning",
+          classes: "app-button-full-width nhsuk-u-margin-bottom-1",
+          attributes: { "data-shortcut": "r" }
+        } | openInModal) }}
+      {% endset %}
 
-              <p class="nhsuk-u-margin-bottom-4">
-                {# Raw button element intentional — app-button-link styles it as a link,
-                  which doesn't work with the NHS button macro (adds conflicting styles).
-                  data-modal-submit added manually for modal support. #}
-                <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-                  Normal, but add details
-                </button>
-              </p>
-            {% endif %}
-          </div>
-
-          <div class="nhsuk-u-margin-bottom-4">
+      {# Horizontal equal-width button layout #}
+      {# Horizontal equal-width button layout.
+         CSS Grid places the three buttons in row 1 (uniform height) and the
+         sub-action link in row 2 col 1 via explicit placement — no wrapper needed. #}
+      {% set opinionButtonsHorizontalHtml %}
+        <div class="app-button-group--equal">
+          {% if hasSymptoms %}
             {{ button({
-              html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
-              value: "technical_recall",
+              html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+              value: "normal_with_details",
               name: "imageReadingTemp[opinion]",
-              variant: "secondary",
-              classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-              attributes: { "data-shortcut": "t" }
+              classes: "app-button--tall",
+              attributes: { "data-shortcut": "n" }
             } | openInModal) }}
-          </div>
-
-          <div class="nhsuk-u-margin-bottom-0">
+          {% else %}
             {{ button({
-              html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
-              value: "recall_for_assessment",
+              html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+              value: "normal",
               name: "imageReadingTemp[opinion]",
-              variant: "warning",
-              classes: "app-button-full-width nhsuk-u-margin-bottom-1",
-              attributes: { "data-shortcut": "r" }
-            } | openInModal) }}
-          </div>
+              classes: "app-button--tall",
+              attributes: { "data-shortcut": "n" }
+            }) }}
+            {# Sub-action placed between Normal and Technical recall in DOM so it auto-flows
+               after Normal on mobile (stacked layout); CSS pins it to row 2 col 1 on desktop. #}
+            <p class="app-button-group__sub-action">
+              {# Raw button element intentional — app-button-link styles it as a link,
+                which doesn't work with the NHS button macro (adds conflicting styles).
+                data-modal-submit added manually for modal support. #}
+              <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+                Normal, but add details
+              </button>
+            </p>
+          {% endif %}
+          {{ button({
+            html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+            value: "technical_recall",
+            name: "imageReadingTemp[opinion]",
+            variant: "secondary",
+            classes: "app-button--tall",
+            attributes: { "data-shortcut": "t" }
+          } | openInModal) }}
+          {{ button({
+            html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+            value: "recall_for_assessment",
+            name: "imageReadingTemp[opinion]",
+            variant: "warning",
+            classes: "app-button--tall",
+            attributes: { "data-shortcut": "r" }
+          } | openInModal) }}
         </div>
+      {% endset %}
 
-      </div>
+      {# Both layouts are rendered; CSS shows the appropriate one per breakpoint.
+         This ensures the link always appears in the correct position (stacked layout
+         has it between Normal and Technical recall in DOM order). #}
+      {% call card({
+        heading: questionText,
+        headingLevel: 2,
+        headingSize: "m"
+      }) %}
+        <div class="app-opinion-buttons--stacked">
+          {{ opinionButtonsStackedHtml | safe }}
+        </div>
+        <div class="app-opinion-buttons--horizontal">
+          {{ opinionButtonsHorizontalHtml | safe }}
+        </div>
+      {% endcall %}
 
     {% endif %}
   {% endset %}
@@ -210,7 +265,7 @@
     {{ card({
       heading: "Medical summary",
       headingLevel: "2",
-      feature: true,
+      feature: false,
       descriptionHtml: medicalSummaryListHtml,
       actions: {
       items: [
@@ -345,7 +400,7 @@
 
   {# Page header with status tags #}
   <div class="nhsuk-grid-row app-header-with-status">
-    <div class="nhsuk-grid-column-two-thirds">
+    <div class="nhsuk-grid-column-three-quarters">
       <span class="nhsuk-caption-l">
         {{ opinionHeading }}
       </span>
@@ -353,7 +408,7 @@
         {{ participant | getFullName }}
       </h1>
     </div>
-    <div class="nhsuk-grid-column-one-third app-header-with-status__status-tag">
+    <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag">
 
       {# Urgency tags #}
       {% set eventAge = event.timing.startTime | daysSince %}
@@ -444,7 +499,7 @@
 
 
       {# Opinion buttons/radios #}
-      <div class="nhsuk-grid-column-two-thirds">
+      <div class="nhsuk-grid-column-three-quarters">
 
         {# Conditional stuff #}
         {{ symptomsWarningHtml | safe }}
@@ -475,7 +530,7 @@
       </div>
 
       {# Mammogram thumbnails #}
-      <div class="nhsuk-grid-column-one-third">
+      <div class="nhsuk-grid-column-one-quarter">
         {{ thumbnailsHtml | safe }}
       </div>
 

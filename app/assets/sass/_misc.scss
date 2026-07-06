@@ -53,6 +53,46 @@ body.js-enabled .app-no-js-only {
   width: 100%;
 }
 
+// Taller button variant — used for primary action buttons on the reading opinion page
+.app-button--tall {
+  padding-top: nhsuk-spacing(3);
+  padding-bottom: nhsuk-spacing(3);
+}
+
+// Equal-width button group — CSS Grid places 3 buttons in row 1 (uniform height)
+// and the optional sub-action link in row 2 col 1. Used on the reading opinion page.
+.app-button-group--equal {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: nhsuk-spacing(3);
+
+  .nhsuk-button {
+    margin-bottom: 0;
+    width: 100%;
+  }
+}
+
+// Sub-action link (e.g. "Normal, but add details") — pinned to row 2 col 1 in the grid,
+// constrained to the same width as the Normal button above it.
+.app-button-group__sub-action {
+  grid-column: 1;
+  grid-row: 2;
+  margin-bottom: 0;
+}
+
+// Opinion button layout switching — stacked shown on mobile, horizontal shown on tablet+
+.app-opinion-buttons--horizontal {
+  @include nhsuk-media-query($until: tablet) {
+    display: none;
+  }
+}
+
+.app-opinion-buttons--stacked {
+  @include nhsuk-media-query($from: tablet) {
+    display: none;
+  }
+}
+
 // Reduce space taken by card
 .nhsuk-card {
   @include nhsuk-responsive-margin(4, "bottom");
