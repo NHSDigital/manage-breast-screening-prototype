@@ -5,6 +5,54 @@ document.addEventListener('DOMContentLoaded', function () {
   // console.log('Expandable sections script loaded') // Debug log
   const sections = document.querySelectorAll('.js-expandable-section')
   const completedSections = new Set()
+  const reviewAfterImagingField = document.querySelector(
+    'input[name="event[workflowStatus][review-breast-features-after-imaging]"]'
+  )
+
+  function setReviewAfterImagingFlag(shouldReviewAfterImaging) {
+    if (!reviewAfterImagingField) {
+      return
+    }
+
+    reviewAfterImagingField.value = shouldReviewAfterImaging ? 'yes' : ''
+  }
+
+  function completeSectionAndContinue(section, index) {
+    // Mark current section as completed
+    completedSections.add(index)
+
+    // Determine current status and set new status
+    const currentStatus = getCurrentSectionStatus(section)
+    let newStatus
+
+    if (currentStatus === 'Incomplete') {
+      newStatus = 'Complete'
+    } else if (currentStatus === 'To review') {
+      newStatus = 'Reviewed'
+    } else if (currentStatus === 'Reviewed') {
+      newStatus = 'Reviewed' // Keep as reviewed
+    } else {
+      newStatus = 'Complete' // Default fallback
+    }
+
+    // Update the status for this section
+    updateSectionStatus(section, newStatus)
+
+    // Save status to sessionStorage
+    const sectionId = section.getAttribute('id')
+    if (sectionId && window.saveSectionStatus) {
+      window.saveSectionStatus(sectionId, newStatus)
+    }
+
+    // Close current section
+    section.removeAttribute('open')
+
+    // Find and open the next incomplete section after this one
+    openNextIncompleteSection(index, sections, completedSections)
+
+    // Update progress counter
+    updateProgress(sections, completedSections)
+  }
 
   sections.forEach(function (section, index) {
     const content = section.querySelector('.nhsuk-details__text')
@@ -16,7 +64,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Create button container
       const buttonContainer = document.createElement('div')
-      buttonContainer.className = 'nhsuk-form-group'
+      buttonContainer.className = 'nhsuk-form-group nhsuk-button-group'
+
+      const sectionId = section.getAttribute('id')
+      const isBreastFeaturesSection = sectionId === 'breast-features'
 
       // Create button
       const button = document.createElement('button')
@@ -30,49 +81,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
       buttonContainer.appendChild(button)
 
+      if (isBreastFeaturesSection) {
+        const reviewAfterImagingButton = document.createElement('button')
+        reviewAfterImagingButton.className =
+          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3'
+        reviewAfterImagingButton.type = 'button'
+        reviewAfterImagingButton.textContent = 'Review after imaging'
+
+        buttonContainer.appendChild(reviewAfterImagingButton)
+
+        reviewAfterImagingButton.addEventListener('click', function () {
+          setReviewAfterImagingFlag(true)
+          completeSectionAndContinue(section, index)
+        })
+      }
+
       // Append HR first, then button container
       content.appendChild(hr)
       content.appendChild(buttonContainer)
 
       // Add click handler
       button.addEventListener('click', function () {
-        // Mark current section as completed
-        completedSections.add(index)
-
-        // Determine current status and set new status
-        const currentStatus = getCurrentSectionStatus(section)
-        let newStatus
-
-        if (currentStatus === 'Incomplete') {
-          newStatus = 'Complete'
-        } else if (currentStatus === 'To review') {
-          newStatus = 'Reviewed'
-        } else if (currentStatus === 'Reviewed') {
-          newStatus = 'Reviewed' // Keep as reviewed
-        } else {
-          newStatus = 'Complete' // Default fallback
+        if (isBreastFeaturesSection) {
+          setReviewAfterImagingFlag(false)
         }
 
-        // Update the status for this section
-        updateSectionStatus(section, newStatus)
-
-        // Save status to sessionStorage
-        const sectionId = section.getAttribute('id')
-        if (sectionId && window.saveSectionStatus) {
-          window.saveSectionStatus(sectionId, newStatus)
-        }
+        completeSectionAndContinue(section, index)
 
         // Update button text based on new status
         updateButtonText(section, button)
-
-        // Close current section
-        section.removeAttribute('open')
-
-        // Find and open the next incomplete section after this one
-        openNextIncompleteSection(index, sections, completedSections)
-
-        // Update progress counter
-        updateProgress(sections, completedSections)
       })
     }
   })

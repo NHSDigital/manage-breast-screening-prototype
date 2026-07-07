@@ -102,6 +102,18 @@ function captureSessionEndTime(data, eventId, userId) {
 // }
 
 module.exports = (router) => {
+  const getPostImagingDestinationUrl = (data, clinicId, eventId) => {
+    const shouldReviewBreastFeaturesAfterImaging =
+      data?.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
+      'yes'
+
+    if (shouldReviewBreastFeaturesAfterImaging) {
+      return `/clinics/${clinicId}/events/${eventId}/review-after-imaging-breast-features`
+    }
+
+    return `/clinics/${clinicId}/events/${eventId}/check-information`
+  }
+
   // Set clinics to active in nav for all urls starting with /clinics
   router.use('/clinics/:clinicId/events/:eventId', (req, res, next) => {
     const eventId = req.params.eventId
@@ -1493,6 +1505,15 @@ module.exports = (router) => {
         referrerChain,
         scrollTo
       )
+
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
+
+      if (req.query.fromPostImagingBreastFeatures === '1') {
+        data.event.workflowStatus['review-breast-features-after-imaging'] = ''
+      }
+
       res.redirect(modalBreakout(returnUrl))
     }
   )
@@ -2157,6 +2178,49 @@ module.exports = (router) => {
     }
   )
 
+  router.get(
+    '/clinics/:clinicId/events/:eventId/review-after-imaging-breast-features',
+    (req, res) => {
+      res.render('events/review-after-imaging-breast-features')
+    }
+  )
+
+  router.post(
+    '/clinics/:clinicId/events/:eventId/review-after-imaging-breast-features-answer',
+    (req, res) => {
+      const { clinicId, eventId } = req.params
+      const data = req.session.data
+      const choice = data?.event?.breastFeaturesAfterImagingDecision
+
+      if (!choice) {
+        req.flash('error', {
+          text: 'Select whether to record breast features',
+          name: 'event[breastFeaturesAfterImagingDecision]'
+        })
+
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/review-after-imaging-breast-features`
+        )
+      }
+
+      if (choice === 'yes') {
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/events/${eventId}/medical-information/record-breast-features?fromPostImagingBreastFeatures=1`,
+            `/clinics/${clinicId}/events/${eventId}/check-information`
+          )
+        )
+      }
+
+      if (!data.event.workflowStatus) {
+        data.event.workflowStatus = {}
+      }
+
+      data.event.workflowStatus['review-breast-features-after-imaging'] = ''
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
+    }
+  )
+
   // Handle screening completion
   router.post(
     '/clinics/:clinicId/events/:eventId/imaging-answer',
@@ -2205,7 +2269,7 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
+      res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
     }
   )
 
@@ -2784,9 +2848,7 @@ module.exports = (router) => {
         data.event.workflowStatus['take-images'] = 'completed'
 
         // Redirect to check information
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/check-information`
-        )
+        return res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
       }
 
       // If custom details needed, go to details page
@@ -2873,7 +2935,7 @@ module.exports = (router) => {
       data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to check information
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
+      res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
     }
   )
 
@@ -3035,7 +3097,7 @@ module.exports = (router) => {
       data.event.workflowStatus['take-images'] = 'completed'
 
       // Redirect to check information
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
+      res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
     }
   )
 

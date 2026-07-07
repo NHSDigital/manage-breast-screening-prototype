@@ -1,0 +1,46 @@
+{# app/views/events/review-after-imaging-breast-features.html #}
+
+{% extends parentLayout or 'layout-appointment.html' %}
+
+{% set pageHeading = "Record breast features" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'take-images' %}
+{% set hideBackLink = true %}
+
+{% set formAction = './review-after-imaging-breast-features-answer' %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {{ radios({
+    name: "event[breastFeaturesAfterImagingDecision]",
+    value: event.breastFeaturesAfterImagingDecision,
+    fieldset: {
+      legend: {
+        text: "Are there any breast features to add?",
+        classes: "nhsuk-fieldset__legend--m"
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes, add features"
+      },
+      {
+        value: "no",
+        text: "No, continue"
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}
