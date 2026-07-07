@@ -296,10 +296,12 @@
 
   {# Reported mammograms banners #}
   {% set priorsWarningHtml %}
-    {# Warning: priors reported but not yet requested #}
-    {% if priorsSummary.hasUnrequested %}
-      {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
-      {% set unrequestedHtml %}
+    {% set priorsBodyHtml %}
+
+      {# Warning: priors reported but not yet requested #}
+      {% if priorsSummary.hasUnrequested %}
+        {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammogram added</p>
         {% for mammogram in unrequestedPriors %}
           <p class="nhsuk-u-margin-bottom-1">
             {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
@@ -308,20 +310,12 @@
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ appLink({ text: "Request priors", href: "./request-priors", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
         </p>
-      {% endset %}
+      {% endif %}
 
-      {% call insetText({
-        classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-      }) %}
-        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammogram added</p>
-        {{ unrequestedHtml | safe }}
-      {% endcall %}
-    {% endif %}
-
-    {# Info: received priors #}
-    {% if priorsSummary.counts.received > 0 %}
-      {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
-      {% set receivedHtml %}
+      {# Info: received priors #}
+      {% if priorsSummary.counts.received > 0 %}
+        {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1{% if priorsSummary.hasUnrequested %} nhsuk-u-margin-top-4{% endif %}">Priors received</p>
         {% for mammogram in receivedMammograms %}
           <p class="nhsuk-u-margin-bottom-1">
             {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
@@ -332,14 +326,18 @@
             {% endif %}
           </p>
         {% endfor %}
-      {% endset %}
+      {% endif %}
 
-      {% call insetText({
-        classes: "app-inset-text--compact" if data.settings.compactMode in ["true", true]
-      }) %}
-        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Priors received</p>
-        {{ receivedHtml | safe }}
-      {% endcall %}
+    {% endset %}
+
+    {% if priorsBodyHtml | trim %}
+      {{ card({
+        heading: "Previous mammograms disclosed",
+        headingLevel: "2",
+        feature: true,
+        classes: "app-card--feature-subtle",
+        descriptionHtml: priorsBodyHtml
+      }) }}
     {% endif %}
   {% endset %}
 
