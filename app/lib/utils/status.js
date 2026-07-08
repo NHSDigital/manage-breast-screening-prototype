@@ -223,6 +223,8 @@ const getStatusTagColour = (status) => {
     'incomplete': 'blue',
     'complete': 'green',
     'to_review': 'blue',
+    'review_after_imaging': 'green',
+    'confirm_after_imaging': 'green',
     'reviewed': 'green',
 
     // Image reading
@@ -327,7 +329,11 @@ const getStatusText = (status) => {
     prior_requested: 'Requested',
     prior_received: 'Received',
     prior_not_available: 'Not available',
-    prior_not_needed: 'Not needed'
+    prior_not_needed: 'Not needed',
+
+    // Task list statuses
+    review_after_imaging: 'Review after imaging',
+    confirm_after_imaging: 'Review after imaging'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',

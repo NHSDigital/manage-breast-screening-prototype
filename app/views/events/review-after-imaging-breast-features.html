@@ -2,19 +2,17 @@
 
 {% extends parentLayout or 'layout-appointment.html' %}
 
-{% set pageHeading = "Record breast features" %}
+{% set pageHeading = "Review breast features" %}
 {% set showNavigation = true %}
 {% set activeWorkflowStep = 'check-information' %}
 {% set hideBackLink = true %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
 {% set formAction = './review-after-imaging-breast-features-answer' %}
 
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
-    </span>
     {{ pageHeading }}
   </h1>
 
@@ -23,18 +21,21 @@
     value: event.breastFeaturesAfterImagingDecision,
     fieldset: {
       legend: {
-        text: "Are there any breast features to add?",
+        text: "Are there any breast features to add for " + (participant | getFullName) + "?",
         classes: "nhsuk-fieldset__legend--m"
       }
+    },
+    hint: {
+      text: "This includes non-surgical scars, moles and other features that may appear on mammogram images"
     },
     items: [
       {
         value: "yes",
-        text: "Yes, add features"
+        text: "Yes"
       },
       {
         value: "no",
-        text: "No, continue"
+        text: "No"
       }
     ]
   } | populateErrors) }}

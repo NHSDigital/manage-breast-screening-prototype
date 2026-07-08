@@ -1511,7 +1511,8 @@ module.exports = (router) => {
       }
 
       if (req.query.fromPostImagingBreastFeatures === '1') {
-        data.event.workflowStatus['review-breast-features-after-imaging'] = ''
+        data.event.workflowStatus['review-breast-features-after-imaging'] =
+          'answered'
       }
 
       res.redirect(modalBreakout(returnUrl))
@@ -2204,6 +2205,13 @@ module.exports = (router) => {
       }
 
       if (choice === 'yes') {
+        if (!data.event.workflowStatus) {
+          data.event.workflowStatus = {}
+        }
+
+        data.event.workflowStatus['review-breast-features-after-imaging'] =
+          'answered'
+
         return res.redirect(
           urlWithReferrer(
             `/clinics/${clinicId}/events/${eventId}/medical-information/record-breast-features?fromPostImagingBreastFeatures=1`,
@@ -2216,7 +2224,8 @@ module.exports = (router) => {
         data.event.workflowStatus = {}
       }
 
-      data.event.workflowStatus['review-breast-features-after-imaging'] = ''
+      data.event.workflowStatus['review-breast-features-after-imaging'] =
+        'answered'
       res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )

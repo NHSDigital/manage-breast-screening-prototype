@@ -1,5 +1,9 @@
 // app/assets/javascript/expandable-sections.js
 
+const BREAST_FEATURES_SECTION_ID = 'breast-features'
+const CONFIRM_AFTER_IMAGING_STATUS = 'Review after imaging'
+const LEGACY_CONFIRM_AFTER_IMAGING_STATUS = 'Confirm after imaging'
+
 // Handle expandable sections with completion tracking
 document.addEventListener('DOMContentLoaded', function () {
   // console.log('Expandable sections script loaded') // Debug log
@@ -9,15 +13,25 @@ document.addEventListener('DOMContentLoaded', function () {
     'input[name="event[workflowStatus][review-breast-features-after-imaging]"]'
   )
 
-  function setReviewAfterImagingFlag(shouldReviewAfterImaging) {
+  function getReviewAfterImagingWorkflowStatus() {
+    if (!reviewAfterImagingField) {
+      return ''
+    }
+
+    return reviewAfterImagingField.value || ''
+  }
+
+  function setReviewAfterImagingFlag(statusValue) {
     if (!reviewAfterImagingField) {
       return
     }
 
-    reviewAfterImagingField.value = shouldReviewAfterImaging ? 'yes' : ''
+    reviewAfterImagingField.value = statusValue || ''
   }
 
-  function completeSectionAndContinue(section, index) {
+  function completeSectionAndContinue(section, index, options = {}) {
+    const forcedStatus = options.forcedStatus
+
     // Mark current section as completed
     completedSections.add(index)
 
@@ -25,7 +39,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const currentStatus = getCurrentSectionStatus(section)
     let newStatus
 
-    if (currentStatus === 'Incomplete') {
+    if (forcedStatus) {
+      newStatus = forcedStatus
+    } else if (
+      currentStatus === CONFIRM_AFTER_IMAGING_STATUS ||
+      currentStatus === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
+    ) {
+      newStatus = CONFIRM_AFTER_IMAGING_STATUS
+    } else if (currentStatus === 'Incomplete') {
       newStatus = 'Complete'
     } else if (currentStatus === 'To review') {
       newStatus = 'Reviewed'
@@ -67,7 +88,24 @@ document.addEventListener('DOMContentLoaded', function () {
       buttonContainer.className = 'nhsuk-form-group nhsuk-button-group'
 
       const sectionId = section.getAttribute('id')
-      const isBreastFeaturesSection = sectionId === 'breast-features'
+      const isBreastFeaturesSection = sectionId === BREAST_FEATURES_SECTION_ID
+
+      if (isBreastFeaturesSection) {
+        const reviewAfterImagingWorkflowStatus =
+          getReviewAfterImagingWorkflowStatus()
+
+        if (reviewAfterImagingWorkflowStatus === 'yes') {
+          updateSectionStatus(section, CONFIRM_AFTER_IMAGING_STATUS)
+          if (window.saveSectionStatus) {
+            window.saveSectionStatus(sectionId, CONFIRM_AFTER_IMAGING_STATUS)
+          }
+        } else if (reviewAfterImagingWorkflowStatus === 'answered') {
+          updateSectionStatus(section, 'Reviewed')
+          if (window.saveSectionStatus) {
+            window.saveSectionStatus(sectionId, 'Reviewed')
+          }
+        }
+      }
 
       // Create button
       const button = document.createElement('button')
@@ -91,8 +129,11 @@ document.addEventListener('DOMContentLoaded', function () {
         buttonContainer.appendChild(reviewAfterImagingButton)
 
         reviewAfterImagingButton.addEventListener('click', function () {
-          setReviewAfterImagingFlag(true)
-          completeSectionAndContinue(section, index)
+          setReviewAfterImagingFlag('yes')
+          completeSectionAndContinue(section, index, {
+            forcedStatus: CONFIRM_AFTER_IMAGING_STATUS
+          })
+          updateButtonText(section, button)
         })
       }
 
@@ -103,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Add click handler
       button.addEventListener('click', function () {
         if (isBreastFeaturesSection) {
-          setReviewAfterImagingFlag(false)
+          setReviewAfterImagingFlag('')
         }
 
         completeSectionAndContinue(section, index)
@@ -125,14 +166,35 @@ document.addEventListener('DOMContentLoaded', function () {
     button.addEventListener('click', function (event) {
       // Mark all sections as completed
       sections.forEach(function (section, index) {
+        const sectionId = section.getAttribute('id')
+        const isBreastFeaturesSection =
+          sectionId === BREAST_FEATURES_SECTION_ID
+
         // Add to completed set
         completedSections.add(index)
 
         // Determine current status and set new status
         const currentStatus = getCurrentSectionStatus(section)
         let newStatus
+        const reviewAfterImagingWorkflowStatus =
+          getReviewAfterImagingWorkflowStatus()
 
-        if (currentStatus === 'Incomplete') {
+        if (
+          isBreastFeaturesSection &&
+          reviewAfterImagingWorkflowStatus === 'yes'
+        ) {
+          newStatus = CONFIRM_AFTER_IMAGING_STATUS
+        } else if (
+          isBreastFeaturesSection &&
+          reviewAfterImagingWorkflowStatus === 'answered'
+        ) {
+          newStatus = 'Reviewed'
+        } else if (
+          currentStatus === CONFIRM_AFTER_IMAGING_STATUS ||
+          currentStatus === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
+        ) {
+          newStatus = CONFIRM_AFTER_IMAGING_STATUS
+        } else if (currentStatus === 'Incomplete') {
           newStatus = 'Complete'
         } else if (currentStatus === 'To review') {
           newStatus = 'Reviewed'
@@ -146,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
         updateSectionStatus(section, newStatus)
 
         // Save status to sessionStorage
-        const sectionId = section.getAttribute('id')
         if (sectionId && window.saveSectionStatus) {
           window.saveSectionStatus(sectionId, newStatus)
         }
@@ -390,7 +451,12 @@ function updateSectionStatus(section, statusText) {
 
   if (statusElement) {
     // console.log('Found status element:', statusElement)
-    statusElement.textContent = statusText
+    const normalisedStatusText =
+      statusText === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
+        ? CONFIRM_AFTER_IMAGING_STATUS
+        : statusText
+
+    statusElement.textContent = normalisedStatusText
 
     // Update the tag colour class based on status
     // Reset all status classes first
@@ -400,11 +466,13 @@ function updateSectionStatus(section, statusText) {
       'nhsuk-tag--yellow'
     )
 
-    if (statusText === 'Complete' || statusText === 'Reviewed') {
+    if (normalisedStatusText === 'Complete' || normalisedStatusText === 'Reviewed') {
       statusElement.classList.add('nhsuk-tag--green')
-    } else if (statusText === 'Incomplete') {
+    } else if (normalisedStatusText === CONFIRM_AFTER_IMAGING_STATUS) {
+      statusElement.classList.add('nhsuk-tag--green')
+    } else if (normalisedStatusText === 'Incomplete') {
       statusElement.classList.add('nhsuk-tag--blue')
-    } else if (statusText === 'To review') {
+    } else if (normalisedStatusText === 'To review') {
       statusElement.classList.add('nhsuk-tag--yellow')
     }
 
