@@ -236,19 +236,21 @@
       {# Both layouts are rendered; CSS shows the appropriate one per breakpoint.
          This ensures the link always appears in the correct position (stacked layout
          has it between Normal and Technical recall in DOM order). #}
-      {% call card({
+      {# {% call card({
         heading: questionText,
         headingLevel: 2,
         headingSize: "m",
-        feature: true
-      }) %}
+        feature: false
+      }) %} #}
+        <h2 class="nhsuk-u-margin-top-4">{{ questionText }}</h2>
         <div class="app-opinion-buttons--stacked">
+          
           {{ opinionButtonsStackedHtml | safe }}
         </div>
-        <div class="app-opinion-buttons--horizontal">
+        <div class="app-opinion-buttons--horizontal {{- " nhsuk-u-margin-bottom-6" if hasSymptoms -}}">
           {{ opinionButtonsHorizontalHtml | safe }}
         </div>
-      {% endcall %}
+      {# {% endcall %} #}
 
     {% endif %}
   {% endset %}
@@ -267,7 +269,7 @@
       heading: "Medical summary",
       headingLevel: "2",
       feature: true,
-      classes: "app-card--feature-subtle",
+      classes: "_app-card--feature-subtle",
       descriptionHtml: medicalSummaryListHtml,
       actions: {
       items: [
@@ -283,7 +285,18 @@
 
   {# Image warnings (captured so we can check if content exists) #}
   {% set imageWarningsHtml %}
-    {% include "_includes/reading/image-warnings.njk" %}
+    {% set imageWarningSummaryHtml %}
+      {% include "_includes/reading/image-warnings.njk" %}
+    {% endset %}
+    {% if imageWarningSummaryHtml | trim %}
+      {{ card({
+        heading: "Image notes",
+        headingLevel: "2",
+        feature: true,
+        classes: "_app-card--feature-subtle",
+        descriptionHtml: imageWarningSummaryHtml
+      }) }}
+    {% endif %}
   {% endset %}
 
   {# Symptoms warning #}
@@ -335,7 +348,7 @@
         heading: "Previous mammograms disclosed",
         headingLevel: "2",
         feature: true,
-        classes: "app-card--feature-subtle",
+        classes: "_app-card--feature-subtle",
         descriptionHtml: priorsBodyHtml
       }) }}
     {% endif %}
@@ -346,7 +359,8 @@
     {% call card({
       heading: "Images (" + imageCount + ")",
       headingLevel: 2,
-      headingSize: "s"
+      headingSize: "s",
+      feature: "true"
     }) %}
     <div class="app-mammogram-thumbnails">
       {% for view in viewOrder %}
@@ -503,25 +517,20 @@
 
         {# Conditional stuff #}
         {{ symptomsWarningHtml | safe }}
-        {{ priorsWarningHtml | safe }}
 
         {# Main opinion stuff #}
         {{ opinionOptionsHtml | safe }}
 
-        {# Image notes and medical summary — 50/50 if both present, full width otherwise #}
-        {# {% if (imageWarningsHtml | trim) and (medicalSummaryHtml | trim) %}
-          <div class="nhsuk-grid-row">
-            <div class="nhsuk-grid-column-one-half">
-              {{ imageWarningsHtml | safe }}
-            </div>
-            <div class="nhsuk-grid-column-one-half">
-              {{ medicalSummaryHtml | safe }}
-            </div>
-          </div>
-        {% else %} #}
-          {{ imageWarningsHtml | safe }}
-          {{ medicalSummaryHtml | safe }}
-        {# {% endif %} #}
+        <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+        
+        {# Conditional priors #}
+        {{ priorsWarningHtml | safe }}
+
+        {# Conditional image warnings #}
+        {{ imageWarningsHtml | safe }}
+
+        {# Shows regardless of medical info being present #}
+        {{ medicalSummaryHtml | safe }}
 
         {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">

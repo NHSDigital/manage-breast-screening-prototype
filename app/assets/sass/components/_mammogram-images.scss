@@ -1,3 +1,5 @@
+@use "sass:color";
+
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 // app/assets/sass/components/_mammogram-images.scss
@@ -53,10 +55,6 @@
 
   @include nhsuk-media-query($from: 900px) {
     flex: 1;
-    // Pull the column up to counteract the feature card's nhsuk-responsive-margin(7)
-    // top margin (48px at this breakpoint), reducing the gap below the h1.
-    // The images column is offset by the remainder to maintain alignment.
-    margin-top: -(nhsuk-spacing(5)); // -32px
   }
 }
 
@@ -68,9 +66,15 @@
     flex: 0 0 auto;
     width: 100%;
     max-width: 300px;
-    // Offset to align the images card with the top edge of the opinion feature card:
-    // feature card margin-top (48px) minus the main column pull-up (32px) = 16px.
-    margin-top: nhsuk-spacing(3); // 16px
+  }
+
+  .nhsuk-card {
+    background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
+  }
+
+  .nhsuk-card__heading {
+    background-color: $nhsuk-secondary-text-colour !important;
+    color: nhsuk-colour("white");
   }
 }
 

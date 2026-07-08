@@ -78,16 +78,7 @@
   }) %}
 {% endif %}
 
-{# Render feature card if any rows #}
+{# Render summary list if any rows #}
 {% if imageWarningRows | length %}
-  {% set imageWarningSummaryHtml %}
-    {{ summaryList({ rows: imageWarningRows, lastRowBorder: false }) }}
-  {% endset %}
-  {{ card({
-    heading: "Image notes",
-    headingLevel: "2",
-    feature: true,
-    classes: "app-card--feature-subtle",
-    descriptionHtml: imageWarningSummaryHtml
-  }) }}
+  {{ summaryList({ rows: imageWarningRows, lastRowBorder: false }) }}
 {% endif %}
