@@ -192,7 +192,6 @@
               html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
               value: "normal_with_details",
               name: "imageReadingTemp[opinion]",
-              classes: "app-button--tall",
               attributes: { "data-shortcut": "n" }
             } | openInModal) }}
           {% else %}
@@ -200,7 +199,6 @@
               html: "Normal <span class='app-shortcut-hint'>(N)</span>",
               value: "normal",
               name: "imageReadingTemp[opinion]",
-              classes: "app-button--tall",
               attributes: { "data-shortcut": "n" }
             }) }}
             {# Sub-action placed between Normal and Technical recall in DOM so it auto-flows
@@ -219,7 +217,6 @@
             value: "technical_recall",
             name: "imageReadingTemp[opinion]",
             variant: "secondary",
-            classes: "app-button--tall",
             attributes: { "data-shortcut": "t" }
           } | openInModal) }}
           {{ button({
@@ -227,7 +224,6 @@
             value: "recall_for_assessment",
             name: "imageReadingTemp[opinion]",
             variant: "warning",
-            classes: "app-button--tall",
             attributes: { "data-shortcut": "r" }
           } | openInModal) }}
         </div>

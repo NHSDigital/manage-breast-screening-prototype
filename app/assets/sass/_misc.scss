@@ -53,12 +53,6 @@ body.js-enabled .app-no-js-only {
   width: 100%;
 }
 
-// Taller button variant — used for primary action buttons on the reading opinion page
-.app-button--tall {
-  padding-top: nhsuk-spacing(3);
-  padding-bottom: nhsuk-spacing(3);
-}
-
 // Equal-width button group — CSS Grid places 3 buttons in row 1 (uniform height)
 // and the optional sub-action link in row 2 col 1. Used on the reading opinion page.
 .app-button-group--equal {
