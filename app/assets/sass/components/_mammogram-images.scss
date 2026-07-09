@@ -41,40 +41,30 @@
 }
 
 // Two-column layout for the reading opinion page: main content + images sidebar.
-// Flexbox approach so the images column has a fixed max-width and main takes the rest.
+// Float-based layout — main column takes remaining space via calc, images column is fixed width.
 .app-reading-opinion-columns {
-  @include nhsuk-media-query($from: 900px) {
-    display: flex;
-    gap: $nhsuk-gutter;
-    align-items: flex-start;
+  @include nhsuk-media-query($from: large-desktop) {
+    @include nhsuk-clearfix;
   }
 }
 
 .app-grid-column-main {
-  min-width: 0;
-
-  @include nhsuk-media-query($from: 900px) {
-    flex: 1;
+  @include nhsuk-media-query($from: large-desktop) {
+    float: left;
+    box-sizing: border-box;
+    width: calc(100% - 300px);
+    padding-right: $nhsuk-gutter;
   }
 }
 
 .app-grid-column-images {
   display: none;
 
-  @include nhsuk-media-query($from: 900px) {
+  @include nhsuk-media-query($from: large-desktop) {
     display: block;
-    flex: 0 0 auto;
-    width: 100%;
-    max-width: 300px;
-  }
-
-  .nhsuk-card {
-    background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
-  }
-
-  .nhsuk-card__heading {
-    background-color: $nhsuk-secondary-text-colour !important;
-    color: nhsuk-colour("white");
+    float: right;
+    box-sizing: border-box;
+    width: 300px;
   }
 }
 
