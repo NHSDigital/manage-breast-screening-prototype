@@ -261,42 +261,17 @@
     {% set showOnlyPopulated = true %}
     {# No edits allowed in image reading #}
     {% set allowEdits = false %}
-    {% set medicalSummaryListHtml %}
-      {% include "_includes/summary-lists/medical-info-summary.njk" %}
-    {% endset %}
-
-    {{ card({
-      heading: "Medical summary",
-      headingLevel: "2",
-      feature: true,
-      classes: "_app-card--feature-subtle",
-      descriptionHtml: medicalSummaryListHtml,
-      actions: {
-      items: [
-        {
-          text: "View full medical information",
-          href: "./medical-information",
-          classes: "nhsuk-link--no-visited-state"
-        } | openInModal
-      ]
-    }
-    }) }}
+    {# Priors are shown separately in the dedicated priors summary above #}
+    {% set hidePreviousMammograms = true %}
+    {% include "_includes/summary-lists/medical-info-summary.njk" %}
+    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+      {{ appLink({ text: "View full medical information", href: "./medical-information", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+    </p>
   {% endset %}
 
   {# Image warnings (captured so we can check if content exists) #}
   {% set imageWarningsHtml %}
-    {% set imageWarningSummaryHtml %}
-      {% include "_includes/reading/image-warnings.njk" %}
-    {% endset %}
-    {% if imageWarningSummaryHtml | trim %}
-      {{ card({
-        heading: "Image notes",
-        headingLevel: "2",
-        feature: true,
-        classes: "_app-card--feature-subtle",
-        descriptionHtml: imageWarningSummaryHtml
-      }) }}
-    {% endif %}
+    {% include "_includes/reading/image-warnings.njk" %}
   {% endset %}
 
   {# Symptoms warning #}
@@ -307,51 +282,9 @@
     {% endif %}
   {% endset %}
 
-  {# Reported mammograms banners #}
+  {# Previous (prior) mammograms - summary list with status and request route #}
   {% set priorsWarningHtml %}
-    {% set priorsBodyHtml %}
-
-      {# Warning: priors reported but not yet requested #}
-      {% if priorsSummary.hasUnrequested %}
-        {% set unrequestedPriors = event.previousMammograms | where("requestStatus", "not_requested") %}
-        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Recent mammogram added</p>
-        {% for mammogram in unrequestedPriors %}
-          <p class="nhsuk-u-margin-bottom-1">
-            {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-          </p>
-        {% endfor %}
-        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          {{ appLink({ text: "Request priors", href: "./request-priors", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-        </p>
-      {% endif %}
-
-      {# Info: received priors #}
-      {% if priorsSummary.counts.received > 0 %}
-        {% set receivedMammograms = event.previousMammograms | where("requestStatus", "received") %}
-        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1{% if priorsSummary.hasUnrequested %} nhsuk-u-margin-top-4{% endif %}">Priors received</p>
-        {% for mammogram in receivedMammograms %}
-          <p class="nhsuk-u-margin-bottom-1">
-            {{ mammogram | summarisePriorMammogram({ unitName: unit.name }) }}
-            {% if mammogram.requestedBy %}
-              – requested by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% if mammogram.requestReason %}: {{ mammogram.requestReason }}{% endif %}
-            {% elseif mammogram.requestReason %}
-              – {{ mammogram.requestReason }}
-            {% endif %}
-          </p>
-        {% endfor %}
-      {% endif %}
-
-    {% endset %}
-
-    {% if priorsBodyHtml | trim %}
-      {{ card({
-        heading: "Previous mammograms disclosed",
-        headingLevel: "2",
-        feature: true,
-        classes: "_app-card--feature-subtle",
-        descriptionHtml: priorsBodyHtml
-      }) }}
-    {% endif %}
+    {% include "_includes/reading/priors-summary.njk" %}
   {% endset %}
 
   {# Mammogram thumbnails #}
@@ -523,14 +456,26 @@
 
         <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
         
-        {# Conditional priors #}
-        {{ priorsWarningHtml | safe }}
-
-        {# Conditional image warnings #}
-        {{ imageWarningsHtml | safe }}
-
-        {# Shows regardless of medical info being present #}
-        {{ medicalSummaryHtml | safe }}
+        {# Combined information card with priors, image notes, and medical summary as sections #}
+        {% set combinedInfoHtml %}
+          {% if priorsWarningHtml | trim %}
+            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Previous mammograms disclosed</h3>
+            {{ priorsWarningHtml | safe }}
+          {% endif %}
+          {% if imageWarningsHtml | trim %}
+            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2{% if priorsWarningHtml | trim %} nhsuk-u-margin-top-4{% endif %}">Image notes</h3>
+            {{ imageWarningsHtml | safe }}
+          {% endif %}
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2{% if (priorsWarningHtml | trim) or (imageWarningsHtml | trim) %} nhsuk-u-margin-top-4{% endif %}">Medical summary</h3>
+          {{ medicalSummaryHtml | safe }}
+        {% endset %}
+        {{ card({
+          headingLevel: "2",
+          heading: "Additional information",
+          feature: true,
+          classes: "_app-card--feature-subtle",
+          descriptionHtml: combinedInfoHtml
+        }) }}
 
         {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">

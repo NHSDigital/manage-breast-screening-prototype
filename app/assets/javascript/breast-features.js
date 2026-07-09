@@ -1284,3 +1284,13 @@ window.addEventListener('load', function () {
     initializeBreastFeatures()
   }
 })
+
+// Re-initialize when a modal loads content that includes the breast diagram.
+// Module scripts are cached by the browser and do not re-execute when the modal
+// re-creates the <script> element, so we rely on the app:init event instead.
+document.addEventListener('app:init', function () {
+  if (document.querySelector('.breast-features__diagram')) {
+    window.breastFeaturesInitialized = false
+    initializeBreastFeatures()
+  }
+})
