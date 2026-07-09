@@ -425,6 +425,7 @@
   </div>
 
   {# Opinion form with thumbnails #}
+
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-session-id="{{ session.id if session }}">
 
@@ -443,8 +444,6 @@
     {# Opinion and thumbnails #}
     <div class="app-reading-opinion-columns">
 
-
-
       {# Opinion buttons/radios #}
       <div class="app-grid-column-main">
 
@@ -459,16 +458,17 @@
         {# Combined information card with priors, image notes, and medical summary as sections #}
         {% set combinedInfoHtml %}
           {% if priorsWarningHtml | trim %}
-            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Previous mammograms disclosed</h3>
+            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1">Previous mammograms disclosed</h3>
             {{ priorsWarningHtml | safe }}
           {% endif %}
           {% if imageWarningsHtml | trim %}
-            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2{% if priorsWarningHtml | trim %} nhsuk-u-margin-top-4{% endif %}">Image notes</h3>
+            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1{% if priorsWarningHtml | trim %} nhsuk-u-margin-top-4{% endif %}">Image notes</h3>
             {{ imageWarningsHtml | safe }}
           {% endif %}
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2{% if (priorsWarningHtml | trim) or (imageWarningsHtml | trim) %} nhsuk-u-margin-top-4{% endif %}">Medical summary</h3>
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1{% if (priorsWarningHtml | trim) or (imageWarningsHtml | trim) %} nhsuk-u-margin-top-4{% endif %}">Medical summary</h3>
           {{ medicalSummaryHtml | safe }}
         {% endset %}
+
         {{ card({
           headingLevel: "2",
           heading: "Additional information",
@@ -484,6 +484,7 @@
       </div>
 
       {# Mammogram thumbnails #}
+      {# Using custom grid/class so that they have fixed width rather than % #}
       <div class="app-grid-column-images">
         {{ thumbnailsHtml | safe }}
       </div>
@@ -492,11 +493,11 @@
 
   </form>
 
-
-
 {% endblock %}
 
 {% block pageScripts %}
+
+{# TODO: can this be removed? don't think we have zoom on these any more #}
 <script>
 // Thumbnail zoom functionality
 document.addEventListener('DOMContentLoaded', () => {
