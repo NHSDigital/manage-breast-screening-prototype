@@ -1,0 +1,64 @@
+// app/assets/sass/components/_copy-to-clipboard.scss
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Base button — looks like a small inline text link
+.app-copy-to-clipboard {
+  display: inline-flex;
+  align-items: center;
+  gap: nhsuk-spacing(1);
+  padding: 0 nhsuk-spacing(1);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: $nhsuk-base-font-size * 0.875; // slightly smaller than body text
+  font-family: inherit;
+  line-height: 1;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  vertical-align: middle;
+}
+
+.app-copy-to-clipboard:hover {
+  text-decoration-thickness: 3px;
+}
+
+.app-copy-to-clipboard:focus {
+  @include nhsuk-focused-text;
+}
+
+// Hide the "copied" label/icon by default
+.app-copy-to-clipboard__copied {
+  display: none;
+}
+
+// When copied: swap which label is visible
+.app-copy-to-clipboard--copied .app-copy-to-clipboard__default {
+  display: none;
+}
+
+.app-copy-to-clipboard--copied .app-copy-to-clipboard__copied {
+  display: inline-flex;
+  align-items: center;
+}
+
+// Icon variant — no underline, just the icon
+.app-copy-to-clipboard--icon {
+  padding: 0 nhsuk-spacing(1);
+  text-decoration: none;
+}
+
+// Fill-based SVG icons — sized relative to surrounding text
+.app-copy-to-clipboard--icon svg {
+  display: block;
+  fill: currentColor;
+  width: 1em;
+  height: 1em;
+}
+
+// Tick should be dark regardless of parent context (e.g. white text on dark bar)
+.app-copy-to-clipboard__copied svg {
+  fill: $nhsuk-text-colour;
+}

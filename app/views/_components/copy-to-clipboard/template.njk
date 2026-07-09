@@ -1,0 +1,51 @@
+{# app/views/_components/copy-to-clipboard/template.njk #}
+
+{#
+  Params:
+    text      (required) — the string to copy to the clipboard
+    type      (optional) — "text" (default) shows a "Copy" label; "icon" shows a clipboard icon
+    label     (optional) — describes what is being copied, e.g. "NHS number"
+                           used to build accessible labels: "Copy NHS number" / "Copied"
+    classes   (optional) — additional classes on the button
+#}
+
+{% set type = params.type if params.type else "text" %}
+
+{% if params.label %}
+  {% set defaultAriaLabel = "Copy " + params.label %}
+{% else %}
+  {% set defaultAriaLabel = "Copy to clipboard" %}
+{% endif %}
+
+<button
+  class="app-copy-to-clipboard{% if type == "icon" %} app-copy-to-clipboard--icon{% endif %}{% if params.classes %} {{ params.classes }}{% endif %}"
+  type="button"
+  data-module="app-copy-to-clipboard"
+  data-copy-text="{{ params.text }}"
+  aria-label="{{ defaultAriaLabel }}"
+  hidden
+>
+  {% if type == "icon" %}
+
+    <span class="app-copy-to-clipboard__default" aria-hidden="true">
+      {# Two-pages copy icon (GitHub Octicons, MIT) #}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true">
+        <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/>
+        <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
+      </svg>
+    </span>
+
+    <span class="app-copy-to-clipboard__copied" aria-hidden="true">
+      {# Checkmark icon (GitHub Octicons, MIT) #}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true">
+        <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>
+      </svg>
+    </span>
+
+  {% else %}
+
+    <span class="app-copy-to-clipboard__default" aria-hidden="true">Copy</span>
+    <span class="app-copy-to-clipboard__copied" aria-hidden="true">Copied</span>
+
+  {% endif %}
+</button>
