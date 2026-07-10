@@ -285,6 +285,16 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
     }
   },
   {
+    key: 'highPriorMammograms',
+    label: 'High prior mammograms',
+    description: 'All participants have prior mammogram images to request',
+    settings: {
+      previousMammograms: {
+        rate: 1
+      }
+    }
+  },
+  {
     divider: true,
     label: 'Reading backlog'
   },

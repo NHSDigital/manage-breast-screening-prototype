@@ -1,40 +1,36 @@
 {# app/views/_includes/reading/image-warnings.njk #}
-{# Displays warnings and notes for the reader inside an inset text component #}
+{# Displays image warnings and notes for the reader in a feature card with summary list #}
 
-{% set warningsHtml = "" %}
+{% set imageWarningRows = [] %}
 
-{# 1. Imperfect #}
+{# 1. Image quality (imperfect but best possible) #}
 {% if event.mammogramData.isImperfectButBestPossible and event.mammogramData.isImperfectButBestPossible | includes("yes") %}
-  {% set warningsHtml %}
-    {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Image quality</h3>
-    <p>Imperfect, but best possible images</p>
-  {% endset %}
+  {% set imageWarningRows = imageWarningRows | push({
+    key: { text: "Image quality" },
+    value: { text: "Imperfect, but best possible images" }
+  }) %}
 {% endif %}
 
 {# 2. Additional images (repeats or extra images for large breasts) #}
 {% if event.mammogramData.metadata.hasAdditionalImages %}
-  {% set additionalImagesDetail %}
-    {% if event.mammogramData.metadata.hasRepeat and event.mammogramData.metadata.hasExtraImages %}
-      Some views were retaken. Extra images were also taken for large breasts.
-    {% elseif event.mammogramData.metadata.hasRepeat %}
-      Some views were retaken due to technical issues.
-    {% elseif event.mammogramData.metadata.hasExtraImages %}
-      Extra images were taken to ensure full coverage for large breasts.
-    {% else %}
-      Some views have additional images.
-    {% endif %}
-  {% endset %}
-  {% set warningsHtml %}
-    {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-0' if warningsHtml }}">Additional images</h3>
-    <p>{{ additionalImagesDetail | trim }}</p>
-  {% endset %}
+  {% if event.mammogramData.metadata.hasRepeat and event.mammogramData.metadata.hasExtraImages %}
+    {% set additionalImagesText = "Some views were retaken. Extra images were also taken for large breasts." %}
+  {% elseif event.mammogramData.metadata.hasRepeat %}
+    {% set additionalImagesText = "Some views were retaken due to technical issues." %}
+  {% elseif event.mammogramData.metadata.hasExtraImages %}
+    {% set additionalImagesText = "Extra images were taken to ensure full coverage for large breasts." %}
+  {% else %}
+    {% set additionalImagesText = "Some views have additional images." %}
+  {% endif %}
+  {% set imageWarningRows = imageWarningRows | push({
+    key: { text: "Additional images" },
+    value: { text: additionalImagesText }
+  }) %}
 {% endif %}
 
-{# 3. Incomplete #}
+{# 3. Incomplete mammography #}
 {% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
-  {% set incompleteDetails %}
+  {% set incompleteValueHtml %}
     {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
       {% if event.mammogramData.incompleteMammographyReasons | length == 1 %}
         <p class="nhsuk-u-margin-bottom-2">Reason: {{ event.mammogramData.incompleteMammographyReasons[0] | lower }}</p>
@@ -55,46 +51,34 @@
       {% if followUpValue.startsWith("No") %}
         {{ tag({
           text: "Partial mammography",
-          colour: "orange",
-          classes: "nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+          colour: "orange"
         }) }}
       {% else %}
         {{ tag({
           text: "Recall requested",
-          colour: "orange",
-          classes: "nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
+          colour: "orange"
         }) }}
         {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
-          <p class="nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
         {% endif %}
       {% endif %}
     {% endif %}
   {% endset %}
-
-  {% set warningsHtml %}
-    {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-0' if warningsHtml }}">Not all mammograms taken</h3>
-    {{ incompleteDetails | safe }}
-  {% endset %}
+  {% set imageWarningRows = imageWarningRows | push({
+    key: { text: "Not all images taken" },
+    value: { html: incompleteValueHtml }
+  }) %}
 {% endif %}
 
 {# 4. Notes for reader #}
 {% if event.mammogramData.notesForReader %}
-  {% set warningsHtml %}
-    {{ warningsHtml | safe }}
-    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2 {{ 'nhsuk-u-margin-top-0' if warningsHtml }}">Notes for reader</h3>
-    <p>{{ event.mammogramData.notesForReader }}</p>
-  {% endset %}
+  {% set imageWarningRows = imageWarningRows | push({
+    key: { text: "Notes for reader" },
+    value: { text: event.mammogramData.notesForReader }
+  }) %}
 {% endif %}
 
-{# Render inInset Text if content exists #}
-{% if warningsHtml %}
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
-      {{ insetText({
-        html: warningsHtml,
-        classes: ""
-      }) }}
-    </div>
-  </div>
+{# Render summary list if any rows #}
+{% if imageWarningRows | length %}
+  {{ summaryList({ rows: imageWarningRows, lastRowBorder: false }) }}
 {% endif %}

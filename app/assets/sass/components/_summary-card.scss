@@ -73,7 +73,7 @@
 
 .nhsuk-summary-card__actions {
   @include nhsuk-font-size($size: 19);
-  @include nhsuk-typography-weight-bold;
+  @include nhsuk-font-weight-bold;
   display: flex;
   flex-wrap: wrap;
   row-gap: 10px;
@@ -133,7 +133,7 @@
   border: none;
 
   .nhsuk-summary-card__actions {
-    @include nhsuk-typography-weight-normal;
+    @include nhsuk-font-weight-normal;
   }
 
   .nhsuk-summary-card__action {

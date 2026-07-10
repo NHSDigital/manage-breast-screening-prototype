@@ -300,6 +300,11 @@
   opacity: 0.8;
 }
 
+// Force shortcut hint onto its own line inside buttons
+.nhsuk-button .app-shortcut-hint {
+  // display: block;
+}
+
 // Compare opinions: card colours by read opinion
 .app-reading-compare-card.nhsuk-card--feature {
   outline: 2px solid nhsuk-colour("grey-3");
@@ -390,5 +395,3 @@
     padding-top: nhsuk-spacing(4);
   }
 }
-
-
