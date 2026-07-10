@@ -89,6 +89,17 @@ try {
   console.warn('Error loading generated data:', err)
 }
 
+// In development, freeze these seed arrays so any leftover in-place mutation
+// of a shared record throws at the offending line. Only the first request of
+// a session sees these exact objects (afterwards the session store holds its
+// own parsed copy), but that is enough to flush out bad writers early.
+// These arrays move to the shared data store in the next phase.
+const { deepFreeze, shouldFreeze } = require('../lib/data-store')
+if (shouldFreeze) {
+  deepFreeze(participants)
+  deepFreeze(events)
+}
+
 const defaultSettings = {
   darkMode: 'false',
   compactMode: 'false',

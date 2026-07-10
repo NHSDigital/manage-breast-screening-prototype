@@ -141,5 +141,7 @@ reload()
 
 module.exports = {
   state,
-  reload
+  reload,
+  deepFreeze,
+  shouldFreeze
 }

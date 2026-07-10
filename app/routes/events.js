@@ -125,8 +125,10 @@ module.exports = (router) => {
           `Temp event data found, but eventId ${data.event.id} does not match ${eventId}, creating new one`
         )
       }
-      // Copy over the event data to the temp event
-      data.event = originalEventData.event
+      // Copy over the event data to the temp event.
+      // Must be a deep clone: the temp copy gets mutated by forms, and the
+      // source record is shared (read-only) data that other sessions see.
+      data.event = structuredClone(originalEventData.event)
     }
 
     const participantId = originalEventData.participant.id
@@ -138,8 +140,10 @@ module.exports = (router) => {
           `Temp participant data found, but participantId ${data.participant.id} does not match ${participantId}, creating new one`
         )
       }
-      // Copy over the participant data to the temp participant
-      data.participant = { ...originalEventData.participant }
+      // Copy over the participant data to the temp participant.
+      // Deep clone - a shallow spread would leave nested objects
+      // (demographicInformation etc) shared with the read-only source record.
+      data.participant = structuredClone(originalEventData.participant)
     }
 
     // Deep compare temp participant and saved participant in array
@@ -282,14 +286,17 @@ module.exports = (router) => {
     if (event?.status === 'event_paused') {
       // Get existing session details
       const existingDetails = event.sessionDetails || {}
-      const authors = existingDetails.authors || []
 
-      // Add resume action to authors
-      authors.push({
-        userId: currentUser.id,
-        action: 'resumed',
-        timestamp: new Date().toISOString()
-      })
+      // Add resume action to a new authors array - the existing one belongs
+      // to the shared read-only event record, so must not be pushed to
+      const authors = [
+        ...(existingDetails.authors || []),
+        {
+          userId: currentUser.id,
+          action: 'resumed',
+          timestamp: new Date().toISOString()
+        }
+      ]
 
       // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
@@ -341,14 +348,17 @@ module.exports = (router) => {
 
         // Get existing session details to track authors
         const existingDetails = event.sessionDetails || {}
-        const authors = existingDetails.authors || []
 
-        // Add current user's pause action to authors
-        authors.push({
-          userId: data.currentUser?.id,
-          action: 'paused',
-          timestamp: new Date().toISOString()
-        })
+        // Add pause action to a new authors array - the existing one belongs
+        // to the shared read-only event record, so must not be pushed to
+        const authors = [
+          ...(existingDetails.authors || []),
+          {
+            userId: data.currentUser?.id,
+            action: 'paused',
+            timestamp: new Date().toISOString()
+          }
+        ]
 
         // Update status to paused and record pause details
         updateEventStatus(data, eventId, 'event_paused')
