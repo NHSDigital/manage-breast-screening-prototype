@@ -3,7 +3,6 @@
 const generateData = require('../generate-seed-data')
 const { join, resolve } = require('path')
 const dayjs = require('dayjs')
-const fs = require('fs')
 const {
   DEFAULT_SEED_DATA_PROFILE,
   ensureSeedProfilesState,
@@ -26,8 +25,6 @@ async function regenerateData(req, options = {}) {
 
   const dataDirectory = join(__dirname, '../../data')
   const sessionDataPath = resolve(dataDirectory, 'session-data-defaults.js')
-  const generatedDataPath = resolve(dataDirectory, 'generated')
-  const generationInfoPath = join(generatedDataPath, 'generation-info.json')
 
   // Generate new data
   await generateData({
@@ -35,40 +32,18 @@ async function regenerateData(req, options = {}) {
     seedDataProfileObject: resolvedProfile
   })
 
-  // Reload the shared data store from the freshly generated files
-  // (required lazily to avoid loading the store before generation at boot)
+  // Reload the shared data store from the freshly generated files. This also
+  // updates the store's generationId, which invalidates every session's
+  // _changes (see the attach middleware in app/routes.js) - so a regenerate
+  // resets data for all sessions, not just this one.
+  // (Required lazily to avoid loading the store before generation at boot.)
   require('../data-store').reload()
 
-  // Clear the require cache for session data defaults
+  // Clear the require cache for session data defaults so they re-evaluate
   delete require.cache[require.resolve(sessionDataPath)]
 
-  // Clear cache for the generated JSON files
-  Object.keys(require.cache).forEach((key) => {
-    if (key.startsWith(generatedDataPath)) {
-      delete require.cache[key]
-    }
-  })
-
-  // Read generation info including stats
-  let generationInfo = {
-    generatedAt: new Date().toISOString(),
-    stats: { participants: 0, clinics: 0, events: 0 },
-    seedDataProfile: resolvedProfile.key
-  }
-
-  try {
-    if (fs.existsSync(generationInfoPath)) {
-      generationInfo = JSON.parse(fs.readFileSync(generationInfoPath))
-    }
-  } catch (err) {
-    console.warn('Error reading generation info:', err)
-  }
-
-  // Reload session data defaults with fresh data and updated generation info
-  // req.session.data = {
-  //   ...require('../../data/session-data-defaults'),
-  //   generationInfo
-  // }
+  // Reset this session to fresh defaults. Collections and generationInfo are
+  // not part of defaults - the attach middleware provides them from the store.
   // IMPORTANT: Modify existing object rather than replacing it
   // Replacing breaks express-session's change tracking
   const freshDefaults = require('../../data/session-data-defaults')
@@ -80,8 +55,8 @@ async function regenerateData(req, options = {}) {
 
   // Clear existing keys
   Object.keys(req.session.data).forEach((key) => delete req.session.data[key])
-  // Merge in fresh defaults and generation info
-  Object.assign(req.session.data, freshDefaults, { generationInfo })
+  // Merge in fresh defaults
+  Object.assign(req.session.data, freshDefaults)
 
   // Restore settings if they existed
   if (preservedSettings) {
@@ -96,8 +71,6 @@ async function regenerateData(req, options = {}) {
     req.session.data.settings
   )
   refreshedSeedProfiles.selectedKey = resolvedProfile.key
-
-  req.session.data.generationInfo.seedDataProfile = resolvedProfile.key
 }
 
 function needsRegeneration(generationInfo) {

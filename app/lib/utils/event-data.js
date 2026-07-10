@@ -2,6 +2,23 @@
 const { getParticipant } = require('./participants.js')
 
 /**
+ * Record a changed event so it persists for this session
+ *
+ * The events array attached to `data` is rebuilt from the shared data store
+ * on every request; only records in data._changes survive across requests
+ * (see the attach middleware in app/routes.js). Callers should also replace
+ * the record in data.events so reads later in the same request see it.
+ *
+ * @param {object} data - Session data
+ * @param {object} event - Whole replacement event record
+ */
+const recordEventChange = (data, event) => {
+  if (data._changes?.events) {
+    data._changes.events[event.id] = event
+  }
+}
+
+/**
  * Get an event by ID
  *
  * @param {object} data - Session data
@@ -50,8 +67,10 @@ const updateEvent = (data, eventId, updatedEvent) => {
   const eventIndex = data.events.findIndex((e) => e.id === eventId)
   if (eventIndex === -1) return null
 
-  // Update in the array
+  // Update in the attached array (same-request reads) and record the change
+  // (persistence across requests)
   data.events[eventIndex] = updatedEvent
+  recordEventChange(data, updatedEvent)
   return updatedEvent
 }
 
@@ -88,6 +107,7 @@ const updateEventStatus = (data, eventId, newStatus) => {
 
   // Update main data
   data.events[eventIndex] = updatedEvent
+  recordEventChange(data, updatedEvent)
 
   // Also update temp event data if it exists and matches this event
   // Only update the status-related fields to preserve other temp changes
@@ -125,6 +145,7 @@ const updateEventData = (data, eventId, updates) => {
 
   // Update main data
   data.events[eventIndex] = updatedEvent
+  recordEventChange(data, updatedEvent)
 
   // Also update temp event data if it exists and matches this event
   // Merge updates into existing temp event to preserve any unsaved changes

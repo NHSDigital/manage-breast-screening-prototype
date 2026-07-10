@@ -57,7 +57,9 @@ router.use(async (req, res, next) => {
       logMemory(`request #${requestCount}`, req.session?.data)
     }
 
-    if (needsRegeneration(req.session.data?.generationInfo)) {
+    // Check the shared store's generation info (not the session's) - one
+    // regeneration serves every session
+    if (needsRegeneration(dataStore.state.generationInfo)) {
       logMemory('before-regeneration')
       console.log('Regenerating data for new day...')
       await regenerateData(req)
@@ -71,8 +73,8 @@ router.use(async (req, res, next) => {
 })
 
 // Collections served from the shared data store rather than from per-session
-// copies. Spike: clinics only - participants and events follow in phase 2.
-const STORE_COLLECTIONS = ['clinics']
+// copies
+const STORE_COLLECTIONS = ['clinics', 'participants', 'events']
 
 // Attach shared collections to this request's session data.
 //
@@ -80,8 +82,12 @@ const STORE_COLLECTIONS = ['clinics']
 // Sessions only persist changed records (data._changes, whole records keyed
 // by id); here we overlay those onto the shared arrays so that everything
 // downstream - route handlers, helpers taking `data`, views via locals, the
-// kit's auto-routes template fallback - sees `data.clinics` etc exactly as
+// kit's auto-routes template fallback - sees `data.events` etc exactly as
 // before the refactor.
+//
+// The attached arrays are fresh copies each request (shared record objects,
+// new array), so the update helpers can replace elements in place for
+// read-after-write within a request without touching the shared store.
 //
 // The toJSON trick: express-session's MemoryStore serialises sessions with
 // JSON.stringify, which respects a toJSON method. Defining a non-enumerable
@@ -104,22 +110,37 @@ router.use((req, res, next) => {
   // Per-session changed records: whole replacement records keyed by id.
   // The _ prefix means the kit's autoStoreData can never write form data
   // into it (it skips _-prefixed fields).
-  if (!data._changes) {
-    data._changes = { events: {}, participants: {}, clinics: {} }
+  //
+  // Changes are stamped with the data generation they were made against.
+  // After a regenerate or profile swap the stamp no longer matches, and the
+  // stale changes are discarded - for every session, not just the one that
+  // triggered the swap. Data resetting on swap is expected demo behaviour,
+  // and this guarantees a swap can never leave another session overlaying
+  // old records onto fresh data.
+  if (
+    !data._changes ||
+    data._changes.generationId !== dataStore.state.generationId
+  ) {
+    data._changes = {
+      generationId: dataStore.state.generationId,
+      events: {},
+      participants: {},
+      clinics: {}
+    }
   }
 
   for (const name of STORE_COLLECTIONS) {
-    const changes = data._changes[name] || {}
-    const hasChanges = Object.keys(changes).length > 0
-
-    // Shared array directly when this session has no changes; an overlay
-    // copy substituting the session's changed records when it does
-    data[name] = hasChanges
-      ? dataStore.state[name].map((record) => changes[record.id] ?? record)
-      : dataStore.state[name]
-
+    const changes = data._changes[name]
+    data[name] = dataStore.state[name].map(
+      (record) => changes[record.id] ?? record
+    )
     res.locals.data[name] = data[name]
   }
+
+  // Generation info also comes from the store, so every session sees the
+  // current generation (not the one it was created under)
+  data.generationInfo = dataStore.state.generationInfo
+  res.locals.data.generationInfo = data.generationInfo
 
   Object.defineProperty(data, 'toJSON', {
     value: function () {
@@ -127,6 +148,7 @@ router.use((req, res, next) => {
       for (const name of STORE_COLLECTIONS) {
         delete copy[name]
       }
+      delete copy.generationInfo
       return copy
     },
     enumerable: false,

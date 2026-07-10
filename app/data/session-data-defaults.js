@@ -27,8 +27,6 @@ if (!fs.existsSync(generatedDataPath)) {
   fs.mkdirSync(generatedDataPath)
 }
 
-let participants = []
-let events = []
 let generationInfo = {
   generatedAt: 'Never',
   seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
@@ -78,27 +76,10 @@ if (needsRegeneration(generationInfo)) {
   require('../lib/data-store').reload()
 }
 
-// Load generated data
-// Clinics are NOT loaded here: they live in the shared data store
-// (app/lib/data-store.js) and are attached to each request by middleware in
-// app/routes.js, so they never get copied into (or serialised with) sessions.
-try {
-  participants = require('./generated/participants.json').participants
-  events = require('./generated/events.json').events
-} catch (err) {
-  console.warn('Error loading generated data:', err)
-}
-
-// In development, freeze these seed arrays so any leftover in-place mutation
-// of a shared record throws at the offending line. Only the first request of
-// a session sees these exact objects (afterwards the session store holds its
-// own parsed copy), but that is enough to flush out bad writers early.
-// These arrays move to the shared data store in the next phase.
-const { deepFreeze, shouldFreeze } = require('../lib/data-store')
-if (shouldFreeze) {
-  deepFreeze(participants)
-  deepFreeze(events)
-}
+// The generated collections (participants, clinics, events) are NOT loaded
+// here: they live in the shared data store (app/lib/data-store.js) and are
+// attached to each request by middleware in app/routes.js, so they never get
+// copied into (or serialised with) sessions. Same for generationInfo.
 
 const defaultSettings = {
   darkMode: 'false',
@@ -148,9 +129,6 @@ const defaults = {
   breastScreeningUnits,
   allBreastScreeningUnits,
   screeningRooms,
-  participants,
-  events,
-  generationInfo,
   config,
   settings: defaultSettings,
   defaultSettings,
