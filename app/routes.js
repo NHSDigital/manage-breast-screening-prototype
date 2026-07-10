@@ -7,6 +7,7 @@ const {
   needsRegeneration
 } = require('./lib/utils/regenerate-data')
 const { resetCallSequence } = require('./lib/utils/random')
+const dataStore = require('./lib/data-store')
 
 const router = express.Router()
 
@@ -67,6 +68,72 @@ router.use(async (req, res, next) => {
     console.error('Error checking/regenerating data:', err)
     next(err)
   }
+})
+
+// Collections served from the shared data store rather than from per-session
+// copies. Spike: clinics only - participants and events follow in phase 2.
+const STORE_COLLECTIONS = ['clinics']
+
+// Attach shared collections to this request's session data.
+//
+// The shared arrays live in app/lib/data-store.js, loaded once at boot.
+// Sessions only persist changed records (data._changes, whole records keyed
+// by id); here we overlay those onto the shared arrays so that everything
+// downstream - route handlers, helpers taking `data`, views via locals, the
+// kit's auto-routes template fallback - sees `data.clinics` etc exactly as
+// before the refactor.
+//
+// The toJSON trick: express-session's MemoryStore serialises sessions with
+// JSON.stringify, which respects a toJSON method. Defining a non-enumerable
+// toJSON on req.session.data that omits the attached collections means they
+// are never written back into the session store - the session stays small
+// (~KBs) while the request sees the full data.
+//
+// Kit version assumptions (nhsuk-prototype-kit 8.3.0):
+// - setSessionDataDefaults spreads a *fresh* req.session.data object every
+//   request, so both the collections and toJSON must be (re)attached per
+//   request - which this middleware does.
+// - autoStoreData copies session data to res.locals.data (for..in over
+//   enumerable props) *before* our router runs, so locals are set explicitly
+//   here; the non-enumerable toJSON is skipped by both that copy and the
+//   defaults spread, which is what we want.
+router.use((req, res, next) => {
+  const data = req.session.data
+  if (!data) return next()
+
+  // Per-session changed records: whole replacement records keyed by id.
+  // The _ prefix means the kit's autoStoreData can never write form data
+  // into it (it skips _-prefixed fields).
+  if (!data._changes) {
+    data._changes = { events: {}, participants: {}, clinics: {} }
+  }
+
+  for (const name of STORE_COLLECTIONS) {
+    const changes = data._changes[name] || {}
+    const hasChanges = Object.keys(changes).length > 0
+
+    // Shared array directly when this session has no changes; an overlay
+    // copy substituting the session's changed records when it does
+    data[name] = hasChanges
+      ? dataStore.state[name].map((record) => changes[record.id] ?? record)
+      : dataStore.state[name]
+
+    res.locals.data[name] = data[name]
+  }
+
+  Object.defineProperty(data, 'toJSON', {
+    value: function () {
+      const copy = { ...this }
+      for (const name of STORE_COLLECTIONS) {
+        delete copy[name]
+      }
+      return copy
+    },
+    enumerable: false,
+    configurable: true
+  })
+
+  next()
 })
 
 // Reset randomisation per page load

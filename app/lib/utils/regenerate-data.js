@@ -35,6 +35,10 @@ async function regenerateData(req, options = {}) {
     seedDataProfileObject: resolvedProfile
   })
 
+  // Reload the shared data store from the freshly generated files
+  // (required lazily to avoid loading the store before generation at boot)
+  require('../data-store').reload()
+
   // Clear the require cache for session data defaults
   delete require.cache[require.resolve(sessionDataPath)]
 
