@@ -5,6 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "generate": "node scripts/generate-data.js",
+    "heroku-postbuild": "npm run generate",
     "build:static-error-page": "node scripts/build-static-error-page.js",
     "docs": "node scripts/generate-utils-reference.js"
   },
