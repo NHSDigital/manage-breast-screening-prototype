@@ -3,6 +3,27 @@
 const dayjs = require('dayjs')
 
 const config = require('../../config')
+const dataStore = require('../data-store')
+
+/**
+ * Get a clinic by ID
+ *
+ * Reads the session's changed records first, then the shared store's id
+ * index, so it avoids a linear scan of the merged clinics array. Falls back
+ * to scanning data.clinics for records that exist only in the passed data.
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @returns {object | null} Clinic object or null if not found
+ */
+const getClinic = (data, clinicId) => {
+  return (
+    data._changes?.clinics?.[clinicId] ??
+    dataStore.state.clinicsById.get(clinicId) ??
+    data.clinics?.find((c) => c.id === clinicId) ??
+    null
+  )
+}
 
 /**
  * Get today's clinics
@@ -115,6 +136,7 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 }
 
 module.exports = {
+  getClinic,
   getTodaysClinics,
   getFilteredClinics,
   getClinicEvents,

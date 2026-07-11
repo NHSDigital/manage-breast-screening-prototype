@@ -2,16 +2,28 @@
 
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const riskLevels = require('../../data/risk-levels.js')
+const dataStore = require('../data-store')
+const { getClinic } = require('./clinics.js')
 
 /**
  * Get a participant by ID
+ *
+ * Reads the session's changed records first, then the shared store's id
+ * index, so it avoids a linear scan of the merged participants array. Falls
+ * back to scanning data.participants for records that exist only in the
+ * passed data.
  *
  * @param {object} data - Session data containing participants
  * @param {string} participantId - Participant ID to search for
  * @returns {object | null} Participant object or null if not found
  */
 const getParticipant = (data, participantId) => {
-  return data.participants.find((p) => p.id === participantId) || null
+  return (
+    data._changes?.participants?.[participantId] ??
+    dataStore.state.participantsById.get(participantId) ??
+    data.participants?.find((p) => p.id === participantId) ??
+    null
+  )
 }
 
 /**
@@ -135,7 +147,7 @@ const getParticipantClinicHistory = (data, participantId, options = {}) => {
   const history = data.events
     .filter((event) => event.participantId === participantId)
     .map((event) => {
-      const clinic = data.clinics.find((clinic) => clinic.id === event.clinicId)
+      const clinic = getClinic(data, event.clinicId)
       if (!clinic) return null
 
       const unit = data.breastScreeningUnits.find(

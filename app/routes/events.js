@@ -12,6 +12,7 @@ const {
 } = require('../lib/generators/mammogram-generator')
 const {
   getEvent,
+  getEventData,
   saveTempEventToEvent,
   updateEventStatus,
   updateEventData
@@ -33,41 +34,6 @@ const {
 } = require('../lib/generators/seed-profiles')
 // Load symptom types data
 const symptomTypes = require('../data/symptom-types')
-
-/**
- * Get single event and its related data
- */
-function getEventData(data, clinicId, eventId) {
-  const clinic = data.clinics.find((c) => c.id === clinicId)
-
-  if (!clinic) {
-    return null
-  }
-
-  const event = data.events.find(
-    (e) => e.id === eventId && e.clinicId === clinicId
-  )
-
-  if (!event) {
-    return null
-  }
-
-  const participant = data.participants.find(
-    (p) => p.id === event.participantId
-  )
-  const unit = data.breastScreeningUnits.find(
-    (u) => u.id === clinic.breastScreeningUnitId
-  )
-  const location = unit?.locations.find((l) => l.id === clinic.locationId)
-
-  return {
-    clinic,
-    event,
-    participant,
-    unit,
-    location
-  }
-}
 
 /**
  * Capture session end time for an event
