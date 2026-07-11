@@ -99,8 +99,10 @@ module.exports = (router) => {
           `Temp participant data found, but participantId ${data.participant.id} does not match ${participantId}, creating new one`
         )
       }
-      // Copy over the participant data to the temp participant
-      data.participant = { ...originalParticipant }
+      // Copy over the participant data to the temp participant.
+      // Deep clone - a shallow spread would leave nested objects
+      // (demographicInformation etc) shared with the read-only source record.
+      data.participant = structuredClone(originalParticipant)
     }
 
     // This will now have any temp participant data that forms have added too

@@ -1,5 +1,5 @@
 // app/routes/image-reading.js
-const { getEventData } = require('../lib/utils/event-data')
+const { getEventData, updateEventData } = require('../lib/utils/event-data')
 const {
   getFirstUserReadableEvent,
   getNextUserReadableEvent,
@@ -212,24 +212,32 @@ module.exports = (router) => {
       return res.redirect('/reading/priors')
     }
 
-    // Update the status
-    mammogram.requestStatus = newStatus
-    mammogram.statusChangedDate = new Date().toISOString()
-    mammogram.statusChangedBy = currentUserId
+    // Build an updated mammogram list rather than mutating in place - event
+    // records are shared read-only data; writes go through the update helpers
+    const previousMammograms = event.previousMammograms.map((m) => {
+      if (m.id !== mammogramId) return m
 
-    // Set additional fields based on status
-    if (newStatus === 'requested') {
-      // Admin is formally sending the IEP request
-      mammogram.requestedDate = new Date().toISOString()
-      mammogram.requestedBy = currentUserId
-    } else if (newStatus === 'received') {
-      mammogram.receivedDate = new Date().toISOString()
-    }
+      const updated = {
+        ...m,
+        requestStatus: newStatus,
+        statusChangedDate: new Date().toISOString(),
+        statusChangedBy: currentUserId
+      }
 
-    // Also update mirrored event in data.event if it matches
-    if (data.event && data.event.id === eventId) {
-      data.event.previousMammograms = event.previousMammograms
-    }
+      // Set additional fields based on status
+      if (newStatus === 'requested') {
+        // Admin is formally sending the IEP request
+        updated.requestedDate = new Date().toISOString()
+        updated.requestedBy = currentUserId
+      } else if (newStatus === 'received') {
+        updated.receivedDate = new Date().toISOString()
+      }
+
+      return updated
+    })
+
+    // Saves to the event and mirrors into data.event if it matches
+    updateEventData(data, eventId, { previousMammograms })
 
     // If this was a fetch request, send JSON response for in-place update
     if (req.headers.accept?.includes('application/json')) {
@@ -703,21 +711,22 @@ module.exports = (router) => {
       // Find the event in the main events array
       const event = data.events.find((e) => e.id === eventId)
       if (event && event.previousMammograms) {
-        event.previousMammograms.forEach((mammogram) => {
-          if (requestPriorIds.includes(mammogram.id)) {
-            mammogram.requestStatus = 'pending'
-            mammogram.requestedDate = new Date().toISOString()
-            mammogram.requestedBy = currentUserId
-            if (reason) {
-              mammogram.requestReason = reason
-            }
-          }
-        })
+        // Build an updated list rather than mutating in place - event records
+        // are shared read-only data; writes go through the update helpers
+        const previousMammograms = event.previousMammograms.map((mammogram) =>
+          requestPriorIds.includes(mammogram.id)
+            ? {
+                ...mammogram,
+                requestStatus: 'pending',
+                requestedDate: new Date().toISOString(),
+                requestedBy: currentUserId,
+                ...(reason ? { requestReason: reason } : {})
+              }
+            : mammogram
+        )
 
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.previousMammograms = event.previousMammograms
-        }
+        // Saves to the event and mirrors into data.event if it matches
+        updateEventData(data, eventId, { previousMammograms })
       }
 
       // If submitted from an existing-read page (e.g. editing reason), return there
@@ -725,18 +734,16 @@ module.exports = (router) => {
       if (priorsReferrerChain) {
         // In edit mode, also update reason on mammograms already pending/requested by this user
         if (event && event.previousMammograms && reason) {
-          event.previousMammograms.forEach((mammogram) => {
-            if (
+          const latestEvent = data.events.find((e) => e.id === eventId)
+          const previousMammograms = latestEvent.previousMammograms.map(
+            (mammogram) =>
               (mammogram.requestStatus === 'pending' ||
                 mammogram.requestStatus === 'requested') &&
               mammogram.requestedBy === currentUserId
-            ) {
-              mammogram.requestReason = reason
-            }
-          })
-          if (data.event && data.event.id === eventId) {
-            data.event.previousMammograms = event.previousMammograms
-          }
+                ? { ...mammogram, requestReason: reason }
+                : mammogram
+          )
+          updateEventData(data, eventId, { previousMammograms })
         }
         const returnUrl = getReturnUrl(
           `/reading/session/${sessionId}/events/${eventId}/existing-read`,
@@ -811,22 +818,23 @@ module.exports = (router) => {
 
       const event = data.events.find((e) => e.id === eventId)
       if (event && event.previousMammograms) {
-        event.previousMammograms.forEach((mammogram) => {
+        // Build an updated list rather than mutating in place - event records
+        // are shared read-only data; writes go through the update helpers
+        const previousMammograms = event.previousMammograms.map((mammogram) => {
           if (
             mammogram.requestStatus === 'pending' &&
             mammogram.requestedBy === currentUserId
           ) {
-            mammogram.requestStatus = 'not_requested'
-            delete mammogram.requestedDate
-            delete mammogram.requestedBy
-            delete mammogram.requestReason
+            // Omit the request fields entirely on the replacement record
+            const { requestedDate, requestedBy, requestReason, ...rest } =
+              mammogram
+            return { ...rest, requestStatus: 'not_requested' }
           }
+          return mammogram
         })
 
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.previousMammograms = event.previousMammograms
-        }
+        // Saves to the event and mirrors into data.event if it matches
+        updateEventData(data, eventId, { previousMammograms })
       }
 
       // Redirect to opinion page so the reader can now read the case
@@ -848,28 +856,26 @@ module.exports = (router) => {
 
       const reason = req.body.deferralReason || ''
 
-      // Find the event and save deferral data
+      // Find the event and save deferral data. Work on a clone rather than
+      // mutating in place - event records are shared read-only data; writes
+      // go through the update helpers
       const event = data.events.find((e) => e.id === eventId)
       if (event) {
-        if (!event.imageReading) {
-          event.imageReading = {}
-        }
+        const imageReading = structuredClone(event.imageReading || {})
 
         // Remove any existing read by this user — deferral replaces a prior opinion
-        if (event.imageReading.reads?.[currentUserId]) {
-          delete event.imageReading.reads[currentUserId]
+        if (imageReading.reads?.[currentUserId]) {
+          delete imageReading.reads[currentUserId]
         }
 
-        event.imageReading.deferral = {
+        imageReading.deferral = {
           deferredAt: new Date().toISOString(),
           deferredBy: currentUserId,
           reason: reason || null
         }
 
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.imageReading = event.imageReading
-        }
+        // Saves to the event and mirrors into data.event if it matches
+        updateEventData(data, eventId, { imageReading })
       }
 
       // If submitted from an existing-read page (e.g. editing reason), return there
@@ -944,12 +950,12 @@ module.exports = (router) => {
 
       const event = data.events.find((e) => e.id === eventId)
       if (event?.imageReading?.deferral) {
-        delete event.imageReading.deferral
+        // Clone rather than mutate - event records are shared read-only data
+        const imageReading = structuredClone(event.imageReading)
+        delete imageReading.deferral
 
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.imageReading = event.imageReading
-        }
+        // Saves to the event and mirrors into data.event if it matches
+        updateEventData(data, eventId, { imageReading })
       }
 
       res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
@@ -969,19 +975,20 @@ module.exports = (router) => {
 
     const event = data.events.find((e) => e.id === eventId)
     if (event?.imageReading?.deferral) {
-      if (!event.imageReading.deferralHistory) {
-        event.imageReading.deferralHistory = []
-      }
-      event.imageReading.deferralHistory.push({
-        ...event.imageReading.deferral,
-        resolvedAt: new Date().toISOString(),
-        resolvedBy: data.currentUser?.id
-      })
-      delete event.imageReading.deferral
+      // Clone rather than mutate - event records are shared read-only data
+      const imageReading = structuredClone(event.imageReading)
+      imageReading.deferralHistory = [
+        ...(imageReading.deferralHistory || []),
+        {
+          ...imageReading.deferral,
+          resolvedAt: new Date().toISOString(),
+          resolvedBy: data.currentUser?.id
+        }
+      ]
+      delete imageReading.deferral
 
-      if (data.event && data.event.id === eventId) {
-        data.event.imageReading = event.imageReading
-      }
+      // Saves to the event and mirrors into data.event if it matches
+      updateEventData(data, eventId, { imageReading })
 
       const participant = data.participants.find(
         (p) => p.id === event.participantId

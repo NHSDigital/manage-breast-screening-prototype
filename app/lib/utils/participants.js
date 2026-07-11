@@ -250,8 +250,13 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
   )
   if (participantIndex === -1) return null
 
-  // Update in the array
+  // Update in the attached array (same-request reads) and record the change
+  // in data._changes (persistence - the attached array is rebuilt from the
+  // shared data store on every request; see middleware in app/routes.js)
   data.participants[participantIndex] = updatedParticipant
+  if (data._changes?.participants) {
+    data._changes.participants[participantId] = updatedParticipant
+  }
   return updatedParticipant
 }
 

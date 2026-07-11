@@ -27,9 +27,6 @@ if (!fs.existsSync(generatedDataPath)) {
   fs.mkdirSync(generatedDataPath)
 }
 
-let participants = []
-let clinics = []
-let events = []
 let generationInfo = {
   generatedAt: 'Never',
   seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
@@ -73,16 +70,16 @@ if (needsRegeneration(generationInfo)) {
   if (!generationInfo.seedDataProfile) {
     generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
   }
+
+  // The shared data store may already have loaded the stale files (require
+  // order at boot), so reload it now the generator has written fresh ones
+  require('../lib/data-store').reload()
 }
 
-// Load generated data
-try {
-  participants = require('./generated/participants.json').participants
-  clinics = require('./generated/clinics.json').clinics
-  events = require('./generated/events.json').events
-} catch (err) {
-  console.warn('Error loading generated data:', err)
-}
+// The generated collections (participants, clinics, events) are NOT loaded
+// here: they live in the shared data store (app/lib/data-store.js) and are
+// attached to each request by middleware in app/routes.js, so they never get
+// copied into (or serialised with) sessions. Same for generationInfo.
 
 const defaultSettings = {
   darkMode: 'false',
@@ -132,10 +129,6 @@ const defaults = {
   breastScreeningUnits,
   allBreastScreeningUnits,
   screeningRooms,
-  participants,
-  clinics,
-  events,
-  generationInfo,
   config,
   settings: defaultSettings,
   defaultSettings,
