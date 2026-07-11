@@ -1,5 +1,10 @@
-// app/routes/image-reading.js
-const { getEventData, updateEventData } = require('../lib/utils/event-data')
+// app/routes/reading.js
+const {
+  getEvent,
+  getEventData,
+  updateEventData
+} = require('../lib/utils/event-data')
+const { getClinic } = require('../lib/utils/clinics')
 const {
   getFirstUserReadableEvent,
   getNextUserReadableEvent,
@@ -27,7 +32,7 @@ const {
   filterEventsByNeedsAnyRead,
   filterEventsByUserCanRead
 } = require('../lib/utils/reading')
-const { getShortName } = require('../lib/utils/participants')
+const { getParticipant, getShortName } = require('../lib/utils/participants')
 const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
 const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
@@ -111,7 +116,7 @@ module.exports = (router) => {
   router.get('/reading/clinics/:clinicId', (req, res) => {
     const { clinicId } = req.params
     const data = req.session.data
-    const clinic = data.clinics.find((c) => c.id === clinicId)
+    const clinic = getClinic(data, clinicId)
 
     if (!clinic) return res.redirect('/reading')
 
@@ -133,7 +138,7 @@ module.exports = (router) => {
     const data = req.session.data
     const currentUserId = data.currentUser.id
 
-    const clinic = data.clinics.find((c) => c.id === clinicId)
+    const clinic = getClinic(data, clinicId)
     if (!clinic) return res.redirect('/reading')
 
     try {
@@ -196,7 +201,7 @@ module.exports = (router) => {
     const { eventId, mammogramId, newStatus } = req.body
     const currentUserId = data.currentUser?.id
 
-    const event = data.events.find((e) => e.id === eventId)
+    const event = getEvent(data, eventId)
     if (!event || !event.previousMammograms) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(404).json({ error: 'Event not found' })
@@ -484,7 +489,7 @@ module.exports = (router) => {
     // Get clinic data if this is a clinic session
     let clinic = null
     if (session.clinicId) {
-      clinic = data.clinics.find((c) => c.id === session.clinicId)
+      clinic = getClinic(data, session.clinicId)
     }
 
     // Overall backlog count — used to gate the 'Start a new session' button.
@@ -527,12 +532,12 @@ module.exports = (router) => {
       // Check if event exists in this session
       if (!session.eventIds.includes(eventId)) {
         // req.flash('error', 'Event not found in this session')
-        console.log(`Event ${sessionId} not found in this session`)
+        console.log(`Event ${eventId} not found in session ${sessionId}`)
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
       // Get the event data
-      const event = data.events.find((e) => e.id === eventId)
+      const event = getEvent(data, eventId)
       if (!event) {
         // req.flash('error', 'Event not found')
         console.log(`Event ${eventId} not found`)
@@ -540,10 +545,8 @@ module.exports = (router) => {
       }
 
       // Get participant and clinic data
-      const participant = data.participants.find(
-        (p) => p.id === event.participantId
-      )
-      const clinic = data.clinics.find((c) => c.id === event.clinicId)
+      const participant = getParticipant(data, event.participantId)
+      const clinic = getClinic(data, event.clinicId)
       const unit = data.breastScreeningUnits.find(
         (u) => u.id === clinic.breastScreeningUnitId
       )

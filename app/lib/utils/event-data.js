@@ -1,5 +1,7 @@
 // app/lib/utils/event-data.js
 const { getParticipant } = require('./participants.js')
+const { getClinic } = require('./clinics.js')
+const dataStore = require('../data-store')
 
 /**
  * Record a changed event so it persists for this session
@@ -21,12 +23,21 @@ const recordEventChange = (data, event) => {
 /**
  * Get an event by ID
  *
+ * Reads the session's changed records first, then the shared store's id
+ * index, so it avoids a linear scan of the merged events array. Falls back
+ * to scanning data.events for records that exist only in the passed data.
+ *
  * @param {object} data - Session data
  * @param {string} eventId - Event ID
  * @returns {object | null} Event object or null if not found
  */
 const getEvent = (data, eventId) => {
-  return data.events.find((e) => e.id === eventId) || null
+  return (
+    data._changes?.events?.[eventId] ??
+    dataStore.state.eventsById.get(eventId) ??
+    data.events?.find((e) => e.id === eventId) ??
+    null
+  )
 }
 
 /**
@@ -38,19 +49,17 @@ const getEvent = (data, eventId) => {
  * @returns {object | null} Bundle of {clinic, event, participant, location, unit} or null if not found
  */
 const getEventData = (data, clinicId, eventId) => {
-  const clinic = data.clinics.find((c) => c.id === clinicId)
+  const clinic = getClinic(data, clinicId)
   if (!clinic) return null
 
-  const event = data.events.find(
-    (e) => e.id === eventId && e.clinicId === clinicId
-  )
-  if (!event) return null
+  const event = getEvent(data, eventId)
+  if (!event || event.clinicId !== clinicId) return null
 
   const participant = getParticipant(data, event.participantId)
   const unit = data.breastScreeningUnits.find(
     (u) => u.id === clinic.breastScreeningUnitId
   )
-  const location = unit.locations.find((l) => l.id === clinic.locationId)
+  const location = unit?.locations.find((l) => l.id === clinic.locationId)
 
   return { clinic, event, participant, location, unit }
 }

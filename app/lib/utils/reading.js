@@ -1,6 +1,7 @@
-// app/lib/utils/.js
+// app/lib/utils/reading.js
 
 const dayjs = require('dayjs')
+const { getClinic } = require('./clinics')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
@@ -1658,7 +1659,7 @@ const getDefaultSessionName = (type, clinicId, data) => {
     case 'awaiting_priors':
       return 'Awaiting priors session'
     case 'clinic': {
-      const clinic = data.clinics.find((c) => c.id === clinicId)
+      const clinic = getClinic(data, clinicId)
       if (!clinic) return 'Clinic session'
 
       const location = clinic.locationId
