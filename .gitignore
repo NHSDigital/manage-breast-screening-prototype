@@ -84,3 +84,5 @@ reference/
 
 # Local setting overrides (personal dev preferences, not for committing)
 *.local.js
+# Local working notes (session notes, not for committing)
+notes/
