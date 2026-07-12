@@ -28,6 +28,10 @@ Never assign to properties of a record you got from one of these collections -
 in development they are frozen, and the assignment will be **silently
 ignored** (this codebase runs in sloppy mode, so frozen objects don't throw).
 If a change you made mysteriously doesn't stick, this is almost certainly why.
+This silence is a deliberate trade-off: making mutations throw would need
+`'use strict'` everywhere or Proxy-wrapped records, and neither is worth the
+complexity here. The freeze's main job - stopping one session's changes
+leaking into every other session - holds either way.
 
 Instead, do one of:
 
