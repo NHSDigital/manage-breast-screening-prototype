@@ -201,6 +201,10 @@ const eligibleForReading = (event) => {
  * getStatusTagColour('event_did_not_attend') // 'red'
  */
 const getStatusTagColour = (status) => {
+  // Keys are matched against snake_cased tag text as well as status keys -
+  // the toTag filter tries the raw status first, then snakeCase(status), so
+  // `"Waiting for 1st read" | toTag` reaches 'waiting_for_1st_read' here.
+  // Check both forms before treating an entry as unused.
   const colourMap = {
     // Clinic statuses
     'scheduled': 'blue', // default blue
@@ -219,19 +223,6 @@ const getStatusTagColour = (status) => {
     'event_rescheduled': 'red',
     'event_attended_not_screened': 'orange',
 
-    // Task list
-    'incomplete': 'blue',
-    'complete': 'green',
-    'to_review': 'blue',
-    'reviewed': 'green',
-
-    // Image reading
-    'not_started': 'grey',
-    'not_provided': 'grey',
-    'not_read': 'white',
-    'skipped': 'grey',
-    'previously_skipped': 'grey',
-
     // Image reading results
     'normal': 'green',
     'recall_for_assessment': 'red',
@@ -239,33 +230,26 @@ const getStatusTagColour = (status) => {
     'clinical_recall': 'yellow',
     'abnormal': 'red',
 
-    // Image status
-    'available': 'green',
-    'requested': 'orange',
-    'images_requested': 'orange',
-    'not_in_pacs': 'grey',
-
-    // Metadata
+    // Case metadata
     'has_symptoms': 'yellow',
-    'has_repeat': 'yellow',
-    'significant_symptom': 'yellow',
     'highlight_to_image_readers': 'yellow',
+    'imperfect': 'orange',
+    'incomplete': 'orange',
+    'urgent': 'red',
+    'due_soon': 'orange',
 
     // Reading statuses
     'waiting_for_1st_read': 'grey',
     'waiting_for_2nd_read': 'grey',
     'not_started': 'grey',
     'skipped': 'grey',
+    'previously_skipped': 'grey',
     'not_read': 'white',
     'complete': 'green',
     'partial_first_read': 'blue',
     'first_read_complete': 'yellow',
     'partial_second_read': 'blue',
     'mixed_reads': 'yellow',
-    'mixed_with_arbitration': 'yellow',
-    'imperfect': 'orange',
-    'incomplete': 'orange',
-
     'no_events': 'grey',
 
     // Outcomes
@@ -274,9 +258,6 @@ const getStatusTagColour = (status) => {
 
     'first_read': 'blue',
     'second_read': 'blue',
-
-    'urgent': 'red',
-    'due_soon': 'orange',
 
     // Prior mammogram request statuses
     'prior_not_requested': 'white',

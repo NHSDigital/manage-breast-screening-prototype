@@ -25,19 +25,6 @@
   {% set hideEmptyRows = true %}
 {% endif %}
 
-{# Format the opinion for display #}
-{% set opinionText %}
-  {% if read.opinion == 'normal' %}
-    Normal
-  {% elseif read.opinion == 'technical_recall' %}
-    Technical recall
-  {% elseif read.opinion == 'recall_for_assessment' %}
-    Recall for assessment
-  {% else %}
-    {{ read.opinion }}
-  {% endif %}
-{% endset %}
-
 {# Count annotations #}
 {% set leftAnnotations = read.left.annotations if read.left and read.left.annotations else [] %}
 {% set rightAnnotations = read.right.annotations if read.right and read.right.annotations else [] %}

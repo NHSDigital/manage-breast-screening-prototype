@@ -6,6 +6,16 @@
 
 const { formatDate, formatRelativeDate } = require('./dates')
 
+/** The known requestStatus values for a prior mammogram */
+const PRIOR_REQUEST_STATUSES = [
+  'not_requested',
+  'pending',
+  'requested',
+  'received',
+  'not_available',
+  'not_needed'
+]
+
 /** Returns true if the event has any previously recorded mammograms */
 const hasRecordedMammograms = (event) => {
   if (!event) return false
@@ -213,6 +223,7 @@ const summarisePriorMammograms = (event, options = {}) => {
 }
 
 module.exports = {
+  PRIOR_REQUEST_STATUSES,
   hasRecordedMammograms,
   awaitingPriors,
   hasUnrequestedPriors,

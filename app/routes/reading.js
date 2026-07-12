@@ -33,7 +33,10 @@ const {
   filterEventsByUserCanRead
 } = require('../lib/utils/reading')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
-const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
+const {
+  PRIOR_REQUEST_STATUSES,
+  userRequestedPriors
+} = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
 const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
@@ -200,6 +203,15 @@ module.exports = (router) => {
     const data = req.session.data
     const { eventId, mammogramId, newStatus } = req.body
     const currentUserId = data.currentUser?.id
+
+    // Only accept known request statuses - the value comes straight from
+    // the request body
+    if (!PRIOR_REQUEST_STATUSES.includes(newStatus)) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(400).json({ error: 'Unknown request status' })
+      }
+      return res.redirect('/reading/priors')
+    }
 
     const event = getEvent(data, eventId)
     if (!event || !event.previousMammograms) {
