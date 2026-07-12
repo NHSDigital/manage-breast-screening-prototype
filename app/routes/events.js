@@ -217,10 +217,13 @@ module.exports = (router) => {
       ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
       : defaultDestination
 
-    // Preserve all query string parameters except returnTo (already used)
+    // Preserve all query string parameters except the ones consumed above.
+    // event[workflowStatus][...] arrives as a parsed object, so leaving it in
+    // would re-serialise as event=[object Object]
     // Todo: could a library do this for us?
     const queryParams = { ...req.query }
     delete queryParams.returnTo
+    delete queryParams.event
     const queryString = Object.keys(queryParams).length
       ? '?' +
         Object.entries(queryParams)

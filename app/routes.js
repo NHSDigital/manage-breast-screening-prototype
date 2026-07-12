@@ -14,7 +14,10 @@ const router = express.Router()
 // Parse JSON request bodies (in addition to URL-encoded, which the kit handles)
 router.use(express.json())
 
-// Memory logging - tracks growth and logs significant changes
+// Memory logging - tracks growth and logs significant changes. Logs at
+// startup, around regeneration, and whenever RSS jumps >20MB (a canary for
+// memory regressions). Per-request periodic logging only runs with
+// debugMode set in session data.
 let requestCount = 0
 let lastLoggedRss = 0
 const logMemory = (context, sessionData) => {
@@ -52,8 +55,12 @@ router.use(async (req, res, next) => {
       logMemory(`growth on ${req.method} ${req.path}`, req.session?.data)
     }
 
-    // Also log periodically
-    if (!isStaticRequest && requestCount % 50 === 0) {
+    // Also log periodically when debug mode is on
+    if (
+      !isStaticRequest &&
+      requestCount % 50 === 0 &&
+      req.session?.data?.debugMode === 'true'
+    ) {
       logMemory(`request #${requestCount}`, req.session?.data)
     }
 
