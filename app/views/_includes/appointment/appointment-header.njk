@@ -41,21 +41,10 @@
 
   <div class="app-header-with-status__status-tag">
     {% set statusTagId = "status-tag-" + event.id %}
-    {% if event.status === "event_rescheduled" %}
-      {{ tag({
-        text: "Reschedule requested",
-        colour: "red",
-        classes: "nhsuk-u-margin-bottom-2",
-        attributes: {
-          id: statusTagId
-        }
-      }) }}
-    {% else %}
-      {{ event.status | toTag({
-        id: statusTagId,
-        classes: "nhsuk-u-margin-bottom-2"
-      }) }}
-    {% endif %}
+    {{ event.status | toTag({
+      id: statusTagId,
+      classes: "nhsuk-u-margin-bottom-2"
+    }) }}
 
     {% if event.status == 'event_scheduled' %}
       {{ appCheckIn({
