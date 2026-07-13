@@ -5,13 +5,10 @@
 // docs/data-conventions.md.
 //
 // Episodes are generated *first*, in the clinic-day loop: an episode is
-// created, then the event that sits inside it. Two things can't be known at
-// that point and are filled in by later passes in generate-seed-data.js:
-//
-// - sequence: snapshots are generated newest-first, so a participant's
-//   episodes are only orderable once every snapshot has run.
-// - stage / outcome: these depend on reading data, which is attached to
-//   events by generateReadingData - the very last generation pass.
+// created, then the event that sits inside it. Its stage and outcome can't be
+// settled there, because they depend on reading data - which is attached to
+// events by generateReadingData, the very last generation pass. So
+// finaliseEpisodeStage runs afterwards.
 
 const dayjs = require('dayjs')
 const weighted = require('weighted')
@@ -21,6 +18,7 @@ const riskLevels = require('../../data/risk-levels')
 const { getOutcome } = require('../utils/reading')
 const { eligibleForReading, isCompleted } = require('../utils/status')
 const {
+  EPISODE_OUTCOMES,
   EPISODE_STAGE_BY_EVENT_STATUS,
   EPISODE_STAGE_BY_READING_OUTCOME
 } = require('../utils/episodes')
@@ -29,11 +27,25 @@ const {
 // (roughly when an invitation would have gone out)
 const INVITATION_LEAD_DAYS = 28
 
-// Outcomes for historic (summary-level) episodes. Most past rounds were
-// clear; a few were recalled for assessment.
+// Outcomes for historic (summary-level) rounds. Chosen outcome-first: we say
+// what the round found and don't model how it got there. Mostly clear; a few
+// found something and went into treatment (they return to screening
+// afterwards, which is why they are here at all); a few never produced a
+// result because the participant didn't attend.
+//
+// Overridable per seed profile via `episodes.historicOutcomeWeights`, though
+// most testing needs vary reading and assessment rather than history.
 const HISTORIC_OUTCOME_WEIGHTS = {
-  routine_recall: 0.94,
-  recall_for_assessment: 0.06
+  routine_recall: 0.9,
+  under_care: 0.03,
+  no_result: 0.07
+}
+
+// What an assessment concluded, for rounds old enough to have had one. Not
+// every recall finds cancer - most turn out clear.
+const ASSESSMENT_OUTCOME_WEIGHTS = {
+  routine_recall: 0.8,
+  under_care: 0.2
 }
 
 /**
@@ -68,7 +80,6 @@ const generateEpisode = ({ participant, type, appointmentDate }) => {
   return {
     id: generateId(),
     participantId: participant.id,
-    sequence: null, // assigned once all snapshots are generated
     type,
     stage: 'scheduled',
     stageHistory: [{ stage: 'scheduled', timestamp: openedDate }],
@@ -154,37 +165,97 @@ const finaliseEpisodeStage = (episode, events) => {
       // Screened too long ago to still be in the reading queue. That round was
       // read at the time - we just don't seed reads going back that far - so
       // close it rather than leave it sitting in reading forever.
-      moveTo(
-        { stage: 'closed', outcome: weighted.select(HISTORIC_OUTCOME_WEIGHTS) },
-        concludedAt
-      )
+      moveTo({ stage: 'closed', outcome: 'routine_recall' }, concludedAt)
     }
+  }
+
+  // An episode recalled for assessment sits in assessment until the assessment
+  // concludes. Recent ones genuinely haven't concluded yet, so they stay open.
+  // Older ones would have by now, and assessment is what produces the result.
+  if (episode.stage === 'assessment' && !eligibleForReading(latestEvent)) {
+    moveTo(
+      {
+        stage: 'closed',
+        outcome: weighted.select(ASSESSMENT_OUTCOME_WEIGHTS)
+      },
+      appointmentEnded
+    )
   }
 
   return episode
 }
 
 /**
+ * How many past rounds a participant plausibly has, from their age and their
+ * screening interval.
+ *
+ * Screening starts at the risk level's lower age bound, so someone only just
+ * old enough has no history at all, and someone near the upper bound has a
+ * round for each interval since. A routine participant aged 51 has none; at
+ * 54, one; at 68, six.
+ *
+ * @param {object} participant - The participant
+ * @param {object} riskLevel - Their risk level from data/risk-levels
+ * @param {string|Date} firstEpisodeDate - When their earliest real round opened
+ * @param {number} max - Cap, to bound how much history we hold
+ * @returns {number} Number of historic episodes to generate
+ */
+const countHistoricEpisodes = (
+  participant,
+  riskLevel,
+  firstEpisodeDate,
+  max
+) => {
+  const ageAtFirstEpisode = dayjs(firstEpisodeDate).diff(
+    dayjs(participant.demographicInformation.dateOfBirth),
+    'year'
+  )
+
+  const yearsScreening = ageAtFirstEpisode - riskLevel.ageRange.lower
+  if (yearsScreening <= 0) return 0
+
+  const intervalYears = riskLevel.frequency / 12
+  const rounds = Math.floor(yearsScreening / intervalYears)
+
+  return Math.min(rounds, max)
+}
+
+/**
  * Generate summary-level episodes for a participant's past screening rounds.
  *
- * These carry no events - just dates, an outcome and enough image metadata
- * to show as priors. Spacing follows the risk level's own screening interval
- * (routine every 3 years, family history / high risk yearly).
+ * Outcome-first: each round says what it found, and we don't model how it got
+ * there - no appointments, no reads, no assessment detail. That is enough for
+ * every "what happened before" view, and cheap to hold. If we later model the
+ * steps, the outcome can be computed from them instead.
+ *
+ * Spacing follows the risk level's own screening interval (routine every 3
+ * years, family history / high risk yearly).
  *
  * @param {object} options
  * @param {object} options.participant - The participant
  * @param {string} options.type - Risk level driving the interval
  * @param {string|Date} options.earliestOpenedDate - Opened date of their oldest real episode
- * @param {number} options.count - How many historic episodes to generate
+ * @param {number} options.max - Cap on how many to generate
+ * @param {object} [options.outcomeWeights] - Override the default outcome mix
  * @returns {Array} Historic episodes, oldest first
  */
 const generateHistoricEpisodes = ({
   participant,
   type,
   earliestOpenedDate,
-  count
+  max,
+  outcomeWeights
 }) => {
   const riskLevel = riskLevels[type] || riskLevels.routine
+  const weights = outcomeWeights || HISTORIC_OUTCOME_WEIGHTS
+
+  const count = countHistoricEpisodes(
+    participant,
+    riskLevel,
+    earliestOpenedDate,
+    max
+  )
+
   const episodes = []
 
   for (let round = 1; round <= count; round++) {
@@ -193,13 +264,6 @@ const generateHistoricEpisodes = ({
       .subtract(riskLevel.frequency * round, 'month')
       .add(faker.number.int({ min: -30, max: 30 }), 'day')
 
-    // Don't invent rounds from before the participant was screening age
-    const ageAtEpisode = openedDate.diff(
-      dayjs(participant.demographicInformation.dateOfBirth),
-      'year'
-    )
-    if (ageAtEpisode < riskLevel.ageRange.lower) break
-
     // The round ran its course: appointment, images, reading, closed
     const screenedDate = openedDate.add(INVITATION_LEAD_DAYS, 'day')
     const closedDate = screenedDate.add(
@@ -207,30 +271,40 @@ const generateHistoricEpisodes = ({
       'day'
     )
 
+    const outcome = weighted.select(weights)
+
+    // A round with no result never produced images either
+    const wasScreened = outcome !== 'no_result'
+
     episodes.push({
       id: generateId(),
       participantId: participant.id,
-      sequence: null, // assigned with the rest of the participant's episodes
       type,
       stage: 'closed',
       stageHistory: [
         { stage: 'scheduled', timestamp: openedDate.toISOString() },
-        { stage: 'mammograms', timestamp: screenedDate.toISOString() },
-        { stage: 'reading', timestamp: screenedDate.toISOString() },
+        ...(wasScreened
+          ? [
+              { stage: 'mammograms', timestamp: screenedDate.toISOString() },
+              { stage: 'reading', timestamp: screenedDate.toISOString() }
+            ]
+          : []),
         { stage: 'closed', timestamp: closedDate.toISOString() }
       ],
-      outcome: weighted.select(HISTORIC_OUTCOME_WEIGHTS),
+      outcome,
       openedDate: openedDate.toISOString(),
       closedDate: closedDate.toISOString(),
       eventIds: [],
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image set
-      mammogramSummary: {
-        takenDate: screenedDate.toISOString(),
-        viewCount: 4,
-        breastScreeningUnitId: participant.assignedBSU
-      }
+      mammogramSummary: wasScreened
+        ? {
+            takenDate: screenedDate.toISOString(),
+            viewCount: 4,
+            breastScreeningUnitId: participant.assignedBSU
+          }
+        : null
     })
   }
 
@@ -258,9 +332,24 @@ const checkEpisodes = (episodes, eventsById) => {
       .map((eventId) => eventsById.get(eventId))
       .filter(Boolean)
 
-    // A past round is over, by definition
+    // Open or closed, and each has its own rules
+    if (episode.stage === 'closed') {
+      if (!episode.closedDate) {
+        problems.push(`closed episode ${episode.id} has no closedDate`)
+      }
+      if (!EPISODE_OUTCOMES.includes(episode.outcome)) {
+        problems.push(
+          `closed episode ${episode.id} has outcome "${episode.outcome}"`
+        )
+      }
+    } else if (episode.outcome) {
+      problems.push(`open episode ${episode.id} has an outcome`)
+    }
+
+    // A past round is over, by definition, and carries no detail of how it got
+    // there - it is seeded outcome-first
     if (episode.isHistoric) {
-      if (episode.stage !== 'closed' || !episode.outcome) {
+      if (episode.stage !== 'closed') {
         problems.push(`historic episode ${episode.id} is not closed`)
       }
       if (episode.eventIds.length) {
@@ -275,7 +364,7 @@ const checkEpisodes = (episodes, eventsById) => {
     }
 
     // Reading needs images: an episode can only be in reading off the back of
-    // a completed mammogram appointment, and only while it is still open
+    // a completed mammogram appointment that is still within the reading window
     if (episode.stage === 'reading') {
       if (!events.some((event) => isCompleted(event.status))) {
         problems.push(
@@ -287,17 +376,15 @@ const checkEpisodes = (episodes, eventsById) => {
           `episode ${episode.id} is in reading but no appointment is eligible for reading`
         )
       }
-      if (episode.outcome) {
-        problems.push(`episode ${episode.id} is in reading but has an outcome`)
+    }
+
+    // Assessment only follows a reading that recalled them
+    if (episode.stage === 'assessment') {
+      if (!events.some((event) => isCompleted(event.status))) {
+        problems.push(
+          `episode ${episode.id} is in assessment with no completed appointment`
+        )
       }
-    }
-
-    if (episode.stage === 'closed' && !episode.closedDate) {
-      problems.push(`episode ${episode.id} is closed with no closedDate`)
-    }
-
-    if (episode.stage !== 'closed' && episode.outcome) {
-      problems.push(`open episode ${episode.id} has an outcome`)
     }
   })
 

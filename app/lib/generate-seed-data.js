@@ -8,7 +8,6 @@ const fs = require('fs')
 const path = require('path')
 const config = require('../config')
 const weighted = require('weighted')
-const { faker } = require('@faker-js/faker')
 
 const { generateParticipant } = require('./generators/participant-generator')
 const { generateClinicsForBSU } = require('./generators/clinic-generator')
@@ -320,45 +319,26 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
 }
 
 /**
- * Number each participant's episodes from 1, oldest first.
+ * Give participants who have a real episode their past screening rounds, as
+ * summary-level records.
  *
- * Can only run once every snapshot has been generated: snapshots run
- * newest-first, so an episode's place in the sequence isn't known when it
- * is created.
- *
- * @param {Array} episodes - All episodes (mutated)
- */
-const assignEpisodeSequences = (episodes) => {
-  const byParticipant = new Map()
-
-  episodes.forEach((episode) => {
-    if (!byParticipant.has(episode.participantId)) {
-      byParticipant.set(episode.participantId, [])
-    }
-    byParticipant.get(episode.participantId).push(episode)
-  })
-
-  byParticipant.forEach((participantEpisodes) => {
-    participantEpisodes
-      .sort((a, b) => new Date(a.openedDate) - new Date(b.openedDate))
-      .forEach((episode, index) => {
-        episode.sequence = index + 1
-      })
-  })
-}
-
-/**
- * Give participants who have a real episode 0-3 summary-level past rounds.
- *
- * Only participants with events get history - the rest are unreachable in
- * the app, so history for them is payload nobody sees.
+ * How many they get follows from their age and screening interval, so someone
+ * only just old enough has none. Only participants with events get history -
+ * the rest are unreachable in the app, so history for them is payload nobody
+ * sees.
  *
  * @param {Array} episodes - The generated (real) episodes
  * @param {Array} participants - All participants
+ * @param {object} seedDataProfile - Active seed profile
  * @returns {Array} Historic episodes
  */
-const generateHistoricEpisodesForParticipants = (episodes, participants) => {
-  const { min, max } = config.generation.historicEpisodesPerParticipant
+const generateHistoricEpisodesForParticipants = (
+  episodes,
+  participants,
+  seedDataProfile
+) => {
+  const max = config.generation.maxHistoricEpisodesPerParticipant
+  const outcomeWeights = seedDataProfile?.episodes?.historicOutcomeWeights
   const participantsById = new Map(
     participants.map((participant) => [participant.id, participant])
   )
@@ -378,15 +358,13 @@ const generateHistoricEpisodesForParticipants = (episodes, participants) => {
     const participant = participantsById.get(participantId)
     if (!participant) return
 
-    const count = faker.number.int({ min, max })
-    if (count === 0) return
-
     historic.push(
       ...generateHistoricEpisodes({
         participant,
         type: earliest.type,
         earliestOpenedDate: earliest.openedDate,
-        count
+        max,
+        outcomeWeights
       })
     )
   })
@@ -730,18 +708,19 @@ const generateData = async (options = {}) => {
 
   const historicEpisodes = generateHistoricEpisodesForParticipants(
     allEpisodes,
-    finalParticipants
+    finalParticipants,
+    selectedSeedDataProfile
   )
 
   const episodesWithHistory = [...allEpisodes, ...historicEpisodes]
-  assignEpisodeSequences(episodesWithHistory)
 
   // Group each participant's episodes together, oldest first. Snapshots are
   // generated newest-first, so without this the store's per-participant index
-  // wouldn't be in sequence order.
+  // wouldn't be in date order.
   episodesWithHistory.sort(
     (a, b) =>
-      a.participantId.localeCompare(b.participantId) || a.sequence - b.sequence
+      a.participantId.localeCompare(b.participantId) ||
+      new Date(a.openedDate) - new Date(b.openedDate)
   )
 
   // The re-screen event was added after the events map was built

@@ -11,8 +11,29 @@ const dataStore = require('../data-store')
 const { getEvent } = require('./event-data.js')
 const { getReadingStatusForEvents } = require('./reading.js')
 
-// Stages an episode passes through, in order. `assessment` isn't modelled yet.
-const EPISODE_STAGES = ['scheduled', 'mammograms', 'reading', 'closed']
+// An episode is open until it closes. While open, the stage says where in the
+// process it has got to; `closed` means it has an outcome and is done.
+//
+// `assessment` needs no modelling of its own - it is simply an open episode
+// that has not concluded.
+const EPISODE_STAGES = [
+  'scheduled',
+  'mammograms',
+  'reading',
+  'assessment',
+  'closed'
+]
+
+// What the round found, set only when the episode closes. This is the
+// meta-level answer, not the detail of how we got there:
+//
+// - routine_recall  clear - reading found nothing, or assessment did not
+// - under_care      cancer or abnormality found; they are in treatment or
+//                   follow-up rather than routine screening
+// - no_result       the round ended without a screening result. Why (did not
+//                   attend, cancelled, attended but not screened) is on the
+//                   appointment - it isn't stored twice
+const EPISODE_OUTCOMES = ['routine_recall', 'under_care', 'no_result']
 
 // Where an event's status leaves its episode. Shared by the generator (which
 // settles seed episodes) and updateEventStatus (which keeps them in step at
@@ -27,20 +48,21 @@ const EPISODE_STAGE_BY_EVENT_STATUS = {
   event_paused: { stage: 'mammograms' },
   event_complete: { stage: 'reading' },
   event_partially_screened: { stage: 'reading' },
-  event_cancelled: { stage: 'closed', outcome: 'cancelled' },
-  event_did_not_attend: { stage: 'closed', outcome: 'did_not_attend' },
-  event_attended_not_screened: { stage: 'closed', outcome: 'did_not_complete' }
+  event_cancelled: { stage: 'closed', outcome: 'no_result' },
+  event_did_not_attend: { stage: 'closed', outcome: 'no_result' },
+  event_attended_not_screened: { stage: 'closed', outcome: 'no_result' }
 }
 
 // Where a concluded reading leaves its episode. Reading outcomes that mean
 // reading is still under way (not_read, pending_second_read,
 // arbitration_pending) are absent - the episode stays in `reading`.
 //
-// Assessment isn't modelled yet, so recall_for_assessment closes the episode
-// rather than moving it on.
+// Note a clear reading is the only one that ends the episode. Recall for
+// assessment is an interim routing decision, not a result: it moves the
+// episode on to assessment, which is where the result actually comes from.
 const EPISODE_STAGE_BY_READING_OUTCOME = {
   normal: { stage: 'closed', outcome: 'routine_recall' },
-  recall_for_assessment: { stage: 'closed', outcome: 'recall_for_assessment' },
+  recall_for_assessment: { stage: 'assessment' },
   // A re-screen is owed, so the episode goes back for more mammograms
   technical_recall: { stage: 'mammograms' }
 }
@@ -99,7 +121,9 @@ const getEpisodesForParticipant = (data, participantId) => {
     .map((episodeId) => getEpisode(data, episodeId))
     .filter(Boolean)
 
-  return episodes.sort((a, b) => a.sequence - b.sequence)
+  return episodes.sort(
+    (a, b) => new Date(a.openedDate) - new Date(b.openedDate)
+  )
 }
 
 /**
@@ -156,6 +180,17 @@ const getEpisodeReadingStatus = (data, episode, userId = null) => {
  */
 const isEpisodeClosed = (episode) => {
   return episode?.stage === 'closed'
+}
+
+/**
+ * Whether an episode is still open - anything that hasn't closed, whatever
+ * stage it has reached
+ *
+ * @param {object} episode - Episode object
+ * @returns {boolean} True if open
+ */
+const isEpisodeOpen = (episode) => {
+  return Boolean(episode) && !isEpisodeClosed(episode)
 }
 
 /**
@@ -257,11 +292,16 @@ const advanceEpisodeForEventStatus = (data, event) => {
 /**
  * Move an event's episode to wherever its reading outcome leaves it.
  *
- * Called from writeReading once a read has been saved: a concluded reading
- * is what closes an episode (or sends it back for a technical recall).
+ * Deliberately NOT called when a read is saved. Two opinions and a computed
+ * outcome is not a confirmed result: there is no confirmation step in the
+ * app yet, so writing a read leaves the episode in `reading`. This is what
+ * that confirmation step should call once it exists.
+ *
+ * The seed generator uses the same map to settle rounds read long enough ago
+ * that they would have been confirmed by now.
  *
  * @param {object} data - Session data
- * @param {object} event - The event that was just read
+ * @param {object} event - The event that was read
  * @param {string} readingOutcome - Outcome from getOutcome
  * @returns {object | null} The updated episode, or null if nothing to do
  */
@@ -278,6 +318,7 @@ const advanceEpisodeForReadingOutcome = (data, event, readingOutcome) => {
 
 module.exports = {
   EPISODE_STAGES,
+  EPISODE_OUTCOMES,
   EPISODE_STAGE_BY_EVENT_STATUS,
   EPISODE_STAGE_BY_READING_OUTCOME,
   getEpisode,
@@ -286,6 +327,7 @@ module.exports = {
   getEpisodeEvents,
   getEpisodeReadingStatus,
   isEpisodeClosed,
+  isEpisodeOpen,
   updateEpisode,
   updateEpisodeStage,
   advanceEpisodeForEventStatus,

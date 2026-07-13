@@ -76,28 +76,50 @@ every episode lists its `eventIds`. Accessors live in
 available as Nunjucks filters): `getEpisode`, `getEpisodesForParticipant`,
 `getCurrentEpisode`, `getEpisodeEvents`, `getEpisodeReadingStatus`.
 
-An episode moves through **stages**: `scheduled` → `mammograms` → `reading`
-→ `closed`. A technical recall sends it back to `mammograms`. (`assessment`
-is a future stage - until it's modelled, episodes that conclude
-recall-for-assessment go straight to `closed`.) When it closes it takes an
-`outcome`.
+### Open or closed
 
-You should not normally need to advance an episode by hand. Stage changes are
-wired into the two funnels that already exist:
+An episode is **open** until it closes. While open, its `stage` says how far
+through the process it has got:
 
-- `updateEventStatus` moves the episode to wherever the appointment's new
-  status leaves it (check-in → `mammograms`, complete → `reading`, did not
-  attend → `closed`).
-- `writeReading` closes the episode - or sends it back for a technical recall
-  - once a reading concludes.
+```
+scheduled → mammograms → reading → assessment      (open)
+                 ↑___________|                      technical recall
+closed                                              (outcome + closedDate set)
+```
 
-Both use the maps in `episodes.js`, which the seed generator also uses, so
-generated episodes sit exactly where a real one would after the same events.
-If you do need to change one directly, use `updateEpisode` /
-`updateEpisodeStage` - the same replacement-record rules apply as for events.
+`assessment` needs no modelling of its own - it is simply an open episode that
+has not concluded. Use `isEpisodeOpen` / `isEpisodeClosed` rather than
+comparing `stage` yourself.
 
-Stage moves are **not validated** yet: any stage can follow any other. A
-transition map arrives with the statuses work.
+When an episode closes it takes an **outcome** - the meta-level answer to what
+the round found, not the detail of how it got there:
+
+| Outcome | Meaning |
+|---|---|
+| `routine_recall` | Clear. Reading found nothing, or assessment didn't. |
+| `under_care` | Cancer or abnormality found; in treatment or follow-up. |
+| `no_result` | The round ended without a screening result. |
+
+Why there was no result (did not attend, cancelled, attended but not screened)
+lives on the **appointment**, not the episode - it isn't stored twice.
+
+### Advancing an episode
+
+`updateEventStatus` moves the episode to wherever the appointment's new status
+leaves it (check-in → `mammograms`, complete → `reading`, did not attend →
+`closed`), so routes don't have to know episodes exist. It uses the maps in
+`episodes.js`, which the seed generator also uses, so generated episodes sit
+exactly where a real one would after the same events.
+
+**Writing a read deliberately does not close the episode.** Two opinions and a
+computed outcome is not a confirmed result, and there is no step in the app
+that confirms one yet. `advanceEpisodeForReadingOutcome` is what that step
+should call when it exists; until then an episode stays in `reading`.
+
+To change an episode directly, use `updateEpisode` / `updateEpisodeStage` - the
+same replacement-record rules apply as for events. Stage moves are **not
+validated**: any stage can follow any other. A transition map arrives with the
+statuses work.
 
 ### What an episode is always allowed to assume
 
@@ -105,12 +127,12 @@ The generator checks these on every run and warns loudly if any is broken
 (`checkEpisodes` in
 [episode-generator.js](../app/lib/generators/episode-generator.js)):
 
-- A **historic** episode is always `closed`, always has an outcome, and never
-  has events.
-- An episode in **`reading`** is open (no outcome) and contains a completed
-  mammogram appointment that is still within the reading window. Nothing can
-  be in reading without images to read.
-- A **closed** episode has a `closedDate`; an open one has no `outcome`.
+- A **closed** episode has a `closedDate` and a valid outcome; an **open** one
+  has no outcome.
+- A **historic** episode is always closed, and never has events.
+- An episode in **`reading`** contains a completed mammogram appointment that
+  is still within the reading window. Nothing can be in reading without images
+  to read.
 
 A round screened longer ago than the reading window closes rather than sitting
 in `reading` forever - it was read at the time, we just don't seed reads going
@@ -127,12 +149,21 @@ rename.
 
 ### Historic episodes
 
-Participants who have a real episode also get 0-3 **historic** ones
-(`isHistoric: true`): summary-level records of past rounds, with dates, an
-outcome and enough image metadata to show as priors, but no events. They are
-spaced by the participant's screening interval (routine every 3 years, high
-risk yearly). Volume is set by `generation.historicEpisodesPerParticipant` in
-[app/config.js](../app/config.js).
+Participants who have a real episode also get their past rounds as **historic**
+episodes (`isHistoric: true`): summary-level records with dates and an outcome,
+but no appointments, no reads and no assessment detail.
+
+They are seeded **outcome-first** - we say what the round found and don't model
+how it got there. That's enough for any "what happened before" view, and cheap
+to hold. If we later model the steps, the outcome can be computed from them
+instead, without the record changing shape.
+
+How many a participant gets follows from their **age** and their screening
+interval, since screening starts at the risk level's lower age bound: a routine
+participant aged 51 has none, at 54 has one, at 69 has six.
+`generation.maxHistoricEpisodesPerParticipant` in
+[app/config.js](../app/config.js) only caps it. The outcome mix can be
+overridden per seed profile via `episodes.historicOutcomeWeights`.
 
 ## Escape hatch
 

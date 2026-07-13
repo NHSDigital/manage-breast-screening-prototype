@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-07-13 11:40 UTC
+- **Generated:** 2026-07-13 13:35 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -21,24 +21,24 @@
 | `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 144 |
 | `event-data.js` | Event lookups and mutations in session data | 169 |
 | `episodes.js` | Episode lookups and stage changes | 184 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 203 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 218 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 274 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 293 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 311 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 324 |
-| `objects.js` | Object utilities for extracting and flattening values. | 342 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 352 |
-| `random.js` | Seeded random functions for stable prototype data | 363 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 380 |
-| `roles-and-permissions.js` | User role checks | 393 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 411 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 204 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 219 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 275 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 294 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 312 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 325 |
+| `objects.js` | Object utilities for extracting and flattening values. | 343 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 353 |
+| `random.js` | Seeded random functions for stable prototype data | 364 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 381 |
+| `roles-and-permissions.js` | User role checks | 394 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 412 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 427 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 439 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 451 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 465 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 475 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 428 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 440 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 452 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 466 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 476 |
 
 ---
 
@@ -189,16 +189,17 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 
 | Function | Description | Line |
 |---|---|---|
-| `getEpisode(data, episodeId)` | Get an episode by ID | 64 |
-| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 85 |
-| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 105 |
-| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 121 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 136 |
-| `isEpisodeClosed(episode)` | Whether an episode has closed | 151 |
-| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 161 |
-| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 194 |
-| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 236 |
-| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 257 |
+| `getEpisode(data, episodeId)` | Get an episode by ID | 86 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 107 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 129 |
+| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 145 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 160 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 175 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 185 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 196 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 229 |
+| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 271 |
+| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 292 |
 
 ### clinics.js
 
@@ -226,50 +227,50 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 | `getReadingMetadata(event)` | Get reading metadata for an event | 35 |
 | `getReadsAsArray(event)` | Get all reads for an event as an ordered array | 66 |
 | `writeReading(event, userId, reading, data, [sessionId])` | Save a user's reading for an event, and remove the event from the reading | 87 |
-| `enhanceEventsWithReadingData(events, participants, userId)` | Enhance events with pre-calculated reading metadata | 155 |
-| `getReadingStatusForEvents(events, [userId])` | Get detailed reading status for a group of events | 350 |
-| `getReadingProgress(events, currentEventId, skippedEvents, [userId])` | Get progress through reading a set of events | 396 |
-| `sortEventsByScreeningDate(events)` | Sort events by screening date (oldest first) | 713 |
-| `getFirstAvailableClinic(data)` | Get the first clinic that still has events needing reads | 733 |
-| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 744 |
-| `getReadableEventsForClinic(data, clinicId)` | Get readable events for a clinic with pre-calculated metadata | 776 |
-| `filterEventsByEligibleForReading(events)` | Filter events that are eligible for reading | 807 |
-| `filterEventsByNeedsAnyRead(events, maxReadsPerEvent)` | Filter events that need any read (first or second) | 816 |
-| `filterEventsByNeedsFirstRead(events)` | Filter events that need a first read | 830 |
-| `filterEventsByNeedsSecondRead(events)` | Filter events that need a second read | 840 |
-| `filterEventsByFullyRead(events, requiredReads)` | Filter events that are fully read (have all required reads) | 850 |
-| `filterEventsByUserCanRead(events, userId)` | Filter events that a specific user can read | 864 |
-| `filterEventsByUserCanReadOrHasRead(events, userId, [options])` | Filter events that user can read or has already read | 875 |
-| `filterEventsByClinic(events, clinicId)` | Filter events for a specific clinic | 906 |
-| `filterEventsByDayRange(events, minDays, [maxDays])` | Filter events that are within a specific day range | 917 |
-| `getFirstEvent(events)` | Get the first event from an array | 937 |
-| `getNextEvent(events, currentEventId, wrap)` | Get the next event after a specific event | 946 |
-| `getPreviousEvent(events, currentEventId, wrap)` | Get the previous event before a specific event | 967 |
-| `getReadForUser(event, [userId])` | Get the read object for a specific user on an event | 992 |
-| `getFirstUserReadableEvent(events, userId)` | Get first event from an array that a user can read | 1009 |
-| `getNextUserReadableEvent(events, currentEventId, [userId])` | Get the next event the user can read after the current event, wrapping to start if needed | 1024 |
-| `getResumeEventForUser(events, [userId], [skippedEvents])` | Get the event the user should resume reading from. | 1047 |
-| `userHasReadEvent(event, userId)` | Check if a user has already read an event | 1099 |
-| `getOtherReads(event, userId)` | Get reads from other users (not the current user) | 1118 |
-| `areReadsDiscordant(readA, readB)` | Determine if two reads are discordant (disagree in a clinically meaningful way). | 1139 |
-| `willGoToArbitration(readA, readB, [settings])` | Determine whether two reads will result in arbitration, taking the site's | 1196 |
-| `getOutcome(event, [settings])` | Compute the overall outcome for an event based on its reads and site policy. | 1224 |
-| `getComparisonInfo(event, secondReadData, [userId], [settings])` | Determine if a comparison page should be shown to the second reader. | 1264 |
-| `shouldShowComparePage(event, secondReadData, [userId], [settings])` | Decide whether the compare page should be shown to the second reader. | 1329 |
-| `isDeferred(event)` | Check if an event has been deferred from reading | 1386 |
-| `hasReads(event)` | Check if an event has any reads | 1433 |
-| `needsFirstRead(event)` | Check if an event needs a first read | 1446 |
-| `needsSecondRead(event)` | Check if an event needs a second read | 1456 |
-| `needsArbitration()` | Check if an event needs arbitration. | 1464 |
-| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible event candidates for a session based on its type and filters | 1504 |
-| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of events for reading based on specified criteria | 1568 |
-| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1657 |
-| `generateSessionId()` | Generate a unique ID for a session | 1692 |
-| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1701 |
-| `getFirstReadableEventInSession(data, sessionId, [userId])` | Get the first event in a session that a user can read | 1738 |
-| `skipEventInSession(data, sessionId, eventId)` | Mark an event as skipped in a session | 1764 |
-| `topUpSession(data, sessionId)` | Add the next eligible event to a session if it is under its target size | 1787 |
-| `getSessionReadingProgress(data, sessionId, currentEventId, [userId])` | Get reading progress for a session | 1837 |
+| `enhanceEventsWithReadingData(events, participants, userId)` | Enhance events with pre-calculated reading metadata | 146 |
+| `getReadingStatusForEvents(events, [userId])` | Get detailed reading status for a group of events | 341 |
+| `getReadingProgress(events, currentEventId, skippedEvents, [userId])` | Get progress through reading a set of events | 387 |
+| `sortEventsByScreeningDate(events)` | Sort events by screening date (oldest first) | 704 |
+| `getFirstAvailableClinic(data)` | Get the first clinic that still has events needing reads | 724 |
+| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 735 |
+| `getReadableEventsForClinic(data, clinicId)` | Get readable events for a clinic with pre-calculated metadata | 767 |
+| `filterEventsByEligibleForReading(events)` | Filter events that are eligible for reading | 798 |
+| `filterEventsByNeedsAnyRead(events, maxReadsPerEvent)` | Filter events that need any read (first or second) | 807 |
+| `filterEventsByNeedsFirstRead(events)` | Filter events that need a first read | 821 |
+| `filterEventsByNeedsSecondRead(events)` | Filter events that need a second read | 831 |
+| `filterEventsByFullyRead(events, requiredReads)` | Filter events that are fully read (have all required reads) | 841 |
+| `filterEventsByUserCanRead(events, userId)` | Filter events that a specific user can read | 855 |
+| `filterEventsByUserCanReadOrHasRead(events, userId, [options])` | Filter events that user can read or has already read | 866 |
+| `filterEventsByClinic(events, clinicId)` | Filter events for a specific clinic | 897 |
+| `filterEventsByDayRange(events, minDays, [maxDays])` | Filter events that are within a specific day range | 908 |
+| `getFirstEvent(events)` | Get the first event from an array | 928 |
+| `getNextEvent(events, currentEventId, wrap)` | Get the next event after a specific event | 937 |
+| `getPreviousEvent(events, currentEventId, wrap)` | Get the previous event before a specific event | 958 |
+| `getReadForUser(event, [userId])` | Get the read object for a specific user on an event | 983 |
+| `getFirstUserReadableEvent(events, userId)` | Get first event from an array that a user can read | 1000 |
+| `getNextUserReadableEvent(events, currentEventId, [userId])` | Get the next event the user can read after the current event, wrapping to start if needed | 1015 |
+| `getResumeEventForUser(events, [userId], [skippedEvents])` | Get the event the user should resume reading from. | 1038 |
+| `userHasReadEvent(event, userId)` | Check if a user has already read an event | 1090 |
+| `getOtherReads(event, userId)` | Get reads from other users (not the current user) | 1109 |
+| `areReadsDiscordant(readA, readB)` | Determine if two reads are discordant (disagree in a clinically meaningful way). | 1130 |
+| `willGoToArbitration(readA, readB, [settings])` | Determine whether two reads will result in arbitration, taking the site's | 1187 |
+| `getOutcome(event, [settings])` | Compute the overall outcome for an event based on its reads and site policy. | 1215 |
+| `getComparisonInfo(event, secondReadData, [userId], [settings])` | Determine if a comparison page should be shown to the second reader. | 1255 |
+| `shouldShowComparePage(event, secondReadData, [userId], [settings])` | Decide whether the compare page should be shown to the second reader. | 1320 |
+| `isDeferred(event)` | Check if an event has been deferred from reading | 1377 |
+| `hasReads(event)` | Check if an event has any reads | 1424 |
+| `needsFirstRead(event)` | Check if an event needs a first read | 1437 |
+| `needsSecondRead(event)` | Check if an event needs a second read | 1447 |
+| `needsArbitration()` | Check if an event needs arbitration. | 1455 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible event candidates for a session based on its type and filters | 1495 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of events for reading based on specified criteria | 1559 |
+| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1648 |
+| `generateSessionId()` | Generate a unique ID for a session | 1683 |
+| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1692 |
+| `getFirstReadableEventInSession(data, sessionId, [userId])` | Get the first event in a session that a user can read | 1729 |
+| `skipEventInSession(data, sessionId, eventId)` | Mark an event as skipped in a session | 1755 |
+| `topUpSession(data, sessionId)` | Add the next eligible event to a session if it is under its target size | 1778 |
+| `getSessionReadingProgress(data, sessionId, currentEventId, [userId])` | Get reading progress for a session | 1828 |
 
 ### prior-mammograms.js
 
