@@ -30,7 +30,7 @@ if (!fs.existsSync(generatedDataPath)) {
 let generationInfo = {
   generatedAt: 'Never',
   seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
-  stats: { participants: 0, clinics: 0, events: 0 }
+  stats: { participants: 0, clinics: 0, events: 0, episodes: 0 }
 }
 
 // Load generation info

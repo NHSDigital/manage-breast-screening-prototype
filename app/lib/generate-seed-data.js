@@ -8,19 +8,31 @@ const fs = require('fs')
 const path = require('path')
 const config = require('../config')
 const weighted = require('weighted')
+const { faker } = require('@faker-js/faker')
 
 const { generateParticipant } = require('./generators/participant-generator')
 const { generateClinicsForBSU } = require('./generators/clinic-generator')
 const { generateEvent } = require('./generators/event-generator')
+const {
+  generateEpisode,
+  generateHistoricEpisodes,
+  finaliseEpisodeStage,
+  checkEpisodes
+} = require('./generators/episode-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
-const { generateReadingData } = require('./generators/reading-generator')
+const {
+  generateReadingData,
+  generateSingleRead
+} = require('./generators/reading-generator')
 const { getSeedDataProfile } = require('./generators/seed-profiles')
+const { getOutcome } = require('./utils/reading')
 
 const riskLevels = require('../data/risk-levels')
 
 // Load existing data
 const breastScreeningUnits = require('../data/breast-screening-units')
 const ethnicities = require('../data/ethnicities')
+const users = require('../data/users')
 
 // Hardcoded scenarios for user research
 const testScenarios = require('../data/test-scenarios')
@@ -111,7 +123,25 @@ const generateClinicsForDay = (
 ) => {
   const clinics = []
   const events = []
+  const episodes = []
   const participants = [...allParticipants]
+
+  // Every event sits inside an episode - the screening round it belongs to.
+  // Create the episode first, then the event, and link them both ways.
+  const addEventToNewEpisode = (participant, eventOptions) => {
+    const episode = generateEpisode({
+      participant,
+      type: getCurrentRiskLevel(participant, dayjs(date).toDate()),
+      appointmentDate: eventOptions.slot.dateTime
+    })
+
+    const event = generateEvent({ ...eventOptions, episodeId: episode.id })
+    episode.eventIds.push(event.id)
+
+    episodes.push(episode)
+    events.push(event)
+    return event
+  }
 
   // Check if this snapshot date is for the recent period (not historical)
   const isRecentSnapshot = dayjs(date).isAfter(dayjs().subtract(1, 'month'))
@@ -176,7 +206,7 @@ const generateClinicsForDay = (
         return
       }
 
-      const event = generateEvent({
+      addEventToNewEpisode(participant, {
         slot,
         participant,
         clinic: firstClinic,
@@ -188,7 +218,6 @@ const generateClinicsForDay = (
         seedDataProfile
       })
 
-      events.push(event)
       usedParticipantsInSnapshot.add(participant.id)
     })
   }
@@ -252,7 +281,7 @@ const generateClinicsForDay = (
         const shouldBeInProgress =
           isToday && !hasCreatedInProgressEvent && i === 0
 
-        const event = generateEvent({
+        addEventToNewEpisode(participant, {
           slot,
           participant,
           clinic,
@@ -268,7 +297,6 @@ const generateClinicsForDay = (
           )
         }
 
-        events.push(event)
         usedParticipantsInSnapshot.add(participant.id)
         availableParticipants.splice(randomIndex, 1)
       }
@@ -280,6 +308,7 @@ const generateClinicsForDay = (
   return {
     clinics,
     events,
+    episodes,
     newParticipants: participants.slice(allParticipants.length)
   }
 }
@@ -288,6 +317,231 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
   return Array.from({ length: numberOfDays }, (_, i) =>
     dayjs(startDate).add(i, 'days')
   )
+}
+
+/**
+ * Number each participant's episodes from 1, oldest first.
+ *
+ * Can only run once every snapshot has been generated: snapshots run
+ * newest-first, so an episode's place in the sequence isn't known when it
+ * is created.
+ *
+ * @param {Array} episodes - All episodes (mutated)
+ */
+const assignEpisodeSequences = (episodes) => {
+  const byParticipant = new Map()
+
+  episodes.forEach((episode) => {
+    if (!byParticipant.has(episode.participantId)) {
+      byParticipant.set(episode.participantId, [])
+    }
+    byParticipant.get(episode.participantId).push(episode)
+  })
+
+  byParticipant.forEach((participantEpisodes) => {
+    participantEpisodes
+      .sort((a, b) => new Date(a.openedDate) - new Date(b.openedDate))
+      .forEach((episode, index) => {
+        episode.sequence = index + 1
+      })
+  })
+}
+
+/**
+ * Give participants who have a real episode 0-3 summary-level past rounds.
+ *
+ * Only participants with events get history - the rest are unreachable in
+ * the app, so history for them is payload nobody sees.
+ *
+ * @param {Array} episodes - The generated (real) episodes
+ * @param {Array} participants - All participants
+ * @returns {Array} Historic episodes
+ */
+const generateHistoricEpisodesForParticipants = (episodes, participants) => {
+  const { min, max } = config.generation.historicEpisodesPerParticipant
+  const participantsById = new Map(
+    participants.map((participant) => [participant.id, participant])
+  )
+
+  // The oldest real episode per participant - history is generated back from it
+  const earliestEpisodes = new Map()
+  episodes.forEach((episode) => {
+    const earliest = earliestEpisodes.get(episode.participantId)
+    if (!earliest || episode.openedDate < earliest.openedDate) {
+      earliestEpisodes.set(episode.participantId, episode)
+    }
+  })
+
+  const historic = []
+
+  earliestEpisodes.forEach((earliest, participantId) => {
+    const participant = participantsById.get(participantId)
+    if (!participant) return
+
+    const count = faker.number.int({ min, max })
+    if (count === 0) return
+
+    historic.push(
+      ...generateHistoricEpisodes({
+        participant,
+        type: earliest.type,
+        earliestOpenedDate: earliest.openedDate,
+        count
+      })
+    )
+  })
+
+  return historic
+}
+
+/**
+ * Seed one multi-event episode, to prove the container holds more than one
+ * appointment.
+ *
+ * A technical recall is the natural multi-event case: reading concludes the
+ * images need retaking, so the episode goes back to mammograms and a re-screen
+ * is booked - a second event in the same episode.
+ *
+ * Whether one arises naturally depends on the reading dice, and some profiles
+ * (allNormals) can never produce one. So where this run didn't throw one up,
+ * we make one: two readers agreeing the images need retaking is exactly what
+ * sends an episode back for a re-screen.
+ *
+ * Either way the re-screen has to be bookable, so candidates are only
+ * considered if their unit has a future clinic with a free slot.
+ *
+ * @param {object} options
+ * @param {Array} options.episodes - All real episodes
+ * @param {Array} options.events - All events, with reading data attached
+ * @param {Array} options.clinics - All clinics
+ * @param {Array} options.participants - All participants
+ * @param {Array} options.users - Users who can read
+ * @param {object} options.seedDataProfile - Active seed profile
+ * @returns {object | null} The re-screen event, or null if no case was found
+ */
+const seedTechnicalRecallRescreen = ({
+  episodes,
+  events,
+  clinics,
+  participants,
+  users,
+  seedDataProfile
+}) => {
+  const participantsById = new Map(
+    participants.map((participant) => [participant.id, participant])
+  )
+  const eventsById = new Map(events.map((event) => [event.id, event]))
+  const usedSlotIds = new Set(events.map((event) => event.slotId))
+  const today = dayjs().startOf('day')
+
+  // Where the re-screen could be booked: a future screening clinic with a
+  // free slot, by unit
+  const clinicByUnit = new Map()
+  clinics.forEach((clinic) => {
+    if (
+      clinic.clinicType !== 'screening' ||
+      !dayjs(clinic.date).isAfter(today) ||
+      clinicByUnit.has(clinic.breastScreeningUnitId)
+    ) {
+      return
+    }
+    const slot = clinic.slots.find(
+      (candidate) => !usedSlotIds.has(candidate.id)
+    )
+    if (slot) clinicByUnit.set(clinic.breastScreeningUnitId, { clinic, slot })
+  })
+
+  // An episode already owed a re-screen, else one still in reading that we
+  // can turn into a technical recall. Only ones we could actually book.
+  const isBookable = (episode) => {
+    const participant = participantsById.get(episode.participantId)
+    return Boolean(participant && clinicByUnit.has(participant.assignedBSU))
+  }
+
+  // Owed a re-screen: its one appointment was read as a technical recall.
+  // Asked of the reading itself, so it can't drift from the stage maps.
+  const owedRescreen = (episode) => {
+    if (episode.eventIds.length !== 1) return false
+
+    const event = eventsById.get(episode.eventIds[0])
+    return Boolean(event) && getOutcome(event, {}) === 'technical_recall'
+  }
+
+  const episode =
+    episodes.find(
+      (candidate) => owedRescreen(candidate) && isBookable(candidate)
+    ) ||
+    episodes.find(
+      (candidate) =>
+        candidate.stage === 'reading' &&
+        candidate.eventIds.length === 1 &&
+        isBookable(candidate)
+    )
+
+  if (!episode || users.length < 2) return null
+
+  const firstEvent = eventsById.get(episode.eventIds[0])
+  if (!firstEvent) return null
+
+  // Force the technical recall if this one didn't already have it
+  if (!owedRescreen(episode)) {
+    const readAt = dayjs(
+      firstEvent.timing.actualEndTime || firstEvent.timing.startTime
+    )
+    const [firstReader, secondReader] = users
+
+    const firstRead = generateSingleRead(
+      firstEvent,
+      firstReader.id,
+      firstReader.role,
+      readAt.add(1, 'day').toISOString(),
+      { forceOpinion: 'technical_recall', readNumber: 1 }
+    )
+
+    // The second read has to agree with the first, down to which views need
+    // retaking - two technical recalls flagging different views count as
+    // discordant, and would go to arbitration instead of back for a re-screen
+    const secondRead = {
+      ...structuredClone(firstRead),
+      readerId: secondReader.id,
+      readerType: secondReader.role,
+      readNumber: 2,
+      timestamp: readAt.add(2, 'day').toISOString()
+    }
+
+    firstEvent.imageReading = {
+      ...firstEvent.imageReading,
+      reads: {
+        [firstReader.id]: firstRead,
+        [secondReader.id]: secondRead
+      }
+    }
+    finaliseEpisodeStage(episode, [firstEvent])
+
+    if (!owedRescreen(episode)) return null
+  }
+
+  const participant = participantsById.get(episode.participantId)
+  const { clinic, slot } = clinicByUnit.get(participant.assignedBSU)
+
+  const rescreenEvent = generateEvent({
+    slot,
+    participant,
+    clinic,
+    episodeId: episode.id,
+    outcomeWeights: config.screening.outcomes[clinic.clinicType],
+    forceStatus: 'event_scheduled',
+    seedDataProfile
+  })
+
+  episode.eventIds.push(rescreenEvent.id)
+
+  console.log(
+    `Seeded technical-recall re-screen for ${participant.demographicInformation.firstName} ` +
+      `${participant.demographicInformation.lastName} (episode ${episode.id})`
+  )
+
+  return rescreenEvent
 }
 
 const generateData = async (options = {}) => {
@@ -406,6 +660,7 @@ const generateData = async (options = {}) => {
       return {
         clinics: [].concat(...snapshotData.map((s) => s.clinics)),
         events: newEvents,
+        episodes: [].concat(...snapshotData.map((s) => s.episodes)),
         newParticipants: [].concat(
           ...snapshotData.map((s) => s.newParticipants)
         )
@@ -415,6 +670,7 @@ const generateData = async (options = {}) => {
     return {
       clinics: [].concat(...unitData.map((d) => d.clinics)),
       events: [].concat(...unitData.map((d) => d.events)),
+      episodes: [].concat(...unitData.map((d) => d.episodes)),
       newParticipants: [].concat(...unitData.map((d) => d.newParticipants))
     }
   })
@@ -422,6 +678,7 @@ const generateData = async (options = {}) => {
   // Combine all data
   const allClinics = [].concat(...allData.map((d) => d.clinics))
   const allEvents = [].concat(...allData.map((d) => d.events))
+  const allEpisodes = [].concat(...allData.map((d) => d.episodes))
   const allNewParticipants = [].concat(...allData.map((d) => d.newParticipants))
 
   // Combine initial and new participants
@@ -440,18 +697,68 @@ const generateData = async (options = {}) => {
   console.log('Generating sample reading data...')
   const eventsWithReadingData = generateReadingData(
     sortedEvents,
-    require('../data/users'),
+    users,
     selectedSeedDataProfile
   )
 
-  // breastScreeningUnits.forEach(unit => {
-  //   snapshots.forEach(date => {
-  //     const { clinics, events, newParticipants } = generateSnapshot(date, participants, unit);
-  //     allClinics.push(...clinics);
-  //     allEvents.push(...events);
-  //     participants = [...participants, ...newParticipants];
-  //   });
-  // });
+  // Episodes: settle the stage now that reading data exists, add the seeded
+  // multi-event (technical recall) case, then the summary-level past rounds
+  console.log('Finalising episodes...')
+
+  const eventsById = new Map(
+    eventsWithReadingData.map((event) => [event.id, event])
+  )
+
+  allEpisodes.forEach((episode) => {
+    const episodeEvents = episode.eventIds
+      .map((eventId) => eventsById.get(eventId))
+      .filter(Boolean)
+    finaliseEpisodeStage(episode, episodeEvents)
+  })
+
+  const rescreenEvent = seedTechnicalRecallRescreen({
+    episodes: allEpisodes,
+    events: eventsWithReadingData,
+    clinics: allClinics,
+    participants: finalParticipants,
+    users,
+    seedDataProfile: selectedSeedDataProfile
+  })
+  if (rescreenEvent) {
+    eventsWithReadingData.push(rescreenEvent)
+  }
+
+  const historicEpisodes = generateHistoricEpisodesForParticipants(
+    allEpisodes,
+    finalParticipants
+  )
+
+  const episodesWithHistory = [...allEpisodes, ...historicEpisodes]
+  assignEpisodeSequences(episodesWithHistory)
+
+  // Group each participant's episodes together, oldest first. Snapshots are
+  // generated newest-first, so without this the store's per-participant index
+  // wouldn't be in sequence order.
+  episodesWithHistory.sort(
+    (a, b) =>
+      a.participantId.localeCompare(b.participantId) || a.sequence - b.sequence
+  )
+
+  // The re-screen event was added after the events map was built
+  eventsWithReadingData.forEach((event) => eventsById.set(event.id, event))
+
+  const episodeProblems = checkEpisodes(episodesWithHistory, eventsById)
+  if (episodeProblems.length) {
+    console.warn(
+      `\nWarning: ${episodeProblems.length} incoherent episodes were generated:`
+    )
+    episodeProblems
+      .slice(0, 10)
+      .forEach((problem) => console.warn(`  - ${problem}`))
+    if (episodeProblems.length > 10) {
+      console.warn(`  ...and ${episodeProblems.length - 10} more`)
+    }
+  }
 
   const writeData = (filename, data) => {
     fs.writeFileSync(
@@ -470,13 +777,15 @@ const generateData = async (options = {}) => {
     }))
   })
   writeData('events.json', { events: eventsWithReadingData })
+  writeData('episodes.json', { episodes: episodesWithHistory })
   writeData('generation-info.json', {
     generatedAt: new Date().toISOString(),
     seedDataProfile: selectedSeedDataProfile.key,
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,
-      events: allEvents.length
+      events: eventsWithReadingData.length,
+      episodes: episodesWithHistory.length
     }
   })
 
@@ -484,7 +793,11 @@ const generateData = async (options = {}) => {
   console.log('Generated:')
   console.log(`- ${finalParticipants.length} participants`)
   console.log(`- ${allClinics.length} clinics`)
-  console.log(`- ${allEvents.length} events`)
+  console.log(`- ${eventsWithReadingData.length} events`)
+  console.log(
+    `- ${episodesWithHistory.length} episodes ` +
+      `(${allEpisodes.length} current, ${historicEpisodes.length} historic)`
+  )
 }
 
 // Export the function instead of running it immediately

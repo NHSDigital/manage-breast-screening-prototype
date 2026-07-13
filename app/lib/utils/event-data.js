@@ -125,6 +125,15 @@ const updateEventStatus = (data, eventId, newStatus) => {
     data.event.statusHistory = updatedEvent.statusHistory
   }
 
+  // Keep the event's episode in step - check-in moves it to mammograms,
+  // a completed appointment moves it to reading, and so on. Doing it here
+  // means routes don't each have to know episodes exist.
+  //
+  // Required lazily: episodes.js needs getEvent from this module, so a
+  // top-level require would be circular.
+  const { advanceEpisodeForEventStatus } = require('./episodes.js')
+  advanceEpisodeForEventStatus(data, updatedEvent)
+
   return updatedEvent
 }
 

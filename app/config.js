@@ -74,6 +74,13 @@ module.exports = {
   generation: {
     numberOfParticipants: 1000,
     bookingProbability: 0.8, // 80% of slots are booked
-    previousMammogramRate: 0.05 // Rate of completed events with recorded previous mammograms
+    previousMammogramRate: 0.05, // Rate of completed events with recorded previous mammograms
+
+    // Summary-level past screening rounds, generated only for participants who
+    // have a real episode. Dial down if the generated data gets heavy.
+    historicEpisodesPerParticipant: {
+      min: 0,
+      max: 3
+    }
   }
 }
