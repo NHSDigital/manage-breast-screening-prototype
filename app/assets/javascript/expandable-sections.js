@@ -1,8 +1,7 @@
 // app/assets/javascript/expandable-sections.js
 
 const BREAST_FEATURES_SECTION_ID = 'breast-features'
-const CONFIRM_AFTER_IMAGING_STATUS = 'Review after imaging'
-const LEGACY_CONFIRM_AFTER_IMAGING_STATUS = 'Confirm after imaging'
+const REVIEW_AT_IMAGING_STATUS = 'Review at imaging'
 
 // Handle expandable sections with completion tracking
 document.addEventListener('DOMContentLoaded', function () {
@@ -41,11 +40,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (forcedStatus) {
       newStatus = forcedStatus
-    } else if (
-      currentStatus === CONFIRM_AFTER_IMAGING_STATUS ||
-      currentStatus === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
-    ) {
-      newStatus = CONFIRM_AFTER_IMAGING_STATUS
     } else if (currentStatus === 'Incomplete') {
       newStatus = 'Complete'
     } else if (currentStatus === 'To review') {
@@ -95,9 +89,9 @@ document.addEventListener('DOMContentLoaded', function () {
           getReviewAfterImagingWorkflowStatus()
 
         if (reviewAfterImagingWorkflowStatus === 'yes') {
-          updateSectionStatus(section, CONFIRM_AFTER_IMAGING_STATUS)
+          updateSectionStatus(section, REVIEW_AT_IMAGING_STATUS)
           if (window.saveSectionStatus) {
-            window.saveSectionStatus(sectionId, CONFIRM_AFTER_IMAGING_STATUS)
+            window.saveSectionStatus(sectionId, REVIEW_AT_IMAGING_STATUS)
           }
         } else if (reviewAfterImagingWorkflowStatus === 'answered') {
           updateSectionStatus(section, 'Reviewed')
@@ -124,14 +118,14 @@ document.addEventListener('DOMContentLoaded', function () {
         reviewAfterImagingButton.className =
           'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3'
         reviewAfterImagingButton.type = 'button'
-        reviewAfterImagingButton.textContent = 'Review after imaging'
+        reviewAfterImagingButton.textContent = 'Review at imaging'
 
         buttonContainer.appendChild(reviewAfterImagingButton)
 
         reviewAfterImagingButton.addEventListener('click', function () {
           setReviewAfterImagingFlag('yes')
           completeSectionAndContinue(section, index, {
-            forcedStatus: CONFIRM_AFTER_IMAGING_STATUS
+            forcedStatus: REVIEW_AT_IMAGING_STATUS
           })
           updateButtonText(section, button)
         })
@@ -183,17 +177,12 @@ document.addEventListener('DOMContentLoaded', function () {
           isBreastFeaturesSection &&
           reviewAfterImagingWorkflowStatus === 'yes'
         ) {
-          newStatus = CONFIRM_AFTER_IMAGING_STATUS
+          newStatus = REVIEW_AT_IMAGING_STATUS
         } else if (
           isBreastFeaturesSection &&
           reviewAfterImagingWorkflowStatus === 'answered'
         ) {
           newStatus = 'Reviewed'
-        } else if (
-          currentStatus === CONFIRM_AFTER_IMAGING_STATUS ||
-          currentStatus === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
-        ) {
-          newStatus = CONFIRM_AFTER_IMAGING_STATUS
         } else if (currentStatus === 'Incomplete') {
           newStatus = 'Complete'
         } else if (currentStatus === 'To review') {
@@ -292,7 +281,11 @@ function getCurrentSectionStatus(section) {
 function updateButtonText(section, button) {
   const currentStatus = getCurrentSectionStatus(section)
 
-  if (currentStatus === 'Reviewed' || currentStatus === 'Complete') {
+  if (
+    currentStatus === 'Reviewed' ||
+    currentStatus === 'Complete' ||
+    currentStatus === REVIEW_AT_IMAGING_STATUS
+  ) {
     button.textContent = 'Next section'
   } else {
     button.textContent = 'Mark as reviewed'
@@ -451,12 +444,7 @@ function updateSectionStatus(section, statusText) {
 
   if (statusElement) {
     // console.log('Found status element:', statusElement)
-    const normalisedStatusText =
-      statusText === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
-        ? CONFIRM_AFTER_IMAGING_STATUS
-        : statusText
-
-    statusElement.textContent = normalisedStatusText
+    statusElement.textContent = statusText
 
     // Update the tag colour class based on status
     // Reset all status classes first
@@ -466,13 +454,15 @@ function updateSectionStatus(section, statusText) {
       'nhsuk-tag--yellow'
     )
 
-    if (normalisedStatusText === 'Complete' || normalisedStatusText === 'Reviewed') {
+    if (
+      statusText === 'Complete' ||
+      statusText === 'Reviewed' ||
+      statusText === REVIEW_AT_IMAGING_STATUS
+    ) {
       statusElement.classList.add('nhsuk-tag--green')
-    } else if (normalisedStatusText === CONFIRM_AFTER_IMAGING_STATUS) {
-      statusElement.classList.add('nhsuk-tag--green')
-    } else if (normalisedStatusText === 'Incomplete') {
+    } else if (statusText === 'Incomplete') {
       statusElement.classList.add('nhsuk-tag--blue')
-    } else if (normalisedStatusText === 'To review') {
+    } else if (statusText === 'To review') {
       statusElement.classList.add('nhsuk-tag--yellow')
     }
 

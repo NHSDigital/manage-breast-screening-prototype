@@ -10,7 +10,7 @@
   const STORAGE_KEY_PREFIX = 'expanded-sections-'
   const PENDING_EXPAND_KEY_PREFIX = 'pending-expand-'
   const STATUS_KEY_PREFIX = 'section-statuses-'
-  const CONFIRM_AFTER_IMAGING_STATUS = 'Review after imaging'
+  const CONFIRM_AFTER_IMAGING_STATUS = 'Review at imaging'
   const LEGACY_CONFIRM_AFTER_IMAGING_STATUS = 'Confirm after imaging'
 
   function getStorageKey() {

@@ -181,14 +181,6 @@
 {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
 {% set breastFeaturesCount = breastFeatures | length %}
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
-{% set reviewBreastFeaturesAfterImagingStatus = data.event.workflowStatus['review-breast-features-after-imaging'] %}
-
-{% set breastFeaturesStatus = "To review" %}
-{% if reviewBreastFeaturesAfterImagingStatus == 'yes' %}
-  {% set breastFeaturesStatus = "Review after imaging" %}
-{% elseif reviewBreastFeaturesAfterImagingStatus == 'answered' %}
-  {% set breastFeaturesStatus = "Reviewed" %}
-{% endif %}
 
 {% set breastFeaturesContentsSummaryText %}
   {{ breastFeaturesCount or "No" }} breast {{ "feature" | pluralise(breastFeaturesCount) }} added
@@ -222,7 +214,7 @@
       subtitle: subHeading,
       html: breastFeaturesHtml,
       contentsSummary: breastFeaturesContentsSummaryText,
-      status: breastFeaturesStatus
+      status: "To review"
     }) }}
 {% endswitch %}
 

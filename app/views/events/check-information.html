@@ -1,5 +1,7 @@
 {% extends 'layout-appointment.html' %}
 
+{% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
+
 
 {% set pageHeading = "Check information" %}
 {% set showNavigation = true %}
@@ -19,6 +21,7 @@
  #}
 
 {% set activeTab = 'review' %}
+{% set showReviewAfterImagingReminder = data.event.workflowStatus['review-breast-features-after-imaging'] == 'yes' %}
 
 
 
@@ -67,12 +70,14 @@
     {% include "_includes/summary-lists/medical-info-summary.njk" %}
   {% endset %}
 
-  {{ card({
-    heading: "Medical information",
-    headingLevel: "2",
-    feature: true,
-    descriptionHtml: medicalInfoSummaryHtml
-  }) }}
+  <div id="check-information-breast-features">
+    {{ card({
+      heading: "Medical information",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: medicalInfoSummaryHtml
+    }) }}
+  </div>
 {% endset %}
 
 
@@ -128,12 +133,14 @@
     {% include "_includes/medical-information/breast-features.njk" %}
   {% endset %}
 
-  {{ card({
-    heading: "Breast features",
-    headingLevel: "2",
-    feature: true,
-    descriptionHtml: breastFeaturesHtml
-  }) }}
+  <div id="check-information-breast-features">
+    {{ card({
+      heading: "Breast features",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: breastFeaturesHtml
+    }) }}
+  </div>
 
   {# Other relevant information card #}
   {% set otherRelevantInformationHtml %}
@@ -154,6 +161,25 @@
 {# ----------------- #}
 
   <h1>{{ pageHeading }}</h1>
+
+  {% if showReviewAfterImagingReminder %}
+    {% set breastFeaturesReminderHtml %}
+      <p>
+        Are there any breast features to add for {{ participant | getFullName }}?
+      </p>
+      <p>
+        This includes non-surgical scars, moles and other features that may appear on mammogram images
+      </p>
+      <p class="nhsuk-u-margin-bottom-0">
+        <a href="#check-information-breast-features">Review breast features</a>
+      </p>
+    {% endset %}
+
+    {{ appNotificationBanner({
+      titleText: "Reminder to add breast features",
+      html: breastFeaturesReminderHtml
+    }) }}
+  {% endif %}
 
   <p class="nhsuk-u-reading-width">
     To conclude this appointment, confirm this information is correct.

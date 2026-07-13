@@ -332,8 +332,8 @@ const getStatusText = (status) => {
     prior_not_needed: 'Not needed',
 
     // Task list statuses
-    review_after_imaging: 'Review after imaging',
-    confirm_after_imaging: 'Review after imaging'
+    review_after_imaging: 'Review at imaging',
+    confirm_after_imaging: 'Review at imaging'
 
     // "technical-recall": 'Technical recall',
     // "recall-for-assesment": 'Recall for assessment',
