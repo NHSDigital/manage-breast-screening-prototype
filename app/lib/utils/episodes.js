@@ -28,13 +28,14 @@ const EPISODE_STAGES = [
 // What the round found, set only when the episode closes. This is the
 // meta-level answer, not the detail of how we got there:
 //
-// - routine_recall  clear - reading found nothing, or assessment did not
-// - under_care      cancer or abnormality found; they are in treatment or
-//                   follow-up rather than routine screening
-// - no_result       the round ended without a screening result. Why (did not
-//                   attend, cancelled, attended but not screened) is on the
-//                   appointment - it isn't stored twice
-const EPISODE_OUTCOMES = ['routine_recall', 'under_care', 'no_result']
+// - routine_recall        clear - reading found nothing, or assessment did not
+// - refer_for_treatment   cancer or abnormality found; the round ends by
+//                         referring them into treatment rather than back to
+//                         routine screening
+// - no_result             the round ended without a screening result. Why (did
+//                         not attend, cancelled, attended but not screened) is
+//                         on the appointment - it isn't stored twice
+const EPISODE_OUTCOMES = ['routine_recall', 'refer_for_treatment', 'no_result']
 
 // How stages and outcomes are shown. Kept as their own vocabularies rather
 // than added to the one big shared status map - the labels users read are a
@@ -49,7 +50,7 @@ const EPISODE_STAGE_TAGS = {
 
 const EPISODE_OUTCOME_TAGS = {
   routine_recall: { label: 'Routine recall', colour: 'green' },
-  under_care: { label: 'Under care', colour: 'red' },
+  refer_for_treatment: { label: 'Referred for treatment', colour: 'red' },
   no_result: { label: 'No result', colour: 'grey' }
 }
 

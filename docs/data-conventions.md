@@ -97,7 +97,7 @@ the round found, not the detail of how it got there:
 | Outcome | Meaning |
 |---|---|
 | `routine_recall` | Clear. Reading found nothing, or assessment didn't. |
-| `under_care` | Cancer or abnormality found; in treatment or follow-up. |
+| `refer_for_treatment` | Cancer or abnormality found; the round ends by referring them into treatment. |
 | `no_result` | The round ended without a screening result. |
 
 Why there was no result (did not attend, cancelled, attended but not screened)

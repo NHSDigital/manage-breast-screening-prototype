@@ -37,7 +37,7 @@ const INVITATION_LEAD_DAYS = 28
 // most testing needs vary reading and assessment rather than history.
 const HISTORIC_OUTCOME_WEIGHTS = {
   routine_recall: 0.9,
-  under_care: 0.03,
+  refer_for_treatment: 0.03,
   no_result: 0.07
 }
 
@@ -45,7 +45,7 @@ const HISTORIC_OUTCOME_WEIGHTS = {
 // every recall finds cancer - most turn out clear.
 const ASSESSMENT_OUTCOME_WEIGHTS = {
   routine_recall: 0.8,
-  under_care: 0.2
+  refer_for_treatment: 0.2
 }
 
 /**

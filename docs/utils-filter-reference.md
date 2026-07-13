@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-07-13 14:21 UTC
+- **Generated:** 2026-07-13 16:47 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -184,24 +184,24 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 
 | Function | Description | Line |
 |---|---|---|
-| `getEpisode(data, episodeId)` | Get an episode by ID | 104 |
-| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 125 |
-| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 147 |
-| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 163 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 178 |
-| `isEpisodeClosed(episode)` | Whether an episode has closed | 193 |
-| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 203 |
-| `getEpisodeScreeningDate(data, episode)` | The date this round's screening happened, or is due to happen. | 214 |
-| `getLastScreening(data, participantId)` | The participant's last mammogram on record, before today. | 239 |
-| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 281 |
-| `getEpisodeStageText(stage)` | Display text for an episode's stage | 300 |
-| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 310 |
-| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 320 |
-| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 330 |
-| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 340 |
-| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 373 |
-| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 415 |
-| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 436 |
+| `getEpisode(data, episodeId)` | Get an episode by ID | 105 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 126 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 156 |
+| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 172 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 187 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 202 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 212 |
+| `getEpisodeScreeningDate(data, episode)` | The date this round's screening happened, or is due to happen. | 223 |
+| `getLastScreening(data, participantId)` | The participant's last mammogram on record, before today. | 248 |
+| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 294 |
+| `getEpisodeStageText(stage)` | Display text for an episode's stage | 313 |
+| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 323 |
+| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 333 |
+| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 343 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 353 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 386 |
+| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 435 |
+| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 468 |
 
 ### clinics.js
 
