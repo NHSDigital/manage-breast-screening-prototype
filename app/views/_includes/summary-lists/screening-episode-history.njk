@@ -9,7 +9,7 @@
   <table class="nhsuk-table">
     <thead class="nhsuk-table__head">
       <tr>
-        <th scope="col">Screening date</th>
+        <th scope="col">Date</th>
         <th scope="col">Type</th>
         <th scope="col">Stage</th>
         <th scope="col">Outcome</th>
@@ -21,10 +21,13 @@
         {% set episode = row.episode %}
         <tr class="nhsuk-table__row">
           <td class="nhsuk-table__cell">
-            {% if row.screeningDate %}
-              {{ row.screeningDate | formatDate }}
+            {% if row.date %}
+              {{ row.date | formatDate }}
+              {% if not row.wasScreened %}
+                <br>{{ "Not screened" | asHint }}
+              {% endif %}
             {% else %}
-              Not booked
+              {{ "Not booked" | asHint }}
             {% endif %}
           </td>
           <td class="nhsuk-table__cell">
@@ -47,7 +50,9 @@
             {% endif %}
           </td>
           <td class="nhsuk-table__cell">
-            <a href="/episodes/{{ episode.id }}">View episode</a>
+            <a href="{{ ('/episodes/' + episode.id) | urlWithReferrer(currentUrl) }}">
+              View episode
+            </a>
           </td>
         </tr>
       {% endfor %}

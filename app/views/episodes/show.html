@@ -3,15 +3,34 @@
 {% set pageHeading = "Screening episode" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
+{# You can reach an episode from the participant record or from the episode
+   list, so send people back where they came from rather than always to the
+   participant. #}
+{% set backText %}
+  {% if referrerChain | stringIncludes("/episodes") %}
+    Back to episodes
+  {% else %}
+    Back to participant
+  {% endif %}
+{% endset %}
+
 {% set back = {
-  href: "/participants/" + episode.participantId,
-  text: "Back to participant"
+  href: ("/participants/" + episode.participantId) | getReturnUrl(referrerChain),
+  text: backText
 } %}
 
 {% block pageContent %}
 
   <span class="nhsuk-caption-l">{{ participant | getFullName }}</span>
   <h1>{{ pageHeading }}</h1>
+
+  <p>
+    <a href="/participants/{{ episode.participantId }}">
+      View participant record
+    </a>
+    &nbsp;·&nbsp;
+    <a href="/episodes">All episodes</a>
+  </p>
 
   {{ summaryList({
     rows: [

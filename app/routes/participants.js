@@ -126,10 +126,19 @@ module.exports = (router) => {
       data,
       originalParticipant.id
     )
-      .map((episode) => ({
-        episode,
-        screeningDate: getEpisodeScreeningDate(data, episode)
-      }))
+      .map((episode) => {
+        const screeningDate = getEpisodeScreeningDate(data, episode)
+
+        return {
+          episode,
+          screeningDate,
+
+          // A round that produced no result was never screened, so it has no
+          // screening date - date it by when it closed instead
+          date: screeningDate || episode.closedDate || episode.openedDate,
+          wasScreened: Boolean(screeningDate)
+        }
+      })
       .reverse()
 
     next()

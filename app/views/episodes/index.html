@@ -47,13 +47,16 @@
           <th scope="col">Type</th>
           <th scope="col">Stage</th>
           <th scope="col">Outcome</th>
+          <th scope="col">
+            <span class="nhsuk-u-visually-hidden">Actions</span>
+          </th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for row in episodes %}
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
-              <a href="/episodes/{{ row.episode.id }}">
+              <a href="/participants/{{ row.episode.participantId }}">
                 {{ row.participant | getFullName }}
               </a>
             </td>
@@ -78,6 +81,11 @@
               {% else %}
                 <span class="nhsuk-u-secondary-text-color">Not yet</span>
               {% endif %}
+            </td>
+            <td class="nhsuk-table__cell">
+              <a href="{{ ('/episodes/' + row.episode.id) | urlWithReferrer(currentUrl) }}">
+                View episode
+              </a>
             </td>
           </tr>
         {% endfor %}
