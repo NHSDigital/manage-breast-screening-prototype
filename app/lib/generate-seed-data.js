@@ -36,15 +36,11 @@ const users = require('../data/users')
 // Hardcoded scenarios for user research
 const testScenarios = require('../data/test-scenarios')
 
-// Create an index of participants by risk level for efficient lookup
-// Create an index of participants by risk level for efficient lookup
-const createParticipantIndices = (participants, clinicDate, events = []) => {
-  // console.time('Creating participant indices')
-
+// Index the age-eligible participants by risk level, so filling a clinic slot
+// is a lookup rather than a scan
+const createParticipantIndices = (participants, clinicDate) => {
   const riskLevelIndex = {}
-  const screeningHistoryIndex = new Map()
 
-  // Single pass through participants
   participants.forEach((participant) => {
     const riskLevel = getCurrentRiskLevel(participant, clinicDate.toDate())
 
@@ -53,27 +49,14 @@ const createParticipantIndices = (participants, clinicDate, events = []) => {
       'year'
     )
 
-    // Check if they're age-eligible for their risk level
     const ageRange = riskLevels[riskLevel].ageRange
     if (age >= ageRange.lower && age <= ageRange.upper) {
-      // Initialize array for this risk level if needed
       riskLevelIndex[riskLevel] = riskLevelIndex[riskLevel] || []
-
-      // Add participant to their risk level index
       riskLevelIndex[riskLevel].push(participant)
     }
-
-    // Track all screening events for this participant
-    const participantEvents = events.filter(
-      (event) => event.participantId === participant.id
-    )
-    screeningHistoryIndex.set(participant.id, participantEvents)
   })
 
-  return {
-    riskLevelIndex,
-    screeningHistoryIndex
-  }
+  return { riskLevelIndex }
 }
 
 // Find nearest slot at or after the target time
@@ -114,10 +97,9 @@ const generateClinicsForDay = (
   date,
   allParticipants,
   unit,
-  usedParticipantsInSnapshot,
+  usedParticipantsInPeriod,
   indices,
   testScenarioParticipantIds = new Set(),
-  unitEvents = [],
   seedDataProfile
 ) => {
   const clinics = []
@@ -142,31 +124,16 @@ const generateClinicsForDay = (
     return event
   }
 
-  // Check if this snapshot date is for the recent period (not historical)
-  const isRecentSnapshot = dayjs(date).isAfter(dayjs().subtract(1, 'month'))
-
-  // For historical snapshots, extract participants who have events in the current period
-  const participantsWithExistingEvents =
-    !isRecentSnapshot && unitEvents.length > 0
-      ? new Set(unitEvents.map((event) => event.participantId))
-      : new Set()
-
   // Check if this is today - we want one in-progress event for today only
   const isToday = dayjs(date).isSame(dayjs(), 'day')
 
-  // Only look for test scenarios in recent snapshots
-  const testScenariosForDay = isRecentSnapshot
-    ? testScenarios.filter((scenario) => {
-        const targetDate = dayjs()
-          .startOf('day')
-          .add(
-            scenario.participant.config.scheduling.whenRelativeToToday,
-            'day'
-          )
+  const testScenariosForDay = testScenarios.filter((scenario) => {
+    const targetDate = dayjs()
+      .startOf('day')
+      .add(scenario.participant.config.scheduling.whenRelativeToToday, 'day')
 
-        return targetDate.isSame(dayjs(date).startOf('day'), 'day')
-      })
-    : []
+    return targetDate.isSame(dayjs(date).startOf('day'), 'day')
+  })
 
   // Pre-filter eligible participants once
   const clinicDate = dayjs(date)
@@ -217,7 +184,7 @@ const generateClinicsForDay = (
         seedDataProfile
       })
 
-      usedParticipantsInSnapshot.add(participant.id)
+      usedParticipantsInPeriod.add(participant.id)
     })
   }
 
@@ -239,25 +206,13 @@ const generateClinicsForDay = (
 
       // Get available participants of selected risk level
       // EXCLUDE test scenario participants from random selection
-      let availableParticipants = indices.riskLevelIndex[
+      const availableParticipants = indices.riskLevelIndex[
         selectedRiskLevel
       ].filter(
-        (p) =>
-          !usedParticipantsInSnapshot.has(p.id) &&
-          !testScenarioParticipantIds.has(p.id)
+        (participant) =>
+          !usedParticipantsInPeriod.has(participant.id) &&
+          !testScenarioParticipantIds.has(participant.id)
       )
-
-      // For historical snapshots, prefer participants with existing events
-      if (!isRecentSnapshot && participantsWithExistingEvents.size > 0) {
-        const preferred = availableParticipants.filter((p) =>
-          participantsWithExistingEvents.has(p.id)
-        )
-
-        // Use preferred participants if available, otherwise fall back to all available
-        if (preferred.length > 0) {
-          availableParticipants = preferred
-        }
-      }
 
       if (availableParticipants.length === 0) {
         const newParticipant = generateParticipant({
@@ -296,7 +251,7 @@ const generateClinicsForDay = (
           )
         }
 
-        usedParticipantsInSnapshot.add(participant.id)
+        usedParticipantsInPeriod.add(participant.id)
         availableParticipants.splice(randomIndex, 1)
       }
     })
@@ -563,93 +518,40 @@ const generateData = async (options = {}) => {
   console.log('Generating clinics and events...')
   const today = dayjs().startOf('day')
 
-  let snapshots = [
-    // Current period
-    generateSnapshotPeriod(
-      today.subtract(config.clinics.daysBeforeToday, 'days'),
-      config.clinics.daysToGenerate
-    )
-  ]
-
-  // Generate historical periods
-  const historicPeriods = config?.clinics?.historicPeriodCount || 0
-
-  for (let index = 0; index < historicPeriods; index++) {
-    snapshots.push(generateSnapshotPeriod(today.subtract(index + 3, 'year'), 5))
-  }
-
-  // Define snapshots from newest to oldest
-  // const snapshots = [
-
-  //   // Historical periods
-  //   generateSnapshotPeriod(
-  //     today.subtract(3, 'year').add(1, 'month'),
-  //     config.clinics.daysToGenerate
-  //   ),
-  //   generateSnapshotPeriod(
-  //     today.subtract(6, 'year').add(2, 'month'),
-  //     config.clinics.daysToGenerate
-  //   ),
-  //   generateSnapshotPeriod(
-  //     today.subtract(9, 'year').add(3, 'month'),
-  //     config.clinics.daysToGenerate
-  //   ),
-  // ]
+  // Only the current period is generated in full. Past screening rounds are
+  // summary-level historic episodes instead of whole clinics and appointments -
+  // full fidelity for the round being worked on, a summary for the rest.
+  const dates = generateSnapshotPeriod(
+    today.subtract(config.clinics.daysBeforeToday, 'days'),
+    config.clinics.daysToGenerate
+  )
 
   // Generate all data in batches per BSU
   const allData = breastScreeningUnits.map((unit) => {
     console.log(`Generating data for ${unit.name}...`)
 
-    let unitEvents = [] // Track events for this unit across snapshots
+    // One appointment per participant across the period
+    const usedParticipantsInPeriod = new Set()
 
-    // Process each snapshot
-    const unitData = snapshots.map((dates) => {
-      // Create a set to track used participants for this entire snapshot
-      const usedParticipantsInSnapshot = new Set()
+    const indices = createParticipantIndices(participants, dates[0])
 
-      // Create indices for this snapshot using the first date
-      const indices = createParticipantIndices(
+    const daysData = dates.map((date) =>
+      generateClinicsForDay(
+        date,
         participants,
-        dates[0],
-        unitEvents
+        unit,
+        usedParticipantsInPeriod,
+        indices,
+        testScenarioParticipantIds,
+        selectedSeedDataProfile
       )
-      // console.log(`Created indices for snapshot ${dates[0].format('YYYY-MM-DD')}:`)
-      // console.log(`- ${Object.keys(indices.riskLevelIndex).length} risk levels`)
-      // console.log(`- ${indices.screeningHistoryIndex.size} participants with history`)
-
-      // Process each day in the snapshot
-      const snapshotData = dates.map((date) =>
-        generateClinicsForDay(
-          date,
-          participants,
-          unit,
-          usedParticipantsInSnapshot,
-          indices,
-          testScenarioParticipantIds,
-          unitEvents,
-          selectedSeedDataProfile
-        )
-      )
-
-      // Add newly generated events to our tracking array
-      const newEvents = [].concat(...snapshotData.map((s) => s.events))
-      unitEvents = [...unitEvents, ...newEvents]
-
-      return {
-        clinics: [].concat(...snapshotData.map((s) => s.clinics)),
-        events: newEvents,
-        episodes: [].concat(...snapshotData.map((s) => s.episodes)),
-        newParticipants: [].concat(
-          ...snapshotData.map((s) => s.newParticipants)
-        )
-      }
-    })
+    )
 
     return {
-      clinics: [].concat(...unitData.map((d) => d.clinics)),
-      events: [].concat(...unitData.map((d) => d.events)),
-      episodes: [].concat(...unitData.map((d) => d.episodes)),
-      newParticipants: [].concat(...unitData.map((d) => d.newParticipants))
+      clinics: [].concat(...daysData.map((day) => day.clinics)),
+      events: [].concat(...daysData.map((day) => day.events)),
+      episodes: [].concat(...daysData.map((day) => day.episodes)),
+      newParticipants: [].concat(...daysData.map((day) => day.newParticipants))
     }
   })
 

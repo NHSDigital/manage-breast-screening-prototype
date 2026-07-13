@@ -30,9 +30,10 @@ module.exports = {
     targetAttendancePercent: 100, // 100% of original capacity (not overbooking)
 
     // Date range for generating data
+    // Only the current period is generated in full. Past screening rounds are
+    // summary-level historic episodes, not whole clinics and appointments.
     daysToGenerate: 13,
     daysBeforeToday: 11,
-    historicPeriodCount: 1, // Number of historic periods to generate
 
     simulatedTime: '10:30' // 24h format
   },

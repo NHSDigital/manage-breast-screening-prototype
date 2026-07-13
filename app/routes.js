@@ -311,6 +311,7 @@ router.use((req, res, next) => {
 
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
+require('./routes/episodes')(router)
 require('./routes/events')(router)
 require('./routes/reading')(router)
 require('./routes/reports')(router)

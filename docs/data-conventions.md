@@ -165,6 +165,16 @@ participant aged 51 has none, at 54 has one, at 69 has six.
 [app/config.js](../app/config.js) only caps it. The outcome mix can be
 overridden per seed profile via `episodes.historicOutcomeWeights`.
 
+**Only the current period is generated in full.** The generator used to also
+produce a whole clinic snapshot from three years ago - real clinics, real
+appointments - purely so participants had a screening history to show. Historic
+episodes do that job for a fraction of the data, so that snapshot is gone. Full
+fidelity for the round being worked on; a summary for everything before it.
+
+This is why `getLastScreening` and `getNextAppointment`
+([episodes.js](../app/lib/utils/episodes.js)) read across episodes rather than
+scanning old events - a past round may have no appointment record at all.
+
 ## Escape hatch
 
 If the development freeze ever blocks you mid-task, set

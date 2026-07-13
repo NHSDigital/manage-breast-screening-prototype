@@ -3,9 +3,12 @@
 const {
   getParticipant,
   sortBySurname,
-  getParticipantClinicHistory,
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
+const {
+  getEpisodesForParticipant,
+  getEpisodeScreeningDate
+} = require('../lib/utils/episodes')
 const { findById } = require('../lib/utils/arrays')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
@@ -116,12 +119,18 @@ module.exports = (router) => {
     // Store original participant data for reference if needed
     res.locals.originalParticipant = originalParticipant
 
-    // Get additional data that participant pages might need
-    const clinicHistory = getParticipantClinicHistory(
+    // A participant's screening history is their episodes, newest first. Past
+    // rounds are summary-only episodes, so this covers their whole history
+    // without needing old appointments to exist.
+    res.locals.episodeHistory = getEpisodesForParticipant(
       data,
       originalParticipant.id
     )
-    res.locals.clinicHistory = clinicHistory
+      .map((episode) => ({
+        episode,
+        screeningDate: getEpisodeScreeningDate(data, episode)
+      }))
+      .reverse()
 
     next()
   })

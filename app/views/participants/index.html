@@ -77,21 +77,19 @@
             </td>
             <td class="nhsuk-table__cell">{{ participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap }}</td>
             <td class="nhsuk-table__cell">
-              {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
-              {% if mostRecentClinic %}
-                {{ mostRecentClinic | log }}
-                {{ mostRecentClinic.event.timing.startTime | formatDate }}<br>
-                {{ mostRecentClinic.event.timing.startTime | formatDate | formatRelativeDate | asHint }}
+              {% set lastScreening = data | getLastScreening(participant.id) %}
+              {% if lastScreening %}
+                {{ lastScreening.date | formatDate }}<br>
+                {{ lastScreening.date | formatDate | formatRelativeDate | asHint }}
               {% else %}
                   {{ "Not known" | asHint }}
               {% endif %}
             </td>
             <td class="nhsuk-table__cell">
-              {% set upcomingClinics = data | getParticipantUpcomingClinics(participant.id) %}
-              {% if upcomingClinics %}
-                {{ upcomingClinics | log }}
-                {{ upcomingClinics[0].event.timing.startTime | formatDate }}<br>
-                {{ upcomingClinics[0].event.timing.startTime | formatDate | formatRelativeDate | asHint }}
+              {% set nextAppointment = data | getNextAppointment(participant.id) %}
+              {% if nextAppointment %}
+                {{ nextAppointment.timing.startTime | formatDate }}<br>
+                {{ nextAppointment.timing.startTime | formatDate | formatRelativeDate | asHint }}
               {% else %}
                   {{ "Not known" | asHint }}
               {% endif %}

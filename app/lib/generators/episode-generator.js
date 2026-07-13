@@ -281,14 +281,12 @@ const generateHistoricEpisodes = ({
       participantId: participant.id,
       type,
       stage: 'closed',
+
+      // Just that it opened and closed. We seed the outcome, not the steps -
+      // inventing timestamps for stages we never modelled would be fiction
+      // dressed up as an audit trail.
       stageHistory: [
         { stage: 'scheduled', timestamp: openedDate.toISOString() },
-        ...(wasScreened
-          ? [
-              { stage: 'mammograms', timestamp: screenedDate.toISOString() },
-              { stage: 'reading', timestamp: screenedDate.toISOString() }
-            ]
-          : []),
         { stage: 'closed', timestamp: closedDate.toISOString() }
       ],
       outcome,

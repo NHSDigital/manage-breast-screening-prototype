@@ -10,6 +10,7 @@
 const dataStore = require('../data-store')
 const { getEvent } = require('./event-data.js')
 const { getReadingStatusForEvents } = require('./reading.js')
+const { getClinic } = require('./clinics.js')
 
 // An episode is open until it closes. While open, the stage says where in the
 // process it has got to; `closed` means it has an outcome and is done.
@@ -34,6 +35,23 @@ const EPISODE_STAGES = [
 //                   attend, cancelled, attended but not screened) is on the
 //                   appointment - it isn't stored twice
 const EPISODE_OUTCOMES = ['routine_recall', 'under_care', 'no_result']
+
+// How stages and outcomes are shown. Kept as their own vocabularies rather
+// than added to the one big shared status map - the labels users read are a
+// display concern, and can differ from the stored value.
+const EPISODE_STAGE_TAGS = {
+  scheduled: { label: 'Scheduled', colour: 'blue' },
+  mammograms: { label: 'Taking mammograms', colour: 'purple' },
+  reading: { label: 'Waiting for reading', colour: 'yellow' },
+  assessment: { label: 'At assessment', colour: 'orange' },
+  closed: { label: 'Closed', colour: 'grey' }
+}
+
+const EPISODE_OUTCOME_TAGS = {
+  routine_recall: { label: 'Routine recall', colour: 'green' },
+  under_care: { label: 'Under care', colour: 'red' },
+  no_result: { label: 'No result', colour: 'grey' }
+}
 
 // Where an event's status leaves its episode. Shared by the generator (which
 // settles seed episodes) and updateEventStatus (which keeps them in step at
@@ -194,6 +212,132 @@ const isEpisodeOpen = (episode) => {
 }
 
 /**
+ * The date this round's screening happened, or is due to happen.
+ *
+ * Takes it from the episode's latest appointment, falling back to the
+ * mammogram summary a historic episode carries instead of appointments.
+ *
+ * @param {object} data - Session data
+ * @param {object} episode - Episode object
+ * @returns {string | null} ISO date, or null if there's nothing to show
+ */
+const getEpisodeScreeningDate = (data, episode) => {
+  const events = getEpisodeEvents(data, episode)
+  const latestEvent = events[events.length - 1]
+
+  if (latestEvent) {
+    return (
+      latestEvent.timing?.actualStartTime ||
+      latestEvent.timing?.startTime ||
+      null
+    )
+  }
+
+  return episode?.mammogramSummary?.takenDate || null
+}
+
+/**
+ * The participant's last mammogram on record, before today.
+ *
+ * Reads across their episodes, so it works whether the round was screened
+ * here (an appointment) or is only held as a summary of a past round. This is
+ * what "most recent mammogram on record" means on a participant record.
+ *
+ * @param {object} data - Session data
+ * @param {string} participantId - Participant ID
+ * @returns {object | null} { date, location, type }, or null if none on record
+ */
+const getLastScreening = (data, participantId) => {
+  const startOfToday = new Date().setHours(0, 0, 0, 0)
+
+  // Episodes come back oldest-first, so the last match is the most recent
+  const screened = getEpisodesForParticipant(data, participantId)
+    .map((episode) => ({
+      episode,
+      date: getEpisodeScreeningDate(data, episode)
+    }))
+    .filter(({ date }) => date && new Date(date) < startOfToday)
+
+  const latest = screened[screened.length - 1]
+  if (!latest) return null
+
+  const events = getEpisodeEvents(data, latest.episode)
+  const latestEvent = events[events.length - 1]
+
+  // A round screened here knows its clinic; a summary round only knows the unit
+  const unitId = latestEvent
+    ? getClinic(data, latestEvent.clinicId)?.breastScreeningUnitId
+    : latest.episode.mammogramSummary?.breastScreeningUnitId
+
+  const unit = data.breastScreeningUnits?.find((each) => each.id === unitId)
+
+  return {
+    date: latest.date,
+    location: unit?.name || 'Not known',
+    type: latestEvent?.type || 'screening'
+  }
+}
+
+/**
+ * The participant's next booked appointment, if they have one.
+ *
+ * @param {object} data - Session data
+ * @param {string} participantId - Participant ID
+ * @returns {object | null} The event, or null if nothing is booked
+ */
+const getNextAppointment = (data, participantId) => {
+  const now = Date.now()
+
+  const upcoming = getEpisodesForParticipant(data, participantId)
+    .filter(isEpisodeOpen)
+    .flatMap((episode) => getEpisodeEvents(data, episode))
+    .filter((event) => new Date(event.timing?.startTime) >= now)
+    .sort((a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime))
+
+  return upcoming[0] || null
+}
+
+/**
+ * Display text for an episode's stage
+ *
+ * @param {string} stage - Episode stage
+ * @returns {string} Label to show
+ */
+const getEpisodeStageText = (stage) => {
+  return EPISODE_STAGE_TAGS[stage]?.label || 'Unknown'
+}
+
+/**
+ * Tag colour for an episode's stage
+ *
+ * @param {string} stage - Episode stage
+ * @returns {string} NHS tag colour
+ */
+const getEpisodeStageTagColour = (stage) => {
+  return EPISODE_STAGE_TAGS[stage]?.colour || 'grey'
+}
+
+/**
+ * Display text for an episode's outcome
+ *
+ * @param {string} outcome - Episode outcome
+ * @returns {string} Label to show
+ */
+const getEpisodeOutcomeText = (outcome) => {
+  return EPISODE_OUTCOME_TAGS[outcome]?.label || 'Unknown'
+}
+
+/**
+ * Tag colour for an episode's outcome
+ *
+ * @param {string} outcome - Episode outcome
+ * @returns {string} NHS tag colour
+ */
+const getEpisodeOutcomeTagColour = (outcome) => {
+  return EPISODE_OUTCOME_TAGS[outcome]?.colour || 'grey'
+}
+
+/**
  * Update an episode, persisting the change for this session.
  *
  * Build a whole replacement record - never mutate the one you read, it's
@@ -326,6 +470,13 @@ module.exports = {
   getCurrentEpisode,
   getEpisodeEvents,
   getEpisodeReadingStatus,
+  getEpisodeScreeningDate,
+  getLastScreening,
+  getNextAppointment,
+  getEpisodeStageText,
+  getEpisodeStageTagColour,
+  getEpisodeOutcomeText,
+  getEpisodeOutcomeTagColour,
   isEpisodeClosed,
   isEpisodeOpen,
   updateEpisode,

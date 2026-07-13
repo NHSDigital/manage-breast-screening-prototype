@@ -1,0 +1,91 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Episodes" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p class="nhsuk-body-l">
+    A screening episode is one round of screening for a participant - the
+    container its appointments sit in.
+  </p>
+
+  <nav class="nhsuk-u-margin-bottom-4">
+    <ul class="nhsuk-list">
+      <li>
+        {% if not stage %}<strong>{% endif %}
+          <a href="/episodes">Open ({{ openCount }})</a>
+        {% if not stage %}</strong>{% endif %}
+      </li>
+      {% for name, count in countsByStage %}
+        <li>
+          {% if stage === name %}<strong>{% endif %}
+            <a href="/episodes?stage={{ name }}">
+              {{ name | getEpisodeStageText }} ({{ count }})
+            </a>
+          {% if stage === name %}</strong>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  {% if episodes.length %}
+
+    {% if totalMatching > limit %}
+      <p class="nhsuk-hint">
+        Showing the {{ limit }} most recent of {{ totalMatching }}.
+      </p>
+    {% endif %}
+
+    <table class="nhsuk-table">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th scope="col">Participant</th>
+          <th scope="col">Opened</th>
+          <th scope="col">Type</th>
+          <th scope="col">Stage</th>
+          <th scope="col">Outcome</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for row in episodes %}
+          <tr class="nhsuk-table__row">
+            <td class="nhsuk-table__cell">
+              <a href="/episodes/{{ row.episode.id }}">
+                {{ row.participant | getFullName }}
+              </a>
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ row.episode.openedDate | formatDate }}
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ row.episode.type | sentenceCase }}
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ tag({
+                text: row.episode.stage | getEpisodeStageText,
+                colour: row.episode.stage | getEpisodeStageTagColour
+              }) }}
+            </td>
+            <td class="nhsuk-table__cell">
+              {% if row.episode.outcome %}
+                {{ tag({
+                  text: row.episode.outcome | getEpisodeOutcomeText,
+                  colour: row.episode.outcome | getEpisodeOutcomeTagColour
+                }) }}
+              {% else %}
+                <span class="nhsuk-u-secondary-text-color">Not yet</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% else %}
+    <p>No episodes at this stage.</p>
+  {% endif %}
+
+{% endblock %}

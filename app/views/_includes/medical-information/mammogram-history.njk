@@ -5,12 +5,11 @@
 {# System record - last known mammogram from BSU records #}
 
 {% set systemRecordHtml %}
-  {% set mostRecentClinic = data | getParticipantMostRecentClinic(participant.id) %}
-  {% if mostRecentClinic %}
-    {{ mostRecentClinic | log }}
-    {{ mostRecentClinic.event.timing.startTime | formatDate }} ({{ mostRecentClinic.event.timing.startTime | formatDate | formatRelativeDate | asHint }})</br>
-    {{ mostRecentClinic.location.name }}</br>
-    {{ mostRecentClinic.event.type | sentenceCase }}
+  {% set lastScreening = data | getLastScreening(participant.id) %}
+  {% if lastScreening %}
+    {{ lastScreening.date | formatDate }} ({{ lastScreening.date | formatDate | formatRelativeDate | asHint }})</br>
+    {{ lastScreening.location }}</br>
+    {{ lastScreening.type | sentenceCase }}
   {% else %}
     {{ "No information" | asHint }}
   {% endif %}

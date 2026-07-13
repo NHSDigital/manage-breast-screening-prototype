@@ -1,0 +1,118 @@
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Screening episode" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/participants/" + episode.participantId,
+  text: "Back to participant"
+} %}
+
+{% block pageContent %}
+
+  <span class="nhsuk-caption-l">{{ participant | getFullName }}</span>
+  <h1>{{ pageHeading }}</h1>
+
+  {{ summaryList({
+    rows: [
+      {
+        key: { text: "Stage" },
+        value: { html: tag({
+          text: episode.stage | getEpisodeStageText,
+          colour: episode.stage | getEpisodeStageTagColour
+        }) }
+      },
+      {
+        key: { text: "Outcome" },
+        value: { html: tag({
+          text: episode.outcome | getEpisodeOutcomeText,
+          colour: episode.outcome | getEpisodeOutcomeTagColour
+        }) if episode.outcome else "Not yet - the episode is still open" }
+      },
+      {
+        key: { text: "Type" },
+        value: { text: episode.type | sentenceCase }
+      },
+      {
+        key: { text: "Opened" },
+        value: { text: episode.openedDate | formatDate }
+      },
+      {
+        key: { text: "Closed" },
+        value: { text: episode.closedDate | formatDate if episode.closedDate else "Not closed" }
+      }
+    ]
+  }) }}
+
+  {% if episode.isHistoric %}
+    <div class="nhsuk-inset-text">
+      <span class="nhsuk-u-visually-hidden">Information: </span>
+      <p>
+        This is a past round, held as a summary only - it has no appointment
+        or reading detail.
+      </p>
+    </div>
+  {% endif %}
+
+  <h2>Appointments</h2>
+
+  {% if appointments.length %}
+    <table class="nhsuk-table">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Type</th>
+          <th scope="col">Status</th>
+          <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for row in appointments %}
+          <tr class="nhsuk-table__row">
+            <td class="nhsuk-table__cell">
+              {{ row.event.timing.startTime | formatDate }}
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ row.clinic.clinicType | formatWords | sentenceCase }}
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ tag({
+                text: row.event.status | getStatusText,
+                colour: row.event.status | getStatusTagColour
+              }) }}
+            </td>
+            <td class="nhsuk-table__cell">
+              <a href="/clinics/{{ row.clinic.id }}/events/{{ row.event.id }}">
+                View appointment
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Image reading</h2>
+    <p>
+      Reading state across this episode’s appointments:
+      {{ tag({
+        text: readingStatus.status | formatWords | sentenceCase,
+        colour: readingStatus.statusColor
+      }) }}
+    </p>
+
+  {% else %}
+    <p>This episode has no appointments.</p>
+  {% endif %}
+
+  <h2>History</h2>
+
+  <ol class="nhsuk-list nhsuk-list--number">
+    {% for entry in episode.stageHistory %}
+      <li>
+        {{ entry.stage | getEpisodeStageText }} -
+        {{ entry.timestamp | formatDate }}
+      </li>
+    {% endfor %}
+  </ol>
+
+{% endblock %}
