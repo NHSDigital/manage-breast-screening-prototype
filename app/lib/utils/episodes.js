@@ -41,7 +41,7 @@ const EPISODE_OUTCOMES = ['routine_recall', 'under_care', 'no_result']
 // display concern, and can differ from the stored value.
 const EPISODE_STAGE_TAGS = {
   scheduled: { label: 'Scheduled', colour: 'blue' },
-  mammograms: { label: 'Taking mammograms', colour: 'purple' },
+  mammograms: { label: 'Mammograms', colour: 'purple' },
   reading: { label: 'Waiting for reading', colour: 'yellow' },
   assessment: { label: 'At assessment', colour: 'orange' },
   closed: { label: 'Closed', colour: 'grey' }
