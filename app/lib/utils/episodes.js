@@ -132,10 +132,18 @@ const getEpisode = (data, episodeId) => {
 const getEpisodesForParticipant = (data, participantId) => {
   if (!participantId) return []
 
-  const episodeIds =
+  const episodeIds = new Set(
     dataStore.state.episodeIdsByParticipant.get(participantId) || []
+  )
 
-  const episodes = episodeIds
+  // Anything created this session exists only in _changes, so isn't in the
+  // store's index. Nothing creates episodes at runtime today, but getEpisode
+  // would find such a record and this shouldn't disagree with it.
+  Object.values(data._changes?.episodes || {})
+    .filter((episode) => episode.participantId === participantId)
+    .forEach((episode) => episodeIds.add(episode.id))
+
+  const episodes = [...episodeIds]
     .map((episodeId) => getEpisode(data, episodeId))
     .filter(Boolean)
 
@@ -274,7 +282,11 @@ const getLastScreening = (data, participantId) => {
   return {
     date: latest.date,
     location: unit?.name || 'Not known',
-    type: latestEvent?.type || 'screening'
+
+    // Every round we hold is a screening round. Appointments gain a `type`
+    // (mammogram / technical recall / assessment) with the event→appointment
+    // rename - read it from the appointment then, rather than assuming
+    type: 'screening'
   }
 }
 
@@ -375,6 +387,9 @@ const updateEpisode = (data, episodeId, updates) => {
  *
  * Stage moves are not validated: any stage can follow any other. Moving to
  * `closed` sets closedDate, and takes the final outcome if one is given.
+ * Moving *off* closed reopens the episode - the outcome and closedDate are
+ * cleared, because an open episode has neither (undoing a cancellation is the
+ * path that gets here).
  *
  * @param {object} data - Session data
  * @param {string} episodeId - Episode ID
@@ -407,6 +422,10 @@ const updateEpisodeStage = (data, episodeId, stage, options = {}) => {
   if (stage === 'closed') {
     updates.closedDate = timestamp
     if (options.outcome) updates.outcome = options.outcome
+  } else if (isEpisodeClosed(episode)) {
+    // Reopening: it has no result any more, and it isn't closed
+    updates.outcome = null
+    updates.closedDate = null
   }
 
   return updateEpisode(data, episodeId, updates)
@@ -418,12 +437,24 @@ const updateEpisodeStage = (data, episodeId, stage, options = {}) => {
  * Called from updateEventStatus, so the episode keeps step with its
  * appointment without every route having to know episodes exist.
  *
+ * Only the episode's *latest* appointment moves it. An episode with more than
+ * one (a technical recall) is where its most recent appointment has got to -
+ * changing an earlier one, or an appointment that has been superseded, must
+ * not drag the whole round backwards. This matches how the generator settles
+ * seed episodes, which reads the latest event too.
+ *
  * @param {object} data - Session data
  * @param {object} event - The event whose status just changed
  * @returns {object | null} The updated episode, or null if nothing to do
  */
 const advanceEpisodeForEventStatus = (data, event) => {
   if (!event?.episodeId) return null
+
+  const episode = getEpisode(data, event.episodeId)
+  if (!episode) return null
+
+  const latestEventId = episode.eventIds?.[episode.eventIds.length - 1]
+  if (latestEventId && latestEventId !== event.id) return null
 
   const destination = EPISODE_STAGE_BY_EVENT_STATUS[event.status]
   if (!destination) return null
