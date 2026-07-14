@@ -67,7 +67,7 @@ module.exports = (router) => {
     )
 
     // Deep compare temp appointment and saved appointment in array, excluding workflowStatus
-    const savedAppointment = data.appointments.find((e) => e.id === data.appointment.id)
+    const savedAppointment = data.appointments.find((appointment) => appointment.id === data.appointment.id)
     const tempAppointmentForCompare = data.appointment ? { ...data.appointment } : undefined
     const savedAppointmentForCompare = savedAppointment ? { ...savedAppointment } : undefined
     if (tempAppointmentForCompare) delete tempAppointmentForCompare.workflowStatus

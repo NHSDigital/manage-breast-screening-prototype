@@ -1,8 +1,9 @@
 // app/routes/appointments/cancel-reschedule.js
 //
 // Cancelling and rescheduling appointments, and undoing either.
-// The undo paths can reopen a closed episode (via updateAppointmentStatus),
-// so they get extra care - see notes/2026-07-12-event-rename/.
+// The undo paths can reopen a closed episode (via updateAppointmentStatus,
+// which clears the episode's outcome and closedDate when a status change
+// moves it off closed) - treat status changes here with extra care.
 
 const {
   getFullName,

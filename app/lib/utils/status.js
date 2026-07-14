@@ -344,17 +344,19 @@ const getStatusText = (status, vocabulary = null) => {
 const filterAppointmentsByStatus = (appointments, filter) => {
   switch (filter) {
     case 'scheduled':
-      return appointments.filter((e) => e.status === 'scheduled')
+      return appointments.filter((appointment) => appointment.status === 'scheduled')
     case 'checked-in':
-      return appointments.filter((e) => e.status === 'checked_in')
+      return appointments.filter((appointment) => appointment.status === 'checked_in')
     case 'in-progress':
       return appointments.filter(
-        (e) => e.status === 'in_progress' || e.status === 'paused'
+        (appointment) =>
+          appointment.status === 'in_progress' ||
+          appointment.status === 'paused'
       )
     case 'complete':
-      return appointments.filter((e) => isFinal(e))
+      return appointments.filter((appointment) => isFinal(appointment))
     case 'remaining':
-      return appointments.filter((e) => hasNotStarted(e))
+      return appointments.filter((appointment) => hasNotStarted(appointment))
     default:
       return appointments
   }
