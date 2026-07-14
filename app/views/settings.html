@@ -88,36 +88,36 @@
     {# Modal forms — open forms in a modal dialog rather than a new page #}
     {{ settingToggle("Modal forms (spike)", "settings[modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.modalForms, "false") }}
 
-    <h2>Screening</h2>
+    <h2>Appointment</h2>
     {# Confirm identity on check-in #}
-    {{ settingToggle("Confirm identity on check-in", "settings[screening][confirmIdentityOnCheckIn]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.screening.confirmIdentityOnCheckIn, "true") }}
+    {{ settingToggle("Confirm identity on check-in", "settings[appointment][confirmIdentityOnCheckIn]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.appointment.confirmIdentityOnCheckIn, "true") }}
 
     {# Manual image collection #}
-    {{ settingToggle("Image collection method", "settings[screening][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic (via gateway)"}], data.settings.screening.manualImageCollection, "false") }}
+    {{ settingToggle("Image collection method", "settings[appointment][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic (via gateway)"}], data.settings.appointment.manualImageCollection, "false") }}
 
     {# Image streaming simulation #}
-    {{ settingToggle("Simulate images streaming from gateway", "settings[screening][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.imageStreaming.enabled, "true") }}
+    {{ settingToggle("Simulate images streaming from gateway", "settings[appointment][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.appointment.imageStreaming.enabled, "true") }}
 
-    {% if data.settings.screening.imageStreaming.enabled != 'false' %}
+    {% if data.settings.appointment.imageStreaming.enabled != 'false' %}
       {% call insetText() %}
-        {{ settingToggle("Streaming interval", "settings[screening][imageStreaming][intervalMs]", [
+        {{ settingToggle("Streaming interval", "settings[appointment][imageStreaming][intervalMs]", [
           {value: "1000", label: "1s"},
           {value: "2000", label: "2s"},
           {value: "3000", label: "3s"},
           {value: "5000", label: "5s"},
           {value: "10000", label: "10s"}
-        ], data.settings.screening.imageStreaming.intervalMs, "3000") }}
+        ], data.settings.appointment.imageStreaming.intervalMs, "3000") }}
       {% endcall %}
     {% endif %}
 
     {# Use condensed review summaries #}
-    {{ settingToggle("Review summaries", "settings[screening][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.screening.useCondensedReviewSummaries, "false") }}
+    {{ settingToggle("Review summaries", "settings[appointment][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.appointment.useCondensedReviewSummaries, "false") }}
 
     {# Show participant section #}
-    {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
+    {{ settingToggle("Participant section", "settings[appointment][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.appointment.showParticipantSection, "true") }}
 
     {# Participant added to worklist — toggles success/fail state shown in appointment header #}
-    {{ settingToggle("Participant added to worklist", "settings[screening][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.screening.addedToWorklist, "true") }}
+    {{ settingToggle("Participant added to worklist", "settings[appointment][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.appointment.addedToWorklist, "true") }}
 
     <h2>Image reading</h2>
     {# Reading index layout #}

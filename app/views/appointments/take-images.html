@@ -10,7 +10,7 @@
 {# Used in automatic flow to show holding page #}
 {# {% set isAwaitingImages = appointment.workflowStatus['awaiting-images'] != 'completed' %} #}
 
-{% set isManualImageCollection = (data.settings.screening.manualImageCollection | falsify) or appointment.isManualImageCollection %}
+{% set isManualImageCollection = (data.settings.appointment.manualImageCollection | falsify) or appointment.isManualImageCollection %}
 
 {# {% set imagesStageCompleted = true if appointment.workflowStatus['take-images'] == 'completed' else false %} #}
 

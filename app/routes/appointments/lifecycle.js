@@ -518,7 +518,7 @@ module.exports = (router) => {
 
     res.redirect(`/clinics/${clinicId}`)
 
-    // res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/screening-complete`)
+    // res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/appointment-complete`)
   })
 
   // Handle undo check in

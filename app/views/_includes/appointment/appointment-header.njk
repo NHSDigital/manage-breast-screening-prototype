@@ -52,7 +52,7 @@
         clinicId: clinicId,
         appointment: appointment,
         participant: participant,
-        confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+        confirmIdentityOnCheckIn: true if data.settings.appointment.confirmIdentityOnCheckIn == 'true' else false,
         statusTagId: statusTagId
       }) }}
     {% endif %}
@@ -114,7 +114,7 @@
 </p>
 
 {# Suppressed until we decide whether to ship the participant record #}
-{% if data.settings.screening.showParticipantSection | falsify %}
+{% if data.settings.appointment.showParticipantSection | falsify %}
   <p class="nhsuk-u-margin-bottom-4"><a href="{{ '/participants/' + participant.id | urlWithReferrer(currentUrl) }}">View participant record</a></p>
 {% endif %}
 

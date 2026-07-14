@@ -194,7 +194,7 @@
 
   {{ data.settings | log("Settings in review page:") }}
 
-  {% if data.settings.screening.useCondensedReviewSummaries == 'true' %}
+  {% if data.settings.appointment.useCondensedReviewSummaries == 'true' %}
     {{ condensedSummaries | safe }}
   {% else %}
     {{ nonCondensedSummaries | safe }}

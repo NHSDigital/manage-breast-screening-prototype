@@ -286,7 +286,7 @@ const getEpisodeMammogramDate = (episode) => {
  * @param {string} participantId - Participant ID
  * @returns {object | null} { date, location, type }, or null if none on record
  */
-const getLastScreening = (data, participantId) => {
+const getLastMammogram = (data, participantId) => {
   const startOfToday = new Date().setHours(0, 0, 0, 0)
 
   // Every image set across their episodes, oldest first
@@ -575,7 +575,7 @@ module.exports = {
   getEpisodeAppointments,
   getEpisodeReadingStatus,
   getEpisodeMammogramDate,
-  getLastScreening,
+  getLastMammogram,
   getNextAppointment,
   getEpisodeStageText,
   getEpisodeStageTagColour,

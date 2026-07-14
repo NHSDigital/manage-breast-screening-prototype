@@ -21,7 +21,7 @@
 
 {# Worklist status #}
 {% set worklistStatusHtml %}
-  {% if data.settings.screening.addedToWorklist == 'false' and not appointment.isOnWorklist %}
+  {% if data.settings.appointment.addedToWorklist == 'false' and not appointment.isOnWorklist %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
       {% if appointment.isManualImageCollection %}
