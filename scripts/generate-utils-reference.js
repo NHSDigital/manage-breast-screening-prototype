@@ -33,6 +33,10 @@ const FILE_META = {
     label: 'event-data.js',
     description: 'Event lookups and mutations in session data. Includes the temp event pattern (`data.event` → `data.events[]`).'
   },
+  'app/lib/utils/episodes.js': {
+    label: 'episodes.js',
+    description: 'Episode lookups and stage changes. An episode is one screening round - the container its appointment events sit in.'
+  },
   'app/lib/utils/clinics.js': {
     label: 'clinics.js',
     description: 'Clinic filtering by time period, slot formatting, and opening hours calculation.'
@@ -110,6 +114,7 @@ const UTILS_FILES = [
   'app/lib/utils/status.js',
   'app/lib/utils/participants.js',
   'app/lib/utils/event-data.js',
+  'app/lib/utils/episodes.js',
   'app/lib/utils/clinics.js',
   'app/lib/utils/reading.js',
   'app/lib/utils/prior-mammograms.js',

@@ -85,6 +85,7 @@ const generateEvent = ({
   slot,
   participant,
   clinic,
+  episodeId,
   outcomeWeights,
   forceStatus = null,
   id = null,
@@ -153,6 +154,7 @@ const generateEvent = ({
 
   const eventBase = {
     id: id || generateId(),
+    episodeId,
     participantId: participant.id,
     clinicId: clinic.id,
     accessionNumber,

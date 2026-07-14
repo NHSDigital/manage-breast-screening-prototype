@@ -3,7 +3,6 @@
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const riskLevels = require('../../data/risk-levels.js')
 const dataStore = require('../data-store')
-const { getClinic } = require('./clinics.js')
 
 /**
  * Get a participant by ID
@@ -49,9 +48,7 @@ const getFullName = (participant) => {
 const getFirstNames = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName } = participant.demographicInformation
-  return nunjucksSafe(
-    [firstName, middleName].filter(Boolean).join(' ')
-  )
+  return nunjucksSafe([firstName, middleName].filter(Boolean).join(' '))
 }
 
 /**
@@ -125,95 +122,6 @@ const sortBySurname = (participants) => {
     return surnameA.localeCompare(surnameB)
   })
 }
-
-/**
- * Get clinic history for a participant with optional filters
- *
- * @param {object} data - Session data containing clinics and events
- * @param {string} participantId - Participant ID to get history for
- * @param {object} [options] - Filter options
- * @param {string} [options.filter] - Filter type: 'historic', 'upcoming', or 'all'
- * @param {boolean} [options.mostRecent] - If true, returns only the most recent matching clinic
- * @returns {Array | object} Array of clinic/event pairs, or single most recent pair
- */
-const getParticipantClinicHistory = (data, participantId, options = {}) => {
-  const { filter = 'all', mostRecent = false } = options
-
-  if (!data?.events || !data?.clinics || !participantId) return []
-
-  const today = new Date().setHours(0, 0, 0, 0)
-
-  // Get participant events with clinic details
-  const history = data.events
-    .filter((event) => event.participantId === participantId)
-    .map((event) => {
-      const clinic = getClinic(data, event.clinicId)
-      if (!clinic) return null
-
-      const unit = data.breastScreeningUnits.find(
-        (unit) => unit.id === clinic.breastScreeningUnitId
-      )
-      const location = unit.locations.find(
-        (location) => location.id === clinic.locationId
-      )
-
-      return {
-        clinic,
-        unit,
-        location,
-        event
-      }
-    })
-    .filter(Boolean) // Remove null entries
-
-  // Apply date filtering
-  const filtered = history.filter((item) => {
-    const clinicDate = new Date(item.clinic.date).setHours(0, 0, 0, 0)
-
-    switch (filter) {
-      case 'historic':
-        return clinicDate < today
-      case 'upcoming':
-        return clinicDate >= today
-      default:
-        return true
-    }
-  })
-
-  // Sort by date, most recent first
-  const sorted = filtered.sort(
-    (a, b) => new Date(b.clinic.date) - new Date(a.clinic.date)
-  )
-
-  return mostRecent ? sorted[0] || null : sorted
-}
-
-// Helper functions for common use cases
-/** Get the most recent historic clinic/event pair for a participant */
-const getParticipantMostRecentClinic = (data, participantId) =>
-  getParticipantClinicHistory(data, participantId, {
-    filter: 'historic',
-    mostRecent: true
-  })
-
-/** Get the start time of the participant's most recent clinic, or false if none */
-const getParticipantMostRecentClinicDate = (data, participantId) => {
-  const clinic = getParticipantClinicHistory(data, participantId, {
-    filter: 'historic',
-    mostRecent: true
-  })
-  if (clinic) {
-    return clinic.event.timing.startTime
-  } else return false
-}
-
-/** Get all past clinic/event pairs for a participant */
-const getParticipantHistoricClinics = (data, participantId) =>
-  getParticipantClinicHistory(data, participantId, { filter: 'historic' })
-
-/** Get all upcoming clinic/event pairs for a participant */
-const getParticipantUpcomingClinics = (data, participantId) =>
-  getParticipantClinicHistory(data, participantId, { filter: 'upcoming' })
 
 /**
  * Determine a participant's current risk level based on age and risk factors
@@ -310,11 +218,6 @@ module.exports = {
   findBySXNumber,
   getAge,
   sortBySurname,
-  getParticipantClinicHistory,
-  getParticipantMostRecentClinic,
-  getParticipantMostRecentClinicDate,
-  getParticipantHistoricClinics,
-  getParticipantUpcomingClinics,
   getCurrentRiskLevel,
   updateParticipant,
   saveTempParticipantToParticipant

@@ -81,7 +81,7 @@ router.use(async (req, res, next) => {
 
 // Collections served from the shared data store rather than from per-session
 // copies
-const STORE_COLLECTIONS = ['clinics', 'participants', 'events']
+const STORE_COLLECTIONS = ['clinics', 'participants', 'events', 'episodes']
 
 // Attach shared collections to this request's session data.
 //
@@ -132,7 +132,8 @@ router.use((req, res, next) => {
       generationId: dataStore.state.generationId,
       events: {},
       participants: {},
-      clinics: {}
+      clinics: {},
+      episodes: {}
     }
   }
 
@@ -310,6 +311,7 @@ router.use((req, res, next) => {
 
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
+require('./routes/episodes')(router)
 require('./routes/events')(router)
 require('./routes/reading')(router)
 require('./routes/reports')(router)

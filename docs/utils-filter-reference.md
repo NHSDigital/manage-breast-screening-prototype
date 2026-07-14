@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-03-12 13:33 UTC
+- **Generated:** 2026-07-14 11:28 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -15,29 +15,30 @@
 
 | File | Purpose | Line |
 |---|---|---|
-| `dates.js` | Date formatting and calculation using dayjs | 48 |
-| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 83 |
-| `status.js` | Event status checks and display helpers | 117 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 141 |
-| `event-data.js` | Event lookups and mutations in session data | 165 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 180 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 194 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 243 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 261 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 279 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 292 |
-| `objects.js` | Object utilities for extracting and flattening values. | 310 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 320 |
-| `random.js` | Seeded random functions for stable prototype data | 331 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 348 |
-| `roles-and-permissions.js` | User role checks | 360 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 378 |
+| `dates.js` | Date formatting and calculation using dayjs | 49 |
+| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 85 |
+| `status.js` | Event status checks and display helpers | 120 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 144 |
+| `event-data.js` | Event lookups and mutations in session data | 164 |
+| `episodes.js` | Episode lookups and stage changes | 179 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 209 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 224 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 280 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 299 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 317 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 330 |
+| `objects.js` | Object utilities for extracting and flattening values. | 348 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 358 |
+| `random.js` | Seeded random functions for stable prototype data | 369 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 386 |
+| `roles-and-permissions.js` | User role checks | 399 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 417 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 394 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 406 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 416 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 430 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 440 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 433 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 445 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 457 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 471 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 481 |
 
 ---
 
@@ -77,8 +78,9 @@ Date formatting and calculation using dayjs. Use these for all date work — for
 | `getWeekDates(dateString)` | Get calendar week dates | 637 |
 | `isWithinDayRange(dateString, minDays, [maxDays], [compareDate])` | Check if a date is within specified age range | 661 |
 | `calculateDurationMinutes(startTime, endTime)` | Calculate duration between two times in minutes (rounded up) — e.g. `calculateDurationMinutes("09:00", "10:30") // returns 90` | 693 |
-| `add(dateInput, amount, unit)` | Add or subtract time from a date — e.g. `add('2023-01-01', 5, 'weeks') // returns '2023-02-05T00:00:00.000Z'` | 731 |
-| `remove(dateInput, amount, unit)` | Remove time from a date (convenience wrapper for add with negative amount) — e.g. `remove('2023-01-01', 2, 'days') // returns '2022-12-30T00:00:00.000Z'` | 778 |
+| `add(dateInput, amount, unit)` | Add or subtract time from a date — e.g. `add('2023-01-01', 5, 'weeks') // returns '2023-02-05T00:00:00.000Z'` | 733 |
+| `remove(dateInput, amount, unit)` | Remove time from a date (convenience wrapper for add with negative amount) — e.g. `remove('2023-01-01', 2, 'days') // returns '2022-12-30T00:00:00.000Z'` | 780 |
+| `toSeason(dateInput)` | Get the season name and year for a given date — e.g. `toSeason('2025-12-01') // 'winter 2025'` | 795 |
 
 ### strings.js
 
@@ -110,9 +112,10 @@ String manipulation: case conversion, formatting, NHS-specific formats (NHS numb
 | `asVisuallyHiddenText(input)` | Wrap string in a hidden text span | 294 |
 | `asAriaHiddenText(input)` | Wrap string in a span, hiding it from assistive technologies | 306 |
 | `formatPhoneNumber(phoneNumber)` | Format phone number for display with spaces | 318 |
-| `formatNhsNumber(input)` | Format NHS number with spaces (3-3-4 format) — e.g. `formatNhsNumber('9997773456') // '999 777 3456'` | 335 |
-| `pluralise(word, args)` | Make a word plural based on a count — e.g. `pluralise('cat') // returns 'cats'` | 359 |
-| `formatMammogramViewCode(code)` | Format mammogram view code for display | 382 |
+| `formatNhsNumber(input)` | Format NHS number with spaces (3-3-4 format) — e.g. `formatNhsNumber('9997773456') // '999 777 3456'` | 337 |
+| `formatAccessionNumber(input)` | Format an accession number for display with spaces (ABC YYYYMMDD ##### format) — e.g. `formatAccessionNumber('KOX2026052712345') // 'KOX 20260527 12345'` | 361 |
+| `pluralise(word, args)` | Make a word plural based on a count — e.g. `pluralise('cat') // returns 'cats'` | 384 |
+| `formatMammogramViewCode(code)` | Format mammogram view code for display | 407 |
 
 ### status.js
 
@@ -132,11 +135,11 @@ Event status checks and display helpers. Use these instead of comparing status s
 | `isAppointmentWorkflow(event, currentUser)` | Check if an event is in the appointment workflow for the current user | 146 |
 | `eligibleForReading(event)` | Check if a status indicates reading is eligible | 178 |
 | `getStatusTagColour(status)` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('event_complete') // 'green'` | 194 |
-| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('event_complete') // 'Screened'` | 291 |
-| `filterEventsByStatus(events, filter)` | Filter events by status category | 334 |
-| `isSpecialAppointment(event)` | Check if an event is a special appointment | 360 |
-| `hasAppointmentNote(event)` | Check if an event has an appointment note | 370 |
-| `hasSymptoms(event)` | Check if an event has recorded symptoms | 380 |
+| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('event_complete') // 'Screened'` | 275 |
+| `filterEventsByStatus(events, filter)` | Filter events by status category | 319 |
+| `isSpecialAppointment(event)` | Check if an event is a special appointment | 345 |
+| `hasAppointmentNote(event)` | Check if an event has an appointment note | 355 |
+| `hasSymptoms(event)` | Check if an event has recorded symptoms | 365 |
 
 ### participants.js
 
@@ -146,21 +149,17 @@ Participant lookups and derived data: full/short names, age, clinic history, and
 
 | Function | Description | Line |
 |---|---|---|
-| `getParticipant(data, participantId)` | Get a participant by ID | 6 |
-| `getFullName(participant)` | Get full name (first, middle, last) of a participant as a Nunjucks-safe string | 17 |
-| `getFullNameReversed(participant)` | Get full name in reversed 'Last, First Middle' format — e.g. `getFullNameReversed(participant) // 'Smith, Jane Louise'` | 31 |
-| `getShortName(participant)` | Get short name (first + last only) of participant as a Nunjucks-safe string | 45 |
-| `findBySXNumber(participants, sxNumber)` | Find a participant by their SX number | 57 |
-| `getAge(participant, [referenceDate])` | Get participant's age | 68 |
-| `sortBySurname(participants)` | Sort participants by surname | 89 |
-| `getParticipantClinicHistory(data, participantId, [options], [options.filter], [options.mostRecent])` | Get clinic history for a participant with optional filters | 103 |
-| `getParticipantMostRecentClinic(data, participantId)` | Get the most recent historic clinic/event pair for a participant | 166 |
-| `getParticipantMostRecentClinicDate(data, participantId)` | Get the start time of the participant's most recent clinic, or false if none | 173 |
-| `getParticipantHistoricClinics(data, participantId)` | Get all past clinic/event pairs for a participant | 184 |
-| `getParticipantUpcomingClinics(data, participantId)` | Get all upcoming clinic/event pairs for a participant | 188 |
-| `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 192 |
-| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 225 |
-| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 244 |
+| `getParticipant(data, participantId)` | Get a participant by ID | 7 |
+| `getFullName(participant)` | Get full name (first, middle, last) of a participant as a Nunjucks-safe string | 28 |
+| `getFirstNames(participant)` | Get first names (first + middle) of a participant as a Nunjucks-safe string | 42 |
+| `getFullNameReversed(participant)` | Get full name in reversed 'Last, First Middle' format — e.g. `getFullNameReversed(participant) // 'Smith, Jane Louise'` | 54 |
+| `getShortName(participant)` | Get short name (first + last only) of participant as a Nunjucks-safe string | 68 |
+| `findBySXNumber(participants, sxNumber)` | Find a participant by their SX number | 80 |
+| `getAge(participant, [referenceDate])` | Get participant's age | 91 |
+| `sortBySurname(participants)` | Sort participants by surname | 112 |
+| `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 126 |
+| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 159 |
+| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 183 |
 
 ### event-data.js
 
@@ -170,12 +169,42 @@ Event lookups and mutations in session data. Includes the temp event pattern (`d
 
 | Function | Description | Line |
 |---|---|---|
-| `getEvent(data, eventId)` | Get an event by ID | 4 |
-| `getEventData(data, clinicId, eventId)` | Get event data bundle for a given clinic and event ID | 15 |
-| `updateEvent(data, eventId, updatedEvent)` | Find and update an event in session data | 41 |
-| `updateEventStatus(data, eventId, newStatus)` | Update event status and add to history | 58 |
-| `updateEventData(data, eventId, updates)` | Update event with arbitrary data changes | 102 |
-| `saveTempEventToEvent(data)` | Save temporary event data back to the main event | 141 |
+| `getEvent(data, eventId)` | Get an event by ID | 23 |
+| `getEventData(data, clinicId, eventId)` | Get event data bundle for a given clinic and event ID | 43 |
+| `updateEvent(data, eventId, updatedEvent)` | Find and update an event in session data | 67 |
+| `updateEventStatus(data, eventId, newStatus)` | Update event status and add to history | 86 |
+| `updateEventData(data, eventId, updates)` | Update event with arbitrary data changes | 145 |
+| `saveTempEventToEvent(data)` | Save temporary event data back to the main event | 185 |
+
+### episodes.js
+
+`app/lib/utils/episodes.js`
+
+Episode lookups and stage changes. An episode is one screening round - the container its appointment events sit in.
+
+| Function | Description | Line |
+|---|---|---|
+| `eventProducedImages(event)` | Whether an event's status means mammograms were taken. | 89 |
+| `buildMammogramEntry(event, [clinic])` | Build the episode's summary record of one set of mammograms. | 103 |
+| `getEpisode(data, episodeId)` | Get an episode by ID | 144 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 165 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 195 |
+| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 211 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 226 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 241 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 251 |
+| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 262 |
+| `getLastScreening(data, participantId)` | The participant's last mammogram on record, before today. | 277 |
+| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 324 |
+| `getEpisodeStageText(stage)` | Display text for an episode's stage | 343 |
+| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 353 |
+| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 363 |
+| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 373 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 383 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 416 |
+| `syncEpisodeMammogramsForEvent(data, event)` | Keep an episode's mammograms record in step with one of its appointments. | 465 |
+| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 505 |
+| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 538 |
 
 ### clinics.js
 
@@ -185,11 +214,12 @@ Clinic filtering by time period, slot formatting, and opening hours calculation.
 
 | Function | Description | Line |
 |---|---|---|
-| `getTodaysClinics(clinics)` | Get today's clinics | 7 |
-| `getClinicEvents(events, clinicId)` | Get events for a specific clinic | 18 |
-| `formatTimeSlot(dateTime)` | Format clinic time slot | 32 |
-| `getClinicHours(clinic)` | Get clinic opening hours | 58 |
-| `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 76 |
+| `getClinic(data, clinicId)` | Get a clinic by ID | 8 |
+| `getTodaysClinics(clinics)` | Get today's clinics | 28 |
+| `getClinicEvents(events, clinicId)` | Get events for a specific clinic | 39 |
+| `formatTimeSlot(dateTime)` | Format clinic time slot | 53 |
+| `getClinicHours(clinic)` | Get clinic opening hours | 79 |
+| `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 97 |
 
 ### reading.js
 
@@ -199,46 +229,53 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 
 | Function | Description | Line |
 |---|---|---|
-| `getReadingMetadata(event)` | Get reading metadata for an event | 33 |
-| `getReadsAsArray(event)` | Get all reads for an event as an ordered array | 64 |
-| `writeReading(event, userId, reading, [data], [batchId])` | Update the writeReading function to also handle removing from skipped events | 85 |
-| `enhanceEventsWithReadingData(events, participants, userId)` | Enhance events with pre-calculated reading metadata | 132 |
-| `getReadingStatusForEvents(events, [userId])` | Get detailed reading status for a group of events | 303 |
-| `getReadingProgress(events, currentEventId, skippedEvents, [userId])` | Get progress through reading a set of events | 349 |
-| `sortEventsByScreeningDate(events)` | Sort events by screening date (oldest first) | 666 |
-| `getFirstAvailableClinic(data)` | Get the first clinic that still has events needing reads | 686 |
-| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 697 |
-| `getReadableEventsForClinic(data, clinicId)` | Get readable events for a clinic with pre-calculated metadata | 729 |
-| `filterEventsByEligibleForReading(events)` | Filter events that are eligible for reading | 760 |
-| `filterEventsByNeedsAnyRead(events, maxReadsPerEvent)` | Filter events that need any read (first or second) | 769 |
-| `filterEventsByNeedsFirstRead(events)` | Filter events that need a first read | 783 |
-| `filterEventsByNeedsSecondRead(events)` | Filter events that need a second read | 793 |
-| `filterEventsByFullyRead(events, requiredReads)` | Filter events that are fully read (have all required reads) | 803 |
-| `filterEventsByUserCanRead(events, userId)` | Filter events that a specific user can read | 817 |
-| `filterEventsByUserCanReadOrHasRead(events, userId, [options])` | Filter events that user can read or has already read | 828 |
-| `filterEventsByClinic(events, clinicId)` | Filter events for a specific clinic | 859 |
-| `filterEventsByDayRange(events, minDays, [maxDays])` | Filter events that are within a specific day range | 870 |
-| `getFirstEvent(events)` | Get the first event from an array | 890 |
-| `getNextEvent(events, currentEventId, wrap)` | Get the next event after a specific event | 899 |
-| `getPreviousEvent(events, currentEventId, wrap)` | Get the previous event before a specific event | 920 |
-| `getReadForUser(event, [userId])` | Get the read object for a specific user on an event | 945 |
-| `getFirstUserReadableEvent(events, userId)` | Get first event from an array that a user can read | 962 |
-| `getNextUserReadableEvent(events, currentEventId, [userId])` | Get the next event the user can read after the current event, wrapping to start if needed | 977 |
-| `userHasReadEvent(event, userId)` | Check if a user has already read an event | 999 |
-| `getOtherReads(event, userId)` | Get reads from other users (not the current user) | 1018 |
-| `getComparisonInfo(event, secondReaderOpinion, userId)` | Determine if a comparison page should be shown to the second reader | 1039 |
-| `canUserReadEvent(event, userId, [options])` | Check if current user can read an event | 1084 |
-| `hasReads(event)` | Check if an event has any reads | 1124 |
-| `needsFirstRead(event)` | Check if an event needs a first read | 1137 |
-| `needsSecondRead(event)` | Check if an event needs a second read | 1147 |
-| `needsArbitration(event)` | Check if an event needs arbitration | 1155 |
-| `createReadingBatch(data, options, options.type, [options.name], [options.clinicId], [options.batchId], [options.limit], [options.filters])` | Create a batch of events for reading based on specified criteria | 1167 |
-| `getDefaultBatchName(type, clinicId, data)` | Generate a default name for a batch based on its type | 1318 |
-| `generateBatchId()` | Generate a unique ID for a batch | 1353 |
-| `getReadingBatch(data, batchId)` | Get a reading batch by ID | 1362 |
-| `getFirstReadableEventInBatch(data, batchId, [userId])` | Get the first event in a batch that a user can read | 1399 |
-| `skipEventInBatch(data, batchId, eventId)` | Mark an event as skipped in a batch | 1424 |
-| `getBatchReadingProgress(data, batchId, currentEventId, [userId])` | Get reading progress for a batch | 1447 |
+| `getReadingMetadata(event)` | Get reading metadata for an event | 35 |
+| `getReadsAsArray(event)` | Get all reads for an event as an ordered array | 66 |
+| `writeReading(event, userId, reading, data, [sessionId])` | Save a user's reading for an event, and remove the event from the reading | 87 |
+| `enhanceEventsWithReadingData(events, participants, userId)` | Enhance events with pre-calculated reading metadata | 146 |
+| `getReadingStatusForEvents(events, [userId])` | Get detailed reading status for a group of events | 341 |
+| `getReadingProgress(events, currentEventId, skippedEvents, [userId])` | Get progress through reading a set of events | 387 |
+| `sortEventsByScreeningDate(events)` | Sort events by screening date (oldest first) | 704 |
+| `getFirstAvailableClinic(data)` | Get the first clinic that still has events needing reads | 724 |
+| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 735 |
+| `getReadableEventsForClinic(data, clinicId)` | Get readable events for a clinic with pre-calculated metadata | 767 |
+| `filterEventsByEligibleForReading(events)` | Filter events that are eligible for reading | 798 |
+| `filterEventsByNeedsAnyRead(events, maxReadsPerEvent)` | Filter events that need any read (first or second) | 807 |
+| `filterEventsByNeedsFirstRead(events)` | Filter events that need a first read | 821 |
+| `filterEventsByNeedsSecondRead(events)` | Filter events that need a second read | 831 |
+| `filterEventsByFullyRead(events, requiredReads)` | Filter events that are fully read (have all required reads) | 841 |
+| `filterEventsByUserCanRead(events, userId)` | Filter events that a specific user can read | 855 |
+| `filterEventsByUserCanReadOrHasRead(events, userId, [options])` | Filter events that user can read or has already read | 866 |
+| `filterEventsByClinic(events, clinicId)` | Filter events for a specific clinic | 897 |
+| `filterEventsByDayRange(events, minDays, [maxDays])` | Filter events that are within a specific day range | 908 |
+| `getFirstEvent(events)` | Get the first event from an array | 928 |
+| `getNextEvent(events, currentEventId, wrap)` | Get the next event after a specific event | 937 |
+| `getPreviousEvent(events, currentEventId, wrap)` | Get the previous event before a specific event | 958 |
+| `getReadForUser(event, [userId])` | Get the read object for a specific user on an event | 983 |
+| `getFirstUserReadableEvent(events, userId)` | Get first event from an array that a user can read | 1000 |
+| `getNextUserReadableEvent(events, currentEventId, [userId])` | Get the next event the user can read after the current event, wrapping to start if needed | 1015 |
+| `getResumeEventForUser(events, [userId], [skippedEvents])` | Get the event the user should resume reading from. | 1038 |
+| `userHasReadEvent(event, userId)` | Check if a user has already read an event | 1090 |
+| `getOtherReads(event, userId)` | Get reads from other users (not the current user) | 1109 |
+| `areReadsDiscordant(readA, readB)` | Determine if two reads are discordant (disagree in a clinically meaningful way). | 1130 |
+| `willGoToArbitration(readA, readB, [settings])` | Determine whether two reads will result in arbitration, taking the site's | 1187 |
+| `getOutcome(event, [settings])` | Compute the overall outcome for an event based on its reads and site policy. | 1215 |
+| `getComparisonInfo(event, secondReadData, [userId], [settings])` | Determine if a comparison page should be shown to the second reader. | 1255 |
+| `shouldShowComparePage(event, secondReadData, [userId], [settings])` | Decide whether the compare page should be shown to the second reader. | 1320 |
+| `isDeferred(event)` | Check if an event has been deferred from reading | 1377 |
+| `hasReads(event)` | Check if an event has any reads | 1424 |
+| `needsFirstRead(event)` | Check if an event needs a first read | 1437 |
+| `needsSecondRead(event)` | Check if an event needs a second read | 1447 |
+| `needsArbitration()` | Check if an event needs arbitration. | 1455 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible event candidates for a session based on its type and filters | 1495 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of events for reading based on specified criteria | 1559 |
+| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1648 |
+| `generateSessionId()` | Generate a unique ID for a session | 1683 |
+| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1692 |
+| `getFirstReadableEventInSession(data, sessionId, [userId])` | Get the first event in a session that a user can read | 1729 |
+| `skipEventInSession(data, sessionId, eventId)` | Mark an event as skipped in a session | 1755 |
+| `topUpSession(data, sessionId)` | Add the next eligible event to a session if it is under its target size | 1778 |
+| `getSessionReadingProgress(data, sessionId, currentEventId, [userId])` | Get reading progress for a session | 1828 |
 
 ### prior-mammograms.js
 
@@ -248,15 +285,16 @@ Prior mammogram request state (awaiting, unrequested, resolved) and one-line sum
 
 | Function | Description | Line |
 |---|---|---|
-| `hasRecordedMammograms(event)` | Returns true if the event has any previously recorded mammograms | 9 |
-| `awaitingPriors(event)` | Returns true if any prior mammogram has requestStatus 'requested' (holds case from reading) | 18 |
-| `hasUnrequestedPriors(event)` | Returns true if any prior mammogram has requestStatus 'not_requested' | 24 |
-| `getPriorsSummary(event)` | Get a summary of prior mammogram statuses for display | 32 |
-| `getUnrequestedPriors(event)` | Get priors with requestStatus 'not_requested' (for the request priors UI) | 80 |
-| `getAwaitingPriors(event)` | Get priors with requestStatus 'requested' (awaiting arrival) | 88 |
-| `userRequestedPriors(event, userId)` | Returns true if the given user has an outstanding prior request on this event | 94 |
-| `summarisePriorMammogram(mammogram, [options], [options.unitName], [options.includeAdditionalInfo])` | Summarise a single prior mammogram into a one-line string for display | 102 |
-| `summarisePriorMammograms(event, [options])` | Summarise all prior mammograms for an event into an array of one-line strings | 168 |
+| `PRIOR_REQUEST_STATUSES()` | The known requestStatus values for a prior mammogram | 9 |
+| `hasRecordedMammograms(event)` | Returns true if the event has any previously recorded mammograms | 19 |
+| `awaitingPriors(event)` | Returns true if any prior mammogram has requestStatus 'pending' or 'requested' (holds case from reading) | 28 |
+| `hasUnrequestedPriors(event)` | Returns true if any prior mammogram has requestStatus 'not_requested' | 36 |
+| `getPriorsSummary(event)` | Get a summary of prior mammogram statuses for display | 44 |
+| `getUnrequestedPriors(event)` | Get priors with requestStatus 'not_requested' (for the request priors UI) | 93 |
+| `getAwaitingPriors(event)` | Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) | 101 |
+| `userRequestedPriors(event, userId)` | Returns true if the given user has a pending prior request on this event. | 109 |
+| `summarisePriorMammogram(mammogram, [options], [options.unitName], [options.includeAdditionalInfo], [options.includeDate], [options.prefix])` | Summarise a single prior mammogram into a one-line string for display | 120 |
+| `summarisePriorMammograms(event, [options])` | Summarise all prior mammograms for an event into an array of one-line strings | 211 |
 
 ### medical-information.js
 
@@ -271,10 +309,10 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 207 |
 | `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 229 |
 | `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 251 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 305 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 319 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 341 |
-| `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 357 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 323 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 337 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 359 |
+| `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 375 |
 
 ### annotation-summary.js
 
@@ -326,7 +364,7 @@ NHS summary list helpers: replace empty row values with "Enter X" links or "Not 
 | Function | Description | Line |
 |---|---|---|
 | `handleSummaryListMissingInformation(input, showNotProvidedText)` | Convert value object to "Enter X" link if empty, or show "Not provided" | 18 |
-| `removeLastRowBorder(input)` | Add no-border class to the last summary list row | 99 |
+| `removeLastRowBorder(input)` | Add no-border class to the last summary list row | 108 |
 
 ### random.js
 
@@ -356,6 +394,7 @@ Referrer chain navigation for multi-level back links. Use these instead of hardc
 | `getReturnUrl(url, referrerChain, [scrollToId])` | Get destination from referrer chain, falling back to provided URL if no referrer — e.g. `<a href="{{ '/default-path' \| getReturnUrl(referrerChain) }}">Back</a>` | 131 |
 | `urlWithReferrer(url, referrerChain, [scrollToId])` | Add referrer to URL as query parameter with optional scroll anchor — e.g. `<a href="{{ '/next-page' \| urlWithReferrer(referrer) }}">Continue</a>` | 214 |
 | `appendReferrer(existingReferrerChain, newUrl)` | Append a URL to an existing referrer chain — e.g. `{% set updatedReferrer = referrerChain \| appendReferrer(currentUrl) %}` | 240 |
+| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 264 |
 
 ### roles-and-permissions.js
 
@@ -412,6 +451,8 @@ Injects matching flash error messages into NHS form component configs by field n
 | Function | Description | Line |
 |---|---|---|
 | `populateErrors(component)` | Add error messages to form components based on flash messages | 3 |
+| `openInModal(component, modalId, [loadUrl])` | Transform a button, summary list action item, or full summary list component — e.g. `{{ button({ text: "Add", href: addUrl } \| openInModal(modalId)) }}` | 36 |
+| `getFlashError(name)` | Get a flash error object for a specific field name from the template context. | 127 |
 
 ### nunjucks.js
 

@@ -1,11 +1,12 @@
 # Data conventions: reading and updating seed data
 
-How participant, clinic and event data works in this prototype, and the rules
-to follow when changing it.
+How participant, clinic, event and episode data works in this prototype, and
+the rules to follow when changing it.
 
 ## How it works
 
-The generated seed data (`data.participants`, `data.clinics`, `data.events`)
+The generated seed data (`data.participants`, `data.clinics`, `data.events`,
+`data.episodes`)
 is **shared and read-only**. It is loaded once at boot into a shared store
 ([app/lib/data-store.js](../app/lib/data-store.js)) and attached to every
 request by middleware in [app/routes.js](../app/routes.js) - it is not copied
@@ -36,8 +37,9 @@ leaking into every other session - holds either way.
 Instead, do one of:
 
 - **Use the update helpers** - `updateEvent`, `updateEventStatus`,
-  `updateEventData` ([app/lib/utils/event-data.js](../app/lib/utils/event-data.js))
-  and `updateParticipant` ([app/lib/utils/participants.js](../app/lib/utils/participants.js)).
+  `updateEventData` ([app/lib/utils/event-data.js](../app/lib/utils/event-data.js)),
+  `updateParticipant` ([app/lib/utils/participants.js](../app/lib/utils/participants.js))
+  and `updateEpisode` / `updateEpisodeStage` ([app/lib/utils/episodes.js](../app/lib/utils/episodes.js)).
   Build a whole replacement record (spread the old one, change what you need)
   and pass it in. The helpers write it to the session's `_changes` for you.
 
@@ -64,6 +66,139 @@ Regenerating data (daily, or via `/settings`) reloads the shared store and
 changes its `generationId`. Session changes are stamped with the generation
 they were made against, and stale changes are discarded automatically - so a
 profile swap resets everyone's data. This is intentional demo behaviour.
+
+## Episodes
+
+An **episode** is one screening round for a participant - the container the
+appointment(s) for that round sit in. Every event has an `episodeId`, and
+every episode lists its `eventIds`. Accessors live in
+[app/lib/utils/episodes.js](../app/lib/utils/episodes.js) (and so are
+available as Nunjucks filters): `getEpisode`, `getEpisodesForParticipant`,
+`getCurrentEpisode`, `getEpisodeEvents`, `getEpisodeReadingStatus`.
+
+### Open or closed
+
+An episode is **open** until it closes. While open, its `stage` says how far
+through the process it has got:
+
+```
+scheduled → mammograms → reading → assessment      (open)
+                 ↑___________|                      technical recall
+closed                                              (outcome + closedDate set)
+```
+
+`assessment` needs no modelling of its own - it is simply an open episode that
+has not concluded. Use `isEpisodeOpen` / `isEpisodeClosed` rather than
+comparing `stage` yourself.
+
+When an episode closes it takes an **outcome** - the meta-level answer to what
+the round found, not the detail of how it got there:
+
+| Outcome | Meaning |
+|---|---|
+| `routine_recall` | Clear. Reading found nothing, or assessment didn't. |
+| `refer_for_treatment` | Cancer or abnormality found; the round ends by referring them into treatment. |
+| `no_result` | The round ended without a screening result. |
+
+Why there was no result (did not attend, cancelled, attended but not screened)
+lives on the **appointment**, not the episode - it isn't stored twice.
+
+### Mammograms
+
+An episode carries its own record of the images its round produced:
+`episode.mammograms`, one entry per image set, oldest first:
+
+```js
+{ takenDate, eventId, breastScreeningUnitId, locationId, viewCount }
+```
+
+`updateEventStatus` writes an entry the moment an appointment reaches a
+screened status, and removes it again if that is undone. The raw image data
+stays on the event (`mammogramData`) - the episode entry is a summary of it.
+
+Read this - via `getEpisodeMammogramDate` / `getLastScreening` - rather than
+deriving "were they screened" from appointment timing: a missed appointment
+still has timing, and must never look like someone's last mammogram.
+
+Historic episodes hold one entry with no `eventId` or `locationId` - where
+the round was screened is all a summary round knows. A technical recall adds
+a second entry when the re-screen happens; one entry per image set is also
+the skeleton the reading-cases model (a future piece of work) hangs off.
+
+### Advancing an episode
+
+`updateEventStatus` moves the episode to wherever the appointment's new status
+leaves it (check-in → `mammograms`, complete → `reading`, did not attend →
+`closed`), so routes don't have to know episodes exist. It uses the maps in
+`episodes.js`, which the seed generator also uses, so generated episodes sit
+exactly where a real one would after the same events.
+
+**Writing a read deliberately does not close the episode.** Two opinions and a
+computed outcome is not a confirmed result, and there is no step in the app
+that confirms one yet. `advanceEpisodeForReadingOutcome` is what that step
+should call when it exists; until then an episode stays in `reading`.
+
+To change an episode directly, use `updateEpisode` / `updateEpisodeStage` - the
+same replacement-record rules apply as for events. Stage moves are **not
+validated**: any stage can follow any other. A transition map arrives with the
+statuses work.
+
+### What an episode is always allowed to assume
+
+The generator checks these on every run and warns loudly if any is broken
+(`checkEpisodes` in
+[episode-generator.js](../app/lib/generators/episode-generator.js)):
+
+- A **closed** episode has a `closedDate` and a valid outcome; an **open** one
+  has no outcome.
+- A **historic** episode is always closed, and never has events. It has
+  mammogram entries exactly when its outcome isn't `no_result`.
+- An episode's **`mammograms`** entries match its appointments that reached a
+  screened status, one each.
+- An episode in **`reading`** contains a completed mammogram appointment that
+  is still within the reading window. Nothing can be in reading without images
+  to read.
+
+A round screened longer ago than the reading window closes rather than sitting
+in `reading` forever - it was read at the time, we just don't seed reads going
+back that far.
+
+### What deliberately doesn't live on the episode yet
+
+The target model puts `imageReadings[]`, priors and deferral on the episode.
+They are all still **on the event**, because moving them touches most of the
+reading code. `getEpisodeReadingStatus` derives an episode's reading state
+from its events rather than holding a copy. The physical move happens with the
+work that needs it (arbitration / case views), or with the event→appointment
+rename.
+
+### Historic episodes
+
+Participants who have a real episode also get their past rounds as **historic**
+episodes (`isHistoric: true`): summary-level records with dates and an outcome,
+but no appointments, no reads and no assessment detail.
+
+They are seeded **outcome-first** - we say what the round found and don't model
+how it got there. That's enough for any "what happened before" view, and cheap
+to hold. If we later model the steps, the outcome can be computed from them
+instead, without the record changing shape.
+
+How many a participant gets follows from their **age** and their screening
+interval, since screening starts at the risk level's lower age bound: a routine
+participant aged 51 has none, at 54 has one, at 69 has six.
+`generation.maxHistoricEpisodesPerParticipant` in
+[app/config.js](../app/config.js) only caps it. The outcome mix can be
+overridden per seed profile via `episodes.historicOutcomeWeights`.
+
+**Only the current period is generated in full.** The generator used to also
+produce a whole clinic snapshot from three years ago - real clinics, real
+appointments - purely so participants had a screening history to show. Historic
+episodes do that job for a fraction of the data, so that snapshot is gone. Full
+fidelity for the round being worked on; a summary for everything before it.
+
+This is why `getLastScreening` and `getNextAppointment`
+([episodes.js](../app/lib/utils/episodes.js)) read across episodes rather than
+scanning old events - a past round may have no appointment record at all.
 
 ## Escape hatch
 

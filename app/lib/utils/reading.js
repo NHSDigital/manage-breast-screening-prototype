@@ -121,6 +121,11 @@ const writeReading = (event, userId, reading, data, sessionId = null) => {
   // Saves to the event and mirrors into data.event if it matches
   updateEventData(data, event.id, { imageReading })
 
+  // Note the episode deliberately stays in `reading`. Two opinions and a
+  // computed outcome is not a confirmed result, and there is no step in the
+  // app that confirms one yet - see advanceEpisodeForReadingOutcome in
+  // app/lib/utils/episodes.js, which is what that step should call.
+
   // If we have session context, remove this event from skipped events
   // (readingSessions is per-session working data, so in-place edits are fine)
   if (sessionId && data.readingSessions?.[sessionId]) {

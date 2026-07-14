@@ -30,9 +30,10 @@ module.exports = {
     targetAttendancePercent: 100, // 100% of original capacity (not overbooking)
 
     // Date range for generating data
+    // Only the current period is generated in full. Past screening rounds are
+    // summary-level historic episodes, not whole clinics and appointments.
     daysToGenerate: 13,
     daysBeforeToday: 11,
-    historicPeriodCount: 1, // Number of historic periods to generate
 
     simulatedTime: '10:30' // 24h format
   },
@@ -74,6 +75,11 @@ module.exports = {
   generation: {
     numberOfParticipants: 1000,
     bookingProbability: 0.8, // 80% of slots are booked
-    previousMammogramRate: 0.05 // Rate of completed events with recorded previous mammograms
+    previousMammogramRate: 0.05, // Rate of completed events with recorded previous mammograms
+
+    // Cap on summary-level past screening rounds per participant. How many they
+    // actually get follows from their age and screening interval - this only
+    // bounds how much history we hold for the longest-screened participants.
+    maxHistoricEpisodesPerParticipant: 6
   }
 }

@@ -69,11 +69,14 @@ const state = {
   participants: [],
   clinics: [],
   events: [],
+  episodes: [],
   participantsById: new Map(),
   clinicsById: new Map(),
   eventsById: new Map(),
+  episodesById: new Map(),
   eventIdsByClinic: new Map(),
   eventIdsByParticipant: new Map(),
+  episodeIdsByParticipant: new Map(),
   generationInfo: {},
   // Identifies which generation of seed data the store holds. Sessions stamp
   // their _changes with this; the attach middleware discards changes made
@@ -92,27 +95,31 @@ const reload = () => {
     readGeneratedFile('participants.json', {}).participants || []
   const clinics = readGeneratedFile('clinics.json', {}).clinics || []
   const events = readGeneratedFile('events.json', {}).events || []
+  const episodes = readGeneratedFile('episodes.json', {}).episodes || []
   const generationInfo = readGeneratedFile('generation-info.json', {
     generatedAt: 'Never',
-    stats: { participants: 0, clinics: 0, events: 0 }
+    stats: { participants: 0, clinics: 0, events: 0, episodes: 0 }
   })
 
   if (shouldFreeze) {
     deepFreeze(participants)
     deepFreeze(clinics)
     deepFreeze(events)
+    deepFreeze(episodes)
     deepFreeze(generationInfo)
   }
 
   state.participants = participants
   state.clinics = clinics
   state.events = events
+  state.episodes = episodes
   state.generationInfo = generationInfo
   state.generationId = generationInfo.generatedAt
 
   state.participantsById = new Map(participants.map((p) => [p.id, p]))
   state.clinicsById = new Map(clinics.map((c) => [c.id, c]))
   state.eventsById = new Map(events.map((e) => [e.id, e]))
+  state.episodesById = new Map(episodes.map((e) => [e.id, e]))
 
   state.eventIdsByClinic = new Map()
   state.eventIdsByParticipant = new Map()
@@ -128,9 +135,20 @@ const reload = () => {
     state.eventIdsByParticipant.get(event.participantId).push(event.id)
   }
 
+  // Episodes are generated oldest-first per participant, so these id lists
+  // stay in sequence order
+  state.episodeIdsByParticipant = new Map()
+  for (const episode of episodes) {
+    if (!state.episodeIdsByParticipant.has(episode.participantId)) {
+      state.episodeIdsByParticipant.set(episode.participantId, [])
+    }
+    state.episodeIdsByParticipant.get(episode.participantId).push(episode.id)
+  }
+
   console.log(
     `Data store: loaded ${participants.length} participants, ` +
-      `${clinics.length} clinics, ${events.length} events ` +
+      `${clinics.length} clinics, ${events.length} events, ` +
+      `${episodes.length} episodes ` +
       `in ${Date.now() - started}ms${shouldFreeze ? ' (frozen)' : ''}`
   )
 }

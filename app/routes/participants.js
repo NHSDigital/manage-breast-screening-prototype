@@ -3,9 +3,13 @@
 const {
   getParticipant,
   sortBySurname,
-  getParticipantClinicHistory,
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
+const {
+  getEpisodesForParticipant,
+  getEpisodeEvents,
+  getEpisodeMammogramDate
+} = require('../lib/utils/episodes')
 const { findById } = require('../lib/utils/arrays')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
@@ -116,12 +120,32 @@ module.exports = (router) => {
     // Store original participant data for reference if needed
     res.locals.originalParticipant = originalParticipant
 
-    // Get additional data that participant pages might need
-    const clinicHistory = getParticipantClinicHistory(
+    // A participant's screening history is their episodes, newest first. Past
+    // rounds are summary-only episodes, so this covers their whole history
+    // without needing old appointments to exist.
+    res.locals.episodeHistory = getEpisodesForParticipant(
       data,
       originalParticipant.id
     )
-    res.locals.clinicHistory = clinicHistory
+      .map((episode) => {
+        // Screened rounds date by when their images were taken. A round with
+        // no images (not yet screened, missed, cancelled) dates by its
+        // appointment or its own dates instead - but never counts as screened
+        const mammogramDate = getEpisodeMammogramDate(episode)
+        const events = getEpisodeEvents(data, episode)
+        const latestEvent = events[events.length - 1]
+
+        return {
+          episode,
+          date:
+            mammogramDate ||
+            latestEvent?.timing?.startTime ||
+            episode.closedDate ||
+            episode.openedDate,
+          wasScreened: Boolean(mammogramDate)
+        }
+      })
+      .reverse()
 
     next()
   })
