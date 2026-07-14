@@ -14,13 +14,6 @@
 
 {% block pageContent %}
 
-  {% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
-  {% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
-  {% set reviewAfterImagingStatus = data.event.workflowStatus['review-breast-features-after-imaging'] %}
-  {% if not reviewAfterImagingStatus %}
-    {% set reviewAfterImagingStatus = event.workflowStatus['review-breast-features-after-imaging'] %}
-  {% endif %}
-
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
   {# Determine current room name #}
@@ -59,50 +52,13 @@
     </p>
   {% endif %}
 
-  {% set allowEdits = true %}
-  <h2>Are there any breast features to add?</h2>
-  <div id="status-message" aria-live="polite" class="nhsuk-u-visually-hidden" role="status"></div>
-  {#
-  <p class="nhsuk-body">
-    Click the diagram to add notable features such as scars, moles, or warts that image readers may need to be aware of. These could be observed by you or reported by the participant.
-  </p>
-  <div class="breast-features-diagram-header">
-    <h4 class="nhsuk-heading-s">Where is the feature?</h4>
-  </div>
-  #}
-  <div class="breast-features-diagram-container">
-  <div class="nhsuk-u-margin-bottom-4">
-    {% include "_includes/breast-diagram-wrapper.njk" %}
-  </div>
-    {% include "_includes/feature-popover.njk" %}
-    {% include "_includes/features-list.njk" %}
-  </div>
-
+  <h2>Observations during mammogram</h2>
   {{ button({
-    text: "Save",
-    type: "button",
+    text: "Add breast features",
+    href: eventUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
     variant: "secondary",
-    attributes: {
-      id: "saveBtn"
-    }
+    small: true
   }) }}
-
-  <script>
-  window.breastFeaturesConfig = {
-    hiddenFieldName: 'event[medicalInformation][breastFeaturesRaw]',
-    hiddenFieldId: 'breastFeaturesRaw',
-    existingFeatures: {{ breastFeatures | dump | safe }} || [],
-    featureTypes: [
-     { value: 'mole', text: 'Mole' },
-     { value: 'wart', text: 'Wart' },
-     { value: 'non-surgical-scar', text: 'Non-surgical scar' },
-     { value: 'bruising-or-trauma', text: 'Bruising or trauma' },
-     { value: 'other-feature', text: 'Other feature' }
-    ]
-  }
-  </script>
-
-  <script type="module" src="/assets/javascript/breast-features.js"></script>
 
   {# {{ radios({
     name: "event[mammogramDataTemp][machineRoom]",
@@ -139,9 +95,9 @@
   {% set troubleshootingIssue = event.mammogramDataTemp.troubleshootingIssue %}
   {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
   {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
-  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or data.event.isManualImageCollection or isManualFailover %}
+  {% set showManualParticipantDetails = showWorklistMatchingContent or isManualFailover %}
 
-  {% if (hasTroubleshootingIssue and showWorklistMatchingContent) or (not hasTroubleshootingIssue and showDefaultManualContent) %}
+  {% if showManualParticipantDetails %}
     <h2>Manually add participant details</h2>
     <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
     {{ summaryList({
