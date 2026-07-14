@@ -33,9 +33,13 @@ const FILE_META = {
     label: 'appointment-data.js',
     description: 'Appointment lookups and mutations in session data. Includes the temp appointment pattern (`data.appointment` → `data.appointments[]`).'
   },
+  'app/lib/utils/appointment-status.js': {
+    label: 'appointment-status.js',
+    description: 'The appointment status-change funnel. Changing a status also moves the appointment’s episode along, so the two updates live together here.'
+  },
   'app/lib/utils/episodes.js': {
     label: 'episodes.js',
-    description: 'Episode lookups and stage changes. An episode is one screening round - the container its appointment appointments sit in.'
+    description: 'Episode lookups and stage changes. An episode is one screening round - the container its appointments sit in.'
   },
   'app/lib/utils/clinics.js': {
     label: 'clinics.js',

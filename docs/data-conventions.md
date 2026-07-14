@@ -36,14 +36,16 @@ leaking into every other session - holds either way.
 
 Instead, do one of:
 
-- **Use the update helpers** - `updateAppointment`, `updateAppointmentStatus`,
-  `updateAppointmentData` ([app/lib/utils/appointment-data.js](../app/lib/utils/appointment-data.js)),
+- **Use the update helpers** - `updateAppointment`, `updateAppointmentData`
+  ([app/lib/utils/appointment-data.js](../app/lib/utils/appointment-data.js)),
+  `updateAppointmentStatus`
+  ([app/lib/utils/appointment-status.js](../app/lib/utils/appointment-status.js)),
   `updateParticipant` ([app/lib/utils/participants.js](../app/lib/utils/participants.js))
   and `updateEpisode` / `updateEpisodeStage` ([app/lib/utils/episodes.js](../app/lib/utils/episodes.js)).
   Build a whole replacement record (spread the old one, change what you need)
   and pass it in. The helpers write it to the session's `_changes` for you.
 
-- **Use the temp working copy** - the screening flow checks out
+- **Use the temp working copy** - the appointment flow checks out
   `data.appointment` / `data.participant` (deep clones) for multi-page forms, and
   `saveTempAppointmentToAppointment` / `saveTempParticipantToParticipant` commit them
   back. Mutating the temp copies is fine - they're session-local clones.
@@ -116,7 +118,7 @@ An episode carries its own record of the images its round produced:
 screened status, and removes it again if that is undone. The raw image data
 stays on the appointment (`mammogramData`) - the episode entry is a summary of it.
 
-Read this - via `getEpisodeMammogramDate` / `getLastScreening` - rather than
+Read this - via `getEpisodeMammogramDate` / `getLastMammogram` - rather than
 deriving "were they screened" from appointment timing: a missed appointment
 still has timing, and must never look like someone's last mammogram.
 
@@ -169,8 +171,7 @@ The target model puts `imageReadings[]`, priors and deferral on the episode.
 They are all still **on the appointment**, because moving them touches most of the
 reading code. `getEpisodeReadingStatus` derives an episode's reading state
 from its appointments rather than holding a copy. The physical move happens with the
-work that needs it (arbitration / case views), or with the appointment→appointment
-rename.
+work that needs it (arbitration / case views).
 
 ### Historic episodes
 
@@ -196,7 +197,7 @@ appointments - purely so participants had a screening history to show. Historic
 episodes do that job for a fraction of the data, so that snapshot is gone. Full
 fidelity for the round being worked on; a summary for everything before it.
 
-This is why `getLastScreening` and `getNextAppointment`
+This is why `getLastMammogram` and `getNextAppointment`
 ([episodes.js](../app/lib/utils/episodes.js)) read across episodes rather than
 scanning old appointments - a past round may have no appointment record at all.
 

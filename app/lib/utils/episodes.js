@@ -314,9 +314,9 @@ const getLastMammogram = (data, participantId) => {
     // round only knows its unit
     location: location?.name || unit?.name || 'Not known',
 
-    // Every round we hold is a screening round. Appointments gain a `type`
-    // (mammogram / technical recall / assessment) with the appointment→appointment
-    // rename - read it from the appointment then, rather than assuming
+    // Every round we hold is a screening round. When appointments gain a
+    // `type` (mammogram / technical recall / assessment - future work), read
+    // it from the appointment rather than assuming
     type: 'screening'
   }
 }
