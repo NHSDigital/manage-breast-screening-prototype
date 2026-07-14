@@ -52,6 +52,14 @@
     </p>
   {% endif %}
 
+  <h2>Observations during mammogram</h2>
+  {{ button({
+    text: "Add breast features",
+    href: eventUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+    variant: "secondary",
+    small: true
+  }) }}
+
   {# {{ radios({
     name: "event[mammogramDataTemp][machineRoom]",
     value: mammogramSource.machineRoom,
@@ -87,9 +95,9 @@
   {% set troubleshootingIssue = event.mammogramDataTemp.troubleshootingIssue %}
   {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
   {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
-  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or data.event.isManualImageCollection or isManualFailover %}
+  {% set showManualParticipantDetails = showWorklistMatchingContent or isManualFailover %}
 
-  {% if (hasTroubleshootingIssue and showWorklistMatchingContent) or (not hasTroubleshootingIssue and showDefaultManualContent) %}
+  {% if showManualParticipantDetails %}
     <h2>Manually add participant details</h2>
     <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
     {{ summaryList({

@@ -140,7 +140,11 @@
         'nhsuk-tag--yellow'
       )
 
-      if (statusText === 'Complete' || statusText === 'Reviewed') {
+      if (
+        statusText === 'Complete' ||
+        statusText === 'Reviewed' ||
+        statusText === 'Review at imaging'
+      ) {
         statusElement.classList.add('nhsuk-tag--green')
       } else if (statusText === 'Incomplete') {
         statusElement.classList.add('nhsuk-tag--blue')

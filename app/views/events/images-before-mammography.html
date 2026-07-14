@@ -15,6 +15,18 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <h2>Observations during mammogram</h2>
+      {{ button({
+        text: "Add breast features",
+        href: eventUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+        variant: "secondary",
+        small: true
+      }) }}
+    </div>
+  </div>
+
   {% set insetHtml %}
     <p>
       Mammography images will appear below once they have been received
@@ -24,7 +36,6 @@
   {{ insetText({
     html: insetHtml
   }) }}
-
 
   {{ appHiddenInput({
     name: "event[workflowStatus][awaiting-images]",
@@ -41,7 +52,6 @@
   </p>
 
   {% include "_includes/images/image-troubleshooting.njk" %}
-
 
 {% endblock %}
 

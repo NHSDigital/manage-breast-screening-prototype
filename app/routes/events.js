@@ -1458,6 +1458,15 @@ module.exports = (router) => {
         }
       }
 
+      // Saving breast features resolves any 'review at imaging' reminder
+      if (
+        data.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
+        'yes'
+      ) {
+        data.event.workflowStatus['review-breast-features-after-imaging'] =
+          'answered'
+      }
+
       // Flash error message if needed
       if (errorCount > 0) {
         req.flash(
