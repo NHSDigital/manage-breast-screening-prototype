@@ -12,52 +12,34 @@ document.addEventListener('DOMContentLoaded', function () {
     'input[name="event[workflowStatus][review-breast-features-after-imaging]"]'
   )
 
-  function getReviewAfterImagingWorkflowStatus() {
-    if (!reviewAfterImagingField) {
-      return ''
-    }
-
-    return reviewAfterImagingField.value || ''
-  }
-
   function setReviewAfterImagingFlag(statusValue) {
-    if (!reviewAfterImagingField) {
-      return
+    if (reviewAfterImagingField) {
+      reviewAfterImagingField.value = statusValue
     }
-
-    reviewAfterImagingField.value = statusValue || ''
   }
 
-  function completeSectionAndContinue(section, index, options = {}) {
-    const forcedStatus = options.forcedStatus
+  // Status implied by the review-at-imaging workflow flag, if any
+  function getReviewAfterImagingSectionStatus() {
+    const flagValue = reviewAfterImagingField
+      ? reviewAfterImagingField.value
+      : ''
 
+    if (flagValue === 'yes') {
+      return REVIEW_AT_IMAGING_STATUS
+    }
+    if (flagValue === 'answered') {
+      return 'Reviewed'
+    }
+    return null
+  }
+
+  function completeSectionAndContinue(section, index, forcedStatus) {
     // Mark current section as completed
     completedSections.add(index)
 
-    // Determine current status and set new status
-    const currentStatus = getCurrentSectionStatus(section)
-    let newStatus
-
-    if (forcedStatus) {
-      newStatus = forcedStatus
-    } else if (currentStatus === 'Incomplete') {
-      newStatus = 'Complete'
-    } else if (currentStatus === 'To review') {
-      newStatus = 'Reviewed'
-    } else if (currentStatus === 'Reviewed') {
-      newStatus = 'Reviewed' // Keep as reviewed
-    } else {
-      newStatus = 'Complete' // Default fallback
-    }
-
-    // Update the status for this section
-    updateSectionStatus(section, newStatus)
-
-    // Save status to sessionStorage
-    const sectionId = section.getAttribute('id')
-    if (sectionId && window.saveSectionStatus) {
-      window.saveSectionStatus(sectionId, newStatus)
-    }
+    const newStatus =
+      forcedStatus || getNextStatus(getCurrentSectionStatus(section))
+    applySectionStatus(section, newStatus)
 
     // Close current section
     section.removeAttribute('open')
@@ -84,20 +66,11 @@ document.addEventListener('DOMContentLoaded', function () {
       const sectionId = section.getAttribute('id')
       const isBreastFeaturesSection = sectionId === BREAST_FEATURES_SECTION_ID
 
+      // Reflect any review-at-imaging decision in the section's status tag
       if (isBreastFeaturesSection) {
-        const reviewAfterImagingWorkflowStatus =
-          getReviewAfterImagingWorkflowStatus()
-
-        if (reviewAfterImagingWorkflowStatus === 'yes') {
-          updateSectionStatus(section, REVIEW_AT_IMAGING_STATUS)
-          if (window.saveSectionStatus) {
-            window.saveSectionStatus(sectionId, REVIEW_AT_IMAGING_STATUS)
-          }
-        } else if (reviewAfterImagingWorkflowStatus === 'answered') {
-          updateSectionStatus(section, 'Reviewed')
-          if (window.saveSectionStatus) {
-            window.saveSectionStatus(sectionId, 'Reviewed')
-          }
+        const impliedStatus = getReviewAfterImagingSectionStatus()
+        if (impliedStatus) {
+          applySectionStatus(section, impliedStatus)
         }
       }
 
@@ -124,9 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         reviewAfterImagingButton.addEventListener('click', function () {
           setReviewAfterImagingFlag('yes')
-          completeSectionAndContinue(section, index, {
-            forcedStatus: REVIEW_AT_IMAGING_STATUS
-          })
+          completeSectionAndContinue(section, index, REVIEW_AT_IMAGING_STATUS)
           updateButtonText(section, button)
         })
       }
@@ -167,39 +138,17 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add to completed set
         completedSections.add(index)
 
-        // Determine current status and set new status
-        const currentStatus = getCurrentSectionStatus(section)
-        let newStatus
-        const reviewAfterImagingWorkflowStatus =
-          getReviewAfterImagingWorkflowStatus()
-
-        if (
-          isBreastFeaturesSection &&
-          reviewAfterImagingWorkflowStatus === 'yes'
-        ) {
-          newStatus = REVIEW_AT_IMAGING_STATUS
-        } else if (
-          isBreastFeaturesSection &&
-          reviewAfterImagingWorkflowStatus === 'answered'
-        ) {
-          newStatus = 'Reviewed'
-        } else if (currentStatus === 'Incomplete') {
-          newStatus = 'Complete'
-        } else if (currentStatus === 'To review') {
-          newStatus = 'Reviewed'
-        } else if (currentStatus === 'Reviewed') {
-          newStatus = 'Reviewed' // Keep as reviewed
-        } else {
-          newStatus = 'Complete' // Default fallback
+        // The breast features section keeps any review-at-imaging status
+        // rather than being marked reviewed with the rest
+        let newStatus = null
+        if (isBreastFeaturesSection) {
+          newStatus = getReviewAfterImagingSectionStatus()
+        }
+        if (!newStatus) {
+          newStatus = getNextStatus(getCurrentSectionStatus(section))
         }
 
-        // Update the status for this section
-        updateSectionStatus(section, newStatus)
-
-        // Save status to sessionStorage
-        if (sectionId && window.saveSectionStatus) {
-          window.saveSectionStatus(sectionId, newStatus)
-        }
+        applySectionStatus(section, newStatus)
 
         // Close the section
         section.removeAttribute('open')
@@ -275,6 +224,24 @@ function getCurrentSectionStatus(section) {
   }
 
   return statusElement ? statusElement.textContent.trim() : 'Incomplete'
+}
+
+// Work out the status a section moves to when marked as done
+function getNextStatus(currentStatus) {
+  if (currentStatus === 'To review' || currentStatus === 'Reviewed') {
+    return 'Reviewed'
+  }
+  return 'Complete'
+}
+
+// Update a section's status tag and persist it to sessionStorage
+function applySectionStatus(section, statusText) {
+  updateSectionStatus(section, statusText)
+
+  const sectionId = section.getAttribute('id')
+  if (sectionId && window.saveSectionStatus) {
+    window.saveSectionStatus(sectionId, statusText)
+  }
 }
 
 // Function to update button text based on section status

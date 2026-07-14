@@ -102,10 +102,6 @@ function captureSessionEndTime(data, eventId, userId) {
 // }
 
 module.exports = (router) => {
-  const getPostImagingDestinationUrl = (data, clinicId, eventId) => {
-    return `/clinics/${clinicId}/events/${eventId}/check-information`
-  }
-
   // Set clinics to active in nav for all urls starting with /clinics
   router.use('/clinics/:clinicId/events/:eventId', (req, res, next) => {
     const eventId = req.params.eventId
@@ -1452,50 +1448,6 @@ module.exports = (router) => {
   )
 
   // Save breast features (includes converting JSON string to structured data)
-  const persistBreastFeaturesFromRaw = (data) => {
-    let errorCount = 0
-    let hasBreastFeatures = false
-
-    if (!data?.event) {
-      return {
-        errorCount,
-        hasBreastFeatures
-      }
-    }
-
-    if (!data.event.medicalInformation) {
-      data.event.medicalInformation = {}
-    }
-
-    const medicalInformation = data.event.medicalInformation
-
-    if (medicalInformation.breastFeaturesRaw) {
-      try {
-        const rawFeatures = medicalInformation.breastFeaturesRaw
-        if (typeof rawFeatures === 'string') {
-          medicalInformation.breastFeatures = JSON.parse(rawFeatures)
-          delete medicalInformation.breastFeaturesRaw
-          console.log(
-            'Converted breastFeaturesRaw to structured data and deleted raw data'
-          )
-        }
-      } catch (error) {
-        console.warn('Failed to convert breastFeaturesRaw:', error)
-        errorCount++
-      }
-    }
-
-    const breastFeatures = medicalInformation.breastFeatures
-    if (Array.isArray(breastFeatures) && breastFeatures.length > 0) {
-      hasBreastFeatures = true
-    }
-
-    return {
-      errorCount,
-      hasBreastFeatures
-    }
-  }
-
   router.post(
     '/clinics/:clinicId/events/:eventId/medical-information/record-breast-features/save',
     (req, res) => {
@@ -1507,10 +1459,33 @@ module.exports = (router) => {
       let conversionsCount = 0
       let errorCount = 0
 
-      const conversionResult = persistBreastFeaturesFromRaw(data)
-      errorCount = conversionResult.errorCount
-      if (conversionResult.hasBreastFeatures) {
-        conversionsCount++
+      // Convert breast features raw data
+      if (data.event?.medicalInformation?.breastFeaturesRaw) {
+        try {
+          const rawFeatures = data.event.medicalInformation.breastFeaturesRaw
+          if (typeof rawFeatures === 'string') {
+            data.event.medicalInformation.breastFeatures =
+              JSON.parse(rawFeatures)
+            // Delete the raw data once converted
+            delete data.event.medicalInformation.breastFeaturesRaw
+            conversionsCount++
+            console.log(
+              'Converted breastFeaturesRaw to structured data and deleted raw data'
+            )
+          }
+        } catch (error) {
+          console.warn('Failed to convert breastFeaturesRaw:', error)
+          errorCount++
+        }
+      }
+
+      // Saving breast features resolves any 'review at imaging' reminder
+      if (
+        data.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
+        'yes'
+      ) {
+        data.event.workflowStatus['review-breast-features-after-imaging'] =
+          'answered'
       }
 
       // Flash error message if needed
@@ -1527,16 +1502,6 @@ module.exports = (router) => {
         referrerChain,
         scrollTo
       )
-
-      if (!data.event.workflowStatus) {
-        data.event.workflowStatus = {}
-      }
-
-      if (req.query.fromPostImagingBreastFeatures === '1') {
-        data.event.workflowStatus['review-breast-features-after-imaging'] =
-          'answered'
-      }
-
       res.redirect(modalBreakout(returnUrl))
     }
   )
@@ -2201,57 +2166,6 @@ module.exports = (router) => {
     }
   )
 
-  router.get(
-    '/clinics/:clinicId/events/:eventId/review-after-imaging-breast-features',
-    (req, res) => {
-      res.render('events/review-after-imaging-breast-features')
-    }
-  )
-
-  router.post(
-    '/clinics/:clinicId/events/:eventId/review-after-imaging-breast-features-answer',
-    (req, res) => {
-      const { clinicId, eventId } = req.params
-      const data = req.session.data
-      const choice = data?.event?.breastFeaturesAfterImagingDecision
-
-      if (!choice) {
-        req.flash('error', {
-          text: 'Select whether to record breast features',
-          name: 'event[breastFeaturesAfterImagingDecision]'
-        })
-
-        return res.redirect(
-          `/clinics/${clinicId}/events/${eventId}/review-after-imaging-breast-features`
-        )
-      }
-
-      if (choice === 'yes') {
-        if (!data.event.workflowStatus) {
-          data.event.workflowStatus = {}
-        }
-
-        data.event.workflowStatus['review-breast-features-after-imaging'] =
-          'answered'
-
-        return res.redirect(
-          urlWithReferrer(
-            `/clinics/${clinicId}/events/${eventId}/medical-information/record-breast-features?fromPostImagingBreastFeatures=1`,
-            `/clinics/${clinicId}/events/${eventId}/check-information`
-          )
-        )
-      }
-
-      if (!data.event.workflowStatus) {
-        data.event.workflowStatus = {}
-      }
-
-      data.event.workflowStatus['review-breast-features-after-imaging'] =
-        'answered'
-      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
-    }
-  )
-
   // Handle screening completion
   router.post(
     '/clinics/:clinicId/events/:eventId/imaging-answer',
@@ -2289,16 +2203,6 @@ module.exports = (router) => {
       }
 
       if (hasMultipleImages) {
-        const reviewAfterImagingSelected =
-          data.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
-          'yes'
-        const conversionResult = persistBreastFeaturesFromRaw(data)
-
-        if (reviewAfterImagingSelected && conversionResult.hasBreastFeatures) {
-          data.event.workflowStatus['review-breast-features-after-imaging'] =
-            'answered'
-        }
-
         return res.redirect(
           `/clinics/${clinicId}/events/${eventId}/images-repeats`
         )
@@ -2310,17 +2214,7 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      const reviewAfterImagingSelected =
-        data.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
-        'yes'
-      const conversionResult = persistBreastFeaturesFromRaw(data)
-
-      if (reviewAfterImagingSelected && conversionResult.hasBreastFeatures) {
-        data.event.workflowStatus['review-breast-features-after-imaging'] =
-          'answered'
-      }
-
-      res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 
@@ -2898,19 +2792,10 @@ module.exports = (router) => {
         }
         data.event.workflowStatus['take-images'] = 'completed'
 
-        const reviewAfterImagingSelected =
-          data.event?.workflowStatus?.[
-            'review-breast-features-after-imaging'
-          ] === 'yes'
-        const conversionResult = persistBreastFeaturesFromRaw(data)
-
-        if (reviewAfterImagingSelected && conversionResult.hasBreastFeatures) {
-          data.event.workflowStatus['review-breast-features-after-imaging'] =
-            'answered'
-        }
-
         // Redirect to check information
-        return res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
+        return res.redirect(
+          `/clinics/${clinicId}/events/${eventId}/check-information`
+        )
       }
 
       // If custom details needed, go to details page
@@ -2996,18 +2881,8 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      const reviewAfterImagingSelected =
-        data.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
-        'yes'
-      const conversionResult = persistBreastFeaturesFromRaw(data)
-
-      if (reviewAfterImagingSelected && conversionResult.hasBreastFeatures) {
-        data.event.workflowStatus['review-breast-features-after-imaging'] =
-          'answered'
-      }
-
       // Redirect to check information
-      res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 
@@ -3168,18 +3043,8 @@ module.exports = (router) => {
       }
       data.event.workflowStatus['take-images'] = 'completed'
 
-      const reviewAfterImagingSelected =
-        data.event?.workflowStatus?.['review-breast-features-after-imaging'] ===
-        'yes'
-      const conversionResult = persistBreastFeaturesFromRaw(data)
-
-      if (reviewAfterImagingSelected && conversionResult.hasBreastFeatures) {
-        data.event.workflowStatus['review-breast-features-after-imaging'] =
-          'answered'
-      }
-
       // Redirect to check information
-      res.redirect(getPostImagingDestinationUrl(data, clinicId, eventId))
+      res.redirect(`/clinics/${clinicId}/events/${eventId}/check-information`)
     }
   )
 

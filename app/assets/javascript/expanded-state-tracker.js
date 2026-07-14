@@ -10,8 +10,6 @@
   const STORAGE_KEY_PREFIX = 'expanded-sections-'
   const PENDING_EXPAND_KEY_PREFIX = 'pending-expand-'
   const STATUS_KEY_PREFIX = 'section-statuses-'
-  const CONFIRM_AFTER_IMAGING_STATUS = 'Review at imaging'
-  const LEGACY_CONFIRM_AFTER_IMAGING_STATUS = 'Confirm after imaging'
 
   function getStorageKey() {
     return STORAGE_KEY_PREFIX + window.location.pathname
@@ -133,12 +131,7 @@
     }
 
     if (statusElement) {
-      const normalisedStatusText =
-        statusText === LEGACY_CONFIRM_AFTER_IMAGING_STATUS
-          ? CONFIRM_AFTER_IMAGING_STATUS
-          : statusText
-
-      statusElement.textContent = normalisedStatusText
+      statusElement.textContent = statusText
 
       // Update the tag colour class based on status
       statusElement.classList.remove(
@@ -147,13 +140,15 @@
         'nhsuk-tag--yellow'
       )
 
-      if (normalisedStatusText === 'Complete' || normalisedStatusText === 'Reviewed') {
+      if (
+        statusText === 'Complete' ||
+        statusText === 'Reviewed' ||
+        statusText === 'Review at imaging'
+      ) {
         statusElement.classList.add('nhsuk-tag--green')
-      } else if (normalisedStatusText === CONFIRM_AFTER_IMAGING_STATUS) {
-        statusElement.classList.add('nhsuk-tag--green')
-      } else if (normalisedStatusText === 'Incomplete') {
+      } else if (statusText === 'Incomplete') {
         statusElement.classList.add('nhsuk-tag--blue')
-      } else if (normalisedStatusText === 'To review') {
+      } else if (statusText === 'To review') {
         statusElement.classList.add('nhsuk-tag--yellow')
       }
     }

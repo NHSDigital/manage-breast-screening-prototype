@@ -70,14 +70,15 @@
     {% include "_includes/summary-lists/medical-info-summary.njk" %}
   {% endset %}
 
-  <div id="check-information-breast-features">
-    {{ card({
-      heading: "Medical information",
-      headingLevel: "2",
-      feature: true,
-      descriptionHtml: medicalInfoSummaryHtml
-    }) }}
-  </div>
+  {{ card({
+    heading: "Medical information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalInfoSummaryHtml,
+    attributes: {
+      id: "check-information-breast-features"
+    }
+  }) }}
 {% endset %}
 
 
@@ -133,14 +134,15 @@
     {% include "_includes/medical-information/breast-features.njk" %}
   {% endset %}
 
-  <div id="check-information-breast-features">
-    {{ card({
-      heading: "Breast features",
-      headingLevel: "2",
-      feature: true,
-      descriptionHtml: breastFeaturesHtml
-    }) }}
-  </div>
+  {{ card({
+    heading: "Breast features",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: breastFeaturesHtml,
+    attributes: {
+      id: "check-information-breast-features"
+    }
+  }) }}
 
   {# Other relevant information card #}
   {% set otherRelevantInformationHtml %}

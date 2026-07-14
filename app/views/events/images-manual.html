@@ -14,6 +14,8 @@
 
 {% block pageContent %}
 
+  <h1>{{ pageHeading }}</h1>
+
   {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
   {# Determine current room name #}
@@ -31,8 +33,6 @@
       {% endif %}
     {% endfor %}
   {% endif %}
-
-  <h1>{{ pageHeading }}</h1>
 
   {% if currentRoomName %}
     <p>
