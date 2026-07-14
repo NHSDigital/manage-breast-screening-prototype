@@ -1,11 +1,11 @@
 # Data conventions: reading and updating seed data
 
-How participant, clinic, event and episode data works in this prototype, and
+How participant, clinic, appointment and episode data works in this prototype, and
 the rules to follow when changing it.
 
 ## How it works
 
-The generated seed data (`data.participants`, `data.clinics`, `data.events`,
+The generated seed data (`data.participants`, `data.clinics`, `data.appointments`,
 `data.episodes`)
 is **shared and read-only**. It is loaded once at boot into a shared store
 ([app/lib/data-store.js](../app/lib/data-store.js)) and attached to every
@@ -14,12 +14,12 @@ into each session.
 
 A user's session only stores **changed records** in `data._changes` (whole
 replacement records, keyed by id). The attach middleware overlays those onto
-the shared arrays on each request, so `data.events` etc always look exactly
+the shared arrays on each request, so `data.appointments` etc always look exactly
 like a plain per-session copy - reading them needs no special knowledge.
 
 ## Reading data
 
-No change from what you'd expect. In views and routes, read `data.events`,
+No change from what you'd expect. In views and routes, read `data.appointments`,
 `data.participants`, `data.clinics` as normal. Lookups, filters, maps and the
 Nunjucks `sort` filter are all fine.
 
@@ -36,29 +36,29 @@ leaking into every other session - holds either way.
 
 Instead, do one of:
 
-- **Use the update helpers** - `updateEvent`, `updateEventStatus`,
-  `updateEventData` ([app/lib/utils/event-data.js](../app/lib/utils/event-data.js)),
+- **Use the update helpers** - `updateAppointment`, `updateAppointmentStatus`,
+  `updateAppointmentData` ([app/lib/utils/appointment-data.js](../app/lib/utils/appointment-data.js)),
   `updateParticipant` ([app/lib/utils/participants.js](../app/lib/utils/participants.js))
   and `updateEpisode` / `updateEpisodeStage` ([app/lib/utils/episodes.js](../app/lib/utils/episodes.js)).
   Build a whole replacement record (spread the old one, change what you need)
   and pass it in. The helpers write it to the session's `_changes` for you.
 
 - **Use the temp working copy** - the screening flow checks out
-  `data.event` / `data.participant` (deep clones) for multi-page forms, and
-  `saveTempEventToEvent` / `saveTempParticipantToParticipant` commit them
+  `data.appointment` / `data.participant` (deep clones) for multi-page forms, and
+  `saveTempAppointmentToAppointment` / `saveTempParticipantToParticipant` commit them
   back. Mutating the temp copies is fine - they're session-local clones.
 
 ```js
 // Wrong - mutates a shared record, silently dropped in dev
-const event = data.events.find((e) => e.id === eventId)
-event.status = 'event_complete'
+const appointment = data.appointments.find((e) => e.id === appointmentId)
+appointment.status = 'appointment_complete'
 
 // Right - build a replacement and save through a helper
-updateEventData(data, eventId, { status: 'event_complete' })
+updateAppointmentData(data, appointmentId, { status: 'appointment_complete' })
 ```
 
 Arrays and nested objects inside records are shared too: don't `push` to
-them - copy first (`[...event.things, newThing]`).
+them - copy first (`[...appointment.things, newThing]`).
 
 ## Regeneration and profile swaps
 
@@ -70,11 +70,11 @@ profile swap resets everyone's data. This is intentional demo behaviour.
 ## Episodes
 
 An **episode** is one screening round for a participant - the container the
-appointment(s) for that round sit in. Every event has an `episodeId`, and
-every episode lists its `eventIds`. Accessors live in
+appointment(s) for that round sit in. Every appointment has an `episodeId`, and
+every episode lists its `appointmentIds`. Accessors live in
 [app/lib/utils/episodes.js](../app/lib/utils/episodes.js) (and so are
 available as Nunjucks filters): `getEpisode`, `getEpisodesForParticipant`,
-`getCurrentEpisode`, `getEpisodeEvents`, `getEpisodeReadingStatus`.
+`getCurrentEpisode`, `getEpisodeAppointments`, `getEpisodeReadingStatus`.
 
 ### Open or closed
 
@@ -109,29 +109,29 @@ An episode carries its own record of the images its round produced:
 `episode.mammograms`, one entry per image set, oldest first:
 
 ```js
-{ takenDate, eventId, breastScreeningUnitId, locationId, viewCount }
+{ takenDate, appointmentId, breastScreeningUnitId, locationId, viewCount }
 ```
 
-`updateEventStatus` writes an entry the moment an appointment reaches a
+`updateAppointmentStatus` writes an entry the moment an appointment reaches a
 screened status, and removes it again if that is undone. The raw image data
-stays on the event (`mammogramData`) - the episode entry is a summary of it.
+stays on the appointment (`mammogramData`) - the episode entry is a summary of it.
 
 Read this - via `getEpisodeMammogramDate` / `getLastScreening` - rather than
 deriving "were they screened" from appointment timing: a missed appointment
 still has timing, and must never look like someone's last mammogram.
 
-Historic episodes hold one entry with no `eventId` or `locationId` - where
+Historic episodes hold one entry with no `appointmentId` or `locationId` - where
 the round was screened is all a summary round knows. A technical recall adds
 a second entry when the re-screen happens; one entry per image set is also
 the skeleton the reading-cases model (a future piece of work) hangs off.
 
 ### Advancing an episode
 
-`updateEventStatus` moves the episode to wherever the appointment's new status
+`updateAppointmentStatus` moves the episode to wherever the appointment's new status
 leaves it (check-in → `mammograms`, complete → `reading`, did not attend →
 `closed`), so routes don't have to know episodes exist. It uses the maps in
 `episodes.js`, which the seed generator also uses, so generated episodes sit
-exactly where a real one would after the same events.
+exactly where a real one would after the same appointments.
 
 **Writing a read deliberately does not close the episode.** Two opinions and a
 computed outcome is not a confirmed result, and there is no step in the app
@@ -139,7 +139,7 @@ that confirms one yet. `advanceEpisodeForReadingOutcome` is what that step
 should call when it exists; until then an episode stays in `reading`.
 
 To change an episode directly, use `updateEpisode` / `updateEpisodeStage` - the
-same replacement-record rules apply as for events. Stage moves are **not
+same replacement-record rules apply as for appointments. Stage moves are **not
 validated**: any stage can follow any other. A transition map arrives with the
 statuses work.
 
@@ -151,7 +151,7 @@ The generator checks these on every run and warns loudly if any is broken
 
 - A **closed** episode has a `closedDate` and a valid outcome; an **open** one
   has no outcome.
-- A **historic** episode is always closed, and never has events. It has
+- A **historic** episode is always closed, and never has appointments. It has
   mammogram entries exactly when its outcome isn't `no_result`.
 - An episode's **`mammograms`** entries match its appointments that reached a
   screened status, one each.
@@ -166,10 +166,10 @@ back that far.
 ### What deliberately doesn't live on the episode yet
 
 The target model puts `imageReadings[]`, priors and deferral on the episode.
-They are all still **on the event**, because moving them touches most of the
+They are all still **on the appointment**, because moving them touches most of the
 reading code. `getEpisodeReadingStatus` derives an episode's reading state
-from its events rather than holding a copy. The physical move happens with the
-work that needs it (arbitration / case views), or with the event→appointment
+from its appointments rather than holding a copy. The physical move happens with the
+work that needs it (arbitration / case views), or with the appointment→appointment
 rename.
 
 ### Historic episodes
@@ -198,7 +198,7 @@ fidelity for the round being worked on; a summary for everything before it.
 
 This is why `getLastScreening` and `getNextAppointment`
 ([episodes.js](../app/lib/utils/episodes.js)) read across episodes rather than
-scanning old events - a past round may have no appointment record at all.
+scanning old appointments - a past round may have no appointment record at all.
 
 ## Escape hatch
 

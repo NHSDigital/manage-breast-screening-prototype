@@ -64,7 +64,7 @@ const TAG_TO_RESULT = {
 /**
  * Generate a single read result aligned with the image set metadata
  *
- * @param {object} event - The event being read
+ * @param {object} appointment - The appointment being read
  * @param {string} readerId - The reader's user ID
  * @param {string} readerType - The reader's role
  * @param {string} timestamp - ISO timestamp for the read
@@ -75,13 +75,13 @@ const TAG_TO_RESULT = {
  * @returns {object} The generated read object
  */
 const generateSingleRead = (
-  event,
+  appointment,
   readerId,
   readerType,
   timestamp,
   options = {}
 ) => {
-  const setId = event.mammogramData?.selectedSetId
+  const setId = appointment.mammogramData?.selectedSetId
   const set = setId ? getSetById(setId, 'diagrams') : null
 
   // Determine the opinion
@@ -126,7 +126,7 @@ const generateSingleRead = (
     read.left = { breastAssessment: 'normal' }
     read.right = { breastAssessment: 'normal' }
 
-    const hasSymptoms = event.medicalInformation?.symptoms?.length > 0
+    const hasSymptoms = appointment.medicalInformation?.symptoms?.length > 0
     if (hasSymptoms) {
       // Always provide a reason when participant has symptoms
       read.normalDetails = faker.helpers.arrayElement(
@@ -140,7 +140,7 @@ const generateSingleRead = (
     }
   } else if (opinion === 'technical_recall') {
     // Technical recall - determine which views need retaking
-    read.technicalRecall = generateTechnicalRecallData(event, set)
+    read.technicalRecall = generateTechnicalRecallData(appointment, set)
     read.left = {
       breastAssessment:
         set?.left?.status === 'technical' ? 'technical' : 'normal'
@@ -151,7 +151,7 @@ const generateSingleRead = (
     }
   } else if (opinion === 'recall_for_assessment') {
     // Abnormal - generate per-breast assessments and annotations
-    const { left, right } = generateAbnormalData(event, set)
+    const { left, right } = generateAbnormalData(appointment, set)
     read.left = left
     read.right = right
   }
@@ -162,7 +162,7 @@ const generateSingleRead = (
 /**
  * Generate technical recall data based on set metadata
  */
-const generateTechnicalRecallData = (event, set) => {
+const generateTechnicalRecallData = (appointment, set) => {
   const views = {}
 
   // If we have a set with per-breast status, use that to determine which views
@@ -226,7 +226,7 @@ const generateTechnicalRecallData = (event, set) => {
 /**
  * Generate abnormal (recall for assessment) data based on set metadata
  */
-const generateAbnormalData = (event, set) => {
+const generateAbnormalData = (appointment, set) => {
   const left = { breastAssessment: 'normal', annotations: [] }
   const right = { breastAssessment: 'normal', annotations: [] }
 
@@ -339,132 +339,132 @@ const generatePlaceholderAnnotation = (side, breastData) => {
 /**
  * Apply reads when a backlogLimit is set.
  *
- * All eligible events except the last `backlogLimit` are fully read (2 reads
- * by non-current users). Of the remaining `backlogLimit` events:
+ * All eligible appointments except the last `backlogLimit` are fully read (2 reads
+ * by non-current users). Of the remaining `backlogLimit` appointments:
  *   - The first `floor(backlogLimit × partialReadRatio)` get 1 read by a
  *     non-current user (second read still available to current user)
  *   - The rest get no reads (first read available to current user)
  *
- * @param {Array} allEvents - Full events array
- * @param {Array} eligibleEvents - Events eligible for reading
+ * @param {Array} allAppointments - Full appointments array
+ * @param {Array} eligibleAppointments - Appointments eligible for reading
  * @param {object} readers - { firstReader, secondReader, thirdReader }
  * @param {object} options - { backlogLimit, backlogPartialReadRatio, alignmentProbability }
- * @returns {Array} Updated events array
+ * @returns {Array} Updated appointments array
  */
 const generateReadingDataWithBacklogLimit = (
-  allEvents,
-  eligibleEvents,
+  allAppointments,
+  eligibleAppointments,
   { firstReader, secondReader, thirdReader },
   { backlogLimit, backlogPartialReadRatio, alignmentProbability }
 ) => {
   // Sort oldest first so the oldest cases become fully read (they appear in history)
-  const sorted = [...eligibleEvents].sort(
+  const sorted = [...eligibleAppointments].sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
 
-  // Events with pending or requested priors cannot realistically have been read —
+  // Appointments with pending or requested priors cannot realistically have been read —
   // they must remain unread regardless of the backlog limit. Exclude them from
   // the fully-read and partially-read groups so that resolving the priors later
   // actually makes them available to read.
-  const hasBlockingPriors = (event) =>
-    Array.isArray(event.previousMammograms) &&
-    event.previousMammograms.some(
+  const hasBlockingPriors = (appointment) =>
+    Array.isArray(appointment.previousMammograms) &&
+    appointment.previousMammograms.some(
       (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
     )
 
   const sortedReadable = sorted.filter((e) => !hasBlockingPriors(e))
-  const blockedByPriorsEvents = sorted.filter(hasBlockingPriors)
+  const blockedByPriorsAppointments = sorted.filter(hasBlockingPriors)
 
   const clampedLimit = Math.min(backlogLimit, sortedReadable.length)
-  const fullyReadEvents = sortedReadable.slice(0, sortedReadable.length - clampedLimit)
-  const backlogEvents = sortedReadable.slice(sortedReadable.length - clampedLimit)
+  const fullyReadAppointments = sortedReadable.slice(0, sortedReadable.length - clampedLimit)
+  const backlogAppointments = sortedReadable.slice(sortedReadable.length - clampedLimit)
   const partialCount = Math.floor(
-    backlogEvents.length * backlogPartialReadRatio
+    backlogAppointments.length * backlogPartialReadRatio
   )
-  const partialEvents = backlogEvents.slice(0, partialCount)
-  const unreadEvents = backlogEvents.slice(partialCount)
+  const partialAppointments = backlogAppointments.slice(0, partialCount)
+  const unreadAppointments = backlogAppointments.slice(partialCount)
 
   console.log(
     `Backlog limit: ${backlogLimit} cases — ` +
-      `${fullyReadEvents.length} fully read, ` +
-      `${partialEvents.length} partially read, ` +
-      `${unreadEvents.length} unread, ` +
-      `${blockedByPriorsEvents.length} unread (awaiting priors)`
+      `${fullyReadAppointments.length} fully read, ` +
+      `${partialAppointments.length} partially read, ` +
+      `${unreadAppointments.length} unread, ` +
+      `${blockedByPriorsAppointments.length} unread (awaiting priors)`
   )
 
-  const updatedEvents = [...allEvents]
+  const updatedAppointments = [...allAppointments]
 
   let baseTime = dayjs().subtract(72, 'hours')
 
   // Fully read: 2 reads by secondReader and thirdReader
-  fullyReadEvents.forEach((event) => {
-    const index = updatedEvents.findIndex((e) => e.id === event.id)
+  fullyReadAppointments.forEach((appointment) => {
+    const index = updatedAppointments.findIndex((e) => e.id === appointment.id)
     if (index === -1) return
-    if (!updatedEvents[index].imageReading) {
-      updatedEvents[index].imageReading = { reads: {} }
+    if (!updatedAppointments[index].imageReading) {
+      updatedAppointments[index].imageReading = { reads: {} }
     }
 
     baseTime = baseTime.add(1, 'minute')
     const firstRead = generateSingleRead(
-      updatedEvents[index],
+      updatedAppointments[index],
       secondReader.id,
       secondReader.role,
       baseTime.toISOString(),
       { readNumber: 1, alignmentProbability }
     )
-    updatedEvents[index].imageReading.reads[secondReader.id] = firstRead
+    updatedAppointments[index].imageReading.reads[secondReader.id] = firstRead
 
     const secondRead = generateSingleRead(
-      updatedEvents[index],
+      updatedAppointments[index],
       thirdReader.id,
       thirdReader.role,
       baseTime.add(15, 'minutes').toISOString(),
       { forceOpinion: firstRead.opinion, readNumber: 2, alignmentProbability }
     )
-    updatedEvents[index].imageReading.reads[thirdReader.id] = secondRead
+    updatedAppointments[index].imageReading.reads[thirdReader.id] = secondRead
   })
 
   baseTime = dayjs().subtract(24, 'hours')
 
   // Partially read: 1 read by firstReader (the current user) — so the current
   // user has already read these and cannot read them again
-  partialEvents.forEach((event) => {
-    const index = updatedEvents.findIndex((e) => e.id === event.id)
+  partialAppointments.forEach((appointment) => {
+    const index = updatedAppointments.findIndex((e) => e.id === appointment.id)
     if (index === -1) return
-    if (!updatedEvents[index].imageReading) {
-      updatedEvents[index].imageReading = { reads: {} }
+    if (!updatedAppointments[index].imageReading) {
+      updatedAppointments[index].imageReading = { reads: {} }
     }
 
     baseTime = baseTime.add(1, 'minute')
     const firstRead = generateSingleRead(
-      updatedEvents[index],
+      updatedAppointments[index],
       firstReader.id,
       firstReader.role,
       baseTime.toISOString(),
       { readNumber: 1, alignmentProbability }
     )
-    updatedEvents[index].imageReading.reads[firstReader.id] = firstRead
+    updatedAppointments[index].imageReading.reads[firstReader.id] = firstRead
   })
 
-  // Unread events: no reads added
+  // Unread appointments: no reads added
 
-  return updatedEvents
+  return updatedAppointments
 }
 
 /**
  * Generate sample image reading data to simulate first and second reads
  *
- * @param {Array} events - Array of screening events
+ * @param {Array} appointments - Array of screening appointments
  * @param {Array} users - Array of system users
- * @returns {Array} Updated events with reading data
+ * @returns {Array} Updated appointments with reading data
  */
-const generateReadingData = (events, users, seedProfile = {}) => {
+const generateReadingData = (appointments, users, seedProfile = {}) => {
   const alignmentProbability =
     seedProfile?.imageReading?.probabilityFirstReaderOpinionMatchesImages ??
     DEFAULT_ALIGNMENT_PROBABILITY
-  if (!events || !events.length || !users || users.length < 2) {
-    console.log('No events or not enough users to generate reading data')
-    return events
+  if (!appointments || !appointments.length || !users || users.length < 2) {
+    console.log('No appointments or not enough users to generate reading data')
+    return appointments
   }
 
   // Use the first, second, and third users as our readers
@@ -476,15 +476,15 @@ const generateReadingData = (events, users, seedProfile = {}) => {
     `Generating reading data using ${firstReader.firstName} ${firstReader.lastName}, ${secondReader.firstName} ${secondReader.lastName}, and ${thirdReader.firstName} ${thirdReader.lastName} as readers`
   )
 
-  const recentEvents = events.filter((event) => eligibleForReading(event))
+  const recentAppointments = appointments.filter((appointment) => eligibleForReading(appointment))
 
   // If a backlog limit is set, use a simplified reading pattern instead of the
   // default clinic-by-clinic pattern. backlogLimit=0 means empty backlog.
   const backlogLimit = seedProfile?.reading?.backlogLimit ?? null
   if (backlogLimit !== null) {
     return generateReadingDataWithBacklogLimit(
-      events,
-      recentEvents,
+      appointments,
+      recentAppointments,
       { firstReader, secondReader, thirdReader },
       {
         backlogLimit,
@@ -496,43 +496,43 @@ const generateReadingData = (events, users, seedProfile = {}) => {
   }
 
   // Sort by date (oldest first)
-  const sortedEvents = [...recentEvents].sort(
+  const sortedAppointments = [...recentAppointments].sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
 
-  if (sortedEvents.length === 0) {
-    console.log('No recent completed events to add reading data to')
-    return events
+  if (sortedAppointments.length === 0) {
+    console.log('No recent completed appointments to add reading data to')
+    return appointments
   }
 
-  // Group events by clinic
-  const eventsByClinic = {}
-  sortedEvents.forEach((event) => {
-    if (!eventsByClinic[event.clinicId]) {
-      eventsByClinic[event.clinicId] = []
+  // Group appointments by clinic
+  const appointmentsByClinic = {}
+  sortedAppointments.forEach((appointment) => {
+    if (!appointmentsByClinic[appointment.clinicId]) {
+      appointmentsByClinic[appointment.clinicId] = []
     }
-    eventsByClinic[event.clinicId].push(event)
+    appointmentsByClinic[appointment.clinicId].push(appointment)
   })
 
   // Get clinics sorted by date (oldest first)
-  const clinics = Object.keys(eventsByClinic)
+  const clinics = Object.keys(appointmentsByClinic)
     .map((clinicId) => ({
       id: clinicId,
-      events: eventsByClinic[clinicId],
-      date: eventsByClinic[clinicId][0].timing.startTime
+      appointments: appointmentsByClinic[clinicId],
+      date: appointmentsByClinic[clinicId][0].timing.startTime
     }))
     .sort((a, b) => new Date(a.id) - new Date(b.id)) // Some clinics share the same date so sort first by a unique ID to keep consistent sort
     .sort((a, b) => new Date(a.date) - new Date(b.date))
 
   console.log(
-    `Found ${clinics.length} clinics with completed events in the last 30 days`
+    `Found ${clinics.length} clinics with completed appointments in the last 30 days`
   )
 
-  // Clone the events array to avoid modifying the original
-  const updatedEvents = [...events]
+  // Clone the appointments array to avoid modifying the original
+  const updatedAppointments = [...appointments]
 
-  // Track which events are updated for efficient lookup later
-  const updatedEventIds = new Set()
+  // Track which appointments are updated for efficient lookup later
+  const updatedAppointmentIds = new Set()
 
   // Function to generate a recent timestamp (within past 7 days)
   const generateRecentTimestamp = (baseDate, minHours = 2, maxHours = 36) => {
@@ -550,17 +550,17 @@ const generateReadingData = (events, users, seedProfile = {}) => {
         `Adding complete first and second reads to clinic ${clinic.id}`
       )
 
-      // Use the same base time for all reads in this clinic, then advance by 1 minute for each event
+      // Use the same base time for all reads in this clinic, then advance by 1 minute for each appointment
       let baseReadTime = dayjs(generateRecentTimestamp(clinic.date, 48, 72))
 
-      clinic.events.forEach((event) => {
-        // Find the event in our array
-        const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
-        if (eventIndex === -1) return
+      clinic.appointments.forEach((appointment) => {
+        // Find the appointment in our array
+        const appointmentIndex = updatedAppointments.findIndex((e) => e.id === appointment.id)
+        if (appointmentIndex === -1) return
 
         // Ensure the imageReading structure exists
-        if (!updatedEvents[eventIndex].imageReading) {
-          updatedEvents[eventIndex].imageReading = { reads: {} }
+        if (!updatedAppointments[appointmentIndex].imageReading) {
+          updatedAppointments[appointmentIndex].imageReading = { reads: {} }
         }
 
         // Advance time by 1 minute for each read
@@ -569,13 +569,13 @@ const generateReadingData = (events, users, seedProfile = {}) => {
 
         // First read (by second user) - aligned with image set
         const firstRead = generateSingleRead(
-          updatedEvents[eventIndex],
+          updatedAppointments[appointmentIndex],
           secondReader.id,
           secondReader.role,
           firstReadTime,
           { readNumber: 1, alignmentProbability }
         )
-        updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
+        updatedAppointments[appointmentIndex].imageReading.reads[secondReader.id] =
           firstRead
 
         // Second read (by first user) - 80% chance of agreement with first read
@@ -594,7 +594,7 @@ const generateReadingData = (events, users, seedProfile = {}) => {
             : firstRead.opinion
 
         const secondRead = generateSingleRead(
-          updatedEvents[eventIndex],
+          updatedAppointments[appointmentIndex],
           firstReader.id,
           firstReader.role,
           secondReadTime,
@@ -604,15 +604,15 @@ const generateReadingData = (events, users, seedProfile = {}) => {
             alignmentProbability
           }
         )
-        updatedEvents[eventIndex].imageReading.reads[firstReader.id] =
+        updatedAppointments[appointmentIndex].imageReading.reads[firstReader.id] =
           secondRead
 
-        updatedEventIds.add(event.id)
+        updatedAppointmentIds.add(appointment.id)
         count++
       })
     }
     console.log(
-      `Added first and second reads to ${count} events in the 2 oldest clinics`
+      `Added first and second reads to ${count} appointments in the 2 oldest clinics`
     )
   }
 
@@ -625,21 +625,21 @@ const generateReadingData = (events, users, seedProfile = {}) => {
       `Adding a clinic with both reads completed by users other than current user to clinic ${clinic.id}`
     )
 
-    // Use the same base time for all reads in this clinic, then advance by 1 minute for each event
+    // Use the same base time for all reads in this clinic, then advance by 1 minute for each appointment
     let baseReadTime = dayjs(generateRecentTimestamp(clinic.date, 30, 48))
 
     // Add full first reads by third user
-    clinic.events.forEach((event) => {
+    clinic.appointments.forEach((appointment) => {
       // Skip if already updated
-      if (updatedEventIds.has(event.id)) return
+      if (updatedAppointmentIds.has(appointment.id)) return
 
-      // Find the event in our array
-      const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
-      if (eventIndex === -1) return
+      // Find the appointment in our array
+      const appointmentIndex = updatedAppointments.findIndex((e) => e.id === appointment.id)
+      if (appointmentIndex === -1) return
 
       // Ensure the imageReading structure exists
-      if (!updatedEvents[eventIndex].imageReading) {
-        updatedEvents[eventIndex].imageReading = { reads: {} }
+      if (!updatedAppointments[appointmentIndex].imageReading) {
+        updatedAppointments[appointmentIndex].imageReading = { reads: {} }
       }
 
       // Advance time by 1 minute for each read
@@ -648,32 +648,32 @@ const generateReadingData = (events, users, seedProfile = {}) => {
 
       // First read (by third user) - aligned with image set
       const firstRead = generateSingleRead(
-        updatedEvents[eventIndex],
+        updatedAppointments[appointmentIndex],
         thirdReader.id,
         thirdReader.role,
         firstReadTime,
         { readNumber: 1, alignmentProbability }
       )
-      updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
+      updatedAppointments[appointmentIndex].imageReading.reads[thirdReader.id] = firstRead
 
-      updatedEventIds.add(event.id)
+      updatedAppointmentIds.add(appointment.id)
       count++
     })
 
-    // Add second reads by second user to 60% of events
-    const eventsForSecondRead = clinic.events
-      .filter((event) => updatedEventIds.has(event.id))
-      .slice(0, Math.ceil(clinic.events.length * 0.6)) // Take 60% of events for second read
+    // Add second reads by second user to 60% of appointments
+    const appointmentsForSecondRead = clinic.appointments
+      .filter((appointment) => updatedAppointmentIds.has(appointment.id))
+      .slice(0, Math.ceil(clinic.appointments.length * 0.6)) // Take 60% of appointments for second read
 
     baseReadTime = dayjs(generateRecentTimestamp(clinic.date, 12, 24)) // More recent timestamp for second reads
 
-    eventsForSecondRead.forEach((event) => {
-      const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
-      if (eventIndex === -1) return
+    appointmentsForSecondRead.forEach((appointment) => {
+      const appointmentIndex = updatedAppointments.findIndex((e) => e.id === appointment.id)
+      if (appointmentIndex === -1) return
 
       // Get the first read
       const firstRead =
-        updatedEvents[eventIndex].imageReading.reads[thirdReader.id]
+        updatedAppointments[appointmentIndex].imageReading.reads[thirdReader.id]
       if (!firstRead) return
 
       // Second read (by second user) - 80% chance of agreement with first read
@@ -695,7 +695,7 @@ const generateReadingData = (events, users, seedProfile = {}) => {
       const secondReadTime = baseReadTime.toISOString()
 
       const secondRead = generateSingleRead(
-        updatedEvents[eventIndex],
+        updatedAppointments[appointmentIndex],
         secondReader.id,
         secondReader.role,
         secondReadTime,
@@ -705,11 +705,11 @@ const generateReadingData = (events, users, seedProfile = {}) => {
           alignmentProbability
         }
       )
-      updatedEvents[eventIndex].imageReading.reads[secondReader.id] = secondRead
+      updatedAppointments[appointmentIndex].imageReading.reads[secondReader.id] = secondRead
     })
 
     console.log(
-      `Added a clinic with ${clinic.events.length} first reads and ${eventsForSecondRead.length} second reads, both done by users other than current user`
+      `Added a clinic with ${clinic.appointments.length} first reads and ${appointmentsForSecondRead.length} second reads, both done by users other than current user`
     )
   }
 
@@ -720,20 +720,20 @@ const generateReadingData = (events, users, seedProfile = {}) => {
       const clinic = clinics[i]
       console.log(`Adding first reads by current user to clinic ${clinic.id}`)
 
-      // Use the same base time for all reads in this clinic, then advance by 1 minute for each event
+      // Use the same base time for all reads in this clinic, then advance by 1 minute for each appointment
       let baseReadTime = dayjs(generateRecentTimestamp(clinic.date, 12, 36))
 
-      clinic.events.forEach((event) => {
+      clinic.appointments.forEach((appointment) => {
         // Skip if already updated
-        if (updatedEventIds.has(event.id)) return
+        if (updatedAppointmentIds.has(appointment.id)) return
 
-        // Find the event in our array
-        const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
-        if (eventIndex === -1) return
+        // Find the appointment in our array
+        const appointmentIndex = updatedAppointments.findIndex((e) => e.id === appointment.id)
+        if (appointmentIndex === -1) return
 
         // Ensure the imageReading structure exists
-        if (!updatedEvents[eventIndex].imageReading) {
-          updatedEvents[eventIndex].imageReading = { reads: {} }
+        if (!updatedAppointments[appointmentIndex].imageReading) {
+          updatedAppointments[appointmentIndex].imageReading = { reads: {} }
         }
 
         // Advance time by 1 minute for each read
@@ -742,20 +742,20 @@ const generateReadingData = (events, users, seedProfile = {}) => {
 
         // First read (by first user/current user) - aligned with image set
         const firstRead = generateSingleRead(
-          updatedEvents[eventIndex],
+          updatedAppointments[appointmentIndex],
           firstReader.id,
           firstReader.role,
           firstReadTime,
           { readNumber: 1, alignmentProbability }
         )
-        updatedEvents[eventIndex].imageReading.reads[firstReader.id] = firstRead
+        updatedAppointments[appointmentIndex].imageReading.reads[firstReader.id] = firstRead
 
-        updatedEventIds.add(event.id)
+        updatedAppointmentIds.add(appointment.id)
         count++
       })
     }
     console.log(
-      `Added first reads by current user to ${count} events in the next 2 clinics`
+      `Added first reads by current user to ${count} appointments in the next 2 clinics`
     )
   }
 
@@ -766,20 +766,20 @@ const generateReadingData = (events, users, seedProfile = {}) => {
       const clinic = clinics[i]
       console.log(`Adding first reads by second user to clinic ${clinic.id}`)
 
-      // Use the same base time for all reads in this clinic, then advance by 1 minute for each event
+      // Use the same base time for all reads in this clinic, then advance by 1 minute for each appointment
       let baseReadTime = dayjs(generateRecentTimestamp(clinic.date, 4, 24))
 
-      clinic.events.forEach((event) => {
+      clinic.appointments.forEach((appointment) => {
         // Skip if already updated
-        if (updatedEventIds.has(event.id)) return
+        if (updatedAppointmentIds.has(appointment.id)) return
 
-        // Find the event in our array
-        const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
-        if (eventIndex === -1) return
+        // Find the appointment in our array
+        const appointmentIndex = updatedAppointments.findIndex((e) => e.id === appointment.id)
+        if (appointmentIndex === -1) return
 
         // Ensure the imageReading structure exists
-        if (!updatedEvents[eventIndex].imageReading) {
-          updatedEvents[eventIndex].imageReading = { reads: {} }
+        if (!updatedAppointments[appointmentIndex].imageReading) {
+          updatedAppointments[appointmentIndex].imageReading = { reads: {} }
         }
 
         // Advance time by 1 minute for each read
@@ -788,21 +788,21 @@ const generateReadingData = (events, users, seedProfile = {}) => {
 
         // First read (by second user) - aligned with image set
         const firstRead = generateSingleRead(
-          updatedEvents[eventIndex],
+          updatedAppointments[appointmentIndex],
           secondReader.id,
           secondReader.role,
           firstReadTime,
           { readNumber: 1, alignmentProbability }
         )
-        updatedEvents[eventIndex].imageReading.reads[secondReader.id] =
+        updatedAppointments[appointmentIndex].imageReading.reads[secondReader.id] =
           firstRead
 
-        updatedEventIds.add(event.id)
+        updatedAppointmentIds.add(appointment.id)
         count++
       })
     }
     console.log(
-      `Added first reads by second user to ${count} events in the next 2 clinics`
+      `Added first reads by second user to ${count} appointments in the next 2 clinics`
     )
   }
 
@@ -813,22 +813,22 @@ const generateReadingData = (events, users, seedProfile = {}) => {
       const clinic = clinics[i]
       console.log(`Adding partial first reads to clinic ${clinic.id}`)
 
-      // Use the same base time for all reads in this clinic, then advance by 1 minute for each event
+      // Use the same base time for all reads in this clinic, then advance by 1 minute for each appointment
       let baseReadTime = dayjs(generateRecentTimestamp(clinic.date, 1, 12))
 
-      // Only read 75% of events in these clinics
-      const eventsToRead = clinic.events
-        .filter((event) => !updatedEventIds.has(event.id))
-        .slice(0, Math.ceil(clinic.events.length * 0.75)) // Take first 75%
+      // Only read 75% of appointments in these clinics
+      const appointmentsToRead = clinic.appointments
+        .filter((appointment) => !updatedAppointmentIds.has(appointment.id))
+        .slice(0, Math.ceil(clinic.appointments.length * 0.75)) // Take first 75%
 
-      eventsToRead.forEach((event) => {
-        // Find the event in our array
-        const eventIndex = updatedEvents.findIndex((e) => e.id === event.id)
-        if (eventIndex === -1) return
+      appointmentsToRead.forEach((appointment) => {
+        // Find the appointment in our array
+        const appointmentIndex = updatedAppointments.findIndex((e) => e.id === appointment.id)
+        if (appointmentIndex === -1) return
 
         // Ensure the imageReading structure exists
-        if (!updatedEvents[eventIndex].imageReading) {
-          updatedEvents[eventIndex].imageReading = { reads: {} }
+        if (!updatedAppointments[appointmentIndex].imageReading) {
+          updatedAppointments[appointmentIndex].imageReading = { reads: {} }
         }
 
         // Advance time by 1 minute for each read
@@ -837,25 +837,25 @@ const generateReadingData = (events, users, seedProfile = {}) => {
 
         // First read (by third user) - aligned with image set
         const firstRead = generateSingleRead(
-          updatedEvents[eventIndex],
+          updatedAppointments[appointmentIndex],
           thirdReader.id,
           thirdReader.role,
           firstReadTime,
           { readNumber: 1, alignmentProbability }
         )
-        updatedEvents[eventIndex].imageReading.reads[thirdReader.id] = firstRead
+        updatedAppointments[appointmentIndex].imageReading.reads[thirdReader.id] = firstRead
 
-        updatedEventIds.add(event.id)
+        updatedAppointmentIds.add(appointment.id)
         count++
       })
     }
     console.log(
-      `Added partial first reads to ${count} events in the next 2 clinics`
+      `Added partial first reads to ${count} appointments in the next 2 clinics`
     )
   }
 
-  console.log(`Total events with reading data: ${updatedEventIds.size}`)
-  return updatedEvents
+  console.log(`Total appointments with reading data: ${updatedAppointmentIds.size}`)
+  return updatedAppointments
 }
 
 module.exports = {

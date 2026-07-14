@@ -13,9 +13,9 @@
 
   {# Todo: this could instead use the currentBSU local variable though that relates to the signed in user #}
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-  {{ filteredEvents | log("Filtered events")}}
-  {# {% set events = data.events | getClinicEvents(clinicId) %} #}
-  {% set events = allEvents %}
+  {{ filteredAppointments | log("Filtered appointments")}}
+  {# {% set appointments = data.appointments | getClinicAppointments(clinicId) %} #}
+  {% set appointments = allAppointments %}
 
   {# {% set clinicRiskType %}
   {% if clinic.riskLevels | length == 1 %}
@@ -60,7 +60,7 @@
   { id: 'all', label: 'All' }
 ] %}
 
-{% set remainingCount = events | filterEventsByStatus(filter.id) | length %}
+{% set remainingCount = appointments | filterAppointmentsByStatus(filter.id) | length %}
 
 {% if clinic.status == 'closed' or remainingCount == 0 %}
   {% set tabItems = [
@@ -78,7 +78,7 @@
   /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}
   {% endset %}
   {% set secondaryNavItems = secondaryNavItems | push({
-  text: (filter.label + " " + appCount(events | filterEventsByStatus(filter.id) | length)) | safe,
+  text: (filter.label + " " + appCount(appointments | filterAppointmentsByStatus(filter.id) | length)) | safe,
   href: href | trim,
   current: true if filter.id == status
   }) %}
@@ -91,28 +91,28 @@
   }) }}
 {% endif %}
 
-{# Message shown when there are no events for the current tab #}
+{# Message shown when there are no appointments for the current tab #}
 {% if status == 'all' or not status %}
-  {% set noEventsMessage = "There are no participants in this clinic." %}
+  {% set noAppointmentsMessage = "There are no participants in this clinic." %}
 {% elseif status == 'remaining' %}
-  {% set noEventsMessage = "There are no remaining participants." %}
+  {% set noAppointmentsMessage = "There are no remaining participants." %}
 {% elseif status == 'checked-in' %}
-  {% set noEventsMessage = "There are no checked-in participants." %}
+  {% set noAppointmentsMessage = "There are no checked-in participants." %}
 {% elseif status == 'in-progress' %}
-  {% set noEventsMessage = "There are no in-progress participants." %}
+  {% set noAppointmentsMessage = "There are no in-progress participants." %}
 {% elseif status == 'complete' %}
-  {% set noEventsMessage = "There are no completed participants." %}
+  {% set noAppointmentsMessage = "There are no completed participants." %}
 {% else %}
-  {% set noEventsMessage = "There are no participants in this clinic." %}
+  {% set noAppointmentsMessage = "There are no participants in this clinic." %}
 {% endif %}
 
-{% if filteredEvents.length === 0 %}
-  <p>{{ noEventsMessage }}</p>
+{% if filteredAppointments.length === 0 %}
+  <p>{{ noAppointmentsMessage }}</p>
 {% else %}
-  <table class="nhsuk-table app-clinic-events-table">
+  <table class="nhsuk-table app-clinic-appointments-table">
     <thead class="nhsuk-table__head">
       <tr>
-        <th class="nhsuk-table__header app-clinic-events-table__time-column">Time</th>
+        <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
         <th class="nhsuk-table__header">Details</th>
         <th class="nhsuk-table__header">Date of birth</th>
         <th class="nhsuk-table__header">Appointment</th>
@@ -120,24 +120,24 @@
       </tr>
     </thead>
     <tbody class="nhsuk-table__body">
-      {% for event in filteredEvents %}
-        {% set participant = data.participants | findById(event.participantId) %}
-        {% set eventBaseUrl = "/clinics/" + clinicId + "/events/" + event.id %}
-        {% set statusTagId = "status-tag-" + event.id %}
+      {% for appointment in filteredAppointments %}
+        {% set participant = data.participants | findById(appointment.participantId) %}
+        {% set appointmentBaseUrl = "/clinics/" + clinicId + "/appointments/" + appointment.id %}
+        {% set statusTagId = "status-tag-" + appointment.id %}
 
-        <tr class="event-row" id="event-row-{{event.id}}">
+        <tr class="appointment-row" id="appointment-row-{{appointment.id}}">
 
           {# Appointment time #}
-          <td class="nhsuk-table__cell app-clinic-events-table__time-column">{{ event.statusHistory[0].timestamp | formatTimeString }}
+          <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}
             <br>
-            {% if event | isSpecialAppointment %}
+            {% if appointment | isSpecialAppointment %}
               {{ tag({
               text: "Special appointment",
               colour: "yellow",
               classes: "nhsuk-u-margin-top-2 app-nowrap"
               })}}
             {% endif %}
-            {% if event | hasAppointmentNote %}
+            {% if appointment | hasAppointmentNote %}
               {{ tag({
               text: "Appointment note",
               colour: "yellow",
@@ -145,7 +145,7 @@
               })}}
             {% endif %}
             {# Symptoms tag used for testing to verify data is working #}
-            {# {% if event | hasSymptoms %}
+            {# {% if appointment | hasSymptoms %}
               {{ tag({
               text: "Has symptoms",
               colour: "yellow",
@@ -160,7 +160,7 @@
             {% set participantHref = ("/participants/" ~ participant.id) | urlWithReferrer(currentUrl) %}
 
             <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
-              {# <a href="/clinics/{{ clinicId }}/events/{{ event.id }}/start" class="nhsuk-link"> #}
+              {# <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}/start" class="nhsuk-link"> #}
                 {# <a href="{{ participantHref }}" class="nhsuk-link">
                   {{ participant | getFullName }}
                 </a> #}
@@ -186,29 +186,29 @@
           {# Appointment status and view appointment link #}
           <td class="nhsuk-table__cell">
             {# Status tag with check-in link #}
-            {# {{ eventStatus({
+            {# {{ appointmentStatus({
             clinicId: clinicId,
-            event: event,
+            appointment: appointment,
             participant: participant,
             participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
-            appointmentUrl: "/clinics/" + clinicId + "/events/" + event.id,
-            referrerChain: currentUrl + "#event-row-" + event.id,
+            appointmentUrl: "/clinics/" + clinicId + "/appointments/" + appointment.id,
+            referrerChain: currentUrl + "#appointment-row-" + appointment.id,
             confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
             showAppointmentLink: true
             })}} #}
 
-            {{ event.status | toTag({ id: statusTagId }) }}
+            {{ appointment.status | toTag({ id: statusTagId }) }}
 
-            {% if event | isInProgressNotPaused %}
+            {% if appointment | isInProgressNotPaused %}
               <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
-                event.sessionDetails.startedBy | getUsername({
+                appointment.sessionDetails.startedBy | getUsername({
                 format: 'short',
                 identifyCurrentUser: true
                 }) }}</span>
 
-            {% elseif (event | isFinal) %}
-              {% if event.sessionDetails.startedBy %}
-                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ event.sessionDetails.startedBy
+            {% elseif (appointment | isFinal) %}
+              {% if appointment.sessionDetails.startedBy %}
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ appointment.sessionDetails.startedBy
                   | getUsername({
                   format: 'short',
                   identifyCurrentUser: true
@@ -217,29 +217,29 @@
             {% endif %}
 
             <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0 app-nowrap">
-              <a href="{{ eventBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) |
+              <a href="{{ appointmentBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) |
                 asVisuallyHiddenText) | safe }}</a>
             </p>
 
 
             {# {% set viewAppointmentLink %}
-            <a href="{{ eventBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) |
+            <a href="{{ appointmentBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) |
               asVisuallyHiddenText) | safe }}</a>
             {% endset %} #}
 
-            {# Scheduled events have dynamic check-in links #}
+            {# Scheduled appointments have dynamic check-in links #}
 
-            {# {% if event.status != 'event_scheduled' %}
+            {# {% if appointment.status != 'appointment_scheduled' %}
             <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
               {% if currentUser | isClinician %}
 
-              {% if event | isFinal %}
+              {% if appointment | isFinal %}
               {{ viewAppointmentLink | safe }}
-              {% elseif event | isInProgress %}
+              {% elseif appointment | isInProgress %}
 
-              {% if event | startedByCurrentUser %}
+              {% if appointment | startedByCurrentUser %}
 
-              <a href="{{ eventBaseUrl }}/identity">
+              <a href="{{ appointmentBaseUrl }}/identity">
                 Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
               </a>
               {% else %}
@@ -247,7 +247,7 @@
               {% endif %}
 
               {% else %}
-              <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started">
+              <a href="{{ appointmentBaseUrl }}/start?appointment[workflowStatus][appointment]=started">
                 Start appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
               </a>
               {% endif %}
@@ -264,10 +264,10 @@
 
           {# Actions - check-in or start appointment #}
           <td class="nhsuk-table__cell">
-            {% if event.status == 'event_scheduled' %}
+            {% if appointment.status == 'appointment_scheduled' %}
               {{ appCheckIn({
                 clinicId: clinicId,
-                event: event,
+                appointment: appointment,
                 participant: participant,
                 confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
                 statusTagId: statusTagId,
@@ -276,36 +276,36 @@
 
             {% endif %}
 
-            {% if (currentUser | isClinician) and (event | isActive) %}
-              {% if event | hasNotStarted %}
+            {% if (currentUser | isClinician) and (appointment | isActive) %}
+              {% if appointment | hasNotStarted %}
                 {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this
                 class to make the link visible #}
-                <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started"
-                  class="app-nowrap {{ 'app-display-none' if event.status == 'event_scheduled' }} js-start-appointment-link">
+                <a href="{{ appointmentBaseUrl }}/start?appointment[workflowStatus][appointment]=started"
+                  class="app-nowrap {{ 'app-display-none' if appointment.status == 'appointment_scheduled' }} js-start-appointment-link">
                   Start appointment
                 </a>
 
-              {% elseif event | isPaused or event | isInProgress %}
-                <a href="{{ eventBaseUrl }}/resume">
+              {% elseif appointment | isPaused or appointment | isInProgress %}
+                <a href="{{ appointmentBaseUrl }}/resume">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
 
-              {% elseif (event | isPaused) and (event | startedByCurrentUser) %}
-                <a href="{{ eventBaseUrl }}/resume">
+              {% elseif (appointment | isPaused) and (appointment | startedByCurrentUser) %}
+                <a href="{{ appointmentBaseUrl }}/resume">
                   Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
                 </a>
               {% endif %}
 
             {% endif %}
 
-            {# {% if not (event | isFinal) and (currentUser | isClinician) %}
+            {# {% if not (appointment | isFinal) and (currentUser | isClinician) %}
             <p class="nhsuk-u-margin-bottom-0">
-              {% if event | hasNotStarted %}
-              <a href="{{ eventBaseUrl }}/start?event[workflowStatus][appointment]=started" class="app-nowrap">
+              {% if appointment | hasNotStarted %}
+              <a href="{{ appointmentBaseUrl }}/start?appointment[workflowStatus][appointment]=started" class="app-nowrap">
                 Start appointment
               </a>
-              {% elseif event | startedByCurrentUser %}
-              <a href="{{ eventBaseUrl }}/identity">
+              {% elseif appointment | startedByCurrentUser %}
+              <a href="{{ appointmentBaseUrl }}/identity">
                 Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
               </a>
               {% endif %}

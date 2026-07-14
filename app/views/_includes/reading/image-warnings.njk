@@ -4,7 +4,7 @@
 {% set imageWarningRows = [] %}
 
 {# 1. Image quality (imperfect but best possible) #}
-{% if event.mammogramData.isImperfectButBestPossible and event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+{% if appointment.mammogramData.isImperfectButBestPossible and appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
   {% set imageWarningRows = imageWarningRows | push({
     key: { text: "Image quality" },
     value: { text: "Imperfect, but best possible images" }
@@ -12,12 +12,12 @@
 {% endif %}
 
 {# 2. Additional images (repeats or extra images for large breasts) #}
-{% if event.mammogramData.metadata.hasAdditionalImages %}
-  {% if event.mammogramData.metadata.hasRepeat and event.mammogramData.metadata.hasExtraImages %}
+{% if appointment.mammogramData.metadata.hasAdditionalImages %}
+  {% if appointment.mammogramData.metadata.hasRepeat and appointment.mammogramData.metadata.hasExtraImages %}
     {% set additionalImagesText = "Some views were retaken. Extra images were also taken for large breasts." %}
-  {% elseif event.mammogramData.metadata.hasRepeat %}
+  {% elseif appointment.mammogramData.metadata.hasRepeat %}
     {% set additionalImagesText = "Some views were retaken due to technical issues." %}
-  {% elseif event.mammogramData.metadata.hasExtraImages %}
+  {% elseif appointment.mammogramData.metadata.hasExtraImages %}
     {% set additionalImagesText = "Extra images were taken to ensure full coverage for large breasts." %}
   {% else %}
     {% set additionalImagesText = "Some views have additional images." %}
@@ -29,25 +29,25 @@
 {% endif %}
 
 {# 3. Incomplete mammography #}
-{% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
+{% if appointment.mammogramData.isIncompleteMammography and appointment.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteValueHtml %}
-    {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
-      {% if event.mammogramData.incompleteMammographyReasons | length == 1 %}
-        <p class="nhsuk-u-margin-bottom-2">Reason: {{ event.mammogramData.incompleteMammographyReasons[0] | lower }}</p>
+    {% if appointment.mammogramData.incompleteMammographyReasons and appointment.mammogramData.incompleteMammographyReasons | length > 0 %}
+      {% if appointment.mammogramData.incompleteMammographyReasons | length == 1 %}
+        <p class="nhsuk-u-margin-bottom-2">Reason: {{ appointment.mammogramData.incompleteMammographyReasons[0] | lower }}</p>
       {% else %}
-        <p class="nhsuk-u-margin-bottom-1">{{ "Reason" | pluralise(event.mammogramData.incompleteMammographyReasons | length) }}:</p>
+        <p class="nhsuk-u-margin-bottom-1">{{ "Reason" | pluralise(appointment.mammogramData.incompleteMammographyReasons | length) }}:</p>
         <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
-          {% for reason in event.mammogramData.incompleteMammographyReasons %}
+          {% for reason in appointment.mammogramData.incompleteMammographyReasons %}
             <li>{{ reason }}</li>
           {% endfor %}
         </ul>
       {% endif %}
     {% endif %}
-    {% if event.mammogramData.incompleteMammographyReasonDetails %}
-      <p class="nhsuk-u-margin-bottom-2">Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}</p>
+    {% if appointment.mammogramData.incompleteMammographyReasonDetails %}
+      <p class="nhsuk-u-margin-bottom-2">Details: {{ appointment.mammogramData.incompleteMammographyReasonDetails }}</p>
     {% endif %}
-    {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
-      {% set followUpValue = event.mammogramData.incompleteMammographyFollowUpAppointment %}
+    {% if appointment.mammogramData.incompleteMammographyFollowUpAppointment %}
+      {% set followUpValue = appointment.mammogramData.incompleteMammographyFollowUpAppointment %}
       {% if followUpValue.startsWith("No") %}
         {{ tag({
           text: "Partial mammography",
@@ -58,8 +58,8 @@
           text: "Recall requested",
           colour: "orange"
         }) }}
-        {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
-          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+        {% if appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
+          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
         {% endif %}
       {% endif %}
     {% endif %}
@@ -71,10 +71,10 @@
 {% endif %}
 
 {# 4. Notes for reader #}
-{% if event.mammogramData.notesForReader %}
+{% if appointment.mammogramData.notesForReader %}
   {% set imageWarningRows = imageWarningRows | push({
     key: { text: "Notes for reader" },
-    value: { text: event.mammogramData.notesForReader }
+    value: { text: appointment.mammogramData.notesForReader }
   }) %}
 {% endif %}
 

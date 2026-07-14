@@ -59,7 +59,7 @@
 {% for typeData in data.medicalHistoryTypes %}
 
   {# Create a shortened name for the data #}
-  {% set historyItemArray = event.medicalInformation.medicalHistory[typeData.type] %}
+  {% set historyItemArray = appointment.medicalInformation.medicalHistory[typeData.type] %}
 
   {# Only run if we have some medical historythe #}
   {% if historyItemArray and historyItemArray | length %}
@@ -604,7 +604,7 @@
 
   <div class="nhsuk-button-group app-button-group--small">
     {% for typeData in data.medicalHistoryTypes %}
-      {% set existingItems = event.medicalInformation.medicalHistory[typeData.type] %}
+      {% set existingItems = appointment.medicalInformation.medicalHistory[typeData.type] %}
       {% set hasExistingItem = existingItems and existingItems | length > 0 %}
       {% set canAdd = typeData.canHaveMultiple or not hasExistingItem %}
       

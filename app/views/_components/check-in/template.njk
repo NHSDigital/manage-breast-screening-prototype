@@ -7,7 +7,7 @@
 
 {# Build check-in href #}
 {% set checkInHref -%}
-  /clinics/{{ params.clinicId }}/check-in/{{ params.event.id }}
+  /clinics/{{ params.clinicId }}/check-in/{{ params.appointment.id }}
 {%- endset %}
 
 {# Check if identity confirmation is enabled #}
@@ -15,15 +15,15 @@
 {% set statusTagId = params.statusTagId %}
 
 {% if confirmIdentityEnabled %}
-  {% set modalId = "check-in-modal-" + params.event.id %}
+  {% set modalId = "check-in-modal-" + params.appointment.id %}
   {% set statusTagId = params.statusTagId %}
-  {% set appointmentUrl = "/clinics/" + params.clinicId + "/events/" + params.event.id %}
+  {% set appointmentUrl = "/clinics/" + params.clinicId + "/appointments/" + params.appointment.id %}
   {% set currentUser = params.currentUser %}
   {% include "_includes/confirm-identity-modal.njk" %}
 {% endif %}
 
-{# Only show check-in for scheduled events #}
-{% if params.event.status === 'event_scheduled' %}
+{# Only show check-in for scheduled appointments #}
+{% if params.appointment.status === 'appointment_scheduled' %}
   {% set checkInText %}
     Check in{{ (" " + (params.participant | getShortName)) | asVisuallyHiddenText if params.participant }}
   {% endset %}
@@ -42,7 +42,7 @@
       <a href="{{ checkInHref }}"
         class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
         data-clinic-id="{{ params.clinicId }}"
-        data-event-id="{{ params.event.id }}"
+        data-appointment-id="{{ params.appointment.id }}"
         data-status-tag-id="{{ statusTagId }}">
         {{ checkInText | safe }}
       </a>

@@ -751,7 +751,7 @@ const generateOtherProceduresItem = (options = {}) => {
 }
 
 /**
- * Generate medical history for an event
+ * Generate medical history for an appointment
  * @param {object} [options] - Generation options
  * @param {number} [options.probability=0.20] - Chance of having any medical history
  * @param {string} [options.addedByUserId] - User who added this information

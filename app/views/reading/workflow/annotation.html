@@ -50,7 +50,7 @@
           {% endif %}
 
           {# Get images for the annotation side #}
-          {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+          {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
           {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
           {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
 

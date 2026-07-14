@@ -23,10 +23,10 @@
 
   {{ isAppointmentWorkflow | log("Is appointment workflow") }}
 
-  {% set appointmentWorkflow = event and event | isAppointmentWorkflow %}
+  {% set appointmentWorkflow = appointment and appointment | isAppointmentWorkflow %}
   {% if appointmentWorkflow %}
     {# Exit appointment with discard action, returning to root #}
-    {% set exitAppointmentHref = eventUrl ~ "/exit-appointment-answer?exitAction=discard&returnTo=/" %}
+    {% set exitAppointmentHref = appointmentUrl ~ "/exit-appointment-answer?exitAction=discard&returnTo=/" %}
     {# Override rootHref to exit appointment and return to root #}
     {% set rootHref = exitAppointmentHref %}
   {% endif %}
@@ -71,7 +71,7 @@
   {% if appointmentWorkflow %}
     {% set navItems = [
       {
-        href: (eventUrl ~ "/exit-appointment") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+        href: (appointmentUrl ~ "/exit-appointment") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         text: "Exit appointment"
       } | openInModal
     ] %}
@@ -130,8 +130,8 @@
 
 {% block content %}
 
-  {% if event %}
-    {{ event | log("Event data") }}
+  {% if appointment %}
+    {{ appointment | log("Appointment data") }}
   {% endif %}
 
   {% if participant %}

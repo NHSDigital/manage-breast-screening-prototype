@@ -22,7 +22,7 @@ The result: RSS (resident set size) grows with each request until it plateaus, b
 
 ```
 clinics.json:      513KB
-events.json:       4.2MB
+appointments.json:       4.2MB
 participants.json: 1.3MB
 ─────────────────────────
 Total JSON:        ~6MB
@@ -93,13 +93,13 @@ The temporary heap allocations still cause RSS growth. Redis was removed as it a
 
 ## The Actual Problem
 
-The architecture stores **all** seed data (participants, events, clinics) in **every user's session**. This means:
+The architecture stores **all** seed data (participants, appointments, clinics) in **every user's session**. This means:
 
 1. **Every request** serializes/deserializes 3.6MB of data
 2. **Every session** stores a 3.6MB copy (even if user hasn't changed anything)
 3. **V8 heap** expands to handle the temporary objects, RSS grows to ~400-600MB
 
-With the current data volume (~1000 participants, ~1200 events), a single session causes RSS to plateau at ~460MB. Multiple concurrent sessions push it higher.
+With the current data volume (~1000 participants, ~1200 appointments), a single session causes RSS to plateau at ~460MB. Multiple concurrent sessions push it higher.
 
 ## Solutions
 
@@ -119,13 +119,13 @@ With the current data volume (~1000 participants, ~1200 events), a single sessio
 Current flow:
 
 ```
-Session = { participants: [...1000], events: [...1200], clinics: [...70], ... }
+Session = { participants: [...1000], appointments: [...1200], clinics: [...70], ... }
 ```
 
 Better architecture:
 
 ```
-Shared read-only: participants, events, clinics (loaded once at startup)
+Shared read-only: participants, appointments, clinics (loaded once at startup)
 Session: { userId, tempFormData, userChanges: {...} }  // ~1KB not 3.6MB
 ```
 
@@ -134,18 +134,18 @@ This requires:
 1. Keep seed data as shared module-level objects (not copied per-session)
 2. Store only **deltas/changes** in session
 3. Merge on read: `Object.assign({}, sharedDefaults, session.userChanges)`
-4. Update all routes that modify `data.events[i]` to write to delta store
+4. Update all routes that modify `data.appointments[i]` to write to delta store
 
 **Estimated effort:** Several days of refactoring + testing
 
 ### Alternative: Use Redis as a database (not just session store)
 
-Store participants/events/clinics as **separate Redis keys**, not in session:
+Store participants/appointments/clinics as **separate Redis keys**, not in session:
 
 ```javascript
 // On startup
 redis.set('participants', JSON.stringify(participants))
-redis.set('events', JSON.stringify(events))
+redis.set('appointments', JSON.stringify(appointments))
 
 // On request - fetch only what's needed
 const participant = await redis.hget('participants', participantId)

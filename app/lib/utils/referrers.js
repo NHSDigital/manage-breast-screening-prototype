@@ -49,13 +49,13 @@
  *
  * ## Real-World Example: Check Information Flow
  *
- * Starting point: User is on `/clinics/123/events/456/check-information`
+ * Starting point: User is on `/clinics/123/appointments/456/check-information`
  *
  * 1. **check-information** → **confirm-information/medical-history**
  *    ```nunjucks
  *    {# Start new chain with current page #}
  *    <a href="{{ './confirm-information/medical-history' | urlWithReferrer(currentUrl) }}">
- *    {# Result: ?referrerChain=/clinics/123/events/456/check-information #}
+ *    {# Result: ?referrerChain=/clinics/123/appointments/456/check-information #}
  *    ```
  *
  * 2. **confirm-information/medical-history** → **edit form**

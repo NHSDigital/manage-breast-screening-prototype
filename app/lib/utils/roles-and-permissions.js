@@ -101,21 +101,21 @@ const isCurrentUser = function (user) {
 }
 
 /**
- * Check if an event was started by the current user
+ * Check if an appointment was started by the current user
  *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event was started by the current user
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment was started by the current user
  */
-const startedByCurrentUser = function (event) {
+const startedByCurrentUser = function (appointment) {
   const data = this.ctx.data
-  if (!event?.sessionDetails?.startedBy || !data?.currentUser) return false
+  if (!appointment?.sessionDetails?.startedBy || !data?.currentUser) return false
 
   const currentUserId =
     typeof data.currentUser === 'string'
       ? data.currentUser
       : data.currentUser.id
 
-  return event.sessionDetails.startedBy === currentUserId
+  return appointment.sessionDetails.startedBy === currentUserId
 }
 
 module.exports = {

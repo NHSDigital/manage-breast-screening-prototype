@@ -81,7 +81,7 @@ router.use(async (req, res, next) => {
 
 // Collections served from the shared data store rather than from per-session
 // copies
-const STORE_COLLECTIONS = ['clinics', 'participants', 'events', 'episodes']
+const STORE_COLLECTIONS = ['clinics', 'participants', 'appointments', 'episodes']
 
 // Attach shared collections to this request's session data.
 //
@@ -89,7 +89,7 @@ const STORE_COLLECTIONS = ['clinics', 'participants', 'events', 'episodes']
 // Sessions only persist changed records (data._changes, whole records keyed
 // by id); here we overlay those onto the shared arrays so that everything
 // downstream - route handlers, helpers taking `data`, views via locals, the
-// kit's auto-routes template fallback - sees `data.events` etc exactly as
+// kit's auto-routes template fallback - sees `data.appointments` etc exactly as
 // before the refactor.
 //
 // The attached arrays are fresh copies each request (shared record objects,
@@ -130,7 +130,7 @@ router.use((req, res, next) => {
   ) {
     data._changes = {
       generationId: dataStore.state.generationId,
-      events: {},
+      appointments: {},
       participants: {},
       clinics: {},
       episodes: {}
@@ -215,9 +215,9 @@ router.use((req, res, next) => {
       delete req.session.data.clearQuery
     }
 
-    // Remove temp event from session data
-    if (req.session.data && req.session.data.clearEvent) {
-      delete req.session.data.event
+    // Remove temp appointment from session data
+    if (req.session.data && req.session.data.clearAppointment) {
+      delete req.session.data.appointment
     }
 
     // Redirect to the same URL without query string
@@ -312,7 +312,7 @@ router.use((req, res, next) => {
 require('./routes/clinics')(router)
 require('./routes/participants')(router)
 require('./routes/episodes')(router)
-require('./routes/events')(router)
+require('./routes/appointments')(router)
 require('./routes/reading')(router)
 require('./routes/reports')(router)
 

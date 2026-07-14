@@ -11,7 +11,7 @@ const weighted = require('weighted')
 
 const { generateParticipant } = require('./generators/participant-generator')
 const { generateClinicsForBSU } = require('./generators/clinic-generator')
-const { generateEvent } = require('./generators/event-generator')
+const { generateAppointment } = require('./generators/appointment-generator')
 const {
   generateEpisode,
   generateHistoricEpisodes,
@@ -103,28 +103,28 @@ const generateClinicsForDay = (
   seedDataProfile
 ) => {
   const clinics = []
-  const events = []
+  const appointments = []
   const episodes = []
   const participants = [...allParticipants]
 
-  // Every event sits inside an episode - the screening round it belongs to.
-  // Create the episode first, then the event, and link them both ways.
-  const addEventToNewEpisode = (participant, eventOptions) => {
+  // Every appointment sits inside an episode - the screening round it belongs to.
+  // Create the episode first, then the appointment, and link them both ways.
+  const addAppointmentToNewEpisode = (participant, appointmentOptions) => {
     const episode = generateEpisode({
       participant,
       type: getCurrentRiskLevel(participant, dayjs(date).toDate()),
-      appointmentDate: eventOptions.slot.dateTime
+      appointmentDate: appointmentOptions.slot.dateTime
     })
 
-    const event = generateEvent({ ...eventOptions, episodeId: episode.id })
-    episode.eventIds.push(event.id)
+    const appointment = generateAppointment({ ...appointmentOptions, episodeId: episode.id })
+    episode.appointmentIds.push(appointment.id)
 
     episodes.push(episode)
-    events.push(event)
-    return event
+    appointments.push(appointment)
+    return appointment
   }
 
-  // Check if this is today - we want one in-progress event for today only
+  // Check if this is today - we want one in-progress appointment for today only
   const isToday = dayjs(date).isSame(dayjs(), 'day')
 
   const testScenariosForDay = testScenarios.filter((scenario) => {
@@ -144,8 +144,8 @@ const generateClinicsForDay = (
     breastScreeningUnit: unit
   })
 
-  // Track if we've created an in-progress event for today
-  let hasCreatedInProgressEvent = false
+  // Track if we've created an in-progress appointment for today
+  let hasCreatedInProgressAppointment = false
 
   // For test scenarios, only use first clinic of the day
   if (testScenariosForDay.length > 0 && newClinics.length > 0) {
@@ -172,11 +172,11 @@ const generateClinicsForDay = (
         return
       }
 
-      addEventToNewEpisode(participant, {
+      addAppointmentToNewEpisode(participant, {
         slot,
         participant,
         clinic: firstClinic,
-        id: scenario?.participant?.config?.eventId,
+        id: scenario?.participant?.config?.appointmentId,
         outcomeWeights: config.screening.outcomes[firstClinic.clinicType],
         forceStatus: scenario.participant.config.scheduling.status,
         specialAppointmentOverride:
@@ -192,7 +192,7 @@ const generateClinicsForDay = (
   newClinics.forEach((clinic) => {
     const remainingSlots = clinic.slots
       .filter(() => Math.random() < config.generation.bookingProbability)
-      .filter((slot) => !events.some((e) => e.slotId === slot.id))
+      .filter((slot) => !appointments.some((e) => e.slotId === slot.id))
 
     remainingSlots.forEach((slot) => {
       // Pick risk level based on clinic's supported levels
@@ -231,11 +231,11 @@ const generateClinicsForDay = (
         )
         const participant = availableParticipants[randomIndex]
 
-        // For today, create one in-progress event (first participant in first available slot)
+        // For today, create one in-progress appointment (first participant in first available slot)
         const shouldBeInProgress =
-          isToday && !hasCreatedInProgressEvent && i === 0
+          isToday && !hasCreatedInProgressAppointment && i === 0
 
-        addEventToNewEpisode(participant, {
+        addAppointmentToNewEpisode(participant, {
           slot,
           participant,
           clinic,
@@ -245,9 +245,9 @@ const generateClinicsForDay = (
         })
 
         if (shouldBeInProgress) {
-          hasCreatedInProgressEvent = true
+          hasCreatedInProgressAppointment = true
           console.log(
-            `Created in-progress event for participant ${participant.demographicInformation.firstName} ${participant.demographicInformation.lastName}`
+            `Created in-progress appointment for participant ${participant.demographicInformation.firstName} ${participant.demographicInformation.lastName}`
           )
         }
 
@@ -261,7 +261,7 @@ const generateClinicsForDay = (
 
   return {
     clinics,
-    events,
+    appointments,
     episodes,
     newParticipants: participants.slice(allParticipants.length)
   }
@@ -278,7 +278,7 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
  * summary-level records.
  *
  * How many they get follows from their age and screening interval, so someone
- * only just old enough has none. Only participants with events get history -
+ * only just old enough has none. Only participants with appointments get history -
  * the rest are unreachable in the app, so history for them is payload nobody
  * sees.
  *
@@ -328,12 +328,12 @@ const generateHistoricEpisodesForParticipants = (
 }
 
 /**
- * Seed one multi-event episode, to prove the container holds more than one
+ * Seed one multi-appointment episode, to prove the container holds more than one
  * appointment.
  *
- * A technical recall is the natural multi-event case: reading concludes the
+ * A technical recall is the natural multi-appointment case: reading concludes the
  * images need retaking, so the episode goes back to mammograms and a re-screen
- * is booked - a second event in the same episode.
+ * is booked - a second appointment in the same episode.
  *
  * Whether one arises naturally depends on the reading dice, and some profiles
  * (allNormals) can never produce one. So where this run didn't throw one up,
@@ -345,16 +345,16 @@ const generateHistoricEpisodesForParticipants = (
  *
  * @param {object} options
  * @param {Array} options.episodes - All real episodes
- * @param {Array} options.events - All events, with reading data attached
+ * @param {Array} options.appointments - All appointments, with reading data attached
  * @param {Array} options.clinics - All clinics
  * @param {Array} options.participants - All participants
  * @param {Array} options.users - Users who can read
  * @param {object} options.seedDataProfile - Active seed profile
- * @returns {object | null} The re-screen event, or null if no case was found
+ * @returns {object | null} The re-screen appointment, or null if no case was found
  */
 const seedTechnicalRecallRescreen = ({
   episodes,
-  events,
+  appointments,
   clinics,
   participants,
   users,
@@ -363,9 +363,9 @@ const seedTechnicalRecallRescreen = ({
   const participantsById = new Map(
     participants.map((participant) => [participant.id, participant])
   )
-  const eventsById = new Map(events.map((event) => [event.id, event]))
+  const appointmentsById = new Map(appointments.map((appointment) => [appointment.id, appointment]))
   const clinicsById = new Map(clinics.map((clinic) => [clinic.id, clinic]))
-  const usedSlotIds = new Set(events.map((event) => event.slotId))
+  const usedSlotIds = new Set(appointments.map((appointment) => appointment.slotId))
   const today = dayjs().startOf('day')
 
   // Where the re-screen could be booked: a future screening clinic with a
@@ -395,10 +395,10 @@ const seedTechnicalRecallRescreen = ({
   // Owed a re-screen: its one appointment was read as a technical recall.
   // Asked of the reading itself, so it can't drift from the stage maps.
   const owedRescreen = (episode) => {
-    if (episode.eventIds.length !== 1) return false
+    if (episode.appointmentIds.length !== 1) return false
 
-    const event = eventsById.get(episode.eventIds[0])
-    return Boolean(event) && getOutcome(event, {}) === 'technical_recall'
+    const appointment = appointmentsById.get(episode.appointmentIds[0])
+    return Boolean(appointment) && getOutcome(appointment, {}) === 'technical_recall'
   }
 
   const episode =
@@ -408,24 +408,24 @@ const seedTechnicalRecallRescreen = ({
     episodes.find(
       (candidate) =>
         candidate.stage === 'reading' &&
-        candidate.eventIds.length === 1 &&
+        candidate.appointmentIds.length === 1 &&
         isBookable(candidate)
     )
 
   if (!episode || users.length < 2) return null
 
-  const firstEvent = eventsById.get(episode.eventIds[0])
-  if (!firstEvent) return null
+  const firstAppointment = appointmentsById.get(episode.appointmentIds[0])
+  if (!firstAppointment) return null
 
   // Force the technical recall if this one didn't already have it
   if (!owedRescreen(episode)) {
     const readAt = dayjs(
-      firstEvent.timing.actualEndTime || firstEvent.timing.startTime
+      firstAppointment.timing.actualEndTime || firstAppointment.timing.startTime
     )
     const [firstReader, secondReader] = users
 
     const firstRead = generateSingleRead(
-      firstEvent,
+      firstAppointment,
       firstReader.id,
       firstReader.role,
       readAt.add(1, 'day').toISOString(),
@@ -443,14 +443,14 @@ const seedTechnicalRecallRescreen = ({
       timestamp: readAt.add(2, 'day').toISOString()
     }
 
-    firstEvent.imageReading = {
-      ...firstEvent.imageReading,
+    firstAppointment.imageReading = {
+      ...firstAppointment.imageReading,
       reads: {
         [firstReader.id]: firstRead,
         [secondReader.id]: secondRead
       }
     }
-    finaliseEpisodeStage(episode, [firstEvent], clinicsById)
+    finaliseEpisodeStage(episode, [firstAppointment], clinicsById)
 
     if (!owedRescreen(episode)) return null
   }
@@ -458,24 +458,24 @@ const seedTechnicalRecallRescreen = ({
   const participant = participantsById.get(episode.participantId)
   const { clinic, slot } = clinicByUnit.get(participant.assignedBSU)
 
-  const rescreenEvent = generateEvent({
+  const rescreenAppointment = generateAppointment({
     slot,
     participant,
     clinic,
     episodeId: episode.id,
     outcomeWeights: config.screening.outcomes[clinic.clinicType],
-    forceStatus: 'event_scheduled',
+    forceStatus: 'appointment_scheduled',
     seedDataProfile
   })
 
-  episode.eventIds.push(rescreenEvent.id)
+  episode.appointmentIds.push(rescreenAppointment.id)
 
   console.log(
     `Seeded technical-recall re-screen for ${participant.demographicInformation.firstName} ` +
       `${participant.demographicInformation.lastName} (episode ${episode.id})`
   )
 
-  return rescreenEvent
+  return rescreenAppointment
 }
 
 const generateData = async (options = {}) => {
@@ -516,7 +516,7 @@ const generateData = async (options = {}) => {
 
   console.log(`Made ${participants.length} participants`)
 
-  console.log('Generating clinics and events...')
+  console.log('Generating clinics and appointments...')
   const today = dayjs().startOf('day')
 
   // Only the current period is generated in full. Past screening rounds are
@@ -550,7 +550,7 @@ const generateData = async (options = {}) => {
 
     return {
       clinics: [].concat(...daysData.map((day) => day.clinics)),
-      events: [].concat(...daysData.map((day) => day.events)),
+      appointments: [].concat(...daysData.map((day) => day.appointments)),
       episodes: [].concat(...daysData.map((day) => day.episodes)),
       newParticipants: [].concat(...daysData.map((day) => day.newParticipants))
     }
@@ -558,16 +558,16 @@ const generateData = async (options = {}) => {
 
   // Combine all data
   const allClinics = [].concat(...allData.map((d) => d.clinics))
-  const allEvents = [].concat(...allData.map((d) => d.events))
+  const allAppointments = [].concat(...allData.map((d) => d.appointments))
   const allEpisodes = [].concat(...allData.map((d) => d.episodes))
   const allNewParticipants = [].concat(...allData.map((d) => d.newParticipants))
 
   // Combine initial and new participants
   const finalParticipants = [...participants, ...allNewParticipants]
 
-  // Sort events by start time within each clinic
-  const sortedEvents = allEvents.sort((a, b) => {
-    // First sort by clinic ID to group events together
+  // Sort appointments by start time within each clinic
+  const sortedAppointments = allAppointments.sort((a, b) => {
+    // First sort by clinic ID to group appointments together
     if (a.clinicId !== b.clinicId) {
       return a.clinicId.localeCompare(b.clinicId)
     }
@@ -576,38 +576,38 @@ const generateData = async (options = {}) => {
   })
 
   console.log('Generating sample reading data...')
-  const eventsWithReadingData = generateReadingData(
-    sortedEvents,
+  const appointmentsWithReadingData = generateReadingData(
+    sortedAppointments,
     users,
     selectedSeedDataProfile
   )
 
   // Episodes: settle the stage now that reading data exists, add the seeded
-  // multi-event (technical recall) case, then the summary-level past rounds
+  // multi-appointment (technical recall) case, then the summary-level past rounds
   console.log('Finalising episodes...')
 
-  const eventsById = new Map(
-    eventsWithReadingData.map((event) => [event.id, event])
+  const appointmentsById = new Map(
+    appointmentsWithReadingData.map((appointment) => [appointment.id, appointment])
   )
   const clinicsById = new Map(allClinics.map((clinic) => [clinic.id, clinic]))
 
   allEpisodes.forEach((episode) => {
-    const episodeEvents = episode.eventIds
-      .map((eventId) => eventsById.get(eventId))
+    const episodeAppointments = episode.appointmentIds
+      .map((appointmentId) => appointmentsById.get(appointmentId))
       .filter(Boolean)
-    finaliseEpisodeStage(episode, episodeEvents, clinicsById)
+    finaliseEpisodeStage(episode, episodeAppointments, clinicsById)
   })
 
-  const rescreenEvent = seedTechnicalRecallRescreen({
+  const rescreenAppointment = seedTechnicalRecallRescreen({
     episodes: allEpisodes,
-    events: eventsWithReadingData,
+    appointments: appointmentsWithReadingData,
     clinics: allClinics,
     participants: finalParticipants,
     users,
     seedDataProfile: selectedSeedDataProfile
   })
-  if (rescreenEvent) {
-    eventsWithReadingData.push(rescreenEvent)
+  if (rescreenAppointment) {
+    appointmentsWithReadingData.push(rescreenAppointment)
   }
 
   const historicEpisodes = generateHistoricEpisodesForParticipants(
@@ -627,10 +627,10 @@ const generateData = async (options = {}) => {
       new Date(a.openedDate) - new Date(b.openedDate)
   )
 
-  // The re-screen event was added after the events map was built
-  eventsWithReadingData.forEach((event) => eventsById.set(event.id, event))
+  // The re-screen appointment was added after the appointments map was built
+  appointmentsWithReadingData.forEach((appointment) => appointmentsById.set(appointment.id, appointment))
 
-  const episodeProblems = checkEpisodes(episodesWithHistory, eventsById)
+  const episodeProblems = checkEpisodes(episodesWithHistory, appointmentsById)
   if (episodeProblems.length) {
     console.warn(
       `\nWarning: ${episodeProblems.length} incoherent episodes were generated:`
@@ -659,7 +659,7 @@ const generateData = async (options = {}) => {
       )
     }))
   })
-  writeData('events.json', { events: eventsWithReadingData })
+  writeData('appointments.json', { appointments: appointmentsWithReadingData })
   writeData('episodes.json', { episodes: episodesWithHistory })
   writeData('generation-info.json', {
     generatedAt: new Date().toISOString(),
@@ -667,7 +667,7 @@ const generateData = async (options = {}) => {
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,
-      events: eventsWithReadingData.length,
+      appointments: appointmentsWithReadingData.length,
       episodes: episodesWithHistory.length
     }
   })
@@ -676,7 +676,7 @@ const generateData = async (options = {}) => {
   console.log('Generated:')
   console.log(`- ${finalParticipants.length} participants`)
   console.log(`- ${allClinics.length} clinics`)
-  console.log(`- ${eventsWithReadingData.length} events`)
+  console.log(`- ${appointmentsWithReadingData.length} appointments`)
   console.log(
     `- ${episodesWithHistory.length} episodes ` +
       `(${allEpisodes.length} current, ${historicEpisodes.length} historic)`

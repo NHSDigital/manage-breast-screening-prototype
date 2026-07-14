@@ -12,20 +12,20 @@
 
 {% block pageContent %}
 
-  {# Get all eligible events with recorded mammograms, sorted by screening date #}
-  {% set eligibleEvents = data.events | filterEventsByEligibleForReading | sortEventsByScreeningDate %}
+  {# Get all eligible appointments with recorded mammograms, sorted by screening date #}
+  {% set eligibleAppointments = data.appointments | filterAppointmentsByEligibleForReading | sortAppointmentsByScreeningDate %}
 
-  {# Build flat list of mammogram rows with their parent event #}
+  {# Build flat list of mammogram rows with their parent appointment #}
   {% set allRows = [] %}
   {% set notRequestedRows = [] %}
   {% set pendingRows = [] %}
   {% set requestedRows = [] %}
   {% set resolvedRows = [] %}
 
-  {% for thisEvent in eligibleEvents %}
-    {% if thisEvent | hasRecordedMammograms %}
-      {% for mammogram in thisEvent.previousMammograms %}
-        {% set row = { event: thisEvent, mammogram: mammogram } %}
+  {% for thisAppointment in eligibleAppointments %}
+    {% if thisAppointment | hasRecordedMammograms %}
+      {% for mammogram in thisAppointment.previousMammograms %}
+        {% set row = { appointment: thisAppointment, mammogram: mammogram } %}
         {% if mammogram.requestStatus == "not_requested" %}
           {% set notRequestedRows = notRequestedRows | push(row) %}
           {% set allRows = allRows | push(row) %}
@@ -101,28 +101,28 @@
       </thead>
       <tbody class="nhsuk-table__body">
         {% for row in displayRows %}
-          {% set thisEvent = row.event %}
+          {% set thisAppointment = row.appointment %}
           {% set mammogram = row.mammogram %}
               <tr data-mammogram-row="{{ mammogram.id }}">
                 {# Participant name - look up from session data #}
-                {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
+                {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
                 <td>
-                  <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}">
+                  <a href="/clinics/{{ thisAppointment.clinicId }}/appointments/{{ thisAppointment.id }}">
                     {{ thisParticipant | getFullName }}
                   </a>
                 </td>
 
                 {# Screening date #}
                 <td>
-                  {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
+                  {% set daysSinceScreening = thisAppointment.timing.startTime | daysSince %}
                   {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
                     {{ "Urgent" | toTag }}<br>
                   {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
                     {{ "Due soon" | toTag }}<br>
                   {% endif %}
-                  {{ thisEvent.timing.startTime | formatDate }}<br>
+                  {{ thisAppointment.timing.startTime | formatDate }}<br>
                   <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                    {{ thisEvent.timing.startTime | formatRelativeDate }}
+                    {{ thisAppointment.timing.startTime | formatRelativeDate }}
                   </span>
                 </td>
 
@@ -182,19 +182,19 @@
                   {% if mammogram.requestStatus == "not_requested" or mammogram.requestStatus == "pending" %}
                     {# Can mark as requested (sent to IEP), not available, or not needed #}
                     <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
-                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="requested">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as requested</button>
                     </form>
                     <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
-                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_available">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
                     </form>
                     <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
-                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_needed">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not needed</button>
@@ -202,19 +202,19 @@
                   {% elseif mammogram.requestStatus == "requested" %}
                     {# Can mark as received, not available, or not needed #}
                     <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
-                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="received">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Mark as received</button>
                     </form>
                     <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
-                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_available">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not available</button>
                     </form>
                     <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
-                      <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+                      <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
                       <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
                       <input type="hidden" name="newStatus" value="not_needed">
                       <button type="submit" class="nhsuk-link--no-visited-state app-link-button">Not needed</button>
@@ -276,7 +276,7 @@
       const form = e.currentTarget
       const formData = new FormData(form)
       const mammogramId = formData.get('mammogramId')
-      const eventId = formData.get('eventId')
+      const appointmentId = formData.get('appointmentId')
       const newStatus = formData.get('newStatus')
 
       fetch(form.action, {
@@ -285,7 +285,7 @@
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json'
         },
-        body: new URLSearchParams({ eventId, mammogramId, newStatus })
+        body: new URLSearchParams({ appointmentId, mammogramId, newStatus })
       })
         .then((response) => {
           if (!response.ok) throw new Error('Failed to update status')
@@ -334,7 +334,7 @@
               actionsCell.innerHTML = newActions.map(function (action) {
                 return '<form action="/reading/priors/update-status" method="POST"' +
                   ' class="js-prior-status-form">' +
-                  '<input type="hidden" name="eventId" value="' + eventId + '">' +
+                  '<input type="hidden" name="appointmentId" value="' + appointmentId + '">' +
                   '<input type="hidden" name="mammogramId" value="' + mammogramId + '">' +
                   '<input type="hidden" name="newStatus" value="' + action + '">' +
                   '<button type="submit" class="nhsuk-link--no-visited-state app-link-button">' +

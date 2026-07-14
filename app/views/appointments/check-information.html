@@ -1,0 +1,287 @@
+{% extends 'layout-appointment.html' %}
+
+{% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
+
+
+{% set pageHeading = "Check information" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'check-information' %}
+{% set hideBackLink = true %}
+
+{% set allowEdits = true %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set formAction = './complete' %}
+
+{# {% set back = {
+  href: "/clinics/" + clinicId,
+  text: "Back to clinic"
+} %}
+ #}
+
+{% set activeTab = 'review' %}
+{% set showReviewAfterImagingReminder = data.appointment.workflowStatus['review-breast-features-after-imaging'] == 'yes' %}
+
+
+
+
+{% block pageContent %}
+
+{# ----------------- #}
+
+{% set condensedSummaries %}
+
+  {# Personal information #}
+  {% set participantDetailsHtml %}
+    {% call appSummaryList() %}
+      
+      {{ appSummaryListRow({
+        key: {
+          text: "Personal information"
+        },
+        value: {
+          html: "No changes"
+        },
+        actions: {
+          items: [
+            {
+              href: "./confirm-information/personal-details" | urlWithReferrer(currentUrl),
+              text: "View or change",
+              visuallyHiddenText: "personal information"
+            } if allowEdits
+          ]
+        }
+      }) }}
+      {% set noBorder = true %}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {{ card({
+    heading: "Personal information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: participantDetailsHtml
+  }) }}
+
+  {# Medical information summary card #}
+  {% set medicalInfoSummaryHtml %}
+    {% include "_includes/summary-lists/medical-info-summary.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Medical information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalInfoSummaryHtml,
+    attributes: {
+      id: "check-information-breast-features"
+    }
+  }) }}
+{% endset %}
+
+
+{% set nonCondensedSummaries %}
+
+  {# Include the personal details summary in a feature card #}
+  {% set participantDetailsHtml %}
+    {% call appSummaryList() %}
+      {% include "_includes/summary-lists/rows/nhs-number.njk" %}
+      {% include "_includes/summary-lists/rows/full-name.njk" %}
+      {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+      {% include "_includes/summary-lists/rows/address.njk" %}
+      {% include "_includes/summary-lists/rows/phone-numbers.njk" %}
+      {% include "_includes/summary-lists/rows/email.njk" %}
+      {% include "_includes/summary-lists/rows/ethnicity.njk" %}
+      {% include "_includes/summary-lists/rows/gp.njk" %}
+    {% endcall %}
+  {% endset %}
+
+  {{ card({
+    heading: "Personal information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: participantDetailsHtml
+  }) }}
+
+  {% set medicalHistoryHtml %}
+    {% include "medical-information/medical-history/index.njk" %}
+  {% endset %}
+  {# Medical history card #}
+  {{ card({
+    heading: "Medical history",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: medicalHistoryHtml
+  }) }}
+
+  {# Symptoms card #}
+  {% set symptomsCardContent %}
+    {% include "_includes/medical-information/symptoms-card-content.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Symptoms",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: symptomsCardContent
+  }) }}
+
+  {# Breast features card #}
+
+  {% set breastFeaturesHtml %}
+    {% include "_includes/medical-information/breast-features.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Breast features",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: breastFeaturesHtml,
+    attributes: {
+      id: "check-information-breast-features"
+    }
+  }) }}
+
+  {# Other relevant information card #}
+  {% set otherRelevantInformationHtml %}
+    {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Other relevant medical information",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: otherRelevantInformationHtml
+  }) }}
+
+{% endset %}
+
+
+
+{# ----------------- #}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {% if showReviewAfterImagingReminder %}
+    {% set breastFeaturesReminderHtml %}
+      <p>
+        Are there any breast features to add for {{ participant | getFullName }}?
+      </p>
+      <p>
+        This includes non-surgical scars, moles and other features that may appear on mammogram images
+      </p>
+      <p class="nhsuk-u-margin-bottom-0">
+        <a href="#check-information-breast-features">Review breast features</a>
+      </p>
+    {% endset %}
+
+    {{ appNotificationBanner({
+      titleText: "Reminder to add breast features",
+      html: breastFeaturesReminderHtml
+    }) }}
+  {% endif %}
+
+  <p class="nhsuk-u-reading-width">
+    To conclude this appointment, confirm this information is correct.
+  </p>
+  {# {{ button({
+    text: "Complete screening and return to clinic"
+  }) }} #}
+
+ 
+
+  {{ data.settings | log("Settings in review page:") }}
+
+  {% if data.settings.screening.useCondensedReviewSummaries == 'true' %}
+    {{ condensedSummaries | safe }}
+  {% else %}
+    {{ nonCondensedSummaries | safe }}
+  {% endif %}
+
+
+  {# Image card #}
+  {% set imageCount = appointment.mammogramData.metadata.totalImages %}
+  {% set imagesCardHtml %}
+    {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: imageCount ~ " images taken",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: imagesCardHtml
+  }) }}
+
+  {% set otherDetailsCardHtml %}
+
+    {% set specialAppointmentHtml %}
+      {% if appointment | isSpecialAppointment %}
+        {{ tag({
+          text: "Special appointment",
+          colour: "yellow",
+          classes: "nhsuk-u-margin-bottom-3"
+        })}}
+        {% include "_includes/special-appointment-content.njk" %}
+      {% else %}
+        <p>No</p>
+      {% endif %}
+    {% endset %}
+
+    {{ summaryList({
+      rows: [
+        {
+          key: {
+            text: "Special appointment"
+          },
+          value: {
+            html: specialAppointmentHtml
+          },
+          actions: {
+            items: [
+              {
+                href: (appointmentUrl + "/special-appointment/edit") | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "special appointment"
+              }
+            ]
+          }
+        },
+        {
+          key: {
+            text: "Appointment note"
+          },
+          value: {
+            html: appointment.appointmentNote
+          },
+          actions: {
+            items: [
+              {
+                href: (appointmentUrl + "/appointment-note") | urlWithReferrer(currentUrl),
+                text: "Change",
+                visuallyHiddenText: "appointment note"
+              }
+            ]
+          }
+        }
+      ]
+    } | openInModal | handleSummaryListMissingInformation | removeLastRowBorder) }}
+  {% endset %}
+
+  {{ card({
+    heading: "Appointment details",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: otherDetailsCardHtml
+  }) }}
+
+  {# Finish #}
+
+  {{ button({
+    text: "Complete screening and return to clinic"
+  }) }}
+
+  {# <p><a href="./attended-not-screened-reason">Screening cannot proceed</a></p> #}
+
+{% endblock %}

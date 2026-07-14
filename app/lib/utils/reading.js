@@ -5,42 +5,42 @@ const { getClinic } = require('./clinics')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
-const { updateEventData } = require('./event-data')
+const { updateAppointmentData } = require('./appointment-data')
 
 // /**
-//  * Get first unread event in a clinic
+//  * Get first unread appointment in a clinic
 //  */
-// const getFirstUnreadEvent = (data, clinicId) => {
-//   return data.events.find(event =>
-//     event.clinicId === clinicId &&
-//     eligibleForReading(event) &&
-//     !event.reads?.length
+// const getFirstUnreadAppointment = (data, clinicId) => {
+//   return data.appointments.find(appointment =>
+//     appointment.clinicId === clinicId &&
+//     eligibleForReading(appointment) &&
+//     !appointment.reads?.length
 //   ) || null
 // }
 
 // /**
-//  * Get first unread event from first available clinic
+//  * Get first unread appointment from first available clinic
 //  */
-// const getFirstUnreadEventOverall = (data) => {
+// const getFirstUnreadAppointmentOverall = (data) => {
 //   const firstClinic = getFirstAvailableClinic(data)
 //   if (!firstClinic) return null
 
-//   return getFirstUnreadEvent(data, firstClinic.id)
+//   return getFirstUnreadAppointment(data, firstClinic.id)
 // }
 
 /************************************************************************
-// Single event
+// Single appointment
 //***********************************************************************
 
 /**
- * Get reading metadata for an event
- * @param {Object} event - The event to check
+ * Get reading metadata for an appointment
+ * @param {Object} appointment - The appointment to check
  * @returns {Object} Object with reading metadata
  */
-const getReadingMetadata = (event) => {
+const getReadingMetadata = (appointment) => {
   // Get all reads from the imageReading structure
-  const reads = event.imageReading?.reads
-    ? Object.values(event.imageReading.reads)
+  const reads = appointment.imageReading?.reads
+    ? Object.values(appointment.imageReading.reads)
     : []
   const readerIds = reads.map((read) => read.readerId)
   const uniqueReaderCount = new Set(readerIds).size
@@ -64,17 +64,17 @@ const getReadingMetadata = (event) => {
 }
 
 /**
- * Get all reads for an event as an ordered array
+ * Get all reads for an appointment as an ordered array
  * Sorted by readNumber if available, otherwise by timestamp
- * @param {Object} event - The event to get reads for
+ * @param {Object} appointment - The appointment to get reads for
  * @returns {Array} Array of read objects sorted by read order
  */
-const getReadsAsArray = function (event) {
-  if (!event?.imageReading?.reads) {
+const getReadsAsArray = function (appointment) {
+  if (!appointment?.imageReading?.reads) {
     return []
   }
 
-  return Object.values(event.imageReading.reads).sort((a, b) => {
+  return Object.values(appointment.imageReading.reads).sort((a, b) => {
     // Sort by readNumber if both have it
     if (a.readNumber && b.readNumber) {
       return a.readNumber - b.readNumber
@@ -85,21 +85,21 @@ const getReadsAsArray = function (event) {
 }
 
 /**
- * Save a user's reading for an event, and remove the event from the reading
+ * Save a user's reading for an appointment, and remove the appointment from the reading
  * session's skipped list if present
  *
- * Builds a new imageReading object and saves it through updateEventData
- * rather than mutating the event - event records are shared read-only data.
+ * Builds a new imageReading object and saves it through updateAppointmentData
+ * rather than mutating the appointment - appointment records are shared read-only data.
  *
- * @param {object} event - The event to update
+ * @param {object} appointment - The appointment to update
  * @param {string} userId - User ID
  * @param {object} reading - Reading data to save
  * @param {object} data - Session data
  * @param {string | null} [sessionId] - Reading session ID (if in session context)
  */
-const writeReading = (event, userId, reading, data, sessionId = null) => {
+const writeReading = (appointment, userId, reading, data, sessionId = null) => {
   // Work on a clone so the shared record is never touched in place
-  const imageReading = structuredClone(event.imageReading || {})
+  const imageReading = structuredClone(appointment.imageReading || {})
   if (!imageReading.reads) {
     imageReading.reads = {}
   }
@@ -118,57 +118,57 @@ const writeReading = (event, userId, reading, data, sessionId = null) => {
     timestamp: new Date().toISOString()
   }
 
-  // Saves to the event and mirrors into data.event if it matches
-  updateEventData(data, event.id, { imageReading })
+  // Saves to the appointment and mirrors into data.appointment if it matches
+  updateAppointmentData(data, appointment.id, { imageReading })
 
   // Note the episode deliberately stays in `reading`. Two opinions and a
   // computed outcome is not a confirmed result, and there is no step in the
   // app that confirms one yet - see advanceEpisodeForReadingOutcome in
   // app/lib/utils/episodes.js, which is what that step should call.
 
-  // If we have session context, remove this event from skipped events
+  // If we have session context, remove this appointment from skipped appointments
   // (readingSessions is per-session working data, so in-place edits are fine)
   if (sessionId && data.readingSessions?.[sessionId]) {
     const session = data.readingSessions[sessionId]
 
-    // Remove event from skipped list if present
-    const skippedIndex = session.skippedEvents.indexOf(event.id)
+    // Remove appointment from skipped list if present
+    const skippedIndex = session.skippedAppointments.indexOf(appointment.id)
     if (skippedIndex !== -1) {
-      session.skippedEvents.splice(skippedIndex, 1)
+      session.skippedAppointments.splice(skippedIndex, 1)
     }
   }
 }
 
 /************************************************************************
-// Multiple events
+// Multiple appointments
 //***********************************************************************
 
 /**
- * Enhance events with pre-calculated reading metadata
- * @param {Array} events - Array of events to enhance
+ * Enhance appointments with pre-calculated reading metadata
+ * @param {Array} appointments - Array of appointments to enhance
  * @param {Array} participants - Array of participants for lookups
  * @param {string} userId - Current user ID
- * @returns {Array} Enhanced events with pre-calculated metadata
+ * @returns {Array} Enhanced appointments with pre-calculated metadata
  */
-const enhanceEventsWithReadingData = (events, participants, userId) => {
+const enhanceAppointmentsWithReadingData = (appointments, participants, userId) => {
   // Create a lookup map for participants
   const participantMap = new Map(participants.map((p) => [p.id, p]))
 
-  // Enhanced events with pre-calculated metadata
-  return events.map((event) => {
+  // Enhanced appointments with pre-calculated metadata
+  return appointments.map((appointment) => {
     // Calculate metadata once
-    const metadata = getReadingMetadata(event)
+    const metadata = getReadingMetadata(appointment)
 
     return {
-      ...event,
-      participant: participantMap.get(event.participantId),
+      ...appointment,
+      participant: participantMap.get(appointment.participantId),
       readStatus:
         metadata.readCount > 0 ? `Read (${metadata.readCount})` : 'Not read',
       tagColor: getStatusTagColour(
         metadata.readCount > 0 ? 'read' : 'not_read'
       ),
       readingMetadata: metadata,
-      canUserRead: canUserReadEvent(event, userId)
+      canUserRead: canUserReadAppointment(appointment, userId)
     }
   })
 }
@@ -176,21 +176,21 @@ const enhanceEventsWithReadingData = (events, participants, userId) => {
 /**
  * Calculate core reading metrics used for both status and progress tracking
  *
- * @param {Array} events - Array of events to analyze
+ * @param {Array} appointments - Array of appointments to analyze
  * @param {string | null} userId - User ID for user-specific metrics
- * @param {Array} [skippedEvents] - Array of skipped event IDs
+ * @param {Array} [skippedAppointments] - Array of skipped appointment IDs
  * @returns {object} Core metrics object
  */
 const calculateReadingMetrics = function (
-  events,
+  appointments,
   userId = null,
-  skippedEvents = []
+  skippedAppointments = []
 ) {
   // Get user ID and settings from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
   const settings = this?.ctx?.data?.settings || {}
 
-  if (!events || events.length === 0) {
+  if (!appointments || appointments.length === 0) {
     return {
       total: 0,
       firstReadCount: 0,
@@ -211,34 +211,34 @@ const calculateReadingMetrics = function (
       userCanRead: false,
       awaitingPriorsCount: 0,
       userAwaitingPriorsCount: 0,
-      skippedCount: skippedEvents?.length || 0
+      skippedCount: skippedAppointments?.length || 0
     }
   }
 
-  // Count first reads (events with at least one read)
-  const firstReadCount = events.filter(hasReads).length
+  // Count first reads (appointments with at least one read)
+  const firstReadCount = appointments.filter(hasReads).length
   const completedCount = firstReadCount // For compatibility with current usage
 
-  // Count second reads (events with at least two different readers)
-  const secondReadCount = events.filter((event) => {
-    const metadata = getReadingMetadata(event)
+  // Count second reads (appointments with at least two different readers)
+  const secondReadCount = appointments.filter((appointment) => {
+    const metadata = getReadingMetadata(appointment)
     return metadata.uniqueReaderCount >= 2
   }).length
 
-  // Count events that are ready for second read (have first read but not second)
-  const secondReadReady = events.filter((event) => {
-    const metadata = getReadingMetadata(event)
+  // Count appointments that are ready for second read (have first read but not second)
+  const secondReadReady = appointments.filter((appointment) => {
+    const metadata = getReadingMetadata(appointment)
     return metadata.readCount === 1 // Exactly one read means ready for second
   }).length
 
-  // Count events needing arbitration (policy-aware via getOutcome)
-  const arbitrationCount = events.filter(
-    (event) => getOutcome(event, settings) === 'arbitration_pending'
+  // Count appointments needing arbitration (policy-aware via getOutcome)
+  const arbitrationCount = appointments.filter(
+    (appointment) => getOutcome(appointment, settings) === 'arbitration_pending'
   ).length
 
-  // Global awaiting priors count (events with any outstanding prior request)
-  const awaitingPriorsCount = events.filter((event) =>
-    awaitingPriors(event)
+  // Global awaiting priors count (appointments with any outstanding prior request)
+  const awaitingPriorsCount = appointments.filter((appointment) =>
+    awaitingPriors(appointment)
   ).length
 
   // User-specific counts
@@ -251,16 +251,16 @@ const calculateReadingMetrics = function (
   let userSecondReadableCount = 0
 
   if (currentUserId) {
-    // Events this user has read
-    userReadCount = events.filter((event) =>
-      userHasReadEvent(event, currentUserId)
+    // Appointments this user has read
+    userReadCount = appointments.filter((appointment) =>
+      userHasReadAppointment(appointment, currentUserId)
     ).length
 
     // Count first/second reads by this user
-    events.forEach((event) => {
-      const metadata = getReadingMetadata(event)
-      const reads = event.imageReading?.reads
-        ? Object.values(event.imageReading.reads)
+    appointments.forEach((appointment) => {
+      const metadata = getReadingMetadata(appointment)
+      const reads = appointment.imageReading?.reads
+        ? Object.values(appointment.imageReading.reads)
         : []
 
       // Find reads by this user
@@ -280,46 +280,46 @@ const calculateReadingMetrics = function (
       }
     })
 
-    // Events where this user has an outstanding priors request
-    userAwaitingPriorsCount = events.filter(
-      (event) =>
-        awaitingPriors(event) && userRequestedPriors(event, currentUserId)
+    // Appointments where this user has an outstanding priors request
+    userAwaitingPriorsCount = appointments.filter(
+      (appointment) =>
+        awaitingPriors(appointment) && userRequestedPriors(appointment, currentUserId)
     ).length
 
-    // Events this user can read
-    userReadableCount = events.filter((event) =>
-      canUserReadEvent(event, currentUserId)
+    // Appointments this user can read
+    userReadableCount = appointments.filter((appointment) =>
+      canUserReadAppointment(appointment, currentUserId)
     ).length
 
-    // Events needing first read that this user can read
-    userFirstReadableCount = filterEventsByNeedsFirstRead(events).filter(
-      (event) => canUserReadEvent(event, currentUserId)
+    // Appointments needing first read that this user can read
+    userFirstReadableCount = filterAppointmentsByNeedsFirstRead(appointments).filter(
+      (appointment) => canUserReadAppointment(appointment, currentUserId)
     ).length
 
-    // Events needing second read that this user can read
-    userSecondReadableCount = filterEventsByNeedsSecondRead(events).filter(
-      (event) => canUserReadEvent(event, currentUserId)
+    // Appointments needing second read that this user can read
+    userSecondReadableCount = filterAppointmentsByNeedsSecondRead(appointments).filter(
+      (appointment) => canUserReadAppointment(appointment, currentUserId)
     ).length
 
-    // Events where this user has an outstanding prior request
-    userAwaitingPriorsCount = events.filter((event) =>
-      userRequestedPriors(event, currentUserId)
+    // Appointments where this user has an outstanding prior request
+    userAwaitingPriorsCount = appointments.filter((appointment) =>
+      userRequestedPriors(appointment, currentUserId)
     ).length
   }
 
   return {
-    total: events.length,
+    total: appointments.length,
     firstReadCount,
-    firstReadRemaining: events.length - firstReadCount,
+    firstReadRemaining: appointments.length - firstReadCount,
     secondReadCount,
-    secondReadRemaining: events.length - secondReadCount,
+    secondReadRemaining: appointments.length - secondReadCount,
     secondReadReady,
     arbitrationCount,
     completedCount,
-    daysSinceScreening: events[0]
+    daysSinceScreening: appointments[0]
       ? dayjs()
           .startOf('day')
-          .diff(dayjs(events[0].timing.startTime).startOf('day'), 'days')
+          .diff(dayjs(appointments[0].timing.startTime).startOf('day'), 'days')
       : 0,
     // User-specific counts
     userReadCount,
@@ -333,27 +333,27 @@ const calculateReadingMetrics = function (
     // Awaiting priors
     awaitingPriorsCount,
     userAwaitingPriorsCount,
-    // Skipped events
-    skippedCount: skippedEvents?.length || 0
+    // Skipped appointments
+    skippedCount: skippedAppointments?.length || 0
   }
 }
 
 /**
- * Get detailed reading status for a group of events
+ * Get detailed reading status for a group of appointments
  *
- * @param {Array} events - Array of events to analyze
+ * @param {Array} appointments - Array of appointments to analyze
  * @param {string | null} [userId] - Optional user ID (defaults to current user if available)
  * @returns {object} Detailed reading status
  */
-const getReadingStatusForEvents = function (events, userId = null) {
+const getReadingStatusForAppointments = function (appointments, userId = null) {
   // Get metrics from base calculation function
-  const metrics = calculateReadingMetrics(events, userId)
+  const metrics = calculateReadingMetrics(appointments, userId)
 
-  // If no events, return basic metrics with default status
-  if (!events || events.length === 0) {
+  // If no appointments, return basic metrics with default status
+  if (!appointments || appointments.length === 0) {
     return {
       ...metrics,
-      status: 'no_events',
+      status: 'no_appointments',
       statusColor: 'grey'
     }
   }
@@ -363,7 +363,7 @@ const getReadingStatusForEvents = function (events, userId = null) {
 
   if (metrics.firstReadCount === 0) {
     status = 'not_started'
-  } else if (metrics.firstReadCount < events.length) {
+  } else if (metrics.firstReadCount < appointments.length) {
     if (metrics.secondReadCount > 0) {
       status = 'mixed_reads'
     } else {
@@ -371,7 +371,7 @@ const getReadingStatusForEvents = function (events, userId = null) {
     }
   } else if (metrics.secondReadCount === 0) {
     status = 'first_read_complete'
-  } else if (metrics.secondReadCount < events.length) {
+  } else if (metrics.secondReadCount < appointments.length) {
     status = 'partial_second_read'
   } else {
     status = 'complete'
@@ -385,69 +385,69 @@ const getReadingStatusForEvents = function (events, userId = null) {
 }
 
 /**
- * Get progress through reading a set of events
+ * Get progress through reading a set of appointments
  * Enhanced to include user-specific navigation
  *
- * @param {Array} events - Array of events to track progress through
- * @param {string} currentEventId - ID of current event
- * @param {Array} skippedEvents - Array of event IDs that have been skipped
+ * @param {Array} appointments - Array of appointments to track progress through
+ * @param {string} currentAppointmentId - ID of current appointment
+ * @param {Array} skippedAppointments - Array of appointment IDs that have been skipped
  * @param {string} [userId] - Optional user ID (defaults to current user if available)
  * @returns {object} Progress information
  */
 const getReadingProgress = function (
-  events,
-  currentEventId,
-  skippedEvents = [],
+  appointments,
+  currentAppointmentId,
+  skippedAppointments = [],
   userId = null
 ) {
   // Get base metrics
-  const metrics = calculateReadingMetrics(events, userId, skippedEvents)
+  const metrics = calculateReadingMetrics(appointments, userId, skippedAppointments)
 
   // Get user ID from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  // Find current event index
-  const currentIndex = events.findIndex((e) => e.id === currentEventId)
+  // Find current appointment index
+  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
 
   // Basic sequential navigation
-  const nextEvent = getNextEvent(events, currentEventId, false)
-  const previousEvent = getPreviousEvent(events, currentEventId, false)
+  const nextAppointment = getNextAppointmentInList(appointments, currentAppointmentId, false)
+  const previousAppointment = getPreviousAppointmentInList(appointments, currentAppointmentId, false)
 
-  // Get events needing any reads (first or second)
-  const readableEvents = filterEventsByNeedsAnyRead(events)
+  // Get appointments needing any reads (first or second)
+  const readableAppointments = filterAppointmentsByNeedsAnyRead(appointments)
 
   // Find next/previous of each type
-  const nextReadableEvent =
+  const nextReadableAppointment =
     currentIndex !== -1
-      ? getNextEvent(readableEvents, currentEventId, true)
+      ? getNextAppointmentInList(readableAppointments, currentAppointmentId, true)
       : null
-  const previousReadableEvent =
+  const previousReadableAppointment =
     currentIndex !== -1
-      ? getPreviousEvent(readableEvents, currentEventId, true)
+      ? getPreviousAppointmentInList(readableAppointments, currentAppointmentId, true)
       : null
 
-  // For user-specific navigation, get events this user can read or has read
-  let userNavigableEvents = events
+  // For user-specific navigation, get appointments this user can read or has read
+  let userNavigableAppointments = appointments
   if (currentUserId) {
-    userNavigableEvents = filterEventsByUserCanReadOrHasRead(
-      events,
+    userNavigableAppointments = filterAppointmentsByUserCanReadOrHasRead(
+      appointments,
       currentUserId
     )
   }
 
-  // Find next/previous user-readable events if userId provided
-  let nextUserReadableEvent = null
-  let previousUserReadableEvent = null
+  // Find next/previous user-readable appointments if userId provided
+  let nextUserReadableAppointment = null
+  let previousUserReadableAppointment = null
 
   if (currentUserId && currentIndex !== -1) {
-    nextUserReadableEvent = getNextEvent(
-      userNavigableEvents,
-      currentEventId,
+    nextUserReadableAppointment = getNextAppointmentInList(
+      userNavigableAppointments,
+      currentAppointmentId,
       true
     )
-    previousUserReadableEvent = getPreviousEvent(
-      userNavigableEvents,
-      currentEventId,
+    previousUserReadableAppointment = getPreviousAppointmentInList(
+      userNavigableAppointments,
+      currentAppointmentId,
       true
     )
   }
@@ -455,121 +455,121 @@ const getReadingProgress = function (
   return {
     ...metrics,
     current: currentIndex + 1,
-    // Event navigation
-    hasNext: !!nextEvent,
-    hasPrevious: !!previousEvent,
-    nextEventId: nextEvent?.id || null,
-    previousEventId: previousEvent?.id || null,
-    hasNextReadableEvent: !!nextReadableEvent,
-    hasPreviousReadableEvent: !!previousReadableEvent,
-    nextReadableEventId: nextReadableEvent?.id || null,
-    previousReadableEventId: previousReadableEvent?.id || null,
+    // Appointment navigation
+    hasNext: !!nextAppointment,
+    hasPrevious: !!previousAppointment,
+    nextAppointmentId: nextAppointment?.id || null,
+    previousAppointmentId: previousAppointment?.id || null,
+    hasNextReadableAppointment: !!nextReadableAppointment,
+    hasPreviousReadableAppointment: !!previousReadableAppointment,
+    nextReadableAppointmentId: nextReadableAppointment?.id || null,
+    previousReadableAppointmentId: previousReadableAppointment?.id || null,
     // User-specific navigation
-    hasNextUserReadable: !!nextUserReadableEvent,
-    hasPreviousUserReadable: !!previousUserReadableEvent,
-    nextUserReadableId: nextUserReadableEvent?.id || null,
-    previousUserReadableId: previousUserReadableEvent?.id || null,
-    // Whether user has already read the previous/next event (for review page links)
-    previousUserHasRead: previousUserReadableEvent
-      ? userHasReadEvent(previousUserReadableEvent, currentUserId)
+    hasNextUserReadable: !!nextUserReadableAppointment,
+    hasPreviousUserReadable: !!previousUserReadableAppointment,
+    nextUserReadableId: nextUserReadableAppointment?.id || null,
+    previousUserReadableId: previousUserReadableAppointment?.id || null,
+    // Whether user has already read the previous/next appointment (for review page links)
+    previousUserHasRead: previousUserReadableAppointment
+      ? userHasReadAppointment(previousUserReadableAppointment, currentUserId)
       : false,
-    nextUserHasRead: nextUserReadableEvent
-      ? userHasReadEvent(nextUserReadableEvent, currentUserId)
+    nextUserHasRead: nextUserReadableAppointment
+      ? userHasReadAppointment(nextUserReadableAppointment, currentUserId)
       : false,
-    // Skipped events
-    skippedEvents,
-    isCurrentSkipped: skippedEvents.includes(currentEventId),
-    nextEventSkipped: nextEvent ? skippedEvents.includes(nextEvent.id) : false,
-    previousEventSkipped: previousEvent
-      ? skippedEvents.includes(previousEvent.id)
+    // Skipped appointments
+    skippedAppointments,
+    isCurrentSkipped: skippedAppointments.includes(currentAppointmentId),
+    nextAppointmentSkipped: nextAppointment ? skippedAppointments.includes(nextAppointment.id) : false,
+    previousAppointmentSkipped: previousAppointment
+      ? skippedAppointments.includes(previousAppointment.id)
       : false
   }
 }
 
 // /**
-//  * Get progress through reading a set of events
+//  * Get progress through reading a set of appointments
 //  * Enhanced to include user-specific navigation
-//  * @param {Array} events - Array of events to track progress through
-//  * @param {string} currentEventId - ID of current event
-//  * @param {Array} skippedEvents - Array of event IDs that have been skipped
+//  * @param {Array} appointments - Array of appointments to track progress through
+//  * @param {string} currentAppointmentId - ID of current appointment
+//  * @param {Array} skippedAppointments - Array of appointment IDs that have been skipped
 //  * @param {string} [userId=null] - Optional user ID (defaults to current user if available)
 //  * @returns {Object} Progress information
 //  */
-// const getReadingProgress = function(events, currentEventId, skippedEvents = [], userId = null) {
+// const getReadingProgress = function(appointments, currentAppointmentId, skippedAppointments = [], userId = null) {
 //   // Get user ID from context if not provided and we're in a template context
 //   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id);
 
-//   const currentIndex = events.findIndex(e => e.id === currentEventId);
+//   const currentIndex = appointments.findIndex(e => e.id === currentAppointmentId);
 
-//   // Get complete events count
-//   const completedCount = events.filter(hasReads).length;
+//   // Get complete appointments count
+//   const completedCount = appointments.filter(hasReads).length;
 
 //   // Basic sequential navigation
-//   const nextEvent = getNextEvent(events, currentEventId, false);
-//   const previousEvent = getPreviousEvent(events, currentEventId, false);
+//   const nextAppointment = getNextAppointmentInList(appointments, currentAppointmentId, false);
+//   const previousAppointment = getPreviousAppointmentInList(appointments, currentAppointmentId, false);
 
-//   // Get events needing any reads (first or second)
-//   const readableEvents = filterEventsByNeedsAnyRead(events);
+//   // Get appointments needing any reads (first or second)
+//   const readableAppointments = filterAppointmentsByNeedsAnyRead(appointments);
 
 //   // Find next/previous of each type
-//   const nextReadableEvent = currentIndex !== -1 ?
-//     getNextEvent(readableEvents, currentEventId, true) : null;
-//   const previousReadableEvent = currentIndex !== -1 ?
-//     getPreviousEvent(readableEvents, currentEventId, true) : null;
+//   const nextReadableAppointment = currentIndex !== -1 ?
+//     getNextAppointmentInList(readableAppointments, currentAppointmentId, true) : null;
+//   const previousReadableAppointment = currentIndex !== -1 ?
+//     getPreviousAppointmentInList(readableAppointments, currentAppointmentId, true) : null;
 
-//   // For user-specific navigation, get events this user can read or has read
-//   let userNavigableEvents = events;
+//   // For user-specific navigation, get appointments this user can read or has read
+//   let userNavigableAppointments = appointments;
 //   if (currentUserId) {
-//     userNavigableEvents = filterEventsByUserCanReadOrHasRead(events, currentUserId);
+//     userNavigableAppointments = filterAppointmentsByUserCanReadOrHasRead(appointments, currentUserId);
 //   }
 
-//   // Find next/previous user-readable events if userId provided
-//   let nextUserReadableEvent = null;
-//   let previousUserReadableEvent = null;
+//   // Find next/previous user-readable appointments if userId provided
+//   let nextUserReadableAppointment = null;
+//   let previousUserReadableAppointment = null;
 
 //   if (currentUserId && currentIndex !== -1) {
-//     nextUserReadableEvent = getNextEvent(userNavigableEvents, currentEventId, true);
-//     previousUserReadableEvent = getPreviousEvent(userNavigableEvents, currentEventId, true);
+//     nextUserReadableAppointment = getNextAppointmentInList(userNavigableAppointments, currentAppointmentId, true);
+//     previousUserReadableAppointment = getPreviousAppointmentInList(userNavigableAppointments, currentAppointmentId, true);
 //   }
 
 //   return {
 //     current: currentIndex + 1,
-//     total: events.length,
+//     total: appointments.length,
 //     completed: completedCount,
-//     // Event navigation
-//     hasNext: !!nextEvent,
-//     hasPrevious: !!previousEvent,
-//     nextEventId: nextEvent?.id || null,
-//     previousEventId: previousEvent?.id || null,
-//     hasNextReadableEvent: !!nextReadableEvent,
-//     hasPreviousReadableEvent: !!previousReadableEvent,
-//     nextReadableEventId: nextReadableEvent?.id || null,
-//     previousReadableEventId: previousReadableEvent?.id || null,
+//     // Appointment navigation
+//     hasNext: !!nextAppointment,
+//     hasPrevious: !!previousAppointment,
+//     nextAppointmentId: nextAppointment?.id || null,
+//     previousAppointmentId: previousAppointment?.id || null,
+//     hasNextReadableAppointment: !!nextReadableAppointment,
+//     hasPreviousReadableAppointment: !!previousReadableAppointment,
+//     nextReadableAppointmentId: nextReadableAppointment?.id || null,
+//     previousReadableAppointmentId: previousReadableAppointment?.id || null,
 //     // User-specific navigation
-//     hasNextUserReadable: !!nextUserReadableEvent,
-//     hasPreviousUserReadable: !!previousUserReadableEvent,
-//     nextUserReadableId: nextUserReadableEvent?.id || null,
-//     previousUserReadableId: previousUserReadableEvent?.id || null,
-//     // Skipped events
-//     skippedCount: skippedEvents.length,
-//     skippedEvents,
-//     isCurrentSkipped: skippedEvents.includes(currentEventId),
-//     nextEventSkipped: nextEvent ? skippedEvents.includes(nextEvent.id) : false,
-//     previousEventSkipped: previousEvent ? skippedEvents.includes(previousEvent.id) : false
+//     hasNextUserReadable: !!nextUserReadableAppointment,
+//     hasPreviousUserReadable: !!previousUserReadableAppointment,
+//     nextUserReadableId: nextUserReadableAppointment?.id || null,
+//     previousUserReadableId: previousUserReadableAppointment?.id || null,
+//     // Skipped appointments
+//     skippedCount: skippedAppointments.length,
+//     skippedAppointments,
+//     isCurrentSkipped: skippedAppointments.includes(currentAppointmentId),
+//     nextAppointmentSkipped: nextAppointment ? skippedAppointments.includes(nextAppointment.id) : false,
+//     previousAppointmentSkipped: previousAppointment ? skippedAppointments.includes(previousAppointment.id) : false
 //   };
 // };
 
 // /**
-//  * Get detailed reading status for a group of events
-//  * @param {Array} events - Array of events to analyze
+//  * Get detailed reading status for a group of appointments
+//  * @param {Array} appointments - Array of appointments to analyze
 //  * @param {string} [userId=null] - Optional user ID (defaults to current user if available)
 //  * @returns {Object} Detailed reading status
 //  */
-// const getReadingStatusForEvents = function(events, userId = null) {
+// const getReadingStatusForAppointments = function(appointments, userId = null) {
 //   // Get user ID from context if not provided and we're in a template context
 //   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id);
 
-//   if (!events || events.length === 0) {
+//   if (!appointments || appointments.length === 0) {
 //     return {
 //       total: 0,
 //       firstReadCount: 0,
@@ -578,7 +578,7 @@ const getReadingProgress = function (
 //       secondReadRemaining: 0,
 //       secondReadReady: 0,
 //       arbitrationCount: 0,
-//       status: 'no_events',
+//       status: 'no_appointments',
 //       statusColor: 'grey',
 //       // User-specific counts
 //       userReadCount: 0,
@@ -590,24 +590,24 @@ const getReadingProgress = function (
 //     };
 //   }
 
-//   // Count first reads (events with at least one read)
-//   const firstReadCount = events.filter(hasReads).length;
+//   // Count first reads (appointments with at least one read)
+//   const firstReadCount = appointments.filter(hasReads).length;
 
-//   // Count second reads (events with at least two different readers)
-//   const secondReadCount = events.filter(event => {
-//     const metadata = getReadingMetadata(event);
+//   // Count second reads (appointments with at least two different readers)
+//   const secondReadCount = appointments.filter(appointment => {
+//     const metadata = getReadingMetadata(appointment);
 //     return metadata.uniqueReaderCount >= 2;
 //   }).length;
 
-//   // Count events that are ready for second read (have first read but not second)
-//   const secondReadReady = events.filter(event => {
-//     const metadata = getReadingMetadata(event);
+//   // Count appointments that are ready for second read (have first read but not second)
+//   const secondReadReady = appointments.filter(appointment => {
+//     const metadata = getReadingMetadata(appointment);
 //     return metadata.readCount === 1; // Exactly one read means ready for second
 //   }).length;
 
-//   // Count events needing arbitration (still track this for informational purposes)
-//   const arbitrationCount = events.filter(event => {
-//     const metadata = getReadingMetadata(event);
+//   // Count appointments needing arbitration (still track this for informational purposes)
+//   const arbitrationCount = appointments.filter(appointment => {
+//     const metadata = getReadingMetadata(appointment);
 //     return metadata.needsArbitration;
 //   }).length;
 
@@ -620,13 +620,13 @@ const getReadingProgress = function (
 //   let userSecondReadableCount = 0;
 
 //   if (currentUserId) {
-//     // Events this user has read
-//     userReadCount = events.filter(event => userHasReadEvent(event, currentUserId)).length;
+//     // Appointments this user has read
+//     userReadCount = appointments.filter(appointment => userHasReadAppointment(appointment, currentUserId)).length;
 
 //     // Count first/second reads by this user
-//     events.forEach(event => {
-//       const metadata = getReadingMetadata(event);
-//       const reads = event.imageReading?.reads ? Object.values(event.imageReading.reads) : [];
+//     appointments.forEach(appointment => {
+//       const metadata = getReadingMetadata(appointment);
+//       const reads = appointment.imageReading?.reads ? Object.values(appointment.imageReading.reads) : [];
 
 //       // Find reads by this user
 //       const userReads = reads.filter(read => read.readerId === currentUserId);
@@ -645,16 +645,16 @@ const getReadingProgress = function (
 //       }
 //     });
 
-//     // Events this user can read
-//     userReadableCount = events.filter(event => canUserReadEvent(event, currentUserId)).length;
+//     // Appointments this user can read
+//     userReadableCount = appointments.filter(appointment => canUserReadAppointment(appointment, currentUserId)).length;
 
-//     // Events needing first read that this user can read
-//     userFirstReadableCount = filterEventsByNeedsFirstRead(events)
-//       .filter(event => canUserReadEvent(event, currentUserId)).length;
+//     // Appointments needing first read that this user can read
+//     userFirstReadableCount = filterAppointmentsByNeedsFirstRead(appointments)
+//       .filter(appointment => canUserReadAppointment(appointment, currentUserId)).length;
 
-//     // Events needing second read that this user can read
-//     userSecondReadableCount = filterEventsByNeedsSecondRead(events)
-//       .filter(event => canUserReadEvent(event, currentUserId)).length;
+//     // Appointments needing second read that this user can read
+//     userSecondReadableCount = filterAppointmentsByNeedsSecondRead(appointments)
+//       .filter(appointment => canUserReadAppointment(appointment, currentUserId)).length;
 //   }
 
 //   // Determine detailed status based on read counts
@@ -662,7 +662,7 @@ const getReadingProgress = function (
 
 //   if (firstReadCount === 0) {
 //     status = 'not_started';
-//   } else if (firstReadCount < events.length) {
+//   } else if (firstReadCount < appointments.length) {
 //     if (secondReadCount > 0) {
 //       status = 'mixed_reads';
 //     } else {
@@ -670,24 +670,24 @@ const getReadingProgress = function (
 //     }
 //   } else if (secondReadCount === 0) {
 //     status = 'first_read_complete';
-//   } else if (secondReadCount < events.length) {
+//   } else if (secondReadCount < appointments.length) {
 //     status = 'partial_second_read';
 //   } else {
 //     status = 'complete';
 //   }
 
 //   return {
-//     total: events.length,
+//     total: appointments.length,
 //     firstReadCount,
-//     firstReadRemaining: events.length - firstReadCount,
+//     firstReadRemaining: appointments.length - firstReadCount,
 //     secondReadCount,
-//     secondReadRemaining: events.length - secondReadCount,
-//     secondReadReady, // Events ready for immediate second read
+//     secondReadRemaining: appointments.length - secondReadCount,
+//     secondReadReady, // Appointments ready for immediate second read
 //     arbitrationCount,
 //     status,
 //     statusColor: getStatusTagColour(status),
-//     daysSinceScreening: events[0] ?
-//       dayjs().startOf('day').diff(dayjs(events[0].timing.startTime).startOf('day'), 'days') : 0,
+//     daysSinceScreening: appointments[0] ?
+//       dayjs().startOf('day').diff(dayjs(appointments[0].timing.startTime).startOf('day'), 'days') : 0,
 //     // User-specific counts
 //     userReadCount,
 //     userFirstReadCount,
@@ -702,17 +702,17 @@ const getReadingProgress = function (
 // Add this to app/lib/utils/reading.js
 
 /**
- * Sort events by screening date (oldest first)
+ * Sort appointments by screening date (oldest first)
  *
- * @param {Array} events - Array of events to sort
- * @returns {Array} Sorted events array
+ * @param {Array} appointments - Array of appointments to sort
+ * @returns {Array} Sorted appointments array
  */
-const sortEventsByScreeningDate = (events) => {
-  if (!events || !Array.isArray(events) || events.length === 0) {
+const sortAppointmentsByScreeningDate = (appointments) => {
+  if (!appointments || !Array.isArray(appointments) || appointments.length === 0) {
     return []
   }
 
-  return [...events].sort(
+  return [...appointments].sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
 }
@@ -722,7 +722,7 @@ const sortEventsByScreeningDate = (events) => {
 //***********************************************************************
 
 /**
- * Get the first clinic that still has events needing reads
+ * Get the first clinic that still has appointments needing reads
  *
  * @param {object} data - Session data
  * @returns {object | null} First clinic with remaining reads, or null
@@ -744,20 +744,20 @@ const getReadingClinics = (data, options = {}) => {
 
   return data.clinics
     .filter((clinic) =>
-      data.events.some((e) => e.clinicId === clinic.id && eligibleForReading(e))
+      data.appointments.some((e) => e.clinicId === clinic.id && eligibleForReading(e))
     )
     .map((clinic) => {
       const unit = data.breastScreeningUnits.find(
         (u) => u.id === clinic.breastScreeningUnitId
       )
       const location = unit.locations.find((l) => l.id === clinic.locationId)
-      const events = getReadableEventsForClinic(data, clinic.id)
+      const appointments = getReadableAppointmentsForClinic(data, clinic.id)
 
       return {
         ...clinic,
         unit,
         location,
-        readingStatus: getReadingStatusForEvents(events, data.currentUser.id)
+        readingStatus: getReadingStatusForAppointments(appointments, data.currentUser.id)
       }
     })
     .sort((a, b) => new Date(a.id) - new Date(b.id)) // Some clinics share the same date so sort first by a unique ID to keep consistent sort
@@ -765,27 +765,27 @@ const getReadingClinics = (data, options = {}) => {
 }
 
 /**
- * Get readable events for a clinic with pre-calculated metadata
+ * Get readable appointments for a clinic with pre-calculated metadata
  *
- * @param {object} data - Session data containing events, participants, etc.
- * @param {string} clinicId - ID of the clinic to get events for
- * @returns {Array} Events with enhanced metadata
+ * @param {object} data - Session data containing appointments, participants, etc.
+ * @param {string} clinicId - ID of the clinic to get appointments for
+ * @returns {Array} Appointments with enhanced metadata
  */
-const getReadableEventsForClinic = (data, clinicId) => {
-  // Filter eligible events for this clinic
-  const eligibleEvents = data.events.filter(
-    (event) => event.clinicId === clinicId && eligibleForReading(event)
+const getReadableAppointmentsForClinic = (data, clinicId) => {
+  // Filter eligible appointments for this clinic
+  const eligibleAppointments = data.appointments.filter(
+    (appointment) => appointment.clinicId === clinicId && eligibleForReading(appointment)
   )
 
-  // Enhance the events with reading metadata
-  const enhancedEvents = enhanceEventsWithReadingData(
-    eligibleEvents,
+  // Enhance the appointments with reading metadata
+  const enhancedAppointments = enhanceAppointmentsWithReadingData(
+    eligibleAppointments,
     data.participants,
     data.currentUser?.id
   )
 
   // Sort by appointment time
-  return enhancedEvents.sort(
+  return enhancedAppointments.sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
 }
@@ -796,128 +796,128 @@ const getReadableEventsForClinic = (data, clinicId) => {
 
 
 /**
- * Filter events that are eligible for reading
- * @param {Array} events - All events
- * @returns {Array} Events eligible for reading
+ * Filter appointments that are eligible for reading
+ * @param {Array} appointments - All appointments
+ * @returns {Array} Appointments eligible for reading
  */
-const filterEventsByEligibleForReading = (events) => {
-  return events.filter((event) => eligibleForReading(event))
+const filterAppointmentsByEligibleForReading = (appointments) => {
+  return appointments.filter((appointment) => eligibleForReading(appointment))
 }
 
 /**
- * Filter events that need any read (first or second)
+ * Filter appointments that need any read (first or second)
  *
- * @param {Array} events - Events to filter
- * @param {number} maxReadsPerEvent - Number of reads required to be complete (default: 2)
- * @returns {Array} Events needing any read
+ * @param {Array} appointments - Appointments to filter
+ * @param {number} maxReadsPerAppointment - Number of reads required to be complete (default: 2)
+ * @returns {Array} Appointments needing any read
  */
-const filterEventsByNeedsAnyRead = (events, maxReadsPerEvent = 2) => {
-  return events.filter((event) => {
-    const metadata = getReadingMetadata(event)
-    return metadata.uniqueReaderCount < maxReadsPerEvent
+const filterAppointmentsByNeedsAnyRead = (appointments, maxReadsPerAppointment = 2) => {
+  return appointments.filter((appointment) => {
+    const metadata = getReadingMetadata(appointment)
+    return metadata.uniqueReaderCount < maxReadsPerAppointment
   })
 }
 
 /**
- * Filter events that need a first read
+ * Filter appointments that need a first read
  *
- * @param {Array} events - Events to filter
- * @returns {Array} Events needing first read
+ * @param {Array} appointments - Appointments to filter
+ * @returns {Array} Appointments needing first read
  */
-const filterEventsByNeedsFirstRead = (events) => {
-  return events.filter((event) => needsFirstRead(event))
+const filterAppointmentsByNeedsFirstRead = (appointments) => {
+  return appointments.filter((appointment) => needsFirstRead(appointment))
 }
 
 /**
- * Filter events that need a second read
+ * Filter appointments that need a second read
  *
- * @param {Array} events - Events to filter
- * @returns {Array} Events needing second read
+ * @param {Array} appointments - Appointments to filter
+ * @returns {Array} Appointments needing second read
  */
-const filterEventsByNeedsSecondRead = (events) => {
-  return events.filter((event) => needsSecondRead(event))
+const filterAppointmentsByNeedsSecondRead = (appointments) => {
+  return appointments.filter((appointment) => needsSecondRead(appointment))
 }
 
 /**
- * Filter events that are fully read (have all required reads)
+ * Filter appointments that are fully read (have all required reads)
  *
- * @param {Array} events - Events to filter
+ * @param {Array} appointments - Appointments to filter
  * @param {number} requiredReads - Number of required reads (default: 2)
- * @returns {Array} Fully read events
+ * @returns {Array} Fully read appointments
  */
-const filterEventsByFullyRead = (events, requiredReads = 2) => {
-  return events.filter((event) => {
-    const metadata = getReadingMetadata(event)
+const filterAppointmentsByFullyRead = (appointments, requiredReads = 2) => {
+  return appointments.filter((appointment) => {
+    const metadata = getReadingMetadata(appointment)
     return metadata.uniqueReaderCount >= requiredReads
   })
 }
 
 /**
- * Filter events that a specific user can read
+ * Filter appointments that a specific user can read
  *
- * @param {Array} events - Events to filter
+ * @param {Array} appointments - Appointments to filter
  * @param {string} userId - User ID
- * @returns {Array} Events user can read
+ * @returns {Array} Appointments user can read
  */
-const filterEventsByUserCanRead = (events, userId) => {
-  return events.filter((event) => canUserReadEvent(event, userId))
+const filterAppointmentsByUserCanRead = (appointments, userId) => {
+  return appointments.filter((appointment) => canUserReadAppointment(appointment, userId))
 }
 
 /**
- * Filter events that user can read or has already read
+ * Filter appointments that user can read or has already read
  *
- * @param {Array} events - Array of events to filter
+ * @param {Array} appointments - Array of appointments to filter
  * @param {string} userId - User ID to check
  * @param {object} [options] - Options for determining eligibility
- * @returns {Array} Events user can read or has read
+ * @returns {Array} Appointments user can read or has read
  *
- *   Priarily to support navigating backwards through events
+ *   Priarily to support navigating backwards through appointments
  */
-const filterEventsByUserCanReadOrHasRead = (events, userId, options = {}) => {
-  const { maxReadsPerEvent = 2 } = options
+const filterAppointmentsByUserCanReadOrHasRead = (appointments, userId, options = {}) => {
+  const { maxReadsPerAppointment = 2 } = options
 
-  return events.filter((event) => {
-    const metadata = getReadingMetadata(event)
+  return appointments.filter((appointment) => {
+    const metadata = getReadingMetadata(appointment)
 
-    // Include if user has already read this event
-    if (userHasReadEvent(event, userId)) {
+    // Include if user has already read this appointment
+    if (userHasReadAppointment(appointment, userId)) {
       return true
     }
 
-    // Include if event isn't fully read and user can read it
-    if (metadata.uniqueReaderCount < maxReadsPerEvent) {
+    // Include if appointment isn't fully read and user can read it
+    if (metadata.uniqueReaderCount < maxReadsPerAppointment) {
       return true
     }
 
-    // Exclude events that are fully read by other users
+    // Exclude appointments that are fully read by other users
     return false
   })
 }
 
 /**
- * Filter events for a specific clinic
+ * Filter appointments for a specific clinic
  *
- * @param {Array} events - All events
+ * @param {Array} appointments - All appointments
  * @param {string} clinicId - Clinic ID
- * @returns {Array} Events for the clinic
+ * @returns {Array} Appointments for the clinic
  */
-const filterEventsByClinic = (events, clinicId) => {
-  return events.filter((event) => event.clinicId === clinicId)
+const filterAppointmentsByClinic = (appointments, clinicId) => {
+  return appointments.filter((appointment) => appointment.clinicId === clinicId)
 }
 
 /**
- * Filter events that are within a specific day range
+ * Filter appointments that are within a specific day range
  *
- * @param {Array} events - Events to filter
+ * @param {Array} appointments - Appointments to filter
  * @param {number} minDays - Minimum days old (inclusive)
  * @param {number | null} [maxDays] - Maximum days old (inclusive), if null, no upper bound
- * @returns {Array} Events within the specified day range
+ * @returns {Array} Appointments within the specified day range
  */
-const filterEventsByDayRange = (events, minDays, maxDays = null) => {
-  if (!events || !Array.isArray(events)) return []
+const filterAppointmentsByDayRange = (appointments, minDays, maxDays = null) => {
+  if (!appointments || !Array.isArray(appointments)) return []
 
-  return events.filter((event) =>
-    isWithinDayRange(event.timing.startTime, minDays, maxDays)
+  return appointments.filter((appointment) =>
+    isWithinDayRange(appointment.timing.startTime, minDays, maxDays)
   )
 }
 
@@ -926,54 +926,54 @@ const filterEventsByDayRange = (events, minDays, maxDays = null) => {
 //***********************************************************************
 
 /**
- * Get the first event from an array
- * @param {Array} events - Array of events
- * @returns {Object|null} First event or null
+ * Get the first appointment from an array
+ * @param {Array} appointments - Array of appointments
+ * @returns {Object|null} First appointment or null
  */
-const getFirstEvent = (events) => {
-  return events.length > 0 ? events[0] : null
+const getFirstAppointmentInList = (appointments) => {
+  return appointments.length > 0 ? appointments[0] : null
 }
 
 /**
- * Get the next event after a specific event
+ * Get the next appointment after a specific appointment
  *
- * @param {Array} events - Array of events
- * @param {string} currentEventId - Current event ID
+ * @param {Array} appointments - Array of appointments
+ * @param {string} currentAppointmentId - Current appointment ID
  * @param {boolean} wrap - Whether to wrap around to start if at end
- * @returns {object | null} Next event or null
+ * @returns {object | null} Next appointment or null
  */
-const getNextEvent = (events, currentEventId, wrap = true) => {
-  const currentIndex = events.findIndex((e) => e.id === currentEventId)
+const getNextAppointmentInList = (appointments, currentAppointmentId, wrap = true) => {
+  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
   if (currentIndex === -1) return null
 
-  // Next event exists
-  if (currentIndex < events.length - 1) {
-    return events[currentIndex + 1]
+  // Next appointment exists
+  if (currentIndex < appointments.length - 1) {
+    return appointments[currentIndex + 1]
   }
 
-  // Wrap around to first event
-  return wrap && events.length > 0 ? events[0] : null
+  // Wrap around to first appointment
+  return wrap && appointments.length > 0 ? appointments[0] : null
 }
 
 /**
- * Get the previous event before a specific event
+ * Get the previous appointment before a specific appointment
  *
- * @param {Array} events - Array of events
- * @param {string} currentEventId - Current event ID
+ * @param {Array} appointments - Array of appointments
+ * @param {string} currentAppointmentId - Current appointment ID
  * @param {boolean} wrap - Whether to wrap around to end if at start
- * @returns {object | null} Previous event or null
+ * @returns {object | null} Previous appointment or null
  */
-const getPreviousEvent = (events, currentEventId, wrap = true) => {
-  const currentIndex = events.findIndex((e) => e.id === currentEventId)
+const getPreviousAppointmentInList = (appointments, currentAppointmentId, wrap = true) => {
+  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
   if (currentIndex === -1) return null
 
-  // Previous event exists
+  // Previous appointment exists
   if (currentIndex > 0) {
-    return events[currentIndex - 1]
+    return appointments[currentIndex - 1]
   }
 
-  // Wrap around to last event
-  return wrap && events.length > 0 ? events[events.length - 1] : null
+  // Wrap around to last appointment
+  return wrap && appointments.length > 0 ? appointments[appointments.length - 1] : null
 }
 
 /************************************************************************
@@ -981,90 +981,90 @@ const getPreviousEvent = (events, currentEventId, wrap = true) => {
 /***********************************************************************/
 
 /**
- * Get the read object for a specific user on an event
+ * Get the read object for a specific user on an appointment
  *
- * @param {object} event - The event to check
+ * @param {object} appointment - The appointment to check
  * @param {string | null} [userId] - User ID (falls back to current user from context)
  * @returns {object | null} The read object, or null if not found
  */
-const getReadForUser = function (event, userId = null) {
+const getReadForUser = function (appointment, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
   if (!currentUserId) {
     return null
   }
 
-  return event.imageReading?.reads?.[currentUserId] || null
+  return appointment.imageReading?.reads?.[currentUserId] || null
 }
 
 /**
- * Get first event from an array that a user can read
+ * Get first appointment from an array that a user can read
  *
- * @param {Array} events - Array of events to search
+ * @param {Array} appointments - Array of appointments to search
  * @param {string | null} userId - User ID to check for
- * @returns {object | null} First event user can read or null if none
+ * @returns {object | null} First appointment user can read or null if none
  */
-const getFirstUserReadableEvent = function (events, userId = null) {
+const getFirstUserReadableAppointment = function (appointments, userId = null) {
   // Get user ID from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  const readableEvents = filterEventsByUserCanRead(events, currentUserId)
-  return readableEvents.length > 0 ? readableEvents[0] : null
+  const readableAppointments = filterAppointmentsByUserCanRead(appointments, currentUserId)
+  return readableAppointments.length > 0 ? readableAppointments[0] : null
 }
 
 /**
- * Get the next event the user can read after the current event, wrapping to start if needed
+ * Get the next appointment the user can read after the current appointment, wrapping to start if needed
  *
- * @param {Array} events - Array of all events
- * @param {string} currentEventId - ID of the current event
+ * @param {Array} appointments - Array of all appointments
+ * @param {string} currentAppointmentId - ID of the current appointment
  * @param {string | null} [userId] - User ID (falls back to current user from context)
- * @returns {object | null} Next readable event, or null if none
+ * @returns {object | null} Next readable appointment, or null if none
  */
-const getNextUserReadableEvent = function (
-  events,
-  currentEventId,
+const getNextUserReadableAppointment = function (
+  appointments,
+  currentAppointmentId,
   userId = null,
   options = {}
 ) {
   const { wrap = true } = options
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-  const currentIndex = events.findIndex((e) => e.id === currentEventId)
-  const eventsFromNext = wrap
-    ? [...events.slice(currentIndex + 1), ...events.slice(0, currentIndex)]
-    : events.slice(currentIndex + 1)
-  return getFirstUserReadableEvent(eventsFromNext, currentUserId)
+  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
+  const appointmentsFromNext = wrap
+    ? [...appointments.slice(currentIndex + 1), ...appointments.slice(0, currentIndex)]
+    : appointments.slice(currentIndex + 1)
+  return getFirstUserReadableAppointment(appointmentsFromNext, currentUserId)
 }
 
 /**
- * Get the event the user should resume reading from.
+ * Get the appointment the user should resume reading from.
  *
  * Finds the furthest point the user has reached by looking at the highest-index
- * event they have either read or that has been skipped in the batch. Returns
- * the first readable event after that position, wrapping to the start if needed.
+ * appointment they have either read or that has been skipped in the batch. Returns
+ * the first readable appointment after that position, wrapping to the start if needed.
  *
  * Using position (index) rather than timestamps lets us account for skipped
- * events, which have no timestamps. (perhaps they should do)
+ * appointments, which have no timestamps. (perhaps they should do)
  *
- * Falls back to getFirstUserReadableEvent if the user has no reads or skips yet.
+ * Falls back to getFirstUserReadableAppointment if the user has no reads or skips yet.
  *
- * @param {Array} events - Array of all events in the session, in session order
+ * @param {Array} appointments - Array of all appointments in the session, in session order
  * @param {string | null} [userId] - User ID (falls back to current user from context)
- * @param {Array} [skippedEvents] - Array of skipped event IDs from the session
- * @returns {object | null} The event to resume from, or null if nothing to read
+ * @param {Array} [skippedAppointments] - Array of skipped appointment IDs from the session
+ * @returns {object | null} The appointment to resume from, or null if nothing to read
  */
-const getResumeEventForUser = function (
-  events,
+const getResumeAppointmentForUser = function (
+  appointments,
   userId = null,
-  skippedEvents = []
+  skippedAppointments = []
 ) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  // Find the highest-index event the user has read or that has been skipped
+  // Find the highest-index appointment the user has read or that has been skipped
   let lastActedIndex = -1
 
-  events.forEach((event, index) => {
-    const wasReadByUser = !!event.imageReading?.reads?.[currentUserId]
-    const wasSkipped = skippedEvents.includes(event.id)
+  appointments.forEach((appointment, index) => {
+    const wasReadByUser = !!appointment.imageReading?.reads?.[currentUserId]
+    const wasSkipped = skippedAppointments.includes(appointment.id)
     if (wasReadByUser || wasSkipped) {
       lastActedIndex = index
     }
@@ -1072,15 +1072,15 @@ const getResumeEventForUser = function (
 
   // Nothing acted on yet — fall back to first readable
   if (lastActedIndex === -1) {
-    return getFirstUserReadableEvent(events, currentUserId)
+    return getFirstUserReadableAppointment(appointments, currentUserId)
   }
 
-  // Search for the first readable event after lastActedIndex, wrapping around
-  const eventsFromNext = [
-    ...events.slice(lastActedIndex + 1),
-    ...events.slice(0, lastActedIndex + 1)
+  // Search for the first readable appointment after lastActedIndex, wrapping around
+  const appointmentsFromNext = [
+    ...appointments.slice(lastActedIndex + 1),
+    ...appointments.slice(0, lastActedIndex + 1)
   ]
-  return getFirstUserReadableEvent(eventsFromNext, currentUserId)
+  return getFirstUserReadableAppointment(appointmentsFromNext, currentUserId)
 }
 
 /************************************************************************
@@ -1088,38 +1088,38 @@ const getResumeEventForUser = function (
 //***********************************************************************
 
 /**
- * Check if a user has already read an event
- * @param {Object} event - The event to check
+ * Check if a user has already read an appointment
+ * @param {Object} appointment - The appointment to check
  * @param {string} userId - User ID to check
- * @returns {boolean} Whether the user has read this event
+ * @returns {boolean} Whether the user has read this appointment
  */
-const userHasReadEvent = function (event, userId) {
+const userHasReadAppointment = function (appointment, userId) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
   if (!currentUserId) {
     console.warn(
-      'userHasReadEvent: No userId provided and no context available'
+      'userHasReadAppointment: No userId provided and no context available'
     )
     return false
   }
 
-  return !!getReadForUser(event, currentUserId)
+  return !!getReadForUser(appointment, currentUserId)
 }
 
 /**
  * Get reads from other users (not the current user)
- * @param {Object} event - The event to check
+ * @param {Object} appointment - The appointment to check
  * @param {string} userId - Current user ID to exclude
  * @returns {Array} Array of read objects from other users
  */
-const getOtherReads = function (event, userId = null) {
+const getOtherReads = function (appointment, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  if (!event?.imageReading?.reads) {
+  if (!appointment?.imageReading?.reads) {
     return []
   }
 
-  return Object.entries(event.imageReading.reads)
+  return Object.entries(appointment.imageReading.reads)
     .filter(([readerId]) => readerId !== currentUserId)
     .map(([readerId, read]) => ({
       ...read,
@@ -1213,7 +1213,7 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
 }
 
 /**
- * Compute the overall outcome for an event based on its reads and site policy.
+ * Compute the overall outcome for an appointment based on its reads and site policy.
  *
  * Outcomes:
  * - 'not_read'             — no reads yet
@@ -1223,16 +1223,16 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
  *                          — concordant outcome (or resolved by an arbitration read)
  *
  * Note: outcome is computed on demand, not persisted. If you need to filter or
- * report by outcome at scale, consider writing it to event.imageReading.outcome at
+ * report by outcome at scale, consider writing it to appointment.imageReading.outcome at
  * save-opinion time.
  *
- * @param {object} event - The event
+ * @param {object} appointment - The appointment
  * @param {object} [settings] - Site settings object (data.settings)
  * @returns {string} Outcome key
  */
-const getOutcome = function (event, settings = null) {
+const getOutcome = function (appointment, settings = null) {
   const resolvedSettings = settings || this?.ctx?.data?.settings || {}
-  const reads = getReadsAsArray(event)
+  const reads = getReadsAsArray(appointment)
 
   if (reads.length === 0) return 'not_read'
   if (reads.length === 1) return 'pending_second_read'
@@ -1257,14 +1257,14 @@ const getOutcome = function (event, settings = null) {
  * Returns false if user is first reader, or if both opinions are normal.
  * Otherwise returns comparison info including discordance and arbitration flags.
  *
- * @param {object} event - The event being read
+ * @param {object} appointment - The appointment being read
  * @param {object} secondReadData - The second reader's data (imageReadingTemp or a read object)
  * @param {string} [userId] - Current user ID (optional, falls back to context)
  * @param {object} [settings] - Site settings (optional, falls back to context)
  * @returns {false | object} False if no comparison needed, else comparison info
  */
 const getComparisonInfo = function (
-  event,
+  appointment,
   secondReadData,
   userId = null,
   settings = null
@@ -1279,7 +1279,7 @@ const getComparisonInfo = function (
       : secondReadData
 
   // Get the first read (from other users)
-  const otherReads = getOtherReads.call(this, event, currentUserId)
+  const otherReads = getOtherReads.call(this, appointment, currentUserId)
 
   // No first read exists - user is first reader
   if (otherReads.length === 0) {
@@ -1328,14 +1328,14 @@ const getComparisonInfo = function (
  *   (i.e. whenever getComparisonInfo returns a result — current behaviour)
  * - 'discordant_only': only show when the two reads are discordant
  *
- * @param {object} event - The event being read
+ * @param {object} appointment - The appointment being read
  * @param {object} secondReadData - The second reader's data (imageReadingTemp or read object)
  * @param {string} [userId] - Current user ID (optional, falls back to context)
  * @param {object} [settings] - Site settings (optional, falls back to context)
  * @returns {boolean}
  */
 const shouldShowComparePage = function (
-  event,
+  appointment,
   secondReadData,
   userId = null,
   settings = null
@@ -1345,7 +1345,7 @@ const shouldShowComparePage = function (
 
   const comparisonInfo = getComparisonInfo.call(
     this,
-    event,
+    appointment,
     secondReadData,
     currentUserId,
     resolvedSettings
@@ -1367,54 +1367,54 @@ const shouldShowComparePage = function (
 }
 
 /**
- * Check if current user can read an event
+ * Check if current user can read an appointment
  *
- * @param {object} event - The event to check
+ * @param {object} appointment - The appointment to check
  * @param {string | null} userId - Current user ID
  * @param {object} [options] - Options for determining eligibility
- * @returns {boolean} Whether the current user can read this event
+ * @returns {boolean} Whether the current user can read this appointment
  */
 /**
- * Check if an event has been deferred from reading
+ * Check if an appointment has been deferred from reading
  *
- * @param {object} event - The event to check
- * @returns {boolean} Whether the event has been deferred
+ * @param {object} appointment - The appointment to check
+ * @returns {boolean} Whether the appointment has been deferred
  */
-const isDeferred = (event) => {
-  return !!event?.imageReading?.deferral?.deferredAt
+const isDeferred = (appointment) => {
+  return !!appointment?.imageReading?.deferral?.deferredAt
 }
 
-const canUserReadEvent = function (event, userId = null, options = {}) {
-  const { maxReadsPerEvent = 2 } = options
+const canUserReadAppointment = function (appointment, userId = null, options = {}) {
+  const { maxReadsPerAppointment = 2 } = options
 
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
   if (!currentUserId) {
     console.warn(
-      'canUserReadEvent: No userId provided and no context available'
+      'canUserReadAppointment: No userId provided and no context available'
     )
     return false
   }
 
-  // Can't read if event is awaiting priors
-  if (awaitingPriors(event)) {
+  // Can't read if appointment is awaiting priors
+  if (awaitingPriors(appointment)) {
     return false
   }
 
-  // Can't read if event has been deferred
-  if (isDeferred(event)) {
+  // Can't read if appointment has been deferred
+  if (isDeferred(appointment)) {
     return false
   }
 
-  const metadata = getReadingMetadata(event)
+  const metadata = getReadingMetadata(appointment)
 
   // If we already have enough unique readers, no more reads needed
-  if (metadata.uniqueReaderCount >= maxReadsPerEvent) {
+  if (metadata.uniqueReaderCount >= maxReadsPerAppointment) {
     return false
   }
 
   // User can't read if they've already read it
-  if (userHasReadEvent(event, currentUserId)) {
+  if (userHasReadAppointment(appointment, currentUserId)) {
     return false
   }
 
@@ -1422,43 +1422,43 @@ const canUserReadEvent = function (event, userId = null, options = {}) {
 }
 
 /**
- * Check if an event has any reads
+ * Check if an appointment has any reads
  *
- * @param {object} event - The event to check
- * @returns {boolean} Whether the event has any reads
+ * @param {object} appointment - The appointment to check
+ * @returns {boolean} Whether the appointment has any reads
  */
-const hasReads = (event) => {
+const hasReads = (appointment) => {
   return (
-    event.imageReading?.reads &&
-    Object.keys(event.imageReading.reads).length > 0
+    appointment.imageReading?.reads &&
+    Object.keys(appointment.imageReading.reads).length > 0
   )
 }
 
 /**
- * Check if an event needs a first read
+ * Check if an appointment needs a first read
  *
- * @param {object} event - The event to check
+ * @param {object} appointment - The appointment to check
  * @returns {boolean} Whether a first read is needed
  */
-const needsFirstRead = (event) => {
-  return !hasReads(event)
+const needsFirstRead = (appointment) => {
+  return !hasReads(appointment)
 }
 
 /**
- * Check if an event needs a second read
+ * Check if an appointment needs a second read
  */
-const needsSecondRead = (event) => {
-  const metadata = getReadingMetadata(event)
+const needsSecondRead = (appointment) => {
+  const metadata = getReadingMetadata(appointment)
   return metadata.firstReadComplete && !metadata.secondReadComplete
 }
 
 /**
- * Check if an event needs arbitration.
+ * Check if an appointment needs arbitration.
  * Policy-aware: reads arbitrationPolicy from Nunjucks context if available.
  */
-const needsArbitration = function (event) {
+const needsArbitration = function (appointment) {
   const settings = this?.ctx?.data?.settings || {}
-  return getOutcome(event, settings) === 'arbitration_pending'
+  return getOutcome(appointment, settings) === 'arbitration_pending'
 }
 
 /************************************************************************
@@ -1466,21 +1466,21 @@ const needsArbitration = function (event) {
 //***********************************************************************
 
 /**
- * Check if an event is a complex case
+ * Check if an appointment is a complex case
  *
- * @param {object} event - The event to check
- * @returns {boolean} Whether the event is a complex case
+ * @param {object} appointment - The appointment to check
+ * @returns {boolean} Whether the appointment is a complex case
  */
-const isComplexCase = (event) => {
-  const hasSymptoms = event?.medicalInformation?.symptoms?.length > 0
+const isComplexCase = (appointment) => {
+  const hasSymptoms = appointment?.medicalInformation?.symptoms?.length > 0
   const hasAdditionalImages =
-    event?.mammogramData?.metadata?.hasAdditionalImages
+    appointment?.mammogramData?.metadata?.hasAdditionalImages
   const isImperfect =
-    event?.mammogramData?.isImperfectButBestPossible?.includes?.('yes')
+    appointment?.mammogramData?.isImperfectButBestPossible?.includes?.('yes')
   const isIncomplete =
-    event?.mammogramData?.isIncompleteMammography?.includes?.('yes')
+    appointment?.mammogramData?.isIncompleteMammography?.includes?.('yes')
   const hasImplants =
-    event?.medicalInformation?.medicalHistory?.breastImplantsAugmentation
+    appointment?.medicalInformation?.medicalHistory?.breastImplantsAugmentation
       ?.length > 0
 
   return (
@@ -1493,74 +1493,74 @@ const isComplexCase = (event) => {
 }
 
 /**
- * Get eligible event candidates for a session based on its type and filters
+ * Get eligible appointment candidates for a session based on its type and filters
  * Shared between createReadingSession and topUpSession to ensure consistent selection
  *
  * @param {object} data - Session data
  * @param {object} sessionOptions - Session options ({ type, clinicId, filters })
- * @returns {Array} Eligible events sorted oldest-first
+ * @returns {Array} Eligible appointments sorted oldest-first
  */
 const getEligibleCandidatesForSession = (data, sessionOptions) => {
   const { type = 'custom', clinicId, filters = {} } = sessionOptions
   const currentUserId = data.currentUser.id
 
-  let events = data.events.filter((event) => eligibleForReading(event))
+  let appointments = data.appointments.filter((appointment) => eligibleForReading(appointment))
 
   if (type === 'clinic') {
     if (!clinicId)
       throw new Error('Clinic ID is required for clinic-type sessions')
-    events = filterEventsByClinic(events, clinicId)
+    appointments = filterAppointmentsByClinic(appointments, clinicId)
   } else {
-    // 1. Filter to events the user can read (unless overridden)
+    // 1. Filter to appointments the user can read (unless overridden)
     if (filters.userCanRead !== false) {
-      events = filterEventsByUserCanRead(events, currentUserId)
+      appointments = filterAppointmentsByUserCanRead(appointments, currentUserId)
     }
 
     // 2. Apply awaiting priors filter
     if (type === 'awaiting_priors') {
-      events = events.filter((event) => awaitingPriors(event))
+      appointments = appointments.filter((appointment) => awaitingPriors(appointment))
     } else if (!filters.includeAwaitingPriors) {
-      events = events.filter((event) => !awaitingPriors(event))
+      appointments = appointments.filter((appointment) => !awaitingPriors(appointment))
     }
 
     // 3. Symptoms filter
     if (filters.hasSymptoms) {
-      events = events.filter(
-        (event) => event?.medicalInformation?.symptoms?.length > 0
+      appointments = appointments.filter(
+        (appointment) => appointment?.medicalInformation?.symptoms?.length > 0
       )
     }
 
     // 4. Complex case filter
     if (filters.complexOnly) {
-      events = events.filter(isComplexCase)
+      appointments = appointments.filter(isComplexCase)
     }
   }
 
   // Apply read type filters
   switch (type) {
     case 'first_reads':
-      events = filterEventsByNeedsFirstRead(events)
+      appointments = filterAppointmentsByNeedsFirstRead(appointments)
       break
     case 'second_reads':
-      events = filterEventsByNeedsSecondRead(events)
+      appointments = filterAppointmentsByNeedsSecondRead(appointments)
       break
     case 'all_reads':
     case 'awaiting_priors':
-      events = filterEventsByNeedsAnyRead(events)
+      appointments = filterAppointmentsByNeedsAnyRead(appointments)
       break
   }
 
   // Sort oldest first
-  return [...events].sort(
+  return [...appointments].sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
 }
 
 /**
- * Create a session of events for reading based on specified criteria
+ * Create a session of appointments for reading based on specified criteria
  *
  * When lazy sessions are enabled (settings.reading.lazySessions), non-clinic sessions
- * start with only the first eligible event. The session is topped up one event at a
+ * start with only the first eligible appointment. The session is topped up one appointment at a
  * time via topUpSession() as reads and skips happen, until targetSize is reached.
  *
  * @param {object} data - Session data
@@ -1591,7 +1591,7 @@ const createReadingSession = (data, options) => {
     parseInt(data.settings?.reading?.defaultSessionSize) || 25
   const targetSize = limit !== null ? parseInt(limit) : settingsTargetSize
 
-  // Lazy loading: start with only the first event and top up as reads happen
+  // Lazy loading: start with only the first appointment and top up as reads happen
   // Clinic sessions are always fully populated upfront
   // Explicit lazy param overrides the setting
   const lazyEnabled =
@@ -1606,29 +1606,29 @@ const createReadingSession = (data, options) => {
   })
 
   // Cap to target size
-  const cappedEvents =
+  const cappedAppointments =
     targetSize > 0 && allCandidates.length > targetSize
       ? allCandidates.slice(0, targetSize)
       : allCandidates
 
-  // Lazy sessions start with only the first event
-  const initialEvents =
-    isLazy && cappedEvents.length > 0 ? [cappedEvents[0]] : cappedEvents
+  // Lazy sessions start with only the first appointment
+  const initialAppointments =
+    isLazy && cappedAppointments.length > 0 ? [cappedAppointments[0]] : cappedAppointments
 
-  // Clinic sessions have no fixed target — their size is however many eligible events exist
-  const sessionTargetSize = type === 'clinic' ? cappedEvents.length : targetSize
+  // Clinic sessions have no fixed target — their size is however many eligible appointments exist
+  const sessionTargetSize = type === 'clinic' ? cappedAppointments.length : targetSize
 
   // Create and store the session
   const session = {
     id: finalSessionId,
     name: name || getDefaultSessionName(type, clinicId, data),
     type,
-    events: initialEvents,
-    eventIds: initialEvents.map((e) => e.id),
+    appointments: initialAppointments,
+    appointmentIds: initialAppointments.map((e) => e.id),
     targetSize: sessionTargetSize,
     clinicId,
     createdAt: new Date().toISOString(),
-    skippedEvents: [],
+    skippedAppointments: [],
     filters: {
       ...filters
     }
@@ -1727,61 +1727,61 @@ const getOrCreateClinicSession = (data, clinicId) => {
 }
 
 /**
- * Get the first event in a session that a user can read
+ * Get the first appointment in a session that a user can read
  *
  * @param {object} data - Session data
  * @param {string} sessionId - Session ID
  * @param {string | null} [userId] - User ID (defaults to current user)
- * @returns {object | null} First readable event or null if none found
+ * @returns {object | null} First readable appointment or null if none found
  */
-const getFirstReadableEventInSession = (data, sessionId, userId = null) => {
+const getFirstReadableAppointmentInSession = (data, sessionId, userId = null) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return null
 
   const currentUserId = userId || data.currentUser.id
 
-  // Get all events for the session
-  const sessionEvents = session.eventIds
-    .map((eventId) => data.events.find((e) => e.id === eventId))
+  // Get all appointments for the session
+  const sessionAppointments = session.appointmentIds
+    .map((appointmentId) => data.appointments.find((e) => e.id === appointmentId))
     .filter(Boolean)
 
   // Find the first one the user can read
   return (
-    sessionEvents.find((event) => canUserReadEvent(event, currentUserId)) ||
+    sessionAppointments.find((appointment) => canUserReadAppointment(appointment, currentUserId)) ||
     null
   )
 }
 
 /**
- * Mark an event as skipped in a session
+ * Mark an appointment as skipped in a session
  *
  * @param {object} data - Session data
  * @param {string} sessionId - Session ID
- * @param {string} eventId - Event ID to mark as skipped
+ * @param {string} appointmentId - Appointment ID to mark as skipped
  * @returns {boolean} Whether the operation was successful
  */
-const skipEventInSession = (data, sessionId, eventId) => {
+const skipAppointmentInSession = (data, sessionId, appointmentId) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return false
 
-  // Check if event exists in this session
-  if (!session.eventIds.includes(eventId)) return false
+  // Check if appointment exists in this session
+  if (!session.appointmentIds.includes(appointmentId)) return false
 
   // Check if already skipped
-  if (session.skippedEvents.includes(eventId)) return true
+  if (session.skippedAppointments.includes(appointmentId)) return true
 
-  // Add to skipped events
-  session.skippedEvents.push(eventId)
+  // Add to skipped appointments
+  session.skippedAppointments.push(appointmentId)
   return true
 }
 
 /**
- * Add the next eligible event to a session if it is under its target size
+ * Add the next eligible appointment to a session if it is under its target size
  * Called after each read or skip to grow the session one case at a time
  *
  * @param {object} data - Session data
  * @param {string} sessionId - Session ID
- * @returns {boolean} Whether an event was added
+ * @returns {boolean} Whether an appointment was added
  */
 const topUpSession = (data, sessionId) => {
   const session = getReadingSession(data, sessionId)
@@ -1792,36 +1792,36 @@ const topUpSession = (data, sessionId) => {
 
   const currentUserId = data.currentUser?.id
 
-  // Count events that are still actionable for this user — events they have read,
-  // can still read, deferred, or awaiting priors. Events fully read by other readers
+  // Count appointments that are still actionable for this user — appointments they have read,
+  // can still read, deferred, or awaiting priors. Appointments fully read by other readers
   // ('dead' slots) are excluded so the session can be topped up to replace them.
-  const actionableCount = session.eventIds.filter((eventId) => {
-    const event = data.events.find((e) => e.id === eventId)
-    if (!event) return false
+  const actionableCount = session.appointmentIds.filter((appointmentId) => {
+    const appointment = data.appointments.find((e) => e.id === appointmentId)
+    if (!appointment) return false
     return (
-      userHasReadEvent(event, currentUserId) ||
-      canUserReadEvent(event, currentUserId) ||
-      isDeferred(event) ||
-      awaitingPriors(event)
+      userHasReadAppointment(appointment, currentUserId) ||
+      canUserReadAppointment(appointment, currentUserId) ||
+      isDeferred(appointment) ||
+      awaitingPriors(appointment)
     )
   }).length
 
   if (!session.targetSize || actionableCount >= session.targetSize) return false
 
-  // Exclude events already in this session to avoid duplicates. Events that
-  // are in other sessions are allowed — the same event can appear in multiple
-  // sessions and canUserReadEvent enforces that each user reads it at most once.
-  const alreadyInSession = new Set(session.eventIds)
+  // Exclude appointments already in this session to avoid duplicates. Appointments that
+  // are in other sessions are allowed — the same appointment can appear in multiple
+  // sessions and canUserReadAppointment enforces that each user reads it at most once.
+  const alreadyInSession = new Set(session.appointmentIds)
 
   // Get candidates using the same filters as at session creation
   const candidates = getEligibleCandidatesForSession(data, session).filter(
-    (event) => !alreadyInSession.has(event.id)
+    (appointment) => !alreadyInSession.has(appointment.id)
   )
 
   if (candidates.length === 0) return false
 
-  // Add the next eligible event
-  session.eventIds.push(candidates[0].id)
+  // Add the next eligible appointment
+  session.appointmentIds.push(candidates[0].id)
   return true
 }
 
@@ -1830,74 +1830,74 @@ const topUpSession = (data, sessionId) => {
  *
  * @param {object} data - Session data
  * @param {string} sessionId - Session ID
- * @param {string} currentEventId - Current event ID
+ * @param {string} currentAppointmentId - Current appointment ID
  * @param {string} [userId] - User ID (defaults to current user)
  * @returns {object} Reading progress information
  */
 const getSessionReadingProgress = (
   data,
   sessionId,
-  currentEventId,
+  currentAppointmentId,
   userId = null
 ) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return null
 
-  // Get all events for the session
-  const sessionEvents = session.eventIds
-    .map((eventId) => data.events.find((e) => e.id === eventId))
+  // Get all appointments for the session
+  const sessionAppointments = session.appointmentIds
+    .map((appointmentId) => data.appointments.find((e) => e.id === appointmentId))
     .filter(Boolean)
 
   // Use existing function for progress tracking, then add session-level size info
   const progress = getReadingProgress(
-    sessionEvents,
-    currentEventId,
-    session.skippedEvents,
+    sessionAppointments,
+    currentAppointmentId,
+    session.skippedAppointments,
     userId || data.currentUser.id
   )
 
-  const resolvedTargetSize = session.targetSize || sessionEvents.length
+  const resolvedTargetSize = session.targetSize || sessionAppointments.length
   const resolvedUserId = userId || data.currentUser.id
 
   // Work out how large this session can actually become right now once we
   // account for unclaimed eligible cases. This prevents showing "25 remaining"
   // when only (for example) 20 cases are available to read.
-  // Mirror the same exclusion used in topUpSession: only exclude events already
-  // in this session, not events in other sessions.
-  const alreadyInSession = new Set(session.eventIds)
+  // Mirror the same exclusion used in topUpSession: only exclude appointments already
+  // in this session, not appointments in other sessions.
+  const alreadyInSession = new Set(session.appointmentIds)
   const availableTopUpCount = getEligibleCandidatesForSession(
     data,
     session
-  ).filter((event) => !alreadyInSession.has(event.id)).length
+  ).filter((appointment) => !alreadyInSession.has(appointment.id)).length
 
-  // Dead events — fully read by other users and not actionable by this user.
+  // Dead appointments — fully read by other users and not actionable by this user.
   // They occupy session slots but can never be completed, so they don't count
-  // toward reachable size. topUpSession will replace them when events are read.
-  const deadCount = sessionEvents.filter((event) => {
+  // toward reachable size. topUpSession will replace them when appointments are read.
+  const deadCount = sessionAppointments.filter((appointment) => {
     return (
-      !userHasReadEvent(event, resolvedUserId) &&
-      !canUserReadEvent(event, resolvedUserId) &&
-      !isDeferred(event) &&
-      !awaitingPriors(event)
+      !userHasReadAppointment(appointment, resolvedUserId) &&
+      !canUserReadAppointment(appointment, resolvedUserId) &&
+      !isDeferred(appointment) &&
+      !awaitingPriors(appointment)
     )
   }).length
 
   const reachableSessionSize =
-    sessionEvents.length - deadCount + availableTopUpCount
+    sessionAppointments.length - deadCount + availableTopUpCount
   const effectiveTargetSize = Math.min(resolvedTargetSize, reachableSessionSize)
 
-  // Count deferred events so they count toward the session target
-  const deferredCount = sessionEvents.filter(isDeferred).length
+  // Count deferred appointments so they count toward the session target
+  const deferredCount = sessionAppointments.filter(isDeferred).length
 
   return {
     ...progress,
-    // How many events are currently loaded vs the overall target
-    populatedCount: sessionEvents.length,
+    // How many appointments are currently loaded vs the overall target
+    populatedCount: sessionAppointments.length,
     targetSize: resolvedTargetSize,
     effectiveTargetSize,
-    // Deferred events count as 'done' for session progress purposes
+    // Deferred appointments count as 'done' for session progress purposes
     deferredCount,
-    // Remaining reads against the target (not just currently loaded events)
+    // Remaining reads against the target (not just currently loaded appointments)
     targetRemaining: Math.max(
       0,
       effectiveTargetSize -
@@ -1909,53 +1909,53 @@ const getSessionReadingProgress = (
 }
 
 module.exports = {
-  // getFirstUnreadEvent,
-  // getFirstUnreadEventOverall,
+  // getFirstUnreadAppointment,
+  // getFirstUnreadAppointmentOverall,
 
-  // Single event
+  // Single appointment
   getReadingMetadata,
   areReadsDiscordant,
   willGoToArbitration,
   getOutcome,
   writeReading,
 
-  // Multiple events
-  enhanceEventsWithReadingData,
+  // Multiple appointments
+  enhanceAppointmentsWithReadingData,
   getReadingProgress,
-  getReadingStatusForEvents,
-  sortEventsByScreeningDate,
+  getReadingStatusForAppointments,
+  sortAppointmentsByScreeningDate,
 
   // Clinic stuff
   getFirstAvailableClinic,
   getReadingClinics,
-  getReadableEventsForClinic,
+  getReadableAppointmentsForClinic,
 
   // Filters
-  filterEventsByEligibleForReading,
-  filterEventsByNeedsAnyRead,
-  filterEventsByNeedsFirstRead,
-  filterEventsByNeedsSecondRead,
-  filterEventsByFullyRead,
-  filterEventsByUserCanRead,
-  filterEventsByUserCanReadOrHasRead,
-  filterEventsByClinic,
-  filterEventsByDayRange,
+  filterAppointmentsByEligibleForReading,
+  filterAppointmentsByNeedsAnyRead,
+  filterAppointmentsByNeedsFirstRead,
+  filterAppointmentsByNeedsSecondRead,
+  filterAppointmentsByFullyRead,
+  filterAppointmentsByUserCanRead,
+  filterAppointmentsByUserCanReadOrHasRead,
+  filterAppointmentsByClinic,
+  filterAppointmentsByDayRange,
   // Selector functions
-  getFirstEvent,
-  getNextEvent,
-  getPreviousEvent,
+  getFirstAppointmentInList,
+  getNextAppointmentInList,
+  getPreviousAppointmentInList,
   // User functions
   getReadForUser,
   getOtherReads,
   getComparisonInfo,
   shouldShowComparePage,
   getReadsAsArray,
-  getFirstUserReadableEvent,
-  getNextUserReadableEvent,
-  getResumeEventForUser,
+  getFirstUserReadableAppointment,
+  getNextUserReadableAppointment,
+  getResumeAppointmentForUser,
   // Booleans
-  userHasReadEvent,
-  canUserReadEvent,
+  userHasReadAppointment,
+  canUserReadAppointment,
   isDeferred,
   hasReads,
   needsArbitration,
@@ -1969,8 +1969,8 @@ module.exports = {
   generateSessionId,
   getReadingSession,
   getOrCreateClinicSession,
-  getFirstReadableEventInSession,
-  skipEventInSession,
+  getFirstReadableAppointmentInSession,
+  skipAppointmentInSession,
   topUpSession,
   getSessionReadingProgress
 }

@@ -20,7 +20,7 @@
       {# Assessment summary card #}
       {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
       {% if withImages %}
-        {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+        {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
         {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
       {% endif %}
 

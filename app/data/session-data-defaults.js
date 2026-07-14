@@ -30,7 +30,7 @@ if (!fs.existsSync(generatedDataPath)) {
 let generationInfo = {
   generatedAt: 'Never',
   seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
-  stats: { participants: 0, clinics: 0, events: 0, episodes: 0 }
+  stats: { participants: 0, clinics: 0, appointments: 0, episodes: 0 }
 }
 
 // Load generation info
@@ -76,7 +76,7 @@ if (needsRegeneration(generationInfo)) {
   require('../lib/data-store').reload()
 }
 
-// The generated collections (participants, clinics, events) are NOT loaded
+// The generated collections (participants, clinics, appointments) are NOT loaded
 // here: they live in the shared data store (app/lib/data-store.js) and are
 // attached to each request by middleware in app/routes.js, so they never get
 // copied into (or serialised with) sessions. Same for generationInfo.

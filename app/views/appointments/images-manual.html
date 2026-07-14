@@ -1,0 +1,186 @@
+{% extends 'layout-appointment.html' %}
+
+{% set showNavigation = true %}
+{% set hideBackLink = true %}
+{% set activeWorkflowStep = 'take-images' %}
+
+{% set pageHeading = "Manually record image information" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './images-manual-answer' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
+
+  {# Determine current room name #}
+  {% set currentRoomName = "" %}
+  {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
+  
+  {% if isMobileClinic %}
+    {# For mobile clinics, use the mobile unit name #}
+    {% set currentRoomName = clinic.location.name %}
+  {% else %}
+    {# For hospital clinics, look up the room from screening rooms #}
+    {% for room in data.screeningRooms %}
+      {% if room.id == data.currentScreeningRoom %}
+        {% set currentRoomName = room.displayName %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  {% if currentRoomName %}
+    <p>
+      Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ currentRoomName }}</span>.
+      {% if not isMobileClinic %}
+        <br><a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Change room or machine details</a>
+      {% endif %}
+    </p>
+
+    {{ appHiddenInput({
+      name: "appointment[mammogramDataTemp][machineRoom]",
+      value: currentRoomName
+    }) }}
+  {% else %}
+    <p>
+      <a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Select a room before continuing</a>
+    </p>
+  {% endif %}
+
+  <h2>Observations during mammogram</h2>
+  {{ button({
+    text: "Add breast features",
+    href: appointmentUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+    variant: "secondary",
+    small: true
+  }) }}
+
+  {# {{ radios({
+    name: "appointment[mammogramDataTemp][machineRoom]",
+    value: mammogramSource.machineRoom,
+    idPrefix: "machineRoom",
+    fieldset: {
+      legend: {
+        text: "Which room is imaging being done in?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Room A - machine XYZ",
+        text: "Room A - machine XYZ"
+      },
+      {
+        value: "Room B - machine ABC",
+        text: "Room B - machine ABC"
+      },
+      {
+        value: "Room C - machine DEF",
+        text: "Room C - machine DEF"
+      }
+    ]
+  }) }} #}
+
+  {# Show unscheduled-appointment setup details whenever the appointment is
+     being handled in manual image collection mode. The reason-for-switching
+     input is only shown when the user manually switched mid-appointment via
+     the troubleshooting link on the automatic images page (failover). #}
+  {% set isManualFailover = appointment.mammogramDataTemp.isManualFailover %}
+  {% set troubleshootingIssue = appointment.mammogramDataTemp.troubleshootingIssue %}
+  {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
+  {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
+  {% set showManualParticipantDetails = showWorklistMatchingContent or isManualFailover %}
+
+  {% if showManualParticipantDetails %}
+    <h2>Manually add participant details</h2>
+    <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
+    {{ summaryList({
+      rows: [
+        {
+          key: { html: "<span class='app-nowrap'>Accession number</span>" },
+          value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (appointment.accessionNumber | formatAccessionNumber) + '</span>' }
+        },
+        {
+          key: { text: "NHS number" },
+          value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>' }
+        },
+        {
+          key: { text: "First names" },
+          value: { text: participant | getFirstNames }
+        },
+        {
+          key: { text: "Last name" },
+          value: { text: participant.demographicInformation.lastName }
+        },
+        {
+          key: { text: "Date of birth" },
+          value: { text: participant.demographicInformation.dateOfBirth | formatDate }
+        }
+      ]
+    }) }}
+
+    {# {% if isManualFailover %}
+      {% call details({
+        summaryText: "Add reason for switching to manual"
+      }) %}
+        {{ textarea({
+          label: {
+            text: "Reason for switching to manual",
+            classes: "nhsuk-label--s"
+          },
+          id: "manualImageModeReason",
+          name: "appointment[mammogramDataTemp][manualImageModeReason]",
+          rows: 3,
+          value: mammogramSource.manualImageModeReason
+        }) }}
+      {% endcall %}
+    {% endif %} #}
+  {% endif %}
+
+  {{ radios({
+    idPrefix: "imagingComplete",
+    name: "appointment[mammogramDataTemp][isStandardSet]",
+    fieldset: {
+      legend: {
+        text: "Have you taken a standard set of images?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    value: mammogramSource.isStandardSet,
+    items: [
+      {
+        value: "yes",
+        text: "Yes, 2 CC and 2 MLO"
+      },
+      {
+        value: "custom",
+        text: "No, add other information",
+        hint: {
+          text: "Such as too few or additional images"
+        }
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "no",
+        text: "No images taken",
+        hint: {
+          text: "The appointment cannot proceed"
+        }
+      }
+    ]
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}

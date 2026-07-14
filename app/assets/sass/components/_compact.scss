@@ -272,15 +272,15 @@
     }
   }
 
-  .app-clinic-events-table {
+  .app-clinic-appointments-table {
     table-layout: fixed;
     width: 100%;
 
-    .app-clinic-events-table__time-column {
+    .app-clinic-appointments-table__time-column {
       width: 22%;
     }
 
-    .app-clinic-events-table__time-column .nhsuk-tag {
+    .app-clinic-appointments-table__time-column .nhsuk-tag {
       display: inline-block;
       max-width: 100%;
       white-space: nowrap;

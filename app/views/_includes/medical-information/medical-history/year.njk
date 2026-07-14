@@ -8,8 +8,8 @@
     text: yearText or "Year of procedure (optional)",
     size: "m"
   },
-  name: "event[medicalHistoryTemp][" ~ _yearFieldName ~ "]",
-  value: event.medicalHistoryTemp[_yearFieldName],
+  name: "appointment[medicalHistoryTemp][" ~ _yearFieldName ~ "]",
+  value: appointment.medicalHistoryTemp[_yearFieldName],
   id: _yearFieldName,
   classes: "nhsuk-input--width-10",
   hint: {
@@ -23,12 +23,12 @@
 
 {{ checkboxes({
   idPrefix: _yearApproximateFieldName,
-  name: "event[medicalHistoryTemp][" ~ _yearApproximateFieldName ~ "]",
+  name: "appointment[medicalHistoryTemp][" ~ _yearApproximateFieldName ~ "]",
   items: [
     {
       value: "yes",
       text: "This date is approximate",
-      checked: true if event.medicalHistoryTemp[_yearApproximateFieldName] else false
+      checked: true if appointment.medicalHistoryTemp[_yearApproximateFieldName] else false
     }
   ]
 }) }}

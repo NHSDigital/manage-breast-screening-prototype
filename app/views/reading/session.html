@@ -26,7 +26,7 @@
 
 {{ session | log("Session data") }}
 {{ readingStatus | log("Reading status") }}
-{{ events | log("Events in session") }}
+{{ appointments | log("Appointments in session") }}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
@@ -50,8 +50,8 @@
     {% set currentUserHasRead = readingStatus.userReadCount > 0 %}
     {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
 
-    {% if resumeEvent %}
-      <a href="/reading/session/{{ session.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button app-reading-session-primary-action">
+    {% if resumeAppointment %}
+      <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button app-reading-session-primary-action">
         {{ readingActionText }}
       </a>
     {% else %}
@@ -100,52 +100,52 @@
 
     {# Number of slots not yet populated in a lazy session #}
     {% set sessionTotalCount = sessionProgress.effectiveTargetSize if sessionProgress else session.targetSize %}
-    {% set pendingCount = (sessionTotalCount - (session.eventIds | length)) if sessionTotalCount else 0 %}
+    {% set pendingCount = (sessionTotalCount - (session.appointmentIds | length)) if sessionTotalCount else 0 %}
     {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
 
     {% if view == 'your-reads' %}
       {# YOUR READS VIEW - Shows cases from user's perspective #}
-      {% set userReadableEvents = [] %}
-      {% for event in events %}
-        {% if event | canUserReadEvent or event | userHasReadEvent or event | userRequestedPriors(data.currentUser.id) or event | isDeferred %}
-          {% set userReadableEvents = userReadableEvents | push(event) %}
+      {% set userReadableAppointments = [] %}
+      {% for appointment in appointments %}
+        {% if appointment | canUserReadAppointment or appointment | userHasReadAppointment or appointment | userRequestedPriors(data.currentUser.id) or appointment | isDeferred %}
+          {% set userReadableAppointments = userReadableAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
 
-      {% if userReadableEvents | length == 0 %}
+      {% if userReadableAppointments | length == 0 %}
         <p>You don't have any cases you can read in this session.</p>
       {% else %}
 
-        {# Build opinion counts from events the user has read #}
-        {% set normalEvents = [] %}
-        {% set technicalRecallEvents = [] %}
-        {% set recallForAssessmentEvents = [] %}
-        {% set priorsRequestedEvents = [] %}
-        {% set deferredEvents = [] %}
+        {# Build opinion counts from appointments the user has read #}
+        {% set normalAppointments = [] %}
+        {% set technicalRecallAppointments = [] %}
+        {% set recallForAssessmentAppointments = [] %}
+        {% set priorsRequestedAppointments = [] %}
+        {% set deferredAppointments = [] %}
 
-        {% for event in userReadableEvents %}
-          {% if event | userHasReadEvent %}
-            {% set read = event | getReadForUser %}
+        {% for appointment in userReadableAppointments %}
+          {% if appointment | userHasReadAppointment %}
+            {% set read = appointment | getReadForUser %}
             {% if read.opinion == 'normal' %}
-              {% set normalEvents = normalEvents | push(event) %}
+              {% set normalAppointments = normalAppointments | push(appointment) %}
             {% elseif read.opinion == 'technical_recall' %}
-              {% set technicalRecallEvents = technicalRecallEvents | push(event) %}
+              {% set technicalRecallAppointments = technicalRecallAppointments | push(appointment) %}
             {% elseif read.opinion == 'recall_for_assessment' %}
-              {% set recallForAssessmentEvents = recallForAssessmentEvents | push(event) %}
+              {% set recallForAssessmentAppointments = recallForAssessmentAppointments | push(appointment) %}
             {% endif %}
-          {% elseif event | userRequestedPriors(data.currentUser.id) %}
-            {% set priorsRequestedEvents = priorsRequestedEvents | push(event) %}
-          {% elseif event | isDeferred %}
-            {% set deferredEvents = deferredEvents | push(event) %}
+          {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
+            {% set priorsRequestedAppointments = priorsRequestedAppointments | push(appointment) %}
+          {% elseif appointment | isDeferred %}
+            {% set deferredAppointments = deferredAppointments | push(appointment) %}
           {% endif %}
         {% endfor %}
 
-        {% set totalCount = userReadableEvents | length %}
-        {% set normalCount = normalEvents | length %}
-        {% set technicalRecallCount = technicalRecallEvents | length %}
-        {% set recallForAssessmentCount = recallForAssessmentEvents | length %}
-        {% set priorsRequestedCount = priorsRequestedEvents | length %}
-        {% set deferredCount = deferredEvents | length %}
+        {% set totalCount = userReadableAppointments | length %}
+        {% set normalCount = normalAppointments | length %}
+        {% set technicalRecallCount = technicalRecallAppointments | length %}
+        {% set recallForAssessmentCount = recallForAssessmentAppointments | length %}
+        {% set priorsRequestedCount = priorsRequestedAppointments | length %}
+        {% set deferredCount = deferredAppointments | length %}
 
         {% set normalPercent = (normalCount / totalCount * 100) | round %}
         {% set technicalRecallPercent = (technicalRecallCount / totalCount * 100) | round %}
@@ -192,7 +192,7 @@
           <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ priorsRequestedCount }} cases</p>
         {% endset %}
 
-        {% if not resumeEvent %}
+        {% if not resumeAppointment %}
           <h2>Opinion summary</h2>
 
           <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
@@ -237,77 +237,77 @@
             </tr>
           </thead>
           <tbody>
-            {% for event in userReadableEvents %}
-            {% set metadata = event | getReadingMetadata %}
-            <tr{% if resumeEvent and event.id == resumeEvent.id and not (event | userHasReadEvent) %} class="app-placeholder-row--next"{% endif %}>
+            {% for appointment in userReadableAppointments %}
+            {% set metadata = appointment | getReadingMetadata %}
+            <tr{% if resumeAppointment and appointment.id == resumeAppointment.id and not (appointment | userHasReadAppointment) %} class="app-placeholder-row--next"{% endif %}>
               <td>
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
               <td>
                 {% set readingHref -%}
-                  /reading/session/{{ session.id }}/events/{{ event.id }}
+                  /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
                 {%- endset %}
-                {% if event.medicalInformation.symptoms | length %}
+                {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
+                <a href="{{ readingHref }}">{{ appointment.participant | getFullName }}</a>
 
                 <br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
-                  {% if event | userHasReadEvent %}
+                  {% if appointment | userHasReadAppointment %}
                     {{ "1st read" if readCount == 1 else "2nd read" }}
                   {% else %}
                     {{ "1st read" if readCount == 0 else "2nd read" }}
                   {% endif %}
                 </span>
                 {% if (data.settings.debugMode | falsify) %}
-                  {% if event | hasRecordedMammograms %}
+                  {% if appointment | hasRecordedMammograms %}
                     <br>{{ "Has priors" | toTag }}
                   {% endif %}
-                  {% if event.mammogramData.metadata.hasAdditionalImages %}
+                  {% if appointment.mammogramData.metadata.hasAdditionalImages %}
                     <br>{{ "Has additional" | toTag }}
                   {% endif %}
-                  {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+                  {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
                      <br>{{ "Imperfect" | toTag }}
                   {% endif %}
-                  {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+                  {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
                      <br>{{ "Incomplete" | toTag }}
                   {% endif %}
                 {% endif %}
               </td>
               <td>
-                {% set daysSinceScreening = event.timing.startTime | daysSince %}
+                {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
                 {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
                   {{ "Urgent" | toTag }}<br>
                 {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
                   {{ "Due soon" | toTag }}
                   <br>
                 {% endif %}
-                {{ event.timing.startTime | formatDate }}<br>
+                {{ appointment.timing.startTime | formatDate }}<br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
-                  {{ event.timing.startTime | formatRelativeDate }}
+                  {{ appointment.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
               <td>
-                {% if event | userHasReadEvent %}
-                  {% set read = event | getReadForUser %}
+                {% if appointment | userHasReadAppointment %}
+                  {% set read = appointment | getReadForUser %}
                   {% if read.opinion %}
                     {{ read.opinion | toTag }}
                   {% endif %}
-                {% elseif event | isDeferred %}
+                {% elseif appointment | isDeferred %}
                   {{ "Deferred" | toTag }}
-                {% elseif event | userRequestedPriors(data.currentUser.id) %}
+                {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
                   {{ "Priors requested" | toTag }}
-                {% elseif session.skippedEvents | includes(event.id) %}
+                {% elseif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
               <td class="app-placeholder-action-cell">
-                {% if resumeEvent and event.id == resumeEvent.id and not (event | userHasReadEvent) %}
-                  <a href="/reading/session/{{ session.id }}/events/{{ resumeEvent.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
+                {% if resumeAppointment and appointment.id == resumeAppointment.id and not (appointment | userHasReadAppointment) %}
+                  <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% endif %}
               </td>
             </tr>
@@ -316,13 +316,13 @@
             {# Placeholder rows for pending lazy session slots #}
             {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
             {% for i in range(0, placeholderRowsShown) %}
-            <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeEvent and pendingCount > 3 and loop.last }}">
+            <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
               <td>
-                <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (userReadableEvents | length) + loop.index }}.</span>
+                <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (userReadableAppointments | length) + loop.index }}.</span>
               </td>
               <td>
                 <span class="app-placeholder-tag"></span>
-                {% if resumeEvent and pendingCount > 3 and loop.last %}
+                {% if resumeAppointment and pendingCount > 3 and loop.last %}
                   <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
                 {% endif %}
               </td>
@@ -338,34 +338,34 @@
       {# ALL READS VIEW - Shows outcome stats and all cases #}
 
       {# Build outcome counts for stats cards #}
-      {% set awaitingSecondReadEvents = [] %}
-      {% set allViewNormalEvents = [] %}
-      {% set allViewTechnicalRecallEvents = [] %}
-      {% set allViewRecallForAssessmentEvents = [] %}
-      {% set allViewArbitrationEvents = [] %}
+      {% set awaitingSecondReadAppointments = [] %}
+      {% set allViewNormalAppointments = [] %}
+      {% set allViewTechnicalRecallAppointments = [] %}
+      {% set allViewRecallForAssessmentAppointments = [] %}
+      {% set allViewArbitrationAppointments = [] %}
 
-      {% for event in events %}
-        {% set eventOutcome = event | getOutcome %}
-        {% if eventOutcome == 'pending_second_read' %}
-          {% set awaitingSecondReadEvents = awaitingSecondReadEvents | push(event) %}
-        {% elseif eventOutcome == 'normal' %}
-          {% set allViewNormalEvents = allViewNormalEvents | push(event) %}
-        {% elseif eventOutcome == 'technical_recall' %}
-          {% set allViewTechnicalRecallEvents = allViewTechnicalRecallEvents | push(event) %}
-        {% elseif eventOutcome == 'recall_for_assessment' %}
-          {% set allViewRecallForAssessmentEvents = allViewRecallForAssessmentEvents | push(event) %}
-        {% elseif eventOutcome == 'arbitration_pending' %}
-          {% set allViewArbitrationEvents = allViewArbitrationEvents | push(event) %}
+      {% for appointment in appointments %}
+        {% set appointmentOutcome = appointment | getOutcome %}
+        {% if appointmentOutcome == 'pending_second_read' %}
+          {% set awaitingSecondReadAppointments = awaitingSecondReadAppointments | push(appointment) %}
+        {% elseif appointmentOutcome == 'normal' %}
+          {% set allViewNormalAppointments = allViewNormalAppointments | push(appointment) %}
+        {% elseif appointmentOutcome == 'technical_recall' %}
+          {% set allViewTechnicalRecallAppointments = allViewTechnicalRecallAppointments | push(appointment) %}
+        {% elseif appointmentOutcome == 'recall_for_assessment' %}
+          {% set allViewRecallForAssessmentAppointments = allViewRecallForAssessmentAppointments | push(appointment) %}
+        {% elseif appointmentOutcome == 'arbitration_pending' %}
+          {% set allViewArbitrationAppointments = allViewArbitrationAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
 
-      {% set allTotal = events | length %}
+      {% set allTotal = appointments | length %}
       {% set allTotalDenominator = allTotal if allTotal > 0 else 1 %}
-      {% set awaitingCount = awaitingSecondReadEvents | length %}
-      {% set allViewNormalCount = allViewNormalEvents | length %}
-      {% set allViewTechnicalRecallCount = allViewTechnicalRecallEvents | length %}
-      {% set allViewRecallForAssessmentCount = allViewRecallForAssessmentEvents | length %}
-      {% set allViewArbitrationCount = allViewArbitrationEvents | length %}
+      {% set awaitingCount = awaitingSecondReadAppointments | length %}
+      {% set allViewNormalCount = allViewNormalAppointments | length %}
+      {% set allViewTechnicalRecallCount = allViewTechnicalRecallAppointments | length %}
+      {% set allViewRecallForAssessmentCount = allViewRecallForAssessmentAppointments | length %}
+      {% set allViewArbitrationCount = allViewArbitrationAppointments | length %}
       {% set twiceReadTotal = allViewNormalCount + allViewTechnicalRecallCount + allViewRecallForAssessmentCount + allViewArbitrationCount %}
       {% set twiceReadDenominator = twiceReadTotal if twiceReadTotal > 0 else 1 %}
 
@@ -433,42 +433,42 @@
           </tr>
         </thead>
         <tbody>
-          {% for event in events %}
-            {% set metadata = event | getReadingMetadata %}
+          {% for appointment in appointments %}
+            {% set metadata = appointment | getReadingMetadata %}
             <tr>
               <td>
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
               <td>
                 {% set readingHref -%}
-                  /reading/session/{{ session.id }}/events/{{ event.id }}
+                  /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
                 {%- endset %}
-                {% if event.medicalInformation.symptoms | length %}
+                {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <a href="{{ readingHref }}">{{ event.participant | getFullName }}</a>
+                <a href="{{ readingHref }}">{{ appointment.participant | getFullName }}</a>
 
-                {% if event | awaitingPriors %}
+                {% if appointment | awaitingPriors %}
                 <br>
                   {{ "Awaiting priors" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
-                  {% if event | hasRecordedMammograms %}
+                  {% if appointment | hasRecordedMammograms %}
                     <br>{{ "Has priors" | toTag }}
                   {% endif %}
-                  {% if event.mammogramData.metadata.hasAdditionalImages %}
+                  {% if appointment.mammogramData.metadata.hasAdditionalImages %}
                     <br>{{ "Has additional" | toTag }}
                   {% endif %}
-                  {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+                  {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
                     <br>{{ "Imperfect" | toTag }}
                   {% endif %}
-                  {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+                  {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
                     <br>{{ "Incomplete" | toTag }}
                   {% endif %}
                 {% endif %}
               </td>
               <td>
-                {% set daysSinceScreening = event.timing.startTime | daysSince %}
+                {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
                 {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
                   {{ "Urgent" | toTag }}
                   <br>
@@ -476,16 +476,16 @@
                   {{ "Due soon" | toTag }}
                   <br>
                 {% endif %}
-                {{ event.timing.startTime | formatDate }}<br>
+                {{ appointment.timing.startTime | formatDate }}<br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
-                  {{ event.timing.startTime | formatRelativeDate }}
+                  {{ appointment.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
               {# 1st read column #}
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
-                {% set allReads = event | getReadsAsArray %}
+                {% set allReads = appointment | getReadsAsArray %}
 
                 {% if metadata.readCount >= 1 %}
                   {% set firstRead = allReads[0] %}
@@ -503,7 +503,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif session.skippedEvents | includes(event.id) %}
+                {% elif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
@@ -525,7 +525,7 @@
                     identifyCurrentUser: true
                   }) }}</span>
                 {% elif metadata.readCount == 1 %}
-                  {% if session.skippedEvents | includes(event.id) %}
+                  {% if session.skippedAppointments | includes(appointment.id) %}
                     {{ "Skipped" | toTag }}
                   {% else %}
                     {{ "Not read" | toTag }}
@@ -536,7 +536,7 @@
               </td>
               {# Outcome column — uses getOutcome which respects the site's arbitration policy #}
               <td>
-                {% set outcome = event | getOutcome %}
+                {% set outcome = appointment | getOutcome %}
                 {% if outcome == 'not_read' %}
                   {{ "Waiting for 1st read" | toTag }}
                 {% elseif outcome == 'pending_second_read' %}
@@ -553,13 +553,13 @@
           {# Placeholder rows for pending lazy session slots #}
           {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
           {% for i in range(0, placeholderRowsShown) %}
-          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeEvent and pendingCount > 3 and loop.last }}">
+          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
             <td>
-              <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (events | length) + loop.index }}.</span>
+              <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (appointments | length) + loop.index }}.</span>
             </td>
             <td>
               <span class="app-placeholder-tag"></span>
-              {% if resumeEvent and pendingCount > 3 and loop.last %}
+              {% if resumeAppointment and pendingCount > 3 and loop.last %}
                 <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
               {% endif %}
             </td>

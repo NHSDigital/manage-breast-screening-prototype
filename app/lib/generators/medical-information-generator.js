@@ -16,7 +16,7 @@ const {
 } = require('./medical-information/medical-history-generator')
 
 /**
- * Generate complete medical information for an event
+ * Generate complete medical information for an appointment
  *
  * All medical information is attributed to the user who ran the appointment
  *

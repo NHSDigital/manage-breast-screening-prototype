@@ -1,0 +1,67 @@
+{# app/views/_components/appointment-status/template.njk #}
+
+{% from 'tag/macro.njk' import tag %}
+{% from '_components/modal/macro.njk' import appModal %}
+{% from '_components/summary-list/macro.njk' import appSummaryList %}
+{% from '_components/summary-list/macro.njk' import appSummaryListRow %}
+
+{% set tagClasses %}
+  {% if params.appointment.status | getStatusTagColour %}
+    nhsuk-tag--{{ params.appointment.status | getStatusTagColour}}
+  {% endif %}
+{% endset %}
+
+{% set tagClasses = tagClasses + " app-nowrap" %}
+
+{# Build check-in href #}
+{% set checkInHref -%}
+  /clinics/{{ params.clinicId }}/check-in/{{ params.appointment.id }}
+{%- endset %}
+
+{# Check if identity confirmation is enabled #}
+{% set confirmIdentityEnabled = params.confirmIdentityOnCheckIn %}
+
+{% if confirmIdentityEnabled %}
+  {% set modalId = "check-in-modal-" + (appointmentId or params.appointment.id) %}
+  {% set showAppointmentLink = params.showAppointmentLink | default('false') %}
+  {% include "_includes/confirm-identity-modal.njk" %}
+{% endif %}
+
+<div data-appointment-status-container="{{ params.appointment.id }}">
+  {{ tag({
+    text: params.appointment.status | getStatusText,
+    classes: tagClasses | trim
+  })}}
+
+  {# Append the participant's name to the check-in text for screen readers so that all links have unique text #}
+  {% set checkInText %}
+    Check in {{ params.participant | getShortName | asVisuallyHiddenText }}
+  {% endset %}
+
+  {% set foobar %}
+    {% if params.appointment.status === 'appointment_scheduled' %}
+      <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+        {% if confirmIdentityEnabled %}
+          {# Modal-based check-in #}
+          <a href=""
+            class="nhsuk-link nhsuk-link--no-visited-state"
+            data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}"
+            onclick="openModal('{{ modalId }}'); return false;">
+            {{ checkInText | safe }}
+          </a>
+        {% else %}
+          {# Check in without identity check #}
+          <a href="{{ checkInHref }}"
+            class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
+            data-clinic-id="{{ params.clinicId }}"
+            data-appointment-id="{{ params.appointment.id }}"
+            data-show-appointment-link="{{ params.showAppointmentLink | default('false') }}">
+            {{ checkInText | safe }}
+          </a>
+        {% endif %}
+      </p>
+    {% endif %}
+  {% endset %}
+
+
+</div>

@@ -375,7 +375,7 @@ const summariseBreastFeatures = (features) => {
 /**
  * Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info)
  *
- * @param {Object} medicalInformation - The medicalInformation object from event
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
  * @returns {Array<string>} Array of summary strings
  */
 const summariseOtherRelevantInformation = (medicalInformation) => {

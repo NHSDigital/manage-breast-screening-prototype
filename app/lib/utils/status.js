@@ -8,31 +8,31 @@ const dayjs = require('dayjs')
  * @type {object}
  */
 const STATUS_GROUPS = {
-  not_started: ['event_scheduled', 'event_checked_in'],
-  completed: ['event_complete', 'event_partially_screened'],
+  not_started: ['appointment_scheduled', 'appointment_checked_in'],
+  completed: ['appointment_complete', 'appointment_partially_screened'],
   final: [
-    'event_complete',
-    'event_partially_screened',
-    'event_did_not_attend',
-    'event_attended_not_screened',
-    'event_cancelled',
-    'event_rescheduled'
+    'appointment_complete',
+    'appointment_partially_screened',
+    'appointment_did_not_attend',
+    'appointment_attended_not_screened',
+    'appointment_cancelled',
+    'appointment_rescheduled'
   ],
-  // Final statuses for seed data generation - excludes event_rescheduled which is user-initiated only
+  // Final statuses for seed data generation - excludes appointment_rescheduled which is user-initiated only
   final_seed_data: [
-    'event_complete',
-    'event_partially_screened',
-    'event_did_not_attend',
-    'event_attended_not_screened',
-    'event_cancelled'
+    'appointment_complete',
+    'appointment_partially_screened',
+    'appointment_did_not_attend',
+    'appointment_attended_not_screened',
+    'appointment_cancelled'
   ],
   active: [
-    'event_scheduled',
-    'event_checked_in',
-    'event_in_progress',
-    'event_paused'
+    'appointment_scheduled',
+    'appointment_checked_in',
+    'appointment_in_progress',
+    'appointment_paused'
   ],
-  eligible_for_reading: ['event_complete', 'event_partially_screened']
+  eligible_for_reading: ['appointment_complete', 'appointment_partially_screened']
 }
 
 /**
@@ -48,9 +48,9 @@ const isStatusInGroup = (status, group) => {
 }
 
 /**
- * Get status from either a status string or event object
+ * Get status from either a status string or appointment object
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {string|null} The status or null if invalid
  */
 const getStatus = (input) => {
@@ -60,9 +60,9 @@ const getStatus = (input) => {
 }
 
 /**
- * Check if a status represents a not started event
+ * Check if a status represents a not started appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is not started
  */
 const hasNotStarted = (input) => {
@@ -72,9 +72,9 @@ const hasNotStarted = (input) => {
 }
 
 /**
- * Check if a status represents a completed event
+ * Check if a status represents a completed appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is completed
  */
 const isCompleted = (input) => {
@@ -84,45 +84,45 @@ const isCompleted = (input) => {
 }
 
 /**
- * Check if a status represents an in-progress event (includes paused)
+ * Check if a status represents an in-progress appointment (includes paused)
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is in progress or paused
  */
 const isInProgress = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'event_in_progress' || status === 'event_paused'
+  return status === 'appointment_in_progress' || status === 'appointment_paused'
 }
 
 /**
- * Check if a status represents a paused event
+ * Check if a status represents a paused appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is paused
  */
 const isPaused = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'event_paused'
+  return status === 'appointment_paused'
 }
 
 /**
- * Check if a status represents an in-progress event that is not paused
+ * Check if a status represents an in-progress appointment that is not paused
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is in progress but not paused
  */
 const isInProgressNotPaused = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'event_in_progress'
+  return status === 'appointment_in_progress'
 }
 
 /**
  * Check if a status represents a final state
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is final
  */
 const isFinal = (input) => {
@@ -132,9 +132,9 @@ const isFinal = (input) => {
 }
 
 /**
- * Check if a status represents an active event
+ * Check if a status represents an active appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is active
  */
 const isActive = (input) => {
@@ -144,22 +144,22 @@ const isActive = (input) => {
 }
 
 /**
- * Check if an event is in the appointment workflow for the current user
+ * Check if an appointment is in the appointment workflow for the current user
  *
- * @param {object} event - Event to check
+ * @param {object} appointment - Appointment to check
  * @param {object | string} currentUser - User object with id property, or user id string directly
- * @returns {boolean} Whether the event is in the appointment workflow for this user
+ * @returns {boolean} Whether the appointment is in the appointment workflow for this user
  */
-const isAppointmentWorkflow = function (event, currentUser) {
-  if (!event) return false
+const isAppointmentWorkflow = function (appointment, currentUser) {
+  if (!appointment) return false
 
   // Get currentUser from context if not provided
   currentUser = currentUser || this?.ctx?.data?.currentUser
 
-  const startedBy = event?.sessionDetails?.startedBy
+  const startedBy = appointment?.sessionDetails?.startedBy
   if (!currentUser || !startedBy) {
     console.log(
-      `User or event not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
+      `User or appointment not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
     )
     return false
   }
@@ -169,25 +169,25 @@ const isAppointmentWorkflow = function (event, currentUser) {
     typeof currentUser === 'string' ? currentUser : currentUser.id
   if (!currentUserId) return false
 
-  // Check if event is in progress (not paused) and started by current user
-  const eventInProgressNotPaused = isInProgressNotPaused(event)
+  // Check if appointment is in progress (not paused) and started by current user
+  const appointmentInProgressNotPaused = isInProgressNotPaused(appointment)
 
-  return eventInProgressNotPaused && startedBy === currentUserId
+  return appointmentInProgressNotPaused && startedBy === currentUserId
 }
 
 /**
  * Check if a status indicates reading is eligible
  *
- * @param {string | object} event - Status string or event object
+ * @param {string | object} appointment - Status string or appointment object
  * @returns {boolean} Whether reading is needed
  */
-const eligibleForReading = (event) => {
-  const status = getStatus(event)
+const eligibleForReading = (appointment) => {
+  const status = getStatus(appointment)
   if (!status) return false
   const cutoffDate = dayjs().subtract(30, 'days').startOf('day')
   return (
     isStatusInGroup(status, 'eligible_for_reading') &&
-    dayjs(event.timing.startTime).isAfter(cutoffDate)
+    dayjs(appointment.timing.startTime).isAfter(cutoffDate)
   )
 }
 
@@ -197,8 +197,8 @@ const eligibleForReading = (event) => {
  * @param {string} status - The status to map
  * @returns {string} NHS tag colour (e.g. 'green', 'red', 'orange') or empty string for default blue
  * @example
- * getStatusTagColour('event_complete') // 'green'
- * getStatusTagColour('event_did_not_attend') // 'red'
+ * getStatusTagColour('appointment_complete') // 'green'
+ * getStatusTagColour('appointment_did_not_attend') // 'red'
  */
 const getStatusTagColour = (status) => {
   // Keys are matched against snake_cased tag text as well as status keys -
@@ -211,17 +211,17 @@ const getStatusTagColour = (status) => {
     'in_progress': 'blue',
     'closed': 'grey',
 
-    // Event statuses
-    'event_scheduled': 'blue', // default blue
-    'event_checked_in': '', // no colour will get solid dark blue
-    'event_in_progress': 'aqua-green',
-    'event_paused': 'orange',
-    'event_complete': 'green',
-    'event_partially_screened': 'orange',
-    'event_did_not_attend': 'red',
-    'event_cancelled': 'red',
-    'event_rescheduled': 'red',
-    'event_attended_not_screened': 'orange',
+    // Appointment statuses
+    'appointment_scheduled': 'blue', // default blue
+    'appointment_checked_in': '', // no colour will get solid dark blue
+    'appointment_in_progress': 'aqua-green',
+    'appointment_paused': 'orange',
+    'appointment_complete': 'green',
+    'appointment_partially_screened': 'orange',
+    'appointment_did_not_attend': 'red',
+    'appointment_cancelled': 'red',
+    'appointment_rescheduled': 'red',
+    'appointment_attended_not_screened': 'orange',
 
     // Image reading results
     'normal': 'green',
@@ -250,7 +250,7 @@ const getStatusTagColour = (status) => {
     'first_read_complete': 'yellow',
     'partial_second_read': 'blue',
     'mixed_reads': 'yellow',
-    'no_events': 'grey',
+    'no_appointments': 'grey',
 
     // Outcomes
     'arbitration': 'orange',
@@ -278,23 +278,23 @@ const getStatusTagColour = (status) => {
  * @param {string} status - The status to map
  * @returns {string} Human-readable status text, or empty string if unknown
  * @example
- * getStatusText('event_complete') // 'Screened'
- * getStatusText('event_did_not_attend') // 'Did not attend'
+ * getStatusText('appointment_complete') // 'Screened'
+ * getStatusText('appointment_did_not_attend') // 'Did not attend'
  */
 const getStatusText = (status) => {
   const statusMap = {
     // Clinic statuses
-    event_scheduled: 'Scheduled',
-    // Event statuses
-    event_checked_in: 'Checked in',
-    event_in_progress: 'In progress',
-    event_paused: 'Paused',
-    event_complete: 'Screened',
-    event_partially_screened: 'Partially screened',
-    event_did_not_attend: 'Did not attend',
-    event_attended_not_screened: 'Attended not screened',
-    event_cancelled: 'Cancelled',
-    event_rescheduled: 'Reschedule requested',
+    appointment_scheduled: 'Scheduled',
+    // Appointment statuses
+    appointment_checked_in: 'Checked in',
+    appointment_in_progress: 'In progress',
+    appointment_paused: 'Paused',
+    appointment_complete: 'Screened',
+    appointment_partially_screened: 'Partially screened',
+    appointment_did_not_attend: 'Did not attend',
+    appointment_attended_not_screened: 'Attended not screened',
+    appointment_cancelled: 'Cancelled',
+    appointment_rescheduled: 'Reschedule requested',
 
     // Image reading opinions
     technical_recall: 'Technical recall',
@@ -317,62 +317,62 @@ const getStatusText = (status) => {
 }
 
 /**
- * Filter events by status category
+ * Filter appointments by status category
  *
- * @param {Array} events - Events to filter
+ * @param {Array} appointments - Appointments to filter
  * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
- * @returns {Array} Filtered events
+ * @returns {Array} Filtered appointments
  */
-const filterEventsByStatus = (events, filter) => {
+const filterAppointmentsByStatus = (appointments, filter) => {
   switch (filter) {
     case 'scheduled':
-      return events.filter((e) => e.status === 'event_scheduled')
+      return appointments.filter((e) => e.status === 'appointment_scheduled')
     case 'checked-in':
-      return events.filter((e) => e.status === 'event_checked_in')
+      return appointments.filter((e) => e.status === 'appointment_checked_in')
     case 'in-progress':
-      return events.filter(
-        (e) => e.status === 'event_in_progress' || e.status === 'event_paused'
+      return appointments.filter(
+        (e) => e.status === 'appointment_in_progress' || e.status === 'appointment_paused'
       )
     case 'complete':
-      return events.filter((e) => isFinal(e))
+      return appointments.filter((e) => isFinal(e))
     case 'remaining':
-      return events.filter((e) => hasNotStarted(e))
+      return appointments.filter((e) => hasNotStarted(e))
     default:
-      return events
+      return appointments
   }
 }
 
 /**
- * Check if an event is a special appointment
+ * Check if an appointment is a special appointment
  *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event is a special appointment
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment is a special appointment
  */
-const isSpecialAppointment = (event) => {
-  return event?.specialAppointment?.supportTypes?.length > 0
+const isSpecialAppointment = (appointment) => {
+  return appointment?.specialAppointment?.supportTypes?.length > 0
 }
 
 /**
- * Check if an event has an appointment note
+ * Check if an appointment has an appointment note
  *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event has an appointment note
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment has an appointment note
  */
-const hasAppointmentNote = (event) => {
-  return event?.appointmentNote && event.appointmentNote.trim().length > 0
+const hasAppointmentNote = (appointment) => {
+  return appointment?.appointmentNote && appointment.appointmentNote.trim().length > 0
 }
 
 /**
- * Check if an event has recorded symptoms
+ * Check if an appointment has recorded symptoms
  *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event has any symptoms
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment has any symptoms
  */
-const hasSymptoms = (event) => {
-  // symptoms stored at event.medicalInformation.symptoms[]
+const hasSymptoms = (appointment) => {
+  // symptoms stored at appointment.medicalInformation.symptoms[]
   return (
-    event?.medicalInformation?.symptoms &&
-    event.medicalInformation.symptoms.length > 0
+    appointment?.medicalInformation?.symptoms &&
+    appointment.medicalInformation.symptoms.length > 0
   )
 }
 
@@ -388,7 +388,7 @@ module.exports = {
   eligibleForReading,
   getStatusTagColour,
   getStatusText,
-  filterEventsByStatus,
+  filterAppointmentsByStatus,
   isSpecialAppointment,
   hasAppointmentNote,
   hasSymptoms,

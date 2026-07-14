@@ -37,18 +37,18 @@ const abroadStatusWeights = {
 // Generate a single previous mammogram entry
 // latestAllowedDate controls the upper bound for when the mammogram was taken
 const generatePreviousMammogram = ({
-  eventDate,
+  appointmentDate,
   addedByUserId,
   latestAllowedDate
 }) => {
   const location = weighted.select(locationWeights)
 
-  // Date must be at least 6 months before the event, and within 3 years
-  const eventDay = dayjs(eventDate)
+  // Date must be at least 6 months before the appointment, and within 3 years
+  const appointmentDay = dayjs(appointmentDate)
   const latestDate = latestAllowedDate
     ? dayjs(latestAllowedDate)
-    : eventDay.subtract(6, 'month')
-  const earliestDate = eventDay.subtract(3, 'year')
+    : appointmentDay.subtract(6, 'month')
+  const earliestDate = appointmentDay.subtract(3, 'year')
 
   // If there's no valid date range (e.g. second mammogram pushed past 3 year limit), skip
   if (earliestDate.isAfter(latestDate)) {
@@ -146,8 +146,8 @@ const generatePreviousMammogram = ({
         ? faker.helpers.arrayElement(adminUsers)
         : { id: addedByUserId }
 
-    // Request was flagged 1-5 days after the event
-    const requestedDate = dayjs(eventDate).add(
+    // Request was flagged 1-5 days after the appointment
+    const requestedDate = dayjs(appointmentDate).add(
       faker.number.int({ min: 1, max: 5 }),
       'day'
     )
@@ -167,8 +167,8 @@ const generatePreviousMammogram = ({
   }
 
   if (requestStatus === 'not_available' || requestStatus === 'not_needed') {
-    // Status was changed 1-7 days after event
-    const changedDate = dayjs(eventDate).add(
+    // Status was changed 1-7 days after appointment
+    const changedDate = dayjs(appointmentDate).add(
       faker.number.int({ min: 1, max: 7 }),
       'day'
     )
@@ -244,22 +244,22 @@ const generatePreviousMammogram = ({
       ? { previousName: faker.person.lastName() }
       : {}),
     ...(otherDetails ? { otherDetails } : {}),
-    dateAdded: dayjs(eventDate).toISOString(),
+    dateAdded: dayjs(appointmentDate).toISOString(),
     addedBy: addedByUserId,
     _rawDate: dateTaken.toISOString(), // Internal field for gap calculations
     ...requestFields
   }
 }
 
-// Generate previous mammograms for an event
+// Generate previous mammograms for an appointment
 // Returns an array, or null if none generated
-const generatePreviousMammograms = ({ eventDate, addedByUserId, rate }) => {
+const generatePreviousMammograms = ({ appointmentDate, addedByUserId, rate }) => {
   const effectiveRate =
     rate !== undefined
       ? rate
       : (config.generation?.previousMammogramRate ?? 0.2)
 
-  // Decide whether this event has recorded mammograms
+  // Decide whether this appointment has recorded mammograms
   if (Math.random() > effectiveRate) {
     return null
   }
@@ -276,7 +276,7 @@ const generatePreviousMammograms = ({ eventDate, addedByUserId, rate }) => {
       latestAllowedDate = previousDate.subtract(6, 'month')
     }
     mammograms.push(
-      generatePreviousMammogram({ eventDate, addedByUserId, latestAllowedDate })
+      generatePreviousMammogram({ appointmentDate, addedByUserId, latestAllowedDate })
     )
   }
 

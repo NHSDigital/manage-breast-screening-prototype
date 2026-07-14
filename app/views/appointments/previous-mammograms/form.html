@@ -1,0 +1,313 @@
+{# app/views/appointments/mammography/previous-mammograms/form.html #}
+
+{% extends parentLayout or '_templates/layout-appointment.html' %}
+
+{% set previousMammogramCount = appointment.previousMammograms | length %}
+
+{% set pageHeading = "Add details of a previous mammogram" %}
+
+{% set formAction = './save' | urlWithReferrer(referrerChain, query.scrollTo) %}
+
+{% block pageContent %}
+
+  {% set previousMammogramCount = data.appointment.previousMammograms | length %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {% set bsuHtml %}
+
+    {% set selectItems = [{
+      value: "",
+      text: "",
+      selected: true,
+      disabled: true
+    }] %}
+
+
+    {% for bsu in data.allBreastScreeningUnits %}
+      {% set selectItems = selectItems | push({
+        value: bsu,
+        text: bsu
+      }) %}
+    {% endfor %}
+
+    {{ select({
+      id: "bsu",
+      name: "appointment[previousMammogramTemp][bsu]",
+      label: {
+        text: "Select a unit"
+      },
+      items: selectItems,
+      value: appointment.previousMammogramTemp.bsu
+    }) }}
+
+  {% endset %}
+
+  {% set otherUkHtml %}
+
+    {{ textarea({
+      name: "appointment[previousMammogramTemp][otherUk]",
+      rows: "2",
+      label: {
+        text: "Location",
+        _classes: "nhsuk-label--s"
+      },
+      value: appointment.previousMammogramTemp.otherUk,
+      hint: {
+        text: "Include the clinic or hospital name, or any location details"
+      }
+    }) }}
+
+  {% endset %}
+
+  {% set otherNonUkHtml %}
+
+    {{ textarea({
+      name: "appointment[previousMammogramTemp][otherNonUk]",
+      rows: "2",
+      label: {
+        text: "Location",
+        _classes: "nhsuk-label--s"
+      },
+      hint: {
+        text: "Include the clinic or hospital name, or any location details"
+      },
+      value: appointment.previousMammogramTemp.otherNonUk
+    }) }}
+
+  {% endset %}
+
+  {{ radios({
+    idPrefix: "location",
+    name: "appointment[previousMammogramTemp][location]",
+    fieldset: {
+      legend: {
+        text: "Where were the breast x-rays taken?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    value: appointment.previousMammogramTemp.location,
+    items: [
+      {
+        value: "currentBsu",
+        text: "At " + unit.name
+      },
+      {
+        value: "bsu",
+        text: "At another NHS breast screening unit",
+        conditional: {
+          html: bsuHtml
+        }
+      },
+      {
+        value: "otherUk",
+        text: "Somewhere else in the UK",
+        conditional: {
+          html: otherUkHtml
+        }
+      },
+      {
+        value: "otherNonUk",
+        text: "Outside the UK",
+        conditional: {
+          html: otherNonUkHtml
+        }
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "preferNotToSay",
+        text: "Prefer not to say"
+      }
+    ]
+  }) }}
+
+  {% set dateKnownHtml %}
+    {{ dateInput({
+      id: "dateTaken",
+      namePrefix: "appointment[previousMammogramTemp][dateTaken]",
+      fieldset: {
+        legend: {
+          text: "Date of mammogram",
+          classes: "nhsuk-u-visually-hidden",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "For example, 15 3 2025"
+      },
+      value: appointment.previousMammogramTemp.dateTaken,
+      items: [
+        {
+          name: "day",
+          classes: "nhsuk-input--width-2",
+          value: appointment.previousMammogramTemp.dateTaken.day
+        },
+        {
+          name: "month",
+          classes: "nhsuk-input--width-2",
+          value: appointment.previousMammogramTemp.dateTaken.month
+        },
+        {
+          name: "year",
+          classes: "nhsuk-input--width-4",
+          value: appointment.previousMammogramTemp.dateTaken.year
+        }
+      ]
+    }) }}
+  {% endset %}
+
+  {% set moreThanSixMonthsHtml %}
+    {{ input({
+      id: "approximateDateMoreThan",
+      name: "appointment[previousMammogramTemp][approximateDate]",
+      label: {
+        text: "Approximate date"
+      },
+      hint: {
+        text: "For example, " + (now() | remove(1, 'year') | formatDate('MMMM YYYY'))
+      },
+      classes: "nhsuk-u-width-two-thirds",
+      value: appointment.previousMammogramTemp.approximateDate
+    }) }}
+  {% endset %}
+
+  {% set lessThanSixMonthsHtml %}
+    <p>This appointment will need to stop and you will be prompted to reschedule once 6 months has passed.</p>
+
+    {{ input({
+      id: "approximateDateLessThan",
+      name: "appointment[previousMammogramTemp][approximateDate]",
+      label: {
+        text: "Approximate date"
+      },
+      hint: {
+        text: "For example, " + (now() | remove(3, 'months') | formatDate('MMMM YYYY'))
+      },
+      classes: "nhsuk-u-width-two-thirds",
+      value: appointment.previousMammogramTemp.approximateDate
+    }) }}
+
+  {% endset %}
+
+  {# Radios for when were they taken #}
+  {{ radios({
+    idPrefix: "dateType",
+    name: "appointment[previousMammogramTemp][dateType]",
+    fieldset: {
+      legend: {
+        text: "When were the x-rays taken?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    value: appointment.previousMammogramTemp.dateType,
+    items: [
+      {
+        value: "dateKnown",
+        text: "Enter an exact date",
+        conditional: {
+          html: dateKnownHtml
+        }
+      },
+      {
+        value: "moreThanSixMonths",
+        text: "Not sure (at least 6 months ago)",
+        conditional: {
+          html: moreThanSixMonthsHtml
+        }
+      },
+      {
+        value: "lessThanSixMonths",
+        text: "Not sure (less than 6 months ago)",
+        conditional: {
+          html: lessThanSixMonthsHtml
+        }
+      }
+    ]
+  }) }}
+
+  {# Radios for 'Were they taken with the same name' with optoins for 'Same name [name here]' and 'Different name ' #}
+
+  {% set differentNameHtml %}
+
+    {{ input({
+      id: "sameNameInput",
+      name: "appointment[previousMammogramTemp][previousName]",
+      label: {
+        text: "Enter the previously used name"
+      },
+      value: appointment.previousMammogramTemp.previousName,
+      classes: "nhsuk-u-width-two-thirds"
+    }) }}
+
+  {% endset %}
+
+  {{ radios({
+    idPrefix: "sameName",
+    name: "appointment[previousMammogramTemp][sameName]",
+    fieldset: {
+      legend: {
+        text: "Were they taken with the name " + (participant | getFullName) + "?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    value: appointment.previousMammogramTemp.sameName,
+    items: [
+      {
+        value: "sameName",
+        text: "Yes"
+      },
+      {
+        value: "differentName",
+        text: "No, under a different name",
+        conditional: {
+          html: differentNameHtml
+        }
+      }
+    ]
+  }) }}
+
+  {# Textarea for any other relevant details #}
+
+  {{ textarea({
+    name: "appointment[previousMammogramTemp][otherDetails]",
+    rows: "2",
+    label: {
+      text: "Additional information (optional)",
+      size: "m"
+    },
+    value: appointment.previousMammogramTemp.otherDetails,
+    hint: {
+      text: "For example, the reason for the mammogram, the participant's previous address, and the outcome of the assessment"
+    }
+  }) }}
+
+  {{ button({
+    text: "Save"
+  }) }}
+
+  {# Only show delete link if this is a previously saved mammogram #}
+  {% if appointment.previousMammogramTemp.id %}
+    {% set deleteHref %}
+      ./delete/{{ appointment.previousMammogramTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+    {% endset %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+        Delete this mammogram
+      </a>
+    </p>
+  {% endif %}
+
+{% endblock %}
+

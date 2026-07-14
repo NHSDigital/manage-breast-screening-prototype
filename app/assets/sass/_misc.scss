@@ -117,7 +117,7 @@ body.js-enabled .app-no-js-only {
   @include nhsuk-width-container(1200px);
 }
 
-.event-row:focus {
+.appointment-row:focus {
   outline: none;
   box-shadow:
     0 0 0 2px #f0f4f5,

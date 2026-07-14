@@ -14,22 +14,22 @@
 
 {% block pageContent %}
 
-  {# Get all events that have been deferred #}
-  {% set deferredEvents = [] %}
-  {% for thisEvent in data.events %}
-    {% if thisEvent | isDeferred %}
-      {% set deferredEvents = deferredEvents | push(thisEvent) %}
+  {# Get all appointments that have been deferred #}
+  {% set deferredAppointments = [] %}
+  {% for thisAppointment in data.appointments %}
+    {% if thisAppointment | isDeferred %}
+      {% set deferredAppointments = deferredAppointments | push(thisAppointment) %}
     {% endif %}
   {% endfor %}
 
   {# Sort by deferral date, most recent first #}
-  {% set deferredEvents = deferredEvents | sort(true, false, 'imageReading.deferral.deferredAt') %}
+  {% set deferredAppointments = deferredAppointments | sort(true, false, 'imageReading.deferral.deferredAt') %}
 
-  {# Collect resolved deferrals across all events, most recently resolved first #}
+  {# Collect resolved deferrals across all appointments, most recently resolved first #}
   {% set resolvedDeferrals = [] %}
-  {% for thisEvent in data.events %}
-    {% for pastDeferral in thisEvent.imageReading.deferralHistory %}
-      {% set resolvedDeferrals = resolvedDeferrals | push({ event: thisEvent, deferral: pastDeferral }) %}
+  {% for thisAppointment in data.appointments %}
+    {% for pastDeferral in thisAppointment.imageReading.deferralHistory %}
+      {% set resolvedDeferrals = resolvedDeferrals | push({ appointment: thisAppointment, deferral: pastDeferral }) %}
     {% endfor %}
   {% endfor %}
   {% set resolvedDeferrals = resolvedDeferrals | sort(true, false, 'deferral.resolvedAt') %}
@@ -39,23 +39,23 @@
 
   <p>Cases deferred from reading require manual review before they can be returned to the reading queue.</p>
 
-  {% if deferredEvents | length == 0 %}
+  {% if deferredAppointments | length == 0 %}
     <p>No deferred cases.</p>
   {% else %}
 
-    {% for thisEvent in deferredEvents %}
-      {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
-      {% set deferral = thisEvent.imageReading.deferral %}
+    {% for thisAppointment in deferredAppointments %}
+      {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
+      {% set deferral = thisAppointment.imageReading.deferral %}
 
       {% set screenedHtml %}
-        {% set daysSinceScreening = thisEvent.timing.startTime | daysSince %}
+        {% set daysSinceScreening = thisAppointment.timing.startTime | daysSince %}
         {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
           {{ "Urgent" | toTag }}<br>
         {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
           {{ "Due soon" | toTag }}<br>
         {% endif %}
-        {{ thisEvent.timing.startTime | formatDate }}
-        <span class="nhsuk-u-secondary-text-colour">({{ thisEvent.timing.startTime | formatRelativeDate }})</span>
+        {{ thisAppointment.timing.startTime | formatDate }}
+        <span class="nhsuk-u-secondary-text-colour">({{ thisAppointment.timing.startTime | formatRelativeDate }})</span>
       {% endset %}
 
       {% set deferredHtml %}
@@ -80,13 +80,13 @@
       <div class="nhsuk-summary-card">
         <div class="nhsuk-summary-card__title-wrapper">
           <h2 class="nhsuk-summary-card__title">
-            <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}" class="nhsuk-link--no-visited-state">
+            <a href="/clinics/{{ thisAppointment.clinicId }}/appointments/{{ thisAppointment.id }}" class="nhsuk-link--no-visited-state">
               {{ thisParticipant | getFullName }}
             </a>
           </h2>
           <div class="nhsuk-summary-card__actions">
             <form action="/reading/deferred/undo" method="POST">
-              <input type="hidden" name="eventId" value="{{ thisEvent.id }}">
+              <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
               <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
                 Unflag case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span>
               </button>
@@ -113,9 +113,9 @@
     <p>These cases have been unflagged and returned to the reading queue.</p>
 
     {% for row in resolvedDeferrals %}
-      {% set thisEvent = row.event %}
+      {% set thisAppointment = row.appointment %}
       {% set deferral = row.deferral %}
-      {% set thisParticipant = data | getParticipant(thisEvent.participantId) %}
+      {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
 
       {% set deferredHtml %}
         {{ deferral.deferredAt | formatDate("D MMM YYYY") }}
@@ -146,7 +146,7 @@
       <div class="nhsuk-summary-card">
         <div class="nhsuk-summary-card__title-wrapper">
           <h3 class="nhsuk-summary-card__title">
-            <a href="/clinics/{{ thisEvent.clinicId }}/events/{{ thisEvent.id }}" class="nhsuk-link--no-visited-state">
+            <a href="/clinics/{{ thisAppointment.clinicId }}/appointments/{{ thisAppointment.id }}" class="nhsuk-link--no-visited-state">
               {{ thisParticipant | getFullName }}
             </a>
           </h3>

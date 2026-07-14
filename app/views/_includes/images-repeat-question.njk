@@ -4,8 +4,8 @@
   
   Parameters:
   - viewItem: object with { side, view, code, count }
-  - namePrefix: string for form field names (e.g., "event[mammogramData]")
-  - dataSource: object containing existing data for pre-filling (e.g., data.event.mammogramData)
+  - namePrefix: string for form field names (e.g., "appointment[mammogramData]")
+  - dataSource: object containing existing data for pre-filling (e.g., data.appointment.mammogramData)
 #}
 
 {% set extraImageCount = (viewItem.count | int) - 1 %}

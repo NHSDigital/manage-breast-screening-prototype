@@ -145,7 +145,7 @@ const generateViewImages = ({
  *
  * @param {object} [options] - Generation options
  * @param {Date|string} [options.startTime] - Starting timestamp (defaults to now)
- * @param {string} [options.accessionNumber] - Accession number for this study (from the event)
+ * @param {string} [options.accessionNumber] - Accession number for this study (from the appointment)
  * @param {boolean} [options.isSeedData] - Whether generating seed data
  * @param {object} [options.config] - Optional configuration for specific scenarios
  * @param {string} [options.config.scenario] - Force a specific scenario ('standard', 'extraImages', 'technicalRepeat', 'incomplete', 'incompleteImperfect')

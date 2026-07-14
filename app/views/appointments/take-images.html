@@ -1,0 +1,22 @@
+{# app/views/appointments/images.html #}
+
+{% set isCompleted = appointment | isCompleted %}
+
+
+{% set showWorkflowNav = true %}
+
+{% set hideBackLink = true %}
+
+{# Used in automatic flow to show holding page #}
+{# {% set isAwaitingImages = appointment.workflowStatus['awaiting-images'] != 'completed' %} #}
+
+{% set isManualImageCollection = (data.settings.screening.manualImageCollection | falsify) or data.appointment.isManualImageCollection %}
+
+{# {% set imagesStageCompleted = true if data.appointment.workflowStatus['take-images'] == 'completed' else false %} #}
+
+{% if isManualImageCollection %}
+  {% include "appointments/images-manual.html" %}
+{% else %}
+  {% include "appointments/images-before-mammography.html" %}
+{% endif %}
+

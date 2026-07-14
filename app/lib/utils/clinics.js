@@ -37,17 +37,17 @@ const getTodaysClinics = (clinics) => {
 }
 
 /**
- * Get events for a specific clinic
+ * Get appointments for a specific clinic
  *
- * @param {Array} events - Array of all events
+ * @param {Array} appointments - Array of all appointments
  * @param {string} clinicId - Clinic ID to filter by
- * @returns {Array} Events belonging to the given clinic
+ * @returns {Array} Appointments belonging to the given clinic
  */
-const getClinicEvents = (events, clinicId) => {
-  if (!events || !clinicId) return []
-  // console.log(`Looking for events with clinicId: ${clinicId}`);
-  // console.log(`Found ${events.filter(e => e.clinicId === clinicId).length} events`);
-  return events.filter((e) => e.clinicId === clinicId)
+const getClinicAppointments = (appointments, clinicId) => {
+  if (!appointments || !clinicId) return []
+  // console.log(`Looking for appointments with clinicId: ${clinicId}`);
+  // console.log(`Found ${appointments.filter(e => e.clinicId === clinicId).length} appointments`);
+  return appointments.filter((e) => e.clinicId === clinicId)
 }
 
 /**
@@ -139,7 +139,7 @@ module.exports = {
   getClinic,
   getTodaysClinics,
   getFilteredClinics,
-  getClinicEvents,
+  getClinicAppointments,
   formatTimeSlot,
   getClinicHours
 }

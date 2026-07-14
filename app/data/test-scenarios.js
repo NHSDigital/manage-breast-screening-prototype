@@ -1,7 +1,7 @@
 // app/data/test-scenarios.js
 
 /**
- * Test scenarios define specific participants and events that should always exist
+ * Test scenarios define specific participants and appointments that should always exist
  * in the generated data. This ensures we have consistent test cases.
  *
  * Only specify what needs to be consistent - any unspecified fields will be randomly generated.
@@ -20,7 +20,7 @@ module.exports = [
         ethnicBackground: null
       },
       config: {
-        eventId: '5gpn41oi',
+        appointmentId: '5gpn41oi',
         defaultRiskLevel: 'routine',
         repeatViews: ['RMLO'],
         missingViews: [], // ensure all views are present
@@ -32,7 +32,7 @@ module.exports = [
         },
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_checked_in',
+          status: 'appointment_checked_in',
           approximateTime: '10:30'
         }
       }
@@ -49,11 +49,11 @@ module.exports = [
         ethnicBackground: null
       },
       config: {
-        eventId: '1fefyh1q',
+        appointmentId: '1fefyh1q',
         defaultRiskLevel: 'routine',
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_complete',
+          status: 'appointment_complete',
           approximateTime: '9:45'
         },
         // Force 100% of all medical information types for testing
@@ -90,13 +90,13 @@ module.exports = [
       },
       extraNeeds: null,
       config: {
-        eventId: '0gdof6fh',
+        appointmentId: '0gdof6fh',
         defaultRiskLevel: 'routine',
         repeatViews: [],
         missingViews: [],
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_in_progress',
+          status: 'appointment_in_progress',
           approximateTime: '11:30'
           // slotIndex: 20,
         },

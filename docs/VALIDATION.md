@@ -21,7 +21,7 @@ Each error object has three properties:
 ```javascript
 {
   text: "Select why this appointment has been stopped",  // Error message shown to user
-  name: "event[appointmentStopped][stoppedReason]",      // Matches component's `name` param
+  name: "appointment[appointmentStopped][stoppedReason]",      // Matches component's `name` param
   href: "#stoppedReason"                                  // Links to the field's id in error summary
 }
 ```
@@ -32,47 +32,47 @@ Each error object has three properties:
 ## Route pattern
 
 ```javascript
-router.post('/clinics/:clinicId/events/:eventId/my-page-answer', (req, res) => {
-  const { clinicId, eventId } = req.params
+router.post('/clinics/:clinicId/appointments/:appointmentId/my-page-answer', (req, res) => {
+  const { clinicId, appointmentId } = req.params
   const data = req.session.data
 
-  const someField = data.event.someField
+  const someField = data.appointment.someField
 
   if (!someField) {
     req.flash('error', {
       text: 'Select an option',
-      name: 'event[someField]',
+      name: 'appointment[someField]',
       href: '#someField'
     })
-    res.redirect(`/clinics/${clinicId}/events/${eventId}/my-page`)
+    res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/my-page`)
     return
   }
 
   // Multiple errors
   const errors = []
-  if (!data.event.fieldA) {
+  if (!data.appointment.fieldA) {
     errors.push({
       text: 'Enter field A',
-      name: 'event[fieldA]',
+      name: 'appointment[fieldA]',
       href: '#fieldA'
     })
   }
-  if (!data.event.fieldB) {
+  if (!data.appointment.fieldB) {
     errors.push({
       text: 'Select field B',
-      name: 'event[fieldB]',
+      name: 'appointment[fieldB]',
       href: '#fieldB'
     })
   }
 
   if (errors.length) {
     errors.forEach((err) => req.flash('error', err))
-    res.redirect(`/clinics/${clinicId}/events/${eventId}/my-page`)
+    res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/my-page`)
     return
   }
 
   // Success — continue
-  res.redirect(`/clinics/${clinicId}/events/${eventId}/next-page`)
+  res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/next-page`)
 })
 ```
 
@@ -84,8 +84,8 @@ Pipe the component config through `| populateErrors`:
 
 ```njk
 {{ radios({
-  name: "event[someField]",
-  value: event.someField,
+  name: "appointment[someField]",
+  value: appointment.someField,
   fieldset: {
     legend: {
       text: "Select an option",
@@ -108,11 +108,11 @@ The filter looks up `flash.error` for an error with a matching `name` and adds `
 ```njk
 {{ dateInput({
   id: "dateStarted",
-  namePrefix: "event[symptomTemp][dateStarted]",
+  namePrefix: "appointment[symptomTemp][dateStarted]",
   hint: { text: "For example, 3 2025" },
   items: [
-    { name: "month", classes: "nhsuk-input--width-2", value: event.symptomTemp.dateStarted.month },
-    { name: "year", classes: "nhsuk-input--width-4", value: event.symptomTemp.dateStarted.year }
+    { name: "month", classes: "nhsuk-input--width-2", value: appointment.symptomTemp.dateStarted.month },
+    { name: "year", classes: "nhsuk-input--width-4", value: appointment.symptomTemp.dateStarted.year }
   ]
 } | populateErrors) }}
 ```
@@ -122,7 +122,7 @@ The filter looks up `flash.error` for an error with a matching `name` and adds `
 When radios/checkboxes are split across columns and can't use `populateErrors` directly on the component (because the fieldset is separate), use `getFlashError` manually:
 
 ```njk
-{% set _locationError = 'event[symptomTemp][location]' | getFlashError %}
+{% set _locationError = 'appointment[symptomTemp][location]' | getFlashError %}
 
 <div class="nhsuk-form-group{{ ' nhsuk-form-group--error' if _locationError else '' }}">
   {% call fieldset({

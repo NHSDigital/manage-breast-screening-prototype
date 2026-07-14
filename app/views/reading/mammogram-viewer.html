@@ -522,7 +522,7 @@
     // View order setting rendered from Nunjucks
     const VIEW_ORDER = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
 
-    let currentEventId = null
+    let currentAppointmentId = null
     let channel = null
 
     // DOM elements
@@ -743,7 +743,7 @@
       placeholderEl.style.display = "flex"
       loadingEl.style.display = "none"
       additionalLinkEl.style.display = "none"
-      currentEventId = null
+      currentAppointmentId = null
       currentAllPaths = null
       updateStatus("Waiting for participant...")
     }
@@ -893,7 +893,7 @@
       headerEl.style.display = "flex"
       gridEl.style.display = "grid"
 
-      currentEventId = data.eventId
+      currentAppointmentId = data.appointmentId
       updateStatus(`Viewing: ${data.participantName}`)
     }
 
@@ -917,8 +917,8 @@
         // Show loading state when navigating away from current case
         showLoading()
       } else if (data.type === "show") {
-        // Ignore if same event already displayed
-        if (data.eventId === currentEventId) {
+        // Ignore if same appointment already displayed
+        if (data.appointmentId === currentAppointmentId) {
           return
         }
         showMammograms(data)

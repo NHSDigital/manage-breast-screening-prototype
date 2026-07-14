@@ -1,7 +1,7 @@
 {% set specialAppointmentRows = [] %}
 {% set showChangeLink = false %}
 
-{% set specialAppointmentData = event.specialAppointment %}
+{% set specialAppointmentData = appointment.specialAppointment %}
 
 {% if specialAppointmentData and specialAppointmentData.supportTypes %}
   {% for supportType in specialAppointmentData.supportTypes %}

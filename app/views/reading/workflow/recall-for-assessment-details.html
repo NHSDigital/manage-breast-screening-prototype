@@ -45,7 +45,7 @@
         {
           value: "clinical",
           text: "Normal, symptoms need clinical assessment"
-        } if event.medicalInformation.symptoms | length > 0,
+        } if appointment.medicalInformation.symptoms | length > 0,
         {
           value: "abnormal",
           text: "Abnormal, recall for assessment"
@@ -111,14 +111,14 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-      {% set symptoms = event.medicalInformation.symptoms %}
+      {% set symptoms = appointment.medicalInformation.symptoms %}
       {% include "symptomsWarningCard.njk" %}
     </div>
   </div>
 
   {# Set up annotation data early — needed by both breast cards and tab modes #}
   {% if annotationsMode != 'without-images' %}
-    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
   {% endif %}

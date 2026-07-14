@@ -6,7 +6,7 @@
 {% set typeDataObject = data.medicalHistoryTypes | where("type", medicalHistoryType) | first %}
 
 {# Set dynamic page heading based on whether editing existing data #}
-{% if event.medicalHistoryTemp.id %}
+{% if appointment.medicalHistoryTemp.id %}
   {% set dynamicPageHeading = "Edit details of " + typeDataObject.name | lower %}
 {% else %}
   {% set dynamicPageHeading = "Add details of " + typeDataObject.name | lower %}
@@ -24,7 +24,7 @@
   </h1>
 
   {{ appHiddenInput({
-    name: "event[medicalHistoryTemp][medicalHistoryType]",
+    name: "appointment[medicalHistoryTemp][medicalHistoryType]",
     value: medicalHistoryType
   }) }}
 
@@ -46,9 +46,9 @@
   </div>
 
   {# Only show link if this is a previously saved symptom #}
-  {% if event.medicalHistoryTemp.id %}
+  {% if appointment.medicalHistoryTemp.id %}
     {% set deleteHref %}
-      ./{{ typeDataObject.slug }}/delete/{{ event.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+      ./{{ typeDataObject.slug }}/delete/{{ appointment.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
     {% endset %}
     <p class="nhsuk-u-margin-top-4">
       <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">

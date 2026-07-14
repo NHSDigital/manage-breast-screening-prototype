@@ -283,7 +283,7 @@ module.exports = {
 // {% set condition = faker.helpers.arrayElement(['Diabetes', 'Hypertension']) %}
 
 // {# Use explicit seed for specific entity #}
-// {% set symptoms = ['Pain', 'Swelling', 'Discharge'] | randomItem(event.id) %}
+// {% set symptoms = ['Pain', 'Swelling', 'Discharge'] | randomItem(appointment.id) %}
 
 // {# Use different entities as seeds for different parts of the page #}
 // {% set clinicStatus = ['Busy', 'Normal', 'Quiet'] | randomItem(clinic.id) %}
@@ -305,7 +305,7 @@ module.exports = {
 // {% set selectedOption = ['one', 'two', 'three'] | randomItem %}
 
 // {# Or use explicit seed when needed #}
-// {% set selectedOption = ['one', 'two', 'three'] | randomItem(event.id) %}
+// {% set selectedOption = ['one', 'two', 'three'] | randomItem(appointment.id) %}
 
 // {# Works the same for all functions #}
 // {% set priority = { 'low': 0.7, 'medium': 0.2, 'high': 0.1 } | randomWeighted %}

@@ -23,7 +23,7 @@ This document provides a technical overview of the image reading section of the 
 
 Need pages to view completed readings outside the workflow:
 
-- View a single event's readings (both readers' opinions, annotations)
+- View a single appointment's readings (both readers' opinions, annotations)
 - View all readings for a participant
 
 ---
@@ -54,7 +54,7 @@ app/
 │   ├── reading/
 │   │   ├── index.html               # Reading dashboard/home
 │   │   ├── clinics.html             # Clinic list view
-│   │   ├── batch.html               # Batch view with event list
+│   │   ├── batch.html               # Batch view with appointment list
 │   │   ├── skipped-review.html      # End-of-batch page when skipped cases remain
 │   │   ├── history.html             # Reading history
 │   │   ├── reading-statistics.html  # Reading statistics dashboard
@@ -87,12 +87,12 @@ app/
 
 ## Data Storage Locations
 
-### 1. Permanent Storage: `event.imageReading.reads`
+### 1. Permanent Storage: `appointment.imageReading.reads`
 
-Final reading opinions are stored on the event object:
+Final reading opinions are stored on the appointment object:
 
 ```javascript
-event.imageReading = {
+appointment.imageReading = {
   reads: {
     [userId]: {
       opinion: 'normal' | 'technical_recall' | 'recall_for_assessment',
@@ -112,7 +112,7 @@ event.imageReading = {
 }
 ```
 
-- Keyed by userId - each user can have one reading per event
+- Keyed by userId - each user can have one reading per appointment
 - Written via `writeReading()` utility function
 - `readNumber` indicates order (1 = first, 2 = second read, 3 = arbitration read)
 
@@ -122,8 +122,8 @@ Multi-step form data is stored temporarily during the reading workflow:
 
 ```javascript
 data.imageReadingTemp = {
-  // Event being read (used to detect navigation to different event)
-  eventId: 'abc123',
+  // Appointment being read (used to detect navigation to different appointment)
+  appointmentId: 'abc123',
 
   // Opinion being recorded (saved via form binding)
   opinion: 'normal' | 'technical_recall' | 'recall_for_assessment',
@@ -185,10 +185,10 @@ data.imageReadingTemp = {
 }
 ```
 
-- Initialised when entering a new event (on GET request only)
+- Initialised when entering a new appointment (on GET request only)
 - Form fields bind directly via `name="imageReadingTemp[fieldName]"`
 - Cleared on final save via `save-opinion` route
-- When returning to an already-read event, populated from saved read
+- When returning to an already-read appointment, populated from saved read
 
 ### 3. Batch Storage: `data.readingSessionBatches`
 
@@ -200,17 +200,17 @@ data.readingSessionBatches = {
     id: 'abc123',
     name: 'All cases needing reads',
     type: 'all_reads' | 'first_reads' | 'second_reads' | 'awaiting_priors' | 'clinic' | 'custom',
-    eventIds: ['event1', 'event2', ...],  // grows one-at-a-time for lazy batches
+    appointmentIds: ['appointment1', 'appointment2', ...],  // grows one-at-a-time for lazy batches
     targetSize: 25,                        // desired final size (0 = unlimited for clinic batches)
     clinicId: null,  // Only for clinic batches
     createdAt: '2025-01-15T10:00:00.000Z',
-    skippedEvents: ['event3'],
+    skippedAppointments: ['appointment3'],
     filters: { hasSymptoms, includeAwaitingPriors, complexOnly }
   }
 }
 ```
 
-**Lazy batches**: When `data.settings.reading.lazyBatches === 'true'` (default), non-clinic batches start with only the first event. `topUpBatch()` is called after each read or skip to add the next eligible event, growing the batch one case at a time up to `targetSize`. Clinic batches are always fully populated at creation.
+**Lazy batches**: When `data.settings.reading.lazyBatches === 'true'` (default), non-clinic batches start with only the first appointment. `topUpBatch()` is called after each read or skip to add the next eligible appointment, growing the batch one case at a time up to `targetSize`. Clinic batches are always fully populated at creation.
 
 ---
 
@@ -224,51 +224,51 @@ data.readingSessionBatches = {
 /reading/clinics/mine                 # Clinics with cases user can read
 /reading/clinics/all                  # All clinics
 /reading/clinics/:clinicId            # Loads/creates clinic batch, redirects to batch view
-/reading/clinics/:clinicId/start      # Creates clinic batch, starts first event
+/reading/clinics/:clinicId/start      # Creates clinic batch, starts first appointment
 /reading/priors                       # Prior mammogram management (redirects to /all)
 /reading/priors/:filter               # Filter: all | not-requested | pending | requested | resolved
 /reading/priors/update-status         # POST: Update mammogram request status
-/reading/create-batch                 # Creates batch from query params, redirects to first event
+/reading/create-batch                 # Creates batch from query params, redirects to first appointment
 /reading/batch/:batchId               # Batch overview (redirects to /your-reads)
 /reading/batch/:batchId/skipped-review  # End-of-batch page when skipped cases remain
 /reading/batch/:batchId/:view         # Batch with view (your-reads | all-reads)
-/reading/batch/:batchId/events/:eventId              # Event entry (redirects to opinion, existing-read, or request-priors)
-/reading/batch/:batchId/events/:eventId/:step        # GET: Render workflow step template
-/reading/batch/:batchId/events/:eventId/skip         # Skip current event, advance batch
-/reading/batch/:batchId/events/:eventId/opinion-answer           # POST: Handle opinion selection → compare or details
-/reading/batch/:batchId/events/:eventId/opinion-details-complete # POST: After details → compare (late) or review/save
-/reading/batch/:batchId/events/:eventId/technical-recall-answer  # POST: Clean up TR view data
-/reading/batch/:batchId/events/:eventId/compare-answer           # POST: Handle comparison decision
-/reading/batch/:batchId/events/:eventId/save-opinion             # POST: Persist read, advance batch
-/reading/batch/:batchId/events/:eventId/request-priors-answer    # POST: Record prior requests, advance batch
-/reading/batch/:batchId/events/:eventId/undo-priors              # GET/POST: Undo user's pending prior requests
-/reading/batch/:batchId/events/:eventId/annotation/add           # Clear temp, redirect to annotation form
-/reading/batch/:batchId/events/:eventId/annotation/edit/:id      # Load annotation into temp, redirect to form
-/reading/batch/:batchId/events/:eventId/annotation/save          # POST: Save annotation with validation
-/reading/batch/:batchId/events/:eventId/annotation/delete/:id    # Delete annotation
+/reading/batch/:batchId/appointments/:appointmentId              # Appointment entry (redirects to opinion, existing-read, or request-priors)
+/reading/batch/:batchId/appointments/:appointmentId/:step        # GET: Render workflow step template
+/reading/batch/:batchId/appointments/:appointmentId/skip         # Skip current appointment, advance batch
+/reading/batch/:batchId/appointments/:appointmentId/opinion-answer           # POST: Handle opinion selection → compare or details
+/reading/batch/:batchId/appointments/:appointmentId/opinion-details-complete # POST: After details → compare (late) or review/save
+/reading/batch/:batchId/appointments/:appointmentId/technical-recall-answer  # POST: Clean up TR view data
+/reading/batch/:batchId/appointments/:appointmentId/compare-answer           # POST: Handle comparison decision
+/reading/batch/:batchId/appointments/:appointmentId/save-opinion             # POST: Persist read, advance batch
+/reading/batch/:batchId/appointments/:appointmentId/request-priors-answer    # POST: Record prior requests, advance batch
+/reading/batch/:batchId/appointments/:appointmentId/undo-priors              # GET/POST: Undo user's pending prior requests
+/reading/batch/:batchId/appointments/:appointmentId/annotation/add           # Clear temp, redirect to annotation form
+/reading/batch/:batchId/appointments/:appointmentId/annotation/edit/:id      # Load annotation into temp, redirect to form
+/reading/batch/:batchId/appointments/:appointmentId/annotation/save          # POST: Save annotation with validation
+/reading/batch/:batchId/appointments/:appointmentId/annotation/delete/:id    # Delete annotation
 /reading/history                      # Reading history (redirects to /mine)
 /reading/history/:view                # History view (mine | all)
 ```
 
 ### Middleware
 
-The route file includes middleware at `/reading/batch/:batchId/events/:eventId` that:
+The route file includes middleware at `/reading/batch/:batchId/appointments/:appointmentId` that:
 
-- Validates batch and event exist
+- Validates batch and appointment exist
 - Loads and attaches to `res.locals`:
-  - `batch`, `event`, `participant`, `clinic`, `unit`, `location`
+  - `batch`, `appointment`, `participant`, `clinic`, `unit`, `location`
   - `progress` (batch reading progress)
-  - `eventData` (combined object)
-- On GET requests only: Initialises `imageReadingTemp` with `eventId` if not already set for this event
-- Populates `imageReadingTemp` from saved read if user has already read this event
+  - `appointmentData` (combined object)
+- On GET requests only: Initialises `imageReadingTemp` with `appointmentId` if not already set for this appointment
+- Populates `imageReadingTemp` from saved read if user has already read this appointment
 
 ---
 
 ## Reading Flow
 
-### Event Entry
+### Appointment Entry
 
-The base event URL (`/events/:eventId`) auto-redirects:
+The base appointment URL (`/appointments/:appointmentId`) auto-redirects:
 
 - **Not read yet, no priors pending**: Redirects to `/opinion` (clears `imageReadingTemp`)
 - **Already read**: Redirects to `/existing-read` (shows saved read with change option)
@@ -278,7 +278,7 @@ The base event URL (`/events/:eventId`) auto-redirects:
 
 ```
 /opinion → POST /opinion-answer → [if confirmNormal] /confirm-normal → POST /save-opinion
-                                   [otherwise] POST /save-opinion → writeReading() → next event
+                                   [otherwise] POST /save-opinion → writeReading() → next appointment
 ```
 
 If user selects "Normal – add details": opinion normalised to `normal`, `wantsNormalDetails` set, redirects to `/normal-details` → POST `/opinion-details-complete` → save.
@@ -357,11 +357,11 @@ Extends `layout-app.html` and provides (~60 lines):
 Templates receive via `res.locals`:
 
 - `batch` - Current batch object
-- `event` - Current event (use `event | getReadingMetadata` to compute metadata)
+- `appointment` - Current appointment (use `appointment | getReadingMetadata` to compute metadata)
 - `participant` - Participant data
 - `clinic`, `unit`, `location` - Clinic context
 - `progress` - Reading progress object (includes `previousUserHasRead`, `nextUserHasRead`)
-- `batchId`, `eventId` - Route params
+- `batchId`, `appointmentId` - Route params
 - `isReadingWorkflow` - Boolean flag for workflow mode
 
 ### Workflow Page Flags
@@ -374,69 +374,69 @@ Templates receive via `res.locals`:
 
 ## Utility Functions
 
-### reading.js — Single Event
+### reading.js — Single Appointment
 
-- `getReadingMetadata(event)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions }` (computed on demand)
-- `getReadsAsArray(event)` - Returns reads sorted by readNumber (or timestamp fallback)
-- `getReadsForUser(event, userId)` - Get this user's read object
-- `getOtherReads(event, userId)` - Get reads from other users (for comparison)
-- `writeReading(event, userId, reading, data, batchId)` - Saves a reading, assigns readNumber, removes from skipped list
+- `getReadingMetadata(appointment)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions }` (computed on demand)
+- `getReadsAsArray(appointment)` - Returns reads sorted by readNumber (or timestamp fallback)
+- `getReadsForUser(appointment, userId)` - Get this user's read object
+- `getOtherReads(appointment, userId)` - Get reads from other users (for comparison)
+- `writeReading(appointment, userId, reading, data, batchId)` - Saves a reading, assigns readNumber, removes from skipped list
 - `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
 - `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `arbitrationPolicy`
-- `getOutcome(event, settings)` - Computes outcome: `not_read` | `pending_second_read` | `arbitration_pending` | `normal` | `technical_recall` | `recall_for_assessment`. Third read (readNumber 3) is the arbitration read and its opinion resolves the case.
-- `getComparisonInfo(event, secondReadData, userId, settings)` - Returns comparison data for second reader, or `false` if not applicable
-- `shouldShowComparePage(event, secondReadData, userId, settings)` - Boolean: whether to show compare page given timing/filter settings
+- `getOutcome(appointment, settings)` - Computes outcome: `not_read` | `pending_second_read` | `arbitration_pending` | `normal` | `technical_recall` | `recall_for_assessment`. Third read (readNumber 3) is the arbitration read and its opinion resolves the case.
+- `getComparisonInfo(appointment, secondReadData, userId, settings)` - Returns comparison data for second reader, or `false` if not applicable
+- `shouldShowComparePage(appointment, secondReadData, userId, settings)` - Boolean: whether to show compare page given timing/filter settings
 
-### reading.js — Multiple Events
+### reading.js — Multiple Appointments
 
-- `getReadingStatusForEvents(events, userId)` - Aggregated status with counts
-- `getReadingProgress(events, currentEventId, skippedEvents, userId)` - Navigation progress
-- `enhanceEventsWithReadingData(events, participants, userId)` - Adds metadata to events
-- `sortEventsByScreeningDate(events)` - Oldest-first sort
+- `getReadingStatusForAppointments(appointments, userId)` - Aggregated status with counts
+- `getReadingProgress(appointments, currentAppointmentId, skippedAppointments, userId)` - Navigation progress
+- `enhanceAppointmentsWithReadingData(appointments, participants, userId)` - Adds metadata to appointments
+- `sortAppointmentsByScreeningDate(appointments)` - Oldest-first sort
 - `getReadingClinics(data, options)` - All clinics with reading status attached
-- `getReadableEventsForClinic(data, clinicId)` - Events in a clinic the user can read
+- `getReadableAppointmentsForClinic(data, clinicId)` - Appointments in a clinic the user can read
 
 ### reading.js — Filter Functions
 
-- `filterEventsByEligibleForReading(events)` - Events within reading window
-- `filterEventsByNeedsFirstRead(events)` - No reads yet
-- `filterEventsByNeedsSecondRead(events)` - Exactly one read, needs second
-- `filterEventsByNeedsAnyRead(events)` - Needs first or second read
-- `filterEventsByFullyRead(events, requiredReads)` - Has required number of reads
-- `filterEventsByUserCanRead(events, userId)` - Events this user can read
-- `filterEventsByUserCanReadOrHasRead(events, userId, options)` - User can read or has read
-- `filterEventsByClinic(events, clinicId)` - Filter by clinic
-- `filterEventsByDayRange(events, minDays, maxDays)` - Filter by days since screening
+- `filterAppointmentsByEligibleForReading(appointments)` - Appointments within reading window
+- `filterAppointmentsByNeedsFirstRead(appointments)` - No reads yet
+- `filterAppointmentsByNeedsSecondRead(appointments)` - Exactly one read, needs second
+- `filterAppointmentsByNeedsAnyRead(appointments)` - Needs first or second read
+- `filterAppointmentsByFullyRead(appointments, requiredReads)` - Has required number of reads
+- `filterAppointmentsByUserCanRead(appointments, userId)` - Appointments this user can read
+- `filterAppointmentsByUserCanReadOrHasRead(appointments, userId, options)` - User can read or has read
+- `filterAppointmentsByClinic(appointments, clinicId)` - Filter by clinic
+- `filterAppointmentsByDayRange(appointments, minDays, maxDays)` - Filter by days since screening
 
 ### reading.js — Batch Functions
 
-- `createReadingBatch(data, options)` - Creates a batch; lazy batches start with one event
-- `topUpBatch(data, batchId)` - Adds next eligible event if batch is below target size
+- `createReadingBatch(data, options)` - Creates a batch; lazy batches start with one appointment
+- `topUpBatch(data, batchId)` - Adds next eligible appointment if batch is below target size
 - `getReadingBatch(data, batchId)` - Retrieves batch
 - `getOrCreateClinicBatch(data, clinicId)` - Gets/creates clinic-based batch (batched by clinicId)
-- `getFirstReadableEventInBatch(data, batchId, userId)` - First event user can read
-- `getFirstUserReadableEvent(events, userId)` - First readable event in array
-- `getNextUserReadableEvent(events, currentEventId, userId, options)` - Next readable event
-- `getResumeEventForUser(events, userId, skippedEvents)` - Resume point (first readable after furthest progress)
-- `getBatchReadingProgress(data, batchId, currentEventId, userId)` - Progress including `targetSize` and `targetRemaining`
-- `skipEventInBatch(data, batchId, eventId)` - Marks event as skipped
+- `getFirstReadableAppointmentInBatch(data, batchId, userId)` - First appointment user can read
+- `getFirstUserReadableAppointment(appointments, userId)` - First readable appointment in array
+- `getNextUserReadableAppointment(appointments, currentAppointmentId, userId, options)` - Next readable appointment
+- `getResumeAppointmentForUser(appointments, userId, skippedAppointments)` - Resume point (first readable after furthest progress)
+- `getBatchReadingProgress(data, batchId, currentAppointmentId, userId)` - Progress including `targetSize` and `targetRemaining`
+- `skipAppointmentInBatch(data, batchId, appointmentId)` - Marks appointment as skipped
 
 ### reading.js — Boolean Checks
 
-- `hasReads(event)` - Has any reads
-- `canUserReadEvent(event, userId)` - User can read (not already read, not awaiting priors, under max reads)
-- `userHasReadEvent(event, userId)` - User has already read
-- `needsFirstRead(event)`, `needsSecondRead(event)`, `needsArbitration(event)` (policy-aware context function)
+- `hasReads(appointment)` - Has any reads
+- `canUserReadAppointment(appointment, userId)` - User can read (not already read, not awaiting priors, under max reads)
+- `userHasReadAppointment(appointment, userId)` - User has already read
+- `needsFirstRead(appointment)`, `needsSecondRead(appointment)`, `needsArbitration(appointment)` (policy-aware context function)
 
 ### prior-mammograms.js
 
-- `awaitingPriors(event)` - Any mammogram has `requestStatus` = `'pending'` or `'requested'`
-- `hasUnrequestedPriors(event)` - Any mammogram has `requestStatus` = `'not_requested'`
-- `userRequestedPriors(event, userId)` - User has pending requests on this event
-- `getPriorsSummary(event)` - Count breakdown by status; `hasAwaiting`, `allResolved` flags
-- `getUnrequestedPriors(event)`, `getAwaitingPriors(event)` - Filtered subsets
+- `awaitingPriors(appointment)` - Any mammogram has `requestStatus` = `'pending'` or `'requested'`
+- `hasUnrequestedPriors(appointment)` - Any mammogram has `requestStatus` = `'not_requested'`
+- `userRequestedPriors(appointment, userId)` - User has pending requests on this appointment
+- `getPriorsSummary(appointment)` - Count breakdown by status; `hasAwaiting`, `allResolved` flags
+- `getUnrequestedPriors(appointment)`, `getAwaitingPriors(appointment)` - Filtered subsets
 - `summarisePriorMammogram(mammogram, options)` - One-line display string (location + date)
-- `summarisePriorMammograms(event, options)` - Array of display strings
+- `summarisePriorMammograms(appointment, options)` - Array of display strings
 
 ---
 
@@ -444,7 +444,7 @@ Templates receive via `res.locals`:
 
 ### Eligibility for Reading
 
-An event is eligible for reading when:
+An appointment is eligible for reading when:
 
 - Has completed screening
 - Is within the reading window (30 days)
@@ -452,7 +452,7 @@ An event is eligible for reading when:
 
 ### Double Reading
 
-Each event needs two independent reads:
+Each appointment needs two independent reads:
 
 - First reader records assessment
 - Second reader cannot see first reader's opinion (blind reading)
@@ -460,7 +460,7 @@ Each event needs two independent reads:
 
 ### Reading Metadata
 
-`getReadingMetadata(event)` calculates (computed on demand, not stored):
+`getReadingMetadata(appointment)` calculates (computed on demand, not stored):
 
 - `readCount` - Total reads
 - `uniqueReaderCount` - Different readers
@@ -468,15 +468,15 @@ Each event needs two independent reads:
 - `isDiscordant` - Whether existing reads disagree meaningfully (not just opinion string)
 - `opinions` - Array of unique opinion values
 
-For arbitration state, use `getOutcome(event, settings)` or the `needsArbitration` filter.
+For arbitration state, use `getOutcome(appointment, settings)` or the `needsArbitration` filter.
 
-Use in templates: `{% set metadata = event | getReadingMetadata %}`
+Use in templates: `{% set metadata = appointment | getReadingMetadata %}`
 
 ### Reads Array
 
-`getReadsAsArray(event)` returns reads sorted by `readNumber` (or timestamp fallback).
+`getReadsAsArray(appointment)` returns reads sorted by `readNumber` (or timestamp fallback).
 
-Use in templates: `{% set allReads = event | getReadsAsArray %}`
+Use in templates: `{% set allReads = appointment | getReadsAsArray %}`
 
 ---
 
@@ -514,10 +514,10 @@ When a reader encounters a case with unrequested priors, they can request them v
 
 ### Data Model
 
-Priors are stored as an array on the event. Each prior mammogram has its own request status:
+Priors are stored as an array on the appointment. Each prior mammogram has its own request status:
 
 ```javascript
-event.previousMammograms = [
+appointment.previousMammograms = [
   {
     id: 'abc123',
     location: 'bsu' | 'otherUk' | 'otherNonUk' | 'currentBsu' | 'preferNotToSay',
@@ -531,18 +531,18 @@ event.previousMammograms = [
 ]
 ```
 
-A case is "awaiting priors" (`awaitingPriors(event)`) when any mammogram has `requestStatus` = `'pending'` or `'requested'`. This blocks the event from reading queues.
+A case is "awaiting priors" (`awaitingPriors(appointment)`) when any mammogram has `requestStatus` = `'pending'` or `'requested'`. This blocks the appointment from reading queues.
 
 **Status lifecycle**: `not_requested` → `pending` (reader requests via workflow) → `requested` (admin sends IEP request) → `received` | `not_available` | `not_needed`. Once a reader marks status as `pending`, only they can undo it (via `/undo-priors`); once admin moves to `requested`, undo is no longer possible.
 
 ### Generation
 
-Prior mammograms are generated at seed time in `event-generator.js` using `generatePreviousMammograms()`. Generation rate is configurable via seed profiles in `seed-profiles.js`.
+Prior mammograms are generated at seed time in `appointment-generator.js` using `generatePreviousMammograms()`. Generation rate is configurable via seed profiles in `seed-profiles.js`.
 
 ### Batch behaviour
 
-- By default, awaiting-priors events are **excluded** from all reading batches
-- The `awaiting_priors` batch type **only** includes these events
+- By default, awaiting-priors appointments are **excluded** from all reading batches
+- The `awaiting_priors` batch type **only** includes these appointments
 - The `includeAwaitingPriors` filter flag overrides the default exclusion (used by the custom batch creator)
 
 ### UI
@@ -561,12 +561,12 @@ The mammogram viewer simulates a PACS viewer on a separate monitor, displaying m
 ### Architecture
 
 - **BroadcastChannel API**: Communication between reading pages and viewer window (channel: `mammogram-viewer`)
-- **Image selection utility**: `app/lib/utils/mammogram-images.js` - weighted seeded random selection based on event ID
+- **Image selection utility**: `app/lib/utils/mammogram-images.js` - weighted seeded random selection based on appointment ID
 - **Viewer page**: `app/views/reading/mammogram-viewer.html` - standalone dark-themed page with 2×2 grid
 
 Reading workflow pages broadcast participant/image data to the viewer via `BroadcastChannel` (`mammogram-channel.js`). The viewer updates on each navigation; a ping/pong mechanism prevents duplicate windows from opening. A `clear` message is sent when leaving the workflow. The viewer can be opened manually (header nav link) or automatically on workflow entry if `autoOpenPacsViewer` is enabled.
 
-Image sets are in `app/assets/images/mammogram-diagrams/` with a `manifest.json` listing sets by tag (normal/abnormal/indeterminate/technical). Selection is weighted and deterministic per event ID. Missing views show a placeholder.
+Image sets are in `app/assets/images/mammogram-diagrams/` with a `manifest.json` listing sets by tag (normal/abnormal/indeterminate/technical). Selection is weighted and deterministic per appointment ID. Missing views show a placeholder.
 
 ### Files
 

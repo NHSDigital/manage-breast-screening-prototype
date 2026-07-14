@@ -1,11 +1,11 @@
-{# /app/views/_includes/summary-lists/event-symptoms.njk #}
+{# /app/views/_includes/summary-lists/appointment-symptoms.njk #}
 
-{% set hasSymptoms = event | hasSymptoms %}
+{% set hasSymptoms = appointment | hasSymptoms %}
 
 {% if hasSymptoms %}
   {% set rows = [] %}
 
-  {% for symptom in event.medicalInformation.symptoms %}
+  {% for symptom in appointment.medicalInformation.symptoms %}
 
     {# Build the key (left column) - just the symptom type #}
     {# {% set keyText = symptom.type or "" %} #}

@@ -23,19 +23,19 @@ const FILE_META = {
   },
   'app/lib/utils/status.js': {
     label: 'status.js',
-    description: 'Event status checks and display helpers. Use these instead of comparing status strings directly — status values may change but these functions will be updated accordingly.'
+    description: 'Appointment status checks and display helpers. Use these instead of comparing status strings directly — status values may change but these functions will be updated accordingly.'
   },
   'app/lib/utils/participants.js': {
     label: 'participants.js',
     description: 'Participant lookups and derived data: full/short names, age, clinic history, and risk level.'
   },
-  'app/lib/utils/event-data.js': {
-    label: 'event-data.js',
-    description: 'Event lookups and mutations in session data. Includes the temp event pattern (`data.event` → `data.events[]`).'
+  'app/lib/utils/appointment-data.js': {
+    label: 'appointment-data.js',
+    description: 'Appointment lookups and mutations in session data. Includes the temp appointment pattern (`data.appointment` → `data.appointments[]`).'
   },
   'app/lib/utils/episodes.js': {
     label: 'episodes.js',
-    description: 'Episode lookups and stage changes. An episode is one screening round - the container its appointment events sit in.'
+    description: 'Episode lookups and stage changes. An episode is one screening round - the container its appointment appointments sit in.'
   },
   'app/lib/utils/clinics.js': {
     label: 'clinics.js',
@@ -113,7 +113,7 @@ const UTILS_FILES = [
   'app/lib/utils/strings.js',
   'app/lib/utils/status.js',
   'app/lib/utils/participants.js',
-  'app/lib/utils/event-data.js',
+  'app/lib/utils/appointment-data.js',
   'app/lib/utils/episodes.js',
   'app/lib/utils/clinics.js',
   'app/lib/utils/reading.js',

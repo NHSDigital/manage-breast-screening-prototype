@@ -8,9 +8,9 @@
     {% include "_includes/reading/opinion-banner.njk" %}
     <div class="nhsuk-grid-column-two-thirds">
       {% if progress.hasPreviousUserReadable %}
-        {# Link to event base URL - route handles redirect to existing-read or opinion #}
+        {# Link to appointment base URL - route handles redirect to existing-read or opinion #}
         {{ backLink({
-          href: "/reading/session/" ~ sessionId ~ "/events/" ~ progress.previousUserReadableId,
+          href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ progress.previousUserReadableId,
           text: "Previous case"
         }) }}
       {% endif %}
@@ -18,15 +18,15 @@
 
     {% if progress.hasNextUserReadable %}
       <div class="nhsuk-grid-column-one-third app-align-right">
-        {% if event | canUserReadEvent %}
+        {% if appointment | canUserReadAppointment %}
           {{ appForwardLink({
-            href: "/reading/session/" ~ sessionId ~ "/events/" ~ eventId ~ "/skip",
+            href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
             text: "Skip to next"
           }) }}
         {% else %}
           {# We already have a reading so don't need to skip #}
           {{ appForwardLink({
-            href: "/reading/session/" ~ sessionId ~ "/events/" ~ progress.nextUserReadableId,
+            href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ progress.nextUserReadableId,
             text: "Next case"
           }) }}
         {% endif %}
