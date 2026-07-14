@@ -13,7 +13,7 @@ const {
   appendReferrer
 } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
-const { updateAppointmentStatus } = require('../lib/utils/appointment-data')
+const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 
 /**
  * Get clinic and its related data from id

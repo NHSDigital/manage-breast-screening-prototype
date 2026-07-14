@@ -8,9 +8,9 @@ const {
   saveTempParticipantToParticipant
 } = require('../../lib/utils/participants')
 const {
-  saveTempAppointmentToAppointment,
-  updateAppointmentStatus
+  saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
+const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
 const generateId = require('../../lib/utils/id-generator')
 const {
   getReturnUrl,
