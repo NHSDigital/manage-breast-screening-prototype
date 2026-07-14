@@ -103,6 +103,28 @@ the round found, not the detail of how it got there:
 Why there was no result (did not attend, cancelled, attended but not screened)
 lives on the **appointment**, not the episode - it isn't stored twice.
 
+### Mammograms
+
+An episode carries its own record of the images its round produced:
+`episode.mammograms`, one entry per image set, oldest first:
+
+```js
+{ takenDate, eventId, breastScreeningUnitId, locationId, viewCount }
+```
+
+`updateEventStatus` writes an entry the moment an appointment reaches a
+screened status, and removes it again if that is undone. The raw image data
+stays on the event (`mammogramData`) - the episode entry is a summary of it.
+
+Read this - via `getEpisodeMammogramDate` / `getLastScreening` - rather than
+deriving "were they screened" from appointment timing: a missed appointment
+still has timing, and must never look like someone's last mammogram.
+
+Historic episodes hold one entry with no `eventId` or `locationId` - where
+the round was screened is all a summary round knows. A technical recall adds
+a second entry when the re-screen happens; one entry per image set is also
+the skeleton the reading-cases model (a future piece of work) hangs off.
+
 ### Advancing an episode
 
 `updateEventStatus` moves the episode to wherever the appointment's new status
@@ -129,7 +151,10 @@ The generator checks these on every run and warns loudly if any is broken
 
 - A **closed** episode has a `closedDate` and a valid outcome; an **open** one
   has no outcome.
-- A **historic** episode is always closed, and never has events.
+- A **historic** episode is always closed, and never has events. It has
+  mammogram entries exactly when its outcome isn't `no_result`.
+- An episode's **`mammograms`** entries match its appointments that reached a
+  screened status, one each.
 - An episode in **`reading`** contains a completed mammogram appointment that
   is still within the reading window. Nothing can be in reading without images
   to read.

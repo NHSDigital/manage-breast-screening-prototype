@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-07-13 16:47 UTC
+- **Generated:** 2026-07-14 11:28 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -21,24 +21,24 @@
 | `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 144 |
 | `event-data.js` | Event lookups and mutations in session data | 164 |
 | `episodes.js` | Episode lookups and stage changes | 179 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 206 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 221 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 277 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 296 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 314 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 327 |
-| `objects.js` | Object utilities for extracting and flattening values. | 345 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 355 |
-| `random.js` | Seeded random functions for stable prototype data | 366 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 383 |
-| `roles-and-permissions.js` | User role checks | 396 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 414 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 209 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 224 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 280 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 299 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 317 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 330 |
+| `objects.js` | Object utilities for extracting and flattening values. | 348 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 358 |
+| `random.js` | Seeded random functions for stable prototype data | 369 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 386 |
+| `roles-and-permissions.js` | User role checks | 399 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 417 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 430 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 442 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 454 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 468 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 478 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 433 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 445 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 457 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 471 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 481 |
 
 ---
 
@@ -173,8 +173,8 @@ Event lookups and mutations in session data. Includes the temp event pattern (`d
 | `getEventData(data, clinicId, eventId)` | Get event data bundle for a given clinic and event ID | 43 |
 | `updateEvent(data, eventId, updatedEvent)` | Find and update an event in session data | 67 |
 | `updateEventStatus(data, eventId, newStatus)` | Update event status and add to history | 86 |
-| `updateEventData(data, eventId, updates)` | Update event with arbitrary data changes | 140 |
-| `saveTempEventToEvent(data)` | Save temporary event data back to the main event | 180 |
+| `updateEventData(data, eventId, updates)` | Update event with arbitrary data changes | 145 |
+| `saveTempEventToEvent(data)` | Save temporary event data back to the main event | 185 |
 
 ### episodes.js
 
@@ -184,24 +184,27 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 
 | Function | Description | Line |
 |---|---|---|
-| `getEpisode(data, episodeId)` | Get an episode by ID | 105 |
-| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 126 |
-| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 156 |
-| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 172 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 187 |
-| `isEpisodeClosed(episode)` | Whether an episode has closed | 202 |
-| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 212 |
-| `getEpisodeScreeningDate(data, episode)` | The date this round's screening happened, or is due to happen. | 223 |
-| `getLastScreening(data, participantId)` | The participant's last mammogram on record, before today. | 248 |
-| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 294 |
-| `getEpisodeStageText(stage)` | Display text for an episode's stage | 313 |
-| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 323 |
-| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 333 |
-| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 343 |
-| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 353 |
-| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 386 |
-| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 435 |
-| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 468 |
+| `eventProducedImages(event)` | Whether an event's status means mammograms were taken. | 89 |
+| `buildMammogramEntry(event, [clinic])` | Build the episode's summary record of one set of mammograms. | 103 |
+| `getEpisode(data, episodeId)` | Get an episode by ID | 144 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 165 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 195 |
+| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 211 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 226 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 241 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 251 |
+| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 262 |
+| `getLastScreening(data, participantId)` | The participant's last mammogram on record, before today. | 277 |
+| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 324 |
+| `getEpisodeStageText(stage)` | Display text for an episode's stage | 343 |
+| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 353 |
+| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 363 |
+| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 373 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 383 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 416 |
+| `syncEpisodeMammogramsForEvent(data, event)` | Keep an episode's mammograms record in step with one of its appointments. | 465 |
+| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 505 |
+| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 538 |
 
 ### clinics.js
 

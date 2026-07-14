@@ -7,7 +7,8 @@ const {
 } = require('../lib/utils/participants')
 const {
   getEpisodesForParticipant,
-  getEpisodeScreeningDate
+  getEpisodeEvents,
+  getEpisodeMammogramDate
 } = require('../lib/utils/episodes')
 const { findById } = require('../lib/utils/arrays')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
@@ -127,16 +128,21 @@ module.exports = (router) => {
       originalParticipant.id
     )
       .map((episode) => {
-        const screeningDate = getEpisodeScreeningDate(data, episode)
+        // Screened rounds date by when their images were taken. A round with
+        // no images (not yet screened, missed, cancelled) dates by its
+        // appointment or its own dates instead - but never counts as screened
+        const mammogramDate = getEpisodeMammogramDate(episode)
+        const events = getEpisodeEvents(data, episode)
+        const latestEvent = events[events.length - 1]
 
         return {
           episode,
-          screeningDate,
-
-          // A round that produced no result was never screened, so it has no
-          // screening date - date it by when it closed instead
-          date: screeningDate || episode.closedDate || episode.openedDate,
-          wasScreened: Boolean(screeningDate)
+          date:
+            mammogramDate ||
+            latestEvent?.timing?.startTime ||
+            episode.closedDate ||
+            episode.openedDate,
+          wasScreened: Boolean(mammogramDate)
         }
       })
       .reverse()

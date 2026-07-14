@@ -20,7 +20,9 @@ const { eligibleForReading, isCompleted } = require('../utils/status')
 const {
   EPISODE_OUTCOMES,
   EPISODE_STAGE_BY_EVENT_STATUS,
-  EPISODE_STAGE_BY_READING_OUTCOME
+  EPISODE_STAGE_BY_READING_OUTCOME,
+  eventProducedImages,
+  buildMammogramEntry
 } = require('../utils/episodes')
 
 // How long before the appointment the episode is considered to have opened
@@ -87,6 +89,7 @@ const generateEpisode = ({ participant, type, appointmentDate }) => {
     openedDate,
     closedDate: null,
     eventIds: [],
+    mammograms: [],
     isHistoric: false
   }
 }
@@ -103,14 +106,23 @@ const generateEpisode = ({ participant, type, appointmentDate }) => {
  *
  * @param {object} episode - Episode to finalise (mutated - generation only)
  * @param {Array} events - The episode's events, oldest first
+ * @param {Map} [clinicsById] - Clinics keyed by id, for where images were taken
  * @returns {object} The same episode
  */
-const finaliseEpisodeStage = (episode, events) => {
+const finaliseEpisodeStage = (episode, events, clinicsById = new Map()) => {
   // Back to a freshly opened episode, keeping only the stage it opened at
   episode.stage = 'scheduled'
   episode.stageHistory = episode.stageHistory.slice(0, 1)
   episode.outcome = null
   episode.closedDate = null
+
+  // The round's record of images taken is derived from the events alongside
+  // the stage, so a re-run refreshes both together
+  episode.mammograms = events
+    .filter(eventProducedImages)
+    .map((event) =>
+      buildMammogramEntry(event, clinicsById.get(event.clinicId))
+    )
 
   const latestEvent = events[events.length - 1]
   if (!latestEvent) return episode
@@ -295,14 +307,20 @@ const generateHistoricEpisodes = ({
       eventIds: [],
       isHistoric: true,
 
-      // Enough to list this round as a prior without holding a full image set
-      mammogramSummary: wasScreened
-        ? {
-            takenDate: screenedDate.toISOString(),
-            viewCount: 4,
-            breastScreeningUnitId: participant.assignedBSU
-          }
-        : null
+      // Enough to list this round as a prior without holding a full image
+      // set. Same entry shape as a round screened here, minus the
+      // appointment link and site detail a summary round doesn't hold
+      mammograms: wasScreened
+        ? [
+            {
+              takenDate: screenedDate.toISOString(),
+              eventId: null,
+              breastScreeningUnitId: participant.assignedBSU,
+              locationId: null,
+              viewCount: 4
+            }
+          ]
+        : []
     })
   }
 
@@ -353,12 +371,36 @@ const checkEpisodes = (episodes, eventsById) => {
       if (episode.eventIds.length) {
         problems.push(`historic episode ${episode.id} has events`)
       }
+      // A summary round has images exactly when it has a result
+      const wasScreened = episode.outcome !== 'no_result'
+      if (wasScreened !== Boolean(episode.mammograms?.length)) {
+        problems.push(
+          `historic episode ${episode.id} outcome and mammograms disagree`
+        )
+      }
       return
     }
 
     if (!events.length) {
       problems.push(`episode ${episode.id} has no events`)
       return
+    }
+
+    // The episode's own record of images must match what its appointments
+    // say - one entry per appointment that reached a screened status
+    const screenedEventIds = events
+      .filter(eventProducedImages)
+      .map((event) => event.id)
+    const recordedEventIds = (episode.mammograms || []).map(
+      (entry) => entry.eventId
+    )
+    if (
+      screenedEventIds.length !== recordedEventIds.length ||
+      screenedEventIds.some((eventId) => !recordedEventIds.includes(eventId))
+    ) {
+      problems.push(
+        `episode ${episode.id} mammograms don't match its screened appointments`
+      )
     }
 
     // Reading needs images: an episode can only be in reading off the back of

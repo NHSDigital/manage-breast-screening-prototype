@@ -364,6 +364,7 @@ const seedTechnicalRecallRescreen = ({
     participants.map((participant) => [participant.id, participant])
   )
   const eventsById = new Map(events.map((event) => [event.id, event]))
+  const clinicsById = new Map(clinics.map((clinic) => [clinic.id, clinic]))
   const usedSlotIds = new Set(events.map((event) => event.slotId))
   const today = dayjs().startOf('day')
 
@@ -449,7 +450,7 @@ const seedTechnicalRecallRescreen = ({
         [secondReader.id]: secondRead
       }
     }
-    finaliseEpisodeStage(episode, [firstEvent])
+    finaliseEpisodeStage(episode, [firstEvent], clinicsById)
 
     if (!owedRescreen(episode)) return null
   }
@@ -588,12 +589,13 @@ const generateData = async (options = {}) => {
   const eventsById = new Map(
     eventsWithReadingData.map((event) => [event.id, event])
   )
+  const clinicsById = new Map(allClinics.map((clinic) => [clinic.id, clinic]))
 
   allEpisodes.forEach((episode) => {
     const episodeEvents = episode.eventIds
       .map((eventId) => eventsById.get(eventId))
       .filter(Boolean)
-    finaliseEpisodeStage(episode, episodeEvents)
+    finaliseEpisodeStage(episode, episodeEvents, clinicsById)
   })
 
   const rescreenEvent = seedTechnicalRecallRescreen({

@@ -87,6 +87,45 @@ const EPISODE_STAGE_BY_READING_OUTCOME = {
 }
 
 /**
+ * Whether an event's status means mammograms were taken.
+ *
+ * Derived from the stage map rather than listed again: any status that sends
+ * the episode to reading produced images, because reading without images is
+ * the thing the model forbids.
+ *
+ * @param {object} event - Event object
+ * @returns {boolean} True if this appointment produced images
+ */
+const eventProducedImages = (event) => {
+  return EPISODE_STAGE_BY_EVENT_STATUS[event?.status]?.stage === 'reading'
+}
+
+/**
+ * Build the episode's summary record of one set of mammograms.
+ *
+ * The raw image data stays on the event (`mammogramData`); this is the light
+ * entry the episode carries so "was this round screened, when and where" is
+ * answerable without walking appointments. Shared with the seed generator so
+ * the two can't drift. One entry per image set is also the skeleton the
+ * reading-cases model hangs off later.
+ *
+ * @param {object} event - The appointment that produced the images
+ * @param {object} [clinic] - The event's clinic, for where they were taken
+ * @returns {object} Mammogram entry
+ */
+const buildMammogramEntry = (event, clinic) => {
+  const views = event.mammogramData?.views || {}
+
+  return {
+    takenDate: event.timing?.actualStartTime || event.timing?.startTime || null,
+    eventId: event.id,
+    breastScreeningUnitId: clinic?.breastScreeningUnitId || null,
+    locationId: clinic?.locationId || null,
+    viewCount: Object.values(views).filter(Boolean).length || null
+  }
+}
+
+/**
  * Record a changed episode so it persists for this session
  *
  * Mirrors recordEventChange: the episodes array attached to `data` is rebuilt
@@ -221,36 +260,27 @@ const isEpisodeOpen = (episode) => {
 }
 
 /**
- * The date this round's screening happened, or is due to happen.
+ * When this round's mammograms were taken, from the episode's own record.
  *
- * Takes it from the episode's latest appointment, falling back to the
- * mammogram summary a historic episode carries instead of appointments.
+ * Null when the round has produced no images - not yet screened, did not
+ * attend, cancelled. A round with no images has no mammogram date, which is
+ * what stops a missed appointment showing as someone's last mammogram.
  *
- * @param {object} data - Session data
  * @param {object} episode - Episode object
- * @returns {string | null} ISO date, or null if there's nothing to show
+ * @returns {string | null} ISO date of the latest set, or null if never screened
  */
-const getEpisodeScreeningDate = (data, episode) => {
-  const events = getEpisodeEvents(data, episode)
-  const latestEvent = events[events.length - 1]
-
-  if (latestEvent) {
-    return (
-      latestEvent.timing?.actualStartTime ||
-      latestEvent.timing?.startTime ||
-      null
-    )
-  }
-
-  return episode?.mammogramSummary?.takenDate || null
+const getEpisodeMammogramDate = (episode) => {
+  const entries = episode?.mammograms || []
+  return entries[entries.length - 1]?.takenDate || null
 }
 
 /**
  * The participant's last mammogram on record, before today.
  *
- * Reads across their episodes, so it works whether the round was screened
- * here (an appointment) or is only held as a summary of a past round. This is
- * what "most recent mammogram on record" means on a participant record.
+ * Reads the mammogram entries across their episodes, so it works whether the
+ * round was screened here (entry carries the appointment and site) or is only
+ * held as a summary of a past round (entry carries the unit). This is what
+ * "most recent mammogram on record" means on a participant record.
  *
  * @param {object} data - Session data
  * @param {string} participantId - Participant ID
@@ -259,30 +289,30 @@ const getEpisodeScreeningDate = (data, episode) => {
 const getLastScreening = (data, participantId) => {
   const startOfToday = new Date().setHours(0, 0, 0, 0)
 
-  // Episodes come back oldest-first, so the last match is the most recent
-  const screened = getEpisodesForParticipant(data, participantId)
-    .map((episode) => ({
-      episode,
-      date: getEpisodeScreeningDate(data, episode)
-    }))
-    .filter(({ date }) => date && new Date(date) < startOfToday)
+  // Every image set across their episodes, oldest first
+  const taken = getEpisodesForParticipant(data, participantId)
+    .flatMap((episode) => episode.mammograms || [])
+    .filter(
+      (entry) => entry.takenDate && new Date(entry.takenDate) < startOfToday
+    )
+    .sort((a, b) => new Date(a.takenDate) - new Date(b.takenDate))
 
-  const latest = screened[screened.length - 1]
+  const latest = taken[taken.length - 1]
   if (!latest) return null
 
-  const events = getEpisodeEvents(data, latest.episode)
-  const latestEvent = events[events.length - 1]
-
-  // A round screened here knows its clinic; a summary round only knows the unit
-  const unitId = latestEvent
-    ? getClinic(data, latestEvent.clinicId)?.breastScreeningUnitId
-    : latest.episode.mammogramSummary?.breastScreeningUnitId
-
-  const unit = data.breastScreeningUnits?.find((each) => each.id === unitId)
+  const unit = data.breastScreeningUnits?.find(
+    (each) => each.id === latest.breastScreeningUnitId
+  )
+  const location = unit?.locations?.find(
+    (each) => each.id === latest.locationId
+  )
 
   return {
-    date: latest.date,
-    location: unit?.name || 'Not known',
+    date: latest.takenDate,
+
+    // The specific site where we know it (a round screened here); a summary
+    // round only knows its unit
+    location: location?.name || unit?.name || 'Not known',
 
     // Every round we hold is a screening round. Appointments gain a `type`
     // (mammogram / technical recall / assessment) with the event→appointment
@@ -433,6 +463,46 @@ const updateEpisodeStage = (data, episodeId, stage, options = {}) => {
 }
 
 /**
+ * Keep an episode's mammograms record in step with one of its appointments.
+ *
+ * Called from updateEventStatus alongside advanceEpisodeForEventStatus: an
+ * appointment reaching a screened status writes its entry, and leaving one
+ * (an undo) removes it. Recording the fact at the moment it happens is what
+ * lets everything downstream trust episode.mammograms instead of re-deriving
+ * "were they screened" from appointment timing.
+ *
+ * Unlike stage moves this applies whichever of the episode's appointments
+ * changed - images from an earlier appointment still exist when a re-screen
+ * supersedes it.
+ *
+ * @param {object} data - Session data
+ * @param {object} event - The event whose status just changed
+ * @returns {object | null} The updated episode, or null if nothing to do
+ */
+const syncEpisodeMammogramsForEvent = (data, event) => {
+  if (!event?.episodeId) return null
+
+  const episode = getEpisode(data, event.episodeId)
+  if (!episode) return null
+
+  const existing = episode.mammograms || []
+  const otherEntries = existing.filter((entry) => entry.eventId !== event.id)
+
+  if (!eventProducedImages(event)) {
+    // No images from this appointment - drop its entry if it had one
+    if (otherEntries.length === existing.length) return null
+    return updateEpisode(data, episode.id, { mammograms: otherEntries })
+  }
+
+  const entries = [
+    ...otherEntries,
+    buildMammogramEntry(event, getClinic(data, event.clinicId))
+  ].sort((a, b) => new Date(a.takenDate) - new Date(b.takenDate))
+
+  return updateEpisode(data, episode.id, { mammograms: entries })
+}
+
+/**
  * Move an event's episode to wherever the event's status leaves it.
  *
  * Called from updateEventStatus, so the episode keeps step with its
@@ -497,12 +567,14 @@ module.exports = {
   EPISODE_OUTCOMES,
   EPISODE_STAGE_BY_EVENT_STATUS,
   EPISODE_STAGE_BY_READING_OUTCOME,
+  eventProducedImages,
+  buildMammogramEntry,
   getEpisode,
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeEvents,
   getEpisodeReadingStatus,
-  getEpisodeScreeningDate,
+  getEpisodeMammogramDate,
   getLastScreening,
   getNextAppointment,
   getEpisodeStageText,
@@ -513,6 +585,7 @@ module.exports = {
   isEpisodeOpen,
   updateEpisode,
   updateEpisodeStage,
+  syncEpisodeMammogramsForEvent,
   advanceEpisodeForEventStatus,
   advanceEpisodeForReadingOutcome
 }
