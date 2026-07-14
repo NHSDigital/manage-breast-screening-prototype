@@ -10,9 +10,9 @@ const {
 } = require('../../lib/utils/participants')
 const {
   getAppointment,
-  saveTempAppointmentToAppointment,
-  updateAppointmentStatus
+  saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
+const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
 const {
   getReturnUrl,
   modalBreakout

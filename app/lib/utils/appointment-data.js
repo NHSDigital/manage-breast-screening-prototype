@@ -84,65 +84,6 @@ const updateAppointment = (data, appointmentId, updatedAppointment) => {
 }
 
 /**
- * Update appointment status and add to history
- * Also updates the temporary appointment data if it exists
- *
- * @param {object} data - Session data
- * @param {string} appointmentId - Appointment ID
- * @param {string} newStatus - New status
- * @returns {object | null} Updated appointment or null if not found
- */
-const updateAppointmentStatus = (data, appointmentId, newStatus) => {
-  const appointmentIndex = data.appointments.findIndex((e) => e.id === appointmentId)
-  if (appointmentIndex === -1) return null
-
-  // Use temp appointment if it exists and matches, otherwise use the array appointment
-  const baseAppointment =
-    data.appointment && data.appointment.id === appointmentId
-      ? data.appointment
-      : data.appointments[appointmentIndex]
-
-  const updatedAppointment = {
-    ...baseAppointment,
-    status: newStatus,
-    statusHistory: [
-      ...baseAppointment.statusHistory,
-      {
-        status: newStatus,
-        timestamp: new Date().toISOString()
-      }
-    ]
-  }
-
-  // Update main data
-  data.appointments[appointmentIndex] = updatedAppointment
-  recordAppointmentChange(data, updatedAppointment)
-
-  // Also update temp appointment data if it exists and matches this appointment
-  // Only update the status-related fields to preserve other temp changes
-  if (data.appointment && data.appointment.id === appointmentId) {
-    data.appointment.status = newStatus
-    data.appointment.statusHistory = updatedAppointment.statusHistory
-  }
-
-  // Keep the appointment's episode in step - check-in moves it to mammograms,
-  // a completed appointment moves it to reading, and so on - and record on
-  // the episode that images were taken (or weren't after all, on an undo).
-  // Doing it here means routes don't each have to know episodes exist.
-  //
-  // Required lazily: episodes.js needs getAppointment from this module, so a
-  // top-level require would be circular.
-  const {
-    syncEpisodeMammogramsForAppointment,
-    advanceEpisodeForAppointmentStatus
-  } = require('./episodes.js')
-  syncEpisodeMammogramsForAppointment(data, updatedAppointment)
-  advanceEpisodeForAppointmentStatus(data, updatedAppointment)
-
-  return updatedAppointment
-}
-
-/**
  * Update appointment with arbitrary data changes
  * Also updates the temporary appointment data if it exists and matches
  *
@@ -212,7 +153,6 @@ module.exports = {
   getAppointment,
   getAppointmentData,
   updateAppointment,
-  updateAppointmentStatus,
   updateAppointmentData,
   saveTempAppointmentToAppointment
 }

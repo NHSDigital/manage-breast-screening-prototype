@@ -12,9 +12,9 @@ const {
 const {
   getAppointment,
   saveTempAppointmentToAppointment,
-  updateAppointmentStatus,
   updateAppointmentData
 } = require('../../lib/utils/appointment-data')
+const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
 const {
   getReturnUrl,
   urlWithReferrer,
