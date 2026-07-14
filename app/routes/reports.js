@@ -91,11 +91,11 @@ module.exports = (router) => {
       (acc, appointment) => {
         const status = appointment.status
         if (
-          status === 'appointment_complete' ||
-          status === 'appointment_partially_screened'
+          status === 'complete' ||
+          status === 'partially_screened'
         ) {
           acc.screened++
-        } else if (status === 'appointment_did_not_attend') {
+        } else if (status === 'did_not_attend') {
           acc.dna++
         } else {
           // Includes scheduled, checked_in, in_progress, paused, etc.

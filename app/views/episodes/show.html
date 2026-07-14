@@ -96,8 +96,8 @@
             </td>
             <td class="nhsuk-table__cell">
               {{ tag({
-                text: row.appointment.status | getStatusText,
-                colour: row.appointment.status | getStatusTagColour
+                text: row.appointment.status | getStatusText('appointment'),
+                colour: row.appointment.status | getStatusTagColour('appointment')
               }) }}
             </td>
             <td class="nhsuk-table__cell">

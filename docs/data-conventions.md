@@ -51,10 +51,10 @@ Instead, do one of:
 ```js
 // Wrong - mutates a shared record, silently dropped in dev
 const appointment = data.appointments.find((e) => e.id === appointmentId)
-appointment.status = 'appointment_complete'
+appointment.status = 'complete'
 
 // Right - build a replacement and save through a helper
-updateAppointmentData(data, appointmentId, { status: 'appointment_complete' })
+updateAppointmentData(data, appointmentId, { status: 'complete' })
 ```
 
 Arrays and nested objects inside records are shared too: don't `push` to

@@ -33,7 +33,7 @@
       {{ pageHeading }}
     </h1>
     <div class="app-header-with-status__status-tag">
-      {{ clinic.status | toTag }}
+      {{ clinic.status | toTag({ vocabulary: 'clinic' }) }}
       <p class="nhsuk-u-margin-top-2">
         <a href="/reports/{{ clinic.id }}">View clinic report</a>
       </p>
@@ -197,7 +197,7 @@
             showAppointmentLink: true
             })}} #}
 
-            {{ appointment.status | toTag({ id: statusTagId }) }}
+            {{ appointment.status | toTag({ id: statusTagId, vocabulary: 'appointment' }) }}
 
             {% if appointment | isInProgressNotPaused %}
               <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
@@ -229,7 +229,7 @@
 
             {# Scheduled appointments have dynamic check-in links #}
 
-            {# {% if appointment.status != 'appointment_scheduled' %}
+            {# {% if appointment.status != 'scheduled' %}
             <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
               {% if currentUser | isClinician %}
 
@@ -264,7 +264,7 @@
 
           {# Actions - check-in or start appointment #}
           <td class="nhsuk-table__cell">
-            {% if appointment.status == 'appointment_scheduled' %}
+            {% if appointment.status == 'scheduled' %}
               {{ appCheckIn({
                 clinicId: clinicId,
                 appointment: appointment,
@@ -281,7 +281,7 @@
                 {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this
                 class to make the link visible #}
                 <a href="{{ appointmentBaseUrl }}/start?appointment[workflowStatus][appointment]=started"
-                  class="app-nowrap {{ 'app-display-none' if appointment.status == 'appointment_scheduled' }} js-start-appointment-link">
+                  class="app-nowrap {{ 'app-display-none' if appointment.status == 'scheduled' }} js-start-appointment-link">
                   Start appointment
                 </a>
 

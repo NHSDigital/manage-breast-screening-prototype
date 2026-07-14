@@ -43,8 +43,8 @@
 
   {% set statusHtml %}
     {# Status tag with check-in link #}
-    {% if appointment.status === "appointment_rescheduled" %}
-      <strong class="nhsuk-tag nhsuk-tag--red">Reschedule requested</strong>
+    {% if appointment.status === "rescheduled" %}
+      {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
     {% else %}
       {{ appointmentStatus({
         clinicId: clinicId,
@@ -60,7 +60,7 @@
       </p>
     {% endif %}
 
-    {% if appointment.status === "appointment_attended_not_screened" and appointment.appointmentStopped %}
+    {% if appointment.status === "attended_not_screened" and appointment.appointmentStopped %}
       <p class="nhsuk-u-margin-top-2">
         <strong>Reason for stopping:</strong> {% for reason in appointment.appointmentStopped.stoppedReason -%}
           {{ reason }}
@@ -89,7 +89,7 @@
       </p>
     {% endif %}
 
-    {% if appointment.status === "appointment_cancelled" and appointment.cancellation %}
+    {% if appointment.status === "cancelled" and appointment.cancellation %}
       <p class="nhsuk-u-margin-top-2">
         <strong>Cancellation reason:</strong> {% for reason in appointment.cancellation.reason -%}
           {{ reason }}
@@ -119,7 +119,7 @@
       </p>
     {% endif %}
 
-    {% if appointment.status === "appointment_rescheduled" and appointment.reschedule %}
+    {% if appointment.status === "rescheduled" and appointment.reschedule %}
       <p class="nhsuk-u-margin-top-2">
         <strong>Cancellation reason:</strong> {% if appointment.cancellation and appointment.cancellation.reason -%}
           {% for reason in appointment.cancellation.reason -%}
@@ -206,19 +206,19 @@
                 text: "Undo cancel appointment",
                 visuallyHiddenText: "appointment"
               }
-            ] if appointment.status == "appointment_cancelled" else ([
+            ] if appointment.status == "cancelled" else ([
               {
                 href: "./undo-reschedule" | urlWithReferrer(currentUrl),
                 text: "Undo cancel appointment",
                 visuallyHiddenText: "appointment"
               }
-            ] if appointment.status == "appointment_rescheduled" else ([
+            ] if appointment.status == "rescheduled" else ([
               {
                 href: "./undo-check-in" | urlWithReferrer(currentUrl),
                 text: "Undo check in",
                 visuallyHiddenText: "appointment"
               }
-            ] if appointment.status == "appointment_checked_in" else []))
+            ] if appointment.status == "checked_in" else []))
           }
         },
         {
@@ -235,7 +235,7 @@
           actions: {
             items: []
           }
-        } if appointment.status == "appointment_complete" and appointment.sessionDetails.endedBy else {},
+        } if appointment.status == "complete" and appointment.sessionDetails.endedBy else {},
         {
           key: {
             text: "Special appointment"
@@ -250,7 +250,7 @@
                 text: "Change",
                 visuallyHiddenText: "special appointment"
               } | openInModal
-            ] if appointment.status != "appointment_complete" else []
+            ] if appointment.status != "complete" else []
           }
         },
         {

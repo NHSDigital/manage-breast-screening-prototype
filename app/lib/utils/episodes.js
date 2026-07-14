@@ -58,18 +58,18 @@ const EPISODE_OUTCOME_TAGS = {
 // settles seed episodes) and updateAppointmentStatus (which keeps them in step at
 // runtime), so the two can't drift apart.
 //
-// appointment_rescheduled is deliberately absent: a rescheduled appointment means
+// rescheduled is deliberately absent: a rescheduled appointment means
 // another one is coming, so the episode stays where it is.
 const EPISODE_STAGE_BY_APPOINTMENT_STATUS = {
-  appointment_scheduled: { stage: 'scheduled' },
-  appointment_checked_in: { stage: 'mammograms' },
-  appointment_in_progress: { stage: 'mammograms' },
-  appointment_paused: { stage: 'mammograms' },
-  appointment_complete: { stage: 'reading' },
-  appointment_partially_screened: { stage: 'reading' },
-  appointment_cancelled: { stage: 'closed', outcome: 'no_result' },
-  appointment_did_not_attend: { stage: 'closed', outcome: 'no_result' },
-  appointment_attended_not_screened: { stage: 'closed', outcome: 'no_result' }
+  scheduled: { stage: 'scheduled' },
+  checked_in: { stage: 'mammograms' },
+  in_progress: { stage: 'mammograms' },
+  paused: { stage: 'mammograms' },
+  complete: { stage: 'reading' },
+  partially_screened: { stage: 'reading' },
+  cancelled: { stage: 'closed', outcome: 'no_result' },
+  did_not_attend: { stage: 'closed', outcome: 'no_result' },
+  attended_not_screened: { stage: 'closed', outcome: 'no_result' }
 }
 
 // Where a concluded reading leaves its episode. Reading outcomes that mean

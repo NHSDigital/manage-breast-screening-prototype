@@ -211,7 +211,7 @@ module.exports = [
         appointmentId: 'evt-001',
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'appointment_complete'
+          status: 'complete'
         },
 
         // Generator overrides
