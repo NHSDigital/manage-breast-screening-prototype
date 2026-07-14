@@ -193,7 +193,7 @@
             participantUrl: "/participants/" + participant.id | urlWithReferrer(currentUrl),
             appointmentUrl: "/clinics/" + clinicId + "/appointments/" + appointment.id,
             referrerChain: currentUrl + "#appointment-row-" + appointment.id,
-            confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+            confirmIdentityOnCheckIn: true if data.settings.appointment.confirmIdentityOnCheckIn == 'true' else false,
             showAppointmentLink: true
             })}} #}
 
@@ -269,7 +269,7 @@
                 clinicId: clinicId,
                 appointment: appointment,
                 participant: participant,
-                confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+                confirmIdentityOnCheckIn: true if data.settings.appointment.confirmIdentityOnCheckIn == 'true' else false,
                 statusTagId: statusTagId,
                 currentUser: currentUser
               }) }}

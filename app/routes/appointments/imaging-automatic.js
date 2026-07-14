@@ -199,13 +199,13 @@ module.exports = (router) => {
     const data = req.session.data
 
     const isAddedToWorklist =
-      data.settings?.screening?.addedToWorklist !== 'false' ||
+      data.settings?.appointment?.addedToWorklist !== 'false' ||
       data.appointment?.isOnWorklist === true
 
     // Manual mode is true if the global setting says so, OR this specific
     // appointment was switched to manual (e.g. via the retry-connection page).
     const isManualImageCollection =
-      data.settings?.screening?.manualImageCollection === 'true' ||
+      data.settings?.appointment?.manualImageCollection === 'true' ||
       data.appointment?.isManualImageCollection === true
 
     const imagesStageCompleted =

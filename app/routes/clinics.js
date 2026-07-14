@@ -57,7 +57,7 @@ function getClinicData(data, clinicId) {
 module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics
   router.use('/clinics', (req, res, next) => {
-    res.locals.navActive = 'screening'
+    res.locals.navActive = 'clinics'
     next()
   })
 

@@ -39,8 +39,8 @@
     },
     {
       href: "/clinics",
-      text: "Screening",
-      current: true if navActive == "screening"
+      text: "Clinics",
+      current: true if navActive == "clinics"
     },
     {
       href: "/reading",
@@ -56,7 +56,7 @@
       href: "/participants",
       text: "Participants",
       current: true if navActive == "participants"
-    } if data.settings.screening.showParticipantSection != 'false' else {},
+    } if data.settings.appointment.showParticipantSection != 'false' else {},
     {
       href: "#",
       text: "Messages",

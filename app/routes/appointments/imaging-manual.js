@@ -32,7 +32,7 @@ module.exports = (router) => {
       // to manual via the retry-connection page, or user navigated here from
       // the troubleshooting link on the automatic images page).
       const isGlobalManualSetting =
-        data.settings?.screening?.manualImageCollection === 'true'
+        data.settings?.appointment?.manualImageCollection === 'true'
       const hadAutomaticData =
         !!data.appointment?.mammogramData && !data.appointment?.mammogramData?.isManualEntry
 

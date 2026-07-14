@@ -92,7 +92,7 @@ const defaultSettings = {
     ...createSeedProfilesState(),
     selectedKey: generationInfo.seedDataProfile
   },
-  screening: {
+  appointment: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
     showParticipantSection: 'false',
