@@ -33,7 +33,7 @@
       {{ pageHeading }}
     </h1>
     <div class="app-header-with-status__status-tag">
-      {{ clinic.status | toTag({ vocabulary: 'clinic' }) }}
+      {{ clinic.status | toTag({ vocabulary: "clinic" }) }}
       <p class="nhsuk-u-margin-top-2">
         <a href="/reports/{{ clinic.id }}">View clinic report</a>
       </p>
@@ -197,7 +197,7 @@
             showAppointmentLink: true
             })}} #}
 
-            {{ appointment.status | toTag({ id: statusTagId, vocabulary: 'appointment' }) }}
+            {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
             {% if appointment | isInProgressNotPaused %}
               <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{

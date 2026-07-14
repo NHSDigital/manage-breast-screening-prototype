@@ -35,7 +35,7 @@ const getAppointment = (data, appointmentId) => {
   return (
     data._changes?.appointments?.[appointmentId] ??
     dataStore.state.appointmentsById.get(appointmentId) ??
-    data.appointments?.find((e) => e.id === appointmentId) ??
+    data.appointments?.find((appointment) => appointment.id === appointmentId) ??
     null
   )
 }
@@ -73,7 +73,7 @@ const getAppointmentData = (data, clinicId, appointmentId) => {
  * @returns {object | null} Updated appointment or null if not found
  */
 const updateAppointment = (data, appointmentId, updatedAppointment) => {
-  const appointmentIndex = data.appointments.findIndex((e) => e.id === appointmentId)
+  const appointmentIndex = data.appointments.findIndex((appointment) => appointment.id === appointmentId)
   if (appointmentIndex === -1) return null
 
   // Update in the attached array (same-request reads) and record the change
@@ -93,7 +93,7 @@ const updateAppointment = (data, appointmentId, updatedAppointment) => {
  * @returns {object | null} Updated appointment or null if not found
  */
 const updateAppointmentData = (data, appointmentId, updates) => {
-  const appointmentIndex = data.appointments.findIndex((e) => e.id === appointmentId)
+  const appointmentIndex = data.appointments.findIndex((appointment) => appointment.id === appointmentId)
   if (appointmentIndex === -1) return null
 
   // Use temp appointment if it exists and matches, otherwise use the array appointment
