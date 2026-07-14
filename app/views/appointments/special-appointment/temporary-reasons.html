@@ -15,7 +15,7 @@
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
-  {% set selectedSupportTypes = data.appointment.specialAppointment.supportTypes %}
+  {% set selectedSupportTypes = appointment.specialAppointment.supportTypes %}
   
   {% set checkboxItems = [] %}
   {% for supportType in selectedSupportTypes %}
@@ -31,7 +31,7 @@
   {% if checkboxItems | length > 0 %}
     {{ checkboxes({
       name: "appointment[specialAppointment][temporaryReasonsList]",
-      values: data.appointment.specialAppointment.temporaryReasonsList, 
+      values: appointment.specialAppointment.temporaryReasonsList, 
       fieldset: {
         legend: {
           text: "Which of these reasons are temporary?",

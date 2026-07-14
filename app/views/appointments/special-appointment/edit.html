@@ -31,7 +31,7 @@
       hint: {
         text: "Select all that apply. When describing support required, include any special requests made by the participant or their carer."
       },
-      values: data.appointment.specialAppointment.supportTypes,
+      values: appointment.specialAppointment.supportTypes,
       items: [
         {
           value: "Breast implants",
@@ -42,7 +42,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.implantDetails,
+              value: appointment.specialAppointment.implantDetails,
               lines: 3
             })
           }
@@ -59,7 +59,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.implantedMedicalDevicesDetails,
+              value: appointment.specialAppointment.implantedMedicalDevicesDetails,
               lines: 3
             })
           }
@@ -73,7 +73,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.visionDetails,
+              value: appointment.specialAppointment.visionDetails,
               lines: 3
             })
           }
@@ -87,7 +87,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.hearingDetails,
+              value: appointment.specialAppointment.hearingDetails,
               lines: 3
             })
           }
@@ -104,7 +104,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.physicalRestrictionDetails,
+              value: appointment.specialAppointment.physicalRestrictionDetails,
               lines: 3
             })
           }
@@ -121,7 +121,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.socialEmotionalMentalHealthDetails,
+              value: appointment.specialAppointment.socialEmotionalMentalHealthDetails,
               lines: 3
             })
           }
@@ -135,7 +135,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.languageDetails,
+              value: appointment.specialAppointment.languageDetails,
               lines: 3
             })
           }
@@ -149,7 +149,7 @@
               label: {
                 text: "Describe support required (optional)"
               },
-              value: data.appointment.specialAppointment.genderIdentityDetails,
+              value: appointment.specialAppointment.genderIdentityDetails,
               lines: 3
             })
           }
@@ -163,7 +163,7 @@
               label: {
                 text: "Describe support required"
               },
-              value: data.appointment.specialAppointment.otherDetails,
+              value: appointment.specialAppointment.otherDetails,
               lines: 3
             })
           }
@@ -174,7 +174,7 @@
     {# Temporary reasons not being built just yet #}
     {# {{ radios({
       name: "appointment[specialAppointment][temporaryReasons]",
-      value: data.appointment.specialAppointment.temporaryReasons,
+      value: appointment.specialAppointment.temporaryReasons,
       fieldset: {
         legend: {
           text: "Are any of these reasons temporary?",

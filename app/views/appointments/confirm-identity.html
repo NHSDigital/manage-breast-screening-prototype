@@ -24,7 +24,7 @@
   {% set dynamicConfirmButton %}
     <div class="nhsuk-form-group">
       {{ button({
-        text: "Confirm identity" if data.appointment.workflowStatus['confirm-identity'] != 'completed' else "Next section",
+        text: "Confirm identity" if appointment.workflowStatus['confirm-identity'] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0"
       }) }}
     </div>

@@ -29,13 +29,13 @@
 
   {{ appHiddenInput({
     name: "appointment[workflowStatus][review-breast-features-after-imaging]",
-    value: data.appointment.workflowStatus['review-breast-features-after-imaging']
+    value: appointment.workflowStatus['review-breast-features-after-imaging']
   }) }}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
-        text: "Complete all and continue" if data.appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
+        text: "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
       }) }}
     </div>

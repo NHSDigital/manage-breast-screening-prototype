@@ -64,7 +64,7 @@
 
   
 
-  {% if data.appointment.workflowStatus["take-images"] == 'completed' %}
+  {% if appointment.workflowStatus["take-images"] == 'completed' %}
     {{ button({
       text: "Next section",
       classes: "nhsuk-u-margin-bottom-1"
@@ -72,7 +72,7 @@
   {% endif %}
 
   {% set insetTextHtml %}
-    {% if data.settings.screening.imageStreaming.enabled != 'false' and data.appointment.workflowStatus['take-images'] != 'completed' %}
+    {% if data.settings.screening.imageStreaming.enabled != 'false' and appointment.workflowStatus['take-images'] != 'completed' %}
       <p>Receiving images&#8230;
         <span id="streaming-received-count">0 received</span>
       </p>
@@ -138,7 +138,7 @@
   <script type="application/json" id="image-streaming-config">
     {
       "enabled": {{ 'false' if data.settings.screening.imageStreaming.enabled == 'false' else 'true' }},
-      "alreadyReceived": {{ 'true' if data.appointment.workflowStatus['take-images'] == 'completed' else 'false' }},
+      "alreadyReceived": {{ 'true' if appointment.workflowStatus['take-images'] == 'completed' else 'false' }},
       "intervalMs": {{ data.settings.screening.imageStreaming.intervalMs if data.settings.screening.imageStreaming.intervalMs else 3000 }},
       "totalImages": {{ imageCount }},
       "images": {{ streamingImages | dump | safe }}
