@@ -1,7 +1,11 @@
 // app/routes/clinics.js
 
 const dayjs = require('dayjs')
-const { getFilteredClinics, getClinicEvents } = require('../lib/utils/clinics')
+const {
+  getClinic,
+  getFilteredClinics,
+  getClinicEvents
+} = require('../lib/utils/clinics')
 const { filterEventsByStatus } = require('../lib/utils/status')
 const {
   getReturnUrl,
@@ -15,7 +19,7 @@ const { updateEventStatus } = require('../lib/utils/event-data')
  * Get clinic and its related data from id
  */
 function getClinicData(data, clinicId) {
-  const clinic = data.clinics.find((c) => c.id === clinicId)
+  const clinic = getClinic(data, clinicId)
 
   if (!clinic) {
     return null

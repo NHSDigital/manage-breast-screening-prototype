@@ -12,6 +12,7 @@ const {
 } = require('../lib/generators/mammogram-generator')
 const {
   getEvent,
+  getEventData,
   saveTempEventToEvent,
   updateEventStatus,
   updateEventData
@@ -33,41 +34,6 @@ const {
 } = require('../lib/generators/seed-profiles')
 // Load symptom types data
 const symptomTypes = require('../data/symptom-types')
-
-/**
- * Get single event and its related data
- */
-function getEventData(data, clinicId, eventId) {
-  const clinic = data.clinics.find((c) => c.id === clinicId)
-
-  if (!clinic) {
-    return null
-  }
-
-  const event = data.events.find(
-    (e) => e.id === eventId && e.clinicId === clinicId
-  )
-
-  if (!event) {
-    return null
-  }
-
-  const participant = data.participants.find(
-    (p) => p.id === event.participantId
-  )
-  const unit = data.breastScreeningUnits.find(
-    (u) => u.id === clinic.breastScreeningUnitId
-  )
-  const location = unit?.locations.find((l) => l.id === clinic.locationId)
-
-  return {
-    clinic,
-    event,
-    participant,
-    unit,
-    location
-  }
-}
 
 /**
  * Capture session end time for an event
@@ -125,8 +91,10 @@ module.exports = (router) => {
           `Temp event data found, but eventId ${data.event.id} does not match ${eventId}, creating new one`
         )
       }
-      // Copy over the event data to the temp event
-      data.event = originalEventData.event
+      // Copy over the event data to the temp event.
+      // Must be a deep clone: the temp copy gets mutated by forms, and the
+      // source record is shared (read-only) data that other sessions see.
+      data.event = structuredClone(originalEventData.event)
     }
 
     const participantId = originalEventData.participant.id
@@ -138,8 +106,10 @@ module.exports = (router) => {
           `Temp participant data found, but participantId ${data.participant.id} does not match ${participantId}, creating new one`
         )
       }
-      // Copy over the participant data to the temp participant
-      data.participant = { ...originalEventData.participant }
+      // Copy over the participant data to the temp participant.
+      // Deep clone - a shallow spread would leave nested objects
+      // (demographicInformation etc) shared with the read-only source record.
+      data.participant = structuredClone(originalEventData.participant)
     }
 
     // Deep compare temp participant and saved participant in array
@@ -247,10 +217,13 @@ module.exports = (router) => {
       ? `/clinics/${req.params.clinicId}/events/${req.params.eventId}/${returnTo}`
       : defaultDestination
 
-    // Preserve all query string parameters except returnTo (already used)
+    // Preserve all query string parameters except the ones consumed above.
+    // event[workflowStatus][...] arrives as a parsed object, so leaving it in
+    // would re-serialise as event=[object Object]
     // Todo: could a library do this for us?
     const queryParams = { ...req.query }
     delete queryParams.returnTo
+    delete queryParams.event
     const queryString = Object.keys(queryParams).length
       ? '?' +
         Object.entries(queryParams)
@@ -282,14 +255,17 @@ module.exports = (router) => {
     if (event?.status === 'event_paused') {
       // Get existing session details
       const existingDetails = event.sessionDetails || {}
-      const authors = existingDetails.authors || []
 
-      // Add resume action to authors
-      authors.push({
-        userId: currentUser.id,
-        action: 'resumed',
-        timestamp: new Date().toISOString()
-      })
+      // Add resume action to a new authors array - the existing one belongs
+      // to the shared read-only event record, so must not be pushed to
+      const authors = [
+        ...(existingDetails.authors || []),
+        {
+          userId: currentUser.id,
+          action: 'resumed',
+          timestamp: new Date().toISOString()
+        }
+      ]
 
       // Update status to in progress
       updateEventStatus(data, req.params.eventId, 'event_in_progress')
@@ -341,14 +317,17 @@ module.exports = (router) => {
 
         // Get existing session details to track authors
         const existingDetails = event.sessionDetails || {}
-        const authors = existingDetails.authors || []
 
-        // Add current user's pause action to authors
-        authors.push({
-          userId: data.currentUser?.id,
-          action: 'paused',
-          timestamp: new Date().toISOString()
-        })
+        // Add pause action to a new authors array - the existing one belongs
+        // to the shared read-only event record, so must not be pushed to
+        const authors = [
+          ...(existingDetails.authors || []),
+          {
+            userId: data.currentUser?.id,
+            action: 'paused',
+            timestamp: new Date().toISOString()
+          }
+        ]
 
         // Update status to paused and record pause details
         updateEventStatus(data, eventId, 'event_paused')

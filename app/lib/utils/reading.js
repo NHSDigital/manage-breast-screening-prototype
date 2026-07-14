@@ -1,9 +1,11 @@
-// app/lib/utils/.js
+// app/lib/utils/reading.js
 
 const dayjs = require('dayjs')
+const { getClinic } = require('./clinics')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
+const { updateEventData } = require('./event-data')
 
 // /**
 //  * Get first unread event in a clinic
@@ -83,44 +85,50 @@ const getReadsAsArray = function (event) {
 }
 
 /**
- * Update the writeReading function to also handle removing from skipped events
+ * Save a user's reading for an event, and remove the event from the reading
+ * session's skipped list if present
+ *
+ * Builds a new imageReading object and saves it through updateEventData
+ * rather than mutating the event - event records are shared read-only data.
  *
  * @param {object} event - The event to update
  * @param {string} userId - User ID
  * @param {object} reading - Reading data to save
- * @param {object | null} [data] - Session data (needed for session context)
- * @param {string | null} [sessionId] - Session ID (if in session context)
+ * @param {object} data - Session data
+ * @param {string | null} [sessionId] - Reading session ID (if in session context)
  */
-const writeReading = (
-  event,
-  userId,
-  reading,
-  data = null,
-  sessionId = null
-) => {
-  // Ensure imageReading structure exists
-  if (!event.imageReading) {
-    event.imageReading = { reads: {} }
-  } else if (!event.imageReading.reads) {
-    event.imageReading.reads = {}
+const writeReading = (event, userId, reading, data, sessionId = null) => {
+  // Work on a clone so the shared record is never touched in place
+  const imageReading = structuredClone(event.imageReading || {})
+  if (!imageReading.reads) {
+    imageReading.reads = {}
   }
 
   // Calculate readNumber based on existing reads
-  const existingReadCount = Object.keys(event.imageReading.reads).length
+  const existingReadCount = Object.keys(imageReading.reads).length
   // If this user already has a read, keep their readNumber; otherwise assign next number
-  const existingRead = event.imageReading.reads[userId]
+  const existingRead = imageReading.reads[userId]
   const readNumber = existingRead?.readNumber || existingReadCount + 1
 
   // Add the reading with timestamp and readNumber
-  event.imageReading.reads[userId] = {
+  imageReading.reads[userId] = {
     ...reading,
     readerId: userId, // Ensure the reader ID is saved
     readNumber,
     timestamp: new Date().toISOString()
   }
 
+  // Saves to the event and mirrors into data.event if it matches
+  updateEventData(data, event.id, { imageReading })
+
+  // Note the episode deliberately stays in `reading`. Two opinions and a
+  // computed outcome is not a confirmed result, and there is no step in the
+  // app that confirms one yet - see advanceEpisodeForReadingOutcome in
+  // app/lib/utils/episodes.js, which is what that step should call.
+
   // If we have session context, remove this event from skipped events
-  if (data && sessionId && data.readingSessions?.[sessionId]) {
+  // (readingSessions is per-session working data, so in-place edits are fine)
+  if (sessionId && data.readingSessions?.[sessionId]) {
     const session = data.readingSessions[sessionId]
 
     // Remove event from skipped list if present
@@ -1656,7 +1664,7 @@ const getDefaultSessionName = (type, clinicId, data) => {
     case 'awaiting_priors':
       return 'Awaiting priors session'
     case 'clinic': {
-      const clinic = data.clinics.find((c) => c.id === clinicId)
+      const clinic = getClinic(data, clinicId)
       if (!clinic) return 'Clinic session'
 
       const location = clinic.locationId

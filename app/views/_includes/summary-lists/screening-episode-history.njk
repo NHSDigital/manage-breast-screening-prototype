@@ -1,0 +1,64 @@
+{# /app/views/_includes/summary-lists/screening-episode-history.njk #}
+
+{# A participant's screening rounds, newest first. Past rounds are held as
+   summary-only episodes, so this covers their whole history without needing
+   the old appointments to exist. #}
+
+{% if episodeHistory.length %}
+
+  <table class="nhsuk-table">
+    <thead class="nhsuk-table__head">
+      <tr>
+        <th scope="col">Date</th>
+        <th scope="col">Type</th>
+        <th scope="col">Stage</th>
+        <th scope="col">Outcome</th>
+        <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody class="nhsuk-table__body">
+      {% for row in episodeHistory %}
+        {% set episode = row.episode %}
+        <tr class="nhsuk-table__row">
+          <td class="nhsuk-table__cell">
+            {% if row.date %}
+              {{ row.date | formatDate }}
+              {% if not row.wasScreened %}
+                <br>{{ "Not screened" | asHint }}
+              {% endif %}
+            {% else %}
+              {{ "Not booked" | asHint }}
+            {% endif %}
+          </td>
+          <td class="nhsuk-table__cell">
+            {{ episode.type | sentenceCase }}
+          </td>
+          <td class="nhsuk-table__cell">
+            {{ tag({
+              text: episode.stage | getEpisodeStageText,
+              colour: episode.stage | getEpisodeStageTagColour
+            }) }}
+          </td>
+          <td class="nhsuk-table__cell">
+            {% if episode.outcome %}
+              {{ tag({
+                text: episode.outcome | getEpisodeOutcomeText,
+                colour: episode.outcome | getEpisodeOutcomeTagColour
+              }) }}
+            {% else %}
+              <span class="nhsuk-u-secondary-text-color">Not yet</span>
+            {% endif %}
+          </td>
+          <td class="nhsuk-table__cell">
+            <a href="{{ ('/episodes/' + episode.id) | urlWithReferrer(currentUrl) }}">
+              View episode
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% else %}
+  <p>No screening history found</p>
+{% endif %}

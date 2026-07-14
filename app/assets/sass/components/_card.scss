@@ -1,0 +1,10 @@
+@use "sass:color";
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+.nhsuk-card--feature.app-card--feature-grey {
+  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%) !important;
+}
+.nhsuk-card--feature.app-card--feature-grey .nhsuk-card__heading {
+  background-color: nhsuk-colour("grey-1");
+  color: nhsuk-colour("white");
+}

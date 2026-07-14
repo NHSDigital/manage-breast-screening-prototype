@@ -1,0 +1,81 @@
+{# app/views/_includes/reading/priors-summary.njk #}
+{# Displays previous (prior) mammograms for the reader as a summary list.
+   One row per prior:
+     key   - status tag plus when the mammogram was taken
+     value - where it was taken, any additional details, and the request
+             timeline (when requested / received / updated, and by whom)
+   Priors that have never been requested get a "Request priors" action.
+
+   Expects: event, unit #}
+
+{% set priorsSummary = event | getPriorsSummary %}
+
+{% if priorsSummary.total > 0 %}
+
+  {% set priorRows = [] %}
+  {% for mammogram in event.previousMammograms %}
+
+    {# When the mammogram was taken - full month and year, or the participant's approximate date #}
+    {% set priorDateLabel = (mammogram.approximateDate if mammogram.dateType == "moreThanSixMonths" else (mammogram.dateTaken | formatDate("MMMM YYYY"))) | capitalize %}
+
+    {# Key: when the mammogram was taken (bold), with the status tag beneath #}
+    {% set priorKeyHtml %}
+      {% if priorDateLabel %}{{ priorDateLabel }}{% else %}Date not known{% endif %}
+      <span class="nhsuk-u-display-block nhsuk-u-margin-top-1">{{ ("prior_" + mammogram.requestStatus) | toTag }}</span>
+    {% endset %}
+
+    {# Request timeline - what has happened to the request and when #}
+    {% set requestTimelineHtml %}
+      {% if mammogram.requestStatus == "received" %}
+        Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}<br>
+        Received {{ mammogram.receivedDate | formatDate("D MMMM YYYY") }}
+      {% elif mammogram.requestStatus == "requested" %}
+        Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+      {% elif mammogram.requestStatus == "pending" %}
+        Flagged for request {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+      {% elif (mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed") and mammogram.statusChangedDate %}
+        Updated {{ mammogram.statusChangedDate | formatDate("D MMMM YYYY") }}{% if mammogram.statusChangedBy %} by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+      {% endif %}
+      {%- if mammogram.requestReason %}<br>Reason: {{ mammogram.requestReason }}{% endif %}
+    {% endset %}
+
+    {# Value: location, any additional details on their own line, then the request timeline #}
+    {% set priorValueHtml %}
+      {{ mammogram | summarisePriorMammogram({ unitName: unit.name, includeDate: false, prefix: "Taken" }) }}
+      {% if mammogram.otherDetails %}
+        <br>{{ mammogram.otherDetails }}
+      {% endif %}
+      {% if requestTimelineHtml | trim %}
+        <br><span class="nhsuk-u-secondary-text-colour">{{ requestTimelineHtml | trim | safe }}</span>
+      {% endif %}
+    {% endset %}
+
+    {# Action: request route only for priors that have never been requested.
+       Multiple unrequested priors each link to the same request page. #}
+    {% set priorActions = null %}
+    {% if mammogram.requestStatus == "not_requested" %}
+      {% set priorActions = {
+        items: [
+          {
+            href: "./request-priors",
+            text: "Request priors",
+            visuallyHiddenText: "for this mammogram"
+          } | openInModal
+        ]
+      } %}
+    {% endif %}
+
+    {% set priorRows = priorRows | push({
+      key: {
+        html: priorKeyHtml
+      },
+      value: {
+        html: priorValueHtml
+      },
+      actions: priorActions
+    }) %}
+  {% endfor %}
+
+  {{ summaryList({ rows: priorRows, lastRowBorder: false }) }}
+
+{% endif %}

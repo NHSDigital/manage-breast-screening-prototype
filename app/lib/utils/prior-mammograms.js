@@ -6,6 +6,16 @@
 
 const { formatDate, formatRelativeDate } = require('./dates')
 
+/** The known requestStatus values for a prior mammogram */
+const PRIOR_REQUEST_STATUSES = [
+  'not_requested',
+  'pending',
+  'requested',
+  'received',
+  'not_available',
+  'not_needed'
+]
+
 /** Returns true if the event has any previously recorded mammograms */
 const hasRecordedMammograms = (event) => {
   if (!event) return false
@@ -118,49 +128,76 @@ const userRequestedPriors = (event, userId) => {
  * @param {Object} [options] - Optional config
  * @param {string} [options.unitName] - Display name for the current BSU (used when location === 'currentBsu')
  * @param {boolean} [options.includeAdditionalInfo] - Whether to append otherDetails (default: false)
- * @returns {string} One-line summary, e.g. "St James's Hospital (March 2018, 8 years ago)"
+ * @param {boolean} [options.includeDate] - Whether to append the parenthesised date detail (default: true)
+ * @param {string} [options.prefix] - Optional leading verb, e.g. "Taken"; the location phrase then reads lower case after it
+ * @returns {string} One-line summary, e.g. "At another BSU: St James's Hospital (March 2018)"
  */
 const summarisePriorMammogram = (mammogram, options = {}) => {
   if (!mammogram) return ''
 
-  const { unitName = null, includeAdditionalInfo = false } = options
+  const {
+    unitName = null,
+    includeAdditionalInfo = false,
+    includeDate = true,
+    prefix = null
+  } = options
 
-  // Location part (primary label)
-  let location = ''
+  // Location: a generic category phrase, plus the specific place the
+  // participant named where we have one, e.g. "at another BSU: St James's".
+  // Phrases are lower case so they read after a prefix ("Taken at another
+  // BSU…"); when there's no prefix the first letter is capitalised so the
+  // phrase reads at the start of a line or list item.
+  let place = ''
+  let specificPlace = ''
   switch (mammogram.location) {
     case 'bsu':
-      location = 'At another BSU'
+      place = 'at another BSU'
+      specificPlace = mammogram.bsu
       break
     case 'otherUk':
-      location = 'Elsewhere in the UK'
+      place = 'elsewhere in the UK'
+      specificPlace = mammogram.otherUk
       break
     case 'otherNonUk':
-      location = 'Outside the UK'
+      place = 'outside the UK'
+      specificPlace = mammogram.otherNonUk
       break
     case 'currentBsu':
-      location = `At ${unitName || 'this BSU'}`
+      place = `at ${unitName || 'this BSU'}`
       break
     case 'preferNotToSay':
-      location = 'Location not provided'
+      place = 'at an undisclosed location'
       break
     default:
-      location = ''
+      place = ''
   }
 
-  // Date detail — combine formatted date and relative time into parenthesised suffix
+  let location = specificPlace ? `${place}: ${specificPlace}` : place
+
+  if (location) {
+    if (prefix) {
+      location = `${prefix} ${location}`
+    } else {
+      location = location.charAt(0).toUpperCase() + location.slice(1)
+    }
+  }
+
+  // Date detail — parenthesised suffix. Uses the participant's approximate
+  // wording when they didn't give an exact date.
   const dateParts = []
   if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
-    dateParts.push(formatDate(mammogram.dateTaken, 'MMM YYYY'))
+    dateParts.push(formatDate(mammogram.dateTaken, 'MMMM YYYY'))
     if (mammogram._rawDate) {
       dateParts.push(formatRelativeDate(mammogram._rawDate))
     }
   } else if (mammogram.dateType === 'moreThanSixMonths') {
-    dateParts.push('over 6 months ago')
+    dateParts.push(mammogram.approximateDate || 'over 6 months ago')
   } else if (mammogram.dateType === 'lessThanSixMonths') {
     dateParts.push('less than 6 months ago')
   }
 
-  const dateDetail = dateParts.length > 0 ? `(${dateParts.join(', ')})` : ''
+  const dateDetail =
+    includeDate && dateParts.length > 0 ? `(${dateParts.join(', ')})` : ''
 
   // Optional additional information appended as a separate sentence
   const additionalInfo =
@@ -186,6 +223,7 @@ const summarisePriorMammograms = (event, options = {}) => {
 }
 
 module.exports = {
+  PRIOR_REQUEST_STATUSES,
   hasRecordedMammograms,
   awaitingPriors,
   hasUnrequestedPriors,

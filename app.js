@@ -42,7 +42,7 @@ async function init() {
     prototype.nunjucks.addGlobal(name, global)
   }
 
-  prototype.start(config.port)
+  prototype.start(port)
 }
 
 init()

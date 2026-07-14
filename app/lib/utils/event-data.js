@@ -1,15 +1,43 @@
 // app/lib/utils/event-data.js
 const { getParticipant } = require('./participants.js')
+const { getClinic } = require('./clinics.js')
+const dataStore = require('../data-store')
+
+/**
+ * Record a changed event so it persists for this session
+ *
+ * The events array attached to `data` is rebuilt from the shared data store
+ * on every request; only records in data._changes survive across requests
+ * (see the attach middleware in app/routes.js). Callers should also replace
+ * the record in data.events so reads later in the same request see it.
+ *
+ * @param {object} data - Session data
+ * @param {object} event - Whole replacement event record
+ */
+const recordEventChange = (data, event) => {
+  if (data._changes?.events) {
+    data._changes.events[event.id] = event
+  }
+}
 
 /**
  * Get an event by ID
+ *
+ * Reads the session's changed records first, then the shared store's id
+ * index, so it avoids a linear scan of the merged events array. Falls back
+ * to scanning data.events for records that exist only in the passed data.
  *
  * @param {object} data - Session data
  * @param {string} eventId - Event ID
  * @returns {object | null} Event object or null if not found
  */
 const getEvent = (data, eventId) => {
-  return data.events.find((e) => e.id === eventId) || null
+  return (
+    data._changes?.events?.[eventId] ??
+    dataStore.state.eventsById.get(eventId) ??
+    data.events?.find((e) => e.id === eventId) ??
+    null
+  )
 }
 
 /**
@@ -21,19 +49,17 @@ const getEvent = (data, eventId) => {
  * @returns {object | null} Bundle of {clinic, event, participant, location, unit} or null if not found
  */
 const getEventData = (data, clinicId, eventId) => {
-  const clinic = data.clinics.find((c) => c.id === clinicId)
+  const clinic = getClinic(data, clinicId)
   if (!clinic) return null
 
-  const event = data.events.find(
-    (e) => e.id === eventId && e.clinicId === clinicId
-  )
-  if (!event) return null
+  const event = getEvent(data, eventId)
+  if (!event || event.clinicId !== clinicId) return null
 
   const participant = getParticipant(data, event.participantId)
   const unit = data.breastScreeningUnits.find(
     (u) => u.id === clinic.breastScreeningUnitId
   )
-  const location = unit.locations.find((l) => l.id === clinic.locationId)
+  const location = unit?.locations.find((l) => l.id === clinic.locationId)
 
   return { clinic, event, participant, location, unit }
 }
@@ -50,8 +76,10 @@ const updateEvent = (data, eventId, updatedEvent) => {
   const eventIndex = data.events.findIndex((e) => e.id === eventId)
   if (eventIndex === -1) return null
 
-  // Update in the array
+  // Update in the attached array (same-request reads) and record the change
+  // (persistence across requests)
   data.events[eventIndex] = updatedEvent
+  recordEventChange(data, updatedEvent)
   return updatedEvent
 }
 
@@ -88,6 +116,7 @@ const updateEventStatus = (data, eventId, newStatus) => {
 
   // Update main data
   data.events[eventIndex] = updatedEvent
+  recordEventChange(data, updatedEvent)
 
   // Also update temp event data if it exists and matches this event
   // Only update the status-related fields to preserve other temp changes
@@ -95,6 +124,20 @@ const updateEventStatus = (data, eventId, newStatus) => {
     data.event.status = newStatus
     data.event.statusHistory = updatedEvent.statusHistory
   }
+
+  // Keep the event's episode in step - check-in moves it to mammograms,
+  // a completed appointment moves it to reading, and so on - and record on
+  // the episode that images were taken (or weren't after all, on an undo).
+  // Doing it here means routes don't each have to know episodes exist.
+  //
+  // Required lazily: episodes.js needs getEvent from this module, so a
+  // top-level require would be circular.
+  const {
+    syncEpisodeMammogramsForEvent,
+    advanceEpisodeForEventStatus
+  } = require('./episodes.js')
+  syncEpisodeMammogramsForEvent(data, updatedEvent)
+  advanceEpisodeForEventStatus(data, updatedEvent)
 
   return updatedEvent
 }
@@ -125,6 +168,7 @@ const updateEventData = (data, eventId, updates) => {
 
   // Update main data
   data.events[eventIndex] = updatedEvent
+  recordEventChange(data, updatedEvent)
 
   // Also update temp event data if it exists and matches this event
   // Merge updates into existing temp event to preserve any unsaved changes

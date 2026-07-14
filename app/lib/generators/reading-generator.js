@@ -859,5 +859,6 @@ const generateReadingData = (events, users, seedProfile = {}) => {
 }
 
 module.exports = {
-  generateReadingData
+  generateReadingData,
+  generateSingleRead
 }

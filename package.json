@@ -5,6 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "generate": "node scripts/generate-data.js",
+    "heroku-postbuild": "npm run generate",
     "build:static-error-page": "node scripts/build-static-error-page.js",
     "docs": "node scripts/generate-utils-reference.js"
   },
@@ -16,7 +18,7 @@
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.21",
     "lodash": "^4.18.1",
-    "markdown-it": "^14.1.1",
+    "markdown-it": "^14.3.0",
     "nhsuk-frontend": "^10.4.2",
     "nhsuk-prototype-kit": "^8.3.0",
     "pluralize": "^8.0.0",
@@ -28,8 +30,8 @@
   },
   "devDependencies": {
     "cssnano": "^8.0.2",
-    "postcss": "^8.5.16",
-    "prettier": "^3.9.4",
+    "postcss": "^8.5.19",
+    "prettier": "^3.9.5",
     "purgecss": "^8.0.0"
   }
 }

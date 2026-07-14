@@ -1,3 +1,5 @@
+@use "sass:color";
+
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 // app/assets/sass/components/_mammogram-images.scss
@@ -38,15 +40,49 @@
   text-align: right;
 }
 
+// Two-column layout for the reading opinion page: main content + images sidebar.
+// Float-based layout — main column takes remaining space via calc, images column is fixed width.
+.app-reading-opinion-columns {
+  @include nhsuk-media-query($from: large-desktop) {
+    @include nhsuk-clearfix;
+  }
+}
+
+.app-grid-column-main {
+  @include nhsuk-media-query($from: large-desktop) {
+    float: left;
+    box-sizing: border-box;
+    width: calc(100% - 300px);
+    padding-right: $nhsuk-gutter;
+  }
+}
+
+.app-grid-column-images {
+  display: none;
+
+  @include nhsuk-media-query($from: large-desktop) {
+    display: block;
+    float: right;
+    box-sizing: border-box;
+    width: 300px;
+  }
+}
+
 // Thumbnail grid for the reading opinion page
 .app-mammogram-thumbnails {
-  display: inline-grid;
-  grid-template-columns: auto auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
   gap: 8px;
 
   // Match the tighter grid gap for same-view images within the reading layout
   .app-mammogram-thumbnail {
     gap: 8px;
+  }
+
+  // Allow thumbnails to scale to fill the available column width
+  .app-mammogram-thumbnail__image-wrapper {
+    max-width: none;
   }
 }
 
@@ -121,7 +157,7 @@
   background-color: nhsuk-colour("blue");
   color: #fff;
   padding: 2px 6px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   z-index: 1;
 }
@@ -141,7 +177,7 @@
   width: 100%;
   height: 100%;
   border: 2px dashed nhsuk-colour("grey-2");
-  background-color: nhsuk-colour("grey-5");
+  background-color: nhsuk-colour("grey-4");
   display: flex;
   align-items: center;
   justify-content: center;

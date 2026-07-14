@@ -28,12 +28,13 @@
 // Wrapper needs to fill the column height for sticky to work
 .app-workflow-side-nav-wrapper {
   height: 100%;
-}
-
-.app-workflow-side-nav {
   position: sticky;
   top: nhsuk-spacing(4);
   padding-bottom: 15px;
+}
+
+.app-workflow-side-nav {
+  position: static;
 }
 
 .app-workflow-side-nav__heading {

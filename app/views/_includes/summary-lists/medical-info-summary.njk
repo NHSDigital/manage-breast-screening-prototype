@@ -200,7 +200,9 @@
 {# Build summary list content #}
 {% set rows = [] %}
 
-{% if not showOnlyPopulated or additionalMammogramsCount > 0 %}
+{# hidePreviousMammograms lets a page suppress this row when priors are shown
+   separately (e.g. the reading opinion page has a dedicated priors summary) #}
+{% if not hidePreviousMammograms and (not showOnlyPopulated or additionalMammogramsCount > 0) %}
   {% set rows = rows | push({
     key: {
       text: "Mammograms added"
