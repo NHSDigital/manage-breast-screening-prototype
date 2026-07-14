@@ -1,4 +1,4 @@
-{# app/views/events/image-reading/index.html #}
+{# app/views/appointments/image-reading/index.html #}
 
 {% extends 'layout-app.html' %}
 
@@ -12,64 +12,64 @@
 
 <h2>Start new reading session</h2>
 
-{# Awaiting priors — count across all eligible events, not just those needing reads #}
-{% set awaitingPriorsEvents = [] %}
-{% for thisEvent in data.events | filterEventsByEligibleForReading %}
-  {% if thisEvent | awaitingPriors %}
-    {% set awaitingPriorsEvents = awaitingPriorsEvents | push(thisEvent) %}
+{# Awaiting priors — count across all eligible appointments, not just those needing reads #}
+{% set awaitingPriorsAppointments = [] %}
+{% for thisAppointment in data.appointments | filterAppointmentsByEligibleForReading %}
+  {% if thisAppointment | awaitingPriors %}
+    {% set awaitingPriorsAppointments = awaitingPriorsAppointments | push(thisAppointment) %}
   {% endif %}
 {% endfor %}
 
-{% set allReadsEventsWithAwaitingPriors = data.events | filterEventsByEligibleForReading | filterEventsByNeedsAnyRead | sortEventsByScreeningDate %}
+{% set allReadsAppointmentsWithAwaitingPriors = data.appointments | filterAppointmentsByEligibleForReading | filterAppointmentsByNeedsAnyRead | sortAppointmentsByScreeningDate %}
 
-{# Split readable events into awaiting priors and available for reading #}
-{# Events with 'requested' status mammograms are held from reading #}
-{% set allReadsEvents = [] %}
-{% for thisEvent in allReadsEventsWithAwaitingPriors %}
-  {% if not (thisEvent | awaitingPriors) %}
-    {% set allReadsEvents = allReadsEvents | push(thisEvent) %}
+{# Split readable appointments into awaiting priors and available for reading #}
+{# Appointments with 'requested' status mammograms are held from reading #}
+{% set allReadsAppointments = [] %}
+{% for thisAppointment in allReadsAppointmentsWithAwaitingPriors %}
+  {% if not (thisAppointment | awaitingPriors) %}
+    {% set allReadsAppointments = allReadsAppointments | push(thisAppointment) %}
   {% endif %}
 {% endfor %}
 
-{% set recentEvents = allReadsEvents | filterEventsByDayRange(0, data.config.reading.priorityThreshold) %}
+{% set recentAppointments = allReadsAppointments | filterAppointmentsByDayRange(0, data.config.reading.priorityThreshold) %}
 
-{% set priorityEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) %}
-{% set urgentEvents = allReadsEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) %}
+{% set priorityAppointments = allReadsAppointments | filterAppointmentsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) %}
+{% set urgentAppointments = allReadsAppointments | filterAppointmentsByDayRange(data.config.reading.urgentThreshold) %}
 
 
 
-{% set firstReadsEvents = allReadsEvents | filterEventsByNeedsFirstRead %}
-{% set secondReadsEvents = allReadsEvents | filterEventsByNeedsSecondRead %}
+{% set firstReadsAppointments = allReadsAppointments | filterAppointmentsByNeedsFirstRead %}
+{% set secondReadsAppointments = allReadsAppointments | filterAppointmentsByNeedsSecondRead %}
 
 {# Filter for current user - currently not used #}
-{% set allReadsForUser = allReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
-{% set firstReadsForUser = firstReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
-{% set secondReadsForUser = secondReadsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
-{% set awaitingPriorsForUser = awaitingPriorsEvents | filterEventsByUserCanRead(data.currentUser.id) %}
+{% set allReadsForUser = allReadsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
+{% set firstReadsForUser = firstReadsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
+{% set secondReadsForUser = secondReadsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
+{% set awaitingPriorsForUser = awaitingPriorsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
 
 {# Get oldest #}
-{% set oldestAllRead = allReadsEvents[0].timing.startTime if allReadsEvents.length > 0 %}
-{% set oldestFirstRead = firstReadsEvents[0].timing.startTime if firstReadsEvents.length > 0 %}
-{% set oldestSecondRead = secondReadsEvents[0].timing.startTime if secondReadsEvents.length > 0 %}
-{% set oldestAwaitingPrior = awaitingPriorsEvents[0].timing.startTime if awaitingPriorsEvents.length > 0 %}
+{% set oldestAllRead = allReadsAppointments[0].timing.startTime if allReadsAppointments.length > 0 %}
+{% set oldestFirstRead = firstReadsAppointments[0].timing.startTime if firstReadsAppointments.length > 0 %}
+{% set oldestSecondRead = secondReadsAppointments[0].timing.startTime if secondReadsAppointments.length > 0 %}
+{% set oldestAwaitingPrior = awaitingPriorsAppointments[0].timing.startTime if awaitingPriorsAppointments.length > 0 %}
 
 {# All reads card content #}
 {% set allReadsContent %}
 
-  {% set allReadCount = allReadsEvents | length %}
+  {% set allReadCount = allReadsAppointments | length %}
 
-  {% set hasPriortyTags = priorityEvents or urgentEvents %}
+  {% set hasPriortyTags = priorityAppointments or urgentAppointments %}
   <p class="{{ "nhsuk-u-margin-bottom-2" if hasPriortyTags }}">
     {{ allReadCount }} cases needing reading
   </p>
 
   {% if hasPriortyTags %}
     <div class="nhsuk-u-margin-bottom-4">
-      {% if urgentEvents | length %}
-        {{ ((urgentEvents | length) ~ " urgent cases") | toTag({colour: "red"}) }}
+      {% if urgentAppointments | length %}
+        {{ ((urgentAppointments | length) ~ " urgent cases") | toTag({colour: "red"}) }}
       {% endif %}
-      {% if priorityEvents | length %}
-        {{ ((priorityEvents | length) ~ " cases due soon") | toTag({colour: "orange"}) }}
+      {% if priorityAppointments | length %}
+        {{ ((priorityAppointments | length) ~ " cases due soon") | toTag({colour: "orange"}) }}
       {% endif %}
     </div>
   {% endif %}
@@ -170,7 +170,7 @@
   </li>
   <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
     {{ card({
-      heading: (awaitingPriorsEvents | length) ~ " Awaiting priors",
+      heading: (awaitingPriorsAppointments | length) ~ " Awaiting priors",
       headingClasses: "nhsuk-heading-s",
       clickable: true,
       href: "/reading/priors"

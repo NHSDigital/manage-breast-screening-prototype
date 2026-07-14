@@ -4,7 +4,7 @@ This document explains the architecture and patterns used in the seed data gener
 
 ## Overview
 
-The prototype uses generators to create realistic test data for participants, events, and associated medical information. Data generation follows a hierarchical pattern where each generator can be configured, overridden, and tested independently.
+The prototype uses generators to create realistic test data for participants, appointments, and associated medical information. Data generation follows a hierarchical pattern where each generator can be configured, overridden, and tested independently.
 
 ## Architecture
 
@@ -23,10 +23,10 @@ generate-seed-data.js (main orchestrator)
   ├─> clinic-generator.js
   │     Creates clinics with slots for each BSU
   │
-  ├─> event-generator.js
-  │     Creates events by assigning participants to clinic slots
+  ├─> appointment-generator.js
+  │     Creates appointments by assigning participants to clinic slots
   │     │
-  │     └─> medical-information-generator.js (for completed events only)
+  │     └─> medical-information-generator.js (for completed appointments only)
   │           ├─> symptoms-generator.js
   │           ├─> hrt-generator.js
   │           ├─> pregnancy-and-breastfeeding-generator.js
@@ -35,14 +35,14 @@ generate-seed-data.js (main orchestrator)
   │           └─> medical-history-generator.js
   │
   └─> reading-generator.js
-        Adds reading/outcome data to events
+        Adds reading/outcome data to appointments
 ```
 
 **Key points:**
 - Generators are called sequentially by the main orchestrator
-- Medical information is only generated for **completed events**
+- Medical information is only generated for **completed appointments**
 - Participants are mostly created upfront, but can be generated on-demand
-- Reading data is added after all events are created
+- Reading data is added after all appointments are created
 
 ### Storage Locations
 
@@ -51,12 +51,12 @@ generate-seed-data.js (main orchestrator)
 - NHS number, GP details
 - Persistent information
 
-**Event level:**
+**Appointment level:**
 - Medical information collected during appointments
 - Session details (who, when, where)
-- Event-specific data
+- Appointment-specific data
 
-**Key principle:** Medical information is stored at the **event level**, representing data collected during specific appointments.
+**Key principle:** Medical information is stored at the **appointment level**, representing data collected during specific appointments.
 
 ## Generator Pattern
 
@@ -207,11 +207,11 @@ module.exports = [
         lastName: 'Test'
       },
       config: {
-        // Event configuration
-        eventId: 'evt-001',
+        // Appointment configuration
+        appointmentId: 'evt-001',
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_complete'
+          status: 'appointment_complete'
         },
 
         // Generator overrides
@@ -284,15 +284,15 @@ const generateItems = (options = {}) => {
 Configuration flows from test scenarios through the generator hierarchy:
 
 ```javascript
-// In event-generator.js
-const event = generateEvent({
+// In appointment-generator.js
+const appointment = generateAppointment({
   participant,  // Contains participant.config
   // ...
 })
 
-// Inside generateEvent, for completed events:
+// Inside generateAppointment, for completed appointments:
 const medicalInfo = generateMedicalInformation({
-  addedByUserId: event.sessionDetails.startedBy,
+  addedByUserId: appointment.sessionDetails.startedBy,
   config: participant.config  // Pass config down
 })
 
@@ -378,10 +378,10 @@ while (items.length < numberOfItems) {
 Medical information should be attributed to the user who collected it:
 
 ```javascript
-// In event-generator.js
-if (isCompleted(eventStatus)) {
+// In appointment-generator.js
+if (isCompleted(appointmentStatus)) {
   const medicalInfo = generateMedicalInformation({
-    addedByUserId: event.sessionDetails.startedBy  // Who ran appointment
+    addedByUserId: appointment.sessionDetails.startedBy  // Who ran appointment
   })
 }
 
@@ -480,7 +480,7 @@ Use test scenarios to create specific high-probability cases when needed.
 ```
 app/lib/generators/
 ├── participant-generator.js          # Generates participant records
-├── event-generator.js                # Generates event records
+├── appointment-generator.js                # Generates appointment records
 ├── medical-information-generator.js  # Umbrella generator
 ├── medical-information/              # Sub-generators
 │   ├── symptoms-generator.js
@@ -567,8 +567,8 @@ const clinics = generateClinicsForBSU({
   breastScreeningUnit: unit
 })
 
-// 4. Generate events by allocating participants to slots
-const event = generateEvent({
+// 4. Generate appointments by allocating participants to slots
+const appointment = generateAppointment({
   slot,
   participant,
   clinic,
@@ -576,30 +576,30 @@ const event = generateEvent({
   forceStatus: scenario?.participant?.config?.scheduling?.status
 })
 
-// 5. Generate reading data after all events created
-const eventsWithReadingData = generateReadingData(
-  sortedEvents,
+// 5. Generate reading data after all appointments created
+const appointmentsWithReadingData = generateReadingData(
+  sortedAppointments,
   users
 )
 ```
 
-### In event-generator.js
+### In appointment-generator.js
 
-Medical information is generated for completed events only:
+Medical information is generated for completed appointments only:
 
 ```javascript
-// Lines 246-258 in event-generator.js
-if (isCompleted(eventStatus)) {
+// Lines 246-258 in appointment-generator.js
+if (isCompleted(appointmentStatus)) {
   // Generate medical information (symptoms, medical history, etc.)
   const medicalInformation = generateMedicalInformation({
-    addedByUserId: event.sessionDetails.startedBy,
+    addedByUserId: appointment.sessionDetails.startedBy,
     config: participant.config,
     // Allow config to override probabilities
     ...(participant.config?.medicalInformation || {})
   })
 
   if (Object.keys(medicalInformation).length > 0) {
-    event.medicalInformation = medicalInformation
+    appointment.medicalInformation = medicalInformation
   }
 }
 ```
@@ -623,7 +623,7 @@ if (availableParticipants.length === 0) {
 
 ## Common Pitfalls
 
-1. **Don't store event data on participants** - Medical information goes on events
+1. **Don't store appointment data on participants** - Medical information goes on appointments
 2. **Check `canHaveMultiple` flags** - Some types limited to single entry
 3. **Pass config through** - Test scenario config must flow to sub-generators
 4. **Attribute to correct user** - Use `sessionDetails.startedBy` for medical info

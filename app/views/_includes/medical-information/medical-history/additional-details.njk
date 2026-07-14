@@ -1,9 +1,9 @@
 {# app/views/_includes/medical-information/medical-history/additional-details.njk #}
 
 {{ textarea({
-  name: "event[medicalHistoryTemp][additionalDetails]",
+  name: "appointment[medicalHistoryTemp][additionalDetails]",
   id: "additional-details",
-  value: event.medicalHistoryTemp.additionalDetails,
+  value: appointment.medicalHistoryTemp.additionalDetails,
   label: {
     text: additionalDetailsQuestionText or "Additional details (optional)",
     size: "m"

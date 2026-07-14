@@ -1,7 +1,7 @@
 {# app/views/_includes/appointment-note-card.njk #}
 
 {% set item = {
-  href: (eventUrl + "/appointment-note") | urlWithReferrer(referrerChain),
+  href: (appointmentUrl + "/appointment-note") | urlWithReferrer(referrerChain),
   text: "Change",
   visuallyHiddenText: "note"
 } %}
@@ -12,7 +12,7 @@ TODO: make this cleaner #}
   {% set item = item | openInModal %}
 {% endif %}
 
-{% if event | hasAppointmentNote %}
+{% if appointment | hasAppointmentNote %}
   {% call warningCallout({
     heading: "Appointment note",
     classes: "nhsuk-u-margin-bottom-4",
@@ -24,7 +24,7 @@ TODO: make this cleaner #}
   }) %}
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-two-thirds">
-        <p>{{ event.appointmentNote }}</p>
+        <p>{{ appointment.appointmentNote }}</p>
       </div>
     </div>
   {% endcall %}

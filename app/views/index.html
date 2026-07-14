@@ -42,14 +42,14 @@
 <h2>Screening appointment</h2>
 
 {# Janet Williams #}
-{% set eventId = "5gpn41oi" %}
+{% set appointmentId = "5gpn41oi" %}
 
 {# Diana McIntosh #}
 {% set almostCompleteAppointment = "0gdof6fh" %}
 
-{% set makeActiveAppointment -%}?event[workflowStatus][appointment]=started{%- endset %}
+{% set makeActiveAppointment -%}?appointment[workflowStatus][appointment]=started{%- endset %}
 
-{% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+{% set exampleParticipant = "/clinics/wtrl7jud/appointments/" + appointmentId %}
 
 
 
@@ -98,7 +98,7 @@
     </ul>
   </li>
 
-  {% set completedSections = "event[workflowStatus][confirm-identity]=completed" %}
+  {% set completedSections = "appointment[workflowStatus][confirm-identity]=completed" %}
 
   <li>
     <a href="{{ startUrl }}?returnTo=review-medical-information&{{ completedSections }}">Review medical information</a>
@@ -154,16 +154,16 @@
       </li>
     </ul>
   </li>
-  {% set completedSections = completedSections + "&event[workflowStatus][review-medical-information]=completed" %}
+  {% set completedSections = completedSections + "&appointment[workflowStatus][review-medical-information]=completed" %}
   <li>
     <a href="{{ startUrl }}?returnTo=take-images&{{ completedSections }}">Images</a>
   </li>
-  {% set completedSections = completedSections + "&event[workflowStatus][take-images]=completed" %}
+  {% set completedSections = completedSections + "&appointment[workflowStatus][take-images]=completed" %}
   <li>
     <a href="{{ startUrl }}?returnTo=check-information&{{ completedSections }}">Check information</a>
   </li>
   <li>
-    <a href="/clinics/wtrl7jud/events/{{ almostCompleteAppointment }}/start?returnTo=check-information">Check information (Diana, fully populated)</a>
+    <a href="/clinics/wtrl7jud/appointments/{{ almostCompleteAppointment }}/start?returnTo=check-information">Check information (Diana, fully populated)</a>
   </li>
   <li>
     Exit appointment
@@ -172,7 +172,7 @@
         <a href="{{ startUrl }}?returnTo=exit-appointment">Before images stage</a>
       </li>
       <li>
-        <a href="{{ startUrl }}?returnTo=exit-appointment&event[workflowStatus][confirm-identity]=completed&event[workflowStatus][review-medical-information]=completed">During images stage (may have images)</a>
+        <a href="{{ startUrl }}?returnTo=exit-appointment&appointment[workflowStatus][confirm-identity]=completed&appointment[workflowStatus][review-medical-information]=completed">During images stage (may have images)</a>
       </li>
       <li>
         <a href="{{ startUrl }}?returnTo=exit-appointment&{{ completedSections }}">After images completed</a>
@@ -185,9 +185,9 @@
 <h3>Completed screening appointment</h3>
 
 {# Angelina Renner #}
-{% set eventId = "1fefyh1q" %}
+{% set appointmentId = "1fefyh1q" %}
 
-{% set exampleParticipant = "/clinics/wtrl7jud/events/" + eventId %}
+{% set exampleParticipant = "/clinics/wtrl7jud/appointments/" + appointmentId %}
 
 <ul>
   <li>

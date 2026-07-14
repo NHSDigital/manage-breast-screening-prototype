@@ -236,7 +236,7 @@ const generateBreastFeature = (options = {}) => {
 }
 
 /**
- * Generate breast features for an event
+ * Generate breast features for an appointment
  *
  * @param {object} [options] - Generation options
  * @param {number} [options.probabilityOfAnyFeatures=0.20] - Chance of having any features

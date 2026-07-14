@@ -1,7 +1,7 @@
 
 {% set scrollTo = sectionId %}
 
-{% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+{% set symptomsCount = appointment.medicalInformation.symptoms and appointment.medicalInformation.symptoms | length %}
 {% set hasSymptoms = symptomsCount > 0 %}
 
 {% set symptomsContentsSummaryText %}

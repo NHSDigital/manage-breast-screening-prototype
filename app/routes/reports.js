@@ -1,6 +1,6 @@
 // app/routes/reports.js
 
-const { getClinicEvents } = require('../lib/utils/clinics')
+const { getClinicAppointments } = require('../lib/utils/clinics')
 
 module.exports = (router) => {
   router.use('/reports', (req, res, next) => {
@@ -42,14 +42,14 @@ module.exports = (router) => {
           location = unit.locations.find((l) => l.id === clinic.locationId)
         }
 
-        // Get events count for context
-        const events = getClinicEvents(data.events, clinic.id)
+        // Get appointments count for context
+        const appointments = getClinicAppointments(data.appointments, clinic.id)
 
         return {
           ...clinic,
           unit,
           location,
-          events
+          appointments
         }
       })
 
@@ -83,19 +83,19 @@ module.exports = (router) => {
     const location = unit
       ? unit.locations.find((l) => l.id === clinic.locationId)
       : {}
-    const events = getClinicEvents(data.events, clinic.id)
+    const appointments = getClinicAppointments(data.appointments, clinic.id)
     const isClinicClosed = clinic.status === 'closed'
 
     // Calculate appointment outcomes based on status
-    const outcomeCounts = events.reduce(
-      (acc, event) => {
-        const status = event.status
+    const outcomeCounts = appointments.reduce(
+      (acc, appointment) => {
+        const status = appointment.status
         if (
-          status === 'event_complete' ||
-          status === 'event_partially_screened'
+          status === 'appointment_complete' ||
+          status === 'appointment_partially_screened'
         ) {
           acc.screened++
-        } else if (status === 'event_did_not_attend') {
+        } else if (status === 'appointment_did_not_attend') {
           acc.dna++
         } else {
           // Includes scheduled, checked_in, in_progress, paused, etc.
@@ -115,7 +115,7 @@ module.exports = (router) => {
       clinic,
       unit,
       location,
-      events,
+      appointments,
       outcomeCounts,
       isClinicClosed
     })

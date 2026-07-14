@@ -17,9 +17,9 @@
 |---|---|---|
 | `dates.js` | Date formatting and calculation using dayjs | 49 |
 | `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 85 |
-| `status.js` | Event status checks and display helpers | 120 |
+| `status.js` | Appointment status checks and display helpers | 120 |
 | `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 144 |
-| `event-data.js` | Event lookups and mutations in session data | 164 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 164 |
 | `episodes.js` | Episode lookups and stage changes | 179 |
 | `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 209 |
 | `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 224 |
@@ -121,25 +121,25 @@ String manipulation: case conversion, formatting, NHS-specific formats (NHS numb
 
 `app/lib/utils/status.js`
 
-Event status checks and display helpers. Use these instead of comparing status strings directly — status values may change but these functions will be updated accordingly.
+Appointment status checks and display helpers. Use these instead of comparing status strings directly — status values may change but these functions will be updated accordingly.
 
 | Function | Description | Line |
 |---|---|---|
-| `hasNotStarted(input)` | Check if a status represents a not started event | 62 |
-| `isCompleted(input)` | Check if a status represents a completed event | 74 |
-| `isInProgress(input)` | Check if a status represents an in-progress event (includes paused) | 86 |
-| `isPaused(input)` | Check if a status represents a paused event | 98 |
-| `isInProgressNotPaused(input)` | Check if a status represents an in-progress event that is not paused | 110 |
+| `hasNotStarted(input)` | Check if a status represents a not started appointment | 62 |
+| `isCompleted(input)` | Check if a status represents a completed appointment | 74 |
+| `isInProgress(input)` | Check if a status represents an in-progress appointment (includes paused) | 86 |
+| `isPaused(input)` | Check if a status represents a paused appointment | 98 |
+| `isInProgressNotPaused(input)` | Check if a status represents an in-progress appointment that is not paused | 110 |
 | `isFinal(input)` | Check if a status represents a final state | 122 |
-| `isActive(input)` | Check if a status represents an active event | 134 |
-| `isAppointmentWorkflow(event, currentUser)` | Check if an event is in the appointment workflow for the current user | 146 |
-| `eligibleForReading(event)` | Check if a status indicates reading is eligible | 178 |
-| `getStatusTagColour(status)` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('event_complete') // 'green'` | 194 |
-| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('event_complete') // 'Screened'` | 275 |
-| `filterEventsByStatus(events, filter)` | Filter events by status category | 319 |
-| `isSpecialAppointment(event)` | Check if an event is a special appointment | 345 |
-| `hasAppointmentNote(event)` | Check if an event has an appointment note | 355 |
-| `hasSymptoms(event)` | Check if an event has recorded symptoms | 365 |
+| `isActive(input)` | Check if a status represents an active appointment | 134 |
+| `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 146 |
+| `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 178 |
+| `getStatusTagColour(status)` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('appointment_complete') // 'green'` | 194 |
+| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('appointment_complete') // 'Screened'` | 275 |
+| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 319 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 345 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 355 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 365 |
 
 ### participants.js
 
@@ -161,36 +161,36 @@ Participant lookups and derived data: full/short names, age, clinic history, and
 | `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 159 |
 | `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 183 |
 
-### event-data.js
+### appointment-data.js
 
-`app/lib/utils/event-data.js`
+`app/lib/utils/appointment-data.js`
 
-Event lookups and mutations in session data. Includes the temp event pattern (`data.event` → `data.events[]`).
+Appointment lookups and mutations in session data. Includes the temp appointment pattern (`data.appointment` → `data.appointments[]`).
 
 | Function | Description | Line |
 |---|---|---|
-| `getEvent(data, eventId)` | Get an event by ID | 23 |
-| `getEventData(data, clinicId, eventId)` | Get event data bundle for a given clinic and event ID | 43 |
-| `updateEvent(data, eventId, updatedEvent)` | Find and update an event in session data | 67 |
-| `updateEventStatus(data, eventId, newStatus)` | Update event status and add to history | 86 |
-| `updateEventData(data, eventId, updates)` | Update event with arbitrary data changes | 145 |
-| `saveTempEventToEvent(data)` | Save temporary event data back to the main event | 185 |
+| `getAppointment(data, appointmentId)` | Get an appointment by ID | 23 |
+| `getAppointmentData(data, clinicId, appointmentId)` | Get appointment data bundle for a given clinic and appointment ID | 43 |
+| `updateAppointment(data, appointmentId, updatedAppointment)` | Find and update an appointment in session data | 67 |
+| `updateAppointmentStatus(data, appointmentId, newStatus)` | Update appointment status and add to history | 86 |
+| `updateAppointmentData(data, appointmentId, updates)` | Update appointment with arbitrary data changes | 145 |
+| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 185 |
 
 ### episodes.js
 
 `app/lib/utils/episodes.js`
 
-Episode lookups and stage changes. An episode is one screening round - the container its appointment events sit in.
+Episode lookups and stage changes. An episode is one screening round - the container its appointment appointments sit in.
 
 | Function | Description | Line |
 |---|---|---|
-| `eventProducedImages(event)` | Whether an event's status means mammograms were taken. | 89 |
-| `buildMammogramEntry(event, [clinic])` | Build the episode's summary record of one set of mammograms. | 103 |
+| `appointmentProducedImages(appointment)` | Whether an appointment's status means mammograms were taken. | 89 |
+| `buildMammogramEntry(appointment, [clinic])` | Build the episode's summary record of one set of mammograms. | 103 |
 | `getEpisode(data, episodeId)` | Get an episode by ID | 144 |
 | `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 165 |
 | `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 195 |
-| `getEpisodeEvents(data, episode)` | Get an episode's events, oldest first | 211 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its events. | 226 |
+| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 211 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its appointments. | 226 |
 | `isEpisodeClosed(episode)` | Whether an episode has closed | 241 |
 | `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 251 |
 | `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 262 |
@@ -202,9 +202,9 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 | `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 373 |
 | `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 383 |
 | `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 416 |
-| `syncEpisodeMammogramsForEvent(data, event)` | Keep an episode's mammograms record in step with one of its appointments. | 465 |
-| `advanceEpisodeForEventStatus(data, event)` | Move an event's episode to wherever the event's status leaves it. | 505 |
-| `advanceEpisodeForReadingOutcome(data, event, readingOutcome)` | Move an event's episode to wherever its reading outcome leaves it. | 538 |
+| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 465 |
+| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 505 |
+| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 538 |
 
 ### clinics.js
 
@@ -216,7 +216,7 @@ Clinic filtering by time period, slot formatting, and opening hours calculation.
 |---|---|---|
 | `getClinic(data, clinicId)` | Get a clinic by ID | 8 |
 | `getTodaysClinics(clinics)` | Get today's clinics | 28 |
-| `getClinicEvents(events, clinicId)` | Get events for a specific clinic | 39 |
+| `getClinicAppointments(appointments, clinicId)` | Get appointments for a specific clinic | 39 |
 | `formatTimeSlot(dateTime)` | Format clinic time slot | 53 |
 | `getClinicHours(clinic)` | Get clinic opening hours | 79 |
 | `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 97 |
@@ -229,53 +229,53 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 
 | Function | Description | Line |
 |---|---|---|
-| `getReadingMetadata(event)` | Get reading metadata for an event | 35 |
-| `getReadsAsArray(event)` | Get all reads for an event as an ordered array | 66 |
-| `writeReading(event, userId, reading, data, [sessionId])` | Save a user's reading for an event, and remove the event from the reading | 87 |
-| `enhanceEventsWithReadingData(events, participants, userId)` | Enhance events with pre-calculated reading metadata | 146 |
-| `getReadingStatusForEvents(events, [userId])` | Get detailed reading status for a group of events | 341 |
-| `getReadingProgress(events, currentEventId, skippedEvents, [userId])` | Get progress through reading a set of events | 387 |
-| `sortEventsByScreeningDate(events)` | Sort events by screening date (oldest first) | 704 |
-| `getFirstAvailableClinic(data)` | Get the first clinic that still has events needing reads | 724 |
+| `getReadingMetadata(appointment)` | Get reading metadata for an appointment | 35 |
+| `getReadsAsArray(appointment)` | Get all reads for an appointment as an ordered array | 66 |
+| `writeReading(appointment, userId, reading, data, [sessionId])` | Save a user's reading for an appointment, and remove the appointment from the reading | 87 |
+| `enhanceAppointmentsWithReadingData(appointments, participants, userId)` | Enhance appointments with pre-calculated reading metadata | 146 |
+| `getReadingStatusForAppointments(appointments, [userId])` | Get detailed reading status for a group of appointments | 341 |
+| `getReadingProgress(appointments, currentAppointmentId, skippedAppointments, [userId])` | Get progress through reading a set of appointments | 387 |
+| `sortAppointmentsByScreeningDate(appointments)` | Sort appointments by screening date (oldest first) | 704 |
+| `getFirstAvailableClinic(data)` | Get the first clinic that still has appointments needing reads | 724 |
 | `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 735 |
-| `getReadableEventsForClinic(data, clinicId)` | Get readable events for a clinic with pre-calculated metadata | 767 |
-| `filterEventsByEligibleForReading(events)` | Filter events that are eligible for reading | 798 |
-| `filterEventsByNeedsAnyRead(events, maxReadsPerEvent)` | Filter events that need any read (first or second) | 807 |
-| `filterEventsByNeedsFirstRead(events)` | Filter events that need a first read | 821 |
-| `filterEventsByNeedsSecondRead(events)` | Filter events that need a second read | 831 |
-| `filterEventsByFullyRead(events, requiredReads)` | Filter events that are fully read (have all required reads) | 841 |
-| `filterEventsByUserCanRead(events, userId)` | Filter events that a specific user can read | 855 |
-| `filterEventsByUserCanReadOrHasRead(events, userId, [options])` | Filter events that user can read or has already read | 866 |
-| `filterEventsByClinic(events, clinicId)` | Filter events for a specific clinic | 897 |
-| `filterEventsByDayRange(events, minDays, [maxDays])` | Filter events that are within a specific day range | 908 |
-| `getFirstEvent(events)` | Get the first event from an array | 928 |
-| `getNextEvent(events, currentEventId, wrap)` | Get the next event after a specific event | 937 |
-| `getPreviousEvent(events, currentEventId, wrap)` | Get the previous event before a specific event | 958 |
-| `getReadForUser(event, [userId])` | Get the read object for a specific user on an event | 983 |
-| `getFirstUserReadableEvent(events, userId)` | Get first event from an array that a user can read | 1000 |
-| `getNextUserReadableEvent(events, currentEventId, [userId])` | Get the next event the user can read after the current event, wrapping to start if needed | 1015 |
-| `getResumeEventForUser(events, [userId], [skippedEvents])` | Get the event the user should resume reading from. | 1038 |
-| `userHasReadEvent(event, userId)` | Check if a user has already read an event | 1090 |
-| `getOtherReads(event, userId)` | Get reads from other users (not the current user) | 1109 |
+| `getReadableAppointmentsForClinic(data, clinicId)` | Get readable appointments for a clinic with pre-calculated metadata | 767 |
+| `filterAppointmentsByEligibleForReading(appointments)` | Filter appointments that are eligible for reading | 798 |
+| `filterAppointmentsByNeedsAnyRead(appointments, maxReadsPerAppointment)` | Filter appointments that need any read (first or second) | 807 |
+| `filterAppointmentsByNeedsFirstRead(appointments)` | Filter appointments that need a first read | 821 |
+| `filterAppointmentsByNeedsSecondRead(appointments)` | Filter appointments that need a second read | 831 |
+| `filterAppointmentsByFullyRead(appointments, requiredReads)` | Filter appointments that are fully read (have all required reads) | 841 |
+| `filterAppointmentsByUserCanRead(appointments, userId)` | Filter appointments that a specific user can read | 855 |
+| `filterAppointmentsByUserCanReadOrHasRead(appointments, userId, [options])` | Filter appointments that user can read or has already read | 866 |
+| `filterAppointmentsByClinic(appointments, clinicId)` | Filter appointments for a specific clinic | 897 |
+| `filterAppointmentsByDayRange(appointments, minDays, [maxDays])` | Filter appointments that are within a specific day range | 908 |
+| `getFirstAppointment(appointments)` | Get the first appointment from an array | 928 |
+| `getNextAppointment(appointments, currentAppointmentId, wrap)` | Get the next appointment after a specific appointment | 937 |
+| `getPreviousAppointment(appointments, currentAppointmentId, wrap)` | Get the previous appointment before a specific appointment | 958 |
+| `getReadForUser(appointment, [userId])` | Get the read object for a specific user on an appointment | 983 |
+| `getFirstUserReadableAppointment(appointments, userId)` | Get first appointment from an array that a user can read | 1000 |
+| `getNextUserReadableAppointment(appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 1015 |
+| `getResumeAppointmentForUser(appointments, [userId], [skippedAppointments])` | Get the appointment the user should resume reading from. | 1038 |
+| `userHasReadAppointment(appointment, userId)` | Check if a user has already read an appointment | 1090 |
+| `getOtherReads(appointment, userId)` | Get reads from other users (not the current user) | 1109 |
 | `areReadsDiscordant(readA, readB)` | Determine if two reads are discordant (disagree in a clinically meaningful way). | 1130 |
 | `willGoToArbitration(readA, readB, [settings])` | Determine whether two reads will result in arbitration, taking the site's | 1187 |
-| `getOutcome(event, [settings])` | Compute the overall outcome for an event based on its reads and site policy. | 1215 |
-| `getComparisonInfo(event, secondReadData, [userId], [settings])` | Determine if a comparison page should be shown to the second reader. | 1255 |
-| `shouldShowComparePage(event, secondReadData, [userId], [settings])` | Decide whether the compare page should be shown to the second reader. | 1320 |
-| `isDeferred(event)` | Check if an event has been deferred from reading | 1377 |
-| `hasReads(event)` | Check if an event has any reads | 1424 |
-| `needsFirstRead(event)` | Check if an event needs a first read | 1437 |
-| `needsSecondRead(event)` | Check if an event needs a second read | 1447 |
-| `needsArbitration()` | Check if an event needs arbitration. | 1455 |
-| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible event candidates for a session based on its type and filters | 1495 |
-| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of events for reading based on specified criteria | 1559 |
+| `getOutcome(appointment, [settings])` | Compute the overall outcome for an appointment based on its reads and site policy. | 1215 |
+| `getComparisonInfo(appointment, secondReadData, [userId], [settings])` | Determine if a comparison page should be shown to the second reader. | 1255 |
+| `shouldShowComparePage(appointment, secondReadData, [userId], [settings])` | Decide whether the compare page should be shown to the second reader. | 1320 |
+| `isDeferred(appointment)` | Check if an appointment has been deferred from reading | 1377 |
+| `hasReads(appointment)` | Check if an appointment has any reads | 1424 |
+| `needsFirstRead(appointment)` | Check if an appointment needs a first read | 1437 |
+| `needsSecondRead(appointment)` | Check if an appointment needs a second read | 1447 |
+| `needsArbitration()` | Check if an appointment needs arbitration. | 1455 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1495 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1559 |
 | `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1648 |
 | `generateSessionId()` | Generate a unique ID for a session | 1683 |
 | `getReadingSession(data, sessionId)` | Get a reading session by ID | 1692 |
-| `getFirstReadableEventInSession(data, sessionId, [userId])` | Get the first event in a session that a user can read | 1729 |
-| `skipEventInSession(data, sessionId, eventId)` | Mark an event as skipped in a session | 1755 |
-| `topUpSession(data, sessionId)` | Add the next eligible event to a session if it is under its target size | 1778 |
-| `getSessionReadingProgress(data, sessionId, currentEventId, [userId])` | Get reading progress for a session | 1828 |
+| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1729 |
+| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1755 |
+| `topUpSession(data, sessionId)` | Add the next eligible appointment to a session if it is under its target size | 1778 |
+| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1828 |
 
 ### prior-mammograms.js
 
@@ -286,15 +286,15 @@ Prior mammogram request state (awaiting, unrequested, resolved) and one-line sum
 | Function | Description | Line |
 |---|---|---|
 | `PRIOR_REQUEST_STATUSES()` | The known requestStatus values for a prior mammogram | 9 |
-| `hasRecordedMammograms(event)` | Returns true if the event has any previously recorded mammograms | 19 |
-| `awaitingPriors(event)` | Returns true if any prior mammogram has requestStatus 'pending' or 'requested' (holds case from reading) | 28 |
-| `hasUnrequestedPriors(event)` | Returns true if any prior mammogram has requestStatus 'not_requested' | 36 |
-| `getPriorsSummary(event)` | Get a summary of prior mammogram statuses for display | 44 |
-| `getUnrequestedPriors(event)` | Get priors with requestStatus 'not_requested' (for the request priors UI) | 93 |
-| `getAwaitingPriors(event)` | Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) | 101 |
-| `userRequestedPriors(event, userId)` | Returns true if the given user has a pending prior request on this event. | 109 |
+| `hasRecordedMammograms(appointment)` | Returns true if the appointment has any previously recorded mammograms | 19 |
+| `awaitingPriors(appointment)` | Returns true if any prior mammogram has requestStatus 'pending' or 'requested' (holds case from reading) | 28 |
+| `hasUnrequestedPriors(appointment)` | Returns true if any prior mammogram has requestStatus 'not_requested' | 36 |
+| `getPriorsSummary(appointment)` | Get a summary of prior mammogram statuses for display | 44 |
+| `getUnrequestedPriors(appointment)` | Get priors with requestStatus 'not_requested' (for the request priors UI) | 93 |
+| `getAwaitingPriors(appointment)` | Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) | 101 |
+| `userRequestedPriors(appointment, userId)` | Returns true if the given user has a pending prior request on this appointment. | 109 |
 | `summarisePriorMammogram(mammogram, [options], [options.unitName], [options.includeAdditionalInfo], [options.includeDate], [options.prefix])` | Summarise a single prior mammogram into a one-line string for display | 120 |
-| `summarisePriorMammograms(event, [options])` | Summarise all prior mammograms for an event into an array of one-line strings | 211 |
+| `summarisePriorMammograms(appointment, [options])` | Summarise all prior mammograms for an appointment into an array of one-line strings | 211 |
 
 ### medical-information.js
 
@@ -412,7 +412,7 @@ User role checks. Use these instead of comparing role strings directly.
 | `isHybridUser(user)` | Check if a user has both clinical and administrative roles | 65 |
 | `getRolesText(user, separator)` | Get all roles for a user as formatted string | 75 |
 | `isCurrentUser(user)` | Check if a user is the current user | 89 |
-| `startedByCurrentUser(event)` | Check if an event was started by the current user | 103 |
+| `startedByCurrentUser(appointment)` | Check if an appointment was started by the current user | 103 |
 
 ### utility.js
 

@@ -136,7 +136,7 @@
             </td>
             <td>
               {% if reading.sessionId %}
-              <a href="/reading/session/{{ reading.sessionId or 'clinic' }}/events/{{ reading.eventId }}">
+              <a href="/reading/session/{{ reading.sessionId or 'clinic' }}/appointments/{{ reading.appointmentId }}">
                 {{ reading.participant | getFullName }}
               </a>
               {% else %}
@@ -168,8 +168,8 @@
               {{ reading.opinion | toTag }}
             </td>
             <td>
-              {% set event = data.events | find('id', reading.eventId) %}
-              {% set outcome = event | getOutcome %}
+              {% set appointment = data.appointments | find('id', reading.appointmentId) %}
+              {% set outcome = appointment | getOutcome %}
               {% if outcome == 'not_read' %}
                 {{ "Waiting for 1st read" | toTag }}
               {% elseif outcome == 'pending_second_read' %}

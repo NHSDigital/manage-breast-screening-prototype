@@ -1,0 +1,32 @@
+{# app/views/appointments/exit-appointment.html #}
+
+{% extends parentLayout or '_templates/layout-appointment.html' %}
+
+{% set pageHeading = "Exit appointment" %}
+{% set formAction = (appointmentUrl + "/exit-appointment-answer") | urlWithReferrer(referrerChain) %}
+
+{# Suppress nav as it's a link to the page we're on #}
+{% set useMinimalNav = true %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% set hasStartedImaging = (appointment.workflowStatus['confirm-identity'] == 'completed') and (appointment.workflowStatus['review-medical-information'] == 'completed') %}
+  {# Also treat automatic mammogram data being present as images confirmed taken #}
+  {% set hasCompletedImaging = (appointment.workflowStatus['take-images'] == 'completed') or (appointment.mammogramData and not appointment.mammogramData.isManualEntry) %}
+  {% set confirmedNoImages = data.confirmedNoImages %}
+  {% set confirmedImagesWereTaken = data.confirmedImagesWereTaken %}
+
+  {% if hasCompletedImaging or confirmedImagesWereTaken %}
+    {# Scenario 3: Images completed - can only pause #}
+    {% include 'appointments/exit-appointment/images-completed.html' %}
+  {% elif hasStartedImaging and not confirmedNoImages %}
+    {# Scenario 2: During images - ask if images were taken #}
+    {% include 'appointments/exit-appointment/images-may-be-taken.html' %}
+  {% else %}
+    {# Scenario 1: Before images - show all options #}
+    {% include 'appointments/exit-appointment/before-images.html' %}
+  {% endif %}
+
+{% endblock %}

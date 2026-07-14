@@ -9,7 +9,7 @@
 {% block pageContent %}
 
   {# Serialise image paths and existing annotations for JS #}
-  {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
   {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
 
   {% set existingLeft = data.imageReadingTemp.left.annotations | default([]) %}
@@ -20,7 +20,7 @@
     V2.imagePaths = {{ allPaths | dump | safe }}
     V2.initialAnnotations = {{ existingLeft | dump | safe }}.concat({{ existingRight | dump | safe }})
     V2.sessionId = "{{ sessionId }}"
-    V2.eventId = "{{ eventId }}"
+    V2.appointmentId = "{{ appointmentId }}"
     V2.viewOrder = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
   </script>
 
@@ -453,8 +453,8 @@
       const startX = e.clientX
       const startY = e.clientY
 
-      function onMove(moveEvent) {
-        const moved = Math.abs(moveEvent.clientX - startX) > 3 || Math.abs(moveEvent.clientY - startY) > 3
+      function onMove(moveAppointment) {
+        const moved = Math.abs(moveAppointment.clientX - startX) > 3 || Math.abs(moveAppointment.clientY - startY) > 3
         if (moved && !hasDragged) {
           hasDragged = true
           el.classList.add('dragging')
@@ -463,12 +463,12 @@
           const panel = el.closest('.app-ann-v2__image-panel, .app-ann-v2__lightbox-panel')
           if (!panel) return
           const rect = panel.getBoundingClientRect()
-          el.style.left = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100)) + '%'
-          el.style.top = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100)) + '%'
+          el.style.left = Math.max(0, Math.min(100, ((moveAppointment.clientX - rect.left) / rect.width) * 100)) + '%'
+          el.style.top = Math.max(0, Math.min(100, ((moveAppointment.clientY - rect.top) / rect.height) * 100)) + '%'
         }
       }
 
-      function onUp(upEvent) {
+      function onUp(upAppointment) {
         document.removeEventListener('mousemove', onMove)
         document.removeEventListener('mouseup', onUp)
         el.classList.remove('dragging')
@@ -477,8 +477,8 @@
           const panel = el.closest('.app-ann-v2__image-panel, .app-ann-v2__lightbox-panel')
           if (panel) {
             const rect = panel.getBoundingClientRect()
-            const cx = Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width))
-            const cy = Math.max(0, Math.min(1, (upEvent.clientY - rect.top) / rect.height))
+            const cx = Math.max(0, Math.min(1, (upAppointment.clientX - rect.left) / rect.width))
+            const cy = Math.max(0, Math.min(1, (upAppointment.clientY - rect.top) / rect.height))
             const imagePos = containerFractionToImageFraction(cx, cy, panel)
             const x = Math.round(imagePos.x * 1000) / 1000
             const y = Math.round(imagePos.y * 1000) / 1000

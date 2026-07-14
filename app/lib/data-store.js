@@ -9,7 +9,7 @@
 //
 // Because these arrays and records are shared across sessions, nothing may
 // mutate them at request time. To change a record, code must go through the
-// update helpers (updateEvent etc), which write a whole replacement record
+// update helpers (updateAppointment etc), which write a whole replacement record
 // into the session's `data._changes`. In development the store is deep-frozen
 // so any leftover in-place mutation throws at the exact line, rather than
 // silently leaking one session's changes into every other session. See
@@ -68,14 +68,14 @@ const readGeneratedFile = (filename, fallback) => {
 const state = {
   participants: [],
   clinics: [],
-  events: [],
+  appointments: [],
   episodes: [],
   participantsById: new Map(),
   clinicsById: new Map(),
-  eventsById: new Map(),
+  appointmentsById: new Map(),
   episodesById: new Map(),
-  eventIdsByClinic: new Map(),
-  eventIdsByParticipant: new Map(),
+  appointmentIdsByClinic: new Map(),
+  appointmentIdsByParticipant: new Map(),
   episodeIdsByParticipant: new Map(),
   generationInfo: {},
   // Identifies which generation of seed data the store holds. Sessions stamp
@@ -94,45 +94,45 @@ const reload = () => {
   const participants =
     readGeneratedFile('participants.json', {}).participants || []
   const clinics = readGeneratedFile('clinics.json', {}).clinics || []
-  const events = readGeneratedFile('events.json', {}).events || []
+  const appointments = readGeneratedFile('appointments.json', {}).appointments || []
   const episodes = readGeneratedFile('episodes.json', {}).episodes || []
   const generationInfo = readGeneratedFile('generation-info.json', {
     generatedAt: 'Never',
-    stats: { participants: 0, clinics: 0, events: 0, episodes: 0 }
+    stats: { participants: 0, clinics: 0, appointments: 0, episodes: 0 }
   })
 
   if (shouldFreeze) {
     deepFreeze(participants)
     deepFreeze(clinics)
-    deepFreeze(events)
+    deepFreeze(appointments)
     deepFreeze(episodes)
     deepFreeze(generationInfo)
   }
 
   state.participants = participants
   state.clinics = clinics
-  state.events = events
+  state.appointments = appointments
   state.episodes = episodes
   state.generationInfo = generationInfo
   state.generationId = generationInfo.generatedAt
 
   state.participantsById = new Map(participants.map((p) => [p.id, p]))
   state.clinicsById = new Map(clinics.map((c) => [c.id, c]))
-  state.eventsById = new Map(events.map((e) => [e.id, e]))
+  state.appointmentsById = new Map(appointments.map((e) => [e.id, e]))
   state.episodesById = new Map(episodes.map((e) => [e.id, e]))
 
-  state.eventIdsByClinic = new Map()
-  state.eventIdsByParticipant = new Map()
-  for (const event of events) {
-    if (!state.eventIdsByClinic.has(event.clinicId)) {
-      state.eventIdsByClinic.set(event.clinicId, [])
+  state.appointmentIdsByClinic = new Map()
+  state.appointmentIdsByParticipant = new Map()
+  for (const appointment of appointments) {
+    if (!state.appointmentIdsByClinic.has(appointment.clinicId)) {
+      state.appointmentIdsByClinic.set(appointment.clinicId, [])
     }
-    state.eventIdsByClinic.get(event.clinicId).push(event.id)
+    state.appointmentIdsByClinic.get(appointment.clinicId).push(appointment.id)
 
-    if (!state.eventIdsByParticipant.has(event.participantId)) {
-      state.eventIdsByParticipant.set(event.participantId, [])
+    if (!state.appointmentIdsByParticipant.has(appointment.participantId)) {
+      state.appointmentIdsByParticipant.set(appointment.participantId, [])
     }
-    state.eventIdsByParticipant.get(event.participantId).push(event.id)
+    state.appointmentIdsByParticipant.get(appointment.participantId).push(appointment.id)
   }
 
   // Episodes are generated oldest-first per participant, so these id lists
@@ -147,7 +147,7 @@ const reload = () => {
 
   console.log(
     `Data store: loaded ${participants.length} participants, ` +
-      `${clinics.length} clinics, ${events.length} events, ` +
+      `${clinics.length} clinics, ${appointments.length} appointments, ` +
       `${episodes.length} episodes ` +
       `in ${Date.now() - started}ms${shouldFreeze ? ' (frozen)' : ''}`
   )

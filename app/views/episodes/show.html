@@ -89,19 +89,19 @@
         {% for row in appointments %}
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
-              {{ row.event.timing.startTime | formatDate }}
+              {{ row.appointment.timing.startTime | formatDate }}
             </td>
             <td class="nhsuk-table__cell">
               {{ row.clinic.clinicType | formatWords | sentenceCase }}
             </td>
             <td class="nhsuk-table__cell">
               {{ tag({
-                text: row.event.status | getStatusText,
-                colour: row.event.status | getStatusTagColour
+                text: row.appointment.status | getStatusText,
+                colour: row.appointment.status | getStatusTagColour
               }) }}
             </td>
             <td class="nhsuk-table__cell">
-              <a href="/clinics/{{ row.clinic.id }}/events/{{ row.event.id }}">
+              <a href="/clinics/{{ row.clinic.id }}/appointments/{{ row.appointment.id }}">
                 View appointment
               </a>
             </td>

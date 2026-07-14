@@ -3,13 +3,13 @@
 // An episode is one screening round for a participant - the container its
 // appointment(s) sit in. See docs/data-conventions.md.
 //
-// Reading data still lives on events, not on the episode; the reading
-// accessors here derive an episode's state from its events rather than
+// Reading data still lives on appointments, not on the episode; the reading
+// accessors here derive an episode's state from its appointments rather than
 // holding a copy. That move happens with the work that needs it.
 
 const dataStore = require('../data-store')
-const { getEvent } = require('./event-data.js')
-const { getReadingStatusForEvents } = require('./reading.js')
+const { getAppointment } = require('./appointment-data.js')
+const { getReadingStatusForAppointments } = require('./reading.js')
 const { getClinic } = require('./clinics.js')
 
 // An episode is open until it closes. While open, the stage says where in the
@@ -54,22 +54,22 @@ const EPISODE_OUTCOME_TAGS = {
   no_result: { label: 'No result', colour: 'grey' }
 }
 
-// Where an event's status leaves its episode. Shared by the generator (which
-// settles seed episodes) and updateEventStatus (which keeps them in step at
+// Where an appointment's status leaves its episode. Shared by the generator (which
+// settles seed episodes) and updateAppointmentStatus (which keeps them in step at
 // runtime), so the two can't drift apart.
 //
-// event_rescheduled is deliberately absent: a rescheduled appointment means
+// appointment_rescheduled is deliberately absent: a rescheduled appointment means
 // another one is coming, so the episode stays where it is.
-const EPISODE_STAGE_BY_EVENT_STATUS = {
-  event_scheduled: { stage: 'scheduled' },
-  event_checked_in: { stage: 'mammograms' },
-  event_in_progress: { stage: 'mammograms' },
-  event_paused: { stage: 'mammograms' },
-  event_complete: { stage: 'reading' },
-  event_partially_screened: { stage: 'reading' },
-  event_cancelled: { stage: 'closed', outcome: 'no_result' },
-  event_did_not_attend: { stage: 'closed', outcome: 'no_result' },
-  event_attended_not_screened: { stage: 'closed', outcome: 'no_result' }
+const EPISODE_STAGE_BY_APPOINTMENT_STATUS = {
+  appointment_scheduled: { stage: 'scheduled' },
+  appointment_checked_in: { stage: 'mammograms' },
+  appointment_in_progress: { stage: 'mammograms' },
+  appointment_paused: { stage: 'mammograms' },
+  appointment_complete: { stage: 'reading' },
+  appointment_partially_screened: { stage: 'reading' },
+  appointment_cancelled: { stage: 'closed', outcome: 'no_result' },
+  appointment_did_not_attend: { stage: 'closed', outcome: 'no_result' },
+  appointment_attended_not_screened: { stage: 'closed', outcome: 'no_result' }
 }
 
 // Where a concluded reading leaves its episode. Reading outcomes that mean
@@ -87,38 +87,38 @@ const EPISODE_STAGE_BY_READING_OUTCOME = {
 }
 
 /**
- * Whether an event's status means mammograms were taken.
+ * Whether an appointment's status means mammograms were taken.
  *
  * Derived from the stage map rather than listed again: any status that sends
  * the episode to reading produced images, because reading without images is
  * the thing the model forbids.
  *
- * @param {object} event - Event object
+ * @param {object} appointment - Appointment object
  * @returns {boolean} True if this appointment produced images
  */
-const eventProducedImages = (event) => {
-  return EPISODE_STAGE_BY_EVENT_STATUS[event?.status]?.stage === 'reading'
+const appointmentProducedImages = (appointment) => {
+  return EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment?.status]?.stage === 'reading'
 }
 
 /**
  * Build the episode's summary record of one set of mammograms.
  *
- * The raw image data stays on the event (`mammogramData`); this is the light
+ * The raw image data stays on the appointment (`mammogramData`); this is the light
  * entry the episode carries so "was this round screened, when and where" is
  * answerable without walking appointments. Shared with the seed generator so
  * the two can't drift. One entry per image set is also the skeleton the
  * reading-cases model hangs off later.
  *
- * @param {object} event - The appointment that produced the images
- * @param {object} [clinic] - The event's clinic, for where they were taken
+ * @param {object} appointment - The appointment that produced the images
+ * @param {object} [clinic] - The appointment's clinic, for where they were taken
  * @returns {object} Mammogram entry
  */
-const buildMammogramEntry = (event, clinic) => {
-  const views = event.mammogramData?.views || {}
+const buildMammogramEntry = (appointment, clinic) => {
+  const views = appointment.mammogramData?.views || {}
 
   return {
-    takenDate: event.timing?.actualStartTime || event.timing?.startTime || null,
-    eventId: event.id,
+    takenDate: appointment.timing?.actualStartTime || appointment.timing?.startTime || null,
+    appointmentId: appointment.id,
     breastScreeningUnitId: clinic?.breastScreeningUnitId || null,
     locationId: clinic?.locationId || null,
     viewCount: Object.values(views).filter(Boolean).length || null
@@ -128,7 +128,7 @@ const buildMammogramEntry = (event, clinic) => {
 /**
  * Record a changed episode so it persists for this session
  *
- * Mirrors recordEventChange: the episodes array attached to `data` is rebuilt
+ * Mirrors recordAppointmentChange: the episodes array attached to `data` is rebuilt
  * from the shared store every request, so only records written into
  * data._changes survive (see the attach middleware in app/routes.js).
  *
@@ -209,25 +209,25 @@ const getCurrentEpisode = (data, participantId) => {
 }
 
 /**
- * Get an episode's events, oldest first
+ * Get an episode's appointments, oldest first
  *
  * @param {object} data - Session data
  * @param {object} episode - Episode object
- * @returns {Array} The episode's events
+ * @returns {Array} The episode's appointments
  */
-const getEpisodeEvents = (data, episode) => {
-  if (!episode?.eventIds?.length) return []
+const getEpisodeAppointments = (data, episode) => {
+  if (!episode?.appointmentIds?.length) return []
 
-  return episode.eventIds
-    .map((eventId) => getEvent(data, eventId))
+  return episode.appointmentIds
+    .map((appointmentId) => getAppointment(data, appointmentId))
     .filter(Boolean)
 }
 
 /**
- * Get the reading status of an episode, derived from its events.
+ * Get the reading status of an episode, derived from its appointments.
  *
- * Reading data lives on events, so this rescopes the existing group-level
- * reading helper over just this episode's events.
+ * Reading data lives on appointments, so this rescopes the existing group-level
+ * reading helper over just this episode's appointments.
  *
  * @param {object} data - Session data
  * @param {object} episode - Episode object
@@ -235,7 +235,7 @@ const getEpisodeEvents = (data, episode) => {
  * @returns {object} Reading status and metrics for the episode
  */
 const getEpisodeReadingStatus = (data, episode, userId = null) => {
-  return getReadingStatusForEvents(getEpisodeEvents(data, episode), userId)
+  return getReadingStatusForAppointments(getEpisodeAppointments(data, episode), userId)
 }
 
 /**
@@ -315,7 +315,7 @@ const getLastScreening = (data, participantId) => {
     location: location?.name || unit?.name || 'Not known',
 
     // Every round we hold is a screening round. Appointments gain a `type`
-    // (mammogram / technical recall / assessment) with the event→appointment
+    // (mammogram / technical recall / assessment) with the appointment→appointment
     // rename - read it from the appointment then, rather than assuming
     type: 'screening'
   }
@@ -326,15 +326,15 @@ const getLastScreening = (data, participantId) => {
  *
  * @param {object} data - Session data
  * @param {string} participantId - Participant ID
- * @returns {object | null} The event, or null if nothing is booked
+ * @returns {object | null} The appointment, or null if nothing is booked
  */
 const getNextAppointment = (data, participantId) => {
   const now = Date.now()
 
   const upcoming = getEpisodesForParticipant(data, participantId)
     .filter(isEpisodeOpen)
-    .flatMap((episode) => getEpisodeEvents(data, episode))
-    .filter((event) => new Date(event.timing?.startTime) >= now)
+    .flatMap((episode) => getEpisodeAppointments(data, episode))
+    .filter((appointment) => new Date(appointment.timing?.startTime) >= now)
     .sort((a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime))
 
   return upcoming[0] || null
@@ -465,7 +465,7 @@ const updateEpisodeStage = (data, episodeId, stage, options = {}) => {
 /**
  * Keep an episode's mammograms record in step with one of its appointments.
  *
- * Called from updateEventStatus alongside advanceEpisodeForEventStatus: an
+ * Called from updateAppointmentStatus alongside advanceEpisodeForAppointmentStatus: an
  * appointment reaching a screened status writes its entry, and leaving one
  * (an undo) removes it. Recording the fact at the moment it happens is what
  * lets everything downstream trust episode.mammograms instead of re-deriving
@@ -476,19 +476,19 @@ const updateEpisodeStage = (data, episodeId, stage, options = {}) => {
  * supersedes it.
  *
  * @param {object} data - Session data
- * @param {object} event - The event whose status just changed
+ * @param {object} appointment - The appointment whose status just changed
  * @returns {object | null} The updated episode, or null if nothing to do
  */
-const syncEpisodeMammogramsForEvent = (data, event) => {
-  if (!event?.episodeId) return null
+const syncEpisodeMammogramsForAppointment = (data, appointment) => {
+  if (!appointment?.episodeId) return null
 
-  const episode = getEpisode(data, event.episodeId)
+  const episode = getEpisode(data, appointment.episodeId)
   if (!episode) return null
 
   const existing = episode.mammograms || []
-  const otherEntries = existing.filter((entry) => entry.eventId !== event.id)
+  const otherEntries = existing.filter((entry) => entry.appointmentId !== appointment.id)
 
-  if (!eventProducedImages(event)) {
+  if (!appointmentProducedImages(appointment)) {
     // No images from this appointment - drop its entry if it had one
     if (otherEntries.length === existing.length) return null
     return updateEpisode(data, episode.id, { mammograms: otherEntries })
@@ -496,47 +496,47 @@ const syncEpisodeMammogramsForEvent = (data, event) => {
 
   const entries = [
     ...otherEntries,
-    buildMammogramEntry(event, getClinic(data, event.clinicId))
+    buildMammogramEntry(appointment, getClinic(data, appointment.clinicId))
   ].sort((a, b) => new Date(a.takenDate) - new Date(b.takenDate))
 
   return updateEpisode(data, episode.id, { mammograms: entries })
 }
 
 /**
- * Move an event's episode to wherever the event's status leaves it.
+ * Move an appointment's episode to wherever the appointment's status leaves it.
  *
- * Called from updateEventStatus, so the episode keeps step with its
+ * Called from updateAppointmentStatus, so the episode keeps step with its
  * appointment without every route having to know episodes exist.
  *
  * Only the episode's *latest* appointment moves it. An episode with more than
  * one (a technical recall) is where its most recent appointment has got to -
  * changing an earlier one, or an appointment that has been superseded, must
  * not drag the whole round backwards. This matches how the generator settles
- * seed episodes, which reads the latest event too.
+ * seed episodes, which reads the latest appointment too.
  *
  * @param {object} data - Session data
- * @param {object} event - The event whose status just changed
+ * @param {object} appointment - The appointment whose status just changed
  * @returns {object | null} The updated episode, or null if nothing to do
  */
-const advanceEpisodeForEventStatus = (data, event) => {
-  if (!event?.episodeId) return null
+const advanceEpisodeForAppointmentStatus = (data, appointment) => {
+  if (!appointment?.episodeId) return null
 
-  const episode = getEpisode(data, event.episodeId)
+  const episode = getEpisode(data, appointment.episodeId)
   if (!episode) return null
 
-  const latestEventId = episode.eventIds?.[episode.eventIds.length - 1]
-  if (latestEventId && latestEventId !== event.id) return null
+  const latestAppointmentId = episode.appointmentIds?.[episode.appointmentIds.length - 1]
+  if (latestAppointmentId && latestAppointmentId !== appointment.id) return null
 
-  const destination = EPISODE_STAGE_BY_EVENT_STATUS[event.status]
+  const destination = EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment.status]
   if (!destination) return null
 
-  return updateEpisodeStage(data, event.episodeId, destination.stage, {
+  return updateEpisodeStage(data, appointment.episodeId, destination.stage, {
     outcome: destination.outcome
   })
 }
 
 /**
- * Move an event's episode to wherever its reading outcome leaves it.
+ * Move an appointment's episode to wherever its reading outcome leaves it.
  *
  * Deliberately NOT called when a read is saved. Two opinions and a computed
  * outcome is not a confirmed result: there is no confirmation step in the
@@ -547,17 +547,17 @@ const advanceEpisodeForEventStatus = (data, event) => {
  * that they would have been confirmed by now.
  *
  * @param {object} data - Session data
- * @param {object} event - The event that was read
+ * @param {object} appointment - The appointment that was read
  * @param {string} readingOutcome - Outcome from getOutcome
  * @returns {object | null} The updated episode, or null if nothing to do
  */
-const advanceEpisodeForReadingOutcome = (data, event, readingOutcome) => {
-  if (!event?.episodeId) return null
+const advanceEpisodeForReadingOutcome = (data, appointment, readingOutcome) => {
+  if (!appointment?.episodeId) return null
 
   const destination = EPISODE_STAGE_BY_READING_OUTCOME[readingOutcome]
   if (!destination) return null
 
-  return updateEpisodeStage(data, event.episodeId, destination.stage, {
+  return updateEpisodeStage(data, appointment.episodeId, destination.stage, {
     outcome: destination.outcome
   })
 }
@@ -565,14 +565,14 @@ const advanceEpisodeForReadingOutcome = (data, event, readingOutcome) => {
 module.exports = {
   EPISODE_STAGES,
   EPISODE_OUTCOMES,
-  EPISODE_STAGE_BY_EVENT_STATUS,
+  EPISODE_STAGE_BY_APPOINTMENT_STATUS,
   EPISODE_STAGE_BY_READING_OUTCOME,
-  eventProducedImages,
+  appointmentProducedImages,
   buildMammogramEntry,
   getEpisode,
   getEpisodesForParticipant,
   getCurrentEpisode,
-  getEpisodeEvents,
+  getEpisodeAppointments,
   getEpisodeReadingStatus,
   getEpisodeMammogramDate,
   getLastScreening,
@@ -585,7 +585,7 @@ module.exports = {
   isEpisodeOpen,
   updateEpisode,
   updateEpisodeStage,
-  syncEpisodeMammogramsForEvent,
-  advanceEpisodeForEventStatus,
+  syncEpisodeMammogramsForAppointment,
+  advanceEpisodeForAppointmentStatus,
   advanceEpisodeForReadingOutcome
 }

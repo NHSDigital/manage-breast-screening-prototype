@@ -1,0 +1,142 @@
+{# app/views/appointments/medical-information/medical-history/breast-implants-augmentation.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Add details of breast implants or augmentation" %}
+{% set medicalHistoryType = "breastImplantsAugmentation" %}
+
+{% block formContent %}
+
+  {% set proceduresQuestionText %}
+    What procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
+  {%- endset %}
+
+  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
+  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "appointment[medicalHistoryTemp][proceduresRightBreast]",
+        values: appointment.medicalHistoryTemp.proceduresRightBreast,
+        idPrefix: "proceduresRightBreast",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
+            size: "s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Breast implants",
+            text: "Breast implants (silicone or saline)"
+          },
+          {
+            value: "Other augmentation",
+            text: "Other augmentation"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "Not known",
+            text: "Not known",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+
+    <div class="nhsuk-grid-column-one-half">
+      {{ checkboxes({
+        name: "appointment[medicalHistoryTemp][proceduresLeftBreast]",
+        values: appointment.medicalHistoryTemp.proceduresLeftBreast,
+        idPrefix: "proceduresLeftBreast",
+        fieldset: {
+          legend: {
+            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
+            size: "s",
+            isPageHeading: false
+          }
+        },
+        items: [
+          {
+            value: "Breast implants",
+            text: "Breast implants (silicone or saline)"
+          },
+          {
+            value: "Other augmentation",
+            text: "Other augmentation"
+          },
+          {
+            value: "No procedures",
+            text: "No procedures",
+            exclusive: true
+          },
+          {
+            divider: "or"
+          },
+          {
+            value: "Not known",
+            text: "Not known",
+            exclusive: true
+          }
+        ]
+      }) }}
+    </div>
+  </div>
+
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  <h2>Removed devices</h2>
+
+  {# Implant removal #}
+  {% set conditionalInput %}
+  {# {{ input({
+      name: "appointment[medicalHistoryTemp][removalDetails]",
+      value: appointment.medicalHistoryTemp.removalDetails,
+      label: {
+        text: "Provide details"
+      }
+    }) }} #}
+    {{ input({
+      label: {
+        text: "Year removed"
+      },
+      name: "appointment[medicalHistoryTemp][yearRemoved]",
+      value: appointment.medicalHistoryTemp.yearRemoved,
+      id: "yearRemoved",
+      classes: "nhsuk-input--width-4",
+      inputmode: "numeric"
+    }) }}
+  {% endset %}
+
+  {{ checkboxes({
+    name: "appointment[medicalHistoryTemp][implantsRemoved]",
+    values: appointment.medicalHistoryTemp.implantsRemoved,
+    classes: "nhsuk-u-margin-bottom-6",
+    items: [
+      {
+        value: "Implants have been removed",
+        text: "Implants have been removed",
+        conditional: {
+          html: conditionalInput
+        }
+      }
+    ]
+  }) }}
+  {{ appHiddenInput({
+    name: "appointment[medicalHistoryTemp][hasImplantsRemovedCheckbox]",
+    value: "true"
+  }) }}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the procedure" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}

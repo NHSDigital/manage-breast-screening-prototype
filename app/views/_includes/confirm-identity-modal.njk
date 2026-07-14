@@ -6,8 +6,8 @@
 {% set appointmentUrl = appointmentUrl or params.appointmentUrl %}
 {% set statusTagId = statusTagId or params.statusTagId %}
 
-{# Create unique modal ID for this event #}
-{% set modalId = "check-in-modal-" + (eventId or params.event.id) %}
+{# Create unique modal ID for this appointment #}
+{% set modalId = "check-in-modal-" + (appointmentId or params.appointment.id) %}
 
 {% set modalContentHtml %}
   <p>
@@ -69,14 +69,14 @@
 {% if statusTagId %}
   {% set buttonAttributes = {
     'data-clinic-id': params.clinicId,
-    'data-event-id': params.event.id,
+    'data-appointment-id': params.appointment.id,
     'data-show-appointment-link': true,
     'data-status-tag-id': statusTagId
   } %}
 {% else %}
   {% set buttonAttributes = {
     'data-clinic-id': params.clinicId,
-    'data-event-id': params.event.id,
+    'data-appointment-id': params.appointment.id,
     'data-show-appointment-link': true
   } %}
 {% endif %}
@@ -108,7 +108,7 @@
       element: "button",
       variant: "warning",
       action: "navigate",
-      href: "/clinics/" + params.clinicId + "/events/" + params.event.id + "/identity-doubt"
+      href: "/clinics/" + params.clinicId + "/appointments/" + params.appointment.id + "/identity-doubt"
     },
     {
       text: "Close",

@@ -29,10 +29,10 @@ participant: {
 }
 ```
 
-#### Event Object
+#### Appointment Object
 
 ```javascript
-event: {
+appointment: {
   id: string,
   participantId: string,
   medicalInformation: {
@@ -54,7 +54,7 @@ event: {
 }
 ```
 
-**Important:** Medical information is primarily stored at the **event level**, not the participant level. This is intentional as it represents information collected during appointments.
+**Important:** Medical information is primarily stored at the **appointment level**, not the participant level. This is intentional as it represents information collected during appointments.
 
 ## Generator Pattern
 
@@ -65,7 +65,7 @@ Generators live in `app/lib/generators/` and follow a consistent pattern:
 ```
 app/lib/generators/
 ├── participant-generator.js                      # Generates participant records
-├── event-generator.js                            # Generates event records
+├── appointment-generator.js                            # Generates appointment records
 ├── medical-information-generator.js              # ✅ Umbrella generator for all medical info
 ├── medical-information/                          # ✅ Subfolder for medical info generators
 │   ├── symptoms-generator.js                     # ✅ Generates symptoms
@@ -182,7 +182,7 @@ module.exports = {
 }
 ```
 
-**Integration:** Called from umbrella generator for completed events only.
+**Integration:** Called from umbrella generator for completed appointments only.
 
 ### HRT Generator
 
@@ -208,7 +208,7 @@ module.exports = {
 }
 ```
 
-**Integration:** Called from umbrella generator for completed events only.
+**Integration:** Called from umbrella generator for completed appointments only.
 
 ### Pregnancy and Breastfeeding Generator
 
@@ -239,7 +239,7 @@ module.exports = {
 }
 ```
 
-**Integration:** Called from umbrella generator for completed events only.
+**Integration:** Called from umbrella generator for completed appointments only.
 
 ### Other Medical Information Generator
 
@@ -258,7 +258,7 @@ module.exports = {
 string  // e.g., 'Takes warfarin for atrial fibrillation. Last INR check was two weeks ago.'
 ```
 
-**Integration:** Called from umbrella generator for completed events only.
+**Integration:** Called from umbrella generator for completed appointments only.
 
 ### Breast Features Generator
 
@@ -292,7 +292,7 @@ string  // e.g., 'Takes warfarin for atrial fibrillation. Last INR check was two
 ]
 ```
 
-**Integration:** Called from umbrella generator for completed events only. No user attribution needed (features are visual markers, not clinical records).
+**Integration:** Called from umbrella generator for completed appointments only. No user attribution needed (features are visual markers, not clinical records).
 
 ## Medical History Types Status
 
@@ -390,23 +390,23 @@ All medical history items should include:
 
 ## Integration Points
 
-### In event-generator.js
+### In appointment-generator.js
 
-✅ **Implemented:** Medical information is added to completed events using the umbrella generator:
+✅ **Implemented:** Medical information is added to completed appointments using the umbrella generator:
 
 ```javascript
-// Around line 246 in event-generator.js
-if (isCompleted(eventStatus)) {
+// Around line 246 in appointment-generator.js
+if (isCompleted(appointmentStatus)) {
   // Generate medical information (symptoms, medical history, etc.)
   // All attributed to the user who ran the appointment
   const medicalInformation = generateMedicalInformation({
-    addedByUserId: event.sessionDetails.startedBy,
+    addedByUserId: appointment.sessionDetails.startedBy,
     config: participant.config
   })
 
   // Store medical information if any was generated
   if (Object.keys(medicalInformation).length > 0) {
-    event.medicalInformation = medicalInformation
+    appointment.medicalInformation = medicalInformation
   }
 }
 ```
@@ -418,7 +418,7 @@ if (isCompleted(eventStatus)) {
 
 ### ✅ Umbrella Generator (Implemented)
 
-**Goal:** Reduce complexity in `event-generator.js` by creating a unified medical information generator.
+**Goal:** Reduce complexity in `appointment-generator.js` by creating a unified medical information generator.
 
 ✅ **Created:** `app/lib/generators/medical-information-generator.js`
 
@@ -438,7 +438,7 @@ const {
 } = require('./medical-information/breast-features-generator')
 
 /**
- * Generate complete medical information for an event
+ * Generate complete medical information for an appointment
  *
  * All medical information is attributed to the user who ran the appointment
  *
@@ -554,7 +554,7 @@ module.exports = {
 **Notes:**
 - All field names corrected to match forms (`year` not `procedureYear`, `location` not `treatmentLocation`)
 - Currently set to 100% probability for all types (testing mode)
-- Each type has independent probability check allowing multiple types per event
+- Each type has independent probability check allowing multiple types per appointment
 
 ## Common Patterns & Helpers
 
@@ -626,16 +626,16 @@ while (items.length < numberOfItems) {
 **Solution:** The routes handle this conversion. Stick to camelCase in generated data.
 
 ```javascript
-// In events.js routes
+// In appointments.js routes
 const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 // Converts 'breast-cancer' → 'breastCancer'
 ```
 
-### 2. Event vs Participant Storage
+### 2. Appointment vs Participant Storage
 
 **Problem:** It's tempting to store medical history on the participant.
 
-**Solution:** Medical information goes on events, not participants. This represents information collected during appointments.
+**Solution:** Medical information goes on appointments, not participants. This represents information collected during appointments.
 
 ### 3. Multiple Entries
 
@@ -699,13 +699,13 @@ const numberOfItems = weighted.select({
 
 **Problem:** Need to attribute who added medical information.
 
-**Solution:** event generator sets a user who completed the appointment - use this user when attributing data
+**Solution:** appointment generator sets a user who completed the appointment - use this user when attributing data
 
 ### 7. Test Scenarios & Explicit Overrides
 
 **Problem:** Need specific test data for user research, but test scenarios are awkwardly implemented and passed around.
 
-**Current state:** Test scenarios in `app/data/test-scenarios.js` allow overriding participant/event data, but the implementation is clunky:
+**Current state:** Test scenarios in `app/data/test-scenarios.js` allow overriding participant/appointment data, but the implementation is clunky:
 
 - Passed through multiple function calls
 - Inconsistent parameter naming
@@ -858,7 +858,7 @@ const dateType = weighted.select({
 })
 ```
 
-### 10. Consistency Within Event
+### 10. Consistency Within Appointment
 
 **Problem:** Data should be consistent (e.g., if they had breast cancer, relevant procedures should be present).
 
@@ -960,7 +960,7 @@ Use lower, more realistic probabilities if:
 1. Run the generator: `node app/lib/generate-seed-data.js`
 2. Check generated files in `app/data/generated/`
 3. Load the app: `npm run dev`
-4. Navigate to events and check medical information displays correctly
+4. Navigate to appointments and check medical information displays correctly
 
 ### Verification Checklist
 
@@ -1126,7 +1126,7 @@ module.exports = [
         dateOfBirth: '1965-03-15'
       },
       config: {
-        eventId: 'evt-medical-001',
+        appointmentId: 'evt-medical-001',
         defaultRiskLevel: 'routine',
 
         // Force this participant to have breast cancer and implanted device
@@ -1145,7 +1145,7 @@ module.exports = [
 
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'event_complete',
+          status: 'appointment_complete',
           approximateTime: '10:00'
         }
       }
@@ -1157,16 +1157,16 @@ module.exports = [
 ### How Config Flows Through
 
 ```javascript
-// In event-generator.js
-const event = generateEvent({
+// In appointment-generator.js
+const appointment = generateAppointment({
   slot,
   participant,
   clinic,
   // ...
 })
 
-// Inside generateEvent, for completed events:
-if (isCompleted(eventStatus)) {
+// Inside generateAppointment, for completed appointments:
+if (isCompleted(appointmentStatus)) {
   // Pass participant config to medical information generator
   const medicalInfo = generateMedicalInformation({
     users,
@@ -1174,7 +1174,7 @@ if (isCompleted(eventStatus)) {
   })
 
   if (Object.keys(medicalInfo).length > 0) {
-    event.medicalInformation = medicalInfo
+    appointment.medicalInformation = medicalInfo
   }
 }
 ```
@@ -1185,7 +1185,7 @@ if (isCompleted(eventStatus)) {
 
 1. ✅ **Created umbrella generator:** `app/lib/generators/medical-information-generator.js`
    - Orchestrates all medical information generation
-   - Reduces complexity in event-generator.js
+   - Reduces complexity in appointment-generator.js
    - Calls out to specialized generators
    - Default probabilities set as single source of truth
 
@@ -1193,7 +1193,7 @@ if (isCompleted(eventStatus)) {
    - Moved symptoms generator to `app/lib/generators/medical-information/`
    - Medical info generators now in dedicated subfolder
 
-3. ✅ **Updated event-generator.js:**
+3. ✅ **Updated appointment-generator.js:**
    - Replaced direct `generateSymptoms()` calls with `generateMedicalInformation()`
    - Simplified medical information logic
    - All medical info attributed to `sessionDetails.startedBy`
@@ -1249,7 +1249,7 @@ if (isCompleted(eventStatus)) {
 ### Core Files
 
 - `app/lib/generate-seed-data.js` - Main generator orchestration
-- `app/lib/generators/event-generator.js` - ✅ Updated to use umbrella generator
+- `app/lib/generators/appointment-generator.js` - ✅ Updated to use umbrella generator
 
 ### Medical Information Generators
 
@@ -1267,9 +1267,9 @@ if (isCompleted(eventStatus)) {
 
 ### Routes & Views (for reference)
 
-- `app/routes/events.js` - Routes that handle medical information (shows expected data structure)
-- `app/views/events/medical-information/hormone-replacement-therapy.html` - HRT form template
-- `app/views/events/medical-information/pregnancy-and-breastfeeding.html` - Pregnancy/breastfeeding form template
-- `app/views/events/medical-information/other-medical-information.html` - Other medical info form template
-- `app/views/events/medical-information/record-breast-features.html` - Breast features diagram interface
-- `app/views/events/medical-information/medical-history/*.html` - Medical history form templates
+- `app/routes/appointments.js` - Routes that handle medical information (shows expected data structure)
+- `app/views/appointments/medical-information/hormone-replacement-therapy.html` - HRT form template
+- `app/views/appointments/medical-information/pregnancy-and-breastfeeding.html` - Pregnancy/breastfeeding form template
+- `app/views/appointments/medical-information/other-medical-information.html` - Other medical info form template
+- `app/views/appointments/medical-information/record-breast-features.html` - Breast features diagram interface
+- `app/views/appointments/medical-information/medical-history/*.html` - Medical history form templates

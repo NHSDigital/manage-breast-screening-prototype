@@ -6,14 +6,14 @@
              timeline (when requested / received / updated, and by whom)
    Priors that have never been requested get a "Request priors" action.
 
-   Expects: event, unit #}
+   Expects: appointment, unit #}
 
-{% set priorsSummary = event | getPriorsSummary %}
+{% set priorsSummary = appointment | getPriorsSummary %}
 
 {% if priorsSummary.total > 0 %}
 
   {% set priorRows = [] %}
-  {% for mammogram in event.previousMammograms %}
+  {% for mammogram in appointment.previousMammograms %}
 
     {# When the mammogram was taken - full month and year, or the participant's approximate date #}
     {% set priorDateLabel = (mammogram.approximateDate if mammogram.dateType == "moreThanSixMonths" else (mammogram.dateTaken | formatDate("MMMM YYYY"))) | capitalize %}

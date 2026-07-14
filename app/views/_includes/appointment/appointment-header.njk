@@ -1,7 +1,7 @@
 {# app/views/_includes/appointment-header.njk #}
 
-{# Banner if event is paused #}
-{% if event | isPaused %}
+{# Banner if appointment is paused #}
+{% if appointment | isPaused %}
   {% set pausedBannerHtml %}
     <p class="nhsuk-notification-banner__heading">
       This appointment is paused.
@@ -14,11 +14,11 @@
   }) }}
 {% endif %}
 
-{# Banner if event is in progress (not paused) by someone else #}
-{% if (event | isInProgressNotPaused) and not event | startedByCurrentUser %}
+{# Banner if appointment is in progress (not paused) by someone else #}
+{% if (appointment | isInProgressNotPaused) and not appointment | startedByCurrentUser %}
   {% set notificationBannerHtml %}
     <p class="nhsuk-notification-banner__heading">
-      This appointment is currently being run by {{ event.sessionDetails.startedBy | getUsername({
+      This appointment is currently being run by {{ appointment.sessionDetails.startedBy | getUsername({
         format: 'short',
         identifyCurrentUser: true
       }) }}.
@@ -40,16 +40,16 @@
   </h1>
 
   <div class="app-header-with-status__status-tag">
-    {% set statusTagId = "status-tag-" + event.id %}
-    {{ event.status | toTag({
+    {% set statusTagId = "status-tag-" + appointment.id %}
+    {{ appointment.status | toTag({
       id: statusTagId,
       classes: "nhsuk-u-margin-bottom-2"
     }) }}
 
-    {% if event.status == 'event_scheduled' %}
+    {% if appointment.status == 'appointment_scheduled' %}
       {{ appCheckIn({
         clinicId: clinicId,
-        event: event,
+        appointment: appointment,
         participant: participant,
         confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
         statusTagId: statusTagId
@@ -63,13 +63,13 @@
         <li>
           {{ appLink({
             text: "Cancel or reschedule appointment",
-            href: (eventUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(eventUrl)
+            href: (appointmentUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(appointmentUrl)
           } | openInModal) }}
         </li>
         <li>
           {{ appLink({
-            text: "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details",
-            href: (eventUrl + '/special-appointment/edit') | urlWithReferrer(eventUrl)
+            text: "Make special appointment" if not appointment | isSpecialAppointment else "Change special appointment details",
+            href: (appointmentUrl + '/special-appointment/edit') | urlWithReferrer(appointmentUrl)
           } | openInModal) }}
         </li>
       </ul>
@@ -89,8 +89,8 @@
           variant: "secondary"
         },
         {
-          text: "Make this appointment a special appointment" if not event | isSpecialAppointment else "Change special appointment details",
-          href: eventUrl ~ "/special-appointment/edit" | urlWithReferrer(eventUrl),
+          text: "Make this appointment a special appointment" if not appointment | isSpecialAppointment else "Change special appointment details",
+          href: appointmentUrl ~ "/special-appointment/edit" | urlWithReferrer(appointmentUrl),
           variant: "secondary"
         }
       ],
@@ -109,7 +109,7 @@
 </p>
 
 <p>
-  {{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes) - {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})
+  {{ appointment.timing.startTime | formatTimeString }} ({{ appointment.timing.duration }} minutes) - {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})
 </p>
 
 {# Suppressed until we decide whether to ship the participant record #}
@@ -118,17 +118,17 @@
 {% endif %}
 
 {% if currentUser | isClinician %}
-  {% if event | isPaused or (event | isInProgress and event | startedByCurrentUser) %}
+  {% if appointment | isPaused or (appointment | isInProgress and appointment | startedByCurrentUser) %}
     <div class="nhsuk-button-group">
       {{ button({
         text: "Resume appointment",
         href: "./resume"
       }) }}
-      <a href="{{ (eventUrl + '/attended-not-screened-reason') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning">
+      <a href="{{ (appointmentUrl + '/attended-not-screened-reason') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning">
         Appointment cannot proceed
       </a>
     </div>
-  {% elseif event | hasNotStarted %}
+  {% elseif appointment | hasNotStarted %}
     <div class="nhsuk-button-group">
       {{ button({
         text: "Start this appointment",

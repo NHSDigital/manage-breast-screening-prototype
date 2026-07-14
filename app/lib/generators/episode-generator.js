@@ -5,9 +5,9 @@
 // docs/data-conventions.md.
 //
 // Episodes are generated *first*, in the clinic-day loop: an episode is
-// created, then the event that sits inside it. Its stage and outcome can't be
+// created, then the appointment that sits inside it. Its stage and outcome can't be
 // settled there, because they depend on reading data - which is attached to
-// events by generateReadingData, the very last generation pass. So
+// appointments by generateReadingData, the very last generation pass. So
 // finaliseEpisodeStage runs afterwards.
 
 const dayjs = require('dayjs')
@@ -19,9 +19,9 @@ const { getOutcome } = require('../utils/reading')
 const { eligibleForReading, isCompleted } = require('../utils/status')
 const {
   EPISODE_OUTCOMES,
-  EPISODE_STAGE_BY_EVENT_STATUS,
+  EPISODE_STAGE_BY_APPOINTMENT_STATUS,
   EPISODE_STAGE_BY_READING_OUTCOME,
-  eventProducedImages,
+  appointmentProducedImages,
   buildMammogramEntry
 } = require('../utils/episodes')
 
@@ -65,8 +65,8 @@ const setStage = (episode, stage, timestamp) => {
 /**
  * Create an episode for one screening round.
  *
- * Starts at the `scheduled` stage with no events - the caller pushes the
- * event id on as it generates the event.
+ * Starts at the `scheduled` stage with no appointments - the caller pushes the
+ * appointment id on as it generates the appointment.
  *
  * @param {object} options
  * @param {object} options.participant - The participant being screened
@@ -88,48 +88,48 @@ const generateEpisode = ({ participant, type, appointmentDate }) => {
     outcome: null,
     openedDate,
     closedDate: null,
-    eventIds: [],
+    appointmentIds: [],
     mammograms: [],
     isHistoric: false
   }
 }
 
 /**
- * Work out an episode's stage and outcome from the state of its events.
+ * Work out an episode's stage and outcome from the state of its appointments.
  *
- * Run after reading data has been attached to events. Uses the same maps the
+ * Run after reading data has been attached to appointments. Uses the same maps the
  * app uses at runtime, so seeded episodes sit exactly where a real one would
- * have ended up after the same sequence of events.
+ * have ended up after the same sequence of appointments.
  *
  * Derives the whole stage history from scratch each time, so it is safe to
- * call again after an event's reading data changes.
+ * call again after an appointment's reading data changes.
  *
  * @param {object} episode - Episode to finalise (mutated - generation only)
- * @param {Array} events - The episode's events, oldest first
+ * @param {Array} appointments - The episode's appointments, oldest first
  * @param {Map} [clinicsById] - Clinics keyed by id, for where images were taken
  * @returns {object} The same episode
  */
-const finaliseEpisodeStage = (episode, events, clinicsById = new Map()) => {
+const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) => {
   // Back to a freshly opened episode, keeping only the stage it opened at
   episode.stage = 'scheduled'
   episode.stageHistory = episode.stageHistory.slice(0, 1)
   episode.outcome = null
   episode.closedDate = null
 
-  // The round's record of images taken is derived from the events alongside
+  // The round's record of images taken is derived from the appointments alongside
   // the stage, so a re-run refreshes both together
-  episode.mammograms = events
-    .filter(eventProducedImages)
-    .map((event) =>
-      buildMammogramEntry(event, clinicsById.get(event.clinicId))
+  episode.mammograms = appointments
+    .filter(appointmentProducedImages)
+    .map((appointment) =>
+      buildMammogramEntry(appointment, clinicsById.get(appointment.clinicId))
     )
 
-  const latestEvent = events[events.length - 1]
-  if (!latestEvent) return episode
+  const latestAppointment = appointments[appointments.length - 1]
+  if (!latestAppointment) return episode
 
-  const appointmentStarted = latestEvent.timing?.actualStartTime
+  const appointmentStarted = latestAppointment.timing?.actualStartTime
   const appointmentEnded =
-    latestEvent.timing?.actualEndTime || latestEvent.timing?.startTime
+    latestAppointment.timing?.actualEndTime || latestAppointment.timing?.startTime
 
   const moveTo = (destination, timestamp) => {
     if (!destination || destination.stage === episode.stage) return
@@ -142,7 +142,7 @@ const finaliseEpisodeStage = (episode, events, clinicsById = new Map()) => {
     }
   }
 
-  const destination = EPISODE_STAGE_BY_EVENT_STATUS[latestEvent.status]
+  const destination = EPISODE_STAGE_BY_APPOINTMENT_STATUS[latestAppointment.status]
 
   // A screened appointment went through mammograms on its way to reading, so
   // put that stage in the history rather than jumping straight to reading
@@ -155,7 +155,7 @@ const finaliseEpisodeStage = (episode, events, clinicsById = new Map()) => {
   // Once the images are taken, it's the reading that decides what happens
   // next - close the episode, or send it back for a technical recall
   if (episode.stage === 'reading') {
-    const reads = Object.values(latestEvent.imageReading?.reads || {})
+    const reads = Object.values(latestAppointment.imageReading?.reads || {})
     const lastReadAt = reads
       .map((read) => read.timestamp)
       .sort()
@@ -169,11 +169,11 @@ const finaliseEpisodeStage = (episode, events, clinicsById = new Map()) => {
         : appointmentEnded
 
     const destinationAfterReading =
-      EPISODE_STAGE_BY_READING_OUTCOME[getOutcome(latestEvent, {})]
+      EPISODE_STAGE_BY_READING_OUTCOME[getOutcome(latestAppointment, {})]
 
     if (destinationAfterReading) {
       moveTo(destinationAfterReading, concludedAt)
-    } else if (!eligibleForReading(latestEvent)) {
+    } else if (!eligibleForReading(latestAppointment)) {
       // Screened too long ago to still be in the reading queue. That round was
       // read at the time - we just don't seed reads going back that far - so
       // close it rather than leave it sitting in reading forever.
@@ -184,7 +184,7 @@ const finaliseEpisodeStage = (episode, events, clinicsById = new Map()) => {
   // An episode recalled for assessment sits in assessment until the assessment
   // concludes. Recent ones genuinely haven't concluded yet, so they stay open.
   // Older ones would have by now, and assessment is what produces the result.
-  if (episode.stage === 'assessment' && !eligibleForReading(latestEvent)) {
+  if (episode.stage === 'assessment' && !eligibleForReading(latestAppointment)) {
     moveTo(
       {
         stage: 'closed',
@@ -304,7 +304,7 @@ const generateHistoricEpisodes = ({
       outcome,
       openedDate: openedDate.toISOString(),
       closedDate: closedDate.toISOString(),
-      eventIds: [],
+      appointmentIds: [],
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image
@@ -314,7 +314,7 @@ const generateHistoricEpisodes = ({
         ? [
             {
               takenDate: screenedDate.toISOString(),
-              eventId: null,
+              appointmentId: null,
               breastScreeningUnitId: participant.assignedBSU,
               locationId: null,
               viewCount: 4
@@ -337,15 +337,15 @@ const generateHistoricEpisodes = ({
  * Warns rather than throws - never break a demo over seed data.
  *
  * @param {Array} episodes - All episodes
- * @param {Map} eventsById - All events, keyed by id
+ * @param {Map} appointmentsById - All appointments, keyed by id
  * @returns {Array} The problems found, one string each
  */
-const checkEpisodes = (episodes, eventsById) => {
+const checkEpisodes = (episodes, appointmentsById) => {
   const problems = []
 
   episodes.forEach((episode) => {
-    const events = episode.eventIds
-      .map((eventId) => eventsById.get(eventId))
+    const appointments = episode.appointmentIds
+      .map((appointmentId) => appointmentsById.get(appointmentId))
       .filter(Boolean)
 
     // Open or closed, and each has its own rules
@@ -368,8 +368,8 @@ const checkEpisodes = (episodes, eventsById) => {
       if (episode.stage !== 'closed') {
         problems.push(`historic episode ${episode.id} is not closed`)
       }
-      if (episode.eventIds.length) {
-        problems.push(`historic episode ${episode.id} has events`)
+      if (episode.appointmentIds.length) {
+        problems.push(`historic episode ${episode.id} has appointments`)
       }
       // A summary round has images exactly when it has a result
       const wasScreened = episode.outcome !== 'no_result'
@@ -381,22 +381,22 @@ const checkEpisodes = (episodes, eventsById) => {
       return
     }
 
-    if (!events.length) {
-      problems.push(`episode ${episode.id} has no events`)
+    if (!appointments.length) {
+      problems.push(`episode ${episode.id} has no appointments`)
       return
     }
 
     // The episode's own record of images must match what its appointments
     // say - one entry per appointment that reached a screened status
-    const screenedEventIds = events
-      .filter(eventProducedImages)
-      .map((event) => event.id)
-    const recordedEventIds = (episode.mammograms || []).map(
-      (entry) => entry.eventId
+    const screenedAppointmentIds = appointments
+      .filter(appointmentProducedImages)
+      .map((appointment) => appointment.id)
+    const recordedAppointmentIds = (episode.mammograms || []).map(
+      (entry) => entry.appointmentId
     )
     if (
-      screenedEventIds.length !== recordedEventIds.length ||
-      screenedEventIds.some((eventId) => !recordedEventIds.includes(eventId))
+      screenedAppointmentIds.length !== recordedAppointmentIds.length ||
+      screenedAppointmentIds.some((appointmentId) => !recordedAppointmentIds.includes(appointmentId))
     ) {
       problems.push(
         `episode ${episode.id} mammograms don't match its screened appointments`
@@ -406,12 +406,12 @@ const checkEpisodes = (episodes, eventsById) => {
     // Reading needs images: an episode can only be in reading off the back of
     // a completed mammogram appointment that is still within the reading window
     if (episode.stage === 'reading') {
-      if (!events.some((event) => isCompleted(event.status))) {
+      if (!appointments.some((appointment) => isCompleted(appointment.status))) {
         problems.push(
           `episode ${episode.id} is in reading with no completed appointment`
         )
       }
-      if (!events.some((event) => eligibleForReading(event))) {
+      if (!appointments.some((appointment) => eligibleForReading(appointment))) {
         problems.push(
           `episode ${episode.id} is in reading but no appointment is eligible for reading`
         )
@@ -420,7 +420,7 @@ const checkEpisodes = (episodes, eventsById) => {
 
     // Assessment only follows a reading that recalled them
     if (episode.stage === 'assessment') {
-      if (!events.some((event) => isCompleted(event.status))) {
+      if (!appointments.some((appointment) => isCompleted(appointment.status))) {
         problems.push(
           `episode ${episode.id} is in assessment with no completed appointment`
         )

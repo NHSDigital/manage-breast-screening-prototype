@@ -12,10 +12,10 @@
 
 {# Medical history summary #}
 {# Count medical history items #}
-{% set medicalHistoryCount = event.medicalInformation.medicalHistory | countMedicalHistoryItems %}
+{% set medicalHistoryCount = appointment.medicalInformation.medicalHistory | countMedicalHistoryItems %}
 
 {# Get medical history summaries #}
-{% set medicalHistorySummaries = event.medicalInformation.medicalHistory | summariseMedicalHistory %}
+{% set medicalHistorySummaries = appointment.medicalInformation.medicalHistory | summariseMedicalHistory %}
 
 {# Build medical history HTML #}
 {% set medicalHistoryHtml %}
@@ -37,10 +37,10 @@
 
 {# Symptoms summary #}
 {# Count symptoms #}
-{% set symptomsCount = event.medicalInformation.symptoms | length %}
+{% set symptomsCount = appointment.medicalInformation.symptoms | length %}
 
 {# Get symptom summaries #}
-{% set symptomSummaries = event.medicalInformation.symptoms | summariseSymptoms %}
+{% set symptomSummaries = appointment.medicalInformation.symptoms | summariseSymptoms %}
 
 {# Build symptoms HTML #}
 {% set symptomsHtml %}
@@ -62,8 +62,8 @@
 
 {# Breast features summary #}
 {# Count breast features #}
-{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
-{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set rawBreastFeatures = appointment.medicalInformation.breastFeaturesRaw | parseJsonString %}
+{% set breastFeatures = appointment.medicalInformation.breastFeatures or rawBreastFeatures %}
 {% set breastFeaturesCount = breastFeatures | length %}
 
 {# Get breast feature summaries #}
@@ -86,14 +86,14 @@
 
 {# Previous mammograms summary #}
 {# Count additional mammograms #}
-{% set additionalMammogramsCount = event.previousMammograms | length %}
+{% set additionalMammogramsCount = appointment.previousMammograms | length %}
 
 {# Build previous mammograms HTML #}
 {% set previousMammogramsHtml %}
   {% if additionalMammogramsCount == 0 %}
     <p>No additional mammograms added</p>
   {% elif additionalMammogramsCount == 1 %}
-    {% set mammogram = event.previousMammograms[0] %}
+    {% set mammogram = appointment.previousMammograms[0] %}
     <p>
       {{ mammogram | summarisePriorMammogram }}
       {{ ("prior_" + mammogram.requestStatus) | toTag }}
@@ -107,7 +107,7 @@
     </p>
   {% else %}
     <ul class="nhsuk-list">
-      {% for mammogram in event.previousMammograms %}
+      {% for mammogram in appointment.previousMammograms %}
         <li>
           {{ mammogram | summarisePriorMammogram }}
           {{ ("prior_" + mammogram.requestStatus) | toTag }}
@@ -129,7 +129,7 @@
 
 {# Other relevant information summary #}
 {# Get other relevant information summaries #}
-{% set otherRelevantInfoSummaries = event.medicalInformation | summariseOtherRelevantInformation %}
+{% set otherRelevantInfoSummaries = appointment.medicalInformation | summariseOtherRelevantInformation %}
 {% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
 
 {# Build other relevant information HTML #}

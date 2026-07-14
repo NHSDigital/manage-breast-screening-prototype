@@ -6,7 +6,7 @@ Implement add/edit/delete functionality for previous mammograms following the es
 ## Task List
 
 ### 1. Data Structure Changes
-**File:** `app/routes/events.js` (lines 396-527)
+**File:** `app/routes/appointments.js` (lines 396-527)
 
 - [x] Add unique ID generation using `generateId()` when creating new mammograms
 - [x] Add `dateAdded` timestamp for new items
@@ -14,34 +14,34 @@ Implement add/edit/delete functionality for previous mammograms following the es
 - [x] Detect new vs edit using `!previousMammogramTemp.id`
 
 ### 2. Update Save Route Logic
-**File:** `app/routes/events.js` (lines 396-527)
+**File:** `app/routes/appointments.js` (lines 396-527)
 
 - [x] Replace `.push()` with findIndex/update or push pattern
 - [x] Handle both creating new and updating existing mammograms
 - [x] Ensure all special flows (recent mammogram warning, proceed anyway, end immediately) still work with new structure
 
 ### 3. Add Edit Route
-**File:** `app/routes/events.js` (add after line 527)
+**File:** `app/routes/appointments.js` (add after line 527)
 
-- [x] Add GET route: `/clinics/:clinicId/events/:eventId/previous-mammograms/edit/:mammogramId`
-- [x] Find mammogram by ID in `event.previousMammograms` array
+- [x] Add GET route: `/clinics/:clinicId/appointments/:appointmentId/previous-mammograms/edit/:mammogramId`
+- [x] Find mammogram by ID in `appointment.previousMammograms` array
 - [x] Copy to `previousMammogramTemp`
 - [x] Redirect to edit form with referrerChain
 - [x] Handle case where mammogram not found
 
 ### 4. Add Delete Route
-**File:** `app/routes/events.js` (add after edit route)
+**File:** `app/routes/appointments.js` (add after edit route)
 
-- [x] Add GET route: `/clinics/:clinicId/events/:eventId/previous-mammograms/delete/:mammogramId`
+- [x] Add GET route: `/clinics/:clinicId/appointments/:appointmentId/previous-mammograms/delete/:mammogramId`
 - [x] Filter out mammogram from array
 - [x] Flash success message: "Previous mammogram deleted"
 - [x] Redirect back using referrerChain and scrollTo
 
 ### 5. Update Edit Form
-**File:** `app/views/events/previous-mammograms/edit.html`
+**File:** `app/views/appointments/previous-mammograms/edit.html`
 
 - [x] Add delete link at bottom of form
-- [x] Only show when `event.previousMammogramTemp.id` exists
+- [x] Only show when `appointment.previousMammogramTemp.id` exists
 - [x] Use warning link style (`app-link--warning`)
 - [x] Include referrerChain and scrollTo in delete href
 

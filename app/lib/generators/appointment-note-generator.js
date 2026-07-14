@@ -59,25 +59,25 @@ const NOTE_CATEGORIES = {
 }
 
 /**
- * Generate an appointment note for an event
+ * Generate an appointment note for an appointment
  * 
  * @param {object} options - Generation options
- * @param {boolean} options.isScheduled - Whether the event is scheduled (not yet happened)
- * @param {boolean} options.isCompleted - Whether the event is completed
+ * @param {boolean} options.isScheduled - Whether the appointment is scheduled (not yet happened)
+ * @param {boolean} options.isCompleted - Whether the appointment is completed
  * @returns {string | null} Appointment note or null if no note should be generated
  */
 const generateAppointmentNote = (options = {}) => {
   const { isScheduled = false, isCompleted = false } = options
 
-  // Determine probability based on event status
+  // Determine probability based on appointment status
   let probability = 0
   if (isScheduled) {
-    probability = 0.2 // 20% of scheduled events have notes
+    probability = 0.2 // 20% of scheduled appointments have notes
   } else if (isCompleted) {
-    probability = 0.2 // 20% of completed events have notes
+    probability = 0.2 // 20% of completed appointments have notes
   }
 
-  // Check if this event should have a note
+  // Check if this appointment should have a note
   if (Math.random() > probability) {
     return null
   }

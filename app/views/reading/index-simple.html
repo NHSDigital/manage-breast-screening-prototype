@@ -18,15 +18,15 @@
 {% set userSessions = [] %}
 {% for sessionId, session in data.readingSessions %}
   {% set userReadCount = 0 %}
-  {% for eventId in session.eventIds %}
-    {% set thisEvent = data.events | find('id', eventId) %}
-    {% if thisEvent and (thisEvent | userHasReadEvent(currentUserId)) %}
+  {% for appointmentId in session.appointmentIds %}
+    {% set thisAppointment = data.appointments | find('id', appointmentId) %}
+    {% if thisAppointment and (thisAppointment | userHasReadAppointment(currentUserId)) %}
       {% set userReadCount = userReadCount + 1 %}
     {% endif %}
   {% endfor %}
   {% if userReadCount > 0 %}
     {% set progress = sessionProgressById[session.id] %}
-    {% set targetSize = progress.effectiveTargetSize if progress else (session.targetSize or session.eventIds | length) %}
+    {% set targetSize = progress.effectiveTargetSize if progress else (session.targetSize or session.appointmentIds | length) %}
     {% set userSessions = userSessions | push({
       id: session.id,
       createdAt: session.createdAt,
@@ -58,7 +58,7 @@
 {#
   Inset counts.
 
-  arbitrationCount is derived from real data — events whose computed outcome is
+  arbitrationCount is derived from real data — appointments whose computed outcome is
   arbitration_pending.
 
   newlyArrivedPriorsCount is faked for the prototype. In a real implementation
@@ -67,22 +67,22 @@
   the empty state of the inset.
 #}
 {% set arbitrationCount = 0 %}
-{% for thisEvent in data.events %}
-  {% if (thisEvent | getOutcome) == 'arbitration_pending' %}
+{% for thisAppointment in data.appointments %}
+  {% if (thisAppointment | getOutcome) == 'arbitration_pending' %}
     {% set arbitrationCount = arbitrationCount + 1 %}
   {% endif %}
 {% endfor %}
 
 {% set deferredCount = 0 %}
-{% for thisEvent in data.events %}
-  {% if thisEvent | isDeferred %}
+{% for thisAppointment in data.appointments %}
+  {% if thisAppointment | isDeferred %}
     {% set deferredCount = deferredCount + 1 %}
   {% endif %}
 {% endfor %}
 
 {% set awaitingPriorsCount = 0 %}
-{% for thisEvent in data.events | filterEventsByEligibleForReading %}
-  {% if thisEvent | awaitingPriors %}
+{% for thisAppointment in data.appointments | filterAppointmentsByEligibleForReading %}
+  {% if thisAppointment | awaitingPriors %}
     {% set awaitingPriorsCount = awaitingPriorsCount + 1 %}
   {% endif %}
 {% endfor %}
@@ -95,17 +95,17 @@
   Backlog counts — all eligible cases that still need reading, banded by
   age relative to the configured priority/urgent thresholds.
 #}
-{% set backlogEvents = data.events
-  | filterEventsByEligibleForReading
-  | filterEventsByNeedsAnyRead %}
-{% set backlogTotal = backlogEvents | length %}
-{% set urgentBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.urgentThreshold) | length %}
-{% set priorityBacklog = backlogEvents | filterEventsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) | length %}
+{% set backlogAppointments = data.appointments
+  | filterAppointmentsByEligibleForReading
+  | filterAppointmentsByNeedsAnyRead %}
+{% set backlogTotal = backlogAppointments | length %}
+{% set urgentBacklog = backlogAppointments | filterAppointmentsByDayRange(data.config.reading.urgentThreshold) | length %}
+{% set priorityBacklog = backlogAppointments | filterAppointmentsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) | length %}
 
 {# Cases the current user can actually read — used to gate the start button #}
-{% set userReadableTotal = data.events
-  | filterEventsByEligibleForReading
-  | filterEventsByUserCanRead(currentUserId)
+{% set userReadableTotal = data.appointments
+  | filterAppointmentsByEligibleForReading
+  | filterAppointmentsByUserCanRead(currentUserId)
   | length %}
 
 {% block pageContent %}

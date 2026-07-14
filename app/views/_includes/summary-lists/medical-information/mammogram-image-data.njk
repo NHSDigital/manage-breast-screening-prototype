@@ -3,8 +3,8 @@
 
 {% set allowEdits = allowEdits | default(true) %}
 
-{% set isManualEntry = event.mammogramData.isManualEntry %}
-{% set mammogramViews = event.mammogramData.views | getObjectValues %}
+{% set isManualEntry = appointment.mammogramData.isManualEntry %}
+{% set mammogramViews = appointment.mammogramData.views | getObjectValues %}
 
 {# Define view order based on config - groups implant displaced views next to their regular counterpart #}
 {% if data.settings.mammogramViewOrder == 'mlo-first' %}
@@ -122,7 +122,7 @@
   {% set imageRecordingValueHtml %}
     <p>Manual</p>
     {# Commented out until we decide how to collect a reason #}
-    {# {% if event.mammogramData.isManualFailover %}
+    {# {% if appointment.mammogramData.isManualFailover %}
       <p><a href="{{ './images-manual-problem-description' | urlWithReferrer(referrerChain, scrollTo) }}" class="nhsuk-link">Add a reason for using manual data collection</a></p>
     {% endif %} #}
   {% endset %}
@@ -138,7 +138,7 @@
 {% endif %}
 
 {# Machine room #}
-{% if event.mammogramData.machineRoom %}
+{% if appointment.mammogramData.machineRoom %}
   {# Check if this is a mobile clinic #}
   {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
   
@@ -158,7 +158,7 @@
       text: "Machine room"
     },
     value: {
-      text: event.mammogramData.machineRoom
+      text: appointment.mammogramData.machineRoom
     },
     actions: {
       items: machineRoomActions
@@ -275,14 +275,14 @@
     text: "Total images"
   },
   value: {
-    html: event.mammogramData.metadata.totalImages + " (" + 
-          event.mammogramData.metadata.imagesByBreast.right + " right, " +
-          event.mammogramData.metadata.imagesByBreast.left + " left)"
+    html: appointment.mammogramData.metadata.totalImages + " (" + 
+          appointment.mammogramData.metadata.imagesByBreast.right + " right, " +
+          appointment.mammogramData.metadata.imagesByBreast.left + " left)"
   }
 }) %} #}
 
 {# Imperfect but best possible images #}
-{% if event.mammogramData.isImperfectButBestPossible and event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+{% if appointment.mammogramData.isImperfectButBestPossible and appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
   {% set summaryRows = summaryRows | push({
     key: {
       text: "Image quality"
@@ -303,25 +303,25 @@
 {% endif %}
 
 {# Incomplete mammography #}
-{% if event.mammogramData.isIncompleteMammography and event.mammogramData.isIncompleteMammography | includes("yes") %}
+{% if appointment.mammogramData.isIncompleteMammography and appointment.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteMammographyHtml %}
-    {% if event.mammogramData.incompleteMammographyReasons and event.mammogramData.incompleteMammographyReasons | length > 0 %}
-      {% if event.mammogramData.incompleteMammographyReasons | length == 1 %}
-        <p class="nhsuk-u-margin-bottom-2">Reason: {{ event.mammogramData.incompleteMammographyReasons[0] | lower }}</p>
+    {% if appointment.mammogramData.incompleteMammographyReasons and appointment.mammogramData.incompleteMammographyReasons | length > 0 %}
+      {% if appointment.mammogramData.incompleteMammographyReasons | length == 1 %}
+        <p class="nhsuk-u-margin-bottom-2">Reason: {{ appointment.mammogramData.incompleteMammographyReasons[0] | lower }}</p>
       {% else %}
-        <p class="nhsuk-u-margin-bottom-1">{{ "Reason" | pluralise(event.mammogramData.incompleteMammographyReasons | length) }}:</p>
+        <p class="nhsuk-u-margin-bottom-1">{{ "Reason" | pluralise(appointment.mammogramData.incompleteMammographyReasons | length) }}:</p>
         <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-2">
-          {% for reason in event.mammogramData.incompleteMammographyReasons %}
+          {% for reason in appointment.mammogramData.incompleteMammographyReasons %}
             <li>{{ reason }}</li>
           {% endfor %}
         </ul>
       {% endif %}
     {% endif %}
-    {% if event.mammogramData.incompleteMammographyReasonDetails %}
-      <p class="nhsuk-u-margin-bottom-2">Details: {{ event.mammogramData.incompleteMammographyReasonDetails }}</p>
+    {% if appointment.mammogramData.incompleteMammographyReasonDetails %}
+      <p class="nhsuk-u-margin-bottom-2">Details: {{ appointment.mammogramData.incompleteMammographyReasonDetails }}</p>
     {% endif %}
-    {% if event.mammogramData.incompleteMammographyFollowUpAppointment %}
-      {% set followUpValue = event.mammogramData.incompleteMammographyFollowUpAppointment %}
+    {% if appointment.mammogramData.incompleteMammographyFollowUpAppointment %}
+      {% set followUpValue = appointment.mammogramData.incompleteMammographyFollowUpAppointment %}
       {% if followUpValue.startsWith("No") %}
         {{ tag({
           text: "Partial mammography",
@@ -335,9 +335,9 @@
           colour: "orange",
           classes: "nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-2"
         }) }}
-        {# <p class="nhsuk-u-margin-bottom-{% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}1{% else %}0{% endif %}">Participant to be invited to a recall appointment to take more images.</p> #}
-        {% if event.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
-          <p class="nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ event.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
+        {# <p class="nhsuk-u-margin-bottom-{% if appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}1{% else %}0{% endif %}">Participant to be invited to a recall appointment to take more images.</p> #}
+        {% if appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
+          <p class="nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
         {% endif %}
       {% endif %}
     {% endif %}
@@ -386,13 +386,13 @@
 {% endif %}
 
 {# Notes for reader #}
-{# {% if event.mammogramData.notesForReader %} #}
+{# {% if appointment.mammogramData.notesForReader %} #}
   {% set summaryRows = summaryRows | push({
     key: {
       text: "Notes for reader"
     },
     value: {
-      text: event.mammogramData.notesForReader
+      text: appointment.mammogramData.notesForReader
     },
     actions: {
       items: [

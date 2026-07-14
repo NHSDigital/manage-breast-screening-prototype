@@ -16,7 +16,7 @@
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
-{% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
+{% set hasAdditionalMammograms = appointment.previousMammograms | length > 0 %}
 
 {% set mammogramHistoryHtml %}
   {% include "_includes/medical-information/mammogram-history.njk" %}
@@ -32,7 +32,7 @@
 {% endset %}
 
 {% if hasAdditionalMammograms %}
-  {% set mammogramHistoryContentsSummary = (event.previousMammograms | length) ~ " " ~ ("mammogram" | pluralise(event.previousMammograms | length)) ~ " added" %}
+  {% set mammogramHistoryContentsSummary = (appointment.previousMammograms | length) ~ " " ~ ("mammogram" | pluralise(appointment.previousMammograms | length)) ~ " added" %}
 {% else %}
   {% set mammogramHistoryContentsSummary = "No mammograms added" %}
 {% endif %}
@@ -84,8 +84,8 @@
 {% endset %}
 
 {% set medicalInfoCount = 0 %}
-{% if event.medicalInformation.medicalHistory %}
-  {% for type, historyGroup in event.medicalInformation.medicalHistory %}
+{% if appointment.medicalInformation.medicalHistory %}
+  {% for type, historyGroup in appointment.medicalInformation.medicalHistory %}
     {% for item in historyGroup %}
       {% set medicalInfoCount = medicalInfoCount + 1 %}
     {% endfor %}
@@ -135,7 +135,7 @@
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
-{% set symptomsCount = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+{% set symptomsCount = appointment.medicalInformation.symptoms and appointment.medicalInformation.symptoms | length %}
 {% set symptomsContentsSummaryText %}{{ symptomsCount or "No" }} {{ "symptom" | pluralise(symptomsCount) }} added{% endset %}
 
 {% set symptomsCardContent %}
@@ -177,8 +177,8 @@
 {% set sectionId = sectionHeading | kebabCase %}
 {% set scrollTo = sectionId %}
 
-{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
-{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set rawBreastFeatures = appointment.medicalInformation.breastFeaturesRaw | parseJsonString %}
+{% set breastFeatures = appointment.medicalInformation.breastFeatures or rawBreastFeatures %}
 {% set breastFeaturesCount = breastFeatures | length %}
 {% set hasBreastFeatures = breastFeaturesCount > 0 %}
 
@@ -231,15 +231,15 @@
 
 {% set otherRelevantInformationCount = 0 %}
 
-{% if event.medicalInformation.hrt.hrtQuestion == 'yes' %}
+{% if appointment.medicalInformation.hrt.hrtQuestion == 'yes' %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
-{% if event.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
+{% if appointment.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 
-{% if event.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
+{% if appointment.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
   {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
 {% endif %}
 

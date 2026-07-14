@@ -46,7 +46,7 @@ module.exports = {
     // Right breast views always on left, left breast views on right
     mammogramViewOrder: 'cc-first',
     // Distribution of image set tags (must sum to 1.0)
-    // These are the base weights - they get adjusted based on event context
+    // These are the base weights - they get adjusted based on appointment context
     // (symptoms, imperfect images, etc.)
     opinionBannerDurationMs: 3000,
     mammogramTagWeights: {
@@ -75,7 +75,7 @@ module.exports = {
   generation: {
     numberOfParticipants: 1000,
     bookingProbability: 0.8, // 80% of slots are booked
-    previousMammogramRate: 0.05, // Rate of completed events with recorded previous mammograms
+    previousMammogramRate: 0.05, // Rate of completed appointments with recorded previous mammograms
 
     // Cap on summary-level past screening rounds per participant. How many they
     // actually get follows from their age and screening interval - this only

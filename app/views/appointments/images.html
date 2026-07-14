@@ -1,0 +1,37 @@
+
+{% extends 'layout-appointment.html' %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set showNavigation = true %}
+{% set activeTab = 'images' %}
+{% set allowEdits = false %}
+
+{% block pageContent %}
+
+  {# Convert object to an array of views #}
+  {% set mammogramViews = appointment.mammogramData.views | getObjectValues %}
+  {% set machineRoom = appointment.mammogramData.machineRoom %}
+  {% set isManualEntry = appointment.mammogramData.isManualEntry %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+
+  {# Only show image thumbnails for automatic entry #}
+  {% if not isManualEntry %}
+    {% set thumbnailSize = "large" %}
+    {% include "_includes/mammogram-image-cards.njk" %}
+  {% endif %}
+
+  {# Summary of mammogram data #}
+  {% set mammogramDetailsHtml %}
+    {% include "_includes/summary-lists/medical-information/mammogram-image-data.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Mammogram details",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: mammogramDetailsHtml
+  }) }}
+
+{% endblock %}
+

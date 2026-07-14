@@ -184,7 +184,7 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
  * Save temporary participant data back to the main participant
  *
  * This function takes the data.participant object and saves it back to the
- * participants array, then clears participant. Similar to saveTempEventToEvent.
+ * participants array, then clears participant. Similar to saveTempAppointmentToAppointment.
  *
  * @param {object} data - Session data
  * @returns {object | null} Updated participant or null if no temp data

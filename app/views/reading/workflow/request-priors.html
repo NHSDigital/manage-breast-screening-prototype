@@ -15,11 +15,11 @@
     {{ participant | getFullName }}
   {% endset %}
 
-  {% set unrequestedPriors = event | getUnrequestedPriors %}
+  {% set unrequestedPriors = appointment | getUnrequestedPriors %}
 
   {# Get existing reason from any pending/requested mammogram for pre-filling when editing #}
   {% set requestReason = "" %}
-  {% for mammogram in event.previousMammograms %}
+  {% for mammogram in appointment.previousMammograms %}
     {% if (mammogram.requestStatus == "pending" or mammogram.requestStatus == "requested") and mammogram.requestReason %}
       {% set requestReason = mammogram.requestReason %}
     {% endif %}

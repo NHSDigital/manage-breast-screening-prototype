@@ -1,7 +1,7 @@
 {# app/views/_includes/summary-lists/medical-information/other-relevant-information #}
 
 {% set hrtHtml %}
-  {% set hrtData = event.medicalInformation.hrt %}
+  {% set hrtData = appointment.medicalInformation.hrt %}
 
   {% if hrtData %}
     {% if hrtData.hrtQuestion == 'yes' %}
@@ -31,7 +31,7 @@
 {% endset %}
 
 {% set pregnancyAndBreastfeedingHtml %}
-  {% set pregnancyAndBreastfeedingData = event.medicalInformation.pregnancyAndBreastfeeding %}
+  {% set pregnancyAndBreastfeedingData = appointment.medicalInformation.pregnancyAndBreastfeeding %}
 
   {% if pregnancyAndBreastfeedingData %}
     {% if pregnancyAndBreastfeedingData.pregnancyStatus == 'yes' %}
@@ -122,7 +122,7 @@
         text: "Other medical information"
       },
       value: {
-        html: event.medicalInformation.otherMedicalInformation
+        html: appointment.medicalInformation.otherMedicalInformation
       },
       actions: {
         items: [

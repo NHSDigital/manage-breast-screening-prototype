@@ -11,12 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault()
       const link = e.currentTarget
       const clinicId = link.dataset.clinicId
-      const eventId = link.dataset.eventId
+      const appointmentId = link.dataset.appointmentId
       const statusTagId = link.dataset.statusTagId
 
       try {
         const response = await fetch(
-          `/clinics/${clinicId}/check-in/${eventId}`,
+          `/clinics/${clinicId}/check-in/${appointmentId}`,
           {
             method: 'GET',
             headers: {
@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Show the start appointment link by removing the hidden class
-        const eventRow = document.getElementById(`event-row-${eventId}`)
-        if (eventRow) {
-          const startAppointmentLink = eventRow.querySelector(
+        const appointmentRow = document.getElementById(`appointment-row-${appointmentId}`)
+        if (appointmentRow) {
+          const startAppointmentLink = appointmentRow.querySelector(
             '.js-start-appointment-link'
           )
           if (startAppointmentLink) {
@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
           }
 
           // Set focus on the row for accessibility
-          eventRow.setAttribute('tabindex', '-1')
-          eventRow.focus()
+          appointmentRow.setAttribute('tabindex', '-1')
+          appointmentRow.focus()
         }
 
         // Remove the check-in link
@@ -60,8 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isModalButton) {
           // For modal buttons, find the original check-in link on the main page
-          // Look for a link that opens the modal for this specific event
-          const modalId = `check-in-modal-${eventId}`
+          // Look for a link that opens the modal for this specific appointment
+          const modalId = `check-in-modal-${appointmentId}`
           const originalCheckInLink = document.querySelector(
             `a[onclick*="openModal('${modalId}')"]`
           )
@@ -112,17 +112,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // When first arriving on a case, users should be prevented from giving an opinion for a period of time. On NBSS this is 30 seconds, but for the prototype is set to 5 seconds to avoid being annoying whilst testing.
   const opinionForm = document.querySelector('[data-reading-opinion-form]')
   if (opinionForm) {
-    const eventId = opinionForm.dataset.eventId
-    if (eventId) {
+    const appointmentId = opinionForm.dataset.appointmentId
+    if (appointmentId) {
       try {
         if (opinionForm.dataset.readingOpinionLocked !== 'true') {
           opinionForm.classList.remove('app-reading-opinion--locked')
           opinionForm.dataset.readingOpinionLocked = 'false'
         } else {
-          // Key by date + session + event so resets and new sessions re-lock
+          // Key by date + session + appointment so resets and new sessions re-lock
           const sessionId = opinionForm.dataset.sessionId || 'no-session'
           const todayKey = new Date().toISOString().slice(0, 10)
-          const unlockKey = `readingOpinionUnlocked:${todayKey}:${sessionId}:${eventId}`
+          const unlockKey = `readingOpinionUnlocked:${todayKey}:${sessionId}:${appointmentId}`
 
           if (!sessionStorage.getItem(unlockKey)) {
             sessionStorage.setItem(unlockKey, 'true')

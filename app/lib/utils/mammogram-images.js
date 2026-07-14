@@ -72,12 +72,12 @@ const seededRandom = (seed) => {
 }
 
 /**
- * Extract context flags from event data for smart set selection
- * @param {object} event - The event object
+ * Extract context flags from appointment data for smart set selection
+ * @param {object} appointment - The appointment object
  * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect, hasRepeat, hasExtraImages, repeatViews
  */
-const extractEventContext = (event) => {
-  if (!event) return {}
+const extractAppointmentContext = (appointment) => {
+  if (!appointment) return {}
 
   const context = {
     hasSymptoms: false,
@@ -90,7 +90,7 @@ const extractEventContext = (event) => {
   }
 
   // Check for symptoms
-  const symptoms = event.medicalInformation?.symptoms || []
+  const symptoms = appointment.medicalInformation?.symptoms || []
   if (symptoms.length > 0) {
     context.hasSymptoms = true
 
@@ -125,7 +125,7 @@ const extractEventContext = (event) => {
 
   // Check for breast implants (array with items means has implants)
   const implants =
-    event.medicalInformation?.medicalHistory?.breastImplantsAugmentation || []
+    appointment.medicalInformation?.medicalHistory?.breastImplantsAugmentation || []
   if (implants.length > 0) {
     // Check if implants have been removed
     const hasActiveImplants = implants.some(
@@ -136,7 +136,7 @@ const extractEventContext = (event) => {
 
   // Check for imperfect images
   // Value can be array ['yes'] or string 'yes' depending on source
-  const imperfectValue = event.mammogramData?.isImperfectButBestPossible
+  const imperfectValue = appointment.mammogramData?.isImperfectButBestPossible
   if (
     imperfectValue === 'yes' ||
     (Array.isArray(imperfectValue) && imperfectValue.includes('yes'))
@@ -145,11 +145,11 @@ const extractEventContext = (event) => {
   }
 
   // Check for repeat/retake images (technical issues)
-  if (event.mammogramData?.metadata?.hasRepeat) {
+  if (appointment.mammogramData?.metadata?.hasRepeat) {
     context.hasRepeat = true
 
     // Extract which views have repeats
-    const views = event.mammogramData?.views
+    const views = appointment.mammogramData?.views
     if (views) {
       for (const [viewKey, viewData] of Object.entries(views)) {
         if (viewData.repeatCount > 0) {
@@ -164,7 +164,7 @@ const extractEventContext = (event) => {
   }
 
   // Check for extra images (large breasts - not a problem)
-  if (event.mammogramData?.metadata?.hasExtraImages) {
+  if (appointment.mammogramData?.metadata?.hasExtraImages) {
     context.hasExtraImages = true
   }
 
@@ -172,8 +172,8 @@ const extractEventContext = (event) => {
 }
 
 /**
- * Get appropriate tag weights based on event context
- * @param {object} context - Context from extractEventContext
+ * Get appropriate tag weights based on appointment context
+ * @param {object} context - Context from extractAppointmentContext
  * @param {object} configWeights - Weights from config (optional override)
  * @returns {object} - Tag weights
  */
@@ -222,7 +222,7 @@ const setHasMultipleImagesForView = (set, view) => {
 /**
  * Filter sets based on hard constraints (e.g., implants, repeats, extra images)
  * @param {array} sets - Available sets
- * @param {object} context - Context from extractEventContext
+ * @param {object} context - Context from extractAppointmentContext
  * @returns {array} - Filtered sets
  */
 const filterSetsByContext = (sets, context) => {
@@ -238,16 +238,16 @@ const filterSetsByContext = (sets, context) => {
 
     // Extra images (large breasts): must match
     if (context.hasExtraImages) {
-      // If event has extra images, only use extra image sets
+      // If appointment has extra images, only use extra image sets
       if (set.hasExtraImages !== true) return false
     } else {
-      // If event doesn't have extra images, exclude extra image sets
+      // If appointment doesn't have extra images, exclude extra image sets
       if (set.hasExtraImages) return false
     }
 
     // Technical repeats: must match
     if (context.hasRepeat) {
-      // If event has repeat images, only use repeat sets
+      // If appointment has repeat images, only use repeat sets
       if (set.hasRepeat !== true) return false
 
       // Additionally, prefer sets that match the specific views with repeats
@@ -264,7 +264,7 @@ const filterSetsByContext = (sets, context) => {
         }
       }
     } else {
-      // If event doesn't have repeats, exclude repeat sets
+      // If appointment doesn't have repeats, exclude repeat sets
       if (set.hasRepeat) return false
     }
 
@@ -276,7 +276,7 @@ const filterSetsByContext = (sets, context) => {
  * Score sets by how well they match the repeat views context
  * Higher score = better match
  * @param {array} sets - Sets to score
- * @param {object} context - Context from extractEventContext
+ * @param {object} context - Context from extractAppointmentContext
  * @returns {array} - Sets with scores attached
  */
 const scoreSetsForRepeatMatch = (sets, context) => {
@@ -364,36 +364,36 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
 }
 
 /**
- * Select an image set for an event using seeded random with weighted tag distribution
- * Returns the same set for the same eventId
- * @param {string} eventId - The event ID to use as seed
+ * Select an image set for an appointment using seeded random with weighted tag distribution
+ * Returns the same set for the same appointmentId
+ * @param {string} appointmentId - The appointment ID to use as seed
  * @param {string} source - "diagrams" or "real"
  * @param {object} options - Optional filtering options
  * @param {string} options.tag - Force a specific tag (bypasses weighted selection)
  * @param {object} options.weights - Override tag weights (e.g., { normal: 0.8, abnormal: 0.2 })
  * @param {object} options.contextualWeights - Override context-specific weights ({ default, symptoms, imperfect, symptomsAndImperfect })
- * @param {object} options.event - Event object for context-aware selection
- * @param {object} options.context - Context object directly (alternative to passing event)
+ * @param {object} options.appointment - Appointment object for context-aware selection
+ * @param {object} options.context - Context object directly (alternative to passing appointment)
  * @returns {object|null} - The selected set object or null if none available
  */
-const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
+const getImageSetForAppointment = (appointmentId, source = 'diagrams', options = {}) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
 
-  // If the event already has a stored selectedSetId, use that directly.
+  // If the appointment already has a stored selectedSetId, use that directly.
   // This ensures the viewer always shows the same set the reading generator used,
   // regardless of which profile weights are currently active.
   // Only bypass this if a specific tag or weights are being forced (e.g. during initial generation).
-  const storedSetId = options.event?.mammogramData?.selectedSetId
+  const storedSetId = options.appointment?.mammogramData?.selectedSetId
 
   if (storedSetId && !options.tag && !options.weights) {
     const storedSet = getSetById(storedSetId, source)
     if (storedSet) return storedSet
   }
 
-  // Use provided context, or extract from event if provided
+  // Use provided context, or extract from appointment if provided
   const context =
-    options.context || (options.event ? extractEventContext(options.event) : {})
+    options.context || (options.appointment ? extractAppointmentContext(options.appointment) : {})
 
   // Apply hard filters based on context (e.g., implants)
   if (Object.keys(context).length > 0) {
@@ -405,7 +405,7 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
   }
 
   // Use seeded random for consistent selection
-  const randomValue = seededRandom(eventId)
+  const randomValue = seededRandom(appointmentId)
 
   // If a specific tag is forced, filter to that tag
   if (options.tag) {
@@ -417,7 +417,7 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
     // Fall through to weighted selection if no sets match
   }
 
-  // Get tag weights - use contextual weights if event provided, otherwise config/options
+  // Get tag weights - use contextual weights if appointment provided, otherwise config/options
   const weights =
     options.weights ||
     getContextualWeights(context, {
@@ -479,7 +479,7 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
 
   // Apply side preference for abnormal sets when symptoms present
   if (selectedTag === 'abnormal' && context.symptomSides?.length > 0) {
-    const sideRandomValue = seededRandom(eventId + 'side')
+    const sideRandomValue = seededRandom(appointmentId + 'side')
     setsForTag = applySidePreference(
       setsForTag,
       context.symptomSides,
@@ -493,7 +493,7 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
     const maxScore = Math.max(...scoredSets.map((s) => s._matchScore))
 
     // Prefer sets with the highest match score (70% of the time)
-    const repeatRandomValue = seededRandom(eventId + 'repeat')
+    const repeatRandomValue = seededRandom(appointmentId + 'repeat')
     if (maxScore > 0 && repeatRandomValue < 0.7) {
       setsForTag = scoredSets.filter((s) => s._matchScore === maxScore)
     }
@@ -501,7 +501,7 @@ const getImageSetForEvent = (eventId, source = 'diagrams', options = {}) => {
 
   // Use a second seeded random to pick within the tag
   // (different seed to avoid correlation with tag selection)
-  const setRandomValue = seededRandom(eventId + selectedTag)
+  const setRandomValue = seededRandom(appointmentId + selectedTag)
   const index = Math.floor(setRandomValue * setsForTag.length)
   return setsForTag[index]
 }
@@ -643,23 +643,23 @@ const getLatestPath = (pathOrPaths) => {
 }
 
 /**
- * Get image paths for an event (convenience function)
- * Combines getImageSetForEvent and getImagePaths
- * Filters paths based on which views are present in the event's mammogram data
+ * Get image paths for an appointment (convenience function)
+ * Combines getImageSetForAppointment and getImagePaths
+ * Filters paths based on which views are present in the appointment's mammogram data
  * Returns both latest paths (for default display) and all paths (for additional images)
- * @param {string} eventId - The event ID
+ * @param {string} appointmentId - The appointment ID
  * @param {string} source - "diagrams" or "real"
- * @param {object} options - Options passed to getImageSetForEvent
+ * @param {object} options - Options passed to getImageSetForAppointment
  * @returns {object|null} - Object with set info, paths, allPaths, and hasAdditionalImages flag
  */
-const getImagesForEvent = function (
-  eventId,
+const getImagesForAppointment = function (
+  appointmentId,
   source = 'diagrams',
   options = {}
 ) {
   // When called from Nunjucks (this.ctx is available) and no contextualWeights are
   // explicitly provided, look up the active seed data profile's weights so dynamic
-  // set selection (for events without a stored selectedSetId) uses the right distribution.
+  // set selection (for appointments without a stored selectedSetId) uses the right distribution.
   if (!options.contextualWeights && this && this.ctx) {
     const profileName = this.ctx.data?.generationInfo?.seedDataProfile
     if (profileName) {
@@ -675,17 +675,17 @@ const getImagesForEvent = function (
     }
   }
 
-  const set = getImageSetForEvent(eventId, source, options)
+  const set = getImageSetForAppointment(appointmentId, source, options)
   if (!set) return null
 
   const rawPaths = getImagePaths(set.id, source)
 
-  // Filter paths based on which views are present in the event's mammogram data
-  const event = options.event
-  const mammogramViews = event?.mammogramData?.views || {}
+  // Filter paths based on which views are present in the appointment's mammogram data
+  const appointment = options.appointment
+  const mammogramViews = appointment?.mammogramData?.views || {}
 
-  // If no event provided, return all paths (backwards compatibility)
-  if (!event) {
+  // If no appointment provided, return all paths (backwards compatibility)
+  if (!appointment) {
     // Check if any view has multiple images
     let hasAdditionalImages = false
     const paths = {}
@@ -710,9 +710,9 @@ const getImagesForEvent = function (
   const allPaths = {}
   let hasAdditionalImages = false
 
-  // Check if event metadata indicates repeats exist
-  // This covers cases where the set's paths don't align with event's repeat views
-  if (event.mammogramData?.metadata?.hasRepeat) {
+  // Check if appointment metadata indicates repeats exist
+  // This covers cases where the set's paths don't align with appointment's repeat views
+  if (appointment.mammogramData?.metadata?.hasRepeat) {
     hasAdditionalImages = true
   }
 
@@ -820,11 +820,11 @@ module.exports = {
   getManifest,
   getAvailableSets,
   getSetById,
-  getImageSetForEvent,
+  getImageSetForAppointment,
   getImagePaths,
   getImageLibraryPath,
-  getImagesForEvent,
+  getImagesForAppointment,
   hasImageSets,
-  extractEventContext,
+  extractAppointmentContext,
   getResolvedAnnotations
 }

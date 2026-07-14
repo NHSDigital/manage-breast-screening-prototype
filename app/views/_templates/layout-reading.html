@@ -18,7 +18,7 @@
       (function() {
         if (typeof BroadcastChannel === 'undefined') return
         var ch = new BroadcastChannel('mammogram-viewer')
-        var currentEventId = document.querySelector('meta[name="mammogram-event-id"]')?.getAttribute('content')
+        var currentAppointmentId = document.querySelector('meta[name="mammogram-appointment-id"]')?.getAttribute('content')
 
         // Send loading message when clicking navigation links
         document.addEventListener('click', function(e) {
@@ -27,32 +27,32 @@
           var href = link.getAttribute('href')
           // Only for internal navigation that might change the case
           if (href && href.startsWith('/reading/') && !href.includes('#')) {
-            ch.postMessage({ type: 'loading', fromEventId: currentEventId, timestamp: Date.now() })
+            ch.postMessage({ type: 'loading', fromAppointmentId: currentAppointmentId, timestamp: Date.now() })
           }
         })
       })()
     </script>
 
     {# Inspect panel: press 'i' to show debug info about the current mammogram set #}
-    {% if event.mammogramData %}
-      {% set inspectImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
-      {% set inspectContext = extractEventContext(event) %}
+    {% if appointment.mammogramData %}
+      {% set inspectImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+      {% set inspectContext = extractAppointmentContext(appointment) %}
     {% endif %}
 
     <div id="reading-inspect-panel" style="display:none; position:fixed; bottom:16px; right:16px; background:#1a1a1a; color:#fff; font-family:monospace; font-size:13px; padding:16px; border-radius:6px; border:1px solid #444; z-index:9999; min-width:320px; max-width:480px; box-shadow:0 4px 16px rgba(0,0,0,0.5);">
       <div style="font-size:11px; color:#888; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.5px;">Inspect – mammogram set</div>
 
-      {% if event.mammogramData %}
+      {% if appointment.mammogramData %}
         <div style="margin-bottom:6px;">
           <span style="color:#888;">selectedSetId: </span>
-          <span style="color:#fff; font-weight:bold;">{{ event.mammogramData.selectedSetId or "not set" }}</span>
+          <span style="color:#fff; font-weight:bold;">{{ appointment.mammogramData.selectedSetId or "not set" }}</span>
         </div>
 
         {% if inspectImages and inspectImages.set %}
           <div style="margin-bottom:6px;">
             <span style="color:#888;">resolved set id: </span>
             <span style="color:#fff; font-weight:bold;">{{ inspectImages.set.id }}</span>
-            {% if inspectImages.set.id != event.mammogramData.selectedSetId %}
+            {% if inspectImages.set.id != appointment.mammogramData.selectedSetId %}
               <span style="color:#ff6b6b;"> ≠ stored</span>
             {% endif %}
           </div>
@@ -97,11 +97,11 @@
           </div>
         {% endif %}
 
-        {% if event.mammogramData.machineRoom %}
-          <div style="margin-top:8px; color:#888;">machine room: <span style="color:#fff;">{{ event.mammogramData.machineRoom }}</span></div>
+        {% if appointment.mammogramData.machineRoom %}
+          <div style="margin-top:8px; color:#888;">machine room: <span style="color:#fff;">{{ appointment.mammogramData.machineRoom }}</span></div>
         {% endif %}
       {% else %}
-        <div style="color:#888;">No mammogramData on event</div>
+        <div style="color:#888;">No mammogramData on appointment</div>
       {% endif %}
 
       <div style="margin-top:12px; color:#555; font-size:11px;">Press I to close</div>
@@ -159,8 +159,8 @@
 
   {# Meta tags for PACS viewer - only in workflow mode with participant #}
   {% if isReadingWorkflow and participant %}
-    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
-    <meta name="mammogram-event-id" content="{{ eventId }}">
+    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+    <meta name="mammogram-appointment-id" content="{{ appointmentId }}">
     <meta name="mammogram-participant-name" content="{{ participant | getFullName }}">
     <meta name="mammogram-nhs-number" content="{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}">
     <meta name="mammogram-sx-number" content="{{ participant.sxNumber }}">
@@ -180,8 +180,8 @@
       <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">
       <meta name="mammogram-set-tag" content="{{ mammogramImages.set.tag }}">
       {# Pass context info for debugging #}
-      {% set eventContext = extractEventContext(event) %}
-      <meta name="mammogram-context" content="{{ eventContext | dump | escape }}">
+      {% set appointmentContext = extractAppointmentContext(appointment) %}
+      <meta name="mammogram-context" content="{{ appointmentContext | dump | escape }}">
     {% endif %}
 
     {# Broadcast to PACS viewer immediately - don't wait for DOMContentLoaded #}
@@ -193,14 +193,14 @@
           var el = document.querySelector('meta[name="' + name + '"]')
           return el ? el.getAttribute('content') : null
         }
-        var eventId = getMeta('mammogram-event-id')
+        var appointmentId = getMeta('mammogram-appointment-id')
         var participantName = getMeta('mammogram-participant-name')
-        if (!eventId || !participantName) return
+        if (!appointmentId || !participantName) return
         var allPathsRaw = getMeta('mammogram-all-paths')
         var contextRaw = getMeta('mammogram-context')
         ch.postMessage({
           type: 'show',
-          eventId: eventId,
+          appointmentId: appointmentId,
           participantName: participantName,
           nhsNumber: getMeta('mammogram-nhs-number'),
           sxNumber: getMeta('mammogram-sx-number'),

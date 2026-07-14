@@ -36,16 +36,16 @@
     , {{ progress.deferredCount }} deferred
   {%- endif -%}
   , {{ progress.targetRemaining }} remaining
-  {%- if progress.skippedEvents | length > 0 %}
-     ({{ progress.skippedEvents | length }} skipped)
+  {%- if progress.skippedAppointments | length > 0 %}
+     ({{ progress.skippedAppointments | length }} skipped)
   {%- endif %}
 {% endset %}
 
 {# Screened date and progress on same row as environment tag #}
-{% if event %}
+{% if appointment %}
   {% set firstRowItems = firstRowItems | push({
     key: "Screened:",
-    value: event.timing.startTime | formatDate
+    value: appointment.timing.startTime | formatDate
   }) %}
 {% endif %}
 

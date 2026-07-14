@@ -1,6 +1,6 @@
 {# app/views/_includes/summary-lists/medical-information/mammogram-history.njk #}
 
-{% set hasAdditionalMammograms = event.previousMammograms | length > 0 %}
+{% set hasAdditionalMammograms = appointment.previousMammograms | length > 0 %}
 
 {# System record - last known mammogram from BSU records #}
 
@@ -33,7 +33,7 @@
   <h3 class="nhsuk-heading-s">Disclosed mammograms</h3>
   {% set userMammogramRows = [] %}
 
-  {% for previousMammogram in event.previousMammograms %}
+  {% for previousMammogram in appointment.previousMammograms %}
     {% set mammogramValueLines = [] %}
 
     {# Date #}

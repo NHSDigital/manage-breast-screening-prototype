@@ -10,7 +10,7 @@
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
 {%- from '_components/count/macro.njk' import appCount %}
 {%- from '_components/details/macro.njk' import appDetails %}
-{%- from '_components/event-status/macro.njk' import eventStatus %}
+{%- from '_components/appointment-status/macro.njk' import appointmentStatus %}
 {%- from '_components/forward-link/macro.njk' import appForwardLink %}
 {%- from '_components/hidden-input/macro.njk' import appHiddenInput %}
 {%- from '_components/link/macro.njk' import appLink %}
@@ -61,7 +61,7 @@
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/">Home</a></li>
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings">Settings</a></li>
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/prototype-admin/reset?returnPage=' + (currentPage | urlencode) + '" data-reset-session>Reset data</a></li>
-    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="https://github.com/NHSDigital/manage-screening-events-prototype">Github</a></li>
+    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="https://github.com/NHSDigital/manage-screening-appointments-prototype">Github</a></li>
   </ul>
 {% endset %}
   {{ footer({

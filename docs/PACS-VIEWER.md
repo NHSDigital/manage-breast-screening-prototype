@@ -30,7 +30,7 @@ This prototype simulates that behaviour using:
 1. Reading workflow pages include meta tags with participant and image data
 2. `mammogram-channel.js` broadcasts participant data on page load
 3. Viewer listens on BroadcastChannel (`mammogram-viewer`) and updates display
-4. Same eventId messages are ignored (prevents flash when navigating within same case)
+4. Same appointmentId messages are ignored (prevents flash when navigating within same case)
 5. When leaving reading workflow, `clear` message shows placeholder in viewer
 
 ### Viewer Detection (Ping/Pong)
@@ -116,7 +116,7 @@ Tags: `normal`, `abnormal`, `indeterminate`, `technical`
 
 ### Context-Aware Selection
 
-Image sets are selected based on participant/event context:
+Image sets are selected based on participant/appointment context:
 
 | Context Flag  | Behaviour                                                                   |
 | ------------- | --------------------------------------------------------------------------- |
@@ -125,7 +125,7 @@ Image sets are selected based on participant/event context:
 | `isImperfect` | Increases probability of technical sets                                     |
 | `hasRepeat`   | Only selects sets with `hasRepeat: true` flag                               |
 
-Context is extracted from event data by `extractEventContext()` in `mammogram-images.js`.
+Context is extracted from appointment data by `extractAppointmentContext()` in `mammogram-images.js`.
 
 ### Weighted Selection
 
@@ -135,11 +135,11 @@ When no context requires hard filtering, sets are selected using weighted random
 - With symptoms: 30% normal, 50% abnormal, 10% indeterminate, 10% technical
 - With imperfect images: 10% normal, 10% abnormal, 0% indeterminate, 80% technical
 - Configured in `config.reading.mammogramTagWeights`
-- Selection is deterministic per event ID (seeded random)
+- Selection is deterministic per appointment ID (seeded random)
 
 ### Missing Views
 
-If a mammogram view is missing from `event.mammogramData.views`, the viewer shows "No image" placeholder for that panel. The image selection system filters paths to only include views present in the event's mammogram data.
+If a mammogram view is missing from `appointment.mammogramData.views`, the viewer shows "No image" placeholder for that panel. The image selection system filters paths to only include views present in the appointment's mammogram data.
 
 ### Composite Sets
 
@@ -302,7 +302,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 
 ## Future Enhancements
 
-- [ ] Test/verify probability distribution (debug route to sample many events)
+- [ ] Test/verify probability distribution (debug route to sample many appointments)
 - [ ] Real mammogram images integration (local gitignored folder)
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
@@ -366,7 +366,7 @@ This enables smarter selection:
 - Participant has symptoms in left breast → prefer sets with left breast abnormality
 - Participant has implants → select implant sets
 - Technical recall case → select sets with technical issues
-- Event has repeat images → select repeat sets
+- Appointment has repeat images → select repeat sets
 
 ### Composite Sets Architecture
 
@@ -462,7 +462,7 @@ The manifest supports composing sets from other sets and the image library:
 
 5. **Special flags**:
    - `hasImplants: true` - Set shows implants, only selected for participants with implants
-   - `hasRepeat: true` - Set has repeat images, only selected for events with repeats
+   - `hasRepeat: true` - Set has repeat images, only selected for appointments with repeats
    - `disabled: true` - Set excluded from selection
 
 **Current technical issue images in library:**

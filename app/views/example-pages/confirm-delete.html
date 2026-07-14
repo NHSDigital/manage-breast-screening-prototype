@@ -9,12 +9,12 @@
 {% set isAppointmentWorkflow = true %}
 
 {# Janet Williams #}
-{% set eventId = "5gpn41oi" %}
+{% set appointmentId = "5gpn41oi" %}
 {% set participantId = "bc724e9f" %}
 {% set clinicId = "wtrl7jud" %}
 {% set participant = data | getParticipant(participantId) %}
 {% set clinic = data.clinics | findById(clinicId) %}
-{% set event = data.events | findById(eventId) %}
+{% set appointment = data.appointments | findById(appointmentId) %}
 
 
 {% block pageContent %}

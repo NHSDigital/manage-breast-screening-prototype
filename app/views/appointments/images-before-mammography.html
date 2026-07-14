@@ -1,0 +1,58 @@
+
+{% extends 'layout-appointment.html' %}
+
+
+{% set pageHeading = "Awaiting images" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'take-images' %}
+{% set hideBackLink = true %}
+
+{% set formAction = './images-automatic' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <h2>Observations during mammogram</h2>
+      {{ button({
+        text: "Add breast features",
+        href: appointmentUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
+        variant: "secondary",
+        small: true
+      }) }}
+    </div>
+  </div>
+
+  {% set insetHtml %}
+    <p>
+      Mammography images will appear below once they have been received
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetHtml
+  }) }}
+
+  {{ appHiddenInput({
+    name: "appointment[workflowStatus][awaiting-images]",
+    value: "completed"
+  }) }}
+
+  <p class="app-suppress-link-styles">
+    <button class="app-button-link" type="submit">
+      Loading images...
+    </button>
+    {# <a href="./images?appointment[workflowStatus][awaiting-images]=completed">
+      <span class="">Loading images...</span>
+    </a> #}
+  </p>
+
+  {% include "_includes/images/image-troubleshooting.njk" %}
+
+{% endblock %}
+
+

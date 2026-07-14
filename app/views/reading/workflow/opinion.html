@@ -11,7 +11,7 @@
 {# Reduce default top padding of main on opinion page to save on scrolling #}
 {% set mainClasses = "nhsuk-u-padding-top-1" %}
 
-{% set hasSymptoms = event.medicalInformation.symptoms | length > 0 %}
+{% set hasSymptoms = appointment.medicalInformation.symptoms | length > 0 %}
 
 
 {% block pageContent %}
@@ -21,7 +21,7 @@
      ========================================================= #}
 
   {# Get existing read data for this user (saved read) #}
-  {% set existingRead = event | getReadForUser %}
+  {% set existingRead = appointment | getReadForUser %}
   {% set existingOpinion = existingRead.opinion %}
 
   {# Also check for in-progress read in temp data #}
@@ -44,7 +44,7 @@
 
   {# Get mammogram images for thumbnails #}
   {% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
-  {% set mammogramImages = getImagesForEvent(eventId, mammogramImageSource, { event: event }) %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, mammogramImageSource, { appointment: appointment }) %}
 
   {# View order from config - determines if CC or MLO comes first #}
   {# Right breast views on left, left breast views on right #}
@@ -81,7 +81,7 @@
      Setup: priors and opinion delay
      ========================================================= #}
 
-  {% set priorsSummary = event | getPriorsSummary %}
+  {% set priorsSummary = appointment | getPriorsSummary %}
 
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
@@ -272,8 +272,8 @@
 
   {# Symptoms warning #}
   {% set symptomsWarningHtml %}
-    {% if event.medicalInformation.symptoms | length %}
-      {% set symptoms = event.medicalInformation.symptoms %}
+    {% if appointment.medicalInformation.symptoms | length %}
+      {% set symptoms = appointment.medicalInformation.symptoms %}
       {% include "_includes/symptomsWarningCard.njk" %}
     {% endif %}
   {% endset %}
@@ -355,19 +355,19 @@
     <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag">
 
       {# Urgency tags #}
-      {% set eventAge = event.timing.startTime | daysSince %}
-      {% if eventAge >= data.config.reading.priorityThreshold %}
+      {% set appointmentAge = appointment.timing.startTime | daysSince %}
+      {% if appointmentAge >= data.config.reading.priorityThreshold %}
         <div class="nhsuk-u-margin-bottom-2">
-          {% if eventAge >= data.config.reading.urgentThreshold %}
+          {% if appointmentAge >= data.config.reading.urgentThreshold %}
             {{ "Urgent" | toTag }}
-          {% elseif eventAge >= data.config.reading.priorityThreshold %}
+          {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
             {{ "Due soon" | toTag }}
           {% endif %}
         </div>
       {% endif %}
 
       {# First/second read tag #}
-      {% set readCount = (event | getReadingMetadata).readCount %}
+      {% set readCount = (appointment | getReadingMetadata).readCount %}
       {% if existingOpinion %}
         {% if readCount == 1 %}
           {{ "First read" | toTag }}
@@ -383,14 +383,14 @@
       {% endif %}
 
       {# Previously skipped tag #}
-      {% if session and session.skippedEvents | includes(event.id) %}
+      {% if session and session.skippedAppointments | includes(appointment.id) %}
         {{ "Previously skipped" | toTag }}
       {% endif %}
 
       {# Prior mammogram status tags #}
       {% if priorsSummary.total > 0 %}
         {% if priorsSummary.hasAwaiting %}
-          {% set awaitingPriorsList = event | getAwaitingPriors %}
+          {% set awaitingPriorsList = appointment | getAwaitingPriors %}
           {{ "Awaiting priors" | toTag | safe }}<br>
           {% for prior in awaitingPriorsList %}
             {% if prior.requestedDate %}
@@ -405,16 +405,16 @@
       {% endif %}
 
       {% if (data.settings.debugMode | falsify) %}
-        {% if event | hasRecordedMammograms %}
+        {% if appointment | hasRecordedMammograms %}
           {{ "Has priors" | toTag }}
         {% endif %}
-        {% if event.mammogramData.metadata.hasAdditionalImages %}
+        {% if appointment.mammogramData.metadata.hasAdditionalImages %}
           <br>{{ "Has additional" | toTag }}
         {% endif %}
-        {% if event.mammogramData.isImperfectButBestPossible | includes("yes") %}
+        {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
             <br>{{ "Imperfect" | toTag }}
         {% endif %}
-        {% if event.mammogramData.isIncompleteMammography | includes("yes") %}
+        {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
             <br>{{ "Incomplete" | toTag }}
         {% endif %}
       {% endif %}
@@ -424,7 +424,7 @@
   {# Opinion form with thumbnails #}
 
   {# Todo: do we need a form here? is the parent layout's form not enough? #}
-  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-event-id="{{ event.id }}" data-session-id="{{ session.id if session }}">
+  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">
 
     {# Hidden field to track previous opinion for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">

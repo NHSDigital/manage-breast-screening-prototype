@@ -748,23 +748,23 @@
                       e.preventDefault()
                       marker.classList.add('dragging')
                       
-                      const onMouseMove = moveEvent => {
+                      const onMouseMove = moveAppointment => {
                         const rect = clickArea.getBoundingClientRect()
-                        const x = Math.max(0, Math.min(100, ((moveEvent.clientX - rect.left) / rect.width) * 100))
-                        const y = Math.max(0, Math.min(100, ((moveEvent.clientY - rect.top) / rect.height) * 100))
+                        const x = Math.max(0, Math.min(100, ((moveAppointment.clientX - rect.left) / rect.width) * 100))
+                        const y = Math.max(0, Math.min(100, ((moveAppointment.clientY - rect.top) / rect.height) * 100))
                         marker.style.left = `${x}%`
                         marker.style.top = `${y}%`
                       }
                       
-                      const onMouseUp = upEvent => {
+                      const onMouseUp = upAppointment => {
                         marker.classList.remove('dragging')
                         document.removeEventListener('mousemove', onMouseMove)
                         document.removeEventListener('mouseup', onMouseUp)
                         
                         // Save final position in 0-1 format (3 decimal places)
                         const rect = clickArea.getBoundingClientRect()
-                        const finalX = Math.round(Math.max(0, Math.min(1, (upEvent.clientX - rect.left) / rect.width)) * 1000) / 1000
-                        const finalY = Math.round(Math.max(0, Math.min(1, (upEvent.clientY - rect.top) / rect.height)) * 1000) / 1000
+                        const finalX = Math.round(Math.max(0, Math.min(1, (upAppointment.clientX - rect.left) / rect.width)) * 1000) / 1000
+                        const finalY = Math.round(Math.max(0, Math.min(1, (upAppointment.clientY - rect.top) / rect.height)) * 1000) / 1000
                         data.annotations[annIndex].positions[view] = { x: finalX, y: finalY }
                         renderEditor()
                       }

@@ -1,0 +1,207 @@
+{% extends parentLayout or '_templates/layout-appointment.html' %}
+
+{% set pageHeading = "Provide special appointment details" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{# Change the form action to go to the special-appointment handler #}
+{# Append referrerChain so the route can thread it through to the final confirm step #}
+{% set formAction = "./edit-answer" | urlWithReferrer(referrerChain) %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+    {{ checkboxes({
+      name: "appointment[specialAppointment][supportTypes]",
+      fieldset: {
+        legend: {
+          text: "Why does " + (participant | getFullName) + " need additional support?",
+          size: "m",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "Select all that apply. When describing support required, include any special requests made by the participant or their carer."
+      },
+      values: data.appointment.specialAppointment.supportTypes,
+      items: [
+        {
+          value: "Breast implants",
+          text: "Breast implants",
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][implantDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.implantDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Implanted medical devices",
+          text: "Implanted medical devices",
+          hint: {
+            text: "For example, a pacemaker"
+          },
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][implantedMedicalDevicesDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.implantedMedicalDevicesDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Vision",
+          text: "Vision",
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][visionDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.visionDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Hearing",
+          text: "Hearing",
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][hearingDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.hearingDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Physical restriction",
+          text: "Physical restriction",
+          hint: {
+            text: "For example, mobility or dexterity"
+          },
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][physicalRestrictionDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.physicalRestrictionDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Social, emotional, and mental health",
+          text: "Social, emotional, and mental health",
+          hint: {
+            text: "For example, neurodiversity or agoraphobia"
+          },
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][socialEmotionalMentalHealthDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.socialEmotionalMentalHealthDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Language",
+          text: "Language",
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][languageDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.languageDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Gender identity",
+          text: "Gender identity",
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][genderIdentityDetails]",
+              label: {
+                text: "Describe support required (optional)"
+              },
+              value: data.appointment.specialAppointment.genderIdentityDetails,
+              lines: 3
+            })
+          }
+        },
+        {
+          value: "Other",
+          text: "Other",
+          conditional: {
+            html: textarea({
+              name: "appointment[specialAppointment][otherDetails]",
+              label: {
+                text: "Describe support required"
+              },
+              value: data.appointment.specialAppointment.otherDetails,
+              lines: 3
+            })
+          }
+        }
+      ]
+    }) }}
+
+    {# Temporary reasons not being built just yet #}
+    {# {{ radios({
+      name: "appointment[specialAppointment][temporaryReasons]",
+      value: data.appointment.specialAppointment.temporaryReasons,
+      fieldset: {
+        legend: {
+          text: "Are any of these reasons temporary?",
+          size: "m",
+          isPageHeading: false
+        }
+      },
+      hint: {
+        text: "This includes issues that are likely to be resolved by their next mammogram, for example a broken foot or a short-term eye problem."
+      },
+      items: [
+        {
+          value: "yes",
+          text: "Yes"
+        },
+        {
+          value: "no",
+          text: "No"
+        }
+      ]
+    } | populateErrors) }} #}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Continue"
+      }) }}
+
+    </div>
+
+{% endblock %}

@@ -8,19 +8,19 @@
 
 {% block pageContent %}
 
-  {% set isAwaitingPriors = event | awaitingPriors %}
-  {% set hasUserRead = event | userHasReadEvent %}
-  {% set isDeferredCase = event | isDeferred %}
+  {% set isAwaitingPriors = appointment | awaitingPriors %}
+  {% set hasUserRead = appointment | userHasReadAppointment %}
+  {% set isDeferredCase = appointment | isDeferred %}
 
   <span class="nhsuk-caption-l">
     {{ participant | getFullName }}
   </span>
 
   {% if isDeferredCase and not hasUserRead %}
-    {# Event has been deferred - show deferral summary #}
+    {# Appointment has been deferred - show deferral summary #}
     <h1 class="nhsuk-heading-l">Your opinion</h1>
 
-    {% set deferral = event.imageReading.deferral %}
+    {% set deferral = appointment.imageReading.deferral %}
     {% set canUndo = deferral.deferredBy == data.currentUser.id %}
 
     {% set deferralSummaryHtml %}
@@ -70,14 +70,14 @@
     }) }}
 
   {% elseif isAwaitingPriors and not hasUserRead %}
-    {# Event is awaiting priors - show as the reader's opinion #}
+    {# Appointment is awaiting priors - show as the reader's opinion #}
     <h1 class="nhsuk-heading-l">Your opinion</h1>
 
-    {% set canUndo = event | userRequestedPriors(data.currentUser.id) %}
+    {% set canUndo = appointment | userRequestedPriors(data.currentUser.id) %}
 
     {# Get the request reason from any pending or requested mammogram (same reason applied to all) #}
     {% set requestReason = "" %}
-    {% for mammogram in event.previousMammograms %}
+    {% for mammogram in appointment.previousMammograms %}
       {% if (mammogram.requestStatus == "pending" or mammogram.requestStatus == "requested") and mammogram.requestReason %}
         {% set requestReason = mammogram.requestReason %}
       {% endif %}
@@ -135,12 +135,12 @@
     {# Read summary card #}
     {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
     {% if withImages %}
-      {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+      {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
       {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% endif %}
 
     {% set readSummaryHtml %}
-      {% set read = event | getReadForUser %}
+      {% set read = appointment | getReadForUser %}
       {% set allowEdits = true %}
       {% set changeOpinionUrl = "./opinion" %}
       {% set showAnnotationImages = withImages %}
@@ -156,7 +156,7 @@
     }) }}
 
     {# Other readers' assessments (for testing/debugging) #}
-    {% set otherReads = event | getOtherReads %}
+    {% set otherReads = appointment | getOtherReads %}
     {% if otherReads | length > 0 %}
       {% for otherRead in otherReads %}
         {% set readerName = otherRead.readerId | getUsername %}

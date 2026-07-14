@@ -89,10 +89,10 @@ When a form flow is complete and the modal should close, wrap the redirect URL w
 const { modalBreakout } = require('../lib/utils/referrers')
 
 // In a route handler:
-res.redirect(modalBreakout(eventUrl))
+res.redirect(modalBreakout(appointmentUrl))
 
 // Or combined with getReturnUrl:
-res.redirect(modalBreakout(getReturnUrl(eventUrl, req.query.referrerChain)))
+res.redirect(modalBreakout(getReturnUrl(appointmentUrl, req.query.referrerChain)))
 ```
 
 `modalBreakout` appends `?_modal_breakout=1` to the URL. The middleware intercepts this and returns a 200 `<div data-modal-navigate="...">` fragment instead of a real redirect. `modal.js` reads this, closes the modal, and navigates the browser to the destination — preserving any flash messages that would otherwise be consumed.

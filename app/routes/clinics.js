@@ -4,16 +4,16 @@ const dayjs = require('dayjs')
 const {
   getClinic,
   getFilteredClinics,
-  getClinicEvents
+  getClinicAppointments
 } = require('../lib/utils/clinics')
-const { filterEventsByStatus } = require('../lib/utils/status')
+const { filterAppointmentsByStatus } = require('../lib/utils/status')
 const {
   getReturnUrl,
   urlWithReferrer,
   appendReferrer
 } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
-const { updateEventStatus } = require('../lib/utils/event-data')
+const { updateAppointmentStatus } = require('../lib/utils/appointment-data')
 
 /**
  * Get clinic and its related data from id
@@ -25,20 +25,20 @@ function getClinicData(data, clinicId) {
     return null
   }
 
-  // Get all events for this clinic
-  const clinicEvents = data.events.filter((e) => e.clinicId === clinic.id)
+  // Get all appointments for this clinic
+  const clinicAppointments = data.appointments.filter((e) => e.clinicId === clinic.id)
 
-  // Get all participants for these events and add their details to the events
-  const eventsWithParticipants = clinicEvents.map((event) => {
-    const participant = getParticipant(data, event.participantId)
+  // Get all participants for these appointments and add their details to the appointments
+  const appointmentsWithParticipants = clinicAppointments.map((appointment) => {
+    const participant = getParticipant(data, appointment.participantId)
     return {
-      ...event,
+      ...appointment,
       participant
     }
   })
 
-  // Sort events by appointment time
-  const sortedEvents = [...eventsWithParticipants].sort((a, b) => {
+  // Sort appointments by appointment time
+  const sortedAppointments = [...appointmentsWithParticipants].sort((a, b) => {
     return new Date(a.timing.startTime) - new Date(b.timing.startTime)
   })
 
@@ -49,7 +49,7 @@ function getClinicData(data, clinicId) {
 
   return {
     clinic,
-    events: sortedEvents,
+    appointments: sortedAppointments,
     unit
   }
 }
@@ -89,13 +89,13 @@ module.exports = (router) => {
         (u) => u.id === clinic.breastScreeningUnitId
       )
       const location = unit.locations.find((l) => l.id === clinic.locationId)
-      const events = getClinicEvents(data.events, clinic.id)
+      const appointments = getClinicAppointments(data.appointments, clinic.id)
 
       return {
         ...clinic,
         unit,
         location,
-        events
+        appointments
       }
     })
 
@@ -111,39 +111,39 @@ module.exports = (router) => {
   })
 
   // Handle check-in
-  router.get('/clinics/:clinicId/check-in/:eventId', (req, res) => {
-    const { clinicId, eventId } = req.params
+  router.get('/clinics/:clinicId/check-in/:appointmentId', (req, res) => {
+    const { clinicId, appointmentId } = req.params
     const data = req.session.data
 
     // Get current filter from query param, or default to the current page's filter
     const currentFilter =
       req.query.filter || req.query.currentFilter || 'remaining'
 
-    // Find the event
-    const eventIndex = data.events.findIndex(
-      (e) => e.id === eventId && e.clinicId === clinicId
+    // Find the appointment
+    const appointmentIndex = data.appointments.findIndex(
+      (e) => e.id === appointmentId && e.clinicId === clinicId
     )
 
-    if (eventIndex === -1) {
+    if (appointmentIndex === -1) {
       if (req.headers.accept?.includes('application/json')) {
-        return res.status(404).json({ error: 'Event not found' })
+        return res.status(404).json({ error: 'Appointment not found' })
       }
       return res.redirect(`/clinics/${clinicId}/${currentFilter}`)
     }
 
-    // Update the event status
-    const event = data.events[eventIndex]
+    // Update the appointment status
+    const appointment = data.appointments[appointmentIndex]
 
     // Only allow check-in if currently scheduled
-    if (event.status !== 'event_scheduled') {
+    if (appointment.status !== 'appointment_scheduled') {
       if (req.headers.accept?.includes('application/json')) {
-        return res.status(400).json({ error: 'Event cannot be checked in' })
+        return res.status(400).json({ error: 'Appointment cannot be checked in' })
       }
       return res.redirect(`/clinics/${clinicId}/${currentFilter}`)
     }
 
-    // Update the event
-    updateEventStatus(data, eventId, 'event_checked_in')
+    // Update the appointment
+    updateAppointmentStatus(data, appointmentId, 'appointment_checked_in')
 
     // Save back to session
     req.session.data = data
@@ -152,7 +152,7 @@ module.exports = (router) => {
     if (req.headers.accept?.includes('application/json')) {
       return res.json({
         status: 'success',
-        event: data.events[eventIndex]
+        appointment: data.appointments[appointmentIndex]
       })
     }
 
@@ -182,8 +182,8 @@ module.exports = (router) => {
     }
 
     const clinicData = getClinicData(req.session.data, req.params.id)
-    let remainingCount = filterEventsByStatus(
-      clinicData.events,
+    let remainingCount = filterAppointmentsByStatus(
+      clinicData.appointments,
       'remaining'
     ).length
 
@@ -207,13 +207,13 @@ module.exports = (router) => {
       return res.redirect('/clinics')
     }
 
-    const filteredEvents = filterEventsByStatus(clinicData.events, filter)
+    const filteredAppointments = filterAppointmentsByStatus(clinicData.appointments, filter)
 
     res.render('clinics/show', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allEvents: clinicData.events,
-      filteredEvents,
+      allAppointments: clinicData.appointments,
+      filteredAppointments,
       status: filter,
       unit: clinicData.unit,
       currentFilter: filter,

@@ -21,7 +21,7 @@
 
   {# Get comparison info — pass full imageReadingTemp so discordance can check TR views and RFA breast assessments #}
   {% set secondOpinion = data.imageReadingTemp.opinion %}
-  {% set comparisonInfo = event | getComparisonInfo(data.imageReadingTemp) %}
+  {% set comparisonInfo = appointment | getComparisonInfo(data.imageReadingTemp) %}
   {% set firstRead = comparisonInfo.firstRead %}
   {% set firstOpinion = comparisonInfo.firstOpinion %}
   {% set comparisonType = comparisonInfo.type %}
@@ -96,7 +96,7 @@
   {# Get image paths for annotation thumbnails #}
   {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages %}
-    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
   {% endif %}
 

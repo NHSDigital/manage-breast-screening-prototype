@@ -8,7 +8,7 @@
 const {
   EPISODE_STAGES,
   getEpisode,
-  getEpisodeEvents,
+  getEpisodeAppointments,
   getEpisodeReadingStatus
 } = require('../lib/utils/episodes')
 const { getParticipant } = require('../lib/utils/participants')
@@ -64,9 +64,9 @@ module.exports = (router) => {
     if (!episode) return next()
 
     // Each appointment with the clinic it sat in, so the page can link back
-    const appointments = getEpisodeEvents(data, episode).map((event) => ({
-      event,
-      clinic: getClinic(data, event.clinicId)
+    const appointments = getEpisodeAppointments(data, episode).map((appointment) => ({
+      appointment,
+      clinic: getClinic(data, appointment.clinicId)
     }))
 
     res.render('episodes/show', {

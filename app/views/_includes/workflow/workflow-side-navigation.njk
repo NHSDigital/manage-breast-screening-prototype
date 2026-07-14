@@ -1,10 +1,10 @@
 {# app/views/_includes/workflow/workflow-side-nav.njk #}
 
 {# Tracking of status #}
-{% set identityStageCompleted = true if data.event.workflowStatus['confirm-identity'] == 'completed' else false %}
-{% set medicalInformationStageCompleted = true if data.event.workflowStatus['review-medical-information'] == 'completed' else false %}
-{% set awaitingImagesStageCompleted = true if data.event.workflowStatus['awaiting-images'] == 'completed' else false %}
-{% set imagesStageCompleted = true if data.event.workflowStatus['take-images'] == 'completed' else false %}
+{% set identityStageCompleted = true if data.appointment.workflowStatus['confirm-identity'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if data.appointment.workflowStatus['review-medical-information'] == 'completed' else false %}
+{% set awaitingImagesStageCompleted = true if data.appointment.workflowStatus['awaiting-images'] == 'completed' else false %}
+{% set imagesStageCompleted = true if data.appointment.workflowStatus['take-images'] == 'completed' else false %}
 
 {# SVG for completed items #}
 {% set tickSvg %}
@@ -33,8 +33,8 @@
 
     <ol class="app-workflow-side-nav__list">
       {% for item in workflowSteps %}
-        {% set href = '/clinics/' + clinicId + '/events/' + event.id + '/' + item.id %}
-        {% set isCompleted = data.event.workflowStatus[item.id] == 'completed' %}
+        {% set href = '/clinics/' + clinicId + '/appointments/' + appointment.id + '/' + item.id %}
+        {% set isCompleted = data.appointment.workflowStatus[item.id] == 'completed' %}
         {% set isCurrent = item.id == activeWorkflowStep %}
         {% set isDisabled = false %}
 
@@ -90,8 +90,8 @@
   <div class="nhsuk-u-margin-top-7">
     <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-3">
     <p class="nhsuk-u-margin-bottom-0 nhsuk-body-s">
-      {% set appointmentNoteUrl = '/clinics/' + clinicId + '/events/' + event.id + '/appointment-note' %}
-      {% set appointmentNoteLinkText = 'View or change appointment note' if event.appointmentNote else 'Add appointment note' %}
+      {% set appointmentNoteUrl = '/clinics/' + clinicId + '/appointments/' + appointment.id + '/appointment-note' %}
+      {% set appointmentNoteLinkText = 'View or change appointment note' if appointment.appointmentNote else 'Add appointment note' %}
       {{ appLink({
         text: appointmentNoteLinkText,
         href: appointmentNoteUrl | urlWithReferrer(currentUrl)

@@ -6,7 +6,7 @@
 {% set hideStatusBar = true %}
 {% set hideBackLink = true %}
 
-{% set pageHeading = "You have skipped " + session.skippedEvents.length + " " + ("case" | pluralise(session.skippedEvents.length)) %}
+{% set pageHeading = "You have skipped " + session.skippedAppointments.length + " " + ("case" | pluralise(session.skippedAppointments.length)) %}
 
 {% block pageContent %}
 
@@ -19,9 +19,9 @@
     <p>An opinion must be given on all cases before this session can be completed.</p>
 
     <div class="nhsuk-button-group">
-      {% if firstSkippedEventId %}
+      {% if firstSkippedAppointmentId %}
         {{ button({
-        text: "Read skipped " + ("case" | pluralise(session.skippedEvents.length)),          href: "/reading/session/" + sessionId + "/events/" + firstSkippedEventId
+        text: "Read skipped " + ("case" | pluralise(session.skippedAppointments.length)),          href: "/reading/session/" + sessionId + "/appointments/" + firstSkippedAppointmentId
         }) }}
       {% endif %}
       <a href="/reading/session/{{ sessionId }}" class="nhsuk-link nhsuk-button-group__item">Go to session overview</a>

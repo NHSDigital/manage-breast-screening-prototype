@@ -7,7 +7,7 @@ const {
 } = require('../lib/utils/participants')
 const {
   getEpisodesForParticipant,
-  getEpisodeEvents,
+  getEpisodeAppointments,
   getEpisodeMammogramDate
 } = require('../lib/utils/episodes')
 const { findById } = require('../lib/utils/arrays')
@@ -132,14 +132,14 @@ module.exports = (router) => {
         // no images (not yet screened, missed, cancelled) dates by its
         // appointment or its own dates instead - but never counts as screened
         const mammogramDate = getEpisodeMammogramDate(episode)
-        const events = getEpisodeEvents(data, episode)
-        const latestEvent = events[events.length - 1]
+        const appointments = getEpisodeAppointments(data, episode)
+        const latestAppointment = appointments[appointments.length - 1]
 
         return {
           episode,
           date:
             mammogramDate ||
-            latestEvent?.timing?.startTime ||
+            latestAppointment?.timing?.startTime ||
             episode.closedDate ||
             episode.openedDate,
           wasScreened: Boolean(mammogramDate)
