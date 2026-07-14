@@ -133,7 +133,7 @@
 
                 {# Status #}
                 <td data-mammogram-status="{{ mammogram.id }}">
-                  {{ ("prior_" + mammogram.requestStatus) | toTag }}
+                  {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
                   {% if mammogram.requestStatus == "pending" %}
                     {# Flagged by reader — show who requested and reason #}
                     {% if mammogram.requestedDate %}

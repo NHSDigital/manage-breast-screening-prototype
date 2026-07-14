@@ -32,7 +32,7 @@ module.exports = [
         },
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'appointment_checked_in',
+          status: 'checked_in',
           approximateTime: '10:30'
         }
       }
@@ -53,7 +53,7 @@ module.exports = [
         defaultRiskLevel: 'routine',
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'appointment_complete',
+          status: 'complete',
           approximateTime: '9:45'
         },
         // Force 100% of all medical information types for testing
@@ -96,7 +96,7 @@ module.exports = [
         missingViews: [],
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'appointment_in_progress',
+          status: 'in_progress',
           approximateTime: '11:30'
           // slotIndex: 20,
         },

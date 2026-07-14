@@ -6,8 +6,8 @@
 {% from '_components/summary-list/macro.njk' import appSummaryListRow %}
 
 {% set tagClasses %}
-  {% if params.appointment.status | getStatusTagColour %}
-    nhsuk-tag--{{ params.appointment.status | getStatusTagColour}}
+  {% if params.appointment.status | getStatusTagColour('appointment') %}
+    nhsuk-tag--{{ params.appointment.status | getStatusTagColour('appointment')}}
   {% endif %}
 {% endset %}
 
@@ -29,7 +29,7 @@
 
 <div data-appointment-status-container="{{ params.appointment.id }}">
   {{ tag({
-    text: params.appointment.status | getStatusText,
+    text: params.appointment.status | getStatusText('appointment'),
     classes: tagClasses | trim
   })}}
 
@@ -39,7 +39,7 @@
   {% endset %}
 
   {% set foobar %}
-    {% if params.appointment.status === 'appointment_scheduled' %}
+    {% if params.appointment.status === 'scheduled' %}
       <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
         {% if confirmIdentityEnabled %}
           {# Modal-based check-in #}

@@ -96,7 +96,7 @@
     {% set mammogram = appointment.previousMammograms[0] %}
     <p>
       {{ mammogram | summarisePriorMammogram }}
-      {{ ("prior_" + mammogram.requestStatus) | toTag }}
+      {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
       {% if mammogram.requestedBy or mammogram.requestReason %}
         <br>
         <span class="nhsuk-u-secondary-text-colour">
@@ -110,7 +110,7 @@
       {% for mammogram in appointment.previousMammograms %}
         <li>
           {{ mammogram | summarisePriorMammogram }}
-          {{ ("prior_" + mammogram.requestStatus) | toTag }}
+          {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
           {% if mammogram.requestedBy or mammogram.requestReason %}
             <br>
             <span class="nhsuk-u-secondary-text-colour">

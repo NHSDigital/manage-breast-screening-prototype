@@ -464,7 +464,7 @@ const seedTechnicalRecallRescreen = ({
     clinic,
     episodeId: episode.id,
     outcomeWeights: config.screening.outcomes[clinic.clinicType],
-    forceStatus: 'appointment_scheduled',
+    forceStatus: 'scheduled',
     seedDataProfile
   })
 

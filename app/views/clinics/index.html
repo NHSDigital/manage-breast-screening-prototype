@@ -100,7 +100,7 @@
               {{ appointments.length }}
             </td>
             <td class="app-clinics-table__status-column">
-              {{ clinic.status | toTag }}
+              {{ clinic.status | toTag({ vocabulary: 'clinic' }) }}
             </td>
           </tr>
         {% endfor %}

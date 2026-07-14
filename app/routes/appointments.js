@@ -165,11 +165,11 @@ module.exports = (router) => {
 
     // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
     if (
-      appointment?.status === 'appointment_scheduled' ||
-      appointment?.status === 'appointment_checked_in'
+      appointment?.status === 'scheduled' ||
+      appointment?.status === 'checked_in'
     ) {
       // Update status to in progress
-      updateAppointmentStatus(data, req.params.appointmentId, 'appointment_in_progress')
+      updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
       // Store session details
       updateAppointmentData(data, req.params.appointmentId, {
@@ -237,7 +237,7 @@ module.exports = (router) => {
       `Resuming appointment for appointment ${req.params.appointmentId} by user ${currentUser.id}`
     )
 
-    if (appointment?.status === 'appointment_paused') {
+    if (appointment?.status === 'paused') {
       // Get existing session details
       const existingDetails = appointment.sessionDetails || {}
 
@@ -253,7 +253,7 @@ module.exports = (router) => {
       ]
 
       // Update status to in progress
-      updateAppointmentStatus(data, req.params.appointmentId, 'appointment_in_progress')
+      updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
       // Update session details - preserve original starter
       updateAppointmentData(data, req.params.appointmentId, {
@@ -315,7 +315,7 @@ module.exports = (router) => {
         ]
 
         // Update status to paused and record pause details
-        updateAppointmentStatus(data, appointmentId, 'appointment_paused')
+        updateAppointmentStatus(data, appointmentId, 'paused')
         updateAppointmentData(data, appointmentId, {
           sessionDetails: {
             startedAt: existingDetails.startedAt || null,
@@ -376,13 +376,13 @@ module.exports = (router) => {
       const exitAction = data.exitAction
 
       // Only allow exiting if the appointment is currently in progress
-      if (appointment?.status === 'appointment_in_progress') {
+      if (appointment?.status === 'in_progress') {
         if (exitAction === 'discard') {
           // Discard changes - reset workflow and revert to checked in
           delete data.appointment.workflowStatus
 
           // Revert status back to checked in
-          updateAppointmentStatus(data, appointmentId, 'appointment_checked_in')
+          updateAppointmentStatus(data, appointmentId, 'checked_in')
 
           // Clear session details
           updateAppointmentData(data, appointmentId, {
@@ -436,7 +436,7 @@ module.exports = (router) => {
           })
 
           // Update status to paused and record pause details
-          updateAppointmentStatus(data, appointmentId, 'appointment_paused')
+          updateAppointmentStatus(data, appointmentId, 'paused')
           updateAppointmentData(data, appointmentId, {
             sessionDetails: {
               startedAt: existingDetails.startedAt || null,
@@ -595,8 +595,8 @@ module.exports = (router) => {
         res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}`)
       } else if (canAppointmentGoAhead === 'yes') {
         // Check-in participant if they're not already checked in
-        if (appointment?.status !== 'appointment_checked_in') {
-          updateAppointmentStatus(data, appointmentId, 'appointment_checked_in')
+        if (appointment?.status !== 'checked_in') {
+          updateAppointmentStatus(data, appointmentId, 'checked_in')
         }
         res.redirect(
           `/clinics/${clinicId}/appointments/${appointmentId}/medical-information-check`
@@ -757,7 +757,7 @@ module.exports = (router) => {
         // Save changes and update status
         saveTempAppointmentToAppointment(data)
         saveTempParticipantToParticipant(data)
-        updateAppointmentStatus(data, appointmentId, 'appointment_attended_not_screened')
+        updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
 
         // Flash success message
         const successMessage = `
@@ -840,7 +840,7 @@ module.exports = (router) => {
           // Save changes and update status
           saveTempAppointmentToAppointment(data)
           saveTempParticipantToParticipant(data)
-          updateAppointmentStatus(data, appointmentId, 'appointment_attended_not_screened')
+          updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
 
           // Flash success message
           const successMessage = `
@@ -1827,7 +1827,7 @@ module.exports = (router) => {
       saveTempParticipantToParticipant(data)
 
       // Update appointment status to indicate cannot proceed
-      updateAppointmentStatus(data, appointmentId, 'appointment_cancelled')
+      updateAppointmentStatus(data, appointmentId, 'cancelled')
 
       // Set success message based on choice
       let successMessage
@@ -3082,7 +3082,7 @@ module.exports = (router) => {
         // Get participant info BEFORE saving (which clears temp data)
         saveTempAppointmentToAppointment(data)
         saveTempParticipantToParticipant(data)
-        updateAppointmentStatus(data, appointmentId, 'appointment_attended_not_screened')
+        updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
 
         // Set success message based on choice
         let successMessage
@@ -3129,7 +3129,7 @@ module.exports = (router) => {
     updateAppointmentStatus(
       data,
       appointmentId,
-      isIncompleteMammography ? 'appointment_partially_screened' : 'appointment_complete'
+      isIncompleteMammography ? 'partially_screened' : 'complete'
     )
 
     const successMessage = `
@@ -3357,7 +3357,7 @@ module.exports = (router) => {
         saveTempParticipantToParticipant(data)
 
         // Update appointment status to cancelled
-        updateAppointmentStatus(data, appointmentId, 'appointment_cancelled')
+        updateAppointmentStatus(data, appointmentId, 'cancelled')
 
         // Set success message based on choice
         let successMessage
@@ -3410,7 +3410,7 @@ module.exports = (router) => {
       saveTempParticipantToParticipant(data)
 
       // Update appointment status to rescheduled
-      updateAppointmentStatus(data, appointmentId, 'appointment_rescheduled')
+      updateAppointmentStatus(data, appointmentId, 'rescheduled')
 
       const successMessage = `Appointment cancelled and a reschedule request has been submitted for ${participantName}. <a href="${participantAppointmentUrl}" class="app-nowrap">View their appointment</a>`
 
@@ -3427,7 +3427,7 @@ module.exports = (router) => {
     const data = req.session.data
     const appointment = getAppointment(data, appointmentId)
 
-    if (appointment && appointment.status === 'appointment_cancelled') {
+    if (appointment && appointment.status === 'cancelled') {
       // Clear cancellation data
       delete data.appointment.cancellation
       delete data.appointment.reschedule
@@ -3436,7 +3436,7 @@ module.exports = (router) => {
       saveTempAppointmentToAppointment(data)
 
       // Revert to scheduled status
-      updateAppointmentStatus(data, appointmentId, 'appointment_scheduled')
+      updateAppointmentStatus(data, appointmentId, 'scheduled')
 
       req.flash('success', 'Appointment cancellation undone')
     }
@@ -3457,7 +3457,7 @@ module.exports = (router) => {
       const data = req.session.data
       const appointment = getAppointment(data, appointmentId)
 
-      if (appointment && appointment.status === 'appointment_rescheduled') {
+      if (appointment && appointment.status === 'rescheduled') {
         // Clear reschedule and cancellation data
         delete data.appointment.cancellation
         delete data.appointment.reschedule
@@ -3466,7 +3466,7 @@ module.exports = (router) => {
         saveTempAppointmentToAppointment(data)
 
         // Revert to scheduled status
-        updateAppointmentStatus(data, appointmentId, 'appointment_scheduled')
+        updateAppointmentStatus(data, appointmentId, 'scheduled')
 
         req.flash('success', 'Appointment cancellation undone')
       }
@@ -3486,14 +3486,14 @@ module.exports = (router) => {
     const data = req.session.data
     const appointment = getAppointment(data, appointmentId)
 
-    if (appointment && appointment.status === 'appointment_checked_in') {
+    if (appointment && appointment.status === 'checked_in') {
       const participantName = getFullName(data.participant)
 
       // Save changes
       saveTempAppointmentToAppointment(data)
 
       // Revert to scheduled status
-      updateAppointmentStatus(data, appointmentId, 'appointment_scheduled')
+      updateAppointmentStatus(data, appointmentId, 'scheduled')
 
       req.flash(
         'success',

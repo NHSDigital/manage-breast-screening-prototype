@@ -56,7 +56,7 @@
 }) %} #}
 
 {% set statusHtml %}
-  {{ appointment.status | getStatusText | default(appointment.status | formatWords | sentenceCase) }}
+  {{ appointment.status | getStatusText('appointment') | default(appointment.status | formatWords | sentenceCase) }}
 
   {% if appointment | isSpecialAppointment %}
   {# <br> #}

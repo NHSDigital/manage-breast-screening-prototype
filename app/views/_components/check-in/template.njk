@@ -23,7 +23,7 @@
 {% endif %}
 
 {# Only show check-in for scheduled appointments #}
-{% if params.appointment.status === 'appointment_scheduled' %}
+{% if params.appointment.status === 'scheduled' %}
   {% set checkInText %}
     Check in{{ (" " + (params.participant | getShortName)) | asVisuallyHiddenText if params.participant }}
   {% endset %}

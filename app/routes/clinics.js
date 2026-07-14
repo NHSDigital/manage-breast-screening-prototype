@@ -135,7 +135,7 @@ module.exports = (router) => {
     const appointment = data.appointments[appointmentIndex]
 
     // Only allow check-in if currently scheduled
-    if (appointment.status !== 'appointment_scheduled') {
+    if (appointment.status !== 'scheduled') {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(400).json({ error: 'Appointment cannot be checked in' })
       }
@@ -143,7 +143,7 @@ module.exports = (router) => {
     }
 
     // Update the appointment
-    updateAppointmentStatus(data, appointmentId, 'appointment_checked_in')
+    updateAppointmentStatus(data, appointmentId, 'checked_in')
 
     // Save back to session
     req.session.data = data

@@ -8,31 +8,31 @@ const dayjs = require('dayjs')
  * @type {object}
  */
 const STATUS_GROUPS = {
-  not_started: ['appointment_scheduled', 'appointment_checked_in'],
-  completed: ['appointment_complete', 'appointment_partially_screened'],
+  not_started: ['scheduled', 'checked_in'],
+  completed: ['complete', 'partially_screened'],
   final: [
-    'appointment_complete',
-    'appointment_partially_screened',
-    'appointment_did_not_attend',
-    'appointment_attended_not_screened',
-    'appointment_cancelled',
-    'appointment_rescheduled'
+    'complete',
+    'partially_screened',
+    'did_not_attend',
+    'attended_not_screened',
+    'cancelled',
+    'rescheduled'
   ],
-  // Final statuses for seed data generation - excludes appointment_rescheduled which is user-initiated only
+  // Final statuses for seed data generation - excludes rescheduled which is user-initiated only
   final_seed_data: [
-    'appointment_complete',
-    'appointment_partially_screened',
-    'appointment_did_not_attend',
-    'appointment_attended_not_screened',
-    'appointment_cancelled'
+    'complete',
+    'partially_screened',
+    'did_not_attend',
+    'attended_not_screened',
+    'cancelled'
   ],
   active: [
-    'appointment_scheduled',
-    'appointment_checked_in',
-    'appointment_in_progress',
-    'appointment_paused'
+    'scheduled',
+    'checked_in',
+    'in_progress',
+    'paused'
   ],
-  eligible_for_reading: ['appointment_complete', 'appointment_partially_screened']
+  eligible_for_reading: ['complete', 'partially_screened']
 }
 
 /**
@@ -92,7 +92,7 @@ const isCompleted = (input) => {
 const isInProgress = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'appointment_in_progress' || status === 'appointment_paused'
+  return status === 'in_progress' || status === 'paused'
 }
 
 /**
@@ -104,7 +104,7 @@ const isInProgress = (input) => {
 const isPaused = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'appointment_paused'
+  return status === 'paused'
 }
 
 /**
@@ -116,7 +116,7 @@ const isPaused = (input) => {
 const isInProgressNotPaused = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'appointment_in_progress'
+  return status === 'in_progress'
 }
 
 /**
@@ -191,129 +191,147 @@ const eligibleForReading = (appointment) => {
   )
 }
 
+// How statuses are shown, one vocabulary per entity. Each entry gives the
+// tag colour and (where the label differs from sentence-cased words) the
+// label. Callers can name the vocabulary (toTag's vocabulary option, or the
+// second argument to the getters); without one, DEFAULT_VOCABULARY_ORDER
+// below decides which vocabulary wins a shared key.
+//
+// Keys are matched against snake_cased tag text as well as status keys -
+// the toTag filter tries the raw status first, then snakeCase(status), so
+// `"Waiting for 1st read" | toTag` reaches 'waiting_for_1st_read' here.
+// Check both forms before treating an entry as unused.
+const STATUS_TAGS = {
+  appointment: {
+    scheduled: { label: 'Scheduled', colour: 'blue' },
+    checked_in: { label: 'Checked in', colour: '' }, // no colour will get solid dark blue
+    in_progress: { label: 'In progress', colour: 'aqua-green' },
+    paused: { label: 'Paused', colour: 'orange' },
+    complete: { label: 'Screened', colour: 'green' },
+    partially_screened: { label: 'Partially screened', colour: 'orange' },
+    did_not_attend: { label: 'Did not attend', colour: 'red' },
+    attended_not_screened: { label: 'Attended not screened', colour: 'orange' },
+    cancelled: { label: 'Cancelled', colour: 'red' },
+    rescheduled: { label: 'Reschedule requested', colour: 'red' }
+  },
+  clinic: {
+    scheduled: { colour: 'blue' },
+    in_progress: { colour: 'blue' },
+    closed: { colour: 'grey' }
+  },
+  // Image reading results and outcomes
+  opinion: {
+    normal: { colour: 'green' },
+    recall_for_assessment: { label: 'Recall for assessment', colour: 'red' },
+    technical_recall: { label: 'Technical recall', colour: 'orange' },
+    clinical_recall: { label: 'Clinical recall', colour: 'yellow' },
+    abnormal: { label: 'Abnormal', colour: 'red' },
+    arbitration: { colour: 'orange' }
+  },
+  // Reading journey state - mostly derived, reached via snake-cased tag text
+  readingState: {
+    'waiting_for_1st_read': { colour: 'grey' },
+    'waiting_for_2nd_read': { colour: 'grey' },
+    'not_started': { colour: 'grey' },
+    'skipped': { colour: 'grey' },
+    'previously_skipped': { colour: 'grey' },
+    'not_read': { colour: 'white' },
+    'complete': { colour: 'green' },
+    'partial_first_read': { colour: 'blue' },
+    'first_read_complete': { colour: 'yellow' },
+    'partial_second_read': { colour: 'blue' },
+    'mixed_reads': { colour: 'yellow' },
+    'no_appointments': { colour: 'grey' },
+    'completed_(blind)': { colour: 'grey' },
+    'first_read': { colour: 'blue' },
+    'second_read': { colour: 'blue' }
+  },
+  // External prior mammogram request tracking (episode.priors)
+  priorsRequest: {
+    not_requested: { label: 'Not requested', colour: 'white' },
+    pending: { label: 'Needs requesting', colour: 'orange' },
+    requested: { label: 'Requested', colour: 'yellow' },
+    received: { label: 'Received', colour: 'green' },
+    not_available: { label: 'Not available', colour: 'grey' },
+    not_needed: { label: 'Not needed', colour: 'grey' }
+  },
+  // Ad-hoc case tags, reached via snake-cased tag text
+  misc: {
+    has_symptoms: { colour: 'yellow' },
+    highlight_to_image_readers: { colour: 'yellow' },
+    imperfect: { colour: 'orange' },
+    incomplete: { colour: 'orange' },
+    urgent: { colour: 'red' },
+    due_soon: { colour: 'orange' },
+    priors_requested: { colour: 'yellow' },
+    deferred: { colour: 'orange' }
+  }
+}
+
+// Which vocabulary wins a shared key when the caller doesn't name one.
+// Mirrors the behaviour of the old single shared map: unhinted 'in_progress'
+// and 'complete' read as clinic/reading values, and appointment statuses
+// resolve last - appointment call sites should pass the vocabulary.
+// priorsRequest is deliberately absent: its unprefixed keys are only
+// reachable with an explicit vocabulary, as they were only reachable with
+// the old prior_ display prefix before.
+const DEFAULT_VOCABULARY_ORDER = [
+  'clinic',
+  'readingState',
+  'opinion',
+  'misc',
+  'appointment'
+]
+
+/**
+ * Find a status's display entry, in one vocabulary or across the default
+ * search order
+ *
+ * @param {string} status - The status to look up
+ * @param {string} [vocabulary] - Vocabulary to look in (e.g. 'appointment')
+ * @returns {object | null} { label?, colour } or null if not found
+ */
+const findStatusTag = (status, vocabulary = null) => {
+  if (!status) return null
+
+  const key = String(status).toLowerCase()
+
+  if (vocabulary) {
+    return STATUS_TAGS[vocabulary]?.[key] || null
+  }
+
+  for (const name of DEFAULT_VOCABULARY_ORDER) {
+    if (STATUS_TAGS[name][key]) return STATUS_TAGS[name][key]
+  }
+  return null
+}
+
 /**
  * Map a status key to its NHS tag colour string
  *
  * @param {string} status - The status to map
+ * @param {string} [vocabulary] - Vocabulary to look in (e.g. 'appointment')
  * @returns {string} NHS tag colour (e.g. 'green', 'red', 'orange') or empty string for default blue
  * @example
- * getStatusTagColour('appointment_complete') // 'green'
- * getStatusTagColour('appointment_did_not_attend') // 'red'
+ * getStatusTagColour('complete', 'appointment') // 'green'
+ * getStatusTagColour('did_not_attend') // 'red'
  */
-const getStatusTagColour = (status) => {
-  // Keys are matched against snake_cased tag text as well as status keys -
-  // the toTag filter tries the raw status first, then snakeCase(status), so
-  // `"Waiting for 1st read" | toTag` reaches 'waiting_for_1st_read' here.
-  // Check both forms before treating an entry as unused.
-  const colourMap = {
-    // Clinic statuses
-    'scheduled': 'blue', // default blue
-    'in_progress': 'blue',
-    'closed': 'grey',
-
-    // Appointment statuses
-    'appointment_scheduled': 'blue', // default blue
-    'appointment_checked_in': '', // no colour will get solid dark blue
-    'appointment_in_progress': 'aqua-green',
-    'appointment_paused': 'orange',
-    'appointment_complete': 'green',
-    'appointment_partially_screened': 'orange',
-    'appointment_did_not_attend': 'red',
-    'appointment_cancelled': 'red',
-    'appointment_rescheduled': 'red',
-    'appointment_attended_not_screened': 'orange',
-
-    // Image reading results
-    'normal': 'green',
-    'recall_for_assessment': 'red',
-    'technical_recall': 'orange',
-    'clinical_recall': 'yellow',
-    'abnormal': 'red',
-
-    // Case metadata
-    'has_symptoms': 'yellow',
-    'highlight_to_image_readers': 'yellow',
-    'imperfect': 'orange',
-    'incomplete': 'orange',
-    'urgent': 'red',
-    'due_soon': 'orange',
-
-    // Reading statuses
-    'waiting_for_1st_read': 'grey',
-    'waiting_for_2nd_read': 'grey',
-    'not_started': 'grey',
-    'skipped': 'grey',
-    'previously_skipped': 'grey',
-    'not_read': 'white',
-    'complete': 'green',
-    'partial_first_read': 'blue',
-    'first_read_complete': 'yellow',
-    'partial_second_read': 'blue',
-    'mixed_reads': 'yellow',
-    'no_appointments': 'grey',
-
-    // Outcomes
-    'arbitration': 'orange',
-    'completed_(blind)': 'grey',
-
-    'first_read': 'blue',
-    'second_read': 'blue',
-
-    // Prior mammogram request statuses
-    'prior_not_requested': 'white',
-    'prior_pending': 'orange',
-    'prior_requested': 'yellow',
-    'priors_requested': 'yellow',
-    'deferred': 'orange',
-    'prior_received': 'green',
-    'prior_not_available': 'grey',
-    'prior_not_needed': 'grey'
-  }
-  return colourMap[status.toLowerCase()] || ''
+const getStatusTagColour = (status, vocabulary = null) => {
+  return findStatusTag(status, vocabulary)?.colour || ''
 }
 
 /**
  * Map a status key to its display text
  *
  * @param {string} status - The status to map
+ * @param {string} [vocabulary] - Vocabulary to look in (e.g. 'appointment')
  * @returns {string} Human-readable status text, or empty string if unknown
  * @example
- * getStatusText('appointment_complete') // 'Screened'
- * getStatusText('appointment_did_not_attend') // 'Did not attend'
+ * getStatusText('complete', 'appointment') // 'Screened'
+ * getStatusText('did_not_attend') // 'Did not attend'
  */
-const getStatusText = (status) => {
-  const statusMap = {
-    // Clinic statuses
-    appointment_scheduled: 'Scheduled',
-    // Appointment statuses
-    appointment_checked_in: 'Checked in',
-    appointment_in_progress: 'In progress',
-    appointment_paused: 'Paused',
-    appointment_complete: 'Screened',
-    appointment_partially_screened: 'Partially screened',
-    appointment_did_not_attend: 'Did not attend',
-    appointment_attended_not_screened: 'Attended not screened',
-    appointment_cancelled: 'Cancelled',
-    appointment_rescheduled: 'Reschedule requested',
-
-    // Image reading opinions
-    technical_recall: 'Technical recall',
-    clinical_recall: 'Clinical recall',
-    recall_for_assessment: 'Recall for assessment',
-    abnormal: 'Abnormal',
-
-    // Prior mammogram request statuses
-    prior_not_requested: 'Not requested',
-    prior_pending: 'Needs requesting',
-    prior_requested: 'Requested',
-    prior_received: 'Received',
-    prior_not_available: 'Not available',
-    prior_not_needed: 'Not needed'
-
-    // "technical-recall": 'Technical recall',
-    // "recall-for-assesment": 'Recall for assessment',
-  }
-  return statusMap[status] || ''
+const getStatusText = (status, vocabulary = null) => {
+  return findStatusTag(status, vocabulary)?.label || ''
 }
 
 /**
@@ -326,12 +344,12 @@ const getStatusText = (status) => {
 const filterAppointmentsByStatus = (appointments, filter) => {
   switch (filter) {
     case 'scheduled':
-      return appointments.filter((e) => e.status === 'appointment_scheduled')
+      return appointments.filter((e) => e.status === 'scheduled')
     case 'checked-in':
-      return appointments.filter((e) => e.status === 'appointment_checked_in')
+      return appointments.filter((e) => e.status === 'checked_in')
     case 'in-progress':
       return appointments.filter(
-        (e) => e.status === 'appointment_in_progress' || e.status === 'appointment_paused'
+        (e) => e.status === 'in_progress' || e.status === 'paused'
       )
     case 'complete':
       return appointments.filter((e) => isFinal(e))
@@ -392,6 +410,7 @@ module.exports = {
   isSpecialAppointment,
   hasAppointmentNote,
   hasSymptoms,
-  // Export groups for testing/reference
-  STATUS_GROUPS
+  // Export groups and display vocabularies for testing/reference
+  STATUS_GROUPS,
+  STATUS_TAGS
 }

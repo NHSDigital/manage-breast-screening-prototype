@@ -42,11 +42,12 @@
   <div class="app-header-with-status__status-tag">
     {% set statusTagId = "status-tag-" + appointment.id %}
     {{ appointment.status | toTag({
+      vocabulary: 'appointment',
       id: statusTagId,
       classes: "nhsuk-u-margin-bottom-2"
     }) }}
 
-    {% if appointment.status == 'appointment_scheduled' %}
+    {% if appointment.status == 'scheduled' %}
       {{ appCheckIn({
         clinicId: clinicId,
         appointment: appointment,

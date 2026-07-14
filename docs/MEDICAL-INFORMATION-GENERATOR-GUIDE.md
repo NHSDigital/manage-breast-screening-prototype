@@ -1145,7 +1145,7 @@ module.exports = [
 
         scheduling: {
           whenRelativeToToday: 0,
-          status: 'appointment_complete',
+          status: 'complete',
           approximateTime: '10:00'
         }
       }

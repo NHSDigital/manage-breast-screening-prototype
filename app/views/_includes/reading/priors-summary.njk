@@ -21,7 +21,7 @@
     {# Key: when the mammogram was taken (bold), with the status tag beneath #}
     {% set priorKeyHtml %}
       {% if priorDateLabel %}{{ priorDateLabel }}{% else %}Date not known{% endif %}
-      <span class="nhsuk-u-display-block nhsuk-u-margin-top-1">{{ ("prior_" + mammogram.requestStatus) | toTag }}</span>
+      <span class="nhsuk-u-display-block nhsuk-u-margin-top-1">{{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}</span>
     {% endset %}
 
     {# Request timeline - what has happened to the request and when #}

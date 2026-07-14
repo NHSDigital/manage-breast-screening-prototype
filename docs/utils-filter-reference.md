@@ -134,8 +134,8 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `isActive(input)` | Check if a status represents an active appointment | 134 |
 | `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 146 |
 | `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 178 |
-| `getStatusTagColour(status)` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('appointment_complete') // 'green'` | 194 |
-| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('appointment_complete') // 'Screened'` | 275 |
+| `getStatusTagColour(status)` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete') // 'green'` | 194 |
+| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('complete') // 'Screened'` | 275 |
 | `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 319 |
 | `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 345 |
 | `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 355 |

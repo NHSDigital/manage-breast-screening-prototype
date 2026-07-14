@@ -42,20 +42,20 @@ const determineAppointmentStatus = (
   // For future dates or future slots today, always return scheduled
   if (slotDateTime.isAfter(simulatedTime)) {
     return weighted.select({
-      appointment_scheduled: 0.95,
-      appointment_cancelled: 0.05
+      scheduled: 0.95,
+      cancelled: 0.05
     })
   }
 
   // For past dates, select from final statuses
-  // Note: appointment_partially_screened is excluded - determined by mammogram completeness instead
+  // Note: partially_screened is excluded - determined by mammogram completeness instead
   if (slotDate.isBefore(currentDate)) {
     const weights = attendanceWeights
     return weighted.select({
-      appointment_complete: weights.complete,
-      appointment_did_not_attend: weights.didNotAttend,
-      appointment_attended_not_screened: weights.attendedNotScreened,
-      appointment_cancelled: weights.cancelled
+      complete: weights.complete,
+      did_not_attend: weights.didNotAttend,
+      attended_not_screened: weights.attendedNotScreened,
+      cancelled: weights.cancelled
     })
   }
 
@@ -66,17 +66,17 @@ const determineAppointmentStatus = (
   if (minutesPassed <= 60) {
     // Within 30 mins of appointment
     return weighted.select({
-      appointment_checked_in: 0.3,
-      appointment_complete: 0.2,
-      appointment_attended_not_screened: 0.1,
-      appointment_scheduled: 0.4
+      checked_in: 0.3,
+      complete: 0.2,
+      attended_not_screened: 0.1,
+      scheduled: 0.4
     })
   } else {
     // More than 30 mins after appointment
     return weighted.select({
-      appointment_complete: 0.6,
-      appointment_attended_not_screened: 0.1,
-      appointment_scheduled: 0.2
+      complete: 0.6,
+      attended_not_screened: 0.1,
+      scheduled: 0.2
     })
   }
 }
@@ -118,7 +118,7 @@ const generateAppointment = ({
   const endDateTime = dayjs(slot.dateTime).add(duration, 'minute')
 
   // Attendance weights for seed data generation
-  // Note: appointment_partially_screened is determined by mammogram completeness, not selected here
+  // Note: partially_screened is determined by mammogram completeness, not selected here
   const attendanceWeights =
     clinic.clinicType === 'assessment'
       ? {
@@ -141,7 +141,7 @@ const generateAppointment = ({
 
   // Override to in_progress if requested
   if (forceInProgress) {
-    appointmentStatus = 'appointment_in_progress'
+    appointmentStatus = 'in_progress'
   }
 
   // Generate accession number for this appointment - format: ABCYYYYMMDD#####
@@ -172,7 +172,7 @@ const generateAppointment = ({
     },
     statusHistory: [
       {
-        status: 'appointment_scheduled',
+        status: 'scheduled',
         timestamp: dayjs(slot.dateTime).subtract(1, 'day').toISOString()
       }
     ]
@@ -184,13 +184,13 @@ const generateAppointment = ({
   }
 
   // For in-progress appointments, add session details with current time
-  if (appointmentStatus === 'appointment_in_progress') {
+  if (appointmentStatus === 'in_progress') {
     const clinicalUsers = users.filter((user) =>
       user.role.includes('clinician')
     )
     // For forced in-progress (test scenarios), use first user; otherwise random
     const randomUser =
-      forceStatus === 'appointment_in_progress'
+      forceStatus === 'in_progress'
         ? clinicalUsers[0]
         : faker.helpers.arrayElement(clinicalUsers.slice(1))
 
@@ -207,7 +207,7 @@ const generateAppointment = ({
     }
   }
 
-  if (!isPast && !forceInProgress && forceStatus !== 'appointment_in_progress') {
+  if (!isPast && !forceInProgress && forceStatus !== 'in_progress') {
     // Generate appointment note for scheduled appointments (5% probability)
     const appointmentNote = generateAppointmentNote({
       isScheduled: true,
@@ -227,7 +227,7 @@ const generateAppointment = ({
       details: {
         ...appointmentBase.details,
         notScreenedReason:
-          appointmentStatus === 'appointment_attended_not_screened'
+          appointmentStatus === 'attended_not_screened'
             ? faker.helpers.arrayElement(NOT_SCREENED_REASONS)
             : null
       }
@@ -296,10 +296,10 @@ const generateAppointment = ({
       // If mammogram is incomplete, status should be partially_screened
       // If mammogram is complete but status was partially_screened, change to complete
       const isIncomplete = !appointment.mammogramData.metadata.standardViewsCompleted
-      if (isIncomplete && appointment.status !== 'appointment_partially_screened') {
-        appointment.status = 'appointment_partially_screened'
-      } else if (!isIncomplete && appointment.status === 'appointment_partially_screened') {
-        appointment.status = 'appointment_complete'
+      if (isIncomplete && appointment.status !== 'partially_screened') {
+        appointment.status = 'partially_screened'
+      } else if (!isIncomplete && appointment.status === 'partially_screened') {
+        appointment.status = 'complete'
       }
 
       // Add machine room for hospital locations
@@ -341,7 +341,7 @@ const generateAppointment = ({
 
     // Generate medical information for in-progress appointments too
     // (they would have collected this during check-in/pre-screening)
-    if (appointmentStatus === 'appointment_in_progress' && appointment.sessionDetails) {
+    if (appointmentStatus === 'in_progress' && appointment.sessionDetails) {
       const medicalInformation = generateMedicalInformation({
         addedByUserId: appointment.sessionDetails.startedBy,
         config: participant.config,
@@ -372,7 +372,7 @@ const generateAppointment = ({
     }
 
     // Add session details for attended-not-screened appointments
-    if (appointmentStatus === 'appointment_attended_not_screened') {
+    if (appointmentStatus === 'attended_not_screened') {
       const clinicalUsers = users.filter((user) =>
         user.role.includes('clinician')
       )
