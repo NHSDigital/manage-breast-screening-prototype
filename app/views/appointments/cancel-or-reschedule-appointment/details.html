@@ -17,7 +17,7 @@
 
   {{ checkboxes({
     name: "appointment[cancellation][reason]",
-    values: data.appointment.cancellation.reason,
+    values: appointment.cancellation.reason,
     fieldset: {
       legend: {
         text: "Why is this appointment not going ahead?",
@@ -38,7 +38,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.availabilityDetails,
+            value: appointment.cancellation.availabilityDetails,
             autocomplete: "off"
           })
         }
@@ -52,7 +52,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.movingDetails,
+            value: appointment.cancellation.movingDetails,
             autocomplete: "off"
           })
         }
@@ -66,7 +66,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.implantDetails,
+            value: appointment.cancellation.implantDetails,
             autocomplete: "off"
           })
         }
@@ -80,7 +80,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.mastectomyDetails,
+            value: appointment.cancellation.mastectomyDetails,
             autocomplete: "off"
           })
         }
@@ -94,7 +94,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.mammogramDetails,
+            value: appointment.cancellation.mammogramDetails,
             autocomplete: "off"
           })
         }
@@ -108,7 +108,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.medicalDetails,
+            value: appointment.cancellation.medicalDetails,
             autocomplete: "off"
           })
         }
@@ -122,7 +122,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.symptomaticDetails,
+            value: appointment.cancellation.symptomaticDetails,
             autocomplete: "off"
           })
         }
@@ -136,7 +136,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.mammographerDetails,
+            value: appointment.cancellation.mammographerDetails,
             autocomplete: "off"
           })
         }
@@ -150,7 +150,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.mammogramRoomDetails,
+            value: appointment.cancellation.mammogramRoomDetails,
             autocomplete: "off"
           })
         }
@@ -164,7 +164,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.technicalDetails,
+            value: appointment.cancellation.technicalDetails,
             autocomplete: "off"
           })
         }
@@ -181,7 +181,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.otherReasonDetails,
+            value: appointment.cancellation.otherReasonDetails,
             autocomplete: "off"
           })
         }
@@ -191,7 +191,7 @@
 
   {{ radios({
     name: "appointment[cancellation][reschedule]",
-    value: data.appointment.cancellation.reschedule,
+    value: appointment.cancellation.reschedule,
     fieldset: {
       legend: {
         text: "Should the appointment be rescheduled?",
@@ -223,7 +223,7 @@
             label: {
               text: "Provide details (optional)"
             },
-            value: data.appointment.cancellation.optOutDetails,
+            value: appointment.cancellation.optOutDetails,
             autocomplete: "off"
           })
         }

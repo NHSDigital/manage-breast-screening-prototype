@@ -2,7 +2,7 @@
 
 {% set pageHeading = "Confirm special appointment requirements" %}
 
-{% set isNoLongerSpecialAppointment = data.appointment.specialAppointment.supportTypes | length === 0 %}
+{% set isNoLongerSpecialAppointment = appointment.specialAppointment.supportTypes | length === 0 %}
 
 {% if isNoLongerSpecialAppointment %}
   {% set pageHeading = "Confirm " + (participant | getFullName) + " no longer needs additional support" %}

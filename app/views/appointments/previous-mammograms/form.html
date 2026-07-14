@@ -10,7 +10,7 @@
 
 {% block pageContent %}
 
-  {% set previousMammogramCount = data.appointment.previousMammograms | length %}
+  {% set previousMammogramCount = appointment.previousMammograms | length %}
 
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 

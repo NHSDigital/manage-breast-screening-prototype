@@ -1,10 +1,10 @@
 {# app/views/_includes/workflow/workflow-top-nav.njk #}
 
 {# Tracking of status #}
-{% set identityStageCompleted = true if data.appointment.workflowStatus['confirm-identity'] == 'completed' else false %}
-{% set medicalInformationStageCompleted = true if data.appointment.workflowStatus['review-medical-information'] == 'completed' else false %}
-{% set awaitingImagesStageCompleted = true if data.appointment.workflowStatus['awaiting-images'] == 'completed' else false %}
-{% set imagesStageCompleted = true if data.appointment.workflowStatus['take-images'] == 'completed' else false %}
+{% set identityStageCompleted = true if appointment.workflowStatus['confirm-identity'] == 'completed' else false %}
+{% set medicalInformationStageCompleted = true if appointment.workflowStatus['review-medical-information'] == 'completed' else false %}
+{% set awaitingImagesStageCompleted = true if appointment.workflowStatus['awaiting-images'] == 'completed' else false %}
+{% set imagesStageCompleted = true if appointment.workflowStatus['take-images'] == 'completed' else false %}
 
 {# Build secondary nav #}
 {% set secondaryNavItems = [] %}
@@ -31,7 +31,7 @@
     </svg>
   {% endset %}
 
-  {% set isCompleted = data.appointment.workflowStatus[item.id] == 'completed' %}
+  {% set isCompleted = appointment.workflowStatus[item.id] == 'completed' %}
 
   {% set isDisabled = false %}
   {# Todo: refactor this be easier to check status #}

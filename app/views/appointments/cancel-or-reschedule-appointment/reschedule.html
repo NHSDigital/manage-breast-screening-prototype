@@ -22,7 +22,7 @@
 
   {{ radios({
     name: "appointment[reschedule][timing]",
-    value: data.appointment.reschedule.timing,
+    value: appointment.reschedule.timing,
     fieldset: {
       legend: {
         text: "When should the appointment be?",
@@ -52,7 +52,7 @@
       text: "Include any other relevant information"
     },
     rows: 5,
-    value: data.appointment.reschedule.note,
+    value: appointment.reschedule.note,
     autocomplete: "off"
   }) }}
 
