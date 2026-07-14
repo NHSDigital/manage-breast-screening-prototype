@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-07-14 11:28 UTC
+- **Generated:** 2026-07-14 21:48 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -20,25 +20,25 @@
 | `status.js` | Appointment status checks and display helpers | 120 |
 | `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 144 |
 | `appointment-data.js` | Appointment lookups and mutations in session data | 164 |
-| `episodes.js` | Episode lookups and stage changes | 179 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 209 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 224 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 280 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 299 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 317 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 330 |
-| `objects.js` | Object utilities for extracting and flattening values. | 348 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 358 |
-| `random.js` | Seeded random functions for stable prototype data | 369 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 386 |
-| `roles-and-permissions.js` | User role checks | 399 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 417 |
+| `episodes.js` | Episode lookups and stage changes | 178 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 208 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 223 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 279 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 298 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 316 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 329 |
+| `objects.js` | Object utilities for extracting and flattening values. | 347 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 357 |
+| `random.js` | Seeded random functions for stable prototype data | 368 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 385 |
+| `roles-and-permissions.js` | User role checks | 398 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 416 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 433 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 445 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 457 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 471 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 481 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 432 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 444 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 456 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 470 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 480 |
 
 ---
 
@@ -134,12 +134,12 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `isActive(input)` | Check if a status represents an active appointment | 134 |
 | `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 146 |
 | `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 178 |
-| `getStatusTagColour(status)` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete') // 'green'` | 194 |
-| `getStatusText(status)` | Map a status key to its display text — e.g. `getStatusText('complete') // 'Screened'` | 275 |
-| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 319 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 345 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 355 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 365 |
+| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 309 |
+| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 323 |
+| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 337 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 363 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 373 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 383 |
 
 ### participants.js
 
@@ -172,15 +172,14 @@ Appointment lookups and mutations in session data. Includes the temp appointment
 | `getAppointment(data, appointmentId)` | Get an appointment by ID | 23 |
 | `getAppointmentData(data, clinicId, appointmentId)` | Get appointment data bundle for a given clinic and appointment ID | 43 |
 | `updateAppointment(data, appointmentId, updatedAppointment)` | Find and update an appointment in session data | 67 |
-| `updateAppointmentStatus(data, appointmentId, newStatus)` | Update appointment status and add to history | 86 |
-| `updateAppointmentData(data, appointmentId, updates)` | Update appointment with arbitrary data changes | 145 |
-| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 185 |
+| `updateAppointmentData(data, appointmentId, updates)` | Update appointment with arbitrary data changes | 86 |
+| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 126 |
 
 ### episodes.js
 
 `app/lib/utils/episodes.js`
 
-Episode lookups and stage changes. An episode is one screening round - the container its appointment appointments sit in.
+Episode lookups and stage changes. An episode is one screening round - the container its appointments sit in.
 
 | Function | Description | Line |
 |---|---|---|
@@ -194,7 +193,7 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 | `isEpisodeClosed(episode)` | Whether an episode has closed | 241 |
 | `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 251 |
 | `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 262 |
-| `getLastScreening(data, participantId)` | The participant's last mammogram on record, before today. | 277 |
+| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 277 |
 | `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 324 |
 | `getEpisodeStageText(stage)` | Display text for an episode's stage | 343 |
 | `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 353 |
@@ -248,9 +247,9 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 | `filterAppointmentsByUserCanReadOrHasRead(appointments, userId, [options])` | Filter appointments that user can read or has already read | 866 |
 | `filterAppointmentsByClinic(appointments, clinicId)` | Filter appointments for a specific clinic | 897 |
 | `filterAppointmentsByDayRange(appointments, minDays, [maxDays])` | Filter appointments that are within a specific day range | 908 |
-| `getFirstAppointment(appointments)` | Get the first appointment from an array | 928 |
-| `getNextAppointment(appointments, currentAppointmentId, wrap)` | Get the next appointment after a specific appointment | 937 |
-| `getPreviousAppointment(appointments, currentAppointmentId, wrap)` | Get the previous appointment before a specific appointment | 958 |
+| `getFirstAppointmentInList(appointments)` | Get the first appointment from an array | 928 |
+| `getNextAppointmentInList(appointments, currentAppointmentId, wrap)` | Get the next appointment after a specific appointment | 937 |
+| `getPreviousAppointmentInList(appointments, currentAppointmentId, wrap)` | Get the previous appointment before a specific appointment | 958 |
 | `getReadForUser(appointment, [userId])` | Get the read object for a specific user on an appointment | 983 |
 | `getFirstUserReadableAppointment(appointments, userId)` | Get first appointment from an array that a user can read | 1000 |
 | `getNextUserReadableAppointment(appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 1015 |
@@ -476,7 +475,7 @@ Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements.
 
 | Function | Description | Line |
 |---|---|---|
-| `toTag(status, [options])` | Convert a status string into an NHS tag | 7 |
+| `toTag(status, [options], [options.vocabulary])` | Convert a status string into an NHS tag | 7 |
 
 ### markdown.js
 
