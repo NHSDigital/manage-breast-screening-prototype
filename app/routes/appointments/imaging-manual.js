@@ -531,7 +531,10 @@ module.exports = (router) => {
       )
 
       if (needsRepeats) {
-        // Keep temp data for repeats page
+        // Keep temp data for repeats page. Mark it as manual entry so the
+        // repeats page takes the manual branch on a first-time entry, when
+        // nothing has been saved to mammogramData yet.
+        data.appointment.mammogramDataTemp.isManualEntry = true
         return res.redirect(
           `/clinics/${clinicId}/appointments/${appointmentId}/images-repeats`
         )
@@ -560,7 +563,10 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const isManualEntry = data.appointment?.mammogramData?.isManualEntry
+      // Saved manual data, or a first-time manual entry still in temp data
+      const isManualEntry =
+        data.appointment?.mammogramData?.isManualEntry ||
+        data.appointment?.mammogramDataTemp?.isManualEntry
 
       const viewCodes = [
         'RCC',

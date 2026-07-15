@@ -27,7 +27,8 @@
   </p>
 
   {% set repeatReasons = data.repeatReasons %}
-  {% set isManualEntry = appointment.mammogramData.isManualEntry %}
+  {# Saved manual data, or a first-time manual entry still in temp data #}
+  {% set isManualEntry = appointment.mammogramData.isManualEntry or appointment.mammogramDataTemp.isManualEntry %}
 
   {# Set data source and name prefix based on flow type, defaulting to automatic #}
   {% set namePrefix = "appointment[mammogramData]" %}
