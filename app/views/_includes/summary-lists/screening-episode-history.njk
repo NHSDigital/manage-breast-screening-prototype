@@ -2,7 +2,8 @@
 
 {# A participant's screening rounds, newest first. Past rounds are held as
    summary-only episodes, so this covers their whole history without needing
-   the old appointments to exist. #}
+   the old appointments to exist. An open episode is not history - the
+   participant page promotes it separately, so it is excluded here. #}
 
 {% if episodeHistory.length %}
 
@@ -50,7 +51,7 @@
             {% endif %}
           </td>
           <td class="nhsuk-table__cell">
-            <a href="{{ ('/episodes/' + episode.id) | urlWithReferrer(currentUrl) }}">
+            <a href="/participants/{{ episode.participantId }}/episodes/{{ episode.id }}">
               View episode
             </a>
           </td>
@@ -60,5 +61,5 @@
   </table>
 
 {% else %}
-  <p>No screening history found</p>
+  <p>No previous screening episodes</p>
 {% endif %}

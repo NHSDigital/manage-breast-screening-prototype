@@ -6,10 +6,14 @@ const {
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
 const {
+  getEpisode,
   getEpisodesForParticipant,
+  getCurrentEpisode,
   getEpisodeAppointments,
-  getEpisodeMammogramDate
+  getEpisodeMammogramDate,
+  getEpisodeReadingStatus
 } = require('../lib/utils/episodes')
+const { getClinic } = require('../lib/utils/clinics')
 const { findById } = require('../lib/utils/arrays')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
@@ -120,13 +124,20 @@ module.exports = (router) => {
     // Store original participant data for reference if needed
     res.locals.originalParticipant = originalParticipant
 
+    // Their open episode, if they have one - the participant page promotes
+    // it above the history rather than listing it as history
+    const currentEpisode = getCurrentEpisode(data, participantId)
+    res.locals.currentEpisode = currentEpisode
+
     // A participant's screening history is their episodes, newest first. Past
     // rounds are summary-only episodes, so this covers their whole history
-    // without needing old appointments to exist.
+    // without needing old appointments to exist. The open episode is not
+    // history, so it is left out.
     res.locals.episodeHistory = getEpisodesForParticipant(
       data,
       originalParticipant.id
     )
+      .filter((episode) => episode.id !== currentEpisode?.id)
       .map((episode) => {
         // Screened rounds date by when their images were taken. A round with
         // no images (not yet screened, missed, cancelled) dates by its
@@ -153,6 +164,48 @@ module.exports = (router) => {
   router.get('/participants/:participantId', (req, res) => {
     res.render('participants/show')
   })
+
+  // Episode pages are casework pages, so they live under the participant -
+  // an episode has no meaning without one. Registered here rather than in
+  // routes/episodes.js so they land before the dynamic template catch-all
+  // below, which would otherwise swallow them.
+  router.use(
+    '/participants/:participantId/episodes/:episodeId',
+    (req, res, next) => {
+      const data = req.session.data
+      const episode = getEpisode(data, req.params.episodeId)
+
+      // 404 unless the episode exists and belongs to this participant
+      if (!episode || episode.participantId !== req.params.participantId) {
+        return next()
+      }
+
+      res.locals.episode = episode
+
+      // Each appointment with the clinic it sat in, so pages can link back
+      res.locals.episodeAppointments = getEpisodeAppointments(
+        data,
+        episode
+      ).map((appointment) => ({
+        appointment,
+        clinic: getClinic(data, appointment.clinicId)
+      }))
+
+      res.locals.readingStatus = getEpisodeReadingStatus(data, episode)
+
+      next()
+    }
+  )
+
+  router.get(
+    '/participants/:participantId/episodes/:episodeId',
+    (req, res, next) => {
+      // No episode loaded means the middleware above declined it
+      if (!res.locals.episode) return next()
+
+      res.render('episodes/show')
+    }
+  )
 
   router.get(
     '/participants/:participantId/*subPaths',

@@ -1,18 +1,11 @@
 // app/routes/episodes.js
 //
-// Minimal episode views. Deliberately not in the nav yet - the casework IA
-// work decides how episodes are navigated to. These exist so the episode
-// entity is reachable and provable in the real app, and so the participant
-// page has somewhere to link to.
+// The whole-service episode index - a finder for locating a specific
+// episode. The canonical episode page lives under the participant
+// (see routes/participants.js); the flat show URL here redirects to it.
 
-const {
-  EPISODE_STAGES,
-  getEpisode,
-  getEpisodeAppointments,
-  getEpisodeReadingStatus
-} = require('../lib/utils/episodes')
+const { EPISODE_STAGES, getEpisode } = require('../lib/utils/episodes')
 const { getParticipant } = require('../lib/utils/participants')
-const { getClinic } = require('../lib/utils/clinics')
 
 // Enough rows to browse without rendering thousands
 const INDEX_LIMIT = 100
@@ -57,23 +50,16 @@ module.exports = (router) => {
     })
   })
 
+  // An episode has no meaning without its participant, so the canonical URL
+  // is nested under them. This flat URL stays as a second door - queues and
+  // backlogs can link to an episode knowing only its id.
   router.get('/episodes/:episodeId', (req, res, next) => {
-    const data = req.session.data
-    const episode = getEpisode(data, req.params.episodeId)
+    const episode = getEpisode(req.session.data, req.params.episodeId)
 
     if (!episode) return next()
 
-    // Each appointment with the clinic it sat in, so the page can link back
-    const appointments = getEpisodeAppointments(data, episode).map((appointment) => ({
-      appointment,
-      clinic: getClinic(data, appointment.clinicId)
-    }))
-
-    res.render('episodes/show', {
-      episode,
-      participant: getParticipant(data, episode.participantId),
-      appointments,
-      readingStatus: getEpisodeReadingStatus(data, episode)
-    })
+    res.redirect(
+      `/participants/${episode.participantId}/episodes/${episode.id}`
+    )
   })
 }

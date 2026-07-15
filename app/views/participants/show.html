@@ -8,23 +8,18 @@
 
 {% set allowEdits = allowEdits | default(true) %}
 
-{% set backText %}
-  {% if referrerChain %}
-    {% if referrerChain | stringIncludes("/appointments/") %}
-      Back to appointment
-    {% else %}
-      Back to clinic
-    {% endif %}
-  {% else %}
-    Back to participants
-  {% endif %}
+{% set hideBackLink = true %}
 
-{% endset %}
-
-{% set back = {
-  href: "/participants" | getReturnUrl(referrerChain),
-  text: backText
-} %}
+{% block beforeContent %}
+  {{ breadcrumb({
+    items: [
+      {
+        href: "/participants",
+        text: "Participants"
+      }
+    ]
+  }) }}
+{% endblock %}
 
 {% block pageContent %}
 
@@ -57,6 +52,47 @@
    #}
 
   {% include "_includes/tabs/participant-details.njk" %}
+
+  {# An open episode is live casework, so it gets its own card above the
+     history rather than a row in it #}
+  {% if currentEpisode %}
+    {% set nextAppointment = data | getNextAppointment(participant.id) %}
+
+    {% set episodeLinkHtml %}
+      <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
+        {{ currentEpisode | getEpisodeLabel }}
+      </a>
+    {% endset %}
+
+    {% call card({
+      heading: "Current episode",
+      headingLevel: "2"
+    }) %}
+      {{ summaryList({
+        rows: [
+          {
+            key: { text: "Episode" },
+            value: { html: episodeLinkHtml }
+          },
+          {
+            key: { text: "Stage" },
+            value: { html: tag({
+              text: currentEpisode.stage | getEpisodeStageText,
+              colour: currentEpisode.stage | getEpisodeStageTagColour
+            }) }
+          },
+          {
+            key: { text: "Opened" },
+            value: { text: currentEpisode.openedDate | formatDate }
+          },
+          {
+            key: { text: "Next appointment" },
+            value: { text: nextAppointment.timing.startTime | formatDate if nextAppointment else "None booked" }
+          }
+        ]
+      }) }}
+    {% endcall %}
+  {% endif %}
 
   {% call card({
     heading: "Screening details"
