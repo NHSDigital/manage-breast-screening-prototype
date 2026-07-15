@@ -168,12 +168,13 @@
           {% include "_includes/summary-lists/read-summary.njk" %}
         {% endset %}
 
-        {{ card({
+        {# Commented out until we decide whether to show other reads #}
+        {# {{ card({
           heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
           headingLevel: "2",
           feature: true,
           descriptionHtml: otherReadSummaryHtml
-        }) }}
+        }) }} #}
       {% endfor %}
     {% endif %}
   {% endif %}
