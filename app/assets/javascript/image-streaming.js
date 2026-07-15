@@ -42,9 +42,6 @@ function initStreaming(config) {
   // Set all slots to awaiting state before any images arrive
   slots.forEach((slot) => setSlotAwaiting(slot))
 
-  // Counter element in the inset text
-  const countEl = document.getElementById('streaming-received-count')
-
   let nextIndex = 0
   let timer = null
 
@@ -53,12 +50,6 @@ function initStreaming(config) {
     const image = images[nextIndex]
     nextIndex++
     revealImage(image, slotMap, immediate)
-
-    // Update received count
-    if (countEl) {
-      const received = nextIndex
-      countEl.textContent = `${received} ${received === 1 ? 'image' : 'images'} received`
-    }
   }
 
   const scheduleNext = () => {
