@@ -257,6 +257,10 @@ const STATUS_TAGS = {
   },
   // Ad-hoc case tags, reached via snake-cased tag text
   misc: {
+    // Initial status on medical-information review sections ("To review" |
+    // toTag); later statuses are applied client-side by
+    // expandable-sections.js / expanded-state-tracker.js
+    to_review: { colour: 'blue' },
     has_symptoms: { colour: 'yellow' },
     highlight_to_image_readers: { colour: 'yellow' },
     imperfect: { colour: 'orange' },
