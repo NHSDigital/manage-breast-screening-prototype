@@ -71,20 +71,6 @@
     }) }}
   {% endif %}
 
-  {% set insetTextHtml %}
-    {% if data.settings.appointment.imageStreaming.enabled != 'false' and appointment.workflowStatus['take-images'] != 'completed' %}
-      <p>Receiving images&#8230;
-        <span id="streaming-received-count">0 received</span>
-      </p>
-    {% else %}
-      <p>{{ imageCount }} images have been received</p>
-    {% endif %}
-  {% endset %}
-
-  {{ insetText({
-    html: insetTextHtml
-  }) }}
-
   {# Convert object to an array of views and get machine room #}
   {% set mammogramViews = appointment.mammogramData.views | getObjectValues %}
   {% set machineRoom = appointment.mammogramData.machineRoom %}
