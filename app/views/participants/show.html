@@ -53,21 +53,23 @@
 
   {% include "_includes/tabs/participant-details.njk" %}
 
-  {# An open episode is live casework, so it gets its own card above the
-     history rather than a row in it #}
-  {% if currentEpisode %}
-    {% set nextAppointment = data | getNextAppointment(participant.id) %}
+  {# One card for their episodes: the open one picked out as live casework,
+     past rounds as history beneath #}
+  {% call card({
+    heading: "Screening episodes",
+    headingLevel: "2"
+  }) %}
+    {% if currentEpisode %}
+      {% set nextAppointment = data | getNextAppointment(participant.id) %}
 
-    {% set episodeLinkHtml %}
-      <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
-        {{ currentEpisode | getEpisodeLabel }}
-      </a>
-    {% endset %}
+      {% set episodeLinkHtml %}
+        <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
+          {{ currentEpisode | getEpisodeLabel }}
+        </a>
+      {% endset %}
 
-    {% call card({
-      heading: "Current episode",
-      headingLevel: "2"
-    }) %}
+      <h3 class="nhsuk-heading-s">Current episode</h3>
+
       {{ summaryList({
         rows: [
           {
@@ -91,20 +93,17 @@
           }
         ]
       }) }}
-    {% endcall %}
-  {% endif %}
+
+      <h3 class="nhsuk-heading-s">Previous episodes</h3>
+    {% endif %}
+
+    {% include "summary-lists/screening-episode-history.njk" %}
+  {% endcall %}
 
   {% call card({
     heading: "Screening details"
   }) %}
     {% include "summary-lists/screening-details.njk" %}
-  {% endcall %}
-
-  {% call card({
-    heading: "Screening history",
-    headingLevel: "2"
-  }) %}
-    {% include "summary-lists/screening-episode-history.njk" %}
   {% endcall %}
 
 {% endblock %}
