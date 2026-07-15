@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const sections = document.querySelectorAll('.js-expandable-section')
   const completedSections = new Set()
   const reviewAfterImagingField = document.querySelector(
-    'input[name="event[workflowStatus][review-breast-features-after-imaging]"]'
+    'input[name="appointment[workflowStatus][review-breast-features-after-imaging]"]'
   )
 
   function setReviewAfterImagingFlag(statusValue) {
