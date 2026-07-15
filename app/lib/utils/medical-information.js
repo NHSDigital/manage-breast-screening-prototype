@@ -353,6 +353,11 @@ const summariseSymptom = (symptom) => {
     summary += ` (${location})`
   }
 
+  // Flag signs noted by the mammographer rather than reported by the participant
+  if (symptom.isMammographerObserved) {
+    summary = `Sign: ${summary}`
+  }
+
   return summary
 }
 

@@ -266,6 +266,12 @@ module.exports = (router) => {
           symptom.isIntermittent = true
         }
 
+        // Sign noted by the mammographer rather than reported by the participant
+        const observedValue = symptomTemp.isMammographerObserved
+        symptom.isMammographerObserved = Array.isArray(observedValue)
+          ? observedValue.includes('yes')
+          : observedValue === 'yes' || observedValue === true
+
         symptom.hasStopped =
           Array.isArray(symptomTemp.hasStopped) &&
           symptomTemp.hasStopped.includes('yes')
