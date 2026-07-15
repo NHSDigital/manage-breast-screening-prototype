@@ -11,6 +11,8 @@ const dataStore = require('../data-store')
 const { getAppointment } = require('./appointment-data.js')
 const { getReadingStatusForAppointments } = require('./reading.js')
 const { getClinic } = require('./clinics.js')
+const { formatMonthYear } = require('./dates.js')
+const { isActive } = require('./status.js')
 
 // An episode is open until it closes. While open, the stage says where in the
 // process it has got to; `closed` means it has an outcome and is done.
@@ -329,15 +331,38 @@ const getLastMammogram = (data, participantId) => {
  * @returns {object | null} The appointment, or null if nothing is booked
  */
 const getNextAppointment = (data, participantId) => {
-  const now = Date.now()
+  // From the start of today, not from this moment - an appointment earlier
+  // today that hasn't happened yet is still their next one. Only appointments
+  // still in play count; one that concluded this morning is not "next".
+  const startOfToday = new Date().setHours(0, 0, 0, 0)
 
   const upcoming = getEpisodesForParticipant(data, participantId)
     .filter(isEpisodeOpen)
     .flatMap((episode) => getEpisodeAppointments(data, episode))
-    .filter((appointment) => new Date(appointment.timing?.startTime) >= now)
+    .filter(
+      (appointment) =>
+        new Date(appointment.timing?.startTime) >= startOfToday &&
+        isActive(appointment.status)
+    )
     .sort((a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime))
 
   return upcoming[0] || null
+}
+
+/**
+ * Human name for an episode. Episodes are named by date, not number -
+ * people say "the March 2026 episode" or "the current episode", they don't
+ * count rounds. Dated by when its mammograms were taken; a round with no
+ * images yet (or that never got them) dates by when it opened.
+ *
+ * @param {object} episode - Episode object
+ * @returns {string} Label like "March 2026 episode"
+ */
+const getEpisodeLabel = (episode) => {
+  const date = getEpisodeMammogramDate(episode) || episode?.openedDate
+  if (!date) return 'Episode'
+
+  return `${formatMonthYear(date)} episode`
 }
 
 /**
@@ -577,6 +602,7 @@ module.exports = {
   getEpisodeMammogramDate,
   getLastMammogram,
   getNextAppointment,
+  getEpisodeLabel,
   getEpisodeStageText,
   getEpisodeStageTagColour,
   getEpisodeOutcomeText,

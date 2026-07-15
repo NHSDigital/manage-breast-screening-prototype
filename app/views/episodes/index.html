@@ -83,7 +83,7 @@
               {% endif %}
             </td>
             <td class="nhsuk-table__cell">
-              <a href="{{ ('/episodes/' + row.episode.id) | urlWithReferrer(currentUrl) }}">
+              <a href="/participants/{{ row.episode.participantId }}/episodes/{{ row.episode.id }}">
                 View episode
               </a>
             </td>

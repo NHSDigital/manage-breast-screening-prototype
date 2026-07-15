@@ -8,23 +8,18 @@
 
 {% set allowEdits = allowEdits | default(true) %}
 
-{% set backText %}
-  {% if referrerChain %}
-    {% if referrerChain | stringIncludes("/appointments/") %}
-      Back to appointment
-    {% else %}
-      Back to clinic
-    {% endif %}
-  {% else %}
-    Back to participants
-  {% endif %}
+{% set hideBackLink = true %}
 
-{% endset %}
-
-{% set back = {
-  href: "/participants" | getReturnUrl(referrerChain),
-  text: backText
-} %}
+{% block beforeContent %}
+  {{ breadcrumb({
+    items: [
+      {
+        href: "/participants",
+        text: "Participants"
+      }
+    ]
+  }) }}
+{% endblock %}
 
 {% block pageContent %}
 
@@ -58,17 +53,57 @@
 
   {% include "_includes/tabs/participant-details.njk" %}
 
+  {# One card for their episodes: the open one picked out as live casework,
+     past rounds as history beneath #}
+  {% call card({
+    heading: "Screening episodes",
+    headingLevel: "2"
+  }) %}
+    {% if currentEpisode %}
+      {% set nextAppointment = data | getNextAppointment(participant.id) %}
+
+      {% set episodeLinkHtml %}
+        <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
+          {{ currentEpisode | getEpisodeLabel }}
+        </a>
+      {% endset %}
+
+      <h3 class="nhsuk-heading-s">Current episode</h3>
+
+      {{ summaryList({
+        rows: [
+          {
+            key: { text: "Episode" },
+            value: { html: episodeLinkHtml }
+          },
+          {
+            key: { text: "Stage" },
+            value: { html: tag({
+              text: currentEpisode.stage | getEpisodeStageText,
+              colour: currentEpisode.stage | getEpisodeStageTagColour
+            }) }
+          },
+          {
+            key: { text: "Opened" },
+            value: { text: currentEpisode.openedDate | formatDate }
+          },
+          {
+            key: { text: "Next appointment" },
+            value: { text: nextAppointment.timing.startTime | formatDate if nextAppointment else "None booked" }
+          }
+        ]
+      }) }}
+
+      <h3 class="nhsuk-heading-s">Previous episodes</h3>
+    {% endif %}
+
+    {% include "summary-lists/screening-episode-history.njk" %}
+  {% endcall %}
+
   {% call card({
     heading: "Screening details"
   }) %}
     {% include "summary-lists/screening-details.njk" %}
-  {% endcall %}
-
-  {% call card({
-    heading: "Screening history",
-    headingLevel: "2"
-  }) %}
-    {% include "summary-lists/screening-episode-history.njk" %}
   {% endcall %}
 
 {% endblock %}
