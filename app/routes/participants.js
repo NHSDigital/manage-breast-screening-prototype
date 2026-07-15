@@ -182,6 +182,18 @@ module.exports = (router) => {
 
       res.locals.episode = episode
 
+      // Where this episode sits in the participant's sequence, so the page
+      // can link between their rounds
+      const participantEpisodes = getEpisodesForParticipant(
+        data,
+        req.params.participantId
+      )
+      const episodeIndex = participantEpisodes.findIndex(
+        (each) => each.id === episode.id
+      )
+      res.locals.previousEpisode = participantEpisodes[episodeIndex - 1] || null
+      res.locals.nextEpisode = participantEpisodes[episodeIndex + 1] || null
+
       // Each appointment with the clinic it sat in, so pages can link back
       res.locals.episodeAppointments = getEpisodeAppointments(
         data,

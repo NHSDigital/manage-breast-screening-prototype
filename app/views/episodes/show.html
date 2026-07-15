@@ -26,6 +26,18 @@
     {{ pageHeading }}
   </h1>
 
+  {# Looking at a past round while another is in progress - flag the live one #}
+  {% if currentEpisode and currentEpisode.id !== episode.id %}
+    <div class="nhsuk-inset-text">
+      <span class="nhsuk-u-visually-hidden">Information: </span>
+      <p>
+        This participant has an episode in progress -
+        <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
+          {{ currentEpisode | getEpisodeLabel }}</a>.
+      </p>
+    </div>
+  {% endif %}
+
   {% if episode.isHistoric %}
 
     {# Past rounds are held as summaries - what the round concluded, not how
@@ -38,31 +50,54 @@
       </p>
     </div>
 
-    {% set mammogramDate = episode | getEpisodeMammogramDate %}
+    {% set mammogram = episode.mammograms | last %}
+    {% set screeningUnit = data.breastScreeningUnits | findById(mammogram.breastScreeningUnitId) if mammogram else null %}
 
-    {{ summaryList({
-      rows: [
+    {% set rows = [
+      {
+        key: { text: "Outcome" },
+        value: { html: tag({
+          text: episode.outcome | getEpisodeOutcomeText,
+          colour: episode.outcome | getEpisodeOutcomeTagColour
+        }) }
+      },
+      {
+        key: { text: "Type" },
+        value: { text: episode.type | sentenceCase }
+      },
+      {
+        key: { text: "Opened" },
+        value: { text: episode.openedDate | formatDate }
+      },
+      {
+        key: { text: "Mammograms taken" },
+        value: { text: mammogram.takenDate | formatDate if mammogram else "Not screened" }
+      }
+    ] %}
+
+    {# A summary round holds where it was screened and an image count, but
+       no appointment or reading records beneath them #}
+    {% if mammogram %}
+      {% set rows = rows.concat([
         {
-          key: { text: "Outcome" },
-          value: { html: tag({
-            text: episode.outcome | getEpisodeOutcomeText,
-            colour: episode.outcome | getEpisodeOutcomeTagColour
-          }) }
+          key: { text: "Screened at" },
+          value: { text: screeningUnit.name if screeningUnit else "Not known" }
         },
         {
-          key: { text: "Type" },
-          value: { text: episode.type | sentenceCase }
-        },
-        {
-          key: { text: "Mammograms taken" },
-          value: { text: mammogramDate | formatDate if mammogramDate else "Not screened" }
-        },
-        {
-          key: { text: "Closed" },
-          value: { text: episode.closedDate | formatDate }
+          key: { text: "Images" },
+          value: { text: mammogram.viewCount + " views" }
         }
-      ]
-    }) }}
+      ]) %}
+    {% endif %}
+
+    {% set rows = rows.concat([
+      {
+        key: { text: "Closed" },
+        value: { text: episode.closedDate | formatDate }
+      }
+    ]) %}
+
+    {{ summaryList({ rows: rows }) }}
 
   {% else %}
 
@@ -158,6 +193,22 @@
       {% endfor %}
     </ol>
 
+  {% endif %}
+
+  {# Step between this participant's rounds without going back to their record #}
+  {% if previousEpisode or nextEpisode %}
+    {{ pagination({
+      previous: {
+        text: "Previous episode",
+        labelText: previousEpisode | getEpisodeLabel,
+        href: participantUrl + "/episodes/" + previousEpisode.id
+      } if previousEpisode,
+      next: {
+        text: "Next episode",
+        labelText: nextEpisode | getEpisodeLabel,
+        href: participantUrl + "/episodes/" + nextEpisode.id
+      } if nextEpisode
+    }) }}
   {% endif %}
 
 {% endblock %}
