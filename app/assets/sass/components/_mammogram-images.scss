@@ -9,7 +9,6 @@
 .app-mammogram-cards {
   display: flex;
   flex-wrap: nowrap;
-  @include nhsuk-responsive-margin(4, "bottom");
 }
 
 .app-mammogram-card {
