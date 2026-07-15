@@ -68,36 +68,6 @@ module.exports = (router) => {
     }
   )
 
-  // Medical history
-
-  // Medical history routes - add these to the appointments.js file
-
-  const medicalHistoryTypes = require('../../data/medical-history-types')
-
-  function isValidMedicalHistoryType(type) {
-    // Check against both type field and slug field
-    return medicalHistoryTypes.some(
-      (item) => item.type === type || item.slug === type
-    )
-  }
-
-  // Helper function to get medical history type object by type (camelCase type or kebab-case slug)
-  function getMedicalHistoryType(type) {
-    // First try to find by type field
-    let result = medicalHistoryTypes.find((item) => item.type === type)
-    if (result) {
-      return result
-    }
-    // Then try to find by slug field
-    return medicalHistoryTypes.find((item) => item.slug === type)
-  }
-
-  // Helper function to get camelCase type from slug
-  function getMedicalHistoryKeyFromSlug(slug) {
-    const item = medicalHistoryTypes.find((item) => item.slug === slug)
-    return item ? item.type : null
-  }
-
   // Handle medical information answer
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information-answer',

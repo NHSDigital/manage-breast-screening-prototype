@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-07-14 21:48 UTC
+- **Generated:** 2026-07-15 11:33 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -25,20 +25,20 @@
 | `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 223 |
 | `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 279 |
 | `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 298 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 316 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 329 |
-| `objects.js` | Object utilities for extracting and flattening values. | 347 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 357 |
-| `random.js` | Seeded random functions for stable prototype data | 368 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 385 |
-| `roles-and-permissions.js` | User role checks | 398 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 416 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 319 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 332 |
+| `objects.js` | Object utilities for extracting and flattening values. | 350 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 360 |
+| `random.js` | Seeded random functions for stable prototype data | 371 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 388 |
+| `roles-and-permissions.js` | User role checks | 401 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 419 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 432 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 444 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 456 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 470 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 480 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 435 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 447 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 459 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 473 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 483 |
 
 ---
 
@@ -137,9 +137,9 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 309 |
 | `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 323 |
 | `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 337 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 363 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 373 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 383 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 365 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 375 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 385 |
 
 ### participants.js
 
@@ -303,15 +303,18 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 
 | Function | Description | Line |
 |---|---|---|
-| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 5 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 178 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 207 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 229 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 251 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 323 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 337 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 359 |
-| `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 375 |
+| `isValidMedicalHistoryType(type)` | Check whether a string names a medical history type, by type or slug | 5 |
+| `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 17 |
+| `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 30 |
+| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 41 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 214 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 243 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 265 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 287 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 359 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 373 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 395 |
+| `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 411 |
 
 ### annotation-summary.js
 

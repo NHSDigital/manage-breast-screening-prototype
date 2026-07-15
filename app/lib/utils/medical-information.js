@@ -3,6 +3,42 @@
 const medicalHistoryTypes = require('../../data/medical-history-types')
 
 /**
+ * Check whether a string names a medical history type, by type or slug
+ *
+ * @param {string} type - camelCase type or kebab-case slug
+ * @returns {boolean} Whether it matches a known medical history type
+ */
+const isValidMedicalHistoryType = (type) => {
+  return medicalHistoryTypes.some(
+    (item) => item.type === type || item.slug === type
+  )
+}
+
+/**
+ * Get a medical history type object, by type or slug
+ *
+ * @param {string} type - camelCase type or kebab-case slug
+ * @returns {Object | undefined} The medical history type object
+ */
+const getMedicalHistoryType = (type) => {
+  return (
+    medicalHistoryTypes.find((item) => item.type === type) ||
+    medicalHistoryTypes.find((item) => item.slug === type)
+  )
+}
+
+/**
+ * Get the camelCase data key for a medical history type from its slug
+ *
+ * @param {string} slug - kebab-case slug
+ * @returns {string | null} The camelCase type, or null if not found
+ */
+const getMedicalHistoryKeyFromSlug = (slug) => {
+  const item = medicalHistoryTypes.find((item) => item.slug === slug)
+  return item ? item.type : null
+}
+
+/**
  * Summarise a single medical history item into a concise string
  *
  * @param {Object} item - The medical history item (must have medicalHistoryType property)
@@ -455,6 +491,9 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
 }
 
 module.exports = {
+  isValidMedicalHistoryType,
+  getMedicalHistoryType,
+  getMedicalHistoryKeyFromSlug,
   summariseMedicalHistoryItem,
   summariseMedicalHistory,
   getMedicalHistoryItems,

@@ -12,6 +12,11 @@ const {
   saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
 const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
+const {
+  isValidMedicalHistoryType,
+  getMedicalHistoryType,
+  getMedicalHistoryKeyFromSlug
+} = require('../../lib/utils/medical-information')
 const generateId = require('../../lib/utils/id-generator')
 const {
   getReturnUrl,
