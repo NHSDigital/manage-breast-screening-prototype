@@ -195,8 +195,8 @@
   function clearExpandedStateIfNeeded() {
     const path = window.location.pathname
 
-    // Clear if on main event page (not sub-pages)
-    if (path.match(/^\/clinics\/[^\/]+\/events\/[^\/]+\/?$/)) {
+    // Clear if on main appointment page (not sub-pages)
+    if (path.match(/^\/clinics\/[^\/]+\/appointments\/[^\/]+\/?$/)) {
       clearAllExpandedStates()
     }
   }
