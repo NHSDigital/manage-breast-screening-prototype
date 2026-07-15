@@ -22,7 +22,8 @@
 
     {# Sign noted by the mammographer rather than reported by the participant #}
     {% if symptom.isMammographerObserved %}
-      {% set valueLines = valueLines | push("Sign noted by mammographer") %}
+      {% set notedByName = (symptom.addedByUserId | getUsername({ format: "short", useYou: true })) or "mammographer" %}
+      {% set valueLines = valueLines | push("Sign noted by " + notedByName) %}
     {% endif %}
 
     {# Add sub-type as first line with appropriate descriptor #}

@@ -97,6 +97,7 @@ const join = (input, delimiter = '', attribute = null, options = {}) => {
  * @param {string} userId - ID of the user
  * @param {object} [options] - Display options
  * @param {boolean} [options.identifyCurrentUser] - Whether to add "(you)" for current user
+ * @param {boolean} [options.useYou] - Return just "you" for the current user
  * @param {string} [options.format] - Name format: 'full', 'short', or 'initial'
  * @returns {string} User's name in requested format
  */
@@ -126,8 +127,13 @@ const getUsername = function (userId, options = {}) {
   }
 
   const currentUser = this.ctx.data.currentUser
-  if (options.identifyCurrentUser && user.id === currentUser.id) {
-    return `${formattedName} (you)`
+  if (currentUser && user.id === currentUser.id) {
+    if (options.useYou) {
+      return 'you'
+    }
+    if (options.identifyCurrentUser) {
+      return `${formattedName} (you)`
+    }
   }
 
   return formattedName

@@ -220,9 +220,12 @@ module.exports = (router) => {
           symptomNotes: symptomTemp.symptomNotes
         }
 
-        // For new symptoms, add the creation timestamp
+        // For new symptoms, record when and who added them
         if (isNewSymptom) {
           symptom.dateAdded = new Date().toISOString()
+          symptom.addedByUserId = data.currentUser?.id
+        } else {
+          symptom.addedByUserId = symptomTemp.addedByUserId
         }
 
         if (symptomTypeConfig) {
