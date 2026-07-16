@@ -1,0 +1,48 @@
+
+{% extends 'layout-appointment.html' %}
+
+
+{% set pageHeading = "Take mammogram images" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'take-images' %}
+{% set hideBackLink = true %}
+
+{% set formAction = './images-automatic' %}
+
+{% set activeTab = 'images' %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  {% set insetHtml %}
+    <p>
+      Mammography images will appear below once they have been received
+    </p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetHtml
+  }) }}
+
+
+  {{ appHiddenInput({
+    name: "event[workflowStatus][awaiting-images]",
+    value: "completed"
+  }) }}
+
+  <p class="app-suppress-link-styles">
+    <button class="app-button-link" type="submit">
+      Loading images...
+    </button>
+    {# <a href="./images?event[workflowStatus][awaiting-images]=completed">
+      <span class="">Loading images...</span>
+    </a> #}
+  </p>
+
+  {% include "_includes/images/image-troubleshooting.njk" %}
+
+
+{% endblock %}
+
+

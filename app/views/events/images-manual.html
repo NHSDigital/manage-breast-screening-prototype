@@ -16,7 +16,7 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
+  {% set mammogramSource = event.mammogramDataTemp or event.mammogramData %}
 
   {# Determine current room name #}
   {% set currentRoomName = "" %}
@@ -43,7 +43,7 @@
     </p>
 
     {{ appHiddenInput({
-      name: "appointment[mammogramDataTemp][machineRoom]",
+      name: "event[mammogramDataTemp][machineRoom]",
       value: currentRoomName
     }) }}
   {% else %}
@@ -52,16 +52,8 @@
     </p>
   {% endif %}
 
-  <h2>Observations during mammogram</h2>
-  {{ button({
-    text: "Add breast features",
-    href: appointmentUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
-    variant: "secondary",
-    small: true
-  }) }}
-
   {# {{ radios({
-    name: "appointment[mammogramDataTemp][machineRoom]",
+    name: "event[mammogramDataTemp][machineRoom]",
     value: mammogramSource.machineRoom,
     idPrefix: "machineRoom",
     fieldset: {
@@ -91,20 +83,20 @@
      being handled in manual image collection mode. The reason-for-switching
      input is only shown when the user manually switched mid-appointment via
      the troubleshooting link on the automatic images page (failover). #}
-  {% set isManualFailover = appointment.mammogramDataTemp.isManualFailover %}
-  {% set troubleshootingIssue = appointment.mammogramDataTemp.troubleshootingIssue %}
+  {% set isManualFailover = event.mammogramDataTemp.isManualFailover %}
+  {% set troubleshootingIssue = event.mammogramDataTemp.troubleshootingIssue %}
   {% set hasTroubleshootingIssue = troubleshootingIssue in ['worklist-participant', 'wrong-image-count', 'incorrect-image-labels'] %}
   {% set showWorklistMatchingContent = troubleshootingIssue == 'worklist-participant' %}
-  {% set showManualParticipantDetails = showWorklistMatchingContent or isManualFailover %}
+  {% set showDefaultManualContent = data.settings.screening.manualImageCollection == 'true' or data.event.isManualImageCollection or isManualFailover %}
 
-  {% if showManualParticipantDetails %}
+  {% if (hasTroubleshootingIssue and showWorklistMatchingContent) or (not hasTroubleshootingIssue and showDefaultManualContent) %}
     <h2>Manually add participant details</h2>
     <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
     {{ summaryList({
       rows: [
         {
           key: { html: "<span class='app-nowrap'>Accession number</span>" },
-          value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (appointment.accessionNumber | formatAccessionNumber) + '</span>' }
+          value: { html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (event.accessionNumber | formatAccessionNumber) + '</span>' }
         },
         {
           key: { text: "NHS number" },
@@ -135,7 +127,7 @@
             classes: "nhsuk-label--s"
           },
           id: "manualImageModeReason",
-          name: "appointment[mammogramDataTemp][manualImageModeReason]",
+          name: "event[mammogramDataTemp][manualImageModeReason]",
           rows: 3,
           value: mammogramSource.manualImageModeReason
         }) }}
@@ -145,7 +137,7 @@
 
   {{ radios({
     idPrefix: "imagingComplete",
-    name: "appointment[mammogramDataTemp][isStandardSet]",
+    name: "event[mammogramDataTemp][isStandardSet]",
     fieldset: {
       legend: {
         text: "Have you taken a standard set of images?",
