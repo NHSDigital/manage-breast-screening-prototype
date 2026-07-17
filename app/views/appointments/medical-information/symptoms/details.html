@@ -63,6 +63,25 @@
 
   {% endif %}
 
+  {# Whether this is a sign noted by the mammographer rather than a symptom reported by the participant #}
+  {{ checkboxes({
+    idPrefix: "isMammographerObserved",
+    name: "appointment[symptomTemp][isMammographerObserved]",
+    fieldset: {
+      legend: {
+        text: "Clinical sign",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Mammographer-noted sign",
+        checked: true if appointment.symptomTemp.isMammographerObserved else false
+      }
+    ]
+  }) }}
+
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
 

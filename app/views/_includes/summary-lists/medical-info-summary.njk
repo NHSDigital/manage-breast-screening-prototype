@@ -47,11 +47,11 @@
   {% if symptomsCount == 0 %}
     <p>No symptoms added</p>
   {% elif symptomsCount == 1 %}
-    <p>{{ symptomSummaries[0] }}</p>
+    <p>{{ symptomSummaries[0] | sentenceCase }}</p>
   {% else %}
     <ul class="nhsuk-list">
       {% for summary in symptomSummaries %}
-        <li>{{ summary }}</li>
+        <li>{{ summary | sentenceCase }}</li>
       {% endfor %}
     </ul>
   {% endif %}

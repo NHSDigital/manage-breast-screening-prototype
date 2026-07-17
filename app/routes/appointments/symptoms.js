@@ -220,9 +220,12 @@ module.exports = (router) => {
           symptomNotes: symptomTemp.symptomNotes
         }
 
-        // For new symptoms, add the creation timestamp
+        // For new symptoms, record when and who added them
         if (isNewSymptom) {
           symptom.dateAdded = new Date().toISOString()
+          symptom.addedByUserId = data.currentUser?.id
+        } else {
+          symptom.addedByUserId = symptomTemp.addedByUserId
         }
 
         if (symptomTypeConfig) {
@@ -265,6 +268,12 @@ module.exports = (router) => {
         if (symptomTemp.isIntermittent) {
           symptom.isIntermittent = true
         }
+
+        // Sign noted by the mammographer rather than reported by the participant
+        const observedValue = symptomTemp.isMammographerObserved
+        symptom.isMammographerObserved = Array.isArray(observedValue)
+          ? observedValue.includes('yes')
+          : observedValue === 'yes' || observedValue === true
 
         symptom.hasStopped =
           Array.isArray(symptomTemp.hasStopped) &&

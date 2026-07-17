@@ -1,6 +1,7 @@
 // app/lib/utils/medical-information.js
 
 const medicalHistoryTypes = require('../../data/medical-history-types')
+const { startLowerCase } = require('./strings')
 
 /**
  * Check whether a string names a medical history type, by type or slug
@@ -287,15 +288,17 @@ const countMedicalHistoryItems = (medicalHistory) => {
 /**
  * Summarise a single symptom into a concise string
  *
+ * Output is lowercase - run through the sentenceCase filter when displaying
+ *
  * @param {Object} symptom - The symptom object
- * @returns {string} A summary string like "Lump (right breast)" or "Nipple change: bloody discharge (both nipples)"
+ * @returns {string} A summary string like "lump (right breast)" or "nipple change: bloody discharge (both nipples)"
  */
 const summariseSymptom = (symptom) => {
   if (!symptom || !symptom.type) {
     return ''
   }
 
-  let summary = symptom.type
+  let summary = startLowerCase(symptom.type)
 
   // Add sub-type details for specific symptom types
   if (symptom.type === 'Nipple change' && symptom.nippleChangeType) {
@@ -303,15 +306,15 @@ const summariseSymptom = (symptom) => {
       symptom.nippleChangeType === 'other' && symptom.nippleChangeDescription
         ? symptom.nippleChangeDescription
         : symptom.nippleChangeType
-    summary += `: ${changeType}`
+    summary += `, ${changeType}`
   } else if (symptom.type === 'Skin change' && symptom.skinChangeType) {
     const changeType =
       symptom.skinChangeType === 'other' && symptom.skinChangeDescription
         ? symptom.skinChangeDescription
         : symptom.skinChangeType
-    summary += `: ${changeType}`
+    summary += `, ${changeType}`
   } else if (symptom.type === 'Other' && symptom.otherDescription) {
-    summary = symptom.otherDescription
+    summary = startLowerCase(symptom.otherDescription)
   }
 
   // Add location
@@ -351,6 +354,11 @@ const summariseSymptom = (symptom) => {
 
   if (location) {
     summary += ` (${location})`
+  }
+
+  // Flag signs noted by the mammographer rather than reported by the participant
+  if (symptom.isMammographerObserved) {
+    summary = `sign: ${summary}`
   }
 
   return summary
