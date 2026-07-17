@@ -312,7 +312,7 @@ const summariseSymptom = (symptom) => {
       symptom.skinChangeType === 'other' && symptom.skinChangeDescription
         ? symptom.skinChangeDescription
         : symptom.skinChangeType
-    summary += `: ${changeType}`
+    summary += `, ${changeType}`
   } else if (symptom.type === 'Other' && symptom.otherDescription) {
     summary = startLowerCase(symptom.otherDescription)
   }
