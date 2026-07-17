@@ -306,7 +306,7 @@ const summariseSymptom = (symptom) => {
       symptom.nippleChangeType === 'other' && symptom.nippleChangeDescription
         ? symptom.nippleChangeDescription
         : symptom.nippleChangeType
-    summary += `: ${changeType}`
+    summary += `, ${changeType}`
   } else if (symptom.type === 'Skin change' && symptom.skinChangeType) {
     const changeType =
       symptom.skinChangeType === 'other' && symptom.skinChangeDescription
