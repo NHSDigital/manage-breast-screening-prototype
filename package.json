@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "cssnano": "^8.0.2",
-    "postcss": "^8.5.19",
+    "postcss": "^8.5.21",
     "prettier": "^3.9.5",
     "purgecss": "^8.0.0"
   }
