@@ -429,59 +429,23 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
 
   const summaries = []
 
-  // HRT summary
-  const hrt = medicalInformation.hrt
-  if (hrt) {
-    if (hrt.hrtQuestion === 'yes') {
-      summaries.push(
-        `Taking HRT (started ${hrt.hrtDateStarted || 'date not specified'})`
-      )
-    } else if (hrt.hrtQuestion === 'no-recently-stopped') {
-      if (hrt.hrtDateStopped) {
-        summaries.push(`Recently stopped HRT (stopped ${hrt.hrtDateStopped})`)
-      } else {
-        summaries.push('Recently stopped HRT')
-      }
-    }
-    // Don't add anything for 'no' - that's the default/negative state
+  const breastDensityFactorsRaw = medicalInformation.breastDensityFactors
+  const breastDensityFactors = Array.isArray(breastDensityFactorsRaw)
+    ? breastDensityFactorsRaw
+    : breastDensityFactorsRaw
+      ? [breastDensityFactorsRaw]
+      : []
+
+  if (breastDensityFactors.includes('hrt')) {
+    summaries.push('Taking HRT')
   }
 
-  // Pregnancy and breastfeeding summary
-  const pregBf = medicalInformation.pregnancyAndBreastfeeding
-  if (pregBf) {
-    // Pregnancy
-    if (pregBf.pregnancyStatus === 'yes') {
-      if (pregBf.pregnancyDueDate) {
-        summaries.push(`Pregnant (due ${pregBf.pregnancyDueDate})`)
-      } else {
-        summaries.push('Pregnant')
-      }
-    } else if (pregBf.pregnancyStatus === 'noButRecently') {
-      if (pregBf.pregnancyEndDate) {
-        summaries.push(`Recently pregnant (ended ${pregBf.pregnancyEndDate})`)
-      } else {
-        summaries.push('Recently pregnant')
-      }
-    }
+  if (breastDensityFactors.includes('pregnant')) {
+    summaries.push('Pregnant')
+  }
 
-    // Breastfeeding
-    if (pregBf.breastfeedingStatus === 'yes') {
-      if (pregBf.breastfeedingStartDate) {
-        summaries.push(
-          `Breastfeeding (started ${pregBf.breastfeedingStartDate})`
-        )
-      } else {
-        summaries.push('Breastfeeding')
-      }
-    } else if (pregBf.breastfeedingStatus === 'recentlyStopped') {
-      if (pregBf.breastfeedingStopDate) {
-        summaries.push(
-          `Recently breastfeeding (stopped ${pregBf.breastfeedingStopDate})`
-        )
-      } else {
-        summaries.push('Recently breastfeeding')
-      }
-    }
+  if (breastDensityFactors.includes('breastfeeding')) {
+    summaries.push('Breastfeeding')
   }
 
   // Other medical information (free text)
