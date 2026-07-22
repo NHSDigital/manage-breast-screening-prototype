@@ -95,6 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Handle reset data in background
   setupResetSessionLink()
 
+  // Auto-save breast density factors when changed
+  setupBreastDensityFactorsAutosave()
+
   // Reading workflow: auto-dismiss the opinion banner after a delay
   const opinionBanner = document.querySelector('[data-reading-opinion-banner]')
   if (opinionBanner) {
@@ -184,6 +187,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 })
+
+function setupBreastDensityFactorsAutosave() {
+  const saveTarget = document.querySelector('[data-breast-density-factors-save-url]')
+  if (!saveTarget) {
+    return
+  }
+
+  const saveUrl = saveTarget.dataset.breastDensityFactorsSaveUrl
+  if (!saveUrl) {
+    return
+  }
+
+  const selector =
+    'input[name="appointment[medicalInformation][breastDensityFactors]"]'
+  const checkboxes = document.querySelectorAll(selector)
+
+  if (checkboxes.length === 0) {
+    return
+  }
+
+  const saveFactors = async () => {
+    const formData = new URLSearchParams()
+    const selectedCheckboxes = document.querySelectorAll(`${selector}:checked`)
+
+    selectedCheckboxes.forEach((checkbox) => {
+      formData.append(
+        'appointment[medicalInformation][breastDensityFactors]',
+        checkbox.value
+      )
+    })
+
+    try {
+      const response = await fetch(saveUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData.toString()
+      })
+
+      if (!response.ok) {
+        throw new Error('Breast density factors auto-save failed')
+      }
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  checkboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', saveFactors)
+  })
+}
 
 // Quick settings modal — press backtick (`) to open settings in a modal overlay.
 // On close, the page reloads to pick up any changes.

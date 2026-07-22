@@ -1,121 +1,68 @@
 {# app/views/_includes/summary-lists/medical-information/other-relevant-information #}
 
-{% set hrtHtml %}
-  {% set hrtData = appointment.medicalInformation.hrt %}
+{% set selectedBreastDensityFactors = appointment.medicalInformation.breastDensityFactors %}
 
-  {% if hrtData %}
-    {% if hrtData.hrtQuestion == 'yes' %}
-      <p>
-        Currently taking HRT
-      </p>
-      <p>
-        {# Example: "Started: September 2022" #}
-        Started: {{ hrtData.hrtDateStarted }}
-      </p>
-    {% elseif hrtData.hrtQuestion == 'no-recently-stopped' %}
-      <p>
-        Recently stopped taking HRT
-      </p>
-      <p>
-        Duration taken: {{ hrtData.hrtDurationBeforeStopping }}<br>
-        Date stopped: {{ hrtData.hrtDateStopped }}<br>
-      </p>
-    {% elseif hrtData.hrtQuestion == 'no' %}
-      Not taking HRT
-    {% else %}
-      No information provided
-    {% endif %}
+{% if selectedBreastDensityFactors and not (selectedBreastDensityFactors | isArray) %}
+  {% set selectedBreastDensityFactors = [selectedBreastDensityFactors] %}
+{% endif %}
+
+{% set breastDensityFactorsSummaryHtml %}
+  {% if selectedBreastDensityFactors and selectedBreastDensityFactors | length > 0 %}
+    <ul class="nhsuk-list">
+      {% if selectedBreastDensityFactors | includes("hrt") %}
+        <li>Taking HRT</li>
+      {% endif %}
+      {% if selectedBreastDensityFactors | includes("pregnant") %}
+        <li>Pregnant</li>
+      {% endif %}
+      {% if selectedBreastDensityFactors | includes("breastfeeding") %}
+        <li>Breastfeeding</li>
+      {% endif %}
+    </ul>
   {% else %}
-    {{ valueHtml }}
+    <p>No breast density factors added</p>
   {% endif %}
 {% endset %}
 
-{% set pregnancyAndBreastfeedingHtml %}
-  {% set pregnancyAndBreastfeedingData = appointment.medicalInformation.pregnancyAndBreastfeeding %}
+{% set breastDensityFactorsInputHtml %}
+  <div
+    class="nhsuk-u-visually-hidden"
+    data-breast-density-factors-save-url="{{ contextUrl }}/medical-information/breast-density-factors-save"
+  ></div>
 
-  {% if pregnancyAndBreastfeedingData %}
-    {% if pregnancyAndBreastfeedingData.pregnancyStatus == 'yes' %}
-      <p>
-        Currently pregnant
-      </p>
-      <p>
-        {# Example: "Due date: June 2026" #}
-        Due date: {{ pregnancyAndBreastfeedingData.pregnancyDueDate }}
-      </p>
-    {% elseif pregnancyAndBreastfeedingData.pregnancyStatus == 'noButRecently' %}
-      <p>
-        Recently pregnant
-      </p>
-      <p>
-        Pregnancy ended: {{ pregnancyAndBreastfeedingData.pregnancyEndDate }}
-      </p>
-    {% elseif pregnancyAndBreastfeedingData.pregnancyStatus == 'noNotPregnant' %}
-      <p>Not pregnant</p>
-    {% else %}
-      <p>No information provided</p>
-    {% endif %}
-
-  {% if pregnancyAndBreastfeedingData.breastfeedingStatus == 'yes' %}
-      <p>
-        Currently breastfeeding
-      </p>
-      <p>
-        {# Example: "Started: January 2026" #}
-        Started: {{ pregnancyAndBreastfeedingData.breastfeedingStartDate }}
-      </p>
-    {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'recentlyStopped' %}
-      <p>
-        Recently breastfeeding
-      </p>
-      <p>
-        Date stopped: {{ pregnancyAndBreastfeedingData.breastfeedingStopDate }}
-      </p>
-    {% elseif pregnancyAndBreastfeedingData.breastfeedingStatus == 'no' %}
-      <p>Not breastfeeding</p>
-    {% else %}
-      <p>No information provided</p>
-    {% endif %}
-  {% else %}
-    {{ valueHtml }}
-  {% endif %}
-
+  {{ checkboxes({
+    name: "appointment[medicalInformation][breastDensityFactors]",
+    values: selectedBreastDensityFactors,
+    classes: "nhsuk-checkboxes--small",
+    hint: {
+      text: "Select any current or recent considerations"
+    },
+    items: [
+      {
+        value: "hrt",
+        text: "HRT (hormone replacement therapy)"
+      },
+      {
+        value: "pregnant",
+        text: "Pregnant"
+      },
+      {
+        value: "breastfeeding",
+        text: "Breastfeeding"
+      }
+    ]
+  }) }}
 {% endset %}
 
 {{ summaryList({
   rows: [
     {
       key: {
-        text: "Hormone replacement therapy (HRT)"
+        text: "Breast density factors"
       },
       value: {
-        html: hrtHtml
-      },
-      actions: {
-        items: [
-          {
-            href: contextUrl + "/medical-information/hormone-replacement-therapy" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-            text: "Change",
-            visuallyHiddenText: "hormone replacement therapy (HRT)"
-          }
-        ]
-      } if allowEdits
-    },
-    {
-      key: {
-        text: "Pregnancy and breastfeeding"
-      },
-      value: {
-        html: pregnancyAndBreastfeedingHtml
-      },
-      actions: {
-        items: [
-          {
-            href: contextUrl + "/medical-information/pregnancy-and-breastfeeding" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-            text: "Change",
-            visuallyHiddenText: "pregnancy and breastfeeding"
-          }
-        ]
-      } if allowEdits
+        html: breastDensityFactorsInputHtml if allowEdits else breastDensityFactorsSummaryHtml
+      }
     },
     {
       key: {

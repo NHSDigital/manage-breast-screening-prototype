@@ -229,19 +229,13 @@
   {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
 {% endset %}
 
-{% set otherRelevantInformationCount = 0 %}
+{% set selectedBreastDensityFactors = appointment.medicalInformation.breastDensityFactors %}
 
-{% if appointment.medicalInformation.hrt.hrtQuestion == 'yes' %}
-  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
+{% if selectedBreastDensityFactors and not (selectedBreastDensityFactors | isArray) %}
+  {% set selectedBreastDensityFactors = [selectedBreastDensityFactors] %}
 {% endif %}
 
-{% if appointment.medicalInformation.pregnancyAndBreastfeeding.pregnancyStatus == 'yes' %}
-  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
-{% endif %}
-
-{% if appointment.medicalInformation.pregnancyAndBreastfeeding.breastfeedingStatus == 'yes' %}
-  {% set otherRelevantInformationCount = otherRelevantInformationCount + 1 %}
-{% endif %}
+{% set otherRelevantInformationCount = selectedBreastDensityFactors | length if selectedBreastDensityFactors else 0 %}
 
 {% if otherRelevantInformationCount > 0 %}
   {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information added" %}
