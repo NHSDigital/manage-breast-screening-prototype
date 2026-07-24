@@ -11,11 +11,11 @@ This document provides a technical overview of the image reading section of the 
 - [ ] Clean up data storage of technical recall and recall for assessment
 - [ ] Improve data display on review summary list
 - [ ] Make location where full medical info can be shown including breast features diagram
-- [ ] Existing read UI assumes you're in a batch — might not always be true if retrospectively editing
+- [ ] Existing read UI assumes you're in a session — might not always be true if retrospectively editing
 
 #### Ideas
 
-- [ ] Should we have UI to let you return to a batch? Index of batches you've worked on?
+- [ ] Should we have UI to let you return to a session? Index of sessions you've worked on?
 - [ ] No good way to navigate by person / see people in general
 - [ ] No good way to see the size and age of the backlog
 
@@ -32,11 +32,11 @@ Need pages to view completed readings outside the workflow:
 
 The image reading section allows radiologists to review mammogram images from screening appointments and record their assessments (opinions). Key features include:
 
-- Batch-based reading sessions (note: 'batch' is being renamed to 'session')
+- Session-based reading (a session is a working list of cases, built lazily or up front)
 - Clinic-based reading workflows
 - First/second read opinion tracking (double-reading requirement)
-- Annotation system for marking abnormalities
-- Skip functionality and progress tracking
+- Annotation system for marking abnormalities (several UI modes via `annotationsMode`)
+- Skip and defer functionality, with progress tracking
 - Keyboard shortcuts on the opinion page, usable from both the reading page and the PACS viewer window
 
 ---
@@ -52,14 +52,18 @@ app/
 │   └── prior-mammograms.js           # Prior mammogram utilities
 ├── views/
 │   ├── reading/
-│   │   ├── index.html               # Reading dashboard/home
+│   │   ├── index-simple.html        # Reading dashboard/home (default layout)
+│   │   ├── index-complex.html       # Reading dashboard/home (via settings.reading.indexLayout)
 │   │   ├── clinics.html             # Clinic list view
-│   │   ├── batch.html               # Batch view with appointment list
-│   │   ├── skipped-review.html      # End-of-batch page when skipped cases remain
+│   │   ├── session.html             # Session view with appointment list
+│   │   ├── skipped-review.html      # End-of-session page when skipped cases remain
+│   │   ├── no-more-cases.html       # Shown when a session has no readable cases left
+│   │   ├── deferred.html            # Deferred cases list
 │   │   ├── history.html             # Reading history
 │   │   ├── reading-statistics.html  # Reading statistics dashboard
-│   │   ├── create-custom-batch.html # Custom batch creation
+│   │   ├── create-custom-session.html # Custom session creation
 │   │   ├── priors.html              # Prior mammogram management (admin/co-ordinator view)
+│   │   ├── batch.html               # Unused — predates the batch→session rename
 │   │   ├── workflow/                # Reading workflow pages
 │   │   │   ├── opinion.html         # Main opinion page (entry point)
 │   │   │   ├── normal-details.html  # Optional details for normal opinion
@@ -67,18 +71,27 @@ app/
 │   │   │   ├── technical-recall.html   # Technical recall details
 │   │   │   ├── recall-for-assessment-details.html  # Per-breast assessment
 │   │   │   ├── annotation.html      # Add/edit annotations
+│   │   │   ├── annotate-v2.html     # Newer annotation UI (image-based modes)
 │   │   │   ├── confirm-abnormal.html
+│   │   │   ├── defer-case.html      # Defer a case out of the reading queue
+│   │   │   ├── medical-information.html  # Full medical information view
 │   │   │   ├── recommended-assessment.html  # Not currently used in routing
 │   │   │   ├── compare.html         # Second-reader comparison page
 │   │   │   ├── request-priors.html  # Request prior images during reading
 │   │   │   ├── review.html          # Review before saving (non-normal opinions)
 │   │   │   └── existing-read.html   # View saved read with change option
 │   ├── _includes/reading/
-│   │   ├── reading-status-bar.njk   # Batch/clinic context bar
+│   │   ├── reading-status-bar.njk   # Session/clinic context bar
 │   │   ├── workflow-navigation.njk  # Prev/next case links
 │   │   ├── opinion-banner.njk       # Success banner shown on next case after saving
 │   │   ├── opinion-ui.njk           # Opinion selection UI component
-│   │   └── image-warnings.njk       # Warnings about image quality
+│   │   ├── image-warnings.njk       # Warnings about image quality
+│   │   ├── priors-summary.njk       # Prior mammograms summary
+│   │   ├── annotation-form.njk      # Annotation form fields
+│   │   ├── annotation-lightbox.njk  # Annotation image lightbox
+│   │   ├── annotation-modal.njk     # Annotation modal
+│   │   ├── annotations-with-images-progressive.njk  # Annotation UI variant
+│   │   └── annotations-with-images-tabbed.njk       # Annotation UI variant
 │   └── _templates/
 │       └── layout-reading.html      # Reading-specific layout
 ```
@@ -190,19 +203,20 @@ data.imageReadingTemp = {
 - Cleared on final save via `save-opinion` route
 - When returning to an already-read appointment, populated from saved read
 
-### 3. Batch Storage: `data.readingSessionBatches`
+### 3. Session Storage: `data.readingSessions`
 
-Reading batches are stored in session:
+Reading sessions (working lists of cases) are stored in session data:
 
 ```javascript
-data.readingSessionBatches = {
-  [batchId]: {
+data.readingSessions = {
+  [sessionId]: {
     id: 'abc123',
     name: 'All cases needing reads',
     type: 'all_reads' | 'first_reads' | 'second_reads' | 'awaiting_priors' | 'clinic' | 'custom',
-    appointmentIds: ['appointment1', 'appointment2', ...],  // grows one-at-a-time for lazy batches
-    targetSize: 25,                        // desired final size (0 = unlimited for clinic batches)
-    clinicId: null,  // Only for clinic batches
+    appointments: [...],                   // the appointment objects currently in the session
+    appointmentIds: ['appointment1', 'appointment2', ...],  // grows one-at-a-time for lazy sessions
+    targetSize: 25,                        // desired final size (clinic sessions: however many eligible appointments exist)
+    clinicId: null,  // Only for clinic sessions
     createdAt: '2025-01-15T10:00:00.000Z',
     skippedAppointments: ['appointment3'],
     filters: { hasSymptoms, includeAwaitingPriors, complexOnly }
@@ -210,7 +224,7 @@ data.readingSessionBatches = {
 }
 ```
 
-**Lazy batches**: When `data.settings.reading.lazyBatches === 'true'` (default), non-clinic batches start with only the first appointment. `topUpBatch()` is called after each read or skip to add the next eligible appointment, growing the batch one case at a time up to `targetSize`. Clinic batches are always fully populated at creation.
+**Lazy sessions**: When `data.settings.reading.lazySessions === 'true'` (default), non-clinic sessions start with only the first appointment. `topUpSession()` is called after each read or skip to add the next eligible appointment, growing the session one case at a time up to `targetSize`. Clinic sessions are always fully populated at creation.
 
 ---
 
@@ -219,46 +233,57 @@ data.readingSessionBatches = {
 ### URL Structure
 
 ```
-/reading                              # Dashboard
+/reading                              # Dashboard (index-simple or index-complex via settings)
 /reading/clinics                      # Clinic list (redirects to /mine)
 /reading/clinics/mine                 # Clinics with cases user can read
 /reading/clinics/all                  # All clinics
-/reading/clinics/:clinicId            # Loads/creates clinic batch, redirects to batch view
-/reading/clinics/:clinicId/start      # Creates clinic batch, starts first appointment
+/reading/clinics/:clinicId            # Loads/creates clinic session, redirects to session view
+/reading/clinics/:clinicId/start      # Creates clinic session, starts first appointment
 /reading/priors                       # Prior mammogram management (redirects to /all)
 /reading/priors/:filter               # Filter: all | not-requested | pending | requested | resolved
 /reading/priors/update-status         # POST: Update mammogram request status
-/reading/create-batch                 # Creates batch from query params, redirects to first appointment
-/reading/batch/:batchId               # Batch overview (redirects to /your-reads)
-/reading/batch/:batchId/skipped-review  # End-of-batch page when skipped cases remain
-/reading/batch/:batchId/:view         # Batch with view (your-reads | all-reads)
-/reading/batch/:batchId/appointments/:appointmentId              # Appointment entry (redirects to opinion, existing-read, or request-priors)
-/reading/batch/:batchId/appointments/:appointmentId/:step        # GET: Render workflow step template
-/reading/batch/:batchId/appointments/:appointmentId/skip         # Skip current appointment, advance batch
-/reading/batch/:batchId/appointments/:appointmentId/opinion-answer           # POST: Handle opinion selection → compare or details
-/reading/batch/:batchId/appointments/:appointmentId/opinion-details-complete # POST: After details → compare (late) or review/save
-/reading/batch/:batchId/appointments/:appointmentId/technical-recall-answer  # POST: Clean up TR view data
-/reading/batch/:batchId/appointments/:appointmentId/compare-answer           # POST: Handle comparison decision
-/reading/batch/:batchId/appointments/:appointmentId/save-opinion             # POST: Persist read, advance batch
-/reading/batch/:batchId/appointments/:appointmentId/request-priors-answer    # POST: Record prior requests, advance batch
-/reading/batch/:batchId/appointments/:appointmentId/undo-priors              # GET/POST: Undo user's pending prior requests
-/reading/batch/:batchId/appointments/:appointmentId/annotation/add           # Clear temp, redirect to annotation form
-/reading/batch/:batchId/appointments/:appointmentId/annotation/edit/:id      # Load annotation into temp, redirect to form
-/reading/batch/:batchId/appointments/:appointmentId/annotation/save          # POST: Save annotation with validation
-/reading/batch/:batchId/appointments/:appointmentId/annotation/delete/:id    # Delete annotation
+/reading/create-session               # Creates session from query params, redirects to first appointment
+/reading/deferred                     # Deferred cases list
+/reading/deferred/undo                # POST: Undo a deferral
+/reading/session/:sessionId           # Session overview (redirects to view)
+/reading/session/:sessionId/resume    # Resume at the next readable appointment
+/reading/session/:sessionId/skipped-review  # End-of-session page when skipped cases remain
+/reading/session/:sessionId/no-more-cases   # Shown when no readable cases remain
+/reading/session/:sessionId/:view     # Session with view (your-reads | all-reads)
+/reading/session/:sessionId/appointments/:appointmentId              # Appointment entry (redirects to opinion, existing-read, or request-priors)
+/reading/session/:sessionId/appointments/:appointmentId/:step        # GET: Render workflow step template
+/reading/session/:sessionId/appointments/:appointmentId/skip         # Skip current appointment, advance session
+/reading/session/:sessionId/appointments/:appointmentId/opinion-answer           # POST: Handle opinion selection → compare or details
+/reading/session/:sessionId/appointments/:appointmentId/opinion-details-complete # POST: After details → compare (late) or review/save
+/reading/session/:sessionId/appointments/:appointmentId/technical-recall-answer  # POST: Clean up TR view data
+/reading/session/:sessionId/appointments/:appointmentId/recall-for-assessment-answer  # POST: Handle RFA details
+/reading/session/:sessionId/appointments/:appointmentId/compare-answer           # POST: Handle comparison decision
+/reading/session/:sessionId/appointments/:appointmentId/save-opinion             # POST: Persist read, advance session
+/reading/session/:sessionId/appointments/:appointmentId/request-priors-answer    # POST: Record prior requests, advance session
+/reading/session/:sessionId/appointments/:appointmentId/undo-priors              # GET/POST: Undo user's pending prior requests
+/reading/session/:sessionId/appointments/:appointmentId/defer-case-answer        # POST: Defer case out of the queue
+/reading/session/:sessionId/appointments/:appointmentId/undo-defer               # POST: Undo a deferral
+/reading/session/:sessionId/appointments/:appointmentId/annotation/add           # Clear temp, redirect to annotation form
+/reading/session/:sessionId/appointments/:appointmentId/annotation/edit/:annotationId  # Load annotation into temp, redirect to form
+/reading/session/:sessionId/appointments/:appointmentId/annotation/save          # POST: Save annotation with validation
+/reading/session/:sessionId/appointments/:appointmentId/annotation/delete/:annotationId  # Delete annotation
+/reading/session/:sessionId/appointments/:appointmentId/annotate-v2/save         # POST: Save from the newer annotation UI
+/reading/session/:sessionId/appointments/:appointmentId/save-annotations-json    # POST: Save annotations posted as JSON
+/reading/session/:sessionId/appointments/:appointmentId/save-breast-assessment   # POST: Save per-breast assessment
 /reading/history                      # Reading history (redirects to /mine)
 /reading/history/:view                # History view (mine | all)
 ```
 
 ### Middleware
 
-The route file includes middleware at `/reading/batch/:batchId/appointments/:appointmentId` that:
+The route file includes middleware at `/reading/session/:sessionId/appointments/:appointmentId` that:
 
-- Validates batch and appointment exist
+- Validates session and appointment exist
 - Loads and attaches to `res.locals`:
-  - `batch`, `appointment`, `participant`, `clinic`, `unit`, `location`
-  - `progress` (batch reading progress)
+  - `session`, `appointment`, `participant`, `clinic`, `unit`, `location`
+  - `progress` (session reading progress)
   - `appointmentData` (combined object)
+  - `sessionId`, `appointmentId`, `isReadingWorkflow`
 - On GET requests only: Initialises `imageReadingTemp` with `appointmentId` if not already set for this appointment
 - Populates `imageReadingTemp` from saved read if user has already read this appointment
 
@@ -321,7 +346,7 @@ On `/compare`, the second reader can:
 
 ```
 /existing-read (shows unrequested priors) → /request-priors
-    → POST /request-priors-answer → advances batch, marks mammograms as 'pending'
+    → POST /request-priors-answer → advances session, marks mammograms as 'pending'
 /existing-read → /undo-priors → rolls back 'pending' requests, redirects to /opinion
 ```
 
@@ -341,7 +366,7 @@ On `/compare`, the second reader can:
 Extends `layout-app.html` and provides (~60 lines):
 
 1. **Status bar** (via `reading-status-bar.njk`, shown when `isReadingWorkflow`):
-   - Batch/clinic context
+   - Session/clinic context
    - Progress (X read, Y remaining, Z skipped)
    - Participant details row (name, DOB, NHS number, SX number)
 
@@ -356,12 +381,12 @@ Extends `layout-app.html` and provides (~60 lines):
 
 Templates receive via `res.locals`:
 
-- `batch` - Current batch object
+- `session` - Current session object
 - `appointment` - Current appointment (use `appointment | getReadingMetadata` to compute metadata)
 - `participant` - Participant data
 - `clinic`, `unit`, `location` - Clinic context
 - `progress` - Reading progress object (includes `previousUserHasRead`, `nextUserHasRead`)
-- `batchId`, `appointmentId` - Route params
+- `sessionId`, `appointmentId` - Route params
 - `isReadingWorkflow` - Boolean flag for workflow mode
 
 ### Workflow Page Flags
@@ -378,9 +403,9 @@ Templates receive via `res.locals`:
 
 - `getReadingMetadata(appointment)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions }` (computed on demand)
 - `getReadsAsArray(appointment)` - Returns reads sorted by readNumber (or timestamp fallback)
-- `getReadsForUser(appointment, userId)` - Get this user's read object
+- `getReadForUser(appointment, userId)` - Get this user's read object
 - `getOtherReads(appointment, userId)` - Get reads from other users (for comparison)
-- `writeReading(appointment, userId, reading, data, batchId)` - Saves a reading, assigns readNumber, removes from skipped list
+- `writeReading(appointment, userId, reading, data, sessionId)` - Saves a reading, assigns readNumber, removes from skipped list
 - `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
 - `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `arbitrationPolicy`
 - `getOutcome(appointment, settings)` - Computes outcome: `not_read` | `pending_second_read` | `arbitration_pending` | `normal` | `technical_recall` | `recall_for_assessment`. Third read (readNumber 3) is the arbitration read and its opinion resolves the case.
@@ -408,24 +433,28 @@ Templates receive via `res.locals`:
 - `filterAppointmentsByClinic(appointments, clinicId)` - Filter by clinic
 - `filterAppointmentsByDayRange(appointments, minDays, maxDays)` - Filter by days since screening
 
-### reading.js — Batch Functions
+### reading.js — Session Functions
 
-- `createReadingBatch(data, options)` - Creates a batch; lazy batches start with one appointment
-- `topUpBatch(data, batchId)` - Adds next eligible appointment if batch is below target size
-- `getReadingBatch(data, batchId)` - Retrieves batch
-- `getOrCreateClinicBatch(data, clinicId)` - Gets/creates clinic-based batch (batched by clinicId)
-- `getFirstReadableAppointmentInBatch(data, batchId, userId)` - First appointment user can read
+- `createReadingSession(data, options)` - Creates a session; lazy sessions start with one appointment
+- `getEligibleCandidatesForSession(data, options)` - Eligible appointments for a would-be session
+- `getDefaultSessionName(type, clinicId, data)` - Default display name for a session
+- `generateSessionId()` - New session id
+- `topUpSession(data, sessionId)` - Adds next eligible appointment if session is below target size
+- `getReadingSession(data, sessionId)` - Retrieves session
+- `getOrCreateClinicSession(data, clinicId)` - Gets/creates clinic-based session (keyed by clinicId)
+- `getFirstReadableAppointmentInSession(data, sessionId, userId)` - First appointment user can read
 - `getFirstUserReadableAppointment(appointments, userId)` - First readable appointment in array
 - `getNextUserReadableAppointment(appointments, currentAppointmentId, userId, options)` - Next readable appointment
 - `getResumeAppointmentForUser(appointments, userId, skippedAppointments)` - Resume point (first readable after furthest progress)
-- `getBatchReadingProgress(data, batchId, currentAppointmentId, userId)` - Progress including `targetSize` and `targetRemaining`
-- `skipAppointmentInBatch(data, batchId, appointmentId)` - Marks appointment as skipped
+- `getSessionReadingProgress(data, sessionId, currentAppointmentId, userId)` - Progress including `targetSize` and `targetRemaining`
+- `skipAppointmentInSession(data, sessionId, appointmentId)` - Marks appointment as skipped
 
 ### reading.js — Boolean Checks
 
 - `hasReads(appointment)` - Has any reads
 - `canUserReadAppointment(appointment, userId)` - User can read (not already read, not awaiting priors, under max reads)
 - `userHasReadAppointment(appointment, userId)` - User has already read
+- `isDeferred(appointment)` - Case has an active deferral (`imageReading.deferral`)
 - `needsFirstRead(appointment)`, `needsSecondRead(appointment)`, `needsArbitration(appointment)` (policy-aware context function)
 
 ### prior-mammograms.js
@@ -487,14 +516,17 @@ Reading behavior is configured via:
 **User settings** (in `data.settings.reading`):
 
 - `confirmNormal` - Require confirmation for normal results
+- `confirmTechnicalRecall`, `confirmRecallForAssessment` - Require confirmation for those opinions
 - `showRemaining` - Show remaining counts
 - `autoOpenPacsViewer` - Auto-open PACS viewer when entering reading workflow (once per session)
 - `enableOpinionDelay` - Enforce lockout period before shortcuts/buttons become active
-- `secondReaderComparison` - When to show compare page: `'early'` | `'late'` (default) | `'off'`
+- `annotationsMode` - Annotation UI variant: `'without-images'` | `'with-images-simple'` (default) | `'with-images'` | `'with-images-progressive'`
+- `indexLayout` - Reading dashboard layout: `'simple'` (default) | `'complex'`
+- `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
 - `compareWhen` - Which cases trigger compare: `'non_normal'` (default) | `'discordant_only'`
 - `arbitrationPolicy` - When reads go to arbitration: `'discordant_only'` (default) | `'all_non_normal'`
-- `lazyBatches` - Build batches lazily one case at a time: `'true'` (default) | `'false'`
-- `defaultBatchTargetSize` - Default batch size (default: 25)
+- `lazySessions` - Build sessions lazily one case at a time: `'true'` (default) | `'false'`
+- `defaultSessionSize` - Default session size (default: 25)
 
 **Hard config** (in `config.reading`):
 
@@ -539,18 +571,30 @@ A case is "awaiting priors" (`awaitingPriors(appointment)`) when any mammogram h
 
 Prior mammograms are generated at seed time in `appointment-generator.js` using `generatePreviousMammograms()`. Generation rate is configurable via seed profiles in `seed-profiles.js`.
 
-### Batch behaviour
+### Session behaviour
 
-- By default, awaiting-priors appointments are **excluded** from all reading batches
-- The `awaiting_priors` batch type **only** includes these appointments
-- The `includeAwaitingPriors` filter flag overrides the default exclusion (used by the custom batch creator)
+- By default, awaiting-priors appointments are **excluded** from all reading sessions
+- The `awaiting_priors` session type **only** includes these appointments
+- The `includeAwaitingPriors` filter flag overrides the default exclusion (used by the custom session creator)
 
 ### UI
 
-- The reading dashboard shows an "Awaiting priors" count card linking to a dedicated batch
-- Within a batch, awaiting-priors cases show their status on `/existing-read`
+- The reading dashboard shows an "Awaiting priors" count card linking to a dedicated session
+- Within a session, awaiting-priors cases show their status on `/existing-read`
 - `/reading/priors` is a management view (for co-ordinators) showing all pending requests filterable by status
 - Readers can undo their own `pending` requests via `/undo-priors`
+
+---
+
+## Deferred cases
+
+A reader can defer a case out of the reading queue (for example to raise it with a colleague) rather than skip or read it.
+
+- Deferral is stored on the appointment: `appointment.imageReading.deferral = { deferredAt, deferredBy, reason }`
+- Deferring removes any existing read by that user — a deferral replaces a prior opinion
+- `isDeferred(appointment)` (in `lib/utils/reading.js`) checks for an active deferral
+- Deferred cases are excluded from reading; `/reading/deferred` lists them, and a deferral can be undone (via `/reading/deferred/undo` or the per-case `/undo-defer` route), returning the case to the queue
+- The workflow's `defer-case.html` step collects an optional reason (`deferralReason`)
 
 ---
 

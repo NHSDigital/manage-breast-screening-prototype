@@ -4,7 +4,7 @@ This document explains the architecture and patterns used in the seed data gener
 
 ## Overview
 
-The prototype uses generators to create realistic test data for participants, appointments, and associated medical information. Data generation follows a hierarchical pattern where each generator can be configured, overridden, and tested independently.
+The prototype uses generators to create realistic test data for participants, episodes, appointments, and associated medical information. Data generation follows a hierarchical pattern where each generator can be configured, overridden, and tested independently.
 
 ## Architecture
 
@@ -23,10 +23,15 @@ generate-seed-data.js (main orchestrator)
   ├─> clinic-generator.js
   │     Creates clinics with slots for each BSU
   │
-  ├─> appointment-generator.js
-  │     Creates appointments by assigning participants to clinic slots
+  ├─> episode-generator.js + appointment-generator.js
+  │     Every appointment sits inside an episode (the screening round it
+  │     belongs to). For each filled slot: generateEpisode() creates the
+  │     episode first, then generateAppointment() creates the appointment,
+  │     and the two are linked both ways (episode.appointmentIds /
+  │     appointment.episodeId)
   │     │
-  │     └─> medical-information-generator.js (for completed appointments only)
+  │     └─> medical-information/ generators (for completed and in-progress
+  │           appointments)
   │           ├─> symptoms-generator.js
   │           ├─> hrt-generator.js
   │           ├─> pregnancy-and-breastfeeding-generator.js
@@ -34,15 +39,25 @@ generate-seed-data.js (main orchestrator)
   │           ├─> breast-features-generator.js
   │           └─> medical-history-generator.js
   │
-  └─> reading-generator.js
-        Adds reading/outcome data to appointments
+  ├─> reading-generator.js
+  │     Adds reading/outcome data to appointments
+  │     finaliseEpisodeStage() then sets each episode's stage/outcome from
+  │     its appointments and reads
+  │
+  └─> episode-generator.js (historic episodes)
+        generateHistoricEpisodes() adds summary-level past screening rounds
+        per participant (outcome-first: dates, outcome and a
+        mammogramSummary — no appointments or reads).
+        checkEpisodes() validates the combined result
 ```
 
 **Key points:**
 - Generators are called sequentially by the main orchestrator
-- Medical information is only generated for **completed appointments**
+- Every appointment belongs to an episode; episodes are created first
+- Medical information is generated for completed and in-progress appointments
 - Participants are mostly created upfront, but can be generated on-demand
-- Reading data is added after all appointments are created
+- Reading data is added after all appointments are created, then episode stages are finalised
+- Historic episodes are summary-level only — see `docs/data-conventions.md` for the episode data model
 
 ### Storage Locations
 
@@ -51,12 +66,18 @@ generate-seed-data.js (main orchestrator)
 - NHS number, GP details
 - Persistent information
 
+**Episode level:**
+- The screening round: stage (`scheduled` | `mammograms` | `reading` | `assessment` | `closed`), stage history, final outcome
+- Links to its appointments (`appointmentIds`)
+- Historic episodes: summary-level record of a past round (dates, outcome, `mammogramSummary`) with no appointments
+
 **Appointment level:**
 - Medical information collected during appointments
 - Session details (who, when, where)
+- Mammogram images and reading data (`imageReading`)
 - Appointment-specific data
 
-**Key principle:** Medical information is stored at the **appointment level**, representing data collected during specific appointments.
+**Key principle:** Medical information is stored at the **appointment level**, representing data collected during specific appointments. Round-level state (stage, outcome) lives on the **episode**.
 
 ## Generator Pattern
 
@@ -207,8 +228,8 @@ module.exports = [
         lastName: 'Test'
       },
       config: {
-        // Appointment configuration
-        appointmentId: 'evt-001',
+        // Appointment configuration (ids are opaque strings, e.g. '5gpn41oi')
+        appointmentId: 'abc12345',
         scheduling: {
           whenRelativeToToday: 0,
           status: 'complete'
@@ -585,10 +606,10 @@ const appointmentsWithReadingData = generateReadingData(
 
 ### In appointment-generator.js
 
-Medical information is generated for completed appointments only:
+Medical information is generated for completed appointments (and again, similarly, for today's in-progress appointment):
 
 ```javascript
-// Lines 246-258 in appointment-generator.js
+// In appointment-generator.js
 if (isCompleted(appointmentStatus)) {
   // Generate medical information (symptoms, medical history, etc.)
   const medicalInformation = generateMedicalInformation({
