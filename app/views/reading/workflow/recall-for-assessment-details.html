@@ -73,12 +73,18 @@
       <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
       <div id="{{ params.side }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if params.annotationError }}">
         <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">{{ params.side | sentenceCase }} breast annotations</h3>
-        {% if params.annotationError %}
+        {# Error before the list when annotations exist (wrong level); after hint text when none exist #}
+        {% if params.annotationError and params.annotationCount > 0 %}
           <span class="app-annotation-section__error-message">
             <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
           </span>
         {% endif %}
         {{ params.annotationsHtml | safe }}
+        {% if params.annotationError and params.annotationCount == 0 %}
+          <span class="app-annotation-section__error-message">
+            <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
+          </span>
+        {% endif %}
       </div>
       {{ params.annotationsButtonHtml | safe }}
     {% endif %}
@@ -224,7 +230,8 @@
           side: breastSide,
           annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode,
           annotationsButtonHtml: sideAnnotationsButtonHtml if isInlineAnnotationsMode,
-          annotationError: _sideAnnotationsError if isInlineAnnotationsMode
+          annotationError: _sideAnnotationsError if isInlineAnnotationsMode,
+          annotationCount: sideAnnotations | length
         }) }}
       </div>
     {% endfor %}
