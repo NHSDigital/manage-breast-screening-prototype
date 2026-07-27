@@ -210,6 +210,34 @@ function setupBreastDensityFactorsAutosave() {
     return
   }
 
+  const updateBreastDensityFactorsSummary = () => {
+    // Find the breast-density-factors section and update its contents summary
+    const section = document.getElementById('breast-density-factors')
+    if (!section) {
+      return
+    }
+
+    // Count selected factors
+    const selectedCheckboxes = document.querySelectorAll(`${checkboxSelector}:checked`)
+    const selectedHrtRadio = document.querySelector(`${hrtRadioSelector}:checked`)
+    let count = selectedCheckboxes.length
+    if (selectedHrtRadio && selectedHrtRadio.value === 'yes') {
+      count += 1
+    }
+
+    // Find and update the contents summary span
+    const summarySpan = section.querySelector('.app-details__contents-summary')
+    if (summarySpan) {
+      if (count === 0) {
+        summarySpan.textContent = 'No breast density factors added'
+      } else if (count === 1) {
+        summarySpan.textContent = '1 breast density factor added'
+      } else {
+        summarySpan.textContent = count + ' breast density factors added'
+      }
+    }
+  }
+
   const saveFactors = async () => {
     const formData = new URLSearchParams()
     const selectedCheckboxes = document.querySelectorAll(`${checkboxSelector}:checked`)
@@ -242,6 +270,9 @@ function setupBreastDensityFactorsAutosave() {
       if (!response.ok) {
         throw new Error('Breast density factors auto-save failed')
       }
+
+      // Update the summary text in the section after successful save
+      updateBreastDensityFactorsSummary()
     } catch (error) {
       console.error(error)
     }
