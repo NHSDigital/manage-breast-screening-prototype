@@ -435,10 +435,9 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
     : breastDensityFactorsRaw
       ? [breastDensityFactorsRaw]
       : []
-
-  if (breastDensityFactors.includes('hrt')) {
-    summaries.push('Taking HRT')
-  }
+  const breastDensityFactorsHrt =
+    medicalInformation.breastDensityFactorsHrt ||
+    (breastDensityFactors.includes('hrt') ? 'yes' : undefined)
 
   if (breastDensityFactors.includes('pregnant')) {
     summaries.push('Pregnant')
@@ -446,6 +445,12 @@ const summariseOtherRelevantInformation = (medicalInformation) => {
 
   if (breastDensityFactors.includes('breastfeeding')) {
     summaries.push('Breastfeeding')
+  }
+
+  if (breastDensityFactorsHrt === 'yes') {
+    summaries.push('Taking HRT')
+  } else if (breastDensityFactorsHrt === 'no') {
+    summaries.push('Not taking HRT')
   }
 
   // Other medical information (free text)

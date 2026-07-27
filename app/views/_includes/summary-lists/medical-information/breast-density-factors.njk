@@ -1,0 +1,90 @@
+{# app/views/_includes/summary-lists/medical-information/breast-density-factors.njk #}
+
+{% set selectedBreastDensityFactors = appointment.medicalInformation.breastDensityFactors %}
+{% set breastDensityFactorsHrt = appointment.medicalInformation.breastDensityFactorsHrt %}
+
+{% if selectedBreastDensityFactors and not (selectedBreastDensityFactors | isArray) %}
+  {% set selectedBreastDensityFactors = [selectedBreastDensityFactors] %}
+{% endif %}
+
+{% if not breastDensityFactorsHrt and selectedBreastDensityFactors and selectedBreastDensityFactors | includes("hrt") %}
+  {% set breastDensityFactorsHrt = "yes" %}
+{% endif %}
+
+{% set breastDensityFactorsSummaryHtml %}
+  {% if breastDensityFactorsHrt == "yes" or (selectedBreastDensityFactors and selectedBreastDensityFactors | length > 0) %}
+    <ul class="nhsuk-list">
+      {% if breastDensityFactorsHrt == "yes" or (selectedBreastDensityFactors and selectedBreastDensityFactors | includes("hrt")) %}
+        <li>Taking HRT</li>
+      {% endif %}
+      {% if selectedBreastDensityFactors | includes("pregnant") %}
+        <li>Pregnant</li>
+      {% endif %}
+      {% if selectedBreastDensityFactors | includes("breastfeeding") %}
+        <li>Breastfeeding</li>
+      {% endif %}
+    </ul>
+  {% else %}
+    <p>No breast density factors added</p>
+  {% endif %}
+{% endset %}
+
+{% set breastDensityFactorsInputHtml %}
+  <div
+    class="nhsuk-u-visually-hidden"
+    data-breast-density-factors-save-url="{{ contextUrl }}/medical-information/breast-density-factors-save"
+  ></div>
+
+  <p class="nhsuk-hint">Select any current or recent considerations</p>
+
+  {{ checkboxes({
+    name: "appointment[medicalInformation][breastDensityFactors]",
+    values: selectedBreastDensityFactors,
+    classes: "nhsuk-checkboxes--small",
+    items: [
+      {
+        value: "pregnant",
+        text: "Pregnant"
+      },
+      {
+        value: "breastfeeding",
+        text: "Breastfeeding"
+      }
+    ]
+  }) }}
+
+  {{ radios({
+    name: "appointment[medicalInformation][breastDensityFactorsHrt]",
+    value: breastDensityFactorsHrt,
+    classes: "nhsuk-radios--inline nhsuk-radios--small",
+    fieldset: {
+      legend: {
+        text: "HRT (hormone replacement therapy)",
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no",
+        text: "No"
+      }
+    ]
+  }) }}
+{% endset %}
+
+{{ summaryList({
+  rows: [
+    {
+      key: {
+        text: "Breast density factors"
+      },
+      value: {
+        html: breastDensityFactorsInputHtml if allowEdits else breastDensityFactorsSummaryHtml
+      }
+    }
+  ]
+} | openInModal | handleSummaryListMissingInformation | removeLastRowBorder ) }}

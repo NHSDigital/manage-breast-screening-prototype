@@ -219,54 +219,80 @@
 {% endswitch %}
 
 {# -------------------------------------------------------------- #}
-{# Other relevant information #}
-{% set sectionHeading = "Other relevant information" %}
-{% set subHeading = "Including HRT, pregnancy, breastfeeding and mammographer notes" %}
-{% set sectionId = sectionHeading | kebabCase %}
-{% set scrollTo = sectionId %}
+{# Breast density factors #}
+{% set breastDensitySectionId = "breast-density-factors" %}
+{% set scrollTo = breastDensitySectionId %}
 
-{% set otherRelevantInformationHtml %}
-  {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
+{% set breastDensityFactorsHtml %}
+  {% include "_includes/summary-lists/medical-information/breast-density-factors.njk" %}
 {% endset %}
 
-{% set selectedBreastDensityFactors = appointment.medicalInformation.breastDensityFactors %}
-
-{% if selectedBreastDensityFactors and not (selectedBreastDensityFactors | isArray) %}
-  {% set selectedBreastDensityFactors = [selectedBreastDensityFactors] %}
-{% endif %}
-
-{% set otherRelevantInformationCount = selectedBreastDensityFactors | length if selectedBreastDensityFactors else 0 %}
-
-{% if otherRelevantInformationCount > 0 %}
-  {% set otherRelevantInformationSummary = otherRelevantInformationCount ~ " other relevant information added" %}
-{% else %}
-  {% set otherRelevantInformationSummary = "No other relevant information added" %}
-{% endif %}
+{# Count selected breast density factors for expander summary #}
+{% set _bdf = appointment.medicalInformation.breastDensityFactors %}
+{% if _bdf and not (_bdf | isArray) %}{% set _bdf = [_bdf] %}{% endif %}
+{% set _bdfHrt = appointment.medicalInformation.breastDensityFactorsHrt %}
+{% if not _bdfHrt and _bdf and _bdf | includes("hrt") %}{% set _bdfHrt = "yes" %}{% endif %}
+{% set breastDensityCount = 0 %}
+{% if _bdfHrt == "yes" %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+{% if _bdf and _bdf | includes("pregnant") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+{% if _bdf and _bdf | includes("breastfeeding") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+{% set breastDensityContentsSummary = breastDensityCount ~ (" breast density factor added" if breastDensityCount == 1 else " breast density factors added") if breastDensityCount > 0 else "No breast density factors added" %}
 
 {% switch displayFormat %}
   {% case 'flat' %}
-    <h2 id="{{ sectionId }}">{{ sectionHeading }}</h2>
-    {{ otherRelevantInformationHtml | safe }}
+    <h2 id="{{ breastDensitySectionId }}">Breast density factors</h2>
+    {{ breastDensityFactorsHtml | safe }}
   {% case 'card' %}
     {% call card({
-      heading: sectionHeading,
+      heading: "Breast density factors",
       attributes: {
-        id: sectionId
+        id: breastDensitySectionId
       }
     }) %}
-      <p>
-        {{ subHeading }}
-      </p>
-      {{ otherRelevantInformationHtml | safe }}
+      {{ breastDensityFactorsHtml | safe }}
     {% endcall %}
   {% default %}
     {{ appDetails({
-      id: sectionId,
+      id: breastDensitySectionId,
       classes: "nhsuk-expander js-expandable-section js-track-expanded",
-      summaryText: sectionHeading,
-      subtitle: subHeading,
-      contentsSummary: otherRelevantInformationSummary,
-      html: otherRelevantInformationHtml,
+      summaryText: "Breast density factors",
+      contentsSummary: breastDensityContentsSummary,
+      html: breastDensityFactorsHtml,
+      status: "To review"
+    }) }}
+{% endswitch %}
+
+{# -------------------------------------------------------------- #}
+{# Other medical information #}
+{% set otherMedicalInfoSectionId = "other-medical-information" %}
+{% set scrollTo = otherMedicalInfoSectionId %}
+
+{% set otherMedicalInformationHtml %}
+  {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
+{% endset %}
+
+{% set otherMedicalInfoContentsSummary = "Other medical information added" if appointment.medicalInformation.otherMedicalInformation else "No other medical information added" %}
+
+{% switch displayFormat %}
+  {% case 'flat' %}
+    <h2 id="{{ otherMedicalInfoSectionId }}">Other medical information</h2>
+    {{ otherMedicalInformationHtml | safe }}
+  {% case 'card' %}
+    {% call card({
+      heading: "Other medical information",
+      attributes: {
+        id: otherMedicalInfoSectionId
+      }
+    }) %}
+      {{ otherMedicalInformationHtml | safe }}
+    {% endcall %}
+  {% default %}
+    {{ appDetails({
+      id: otherMedicalInfoSectionId,
+      classes: "nhsuk-expander js-expandable-section js-track-expanded",
+      summaryText: "Other medical information",
+      contentsSummary: otherMedicalInfoContentsSummary,
+      html: otherMedicalInformationHtml,
       status: "To review"
     }) }}
 {% endswitch %}

@@ -199,17 +199,21 @@ function setupBreastDensityFactorsAutosave() {
     return
   }
 
-  const selector =
+  const checkboxSelector =
     'input[name="appointment[medicalInformation][breastDensityFactors]"]'
-  const checkboxes = document.querySelectorAll(selector)
+  const hrtRadioSelector =
+    'input[name="appointment[medicalInformation][breastDensityFactorsHrt]"]'
+  const checkboxes = document.querySelectorAll(checkboxSelector)
+  const hrtRadios = document.querySelectorAll(hrtRadioSelector)
 
-  if (checkboxes.length === 0) {
+  if (checkboxes.length === 0 && hrtRadios.length === 0) {
     return
   }
 
   const saveFactors = async () => {
     const formData = new URLSearchParams()
-    const selectedCheckboxes = document.querySelectorAll(`${selector}:checked`)
+    const selectedCheckboxes = document.querySelectorAll(`${checkboxSelector}:checked`)
+    const selectedHrtRadio = document.querySelector(`${hrtRadioSelector}:checked`)
 
     selectedCheckboxes.forEach((checkbox) => {
       formData.append(
@@ -217,6 +221,13 @@ function setupBreastDensityFactorsAutosave() {
         checkbox.value
       )
     })
+
+    if (selectedHrtRadio) {
+      formData.append(
+        'appointment[medicalInformation][breastDensityFactorsHrt]',
+        selectedHrtRadio.value
+      )
+    }
 
     try {
       const response = await fetch(saveUrl, {
@@ -238,6 +249,10 @@ function setupBreastDensityFactorsAutosave() {
 
   checkboxes.forEach((checkbox) => {
     checkbox.addEventListener('change', saveFactors)
+  })
+
+  hrtRadios.forEach((radio) => {
+    radio.addEventListener('change', saveFactors)
   })
 }
 

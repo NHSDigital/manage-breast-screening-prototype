@@ -16,6 +16,7 @@ module.exports = (router) => {
     (req, res) => {
       const data = req.session.data
       const postedFactors = req.body?.appointment?.medicalInformation?.breastDensityFactors
+      const postedHrt = req.body?.appointment?.medicalInformation?.breastDensityFactorsHrt
 
       // No posted factors means all options are currently unchecked
       const factors = Array.isArray(postedFactors)
@@ -23,6 +24,7 @@ module.exports = (router) => {
         : postedFactors
           ? [postedFactors]
           : []
+      const nonHrtFactors = factors.filter((factor) => factor !== 'hrt')
 
       if (!data.appointment) {
         data.appointment = {}
@@ -32,14 +34,22 @@ module.exports = (router) => {
         data.appointment.medicalInformation = {}
       }
 
-      data.appointment.medicalInformation.breastDensityFactors = factors
+      data.appointment.medicalInformation.breastDensityFactors = nonHrtFactors
+
+      if (postedHrt === 'yes' || postedHrt === 'no') {
+        data.appointment.medicalInformation.breastDensityFactorsHrt = postedHrt
+      }
 
       // Keep a draft cache outside auto-stored form keys so later form posts
       // cannot accidentally clear the latest autosaved checkbox state.
       if (!data._medicalInformationDraft) {
         data._medicalInformationDraft = {}
       }
-      data._medicalInformationDraft.breastDensityFactors = factors
+      data._medicalInformationDraft.breastDensityFactors = nonHrtFactors
+
+      if (postedHrt === 'yes' || postedHrt === 'no') {
+        data._medicalInformationDraft.breastDensityFactorsHrt = postedHrt
+      }
 
       res.status(204).send()
     }
@@ -57,8 +67,12 @@ module.exports = (router) => {
       const appointmentMedicalInformation = data?.appointment?.medicalInformation
       const postedBreastDensityFactors =
         appointmentMedicalInformation?.breastDensityFactors
+      const postedBreastDensityFactorsHrt =
+        appointmentMedicalInformation?.breastDensityFactorsHrt
       const cachedBreastDensityFactors =
         data?._medicalInformationDraft?.breastDensityFactors
+      const cachedBreastDensityFactorsHrt =
+        data?._medicalInformationDraft?.breastDensityFactorsHrt
 
       const normalisedPostedBreastDensityFactors =
         Array.isArray(postedBreastDensityFactors)
@@ -72,7 +86,15 @@ module.exports = (router) => {
           data._medicalInformationDraft = {}
         }
         data._medicalInformationDraft.breastDensityFactors =
-          normalisedPostedBreastDensityFactors
+          normalisedPostedBreastDensityFactors.filter((factor) => factor !== 'hrt')
+      }
+
+      if (postedBreastDensityFactorsHrt === 'yes' || postedBreastDensityFactorsHrt === 'no') {
+        if (!data._medicalInformationDraft) {
+          data._medicalInformationDraft = {}
+        }
+        data._medicalInformationDraft.breastDensityFactorsHrt =
+          postedBreastDensityFactorsHrt
       }
 
       // If this submission did not include factors, keep the last saved values
@@ -91,6 +113,24 @@ module.exports = (router) => {
         {
           data.appointment.medicalInformation.breastDensityFactors =
             savedBreastDensityFactors
+        }
+      }
+
+      if (!postedBreastDensityFactorsHrt)
+      {
+        const savedAppointmentData = getAppointmentData(data, clinicId, appointmentId)
+        const savedBreastDensityFactorsHrt =
+          savedAppointmentData?.appointment?.medicalInformation?.breastDensityFactorsHrt
+
+        if (cachedBreastDensityFactorsHrt)
+        {
+          data.appointment.medicalInformation.breastDensityFactorsHrt =
+            cachedBreastDensityFactorsHrt
+        }
+        else if (savedBreastDensityFactorsHrt)
+        {
+          data.appointment.medicalInformation.breastDensityFactorsHrt =
+            savedBreastDensityFactorsHrt
         }
       }
 

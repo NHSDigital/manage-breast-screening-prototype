@@ -127,23 +127,36 @@
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
-{# Other relevant information summary #}
-{# Get other relevant information summaries #}
-{% set otherRelevantInfoSummaries = appointment.medicalInformation | summariseOtherRelevantInformation %}
-{% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
+{# Breast density factors summary #}
+{% set _bdf = appointment.medicalInformation.breastDensityFactors %}
+{% if _bdf and not (_bdf | isArray) %}{% set _bdf = [_bdf] %}{% endif %}
+{% set _bdfHrt = appointment.medicalInformation.breastDensityFactorsHrt %}
+{% if not _bdfHrt and _bdf and _bdf | includes("hrt") %}{% set _bdfHrt = "yes" %}{% endif %}
 
-{# Build other relevant information HTML #}
-{% set otherRelevantInfoHtml %}
-  {% if otherRelevantInfoCount == 0 %}
-    <p>No other information added</p>
-  {% elif otherRelevantInfoCount == 1 %}
-    <p>{{ otherRelevantInfoSummaries[0] }}</p>
-  {% else %}
+{% set breastDensityFactorsHtml %}
+  {% if _bdfHrt == "yes" or (_bdf and _bdf | length > 0) %}
     <ul class="nhsuk-list">
-      {% for summary in otherRelevantInfoSummaries %}
-        <li>{{ summary }}</li>
-      {% endfor %}
+      {% if _bdfHrt == "yes" %}<li>Taking HRT</li>{% endif %}
+      {% if _bdf and _bdf | includes("pregnant") %}<li>Pregnant</li>{% endif %}
+      {% if _bdf and _bdf | includes("breastfeeding") %}<li>Breastfeeding</li>{% endif %}
     </ul>
+  {% else %}
+    <p>No breast density factors added</p>
+  {% endif %}
+{% endset %}
+
+{% set breastDensityCount = 0 %}
+{% if _bdfHrt == "yes" %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+{% if _bdf and _bdf | includes("pregnant") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+{% if _bdf and _bdf | includes("breastfeeding") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+
+{# Other medical information summary #}
+{% set otherMedicalInfo = appointment.medicalInformation.otherMedicalInformation %}
+{% set otherMedicalInfoHtml %}
+  {% if otherMedicalInfo %}
+    <p>{{ otherMedicalInfo }}</p>
+  {% else %}
+    <p>No other medical information added</p>
   {% endif %}
 {% endset %}
 
@@ -266,20 +279,40 @@
   }) %}
 {% endif %}
 
-{% if not showOnlyPopulated or otherRelevantInfoCount > 0 %}
+{% if not showOnlyPopulated or breastDensityCount > 0 %}
   {% set rows = rows | push({
     key: {
-      text: "Other relevant information"
+      text: "Breast density factors"
     },
     value: {
-      html: otherRelevantInfoHtml
+      html: breastDensityFactorsHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./confirm-information/breast-density-factors") | urlWithReferrer(currentUrl),
+          text: "View or change",
+          visuallyHiddenText: "breast density factors"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or otherMedicalInfo %}
+  {% set rows = rows | push({
+    key: {
+      text: "Other medical information"
+    },
+    value: {
+      html: otherMedicalInfoHtml
     },
     actions: {
       items: [
         {
           href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
           text: "View or change",
-          visuallyHiddenText: "other relevant information"
+          visuallyHiddenText: "other medical information"
         }
       ]
     } if allowEdits
