@@ -101,7 +101,6 @@
           } if canUndo
         }) }}
 
-        {% if requestReason %}
           {{ appSummaryListRow({
             key: {
               text: "Reason"
@@ -109,6 +108,7 @@
             value: {
               text: requestReason
             },
+            classes: "nhsuk-summary-list__row--no-border",
             actions: {
               items: [{
                 href: "./request-priors" | urlWithReferrer(currentUrl),
@@ -116,8 +116,8 @@
                 visuallyHiddenText: "priors request reason"
               }]
             } if canUndo
-          } | openInModal) }}
-        {% endif %}
+          } | openInModal |  handleSummaryListMissingInformation()) }}
+
       {% endcall %}
     {% endset %}
 

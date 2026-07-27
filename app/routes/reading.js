@@ -221,7 +221,9 @@ module.exports = (router) => {
       return res.redirect('/reading/priors')
     }
 
-    const mammogram = appointment.previousMammograms.find((m) => m.id === mammogramId)
+    const mammogram = appointment.previousMammograms.find(
+      (m) => m.id === mammogramId
+    )
     if (!mammogram) {
       if (req.headers.accept?.includes('application/json')) {
         return res.status(404).json({ error: 'Mammogram not found' })
@@ -369,7 +371,9 @@ module.exports = (router) => {
 
     // Rebuild after potential top-ups
     const sessionAppointments = session.appointmentIds
-      .map((appointmentId) => data.appointments.find((e) => e.id === appointmentId))
+      .map((appointmentId) =>
+        data.appointments.find((e) => e.id === appointmentId)
+      )
       .filter(Boolean)
 
     const resumeAppointment = getResumeAppointmentForUser(
@@ -444,7 +448,9 @@ module.exports = (router) => {
 
     // Get enhanced appointments with reading metadata
     const enhancedAppointments = session.appointmentIds
-      .map((appointmentId) => data.appointments.find((e) => e.id === appointmentId))
+      .map((appointmentId) =>
+        data.appointments.find((e) => e.id === appointmentId)
+      )
       .filter(Boolean)
       .map((appointment) => {
         // Add participant data and reading metadata
@@ -484,7 +490,8 @@ module.exports = (router) => {
     // Countdown starts when the current user records their first opinion in this session
     const firstUserReadTimestamp = enhancedAppointments
       .map(
-        (appointment) => appointment.imageReading?.reads?.[data.currentUser.id]?.timestamp
+        (appointment) =>
+          appointment.imageReading?.reads?.[data.currentUser.id]?.timestamp
       )
       .filter(Boolean)
       .sort((a, b) => new Date(a) - new Date(b))[0]
@@ -544,7 +551,9 @@ module.exports = (router) => {
       // Check if appointment exists in this session
       if (!session.appointmentIds.includes(appointmentId)) {
         // req.flash('error', 'Appointment not found in this session')
-        console.log(`Appointment ${appointmentId} not found in session ${sessionId}`)
+        console.log(
+          `Appointment ${appointmentId} not found in session ${sessionId}`
+        )
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
@@ -586,7 +595,9 @@ module.exports = (router) => {
             }
           } else {
             // No existing read - initialise empty temp with appointmentId
-            console.log(`Initialising imageReadingTemp for appointment ${appointmentId}`)
+            console.log(
+              `Initialising imageReadingTemp for appointment ${appointmentId}`
+            )
             data.imageReadingTemp = { appointmentId: appointmentId }
           }
           // Update res.locals.data to reflect the change (it was set before this middleware)
@@ -609,7 +620,13 @@ module.exports = (router) => {
       // Set up locals for templates
       res.locals.isReadingWorkflow = true
       res.locals.session = session
-      res.locals.appointmentData = { clinic, appointment, participant, unit, location }
+      res.locals.appointmentData = {
+        clinic,
+        appointment,
+        participant,
+        unit,
+        location
+      }
       res.locals.clinic = clinic
       res.locals.appointment = appointment
       res.locals.participant = participant
@@ -625,87 +642,97 @@ module.exports = (router) => {
 
   // Route for appointment reading within a batch
   // Redirects to existing-read if user has already read, otherwise to opinion
-  router.get('/reading/session/:sessionId/appointments/:appointmentId', (req, res) => {
-    const data = req.session.data
-    const { sessionId, appointmentId } = req.params
-    const currentUserId = data.currentUser?.id
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
 
-    // Find the appointment
-    const appointment = data.appointments.find((e) => e.id === appointmentId)
-    if (!appointment) {
-      return res.redirect(`/reading/session/${sessionId}`)
-    }
+      // Find the appointment
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) {
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
 
-    // Check if user has already read this appointment
-    if (userHasReadAppointment(appointment, currentUserId)) {
-      return res.redirect(
-        `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+      // Check if user has already read this appointment
+      if (userHasReadAppointment(appointment, currentUserId)) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+        )
+      }
+
+      // Check if appointment is awaiting priors (user or someone else requested)
+      const { awaitingPriors } = require('../lib/utils/prior-mammograms')
+      if (awaitingPriors(appointment)) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+        )
+      }
+
+      // Check if appointment has been deferred from reading
+      const { isDeferred } = require('../lib/utils/reading')
+      if (isDeferred(appointment)) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+        )
+      }
+
+      // Delete temporary data from previous steps
+      delete data.imageReadingTemp
+
+      res.redirect(
+        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion`
       )
     }
-
-    // Check if appointment is awaiting priors (user or someone else requested)
-    const { awaitingPriors } = require('../lib/utils/prior-mammograms')
-    if (awaitingPriors(appointment)) {
-      return res.redirect(
-        `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
-      )
-    }
-
-    // Check if appointment has been deferred from reading
-    const { isDeferred } = require('../lib/utils/reading')
-    if (isDeferred(appointment)) {
-      return res.redirect(
-        `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
-      )
-    }
-
-    // Delete temporary data from previous steps
-    delete data.imageReadingTemp
-
-    res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}/opinion`)
-  })
+  )
 
   // Handle skipping an appointment in a batch
-  router.get('/reading/session/:sessionId/appointments/:appointmentId/skip', (req, res) => {
-    const data = req.session.data
-    const { sessionId, appointmentId } = req.params
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId/skip',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
 
-    // Mark as skipped
-    skipAppointmentInSession(data, sessionId, appointmentId)
+      // Mark as skipped
+      skipAppointmentInSession(data, sessionId, appointmentId)
 
-    // Top up the batch with the next eligible appointment if under target size
-    topUpSession(data, sessionId)
+      // Top up the batch with the next eligible appointment if under target size
+      topUpSession(data, sessionId)
 
-    // Find next readable appointment after current position (no wrap)
-    const currentUserId = data.currentUser.id
-    const session = getReadingSession(data, sessionId)
-    const sessionAppointments = session.appointmentIds
-      .map((id) => data.appointments.find((e) => e.id === id))
-      .filter(Boolean)
-    const nextUnreadAppointment = getNextUserReadableAppointment(
-      sessionAppointments,
-      appointmentId,
-      currentUserId,
-      { wrap: false }
-    )
-
-    if (nextUnreadAppointment) {
-      res.redirect(`/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`)
-    } else if (session.skippedAppointments.length > 0) {
-      res.redirect(`/reading/session/${sessionId}/skipped-review`)
-    } else {
-      // Check if there are any readable cases left in the session
-      const firstReadable = getFirstUserReadableAppointment(
+      // Find next readable appointment after current position (no wrap)
+      const currentUserId = data.currentUser.id
+      const session = getReadingSession(data, sessionId)
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
+        .filter(Boolean)
+      const nextUnreadAppointment = getNextUserReadableAppointment(
         sessionAppointments,
-        currentUserId
+        appointmentId,
+        currentUserId,
+        { wrap: false }
       )
-      if (firstReadable) {
-        res.redirect(`/reading/session/${sessionId}`)
+
+      if (nextUnreadAppointment) {
+        res.redirect(
+          `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
+        )
+      } else if (session.skippedAppointments.length > 0) {
+        res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
-        res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+        // Check if there are any readable cases left in the session
+        const firstReadable = getFirstUserReadableAppointment(
+          sessionAppointments,
+          currentUserId
+        )
+        if (firstReadable) {
+          res.redirect(`/reading/session/${sessionId}`)
+        } else {
+          res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+        }
       }
     }
-  })
+  )
 
   // Handle requesting prior images during reading
   router.post(
@@ -728,16 +755,17 @@ module.exports = (router) => {
       if (appointment && appointment.previousMammograms) {
         // Build an updated list rather than mutating in place - appointment records
         // are shared read-only data; writes go through the update helpers
-        const previousMammograms = appointment.previousMammograms.map((mammogram) =>
-          requestPriorIds.includes(mammogram.id)
-            ? {
-                ...mammogram,
-                requestStatus: 'pending',
-                requestedDate: new Date().toISOString(),
-                requestedBy: currentUserId,
-                ...(reason ? { requestReason: reason } : {})
-              }
-            : mammogram
+        const previousMammograms = appointment.previousMammograms.map(
+          (mammogram) =>
+            requestPriorIds.includes(mammogram.id)
+              ? {
+                  ...mammogram,
+                  requestStatus: 'pending',
+                  requestedDate: new Date().toISOString(),
+                  requestedBy: currentUserId,
+                  requestReason: reason
+                }
+              : mammogram
         )
 
         // Saves to the appointment and mirrors into data.appointment if it matches
@@ -748,8 +776,10 @@ module.exports = (router) => {
       const priorsReferrerChain = req.query.referrerChain
       if (priorsReferrerChain) {
         // In edit mode, also update reason on mammograms already pending/requested by this user
-        if (appointment && appointment.previousMammograms && reason) {
-          const latestAppointment = data.appointments.find((e) => e.id === appointmentId)
+        if (appointment && appointment.previousMammograms) {
+          const latestAppointment = data.appointments.find(
+            (e) => e.id === appointmentId
+          )
           const previousMammograms = latestAppointment.previousMammograms.map(
             (mammogram) =>
               (mammogram.requestStatus === 'pending' ||
@@ -835,25 +865,29 @@ module.exports = (router) => {
       if (appointment && appointment.previousMammograms) {
         // Build an updated list rather than mutating in place - appointment records
         // are shared read-only data; writes go through the update helpers
-        const previousMammograms = appointment.previousMammograms.map((mammogram) => {
-          if (
-            mammogram.requestStatus === 'pending' &&
-            mammogram.requestedBy === currentUserId
-          ) {
-            // Omit the request fields entirely on the replacement record
-            const { requestedDate, requestedBy, requestReason, ...rest } =
-              mammogram
-            return { ...rest, requestStatus: 'not_requested' }
+        const previousMammograms = appointment.previousMammograms.map(
+          (mammogram) => {
+            if (
+              mammogram.requestStatus === 'pending' &&
+              mammogram.requestedBy === currentUserId
+            ) {
+              // Omit the request fields entirely on the replacement record
+              const { requestedDate, requestedBy, requestReason, ...rest } =
+                mammogram
+              return { ...rest, requestStatus: 'not_requested' }
+            }
+            return mammogram
           }
-          return mammogram
-        })
+        )
 
         // Saves to the appointment and mirrors into data.appointment if it matches
         updateAppointmentData(data, appointmentId, { previousMammograms })
       }
 
       // Redirect to opinion page so the reader can now read the case
-      res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}/opinion`)
+      res.redirect(
+        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion`
+      )
     }
   )
 
@@ -973,7 +1007,9 @@ module.exports = (router) => {
         updateAppointmentData(data, appointmentId, { imageReading })
       }
 
-      res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}/opinion`)
+      res.redirect(
+        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion`
+      )
     }
   )
 
@@ -1127,7 +1163,9 @@ module.exports = (router) => {
       }
 
       // Always use the unified annotation page
-      res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}/annotation`)
+      res.redirect(
+        `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`
+      )
     }
   )
 
@@ -1661,8 +1699,11 @@ module.exports = (router) => {
           rightAssessment === 'normal' &&
           leftAssessment === 'normal'
         ) {
-          const appointment = data.appointments.find((e) => e.id === appointmentId)
-          const hasSymptoms = appointment?.medicalInformation?.symptoms?.length > 0
+          const appointment = data.appointments.find(
+            (e) => e.id === appointmentId
+          )
+          const hasSymptoms =
+            appointment?.medicalInformation?.symptoms?.length > 0
           const errorText = hasSymptoms
             ? 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment'
             : 'At least one breast must be marked abnormal to recall for assessment'
@@ -1762,7 +1803,12 @@ module.exports = (router) => {
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
       if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
         if (
-          shouldShowComparePage(appointment, formData, currentUserId, data.settings)
+          shouldShowComparePage(
+            appointment,
+            formData,
+            currentUserId,
+            data.settings
+          )
         ) {
           return res.redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/compare`
@@ -1836,7 +1882,9 @@ module.exports = (router) => {
 
       if (!formData || !formData.opinion) {
         console.log('No opinion in imageReadingTemp - cannot save')
-        return res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}`)
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}`
+        )
       }
 
       // Find the appointment
@@ -2060,7 +2108,9 @@ module.exports = (router) => {
             )
           )
         default:
-          return res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}`)
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}`
+          )
       }
     }
   )
@@ -2179,7 +2229,9 @@ module.exports = (router) => {
             `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
           )
         default:
-          return res.redirect(`/reading/session/${sessionId}/appointments/${appointmentId}`)
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}`
+          )
       }
     }
   )
@@ -2204,53 +2256,51 @@ module.exports = (router) => {
     data.appointments.forEach((appointment) => {
       if (!appointment.imageReading?.reads) return
 
-      const appointmentReadings = Object.entries(appointment.imageReading.reads).map(
-        ([readerId, reading]) => {
-          // Determine if this is a first or second read
-          const readingsForAppointment = Object.values(appointment.imageReading.reads)
-          const sortedReadings = [...readingsForAppointment].sort(
-            (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-          )
+      const appointmentReadings = Object.entries(
+        appointment.imageReading.reads
+      ).map(([readerId, reading]) => {
+        // Determine if this is a first or second read
+        const readingsForAppointment = Object.values(
+          appointment.imageReading.reads
+        )
+        const sortedReadings = [...readingsForAppointment].sort(
+          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
+        )
 
-          const readOrder = sortedReadings.findIndex(
-            (r) => r.readerId === readerId
-          )
+        const readOrder = sortedReadings.findIndex(
+          (r) => r.readerId === readerId
+        )
 
-          const readType =
-            readOrder === 0
-              ? 'first'
-              : readOrder === 1
-                ? 'second'
-                : 'arbitration'
+        const readType =
+          readOrder === 0 ? 'first' : readOrder === 1 ? 'second' : 'arbitration'
 
-          // Get participant info
-          const participant = data.participants.find(
-            (p) => p.id === appointment.participantId
-          )
+        // Get participant info
+        const participant = data.participants.find(
+          (p) => p.id === appointment.participantId
+        )
 
-          // Get batch ID if available
-          let sessionId = null
-          if (data.readingSessions) {
-            for (const [id, session] of Object.entries(data.readingSessions)) {
-              if (session.appointmentIds.includes(appointment.id)) {
-                sessionId = id
-                break
-              }
+        // Get batch ID if available
+        let sessionId = null
+        if (data.readingSessions) {
+          for (const [id, session] of Object.entries(data.readingSessions)) {
+            if (session.appointmentIds.includes(appointment.id)) {
+              sessionId = id
+              break
             }
           }
-
-          return {
-            appointmentId: appointment.id,
-            clinicId: appointment.clinicId,
-            sessionId,
-            readerId: reading.readerId,
-            readType,
-            opinion: reading.opinion,
-            timestamp: reading.timestamp,
-            participant
-          }
         }
-      )
+
+        return {
+          appointmentId: appointment.id,
+          clinicId: appointment.clinicId,
+          sessionId,
+          readerId: reading.readerId,
+          readType,
+          opinion: reading.opinion,
+          timestamp: reading.timestamp,
+          participant
+        }
+      })
 
       allReadings.push(...appointmentReadings)
     })
