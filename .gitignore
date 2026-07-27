@@ -86,3 +86,8 @@ reference/
 *.local.js
 # Local working notes (session notes, not for committing)
 notes/
+
+# Playwright output (traces and screenshots from failed runs)
+test-results/
+playwright-report/
+/playwright/.cache/
