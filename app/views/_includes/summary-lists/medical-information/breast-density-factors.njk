@@ -14,14 +14,14 @@
 {% set breastDensityFactorsSummaryHtml %}
   {% if breastDensityFactorsHrt == "yes" or (selectedBreastDensityFactors and selectedBreastDensityFactors | length > 0) %}
     <ul class="nhsuk-list">
-      {% if breastDensityFactorsHrt == "yes" or (selectedBreastDensityFactors and selectedBreastDensityFactors | includes("hrt")) %}
-        <li>Taking HRT</li>
-      {% endif %}
       {% if selectedBreastDensityFactors | includes("pregnant") %}
         <li>Pregnant</li>
       {% endif %}
       {% if selectedBreastDensityFactors | includes("breastfeeding") %}
         <li>Breastfeeding</li>
+      {% endif %}
+      {% if breastDensityFactorsHrt == "yes" or (selectedBreastDensityFactors and selectedBreastDensityFactors | includes("hrt")) %}
+        <li>Taking HRT</li>
       {% endif %}
     </ul>
   {% else %}
