@@ -239,19 +239,23 @@ read as normal - though a minority were recalled and then found clear at
 assessment, which is what actually happens in screening. `checkEpisodes`
 enforces the first of those.
 
-A screened past round also carries `episode.summaryAppointment` - a stand-in for
-the appointment we don't model, holding the round's date and the medical
-information recorded at it:
+A screened past round also carries `episode.summaryAppointments[]` - stand-ins
+for the appointment records we don't model:
 
 ```js
-{ startTime, medicalInformation }
+{ id, status, type, startTime, medicalInformation }
 ```
 
-It lives on the episode rather than in `data.appointments` deliberately, so it
-can't drift into a clinic list, a reading queue or a route expecting a real
-appointment. Its recorded dates are stamped back to the round's screening date -
-the medical information generators date everything "now", which is right for a
-live appointment and wrong for a past one.
+A list, like the episode's other per-appointment records, so a past round is
+shaped the same as a live one and the episode page can show an appointments
+table either way. Only one is generated today; a past technical recall would
+have had two.
+
+They live on the episode rather than in `data.appointments` deliberately, so
+they can't drift into a clinic list, a reading queue or a route expecting a real
+appointment - there is nothing to open. Their recorded dates are stamped back to
+the round's screening date; the medical information generators date everything
+"now", which is right for a live appointment and wrong for a past one.
 
 **Seed profiles reach history too.** `episodes.historicOutcomeWeights` shapes how
 past rounds turned out, so a profile's claim about the current round isn't

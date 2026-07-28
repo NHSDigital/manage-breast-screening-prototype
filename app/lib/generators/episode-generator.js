@@ -76,7 +76,12 @@ const HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY = 0.06
  * reading queue or a route that expects a real appointment.
  *
  * Where and when the round was screened already lives in `episode.mammograms`;
- * what this adds is the medical information recorded at the time.
+ * what this adds is the appointment's own detail - its status, and the medical
+ * information recorded at it.
+ *
+ * Held as a list, like the episode's other per-appointment records, so a past
+ * round is shaped the same as a live one. Only one is generated today; a past
+ * technical recall would have had two.
  *
  * @param {object} options
  * @param {object} options.screenedDate - When the images were taken (dayjs)
@@ -89,6 +94,12 @@ const buildHistoricSummaryAppointment = ({ screenedDate, seedProfile }) => {
   })
 
   return {
+    id: generateId(),
+    // A past round was screened - that is why it has images and a reading. The
+    // status is carried explicitly so the episode page can show an appointments
+    // list the same way a live round does.
+    status: 'complete',
+    type: 'screening',
     startTime: screenedDate.toISOString(),
     medicalInformation: stampRecordedDates(medicalInformation, screenedDate)
   }
@@ -490,9 +501,9 @@ const generateHistoricEpisodes = ({
 
     // A round that produced no images had no screening appointment worth
     // standing in for either
-    const summaryAppointment = wasScreened
-      ? buildHistoricSummaryAppointment({ screenedDate, seedProfile })
-      : null
+    const summaryAppointments = wasScreened
+      ? [buildHistoricSummaryAppointment({ screenedDate, seedProfile })]
+      : []
 
     episodes.push({
       id: generateId(),
@@ -512,7 +523,7 @@ const generateHistoricEpisodes = ({
       closedDate: closedDate.toISOString(),
       appointmentIds: [],
       readingCases: readingCase ? [readingCase] : [],
-      summaryAppointment,
+      summaryAppointments,
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image
@@ -586,6 +597,15 @@ const checkEpisodes = (episodes, appointmentsById) => {
           `historic episode ${episode.id} outcome and mammograms disagree`
         )
       }
+      // A screened past round has a stand-in appointment; one that produced no
+      // images was never screened, so has none
+      const summaryAppointments = episode.summaryAppointments || []
+      if (wasScreened !== (summaryAppointments.length > 0)) {
+        problems.push(
+          `historic episode ${episode.id} summary appointments and outcome disagree`
+        )
+      }
+
       // A screened past round carries exactly one summary reading case, and a
       // round that produced no images has nothing to read
       const historicCases = episode.readingCases || []

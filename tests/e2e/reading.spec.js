@@ -113,6 +113,13 @@ test.describe('Image reading', () => {
         'label[for="modal-imageReadingTemp[annotationTemp][levelOfConcern]-4"]'
       )
       .click()
+    // The dialog is `overflow: clip` and scrolls via .app-modal__content, so
+    // Playwright's auto-scroll can't bring Save into view on a long form - it
+    // reports the button as visible but outside the viewport. Scroll the
+    // content area the way a user would, then click.
+    await annotationModal
+      .locator('.app-modal__content')
+      .evaluate((element) => element.scrollTo(0, element.scrollHeight))
     await annotationModal.getByRole('button', { name: 'Save' }).first().click()
     await expectModalClosed(annotationModal)
 
