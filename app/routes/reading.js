@@ -368,11 +368,28 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
 
-    // Fill any dead slots (appointments fully read by others) before looking for the
-    // next readable case. topUpSession adds one appointment at a time so loop until
-    // it can no longer add anything.
+    // A session can end up with nothing readable in it — every loaded case
+    // taken by other readers — while the backlog still has cases waiting. Top
+    // up until one readable case appears, and no further.
+    //
+    // Not "until topUpSession stops adding": it grows the session towards its
+    // target size, so running it to exhaustion here would load every remaining
+    // case at once and defeat lazy sessions. The bound is a backstop only.
     const maxTopUps = session.targetSize || 25
     for (let count = 0; count < maxTopUps; count++) {
+      const loadedAppointments = session.appointmentIds
+        .map((appointmentId) =>
+          data.appointments.find((e) => e.id === appointmentId)
+        )
+        .filter(Boolean)
+
+      const hasReadableCase = getFirstUserReadableAppointment(
+        data,
+        loadedAppointments,
+        data.currentUser.id
+      )
+      if (hasReadableCase) break
+
       if (!topUpSession(data, sessionId)) break
     }
 

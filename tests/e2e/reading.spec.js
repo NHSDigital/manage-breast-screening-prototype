@@ -206,6 +206,38 @@ test.describe('Image reading', () => {
     await expect(page.getByText(deferralReason)).toBeVisible()
   })
 
+  test('keeps a lazy session lazy across a resume', async ({ page }) => {
+    // Lazy sessions load one case at a time, so the overview should only ever
+    // show what has actually been reached. Leaving and resuming used to load
+    // every remaining case at once, which made the whole backlog look claimed.
+    await pinSettings(page, readingSettings)
+
+    await page.goto(
+      '/reading/create-session?type=all_reads&limit=10&lazy=true'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+
+    // Rows for cases the session hasn't reached yet are rendered as
+    // placeholders, so count the ones that link to a real case
+    const caseRows = page.locator(
+      '.app-reading-session-table tbody tr:not(.app-placeholder-row) a[href*="/appointments/"]'
+    )
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    const rowsBefore = await caseRows.count()
+    expect(rowsBefore).toBeLessThanOrEqual(2)
+
+    // Leave, come back through the dashboard, and resume
+    await page.goto('/reading')
+    await page.goto(`/reading/session/${sessionId}/resume`)
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    await expect(caseRows).toHaveCount(rowsBefore)
+  })
+
   test('shows the second reader the first read before saving', async ({
     page
   }) => {
