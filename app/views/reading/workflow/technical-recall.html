@@ -84,14 +84,13 @@
         items: selectItems
       } | populateErrors) }}
 
-      {% call appCollapsibleInput({ text: "Add additional details" }) %}
+      {% call appCollapsibleInput({ text: "Add additional details (optional)" }) %}
         {{ input({
           id: "technicalRecall-" + viewCode + "-additionalDetails",
           name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
           value: viewData.additionalDetails,
           label: {
-            text: "Additional details (optional)",
-            size: "s"
+            text: "Additional details (optional)"
           }
         }) }}
       {% endcall %}
