@@ -135,7 +135,15 @@
         text: "Start this appointment",
         href: "./start"
       }) }}
+      <a href="{{ (appointmentUrl + '/mark-did-not-attend') | urlWithReferrer(currentUrl) }}" class="nhsuk-link nhsuk-link--no-visited-state" style="color: #d5281b">
+        Did not attend
+      </a>
     </div>
+  {% elseif appointment.status == 'did_not_attend' %}
+    {{ insetText({
+      html: (participant | getFullName | safe) + ' did not attend this appointment<br><a href="' + ((appointmentUrl + '/undo-did-not-attend') | urlWithReferrer(currentUrl)) + '" class="nhsuk-link nhsuk-link--no-visited-state">Undo</a>',
+      classes: 'nhsuk-body'
+    }) }}
   {% endif %}
 {% endif %}
 
