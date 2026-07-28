@@ -65,6 +65,12 @@ const ASSESSMENT_OUTCOME_WEIGHTS = {
 // how screening actually goes.
 const HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY = 0.06
 
+// How often a past round's two readers disagreed and it went to arbitration.
+// A few percent of cases is the right order for real screening - the point of
+// seeding any is that arbitration work has past examples to look at, not only
+// cases created by hand.
+const HISTORIC_ARBITRATION_PROBABILITY = 0.04
+
 /**
  * Build the stand-in appointment for a past round.
  *
@@ -172,11 +178,17 @@ const buildHistoricReadingCase = ({
     outcome === 'refer_for_treatment' ||
     Math.random() < HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY
 
+  // What the round concluded at reading - the arbitration read where there was
+  // one, otherwise what both readers agreed
   const opinion = wasRecalled ? 'recall_for_assessment' : 'normal'
 
-  // Two readers who agreed - a past round that needed arbitration is a story we
-  // have no way to tell honestly at summary fidelity
-  const [firstReader, secondReader] = faker.helpers.arrayElements(readers, 2)
+  // Sometimes the two readers disagreed and a third settled it. Needs three
+  // readers: nobody reads the same case twice, arbitration included
+  const wentToArbitration =
+    readers.length >= 3 && Math.random() < HISTORIC_ARBITRATION_PROBABILITY
+
+  const [firstReader, secondReader, arbitrationReader] =
+    faker.helpers.arrayElements(readers, wentToArbitration ? 3 : 2)
 
   // Read in the window between the images being taken and the round closing
   const firstReadAt = screenedDate.add(
@@ -191,8 +203,8 @@ const buildHistoricReadingCase = ({
     ? closedDate
     : secondReadAt
 
-  const buildSummaryRead = (reader, readType, readNumber, timestamp) => ({
-    opinion,
+  const buildSummaryRead = (reader, readType, readNumber, timestamp, readOpinion) => ({
+    opinion: readOpinion,
     readerId: reader.id,
     readerType: reader.role,
     readType,
@@ -200,16 +212,55 @@ const buildHistoricReadingCase = ({
     timestamp: timestamp.toISOString()
   })
 
+  // When it went to arbitration the two readers disagreed, so one of them said
+  // the opposite of what the round concluded. Which one is arbitrary - either
+  // reader could have been the one who saw something
+  const disagreeingOpinion =
+    opinion === 'normal' ? 'recall_for_assessment' : 'normal'
+  const firstReaderDisagreed = wentToArbitration && Math.random() < 0.5
+
+  const reads = [
+    buildSummaryRead(
+      firstReader,
+      'first',
+      1,
+      firstReadAt,
+      firstReaderDisagreed ? disagreeingOpinion : opinion
+    ),
+    buildSummaryRead(
+      secondReader,
+      'second',
+      2,
+      cappedSecondReadAt,
+      wentToArbitration && !firstReaderDisagreed ? disagreeingOpinion : opinion
+    )
+  ]
+
+  if (wentToArbitration) {
+    // The arbitration read is what settled it, so it carries the round's
+    // conclusion - and dates after the two it was called in to resolve
+    const arbitratedAt = cappedSecondReadAt.add(
+      faker.number.int({ min: 1, max: 3 }),
+      'day'
+    )
+    reads.push(
+      buildSummaryRead(
+        arbitrationReader,
+        'arbitration',
+        3,
+        arbitratedAt.isAfter(closedDate) ? closedDate : arbitratedAt,
+        opinion
+      )
+    )
+  }
+
   return {
     id: generateId(),
     // A past round has no appointment record for the case to hang off - the
     // same reason its mammogram entry carries no appointmentId
     appointmentId: null,
     openedDate: screenedDate.toISOString(),
-    reads: [
-      buildSummaryRead(firstReader, 'first', 1, firstReadAt),
-      buildSummaryRead(secondReader, 'second', 2, cappedSecondReadAt)
-    ]
+    reads
   }
 }
 
@@ -633,9 +684,11 @@ const checkEpisodes = (episodes, appointmentsById) => {
             `historic episode ${episode.id} ended in treatment but was read as "${readingOutcome}"`
           )
         }
-        if (getReadsAsArray(readingCase).length !== 2) {
+        // Two readers, or three where they disagreed and one arbitrated
+        const historicReadCount = getReadsAsArray(readingCase).length
+        if (historicReadCount !== 2 && historicReadCount !== 3) {
           problems.push(
-            `historic reading case ${readingCase.id} does not have two reads`
+            `historic reading case ${readingCase.id} has ${historicReadCount} reads`
           )
         }
       })

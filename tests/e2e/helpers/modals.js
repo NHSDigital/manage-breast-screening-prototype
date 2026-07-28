@@ -80,6 +80,27 @@ const clickLinkToOpenModal = async (page, name, options = {}) => {
 }
 
 /**
+ * Bring a control inside a modal into view before interacting with it.
+ *
+ * The dialog is `overflow: clip` and scrolls via `.app-modal__content`, and it
+ * is positioned with a transform. Between them, Playwright's automatic
+ * scroll-into-view can report a control as visible but "outside of the
+ * viewport" and never manage to click it - intermittently, because whether a
+ * control sits below the fold depends on how much the form happens to hold.
+ *
+ * Scrolling it in explicitly is also what a real user does.
+ *
+ * @param {import('@playwright/test').Locator} target - Control inside the modal
+ * @returns {import('@playwright/test').Locator} The same locator, for chaining
+ */
+const revealInModal = async (target) => {
+  await target.evaluate((element) =>
+    element.scrollIntoView({ block: 'center' })
+  )
+  return target
+}
+
+/**
  * Wait for a modal to close again after submitting
  *
  * @param {import('@playwright/test').Locator} modal - Modal container
@@ -104,6 +125,7 @@ module.exports = {
   openFormModal,
   clickToOpenModal,
   clickLinkToOpenModal,
+  revealInModal,
   expectModalClosed,
   openSection
 }

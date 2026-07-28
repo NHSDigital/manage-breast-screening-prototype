@@ -132,7 +132,11 @@
                 }) }}
               </td>
               <td class="nhsuk-table__cell">
-                <span class="nhsuk-u-secondary-text-colour">Summary only</span>
+                {# Alludes to the page a past appointment would have. Nothing
+                   serves it yet - a past round has no appointment record. #}
+                <a href="{{ participantUrl }}/episodes/{{ episode.id }}/appointments/{{ summaryAppointment.id }}">
+                  View appointment
+                </a>
               </td>
             </tr>
           {% endfor %}
@@ -155,37 +159,11 @@
 
     {% endif %}
 
-    {# What the round's reading concluded. A summary case records who read it
-       and what they said, but no annotations - there is no image set behind a
-       past round for them to point at. #}
-    {% set historicCase = episode.readingCases | first %}
-    {% if historicCase %}
-
-      <h2 class="nhsuk-heading-m">Image reading</h2>
-
-      {% set readingRows = [
-        {
-          key: { text: "Reading outcome" },
-          value: { html: (historicCase | getReadingCaseOutcome(data.settings)) | toTag }
-        }
-      ] %}
-
-      {% for read in historicCase | getReadsAsArray %}
-        {% set readValueHtml %}
-          {{ read.opinion | toTag }}
-          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-            {{ read.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }},
-            {{ read.timestamp | formatDate }}
-          </span>
-        {% endset %}
-        {% set readingRows = readingRows | push({
-          key: { text: read.readType | sentenceCase + " read" },
-          value: { html: readValueHtml }
-        }) %}
-      {% endfor %}
-
-      {{ summaryList({ rows: readingRows }) }}
-
+    {# One row per set of images read. The individual reads belong on the case
+       view rather than here - this is the round's shape, not its detail. #}
+    {% if episode.readingCases.length %}
+      <h2>Image reading</h2>
+      {% include "_includes/episodes/reading-cases-table.njk" %}
     {% endif %}
 
   {% else %}
@@ -284,13 +262,17 @@
       {% endif %}
 
       <h2>Image reading</h2>
-      <p>
-        Reading state across this episode’s appointments:
-        {{ tag({
-          text: readingStatus.status | formatWords | sentenceCase,
-          colour: readingStatus.statusColor
-        }) }}
-      </p>
+      {% if episode.readingCases.length %}
+        {% include "_includes/episodes/reading-cases-table.njk" %}
+      {% else %}
+        <p>
+          Reading state across this episode’s appointments:
+          {{ tag({
+            text: readingStatus.status | formatWords | sentenceCase,
+            colour: readingStatus.statusColor
+          }) }}
+        </p>
+      {% endif %}
 
     {% else %}
       <p>This episode has no appointments.</p>

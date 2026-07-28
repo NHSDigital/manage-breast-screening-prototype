@@ -30,7 +30,10 @@ const mergeDeep = (base, override) => {
 }
 
 const SEED_DATA_PROFILE_DEFAULTS = {
-  imageReading: {
+  // How generated reads behave. Named `reads` rather than `imageReading` -
+  // nothing in the data model is called imageReading any more, and the reads
+  // themselves are what this shapes.
+  reads: {
     probabilityFirstReaderOpinionMatchesImages: 0.95
   },
   episodes: {

@@ -1,0 +1,49 @@
+{# app/views/_includes/episodes/reading-cases-table.njk
+
+   One row per reading case - one set of images read. Shared by past and live
+   rounds, because a case is the same thing either way; only the fidelity of
+   what sits behind it differs.
+
+   The individual reads deliberately aren't here. They belong on the case view,
+   which is where a reader goes to see who said what. #}
+
+<table class="nhsuk-table">
+  <thead class="nhsuk-table__head">
+    <tr>
+      <th scope="col">Images taken</th>
+      <th scope="col">Reads</th>
+      <th scope="col">State</th>
+      <th scope="col">Outcome</th>
+      <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+    </tr>
+  </thead>
+  <tbody class="nhsuk-table__body">
+    {% for readingCase in episode.readingCases %}
+      {% set caseState = readingCase | getReadingCaseState(data.settings) %}
+      {% set caseOutcome = readingCase | getReadingCaseOutcome(data.settings) %}
+      <tr class="nhsuk-table__row">
+        <td class="nhsuk-table__cell">
+          {{ readingCase.openedDate | formatDate }}
+        </td>
+        <td class="nhsuk-table__cell">
+          {{ (readingCase | getReadsAsArray) | length }}
+        </td>
+        <td class="nhsuk-table__cell">
+          {{ caseState | formatWords | sentenceCase }}
+        </td>
+        <td class="nhsuk-table__cell">
+          {% if caseOutcome %}
+            {{ caseOutcome | toTag }}
+          {% else %}
+            <span class="nhsuk-u-secondary-text-colour">Not yet</span>
+          {% endif %}
+        </td>
+        <td class="nhsuk-table__cell">
+          {# Alludes to the reading case view - the URL the reading backlog
+             work will serve. Nothing answers it yet. #}
+          <a href="/reading/cases/{{ readingCase.id }}">View case</a>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -504,7 +504,7 @@ const generateReadingDataWithBacklogLimit = (
  */
 const generateReadingData = (appointments, users, episodes, seedProfile = {}) => {
   const alignmentProbability =
-    seedProfile?.imageReading?.probabilityFirstReaderOpinionMatchesImages ??
+    seedProfile?.reads?.probabilityFirstReaderOpinionMatchesImages ??
     DEFAULT_ALIGNMENT_PROBABILITY
   if (!appointments || !appointments.length || !users || users.length < 2) {
     console.log('No appointments or not enough users to generate reading data')

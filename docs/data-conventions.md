@@ -239,6 +239,11 @@ read as normal - though a minority were recalled and then found clear at
 assessment, which is what actually happens in screening. `checkEpisodes`
 enforces the first of those.
 
+A few percent of past rounds went to **arbitration**: the two readers disagreed
+and a third read settled it, carrying the round's conclusion. Those are seeded
+so arbitration work has past examples to look at rather than only cases made by
+hand.
+
 A screened past round also carries `episode.summaryAppointments[]` - stand-ins
 for the appointment records we don't model:
 

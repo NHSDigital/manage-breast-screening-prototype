@@ -16,6 +16,7 @@ const { pinSettings, readingSettings } = require('./helpers/settings')
 const {
   clickToOpenModal,
   clickLinkToOpenModal,
+  revealInModal,
   expectModalClosed
 } = require('./helpers/modals')
 
@@ -23,7 +24,12 @@ const {
 const sessionSize = 3
 
 /**
- * Record a normal opinion on the case currently on screen
+ * Record a normal opinion on the case currently on screen.
+ *
+ * A case whose participant disclosed significant symptoms offers "Normal, and
+ * add details" instead of a plain "Normal", and then asks the reader to
+ * acknowledge the symptoms. Which cases a session picks up depends on the seed
+ * data, so both paths have to work.
  *
  * @param {import('@playwright/test').Page} page - Playwright page
  */
@@ -31,7 +37,29 @@ const recordNormal = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'What is your opinion of these images?' })
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Normal (N)' }).first().click()
+
+  const plainNormal = page.getByRole('button', { name: 'Normal (N)' }).first()
+
+  if (await plainNormal.isVisible()) {
+    await plainNormal.click()
+    return
+  }
+
+  // The details route loads into the shared modal, so this is a modal flow
+  const detailsModal = await clickToOpenModal(
+    page,
+    'Normal, and add details (N)'
+  )
+
+  // Symptoms have to be acknowledged before a normal opinion can be saved
+  await detailsModal
+    .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+    .check()
+  await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
+
+  // The modal has to finish closing before the next case's opinion page is
+  // clickable - its overlay swallows pointer events while it is still open
+  await expectModalClosed(detailsModal)
 }
 
 /**
@@ -113,14 +141,11 @@ test.describe('Image reading', () => {
         'label[for="modal-imageReadingTemp[annotationTemp][levelOfConcern]-4"]'
       )
       .click()
-    // The dialog is `overflow: clip` and scrolls via .app-modal__content, so
-    // Playwright's auto-scroll can't bring Save into view on a long form - it
-    // reports the button as visible but outside the viewport. Scroll the
-    // content area the way a user would, then click.
-    await annotationModal
-      .locator('.app-modal__content')
-      .evaluate((element) => element.scrollTo(0, element.scrollHeight))
-    await annotationModal.getByRole('button', { name: 'Save' }).first().click()
+    const saveAnnotation = annotationModal
+      .getByRole('button', { name: 'Save' })
+      .first()
+    await revealInModal(saveAnnotation)
+    await saveAnnotation.click()
     await expectModalClosed(annotationModal)
 
     await expect(page.getByText('Level 4 (suspicious)')).toBeVisible()

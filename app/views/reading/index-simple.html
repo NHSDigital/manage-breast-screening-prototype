@@ -55,24 +55,9 @@
   {% endif %}
 {% endfor %}
 
-{#
-  Inset counts.
-
-  arbitrationCount is derived from real data — cases whose derived state is
-  arbitration_required.
-
-  newlyArrivedPriorsCount is faked for the prototype. In a real implementation
-  this would be the count of cases where priors the reader requested or was
-  waiting on have since arrived. Edit the value below (or set it to 0) to see
-  the empty state of the inset.
-#}
-{% set arbitrationCount = 0 %}
-{% for thisAppointment in data.appointments %}
-  {% if ((data | getReadingCase(thisAppointment)) | getReadingCaseState(data.settings)) == 'arbitration_required' %}
-    {% set arbitrationCount = arbitrationCount + 1 %}
-  {% endif %}
-{% endfor %}
-
+{# Inset counts. Only the ones an inset actually shows are worked out here -
+   an arbitration count and a faked newly-arrived-priors count used to be
+   calculated and then never rendered. #}
 {% set deferredCount = 0 %}
 {% for thisAppointment in data.appointments %}
   {% if (data | getReadingCase(thisAppointment)) | isCaseDeferred %}
@@ -86,10 +71,6 @@
     {% set awaitingPriorsCount = awaitingPriorsCount + 1 %}
   {% endif %}
 {% endfor %}
-
-{% set newlyArrivedPriorsCount = 2 %}
-
-{% set actionTotal = arbitrationCount + newlyArrivedPriorsCount %}
 
 {#
   Backlog counts — all eligible cases that still need reading, banded by
