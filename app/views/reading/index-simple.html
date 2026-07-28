@@ -20,7 +20,7 @@
   {% set userReadCount = 0 %}
   {% for appointmentId in session.appointmentIds %}
     {% set thisAppointment = data.appointments | find('id', appointmentId) %}
-    {% if thisAppointment and (thisAppointment | userHasReadAppointment(currentUserId)) %}
+    {% if thisAppointment and (data | userHasReadAppointment(thisAppointment, currentUserId)) %}
       {% set userReadCount = userReadCount + 1 %}
     {% endif %}
   {% endfor %}
@@ -58,8 +58,8 @@
 {#
   Inset counts.
 
-  arbitrationCount is derived from real data — appointments whose computed outcome is
-  arbitration_pending.
+  arbitrationCount is derived from real data — cases whose derived state is
+  arbitration_required.
 
   newlyArrivedPriorsCount is faked for the prototype. In a real implementation
   this would be the count of cases where priors the reader requested or was
@@ -68,14 +68,14 @@
 #}
 {% set arbitrationCount = 0 %}
 {% for thisAppointment in data.appointments %}
-  {% if (thisAppointment | getOutcome) == 'arbitration_pending' %}
+  {% if ((data | getReadingCase(thisAppointment)) | getReadingCaseState(data.settings)) == 'arbitration_required' %}
     {% set arbitrationCount = arbitrationCount + 1 %}
   {% endif %}
 {% endfor %}
 
 {% set deferredCount = 0 %}
 {% for thisAppointment in data.appointments %}
-  {% if thisAppointment | isDeferred %}
+  {% if (data | getReadingCase(thisAppointment)) | isCaseDeferred %}
     {% set deferredCount = deferredCount + 1 %}
   {% endif %}
 {% endfor %}
@@ -95,18 +95,17 @@
   Backlog counts — all eligible cases that still need reading, banded by
   age relative to the configured priority/urgent thresholds.
 #}
-{% set backlogAppointments = data.appointments
-  | filterAppointmentsByEligibleForReading
-  | filterAppointmentsByNeedsAnyRead %}
+{% set backlogAppointments = filterAppointmentsByNeedsAnyRead(
+  data, data.appointments | filterAppointmentsByEligibleForReading
+) %}
 {% set backlogTotal = backlogAppointments | length %}
 {% set urgentBacklog = backlogAppointments | filterAppointmentsByDayRange(data.config.reading.urgentThreshold) | length %}
 {% set priorityBacklog = backlogAppointments | filterAppointmentsByDayRange(data.config.reading.priorityThreshold, data.config.reading.urgentThreshold - 1) | length %}
 
 {# Cases the current user can actually read — used to gate the start button #}
-{% set userReadableTotal = data.appointments
-  | filterAppointmentsByEligibleForReading
-  | filterAppointmentsByUserCanRead(currentUserId)
-  | length %}
+{% set userReadableTotal = filterAppointmentsByUserCanRead(
+  data, data.appointments | filterAppointmentsByEligibleForReading, currentUserId
+) | length %}
 
 {% block pageContent %}
   <div class="nhsuk-grid-row">

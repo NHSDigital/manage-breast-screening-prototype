@@ -15,6 +15,7 @@ const { generateAppointment } = require('./generators/appointment-generator')
 const {
   generateEpisode,
   generateHistoricEpisodes,
+  syncEpisodeReadingCases,
   finaliseEpisodeStage,
   checkEpisodes
 } = require('./generators/episode-generator')
@@ -24,7 +25,11 @@ const {
   generateSingleRead
 } = require('./generators/reading-generator')
 const { getSeedDataProfile } = require('./generators/seed-profiles')
-const { getOutcome } = require('./utils/reading')
+const {
+  buildRead,
+  getLatestReadingCase,
+  getReadingCaseOutcome
+} = require('./utils/reading-cases')
 
 const riskLevels = require('../data/risk-levels')
 
@@ -398,7 +403,12 @@ const seedTechnicalRecallRescreen = ({
     if (episode.appointmentIds.length !== 1) return false
 
     const appointment = appointmentsById.get(episode.appointmentIds[0])
-    return Boolean(appointment) && getOutcome(appointment, {}) === 'technical_recall'
+    if (!appointment) return false
+
+    return (
+      getReadingCaseOutcome(getLatestReadingCase(episode), {}) ===
+      'technical_recall'
+    )
   }
 
   const episode =
@@ -424,12 +434,23 @@ const seedTechnicalRecallRescreen = ({
     )
     const [firstReader, secondReader] = users
 
-    const firstRead = generateSingleRead(
+    // Reads live on the episode's case for this set of images
+    const readingCase = getLatestReadingCase(episode)
+    if (!readingCase) return null
+
+    const generatedRead = generateSingleRead(
       firstAppointment,
       firstReader.id,
       firstReader.role,
       readAt.add(1, 'day').toISOString(),
-      { forceOpinion: 'technical_recall', readNumber: 1 }
+      { forceOpinion: 'technical_recall' }
+    )
+    const firstRead = buildRead(
+      readingCase,
+      firstReader.id,
+      firstReader.role,
+      generatedRead,
+      { timestamp: readAt.add(1, 'day').toISOString() }
     )
 
     // The second read has to agree with the first, down to which views need
@@ -439,17 +460,12 @@ const seedTechnicalRecallRescreen = ({
       ...structuredClone(firstRead),
       readerId: secondReader.id,
       readerType: secondReader.role,
+      readType: 'second',
       readNumber: 2,
       timestamp: readAt.add(2, 'day').toISOString()
     }
 
-    firstAppointment.imageReading = {
-      ...firstAppointment.imageReading,
-      reads: {
-        [firstReader.id]: firstRead,
-        [secondReader.id]: secondRead
-      }
-    }
+    readingCase.reads = [firstRead, secondRead]
     finaliseEpisodeStage(episode, [firstAppointment], clinicsById)
 
     if (!owedRescreen(episode)) return null
@@ -575,10 +591,27 @@ const generateData = async (options = {}) => {
     return new Date(a.timing.startTime) - new Date(b.timing.startTime)
   })
 
+  const appointmentsById = new Map(
+    sortedAppointments.map((appointment) => [appointment.id, appointment])
+  )
+  const clinicsById = new Map(allClinics.map((clinic) => [clinic.id, clinic]))
+
+  // Every set of images taken is a case to read, so the cases have to exist
+  // before there is anywhere to write reads to
+  const episodeAppointmentsFor = (episode) =>
+    episode.appointmentIds
+      .map((appointmentId) => appointmentsById.get(appointmentId))
+      .filter(Boolean)
+
+  allEpisodes.forEach((episode) => {
+    syncEpisodeReadingCases(episode, episodeAppointmentsFor(episode))
+  })
+
   console.log('Generating sample reading data...')
-  const appointmentsWithReadingData = generateReadingData(
+  generateReadingData(
     sortedAppointments,
     users,
+    allEpisodes,
     selectedSeedDataProfile
   )
 
@@ -586,28 +619,20 @@ const generateData = async (options = {}) => {
   // multi-appointment (technical recall) case, then the summary-level past rounds
   console.log('Finalising episodes...')
 
-  const appointmentsById = new Map(
-    appointmentsWithReadingData.map((appointment) => [appointment.id, appointment])
-  )
-  const clinicsById = new Map(allClinics.map((clinic) => [clinic.id, clinic]))
-
   allEpisodes.forEach((episode) => {
-    const episodeAppointments = episode.appointmentIds
-      .map((appointmentId) => appointmentsById.get(appointmentId))
-      .filter(Boolean)
-    finaliseEpisodeStage(episode, episodeAppointments, clinicsById)
+    finaliseEpisodeStage(episode, episodeAppointmentsFor(episode), clinicsById)
   })
 
   const rescreenAppointment = seedTechnicalRecallRescreen({
     episodes: allEpisodes,
-    appointments: appointmentsWithReadingData,
+    appointments: sortedAppointments,
     clinics: allClinics,
     participants: finalParticipants,
     users,
     seedDataProfile: selectedSeedDataProfile
   })
   if (rescreenAppointment) {
-    appointmentsWithReadingData.push(rescreenAppointment)
+    sortedAppointments.push(rescreenAppointment)
   }
 
   const historicEpisodes = generateHistoricEpisodesForParticipants(
@@ -628,7 +653,7 @@ const generateData = async (options = {}) => {
   )
 
   // The re-screen appointment was added after the appointments map was built
-  appointmentsWithReadingData.forEach((appointment) => appointmentsById.set(appointment.id, appointment))
+  sortedAppointments.forEach((appointment) => appointmentsById.set(appointment.id, appointment))
 
   const episodeProblems = checkEpisodes(episodesWithHistory, appointmentsById)
   if (episodeProblems.length) {
@@ -659,7 +684,7 @@ const generateData = async (options = {}) => {
       )
     }))
   })
-  writeData('appointments.json', { appointments: appointmentsWithReadingData })
+  writeData('appointments.json', { appointments: sortedAppointments })
   writeData('episodes.json', { episodes: episodesWithHistory })
   writeData('generation-info.json', {
     generatedAt: new Date().toISOString(),
@@ -667,7 +692,7 @@ const generateData = async (options = {}) => {
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,
-      appointments: appointmentsWithReadingData.length,
+      appointments: sortedAppointments.length,
       episodes: episodesWithHistory.length
     }
   })
@@ -676,7 +701,7 @@ const generateData = async (options = {}) => {
   console.log('Generated:')
   console.log(`- ${finalParticipants.length} participants`)
   console.log(`- ${allClinics.length} clinics`)
-  console.log(`- ${appointmentsWithReadingData.length} appointments`)
+  console.log(`- ${sortedAppointments.length} appointments`)
   console.log(
     `- ${episodesWithHistory.length} episodes ` +
       `(${allEpisodes.length} current, ${historicEpisodes.length} historic)`

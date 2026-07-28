@@ -21,7 +21,7 @@
 
   {# Get comparison info — pass full imageReadingTemp so discordance can check TR views and RFA breast assessments #}
   {% set secondOpinion = data.imageReadingTemp.opinion %}
-  {% set comparisonInfo = appointment | getComparisonInfo(data.imageReadingTemp) %}
+  {% set comparisonInfo = readingCase | getComparisonInfo(data.imageReadingTemp, data.currentUser.id, data.settings) %}
   {% set firstRead = comparisonInfo.firstRead %}
   {% set firstOpinion = comparisonInfo.firstOpinion %}
   {% set comparisonType = comparisonInfo.type %}

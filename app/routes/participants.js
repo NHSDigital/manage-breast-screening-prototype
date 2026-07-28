@@ -10,9 +10,9 @@ const {
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeAppointments,
-  getEpisodeMammogramDate,
-  getEpisodeReadingStatus
+  getEpisodeMammogramDate
 } = require('../lib/utils/episodes')
+const { getEpisodeReadingStatus } = require('../lib/utils/reading')
 const { getClinic } = require('../lib/utils/clinics')
 const { findById } = require('../lib/utils/arrays')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')

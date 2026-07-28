@@ -107,7 +107,7 @@
       {# YOUR READS VIEW - Shows cases from user's perspective #}
       {% set userReadableAppointments = [] %}
       {% for appointment in appointments %}
-        {% if appointment | canUserReadAppointment or appointment | userHasReadAppointment or appointment | userRequestedPriors(data.currentUser.id) or appointment | isDeferred %}
+        {% if (data | canUserReadAppointment(appointment)) or (data | userHasReadAppointment(appointment)) or (appointment | userRequestedPriors(data.currentUser.id)) or (appointment.readingCase | isCaseDeferred) %}
           {% set userReadableAppointments = userReadableAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
@@ -124,8 +124,8 @@
         {% set deferredAppointments = [] %}
 
         {% for appointment in userReadableAppointments %}
-          {% if appointment | userHasReadAppointment %}
-            {% set read = appointment | getReadForUser %}
+          {% if data | userHasReadAppointment(appointment) %}
+            {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
             {% if read.opinion == 'normal' %}
               {% set normalAppointments = normalAppointments | push(appointment) %}
             {% elseif read.opinion == 'technical_recall' %}
@@ -135,7 +135,7 @@
             {% endif %}
           {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
             {% set priorsRequestedAppointments = priorsRequestedAppointments | push(appointment) %}
-          {% elseif appointment | isDeferred %}
+          {% elseif appointment.readingCase | isCaseDeferred %}
             {% set deferredAppointments = deferredAppointments | push(appointment) %}
           {% endif %}
         {% endfor %}
@@ -238,8 +238,8 @@
           </thead>
           <tbody>
             {% for appointment in userReadableAppointments %}
-            {% set metadata = appointment | getReadingMetadata %}
-            <tr{% if resumeAppointment and appointment.id == resumeAppointment.id and not (appointment | userHasReadAppointment) %} class="app-placeholder-row--next"{% endif %}>
+            {% set metadata = appointment.readingCase | getReadingMetadata(data.settings) %}
+            <tr{% if resumeAppointment and appointment.id == resumeAppointment.id and not (data | userHasReadAppointment(appointment)) %} class="app-placeholder-row--next"{% endif %}>
               <td>
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
@@ -255,7 +255,7 @@
                 <br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
-                  {% if appointment | userHasReadAppointment %}
+                  {% if data | userHasReadAppointment(appointment) %}
                     {{ "1st read" if readCount == 1 else "2nd read" }}
                   {% else %}
                     {{ "1st read" if readCount == 0 else "2nd read" }}
@@ -290,12 +290,12 @@
                 </span>
               </td>
               <td>
-                {% if appointment | userHasReadAppointment %}
-                  {% set read = appointment | getReadForUser %}
+                {% if data | userHasReadAppointment(appointment) %}
+                  {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
                     {{ read.opinion | toTag }}
                   {% endif %}
-                {% elseif appointment | isDeferred %}
+                {% elseif appointment.readingCase | isCaseDeferred %}
                   {{ "Deferred" | toTag }}
                 {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
                   {{ "Priors requested" | toTag }}
@@ -306,7 +306,7 @@
                 {% endif %}
               </td>
               <td class="app-placeholder-action-cell">
-                {% if resumeAppointment and appointment.id == resumeAppointment.id and not (appointment | userHasReadAppointment) %}
+                {% if resumeAppointment and appointment.id == resumeAppointment.id and not (data | userHasReadAppointment(appointment)) %}
                   <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% endif %}
               </td>
@@ -345,8 +345,9 @@
       {% set allViewArbitrationAppointments = [] %}
 
       {% for appointment in appointments %}
-        {% set appointmentOutcome = appointment | getOutcome %}
-        {% if appointmentOutcome == 'pending_second_read' %}
+        {% set appointmentState = appointment.readingCase | getReadingCaseState(data.settings) %}
+        {% set appointmentOutcome = appointment.readingCase | getReadingCaseOutcome(data.settings) %}
+        {% if appointmentState == 'awaiting_second_read' %}
           {% set awaitingSecondReadAppointments = awaitingSecondReadAppointments | push(appointment) %}
         {% elseif appointmentOutcome == 'normal' %}
           {% set allViewNormalAppointments = allViewNormalAppointments | push(appointment) %}
@@ -354,7 +355,7 @@
           {% set allViewTechnicalRecallAppointments = allViewTechnicalRecallAppointments | push(appointment) %}
         {% elseif appointmentOutcome == 'recall_for_assessment' %}
           {% set allViewRecallForAssessmentAppointments = allViewRecallForAssessmentAppointments | push(appointment) %}
-        {% elseif appointmentOutcome == 'arbitration_pending' %}
+        {% elseif appointmentState == 'arbitration_required' or appointmentState == 'in_arbitration' %}
           {% set allViewArbitrationAppointments = allViewArbitrationAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
@@ -434,7 +435,7 @@
         </thead>
         <tbody>
           {% for appointment in appointments %}
-            {% set metadata = appointment | getReadingMetadata %}
+            {% set metadata = appointment.readingCase | getReadingMetadata(data.settings) %}
             <tr>
               <td>
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
@@ -485,7 +486,7 @@
               <td>
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
-                {% set allReads = appointment | getReadsAsArray %}
+                {% set allReads = appointment.readingCase | getReadsAsArray %}
 
                 {% if metadata.readCount >= 1 %}
                   {% set firstRead = allReads[0] %}
@@ -534,17 +535,17 @@
                   {{ "Waiting for 1st read" | toTag }}
                 {% endif %}
               </td>
-              {# Outcome column — uses getOutcome which respects the site's arbitration policy #}
+              {# Outcome column — the case state respects the site's arbitration policy #}
               <td>
-                {% set outcome = appointment | getOutcome %}
-                {% if outcome == 'not_read' %}
+                {% set caseState = appointment.readingCase | getReadingCaseState(data.settings) %}
+                {% if caseState == 'awaiting_first_read' %}
                   {{ "Waiting for 1st read" | toTag }}
-                {% elseif outcome == 'pending_second_read' %}
+                {% elseif caseState == 'awaiting_second_read' %}
                   {{ "Waiting for 2nd read" | toTag }}
-                {% elseif outcome == 'arbitration_pending' %}
+                {% elseif caseState == 'arbitration_required' or caseState == 'in_arbitration' %}
                   {{ "Arbitration" | toTag }}
                 {% else %}
-                  {{ outcome | toTag }}
+                  {{ (appointment.readingCase | getReadingCaseOutcome(data.settings)) | toTag }}
                 {% endif %}
               </td>
             </tr>

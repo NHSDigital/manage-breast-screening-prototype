@@ -13,7 +13,6 @@ const {
   getReadingStatusForAppointments,
   getReadingClinics,
   getReadingProgress,
-  hasReads,
   canUserReadAppointment,
   userHasReadAppointment,
   writeReading,
@@ -25,13 +24,21 @@ const {
   getSessionReadingProgress,
   skipAppointmentInSession,
   topUpSession,
-  getReadingMetadata,
-  getComparisonInfo,
-  shouldShowComparePage,
+  getAppointmentReadingMetadata,
   filterAppointmentsByEligibleForReading,
   filterAppointmentsByNeedsAnyRead,
   filterAppointmentsByUserCanRead
 } = require('../lib/utils/reading')
+const { getReadingCase, updateReadingCase } = require('../lib/utils/episodes')
+const {
+  getComparisonInfo,
+  shouldShowComparePage,
+  getReadingMetadata,
+  getReadsAsArray,
+  getReadForUser,
+  isCaseDeferred,
+  withoutRead
+} = require('../lib/utils/reading-cases')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
 const {
   PRIOR_REQUEST_STATUSES,
@@ -377,6 +384,7 @@ module.exports = (router) => {
       .filter(Boolean)
 
     const resumeAppointment = getResumeAppointmentForUser(
+      data,
       sessionAppointments,
       data.currentUser.id,
       session.skippedAppointments || []
@@ -390,6 +398,7 @@ module.exports = (router) => {
 
     // Check if there are any readable cases left in the session
     const firstReadable = getFirstUserReadableAppointment(
+      data,
       sessionAppointments,
       data.currentUser.id
     )
@@ -453,21 +462,23 @@ module.exports = (router) => {
       )
       .filter(Boolean)
       .map((appointment) => {
-        // Add participant data and reading metadata
+        // Add participant data, the reading case, and its metadata
         const participant = data.participants.find(
           (p) => p.id === appointment.participantId
         )
-        const metadata = getReadingMetadata(appointment)
+        const readingCase = getReadingCase(data, appointment)
 
         return {
           ...appointment,
           participant,
-          readingMetadata: metadata
+          readingCase,
+          readingMetadata: getReadingMetadata(readingCase, data.settings)
         }
       })
 
     // Get reading status for the session
     const readingStatus = getReadingStatusForAppointments(
+      data,
       enhancedAppointments,
       data.currentUser.id
     )
@@ -482,6 +493,7 @@ module.exports = (router) => {
     // Find where the user should resume — first readable after the furthest
     // point they've reached (reads or skips), falling back to first readable
     const resumeAppointment = getResumeAppointmentForUser(
+      data,
       enhancedAppointments,
       data.currentUser.id,
       session.skippedAppointments || []
@@ -491,7 +503,8 @@ module.exports = (router) => {
     const firstUserReadTimestamp = enhancedAppointments
       .map(
         (appointment) =>
-          appointment.imageReading?.reads?.[data.currentUser.id]?.timestamp
+          getReadForUser(appointment.readingCase, data.currentUser.id)
+            ?.timestamp
       )
       .filter(Boolean)
       .sort((a, b) => new Date(a) - new Date(b))[0]
@@ -515,6 +528,7 @@ module.exports = (router) => {
     // Checks only cases the current user can actually read (not already read by them,
     // not fully read by others, not deferred or awaiting priors).
     const backlogTotal = filterAppointmentsByUserCanRead(
+      data,
       filterAppointmentsByEligibleForReading(data.appointments),
       data.currentUser.id
     ).length
@@ -583,7 +597,10 @@ module.exports = (router) => {
           !data.imageReadingTemp ||
           data.imageReadingTemp.appointmentId !== appointmentId
         ) {
-          const existingRead = appointment.imageReading?.reads?.[currentUserId]
+          const existingRead = getReadForUser(
+            getReadingCase(data, appointment),
+            currentUserId
+          )
           if (existingRead) {
             // User has already read this appointment - populate temp from saved read
             console.log(
@@ -617,8 +634,11 @@ module.exports = (router) => {
         }
       }
 
-      // Set up locals for templates
+      // Set up locals for templates. The case is resolved once here so the
+      // workflow templates can work in reading-case terms without each of them
+      // walking back to the episode
       res.locals.isReadingWorkflow = true
+      res.locals.readingCase = getReadingCase(data, appointment)
       res.locals.session = session
       res.locals.appointmentData = {
         clinic,
@@ -656,7 +676,7 @@ module.exports = (router) => {
       }
 
       // Check if user has already read this appointment
-      if (userHasReadAppointment(appointment, currentUserId)) {
+      if (userHasReadAppointment(data, appointment, currentUserId)) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )
@@ -671,8 +691,7 @@ module.exports = (router) => {
       }
 
       // Check if appointment has been deferred from reading
-      const { isDeferred } = require('../lib/utils/reading')
-      if (isDeferred(appointment)) {
+      if (isCaseDeferred(getReadingCase(data, appointment))) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )
@@ -707,6 +726,7 @@ module.exports = (router) => {
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
       const nextUnreadAppointment = getNextUserReadableAppointment(
+        data,
         sessionAppointments,
         appointmentId,
         currentUserId,
@@ -722,6 +742,7 @@ module.exports = (router) => {
       } else {
         // Check if there are any readable cases left in the session
         const firstReadable = getFirstUserReadableAppointment(
+          data,
           sessionAppointments,
           currentUserId
         )
@@ -808,6 +829,7 @@ module.exports = (router) => {
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
       const nextUnreadAppointment = getNextUserReadableAppointment(
+        data,
         sessionAppointments,
         appointmentId,
         currentUserId,
@@ -837,6 +859,7 @@ module.exports = (router) => {
       } else {
         // Check if there are any readable cases left in the session
         const firstReadable = getFirstUserReadableAppointment(
+          data,
           sessionAppointments,
           currentUserId
         )
@@ -909,22 +932,20 @@ module.exports = (router) => {
       // mutating in place - appointment records are shared read-only data; writes
       // go through the update helpers
       const appointment = data.appointments.find((e) => e.id === appointmentId)
-      if (appointment) {
-        const imageReading = structuredClone(appointment.imageReading || {})
-
-        // Remove any existing read by this user — deferral replaces a prior opinion
-        if (imageReading.reads?.[currentUserId]) {
-          delete imageReading.reads[currentUserId]
+      const readingCase = getReadingCase(data, appointment)
+      if (readingCase) {
+        // Deferring withdraws any opinion this user had already given - they're
+        // saying they can't judge this case after all
+        const updatedCase = {
+          ...withoutRead(readingCase, currentUserId),
+          deferral: {
+            deferredAt: new Date().toISOString(),
+            deferredBy: currentUserId,
+            reason: reason || null
+          }
         }
 
-        imageReading.deferral = {
-          deferredAt: new Date().toISOString(),
-          deferredBy: currentUserId,
-          reason: reason || null
-        }
-
-        // Saves to the appointment and mirrors into data.appointment if it matches
-        updateAppointmentData(data, appointmentId, { imageReading })
+        updateReadingCase(data, appointment.episodeId, updatedCase)
       }
 
       // If submitted from an existing-read page (e.g. editing reason), return there
@@ -947,6 +968,7 @@ module.exports = (router) => {
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
       const nextUnreadAppointment = getNextUserReadableAppointment(
+        data,
         sessionAppointments,
         appointmentId,
         currentUserId,
@@ -976,6 +998,7 @@ module.exports = (router) => {
       } else {
         // Check if there are any readable cases left in the session
         const firstReadable = getFirstUserReadableAppointment(
+          data,
           sessionAppointments,
           currentUserId
         )
@@ -998,13 +1021,10 @@ module.exports = (router) => {
       const { sessionId, appointmentId } = req.params
 
       const appointment = data.appointments.find((e) => e.id === appointmentId)
-      if (appointment?.imageReading?.deferral) {
-        // Clone rather than mutate - appointment records are shared read-only data
-        const imageReading = structuredClone(appointment.imageReading)
-        delete imageReading.deferral
-
-        // Saves to the appointment and mirrors into data.appointment if it matches
-        updateAppointmentData(data, appointmentId, { imageReading })
+      const readingCase = getReadingCase(data, appointment)
+      if (isCaseDeferred(readingCase)) {
+        const { deferral, ...withoutDeferral } = readingCase
+        updateReadingCase(data, appointment.episodeId, withoutDeferral)
       }
 
       res.redirect(
@@ -1025,21 +1045,21 @@ module.exports = (router) => {
     const { appointmentId } = req.body
 
     const appointment = data.appointments.find((e) => e.id === appointmentId)
-    if (appointment?.imageReading?.deferral) {
-      // Clone rather than mutate - appointment records are shared read-only data
-      const imageReading = structuredClone(appointment.imageReading)
-      imageReading.deferralHistory = [
-        ...(imageReading.deferralHistory || []),
-        {
-          ...imageReading.deferral,
-          resolvedAt: new Date().toISOString(),
-          resolvedBy: data.currentUser?.id
-        }
-      ]
-      delete imageReading.deferral
+    const readingCase = getReadingCase(data, appointment)
+    if (isCaseDeferred(readingCase)) {
+      const { deferral, ...withoutDeferral } = readingCase
 
-      // Saves to the appointment and mirrors into data.appointment if it matches
-      updateAppointmentData(data, appointmentId, { imageReading })
+      updateReadingCase(data, appointment.episodeId, {
+        ...withoutDeferral,
+        deferralHistory: [
+          ...(readingCase.deferralHistory || []),
+          {
+            ...deferral,
+            resolvedAt: new Date().toISOString(),
+            resolvedBy: data.currentUser?.id
+          }
+        ]
+      })
 
       const participant = data.participants.find(
         (p) => p.id === appointment.participantId
@@ -1804,7 +1824,7 @@ module.exports = (router) => {
       if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
         if (
           shouldShowComparePage(
-            appointment,
+            getReadingCase(data, appointment),
             formData,
             currentUserId,
             data.settings
@@ -1905,7 +1925,7 @@ module.exports = (router) => {
       }
 
       // Write the reading (passing session context to handle skipped appointments)
-      writeReading(appointment, currentUserId, readResult, data, sessionId)
+      writeReading(data, appointment, currentUserId, readResult, sessionId)
 
       // Top up the session with the next eligible appointment if under target size
       topUpSession(data, sessionId)
@@ -1916,6 +1936,7 @@ module.exports = (router) => {
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
       const nextUnreadAppointment = getNextUserReadableAppointment(
+        data,
         sessionAppointments,
         appointmentId,
         currentUserId,
@@ -1970,6 +1991,7 @@ module.exports = (router) => {
       } else {
         // Check if there are any readable cases left in the session
         const firstReadable = getFirstUserReadableAppointment(
+          data,
           sessionAppointments,
           currentUserId
         )
@@ -2048,7 +2070,7 @@ module.exports = (router) => {
         const currentUserId = data.currentUser?.id
         if (
           shouldShowComparePage(
-            appointment,
+            getReadingCase(data, appointment),
             data.imageReadingTemp,
             currentUserId,
             data.settings
@@ -2069,7 +2091,7 @@ module.exports = (router) => {
           if (comparisonSetting === 'late') {
             if (
               shouldShowComparePage(
-                appointment,
+                getReadingCase(data, appointment),
                 data.imageReadingTemp,
                 data.currentUser?.id,
                 data.settings
@@ -2129,9 +2151,10 @@ module.exports = (router) => {
 
       const opinion = data.imageReadingTemp?.opinion
       const comparisonInfo = getComparisonInfo(
-        appointment,
+        getReadingCase(data, appointment),
         data.imageReadingTemp,
-        currentUserId
+        currentUserId,
+        data.settings
       )
       const firstOpinion = comparisonInfo?.firstOpinion
       const forceNormalDetailsForDiscordantNormal =
@@ -2250,29 +2273,18 @@ module.exports = (router) => {
     // Get all recent readings across all appointments - last 30 days
     const thirtyDaysAgo = dayjs().subtract(30, 'days').toISOString()
 
-    // Collect all readings from appointments
+    // Collect all reads across the reading cases
     const allReadings = []
 
     data.appointments.forEach((appointment) => {
-      if (!appointment.imageReading?.reads) return
+      const readingCase = getReadingCase(data, appointment)
+      const reads = getReadsAsArray(readingCase)
+      if (!reads.length) return
 
-      const appointmentReadings = Object.entries(
-        appointment.imageReading.reads
-      ).map(([readerId, reading]) => {
-        // Determine if this is a first or second read
-        const readingsForAppointment = Object.values(
-          appointment.imageReading.reads
-        )
-        const sortedReadings = [...readingsForAppointment].sort(
-          (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-        )
-
-        const readOrder = sortedReadings.findIndex(
-          (r) => r.readerId === readerId
-        )
-
-        const readType =
-          readOrder === 0 ? 'first' : readOrder === 1 ? 'second' : 'arbitration'
+      const appointmentReadings = reads.map((reading) => {
+        // Each read records what kind it was when it was made, so history
+        // doesn't have to infer it from ordering
+        const readType = reading.readType
 
         // Get participant info
         const participant = data.participants.find(
@@ -2337,7 +2349,7 @@ module.exports = (router) => {
           .filter(Boolean)
         const userCompletedCount = sessionAppointments.filter(
           (appointment) =>
-            userHasReadAppointment(appointment, currentUserId) ||
+            userHasReadAppointment(data, appointment, currentUserId) ||
             userRequestedPriors(appointment, currentUserId)
         ).length
 

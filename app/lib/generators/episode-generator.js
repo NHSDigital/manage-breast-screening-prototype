@@ -15,7 +15,12 @@ const weighted = require('weighted')
 const { faker } = require('@faker-js/faker')
 const generateId = require('../utils/id-generator')
 const riskLevels = require('../../data/risk-levels')
-const { getOutcome } = require('../utils/reading')
+const {
+  buildReadingCase,
+  getLatestReadingCase,
+  getReadingCaseOutcome,
+  getReadsAsArray
+} = require('../utils/reading-cases')
 const { eligibleForReading, isCompleted } = require('../utils/status')
 const {
   EPISODE_OUTCOMES,
@@ -90,8 +95,40 @@ const generateEpisode = ({ participant, type, appointmentDate }) => {
     closedDate: null,
     appointmentIds: [],
     mammograms: [],
+    readingCases: [],
     isHistoric: false
   }
+}
+
+/**
+ * Open a reading case for each set of images the episode's appointments
+ * produced, keeping any case that already exists.
+ *
+ * Runs before reading data is generated, because reads are written onto cases -
+ * there has to be a case to write to. Existing cases are kept rather than
+ * rebuilt so re-running never throws away reads.
+ *
+ * @param {object} episode - Episode to sync (mutated - generation only)
+ * @param {Array} appointments - The episode's appointments, oldest first
+ * @returns {object} The same episode
+ */
+const syncEpisodeReadingCases = (episode, appointments) => {
+  const existingByAppointmentId = new Map(
+    (episode.readingCases || []).map((readingCase) => [
+      readingCase.appointmentId,
+      readingCase
+    ])
+  )
+
+  episode.readingCases = appointments
+    .filter(appointmentProducedImages)
+    .map(
+      (appointment) =>
+        existingByAppointmentId.get(appointment.id) ||
+        buildReadingCase(appointment)
+    )
+
+  return episode
 }
 
 /**
@@ -117,12 +154,14 @@ const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) =>
   episode.closedDate = null
 
   // The round's record of images taken is derived from the appointments alongside
-  // the stage, so a re-run refreshes both together
+  // the stage, so a re-run refreshes both together. Its reading cases follow the
+  // same image sets, and keep any reads already written to them
   episode.mammograms = appointments
     .filter(appointmentProducedImages)
     .map((appointment) =>
       buildMammogramEntry(appointment, clinicsById.get(appointment.clinicId))
     )
+  syncEpisodeReadingCases(episode, appointments)
 
   const latestAppointment = appointments[appointments.length - 1]
   if (!latestAppointment) return episode
@@ -153,10 +192,12 @@ const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) =>
   moveTo(destination, appointmentEnded)
 
   // Once the images are taken, it's the reading that decides what happens
-  // next - close the episode, or send it back for a technical recall
+  // next - close the episode, or send it back for a technical recall. The
+  // *latest* case decides: a technical recall's re-screen supersedes the
+  // reading that asked for it
   if (episode.stage === 'reading') {
-    const reads = Object.values(latestAppointment.imageReading?.reads || {})
-    const lastReadAt = reads
+    const latestCase = getLatestReadingCase(episode)
+    const lastReadAt = getReadsAsArray(latestCase)
       .map((read) => read.timestamp)
       .sort()
       .pop()
@@ -169,7 +210,7 @@ const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) =>
         : appointmentEnded
 
     const destinationAfterReading =
-      EPISODE_STAGE_BY_READING_OUTCOME[getOutcome(latestAppointment, {})]
+      EPISODE_STAGE_BY_READING_OUTCOME[getReadingCaseOutcome(latestCase, {})]
 
     if (destinationAfterReading) {
       moveTo(destinationAfterReading, concludedAt)
@@ -305,6 +346,7 @@ const generateHistoricEpisodes = ({
       openedDate: openedDate.toISOString(),
       closedDate: closedDate.toISOString(),
       appointmentIds: [],
+      readingCases: [],
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image
@@ -378,6 +420,11 @@ const checkEpisodes = (episodes, appointmentsById) => {
           `historic episode ${episode.id} outcome and mammograms disagree`
         )
       }
+      // A summary round records that it was read, not how - it has no
+      // appointment for a case to hang off
+      if (episode.readingCases?.length) {
+        problems.push(`historic episode ${episode.id} has reading cases`)
+      }
       return
     }
 
@@ -402,6 +449,52 @@ const checkEpisodes = (episodes, appointmentsById) => {
         `episode ${episode.id} mammograms don't match its screened appointments`
       )
     }
+
+    // One reading case per image set, and none without images to read: the two
+    // records answer the same question from different sides, so they must agree
+    const caseAppointmentIds = (episode.readingCases || []).map(
+      (readingCase) => readingCase.appointmentId
+    )
+    if (
+      screenedAppointmentIds.length !== caseAppointmentIds.length ||
+      screenedAppointmentIds.some(
+        (appointmentId) => !caseAppointmentIds.includes(appointmentId)
+      )
+    ) {
+      problems.push(
+        `episode ${episode.id} reading cases don't match its screened appointments`
+      )
+    }
+
+    // A case is read at most twice until arbitration, and an arbitration read
+    // only makes sense once two reads have disagreed
+    ;(episode.readingCases || []).forEach((readingCase) => {
+      const reads = getReadsAsArray(readingCase)
+      const arbitrationReads = reads.filter(
+        (read) => read.readType === 'arbitration'
+      )
+
+      if (reads.length > 3) {
+        problems.push(
+          `reading case ${readingCase.id} has ${reads.length} reads`
+        )
+      }
+      if (arbitrationReads.length > 1) {
+        problems.push(
+          `reading case ${readingCase.id} has more than one arbitration read`
+        )
+      }
+      if (arbitrationReads.length && reads.length < 3) {
+        problems.push(
+          `reading case ${readingCase.id} has an arbitration read without two prior reads`
+        )
+      }
+      if (new Set(reads.map((read) => read.readerId)).size !== reads.length) {
+        problems.push(
+          `reading case ${readingCase.id} has the same reader twice`
+        )
+      }
+    })
 
     // Reading needs images: an episode can only be in reading off the back of
     // a completed mammogram appointment that is still within the reading window
@@ -434,6 +527,7 @@ const checkEpisodes = (episodes, appointmentsById) => {
 module.exports = {
   generateEpisode,
   generateHistoricEpisodes,
+  syncEpisodeReadingCases,
   finaliseEpisodeStage,
   checkEpisodes
 }

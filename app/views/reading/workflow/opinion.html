@@ -21,7 +21,7 @@
      ========================================================= #}
 
   {# Get existing read data for this user (saved read) #}
-  {% set existingRead = appointment | getReadForUser %}
+  {% set existingRead = readingCase | getReadForUser(data.currentUser.id) %}
   {% set existingOpinion = existingRead.opinion %}
 
   {# Also check for in-progress read in temp data #}
@@ -367,7 +367,7 @@
       {% endif %}
 
       {# First/second read tag #}
-      {% set readCount = (appointment | getReadingMetadata).readCount %}
+      {% set readCount = (readingCase | getReadingMetadata).readCount %}
       {% if existingOpinion %}
         {% if readCount == 1 %}
           {{ "First read" | toTag }}

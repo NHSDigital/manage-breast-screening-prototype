@@ -1,125 +1,86 @@
 // app/lib/utils/reading.js
+//
+// The appointment- and session-shaped layer over image reading: reading
+// sessions, backlogs, clinic lists, progress and navigation, all of which work
+// in terms of the appointments a reader is working through.
+//
+// The reading data itself lives on the episode, as `episode.readingCases[]`.
+// Case-level logic is in reading-cases.js and takes a case; getting the case
+// for an appointment goes through getReadingCase in episodes.js. That is why
+// most helpers here take `data` - it's what resolving a case needs.
 
 const dayjs = require('dayjs')
 const { getClinic } = require('./clinics')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
-const { updateAppointmentData } = require('./appointment-data')
-
-// /**
-//  * Get first unread appointment in a clinic
-//  */
-// const getFirstUnreadAppointment = (data, clinicId) => {
-//   return data.appointments.find(appointment =>
-//     appointment.clinicId === clinicId &&
-//     eligibleForReading(appointment) &&
-//     !appointment.reads?.length
-//   ) || null
-// }
-
-// /**
-//  * Get first unread appointment from first available clinic
-//  */
-// const getFirstUnreadAppointmentOverall = (data) => {
-//   const firstClinic = getFirstAvailableClinic(data)
-//   if (!firstClinic) return null
-
-//   return getFirstUnreadAppointment(data, firstClinic.id)
-// }
+const {
+  getReadingCase,
+  getEpisodeAppointments,
+  updateReadingCase
+} = require('./episodes')
+const {
+  getReadsAsArray,
+  getReadForUser,
+  getReadingMetadata,
+  getReadingCaseState,
+  isCaseDeferred,
+  caseHasReads,
+  caseNeedsFirstRead,
+  caseNeedsSecondRead,
+  canUserReadCase,
+  userHasReadCase,
+  buildRead,
+  withRead
+} = require('./reading-cases')
 
 /************************************************************************
 // Single appointment
-//***********************************************************************
+//
+// Thin bridges from an appointment to its case, for the places that only have
+// an appointment to hand. Anything doing real work with reads should take the
+// case instead.
+//***********************************************************************/
 
 /**
- * Get reading metadata for an appointment
- * @param {Object} appointment - The appointment to check
- * @returns {Object} Object with reading metadata
- */
-const getReadingMetadata = (appointment) => {
-  // Get all reads from the imageReading structure
-  const reads = appointment.imageReading?.reads
-    ? Object.values(appointment.imageReading.reads)
-    : []
-  const readerIds = reads.map((read) => read.readerId)
-  const uniqueReaderCount = new Set(readerIds).size
-
-  // Get all unique opinions from reads
-  const opinions = reads.map((read) => read.opinion)
-  const uniqueOpinions = [...new Set(opinions)].filter(Boolean) // Filter out undefined
-
-  // Discordance: richer than just comparing opinion strings — also checks TR views and RFA breast assessments
-  const isDiscordant =
-    reads.length >= 2 ? areReadsDiscordant(reads[0], reads[1]) : false
-
-  return {
-    readCount: reads.length,
-    uniqueReaderCount,
-    firstReadComplete: reads.length >= 1,
-    secondReadComplete: reads.length >= 2,
-    isDiscordant,
-    opinions: uniqueOpinions
-  }
-}
-
-/**
- * Get all reads for an appointment as an ordered array
- * Sorted by readNumber if available, otherwise by timestamp
- * @param {Object} appointment - The appointment to get reads for
- * @returns {Array} Array of read objects sorted by read order
- */
-const getReadsAsArray = function (appointment) {
-  if (!appointment?.imageReading?.reads) {
-    return []
-  }
-
-  return Object.values(appointment.imageReading.reads).sort((a, b) => {
-    // Sort by readNumber if both have it
-    if (a.readNumber && b.readNumber) {
-      return a.readNumber - b.readNumber
-    }
-    // Fall back to timestamp
-    return new Date(a.timestamp) - new Date(b.timestamp)
-  })
-}
-
-/**
- * Save a user's reading for an appointment, and remove the appointment from the reading
- * session's skipped list if present
+ * Get the reading metadata for an appointment's case
  *
- * Builds a new imageReading object and saves it through updateAppointmentData
- * rather than mutating the appointment - appointment records are shared read-only data.
- *
- * @param {object} appointment - The appointment to update
- * @param {string} userId - User ID
- * @param {object} reading - Reading data to save
  * @param {object} data - Session data
- * @param {string | null} [sessionId] - Reading session ID (if in session context)
+ * @param {object} appointment - The appointment
+ * @returns {object} Reading metadata, all zeros if there is no case yet
  */
-const writeReading = (appointment, userId, reading, data, sessionId = null) => {
-  // Work on a clone so the shared record is never touched in place
-  const imageReading = structuredClone(appointment.imageReading || {})
-  if (!imageReading.reads) {
-    imageReading.reads = {}
+const getAppointmentReadingMetadata = (data, appointment) => {
+  return getReadingMetadata(resolveCase(data, appointment), data?.settings || {})
+}
+
+/**
+ * Save a user's read of an appointment's images, and take the appointment off
+ * the reading session's skipped list if it was on it.
+ *
+ * The read goes onto the episode's reading case, not the appointment - a read
+ * is a read of one set of images, and the case is what holds those.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment whose images were read
+ * @param {string} userId - User ID
+ * @param {object} reading - The opinion and its details
+ * @param {string | null} [sessionId] - Reading session ID (if in session context)
+ * @returns {object | null} The updated case, or null if there was none to write to
+ */
+const writeReading = (data, appointment, userId, reading, sessionId = null) => {
+  const readingCase = getReadingCase(data, appointment)
+  if (!readingCase) {
+    console.warn(
+      `writeReading: no reading case for appointment ${appointment?.id}`
+    )
+    return null
   }
 
-  // Calculate readNumber based on existing reads
-  const existingReadCount = Object.keys(imageReading.reads).length
-  // If this user already has a read, keep their readNumber; otherwise assign next number
-  const existingRead = imageReading.reads[userId]
-  const readNumber = existingRead?.readNumber || existingReadCount + 1
+  const readerType = data.users?.find((user) => user.id === userId)?.role
+  const read = buildRead(readingCase, userId, readerType, reading)
+  const updatedCase = withRead(readingCase, read)
 
-  // Add the reading with timestamp and readNumber
-  imageReading.reads[userId] = {
-    ...reading,
-    readerId: userId, // Ensure the reader ID is saved
-    readNumber,
-    timestamp: new Date().toISOString()
-  }
-
-  // Saves to the appointment and mirrors into data.appointment if it matches
-  updateAppointmentData(data, appointment.id, { imageReading })
+  updateReadingCase(data, appointment.episodeId, updatedCase)
 
   // Note the episode deliberately stays in `reading`. Two opinions and a
   // computed outcome is not a confirmed result, and there is no step in the
@@ -137,6 +98,103 @@ const writeReading = (appointment, userId, reading, data, sessionId = null) => {
       session.skippedAppointments.splice(skippedIndex, 1)
     }
   }
+
+  return updatedCase
+}
+
+/**
+ * Get the reading status of an episode.
+ *
+ * Lives here rather than in episodes.js so the requires stay one-directional -
+ * episodes.js owns getting cases out of session data, and this is the layer
+ * above that summarises them.
+ *
+ * Scoped by the episode's appointments rather than its cases directly, because
+ * the summary mixes case facts (reads) with appointment ones (outstanding
+ * priors, how long ago the images were taken).
+ *
+ * @param {object} data - Session data
+ * @param {object} episode - Episode object
+ * @param {string} [userId] - Optional user, for per-user reading counts
+ * @returns {object} Reading status and metrics for the episode
+ */
+const getEpisodeReadingStatus = (data, episode, userId = null) => {
+  return getReadingStatusForAppointments(
+    data,
+    getEpisodeAppointments(data, episode),
+    userId
+  )
+}
+
+/**
+ * Every case currently deferred from reading, most recently deferred first.
+ *
+ * Deferral is a case-level fact, so this walks the reading backlog and pairs
+ * each deferred case with the appointment and participant it belongs to - what
+ * a list of deferred cases needs to show a row.
+ *
+ * @param {object} data - Session data
+ * @returns {Array} `{ appointment, participant, readingCase, deferral }`, newest first
+ */
+const getDeferredCases = (data) => {
+  return data.appointments
+    .map((appointment) => ({
+      appointment,
+      participant: data.participants.find(
+        (participant) => participant.id === appointment.participantId
+      ),
+      readingCase: getReadingCase(data, appointment)
+    }))
+    .filter((row) => isCaseDeferred(row.readingCase))
+    .map((row) => ({ ...row, deferral: row.readingCase.deferral }))
+    .sort(
+      (a, b) => new Date(b.deferral.deferredAt) - new Date(a.deferral.deferredAt)
+    )
+}
+
+/**
+ * Every deferral that has since been resolved, most recently resolved first.
+ *
+ * A case can have been deferred and returned to the queue more than once, so
+ * this is a list of deferrals rather than of cases.
+ *
+ * @param {object} data - Session data
+ * @returns {Array} `{ appointment, participant, readingCase, deferral }`, newest first
+ */
+const getResolvedDeferrals = (data) => {
+  return data.appointments
+    .flatMap((appointment) => {
+      const readingCase = getReadingCase(data, appointment)
+
+      return (readingCase?.deferralHistory || []).map((deferral) => ({
+        appointment,
+        participant: data.participants.find(
+          (participant) => participant.id === appointment.participantId
+        ),
+        readingCase,
+        deferral
+      }))
+    })
+    .sort(
+      (a, b) => new Date(b.deferral.resolvedAt) - new Date(a.deferral.resolvedAt)
+    )
+}
+
+/**
+ * Get an appointment's reading case, preferring one already attached.
+ *
+ * List-building code enriches appointments with their case up front so a long
+ * list resolves each one once; anything working from a raw appointment record
+ * falls through to resolving it here.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment
+ * @returns {object | null} The case, or null if the appointment produced no images
+ */
+const resolveCase = (data, appointment) => {
+  return appointment?.readingCase !== undefined
+    ? appointment.readingCase
+    : getReadingCase(data, appointment)
 }
 
 /************************************************************************
@@ -144,23 +202,35 @@ const writeReading = (appointment, userId, reading, data, sessionId = null) => {
 //***********************************************************************
 
 /**
- * Enhance appointments with pre-calculated reading metadata
+ * Enhance appointments with their reading case and pre-calculated metadata.
+ *
+ * Attaching the case here is what lets the rest of the list-handling code stay
+ * cheap - everything downstream reads `appointment.readingCase` instead of
+ * resolving the episode again per row.
+ *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to enhance
  * @param {Array} participants - Array of participants for lookups
  * @param {string} userId - Current user ID
- * @returns {Array} Enhanced appointments with pre-calculated metadata
+ * @returns {Array} Enhanced appointments with their case and metadata
  */
-const enhanceAppointmentsWithReadingData = (appointments, participants, userId) => {
+const enhanceAppointmentsWithReadingData = (
+  data,
+  appointments,
+  participants,
+  userId
+) => {
   // Create a lookup map for participants
   const participantMap = new Map(participants.map((p) => [p.id, p]))
 
-  // Enhanced appointments with pre-calculated metadata
+  // Enhanced appointments with their case and pre-calculated metadata
   return appointments.map((appointment) => {
-    // Calculate metadata once
-    const metadata = getReadingMetadata(appointment)
+    const readingCase = getReadingCase(data, appointment)
+    const enhanced = { ...appointment, readingCase }
+    const metadata = getReadingMetadata(readingCase, data?.settings || {})
 
     return {
-      ...appointment,
+      ...enhanced,
       participant: participantMap.get(appointment.participantId),
       readStatus:
         metadata.readCount > 0 ? `Read (${metadata.readCount})` : 'Not read',
@@ -168,7 +238,7 @@ const enhanceAppointmentsWithReadingData = (appointments, participants, userId) 
         metadata.readCount > 0 ? 'read' : 'not_read'
       ),
       readingMetadata: metadata,
-      canUserRead: canUserReadAppointment(appointment, userId)
+      canUserRead: canUserReadAppointment(data, enhanced, userId)
     }
   })
 }
@@ -176,19 +246,21 @@ const enhanceAppointmentsWithReadingData = (appointments, participants, userId) 
 /**
  * Calculate core reading metrics used for both status and progress tracking
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to analyze
  * @param {string | null} userId - User ID for user-specific metrics
  * @param {Array} [skippedAppointments] - Array of skipped appointment IDs
  * @returns {object} Core metrics object
  */
 const calculateReadingMetrics = function (
+  data,
   appointments,
   userId = null,
   skippedAppointments = []
 ) {
   // Get user ID and settings from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-  const settings = this?.ctx?.data?.settings || {}
+  const settings = data?.settings || this?.ctx?.data?.settings || {}
 
   if (!appointments || appointments.length === 0) {
     return {
@@ -214,25 +286,26 @@ const calculateReadingMetrics = function (
     }
   }
 
-  // Count first reads (appointments with at least one read)
-  const firstReadCount = appointments.filter(hasReads).length
+  // Resolve each appointment's case once - every count below is about the case
+  const cases = appointments.map((appointment) => resolveCase(data, appointment))
+
+  // Count first reads (cases with at least one read)
+  const firstReadCount = cases.filter(caseHasReads).length
   const completedCount = firstReadCount // For compatibility with current usage
 
-  // Count second reads (appointments with at least two different readers)
-  const secondReadCount = appointments.filter((appointment) => {
-    const metadata = getReadingMetadata(appointment)
-    return metadata.uniqueReaderCount >= 2
-  }).length
+  // Count second reads (cases with at least two different readers)
+  const secondReadCount = cases.filter(
+    (readingCase) =>
+      getReadingMetadata(readingCase, settings).uniqueReaderCount >= 2
+  ).length
 
-  // Count appointments that are ready for second read (have first read but not second)
-  const secondReadReady = appointments.filter((appointment) => {
-    const metadata = getReadingMetadata(appointment)
-    return metadata.readCount === 1 // Exactly one read means ready for second
-  }).length
+  // Count cases that are ready for second read (have first read but not second)
+  const secondReadReady = cases.filter(caseNeedsSecondRead).length
 
-  // Count appointments needing arbitration (policy-aware via getOutcome)
-  const arbitrationCount = appointments.filter(
-    (appointment) => getOutcome(appointment, settings) === 'arbitration_pending'
+  // Count cases needing arbitration (policy-aware via the case state)
+  const arbitrationCount = cases.filter(
+    (readingCase) =>
+      getReadingCaseState(readingCase, settings) === 'arbitration_required'
   ).length
 
   // Global awaiting priors count (appointments with any outstanding prior request)
@@ -250,54 +323,40 @@ const calculateReadingMetrics = function (
   let userSecondReadableCount = 0
 
   if (currentUserId) {
-    // Appointments this user has read
-    userReadCount = appointments.filter((appointment) =>
-      userHasReadAppointment(appointment, currentUserId)
+    // Cases this user has read
+    userReadCount = cases.filter((readingCase) =>
+      userHasReadCase(readingCase, currentUserId)
     ).length
 
-    // Count first/second reads by this user
-    appointments.forEach((appointment) => {
-      const metadata = getReadingMetadata(appointment)
-      const reads = appointment.imageReading?.reads
-        ? Object.values(appointment.imageReading.reads)
-        : []
+    // Count first/second reads by this user, by the read's own recorded type
+    // rather than its position - a withdrawn read must not shuffle the rest
+    cases.forEach((readingCase) => {
+      const userRead = getReadForUser(readingCase, currentUserId)
+      if (!userRead) return
 
-      // Find reads by this user
-      const userReads = reads.filter((read) => read.readerId === currentUserId)
-
-      // Count based on read position (first or second)
-      if (userReads.length > 0) {
-        // Check if this user did the first read
-        if (reads[0]?.readerId === currentUserId) {
-          userFirstReadCount++
-        }
-
-        // Check if this user did the second read
-        if (reads.length > 1 && reads[1]?.readerId === currentUserId) {
-          userSecondReadCount++
-        }
-      }
+      if (userRead.readType === 'first') userFirstReadCount++
+      if (userRead.readType === 'second') userSecondReadCount++
     })
-
-    // Appointments where this user has an outstanding priors request
-    userAwaitingPriorsCount = appointments.filter(
-      (appointment) =>
-        awaitingPriors(appointment) && userRequestedPriors(appointment, currentUserId)
-    ).length
 
     // Appointments this user can read
     userReadableCount = appointments.filter((appointment) =>
-      canUserReadAppointment(appointment, currentUserId)
+      canUserReadAppointment(data, appointment, currentUserId)
     ).length
 
     // Appointments needing first read that this user can read
-    userFirstReadableCount = filterAppointmentsByNeedsFirstRead(appointments).filter(
-      (appointment) => canUserReadAppointment(appointment, currentUserId)
+    userFirstReadableCount = filterAppointmentsByNeedsFirstRead(
+      data,
+      appointments
+    ).filter((appointment) =>
+      canUserReadAppointment(data, appointment, currentUserId)
     ).length
 
     // Appointments needing second read that this user can read
-    userSecondReadableCount = filterAppointmentsByNeedsSecondRead(appointments).filter(
-      (appointment) => canUserReadAppointment(appointment, currentUserId)
+    userSecondReadableCount = filterAppointmentsByNeedsSecondRead(
+      data,
+      appointments
+    ).filter((appointment) =>
+      canUserReadAppointment(data, appointment, currentUserId)
     ).length
 
     // Appointments where this user has an outstanding prior request
@@ -339,13 +398,14 @@ const calculateReadingMetrics = function (
 /**
  * Get detailed reading status for a group of appointments
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to analyze
  * @param {string | null} [userId] - Optional user ID (defaults to current user if available)
  * @returns {object} Detailed reading status
  */
-const getReadingStatusForAppointments = function (appointments, userId = null) {
+const getReadingStatusForAppointments = function (data, appointments, userId = null) {
   // Get metrics from base calculation function
-  const metrics = calculateReadingMetrics(appointments, userId)
+  const metrics = calculateReadingMetrics.call(this, data, appointments, userId)
 
   // If no appointments, return basic metrics with default status
   if (!appointments || appointments.length === 0) {
@@ -386,6 +446,7 @@ const getReadingStatusForAppointments = function (appointments, userId = null) {
  * Get progress through reading a set of appointments
  * Enhanced to include user-specific navigation
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to track progress through
  * @param {string} currentAppointmentId - ID of current appointment
  * @param {Array} skippedAppointments - Array of appointment IDs that have been skipped
@@ -393,13 +454,20 @@ const getReadingStatusForAppointments = function (appointments, userId = null) {
  * @returns {object} Progress information
  */
 const getReadingProgress = function (
+  data,
   appointments,
   currentAppointmentId,
   skippedAppointments = [],
   userId = null
 ) {
   // Get base metrics
-  const metrics = calculateReadingMetrics(appointments, userId, skippedAppointments)
+  const metrics = calculateReadingMetrics.call(
+    this,
+    data,
+    appointments,
+    userId,
+    skippedAppointments
+  )
 
   // Get user ID from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
@@ -412,7 +480,7 @@ const getReadingProgress = function (
   const previousAppointment = getPreviousAppointmentInList(appointments, currentAppointmentId, false)
 
   // Get appointments needing any reads (first or second)
-  const readableAppointments = filterAppointmentsByNeedsAnyRead(appointments)
+  const readableAppointments = filterAppointmentsByNeedsAnyRead(data, appointments)
 
   // Find next/previous of each type
   const nextReadableAppointment =
@@ -428,6 +496,7 @@ const getReadingProgress = function (
   let userNavigableAppointments = appointments
   if (currentUserId) {
     userNavigableAppointments = filterAppointmentsByUserCanReadOrHasRead(
+      data,
       appointments,
       currentUserId
     )
@@ -469,10 +538,10 @@ const getReadingProgress = function (
     previousUserReadableId: previousUserReadableAppointment?.id || null,
     // Whether user has already read the previous/next appointment (for review page links)
     previousUserHasRead: previousUserReadableAppointment
-      ? userHasReadAppointment(previousUserReadableAppointment, currentUserId)
+      ? userHasReadAppointment(data, previousUserReadableAppointment, currentUserId)
       : false,
     nextUserHasRead: nextUserReadableAppointment
-      ? userHasReadAppointment(nextUserReadableAppointment, currentUserId)
+      ? userHasReadAppointment(data, nextUserReadableAppointment, currentUserId)
       : false,
     // Skipped appointments
     skippedAppointments,
@@ -483,221 +552,6 @@ const getReadingProgress = function (
       : false
   }
 }
-
-// /**
-//  * Get progress through reading a set of appointments
-//  * Enhanced to include user-specific navigation
-//  * @param {Array} appointments - Array of appointments to track progress through
-//  * @param {string} currentAppointmentId - ID of current appointment
-//  * @param {Array} skippedAppointments - Array of appointment IDs that have been skipped
-//  * @param {string} [userId=null] - Optional user ID (defaults to current user if available)
-//  * @returns {Object} Progress information
-//  */
-// const getReadingProgress = function(appointments, currentAppointmentId, skippedAppointments = [], userId = null) {
-//   // Get user ID from context if not provided and we're in a template context
-//   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id);
-
-//   const currentIndex = appointments.findIndex(e => e.id === currentAppointmentId);
-
-//   // Get complete appointments count
-//   const completedCount = appointments.filter(hasReads).length;
-
-//   // Basic sequential navigation
-//   const nextAppointment = getNextAppointmentInList(appointments, currentAppointmentId, false);
-//   const previousAppointment = getPreviousAppointmentInList(appointments, currentAppointmentId, false);
-
-//   // Get appointments needing any reads (first or second)
-//   const readableAppointments = filterAppointmentsByNeedsAnyRead(appointments);
-
-//   // Find next/previous of each type
-//   const nextReadableAppointment = currentIndex !== -1 ?
-//     getNextAppointmentInList(readableAppointments, currentAppointmentId, true) : null;
-//   const previousReadableAppointment = currentIndex !== -1 ?
-//     getPreviousAppointmentInList(readableAppointments, currentAppointmentId, true) : null;
-
-//   // For user-specific navigation, get appointments this user can read or has read
-//   let userNavigableAppointments = appointments;
-//   if (currentUserId) {
-//     userNavigableAppointments = filterAppointmentsByUserCanReadOrHasRead(appointments, currentUserId);
-//   }
-
-//   // Find next/previous user-readable appointments if userId provided
-//   let nextUserReadableAppointment = null;
-//   let previousUserReadableAppointment = null;
-
-//   if (currentUserId && currentIndex !== -1) {
-//     nextUserReadableAppointment = getNextAppointmentInList(userNavigableAppointments, currentAppointmentId, true);
-//     previousUserReadableAppointment = getPreviousAppointmentInList(userNavigableAppointments, currentAppointmentId, true);
-//   }
-
-//   return {
-//     current: currentIndex + 1,
-//     total: appointments.length,
-//     completed: completedCount,
-//     // Appointment navigation
-//     hasNext: !!nextAppointment,
-//     hasPrevious: !!previousAppointment,
-//     nextAppointmentId: nextAppointment?.id || null,
-//     previousAppointmentId: previousAppointment?.id || null,
-//     hasNextReadableAppointment: !!nextReadableAppointment,
-//     hasPreviousReadableAppointment: !!previousReadableAppointment,
-//     nextReadableAppointmentId: nextReadableAppointment?.id || null,
-//     previousReadableAppointmentId: previousReadableAppointment?.id || null,
-//     // User-specific navigation
-//     hasNextUserReadable: !!nextUserReadableAppointment,
-//     hasPreviousUserReadable: !!previousUserReadableAppointment,
-//     nextUserReadableId: nextUserReadableAppointment?.id || null,
-//     previousUserReadableId: previousUserReadableAppointment?.id || null,
-//     // Skipped appointments
-//     skippedCount: skippedAppointments.length,
-//     skippedAppointments,
-//     isCurrentSkipped: skippedAppointments.includes(currentAppointmentId),
-//     nextAppointmentSkipped: nextAppointment ? skippedAppointments.includes(nextAppointment.id) : false,
-//     previousAppointmentSkipped: previousAppointment ? skippedAppointments.includes(previousAppointment.id) : false
-//   };
-// };
-
-// /**
-//  * Get detailed reading status for a group of appointments
-//  * @param {Array} appointments - Array of appointments to analyze
-//  * @param {string} [userId=null] - Optional user ID (defaults to current user if available)
-//  * @returns {Object} Detailed reading status
-//  */
-// const getReadingStatusForAppointments = function(appointments, userId = null) {
-//   // Get user ID from context if not provided and we're in a template context
-//   const currentUserId = userId || (this?.ctx?.data?.currentUser?.id);
-
-//   if (!appointments || appointments.length === 0) {
-//     return {
-//       total: 0,
-//       firstReadCount: 0,
-//       firstReadRemaining: 0,
-//       secondReadCount: 0,
-//       secondReadRemaining: 0,
-//       secondReadReady: 0,
-//       arbitrationCount: 0,
-//       status: 'no_appointments',
-//       statusColor: 'grey',
-//       // User-specific counts
-//       userReadCount: 0,
-//       userFirstReadCount: 0,
-//       userSecondReadCount: 0,
-//       userReadableCount: 0,
-//       userFirstReadableCount: 0,
-//       userSecondReadableCount: 0
-//     };
-//   }
-
-//   // Count first reads (appointments with at least one read)
-//   const firstReadCount = appointments.filter(hasReads).length;
-
-//   // Count second reads (appointments with at least two different readers)
-//   const secondReadCount = appointments.filter(appointment => {
-//     const metadata = getReadingMetadata(appointment);
-//     return metadata.uniqueReaderCount >= 2;
-//   }).length;
-
-//   // Count appointments that are ready for second read (have first read but not second)
-//   const secondReadReady = appointments.filter(appointment => {
-//     const metadata = getReadingMetadata(appointment);
-//     return metadata.readCount === 1; // Exactly one read means ready for second
-//   }).length;
-
-//   // Count appointments needing arbitration (still track this for informational purposes)
-//   const arbitrationCount = appointments.filter(appointment => {
-//     const metadata = getReadingMetadata(appointment);
-//     return metadata.needsArbitration;
-//   }).length;
-
-//   // User-specific counts if userId provided
-//   let userReadCount = 0;
-//   let userFirstReadCount = 0;
-//   let userSecondReadCount = 0;
-//   let userReadableCount = 0;
-//   let userFirstReadableCount = 0;
-//   let userSecondReadableCount = 0;
-
-//   if (currentUserId) {
-//     // Appointments this user has read
-//     userReadCount = appointments.filter(appointment => userHasReadAppointment(appointment, currentUserId)).length;
-
-//     // Count first/second reads by this user
-//     appointments.forEach(appointment => {
-//       const metadata = getReadingMetadata(appointment);
-//       const reads = appointment.imageReading?.reads ? Object.values(appointment.imageReading.reads) : [];
-
-//       // Find reads by this user
-//       const userReads = reads.filter(read => read.readerId === currentUserId);
-
-//       // Count based on read position (first or second)
-//       if (userReads.length > 0) {
-//         // Check if this user did the first read
-//         if (reads[0]?.readerId === currentUserId) {
-//           userFirstReadCount++;
-//         }
-
-//         // Check if this user did the second read
-//         if (reads.length > 1 && reads[1]?.readerId === currentUserId) {
-//           userSecondReadCount++;
-//         }
-//       }
-//     });
-
-//     // Appointments this user can read
-//     userReadableCount = appointments.filter(appointment => canUserReadAppointment(appointment, currentUserId)).length;
-
-//     // Appointments needing first read that this user can read
-//     userFirstReadableCount = filterAppointmentsByNeedsFirstRead(appointments)
-//       .filter(appointment => canUserReadAppointment(appointment, currentUserId)).length;
-
-//     // Appointments needing second read that this user can read
-//     userSecondReadableCount = filterAppointmentsByNeedsSecondRead(appointments)
-//       .filter(appointment => canUserReadAppointment(appointment, currentUserId)).length;
-//   }
-
-//   // Determine detailed status based on read counts
-//   let status;
-
-//   if (firstReadCount === 0) {
-//     status = 'not_started';
-//   } else if (firstReadCount < appointments.length) {
-//     if (secondReadCount > 0) {
-//       status = 'mixed_reads';
-//     } else {
-//       status = 'partial_first_read';
-//     }
-//   } else if (secondReadCount === 0) {
-//     status = 'first_read_complete';
-//   } else if (secondReadCount < appointments.length) {
-//     status = 'partial_second_read';
-//   } else {
-//     status = 'complete';
-//   }
-
-//   return {
-//     total: appointments.length,
-//     firstReadCount,
-//     firstReadRemaining: appointments.length - firstReadCount,
-//     secondReadCount,
-//     secondReadRemaining: appointments.length - secondReadCount,
-//     secondReadReady, // Appointments ready for immediate second read
-//     arbitrationCount,
-//     status,
-//     statusColor: getStatusTagColour(status),
-//     daysSinceScreening: appointments[0] ?
-//       dayjs().startOf('day').diff(dayjs(appointments[0].timing.startTime).startOf('day'), 'days') : 0,
-//     // User-specific counts
-//     userReadCount,
-//     userFirstReadCount,
-//     userSecondReadCount,
-//     userReadableCount,
-//     userFirstReadableCount,
-//     userSecondReadableCount,
-//     userCanRead: userReadableCount > 0
-//   };
-// };
-
-// Add this to app/lib/utils/reading.js
 
 /**
  * Sort appointments by screening date (oldest first)
@@ -755,7 +609,11 @@ const getReadingClinics = (data, options = {}) => {
         ...clinic,
         unit,
         location,
-        readingStatus: getReadingStatusForAppointments(appointments, data.currentUser.id)
+        readingStatus: getReadingStatusForAppointments(
+          data,
+          appointments,
+          data.currentUser.id
+        )
       }
     })
     .sort((a, b) => new Date(a.id) - new Date(b.id)) // Some clinics share the same date so sort first by a unique ID to keep consistent sort
@@ -777,6 +635,7 @@ const getReadableAppointmentsForClinic = (data, clinicId) => {
 
   // Enhance the appointments with reading metadata
   const enhancedAppointments = enhanceAppointmentsWithReadingData(
+    data,
     eligibleAppointments,
     data.participants,
     data.currentUser?.id
@@ -805,89 +664,102 @@ const filterAppointmentsByEligibleForReading = (appointments) => {
 /**
  * Filter appointments that need any read (first or second)
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Appointments to filter
- * @param {number} maxReadsPerAppointment - Number of reads required to be complete (default: 2)
+ * @param {number} maxReadsPerCase - Number of reads required to be complete (default: 2)
  * @returns {Array} Appointments needing any read
  */
-const filterAppointmentsByNeedsAnyRead = (appointments, maxReadsPerAppointment = 2) => {
-  return appointments.filter((appointment) => {
-    const metadata = getReadingMetadata(appointment)
-    return metadata.uniqueReaderCount < maxReadsPerAppointment
-  })
+const filterAppointmentsByNeedsAnyRead = (data, appointments, maxReadsPerCase = 2) => {
+  return appointments.filter(
+    (appointment) =>
+      getReadsAsArray(resolveCase(data, appointment)).length < maxReadsPerCase
+  )
 }
 
 /**
  * Filter appointments that need a first read
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Appointments to filter
  * @returns {Array} Appointments needing first read
  */
-const filterAppointmentsByNeedsFirstRead = (appointments) => {
-  return appointments.filter((appointment) => needsFirstRead(appointment))
+const filterAppointmentsByNeedsFirstRead = (data, appointments) => {
+  return appointments.filter((appointment) =>
+    caseNeedsFirstRead(resolveCase(data, appointment))
+  )
 }
 
 /**
  * Filter appointments that need a second read
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Appointments to filter
  * @returns {Array} Appointments needing second read
  */
-const filterAppointmentsByNeedsSecondRead = (appointments) => {
-  return appointments.filter((appointment) => needsSecondRead(appointment))
+const filterAppointmentsByNeedsSecondRead = (data, appointments) => {
+  return appointments.filter((appointment) =>
+    caseNeedsSecondRead(resolveCase(data, appointment))
+  )
 }
 
 /**
  * Filter appointments that are fully read (have all required reads)
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Appointments to filter
  * @param {number} requiredReads - Number of required reads (default: 2)
  * @returns {Array} Fully read appointments
  */
-const filterAppointmentsByFullyRead = (appointments, requiredReads = 2) => {
-  return appointments.filter((appointment) => {
-    const metadata = getReadingMetadata(appointment)
-    return metadata.uniqueReaderCount >= requiredReads
-  })
+const filterAppointmentsByFullyRead = (data, appointments, requiredReads = 2) => {
+  return appointments.filter(
+    (appointment) =>
+      getReadsAsArray(resolveCase(data, appointment)).length >= requiredReads
+  )
 }
 
 /**
  * Filter appointments that a specific user can read
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Appointments to filter
  * @param {string} userId - User ID
  * @returns {Array} Appointments user can read
  */
-const filterAppointmentsByUserCanRead = (appointments, userId) => {
-  return appointments.filter((appointment) => canUserReadAppointment(appointment, userId))
+const filterAppointmentsByUserCanRead = (data, appointments, userId) => {
+  return appointments.filter((appointment) =>
+    canUserReadAppointment(data, appointment, userId)
+  )
 }
 
 /**
  * Filter appointments that user can read or has already read
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to filter
  * @param {string} userId - User ID to check
  * @param {object} [options] - Options for determining eligibility
  * @returns {Array} Appointments user can read or has read
  *
- *   Priarily to support navigating backwards through appointments
+ *   Primarily to support navigating backwards through appointments
  */
-const filterAppointmentsByUserCanReadOrHasRead = (appointments, userId, options = {}) => {
-  const { maxReadsPerAppointment = 2 } = options
+const filterAppointmentsByUserCanReadOrHasRead = (
+  data,
+  appointments,
+  userId,
+  options = {}
+) => {
+  const { maxReadsPerCase = 2 } = options
 
   return appointments.filter((appointment) => {
-    const metadata = getReadingMetadata(appointment)
+    const readingCase = resolveCase(data, appointment)
 
-    // Include if user has already read this appointment
-    if (userHasReadAppointment(appointment, userId)) {
-      return true
-    }
+    // Include if the user has already read this case
+    if (userHasReadCase(readingCase, userId)) return true
 
-    // Include if appointment isn't fully read and user can read it
-    if (metadata.uniqueReaderCount < maxReadsPerAppointment) {
-      return true
-    }
+    // Include if the case isn't fully read yet, so they could still read it
+    if (getReadsAsArray(readingCase).length < maxReadsPerCase) return true
 
-    // Exclude appointments that are fully read by other users
+    // Exclude cases that are fully read by other users
     return false
   })
 }
@@ -979,46 +851,36 @@ const getPreviousAppointmentInList = (appointments, currentAppointmentId, wrap =
 /***********************************************************************/
 
 /**
- * Get the read object for a specific user on an appointment
- *
- * @param {object} appointment - The appointment to check
- * @param {string | null} [userId] - User ID (falls back to current user from context)
- * @returns {object | null} The read object, or null if not found
- */
-const getReadForUser = function (appointment, userId = null) {
-  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-
-  if (!currentUserId) {
-    return null
-  }
-
-  return appointment.imageReading?.reads?.[currentUserId] || null
-}
-
-/**
  * Get first appointment from an array that a user can read
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to search
  * @param {string | null} userId - User ID to check for
  * @returns {object | null} First appointment user can read or null if none
  */
-const getFirstUserReadableAppointment = function (appointments, userId = null) {
+const getFirstUserReadableAppointment = function (data, appointments, userId = null) {
   // Get user ID from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  const readableAppointments = filterAppointmentsByUserCanRead(appointments, currentUserId)
+  const readableAppointments = filterAppointmentsByUserCanRead(
+    data,
+    appointments,
+    currentUserId
+  )
   return readableAppointments.length > 0 ? readableAppointments[0] : null
 }
 
 /**
  * Get the next appointment the user can read after the current appointment, wrapping to start if needed
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of all appointments
  * @param {string} currentAppointmentId - ID of the current appointment
  * @param {string | null} [userId] - User ID (falls back to current user from context)
  * @returns {object | null} Next readable appointment, or null if none
  */
 const getNextUserReadableAppointment = function (
+  data,
   appointments,
   currentAppointmentId,
   userId = null,
@@ -1030,7 +892,7 @@ const getNextUserReadableAppointment = function (
   const appointmentsFromNext = wrap
     ? [...appointments.slice(currentIndex + 1), ...appointments.slice(0, currentIndex)]
     : appointments.slice(currentIndex + 1)
-  return getFirstUserReadableAppointment(appointmentsFromNext, currentUserId)
+  return getFirstUserReadableAppointment(data, appointmentsFromNext, currentUserId)
 }
 
 /**
@@ -1045,12 +907,14 @@ const getNextUserReadableAppointment = function (
  *
  * Falls back to getFirstUserReadableAppointment if the user has no reads or skips yet.
  *
+ * @param {object} data - Session data
  * @param {Array} appointments - Array of all appointments in the session, in session order
  * @param {string | null} [userId] - User ID (falls back to current user from context)
  * @param {Array} [skippedAppointments] - Array of skipped appointment IDs from the session
  * @returns {object | null} The appointment to resume from, or null if nothing to read
  */
 const getResumeAppointmentForUser = function (
+  data,
   appointments,
   userId = null,
   skippedAppointments = []
@@ -1061,7 +925,10 @@ const getResumeAppointmentForUser = function (
   let lastActedIndex = -1
 
   appointments.forEach((appointment, index) => {
-    const wasReadByUser = !!appointment.imageReading?.reads?.[currentUserId]
+    const wasReadByUser = userHasReadCase(
+      resolveCase(data, appointment),
+      currentUserId
+    )
     const wasSkipped = skippedAppointments.includes(appointment.id)
     if (wasReadByUser || wasSkipped) {
       lastActedIndex = index
@@ -1070,7 +937,7 @@ const getResumeAppointmentForUser = function (
 
   // Nothing acted on yet — fall back to first readable
   if (lastActedIndex === -1) {
-    return getFirstUserReadableAppointment(appointments, currentUserId)
+    return getFirstUserReadableAppointment(data, appointments, currentUserId)
   }
 
   // Search for the first readable appointment after lastActedIndex, wrapping around
@@ -1078,20 +945,26 @@ const getResumeAppointmentForUser = function (
     ...appointments.slice(lastActedIndex + 1),
     ...appointments.slice(0, lastActedIndex + 1)
   ]
-  return getFirstUserReadableAppointment(appointmentsFromNext, currentUserId)
+  return getFirstUserReadableAppointment(data, appointmentsFromNext, currentUserId)
 }
 
 /************************************************************************
 // Booleans
-//***********************************************************************
+//
+// Only the predicates that need more than the case: reading is blocked by
+// outstanding priors, which live on the appointment. Everything else about a
+// read is in reading-cases.js and takes a case.
+//***********************************************************************/
 
 /**
- * Check if a user has already read an appointment
- * @param {Object} appointment - The appointment to check
- * @param {string} userId - User ID to check
+ * Check if a user has already read an appointment's images
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment to check
+ * @param {string} [userId] - User ID (falls back to current user from context)
  * @returns {boolean} Whether the user has read this appointment
  */
-const userHasReadAppointment = function (appointment, userId) {
+const userHasReadAppointment = function (data, appointment, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
   if (!currentUserId) {
@@ -1101,290 +974,28 @@ const userHasReadAppointment = function (appointment, userId) {
     return false
   }
 
-  return !!getReadForUser(appointment, currentUserId)
+  return userHasReadCase(resolveCase(data, appointment), currentUserId)
 }
 
 /**
- * Get reads from other users (not the current user)
- * @param {Object} appointment - The appointment to check
- * @param {string} userId - Current user ID to exclude
- * @returns {Array} Array of read objects from other users
- */
-const getOtherReads = function (appointment, userId = null) {
-  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-
-  if (!appointment?.imageReading?.reads) {
-    return []
-  }
-
-  return Object.entries(appointment.imageReading.reads)
-    .filter(([readerId]) => readerId !== currentUserId)
-    .map(([readerId, read]) => ({
-      ...read,
-      readerId
-    }))
-}
-
-/**
- * Determine if two reads are discordant (disagree in a clinically meaningful way).
+ * Check if a user can read an appointment's images.
  *
- * Rules:
- * - Different top-level opinions → always discordant
- * - Both technical recall: discordant if the set of selected views differs
- *   (reasons are ignored — same views = concordant even with different reasons)
- * - Both recall for assessment: discordant if either per-breast assessment differs
- *   (annotations and comments are ignored)
- * - Both normal → concordant
+ * Combines what the case knows (deferral, who has read it, how many reads it
+ * has) with the one blocker that lives on the appointment: a prior mammogram
+ * that has been requested but not yet arrived.
  *
- * Handles partial data gracefully: if TR views or RFA breast assessments are not
- * yet filled in, falls back to comparing only what's available.
- *
- * @param {object} readA - First read (saved read or imageReadingTemp)
- * @param {object} readB - Second read (saved read or imageReadingTemp)
- * @returns {boolean} Whether the reads are discordant
- */
-const areReadsDiscordant = (readA, readB) => {
-  if (!readA?.opinion || !readB?.opinion) return false
-
-  // Different top-level opinions → always discordant
-  if (readA.opinion !== readB.opinion) return true
-
-  const opinion = readA.opinion
-
-  // Both TR: compare the set of selected view keys
-  if (opinion === 'technical_recall') {
-    const viewsA = readA.technicalRecall?.views
-    const viewsB = readB.technicalRecall?.views
-    // If either side has no view data yet, can't compare further
-    if (!viewsA || !viewsB) return false
-    const keysA = new Set(Object.keys(viewsA))
-    const keysB = new Set(Object.keys(viewsB))
-    if (keysA.size !== keysB.size) return true
-    for (const view of keysA) {
-      if (!keysB.has(view)) return true
-    }
-    return false
-  }
-
-  // Both RFA: compare per-breast assessments
-  if (opinion === 'recall_for_assessment') {
-    const leftA = readA.left?.breastAssessment
-    const leftB = readB.left?.breastAssessment
-    const rightA = readA.right?.breastAssessment
-    const rightB = readB.right?.breastAssessment
-    // If no breast data on either side yet, can't compare further
-    if (!leftA && !leftB && !rightA && !rightB) return false
-    if ((leftA || leftB) && leftA !== leftB) return true
-    if ((rightA || rightB) && rightA !== rightB) return true
-    return false
-  }
-
-  return false
-}
-
-/**
- * Determine whether two reads will result in arbitration, taking the site's
- * arbitration policy into account.
- *
- * Policies (from settings.reading.arbitrationPolicy):
- * - 'discordant_only' (default): only discordant reads go to arbitration
- * - 'all_non_normal': any concordant non-normal outcome also goes to arbitration
- *
- * @param {object} readA - First read
- * @param {object} readB - Second read
- * @param {object} [settings] - Site settings object (data.settings)
- * @returns {boolean}
- */
-const willGoToArbitration = (readA, readB, settings = {}) => {
-  if (!readA || !readB) return false
-
-  // Discordant reads always go to arbitration
-  if (areReadsDiscordant(readA, readB)) return true
-
-  // Concordant but non-normal: depends on policy
-  const policy = settings?.reading?.arbitrationPolicy || 'discordant_only'
-  if (policy === 'all_non_normal') {
-    return readA.opinion !== 'normal'
-  }
-
-  return false
-}
-
-/**
- * Compute the overall outcome for an appointment based on its reads and site policy.
- *
- * Outcomes:
- * - 'not_read'             — no reads yet
- * - 'pending_second_read'  — one read, awaiting second
- * - 'arbitration_pending'  — two reads that are discordant (or policy requires arbitration)
- * - 'normal' / 'technical_recall' / 'recall_for_assessment'
- *                          — concordant outcome (or resolved by an arbitration read)
- *
- * Note: outcome is computed on demand, not persisted. If you need to filter or
- * report by outcome at scale, consider writing it to appointment.imageReading.outcome at
- * save-opinion time.
- *
- * @param {object} appointment - The appointment
- * @param {object} [settings] - Site settings object (data.settings)
- * @returns {string} Outcome key
- */
-const getOutcome = function (appointment, settings = null) {
-  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
-  const reads = getReadsAsArray(appointment)
-
-  if (reads.length === 0) return 'not_read'
-  if (reads.length === 1) return 'pending_second_read'
-
-  // Third read = arbitration read; its opinion resolves the case
-  if (reads.length >= 3) {
-    return reads[2].opinion
-  }
-
-  const [firstRead, secondRead] = reads
-
-  if (willGoToArbitration(firstRead, secondRead, resolvedSettings)) {
-    return 'arbitration_pending'
-  }
-
-  // Concordant reads — outcome is the shared opinion
-  return firstRead.opinion
-}
-
-/**
- * Determine if a comparison page should be shown to the second reader.
- * Returns false if user is first reader, or if both opinions are normal.
- * Otherwise returns comparison info including discordance and arbitration flags.
- *
- * @param {object} appointment - The appointment being read
- * @param {object} secondReadData - The second reader's data (imageReadingTemp or a read object)
- * @param {string} [userId] - Current user ID (optional, falls back to context)
- * @param {object} [settings] - Site settings (optional, falls back to context)
- * @returns {false | object} False if no comparison needed, else comparison info
- */
-const getComparisonInfo = function (
-  appointment,
-  secondReadData,
-  userId = null,
-  settings = null
-) {
-  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
-
-  // Support passing just an opinion string for backwards compatibility
-  const secondRead =
-    typeof secondReadData === 'string'
-      ? { opinion: secondReadData }
-      : secondReadData
-
-  // Get the first read (from other users)
-  const otherReads = getOtherReads.call(this, appointment, currentUserId)
-
-  // No first read exists - user is first reader
-  if (otherReads.length === 0) {
-    return false
-  }
-
-  // Get the first reader's opinion (sorted by readNumber)
-  const firstRead = otherReads.sort((a, b) => {
-    if (a.readNumber && b.readNumber) return a.readNumber - b.readNumber
-    return new Date(a.timestamp) - new Date(b.timestamp)
-  })[0]
-
-  const firstOpinion = firstRead.opinion
-  const secondOpinion = secondRead.opinion
-
-  // Both normal - no comparison needed
-  if (firstOpinion === 'normal' && secondOpinion === 'normal') {
-    return false
-  }
-
-  const discordant = areReadsDiscordant(firstRead, secondRead)
-  const type = discordant ? 'discordant' : 'agreeing'
-
-  return {
-    type,
-    discordant,
-    goesToArbitration: willGoToArbitration(
-      firstRead,
-      secondRead,
-      resolvedSettings
-    ),
-    firstRead,
-    firstOpinion,
-    secondOpinion
-  }
-}
-
-/**
- * Decide whether the compare page should be shown to the second reader.
- *
- * Combines the timing setting (secondReaderComparison) and the new show-when
- * setting (compareWhen) to give a single boolean answer.
- *
- * compareWhen values (settings.reading.compareWhen):
- * - 'non_normal' (default): show whenever either opinion is non-normal
- *   (i.e. whenever getComparisonInfo returns a result — current behaviour)
- * - 'discordant_only': only show when the two reads are discordant
- *
- * @param {object} appointment - The appointment being read
- * @param {object} secondReadData - The second reader's data (imageReadingTemp or read object)
- * @param {string} [userId] - Current user ID (optional, falls back to context)
- * @param {object} [settings] - Site settings (optional, falls back to context)
- * @returns {boolean}
- */
-const shouldShowComparePage = function (
-  appointment,
-  secondReadData,
-  userId = null,
-  settings = null
-) {
-  const resolvedSettings = settings || this?.ctx?.data?.settings || {}
-  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-
-  const comparisonInfo = getComparisonInfo.call(
-    this,
-    appointment,
-    secondReadData,
-    currentUserId,
-    resolvedSettings
-  )
-
-  // getComparisonInfo returns false when no comparison needed
-  // (user is first reader, or both opinions are normal)
-  if (!comparisonInfo) return false
-
-  const compareWhen = resolvedSettings?.reading?.compareWhen || 'non_normal'
-
-  // 'non_normal': show for any non-normal combination — current behaviour
-  if (compareWhen === 'non_normal') return true
-
-  // 'discordant_only': only show when reads disagree in a clinically meaningful way
-  if (compareWhen === 'discordant_only') return comparisonInfo.discordant
-
-  return true
-}
-
-/**
- * Check if current user can read an appointment
- *
+ * @param {object} data - Session data
  * @param {object} appointment - The appointment to check
- * @param {string | null} userId - Current user ID
+ * @param {string | null} [userId] - User ID (falls back to current user from context)
  * @param {object} [options] - Options for determining eligibility
- * @returns {boolean} Whether the current user can read this appointment
+ * @returns {boolean} Whether the user can read this appointment
  */
-/**
- * Check if an appointment has been deferred from reading
- *
- * @param {object} appointment - The appointment to check
- * @returns {boolean} Whether the appointment has been deferred
- */
-const isDeferred = (appointment) => {
-  return !!appointment?.imageReading?.deferral?.deferredAt
-}
-
-const canUserReadAppointment = function (appointment, userId = null, options = {}) {
-  const { maxReadsPerAppointment = 2 } = options
-
+const canUserReadAppointment = function (
+  data,
+  appointment,
+  userId = null,
+  options = {}
+) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
   if (!currentUserId) {
@@ -1394,70 +1005,12 @@ const canUserReadAppointment = function (appointment, userId = null, options = {
     return false
   }
 
-  // Can't read if appointment is awaiting priors
-  if (awaitingPriors(appointment)) {
-    return false
-  }
+  // Can't read while a requested prior is still outstanding
+  if (awaitingPriors(appointment)) return false
 
-  // Can't read if appointment has been deferred
-  if (isDeferred(appointment)) {
-    return false
-  }
-
-  const metadata = getReadingMetadata(appointment)
-
-  // If we already have enough unique readers, no more reads needed
-  if (metadata.uniqueReaderCount >= maxReadsPerAppointment) {
-    return false
-  }
-
-  // User can't read if they've already read it
-  if (userHasReadAppointment(appointment, currentUserId)) {
-    return false
-  }
-
-  return true
+  return canUserReadCase(resolveCase(data, appointment), currentUserId, options)
 }
 
-/**
- * Check if an appointment has any reads
- *
- * @param {object} appointment - The appointment to check
- * @returns {boolean} Whether the appointment has any reads
- */
-const hasReads = (appointment) => {
-  return (
-    appointment.imageReading?.reads &&
-    Object.keys(appointment.imageReading.reads).length > 0
-  )
-}
-
-/**
- * Check if an appointment needs a first read
- *
- * @param {object} appointment - The appointment to check
- * @returns {boolean} Whether a first read is needed
- */
-const needsFirstRead = (appointment) => {
-  return !hasReads(appointment)
-}
-
-/**
- * Check if an appointment needs a second read
- */
-const needsSecondRead = (appointment) => {
-  const metadata = getReadingMetadata(appointment)
-  return metadata.firstReadComplete && !metadata.secondReadComplete
-}
-
-/**
- * Check if an appointment needs arbitration.
- * Policy-aware: reads arbitrationPolicy from Nunjucks context if available.
- */
-const needsArbitration = function (appointment) {
-  const settings = this?.ctx?.data?.settings || {}
-  return getOutcome(appointment, settings) === 'arbitration_pending'
-}
 
 /************************************************************************
 // Sessions
@@ -1511,7 +1064,7 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
   } else {
     // 1. Filter to appointments the user can read (unless overridden)
     if (filters.userCanRead !== false) {
-      appointments = filterAppointmentsByUserCanRead(appointments, currentUserId)
+      appointments = filterAppointmentsByUserCanRead(data, appointments, currentUserId)
     }
 
     // 2. Apply awaiting priors filter
@@ -1537,14 +1090,14 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
   // Apply read type filters
   switch (type) {
     case 'first_reads':
-      appointments = filterAppointmentsByNeedsFirstRead(appointments)
+      appointments = filterAppointmentsByNeedsFirstRead(data, appointments)
       break
     case 'second_reads':
-      appointments = filterAppointmentsByNeedsSecondRead(appointments)
+      appointments = filterAppointmentsByNeedsSecondRead(data, appointments)
       break
     case 'all_reads':
     case 'awaiting_priors':
-      appointments = filterAppointmentsByNeedsAnyRead(appointments)
+      appointments = filterAppointmentsByNeedsAnyRead(data, appointments)
       break
   }
 
@@ -1745,7 +1298,9 @@ const getFirstReadableAppointmentInSession = (data, sessionId, userId = null) =>
 
   // Find the first one the user can read
   return (
-    sessionAppointments.find((appointment) => canUserReadAppointment(appointment, currentUserId)) ||
+    sessionAppointments.find((appointment) =>
+      canUserReadAppointment(data, appointment, currentUserId)
+    ) ||
     null
   )
 }
@@ -1797,9 +1352,9 @@ const topUpSession = (data, sessionId) => {
     const appointment = data.appointments.find((e) => e.id === appointmentId)
     if (!appointment) return false
     return (
-      userHasReadAppointment(appointment, currentUserId) ||
-      canUserReadAppointment(appointment, currentUserId) ||
-      isDeferred(appointment) ||
+      userHasReadAppointment(data, appointment, currentUserId) ||
+      canUserReadAppointment(data, appointment, currentUserId) ||
+      isCaseDeferred(getReadingCase(data, appointment)) ||
       awaitingPriors(appointment)
     )
   }).length
@@ -1848,6 +1403,7 @@ const getSessionReadingProgress = (
 
   // Use existing function for progress tracking, then add session-level size info
   const progress = getReadingProgress(
+    data,
     sessionAppointments,
     currentAppointmentId,
     session.skippedAppointments,
@@ -1873,9 +1429,9 @@ const getSessionReadingProgress = (
   // toward reachable size. topUpSession will replace them when appointments are read.
   const deadCount = sessionAppointments.filter((appointment) => {
     return (
-      !userHasReadAppointment(appointment, resolvedUserId) &&
-      !canUserReadAppointment(appointment, resolvedUserId) &&
-      !isDeferred(appointment) &&
+      !userHasReadAppointment(data, appointment, resolvedUserId) &&
+      !canUserReadAppointment(data, appointment, resolvedUserId) &&
+      !isCaseDeferred(getReadingCase(data, appointment)) &&
       !awaitingPriors(appointment)
     )
   }).length
@@ -1885,7 +1441,9 @@ const getSessionReadingProgress = (
   const effectiveTargetSize = Math.min(resolvedTargetSize, reachableSessionSize)
 
   // Count deferred appointments so they count toward the session target
-  const deferredCount = sessionAppointments.filter(isDeferred).length
+  const deferredCount = sessionAppointments.filter((appointment) =>
+    isCaseDeferred(getReadingCase(data, appointment))
+  ).length
 
   return {
     ...progress,
@@ -1907,15 +1465,12 @@ const getSessionReadingProgress = (
 }
 
 module.exports = {
-  // getFirstUnreadAppointment,
-  // getFirstUnreadAppointmentOverall,
-
   // Single appointment
-  getReadingMetadata,
-  areReadsDiscordant,
-  willGoToArbitration,
-  getOutcome,
+  getAppointmentReadingMetadata,
   writeReading,
+  getEpisodeReadingStatus,
+  getDeferredCases,
+  getResolvedDeferrals,
 
   // Multiple appointments
   enhanceAppointmentsWithReadingData,
@@ -1943,22 +1498,12 @@ module.exports = {
   getNextAppointmentInList,
   getPreviousAppointmentInList,
   // User functions
-  getReadForUser,
-  getOtherReads,
-  getComparisonInfo,
-  shouldShowComparePage,
-  getReadsAsArray,
   getFirstUserReadableAppointment,
   getNextUserReadableAppointment,
   getResumeAppointmentForUser,
   // Booleans
   userHasReadAppointment,
   canUserReadAppointment,
-  isDeferred,
-  hasReads,
-  needsArbitration,
-  needsFirstRead,
-  needsSecondRead,
 
   // Sessions
   getEligibleCandidatesForSession,

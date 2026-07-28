@@ -100,34 +100,49 @@ app/
 
 ## Data Storage Locations
 
-### 1. Permanent Storage: `appointment.imageReading.reads`
+### 1. Permanent Storage: `episode.readingCases[]`
 
-Final reading opinions are stored on the appointment object:
+A **reading case** is one set of mammograms being read. Cases live on the
+episode, one per image set, and the reads belong to the case:
 
 ```javascript
-appointment.imageReading = {
-  reads: {
-    [userId]: {
-      opinion: 'normal' | 'technical_recall' | 'recall_for_assessment',
-      readerId: userId,
-      readerType: 'radiologist',
-      readNumber: 1, // 1 = first read, 2 = second read
-      timestamp: '2025-01-15T10:30:00.000Z',
-      // For abnormal opinions, includes per-breast data:
-      left: {
-        breastAssessment: 'normal' | 'clinical' | 'abnormal',
-        comment: 'optional text',
-        annotations: [...]
-      },
-      right: { ... }
-    }
+episode.readingCases = [
+  {
+    id: 'abc12345',
+    appointmentId: 'def67890',   // whose images this case covers
+    openedDate: '2026-01-15T09:00:00.000Z',
+    reads: [
+      {
+        opinion: 'normal' | 'technical_recall' | 'recall_for_assessment',
+        readerId: userId,
+        readerType: 'radiologist',
+        readType: 'first' | 'second' | 'arbitration',
+        readNumber: 1,
+        timestamp: '2026-01-15T10:30:00.000Z',
+        // For abnormal opinions, includes per-breast data:
+        left: {
+          breastAssessment: 'normal' | 'clinical' | 'abnormal',
+          comment: 'optional text',
+          annotations: [...]
+        },
+        right: { ... }
+      }
+    ],
+    deferral, deferralHistory
   }
-}
+]
 ```
 
-- Keyed by userId - each user can have one reading per appointment
-- Written via `writeReading()` utility function
-- `readNumber` indicates order (1 = first, 2 = second read, 3 = arbitration read)
+- One case per image set; a technical recall's re-screen opens a second case,
+  and the episode's reading state comes from the latest one
+- Reads are ordered, at most one per reader, and each records its own `readType`
+  — settled when the read is written rather than inferred from position later
+- Written via `writeReading()` (appointments) or the case helpers in
+  `reading-cases.js`
+- Resolve an appointment's case with `getReadingCase(data, appointment)` from
+  `episodes.js`
+
+See [data-conventions.md](data-conventions.md) for the state and outcome model.
 
 ### 2. Temporary Storage: `data.imageReadingTemp`
 
@@ -401,14 +416,15 @@ Templates receive via `res.locals`:
 
 ### reading.js — Single Appointment
 
-- `getReadingMetadata(appointment)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions }` (computed on demand)
+- `getReadingMetadata(readingCase, settings)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions, state, outcome }` (computed on demand). `getAppointmentReadingMetadata(data, appointment)` is the appointment-shaped wrapper.
 - `getReadsAsArray(appointment)` - Returns reads sorted by readNumber (or timestamp fallback)
 - `getReadForUser(appointment, userId)` - Get this user's read object
 - `getOtherReads(appointment, userId)` - Get reads from other users (for comparison)
-- `writeReading(appointment, userId, reading, data, sessionId)` - Saves a reading, assigns readNumber, removes from skipped list
+- `writeReading(data, appointment, userId, reading, sessionId)` - Saves a read onto the appointment's case, settles readNumber and readType, removes from skipped list
 - `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
 - `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `arbitrationPolicy`
-- `getOutcome(appointment, settings)` - Computes outcome: `not_read` | `pending_second_read` | `arbitration_pending` | `normal` | `technical_recall` | `recall_for_assessment`. Third read (readNumber 3) is the arbitration read and its opinion resolves the case.
+- `getReadingCaseState(readingCase, settings)` - Where the case has got to: `awaiting_first_read` | `awaiting_second_read` | `arbitration_required` | `in_arbitration` | `concluded`
+- `getReadingCaseOutcome(readingCase, settings)` - What it found: `normal` | `technical_recall` | `recall_for_assessment`, or `null` while reading is still under way. The arbitration read, where there is one, is the deciding read.
 - `getComparisonInfo(appointment, secondReadData, userId, settings)` - Returns comparison data for second reader, or `false` if not applicable
 - `shouldShowComparePage(appointment, secondReadData, userId, settings)` - Boolean: whether to show compare page given timing/filter settings
 
@@ -451,11 +467,20 @@ Templates receive via `res.locals`:
 
 ### reading.js — Boolean Checks
 
-- `hasReads(appointment)` - Has any reads
-- `canUserReadAppointment(appointment, userId)` - User can read (not already read, not awaiting priors, under max reads)
-- `userHasReadAppointment(appointment, userId)` - User has already read
-- `isDeferred(appointment)` - Case has an active deferral (`imageReading.deferral`)
-- `needsFirstRead(appointment)`, `needsSecondRead(appointment)`, `needsArbitration(appointment)` (policy-aware context function)
+Appointment-shaped, so they take `data` to resolve the case:
+
+- `canUserReadAppointment(data, appointment, userId)` - User can read (not already read, not awaiting priors, not deferred, under max reads)
+- `userHasReadAppointment(data, appointment, userId)` - User has already read
+
+### reading-cases.js — Boolean Checks
+
+Case-shaped, and pure:
+
+- `caseHasReads(readingCase)` - Has any reads
+- `isCaseDeferred(readingCase)` - Case has an active deferral
+- `isCaseInArbitration(readingCase)` - Released into arbitration (nothing does this yet)
+- `caseNeedsFirstRead(readingCase)`, `caseNeedsSecondRead(readingCase)`, `caseNeedsArbitration(readingCase, settings)`
+- `canUserReadCase(readingCase, userId)`, `userHasReadCase(readingCase, userId)`
 
 ### prior-mammograms.js
 
@@ -489,7 +514,7 @@ Each appointment needs two independent reads:
 
 ### Reading Metadata
 
-`getReadingMetadata(appointment)` calculates (computed on demand, not stored):
+`getReadingMetadata(readingCase, settings)` calculates (computed on demand, not stored):
 
 - `readCount` - Total reads
 - `uniqueReaderCount` - Different readers
@@ -497,7 +522,7 @@ Each appointment needs two independent reads:
 - `isDiscordant` - Whether existing reads disagree meaningfully (not just opinion string)
 - `opinions` - Array of unique opinion values
 
-For arbitration state, use `getOutcome(appointment, settings)` or the `needsArbitration` filter.
+For arbitration state, use `getReadingCaseState(readingCase, settings)` or the `caseNeedsArbitration` filter.
 
 Use in templates: `{% set metadata = appointment | getReadingMetadata %}`
 
@@ -590,9 +615,10 @@ Prior mammograms are generated at seed time in `appointment-generator.js` using 
 
 A reader can defer a case out of the reading queue (for example to raise it with a colleague) rather than skip or read it.
 
-- Deferral is stored on the appointment: `appointment.imageReading.deferral = { deferredAt, deferredBy, reason }`
-- Deferring removes any existing read by that user — a deferral replaces a prior opinion
-- `isDeferred(appointment)` (in `lib/utils/reading.js`) checks for an active deferral
+- Deferral is stored on the reading case: `readingCase.deferral = { deferredAt, deferredBy, reason }`
+- Deferring removes any existing read by that user — a deferral withdraws a prior opinion
+- `isCaseDeferred(readingCase)` (in `lib/utils/reading-cases.js`) checks for an active deferral
+- `getDeferredCases(data)` / `getResolvedDeferrals(data)` (in `lib/utils/reading.js`) build the lists the deferred cases page shows
 - Deferred cases are excluded from reading; `/reading/deferred` lists them, and a deferral can be undone (via `/reading/deferred/undo` or the per-case `/undo-defer` route), returning the case to the queue
 - The workflow's `defer-case.html` step collects an optional reason (`deferralReason`)
 

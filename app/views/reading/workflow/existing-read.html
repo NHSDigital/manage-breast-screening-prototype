@@ -9,8 +9,8 @@
 {% block pageContent %}
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}
-  {% set hasUserRead = appointment | userHasReadAppointment %}
-  {% set isDeferredCase = appointment | isDeferred %}
+  {% set hasUserRead = readingCase | userHasReadCase(data.currentUser.id) %}
+  {% set isDeferredCase = readingCase | isCaseDeferred %}
 
   <span class="nhsuk-caption-l">
     {{ participant | getFullName }}
@@ -20,7 +20,7 @@
     {# Appointment has been deferred - show deferral summary #}
     <h1 class="nhsuk-heading-l">Your opinion</h1>
 
-    {% set deferral = appointment.imageReading.deferral %}
+    {% set deferral = readingCase.deferral %}
     {% set canUndo = deferral.deferredBy == data.currentUser.id %}
 
     {% set deferralSummaryHtml %}
@@ -140,7 +140,7 @@
     {% endif %}
 
     {% set readSummaryHtml %}
-      {% set read = appointment | getReadForUser %}
+      {% set read = readingCase | getReadForUser(data.currentUser.id) %}
       {% set allowEdits = true %}
       {% set changeOpinionUrl = "./opinion" %}
       {% set showAnnotationImages = withImages %}
@@ -156,7 +156,7 @@
     }) }}
 
     {# Other readers' assessments (for testing/debugging) #}
-    {% set otherReads = appointment | getOtherReads %}
+    {% set otherReads = readingCase | getOtherReads(data.currentUser.id) %}
     {% if otherReads | length > 0 %}
       {% for otherRead in otherReads %}
         {% set readerName = otherRead.readerId | getUsername %}

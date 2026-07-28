@@ -165,13 +165,60 @@ A round screened longer ago than the reading window closes rather than sitting
 in `reading` forever - it was read at the time, we just don't seed reads going
 back that far.
 
-### What deliberately doesn't live on the episode yet
+### Reading cases
 
-The target model puts `imageReadings[]`, priors and deferral on the episode.
-They are all still **on the appointment**, because moving them touches most of the
-reading code. `getEpisodeReadingStatus` derives an episode's reading state
-from its appointments rather than holding a copy. The physical move happens with the
-work that needs it (arbitration / case views).
+A **reading case** is one set of mammograms being read. Cases live on the
+episode as `episode.readingCases[]`, one per image set, oldest first — the same
+sets `episode.mammograms` records, from the other side:
+
+```js
+{
+  id, appointmentId, openedDate,
+  reads: [{ readerId, readerType, readType, readNumber, timestamp, opinion, ... }],
+  deferral, deferralHistory
+}
+```
+
+The trigger rule is **new image set → new case**. `updateAppointmentStatus`
+opens one the moment an appointment reaches a screened status, alongside the
+mammogram entry, and removes it again if that is undone. Most episodes have one
+case; a technical recall produces a second set of images and therefore a second
+case, and the episode's reading state comes from the **latest** one.
+
+Reads are an ordered array, and each records its own `readType` (`first`,
+`second`, `arbitration`). The type is settled when the read is written, from
+where the case had got to at the time — which is not recoverable later, because
+reads can be withdrawn (deferring after giving an opinion does exactly that).
+
+Two functions answer the two different questions, and the split matters:
+
+| | |
+|---|---|
+| `getReadingCaseState(case, settings)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `arbitration_required`, `in_arbitration`, `concluded` |
+| `getReadingCaseOutcome(case, settings)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
+
+`arbitration_required` and `in_arbitration` are deliberately different. Reads
+disagreeing is what makes arbitration *necessary*; a case only becomes
+arbitratable once someone releases it into arbitration. Nothing performs that
+release yet, so no case reaches `in_arbitration` today — the state exists so the
+vocabulary is whole rather than growing a value later across every call site.
+Deferral works the same way already: the act is recorded
+(`deferral: { deferredAt, deferredBy, reason }`) and `isCaseDeferred` reads the
+state back from its presence.
+
+Priors are the exception that stays on the appointment
+(`appointment.previousMammograms`), so `canUserReadAppointment` combines the two.
+Deferral and outstanding priors are **states, not outcomes** — both hold a case
+up, and a case held up still owes an outcome once it is released.
+
+**Where the code lives.** `reading-cases.js` holds the case logic and is
+deliberately pure — everything there takes a case. `episodes.js` owns getting
+cases out of session data (`getReadingCase`) and writing them back
+(`updateReadingCase`), because both go through the episode. `reading.js` is the
+appointment- and session-shaped layer above: sessions, backlogs, progress. That
+is why most of its helpers take `data` — resolving a case is what needs it.
+Resolution happens once, at the edges: the reading workflow middleware sets
+`res.locals.readingCase`, and list-building attaches `readingCase` to each row.
 
 ### Historic episodes
 
