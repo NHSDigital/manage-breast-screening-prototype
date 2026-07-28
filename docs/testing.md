@@ -38,13 +38,28 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Three journeys:
+JavaScript. Six journeys:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
 - a screening appointment straight through with nothing to record
 - an image reading session: normal opinions, then a recall for assessment with
   an annotation
+- a technical recall, through its views-to-retake form and the review step
+- deferring a case, then unflagging it from the deferred cases page
+- a second reader reaching the comparison page and keeping their opinion
+
+Between them the reading journeys cover all four ways a reader can leave a case
+— normal, recall for assessment, technical recall and deferral — which is what
+makes them useful as a net under changes to how reading data is stored.
+
+**Some pages render inside the shared modal, some break out of it.** With
+`modalForms` on, the reading details forms and the review step load into the
+modal, so ids there carry a `modal-` prefix and assertions must be scoped to
+the modal — the page underneath has its own copy of the opinion buttons, and an
+unscoped locator will match those instead. Recall for assessment and the
+second-reader comparison deliberately break out to a full page. Which of the
+two a step does is worth checking before writing selectors for it.
 
 ## Things worth knowing
 
@@ -85,5 +100,6 @@ npx playwright show-trace test-results/<dir>/trace.zip
 - The image-marking annotation modes in image reading (`with-images-simple` and
   friends), which need pixel-accurate clicks on the mammogram views. The reading
   spec pins `without-images`, where the location is typed instead.
-- Arbitration and second-reader comparison flows
+- Arbitration, and the second reader adopting the first reader's opinion
+  (the comparison journey covers keeping their own)
 - CI — the suite runs on demand, not on every push

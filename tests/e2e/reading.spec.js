@@ -1,19 +1,23 @@
 // tests/e2e/reading.spec.js
 //
-// One journey through image reading: create a small session, record a normal
-// opinion, then a recall for assessment with an annotation, and reach the end
-// of the session.
+// Journeys through image reading. Between them they cover the four ways a
+// reader can leave a case - normal, recall for assessment, technical recall,
+// and deferral - plus the second reader's comparison step.
 //
-// The session is created with an explicit limit so the test reads a known,
+// Sessions are created with an explicit limit so each test reads a known,
 // small number of cases rather than working through a default-sized session.
 //
 // Not covered: the image-marking annotation modes ('with-images-simple' and
-// friends), which need pixel-accurate clicks on the mammogram views. This spec
-// pins 'without-images', where the abnormality location is typed instead.
+// friends), which need pixel-accurate clicks on the mammogram views. These
+// specs pin 'without-images', where the abnormality location is typed instead.
 
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings, readingSettings } = require('./helpers/settings')
-const { clickToOpenModal, expectModalClosed } = require('./helpers/modals')
+const {
+  clickToOpenModal,
+  clickLinkToOpenModal,
+  expectModalClosed
+} = require('./helpers/modals')
 
 // Cases in the session: two read as normal, the last recalled for assessment
 const sessionSize = 3
@@ -28,6 +32,36 @@ const recordNormal = async (page) => {
     page.getByRole('heading', { name: 'What is your opinion of these images?' })
   ).toBeVisible()
   await page.getByRole('button', { name: 'Normal (N)' }).first().click()
+}
+
+/**
+ * Fill in the technical recall details for one view and continue.
+ *
+ * The technical recall form opens in the shared modal - unlike recall for
+ * assessment, its route doesn't break out to a full page - so ids inside it
+ * carry the modal's 'modal-' prefix. Field names are left alone, which makes
+ * them the more stable thing to target.
+ *
+ * @param {import('@playwright/test').Locator} modal - The open modal container
+ * @param {string} view - View code to mark for retaking, eg 'RMLO'
+ * @param {string} reason - Reason to select from the dropdown
+ */
+const recordTechnicalRecallDetails = async (modal, view, reason) => {
+  await modal
+    .locator(
+      `input[name="imageReadingTemp[technicalRecall][selectedViews]"][value="${view}"]`
+    )
+    .check()
+
+  // The reason select sits in the checkbox's conditional reveal, so it only
+  // becomes reachable once the view above is checked
+  await modal
+    .locator(
+      `select[name="imageReadingTemp[technicalRecall][views][${view}][reason]"]`
+    )
+    .selectOption(reason)
+
+  await modal.getByRole('button', { name: 'Continue' }).first().click()
 }
 
 test.describe('Image reading', () => {
@@ -94,5 +128,125 @@ test.describe('Image reading', () => {
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
     ).toBeVisible()
+  })
+
+  test('records a technical recall', async ({ page }) => {
+    // The review page is opt-in for technical recall, and it's the step that
+    // proves the selected views survived to the point of saving
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][confirmTechnicalRecall]': 'true'
+    })
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    await expect(
+      page.getByRole('heading', { name: 'What is your opinion of these images?' })
+    ).toBeVisible()
+
+    const recallModal = await clickToOpenModal(page, 'Technical recall (T)')
+    await expect(
+      recallModal.getByRole('heading', { name: 'Technical recall' })
+    ).toBeVisible()
+
+    await recordTechnicalRecallDetails(recallModal, 'RMLO', 'Image blurred')
+
+    // The review step stays in the modal, and the opinion page underneath still
+    // has its own "Technical recall" button - so assert against the modal, not
+    // the page, or the hidden button below matches first
+    await expect(
+      recallModal.getByRole('heading', { name: 'Confirm your opinion' })
+    ).toBeVisible()
+    await expect(recallModal.getByText('Technical recall').first()).toBeVisible()
+    await expect(recallModal.getByText('RMLO').first()).toBeVisible()
+    await expect(recallModal.getByText('Image blurred')).toBeVisible()
+    await recallModal.getByRole('button', { name: 'Confirm and save' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+  })
+
+  test('defers a case and returns it to the reading queue', async ({ page }) => {
+    await pinSettings(page, readingSettings)
+
+    // The reason is the thing that identifies this deferral on the deferred
+    // cases page, so make it distinctive
+    const deferralReason = 'Prior images needed before an opinion can be given'
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    const deferModal = await clickLinkToOpenModal(page, 'Defer this case')
+    await deferModal.locator('#modal-deferralReason').fill(deferralReason)
+    await deferModal
+      .getByRole('button', { name: 'Confirm deferral' })
+      .first()
+      .click()
+
+    // Deferral takes the only case out of the session, so there is nothing
+    // left to read
+    await expect(page).toHaveURL(/\/no-more-cases/)
+
+    // The case now sits on the deferred list, waiting for manual review
+    await page.goto('/reading/deferred')
+    await expect(
+      page.getByRole('heading', { name: 'Deferred cases' })
+    ).toBeVisible()
+    await expect(page.getByText(deferralReason)).toBeVisible()
+
+    // Unflagging returns it to the queue, keeping a record of why it was held
+    await page.getByRole('button', { name: 'Unflag case' }).first().click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Recently resolved' })
+    ).toBeVisible()
+    await expect(page.getByText('No deferred cases.')).toBeVisible()
+    await expect(page.getByText(deferralReason)).toBeVisible()
+  })
+
+  test('shows the second reader the first read before saving', async ({
+    page
+  }) => {
+    // 'early' shows the comparison as soon as an opinion is chosen, before any
+    // details are entered - the shortest path to the page under test. Combined
+    // with 'non_normal', any non-normal second opinion reaches it whatever the
+    // first reader said, so the test doesn't depend on the seeded read.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][secondReaderComparison]': 'early',
+      'settings[reading][compareWhen]': 'non_normal',
+      'settings[reading][confirmTechnicalRecall]': 'true'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=1&lazy=false'
+    )
+    // An empty candidate list would redirect to /reading instead
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    await expect(
+      page.getByRole('heading', { name: 'What is your opinion of these images?' })
+    ).toBeVisible()
+
+    // Unlike the details pages, the comparison breaks out of the modal and
+    // takes over the page, so this is a plain click rather than clickToOpenModal
+    await page.getByRole('button', { name: 'Technical recall (T)' }).first().click()
+
+    await expect(page).toHaveURL(/\/compare/)
+    // Exact, because the page heading ("The first reader had a different
+    // opinion") would otherwise match too
+    await expect(
+      page.getByRole('heading', { name: 'First read', exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Your read', exact: true })
+    ).toBeVisible()
+
+    // Standing by the second opinion continues to its details page
+    await page.getByRole('button', { name: 'Keep your opinion' }).first().click()
+
+    await expect(page).toHaveURL(/\/technical-recall/)
   })
 })

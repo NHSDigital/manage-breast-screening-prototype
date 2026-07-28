@@ -59,6 +59,27 @@ const clickToOpenModal = async (page, name, options = {}) => {
 }
 
 /**
+ * Click a link that opens its target in the shared modal, and wait for it
+ *
+ * The link variant of clickToOpenModal - openInModal rewires links with
+ * data-load-modal-url rather than the data-modal-submit it puts on buttons,
+ * but both end up in the same shared modal.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {string} name - Accessible name of the link
+ * @param {object} [options] - Extra options passed to getByRole
+ * @returns {import('@playwright/test').Locator} The open modal container
+ */
+const clickLinkToOpenModal = async (page, name, options = {}) => {
+  await waitForModalsReady(page)
+  await page
+    .getByRole('link', { name, ...options })
+    .first()
+    .click()
+  return openFormModal(page)
+}
+
+/**
  * Wait for a modal to close again after submitting
  *
  * @param {import('@playwright/test').Locator} modal - Modal container
@@ -82,6 +103,7 @@ module.exports = {
   waitForModalsReady,
   openFormModal,
   clickToOpenModal,
+  clickLinkToOpenModal,
   expectModalClosed,
   openSection
 }
