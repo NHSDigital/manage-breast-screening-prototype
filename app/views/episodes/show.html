@@ -41,7 +41,8 @@
   {% if episode.isHistoric %}
 
     {# Past rounds are held as summaries - what the round concluded, not how
-       it got there. There are no appointment or reading records to show. #}
+       it got there. There is no appointment record, but the round does carry a
+       summary of its reading. #}
 
     <div class="nhsuk-inset-text">
       <span class="nhsuk-u-visually-hidden">Information: </span>
@@ -98,6 +99,39 @@
     ]) %}
 
     {{ summaryList({ rows: rows }) }}
+
+    {# What the round's reading concluded. A summary case records who read it
+       and what they said, but no annotations - there is no image set behind a
+       past round for them to point at. #}
+    {% set historicCase = episode.readingCases | first %}
+    {% if historicCase %}
+
+      <h2 class="nhsuk-heading-m">Image reading</h2>
+
+      {% set readingRows = [
+        {
+          key: { text: "Reading outcome" },
+          value: { html: (historicCase | getReadingCaseOutcome(data.settings)) | toTag }
+        }
+      ] %}
+
+      {% for read in historicCase | getReadsAsArray %}
+        {% set readValueHtml %}
+          {{ read.opinion | toTag }}
+          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+            {{ read.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }},
+            {{ read.timestamp | formatDate }}
+          </span>
+        {% endset %}
+        {% set readingRows = readingRows | push({
+          key: { text: read.readType | sentenceCase + " read" },
+          value: { html: readValueHtml }
+        }) %}
+      {% endfor %}
+
+      {{ summaryList({ rows: readingRows }) }}
+
+    {% endif %}
 
   {% else %}
 

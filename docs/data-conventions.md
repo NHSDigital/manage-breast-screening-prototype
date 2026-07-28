@@ -226,10 +226,18 @@ Participants who have a real episode also get their past rounds as **historic**
 episodes (`isHistoric: true`): summary-level records with dates and an outcome,
 but no appointments, no reads and no assessment detail.
 
-They are seeded **outcome-first** - we say what the round found and don't model
-how it got there. That's enough for any "what happened before" view, and cheap
-to hold. If we later model the steps, the outcome can be computed from them
-instead, without the record changing shape.
+They are seeded **outcome-first**: the round's outcome is picked, and the detail
+beneath it is chosen to be consistent with that rather than the other way round.
+A past round carries one **summary reading case** - who read it, when, and what
+they concluded - with `appointmentId: null`, since there is no appointment
+record behind it for the case to hang off (the same reason its mammogram entry
+has no `appointmentId`).
+
+The reads have to agree with the outcome: a round that ended in
+`refer_for_treatment` was recalled for assessment, and a clear round was usually
+read as normal - though a minority were recalled and then found clear at
+assessment, which is what actually happens in screening. `checkEpisodes`
+enforces the first of those.
 
 How many a participant gets follows from their **age** and their screening
 interval, since screening starts at the risk level's lower age bound: a routine

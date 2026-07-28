@@ -55,6 +55,87 @@ const ASSESSMENT_OUTCOME_WEIGHTS = {
   refer_for_treatment: 0.2
 }
 
+// How often a past round that ended in routine recall got there via assessment
+// rather than straight from a clear reading. Most clear rounds were simply read
+// as normal; a minority were recalled and then found to be clear. Without this
+// every historic recall would have ended in treatment, which is the opposite of
+// how screening actually goes.
+const HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY = 0.06
+
+/**
+ * Build the summary reading case for a past round.
+ *
+ * Past rounds are seeded outcome-first, so the reads are chosen to be
+ * consistent with the outcome already picked rather than the other way round:
+ * a round that ended in treatment must have been recalled for assessment, and a
+ * clear round was usually - though not always - read as normal.
+ *
+ * Deliberately lean. There is no appointment behind a past round, so no image
+ * set for annotations to point at; what a past round can honestly say is who
+ * read it, when, and what they concluded.
+ *
+ * @param {object} options
+ * @param {string} options.outcome - The round's episode outcome
+ * @param {object} options.screenedDate - When the images were taken (dayjs)
+ * @param {object} options.closedDate - When the round closed (dayjs)
+ * @param {Array} options.readers - Users available to have read it
+ * @returns {object | null} The reading case, or null if the round wasn't screened
+ */
+const buildHistoricReadingCase = ({
+  outcome,
+  screenedDate,
+  closedDate,
+  readers
+}) => {
+  if (outcome === 'no_result' || readers.length < 2) return null
+
+  // A round ending in treatment was recalled for assessment; a clear round
+  // usually wasn't, but sometimes was and the assessment found nothing
+  const wasRecalled =
+    outcome === 'refer_for_treatment' ||
+    Math.random() < HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY
+
+  const opinion = wasRecalled ? 'recall_for_assessment' : 'normal'
+
+  // Two readers who agreed - a past round that needed arbitration is a story we
+  // have no way to tell honestly at summary fidelity
+  const [firstReader, secondReader] = faker.helpers.arrayElements(readers, 2)
+
+  // Read in the window between the images being taken and the round closing
+  const firstReadAt = screenedDate.add(
+    faker.number.int({ min: 1, max: 4 }),
+    'day'
+  )
+  const secondReadAt = firstReadAt.add(
+    faker.number.int({ min: 0, max: 2 }),
+    'day'
+  )
+  const cappedSecondReadAt = secondReadAt.isAfter(closedDate)
+    ? closedDate
+    : secondReadAt
+
+  const buildSummaryRead = (reader, readType, readNumber, timestamp) => ({
+    opinion,
+    readerId: reader.id,
+    readerType: reader.role,
+    readType,
+    readNumber,
+    timestamp: timestamp.toISOString()
+  })
+
+  return {
+    id: generateId(),
+    // A past round has no appointment record for the case to hang off - the
+    // same reason its mammogram entry carries no appointmentId
+    appointmentId: null,
+    openedDate: screenedDate.toISOString(),
+    reads: [
+      buildSummaryRead(firstReader, 'first', 1, firstReadAt),
+      buildSummaryRead(secondReader, 'second', 2, cappedSecondReadAt)
+    ]
+  }
+}
+
 /**
  * Record a stage change, keeping stageHistory in step
  *
@@ -276,10 +357,11 @@ const countHistoricEpisodes = (
 /**
  * Generate summary-level episodes for a participant's past screening rounds.
  *
- * Outcome-first: each round says what it found, and we don't model how it got
- * there - no appointments, no reads, no assessment detail. That is enough for
- * every "what happened before" view, and cheap to hold. If we later model the
- * steps, the outcome can be computed from them instead.
+ * Outcome-first: each round says what it found, and the detail beneath it is
+ * chosen to be consistent with that - not the other way round. A past round
+ * holds no appointment and no assessment detail, but it does carry a summary
+ * reading case, so "who read this and what did they say" is answerable for
+ * every round rather than only the current one.
  *
  * Spacing follows the risk level's own screening interval (routine every 3
  * years, family history / high risk yearly).
@@ -290,6 +372,7 @@ const countHistoricEpisodes = (
  * @param {string|Date} options.earliestOpenedDate - Opened date of their oldest real episode
  * @param {number} options.max - Cap on how many to generate
  * @param {object} [options.outcomeWeights] - Override the default outcome mix
+ * @param {Array} [options.readers] - Users who could have read these rounds
  * @returns {Array} Historic episodes, oldest first
  */
 const generateHistoricEpisodes = ({
@@ -297,7 +380,8 @@ const generateHistoricEpisodes = ({
   type,
   earliestOpenedDate,
   max,
-  outcomeWeights
+  outcomeWeights,
+  readers = []
 }) => {
   const riskLevel = riskLevels[type] || riskLevels.routine
   const weights = outcomeWeights || HISTORIC_OUTCOME_WEIGHTS
@@ -329,6 +413,13 @@ const generateHistoricEpisodes = ({
     // A round with no result never produced images either
     const wasScreened = outcome !== 'no_result'
 
+    const readingCase = buildHistoricReadingCase({
+      outcome,
+      screenedDate,
+      closedDate,
+      readers
+    })
+
     episodes.push({
       id: generateId(),
       participantId: participant.id,
@@ -346,7 +437,7 @@ const generateHistoricEpisodes = ({
       openedDate: openedDate.toISOString(),
       closedDate: closedDate.toISOString(),
       appointmentIds: [],
-      readingCases: [],
+      readingCases: readingCase ? [readingCase] : [],
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image
@@ -420,11 +511,39 @@ const checkEpisodes = (episodes, appointmentsById) => {
           `historic episode ${episode.id} outcome and mammograms disagree`
         )
       }
-      // A summary round records that it was read, not how - it has no
-      // appointment for a case to hang off
-      if (episode.readingCases?.length) {
-        problems.push(`historic episode ${episode.id} has reading cases`)
+      // A screened past round carries exactly one summary reading case, and a
+      // round that produced no images has nothing to read
+      const historicCases = episode.readingCases || []
+      if (wasScreened !== (historicCases.length === 1)) {
+        problems.push(
+          `historic episode ${episode.id} should have exactly one reading case when screened`
+        )
       }
+
+      historicCases.forEach((readingCase) => {
+        // No appointment record exists behind a past round
+        if (readingCase.appointmentId) {
+          problems.push(
+            `historic reading case ${readingCase.id} references an appointment`
+          )
+        }
+        // The reads have to agree with the outcome the round was seeded with:
+        // a round ending in treatment must have been recalled for assessment
+        const readingOutcome = getReadingCaseOutcome(readingCase, {})
+        if (
+          episode.outcome === 'refer_for_treatment' &&
+          readingOutcome !== 'recall_for_assessment'
+        ) {
+          problems.push(
+            `historic episode ${episode.id} ended in treatment but was read as "${readingOutcome}"`
+          )
+        }
+        if (getReadsAsArray(readingCase).length !== 2) {
+          problems.push(
+            `historic reading case ${readingCase.id} does not have two reads`
+          )
+        }
+      })
       return
     }
 

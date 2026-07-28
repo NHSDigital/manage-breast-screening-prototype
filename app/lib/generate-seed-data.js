@@ -290,12 +290,14 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
  * @param {Array} episodes - The generated (real) episodes
  * @param {Array} participants - All participants
  * @param {object} seedDataProfile - Active seed profile
+ * @param {Array} readers - Users who could have read these past rounds
  * @returns {Array} Historic episodes
  */
 const generateHistoricEpisodesForParticipants = (
   episodes,
   participants,
-  seedDataProfile
+  seedDataProfile,
+  readers
 ) => {
   const max = config.generation.maxHistoricEpisodesPerParticipant
   const outcomeWeights = seedDataProfile?.episodes?.historicOutcomeWeights
@@ -324,7 +326,8 @@ const generateHistoricEpisodesForParticipants = (
         type: earliest.type,
         earliestOpenedDate: earliest.openedDate,
         max,
-        outcomeWeights
+        outcomeWeights,
+        readers
       })
     )
   })
@@ -445,8 +448,12 @@ const seedTechnicalRecallRescreen = ({
       readAt.add(1, 'day').toISOString(),
       { forceOpinion: 'technical_recall' }
     )
+    // Built against an empty case, because this replaces whatever reads it had
+    // rather than adding to them - buildRead types a read from where the case
+    // had got to, and against the existing reads this would come out as an
+    // arbitration read
     const firstRead = buildRead(
-      readingCase,
+      { ...readingCase, reads: [] },
       firstReader.id,
       firstReader.role,
       generatedRead,
@@ -638,7 +645,8 @@ const generateData = async (options = {}) => {
   const historicEpisodes = generateHistoricEpisodesForParticipants(
     allEpisodes,
     finalParticipants,
-    selectedSeedDataProfile
+    selectedSeedDataProfile,
+    users
   )
 
   const episodesWithHistory = [...allEpisodes, ...historicEpisodes]
