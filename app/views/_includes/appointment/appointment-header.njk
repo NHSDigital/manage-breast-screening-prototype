@@ -136,7 +136,7 @@
         href: "./start"
       }) }}
       {% if appointment.status == 'scheduled' %}
-        <a href="{{ (appointmentUrl + '/mark-did-not-attend') | urlWithReferrer(currentUrl) }}" class="nhsuk-link nhsuk-link--no-visited-state" style="color: #d5281b">
+        <a href="{{ (appointmentUrl + '/mark-did-not-attend') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning nhsuk-link--no-visited-state">
           Did not attend
         </a>
       {% endif %}
