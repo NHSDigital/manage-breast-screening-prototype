@@ -217,8 +217,8 @@ module.exports = (router) => {
 
       if (appointment && appointment.status === 'did_not_attend') {
         const participantName = getFullName(data.participant)
-        // Revert to checked_in status
-        updateAppointmentStatus(data, appointmentId, 'checked_in')
+        // Revert to scheduled status
+        updateAppointmentStatus(data, appointmentId, 'scheduled')
         req.flash('success', `${participantName} did not attend status undone`)
       }
 
