@@ -218,7 +218,13 @@
                 text: "Undo check in",
                 visuallyHiddenText: "appointment"
               }
-            ] if appointment.status == "checked_in" else []))
+            ] if appointment.status == "checked_in" else ([
+              {
+                href: "./undo-did-not-attend" | urlWithReferrer(currentUrl),
+                text: "Undo",
+                visuallyHiddenText: "did not attend"
+              }
+            ] if appointment.status == "did_not_attend" else [])))
           }
         },
         {
