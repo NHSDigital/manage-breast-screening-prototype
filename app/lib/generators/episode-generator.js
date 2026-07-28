@@ -16,6 +16,9 @@ const { faker } = require('@faker-js/faker')
 const generateId = require('../utils/id-generator')
 const riskLevels = require('../../data/risk-levels')
 const {
+  generateMedicalInformation
+} = require('./medical-information-generator')
+const {
   buildReadingCase,
   getLatestReadingCase,
   getReadingCaseOutcome,
@@ -61,6 +64,69 @@ const ASSESSMENT_OUTCOME_WEIGHTS = {
 // every historic recall would have ended in treatment, which is the opposite of
 // how screening actually goes.
 const HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY = 0.06
+
+/**
+ * Build the stand-in appointment for a past round.
+ *
+ * A past round has no appointment record - reviving one in full is what the
+ * episodes work deliberately dropped, because a whole historic clinic snapshot
+ * cost far more than it was worth. This is the fidelity tier in between: enough
+ * to show what an appointment that day looked like, held on the episode rather
+ * than in `data.appointments`, so it can never drift into a clinic list, a
+ * reading queue or a route that expects a real appointment.
+ *
+ * Where and when the round was screened already lives in `episode.mammograms`;
+ * what this adds is the medical information recorded at the time.
+ *
+ * @param {object} options
+ * @param {object} options.screenedDate - When the images were taken (dayjs)
+ * @param {object} [options.seedProfile] - Active seed profile
+ * @returns {object} The summary appointment
+ */
+const buildHistoricSummaryAppointment = ({ screenedDate, seedProfile }) => {
+  const medicalInformation = generateMedicalInformation({
+    ...(seedProfile?.medicalInformation || {})
+  })
+
+  return {
+    startTime: screenedDate.toISOString(),
+    medicalInformation: stampRecordedDates(medicalInformation, screenedDate)
+  }
+}
+
+/**
+ * Re-date everything in a generated medical information record to when it was
+ * actually recorded.
+ *
+ * The medical information generators stamp `dateAdded` with the current time,
+ * which is right for a live appointment and wrong for a past round - it would
+ * show a symptom from 2023 as having been recorded today. Rewriting them here
+ * keeps that fix to historic generation, rather than threading a date through
+ * every generator that the live flow also uses.
+ *
+ * Walks the whole structure rather than naming fields, so it keeps working as
+ * the medical information shape grows.
+ *
+ * @param {*} value - Generated medical information, or part of it
+ * @param {object} recordedDate - When the round was screened (dayjs)
+ * @returns {*} The same shape, with recorded dates moved back
+ */
+const stampRecordedDates = (value, recordedDate) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => stampRecordedDates(item, recordedDate))
+  }
+
+  if (!value || typeof value !== 'object') return value
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      key === 'dateAdded'
+        ? recordedDate.toISOString()
+        : stampRecordedDates(item, recordedDate)
+    ])
+  )
+}
 
 /**
  * Build the summary reading case for a past round.
@@ -373,6 +439,7 @@ const countHistoricEpisodes = (
  * @param {number} options.max - Cap on how many to generate
  * @param {object} [options.outcomeWeights] - Override the default outcome mix
  * @param {Array} [options.readers] - Users who could have read these rounds
+ * @param {object} [options.seedProfile] - Active seed profile
  * @returns {Array} Historic episodes, oldest first
  */
 const generateHistoricEpisodes = ({
@@ -381,7 +448,8 @@ const generateHistoricEpisodes = ({
   earliestOpenedDate,
   max,
   outcomeWeights,
-  readers = []
+  readers = [],
+  seedProfile
 }) => {
   const riskLevel = riskLevels[type] || riskLevels.routine
   const weights = outcomeWeights || HISTORIC_OUTCOME_WEIGHTS
@@ -420,6 +488,12 @@ const generateHistoricEpisodes = ({
       readers
     })
 
+    // A round that produced no images had no screening appointment worth
+    // standing in for either
+    const summaryAppointment = wasScreened
+      ? buildHistoricSummaryAppointment({ screenedDate, seedProfile })
+      : null
+
     episodes.push({
       id: generateId(),
       participantId: participant.id,
@@ -438,6 +512,7 @@ const generateHistoricEpisodes = ({
       closedDate: closedDate.toISOString(),
       appointmentIds: [],
       readingCases: readingCase ? [readingCase] : [],
+      summaryAppointment,
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image

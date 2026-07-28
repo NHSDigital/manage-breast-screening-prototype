@@ -239,6 +239,26 @@ read as normal - though a minority were recalled and then found clear at
 assessment, which is what actually happens in screening. `checkEpisodes`
 enforces the first of those.
 
+A screened past round also carries `episode.summaryAppointment` - a stand-in for
+the appointment we don't model, holding the round's date and the medical
+information recorded at it:
+
+```js
+{ startTime, medicalInformation }
+```
+
+It lives on the episode rather than in `data.appointments` deliberately, so it
+can't drift into a clinic list, a reading queue or a route expecting a real
+appointment. Its recorded dates are stamped back to the round's screening date -
+the medical information generators date everything "now", which is right for a
+live appointment and wrong for a past one.
+
+**Seed profiles reach history too.** `episodes.historicOutcomeWeights` shapes how
+past rounds turned out, so a profile's claim about the current round isn't
+contradicted by the participant's past - "all normals" shows no past referrals,
+"high abnormalities" shows more. Medical information for past rounds uses the
+profile's `medicalInformation` probabilities, the same as a live appointment.
+
 How many a participant gets follows from their **age** and their screening
 interval, since screening starts at the risk level's lower age bound: a routine
 participant aged 51 has none, at 54 has one, at 69 has six.

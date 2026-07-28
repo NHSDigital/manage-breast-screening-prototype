@@ -33,6 +33,16 @@ const SEED_DATA_PROFILE_DEFAULTS = {
   imageReading: {
     probabilityFirstReaderOpinionMatchesImages: 0.95
   },
+  episodes: {
+    // How past rounds turned out. Overriding this is what stops a profile's
+    // claim about the current round being contradicted by a participant's
+    // history - 'all normals' shouldn't show past referrals for treatment.
+    historicOutcomeWeights: {
+      routine_recall: 0.9,
+      refer_for_treatment: 0.03,
+      no_result: 0.07
+    }
+  },
   reading: {
     // null = no limit (use default clinic-pattern behaviour)
     // 0 = empty backlog, n = limit backlog to n cases
@@ -216,6 +226,14 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
       previousMammograms: {
         rate: 0
       },
+      // Nothing was ever found, in this round or any before it
+      episodes: {
+        historicOutcomeWeights: {
+          routine_recall: 0.93,
+          refer_for_treatment: 0,
+          no_result: 0.07
+        }
+      },
       imageSetSelection: {
         contextualTagWeights: {
           default: {
@@ -233,6 +251,15 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
     label: 'High abnormalities',
     description: 'High chance of abnormalities in selected images',
     settings: {
+      // A population with abnormal current rounds plausibly has a history of
+      // them too, so past rounds find more as well
+      episodes: {
+        historicOutcomeWeights: {
+          routine_recall: 0.78,
+          refer_for_treatment: 0.15,
+          no_result: 0.07
+        }
+      },
       imageSetSelection: {
         contextualTagWeights: {
           default: {

@@ -327,7 +327,8 @@ const generateHistoricEpisodesForParticipants = (
         earliestOpenedDate: earliest.openedDate,
         max,
         outcomeWeights,
-        readers
+        readers,
+        seedProfile: seedDataProfile
       })
     )
   })
