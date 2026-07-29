@@ -10,9 +10,9 @@
   <table class="nhsuk-table">
     <thead class="nhsuk-table__head">
       <tr>
-        <th scope="col">Date</th>
+        <th scope="col">Screened</th>
+        <th scope="col">Closed</th>
         <th scope="col">Type</th>
-        <th scope="col">Stage</th>
         <th scope="col">Outcome</th>
         <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
       </tr>
@@ -22,23 +22,21 @@
         {% set episode = row.episode %}
         <tr class="nhsuk-table__row">
           <td class="nhsuk-table__cell">
-            {% if row.date %}
-              {{ row.date | formatDate }}
-              {% if not row.wasScreened %}
-                <br>{{ "Not screened" | asHint }}
-              {% endif %}
+            {% if row.screenedDate %}
+              {{ row.screenedDate | formatDate }}
             {% else %}
-              {{ "Not booked" | asHint }}
+              {{ "Not screened" | asHint }}
+            {% endif %}
+          </td>
+          <td class="nhsuk-table__cell">
+            {% if row.closedDate %}
+              {{ row.closedDate | formatDate }}
+            {% else %}
+              {{ "—" | asHint }}
             {% endif %}
           </td>
           <td class="nhsuk-table__cell">
             {{ episode.type | sentenceCase }}
-          </td>
-          <td class="nhsuk-table__cell">
-            {{ tag({
-              text: episode.stage | getEpisodeStageText,
-              colour: episode.stage | getEpisodeStageTagColour
-            }) }}
           </td>
           <td class="nhsuk-table__cell">
             {% if episode.outcome %}

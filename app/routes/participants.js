@@ -148,11 +148,8 @@ module.exports = (router) => {
 
         return {
           episode,
-          date:
-            mammogramDate ||
-            latestAppointment?.timing?.startTime ||
-            episode.closedDate ||
-            episode.openedDate,
+          screenedDate: mammogramDate || null,
+          closedDate: episode.closedDate || null,
           wasScreened: Boolean(mammogramDate)
         }
       })
