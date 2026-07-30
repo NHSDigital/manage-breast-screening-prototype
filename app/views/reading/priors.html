@@ -127,20 +127,16 @@
                 </td>
 
                 {# Mammogram location and date, then the request story - who
-                   flagged or actioned it, when, and the reader's reason.
-                   Pending was flagged by a reader, so uses the request date;
-                   every later status was actioned by admin staff #}
+                   requested or actioned it, when, and the reader's reason #}
                 <td data-mammogram-details="{{ mammogram.id }}">
                   {% if mammogram.requestStatus == "pending" %}
-                    {% set changedLabel = "Flagged" %}
+                    {# Requested by a reader, so the request date is theirs #}
+                    {% set changedLabel = "Requested" %}
                     {% set changedDate = mammogram.requestedDate %}
                     {% set changedBy = mammogram.requestedBy %}
-                  {% elseif mammogram.requestStatus == "requested" %}
-                    {% set changedLabel = "Requested" %}
-                    {% set changedDate = mammogram.statusChangedDate %}
-                    {% set changedBy = mammogram.statusChangedBy %}
                   {% elseif mammogram.requestStatus != "not_requested" %}
-                    {% set changedLabel = "Updated" %}
+                    {# Actioned by admin staff #}
+                    {% set changedLabel = "Requested" if mammogram.requestStatus == "requested" else "Updated" %}
                     {% set changedDate = mammogram.statusChangedDate %}
                     {% set changedBy = mammogram.statusChangedBy %}
                   {% endif %}
