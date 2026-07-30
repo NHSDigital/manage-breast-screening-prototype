@@ -136,10 +136,10 @@
 {% set breastDensityFactorsHtml %}
   {% if _bdfHrt == "yes" or _bdfHrt == "no" or (_bdf and _bdf | length > 0) %}
     <ul class="nhsuk-list">
-      {% if _bdf and _bdf | includes("pregnant") %}<li>Pregnant</li>{% endif %}
-      {% if _bdf and _bdf | includes("breastfeeding") %}<li>Breastfeeding</li>{% endif %}
       {% if _bdfHrt == "yes" %}<li>Taking HRT</li>{% endif %}
       {% if _bdfHrt == "no" %}<li>Not taking HRT</li>{% endif %}
+      {% if _bdf and _bdf | includes("pregnant") %}<li>Pregnant</li>{% endif %}
+      {% if _bdf and _bdf | includes("breastfeeding") %}<li>Breastfeeding</li>{% endif %}
     </ul>
   {% else %}
     <p>No breast density factors added</p>
