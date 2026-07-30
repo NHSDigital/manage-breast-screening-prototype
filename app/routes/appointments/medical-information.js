@@ -24,7 +24,7 @@ module.exports = (router) => {
         : postedFactors
           ? [postedFactors]
           : []
-      const nonHrtFactors = factors.filter((factor) => factor !== 'hrt')
+      const nonHrtFactors = factors.filter((factor) => factor && factor !== 'hrt')
 
       if (!data.appointment) {
         data.appointment = {}
@@ -86,7 +86,7 @@ module.exports = (router) => {
           data._medicalInformationDraft = {}
         }
         data._medicalInformationDraft.breastDensityFactors =
-          normalisedPostedBreastDensityFactors.filter((factor) => factor !== 'hrt')
+          normalisedPostedBreastDensityFactors.filter((factor) => factor && factor !== 'hrt')
       }
 
       if (postedBreastDensityFactorsHrt === 'yes' || postedBreastDensityFactorsHrt === 'no') {
