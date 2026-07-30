@@ -1836,6 +1836,15 @@ module.exports = (router) => {
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
 
+      // Editing a read the user has already saved. The existing-read page they
+      // came from is itself a summary of the read, so the confirmation step is
+      // redundant — save straight away regardless of the confirmation settings.
+      const isEditingExistingRead = userHasReadAppointment(
+        data,
+        appointment,
+        currentUserId
+      )
+
       // Check for late comparison if not already done
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
       if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
@@ -1858,7 +1867,10 @@ module.exports = (router) => {
         case 'normal':
           // opinion-details-complete is only reached for normal when the user
           // went through the normal-details page, so use confirmNormalWithDetails
-          if (data.settings?.reading?.confirmNormalWithDetails === 'true') {
+          if (
+            !isEditingExistingRead &&
+            data.settings?.reading?.confirmNormalWithDetails === 'true'
+          ) {
             return res.redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
             )
@@ -1872,7 +1884,10 @@ module.exports = (router) => {
           const trChainParam = trReferrer
             ? `?referrerChain=${encodeURIComponent(trReferrer)}`
             : ''
-          if (data.settings?.reading?.confirmTechnicalRecall !== 'false') {
+          if (
+            !isEditingExistingRead &&
+            data.settings?.reading?.confirmTechnicalRecall !== 'false'
+          ) {
             return res.redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
             )
@@ -1887,7 +1902,10 @@ module.exports = (router) => {
           const rfaChainParam = rfaReferrer
             ? `?referrerChain=${encodeURIComponent(rfaReferrer)}`
             : ''
-          if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
+          if (
+            !isEditingExistingRead &&
+            data.settings?.reading?.confirmRecallForAssessment !== 'false'
+          ) {
             return res.redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
             )
@@ -1930,6 +1948,17 @@ module.exports = (router) => {
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
+      // Whether this save is an edit of a read the user had already made.
+      // The case URL only routes already-read users via existing-read, so any
+      // journey reaching here with a read in place started from that page —
+      // and should return to it rather than moving on to the next case.
+      // Must be checked before the read is written.
+      const isEditingExistingRead = userHasReadAppointment(
+        data,
+        appointment,
+        currentUserId
+      )
+
       delete data.imageReadingTemp
       delete res.locals.data?.imageReadingTemp
 
@@ -1960,10 +1989,11 @@ module.exports = (router) => {
         { wrap: false }
       )
 
-      // Store banner message for the next case, but only if there is one
+      // Store banner message for the next case, but only if there is one.
+      // Edits stay on the current case, so there's nowhere to show it.
       // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
       // Todo: can we get this working with req.flash?
-      if (nextUnreadAppointment) {
+      if (nextUnreadAppointment && !isEditingExistingRead) {
         const participant = data.participants.find(
           (person) => person.id === appointment.participantId
         )
@@ -1991,6 +2021,17 @@ module.exports = (router) => {
           saveReferrerChain
         )
         res.redirect(modalBreakout(returnUrl))
+        return
+      }
+
+      // An edit returns to the read it was made from, so the reader can see the
+      // change they've just made rather than being pushed on to the next case
+      if (isEditingExistingRead) {
+        res.redirect(
+          modalBreakout(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+          )
+        )
         return
       }
 
@@ -2046,6 +2087,14 @@ module.exports = (router) => {
 
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      // Editing a read the user has already saved — skip the confirmation step,
+      // the existing-read page they return to already summarises the read
+      const isEditingExistingRead = userHasReadAppointment(
+        data,
+        appointment,
+        data.currentUser?.id
+      )
 
       // Ensure appointmentId is set for tracking
       if (!data.imageReadingTemp) {
@@ -2119,7 +2168,10 @@ module.exports = (router) => {
               )
             }
           }
-          if (data.settings.reading.confirmNormal === 'true') {
+          if (
+            !isEditingExistingRead &&
+            data.settings.reading.confirmNormal === 'true'
+          ) {
             return res.redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
             )
@@ -2165,6 +2217,14 @@ module.exports = (router) => {
 
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      // Editing a read the user has already saved — skip the confirmation step,
+      // the existing-read page they return to already summarises the read
+      const isEditingExistingRead = userHasReadAppointment(
+        data,
+        appointment,
+        currentUserId
+      )
 
       const opinion = data.imageReadingTemp?.opinion
       const comparisonInfo = getComparisonInfo(
@@ -2216,6 +2276,12 @@ module.exports = (router) => {
           console.log('Adopted first reader opinion:', firstRead.opinion)
         }
 
+        if (isEditingExistingRead) {
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+          )
+        }
+
         // Go straight to review since we have complete data
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/review`
@@ -2250,7 +2316,10 @@ module.exports = (router) => {
             return res.redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/normal-details`
             )
-          } else if (data.settings.reading.confirmNormal === 'true') {
+          } else if (
+            !isEditingExistingRead &&
+            data.settings.reading.confirmNormal === 'true'
+          ) {
             return res.redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
             )
