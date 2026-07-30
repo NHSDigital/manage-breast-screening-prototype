@@ -298,7 +298,7 @@
                 {% elseif appointment.readingCase | isCaseDeferred %}
                   {{ "Deferred" | toTag }}
                 {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
-                  {{ "Priors requested" | toTag }}
+                  {{ "Priors required" | toTag }}
                 {% elseif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}

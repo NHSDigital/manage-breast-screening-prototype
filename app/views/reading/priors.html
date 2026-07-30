@@ -64,7 +64,7 @@
   {% set tabItems = [
     { id: "all", label: "All", count: allRows | length },
     { id: "not-requested", label: "Not requested", count: notRequestedRows | length },
-    { id: "pending", label: "Needs requesting", count: pendingRows | length },
+    { id: "pending", label: "Priors required", count: pendingRows | length },
     { id: "requested", label: "Requested", count: requestedRows | length },
     { id: "resolved", label: "Recently resolved", count: resolvedRows | length }
   ] %}
@@ -126,54 +126,34 @@
                   </span>
                 </td>
 
-                {# Mammogram location and date #}
+                {# Mammogram location and date, plus the reader's reason for the request #}
                 <td>
                   {{ mammogram | summarisePriorMammogram }}
+                  {% if mammogram.requestReason %}
+                    <br>Reason: {{ mammogram.requestReason }}
+                  {% endif %}
                 </td>
 
-                {# Status #}
+                {# Status. Pending was flagged by a reader, so shows when they
+                   flagged it; every later status was actioned by admin staff #}
                 <td data-mammogram-status="{{ mammogram.id }}">
-                  {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
                   {% if mammogram.requestStatus == "pending" %}
-                    {# Flagged by reader — show who requested and reason #}
-                    {% if mammogram.requestedDate %}
-                      <br>
-                      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                        {{ mammogram.requestedDate | formatDate("D MMM YYYY") }}
-                        {% if mammogram.requestedBy %}
-                          by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
-                        {% endif %}
-                      </span>
-                    {% endif %}
-                    {% if mammogram.requestReason %}
-                      <br>
-                      <span class="nhsuk-body-s js-prior-reason"><strong>Reason:</strong> {{ mammogram.requestReason }}</span>
-                    {% endif %}
-                  {% elseif mammogram.requestStatus == "requested" %}
-                    {# Admin has sent IEP request — show when admin actioned it #}
-                    {% if mammogram.statusChangedDate %}
-                      <br>
-                      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                        {{ mammogram.statusChangedDate | formatDate("D MMM YYYY") }}
-                        {% if mammogram.statusChangedBy %}
-                          by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
-                        {% endif %}
-                      </span>
-                    {% endif %}
-                    {% if mammogram.requestReason %}
-                      <br>
-                      <span class="nhsuk-body-s js-prior-reason"><strong>Reason:</strong> {{ mammogram.requestReason }}</span>
-                    {% endif %}
-                  {% elseif mammogram.requestStatus == "received" or mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed" %}
-                    {% if mammogram.statusChangedDate %}
-                      <br>
-                      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                        {{ mammogram.statusChangedDate | formatDate("D MMM YYYY") }}
-                        {% if mammogram.statusChangedBy %}
-                          by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
-                        {% endif %}
-                      </span>
-                    {% endif %}
+                    {% set changedDate = mammogram.requestedDate %}
+                    {% set changedBy = mammogram.requestedBy %}
+                  {% else %}
+                    {% set changedDate = mammogram.statusChangedDate %}
+                    {% set changedBy = mammogram.statusChangedBy %}
+                  {% endif %}
+
+                  {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
+                  {% if changedDate and mammogram.requestStatus != "not_requested" %}
+                    <br>
+                    <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                      {{ changedDate | formatDate("D MMM YYYY") }}
+                      {% if changedBy %}
+                        by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                      {% endif %}
+                    </span>
                   {% endif %}
                 </td>
 
@@ -235,7 +215,7 @@
   // Mirrors the check-in pattern used on clinic show page
   document.addEventListener('DOMContentLoaded', () => {
     const statusLabels = {
-      pending: 'Needs requesting',
+      pending: 'Priors required',
       requested: 'Requested',
       received: 'Received',
       not_available: 'Not available',
@@ -292,14 +272,11 @@
           return response.json()
         })
         .then(() => {
-          // Update the status tag in-place, preserving reason text if present
+          // Update the status tag in-place
           const statusCell = document.querySelector(
             '[data-mammogram-status="' + mammogramId + '"]'
           )
           if (statusCell) {
-            const reasonEl = statusCell.querySelector('.js-prior-reason')
-            const existingReason = reasonEl ? reasonEl.textContent.trim() : ''
-
             const colourClass = statusColours[newStatus] || ''
             const today = new Date().toLocaleDateString('en-GB', {
               day: 'numeric', month: 'short', year: 'numeric'
@@ -312,11 +289,6 @@
             // Show date and attribution after admin actions
             if (['requested', 'received', 'not_available', 'not_needed'].includes(newStatus)) {
               statusHtml += '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">' + today + ' by ' + username + '</span>'
-            }
-
-            // Preserve reason when moving from pending to requested
-            if (existingReason && newStatus === 'requested') {
-              statusHtml += '<br><span class="nhsuk-body-s js-prior-reason"><strong>Reason:</strong> ' + existingReason + '</span>'
             }
 
             statusCell.innerHTML = statusHtml

@@ -249,7 +249,7 @@ const STATUS_TAGS = {
   // External prior mammogram request tracking (episode.priors)
   priorsRequest: {
     not_requested: { label: 'Not requested', colour: 'white' },
-    pending: { label: 'Needs requesting', colour: 'orange' },
+    pending: { label: 'Priors required', colour: 'orange' },
     requested: { label: 'Requested', colour: 'yellow' },
     received: { label: 'Received', colour: 'green' },
     not_available: { label: 'Not available', colour: 'grey' },
@@ -267,7 +267,9 @@ const STATUS_TAGS = {
     incomplete: { colour: 'orange' },
     urgent: { colour: 'red' },
     due_soon: { colour: 'orange' },
-    priors_requested: { colour: 'yellow' },
+    // Case-level equivalent of priorsRequest.pending - same words and colour,
+    // so readers and admin staff see one status rather than two
+    priors_required: { colour: 'orange' },
     deferred: { colour: 'orange' }
   }
 }
