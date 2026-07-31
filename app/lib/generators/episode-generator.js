@@ -15,7 +15,15 @@ const weighted = require('weighted')
 const { faker } = require('@faker-js/faker')
 const generateId = require('../utils/id-generator')
 const riskLevels = require('../../data/risk-levels')
-const { getOutcome } = require('../utils/reading')
+const {
+  generateMedicalInformation
+} = require('./medical-information-generator')
+const {
+  buildReadingCase,
+  getLatestReadingCase,
+  getReadingCaseOutcome,
+  getReadsAsArray
+} = require('../utils/reading-cases')
 const { eligibleForReading, isCompleted } = require('../utils/status')
 const {
   EPISODE_OUTCOMES,
@@ -48,6 +56,212 @@ const HISTORIC_OUTCOME_WEIGHTS = {
 const ASSESSMENT_OUTCOME_WEIGHTS = {
   routine_recall: 0.8,
   refer_for_treatment: 0.2
+}
+
+// How often a past round that ended in routine recall got there via assessment
+// rather than straight from a clear reading. Most clear rounds were simply read
+// as normal; a minority were recalled and then found to be clear. Without this
+// every historic recall would have ended in treatment, which is the opposite of
+// how screening actually goes.
+const HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY = 0.06
+
+// How often a past round's two readers disagreed and it went to arbitration.
+// A few percent of cases is the right order for real screening - the point of
+// seeding any is that arbitration work has past examples to look at, not only
+// cases created by hand.
+const HISTORIC_ARBITRATION_PROBABILITY = 0.04
+
+/**
+ * Build the stand-in appointment for a past round.
+ *
+ * A past round has no appointment record - reviving one in full is what the
+ * episodes work deliberately dropped, because a whole historic clinic snapshot
+ * cost far more than it was worth. This is the fidelity tier in between: enough
+ * to show what an appointment that day looked like, held on the episode rather
+ * than in `data.appointments`, so it can never drift into a clinic list, a
+ * reading queue or a route that expects a real appointment.
+ *
+ * Where and when the round was screened already lives in `episode.mammograms`;
+ * what this adds is the appointment's own detail - its status, and the medical
+ * information recorded at it.
+ *
+ * Held as a list, like the episode's other per-appointment records, so a past
+ * round is shaped the same as a live one. Only one is generated today; a past
+ * technical recall would have had two.
+ *
+ * @param {object} options
+ * @param {object} options.screenedDate - When the images were taken (dayjs)
+ * @param {object} [options.seedProfile] - Active seed profile
+ * @returns {object} The summary appointment
+ */
+const buildHistoricSummaryAppointment = ({ screenedDate, seedProfile }) => {
+  const medicalInformation = generateMedicalInformation({
+    ...(seedProfile?.medicalInformation || {})
+  })
+
+  return {
+    id: generateId(),
+    // A past round was screened - that is why it has images and a reading. The
+    // status is carried explicitly so the episode page can show an appointments
+    // list the same way a live round does.
+    status: 'complete',
+    type: 'screening',
+    startTime: screenedDate.toISOString(),
+    medicalInformation: stampRecordedDates(medicalInformation, screenedDate)
+  }
+}
+
+/**
+ * Re-date everything in a generated medical information record to when it was
+ * actually recorded.
+ *
+ * The medical information generators stamp `dateAdded` with the current time,
+ * which is right for a live appointment and wrong for a past round - it would
+ * show a symptom from 2023 as having been recorded today. Rewriting them here
+ * keeps that fix to historic generation, rather than threading a date through
+ * every generator that the live flow also uses.
+ *
+ * Walks the whole structure rather than naming fields, so it keeps working as
+ * the medical information shape grows.
+ *
+ * @param {*} value - Generated medical information, or part of it
+ * @param {object} recordedDate - When the round was screened (dayjs)
+ * @returns {*} The same shape, with recorded dates moved back
+ */
+const stampRecordedDates = (value, recordedDate) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => stampRecordedDates(item, recordedDate))
+  }
+
+  if (!value || typeof value !== 'object') return value
+
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      key === 'dateAdded'
+        ? recordedDate.toISOString()
+        : stampRecordedDates(item, recordedDate)
+    ])
+  )
+}
+
+/**
+ * Build the summary reading case for a past round.
+ *
+ * Past rounds are seeded outcome-first, so the reads are chosen to be
+ * consistent with the outcome already picked rather than the other way round:
+ * a round that ended in treatment must have been recalled for assessment, and a
+ * clear round was usually - though not always - read as normal.
+ *
+ * Deliberately lean. There is no appointment behind a past round, so no image
+ * set for annotations to point at; what a past round can honestly say is who
+ * read it, when, and what they concluded.
+ *
+ * @param {object} options
+ * @param {string} options.outcome - The round's episode outcome
+ * @param {object} options.screenedDate - When the images were taken (dayjs)
+ * @param {object} options.closedDate - When the round closed (dayjs)
+ * @param {Array} options.readers - Users available to have read it
+ * @returns {object | null} The reading case, or null if the round wasn't screened
+ */
+const buildHistoricReadingCase = ({
+  outcome,
+  screenedDate,
+  closedDate,
+  readers
+}) => {
+  if (outcome === 'no_result' || readers.length < 2) return null
+
+  // A round ending in treatment was recalled for assessment; a clear round
+  // usually wasn't, but sometimes was and the assessment found nothing
+  const wasRecalled =
+    outcome === 'refer_for_treatment' ||
+    Math.random() < HISTORIC_RECALLED_THEN_CLEAR_PROBABILITY
+
+  // What the round concluded at reading - the arbitration read where there was
+  // one, otherwise what both readers agreed
+  const opinion = wasRecalled ? 'recall_for_assessment' : 'normal'
+
+  // Sometimes the two readers disagreed and a third settled it. Needs three
+  // readers: nobody reads the same case twice, arbitration included
+  const wentToArbitration =
+    readers.length >= 3 && Math.random() < HISTORIC_ARBITRATION_PROBABILITY
+
+  const [firstReader, secondReader, arbitrationReader] =
+    faker.helpers.arrayElements(readers, wentToArbitration ? 3 : 2)
+
+  // Read in the window between the images being taken and the round closing
+  const firstReadAt = screenedDate.add(
+    faker.number.int({ min: 1, max: 4 }),
+    'day'
+  )
+  const secondReadAt = firstReadAt.add(
+    faker.number.int({ min: 0, max: 2 }),
+    'day'
+  )
+  const cappedSecondReadAt = secondReadAt.isAfter(closedDate)
+    ? closedDate
+    : secondReadAt
+
+  const buildSummaryRead = (reader, readType, readNumber, timestamp, readOpinion) => ({
+    opinion: readOpinion,
+    readerId: reader.id,
+    readerType: reader.role,
+    readType,
+    readNumber,
+    timestamp: timestamp.toISOString()
+  })
+
+  // When it went to arbitration the two readers disagreed, so one of them said
+  // the opposite of what the round concluded. Which one is arbitrary - either
+  // reader could have been the one who saw something
+  const disagreeingOpinion =
+    opinion === 'normal' ? 'recall_for_assessment' : 'normal'
+  const firstReaderDisagreed = wentToArbitration && Math.random() < 0.5
+
+  const reads = [
+    buildSummaryRead(
+      firstReader,
+      'first',
+      1,
+      firstReadAt,
+      firstReaderDisagreed ? disagreeingOpinion : opinion
+    ),
+    buildSummaryRead(
+      secondReader,
+      'second',
+      2,
+      cappedSecondReadAt,
+      wentToArbitration && !firstReaderDisagreed ? disagreeingOpinion : opinion
+    )
+  ]
+
+  if (wentToArbitration) {
+    // The arbitration read is what settled it, so it carries the round's
+    // conclusion - and dates after the two it was called in to resolve
+    const arbitratedAt = cappedSecondReadAt.add(
+      faker.number.int({ min: 1, max: 3 }),
+      'day'
+    )
+    reads.push(
+      buildSummaryRead(
+        arbitrationReader,
+        'arbitration',
+        3,
+        arbitratedAt.isAfter(closedDate) ? closedDate : arbitratedAt,
+        opinion
+      )
+    )
+  }
+
+  return {
+    id: generateId(),
+    // A past round has no appointment record for the case to hang off - the
+    // same reason its mammogram entry carries no appointmentId
+    appointmentId: null,
+    openedDate: screenedDate.toISOString(),
+    reads
+  }
 }
 
 /**
@@ -90,8 +304,40 @@ const generateEpisode = ({ participant, type, appointmentDate }) => {
     closedDate: null,
     appointmentIds: [],
     mammograms: [],
+    readingCases: [],
     isHistoric: false
   }
+}
+
+/**
+ * Open a reading case for each set of images the episode's appointments
+ * produced, keeping any case that already exists.
+ *
+ * Runs before reading data is generated, because reads are written onto cases -
+ * there has to be a case to write to. Existing cases are kept rather than
+ * rebuilt so re-running never throws away reads.
+ *
+ * @param {object} episode - Episode to sync (mutated - generation only)
+ * @param {Array} appointments - The episode's appointments, oldest first
+ * @returns {object} The same episode
+ */
+const syncEpisodeReadingCases = (episode, appointments) => {
+  const existingByAppointmentId = new Map(
+    (episode.readingCases || []).map((readingCase) => [
+      readingCase.appointmentId,
+      readingCase
+    ])
+  )
+
+  episode.readingCases = appointments
+    .filter(appointmentProducedImages)
+    .map(
+      (appointment) =>
+        existingByAppointmentId.get(appointment.id) ||
+        buildReadingCase(appointment)
+    )
+
+  return episode
 }
 
 /**
@@ -117,12 +363,14 @@ const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) =>
   episode.closedDate = null
 
   // The round's record of images taken is derived from the appointments alongside
-  // the stage, so a re-run refreshes both together
+  // the stage, so a re-run refreshes both together. Its reading cases follow the
+  // same image sets, and keep any reads already written to them
   episode.mammograms = appointments
     .filter(appointmentProducedImages)
     .map((appointment) =>
       buildMammogramEntry(appointment, clinicsById.get(appointment.clinicId))
     )
+  syncEpisodeReadingCases(episode, appointments)
 
   const latestAppointment = appointments[appointments.length - 1]
   if (!latestAppointment) return episode
@@ -153,10 +401,12 @@ const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) =>
   moveTo(destination, appointmentEnded)
 
   // Once the images are taken, it's the reading that decides what happens
-  // next - close the episode, or send it back for a technical recall
+  // next - close the episode, or send it back for a technical recall. The
+  // *latest* case decides: a technical recall's re-screen supersedes the
+  // reading that asked for it
   if (episode.stage === 'reading') {
-    const reads = Object.values(latestAppointment.imageReading?.reads || {})
-    const lastReadAt = reads
+    const latestCase = getLatestReadingCase(episode)
+    const lastReadAt = getReadsAsArray(latestCase)
       .map((read) => read.timestamp)
       .sort()
       .pop()
@@ -169,7 +419,7 @@ const finaliseEpisodeStage = (episode, appointments, clinicsById = new Map()) =>
         : appointmentEnded
 
     const destinationAfterReading =
-      EPISODE_STAGE_BY_READING_OUTCOME[getOutcome(latestAppointment, {})]
+      EPISODE_STAGE_BY_READING_OUTCOME[getReadingCaseOutcome(latestCase, {})]
 
     if (destinationAfterReading) {
       moveTo(destinationAfterReading, concludedAt)
@@ -235,10 +485,11 @@ const countHistoricEpisodes = (
 /**
  * Generate summary-level episodes for a participant's past screening rounds.
  *
- * Outcome-first: each round says what it found, and we don't model how it got
- * there - no appointments, no reads, no assessment detail. That is enough for
- * every "what happened before" view, and cheap to hold. If we later model the
- * steps, the outcome can be computed from them instead.
+ * Outcome-first: each round says what it found, and the detail beneath it is
+ * chosen to be consistent with that - not the other way round. A past round
+ * holds no appointment and no assessment detail, but it does carry a summary
+ * reading case, so "who read this and what did they say" is answerable for
+ * every round rather than only the current one.
  *
  * Spacing follows the risk level's own screening interval (routine every 3
  * years, family history / high risk yearly).
@@ -249,6 +500,8 @@ const countHistoricEpisodes = (
  * @param {string|Date} options.earliestOpenedDate - Opened date of their oldest real episode
  * @param {number} options.max - Cap on how many to generate
  * @param {object} [options.outcomeWeights] - Override the default outcome mix
+ * @param {Array} [options.readers] - Users who could have read these rounds
+ * @param {object} [options.seedProfile] - Active seed profile
  * @returns {Array} Historic episodes, oldest first
  */
 const generateHistoricEpisodes = ({
@@ -256,7 +509,9 @@ const generateHistoricEpisodes = ({
   type,
   earliestOpenedDate,
   max,
-  outcomeWeights
+  outcomeWeights,
+  readers = [],
+  seedProfile
 }) => {
   const riskLevel = riskLevels[type] || riskLevels.routine
   const weights = outcomeWeights || HISTORIC_OUTCOME_WEIGHTS
@@ -288,6 +543,19 @@ const generateHistoricEpisodes = ({
     // A round with no result never produced images either
     const wasScreened = outcome !== 'no_result'
 
+    const readingCase = buildHistoricReadingCase({
+      outcome,
+      screenedDate,
+      closedDate,
+      readers
+    })
+
+    // A round that produced no images had no screening appointment worth
+    // standing in for either
+    const summaryAppointments = wasScreened
+      ? [buildHistoricSummaryAppointment({ screenedDate, seedProfile })]
+      : []
+
     episodes.push({
       id: generateId(),
       participantId: participant.id,
@@ -305,6 +573,8 @@ const generateHistoricEpisodes = ({
       openedDate: openedDate.toISOString(),
       closedDate: closedDate.toISOString(),
       appointmentIds: [],
+      readingCases: readingCase ? [readingCase] : [],
+      summaryAppointments,
       isHistoric: true,
 
       // Enough to list this round as a prior without holding a full image
@@ -378,6 +648,50 @@ const checkEpisodes = (episodes, appointmentsById) => {
           `historic episode ${episode.id} outcome and mammograms disagree`
         )
       }
+      // A screened past round has a stand-in appointment; one that produced no
+      // images was never screened, so has none
+      const summaryAppointments = episode.summaryAppointments || []
+      if (wasScreened !== (summaryAppointments.length > 0)) {
+        problems.push(
+          `historic episode ${episode.id} summary appointments and outcome disagree`
+        )
+      }
+
+      // A screened past round carries exactly one summary reading case, and a
+      // round that produced no images has nothing to read
+      const historicCases = episode.readingCases || []
+      if (wasScreened !== (historicCases.length === 1)) {
+        problems.push(
+          `historic episode ${episode.id} should have exactly one reading case when screened`
+        )
+      }
+
+      historicCases.forEach((readingCase) => {
+        // No appointment record exists behind a past round
+        if (readingCase.appointmentId) {
+          problems.push(
+            `historic reading case ${readingCase.id} references an appointment`
+          )
+        }
+        // The reads have to agree with the outcome the round was seeded with:
+        // a round ending in treatment must have been recalled for assessment
+        const readingOutcome = getReadingCaseOutcome(readingCase, {})
+        if (
+          episode.outcome === 'refer_for_treatment' &&
+          readingOutcome !== 'recall_for_assessment'
+        ) {
+          problems.push(
+            `historic episode ${episode.id} ended in treatment but was read as "${readingOutcome}"`
+          )
+        }
+        // Two readers, or three where they disagreed and one arbitrated
+        const historicReadCount = getReadsAsArray(readingCase).length
+        if (historicReadCount !== 2 && historicReadCount !== 3) {
+          problems.push(
+            `historic reading case ${readingCase.id} has ${historicReadCount} reads`
+          )
+        }
+      })
       return
     }
 
@@ -402,6 +716,52 @@ const checkEpisodes = (episodes, appointmentsById) => {
         `episode ${episode.id} mammograms don't match its screened appointments`
       )
     }
+
+    // One reading case per image set, and none without images to read: the two
+    // records answer the same question from different sides, so they must agree
+    const caseAppointmentIds = (episode.readingCases || []).map(
+      (readingCase) => readingCase.appointmentId
+    )
+    if (
+      screenedAppointmentIds.length !== caseAppointmentIds.length ||
+      screenedAppointmentIds.some(
+        (appointmentId) => !caseAppointmentIds.includes(appointmentId)
+      )
+    ) {
+      problems.push(
+        `episode ${episode.id} reading cases don't match its screened appointments`
+      )
+    }
+
+    // A case is read at most twice until arbitration, and an arbitration read
+    // only makes sense once two reads have disagreed
+    ;(episode.readingCases || []).forEach((readingCase) => {
+      const reads = getReadsAsArray(readingCase)
+      const arbitrationReads = reads.filter(
+        (read) => read.readType === 'arbitration'
+      )
+
+      if (reads.length > 3) {
+        problems.push(
+          `reading case ${readingCase.id} has ${reads.length} reads`
+        )
+      }
+      if (arbitrationReads.length > 1) {
+        problems.push(
+          `reading case ${readingCase.id} has more than one arbitration read`
+        )
+      }
+      if (arbitrationReads.length && reads.length < 3) {
+        problems.push(
+          `reading case ${readingCase.id} has an arbitration read without two prior reads`
+        )
+      }
+      if (new Set(reads.map((read) => read.readerId)).size !== reads.length) {
+        problems.push(
+          `reading case ${readingCase.id} has the same reader twice`
+        )
+      }
+    })
 
     // Reading needs images: an episode can only be in reading off the back of
     // a completed mammogram appointment that is still within the reading window
@@ -434,6 +794,7 @@ const checkEpisodes = (episodes, appointmentsById) => {
 module.exports = {
   generateEpisode,
   generateHistoricEpisodes,
+  syncEpisodeReadingCases,
   finaliseEpisodeStage,
   checkEpisodes
 }

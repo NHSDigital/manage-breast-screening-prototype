@@ -63,13 +63,16 @@ const findTodayAppointment = ({ status = 'scheduled', index = 0 } = {}) => {
   const participant = participants.find(
     (item) => item.id === appointment.participantId
   )
-  const { firstName, lastName } = participant.demographicInformation
+  const { firstName, middleName, lastName } = participant.demographicInformation
 
   return {
     clinic,
     appointment,
     participant,
-    fullName: `${firstName} ${lastName}`
+    // Built the same way getFullName does, middle name included - some
+    // participants have one, and which participant a run picks depends on the
+    // seed data, so a first+last name only matches some of the time
+    fullName: [firstName, middleName, lastName].filter(Boolean).join(' ')
   }
 }
 

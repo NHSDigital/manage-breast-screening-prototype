@@ -59,6 +59,48 @@ const clickToOpenModal = async (page, name, options = {}) => {
 }
 
 /**
+ * Click a link that opens its target in the shared modal, and wait for it
+ *
+ * The link variant of clickToOpenModal - openInModal rewires links with
+ * data-load-modal-url rather than the data-modal-submit it puts on buttons,
+ * but both end up in the same shared modal.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {string} name - Accessible name of the link
+ * @param {object} [options] - Extra options passed to getByRole
+ * @returns {import('@playwright/test').Locator} The open modal container
+ */
+const clickLinkToOpenModal = async (page, name, options = {}) => {
+  await waitForModalsReady(page)
+  await page
+    .getByRole('link', { name, ...options })
+    .first()
+    .click()
+  return openFormModal(page)
+}
+
+/**
+ * Bring a control inside a modal into view before interacting with it.
+ *
+ * The dialog is `overflow: clip` and scrolls via `.app-modal__content`, and it
+ * is positioned with a transform. Between them, Playwright's automatic
+ * scroll-into-view can report a control as visible but "outside of the
+ * viewport" and never manage to click it - intermittently, because whether a
+ * control sits below the fold depends on how much the form happens to hold.
+ *
+ * Scrolling it in explicitly is also what a real user does.
+ *
+ * @param {import('@playwright/test').Locator} target - Control inside the modal
+ * @returns {import('@playwright/test').Locator} The same locator, for chaining
+ */
+const revealInModal = async (target) => {
+  await target.evaluate((element) =>
+    element.scrollIntoView({ block: 'center' })
+  )
+  return target
+}
+
+/**
  * Wait for a modal to close again after submitting
  *
  * @param {import('@playwright/test').Locator} modal - Modal container
@@ -82,6 +124,8 @@ module.exports = {
   waitForModalsReady,
   openFormModal,
   clickToOpenModal,
+  clickLinkToOpenModal,
+  revealInModal,
   expectModalClosed,
   openSection
 }

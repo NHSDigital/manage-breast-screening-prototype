@@ -69,15 +69,21 @@ generate-seed-data.js (main orchestrator)
 **Episode level:**
 - The screening round: stage (`scheduled` | `mammograms` | `reading` | `assessment` | `closed`), stage history, final outcome
 - Links to its appointments (`appointmentIds`)
+- Reading cases (`readingCases`), one per set of images taken — the reads live here
 - Historic episodes: summary-level record of a past round (dates, outcome, `mammogramSummary`) with no appointments
 
 **Appointment level:**
 - Medical information collected during appointments
 - Session details (who, when, where)
-- Mammogram images and reading data (`imageReading`)
+- Mammogram images (`mammogramData`) and prior mammograms
 - Appointment-specific data
 
-**Key principle:** Medical information is stored at the **appointment level**, representing data collected during specific appointments. Round-level state (stage, outcome) lives on the **episode**.
+**Key principle:** Medical information is stored at the **appointment level**, representing data collected during specific appointments. Round-level state (stage, outcome) and the reading of each image set live on the **episode**.
+
+Because reads are written onto cases, generation runs in that order: episodes
+open a case per image set (`syncEpisodeReadingCases`), then `generateReadingData`
+writes reads into them, then `finaliseEpisodeStage` settles each episode's stage
+from its latest case.
 
 ## Generator Pattern
 

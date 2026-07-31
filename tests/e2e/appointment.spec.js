@@ -10,6 +10,7 @@ const { pinSettings, appointmentSettings } = require('./helpers/settings')
 const { findTodayAppointment } = require('./helpers/seed-data')
 const {
   clickToOpenModal,
+  revealInModal,
   expectModalClosed,
   openSection,
   waitForModalsReady
@@ -106,6 +107,11 @@ test.describe('Screening appointment', () => {
     await openSection(page, 'Symptoms')
 
     const symptomModal = await clickToOpenModal(page, 'Lump', { exact: true })
+    await revealInModal(
+      symptomModal.locator(
+        'input[name="appointment[symptomTemp][location]"][value="right breast"]'
+      )
+    )
     await symptomModal
       .locator(
         'input[name="appointment[symptomTemp][location]"][value="right breast"]'

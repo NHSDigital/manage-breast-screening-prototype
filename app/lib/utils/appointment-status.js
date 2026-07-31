@@ -17,6 +17,7 @@ const {
 } = require('./appointment-data')
 const {
   syncEpisodeMammogramsForAppointment,
+  syncReadingCasesForAppointment,
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
 
@@ -51,8 +52,10 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
   if (!updatedAppointment) return null
 
   // Keep the appointment's episode in step, and record on the episode that
-  // images were taken (or weren't after all, on an undo)
+  // images were taken (or weren't after all, on an undo). A new set of images
+  // is both a mammogram entry and a new case to read, so the two sync together
   syncEpisodeMammogramsForAppointment(data, updatedAppointment)
+  syncReadingCasesForAppointment(data, updatedAppointment)
   advanceEpisodeForAppointmentStatus(data, updatedAppointment)
 
   return updatedAppointment

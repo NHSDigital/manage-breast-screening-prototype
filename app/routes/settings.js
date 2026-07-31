@@ -45,7 +45,7 @@ const convertPercentageOverrides = (overrides, fallbackProfile) => {
 
 const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
   const rawOverrides = {
-    imageReading: body.imageReading,
+    reads: body.reads,
     medicalInformation: body.medicalInformation,
     specialAppointment: body.specialAppointment,
     previousMammograms: body.previousMammograms,
@@ -54,7 +54,7 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
   }
 
   const converted = convertPercentageOverrides(rawOverrides, {
-    imageReading: fallbackProfile.imageReading,
+    reads: fallbackProfile.reads,
     medicalInformation: fallbackProfile.medicalInformation,
     specialAppointment: fallbackProfile.specialAppointment,
     previousMammograms: fallbackProfile.previousMammograms,

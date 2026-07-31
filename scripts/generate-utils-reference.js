@@ -45,9 +45,14 @@ const FILE_META = {
     label: 'clinics.js',
     description: 'Clinic filtering by time period, slot formatting, and opening hours calculation.'
   },
+  'app/lib/utils/reading-cases.js': {
+    label: 'reading-cases.js',
+    description:
+      'A reading case is one set of mammograms being read, held on the episode as episode.readingCases[]. Pure case logic: reads, read types, case state and outcome, discordance and arbitration, deferral. Everything here takes a case — resolve one from an appointment with getReadingCase in episodes.js.'
+  },
   'app/lib/utils/reading.js': {
     label: 'reading.js',
-    description: 'Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering. The main module for anything related to image reading.'
+    description: 'Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering. The appointment- and session-shaped layer over reading cases.'
   },
   'app/lib/utils/prior-mammograms.js': {
     label: 'prior-mammograms.js',
@@ -120,6 +125,7 @@ const UTILS_FILES = [
   'app/lib/utils/appointment-data.js',
   'app/lib/utils/episodes.js',
   'app/lib/utils/clinics.js',
+  'app/lib/utils/reading-cases.js',
   'app/lib/utils/reading.js',
   'app/lib/utils/prior-mammograms.js',
   'app/lib/utils/medical-information.js',

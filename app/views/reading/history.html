@@ -169,15 +169,16 @@
             </td>
             <td>
               {% set appointment = data.appointments | find('id', reading.appointmentId) %}
-              {% set outcome = appointment | getOutcome %}
-              {% if outcome == 'not_read' %}
+              {% set thisCase = data | getReadingCase(appointment) %}
+              {% set caseState = thisCase | getReadingCaseState(data.settings) %}
+              {% if caseState == 'awaiting_first_read' %}
                 {{ "Waiting for 1st read" | toTag }}
-              {% elseif outcome == 'pending_second_read' %}
+              {% elseif caseState == 'awaiting_second_read' %}
                 {{ "Waiting for 2nd read" | toTag }}
-              {% elseif outcome == 'arbitration_pending' %}
+              {% elseif caseState == 'arbitration_required' or caseState == 'in_arbitration' %}
                 {{ "Arbitration" | toTag }}
               {% else %}
-                {{ outcome | toTag }}
+                {{ (thisCase | getReadingCaseOutcome(data.settings)) | toTag }}
               {% endif %}
             </td>
           </tr>
