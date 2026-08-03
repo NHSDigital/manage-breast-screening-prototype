@@ -188,103 +188,99 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })
 
+// Breast density factors are edited in place rather than on their own page,
+// so there's no submit button to save them - each change posts on its own.
 function setupBreastDensityFactorsAutosave() {
-  const saveTarget = document.querySelector('[data-breast-density-factors-save-url]')
-  if (!saveTarget) {
+  const container = document.querySelector('[data-breast-density-factors-save-url]')
+  if (!container) {
     return
   }
 
-  const saveUrl = saveTarget.dataset.breastDensityFactorsSaveUrl
+  const saveUrl = container.dataset.breastDensityFactorsSaveUrl
   if (!saveUrl) {
     return
   }
 
-  const checkboxSelector =
-    'input[name="appointment[medicalInformation][breastDensityFactors]"]'
-  const hrtRadioSelector =
-    'input[name="appointment[medicalInformation][breastDensityFactorsHrt]"]'
-  const checkboxes = document.querySelectorAll(checkboxSelector)
-  const hrtRadios = document.querySelectorAll(hrtRadioSelector)
+  const factorsName = 'breastDensityFactors'
+  const hrtName = 'breastDensityFactorsHrt'
+
+  const checkboxes = container.querySelectorAll(`input[name="${factorsName}"]`)
+  const hrtRadios = container.querySelectorAll(`input[name="${hrtName}"]`)
 
   if (checkboxes.length === 0 && hrtRadios.length === 0) {
     return
   }
 
-  const updateBreastDensityFactorsSummary = () => {
-    // Find the breast-density-factors section and update its contents summary
-    const section = document.getElementById('breast-density-factors')
-    if (!section) {
+  // Keep the expander's "n factors added" line in step with the inputs.
+  // Only the review page wraps these in an expander, so this does nothing
+  // elsewhere.
+  const updateContentsSummary = () => {
+    const summary = container
+      .closest('.js-expandable-section')
+      ?.querySelector('.app-details__contents-summary')
+
+    if (!summary) {
       return
     }
 
-    // Count selected factors
-    const selectedCheckboxes = document.querySelectorAll(`${checkboxSelector}:checked`)
-    const selectedHrtRadio = document.querySelector(`${hrtRadioSelector}:checked`)
-    let count = selectedCheckboxes.length
-    if (selectedHrtRadio && selectedHrtRadio.value === 'yes') {
-      count += 1
-    }
+    // "No" to HRT is an answer, not a factor - match the count in
+    // getBreastDensityFactors so the two never disagree
+    const checkedFactors = container.querySelectorAll(
+      `input[name="${factorsName}"]:checked`
+    ).length
+    const hrtYes = container.querySelector(`input[name="${hrtName}"]:checked`)?.value === 'yes'
+    const count = checkedFactors + (hrtYes ? 1 : 0)
 
-    // Find and update the contents summary span
-    const summarySpan = section.querySelector('.app-details__contents-summary')
-    if (summarySpan) {
-      if (count === 0) {
-        summarySpan.textContent = 'No breast density factors added'
-      } else if (count === 1) {
-        summarySpan.textContent = '1 breast density factor added'
-      } else {
-        summarySpan.textContent = count + ' breast density factors added'
-      }
+    if (count === 0) {
+      summary.textContent = 'No breast density factors added'
+    } else if (count === 1) {
+      summary.textContent = '1 breast density factor added'
+    } else {
+      summary.textContent = `${count} breast density factors added`
     }
   }
 
-  const saveFactors = async () => {
+  // Changes can land faster than the requests complete, so keep them in a
+  // queue - otherwise an earlier response could be the last one to arrive
+  let pendingSave = Promise.resolve()
+
+  const saveFactors = () => {
     const formData = new URLSearchParams()
-    const selectedCheckboxes = document.querySelectorAll(`${checkboxSelector}:checked`)
-    const selectedHrtRadio = document.querySelector(`${hrtRadioSelector}:checked`)
 
-    selectedCheckboxes.forEach((checkbox) => {
-      formData.append(
-        'appointment[medicalInformation][breastDensityFactors]',
-        checkbox.value
-      )
-    })
+    container
+      .querySelectorAll(`input[name="${factorsName}"]:checked`)
+      .forEach((checkbox) => formData.append(factorsName, checkbox.value))
 
-    if (selectedHrtRadio) {
-      formData.append(
-        'appointment[medicalInformation][breastDensityFactorsHrt]',
-        selectedHrtRadio.value
-      )
+    const selectedHrt = container.querySelector(`input[name="${hrtName}"]:checked`)
+    if (selectedHrt) {
+      formData.append(hrtName, selectedHrt.value)
     }
 
-    try {
-      const response = await fetch(saveUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData.toString()
+    updateContentsSummary()
+
+    pendingSave = pendingSave
+      .then(async () => {
+        const response = await fetch(saveUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: formData.toString()
+        })
+
+        if (!response.ok) {
+          throw new Error(
+            `Breast density factors auto-save failed (${response.status})`
+          )
+        }
       })
-
-      if (!response.ok) {
-        throw new Error('Breast density factors auto-save failed')
-      }
-
-      // Update the summary text in the section after successful save
-      updateBreastDensityFactorsSummary()
-    } catch (error) {
-      console.error(error)
-    }
+      .catch((error) => console.error(error))
   }
 
-  checkboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', saveFactors)
-  })
-
-  hrtRadios.forEach((radio) => {
-    radio.addEventListener('change', saveFactors)
-  })
+  container
+    .querySelectorAll(`input[name="${factorsName}"], input[name="${hrtName}"]`)
+    .forEach((input) => input.addEventListener('change', saveFactors))
 }
 
 // Quick settings modal — press backtick (`) to open settings in a modal overlay.

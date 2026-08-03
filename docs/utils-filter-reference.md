@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-07-15 11:33 UTC
+- **Generated:** 2026-08-03 09:24 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -21,24 +21,24 @@
 | `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 144 |
 | `appointment-data.js` | Appointment lookups and mutations in session data | 164 |
 | `episodes.js` | Episode lookups and stage changes | 178 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 208 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 223 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 279 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 298 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 319 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 332 |
-| `objects.js` | Object utilities for extracting and flattening values. | 350 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 360 |
-| `random.js` | Seeded random functions for stable prototype data | 371 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 388 |
-| `roles-and-permissions.js` | User role checks | 401 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 419 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 209 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 224 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 280 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 299 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 322 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 335 |
+| `objects.js` | Object utilities for extracting and flattening values. | 353 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 363 |
+| `random.js` | Seeded random functions for stable prototype data | 374 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 391 |
+| `roles-and-permissions.js` | User role checks | 404 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 422 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 435 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 447 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 459 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 473 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 483 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 438 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 450 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 462 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 476 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 486 |
 
 ---
 
@@ -134,12 +134,12 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `isActive(input)` | Check if a status represents an active appointment | 134 |
 | `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 146 |
 | `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 178 |
-| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 309 |
-| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 323 |
-| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 337 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 365 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 375 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 385 |
+| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 313 |
+| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 327 |
+| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 341 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 369 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 379 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 389 |
 
 ### participants.js
 
@@ -183,27 +183,28 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 
 | Function | Description | Line |
 |---|---|---|
-| `appointmentProducedImages(appointment)` | Whether an appointment's status means mammograms were taken. | 89 |
-| `buildMammogramEntry(appointment, [clinic])` | Build the episode's summary record of one set of mammograms. | 103 |
-| `getEpisode(data, episodeId)` | Get an episode by ID | 144 |
-| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 165 |
-| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 195 |
-| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 211 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its appointments. | 226 |
-| `isEpisodeClosed(episode)` | Whether an episode has closed | 241 |
-| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 251 |
-| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 262 |
-| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 277 |
-| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 324 |
-| `getEpisodeStageText(stage)` | Display text for an episode's stage | 343 |
-| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 353 |
-| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 363 |
-| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 373 |
-| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 383 |
-| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 416 |
-| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 465 |
-| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 505 |
-| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 538 |
+| `appointmentProducedImages(appointment)` | Whether an appointment's status means mammograms were taken. | 91 |
+| `buildMammogramEntry(appointment, [clinic])` | Build the episode's summary record of one set of mammograms. | 105 |
+| `getEpisode(data, episodeId)` | Get an episode by ID | 146 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 167 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 197 |
+| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 213 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode, derived from its appointments. | 228 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 243 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 253 |
+| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 264 |
+| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 279 |
+| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 326 |
+| `getEpisodeLabel(episode)` | Human name for an episode. Episodes are named by date, not number - | 352 |
+| `getEpisodeStageText(stage)` | Display text for an episode's stage | 368 |
+| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 378 |
+| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 388 |
+| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 398 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change for this session. | 408 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 441 |
+| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 490 |
+| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 530 |
+| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 563 |
 
 ### clinics.js
 
@@ -303,18 +304,20 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 
 | Function | Description | Line |
 |---|---|---|
-| `isValidMedicalHistoryType(type)` | Check whether a string names a medical history type, by type or slug | 5 |
-| `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 17 |
-| `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 30 |
-| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 41 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 214 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 243 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 265 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 287 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 359 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 373 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 395 |
-| `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 411 |
+| `isValidMedicalHistoryType(type)` | Check whether a string names a medical history type, by type or slug | 6 |
+| `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 18 |
+| `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 31 |
+| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 42 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 215 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 244 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 266 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 288 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 367 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 381 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 403 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 419 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 455 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 490 |
 
 ### annotation-summary.js
 
@@ -466,9 +469,9 @@ Nunjucks-specific helpers: joining arrays, resolving user names from IDs, templa
 |---|---|---|
 | `log(a, [description])` | Render a value to the browser console via an inline script tag (for template debugging) | 5 |
 | `join(input, [delimiter], [attribute], [options], [options.filterEmpty], [options.toString])` | Safely join array elements with proper undefined/null handling — e.g. `join(['a', 'b', 'c'], ', ') // 'a, b, c'` | 22 |
-| `getUsername(userId, [options], [options.identifyCurrentUser], [options.format])` | Get user name by user ID with format options | 94 |
-| `getContext()` | Return the full Nunjucks template context — useful for debugging | 136 |
-| `parseJsonString(value)` | Safely parse a JSON string and return the resulting object, or return structured data as-is | 145 |
+| `getUsername(userId, [options], [options.identifyCurrentUser], [options.useYou], [options.format])` | Get user name by user ID with format options | 94 |
+| `getContext()` | Return the full Nunjucks template context — useful for debugging | 142 |
+| `parseJsonString(value)` | Safely parse a JSON string and return the resulting object, or return structured data as-is | 151 |
 
 ### tags.js
 

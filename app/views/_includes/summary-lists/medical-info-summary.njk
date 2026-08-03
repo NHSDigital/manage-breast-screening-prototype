@@ -128,31 +128,24 @@
 {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
 {# Breast density factors summary #}
-{% set _bdf = appointment.medicalInformation.breastDensityFactors %}
-{% if _bdf and not (_bdf | isArray) %}{% set _bdf = [_bdf] %}{% endif %}
-{% set _bdfHrt = appointment.medicalInformation.breastDensityFactorsHrt %}
-{% if not _bdfHrt and _bdf and _bdf | includes("hrt") %}{% set _bdfHrt = "yes" %}{% endif %}
+{% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+{# Show the row whenever there's an answer to show, including "not taking HRT" #}
+{% set breastDensityCount = breastDensityFactors.answeredCount %}
 
 {% set breastDensityFactorsHtml %}
-  {% if _bdfHrt == "yes" or _bdfHrt == "no" or (_bdf and _bdf | length > 0) %}
+  {% if breastDensityFactors.summaries | length %}
     <ul class="nhsuk-list">
-      {% if _bdfHrt == "yes" %}<li>Taking HRT</li>{% endif %}
-      {% if _bdfHrt == "no" %}<li>Not taking HRT</li>{% endif %}
-      {% if _bdf and _bdf | includes("pregnant") %}<li>Pregnant</li>{% endif %}
-      {% if _bdf and _bdf | includes("breastfeeding") %}<li>Breastfeeding</li>{% endif %}
+      {% for summary in breastDensityFactors.summaries %}
+        <li>{{ summary }}</li>
+      {% endfor %}
     </ul>
   {% else %}
     <p>No breast density factors added</p>
   {% endif %}
 {% endset %}
 
-{% set breastDensityCount = 0 %}
-{% if _bdfHrt == "yes" %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
-{% if _bdf and _bdf | includes("pregnant") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
-{% if _bdf and _bdf | includes("breastfeeding") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
-
 {# Other medical information summary #}
-{% set otherMedicalInfo = appointment.medicalInformation.otherMedicalInformation %}
+{% set otherMedicalInfo = appointment.medicalInformation | summariseOtherMedicalInformation %}
 {% set otherMedicalInfoHtml %}
   {% if otherMedicalInfo %}
     <p>{{ otherMedicalInfo }}</p>

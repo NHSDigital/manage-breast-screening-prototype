@@ -417,54 +417,95 @@ const summariseBreastFeatures = (features) => {
 }
 
 /**
- * Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info)
+ * Read the breast density factors off an appointment's medical information
+ *
+ * A checkbox group posts a bare string when one box is ticked and an array
+ * when several are, so the stored value needs normalising before anything can
+ * read it. Doing that here means templates get a single shape to work with
+ * rather than repeating the coercion at every call site.
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {{factors: Array<string>, hrt: string|undefined, count: number, answeredCount: number, summaries: Array<string>}}
+ */
+const getBreastDensityFactors = (medicalInformation) => {
+  const rawFactors = medicalInformation?.breastDensityFactors
+  const factors = Array.isArray(rawFactors)
+    ? rawFactors.filter(Boolean)
+    : rawFactors
+      ? [rawFactors]
+      : []
+
+  const hrt = medicalInformation?.breastDensityFactorsHrt
+
+  // "Not taking HRT" is an answer, but it isn't a density factor - only
+  // count the things that actually affect density
+  const count =
+    (hrt === 'yes' ? 1 : 0) +
+    (factors.includes('pregnant') ? 1 : 0) +
+    (factors.includes('breastfeeding') ? 1 : 0)
+
+  const summaries = summariseBreastDensityFactors(medicalInformation)
+
+  return {
+    factors,
+    hrt,
+    count,
+    // Everything worth showing, including a recorded "no" to HRT - use this
+    // to decide whether to show the row at all, and count for "n added"
+    answeredCount: summaries.length,
+    summaries
+  }
+}
+
+/**
+ * Summarise breast density factors into an array of summary strings
  *
  * @param {Object} medicalInformation - The medicalInformation object from appointment
  * @returns {Array<string>} Array of summary strings
  */
-const summariseOtherRelevantInformation = (medicalInformation) => {
-  if (!medicalInformation) {
-    return []
-  }
+const summariseBreastDensityFactors = (medicalInformation) => {
+  const rawFactors = medicalInformation?.breastDensityFactors
+  const factors = Array.isArray(rawFactors)
+    ? rawFactors.filter(Boolean)
+    : rawFactors
+      ? [rawFactors]
+      : []
+
+  const hrt = medicalInformation?.breastDensityFactorsHrt
 
   const summaries = []
 
-  const breastDensityFactorsRaw = medicalInformation.breastDensityFactors
-  const breastDensityFactors = Array.isArray(breastDensityFactorsRaw)
-    ? breastDensityFactorsRaw
-    : breastDensityFactorsRaw
-      ? [breastDensityFactorsRaw]
-      : []
-  const breastDensityFactorsHrt =
-    medicalInformation.breastDensityFactorsHrt ||
-    (breastDensityFactors.includes('hrt') ? 'yes' : undefined)
-
-  if (breastDensityFactors.includes('pregnant')) {
-    summaries.push('Pregnant')
-  }
-
-  if (breastDensityFactors.includes('breastfeeding')) {
-    summaries.push('Breastfeeding')
-  }
-
-  if (breastDensityFactorsHrt === 'yes') {
+  if (hrt === 'yes') {
     summaries.push('Taking HRT')
-  } else if (breastDensityFactorsHrt === 'no') {
+  } else if (hrt === 'no') {
     summaries.push('Not taking HRT')
   }
 
-  // Other medical information (free text)
-  if (medicalInformation.otherMedicalInformation) {
-    // Truncate if very long, otherwise show as-is
-    const otherInfo = medicalInformation.otherMedicalInformation.trim()
-    if (otherInfo.length > 100) {
-      summaries.push(otherInfo.substring(0, 100) + '...')
-    } else {
-      summaries.push(otherInfo)
-    }
+  if (factors.includes('pregnant')) {
+    summaries.push('Pregnant')
+  }
+
+  if (factors.includes('breastfeeding')) {
+    summaries.push('Breastfeeding')
   }
 
   return summaries
+}
+
+/**
+ * Summarise the free-text other medical information, truncating if long
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {string|null} Summary string, or null if there's nothing recorded
+ */
+const summariseOtherMedicalInformation = (medicalInformation) => {
+  const otherInfo = medicalInformation?.otherMedicalInformation?.trim()
+
+  if (!otherInfo) {
+    return null
+  }
+
+  return otherInfo.length > 100 ? otherInfo.substring(0, 100) + '...' : otherInfo
 }
 
 module.exports = {
@@ -479,5 +520,7 @@ module.exports = {
   summariseSymptoms,
   summariseBreastFeature,
   summariseBreastFeatures,
-  summariseOtherRelevantInformation
+  getBreastDensityFactors,
+  summariseBreastDensityFactors,
+  summariseOtherMedicalInformation
 }

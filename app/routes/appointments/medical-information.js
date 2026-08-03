@@ -7,140 +7,63 @@ const {
   getReturnUrl,
   modalBreakout
 } = require('../../lib/utils/referrers')
-const { getAppointmentData } = require('../../lib/utils/appointment-data')
 
 module.exports = (router) => {
-  // Auto-save breast density factors when checkboxes are changed
+  // Auto-save breast density factors as they're changed
+  //
+  // These answers are edited in place on the review page rather than on a
+  // sub-page with its own submit, so there's no form post to carry them.
+  // Like the other medical information sections, this writes to the temp
+  // appointment and is committed when the appointment is completed or paused.
+  //
+  // The inputs are named outside the appointment[...] namespace on purpose.
+  // They render inside other forms, and the kit's unchecked-checkbox script
+  // adds an "_unchecked" value for every checkbox in whichever form is being
+  // submitted. Since auto-store-data replaces arrays rather than merging
+  // them, an appointment-namespaced name would let any other form on the page
+  // wipe these answers. Keeping them out of that namespace means only this
+  // route ever writes them.
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information/breast-density-factors-save',
     (req, res) => {
+      const { appointmentId } = req.params
       const data = req.session.data
-      const postedFactors = req.body?.appointment?.medicalInformation?.breastDensityFactors
-      const postedHrt = req.body?.appointment?.medicalInformation?.breastDensityFactorsHrt
 
-      // No posted factors means all options are currently unchecked
-      const factors = Array.isArray(postedFactors)
-        ? postedFactors
-        : postedFactors
-          ? [postedFactors]
-          : []
-      const nonHrtFactors = factors.filter((factor) => factor && factor !== 'hrt')
+      // An unticked checkbox group posts nothing at all, so a missing value
+      // means "none selected" rather than "unchanged"
+      const postedFactors = req.body?.breastDensityFactors
+      const factors = (
+        Array.isArray(postedFactors)
+          ? postedFactors
+          : postedFactors
+            ? [postedFactors]
+            : []
+      ).filter((factor) => factor && factor !== '_unchecked')
 
-      if (!data.appointment) {
-        data.appointment = {}
+      const postedHrt = req.body?.breastDensityFactorsHrt
+
+      // The appointment context middleware has already made the temp copy,
+      // so this is only defensive
+      if (data.appointment?.id !== appointmentId) {
+        res.status(409).send()
+        return
       }
 
-      if (!data.appointment.medicalInformation) {
-        data.appointment.medicalInformation = {}
+      const medicalInformation = data.appointment.medicalInformation || {}
+      medicalInformation.breastDensityFactors = factors
+
+      if (postedHrt) {
+        medicalInformation.breastDensityFactorsHrt = postedHrt
       }
 
-      data.appointment.medicalInformation.breastDensityFactors = nonHrtFactors
+      data.appointment.medicalInformation = medicalInformation
 
-      if (postedHrt === 'yes' || postedHrt === 'no') {
-        data.appointment.medicalInformation.breastDensityFactorsHrt = postedHrt
-      }
-
-      // Keep a draft cache outside auto-stored form keys so later form posts
-      // cannot accidentally clear the latest autosaved checkbox state.
-      if (!data._medicalInformationDraft) {
-        data._medicalInformationDraft = {}
-      }
-      data._medicalInformationDraft.breastDensityFactors = nonHrtFactors
-
-      if (postedHrt === 'yes' || postedHrt === 'no') {
-        data._medicalInformationDraft.breastDensityFactorsHrt = postedHrt
-      }
+      // These aren't form fields for any other page - don't leave them in
+      // session data where auto-store-data has put them
+      delete data.breastDensityFactors
+      delete data.breastDensityFactorsHrt
 
       res.status(204).send()
-    }
-  )
-
-  // Save other medical information while preserving breast density factors
-  router.post(
-    '/clinics/:clinicId/appointments/:appointmentId/medical-information/other-medical-information-save',
-    (req, res) => {
-      const { clinicId, appointmentId } = req.params
-      const data = req.session.data
-      const referrerChain = req.query.referrerChain
-      const scrollTo = req.query.scrollTo
-
-      const appointmentMedicalInformation = data?.appointment?.medicalInformation
-      const postedBreastDensityFactors =
-        appointmentMedicalInformation?.breastDensityFactors
-      const postedBreastDensityFactorsHrt =
-        appointmentMedicalInformation?.breastDensityFactorsHrt
-      const cachedBreastDensityFactors =
-        data?._medicalInformationDraft?.breastDensityFactors
-      const cachedBreastDensityFactorsHrt =
-        data?._medicalInformationDraft?.breastDensityFactorsHrt
-
-      const normalisedPostedBreastDensityFactors =
-        Array.isArray(postedBreastDensityFactors)
-          ? postedBreastDensityFactors
-          : postedBreastDensityFactors
-            ? [postedBreastDensityFactors]
-            : undefined
-
-      if (normalisedPostedBreastDensityFactors) {
-        if (!data._medicalInformationDraft) {
-          data._medicalInformationDraft = {}
-        }
-        data._medicalInformationDraft.breastDensityFactors =
-          normalisedPostedBreastDensityFactors.filter((factor) => factor && factor !== 'hrt')
-      }
-
-      if (postedBreastDensityFactorsHrt === 'yes' || postedBreastDensityFactorsHrt === 'no') {
-        if (!data._medicalInformationDraft) {
-          data._medicalInformationDraft = {}
-        }
-        data._medicalInformationDraft.breastDensityFactorsHrt =
-          postedBreastDensityFactorsHrt
-      }
-
-      // If this submission did not include factors, keep the last saved values
-      if (!normalisedPostedBreastDensityFactors)
-      {
-        const savedAppointmentData = getAppointmentData(data, clinicId, appointmentId)
-        const savedBreastDensityFactors =
-          savedAppointmentData?.appointment?.medicalInformation?.breastDensityFactors
-
-        if (cachedBreastDensityFactors)
-        {
-          data.appointment.medicalInformation.breastDensityFactors =
-            cachedBreastDensityFactors
-        }
-        else if (savedBreastDensityFactors)
-        {
-          data.appointment.medicalInformation.breastDensityFactors =
-            savedBreastDensityFactors
-        }
-      }
-
-      if (!postedBreastDensityFactorsHrt)
-      {
-        const savedAppointmentData = getAppointmentData(data, clinicId, appointmentId)
-        const savedBreastDensityFactorsHrt =
-          savedAppointmentData?.appointment?.medicalInformation?.breastDensityFactorsHrt
-
-        if (cachedBreastDensityFactorsHrt)
-        {
-          data.appointment.medicalInformation.breastDensityFactorsHrt =
-            cachedBreastDensityFactorsHrt
-        }
-        else if (savedBreastDensityFactorsHrt)
-        {
-          data.appointment.medicalInformation.breastDensityFactorsHrt =
-            savedBreastDensityFactorsHrt
-        }
-      }
-
-      const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`,
-        referrerChain,
-        scrollTo
-      )
-
-      res.redirect(modalBreakout(returnUrl))
     }
   )
 

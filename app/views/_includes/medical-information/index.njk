@@ -224,18 +224,10 @@
 {% set scrollTo = breastDensitySectionId %}
 
 {% set breastDensityFactorsHtml %}
-  {% include "_includes/summary-lists/medical-information/breast-density-factors.njk" %}
+  {% include "_includes/forms/breast-density-factors.njk" %}
 {% endset %}
 
-{# Count selected breast density factors for expander summary #}
-{% set _bdf = appointment.medicalInformation.breastDensityFactors %}
-{% if _bdf and not (_bdf | isArray) %}{% set _bdf = [_bdf] %}{% endif %}
-{% set _bdfHrt = appointment.medicalInformation.breastDensityFactorsHrt %}
-{% if not _bdfHrt and _bdf and _bdf | includes("hrt") %}{% set _bdfHrt = "yes" %}{% endif %}
-{% set breastDensityCount = 0 %}
-{% if _bdfHrt == "yes" %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
-{% if _bdf and _bdf | includes("pregnant") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
-{% if _bdf and _bdf | includes("breastfeeding") %}{% set breastDensityCount = breastDensityCount + 1 %}{% endif %}
+{% set breastDensityCount = (appointment.medicalInformation | getBreastDensityFactors).count %}
 {% set breastDensityContentsSummary = breastDensityCount ~ (" breast density factor added" if breastDensityCount == 1 else " breast density factors added") if breastDensityCount > 0 else "No breast density factors added" %}
 
 {% switch displayFormat %}

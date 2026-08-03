@@ -6,20 +6,9 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './other-medical-information-save' | urlWithReferrer(referrerChain, query.scrollTo) %}
+{% set formAction = './../review-medical-information' | getReturnUrl(referrerChain, query.scrollTo) %}
 
 {% block pageContent %}
-
-  {% set selectedBreastDensityFactors = appointment.medicalInformation.breastDensityFactors %}
-  {% set breastDensityFactorsHrt = appointment.medicalInformation.breastDensityFactorsHrt %}
-
-  {% if selectedBreastDensityFactors and not (selectedBreastDensityFactors | isArray) %}
-    {% set selectedBreastDensityFactors = [selectedBreastDensityFactors] %}
-  {% endif %}
-
-  {% if not breastDensityFactorsHrt and selectedBreastDensityFactors and selectedBreastDensityFactors | includes("hrt") %}
-    {% set breastDensityFactorsHrt = "yes" %}
-  {% endif %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
@@ -36,24 +25,6 @@
     },
     rows: 10
   }) }}
-
-  {% if selectedBreastDensityFactors %}
-    {% for factor in selectedBreastDensityFactors %}
-      {% if factor != "hrt" %}
-        {{ appHiddenInput({
-          name: "appointment[medicalInformation][breastDensityFactors]",
-          value: factor
-        }) }}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-
-  {% if breastDensityFactorsHrt %}
-    {{ appHiddenInput({
-      name: "appointment[medicalInformation][breastDensityFactorsHrt]",
-      value: breastDensityFactorsHrt
-    }) }}
-  {% endif %}
 
   {{ button({
     text: "Save"

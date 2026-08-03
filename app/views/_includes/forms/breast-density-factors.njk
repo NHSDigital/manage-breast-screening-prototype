@@ -1,0 +1,119 @@
+{# app/views/_includes/forms/breast-density-factors.njk #}
+{#
+  Breast density factors - HRT, pregnancy and breastfeeding.
+
+  Shown inline rather than on a sub-page, so when edits are allowed the inputs
+  render directly and save themselves as they're changed (see the autosave in
+  main.js). The save URL rides on the wrapper element.
+
+  The inputs are named outside the appointment[...] namespace on purpose. This
+  section renders inside other forms (the review page wraps everything in a
+  "complete and continue" form), and the kit's unchecked-checkbox script adds
+  an "_unchecked" value for every checkbox in whichever form is submitted.
+  Since auto-store-data replaces arrays rather than merging them, an
+  appointment-namespaced name would let any other form on the page wipe these
+  answers. The save route maps these names onto the appointment.
+#}
+
+{% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+
+{% set participantName = participant | getFullName %}
+
+{% set hrtQuestion = "Has " + participantName + " begun a course of HRT since their last screening appointment?" %}
+{% set pregnantOrBreastfeedingQuestion = "Is " + participantName + " pregnant or breastfeeding?" %}
+
+{% set hrtInputHtml %}
+  {{ radios({
+    name: "breastDensityFactorsHrt",
+    value: breastDensityFactors.hrt,
+    classes: "nhsuk-radios--inline nhsuk-radios--small",
+    fieldset: {
+      legend: {
+        text: hrtQuestion,
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no",
+        text: "No"
+      }
+    ]
+  }) }}
+{% endset %}
+
+{% set pregnantOrBreastfeedingInputHtml %}
+  {{ checkboxes({
+    name: "breastDensityFactors",
+    values: breastDensityFactors.factors,
+    classes: "nhsuk-checkboxes--small",
+    fieldset: {
+      legend: {
+        text: pregnantOrBreastfeedingQuestion,
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "pregnant",
+        text: "Pregnant"
+      },
+      {
+        value: "breastfeeding",
+        text: "Breastfeeding"
+      }
+    ]
+  }) }}
+{% endset %}
+
+{% set hrtSummaryHtml %}
+  {% if breastDensityFactors.hrt == "yes" %}
+    <p>Yes</p>
+  {% elseif breastDensityFactors.hrt == "no" %}
+    <p>No</p>
+  {% else %}
+    <p>Not answered</p>
+  {% endif %}
+{% endset %}
+
+{% set pregnantOrBreastfeedingSummaryHtml %}
+  {% if breastDensityFactors.factors | length %}
+    <ul class="nhsuk-list">
+      {% if breastDensityFactors.factors | includes("pregnant") %}
+        <li>Pregnant</li>
+      {% endif %}
+      {% if breastDensityFactors.factors | includes("breastfeeding") %}
+        <li>Breastfeeding</li>
+      {% endif %}
+    </ul>
+  {% else %}
+    <p>No</p>
+  {% endif %}
+{% endset %}
+
+<div data-breast-density-factors-save-url="{{ contextUrl }}/medical-information/breast-density-factors-save">
+  {{ summaryList({
+    rows: [
+      {
+        key: {
+          text: "HRT (hormone replacement therapy)"
+        },
+        value: {
+          html: hrtInputHtml if allowEdits else hrtSummaryHtml
+        }
+      },
+      {
+        key: {
+          text: "Pregnant or breastfeeding"
+        },
+        value: {
+          html: pregnantOrBreastfeedingInputHtml if allowEdits else pregnantOrBreastfeedingSummaryHtml
+        }
+      }
+    ]
+  } | removeLastRowBorder ) }}
+</div>

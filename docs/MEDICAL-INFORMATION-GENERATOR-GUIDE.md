@@ -8,8 +8,7 @@ The prototype generates seed data to populate a breast screening management syst
 
 - **Medical history** (breast cancer, mastectomy, implants, etc.) - ✅ _implemented (4 of 7 types)_
 - **Symptoms** (lumps, pain, nipple changes, etc.) - ✅ _implemented_
-- **HRT** - ✅ _implemented_
-- **Pregnancy and breastfeeding** - ✅ _implemented_
+- **Breast density factors** (HRT, pregnancy, breastfeeding) - ✅ _implemented_
 - **Other medical information** (freetext) - ✅ _implemented_
 - **Breast features** (moles, scars, etc.) - ✅ _implemented_
 
@@ -37,8 +36,8 @@ appointment: {
   participantId: string,
   medicalInformation: {
     symptoms: [],                    // ✅ Array of symptom objects
-    hrt: {},                         // ✅ HRT information
-    pregnancyAndBreastfeeding: {},   // ✅ Pregnancy and breastfeeding status
+    breastDensityFactorsHrt: string, // ✅ 'yes' or 'no' - absent if not asked
+    breastDensityFactors: [],        // ✅ Any of 'pregnant', 'breastfeeding' - absent if none
     otherMedicalInformation: string, // ✅ Freetext medical info
     breastFeatures: [],              // ✅ Array of breast feature objects
     medicalHistory: {                // Object with arrays for each type
@@ -69,10 +68,10 @@ app/lib/generators/
 ├── medical-information-generator.js              # ✅ Umbrella generator for all medical info
 ├── medical-information/                          # ✅ Subfolder for medical info generators
 │   ├── symptoms-generator.js                     # ✅ Generates symptoms
-│   ├── hrt-generator.js                          # ✅ Generates HRT data
-│   ├── pregnancy-and-breastfeeding-generator.js  # ✅ Generates pregnancy/breastfeeding data
+│   ├── breast-density-factors-generator.js       # ✅ Generates HRT, pregnancy and breastfeeding data
 │   ├── other-medical-information-generator.js    # ✅ Generates freetext medical info
-│   └── breast-features-generator.js              # ✅ Generates breast features
+│   ├── breast-features-generator.js              # ✅ Generates breast features
+│   └── medical-history-generator.js              # ✅ Generates medical history
 ├── special-appointment-generator.js
 └── [new]-generator.js                            # Your new generator here
 ```
@@ -184,58 +183,38 @@ module.exports = {
 
 **Integration:** Called from umbrella generator for completed appointments only.
 
-### HRT Generator
+### Breast density factors generator
 
-**File:** `app/lib/generators/medical-information/hrt-generator.js`
+**File:** `app/lib/generators/medical-information/breast-density-factors-generator.js`
+
+Replaces the separate HRT and pregnancy/breastfeeding generators. The question is now a simple yes/no for HRT plus a checkbox group for pregnancy and breastfeeding, so the generated data is just as simple.
 
 **Key features:**
 
-- Generates HRT (hormone replacement therapy) information
-- Three status options: currently taking, recently stopped, or no HRT
-- Conditional fields populate based on status
-- 30% default probability of having HRT data
+- Generates the factors that affect breast density: HRT, pregnancy and breastfeeding
+- 80% default probability the question was asked at all — if it wasn't, `breastDensityFactorsHrt` is left unset, so summaries can distinguish “not answered” from a recorded “no”
+- 30% default probability of currently taking HRT
+- 5% default probability of being pregnant or breastfeeding (appropriate for the screening age group), split 70/30 towards breastfeeding
+- Returns a plain object of keys the umbrella generator merges with `Object.assign`, rather than a nested sub-object
 
-**Data structure:**
+**Options:**
 
 ```javascript
-{
-  hrtQuestion: 'yes' | 'no-recently-stopped' | 'no',
-  // If 'yes':
-  hrtDateStarted: string,                 // e.g., 'September 2022'
-  // If 'no-recently-stopped':
-  hrtDateStopped: string,                 // e.g., 'January 2026'
-  hrtDurationBeforeStopping: string       // e.g., '5 years'
-}
+generateBreastDensityFactors({
+  probabilityOfHrt: 0.3,                      // Chance of currently taking HRT
+  probabilityOfPregnancyBreastfeeding: 0.05,  // Chance of being pregnant or breastfeeding
+  probabilityOfBeingAsked: 0.8                // Chance the question was asked at all
+})
 ```
 
-**Integration:** Called from umbrella generator for completed appointments only.
-
-### Pregnancy and Breastfeeding Generator
-
-**File:** `app/lib/generators/medical-information/pregnancy-and-breastfeeding-generator.js`
-
-**Key features:**
-
-- Generates pregnancy and breastfeeding status
-- Smart logic: if pregnant → not breastfeeding; if recently pregnant → likely breastfeeding
-- Conditional fields populate based on status
-- 5% default probability (appropriate for screening age group)
-
 **Data structure:**
 
 ```javascript
 {
-  pregnancyStatus: 'yes' | 'noButRecently' | 'noNotPregnant',
-  // If 'yes':
-  pregnancyDueDate: string,               // e.g., 'June 2026'
-  // If 'noButRecently':
-  pregnancyEndDate: string,               // e.g., 'January 2026'
-
-  breastfeedingStatus: 'yes' | 'recentlyStopped' | 'no',
-  // If 'yes':
-  breastfeedingStartDate: string,         // e.g., 'January 2026'
-  // If 'recentlyStopped':
-  breastfeedingStopDate: string           // e.g., 'December 2025'
+  // Absent if the question wasn't asked
+  breastDensityFactorsHrt: 'yes' | 'no',
+  // Absent if neither applies
+  breastDensityFactors: ['pregnant' | 'breastfeeding']
 }
 ```
 
@@ -426,10 +405,9 @@ if (isCompleted(appointmentStatus)) {
 // app/lib/generators/medical-information-generator.js
 
 const { generateSymptoms } = require('./medical-information/symptoms-generator')
-const { generateHRT } = require('./medical-information/hrt-generator')
 const {
-  generatePregnancyAndBreastfeeding
-} = require('./medical-information/pregnancy-and-breastfeeding-generator')
+  generateBreastDensityFactors
+} = require('./medical-information/breast-density-factors-generator')
 const {
   generateOtherMedicalInformation
 } = require('./medical-information/other-medical-information-generator')
@@ -445,8 +423,8 @@ const {
  * @param {object} options - Generation options
  * @param {string} [options.addedByUserId] - User ID who collected this information
  * @param {number} [options.probabilityOfSymptoms=0.85] - Chance of having symptoms
- * @param {number} [options.probabilityOfHRT=0.30] - Chance of having HRT data
- * @param {number} [options.probabilityOfPregnancyBreastfeeding=0.05] - Chance of pregnancy/breastfeeding
+ * @param {number} [options.probabilityOfHRT=0.30] - Chance of currently taking HRT
+ * @param {number} [options.probabilityOfPregnancyBreastfeeding=0.05] - Chance of being pregnant or breastfeeding
  * @param {number} [options.probabilityOfOtherMedicalInfo=0.15] - Chance of other medical info
  * @param {number} [options.probabilityOfBreastFeatures=0.20] - Chance of having breast features
  * @param {object} [options.config] - Participant config for overrides
@@ -475,23 +453,14 @@ const generateMedicalInformation = (options = {}) => {
     medicalInfo.symptoms = symptoms
   }
 
-  // Generate HRT information
-  const hrt = generateHRT({
-    probability: probabilityOfHRT
+  // Generate breast density factors (HRT, pregnancy, breastfeeding)
+  // This generator returns top-level keys, so its result is merged in
+  const breastDensityFactors = generateBreastDensityFactors({
+    probabilityOfHrt: probabilityOfHRT,
+    probabilityOfPregnancyBreastfeeding
   })
 
-  if (hrt) {
-    medicalInfo.hrt = hrt
-  }
-
-  // Generate pregnancy and breastfeeding information
-  const pregnancyAndBreastfeeding = generatePregnancyAndBreastfeeding({
-    probability: probabilityOfPregnancyBreastfeeding
-  })
-
-  if (pregnancyAndBreastfeeding) {
-    medicalInfo.pregnancyAndBreastfeeding = pregnancyAndBreastfeeding
-  }
+  Object.assign(medicalInfo, breastDensityFactors)
 
   // Generate other medical information
   const otherMedicalInformation = generateOtherMedicalInformation({
@@ -1219,6 +1188,8 @@ if (isCompleted(appointmentStatus)) {
    - Smart conditional logic (pregnant → not breastfeeding, etc.)
    - Data matches form structure exactly
 
+   _Both of these were later replaced by the breast density factors generator when the questions were redesigned into a single yes/no plus a checkbox group._
+
 8. ✅ **Implemented other medical information generator:**
    - Created `app/lib/generators/medical-information/other-medical-information-generator.js`
    - 15% default probability
@@ -1255,8 +1226,7 @@ if (isCompleted(appointmentStatus)) {
 
 - `app/lib/generators/medical-information-generator.js` - ✅ Umbrella generator (orchestrator)
 - `app/lib/generators/medical-information/symptoms-generator.js` - ✅ Symptoms generator
-- `app/lib/generators/medical-information/hrt-generator.js` - ✅ HRT generator
-- `app/lib/generators/medical-information/pregnancy-and-breastfeeding-generator.js` - ✅ Pregnancy/breastfeeding generator
+- `app/lib/generators/medical-information/breast-density-factors-generator.js` - ✅ Breast density factors generator (HRT, pregnancy, breastfeeding)
 - `app/lib/generators/medical-information/other-medical-information-generator.js` - ✅ Other medical info generator
 - `app/lib/generators/medical-information/breast-features-generator.js` - ✅ Breast features generator
 - `app/lib/generators/medical-information/medical-history-generator.js` - ✅ Medical history generator (4 of 7 types)
@@ -1268,8 +1238,8 @@ if (isCompleted(appointmentStatus)) {
 ### Routes & Views (for reference)
 
 - `app/routes/appointments.js` - Routes that handle medical information (shows expected data structure)
-- `app/views/appointments/medical-information/hormone-replacement-therapy.html` - HRT form template
-- `app/views/appointments/medical-information/pregnancy-and-breastfeeding.html` - Pregnancy/breastfeeding form template
+- `app/views/_includes/forms/breast-density-factors.njk` - Breast density factors form fields
+- `app/views/appointments/confirm-information/breast-density-factors.html` - Breast density factors edit and review page
 - `app/views/appointments/medical-information/other-medical-information.html` - Other medical info form template
 - `app/views/appointments/medical-information/record-breast-features.html` - Breast features diagram interface
 - `app/views/appointments/medical-information/medical-history/*.html` - Medical history form templates
