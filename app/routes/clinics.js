@@ -182,7 +182,10 @@ module.exports = (router) => {
   // Mark appointment as attended not screened from close clinic page
   router.get('/clinics/:id/close/attended-not-screened/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
+    const appointment = getAppointment(req.session.data, appointmentId)
+    const participant = getParticipant(req.session.data, appointment.participantId)
     updateAppointmentStatus(req.session.data, appointmentId, 'attended_not_screened')
+    req.flash('success', `${getFullName(participant)} marked as attended not screened`)
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -196,7 +199,10 @@ module.exports = (router) => {
   // Mark appointment as did not attend from close clinic page
   router.get('/clinics/:id/close/did-not-attend/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
+    const appointment = getAppointment(req.session.data, appointmentId)
+    const participant = getParticipant(req.session.data, appointment.participantId)
     updateAppointmentStatus(req.session.data, appointmentId, 'did_not_attend')
+    req.flash('success', `${getFullName(participant)} marked as did not attend`)
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -215,6 +221,7 @@ module.exports = (router) => {
       (a) => a.clinicId === id && a.status === 'checked_in'
     )
     appointments.forEach((a) => updateAppointmentStatus(data, a.id, 'attended_not_screened'))
+    req.flash('success', `${appointments.length} participants marked as attended not screened`)
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -226,6 +233,7 @@ module.exports = (router) => {
       (a) => a.clinicId === id && a.status === 'scheduled'
     )
     appointments.forEach((a) => updateAppointmentStatus(data, a.id, 'did_not_attend'))
+    req.flash('success', `${appointments.length} participants marked as did not attend`)
     res.redirect(`/clinics/${id}/close`)
   })
 
