@@ -29,14 +29,20 @@ const READ_TYPES = ['first', 'second', 'arbitration']
 // Where a case has got to. Derived from its reads plus the acts recorded on it
 // - never stored, so it can't drift from the reads it describes.
 //
-// `arbitration_required` and `in_arbitration` are deliberately different
-// states: reads disagreeing is what makes arbitration *necessary*, but a case
-// only becomes arbitratable once someone releases it. Nothing performs that
-// release yet, so no case reaches `in_arbitration` today.
+// Two reads are not a result by themselves: the result becomes real once the
+// reads are confirmed - explicitly by the reader, or automatically when the
+// confirmation delay passes. `awaiting_confirmation` is that gap. A case whose
+// destination is arbitration is still `awaiting_confirmation` until then - the
+// destination is a fact about the case (see getReadingCaseStatus), not a
+// separate state.
+//
+// `in_arbitration` is reserved for a future claim/lock - a case being actively
+// worked in an arbitration session. Nothing sets it yet.
 const READING_CASE_STATES = [
   'awaiting_first_read',
   'awaiting_second_read',
-  'arbitration_required',
+  'awaiting_confirmation',
+  'awaiting_arbitration',
   'in_arbitration',
   'concluded'
 ]
@@ -303,6 +309,50 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
 }
 
 /**
+ * Whether a read is confirmed.
+ *
+ * Confirmation happens two ways: the reader confirms it (confirmedAt is
+ * written), or the confirmation delay passes and it confirms itself. The
+ * delay comes from settings.reading.confirmationDelay - minutes as a string,
+ * '0' meaning immediately, 'never' meaning only ever manually.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-confirmation against;
+ *   defaults to the real now
+ * @returns {boolean}
+ */
+const isReadConfirmed = (read, settings = {}, now = null) => {
+  if (!read) return false
+  if (read.confirmedAt) return true
+
+  const delay = settings?.reading?.confirmationDelay ?? '60'
+  if (delay === 'never') return false
+  if (!read.timestamp) return false
+
+  const delayMinutes = parseInt(delay, 10)
+  if (Number.isNaN(delayMinutes)) return false
+
+  const confirmsAt = new Date(read.timestamp).getTime() + delayMinutes * 60000
+  const judgedAt = now ? new Date(now).getTime() : Date.now()
+  return judgedAt >= confirmsAt
+}
+
+/**
+ * Whether every read on a case is confirmed
+ *
+ * @param {object} readingCase - Reading case
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-confirmation against
+ * @returns {boolean}
+ */
+const areAllReadsConfirmed = (readingCase, settings = {}, now = null) => {
+  return getReadsAsArray(readingCase).every((read) =>
+    isReadConfirmed(read, settings, now)
+  )
+}
+
+/**
  * Where a case has got to.
  *
  * Deferral and outstanding priors are not states here - both hold a case up
@@ -311,9 +361,10 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-confirmation against
  * @returns {string} One of READING_CASE_STATES
  */
-const getReadingCaseState = (readingCase, settings = {}) => {
+const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   const reads = getReadsAsArray(readingCase)
 
   if (reads.length === 0) return 'awaiting_first_read'
@@ -322,12 +373,15 @@ const getReadingCaseState = (readingCase, settings = {}) => {
   // An arbitration read settles the case whatever the first two said
   if (getArbitrationRead(readingCase)) return 'concluded'
 
+  // Two opinions are not a result until they are confirmed
+  if (!areAllReadsConfirmed(readingCase, settings, now)) {
+    return 'awaiting_confirmation'
+  }
+
   const [firstRead, secondRead] = reads
 
   if (willGoToArbitration(firstRead, secondRead, settings)) {
-    return isCaseInArbitration(readingCase)
-      ? 'in_arbitration'
-      : 'arbitration_required'
+    return 'awaiting_arbitration'
   }
 
   return 'concluded'
@@ -341,10 +395,13 @@ const getReadingCaseState = (readingCase, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-confirmation against
  * @returns {string | null} One of READING_CASE_OUTCOMES, or null
  */
-const getReadingCaseOutcome = (readingCase, settings = {}) => {
-  if (getReadingCaseState(readingCase, settings) !== 'concluded') return null
+const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
+  if (getReadingCaseState(readingCase, settings, now) !== 'concluded') {
+    return null
+  }
 
   // Arbitration, where it happened, is the deciding read
   const arbitrationRead = getArbitrationRead(readingCase)
@@ -352,6 +409,46 @@ const getReadingCaseOutcome = (readingCase, settings = {}) => {
 
   // Otherwise the two reads agreed, so either one gives the answer
   return getReadsAsArray(readingCase)[0]?.opinion || null
+}
+
+/**
+ * The facts about where a case stands, for composing status displays.
+ *
+ * Facts rather than labels, so "awaiting confirmation, then arbitration" is
+ * one state with a destination instead of a fourth state - willArbitrate is
+ * just willGoToArbitration asked as soon as two reads exist, rather than at
+ * confirmation.
+ *
+ * getReadingCaseOutcome stays strict (null until concluded);
+ * provisionalOutcome is what the outcome will be once the reads confirm,
+ * where that can already be said.
+ *
+ * @param {object} readingCase - Reading case
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-confirmation against
+ * @returns {{state: string, confirmed: boolean, willArbitrate: boolean, provisionalOutcome: string | null}}
+ */
+const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
+  const reads = getReadsAsArray(readingCase)
+  const arbitrationRead = getArbitrationRead(readingCase)
+
+  const willArbitrate = Boolean(
+    reads.length >= 2 &&
+      !arbitrationRead &&
+      willGoToArbitration(reads[0], reads[1], settings)
+  )
+
+  const provisionalOutcome =
+    arbitrationRead?.opinion ||
+    (reads.length >= 2 && !willArbitrate ? reads[0]?.opinion || null : null)
+
+  return {
+    state: getReadingCaseState(readingCase, settings, now),
+    confirmed:
+      reads.length >= 2 && areAllReadsConfirmed(readingCase, settings, now),
+    willArbitrate,
+    provisionalOutcome
+  }
 }
 
 /**
@@ -406,14 +503,15 @@ const caseNeedsSecondRead = (readingCase) => {
 }
 
 /**
- * Whether a case needs arbitrating but hasn't been released into it
+ * Whether a case sits in the arbitration backlog - confirmed reads whose
+ * result the rules send to arbitration, not yet claimed by anyone
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
  * @returns {boolean}
  */
 const caseNeedsArbitration = (readingCase, settings = {}) => {
-  return getReadingCaseState(readingCase, settings) === 'arbitration_required'
+  return getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
 }
 
 /**
@@ -631,8 +729,11 @@ module.exports = {
   willGoToArbitration,
   getComparisonInfo,
   shouldShowComparePage,
+  isReadConfirmed,
+  areAllReadsConfirmed,
   getReadingCaseState,
   getReadingCaseOutcome,
+  getReadingCaseStatus,
   getReadingMetadata,
   caseNeedsFirstRead,
   caseNeedsSecondRead,

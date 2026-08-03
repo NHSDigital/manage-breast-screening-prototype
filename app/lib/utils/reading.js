@@ -302,10 +302,10 @@ const calculateReadingMetrics = function (
   // Count cases that are ready for second read (have first read but not second)
   const secondReadReady = cases.filter(caseNeedsSecondRead).length
 
-  // Count cases needing arbitration (policy-aware via the case state)
+  // Count cases in the arbitration backlog (policy-aware via the case state)
   const arbitrationCount = cases.filter(
     (readingCase) =>
-      getReadingCaseState(readingCase, settings) === 'arbitration_required'
+      getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
   ).length
 
   // Global awaiting priors count (appointments with any outstanding prior request)

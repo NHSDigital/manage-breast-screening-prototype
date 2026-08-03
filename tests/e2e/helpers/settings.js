@@ -40,7 +40,10 @@ const readingSettings = {
   // The image-marking modes need pixel-accurate clicks on a canvas, which is
   // more than a smoke test should take on - see notes in reading.spec.js.
   'settings[reading][annotationsMode]': 'without-images',
-  'settings[reading][secondReaderComparison]': 'off'
+  'settings[reading][secondReaderComparison]': 'off',
+  // Reads confirm as soon as they are saved, so journeys see settled states
+  // rather than cases waiting out the confirmation delay
+  'settings[reading][confirmationDelay]': '0'
 }
 
 /**
