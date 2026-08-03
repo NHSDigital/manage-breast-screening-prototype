@@ -12,8 +12,9 @@ const {
   urlWithReferrer,
   appendReferrer
 } = require('../lib/utils/referrers')
-const { getParticipant } = require('../lib/utils/participants')
+const { getParticipant, getFullName } = require('../lib/utils/participants')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
+const { getAppointment } = require('../lib/utils/appointment-data')
 
 /**
  * Get clinic and its related data from id
@@ -185,6 +186,13 @@ module.exports = (router) => {
     res.redirect(`/clinics/${id}/close`)
   })
 
+  // Undo attended not screened
+  router.get('/clinics/:id/close/undo-attended-not-screened/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    updateAppointmentStatus(req.session.data, appointmentId, 'checked_in')
+    res.redirect(`/clinics/${id}/close`)
+  })
+
   // Mark appointment as did not attend from close clinic page
   router.get('/clinics/:id/close/did-not-attend/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
@@ -192,17 +200,47 @@ module.exports = (router) => {
     res.redirect(`/clinics/${id}/close`)
   })
 
+  // Undo did not attend
+  router.get('/clinics/:id/close/undo-did-not-attend/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    updateAppointmentStatus(req.session.data, appointmentId, 'scheduled')
+    res.redirect(`/clinics/${id}/close`)
+  })
+
+  // Bulk mark all checked-in as attended not screened
+  router.get('/clinics/:id/close/attended-not-screened-all', (req, res) => {
+    const { id } = req.params
+    const data = req.session.data
+    const appointments = data.appointments.filter(
+      (a) => a.clinicId === id && a.status === 'checked_in'
+    )
+    appointments.forEach((a) => updateAppointmentStatus(data, a.id, 'attended_not_screened'))
+    res.redirect(`/clinics/${id}/close`)
+  })
+
+  // Bulk mark all remaining as did not attend
+  router.get('/clinics/:id/close/did-not-attend-all', (req, res) => {
+    const { id } = req.params
+    const data = req.session.data
+    const appointments = data.appointments.filter(
+      (a) => a.clinicId === id && a.status === 'scheduled'
+    )
+    appointments.forEach((a) => updateAppointmentStatus(data, a.id, 'did_not_attend'))
+    res.redirect(`/clinics/${id}/close`)
+  })
+
   // Confirm and close clinic
   router.post('/clinics/:id/close', (req, res) => {
     const { id } = req.params
     const data = req.session.data
-    const clinicIndex = data.clinics.findIndex((c) => c.id === id)
+    const clinic = data.clinics.find((c) => c.id === id)
 
-    if (clinicIndex !== -1) {
-      data.clinics[clinicIndex].status = 'closed'
+    if (clinic) {
+      clinic.status = 'closed'
+      req.flash('success', `Clinic ${clinic.clinicCode} closed`)
     }
 
-    res.redirect(`/clinics/${id}`)
+    res.redirect('/clinics/completed')
   })
 
   // Single clinic view

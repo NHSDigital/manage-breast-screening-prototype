@@ -63,12 +63,17 @@
 
   {# Checked in but not screened #}
   {% set checkedInAppointments = allAppointments | filterAppointmentsByStatus("checked-in") %}
+  {% set attendedNotScreenedAppointments = allAppointments | where("status", "attended_not_screened") %}
 
-  {% if checkedInAppointments | length %}
+  {% if checkedInAppointments | length or attendedNotScreenedAppointments | length %}
     <div class="nhsuk-card">
       <div class="nhsuk-card__content">
         <h2 class="nhsuk-card__heading nhsuk-heading-m">Checked in, not screened</h2>
         <p>These participants attended but their appointment did not take place.</p>
+
+        {% if checkedInAppointments | length %}
+          <p><a href="/clinics/{{ clinicId }}/close/attended-not-screened-all">Mark all as attended not screened</a></p>
+        {% endif %}
 
         <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
           <thead class="nhsuk-table__head">
@@ -79,7 +84,8 @@
             </tr>
           </thead>
           <tbody class="nhsuk-table__body">
-            {% for appointment in checkedInAppointments %}
+            {% for appointment in allAppointments %}
+              {% if appointment.status == "checked_in" or appointment.status == "attended_not_screened" %}
               {% set participant = data.participants | findById(appointment.participantId) %}
               <tr>
                 <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
@@ -88,9 +94,20 @@
                   <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
                 </td>
                 <td class="nhsuk-table__cell">
-                  <a href="/clinics/{{ clinicId }}/close/attended-not-screened/{{ appointment.id }}">Mark as attended not screened</a>
+                  {% if appointment.status == "attended_not_screened" %}
+                    {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
+                    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                      <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a>
+                    </p>
+                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+                      <a href="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}">Undo</a>
+                    </p>
+                  {% else %}
+                    <a href="/clinics/{{ clinicId }}/close/attended-not-screened/{{ appointment.id }}">Mark as attended not screened</a>
+                  {% endif %}
                 </td>
               </tr>
+              {% endif %}
             {% endfor %}
           </tbody>
         </table>
@@ -100,12 +117,17 @@
 
   {# Did not check in #}
   {% set remainingAppointments = allAppointments | filterAppointmentsByStatus("remaining") %}
+  {% set didNotAttendAppointments = allAppointments | where("status", "did_not_attend") %}
 
-  {% if remainingAppointments | length %}
+  {% if remainingAppointments | length or didNotAttendAppointments | length %}
     <div class="nhsuk-card">
       <div class="nhsuk-card__content">
         <h2 class="nhsuk-card__heading nhsuk-heading-m">Did not check in</h2>
         <p>These participants did not arrive for their appointment.</p>
+
+        {% if remainingAppointments | length %}
+          <p><a href="/clinics/{{ clinicId }}/close/did-not-attend-all">Mark all as did not attend</a></p>
+        {% endif %}
 
         <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
           <thead class="nhsuk-table__head">
@@ -116,7 +138,8 @@
             </tr>
           </thead>
           <tbody class="nhsuk-table__body">
-            {% for appointment in remainingAppointments %}
+            {% for appointment in allAppointments %}
+              {% if appointment.status == "scheduled" or appointment.status == "did_not_attend" %}
               {% set participant = data.participants | findById(appointment.participantId) %}
               <tr>
                 <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
@@ -125,9 +148,20 @@
                   <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
                 </td>
                 <td class="nhsuk-table__cell">
-                  <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
+                  {% if appointment.status == "did_not_attend" %}
+                    {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
+                    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+                      <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a>
+                    </p>
+                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+                      <a href="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}">Undo</a>
+                    </p>
+                  {% else %}
+                    <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
+                  {% endif %}
                 </td>
               </tr>
+              {% endif %}
             {% endfor %}
           </tbody>
         </table>
