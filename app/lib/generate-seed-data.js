@@ -453,13 +453,20 @@ const seedTechnicalRecallRescreen = ({
     // rather than adding to them - buildRead types a read from where the case
     // had got to, and against the existing reads this would come out as an
     // arbitration read
-    const firstRead = buildRead(
-      { ...readingCase, reads: [] },
-      firstReader.id,
-      firstReader.role,
-      generatedRead,
-      { timestamp: readAt.add(1, 'day').toISOString() }
-    )
+    const firstRead = {
+      ...buildRead(
+        { ...readingCase, reads: [] },
+        firstReader.id,
+        firstReader.role,
+        generatedRead,
+        { timestamp: readAt.add(1, 'day').toISOString() }
+      ),
+      // Confirmed explicitly: these reads can be dated ahead of now, so the
+      // technical-recall outcome (and the re-screen owed on it) must not
+      // depend on the confirmation delay having passed
+      confirmedAt: readAt.add(1, 'day').toISOString(),
+      confirmedBy: firstReader.id
+    }
 
     // The second read has to agree with the first, down to which views need
     // retaking - two technical recalls flagging different views count as
@@ -470,7 +477,9 @@ const seedTechnicalRecallRescreen = ({
       readerType: secondReader.role,
       readType: 'second',
       readNumber: 2,
-      timestamp: readAt.add(2, 'day').toISOString()
+      timestamp: readAt.add(2, 'day').toISOString(),
+      confirmedAt: readAt.add(2, 'day').toISOString(),
+      confirmedBy: secondReader.id
     }
 
     readingCase.reads = [firstRead, secondRead]

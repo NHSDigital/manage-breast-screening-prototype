@@ -193,6 +193,7 @@
     {# Arbitration policy #}
     {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [
       {value: "discordant_only", label: "Discordant reads only"},
+      {value: "all_recalls", label: "All recalls for assessment"},
       {value: "all_non_normal", label: "All non-normal outcomes"}
     ], data.settings.reading.arbitrationPolicy, "discordant_only") }}
 

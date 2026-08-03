@@ -363,6 +363,16 @@ const addRead = (readingCase, appointment, reader, timestamp, options = {}) => {
     timestamp
   })
 
+  // A read old enough would have been confirmed by now, so record it as such.
+  // Recent reads stay unconfirmed - they are what the confirmation flow (and
+  // the awaiting_confirmation state) has to work on.
+  if (dayjs(timestamp).isBefore(dayjs().subtract(24, 'hour'))) {
+    read.confirmedAt = dayjs(timestamp)
+      .add(faker.number.int({ min: 15, max: 45 }), 'minute')
+      .toISOString()
+    read.confirmedBy = reader.id
+  }
+
   const existingIndex = readingCase.reads.findIndex(
     (candidate) => candidate.readerId === reader.id
   )

@@ -286,6 +286,7 @@ const areReadsDiscordant = (readA, readB) => {
  *
  * Policies (from settings.reading.arbitrationPolicy):
  * - 'discordant_only' (default): only discordant reads need arbitration
+ * - 'all_recalls': concordant recalls for assessment do too
  * - 'all_non_normal': any concordant non-normal outcome does too
  *
  * @param {object} readA - First read
@@ -303,6 +304,9 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
   const policy = settings?.reading?.arbitrationPolicy || 'discordant_only'
   if (policy === 'all_non_normal') {
     return readA.opinion !== 'normal'
+  }
+  if (policy === 'all_recalls') {
+    return readA.opinion === 'recall_for_assessment'
   }
 
   return false
