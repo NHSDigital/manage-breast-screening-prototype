@@ -50,7 +50,7 @@ JavaScript. Nine journeys:
 - a second reader reaching the comparison page and keeping their opinion
 - a concordant second read taking a case to its concluded outcome, checked on
   the case view
-- confirming a read from the session-complete panel, settling a case that was
+- confirming a read from the session overview, settling a case that was
   awaiting confirmation
 - a lazy session staying lazy across leaving and resuming it
 

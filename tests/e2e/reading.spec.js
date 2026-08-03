@@ -318,10 +318,12 @@ test.describe('Image reading', () => {
     await expect(summaryRow('Outcome')).toContainText('Normal')
   })
 
-  test('confirms reads from the session-complete panel', async ({ page }) => {
-    // With a confirmation delay, a fresh read sits unconfirmed and the
-    // session-complete panel offers to confirm it. The seeded first read is
-    // hours old, so it has auto-confirmed - confirming ours settles the case.
+  test('confirms reads from the session overview', async ({ page }) => {
+    // With a confirmation delay, a fresh read sits unconfirmed. Confirmation
+    // deliberately lives on the session overview - behind a chance to review
+    // what was read - not on the session-complete page, which only points
+    // there. The seeded first read is hours old, so it has auto-confirmed -
+    // confirming ours settles the case.
     await pinSettings(page, {
       ...readingSettings,
       'settings[reading][confirmationDelay]': '60'
@@ -337,15 +339,19 @@ test.describe('Image reading', () => {
 
     await recordNormal(page)
 
-    // The only case is read, so the session is complete - with the read
-    // unconfirmed, the panel says so and offers to confirm
+    // The only case is read, so the session is complete - the page notes the
+    // unconfirmed read but sends the reader to the overview to confirm it
     await expect(page).toHaveURL(/\/no-more-cases/)
     await expect(page.getByText('not yet confirmed')).toBeVisible()
-    await page.getByRole('button', { name: 'Confirm read' }).click()
+    await page.getByRole('button', { name: 'See session overview' }).click()
 
-    // Confirmed: the panel reverts to the plain session-complete state
-    await expect(page).toHaveURL(/\/no-more-cases/)
-    await expect(page.getByText('not yet confirmed')).toBeHidden()
+    // The session-complete panel carries the auto-confirmation time and the
+    // confirm action
+    await expect(page.getByText('confirmed automatically')).toBeVisible()
+    await page.getByRole('link', { name: 'Confirm opinions now' }).click()
+
+    // Confirmed: the prompt gives way to the settled state
+    await expect(page.getByText('All opinions are confirmed')).toBeVisible()
 
     // Both reads now confirmed, so the case has settled - concluded if the
     // reads agreed, awaiting arbitration if not

@@ -462,10 +462,11 @@ module.exports = (router) => {
     })
   })
 
-  // Confirm the user's reads from this session. Confirmation is what makes a
-  // result real - it releases discordant cases into the arbitration backlog
-  // and moves concluded episodes on.
-  router.post('/reading/session/:sessionId/confirm-reads', (req, res) => {
+  // Confirm the user's reads from this session - linked from the session
+  // overview's session-complete panel, so a plain link can reach it.
+  // Confirmation is what makes a result real: it releases discordant cases
+  // into the arbitration backlog and moves concluded episodes on.
+  router.all('/reading/session/:sessionId/confirm-reads', (req, res) => {
     const data = req.session.data
     const { sessionId } = req.params
     const session = getReadingSession(data, sessionId)
@@ -488,14 +489,13 @@ module.exports = (router) => {
       )
     }
 
-    res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+    res.redirect(`/reading/session/${sessionId}`)
   })
 
   // Route for viewing a session with specific view
   router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
     const { sessionId, view } = req.params
-    const autoFinaliseWindowMinutes = 30
     const validViews = ['your-reads', 'all-reads']
 
     // Validate view parameter
@@ -552,21 +552,26 @@ module.exports = (router) => {
       session.skippedAppointments || []
     )
 
-    // Countdown starts when the current user records their first opinion in this session
-    const firstUserReadTimestamp = enhancedAppointments
-      .map(
-        (appointment) =>
-          getReadForUser(appointment.readingCase, data.currentUser.id)
-            ?.timestamp
-      )
-      .filter(Boolean)
-      .sort((a, b) => new Date(a) - new Date(b))[0]
-
-    const autoFinaliseAt = firstUserReadTimestamp
-      ? dayjs(firstUserReadTimestamp)
-          .add(autoFinaliseWindowMinutes, 'minute')
-          .toISOString()
-      : dayjs().add(autoFinaliseWindowMinutes, 'minute').toISOString()
+    // The user's reads still awaiting confirmation, and when the first will
+    // confirm itself - drives the session-complete panel's confirm prompt
+    const unconfirmedReads = getUnconfirmedUserReadsForSession(
+      data,
+      sessionId,
+      data.currentUser.id
+    )
+    const confirmationDelayMinutes = parseInt(
+      data.settings?.reading?.confirmationDelay,
+      10
+    )
+    const firstUnconfirmedTimestamp = unconfirmedReads
+      .map(({ read }) => read.timestamp)
+      .sort()[0]
+    const autoConfirmAt =
+      firstUnconfirmedTimestamp && !Number.isNaN(confirmationDelayMinutes)
+        ? dayjs(firstUnconfirmedTimestamp)
+            .add(confirmationDelayMinutes, 'minute')
+            .toISOString()
+        : null
 
     // Clear any lingering opinion banner from a previous session
     delete data.readingOpinionBanner
@@ -592,7 +597,8 @@ module.exports = (router) => {
       readingStatus,
       sessionProgress,
       resumeAppointment,
-      autoFinaliseAt,
+      autoConfirmAt,
+      unconfirmedReadCount: unconfirmedReads.length,
       clinic,
       backlogTotal,
       view: selectedView

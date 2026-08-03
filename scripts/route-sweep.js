@@ -40,6 +40,7 @@ const skippedPaths = [
   { pattern: /\/undo-check-in$/, reason: 'reverses a check-in' },
   { pattern: /\/complete$/, reason: 'completes an appointment' },
   { pattern: /\/save-opinion$/, reason: 'saves a reading opinion' },
+  { pattern: /\/confirm-reads$/, reason: 'confirms reading opinions' },
   {
     pattern: /^\/reading\/create-session/,
     reason: 'creates a reading session'
