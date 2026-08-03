@@ -2,7 +2,8 @@
 //
 // Journeys through image reading. Between them they cover the four ways a
 // reader can leave a case - normal, recall for assessment, technical recall,
-// and deferral - plus the second reader's comparison step.
+// and deferral - plus the second reader's comparison step, and a concordant
+// second read taking a case to its concluded outcome.
 //
 // Sessions are created with an explicit limit so each test reads a known,
 // small number of cases rather than working through a default-sized session.
@@ -13,6 +14,7 @@
 
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings, readingSettings } = require('./helpers/settings')
+const { findCaseAwaitingSecondRead } = require('./helpers/seed-data')
 const {
   clickToOpenModal,
   clickLinkToOpenModal,
@@ -268,6 +270,49 @@ test.describe('Image reading', () => {
 
     await page.goto(`/reading/session/${sessionId}/all-reads`)
     await expect(caseRows).toHaveCount(rowsBefore)
+  })
+
+  test('concludes a case after a concordant second read', async ({ page }) => {
+    // The safety net under the reading state derivation: a case with one
+    // seeded normal read gets a matching second read, and the case view then
+    // shows it concluded with a normal outcome. Anything that breaks
+    // getReadingCaseState or getReadingCaseOutcome shows up here first.
+    await pinSettings(page, {
+      ...readingSettings,
+      // Concordant reads conclude without arbitration
+      'settings[reading][arbitrationPolicy]': 'discordant_only'
+    })
+
+    // Picked from the seed data so the first read's opinion is known - the
+    // second read mirrors it, making the pair concordant
+    const { readingCase, appointment } = findCaseAwaitingSecondRead({
+      firstOpinion: 'normal'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=100&lazy=false'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+
+    // Go straight to the chosen case rather than whichever the session leads
+    // with - the appointment routes resolve any readable case by id
+    await page.goto(`/reading/session/${sessionId}/appointments/${appointment.id}`)
+    await recordNormal(page)
+
+    // Saving moves on to another case (or session complete) - wait for that
+    // before leaving, so the save has landed
+    await expect(page).not.toHaveURL(new RegExp(appointment.id))
+
+    // The case view derives state and outcome from the reads
+    await page.goto(`/reading/cases/${readingCase.id}`)
+
+    const summaryRow = (label) =>
+      page.locator('.nhsuk-summary-list__row', { hasText: label })
+
+    await expect(summaryRow('State')).toContainText('Concluded')
+    await expect(summaryRow('Reads')).toContainText('2')
+    await expect(summaryRow('Outcome')).toContainText('Normal')
   })
 
   test('shows the second reader the first read before saving', async ({
