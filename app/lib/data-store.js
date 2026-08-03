@@ -77,6 +77,11 @@ const state = {
   appointmentIdsByClinic: new Map(),
   appointmentIdsByParticipant: new Map(),
   episodeIdsByParticipant: new Map(),
+  // Reading cases live inside episodes, so finding one by its own id means
+  // knowing which episode holds it. The index points at the episode rather than
+  // the case itself so lookups still go through getEpisode, and a case changed
+  // this session is found on the session's copy rather than the frozen one.
+  episodeIdByReadingCase: new Map(),
   generationInfo: {},
   // Identifies which generation of seed data the store holds. Sessions stamp
   // their _changes with this; the attach middleware discards changes made
@@ -138,11 +143,16 @@ const reload = () => {
   // Episodes are generated oldest-first per participant, so these id lists
   // stay in sequence order
   state.episodeIdsByParticipant = new Map()
+  state.episodeIdByReadingCase = new Map()
   for (const episode of episodes) {
     if (!state.episodeIdsByParticipant.has(episode.participantId)) {
       state.episodeIdsByParticipant.set(episode.participantId, [])
     }
     state.episodeIdsByParticipant.get(episode.participantId).push(episode.id)
+
+    for (const readingCase of episode.readingCases || []) {
+      state.episodeIdByReadingCase.set(readingCase.id, episode.id)
+    }
   }
 
   console.log(
