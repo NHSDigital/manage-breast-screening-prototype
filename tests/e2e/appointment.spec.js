@@ -93,11 +93,13 @@ test.describe('Screening appointment', () => {
     await openSection(page, 'Medical history')
 
     const historyModal = await clickToOpenModal(page, 'Breast cancer')
-    await historyModal
-      .locator(
-        'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
-      )
-      .check()
+    // The checkbox can sit below the fold of the modal, and check() won't
+    // scroll a covered NHS-styled input into view by itself
+    const cancerLocation = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
+    )
+    await revealInModal(cancerLocation)
+    await cancerLocation.check()
     await historyModal.getByRole('button', { name: 'Save' }).click()
     await expectModalClosed(historyModal)
 
