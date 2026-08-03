@@ -163,6 +163,48 @@ module.exports = (router) => {
     res.redirect(returnUrl)
   })
 
+  // Close clinic page
+  router.get('/clinics/:id/close', (req, res) => {
+    const clinicData = getClinicData(req.session.data, req.params.id)
+
+    if (!clinicData) {
+      return res.redirect('/clinics')
+    }
+
+    res.render('clinics/close', {
+      clinicId: req.params.id,
+      clinic: clinicData.clinic,
+      allAppointments: clinicData.appointments
+    })
+  })
+
+  // Mark appointment as attended not screened from close clinic page
+  router.get('/clinics/:id/close/attended-not-screened/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    updateAppointmentStatus(req.session.data, appointmentId, 'attended_not_screened')
+    res.redirect(`/clinics/${id}/close`)
+  })
+
+  // Mark appointment as did not attend from close clinic page
+  router.get('/clinics/:id/close/did-not-attend/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    updateAppointmentStatus(req.session.data, appointmentId, 'did_not_attend')
+    res.redirect(`/clinics/${id}/close`)
+  })
+
+  // Confirm and close clinic
+  router.post('/clinics/:id/close', (req, res) => {
+    const { id } = req.params
+    const data = req.session.data
+    const clinicIndex = data.clinics.findIndex((c) => c.id === id)
+
+    if (clinicIndex !== -1) {
+      data.clinics[clinicIndex].status = 'closed'
+    }
+
+    res.redirect(`/clinics/${id}`)
+  })
+
   // Single clinic view
   const VALID_FILTERS = [
     'remaining',

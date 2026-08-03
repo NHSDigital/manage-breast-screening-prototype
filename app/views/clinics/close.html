@@ -1,0 +1,144 @@
+{# app/views/clinics/close.html #}
+
+{% extends 'layout-app.html' %}
+{% set pageHeading = "Close clinic - " ~ clinic.clinicCode %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/clinics/" + clinicId,
+  text: "Back to clinic"
+} %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ unit.name }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
+
+  {{ insetText({
+    html: "<p>Record an outcome for every participant to close this clinic.</p>"
+  }) }}
+
+  {# In progress appointments #}
+  {% set inProgressAppointments = allAppointments | filterAppointmentsByStatus("in-progress") %}
+
+  {% if inProgressAppointments | length %}
+    <div class="nhsuk-card">
+      <div class="nhsuk-card__content">
+        <h2 class="nhsuk-card__heading nhsuk-heading-m">In progress</h2>
+        <p>Complete or end this appointment to close the clinic.</p>
+
+        <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
+              <th class="nhsuk-table__header">Details</th>
+              <th class="nhsuk-table__header" style="width: 40%">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for appointment in inProgressAppointments %}
+              {% set participant = data.participants | findById(appointment.participantId) %}
+              <tr>
+                <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
+                <td class="nhsuk-table__cell">
+                  <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
+                  <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
+                </td>
+                <td class="nhsuk-table__cell">
+                  <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {# Checked in but not screened #}
+  {% set checkedInAppointments = allAppointments | filterAppointmentsByStatus("checked-in") %}
+
+  {% if checkedInAppointments | length %}
+    <div class="nhsuk-card">
+      <div class="nhsuk-card__content">
+        <h2 class="nhsuk-card__heading nhsuk-heading-m">Checked in, not screened</h2>
+        <p>These participants attended but their appointment did not take place.</p>
+
+        <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
+              <th class="nhsuk-table__header">Details</th>
+              <th class="nhsuk-table__header" style="width: 40%">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for appointment in checkedInAppointments %}
+              {% set participant = data.participants | findById(appointment.participantId) %}
+              <tr>
+                <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
+                <td class="nhsuk-table__cell">
+                  <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
+                  <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
+                </td>
+                <td class="nhsuk-table__cell">
+                  <a href="/clinics/{{ clinicId }}/close/attended-not-screened/{{ appointment.id }}">Mark as attended not screened</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {# Did not check in #}
+  {% set remainingAppointments = allAppointments | filterAppointmentsByStatus("remaining") %}
+
+  {% if remainingAppointments | length %}
+    <div class="nhsuk-card">
+      <div class="nhsuk-card__content">
+        <h2 class="nhsuk-card__heading nhsuk-heading-m">Did not check in</h2>
+        <p>These participants did not arrive for their appointment.</p>
+
+        <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
+              <th class="nhsuk-table__header">Details</th>
+              <th class="nhsuk-table__header" style="width: 40%">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for appointment in remainingAppointments %}
+              {% set participant = data.participants | findById(appointment.participantId) %}
+              <tr>
+                <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
+                <td class="nhsuk-table__cell">
+                  <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
+                  <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
+                </td>
+                <td class="nhsuk-table__cell">
+                  <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  <form method="post" action="/clinics/{{ clinicId }}/close">
+    {{ button({
+      text: "Confirm and close clinic"
+    }) }}
+  </form>
+
+{% endblock %}

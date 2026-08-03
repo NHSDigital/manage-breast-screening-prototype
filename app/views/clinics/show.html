@@ -50,6 +50,14 @@
   {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
 </p>
 
+{% if clinic.status !== "closed" and clinic.status !== "scheduled" %}
+  {{ button({
+    text: "Close clinic",
+    href: "/clinics/" + clinicId + "/close",
+    classes: "nhsuk-button--secondary"
+  }) }}
+{% endif %}
+
 {% set secondaryNavItems = [] %}
 
 {% set tabItems = [
