@@ -68,7 +68,7 @@
   {% if checkedInAppointments | length or attendedNotScreenedAppointments | length %}
     <div class="nhsuk-card">
       <div class="nhsuk-card__content">
-        <h2 class="nhsuk-card__heading nhsuk-heading-m">Checked in, not screened</h2>
+        <h2 class="nhsuk-card__heading nhsuk-heading-m">Attended, not screened</h2>
         <p>These participants attended but their appointment did not take place.</p>
 
         {% if checkedInAppointments | length %}
@@ -122,7 +122,7 @@
   {% if remainingAppointments | length or didNotAttendAppointments | length %}
     <div class="nhsuk-card">
       <div class="nhsuk-card__content">
-        <h2 class="nhsuk-card__heading nhsuk-heading-m">Did not check in</h2>
+        <h2 class="nhsuk-card__heading nhsuk-heading-m">Did not attend</h2>
         <p>These participants did not arrive for their appointment.</p>
 
         {% if remainingAppointments | length %}
