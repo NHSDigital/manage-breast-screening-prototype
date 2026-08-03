@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.62.1",
     "cssnano": "^8.0.2",
     "eslint": "^10.8.0",
     "globals": "^17.8.0",
