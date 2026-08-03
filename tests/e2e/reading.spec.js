@@ -14,7 +14,10 @@
 
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings, readingSettings } = require('./helpers/settings')
-const { findCaseAwaitingSecondRead } = require('./helpers/seed-data')
+const {
+  findCaseAwaitingSecondRead,
+  readCollection
+} = require('./helpers/seed-data')
 const {
   clickToOpenModal,
   clickLinkToOpenModal,
@@ -313,6 +316,49 @@ test.describe('Image reading', () => {
     await expect(summaryRow('State')).toContainText('Concluded')
     await expect(summaryRow('Reads')).toContainText('2')
     await expect(summaryRow('Outcome')).toContainText('Normal')
+  })
+
+  test('confirms reads from the session-complete panel', async ({ page }) => {
+    // With a confirmation delay, a fresh read sits unconfirmed and the
+    // session-complete panel offers to confirm it. The seeded first read is
+    // hours old, so it has auto-confirmed - confirming ours settles the case.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][confirmationDelay]': '60'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=1&lazy=false'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    // The case in hand, for finding its case view afterwards
+    const appointmentId = page.url().split('/appointments/')[1].split('/')[0]
+
+    await recordNormal(page)
+
+    // The only case is read, so the session is complete - with the read
+    // unconfirmed, the panel says so and offers to confirm
+    await expect(page).toHaveURL(/\/no-more-cases/)
+    await expect(page.getByText('not yet confirmed')).toBeVisible()
+    await page.getByRole('button', { name: 'Confirm read' }).click()
+
+    // Confirmed: the panel reverts to the plain session-complete state
+    await expect(page).toHaveURL(/\/no-more-cases/)
+    await expect(page.getByText('not yet confirmed')).toBeHidden()
+
+    // Both reads now confirmed, so the case has settled - concluded if the
+    // reads agreed, awaiting arbitration if not
+    const episodes = readCollection('episodes.json', 'episodes')
+    const readingCase = episodes
+      .flatMap((episode) => episode.readingCases || [])
+      .find((candidate) => candidate.appointmentId === appointmentId)
+
+    await page.goto(`/reading/cases/${readingCase.id}`)
+    const stateRow = page.locator('.nhsuk-summary-list__row', {
+      hasText: 'State'
+    })
+    await expect(stateRow).toContainText(/Concluded|Awaiting arbitration/)
   })
 
   test('shows the second reader the first read before saving', async ({

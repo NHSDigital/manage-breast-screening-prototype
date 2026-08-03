@@ -17,13 +17,16 @@ const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
 const {
   getReadingCase,
   getEpisodeAppointments,
-  updateReadingCase
+  updateReadingCase,
+  advanceEpisodeForReadingOutcome
 } = require('./episodes')
 const {
   getReadsAsArray,
   getReadForUser,
   getReadingMetadata,
   getReadingCaseState,
+  getReadingCaseOutcome,
+  isReadConfirmed,
   isCaseDeferred,
   caseHasReads,
   caseNeedsFirstRead,
@@ -31,7 +34,8 @@ const {
   canUserReadCase,
   userHasReadCase,
   buildRead,
-  withRead
+  withRead,
+  withReadConfirmed
 } = require('./reading-cases')
 
 /************************************************************************
@@ -83,9 +87,8 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   updateReadingCase(data, appointment.episodeId, updatedCase)
 
   // Note the episode deliberately stays in `reading`. Two opinions and a
-  // computed outcome is not a confirmed result, and there is no step in the
-  // app that confirms one yet - see advanceEpisodeForReadingOutcome in
-  // app/lib/utils/episodes.js, which is what that step should call.
+  // computed outcome is not a confirmed result - the episode moves on when
+  // the reads are confirmed (see confirmUserReadsForSession below).
 
   // If we have session context, remove this appointment from skipped appointments
   // (readingSessions is per-session working data, so in-place edits are fine)
@@ -100,6 +103,102 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   }
 
   return updatedCase
+}
+
+/**
+ * The user's not-yet-confirmed reads in a session, each with the appointment
+ * and case it belongs to. The session-complete panel's count and the confirm
+ * action both work from this.
+ *
+ * "Not yet confirmed" means not confirmed either way: no explicit confirmedAt,
+ * and the auto-confirmation delay hasn't passed.
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - Reading session ID
+ * @param {string} userId - User ID
+ * @returns {Array<{appointment: object, readingCase: object, read: object}>}
+ */
+const getUnconfirmedUserReadsForSession = (data, sessionId, userId) => {
+  const session = data.readingSessions?.[sessionId]
+  if (!session || !userId) return []
+
+  const results = []
+
+  for (const appointmentId of session.appointmentIds || []) {
+    const appointment = data.appointments.find(
+      (candidate) => candidate.id === appointmentId
+    )
+    if (!appointment) continue
+
+    const readingCase = getReadingCase(data, appointment)
+    const read = getReadForUser(readingCase, userId)
+    if (!read) continue
+    if (isReadConfirmed(read, data.settings)) continue
+
+    results.push({ appointment, readingCase, read })
+  }
+
+  return results
+}
+
+/**
+ * Confirm the user's outstanding reads from a session, and settle what each
+ * confirmation makes true: a case whose confirmed reads the rules send to
+ * arbitration gets its release recorded, and a case that concludes moves its
+ * episode on.
+ *
+ * Auto-confirmation (the delay passing) has no moment like this - a case can
+ * conclude by time alone without anything recording the release or advancing
+ * the episode. The state stays honest because it is derived; the acts are only
+ * recorded where there is an act to record.
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - Reading session ID
+ * @param {string} userId - User ID
+ * @returns {{confirmedCount: number, releasedCount: number, concludedCount: number}}
+ */
+const confirmUserReadsForSession = (data, sessionId, userId) => {
+  const unconfirmed = getUnconfirmedUserReadsForSession(data, sessionId, userId)
+  const confirmedAt = new Date().toISOString()
+
+  let releasedCount = 0
+  let concludedCount = 0
+
+  for (const { appointment, readingCase } of unconfirmed) {
+    let updatedCase = withReadConfirmed(readingCase, userId, {
+      confirmedAt,
+      confirmedBy: userId
+    })
+
+    const state = getReadingCaseState(updatedCase, data.settings)
+
+    // Both reads confirmed and the rules send it to arbitration: record the
+    // release into the backlog (see isCaseInArbitration)
+    if (
+      state === 'awaiting_arbitration' &&
+      !updatedCase.arbitration?.releasedAt
+    ) {
+      updatedCase = {
+        ...updatedCase,
+        arbitration: { releasedAt: confirmedAt, releasedBy: userId }
+      }
+      releasedCount++
+    }
+
+    updateReadingCase(data, appointment.episodeId, updatedCase)
+
+    // A confirmed conclusion is a real result, so the episode moves on
+    if (state === 'concluded') {
+      advanceEpisodeForReadingOutcome(
+        data,
+        appointment,
+        getReadingCaseOutcome(updatedCase, data.settings)
+      )
+      concludedCount++
+    }
+  }
+
+  return { confirmedCount: unconfirmed.length, releasedCount, concludedCount }
 }
 
 /**
@@ -1468,6 +1567,8 @@ module.exports = {
   // Single appointment
   getAppointmentReadingMetadata,
   writeReading,
+  getUnconfirmedUserReadsForSession,
+  confirmUserReadsForSession,
   getEpisodeReadingStatus,
   getDeferredCases,
   getResolvedDeferrals,

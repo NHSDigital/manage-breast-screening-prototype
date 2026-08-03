@@ -691,6 +691,33 @@ const withRead = (readingCase, read) => {
 }
 
 /**
+ * Mark a user's read on a case as confirmed, returning a new case record.
+ *
+ * Already-confirmed reads are left alone, so the original confirmation
+ * record survives a repeat call.
+ *
+ * @param {object} readingCase - The case
+ * @param {string} userId - Whose read to confirm
+ * @param {object} [options] - Options
+ * @param {string} [options.confirmedAt] - When; defaults to now
+ * @param {string} [options.confirmedBy] - Who confirmed it; defaults to the reader
+ * @returns {object} A new case record with the confirmation applied
+ */
+const withReadConfirmed = (readingCase, userId, options = {}) => {
+  const reads = getReadsAsArray(readingCase).map((read) =>
+    read.readerId === userId && !read.confirmedAt
+      ? {
+          ...read,
+          confirmedAt: options.confirmedAt || new Date().toISOString(),
+          confirmedBy: options.confirmedBy || userId
+        }
+      : read
+  )
+
+  return { ...readingCase, reads }
+}
+
+/**
  * Remove a user's read from a case, returning a new case record.
  *
  * Deferring after giving an opinion withdraws that opinion - the reader is
@@ -741,5 +768,6 @@ module.exports = {
   canUserReadCase,
   buildRead,
   withRead,
+  withReadConfirmed,
   withoutRead
 }

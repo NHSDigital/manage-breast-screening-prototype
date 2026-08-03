@@ -16,6 +16,8 @@ const {
   canUserReadAppointment,
   userHasReadAppointment,
   writeReading,
+  getUnconfirmedUserReadsForSession,
+  confirmUserReadsForSession,
   getEligibleCandidatesForSession,
   createReadingSession,
   getFirstReadableAppointmentInSession,
@@ -451,8 +453,42 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
     res.render('reading/no-more-cases', {
-      sessionId
+      sessionId,
+      unconfirmedReadCount: getUnconfirmedUserReadsForSession(
+        data,
+        sessionId,
+        data.currentUser?.id
+      ).length
     })
+  })
+
+  // Confirm the user's reads from this session. Confirmation is what makes a
+  // result real - it releases discordant cases into the arbitration backlog
+  // and moves concluded episodes on.
+  router.post('/reading/session/:sessionId/confirm-reads', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    const { confirmedCount } = confirmUserReadsForSession(
+      data,
+      sessionId,
+      data.currentUser?.id
+    )
+
+    if (confirmedCount > 0) {
+      req.flash(
+        'success',
+        confirmedCount === 1
+          ? '1 read confirmed'
+          : `${confirmedCount} reads confirmed`
+      )
+    }
+
+    res.redirect(`/reading/session/${sessionId}/no-more-cases`)
   })
 
   // Route for viewing a session with specific view

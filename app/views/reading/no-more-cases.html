@@ -18,13 +18,44 @@
 
     <p>You have given an opinion on all available cases.</p>
 
-    <div class="nhsuk-button-group">
-      {{ button({
-        text: "See session overview",
-        href: "/reading/session/" + sessionId
-      }) }}
-      <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
-    </div>
+    {% if unconfirmedReadCount > 0 %}
+
+      {# Confirmation is what makes a result real - until then a case sits in
+         awaiting_confirmation rather than concluding or going to arbitration #}
+      <p>
+        {% if unconfirmedReadCount == 1 %}
+          Your read from this session is not yet confirmed.
+        {% else %}
+          Your {{ unconfirmedReadCount }} reads from this session are not yet confirmed.
+        {% endif %}
+        Each case moves on – to its result, or to arbitration – once its reads are confirmed.
+      </p>
+
+      <form action="/reading/session/{{ sessionId }}/confirm-reads" method="post">
+        <div class="nhsuk-button-group">
+          {{ button({
+            text: "Confirm read" if unconfirmedReadCount == 1 else "Confirm reads"
+          }) }}
+          {{ button({
+            text: "See session overview",
+            href: "/reading/session/" + sessionId,
+            classes: "nhsuk-button--secondary"
+          }) }}
+          <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
+        </div>
+      </form>
+
+    {% else %}
+
+      <div class="nhsuk-button-group">
+        {{ button({
+          text: "See session overview",
+          href: "/reading/session/" + sessionId
+        }) }}
+        <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
+      </div>
+
+    {% endif %}
 
   </div>
 </div>
