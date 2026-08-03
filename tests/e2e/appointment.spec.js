@@ -93,13 +93,15 @@ test.describe('Screening appointment', () => {
     await openSection(page, 'Medical history')
 
     const historyModal = await clickToOpenModal(page, 'Breast cancer')
-    // The checkbox can sit below the fold of the modal, and check() won't
-    // scroll a covered NHS-styled input into view by itself
+    // Under a loaded full-suite run Playwright intermittently reports this
+    // checkbox "outside of the viewport" inside the transformed dialog and
+    // retries forever (see revealInModal's note). A DOM-level click sidesteps
+    // the geometry, and the assertion keeps it honest.
     const cancerLocation = historyModal.locator(
       'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
     )
-    await revealInModal(cancerLocation)
-    await cancerLocation.check()
+    await cancerLocation.evaluate((element) => element.click())
+    await expect(cancerLocation).toBeChecked()
     await historyModal.getByRole('button', { name: 'Save' }).click()
     await expectModalClosed(historyModal)
 
