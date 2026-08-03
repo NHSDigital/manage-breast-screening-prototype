@@ -230,6 +230,14 @@ const STATUS_TAGS = {
   },
   // Reading journey state - mostly derived, reached via snake-cased tag text
   readingState: {
+    // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
+    // set of images has got to. The entries below them are the older
+    // appointment- and group-level vocabulary.
+    'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
+    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'blue' },
+    'arbitration_required': { label: 'Arbitration required', colour: 'orange' },
+    'in_arbitration': { label: 'In arbitration', colour: 'purple' },
+    'concluded': { label: 'Concluded', colour: 'green' },
     'waiting_for_1st_read': { colour: 'grey' },
     'waiting_for_2nd_read': { colour: 'grey' },
     'not_started': { colour: 'grey' },
