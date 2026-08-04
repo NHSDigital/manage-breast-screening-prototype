@@ -107,8 +107,12 @@ module.exports = (router) => {
       filter,
       clinics: clinicsWithData,
       filteredClinics,
+      justClosedClinicId: req.session.justClosedClinicId || null,
       formatDate: (date) => dayjs(date).format('D MMMM YYYY')
     })
+
+    // Clear after rendering so it only applies once
+    delete req.session.justClosedClinicId
   })
 
   // Handle check-in
@@ -285,11 +289,15 @@ module.exports = (router) => {
 
     if (clinic) {
       clinic.status = 'closed'
+      clinic.closedAt = new Date().toISOString()
       req.flash('success', `Clinic ${clinic.clinicCode} closed`)
     }
 
     // Clean up resolved tracking
     delete req.session[`closeClinicResolved_${id}`]
+
+    // Track just-closed clinic so it shows at top of list
+    req.session.justClosedClinicId = id
 
     res.redirect('/clinics/completed')
   })
