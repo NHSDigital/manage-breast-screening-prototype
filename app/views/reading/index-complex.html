@@ -108,6 +108,12 @@
 <p>{{ arbitrationCount }} {{ "case" | pluralise(arbitrationCount) }} need{{ "s" if arbitrationCount == 1 }} arbitration</p>
 {{ actionLink({
   classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
+  text: "Start arbitration",
+  href: "/reading/arbitration/start"
+}) }}
+<br>
+{{ actionLink({
+  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
   text: "See cases",
   href: "/reading/cases?state=awaiting_arbitration"
 }) }}

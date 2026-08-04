@@ -1,0 +1,52 @@
+{# app/views/reading/arbitration/start.html #}
+{# Arbitration setup - who is arbitrating #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Start arbitration" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set back = {
+  href: "/reading",
+  text: "Back to reading"
+} %}
+
+{% set formAction = "/reading/arbitration/start-answer" %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>
+    {{ backlogCount }} {{ "case" | pluralise(backlogCount) }} {{ "is" if backlogCount == 1 else "are" }} waiting for arbitration.
+    <a href="/reading/cases?state=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
+  </p>
+
+  {{ radios({
+    idPrefix: "arbitration-mode",
+    name: "arbitrationTemp[mode]",
+    fieldset: {
+      legend: {
+        text: "Who is arbitrating?",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "alone",
+        text: "Just me"
+      },
+      {
+        value: "panel",
+        text: "Me with other people",
+        hint: {
+          text: "You’ll choose who on the next page"
+        }
+      }
+    ]
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}
