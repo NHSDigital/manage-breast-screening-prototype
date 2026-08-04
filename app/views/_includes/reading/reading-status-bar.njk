@@ -7,9 +7,15 @@
 {% set firstRowItems = [] %}
 
 {# Environment tag - always first item #}
-{% set firstRowItems = firstRowItems | push({
-  html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
-}) %}
+{% if isArbitration %}
+  {% set firstRowItems = firstRowItems | push({
+    html: '<strong class="nhsuk-tag nhsuk-tag--orange">Arbitration</strong>'
+  }) %}
+{% else %}
+  {% set firstRowItems = firstRowItems | push({
+    html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
+  }) %}
+{% endif %}
 
 {# Clinic context item (session context has no label, just the environment tag) #}
 {% if isClinicContext %}

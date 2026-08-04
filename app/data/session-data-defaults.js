@@ -104,6 +104,7 @@ const defaultSettings = {
     }
   },
   reading: {
+    indexLayout: 'complex', // 'simple' | 'complex'
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',
