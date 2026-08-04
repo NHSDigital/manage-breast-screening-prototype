@@ -56,10 +56,10 @@
       </a>
     {% else %}
       {% set sessionCompletePanelHtml %}
-        {% if unconfirmedReadCount > 0 %}
-          <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}.{% if autoConfirmAt %} The first opinion will be confirmed automatically at {{ autoConfirmAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/confirm-reads" class="nhsuk-link nhsuk-link--reverse">Confirm opinions now</a></p>
+        {% if unfinalisedReadCount > 0 %}
+          <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         {% else %}
-          <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. All opinions are confirmed.</p>
+          <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. All opinions are finalised.</p>
         {% endif %}
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {% if backlogTotal > 0 %}
@@ -546,8 +546,8 @@
                   {{ "Waiting for 1st read" | toTag }}
                 {% elseif caseState == 'awaiting_second_read' %}
                   {{ "Waiting for 2nd read" | toTag }}
-                {% elseif caseState == 'awaiting_confirmation' %}
-                  {{ "Awaiting confirmation" | toTag }}
+                {% elseif caseState == 'awaiting_finalisation' %}
+                  {{ "Awaiting finalisation" | toTag }}
                 {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
                   {{ "Arbitration" | toTag }}
                 {% else %}

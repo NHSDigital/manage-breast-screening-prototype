@@ -461,11 +461,11 @@ const seedTechnicalRecallRescreen = ({
         generatedRead,
         { timestamp: readAt.add(1, 'day').toISOString() }
       ),
-      // Confirmed explicitly: these reads can be dated ahead of now, so the
+      // Finalised explicitly: these reads can be dated ahead of now, so the
       // technical-recall outcome (and the re-screen owed on it) must not
-      // depend on the confirmation delay having passed
-      confirmedAt: readAt.add(1, 'day').toISOString(),
-      confirmedBy: firstReader.id
+      // depend on the finalisation delay having passed
+      finalisedAt: readAt.add(1, 'day').toISOString(),
+      finalisedBy: firstReader.id
     }
 
     // The second read has to agree with the first, down to which views need
@@ -478,8 +478,8 @@ const seedTechnicalRecallRescreen = ({
       readType: 'second',
       readNumber: 2,
       timestamp: readAt.add(2, 'day').toISOString(),
-      confirmedAt: readAt.add(2, 'day').toISOString(),
-      confirmedBy: secondReader.id
+      finalisedAt: readAt.add(2, 'day').toISOString(),
+      finalisedBy: secondReader.id
     }
 
     readingCase.reads = [firstRead, secondRead]

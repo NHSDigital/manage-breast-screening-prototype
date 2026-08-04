@@ -423,10 +423,10 @@ Templates receive via `res.locals`:
 - `writeReading(data, appointment, userId, reading, sessionId)` - Saves a read onto the appointment's case, settles readNumber and readType, removes from skipped list
 - `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
 - `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `arbitrationPolicy`
-- `getReadingCaseState(readingCase, settings, now)` - Where the case has got to: `awaiting_first_read` | `awaiting_second_read` | `awaiting_confirmation` | `awaiting_arbitration` | `in_arbitration` | `concluded`
+- `getReadingCaseState(readingCase, settings, now)` - Where the case has got to: `awaiting_first_read` | `awaiting_second_read` | `awaiting_finalisation` | `awaiting_arbitration` | `in_arbitration` | `concluded`
 - `getReadingCaseOutcome(readingCase, settings, now)` - What it found: `normal` | `technical_recall` | `recall_for_assessment`, or `null` while reading is still under way. The arbitration read, where there is one, is the deciding read.
-- `isReadConfirmed(read, settings, now)` - Whether a read is confirmed: explicitly (`confirmedAt`) or automatically once `settings.reading.confirmationDelay` minutes have passed since the read (`'0'` immediate, `'never'` manual only)
-- `getReadingCaseStatus(readingCase, settings, now)` - The facts for status displays: `{ state, confirmed, willArbitrate, provisionalOutcome }` - `willArbitrate` is `willGoToArbitration` asked as soon as two reads exist, so "awaiting confirmation, then arbitration" is one state with a destination
+- `isReadFinalised(read, settings, now)` - Whether a read is finalised: explicitly (`finalisedAt`) or automatically once `settings.reading.finalisationDelay` minutes have passed since the read (`'0'` immediate, `'never'` manual only)
+- `getReadingCaseStatus(readingCase, settings, now)` - The facts for status displays: `{ state, finalised, willArbitrate, provisionalOutcome }` - `willArbitrate` is `willGoToArbitration` asked as soon as two reads exist, so "awaiting finalisation, then arbitration" is one state with a destination
 - `getComparisonInfo(appointment, secondReadData, userId, settings)` - Returns comparison data for second reader, or `false` if not applicable
 - `shouldShowComparePage(appointment, secondReadData, userId, settings)` - Boolean: whether to show compare page given timing/filter settings
 

@@ -210,9 +210,9 @@ const buildHistoricReadingCase = ({
     readType,
     readNumber,
     timestamp: timestamp.toISOString(),
-    // A settled past round's reads were confirmed at the time
-    confirmedAt: timestamp.add(30, 'minute').toISOString(),
-    confirmedBy: reader.id
+    // A settled past round's reads were finalised at the time
+    finalisedAt: timestamp.add(30, 'minute').toISOString(),
+    finalisedBy: reader.id
   })
 
   // When it went to arbitration the two readers disagreed, so one of them said
@@ -687,11 +687,11 @@ const checkEpisodes = (episodes, appointmentsById) => {
             `historic episode ${episode.id} ended in treatment but was read as "${readingOutcome}"`
           )
         }
-        // A settled past round's reads were all confirmed at the time
+        // A settled past round's reads were all finalised at the time
         getReadsAsArray(readingCase).forEach((read) => {
-          if (!read.confirmedAt) {
+          if (!read.finalisedAt) {
             problems.push(
-              `historic reading case ${readingCase.id} has an unconfirmed read`
+              `historic reading case ${readingCase.id} has an unfinalised read`
             )
           }
         })
@@ -767,17 +767,17 @@ const checkEpisodes = (episodes, appointmentsById) => {
           `reading case ${readingCase.id} has an arbitration read without two prior reads`
         )
       }
-      // Confirmation coherence: a confirmation is one act with two halves,
-      // and nothing confirms a read before it was made
+      // Finalisation coherence: a finalisation is one act with two halves,
+      // and nothing finalises a read before it was made
       reads.forEach((read) => {
-        if (Boolean(read.confirmedAt) !== Boolean(read.confirmedBy)) {
+        if (Boolean(read.finalisedAt) !== Boolean(read.finalisedBy)) {
           problems.push(
-            `read by ${read.readerId} on case ${readingCase.id} has half a confirmation record`
+            `read by ${read.readerId} on case ${readingCase.id} has half a finalisation record`
           )
         }
-        if (read.confirmedAt && read.confirmedAt < read.timestamp) {
+        if (read.finalisedAt && read.finalisedAt < read.timestamp) {
           problems.push(
-            `read by ${read.readerId} on case ${readingCase.id} was confirmed before it was read`
+            `read by ${read.readerId} on case ${readingCase.id} was finalised before it was read`
           )
         }
       })

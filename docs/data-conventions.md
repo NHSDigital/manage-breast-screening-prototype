@@ -194,21 +194,21 @@ Two functions answer the two different questions, and the split matters:
 
 | | |
 |---|---|
-| `getReadingCaseState(case, settings, now)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_confirmation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
+| `getReadingCaseState(case, settings, now)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_finalisation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
 | `getReadingCaseOutcome(case, settings, now)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
 
 Two reads are not a result by themselves — the result becomes real once the
-reads are confirmed, explicitly (`read.confirmedAt` / `confirmedBy`) or
-automatically when the confirmation delay passes
-(`settings.reading.confirmationDelay`, minutes as a string, `'0'` immediate,
-`'never'` manual only — see `isReadConfirmed`). Until then the case sits in
-`awaiting_confirmation`. Whether it is heading for arbitration is a **fact
+reads are finalised, explicitly (`read.finalisedAt` / `finalisedBy`) or
+automatically when the finalisation delay passes
+(`settings.reading.finalisationDelay`, minutes as a string, `'0'` immediate,
+`'never'` manual only — see `isReadFinalised`). Until then the case sits in
+`awaiting_finalisation`. Whether it is heading for arbitration is a **fact
 about the case, not a separate state**: `getReadingCaseStatus(case, settings,
-now)` returns `{ state, confirmed, willArbitrate, provisionalOutcome }`, so
-"awaiting confirmation, then arbitration" is one state with a destination.
+now)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so
+"awaiting finalisation, then arbitration" is one state with a destination.
 
 `awaiting_arbitration` and `in_arbitration` are deliberately different:
-confirmed discordant reads put a case in the arbitration backlog, but
+finalised discordant reads put a case in the arbitration backlog, but
 `in_arbitration` is reserved for a future claim/lock while someone actively
 arbitrates it — nothing sets it yet. The state exists so the vocabulary is
 whole rather than growing a value later across every call site. Deferral works

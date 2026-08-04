@@ -18,16 +18,16 @@
 
     <p>You have given an opinion on all available cases.</p>
 
-    {% if unconfirmedReadCount > 0 %}
-      {# Confirmation itself lives on the session overview, behind a chance to
+    {% if unfinalisedReadCount > 0 %}
+      {# Finalisation itself lives on the session overview, behind a chance to
          review what was read - this page only points there #}
       <p>
-        {% if unconfirmedReadCount == 1 %}
-          Your read from this session is not yet confirmed.
+        {% if unfinalisedReadCount == 1 %}
+          Your read from this session is not yet finalised.
         {% else %}
-          Your {{ unconfirmedReadCount }} reads from this session are not yet confirmed.
+          Your {{ unfinalisedReadCount }} reads from this session are not yet finalised.
         {% endif %}
-        Review and confirm them from the session overview.
+        Review and finalise them from the session overview.
       </p>
     {% endif %}
 

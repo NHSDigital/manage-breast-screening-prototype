@@ -182,13 +182,13 @@
     {% endif %}
     
 
-    {# Read confirmation delay #}
-    {{ settingToggle("Read confirmation", "settings[reading][confirmationDelay]", [
+    {# Read finalisation delay #}
+    {{ settingToggle("Read finalisation", "settings[reading][finalisationDelay]", [
       {value: "0", label: "Immediate"},
       {value: "60", label: "After 1 hour"},
       {value: "1440", label: "After 24 hours"},
       {value: "never", label: "Manual only"}
-    ], data.settings.reading.confirmationDelay, "60") }}
+    ], data.settings.reading.finalisationDelay, "60") }}
 
     {# Arbitration policy #}
     {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [

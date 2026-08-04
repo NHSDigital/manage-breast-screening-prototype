@@ -318,15 +318,15 @@ test.describe('Image reading', () => {
     await expect(summaryRow('Outcome')).toContainText('Normal')
   })
 
-  test('confirms reads from the session overview', async ({ page }) => {
-    // With a confirmation delay, a fresh read sits unconfirmed. Confirmation
+  test('finalises reads from the session overview', async ({ page }) => {
+    // With a finalisation delay, a fresh read sits unfinalised. Finalisation
     // deliberately lives on the session overview - behind a chance to review
     // what was read - not on the session-complete page, which only points
-    // there. The seeded first read is hours old, so it has auto-confirmed -
-    // confirming ours settles the case.
+    // there. The seeded first read is hours old, so it has auto-finalised -
+    // finalising ours settles the case.
     await pinSettings(page, {
       ...readingSettings,
-      'settings[reading][confirmationDelay]': '60'
+      'settings[reading][finalisationDelay]': '60'
     })
 
     await page.goto(
@@ -340,20 +340,20 @@ test.describe('Image reading', () => {
     await recordNormal(page)
 
     // The only case is read, so the session is complete - the page notes the
-    // unconfirmed read but sends the reader to the overview to confirm it
+    // unfinalised read but sends the reader to the overview to finalise it
     await expect(page).toHaveURL(/\/no-more-cases/)
-    await expect(page.getByText('not yet confirmed')).toBeVisible()
+    await expect(page.getByText('not yet finalised')).toBeVisible()
     await page.getByRole('button', { name: 'See session overview' }).click()
 
-    // The session-complete panel carries the auto-confirmation time and the
-    // confirm action
-    await expect(page.getByText('confirmed automatically')).toBeVisible()
-    await page.getByRole('link', { name: 'Confirm opinions now' }).click()
+    // The session-complete panel carries the auto-finalisation time and the
+    // finalise action
+    await expect(page.getByText('finalised automatically')).toBeVisible()
+    await page.getByRole('link', { name: 'Finalise opinions now' }).click()
 
-    // Confirmed: the prompt gives way to the settled state
-    await expect(page.getByText('All opinions are confirmed')).toBeVisible()
+    // Finalised: the prompt gives way to the settled state
+    await expect(page.getByText('All opinions are finalised')).toBeVisible()
 
-    // Both reads now confirmed, so the case has settled - concluded if the
+    // Both reads now finalised, so the case has settled - concluded if the
     // reads agreed, awaiting arbitration if not
     const episodes = readCollection('episodes.json', 'episodes')
     const readingCase = episodes

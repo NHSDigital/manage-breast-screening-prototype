@@ -16,8 +16,8 @@ const {
   canUserReadAppointment,
   userHasReadAppointment,
   writeReading,
-  getUnconfirmedUserReadsForSession,
-  confirmUserReadsForSession,
+  getUnfinalisedUserReadsForSession,
+  finaliseUserReadsForSession,
   getEligibleCandidatesForSession,
   createReadingSession,
   getFirstReadableAppointmentInSession,
@@ -454,7 +454,7 @@ module.exports = (router) => {
     }
     res.render('reading/no-more-cases', {
       sessionId,
-      unconfirmedReadCount: getUnconfirmedUserReadsForSession(
+      unfinalisedReadCount: getUnfinalisedUserReadsForSession(
         data,
         sessionId,
         data.currentUser?.id
@@ -462,11 +462,11 @@ module.exports = (router) => {
     })
   })
 
-  // Confirm the user's reads from this session - linked from the session
+  // Finalise the user's reads from this session - linked from the session
   // overview's session-complete panel, so a plain link can reach it.
-  // Confirmation is what makes a result real: it releases discordant cases
+  // Finalisation is what makes a result real: it releases discordant cases
   // into the arbitration backlog and moves concluded episodes on.
-  router.all('/reading/session/:sessionId/confirm-reads', (req, res) => {
+  router.all('/reading/session/:sessionId/finalise-reads', (req, res) => {
     const data = req.session.data
     const { sessionId } = req.params
     const session = getReadingSession(data, sessionId)
@@ -474,18 +474,18 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
 
-    const { confirmedCount } = confirmUserReadsForSession(
+    const { finalisedCount } = finaliseUserReadsForSession(
       data,
       sessionId,
       data.currentUser?.id
     )
 
-    if (confirmedCount > 0) {
+    if (finalisedCount > 0) {
       req.flash(
         'success',
-        confirmedCount === 1
-          ? '1 read confirmed'
-          : `${confirmedCount} reads confirmed`
+        finalisedCount === 1
+          ? '1 read finalised'
+          : `${finalisedCount} reads finalised`
       )
     }
 
@@ -552,24 +552,24 @@ module.exports = (router) => {
       session.skippedAppointments || []
     )
 
-    // The user's reads still awaiting confirmation, and when the first will
-    // confirm itself - drives the session-complete panel's confirm prompt
-    const unconfirmedReads = getUnconfirmedUserReadsForSession(
+    // The user's reads still awaiting finalisation, and when the first will
+    // finalise itself - drives the session-complete panel's finalise prompt
+    const unconfirmedReads = getUnfinalisedUserReadsForSession(
       data,
       sessionId,
       data.currentUser.id
     )
-    const confirmationDelayMinutes = parseInt(
-      data.settings?.reading?.confirmationDelay,
+    const finalisationDelayMinutes = parseInt(
+      data.settings?.reading?.finalisationDelay,
       10
     )
     const firstUnconfirmedTimestamp = unconfirmedReads
       .map(({ read }) => read.timestamp)
       .sort()[0]
-    const autoConfirmAt =
-      firstUnconfirmedTimestamp && !Number.isNaN(confirmationDelayMinutes)
+    const autoFinaliseAt =
+      firstUnconfirmedTimestamp && !Number.isNaN(finalisationDelayMinutes)
         ? dayjs(firstUnconfirmedTimestamp)
-            .add(confirmationDelayMinutes, 'minute')
+            .add(finalisationDelayMinutes, 'minute')
             .toISOString()
         : null
 
@@ -597,8 +597,8 @@ module.exports = (router) => {
       readingStatus,
       sessionProgress,
       resumeAppointment,
-      autoConfirmAt,
-      unconfirmedReadCount: unconfirmedReads.length,
+      autoFinaliseAt,
+      unfinalisedReadCount: unconfirmedReads.length,
       clinic,
       backlogTotal,
       view: selectedView

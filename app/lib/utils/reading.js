@@ -26,7 +26,7 @@ const {
   getReadingMetadata,
   getReadingCaseState,
   getReadingCaseOutcome,
-  isReadConfirmed,
+  isReadFinalised,
   isCaseDeferred,
   caseHasReads,
   caseNeedsFirstRead,
@@ -35,7 +35,7 @@ const {
   userHasReadCase,
   buildRead,
   withRead,
-  withReadConfirmed
+  withReadFinalised
 } = require('./reading-cases')
 
 /************************************************************************
@@ -87,8 +87,8 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   updateReadingCase(data, appointment.episodeId, updatedCase)
 
   // Note the episode deliberately stays in `reading`. Two opinions and a
-  // computed outcome is not a confirmed result - the episode moves on when
-  // the reads are confirmed (see confirmUserReadsForSession below).
+  // computed outcome is not a finalised result - the episode moves on when
+  // the reads are finalised (see finaliseUserReadsForSession below).
 
   // If we have session context, remove this appointment from skipped appointments
   // (readingSessions is per-session working data, so in-place edits are fine)
@@ -106,19 +106,19 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
 }
 
 /**
- * The user's not-yet-confirmed reads in a session, each with the appointment
- * and case it belongs to. The session-complete panel's count and the confirm
+ * The user's not-yet-finalised reads in a session, each with the appointment
+ * and case it belongs to. The session-complete panel's count and the finalise
  * action both work from this.
  *
- * "Not yet confirmed" means not confirmed either way: no explicit confirmedAt,
- * and the auto-confirmation delay hasn't passed.
+ * "Not yet finalised" means not finalised either way: no explicit finalisedAt,
+ * and the auto-finalisation delay hasn't passed.
  *
  * @param {object} data - Session data
  * @param {string} sessionId - Reading session ID
  * @param {string} userId - User ID
  * @returns {Array<{appointment: object, readingCase: object, read: object}>}
  */
-const getUnconfirmedUserReadsForSession = (data, sessionId, userId) => {
+const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
   const session = data.readingSessions?.[sessionId]
   if (!session || !userId) return []
 
@@ -133,7 +133,7 @@ const getUnconfirmedUserReadsForSession = (data, sessionId, userId) => {
     const readingCase = getReadingCase(data, appointment)
     const read = getReadForUser(readingCase, userId)
     if (!read) continue
-    if (isReadConfirmed(read, data.settings)) continue
+    if (isReadFinalised(read, data.settings)) continue
 
     results.push({ appointment, readingCase, read })
   }
@@ -142,12 +142,12 @@ const getUnconfirmedUserReadsForSession = (data, sessionId, userId) => {
 }
 
 /**
- * Confirm the user's outstanding reads from a session, and settle what each
- * confirmation makes true: a case whose confirmed reads the rules send to
+ * Finalise the user's outstanding reads from a session, and settle what each
+ * finalisation makes true: a case whose finalised reads the rules send to
  * arbitration gets its release recorded, and a case that concludes moves its
  * episode on.
  *
- * Auto-confirmation (the delay passing) has no moment like this - a case can
+ * Auto-finalisation (the delay passing) has no moment like this - a case can
  * conclude by time alone without anything recording the release or advancing
  * the episode. The state stays honest because it is derived; the acts are only
  * recorded where there is an act to record.
@@ -155,24 +155,24 @@ const getUnconfirmedUserReadsForSession = (data, sessionId, userId) => {
  * @param {object} data - Session data
  * @param {string} sessionId - Reading session ID
  * @param {string} userId - User ID
- * @returns {{confirmedCount: number, releasedCount: number, concludedCount: number}}
+ * @returns {{finalisedCount: number, releasedCount: number, concludedCount: number}}
  */
-const confirmUserReadsForSession = (data, sessionId, userId) => {
-  const unconfirmed = getUnconfirmedUserReadsForSession(data, sessionId, userId)
-  const confirmedAt = new Date().toISOString()
+const finaliseUserReadsForSession = (data, sessionId, userId) => {
+  const unfinalised = getUnfinalisedUserReadsForSession(data, sessionId, userId)
+  const finalisedAt = new Date().toISOString()
 
   let releasedCount = 0
   let concludedCount = 0
 
-  for (const { appointment, readingCase } of unconfirmed) {
-    let updatedCase = withReadConfirmed(readingCase, userId, {
-      confirmedAt,
-      confirmedBy: userId
+  for (const { appointment, readingCase } of unfinalised) {
+    let updatedCase = withReadFinalised(readingCase, userId, {
+      finalisedAt,
+      finalisedBy: userId
     })
 
     const state = getReadingCaseState(updatedCase, data.settings)
 
-    // Both reads confirmed and the rules send it to arbitration: record the
+    // Both reads finalised and the rules send it to arbitration: record the
     // release into the backlog (see isCaseInArbitration)
     if (
       state === 'awaiting_arbitration' &&
@@ -180,14 +180,14 @@ const confirmUserReadsForSession = (data, sessionId, userId) => {
     ) {
       updatedCase = {
         ...updatedCase,
-        arbitration: { releasedAt: confirmedAt, releasedBy: userId }
+        arbitration: { releasedAt: finalisedAt, releasedBy: userId }
       }
       releasedCount++
     }
 
     updateReadingCase(data, appointment.episodeId, updatedCase)
 
-    // A confirmed conclusion is a real result, so the episode moves on
+    // A finalised conclusion is a real result, so the episode moves on
     if (state === 'concluded') {
       advanceEpisodeForReadingOutcome(
         data,
@@ -198,7 +198,7 @@ const confirmUserReadsForSession = (data, sessionId, userId) => {
     }
   }
 
-  return { confirmedCount: unconfirmed.length, releasedCount, concludedCount }
+  return { finalisedCount: unfinalised.length, releasedCount, concludedCount }
 }
 
 /**
@@ -1567,8 +1567,8 @@ module.exports = {
   // Single appointment
   getAppointmentReadingMetadata,
   writeReading,
-  getUnconfirmedUserReadsForSession,
-  confirmUserReadsForSession,
+  getUnfinalisedUserReadsForSession,
+  finaliseUserReadsForSession,
   getEpisodeReadingStatus,
   getDeferredCases,
   getResolvedDeferrals,

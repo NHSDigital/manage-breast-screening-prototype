@@ -116,7 +116,7 @@ const defaultSettings = {
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
     arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_recalls' | 'all_non_normal'
-    confirmationDelay: '60', // minutes before reads auto-confirm; '0' immediate | 'never' manual only
+    finalisationDelay: '60', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
     lazySessions: 'true',
     defaultSessionSize: '25'
   }

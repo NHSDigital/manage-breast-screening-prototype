@@ -41,9 +41,9 @@ const readingSettings = {
   // more than a smoke test should take on - see notes in reading.spec.js.
   'settings[reading][annotationsMode]': 'without-images',
   'settings[reading][secondReaderComparison]': 'off',
-  // Reads confirm as soon as they are saved, so journeys see settled states
-  // rather than cases waiting out the confirmation delay
-  'settings[reading][confirmationDelay]': '0'
+  // Reads finalise as soon as they are saved, so journeys see settled states
+  // rather than cases waiting out the finalisation delay
+  'settings[reading][finalisationDelay]': '0'
 }
 
 /**

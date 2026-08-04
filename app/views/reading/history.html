@@ -175,8 +175,8 @@
                 {{ "Waiting for 1st read" | toTag }}
               {% elseif caseState == 'awaiting_second_read' %}
                 {{ "Waiting for 2nd read" | toTag }}
-              {% elseif caseState == 'awaiting_confirmation' %}
-                {{ "Awaiting confirmation" | toTag }}
+              {% elseif caseState == 'awaiting_finalisation' %}
+                {{ "Awaiting finalisation" | toTag }}
               {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
                 {{ "Arbitration" | toTag }}
               {% else %}

@@ -30,9 +30,9 @@ const READ_TYPES = ['first', 'second', 'arbitration']
 // - never stored, so it can't drift from the reads it describes.
 //
 // Two reads are not a result by themselves: the result becomes real once the
-// reads are confirmed - explicitly by the reader, or automatically when the
-// confirmation delay passes. `awaiting_confirmation` is that gap. A case whose
-// destination is arbitration is still `awaiting_confirmation` until then - the
+// reads are finalised - explicitly by the reader, or automatically when the
+// finalisation delay passes. `awaiting_finalisation` is that gap. A case whose
+// destination is arbitration is still `awaiting_finalisation` until then - the
 // destination is a fact about the case (see getReadingCaseStatus), not a
 // separate state.
 //
@@ -41,7 +41,7 @@ const READ_TYPES = ['first', 'second', 'arbitration']
 const READING_CASE_STATES = [
   'awaiting_first_read',
   'awaiting_second_read',
-  'awaiting_confirmation',
+  'awaiting_finalisation',
   'awaiting_arbitration',
   'in_arbitration',
   'concluded'
@@ -313,46 +313,46 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
 }
 
 /**
- * Whether a read is confirmed.
+ * Whether a read is finalised.
  *
- * Confirmation happens two ways: the reader confirms it (confirmedAt is
- * written), or the confirmation delay passes and it confirms itself. The
- * delay comes from settings.reading.confirmationDelay - minutes as a string,
+ * Finalisation happens two ways: the reader finalises it (finalisedAt is
+ * written), or the finalisation delay passes and it finalises itself. The
+ * delay comes from settings.reading.finalisationDelay - minutes as a string,
  * '0' meaning immediately, 'never' meaning only ever manually.
  *
  * @param {object} read - The read
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-confirmation against;
+ * @param {Date | string} [now] - The time to judge auto-finalisation against;
  *   defaults to the real now
  * @returns {boolean}
  */
-const isReadConfirmed = (read, settings = {}, now = null) => {
+const isReadFinalised = (read, settings = {}, now = null) => {
   if (!read) return false
-  if (read.confirmedAt) return true
+  if (read.finalisedAt) return true
 
-  const delay = settings?.reading?.confirmationDelay ?? '60'
+  const delay = settings?.reading?.finalisationDelay ?? '60'
   if (delay === 'never') return false
   if (!read.timestamp) return false
 
   const delayMinutes = parseInt(delay, 10)
   if (Number.isNaN(delayMinutes)) return false
 
-  const confirmsAt = new Date(read.timestamp).getTime() + delayMinutes * 60000
+  const finalisesAt = new Date(read.timestamp).getTime() + delayMinutes * 60000
   const judgedAt = now ? new Date(now).getTime() : Date.now()
-  return judgedAt >= confirmsAt
+  return judgedAt >= finalisesAt
 }
 
 /**
- * Whether every read on a case is confirmed
+ * Whether every read on a case is finalised
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-confirmation against
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
  * @returns {boolean}
  */
-const areAllReadsConfirmed = (readingCase, settings = {}, now = null) => {
+const areAllReadsFinalised = (readingCase, settings = {}, now = null) => {
   return getReadsAsArray(readingCase).every((read) =>
-    isReadConfirmed(read, settings, now)
+    isReadFinalised(read, settings, now)
   )
 }
 
@@ -365,7 +365,7 @@ const areAllReadsConfirmed = (readingCase, settings = {}, now = null) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-confirmation against
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
  * @returns {string} One of READING_CASE_STATES
  */
 const getReadingCaseState = (readingCase, settings = {}, now = null) => {
@@ -377,9 +377,9 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   // An arbitration read settles the case whatever the first two said
   if (getArbitrationRead(readingCase)) return 'concluded'
 
-  // Two opinions are not a result until they are confirmed
-  if (!areAllReadsConfirmed(readingCase, settings, now)) {
-    return 'awaiting_confirmation'
+  // Two opinions are not a result until they are finalised
+  if (!areAllReadsFinalised(readingCase, settings, now)) {
+    return 'awaiting_finalisation'
   }
 
   const [firstRead, secondRead] = reads
@@ -399,7 +399,7 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-confirmation against
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
  * @returns {string | null} One of READING_CASE_OUTCOMES, or null
  */
 const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
@@ -418,19 +418,19 @@ const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
 /**
  * The facts about where a case stands, for composing status displays.
  *
- * Facts rather than labels, so "awaiting confirmation, then arbitration" is
+ * Facts rather than labels, so "awaiting finalisation, then arbitration" is
  * one state with a destination instead of a fourth state - willArbitrate is
  * just willGoToArbitration asked as soon as two reads exist, rather than at
- * confirmation.
+ * finalisation.
  *
  * getReadingCaseOutcome stays strict (null until concluded);
- * provisionalOutcome is what the outcome will be once the reads confirm,
+ * provisionalOutcome is what the outcome will be once the reads finalise,
  * where that can already be said.
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-confirmation against
- * @returns {{state: string, confirmed: boolean, willArbitrate: boolean, provisionalOutcome: string | null}}
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @returns {{state: string, finalised: boolean, willArbitrate: boolean, provisionalOutcome: string | null}}
  */
 const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
   const reads = getReadsAsArray(readingCase)
@@ -448,8 +448,8 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
 
   return {
     state: getReadingCaseState(readingCase, settings, now),
-    confirmed:
-      reads.length >= 2 && areAllReadsConfirmed(readingCase, settings, now),
+    finalised:
+      reads.length >= 2 && areAllReadsFinalised(readingCase, settings, now),
     willArbitrate,
     provisionalOutcome
   }
@@ -507,7 +507,7 @@ const caseNeedsSecondRead = (readingCase) => {
 }
 
 /**
- * Whether a case sits in the arbitration backlog - confirmed reads whose
+ * Whether a case sits in the arbitration backlog - finalised reads whose
  * result the rules send to arbitration, not yet claimed by anyone
  *
  * @param {object} readingCase - Reading case
@@ -695,25 +695,25 @@ const withRead = (readingCase, read) => {
 }
 
 /**
- * Mark a user's read on a case as confirmed, returning a new case record.
+ * Mark a user's read on a case as finalised, returning a new case record.
  *
- * Already-confirmed reads are left alone, so the original confirmation
+ * Already-finalised reads are left alone, so the original finalisation
  * record survives a repeat call.
  *
  * @param {object} readingCase - The case
- * @param {string} userId - Whose read to confirm
+ * @param {string} userId - Whose read to finalise
  * @param {object} [options] - Options
- * @param {string} [options.confirmedAt] - When; defaults to now
- * @param {string} [options.confirmedBy] - Who confirmed it; defaults to the reader
- * @returns {object} A new case record with the confirmation applied
+ * @param {string} [options.finalisedAt] - When; defaults to now
+ * @param {string} [options.finalisedBy] - Who finalised it; defaults to the reader
+ * @returns {object} A new case record with the finalisation applied
  */
-const withReadConfirmed = (readingCase, userId, options = {}) => {
+const withReadFinalised = (readingCase, userId, options = {}) => {
   const reads = getReadsAsArray(readingCase).map((read) =>
-    read.readerId === userId && !read.confirmedAt
+    read.readerId === userId && !read.finalisedAt
       ? {
           ...read,
-          confirmedAt: options.confirmedAt || new Date().toISOString(),
-          confirmedBy: options.confirmedBy || userId
+          finalisedAt: options.finalisedAt || new Date().toISOString(),
+          finalisedBy: options.finalisedBy || userId
         }
       : read
   )
@@ -760,8 +760,8 @@ module.exports = {
   willGoToArbitration,
   getComparisonInfo,
   shouldShowComparePage,
-  isReadConfirmed,
-  areAllReadsConfirmed,
+  isReadFinalised,
+  areAllReadsFinalised,
   getReadingCaseState,
   getReadingCaseOutcome,
   getReadingCaseStatus,
@@ -772,6 +772,6 @@ module.exports = {
   canUserReadCase,
   buildRead,
   withRead,
-  withReadConfirmed,
+  withReadFinalised,
   withoutRead
 }

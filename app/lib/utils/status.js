@@ -235,7 +235,7 @@ const STATUS_TAGS = {
     // appointment- and group-level vocabulary.
     'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
     'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'blue' },
-    'awaiting_confirmation': { label: 'Awaiting confirmation', colour: 'yellow' },
+    'awaiting_finalisation': { label: 'Awaiting finalisation', colour: 'yellow' },
     'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'orange' },
     'in_arbitration': { label: 'In arbitration', colour: 'purple' },
     'concluded': { label: 'Concluded', colour: 'green' },
