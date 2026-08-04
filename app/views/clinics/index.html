@@ -7,7 +7,7 @@
     {% case 'upcoming' %}
      Upcoming clinics
     {% case 'completed' %}
-     Completed clinics
+     Closed clinics
     {% default %}
      All clinics
   {% endswitch %}
@@ -28,7 +28,7 @@
   {% for item in [
     { id: 'today', label: 'Today' },
     { id: 'upcoming', label: 'Upcoming' },
-    { id: 'completed', label: 'Completed' },
+    { id: 'completed', label: 'Closed' },
     { id: 'all', label: 'All' }
   ] %}
     {% set href -%}
