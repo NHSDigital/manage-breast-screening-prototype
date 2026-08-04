@@ -29,14 +29,20 @@ const READ_TYPES = ['first', 'second', 'arbitration']
 // Where a case has got to. Derived from its reads plus the acts recorded on it
 // - never stored, so it can't drift from the reads it describes.
 //
-// `arbitration_required` and `in_arbitration` are deliberately different
-// states: reads disagreeing is what makes arbitration *necessary*, but a case
-// only becomes arbitratable once someone releases it. Nothing performs that
-// release yet, so no case reaches `in_arbitration` today.
+// Two reads are not a result by themselves: the result becomes real once the
+// reads are finalised - explicitly by the reader, or automatically when the
+// finalisation delay passes. `awaiting_finalisation` is that gap. A case whose
+// destination is arbitration is still `awaiting_finalisation` until then - the
+// destination is a fact about the case (see getReadingCaseStatus), not a
+// separate state.
+//
+// `in_arbitration` is reserved for a future claim/lock - a case being actively
+// worked in an arbitration session. Nothing sets it yet.
 const READING_CASE_STATES = [
   'awaiting_first_read',
   'awaiting_second_read',
-  'arbitration_required',
+  'awaiting_finalisation',
+  'awaiting_arbitration',
   'in_arbitration',
   'concluded'
 ]
@@ -280,6 +286,7 @@ const areReadsDiscordant = (readA, readB) => {
  *
  * Policies (from settings.reading.arbitrationPolicy):
  * - 'discordant_only' (default): only discordant reads need arbitration
+ * - 'all_recalls': concordant recalls for assessment do too
  * - 'all_non_normal': any concordant non-normal outcome does too
  *
  * @param {object} readA - First read
@@ -298,8 +305,55 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
   if (policy === 'all_non_normal') {
     return readA.opinion !== 'normal'
   }
+  if (policy === 'all_recalls') {
+    return readA.opinion === 'recall_for_assessment'
+  }
 
   return false
+}
+
+/**
+ * Whether a read is finalised.
+ *
+ * Finalisation happens two ways: the reader finalises it (finalisedAt is
+ * written), or the finalisation delay passes and it finalises itself. The
+ * delay comes from settings.reading.finalisationDelay - minutes as a string,
+ * '0' meaning immediately, 'never' meaning only ever manually.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-finalisation against;
+ *   defaults to the real now
+ * @returns {boolean}
+ */
+const isReadFinalised = (read, settings = {}, now = null) => {
+  if (!read) return false
+  if (read.finalisedAt) return true
+
+  const delay = settings?.reading?.finalisationDelay ?? '60'
+  if (delay === 'never') return false
+  if (!read.timestamp) return false
+
+  const delayMinutes = parseInt(delay, 10)
+  if (Number.isNaN(delayMinutes)) return false
+
+  const finalisesAt = new Date(read.timestamp).getTime() + delayMinutes * 60000
+  const judgedAt = now ? new Date(now).getTime() : Date.now()
+  return judgedAt >= finalisesAt
+}
+
+/**
+ * Whether every read on a case is finalised
+ *
+ * @param {object} readingCase - Reading case
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @returns {boolean}
+ */
+const areAllReadsFinalised = (readingCase, settings = {}, now = null) => {
+  return getReadsAsArray(readingCase).every((read) =>
+    isReadFinalised(read, settings, now)
+  )
 }
 
 /**
@@ -311,9 +365,10 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
  * @returns {string} One of READING_CASE_STATES
  */
-const getReadingCaseState = (readingCase, settings = {}) => {
+const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   const reads = getReadsAsArray(readingCase)
 
   if (reads.length === 0) return 'awaiting_first_read'
@@ -322,12 +377,15 @@ const getReadingCaseState = (readingCase, settings = {}) => {
   // An arbitration read settles the case whatever the first two said
   if (getArbitrationRead(readingCase)) return 'concluded'
 
+  // Two opinions are not a result until they are finalised
+  if (!areAllReadsFinalised(readingCase, settings, now)) {
+    return 'awaiting_finalisation'
+  }
+
   const [firstRead, secondRead] = reads
 
   if (willGoToArbitration(firstRead, secondRead, settings)) {
-    return isCaseInArbitration(readingCase)
-      ? 'in_arbitration'
-      : 'arbitration_required'
+    return 'awaiting_arbitration'
   }
 
   return 'concluded'
@@ -341,10 +399,13 @@ const getReadingCaseState = (readingCase, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
  * @returns {string | null} One of READING_CASE_OUTCOMES, or null
  */
-const getReadingCaseOutcome = (readingCase, settings = {}) => {
-  if (getReadingCaseState(readingCase, settings) !== 'concluded') return null
+const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
+  if (getReadingCaseState(readingCase, settings, now) !== 'concluded') {
+    return null
+  }
 
   // Arbitration, where it happened, is the deciding read
   const arbitrationRead = getArbitrationRead(readingCase)
@@ -352,6 +413,46 @@ const getReadingCaseOutcome = (readingCase, settings = {}) => {
 
   // Otherwise the two reads agreed, so either one gives the answer
   return getReadsAsArray(readingCase)[0]?.opinion || null
+}
+
+/**
+ * The facts about where a case stands, for composing status displays.
+ *
+ * Facts rather than labels, so "awaiting finalisation, then arbitration" is
+ * one state with a destination instead of a fourth state - willArbitrate is
+ * just willGoToArbitration asked as soon as two reads exist, rather than at
+ * finalisation.
+ *
+ * getReadingCaseOutcome stays strict (null until concluded);
+ * provisionalOutcome is what the outcome will be once the reads finalise,
+ * where that can already be said.
+ *
+ * @param {object} readingCase - Reading case
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @returns {{state: string, finalised: boolean, willArbitrate: boolean, provisionalOutcome: string | null}}
+ */
+const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
+  const reads = getReadsAsArray(readingCase)
+  const arbitrationRead = getArbitrationRead(readingCase)
+
+  const willArbitrate = Boolean(
+    reads.length >= 2 &&
+      !arbitrationRead &&
+      willGoToArbitration(reads[0], reads[1], settings)
+  )
+
+  const provisionalOutcome =
+    arbitrationRead?.opinion ||
+    (reads.length >= 2 && !willArbitrate ? reads[0]?.opinion || null : null)
+
+  return {
+    state: getReadingCaseState(readingCase, settings, now),
+    finalised:
+      reads.length >= 2 && areAllReadsFinalised(readingCase, settings, now),
+    willArbitrate,
+    provisionalOutcome
+  }
 }
 
 /**
@@ -406,14 +507,15 @@ const caseNeedsSecondRead = (readingCase) => {
 }
 
 /**
- * Whether a case needs arbitrating but hasn't been released into it
+ * Whether a case sits in the arbitration backlog - finalised reads whose
+ * result the rules send to arbitration, not yet claimed by anyone
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
  * @returns {boolean}
  */
 const caseNeedsArbitration = (readingCase, settings = {}) => {
-  return getReadingCaseState(readingCase, settings) === 'arbitration_required'
+  return getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
 }
 
 /**
@@ -593,6 +695,33 @@ const withRead = (readingCase, read) => {
 }
 
 /**
+ * Mark a user's read on a case as finalised, returning a new case record.
+ *
+ * Already-finalised reads are left alone, so the original finalisation
+ * record survives a repeat call.
+ *
+ * @param {object} readingCase - The case
+ * @param {string} userId - Whose read to finalise
+ * @param {object} [options] - Options
+ * @param {string} [options.finalisedAt] - When; defaults to now
+ * @param {string} [options.finalisedBy] - Who finalised it; defaults to the reader
+ * @returns {object} A new case record with the finalisation applied
+ */
+const withReadFinalised = (readingCase, userId, options = {}) => {
+  const reads = getReadsAsArray(readingCase).map((read) =>
+    read.readerId === userId && !read.finalisedAt
+      ? {
+          ...read,
+          finalisedAt: options.finalisedAt || new Date().toISOString(),
+          finalisedBy: options.finalisedBy || userId
+        }
+      : read
+  )
+
+  return { ...readingCase, reads }
+}
+
+/**
  * Remove a user's read from a case, returning a new case record.
  *
  * Deferring after giving an opinion withdraws that opinion - the reader is
@@ -631,8 +760,11 @@ module.exports = {
   willGoToArbitration,
   getComparisonInfo,
   shouldShowComparePage,
+  isReadFinalised,
+  areAllReadsFinalised,
   getReadingCaseState,
   getReadingCaseOutcome,
+  getReadingCaseStatus,
   getReadingMetadata,
   caseNeedsFirstRead,
   caseNeedsSecondRead,
@@ -640,5 +772,6 @@ module.exports = {
   canUserReadCase,
   buildRead,
   withRead,
+  withReadFinalised,
   withoutRead
 }

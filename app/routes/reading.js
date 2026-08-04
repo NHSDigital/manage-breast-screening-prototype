@@ -16,6 +16,8 @@ const {
   canUserReadAppointment,
   userHasReadAppointment,
   writeReading,
+  getUnfinalisedUserReadsForSession,
+  finaliseUserReadsForSession,
   getEligibleCandidatesForSession,
   createReadingSession,
   getFirstReadableAppointmentInSession,
@@ -451,15 +453,49 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
     res.render('reading/no-more-cases', {
-      sessionId
+      sessionId,
+      unfinalisedReadCount: getUnfinalisedUserReadsForSession(
+        data,
+        sessionId,
+        data.currentUser?.id
+      ).length
     })
+  })
+
+  // Finalise the user's reads from this session - linked from the session
+  // overview's session-complete panel, so a plain link can reach it.
+  // Finalisation is what makes a result real: it releases discordant cases
+  // into the arbitration backlog and moves concluded episodes on.
+  router.all('/reading/session/:sessionId/finalise-reads', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    const { finalisedCount } = finaliseUserReadsForSession(
+      data,
+      sessionId,
+      data.currentUser?.id
+    )
+
+    if (finalisedCount > 0) {
+      req.flash(
+        'success',
+        finalisedCount === 1
+          ? '1 read finalised'
+          : `${finalisedCount} reads finalised`
+      )
+    }
+
+    res.redirect(`/reading/session/${sessionId}`)
   })
 
   // Route for viewing a session with specific view
   router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
     const { sessionId, view } = req.params
-    const autoFinaliseWindowMinutes = 30
     const validViews = ['your-reads', 'all-reads']
 
     // Validate view parameter
@@ -516,21 +552,26 @@ module.exports = (router) => {
       session.skippedAppointments || []
     )
 
-    // Countdown starts when the current user records their first opinion in this session
-    const firstUserReadTimestamp = enhancedAppointments
-      .map(
-        (appointment) =>
-          getReadForUser(appointment.readingCase, data.currentUser.id)
-            ?.timestamp
-      )
-      .filter(Boolean)
-      .sort((a, b) => new Date(a) - new Date(b))[0]
-
-    const autoFinaliseAt = firstUserReadTimestamp
-      ? dayjs(firstUserReadTimestamp)
-          .add(autoFinaliseWindowMinutes, 'minute')
-          .toISOString()
-      : dayjs().add(autoFinaliseWindowMinutes, 'minute').toISOString()
+    // The user's reads still awaiting finalisation, and when the first will
+    // finalise itself - drives the session-complete panel's finalise prompt
+    const unconfirmedReads = getUnfinalisedUserReadsForSession(
+      data,
+      sessionId,
+      data.currentUser.id
+    )
+    const finalisationDelayMinutes = parseInt(
+      data.settings?.reading?.finalisationDelay,
+      10
+    )
+    const firstUnconfirmedTimestamp = unconfirmedReads
+      .map(({ read }) => read.timestamp)
+      .sort()[0]
+    const autoFinaliseAt =
+      firstUnconfirmedTimestamp && !Number.isNaN(finalisationDelayMinutes)
+        ? dayjs(firstUnconfirmedTimestamp)
+            .add(finalisationDelayMinutes, 'minute')
+            .toISOString()
+        : null
 
     // Clear any lingering opinion banner from a previous session
     delete data.readingOpinionBanner
@@ -557,6 +598,7 @@ module.exports = (router) => {
       sessionProgress,
       resumeAppointment,
       autoFinaliseAt,
+      unfinalisedReadCount: unconfirmedReads.length,
       clinic,
       backlogTotal,
       view: selectedView

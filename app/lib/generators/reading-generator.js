@@ -363,6 +363,16 @@ const addRead = (readingCase, appointment, reader, timestamp, options = {}) => {
     timestamp
   })
 
+  // A read old enough would have been finalised by now, so record it as such.
+  // Recent reads stay unfinalised - they are what the finalisation flow (and
+  // the awaiting_finalisation state) has to work on.
+  if (dayjs(timestamp).isBefore(dayjs().subtract(24, 'hour'))) {
+    read.finalisedAt = dayjs(timestamp)
+      .add(faker.number.int({ min: 15, max: 45 }), 'minute')
+      .toISOString()
+    read.finalisedBy = reader.id
+  }
+
   const existingIndex = readingCase.reads.findIndex(
     (candidate) => candidate.readerId === reader.id
   )

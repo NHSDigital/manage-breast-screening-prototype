@@ -18,6 +18,19 @@
 
     <p>You have given an opinion on all available cases.</p>
 
+    {% if unfinalisedReadCount > 0 %}
+      {# Finalisation itself lives on the session overview, behind a chance to
+         review what was read - this page only points there #}
+      <p>
+        {% if unfinalisedReadCount == 1 %}
+          Your read from this session is not yet finalised.
+        {% else %}
+          Your {{ unfinalisedReadCount }} reads from this session are not yet finalised.
+        {% endif %}
+        Review and finalise them from the session overview.
+      </p>
+    {% endif %}
+
     <div class="nhsuk-button-group">
       {{ button({
         text: "See session overview",

@@ -93,11 +93,15 @@ test.describe('Screening appointment', () => {
     await openSection(page, 'Medical history')
 
     const historyModal = await clickToOpenModal(page, 'Breast cancer')
-    await historyModal
-      .locator(
-        'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
-      )
-      .check()
+    // Under a loaded full-suite run Playwright intermittently reports this
+    // checkbox "outside of the viewport" inside the transformed dialog and
+    // retries forever (see revealInModal's note). A DOM-level click sidesteps
+    // the geometry, and the assertion keeps it honest.
+    const cancerLocation = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
+    )
+    await cancerLocation.evaluate((element) => element.click())
+    await expect(cancerLocation).toBeChecked()
     await historyModal.getByRole('button', { name: 'Save' }).click()
     await expectModalClosed(historyModal)
 

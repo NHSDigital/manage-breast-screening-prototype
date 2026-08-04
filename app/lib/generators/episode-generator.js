@@ -209,7 +209,10 @@ const buildHistoricReadingCase = ({
     readerType: reader.role,
     readType,
     readNumber,
-    timestamp: timestamp.toISOString()
+    timestamp: timestamp.toISOString(),
+    // A settled past round's reads were finalised at the time
+    finalisedAt: timestamp.add(30, 'minute').toISOString(),
+    finalisedBy: reader.id
   })
 
   // When it went to arbitration the two readers disagreed, so one of them said
@@ -684,6 +687,14 @@ const checkEpisodes = (episodes, appointmentsById) => {
             `historic episode ${episode.id} ended in treatment but was read as "${readingOutcome}"`
           )
         }
+        // A settled past round's reads were all finalised at the time
+        getReadsAsArray(readingCase).forEach((read) => {
+          if (!read.finalisedAt) {
+            problems.push(
+              `historic reading case ${readingCase.id} has an unfinalised read`
+            )
+          }
+        })
         // Two readers, or three where they disagreed and one arbitrated
         const historicReadCount = getReadsAsArray(readingCase).length
         if (historicReadCount !== 2 && historicReadCount !== 3) {
@@ -756,6 +767,20 @@ const checkEpisodes = (episodes, appointmentsById) => {
           `reading case ${readingCase.id} has an arbitration read without two prior reads`
         )
       }
+      // Finalisation coherence: a finalisation is one act with two halves,
+      // and nothing finalises a read before it was made
+      reads.forEach((read) => {
+        if (Boolean(read.finalisedAt) !== Boolean(read.finalisedBy)) {
+          problems.push(
+            `read by ${read.readerId} on case ${readingCase.id} has half a finalisation record`
+          )
+        }
+        if (read.finalisedAt && read.finalisedAt < read.timestamp) {
+          problems.push(
+            `read by ${read.readerId} on case ${readingCase.id} was finalised before it was read`
+          )
+        }
+      })
       if (new Set(reads.map((read) => read.readerId)).size !== reads.length) {
         problems.push(
           `reading case ${readingCase.id} has the same reader twice`

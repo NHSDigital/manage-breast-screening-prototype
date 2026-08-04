@@ -56,7 +56,11 @@
       </a>
     {% else %}
       {% set sessionCompletePanelHtml %}
-        <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised at {{ autoFinaliseAt | formatTime("h:mma") }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        {% if unfinalisedReadCount > 0 %}
+          <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        {% else %}
+          <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. All opinions are finalised.</p>
+        {% endif %}
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {% if backlogTotal > 0 %}
             {{ button({
@@ -355,7 +359,7 @@
           {% set allViewTechnicalRecallAppointments = allViewTechnicalRecallAppointments | push(appointment) %}
         {% elseif appointmentOutcome == 'recall_for_assessment' %}
           {% set allViewRecallForAssessmentAppointments = allViewRecallForAssessmentAppointments | push(appointment) %}
-        {% elseif appointmentState == 'arbitration_required' or appointmentState == 'in_arbitration' %}
+        {% elseif appointmentState == 'awaiting_arbitration' or appointmentState == 'in_arbitration' %}
           {% set allViewArbitrationAppointments = allViewArbitrationAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
@@ -542,7 +546,9 @@
                   {{ "Waiting for 1st read" | toTag }}
                 {% elseif caseState == 'awaiting_second_read' %}
                   {{ "Waiting for 2nd read" | toTag }}
-                {% elseif caseState == 'arbitration_required' or caseState == 'in_arbitration' %}
+                {% elseif caseState == 'awaiting_finalisation' %}
+                  {{ "Awaiting finalisation" | toTag }}
+                {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
                   {{ "Arbitration" | toTag }}
                 {% else %}
                   {{ (appointment.readingCase | getReadingCaseOutcome(data.settings)) | toTag }}

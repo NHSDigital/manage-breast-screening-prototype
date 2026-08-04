@@ -17,13 +17,16 @@ const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
 const {
   getReadingCase,
   getEpisodeAppointments,
-  updateReadingCase
+  updateReadingCase,
+  advanceEpisodeForReadingOutcome
 } = require('./episodes')
 const {
   getReadsAsArray,
   getReadForUser,
   getReadingMetadata,
   getReadingCaseState,
+  getReadingCaseOutcome,
+  isReadFinalised,
   isCaseDeferred,
   caseHasReads,
   caseNeedsFirstRead,
@@ -31,7 +34,8 @@ const {
   canUserReadCase,
   userHasReadCase,
   buildRead,
-  withRead
+  withRead,
+  withReadFinalised
 } = require('./reading-cases')
 
 /************************************************************************
@@ -83,9 +87,8 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   updateReadingCase(data, appointment.episodeId, updatedCase)
 
   // Note the episode deliberately stays in `reading`. Two opinions and a
-  // computed outcome is not a confirmed result, and there is no step in the
-  // app that confirms one yet - see advanceEpisodeForReadingOutcome in
-  // app/lib/utils/episodes.js, which is what that step should call.
+  // computed outcome is not a finalised result - the episode moves on when
+  // the reads are finalised (see finaliseUserReadsForSession below).
 
   // If we have session context, remove this appointment from skipped appointments
   // (readingSessions is per-session working data, so in-place edits are fine)
@@ -100,6 +103,102 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   }
 
   return updatedCase
+}
+
+/**
+ * The user's not-yet-finalised reads in a session, each with the appointment
+ * and case it belongs to. The session-complete panel's count and the finalise
+ * action both work from this.
+ *
+ * "Not yet finalised" means not finalised either way: no explicit finalisedAt,
+ * and the auto-finalisation delay hasn't passed.
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - Reading session ID
+ * @param {string} userId - User ID
+ * @returns {Array<{appointment: object, readingCase: object, read: object}>}
+ */
+const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
+  const session = data.readingSessions?.[sessionId]
+  if (!session || !userId) return []
+
+  const results = []
+
+  for (const appointmentId of session.appointmentIds || []) {
+    const appointment = data.appointments.find(
+      (candidate) => candidate.id === appointmentId
+    )
+    if (!appointment) continue
+
+    const readingCase = getReadingCase(data, appointment)
+    const read = getReadForUser(readingCase, userId)
+    if (!read) continue
+    if (isReadFinalised(read, data.settings)) continue
+
+    results.push({ appointment, readingCase, read })
+  }
+
+  return results
+}
+
+/**
+ * Finalise the user's outstanding reads from a session, and settle what each
+ * finalisation makes true: a case whose finalised reads the rules send to
+ * arbitration gets its release recorded, and a case that concludes moves its
+ * episode on.
+ *
+ * Auto-finalisation (the delay passing) has no moment like this - a case can
+ * conclude by time alone without anything recording the release or advancing
+ * the episode. The state stays honest because it is derived; the acts are only
+ * recorded where there is an act to record.
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - Reading session ID
+ * @param {string} userId - User ID
+ * @returns {{finalisedCount: number, releasedCount: number, concludedCount: number}}
+ */
+const finaliseUserReadsForSession = (data, sessionId, userId) => {
+  const unfinalised = getUnfinalisedUserReadsForSession(data, sessionId, userId)
+  const finalisedAt = new Date().toISOString()
+
+  let releasedCount = 0
+  let concludedCount = 0
+
+  for (const { appointment, readingCase } of unfinalised) {
+    let updatedCase = withReadFinalised(readingCase, userId, {
+      finalisedAt,
+      finalisedBy: userId
+    })
+
+    const state = getReadingCaseState(updatedCase, data.settings)
+
+    // Both reads finalised and the rules send it to arbitration: record the
+    // release into the backlog (see isCaseInArbitration)
+    if (
+      state === 'awaiting_arbitration' &&
+      !updatedCase.arbitration?.releasedAt
+    ) {
+      updatedCase = {
+        ...updatedCase,
+        arbitration: { releasedAt: finalisedAt, releasedBy: userId }
+      }
+      releasedCount++
+    }
+
+    updateReadingCase(data, appointment.episodeId, updatedCase)
+
+    // A finalised conclusion is a real result, so the episode moves on
+    if (state === 'concluded') {
+      advanceEpisodeForReadingOutcome(
+        data,
+        appointment,
+        getReadingCaseOutcome(updatedCase, data.settings)
+      )
+      concludedCount++
+    }
+  }
+
+  return { finalisedCount: unfinalised.length, releasedCount, concludedCount }
 }
 
 /**
@@ -302,10 +401,10 @@ const calculateReadingMetrics = function (
   // Count cases that are ready for second read (have first read but not second)
   const secondReadReady = cases.filter(caseNeedsSecondRead).length
 
-  // Count cases needing arbitration (policy-aware via the case state)
+  // Count cases in the arbitration backlog (policy-aware via the case state)
   const arbitrationCount = cases.filter(
     (readingCase) =>
-      getReadingCaseState(readingCase, settings) === 'arbitration_required'
+      getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
   ).length
 
   // Global awaiting priors count (appointments with any outstanding prior request)
@@ -1468,6 +1567,8 @@ module.exports = {
   // Single appointment
   getAppointmentReadingMetadata,
   writeReading,
+  getUnfinalisedUserReadsForSession,
+  finaliseUserReadsForSession,
   getEpisodeReadingStatus,
   getDeferredCases,
   getResolvedDeferrals,
