@@ -197,6 +197,12 @@
       {value: "all_non_normal", label: "All non-normal outcomes"}
     ], data.settings.reading.arbitrationPolicy, "discordant_only") }}
 
+    {# Arbitration flow order - what an arbitration case opens on #}
+    {{ settingToggle("Arbitration flow", "settings[reading][arbitrationFlow]", [
+      {value: "compare_first", label: "Compare reads first"},
+      {value: "opinion_first", label: "Own outcome first"}
+    ], data.settings.reading.arbitrationFlow, "compare_first") }}
+
     {# Mammogram view order #}
     {{ settingToggle("Mammogram view order", "settings[mammogramViewOrder]", [
       {value: "cc-first", label: "CC first"},

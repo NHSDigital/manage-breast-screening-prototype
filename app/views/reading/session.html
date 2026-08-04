@@ -31,7 +31,7 @@
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
     <div class="app-header-with-status">
-      <span class="nhsuk-caption-l">Image reading</span>
+      <span class="nhsuk-caption-l">{{ "Arbitration" if session.type == 'arbitration' else "Image reading" }}</span>
       <h1 class="nhsuk-heading-l">
         {{ pageHeading }}
       </h1>
@@ -47,8 +47,21 @@
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
 
+    {% if session.type == 'arbitration' and session.arbitration.panelUserIds | length %}
+      <p class="nhsuk-u-secondary-text-colour">
+        Arbitrated by
+        {%- for userId in session.arbitration.panelUserIds %}
+          {{ userId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+        {%- endfor %}
+      </p>
+    {% endif %}
+
     {% set currentUserHasRead = readingStatus.userReadCount > 0 %}
-    {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
+    {% if session.type == 'arbitration' %}
+      {% set readingActionText = "Resume arbitrating" if currentUserHasRead else "Start arbitrating" %}
+    {% else %}
+      {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
+    {% endif %}
 
     {% if resumeAppointment %}
       <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button app-reading-session-primary-action">
@@ -236,7 +249,7 @@
               <th scope="col">No.</th>
               <th scope="col">Case</th>
               <th scope="col">Screening date</th>
-              <th scope="col">Your opinion</th>
+              <th scope="col">{{ "Your outcome" if session.type == 'arbitration' else "Your opinion" }}</th>
               <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
             </tr>
           </thead>
@@ -258,11 +271,16 @@
 
                 <br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
-                  {% set readCount = metadata.readCount %}
-                  {% if data | userHasReadAppointment(appointment) %}
-                    {{ "1st read" if readCount == 1 else "2nd read" }}
+                  {% if session.type == 'arbitration' %}
+                    Arbitration
+                    &middot; <a href="/participants/{{ appointment.participantId }}" target="_blank" rel="noopener" class="nhsuk-link--no-visited-state">Participant record</a>
                   {% else %}
-                    {{ "1st read" if readCount == 0 else "2nd read" }}
+                    {% set readCount = metadata.readCount %}
+                    {% if data | userHasReadAppointment(appointment) %}
+                      {{ "1st read" if readCount == 1 else "2nd read" }}
+                    {% else %}
+                      {{ "1st read" if readCount == 0 else "2nd read" }}
+                    {% endif %}
                   {% endif %}
                 </span>
                 {% if (data.settings.debugMode | falsify) %}

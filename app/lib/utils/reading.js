@@ -31,6 +31,7 @@ const {
   caseHasReads,
   caseNeedsFirstRead,
   caseNeedsSecondRead,
+  caseNeedsArbitration,
   canUserReadCase,
   userHasReadCase,
   buildRead,
@@ -802,6 +803,26 @@ const filterAppointmentsByNeedsSecondRead = (data, appointments) => {
 }
 
 /**
+ * Filter appointments whose case sits in the arbitration backlog and which
+ * this user could arbitrate - nobody reads the same case twice.
+ *
+ * @param {object} data - Session data
+ * @param {Array} appointments - Appointments to filter
+ * @param {string} [userId] - User who would arbitrate; omit to skip the check
+ * @returns {Array} Appointments needing arbitration
+ */
+const filterAppointmentsByNeedsArbitration = (data, appointments, userId = null) => {
+  return appointments.filter((appointment) => {
+    const readingCase = resolveCase(data, appointment)
+
+    if (!caseNeedsArbitration(readingCase, data.settings)) return false
+    if (isCaseDeferred(readingCase)) return false
+
+    return !userId || !userHasReadCase(readingCase, userId)
+  })
+}
+
+/**
  * Filter appointments that are fully read (have all required reads)
  *
  * @param {object} data - Session data
@@ -1160,6 +1181,16 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
     if (!clinicId)
       throw new Error('Clinic ID is required for clinic-type sessions')
     appointments = filterAppointmentsByClinic(appointments, clinicId)
+  } else if (type === 'arbitration') {
+    // The arbitration backlog, not the reading queues. The generic
+    // user-can-read filter below would reject these cases (two reads
+    // already), so arbitration selects its own way.
+    appointments = filterAppointmentsByNeedsArbitration(
+      data,
+      appointments,
+      currentUserId
+    )
+    appointments = appointments.filter((appointment) => !awaitingPriors(appointment))
   } else {
     // 1. Filter to appointments the user can read (unless overridden)
     if (filters.userCanRead !== false) {
@@ -1313,6 +1344,8 @@ const getDefaultSessionName = (type, clinicId, data) => {
       return '2nd reads session'
     case 'awaiting_priors':
       return 'Awaiting priors session'
+    case 'arbitration':
+      return 'Arbitration session'
     case 'clinic': {
       const clinic = getClinic(data, clinicId)
       if (!clinic) return 'Clinic session'
@@ -1589,6 +1622,7 @@ module.exports = {
   filterAppointmentsByNeedsAnyRead,
   filterAppointmentsByNeedsFirstRead,
   filterAppointmentsByNeedsSecondRead,
+  filterAppointmentsByNeedsArbitration,
   filterAppointmentsByFullyRead,
   filterAppointmentsByUserCanRead,
   filterAppointmentsByUserCanReadOrHasRead,

@@ -1,0 +1,131 @@
+{# app/views/reading/workflow/arbitration-compare.html #}
+{# Arbitration compare step - the two reads side by side. Agree with either to
+   adopt it as the outcome, or record a different outcome. In the opinion-first
+   flow this follows the outcome instead, adding a "keep my outcome" action. #}
+
+{% extends 'layout-reading.html' %}
+
+{% set pageHeading = participant | getFullName %}
+{% set showWorkflowNav = true %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
+
+{% block pageContent %}
+
+  {% set allReads = readingCase | getReadsAsArray %}
+  {% set firstRead = allReads[0] %}
+  {% set secondRead = allReads[1] %}
+
+  {# The outcome already given, when the compare step follows the opinion page #}
+  {% set ownOutcome = data.imageReadingTemp.opinion if data.imageReadingTemp else null %}
+
+  {% set outcomeLabels = {
+    "normal": "Normal",
+    "technical_recall": "Technical recall",
+    "recall_for_assessment": "Recall for assessment"
+  } %}
+
+  {% set outcomeCardClasses = {
+    "normal": "app-reading-compare-card--normal",
+    "technical_recall": "app-reading-compare-card--technical-recall",
+    "recall_for_assessment": "app-reading-compare-card--recall-for-assessment"
+  } %}
+
+  <div class="nhsuk-grid-row app-header-with-status">
+    <div class="nhsuk-grid-column-three-quarters">
+      <span class="nhsuk-caption-l">
+        Arbitration
+      </span>
+      <h1 class="nhsuk-heading-l">{{ participant | getFullName }}</h1>
+    </div>
+    <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag">
+      {{ "Arbitration" | toTag }}
+    </div>
+  </div>
+
+  {# Get image paths for annotation thumbnails #}
+  {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
+  {% if withImages %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+    {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+  {% endif %}
+
+  <div class="nhsuk-grid-row app-reading-compare-grid app-reading-compare-grid--bottom-actions">
+    {% for read in [firstRead, secondRead] %}
+      {% if read %}
+        {% set readSummaryHtml %}
+          {% set allowEdits = false %}
+          {% set hideOpinionRow = true %}
+          {% set showAnnotationImages = withImages %}
+          {% set annotationImagePaths = allPaths %}
+          {% include "_includes/summary-lists/read-summary.njk" %}
+        {% endset %}
+
+        {% set cardContentHtml %}
+          {{ readSummaryHtml | safe }}
+          <div class="app-reading-compare-card__action app-reading-compare-card__action--bottom">
+            <form action="./arbitration-compare-answer" method="post" class="app-reading-compare-card__action-form">
+              <input type="hidden" name="agreedReaderId" value="{{ read.readerId }}">
+              {{ button({
+                text: "Agree – use as the outcome",
+                classes: "nhsuk-u-margin-bottom-0"
+              }) }}
+            </form>
+          </div>
+        {% endset %}
+
+        <div class="nhsuk-grid-column-one-half">
+          <h2 class="nhsuk-u-margin-bottom-0">
+            {{ "First read" if loop.first else "Second read" }}
+            <span class="nhsuk-u-font-weight-normal nhsuk-u-font-size-19">
+              – {{ read.readerId | getUsername({ format: "short" }) }},
+              {{ read.timestamp | formatDate("D MMM YYYY") }}
+            </span>
+          </h2>
+          {{ card({
+            heading: outcomeLabels[read.opinion] or read.opinion,
+            headingLevel: "2",
+            feature: true,
+            classes: "app-reading-compare-card " + (outcomeCardClasses[read.opinion] or ""),
+            descriptionHtml: cardContentHtml
+          }) }}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      {% if ownOutcome %}
+
+        {# Opinion-first flow: their outcome exists - keep it or agree above #}
+        <h2 class="nhsuk-heading-m">Or keep your outcome</h2>
+        <p>You gave the outcome {{ (outcomeLabels[ownOutcome] or ownOutcome) | toTag }}</p>
+        <form action="./arbitration-compare-answer" method="post">
+          {{ button({
+            text: "Keep my outcome",
+            variant: "secondary"
+          }) }}
+        </form>
+
+      {% else %}
+
+        <h2 class="nhsuk-heading-m">Or give a different outcome</h2>
+        <p>If you don’t agree with either read, review the images and record your own outcome.</p>
+        {{ button({
+          text: "Record a different outcome",
+          href: "./opinion",
+          variant: "secondary"
+        }) }}
+
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% if withImages %}
+    <script src="/assets/javascript/annotation-markers.js"></script>
+    <script>AnnotationMarkers.correctAll()</script>
+  {% endif %}
+
+{% endblock %}

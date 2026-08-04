@@ -3,7 +3,7 @@
 
 {% extends parentLayout or 'layout-reading.html' %}
 
-{% set pageHeading = "Confirm your opinion" %}
+{% set pageHeading = "Confirm the outcome" if isArbitration else "Confirm your opinion" %}
 
 {% set formAction = './save-opinion' | urlWithReferrer(referrerChain) %}
 
@@ -34,7 +34,7 @@
       {% endset %}
 
       {{ card({
-        heading: "Your read",
+        heading: "Arbitration outcome" if isArbitration else "Your read",
         headingLevel: "2",
         feature: true,
         descriptionHtml: readSummaryHtml

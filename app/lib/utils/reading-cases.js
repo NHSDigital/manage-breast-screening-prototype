@@ -374,8 +374,13 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   if (reads.length === 0) return 'awaiting_first_read'
   if (reads.length === 1) return 'awaiting_second_read'
 
-  // An arbitration read settles the case whatever the first two said
-  if (getArbitrationRead(readingCase)) return 'concluded'
+  // An arbitration read settles the case whatever the first two said - but
+  // like any read it is not a result until finalised
+  if (getArbitrationRead(readingCase)) {
+    return areAllReadsFinalised(readingCase, settings, now)
+      ? 'concluded'
+      : 'awaiting_finalisation'
+  }
 
   // Two opinions are not a result until they are finalised
   if (!areAllReadsFinalised(readingCase, settings, now)) {
@@ -538,6 +543,12 @@ const canUserReadCase = (readingCase, userId, options = {}) => {
 
   // A deferred case is out of the queue until someone reviews it
   if (isCaseDeferred(readingCase)) return false
+
+  // A case released to arbitration takes one more read - the arbitration
+  // read - from someone who hasn't read it already
+  if (isCaseInArbitration(readingCase) && !getArbitrationRead(readingCase)) {
+    return !userHasReadCase(readingCase, userId)
+  }
 
   // Enough readers have had it already
   if (getReadsAsArray(readingCase).length >= maxReadsPerCase) return false

@@ -36,7 +36,7 @@
     {% set opinionHeading = "Update review" %}
   {% endif %}
 
-  {% set questionText = "What is your opinion of these images?" %}
+  {% set questionText = "What is the outcome for this case?" if isArbitration else "What is your opinion of these images?" %}
 
   {# =========================================================
      Setup: mammogram images and view order
@@ -366,19 +366,23 @@
         </div>
       {% endif %}
 
-      {# First/second read tag #}
-      {% set readCount = (readingCase | getReadingMetadata).readCount %}
-      {% if existingOpinion %}
-        {% if readCount == 1 %}
-          {{ "First read" | toTag }}
-        {% else %}
-          {{ "Second read" | toTag }}
-        {% endif %}
+      {# First/second read tag - arbitration is its own kind of read #}
+      {% if isArbitration %}
+        {{ "Arbitration" | toTag }}
       {% else %}
-        {% if readCount == 0 %}
-          {{ "First read" | toTag }}
+        {% set readCount = (readingCase | getReadingMetadata).readCount %}
+        {% if existingOpinion %}
+          {% if readCount == 1 %}
+            {{ "First read" | toTag }}
+          {% else %}
+            {{ "Second read" | toTag }}
+          {% endif %}
         {% else %}
-          {{ "Second read" | toTag }}
+          {% if readCount == 0 %}
+            {{ "First read" | toTag }}
+          {% else %}
+            {{ "Second read" | toTag }}
+          {% endif %}
         {% endif %}
       {% endif %}
 

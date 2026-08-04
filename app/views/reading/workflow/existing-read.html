@@ -3,7 +3,7 @@
 
 {% extends 'layout-reading.html' %}
 
-{% set pageHeading = "Your opinion" %}
+{% set pageHeading = "Your outcome" if isArbitration else "Your opinion" %}
 {% set showWorkflowNav = true %}
 
 {% block pageContent %}
@@ -18,7 +18,7 @@
 
   {% if isDeferredCase and not hasUserRead %}
     {# Appointment has been deferred - show deferral summary #}
-    <h1 class="nhsuk-heading-l">Your opinion</h1>
+    <h1 class="nhsuk-heading-l">{{ "Your outcome" if isArbitration else "Your opinion" }}</h1>
 
     {% set deferral = readingCase.deferral %}
     {% set canUndo = deferral.deferredBy == data.currentUser.id %}
@@ -63,7 +63,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Your read",
+      heading: "Arbitration outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: deferralSummaryHtml
@@ -71,7 +71,7 @@
 
   {% elseif isAwaitingPriors and not hasUserRead %}
     {# Appointment is awaiting priors - show as the reader's opinion #}
-    <h1 class="nhsuk-heading-l">Your opinion</h1>
+    <h1 class="nhsuk-heading-l">{{ "Your outcome" if isArbitration else "Your opinion" }}</h1>
 
     {% set canUndo = appointment | userRequestedPriors(data.currentUser.id) %}
 
@@ -122,7 +122,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Your read",
+      heading: "Arbitration outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: priorsReadSummaryHtml
@@ -130,7 +130,7 @@
 
   {% else %}
     {# Normal existing read view #}
-    <h1 class="nhsuk-heading-l">Your opinion</h1>
+    <h1 class="nhsuk-heading-l">{{ "Your outcome" if isArbitration else "Your opinion" }}</h1>
 
     {# Read summary card #}
     {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
@@ -149,7 +149,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Your read",
+      heading: "Arbitration outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: readSummaryHtml
