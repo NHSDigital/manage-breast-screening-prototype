@@ -62,13 +62,7 @@
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
-        {% set sortedClinics = filteredClinics | sort(false, false, 'date') %}
-        {% if justClosedClinicId %}
-          {% set justClosed = sortedClinics | where("id", justClosedClinicId) %}
-          {% set rest = sortedClinics | removeWhere("id", justClosedClinicId) %}
-          {% set sortedClinics = justClosed.concat(rest) %}
-        {% endif %}
-        {% for clinic in sortedClinics %}
+        {% for clinic in filteredClinics | sort(false, false, 'date') %}
         {# {{ clinic | log }} #}
           {% set unit = clinic.unit %}
           {% set location = clinic.location %}
