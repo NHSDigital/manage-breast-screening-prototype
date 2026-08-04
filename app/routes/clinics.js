@@ -172,20 +172,33 @@ module.exports = (router) => {
       return res.redirect('/clinics')
     }
 
+    const resolvedKey = `closeClinicResolved_${req.params.id}`
+    const resolvedAppointmentIds = req.session[resolvedKey] || []
+
+    // Group by status so similar statuses appear together
+    const statusOrder = ["in_progress", "paused", "checked_in", "scheduled", "attended_not_screened", "did_not_attend", "complete", "partially_screened", "cancelled", "rescheduled"]
+    const sortedAppointments = [...clinicData.appointments].sort((a, b) =>
+      statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status)
+    )
+
     res.render('clinics/close', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allAppointments: clinicData.appointments
+      allAppointments: sortedAppointments,
+      resolvedAppointmentIds
     })
   })
 
   // Mark appointment as attended not screened from close clinic page
   router.get('/clinics/:id/close/attended-not-screened/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
-    const appointment = getAppointment(req.session.data, appointmentId)
-    const participant = getParticipant(req.session.data, appointment.participantId)
     updateAppointmentStatus(req.session.data, appointmentId, 'attended_not_screened')
-    req.flash('success', `${getFullName(participant)} marked as attended not screened`)
+    const resolvedKey = `closeClinicResolved_${id}`
+    if (!req.session[resolvedKey]) req.session[resolvedKey] = []
+    if (!req.session[resolvedKey].includes(appointmentId)) req.session[resolvedKey].push(appointmentId)
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success' })
+    }
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -193,16 +206,24 @@ module.exports = (router) => {
   router.get('/clinics/:id/close/undo-attended-not-screened/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
     updateAppointmentStatus(req.session.data, appointmentId, 'checked_in')
+    const resolvedKey = `closeClinicResolved_${id}`
+    if (req.session[resolvedKey]) req.session[resolvedKey] = req.session[resolvedKey].filter((i) => i !== appointmentId)
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success' })
+    }
     res.redirect(`/clinics/${id}/close`)
   })
 
   // Mark appointment as did not attend from close clinic page
   router.get('/clinics/:id/close/did-not-attend/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
-    const appointment = getAppointment(req.session.data, appointmentId)
-    const participant = getParticipant(req.session.data, appointment.participantId)
     updateAppointmentStatus(req.session.data, appointmentId, 'did_not_attend')
-    req.flash('success', `${getFullName(participant)} marked as did not attend`)
+    const resolvedKey = `closeClinicResolved_${id}`
+    if (!req.session[resolvedKey]) req.session[resolvedKey] = []
+    if (!req.session[resolvedKey].includes(appointmentId)) req.session[resolvedKey].push(appointmentId)
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success' })
+    }
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -210,6 +231,11 @@ module.exports = (router) => {
   router.get('/clinics/:id/close/undo-did-not-attend/:appointmentId', (req, res) => {
     const { id, appointmentId } = req.params
     updateAppointmentStatus(req.session.data, appointmentId, 'scheduled')
+    const resolvedKey = `closeClinicResolved_${id}`
+    if (req.session[resolvedKey]) req.session[resolvedKey] = req.session[resolvedKey].filter((i) => i !== appointmentId)
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success' })
+    }
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -220,8 +246,15 @@ module.exports = (router) => {
     const appointments = data.appointments.filter(
       (a) => a.clinicId === id && a.status === 'checked_in'
     )
-    appointments.forEach((a) => updateAppointmentStatus(data, a.id, 'attended_not_screened'))
-    req.flash('success', `${appointments.length} participants marked as attended not screened`)
+    const resolvedKey = `closeClinicResolved_${id}`
+    if (!req.session[resolvedKey]) req.session[resolvedKey] = []
+    appointments.forEach((a) => {
+      updateAppointmentStatus(data, a.id, 'attended_not_screened')
+      if (!req.session[resolvedKey].includes(a.id)) req.session[resolvedKey].push(a.id)
+    })
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success', count: appointments.length })
+    }
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -232,8 +265,15 @@ module.exports = (router) => {
     const appointments = data.appointments.filter(
       (a) => a.clinicId === id && a.status === 'scheduled'
     )
-    appointments.forEach((a) => updateAppointmentStatus(data, a.id, 'did_not_attend'))
-    req.flash('success', `${appointments.length} participants marked as did not attend`)
+    const resolvedKey = `closeClinicResolved_${id}`
+    if (!req.session[resolvedKey]) req.session[resolvedKey] = []
+    appointments.forEach((a) => {
+      updateAppointmentStatus(data, a.id, 'did_not_attend')
+      if (!req.session[resolvedKey].includes(a.id)) req.session[resolvedKey].push(a.id)
+    })
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success', count: appointments.length })
+    }
     res.redirect(`/clinics/${id}/close`)
   })
 
@@ -247,6 +287,9 @@ module.exports = (router) => {
       clinic.status = 'closed'
       req.flash('success', `Clinic ${clinic.clinicCode} closed`)
     }
+
+    // Clean up resolved tracking
+    delete req.session[`closeClinicResolved_${id}`]
 
     res.redirect('/clinics/completed')
   })

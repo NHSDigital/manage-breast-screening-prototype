@@ -20,154 +20,132 @@
 
   <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
 
+  {# Needs an outcome: active appointments plus those just resolved on this page #}
+  {% set needsOutcomeAppointments = allAppointments | removeWhere("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
+  {% set newlyResolvedIds = resolvedAppointmentIds or [] %}
+
+  <div id="js-close-clinic-content">
+
   {{ insetText({
-    html: "<p>Record an outcome for every participant to close this clinic.</p>"
+    html: "<p>Record an appointment outcome for every participant to close this clinic.</p><p>There were " + allAppointments | length + " total participants in this clinic, and " + needsOutcomeAppointments | length + " still need a final outcome assigned.</p>"
   }) }}
 
-  {# In progress appointments #}
-  {% set inProgressAppointments = allAppointments | filterAppointmentsByStatus("in-progress") %}
-
-  {% if inProgressAppointments | length %}
-    <div class="nhsuk-card">
-      <div class="nhsuk-card__content">
-        <h2 class="nhsuk-card__heading nhsuk-heading-m">In progress</h2>
-        <p>Complete or end this appointment to close the clinic.</p>
-
-        <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
-          <thead class="nhsuk-table__head">
-            <tr>
-              <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-              <th class="nhsuk-table__header">Details</th>
-              <th class="nhsuk-table__header" style="width: 40%">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="nhsuk-table__body">
-            {% for appointment in inProgressAppointments %}
-              {% set participant = data.participants | findById(appointment.participantId) %}
-              <tr>
-                <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
-                <td class="nhsuk-table__cell">
-                  <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
-                  <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
-                </td>
-                <td class="nhsuk-table__cell">
-                  <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {% endif %}
-
-  {# Checked in but not screened #}
-  {% set checkedInAppointments = allAppointments | filterAppointmentsByStatus("checked-in") %}
-  {% set attendedNotScreenedAppointments = allAppointments | where("status", "attended_not_screened") %}
-
-  {% if checkedInAppointments | length or attendedNotScreenedAppointments | length %}
-    <div class="nhsuk-card">
-      <div class="nhsuk-card__content">
-        <h2 class="nhsuk-card__heading nhsuk-heading-m">Attended, not screened</h2>
-        <p>These participants attended but their appointment did not take place.</p>
-
-        {% if checkedInAppointments | length %}
-          <p><a href="/clinics/{{ clinicId }}/close/attended-not-screened-all">Mark all as attended not screened</a></p>
+  {# Macro for appointment table rows #}
+  {% macro appointmentRow(appointment, clinicId, showActions) %}
+    {% set participant = data.participants | findById(appointment.participantId) %}
+    <tr data-appointment-id="{{ appointment.id }}">
+      <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
+      <td class="nhsuk-table__cell">
+        <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
+          <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">{{ participant | getFullName }}</a>
+        </p>
+        <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
+      </td>
+      <td class="nhsuk-table__cell" data-cell="status">{{ appointment.status | toTag({ vocabulary: "appointment" }) }}</td>
+      <td class="nhsuk-table__cell" data-cell="actions">
+        {% if showActions %}
+        {% if appointment.status == "in_progress" or appointment.status == "paused" %}
+          <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
+        {% elseif appointment.status == "checked_in" %}
+          <a href="/clinics/{{ clinicId }}/close/attended-not-screened/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}">Mark as attended not screened</a>
+        {% elseif appointment.status == "scheduled" %}
+          <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
+        {% elseif appointment.status == "attended_not_screened" %}
+          <a href="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>
+        {% elseif appointment.status == "did_not_attend" %}
+          <a href="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>
         {% endif %}
-
-        <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
-          <thead class="nhsuk-table__head">
-            <tr>
-              <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-              <th class="nhsuk-table__header">Details</th>
-              <th class="nhsuk-table__header" style="width: 40%">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="nhsuk-table__body">
-            {% for appointment in allAppointments %}
-              {% if appointment.status == "checked_in" or appointment.status == "attended_not_screened" %}
-              {% set participant = data.participants | findById(appointment.participantId) %}
-              <tr>
-                <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
-                <td class="nhsuk-table__cell">
-                  <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
-                  <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
-                </td>
-                <td class="nhsuk-table__cell">
-                  {% if appointment.status == "attended_not_screened" %}
-                    {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
-                    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                      <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a>
-                    </p>
-                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
-                      <a href="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}">Undo</a>
-                    </p>
-                  {% else %}
-                    <a href="/clinics/{{ clinicId }}/close/attended-not-screened/{{ appointment.id }}">Mark as attended not screened</a>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  {% endif %}
-
-  {# Did not check in #}
-  {% set remainingAppointments = allAppointments | filterAppointmentsByStatus("remaining") %}
-  {% set didNotAttendAppointments = allAppointments | where("status", "did_not_attend") %}
-
-  {% if remainingAppointments | length or didNotAttendAppointments | length %}
-    <div class="nhsuk-card">
-      <div class="nhsuk-card__content">
-        <h2 class="nhsuk-card__heading nhsuk-heading-m">Did not attend</h2>
-        <p>These participants did not arrive for their appointment.</p>
-
-        {% if remainingAppointments | length %}
-          <p><a href="/clinics/{{ clinicId }}/close/did-not-attend-all">Mark all as did not attend</a></p>
         {% endif %}
+      </td>
+    </tr>
+  {% endmacro %}
 
-        <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
-          <thead class="nhsuk-table__head">
-            <tr>
-              <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-              <th class="nhsuk-table__header">Details</th>
-              <th class="nhsuk-table__header" style="width: 40%">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="nhsuk-table__body">
-            {% for appointment in allAppointments %}
-              {% if appointment.status == "scheduled" or appointment.status == "did_not_attend" %}
-              {% set participant = data.participants | findById(appointment.participantId) %}
-              <tr>
-                <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
-                <td class="nhsuk-table__cell">
-                  <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
-                  <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
-                </td>
-                <td class="nhsuk-table__cell">
-                  {% if appointment.status == "did_not_attend" %}
-                    {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
-                    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-                      <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a>
-                    </p>
-                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
-                      <a href="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}">Undo</a>
-                    </p>
-                  {% else %}
-                    <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
+  {# Macro for a status group table #}
+  {% macro statusGroupTable(appointments, clinicId, showActions) %}
+    <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
+          <th class="nhsuk-table__header">Details</th>
+          <th class="nhsuk-table__header" style="width: 25%">Status</th>
+          <th class="nhsuk-table__header" style="width: 30%">{{ "Actions" if showActions }}</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for appointment in appointments %}
+          {{ appointmentRow(appointment, clinicId, showActions) }}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endmacro %}
+
+  {% if needsOutcomeAppointments | length or newlyResolvedIds | length %}
+    {% set needsOutcomeHtml %}
+      {# In progress #}
+      {% set inProgressAppointments = allAppointments | where("status", ["in_progress", "paused"]) %}
+      {% if inProgressAppointments | length %}
+        <h3 class="nhsuk-heading-s">In progress</h3>
+        <p>Complete or end these appointments to close the clinic.</p>
+        {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
+      {% endif %}
+
+      {# Checked in, not screened #}
+      {% set checkedInAppointments = allAppointments | where("status", "checked_in") %}
+      {% set newlyMarkedAns = allAppointments | where("status", "attended_not_screened") | where("id", newlyResolvedIds) %}
+      {% if checkedInAppointments | length or newlyMarkedAns | length %}
+        <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
+        <p><a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened">Mark all as attended not screened</a></p>
+        {% set checkedInGroup = [] %}
+        {% for appointment in allAppointments %}
+          {% if appointment.status == "checked_in" or (appointment.status == "attended_not_screened" and appointment.id in newlyResolvedIds) %}
+            {% set checkedInGroup = checkedInGroup.concat(appointment) %}
+          {% endif %}
+        {% endfor %}
+        {{ statusGroupTable(checkedInGroup, clinicId, true) }}
+      {% endif %}
+
+      {# Did not check in #}
+      {% set scheduledAppointments = allAppointments | where("status", "scheduled") %}
+      {% set newlyMarkedDna = allAppointments | where("status", "did_not_attend") | where("id", newlyResolvedIds) %}
+      {% if scheduledAppointments | length or newlyMarkedDna | length %}
+        <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
+        <p><a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend">Mark all as did not attend</a></p>
+        {% set didNotCheckInGroup = [] %}
+        {% for appointment in allAppointments %}
+          {% if appointment.status == "scheduled" or (appointment.status == "did_not_attend" and appointment.id in newlyResolvedIds) %}
+            {% set didNotCheckInGroup = didNotCheckInGroup.concat(appointment) %}
+          {% endif %}
+        {% endfor %}
+        {{ statusGroupTable(didNotCheckInGroup, clinicId, true) }}
+      {% endif %}
+    {% endset %}
+
+    {{ card({
+      heading: "Needs an outcome",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: needsOutcomeHtml
+    }) }}
   {% endif %}
+
+  {# Outcome recorded: appointments that already had a final status before visiting this page #}
+  {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) | removeWhere("id", newlyResolvedIds) %}
+
+  {% if outcomeRecordedAppointments | length %}
+    {% set outcomeRecordedHtml %}
+      {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
+    {% endset %}
+
+    {{ card({
+      heading: "Outcome recorded",
+      headingLevel: "2",
+      feature: true,
+      classes: "app-card--feature-green",
+      descriptionHtml: outcomeRecordedHtml
+    }) }}
+  {% endif %}
+
+  </div>
 
   <form method="post" action="/clinics/{{ clinicId }}/close">
     {{ button({
@@ -175,4 +153,100 @@
     }) }}
   </form>
 
+{% endblock %}
+
+{% block pageScripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var container = document.getElementById('js-close-clinic-content')
+    if (!container) return
+
+    var statusTags = {
+      checked_in: { text: 'Checked in', colour: '' },
+      scheduled: { text: 'Scheduled', colour: '' },
+      attended_not_screened: { text: 'Attended not screened', colour: 'red' },
+      did_not_attend: { text: 'Did not attend', colour: 'red' }
+    }
+
+    var clinicId = window.location.pathname.split('/')[2]
+
+    function renderTag(status) {
+      var config = statusTags[status]
+      if (!config) return ''
+      var colourClass = config.colour ? ' nhsuk-tag--' + config.colour : ''
+      return '<strong class="nhsuk-tag app-nowrap' + colourClass + '">' + config.text + '</strong>'
+    }
+
+    function renderActionCell(appointmentId, newStatus) {
+      if (newStatus === 'attended_not_screened') {
+        return '<a href="/clinics/' + clinicId + '/close/undo-attended-not-screened/' + appointmentId + '" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>'
+      }
+      if (newStatus === 'did_not_attend') {
+        return '<a href="/clinics/' + clinicId + '/close/undo-did-not-attend/' + appointmentId + '" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>'
+      }
+      if (newStatus === 'checked_in') {
+        return '<a href="/clinics/' + clinicId + '/close/attended-not-screened/' + appointmentId + '" class="js-close-clinic-action" data-new-status="attended_not_screened">Mark as attended not screened</a>'
+      }
+      if (newStatus === 'scheduled') {
+        return '<a href="/clinics/' + clinicId + '/close/did-not-attend/' + appointmentId + '" class="js-close-clinic-action" data-new-status="did_not_attend">Mark as did not attend</a>'
+      }
+      return ''
+    }
+
+    function updateRow(row, newStatus) {
+      var statusCell = row.querySelector('[data-cell="status"]')
+      var actionsCell = row.querySelector('[data-cell="actions"]')
+      var appointmentId = row.getAttribute('data-appointment-id')
+
+      if (statusCell) statusCell.innerHTML = renderTag(newStatus)
+      if (actionsCell) {
+        actionsCell.innerHTML = renderActionCell(appointmentId, newStatus)
+        bindActions()
+      }
+    }
+
+    function handleClick(e) {
+      e.preventDefault()
+      e.stopPropagation()
+
+      var link = e.currentTarget
+      var url = link.href
+      var newStatus = link.getAttribute('data-new-status')
+      var isBulk = link.getAttribute('data-bulk') === 'true'
+
+      fetch(url, { headers: { 'Accept': 'application/json' } })
+        .then(function (response) {
+          if (!response.ok) throw new Error('Request failed')
+          return response.json()
+        })
+        .then(function () {
+          if (isBulk) {
+            container.querySelectorAll('tr[data-appointment-id]').forEach(function (row) {
+              var actionLink = row.querySelector('[data-cell="actions"] .js-close-clinic-action')
+              if (actionLink && actionLink.getAttribute('data-new-status') === newStatus) {
+                updateRow(row, newStatus)
+              }
+            })
+          } else {
+            var row = link.closest('tr')
+            if (row) updateRow(row, newStatus)
+          }
+        })
+        .catch(function (error) {
+          console.error('Error:', error)
+          window.location.href = url
+        })
+    }
+
+    function bindActions() {
+      container.querySelectorAll('.js-close-clinic-action').forEach(function (link) {
+        if (link.getAttribute('data-bound')) return
+        link.setAttribute('data-bound', 'true')
+        link.addEventListener('click', handleClick)
+      })
+    }
+
+    bindActions()
+  })
+</script>
 {% endblock %}
