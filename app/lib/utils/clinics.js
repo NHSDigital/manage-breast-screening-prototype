@@ -26,6 +26,35 @@ const getClinic = (data, clinicId) => {
 }
 
 /**
+ * Where a clinic was held, as one line.
+ *
+ * A mobile unit is named by both the unit and the site it was parked at, since
+ * the unit alone doesn't say where anyone went. Templates have long written
+ * this inline as `location.name at clinic.siteName`; this is the same rule in
+ * one place, for callers that only want the string.
+ *
+ * @param {object} data - Session data
+ * @param {object} clinic - Clinic object
+ * @returns {string} Display name, or an empty string if it can't be resolved
+ */
+const getClinicLocationName = (data, clinic) => {
+  if (!clinic) return ''
+
+  const unit = (data.breastScreeningUnits || []).find(
+    (candidate) => candidate.id === clinic.breastScreeningUnitId
+  )
+  const location = (unit?.locations || []).find(
+    (candidate) => candidate.id === clinic.locationId
+  )
+
+  if (!location) return clinic.siteName || ''
+
+  return location.type === 'mobile_unit' && clinic.siteName
+    ? `${location.name} at ${clinic.siteName}`
+    : location.name
+}
+
+/**
  * Get today's clinics
  *
  * @param {Array} clinics - Array of all clinics
@@ -137,6 +166,7 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 
 module.exports = {
   getClinic,
+  getClinicLocationName,
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,

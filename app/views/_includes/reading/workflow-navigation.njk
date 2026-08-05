@@ -18,7 +18,7 @@
 
     {% if progress.hasNextUserReadable %}
       <div class="nhsuk-grid-column-one-third app-align-right">
-        {% if appointment | canUserReadAppointment %}
+        {% if data | canUserReadAppointment(appointment) %}
           {{ appForwardLink({
             href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
             text: "Skip to next"

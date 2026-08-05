@@ -1,0 +1,268 @@
+{# app/views/reading/case.html
+
+   One reading case in reading chrome, in tabs: what the case concluded, what
+   each reader said, and every mark they made on the images.
+
+   The casework lens on the same content is the episode page's reading section.
+   When that grows a tab of its own, the panels below should move into shared
+   includes rather than being written twice.
+
+   Read panels reuse _includes/summary-lists/read-summary.njk, the same include
+   the workflow's review and compare pages use, so a read looks the same
+   wherever it is shown. #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
+{% from '_components/annotation-list/macro.njk' import appAnnotationList %}
+{% from '_components/details/macro.njk' import appDetails %}
+
+{% set pageHeading = participant | getFullName %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/reading/cases",
+  text: "Back to reading cases"
+} %}
+
+{% set tabLabels = {
+  "summary": "Summary",
+  "reads": "Reads",
+  "annotations": "Annotations"
+} %}
+
+{% block pageContent %}
+
+  <span class="nhsuk-caption-l">Image reading case</span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% set tabNavItems = [] %}
+  {% for tabName in caseTabs %}
+    {% set tabHref %}/reading/cases/{{ readingCase.id }}{{ "/" + tabName if tabName != "summary" }}{% endset %}
+    {% set tabNavItems = tabNavItems | push({
+      text: tabLabels[tabName],
+      href: tabHref | trim,
+      current: true if tabName == tab
+    }) %}
+  {% endfor %}
+
+  {{ appSecondaryNavigation({
+    visuallyHiddenTitle: "Reading case views",
+    items: tabNavItems
+  }) }}
+
+  {# Image paths drive the annotation markers. Resolved once here rather than
+     per read, since the annotations tab pools every read onto one set. #}
+  {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
+  {% if withImages and appointment %}
+    {% set mammogramImages = getImagesForAppointment(appointment.id, "diagrams", { appointment: appointment }) %}
+    {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+  {% endif %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      {% if tab == "summary" %}
+
+        {% set caseRows = [
+          {
+            key: { text: "Images taken" },
+            value: { html: (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span>' }
+          },
+          {
+            key: { text: "Screened at" },
+            value: { text: clinicLocationName or "Unknown" }
+          },
+          {
+            key: { text: "State" },
+            value: { html: caseState | toTag({ vocabulary: "readingState" }) }
+          },
+          {
+            key: { text: "Reads" },
+            value: { text: readCount }
+          }
+        ] %}
+
+        {% if caseOutcome %}
+          {% set caseRows = caseRows | push({
+            key: { text: "Outcome" },
+            value: { html: caseOutcome | toTag }
+          }) %}
+        {% endif %}
+
+        {# What the case concluded per breast, from the deciding read #}
+        {% if decidingRead %}
+          {% for side in ["right", "left"] %}
+            {% set breast = decidingRead[side] %}
+            {% if breast and breast.breastAssessment %}
+              {% set assessmentKey = breast.breastAssessment | lower %}
+              {% set tagStatusMap = {
+                "normal": "normal",
+                "clinical": "clinical_recall",
+                "abnormal": "abnormal",
+                "technical": "technical_recall"
+              } %}
+              {% set caseRows = caseRows | push({
+                key: { text: side | sentenceCase + " breast" },
+                value: { html: (tagStatusMap[assessmentKey] or breast.breastAssessment) | toTag }
+              }) %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        {% if caseTotal > 1 %}
+          {# A technical recall opens a further case, covering the new images as
+             well as the originals - so say which of the round's cases this is #}
+          {% set caseRows = caseRows | push({
+            key: { text: "Case" },
+            value: { text: casePosition + " of " + caseTotal + " this round" }
+          }) %}
+        {% endif %}
+
+        {{ appSummaryList({ rows: caseRows }) }}
+
+        {% if isDeferred %}
+          {{ warningCallout({
+            heading: "Deferred",
+            html: "<p>This case has been deferred from reading and needs review before it returns to the reading queue.</p>"
+          }) }}
+        {% endif %}
+
+        <h2 class="nhsuk-heading-m">Elsewhere</h2>
+        <ul class="nhsuk-list nhsuk-list--bullet">
+          <li>
+            <a href="/participants/{{ episode.participantId }}/episodes/{{ episode.id }}">
+              Episode this case belongs to
+            </a>
+          </li>
+          {% if appointment %}
+            <li>
+              <a href="/clinics/{{ appointment.clinicId }}/appointments/{{ appointment.id }}">
+                Appointment the images were taken at
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+
+      {% elseif tab == "reads" %}
+
+        {% if readsHidden %}
+          <p>Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
+        {% elseif readCount == 0 %}
+          <p>This case has not been read yet.</p>
+        {% else %}
+
+          {% for thisRead in reads %}
+            {# Opinion up front; the rest behind a disclosure, since the
+               question most of the time is just who said what #}
+            {% set readDetailHtml %}
+              {% set read = thisRead %}
+              {% set allowEdits = false %}
+              {% set hideEmptyRows = true %}
+              {% set hideOpinionRow = true %}
+              {% set showAnnotationImages = false %}
+              {% include "_includes/summary-lists/read-summary.njk" %}
+            {% endset %}
+
+            <div class="nhsuk-summary-card">
+              <div class="nhsuk-summary-card__title-wrapper">
+                <h2 class="nhsuk-summary-card__title">
+                  {{ thisRead.readType | formatWords | sentenceCase }} read
+                </h2>
+                <div class="nhsuk-summary-card__actions">
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                    {{ thisRead.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }},
+                    {{ thisRead.timestamp | formatDate }}
+                  </span>
+                </div>
+              </div>
+              <div class="nhsuk-summary-card__content">
+                <p class="nhsuk-u-margin-bottom-2">
+                  {{ thisRead.opinion | toTag if thisRead.opinion else "Opinion not recorded" }}
+                </p>
+
+                {{ appDetails({
+                  summaryText: "Show full read",
+                  html: readDetailHtml
+                }) }}
+              </div>
+            </div>
+          {% endfor %}
+
+        {% endif %}
+
+      {% endif %}
+
+    </div>
+  </div>
+
+  {# Annotations get the full width - two sides of images side by side #}
+  {% if tab == "annotations" %}
+
+    {% if readsHidden %}
+      <p>Annotations on this case are hidden because it is still yours to read.</p>
+    {% elseif readCount == 0 %}
+      <p>This case has not been read yet, so nothing has been annotated.</p>
+    {% else %}
+
+      <div class="nhsuk-grid-row">
+        {% for side in ["right", "left"] %}
+
+          {# Pool every read's marks for this side onto one set of images, and
+             keep the numbering running so the lists beneath match the markers #}
+          {% set pooled = [] %}
+          {% for thisRead in reads %}
+            {% for annotation in (thisRead[side].annotations or []) %}
+              {% set pooled = pooled | push(annotation) %}
+            {% endfor %}
+          {% endfor %}
+
+          <div class="nhsuk-grid-column-one-half">
+            <h2 class="nhsuk-heading-m">{{ side | sentenceCase }} breast</h2>
+
+            {% if pooled | length == 0 %}
+              <p class="nhsuk-u-secondary-text-colour">No annotations on this side.</p>
+            {% else %}
+
+              {% if withImages and allPaths %}
+                {{ appAnnotationImages({
+                  side: side,
+                  imagePaths: allPaths,
+                  viewOrder: data.settings.mammogramViewOrder or "cc-first",
+                  annotations: pooled,
+                  mode: "readonly",
+                  size: "thumbnail",
+                  showLabels: true
+                }) }}
+              {% endif %}
+
+              {# Attribute the marks: same numbering, grouped by who made them #}
+              {% set runningNumber = 1 %}
+              {% for thisRead in reads %}
+                {% set sideAnnotations = thisRead[side].annotations or [] %}
+                {% if sideAnnotations | length %}
+                  <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-1 nhsuk-u-margin-top-3">
+                    {{ thisRead.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                    <span class="nhsuk-u-secondary-text-colour nhsuk-u-font-weight-normal">
+                      ({{ thisRead.readType | formatWords }} read)
+                    </span>
+                  </h3>
+                  {{ appAnnotationList({
+                    annotations: sideAnnotations,
+                    startNumber: runningNumber,
+                    editable: false
+                  }) }}
+                  {% set runningNumber = runningNumber + (sideAnnotations | length) %}
+                {% endif %}
+              {% endfor %}
+
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+    {% endif %}
+
+  {% endif %}
+
+{% endblock %}

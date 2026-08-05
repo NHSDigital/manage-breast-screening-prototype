@@ -184,4 +184,49 @@ module.exports = (router) => {
       res.redirect(returnUrl)
     }
   )
+
+  // Handle mark as did not attend
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/mark-did-not-attend',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const appointment = getAppointment(data, appointmentId)
+
+      if (appointment) {
+        const participantName = getFullName(data.participant)
+        updateAppointmentStatus(data, appointmentId, 'did_not_attend')
+        req.flash('success', `${participantName} marked as did not attend`)
+      }
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
+
+  // Handle undo did not attend
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/undo-did-not-attend',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const appointment = getAppointment(data, appointmentId)
+
+      if (appointment && appointment.status === 'did_not_attend') {
+        const participantName = getFullName(data.participant)
+        // Revert to scheduled status
+        updateAppointmentStatus(data, appointmentId, 'scheduled')
+        req.flash('success', `${participantName} did not attend status undone`)
+      }
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
+    }
+  )
 }

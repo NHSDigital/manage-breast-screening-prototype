@@ -8,7 +8,12 @@
     "generate": "node scripts/generate-data.js",
     "heroku-postbuild": "npm run generate",
     "build:static-error-page": "node scripts/build-static-error-page.js",
-    "docs": "node scripts/generate-utils-reference.js"
+    "docs": "node scripts/generate-utils-reference.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test:journeys": "playwright test",
+    "test:routes": "node scripts/route-sweep.js",
+    "test": "npm run lint && npm run test:routes && npm run test:journeys"
   },
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
@@ -29,9 +34,13 @@
     "npm": "^11.6.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "cssnano": "^8.0.2",
-    "postcss": "^8.5.19",
-    "prettier": "^3.9.5",
+    "eslint": "^10.8.0",
+    "globals": "^17.8.0",
+    "postcss": "^8.5.25",
+    "prettier": "^3.9.6",
     "purgecss": "^8.0.0"
   }
 }

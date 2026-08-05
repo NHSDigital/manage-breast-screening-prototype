@@ -208,16 +208,6 @@ module.exports = (router) => {
         return res.redirect(
           modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/appointment`)
         )
-        // Return to appointment - use referrer chain
-        delete data.pauseAction
-        delete data.confirmedImagesWereTaken
-
-        // Use referrer chain to go back to where they came from
-        const returnUrl = getReturnUrl(
-          `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
-          req.query.referrerChain
-        )
-        return res.redirect(modalBreakout(returnUrl))
       }
 
       // Handle the initial question about whether images were taken

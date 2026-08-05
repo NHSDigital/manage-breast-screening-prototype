@@ -41,7 +41,8 @@
   {% if episode.isHistoric %}
 
     {# Past rounds are held as summaries - what the round concluded, not how
-       it got there. There are no appointment or reading records to show. #}
+       it got there. There is no appointment record, but the round does carry a
+       summary of its reading. #}
 
     <div class="nhsuk-inset-text">
       <span class="nhsuk-u-visually-hidden">Information: </span>
@@ -98,6 +99,70 @@
     ]) %}
 
     {{ summaryList({ rows: rows }) }}
+
+    {# A past round holds stand-ins rather than appointment records, so the list
+       is shaped the same as a live round's but has nothing to open. Showing it
+       as a list rather than a single block is deliberate: an episode can hold
+       more than one appointment, and a past one is no different. #}
+    <h2>Appointments</h2>
+
+    {% if episode.summaryAppointments.length %}
+      <table class="nhsuk-table">
+        <thead class="nhsuk-table__head">
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody class="nhsuk-table__body">
+          {% for summaryAppointment in episode.summaryAppointments %}
+            <tr class="nhsuk-table__row">
+              <td class="nhsuk-table__cell">
+                {{ summaryAppointment.startTime | formatDate }}
+              </td>
+              <td class="nhsuk-table__cell">
+                {{ summaryAppointment.type | formatWords | sentenceCase }}
+              </td>
+              <td class="nhsuk-table__cell">
+                {{ tag({
+                  text: summaryAppointment.status | getStatusText('appointment'),
+                  colour: summaryAppointment.status | getStatusTagColour('appointment')
+                }) }}
+              </td>
+              <td class="nhsuk-table__cell">
+                {# Alludes to the page a past appointment would have. Nothing
+                   serves it yet, so it deliberately goes nowhere. #}
+                <a href="#">View appointment</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>This round was not screened, so it has no appointments.</p>
+    {% endif %}
+
+    {# What was recorded on the day #}
+    {% set latestSummaryAppointment = episode.summaryAppointments | last %}
+    {% if latestSummaryAppointment %}
+
+      <h2 class="nhsuk-heading-m">Medical information recorded</h2>
+
+      {# The shared summary reads `appointment.medicalInformation`, and the
+         stand-in carries the same shape, so it can be reused as-is #}
+      {% set appointment = latestSummaryAppointment %}
+      {% include "_includes/summary-lists/medical-info-summary.njk" %}
+
+    {% endif %}
+
+    {# One row per set of images read. The individual reads belong on the case
+       view rather than here - this is the round's shape, not its detail. #}
+    {% if episode.readingCases.length %}
+      <h2>Image reading</h2>
+      {% include "_includes/episodes/reading-cases-table.njk" %}
+    {% endif %}
 
   {% else %}
 
@@ -169,14 +234,43 @@
         </tbody>
       </table>
 
+      {# What was recorded at the appointment, the same as a past round shows.
+         The latest appointment that got as far as recording anything: an
+         episode can hold more than one, and a booked-but-not-yet-attended one
+         has nothing to show. #}
+      {% set appointmentsWithInfo = [] %}
+      {% for row in episodeAppointments %}
+        {% if row.appointment.medicalInformation %}
+          {% set appointmentsWithInfo = appointmentsWithInfo | push(row.appointment) %}
+        {% endif %}
+      {% endfor %}
+      {% set latestWithInfo = appointmentsWithInfo | last %}
+
+      {% if latestWithInfo %}
+        <h2 class="nhsuk-heading-m">Medical information recorded</h2>
+
+        {% if appointmentsWithInfo | length > 1 %}
+          <p class="nhsuk-u-secondary-text-colour">
+            As recorded at the {{ latestWithInfo.timing.startTime | formatDate }} appointment.
+          </p>
+        {% endif %}
+
+        {% set appointment = latestWithInfo %}
+        {% include "_includes/summary-lists/medical-info-summary.njk" %}
+      {% endif %}
+
       <h2>Image reading</h2>
-      <p>
-        Reading state across this episode’s appointments:
-        {{ tag({
-          text: readingStatus.status | formatWords | sentenceCase,
-          colour: readingStatus.statusColor
-        }) }}
-      </p>
+      {% if episode.readingCases.length %}
+        {% include "_includes/episodes/reading-cases-table.njk" %}
+      {% else %}
+        <p>
+          Reading state across this episode’s appointments:
+          {{ tag({
+            text: readingStatus.status | formatWords | sentenceCase,
+            colour: readingStatus.statusColor
+          }) }}
+        </p>
+      {% endif %}
 
     {% else %}
       <p>This episode has no appointments.</p>

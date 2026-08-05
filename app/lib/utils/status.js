@@ -230,6 +230,15 @@ const STATUS_TAGS = {
   },
   // Reading journey state - mostly derived, reached via snake-cased tag text
   readingState: {
+    // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
+    // set of images has got to. The entries below them are the older
+    // appointment- and group-level vocabulary.
+    'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
+    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'blue' },
+    'awaiting_finalisation': { label: 'Awaiting finalisation', colour: 'yellow' },
+    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'orange' },
+    'in_arbitration': { label: 'In arbitration', colour: 'purple' },
+    'concluded': { label: 'Concluded', colour: 'green' },
     'waiting_for_1st_read': { colour: 'grey' },
     'waiting_for_2nd_read': { colour: 'grey' },
     'not_started': { colour: 'grey' },
@@ -249,7 +258,7 @@ const STATUS_TAGS = {
   // External prior mammogram request tracking (episode.priors)
   priorsRequest: {
     not_requested: { label: 'Not requested', colour: 'white' },
-    pending: { label: 'Needs requesting', colour: 'orange' },
+    pending: { label: 'Priors required', colour: 'orange' },
     requested: { label: 'Requested', colour: 'yellow' },
     received: { label: 'Received', colour: 'green' },
     not_available: { label: 'Not available', colour: 'grey' },
@@ -267,7 +276,9 @@ const STATUS_TAGS = {
     incomplete: { colour: 'orange' },
     urgent: { colour: 'red' },
     due_soon: { colour: 'orange' },
-    priors_requested: { colour: 'yellow' },
+    // Case-level equivalent of priorsRequest.pending - same words and colour,
+    // so readers and admin staff see one status rather than two
+    priors_required: { colour: 'orange' },
     deferred: { colour: 'orange' }
   }
 }

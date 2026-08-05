@@ -6,7 +6,7 @@ This document explains how medical information is generated and stored in the se
 
 The prototype generates seed data to populate a breast screening management system. **Medical information** is the umbrella term covering:
 
-- **Medical history** (breast cancer, mastectomy, implants, etc.) - ✅ _implemented (4 of 7 types)_
+- **Medical history** (breast cancer, mastectomy, implants, etc.) - ✅ _implemented (all 7 types)_
 - **Symptoms** (lumps, pain, nipple changes, etc.) - ✅ _implemented_
 - **Breast density factors** (HRT, pregnancy, breastfeeding) - ✅ _implemented_
 - **Other medical information** (freetext) - ✅ _implemented_
@@ -154,7 +154,7 @@ module.exports = {
 
 ### Symptoms Generator
 
-**File:** `app/lib/generators/symptoms-generator.js`
+**File:** `app/lib/generators/medical-information/symptoms-generator.js`
 
 **Key features:**
 
@@ -275,16 +275,14 @@ string  // e.g., 'Takes warfarin for atrial fibrillation. Last INR check was two
 
 ## Medical History Types Status
 
-**Implemented (4/7):**
+**Implemented (all 7):**
 - ✅ Breast cancer
 - ✅ Implanted medical device
 - ✅ Breast implants/augmentation
 - ✅ Mastectomy/lumpectomy
-
-**To implement (3/7):**
-- Cysts
-- Benign lumps
-- Other procedures
+- ✅ Cysts
+- ✅ Benign lumps
+- ✅ Other procedures
 
 ## Medical History Types
 
@@ -509,21 +507,19 @@ module.exports = {
 
 **File:** `app/lib/generators/medical-information/medical-history-generator.js`
 
-**Implemented types:**
+**Implemented types (all 7):**
 - ✅ Breast cancer (can have multiple)
 - ✅ Implanted medical device (can have multiple)
 - ✅ Breast implants/augmentation (single entry, includes consent)
 - ✅ Mastectomy/lumpectomy (can have multiple)
-
-**Remaining types:**
-- Cysts (single entry only)
-- Benign lumps (can have multiple)
-- Other procedures (can have multiple)
+- ✅ Cysts (single entry only)
+- ✅ Benign lumps (can have multiple)
+- ✅ Other procedures (can have multiple)
 
 **Notes:**
 - All field names corrected to match forms (`year` not `procedureYear`, `location` not `treatmentLocation`)
-- Currently set to 100% probability for all types (testing mode)
-- Each type has independent probability check allowing multiple types per appointment
+- Types are selected via weighted probabilities (`typeWeights` in the generator — cysts and benign lumps most common, implants/augmentation least)
+- Multiple types per appointment are possible, without duplicates
 
 ## Common Patterns & Helpers
 
@@ -1095,7 +1091,7 @@ module.exports = [
         dateOfBirth: '1965-03-15'
       },
       config: {
-        appointmentId: 'evt-medical-001',
+        appointmentId: 'medhist01',  // ids are opaque strings
         defaultRiskLevel: 'routine',
 
         // Force this participant to have breast cancer and implanted device
@@ -1206,14 +1202,7 @@ if (isCompleted(appointmentStatus)) {
 
 ### Next Steps
 
-1. **Complete remaining medical history types:**
-   - Cysts (single entry only)
-   - Benign lumps (can have multiple)
-   - Other procedures (can have multiple)
-
-2. **Adjust probabilities for realistic data:**
-   - Currently all types set to 100% for testing
-   - Reduce to realistic levels when testing complete
+None outstanding — all seven medical history types are implemented with weighted probabilities.
 
 ## Related Files
 
@@ -1229,7 +1218,7 @@ if (isCompleted(appointmentStatus)) {
 - `app/lib/generators/medical-information/breast-density-factors-generator.js` - ✅ Breast density factors generator (HRT, pregnancy, breastfeeding)
 - `app/lib/generators/medical-information/other-medical-information-generator.js` - ✅ Other medical info generator
 - `app/lib/generators/medical-information/breast-features-generator.js` - ✅ Breast features generator
-- `app/lib/generators/medical-information/medical-history-generator.js` - ✅ Medical history generator (4 of 7 types)
+- `app/lib/generators/medical-information/medical-history-generator.js` - ✅ Medical history generator (all 7 types)
 
 ### Data & Configuration
 
@@ -1240,6 +1229,7 @@ if (isCompleted(appointmentStatus)) {
 - `app/routes/appointments.js` - Routes that handle medical information (shows expected data structure)
 - `app/views/_includes/forms/breast-density-factors.njk` - Breast density factors form fields
 - `app/views/appointments/confirm-information/breast-density-factors.html` - Breast density factors edit and review page
+- `app/routes/appointments/medical-information.js` and `app/routes/appointments/medical-history.js` - Routes that handle medical information (show expected data structure)
 - `app/views/appointments/medical-information/other-medical-information.html` - Other medical info form template
 - `app/views/appointments/medical-information/record-breast-features.html` - Breast features diagram interface
 - `app/views/appointments/medical-information/medical-history/*.html` - Medical history form templates

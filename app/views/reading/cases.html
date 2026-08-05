@@ -1,0 +1,152 @@
+{# app/views/reading/cases.html
+
+   The reading backlog - every reading case, whatever stage it has reached.
+   Filters are query params so several can apply at once and the URL stays
+   shareable. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Reading cases" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/reading",
+  text: "Back to reading"
+} %}
+
+{# Build a filtered URL, carrying the filters that aren't being changed #}
+{%- macro casesUrl(scope, state, deferred, query) -%}
+  /reading/cases?scope={{ scope }}
+  {%- if state %}&state={{ state }}{% endif -%}
+  {%- if deferred %}&deferred=true{% endif -%}
+  {%- if query %}&q={{ query | urlencode }}{% endif -%}
+{%- endmacro -%}
+
+{% set scopeLabels = {
+  "open": "Open rounds",
+  "recently-closed": "Recently closed",
+  "all": "All, including history"
+} %}
+
+{% block pageContent %}
+
+  <span class="nhsuk-caption-l">Image reading</span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {# Search first - the fastest way to a known case, before any browsing #}
+  <form action="/reading/cases" method="get" class="nhsuk-u-margin-bottom-4">
+    <input type="hidden" name="scope" value="{{ filters.scope }}">
+    {% if filters.state %}<input type="hidden" name="state" value="{{ filters.state }}">{% endif %}
+    {% if filters.deferred %}<input type="hidden" name="deferred" value="true">{% endif %}
+
+    {{ searchInput({
+      id: "case-search",
+      name: "q",
+      value: filters.query,
+      label: { text: "Search by name or NHS number" },
+      width: 20,
+      button: { variant: "secondary" }
+    }) }}
+  </form>
+
+  {# Scope next - it decides which population the state counts describe #}
+  {% set scopeNavItems = [] %}
+  {% for scope in scopes %}
+    {% set scopeNavItems = scopeNavItems | push({
+      text: scopeLabels[scope],
+      href: casesUrl(scope, filters.state, filters.deferred, filters.query) | trim,
+      current: true if scope == filters.scope
+    }) %}
+  {% endfor %}
+
+  {{ appSecondaryNavigation({
+    visuallyHiddenTitle: "Which rounds to show",
+    items: scopeNavItems
+  }) }}
+
+  {# State filters, with counts from the current scope #}
+  <p class="nhsuk-u-margin-bottom-2">
+    <strong>State:</strong>
+    <a href="{{ casesUrl(filters.scope, null, filters.deferred, filters.query) | trim }}"
+       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if not filters.state }}">
+      All ({{ counts.all }})
+    </a>
+    {% for state in states %}
+      {% if counts[state] %}
+        &nbsp;·&nbsp;
+        <a href="{{ casesUrl(filters.scope, state, filters.deferred, filters.query) | trim }}"
+           class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.state == state }}">
+          {{ state | getStatusText("readingState") or (state | formatWords | sentenceCase) }} ({{ counts[state] }})
+        </a>
+      {% endif %}
+    {% endfor %}
+    &nbsp;·&nbsp;
+    <a href="{{ casesUrl(filters.scope, filters.state, (not filters.deferred), filters.query) | trim }}"
+       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.deferred }}">
+      Deferred ({{ counts.deferred }})
+    </a>
+  </p>
+
+  {% if totalCount == 0 %}
+    <p>No reading cases match these filters.</p>
+  {% else %}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+      {% if truncated %}
+        Showing the {{ shownCount }} oldest of {{ totalCount }} cases. Filter or search to narrow this down.
+      {% else %}
+        {{ totalCount }} {{ "case" | pluralise(totalCount) }}.
+      {% endif %}
+    </p>
+
+    <table class="nhsuk-table">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th scope="col">Participant</th>
+          <th scope="col">Images taken</th>
+          <th scope="col">Screened at</th>
+          <th scope="col">Reads</th>
+          <th scope="col">State</th>
+          <th scope="col">Outcome</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for row in rows %}
+          <tr class="nhsuk-table__row">
+            <td class="nhsuk-table__cell">
+              <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-link--no-visited-state">
+                {{ row.participant | getFullName }}
+              </a>
+              {% if row.isDeferred %}
+                <br>{{ "Deferred" | toTag }}
+              {% endif %}
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ row.imagesTakenDate | formatDate }}
+              <br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                {{ row.imagesTakenDate | formatRelativeDate }}
+              </span>
+            </td>
+            <td class="nhsuk-table__cell">
+              {{ row.clinicLocationName or "Unknown" }}
+            </td>
+            <td class="nhsuk-table__cell">{{ row.readCount }}</td>
+            <td class="nhsuk-table__cell">
+              {{ row.state | toTag({ vocabulary: "readingState" }) }}
+            </td>
+            <td class="nhsuk-table__cell">
+              {% if row.outcome %}
+                {{ row.outcome | toTag }}
+              {% else %}
+                <span class="nhsuk-u-secondary-text-colour">Not yet</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% endif %}
+
+{% endblock %}

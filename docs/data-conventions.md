@@ -165,13 +165,70 @@ A round screened longer ago than the reading window closes rather than sitting
 in `reading` forever - it was read at the time, we just don't seed reads going
 back that far.
 
-### What deliberately doesn't live on the episode yet
+### Reading cases
 
-The target model puts `imageReadings[]`, priors and deferral on the episode.
-They are all still **on the appointment**, because moving them touches most of the
-reading code. `getEpisodeReadingStatus` derives an episode's reading state
-from its appointments rather than holding a copy. The physical move happens with the
-work that needs it (arbitration / case views).
+A **reading case** is one set of mammograms being read. Cases live on the
+episode as `episode.readingCases[]`, one per image set, oldest first — the same
+sets `episode.mammograms` records, from the other side:
+
+```js
+{
+  id, appointmentId, openedDate,
+  reads: [{ readerId, readerType, readType, readNumber, timestamp, opinion, ... }],
+  deferral, deferralHistory
+}
+```
+
+The trigger rule is **new image set → new case**. `updateAppointmentStatus`
+opens one the moment an appointment reaches a screened status, alongside the
+mammogram entry, and removes it again if that is undone. Most episodes have one
+case; a technical recall produces a second set of images and therefore a second
+case, and the episode's reading state comes from the **latest** one.
+
+Reads are an ordered array, and each records its own `readType` (`first`,
+`second`, `arbitration`). The type is settled when the read is written, from
+where the case had got to at the time — which is not recoverable later, because
+reads can be withdrawn (deferring after giving an opinion does exactly that).
+
+Two functions answer the two different questions, and the split matters:
+
+| | |
+|---|---|
+| `getReadingCaseState(case, settings, now)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_finalisation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
+| `getReadingCaseOutcome(case, settings, now)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
+
+Two reads are not a result by themselves — the result becomes real once the
+reads are finalised, explicitly (`read.finalisedAt` / `finalisedBy`) or
+automatically when the finalisation delay passes
+(`settings.reading.finalisationDelay`, minutes as a string, `'0'` immediate,
+`'never'` manual only — see `isReadFinalised`). Until then the case sits in
+`awaiting_finalisation`. Whether it is heading for arbitration is a **fact
+about the case, not a separate state**: `getReadingCaseStatus(case, settings,
+now)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so
+"awaiting finalisation, then arbitration" is one state with a destination.
+
+`awaiting_arbitration` and `in_arbitration` are deliberately different:
+finalised discordant reads put a case in the arbitration backlog, but
+`in_arbitration` is reserved for a future claim/lock while someone actively
+arbitrates it — nothing sets it yet. The state exists so the vocabulary is
+whole rather than growing a value later across every call site. Deferral works
+the same way already: the act is recorded
+(`deferral: { deferredAt, deferredBy, reason }`) and `isCaseDeferred` reads the
+state back from its presence.
+
+Priors are the exception that stays on the appointment
+(`appointment.previousMammograms`), so `canUserReadAppointment` combines the two.
+Deferral and outstanding priors are **states, not outcomes** — both hold a case
+up, and a case held up still owes an outcome once it is released.
+
+**Where the code lives.** `reading-cases.js` holds the case logic and is
+deliberately pure — everything there takes a case. `episodes.js` owns getting
+cases out of session data (`getReadingCase`) and writing them back
+(`updateReadingCase`), because both go through the episode. `reading.js` is the
+appointment- and session-shaped layer above: sessions, backlogs, progress. That
+is why most of its helpers take `data` — resolving a case is what needs it.
+Resolution happens once, at the edges: the reading workflow middleware sets
+`res.locals.readingCase`, and list-building attaches `readingCase` to each row.
 
 ### Historic episodes
 
@@ -179,10 +236,47 @@ Participants who have a real episode also get their past rounds as **historic**
 episodes (`isHistoric: true`): summary-level records with dates and an outcome,
 but no appointments, no reads and no assessment detail.
 
-They are seeded **outcome-first** - we say what the round found and don't model
-how it got there. That's enough for any "what happened before" view, and cheap
-to hold. If we later model the steps, the outcome can be computed from them
-instead, without the record changing shape.
+They are seeded **outcome-first**: the round's outcome is picked, and the detail
+beneath it is chosen to be consistent with that rather than the other way round.
+A past round carries one **summary reading case** - who read it, when, and what
+they concluded - with `appointmentId: null`, since there is no appointment
+record behind it for the case to hang off (the same reason its mammogram entry
+has no `appointmentId`).
+
+The reads have to agree with the outcome: a round that ended in
+`refer_for_treatment` was recalled for assessment, and a clear round was usually
+read as normal - though a minority were recalled and then found clear at
+assessment, which is what actually happens in screening. `checkEpisodes`
+enforces the first of those.
+
+A few percent of past rounds went to **arbitration**: the two readers disagreed
+and a third read settled it, carrying the round's conclusion. Those are seeded
+so arbitration work has past examples to look at rather than only cases made by
+hand.
+
+A screened past round also carries `episode.summaryAppointments[]` - stand-ins
+for the appointment records we don't model:
+
+```js
+{ id, status, type, startTime, medicalInformation }
+```
+
+A list, like the episode's other per-appointment records, so a past round is
+shaped the same as a live one and the episode page can show an appointments
+table either way. Only one is generated today; a past technical recall would
+have had two.
+
+They live on the episode rather than in `data.appointments` deliberately, so
+they can't drift into a clinic list, a reading queue or a route expecting a real
+appointment - there is nothing to open. Their recorded dates are stamped back to
+the round's screening date; the medical information generators date everything
+"now", which is right for a live appointment and wrong for a past one.
+
+**Seed profiles reach history too.** `episodes.historicOutcomeWeights` shapes how
+past rounds turned out, so a profile's claim about the current round isn't
+contradicted by the participant's past - "all normals" shows no past referrals,
+"high abnormalities" shows more. Medical information for past rounds uses the
+profile's `medicalInformation` probabilities, the same as a live appointment.
 
 How many a participant gets follows from their **age** and their screening
 interval, since screening starts at the risk level's lower age bound: a routine

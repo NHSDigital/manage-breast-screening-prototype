@@ -38,14 +38,14 @@
 
 
 
-{% set firstReadsAppointments = allReadsAppointments | filterAppointmentsByNeedsFirstRead %}
-{% set secondReadsAppointments = allReadsAppointments | filterAppointmentsByNeedsSecondRead %}
+{% set firstReadsAppointments = filterAppointmentsByNeedsFirstRead(data, allReadsAppointments) %}
+{% set secondReadsAppointments = filterAppointmentsByNeedsSecondRead(data, allReadsAppointments) %}
 
 {# Filter for current user - currently not used #}
-{% set allReadsForUser = allReadsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
-{% set firstReadsForUser = firstReadsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
-{% set secondReadsForUser = secondReadsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
-{% set awaitingPriorsForUser = awaitingPriorsAppointments | filterAppointmentsByUserCanRead(data.currentUser.id) %}
+{% set allReadsForUser = filterAppointmentsByUserCanRead(data, allReadsAppointments, data.currentUser.id) %}
+{% set firstReadsForUser = filterAppointmentsByUserCanRead(data, firstReadsAppointments, data.currentUser.id) %}
+{% set secondReadsForUser = filterAppointmentsByUserCanRead(data, secondReadsAppointments, data.currentUser.id) %}
+{% set awaitingPriorsForUser = filterAppointmentsByUserCanRead(data, awaitingPriorsAppointments, data.currentUser.id) %}
 
 {# Get oldest #}
 {% set oldestAllRead = allReadsAppointments[0].timing.startTime if allReadsAppointments.length > 0 %}

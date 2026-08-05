@@ -14,38 +14,24 @@
 
 {% block pageContent %}
 
-  {# Get all appointments that have been deferred #}
-  {% set deferredAppointments = [] %}
-  {% for thisAppointment in data.appointments %}
-    {% if thisAppointment | isDeferred %}
-      {% set deferredAppointments = deferredAppointments | push(thisAppointment) %}
-    {% endif %}
-  {% endfor %}
-
-  {# Sort by deferral date, most recent first #}
-  {% set deferredAppointments = deferredAppointments | sort(true, false, 'imageReading.deferral.deferredAt') %}
-
-  {# Collect resolved deferrals across all appointments, most recently resolved first #}
-  {% set resolvedDeferrals = [] %}
-  {% for thisAppointment in data.appointments %}
-    {% for pastDeferral in thisAppointment.imageReading.deferralHistory %}
-      {% set resolvedDeferrals = resolvedDeferrals | push({ appointment: thisAppointment, deferral: pastDeferral }) %}
-    {% endfor %}
-  {% endfor %}
-  {% set resolvedDeferrals = resolvedDeferrals | sort(true, false, 'deferral.resolvedAt') %}
+  {# Deferral lives on the reading case, so both lists come from there,
+     already paired with their appointment and participant #}
+  {% set deferredCases = data | getDeferredCases %}
+  {% set resolvedDeferrals = data | getResolvedDeferrals %}
 
   <span class="nhsuk-caption-l">Image reading</span>
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
   <p>Cases deferred from reading require manual review before they can be returned to the reading queue.</p>
 
-  {% if deferredAppointments | length == 0 %}
+  {% if deferredCases | length == 0 %}
     <p>No deferred cases.</p>
   {% else %}
 
-    {% for thisAppointment in deferredAppointments %}
-      {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
-      {% set deferral = thisAppointment.imageReading.deferral %}
+    {% for row in deferredCases %}
+      {% set thisAppointment = row.appointment %}
+      {% set thisParticipant = row.participant %}
+      {% set deferral = row.deferral %}
 
       {% set screenedHtml %}
         {% set daysSinceScreening = thisAppointment.timing.startTime | daysSince %}
@@ -114,8 +100,8 @@
 
     {% for row in resolvedDeferrals %}
       {% set thisAppointment = row.appointment %}
+      {% set thisParticipant = row.participant %}
       {% set deferral = row.deferral %}
-      {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
 
       {% set deferredHtml %}
         {{ deferral.deferredAt | formatDate("D MMM YYYY") }}

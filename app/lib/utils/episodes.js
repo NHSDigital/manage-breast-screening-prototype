@@ -1,18 +1,25 @@
 // app/lib/utils/episodes.js
 //
 // An episode is one screening round for a participant - the container its
-// appointment(s) sit in. See docs/data-conventions.md.
+// appointment(s) and its reading sit in. See docs/data-conventions.md.
 //
-// Reading data still lives on appointments, not on the episode; the reading
-// accessors here derive an episode's state from its appointments rather than
-// holding a copy. That move happens with the work that needs it.
+// Reading lives on the episode as `episode.readingCases[]`, one case per set of
+// images. The case logic itself is in reading-cases.js, which is deliberately
+// pure - this file owns getting cases out of session data and writing them
+// back, because that means going through the episode.
 
 const dataStore = require('../data-store')
 const { getAppointment } = require('./appointment-data.js')
-const { getReadingStatusForAppointments } = require('./reading.js')
 const { getClinic } = require('./clinics.js')
 const { formatMonthYear } = require('./dates.js')
 const { isActive } = require('./status.js')
+const {
+  buildReadingCase,
+  getReadingCases,
+  getLatestReadingCase,
+  getReadingCaseForAppointment,
+  getReadingCaseOutcome
+} = require('./reading-cases.js')
 
 // An episode is open until it closes. While open, the stage says where in the
 // process it has got to; `closed` means it has an outcome and is done.
@@ -74,9 +81,9 @@ const EPISODE_STAGE_BY_APPOINTMENT_STATUS = {
   attended_not_screened: { stage: 'closed', outcome: 'no_result' }
 }
 
-// Where a concluded reading leaves its episode. Reading outcomes that mean
-// reading is still under way (not_read, pending_second_read,
-// arbitration_pending) are absent - the episode stays in `reading`.
+// Where a concluded reading leaves its episode. A reading still under way has
+// no outcome at all (getReadingCaseOutcome returns null), and an episode with
+// no reading outcome stays in `reading`.
 //
 // Note a clear reading is the only one that ends the episode. Recall for
 // assessment is an interim routing decision, not a result: it moves the
@@ -226,18 +233,156 @@ const getEpisodeAppointments = (data, episode) => {
 }
 
 /**
- * Get the reading status of an episode, derived from its appointments.
+ * Get the reading case covering an appointment's images.
  *
- * Reading data lives on appointments, so this rescopes the existing group-level
- * reading helper over just this episode's appointments.
+ * The single bridge from an appointment to its case. Everything that works in
+ * appointment terms - the reading session, the workflow pages, the backlog -
+ * comes through here once, at the edge, and passes the case onwards.
  *
  * @param {object} data - Session data
- * @param {object} episode - Episode object
- * @param {string} [userId] - Optional user, for per-user reading counts
- * @returns {object} Reading status and metrics for the episode
+ * @param {object} appointment - Appointment object
+ * @returns {object | null} The case, or null if the appointment produced no images
  */
-const getEpisodeReadingStatus = (data, episode, userId = null) => {
-  return getReadingStatusForAppointments(getEpisodeAppointments(data, episode), userId)
+const getReadingCase = (data, appointment) => {
+  if (!appointment?.episodeId) return null
+
+  const episode = getEpisode(data, appointment.episodeId)
+  if (!episode) return null
+
+  return getReadingCaseForAppointment(episode, appointment.id)
+}
+
+/**
+ * Find a reading case by its own id, with the episode that holds it.
+ *
+ * Cases live inside episodes, so a case id on its own is not enough to reach
+ * one - hence the store index. Callers that have an appointment should use
+ * getReadingCase instead; this is for the case views, which are reached by case
+ * id and need the episode anyway (for the participant and the appointment).
+ *
+ * @param {object} data - Session data
+ * @param {string} caseId - Reading case ID
+ * @returns {{ readingCase: object, episode: object } | null} Both, or null
+ */
+const getReadingCaseById = (data, caseId) => {
+  if (!caseId) return null
+
+  const episodeId = dataStore.state.episodeIdByReadingCase.get(caseId)
+
+  // A case opened this session exists only in _changes, so isn't in the index
+  const episode = episodeId
+    ? getEpisode(data, episodeId)
+    : Object.values(data._changes?.episodes || {}).find((candidate) =>
+        getReadingCases(candidate).some((readingCase) => readingCase.id === caseId)
+      )
+
+  if (!episode) return null
+
+  const readingCase = getReadingCases(episode).find(
+    (candidate) => candidate.id === caseId
+  )
+
+  return readingCase ? { readingCase, episode } : null
+}
+
+/**
+ * Get an episode's reading cases, oldest first
+ *
+ * @param {object} episode - Episode object
+ * @returns {Array} The cases
+ */
+const getEpisodeReadingCases = (episode) => {
+  return getReadingCases(episode)
+}
+
+/**
+ * Get the case that says where an episode's reading has got to - its latest.
+ *
+ * @param {object} episode - Episode object
+ * @returns {object | null} The latest case, or null if the round has no images
+ */
+const getEpisodeReadingCase = (episode) => {
+  return getLatestReadingCase(episode)
+}
+
+/**
+ * Get an episode's reading outcome, from its latest case.
+ *
+ * The *latest* case, so a technical recall's re-screen supersedes the reading
+ * that asked for it rather than the episode being stuck on the older answer.
+ *
+ * @param {object} episode - Episode object
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {string | null} The outcome, or null while reading is under way
+ */
+const getEpisodeReadingOutcome = (episode, settings = {}) => {
+  const latestCase = getLatestReadingCase(episode)
+  return latestCase ? getReadingCaseOutcome(latestCase, settings) : null
+}
+
+/**
+ * Save a changed reading case back to its episode.
+ *
+ * Build a whole replacement case and pass it in - the one you read came out of
+ * shared read-only data (see docs/data-conventions.md). reading-cases.js has
+ * `withRead` / `withoutRead` for building those replacements.
+ *
+ * @param {object} data - Session data
+ * @param {string} episodeId - Episode ID
+ * @param {object} updatedCase - Whole replacement case record
+ * @returns {object | null} The updated episode, or null if not found
+ */
+const updateReadingCase = (data, episodeId, updatedCase) => {
+  const episode = getEpisode(data, episodeId)
+  if (!episode) {
+    console.warn(`updateReadingCase: no episode with id ${episodeId}`)
+    return null
+  }
+
+  const readingCases = getReadingCases(episode).map((existing) =>
+    existing.id === updatedCase.id ? updatedCase : existing
+  )
+
+  return updateEpisode(data, episodeId, { readingCases })
+}
+
+/**
+ * Keep an episode's reading cases in step with one of its appointments.
+ *
+ * Called alongside syncEpisodeMammogramsForAppointment, because they answer the
+ * same question from two sides: a new set of images is both a mammogram entry
+ * and a new case to read. Undoing a screened status removes both again.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment whose status just changed
+ * @returns {object | null} The updated episode, or null if nothing to do
+ */
+const syncReadingCasesForAppointment = (data, appointment) => {
+  if (!appointment?.episodeId) return null
+
+  const episode = getEpisode(data, appointment.episodeId)
+  if (!episode) return null
+
+  const existing = getReadingCases(episode)
+  const otherCases = existing.filter(
+    (readingCase) => readingCase.appointmentId !== appointment.id
+  )
+
+  if (!appointmentProducedImages(appointment)) {
+    // No images from this appointment any more - drop its case. Any reads on it
+    // go too, which is right: they were reads of images that didn't happen.
+    if (otherCases.length === existing.length) return null
+    return updateEpisode(data, episode.id, { readingCases: otherCases })
+  }
+
+  // Already has a case - leave it and its reads alone
+  if (otherCases.length !== existing.length) return null
+
+  const readingCases = [...existing, buildReadingCase(appointment)].sort(
+    (a, b) => new Date(a.openedDate) - new Date(b.openedDate)
+  )
+
+  return updateEpisode(data, episode.id, { readingCases })
 }
 
 /**
@@ -564,16 +709,16 @@ const advanceEpisodeForAppointmentStatus = (data, appointment) => {
  * Move an appointment's episode to wherever its reading outcome leaves it.
  *
  * Deliberately NOT called when a read is saved. Two opinions and a computed
- * outcome is not a confirmed result: there is no confirmation step in the
+ * outcome is not a finalised result: there is no finalisation step in the
  * app yet, so writing a read leaves the episode in `reading`. This is what
- * that confirmation step should call once it exists.
+ * that finalisation step should call once it exists.
  *
  * The seed generator uses the same map to settle rounds read long enough ago
- * that they would have been confirmed by now.
+ * that they would have been finalised by now.
  *
  * @param {object} data - Session data
  * @param {object} appointment - The appointment that was read
- * @param {string} readingOutcome - Outcome from getOutcome
+ * @param {string} readingOutcome - Outcome from getReadingCaseOutcome
  * @returns {object | null} The updated episode, or null if nothing to do
  */
 const advanceEpisodeForReadingOutcome = (data, appointment, readingOutcome) => {
@@ -598,7 +743,13 @@ module.exports = {
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeAppointments,
-  getEpisodeReadingStatus,
+  getReadingCase,
+  getReadingCaseById,
+  getEpisodeReadingCases,
+  getEpisodeReadingCase,
+  getEpisodeReadingOutcome,
+  updateReadingCase,
+  syncReadingCasesForAppointment,
   getEpisodeMammogramDate,
   getLastMammogram,
   getNextAppointment,
