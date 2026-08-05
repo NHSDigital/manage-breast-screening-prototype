@@ -38,6 +38,7 @@ const {
   getReadingMetadata,
   getReadsAsArray,
   getReadForUser,
+  getArbitrationRead,
   isCaseDeferred,
   withoutRead
 } = require('../lib/utils/reading-cases')
@@ -747,7 +748,11 @@ module.exports = (router) => {
       }
 
       // Check if user has already read this appointment
-      if (userHasReadAppointment(data, appointment, currentUserId)) {
+      // In arbitration, the user may have been an original reader (panel mode)
+      // but still needs to reach the arbitration compare page
+      const session = getReadingSession(data, sessionId)
+      const isArbitrationSession = session?.type === 'arbitration'
+      if (!isArbitrationSession && userHasReadAppointment(data, appointment, currentUserId)) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )
@@ -773,9 +778,8 @@ module.exports = (router) => {
 
       // Arbitration cases open on the two reads by default; opinion-first is a
       // settings choice, with the compare step following the opinion instead
-      const session = getReadingSession(data, sessionId)
       if (
-        session?.type === 'arbitration' &&
+        isArbitrationSession &&
         data.settings?.reading?.arbitrationFlow !== 'opinion_first'
       ) {
         return res.redirect(
@@ -1906,14 +1910,13 @@ module.exports = (router) => {
       // Editing a read the user has already saved. The existing-read page they
       // came from is itself a summary of the read, so the confirmation step is
       // redundant — save straight away regardless of the confirmation settings.
-      const isEditingExistingRead = userHasReadAppointment(
-        data,
-        appointment,
-        currentUserId
-      )
-
+      // In arbitration, "editing" means the arbitration read exists - not that
+      // the user was an original reader (panel members may have been).
       const isArbitrationSession =
         getReadingSession(data, sessionId)?.type === 'arbitration'
+      const isEditingExistingRead = isArbitrationSession
+        ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+        : userHasReadAppointment(data, appointment, currentUserId)
 
       // Arbitration, opinion-first: the compare step follows the outcome and
       // its details rather than opening the case
@@ -2082,13 +2085,22 @@ module.exports = (router) => {
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
-        data,
-        sessionAppointments,
-        appointmentId,
-        currentUserId,
-        { wrap: false }
-      )
+      const isArbitrationSave = session?.type === 'arbitration'
+
+      // Arbitration sessions find the next case without an arbitration read,
+      // bypassing the user-can-read check (panel members may be original readers)
+      const currentIndex = sessionAppointments.findIndex((e) => e.id === appointmentId)
+      const nextUnreadAppointment = isArbitrationSave
+        ? sessionAppointments.slice(currentIndex + 1).find((appt) =>
+            !getArbitrationRead(getReadingCase(data, appt))
+          )
+        : getNextUserReadableAppointment(
+            data,
+            sessionAppointments,
+            appointmentId,
+            currentUserId,
+            { wrap: false }
+          )
 
       // Store banner message for the next case, but only if there is one.
       // Edits stay on the current case, so there's nowhere to show it.
@@ -2105,8 +2117,6 @@ module.exports = (router) => {
           recall_for_assessment: 'Recall for assessment'
         }
         const resultLabel = resultLabels[formData.opinion] || 'Opinion'
-        const isArbitrationSave =
-          getReadingSession(data, sessionId)?.type === 'arbitration'
         const message = isArbitrationSave
           ? `${resultLabel} outcome recorded for ${shortName}`
           : `${resultLabel} opinion recorded for ${shortName}`
@@ -2153,11 +2163,15 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
-          data,
-          sessionAppointments,
-          currentUserId
-        )
+        const firstReadable = isArbitrationSave
+          ? sessionAppointments.find((appt) =>
+              !getArbitrationRead(getReadingCase(data, appt))
+            )
+          : getFirstUserReadableAppointment(
+              data,
+              sessionAppointments,
+              currentUserId
+            )
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
@@ -2344,15 +2358,13 @@ module.exports = (router) => {
     (req, res) => {
       const { sessionId, appointmentId } = req.params
       const data = req.session.data
-      const currentUserId = data.currentUser?.id
 
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
 
-      const isEditingExistingRead = userHasReadAppointment(
-        data,
-        appointment,
-        currentUserId
+      // In arbitration, "editing" means the arbitration read already exists
+      const isEditingExistingRead = Boolean(
+        getArbitrationRead(getReadingCase(data, appointment))
       )
 
       data.imageReadingTemp = data.imageReadingTemp || { appointmentId }

@@ -50,7 +50,12 @@ const recordArbitrationReleases = (data, session) => {
  * falling back to the session overview when nothing is readable.
  */
 const startArbitrationSession = (data, res, arbitration) => {
-  const sessionOptions = { type: 'arbitration', lazy: false }
+  const isPanel = arbitration.mode === 'panel'
+  const sessionOptions = {
+    type: 'arbitration',
+    lazy: false,
+    filters: isPanel ? { skipUserFilter: true } : {}
+  }
 
   const candidates = getEligibleCandidatesForSession(data, sessionOptions)
   if (candidates.length === 0) {
@@ -68,9 +73,14 @@ const startArbitrationSession = (data, res, arbitration) => {
     data.currentUser.id
   )
 
-  if (firstReadableAppointment) {
+  // Panel arbitrators may have read every case in the session — fall back to
+  // the first appointment so they still land on the arbitration compare page
+  const firstAppointmentId = firstReadableAppointment?.id
+    || session.appointmentIds[0]
+
+  if (firstAppointmentId) {
     return res.redirect(
-      `/reading/session/${session.id}/appointments/${firstReadableAppointment.id}`
+      `/reading/session/${session.id}/appointments/${firstAppointmentId}`
     )
   }
 

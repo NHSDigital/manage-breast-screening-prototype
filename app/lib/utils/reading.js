@@ -1192,10 +1192,12 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
     // The arbitration backlog, not the reading queues. The generic
     // user-can-read filter below would reject these cases (two reads
     // already), so arbitration selects its own way.
+    // Panel arbitration skips user filtering — a panel member who was
+    // an original reader can still participate in the group decision.
     appointments = filterAppointmentsByNeedsArbitration(
       data,
       appointments,
-      currentUserId
+      filters.skipUserFilter ? null : currentUserId
     )
     appointments = appointments.filter((appointment) => !awaitingPriors(appointment))
   } else {

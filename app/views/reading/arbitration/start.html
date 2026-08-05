@@ -33,7 +33,10 @@
     items: [
       {
         value: "alone",
-        text: "Just me"
+        text: "Just me",
+        hint: {
+          text: soloCount ~ " of " ~ backlogCount ~ " available to you (you read the others)"
+        } if soloCount != backlogCount else undefined
       },
       {
         value: "panel",

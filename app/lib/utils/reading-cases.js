@@ -537,7 +537,7 @@ const caseNeedsArbitration = (readingCase, settings = {}) => {
  * @returns {boolean}
  */
 const canUserReadCase = (readingCase, userId, options = {}) => {
-  const { maxReadsPerCase = 2 } = options
+  const { maxReadsPerCase = 2, panelArbitration = false } = options
 
   if (!userId) return false
 
@@ -545,9 +545,10 @@ const canUserReadCase = (readingCase, userId, options = {}) => {
   if (isCaseDeferred(readingCase)) return false
 
   // A case released to arbitration takes one more read - the arbitration
-  // read - from someone who hasn't read it already
+  // read - from someone who hasn't read it already. Panel arbitrators may
+  // have been an original reader, so skip the user check for panels.
   if (isCaseInArbitration(readingCase) && !getArbitrationRead(readingCase)) {
-    return !userHasReadCase(readingCase, userId)
+    return panelArbitration || !userHasReadCase(readingCase, userId)
   }
 
   // Enough readers have had it already
