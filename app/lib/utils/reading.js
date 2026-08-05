@@ -57,7 +57,10 @@ const {
  * @returns {object} Reading metadata, all zeros if there is no case yet
  */
 const getAppointmentReadingMetadata = (data, appointment) => {
-  return getReadingMetadata(resolveCase(data, appointment), data?.settings || {})
+  return getReadingMetadata(
+    resolveCase(data, appointment),
+    data?.settings || {}
+  )
 }
 
 /**
@@ -250,7 +253,8 @@ const getDeferredCases = (data) => {
     .filter((row) => isCaseDeferred(row.readingCase))
     .map((row) => ({ ...row, deferral: row.readingCase.deferral }))
     .sort(
-      (a, b) => new Date(b.deferral.deferredAt) - new Date(a.deferral.deferredAt)
+      (a, b) =>
+        new Date(b.deferral.deferredAt) - new Date(a.deferral.deferredAt)
     )
 }
 
@@ -278,7 +282,8 @@ const getResolvedDeferrals = (data) => {
       }))
     })
     .sort(
-      (a, b) => new Date(b.deferral.resolvedAt) - new Date(a.deferral.resolvedAt)
+      (a, b) =>
+        new Date(b.deferral.resolvedAt) - new Date(a.deferral.resolvedAt)
     )
 }
 
@@ -389,7 +394,9 @@ const calculateReadingMetrics = function (
   }
 
   // Resolve each appointment's case once - every count below is about the case
-  const cases = appointments.map((appointment) => resolveCase(data, appointment))
+  const cases = appointments.map((appointment) =>
+    resolveCase(data, appointment)
+  )
 
   // Count first reads (cases with at least one read)
   const firstReadCount = cases.filter(caseHasReads).length
@@ -505,7 +512,11 @@ const calculateReadingMetrics = function (
  * @param {string | null} [userId] - Optional user ID (defaults to current user if available)
  * @returns {object} Detailed reading status
  */
-const getReadingStatusForAppointments = function (data, appointments, userId = null) {
+const getReadingStatusForAppointments = function (
+  data,
+  appointments,
+  userId = null
+) {
   // Get metrics from base calculation function
   const metrics = calculateReadingMetrics.call(this, data, appointments, userId)
 
@@ -575,23 +586,44 @@ const getReadingProgress = function (
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
   // Find current appointment index
-  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
+  const currentIndex = appointments.findIndex(
+    (e) => e.id === currentAppointmentId
+  )
 
   // Basic sequential navigation
-  const nextAppointment = getNextAppointmentInList(appointments, currentAppointmentId, false)
-  const previousAppointment = getPreviousAppointmentInList(appointments, currentAppointmentId, false)
+  const nextAppointment = getNextAppointmentInList(
+    appointments,
+    currentAppointmentId,
+    false
+  )
+  const previousAppointment = getPreviousAppointmentInList(
+    appointments,
+    currentAppointmentId,
+    false
+  )
 
   // Get appointments needing any reads (first or second)
-  const readableAppointments = filterAppointmentsByNeedsAnyRead(data, appointments)
+  const readableAppointments = filterAppointmentsByNeedsAnyRead(
+    data,
+    appointments
+  )
 
   // Find next/previous of each type
   const nextReadableAppointment =
     currentIndex !== -1
-      ? getNextAppointmentInList(readableAppointments, currentAppointmentId, true)
+      ? getNextAppointmentInList(
+          readableAppointments,
+          currentAppointmentId,
+          true
+        )
       : null
   const previousReadableAppointment =
     currentIndex !== -1
-      ? getPreviousAppointmentInList(readableAppointments, currentAppointmentId, true)
+      ? getPreviousAppointmentInList(
+          readableAppointments,
+          currentAppointmentId,
+          true
+        )
       : null
 
   // For user-specific navigation, get appointments this user can read or has read
@@ -640,7 +672,11 @@ const getReadingProgress = function (
     previousUserReadableId: previousUserReadableAppointment?.id || null,
     // Whether user has already read the previous/next appointment (for review page links)
     previousUserHasRead: previousUserReadableAppointment
-      ? userHasReadAppointment(data, previousUserReadableAppointment, currentUserId)
+      ? userHasReadAppointment(
+          data,
+          previousUserReadableAppointment,
+          currentUserId
+        )
       : false,
     nextUserHasRead: nextUserReadableAppointment
       ? userHasReadAppointment(data, nextUserReadableAppointment, currentUserId)
@@ -648,7 +684,9 @@ const getReadingProgress = function (
     // Skipped appointments
     skippedAppointments,
     isCurrentSkipped: skippedAppointments.includes(currentAppointmentId),
-    nextAppointmentSkipped: nextAppointment ? skippedAppointments.includes(nextAppointment.id) : false,
+    nextAppointmentSkipped: nextAppointment
+      ? skippedAppointments.includes(nextAppointment.id)
+      : false,
     previousAppointmentSkipped: previousAppointment
       ? skippedAppointments.includes(previousAppointment.id)
       : false
@@ -662,7 +700,11 @@ const getReadingProgress = function (
  * @returns {Array} Sorted appointments array
  */
 const sortAppointmentsByScreeningDate = (appointments) => {
-  if (!appointments || !Array.isArray(appointments) || appointments.length === 0) {
+  if (
+    !appointments ||
+    !Array.isArray(appointments) ||
+    appointments.length === 0
+  ) {
     return []
   }
 
@@ -698,7 +740,9 @@ const getReadingClinics = (data, options = {}) => {
 
   return data.clinics
     .filter((clinic) =>
-      data.appointments.some((e) => e.clinicId === clinic.id && eligibleForReading(e))
+      data.appointments.some(
+        (e) => e.clinicId === clinic.id && eligibleForReading(e)
+      )
     )
     .map((clinic) => {
       const unit = data.breastScreeningUnits.find(
@@ -732,7 +776,8 @@ const getReadingClinics = (data, options = {}) => {
 const getReadableAppointmentsForClinic = (data, clinicId) => {
   // Filter eligible appointments for this clinic
   const eligibleAppointments = data.appointments.filter(
-    (appointment) => appointment.clinicId === clinicId && eligibleForReading(appointment)
+    (appointment) =>
+      appointment.clinicId === clinicId && eligibleForReading(appointment)
   )
 
   // Enhance the appointments with reading metadata
@@ -771,7 +816,11 @@ const filterAppointmentsByEligibleForReading = (appointments) => {
  * @param {number} maxReadsPerCase - Number of reads required to be complete (default: 2)
  * @returns {Array} Appointments needing any read
  */
-const filterAppointmentsByNeedsAnyRead = (data, appointments, maxReadsPerCase = 2) => {
+const filterAppointmentsByNeedsAnyRead = (
+  data,
+  appointments,
+  maxReadsPerCase = 2
+) => {
   return appointments.filter(
     (appointment) =>
       getReadsAsArray(resolveCase(data, appointment)).length < maxReadsPerCase
@@ -813,7 +862,11 @@ const filterAppointmentsByNeedsSecondRead = (data, appointments) => {
  * @param {string} [userId] - User who would arbitrate; omit to skip the check
  * @returns {Array} Appointments needing arbitration
  */
-const filterAppointmentsByNeedsArbitration = (data, appointments, userId = null) => {
+const filterAppointmentsByNeedsArbitration = (
+  data,
+  appointments,
+  userId = null
+) => {
   return appointments.filter((appointment) => {
     const readingCase = resolveCase(data, appointment)
 
@@ -832,7 +885,11 @@ const filterAppointmentsByNeedsArbitration = (data, appointments, userId = null)
  * @param {number} requiredReads - Number of required reads (default: 2)
  * @returns {Array} Fully read appointments
  */
-const filterAppointmentsByFullyRead = (data, appointments, requiredReads = 2) => {
+const filterAppointmentsByFullyRead = (
+  data,
+  appointments,
+  requiredReads = 2
+) => {
   return appointments.filter(
     (appointment) =>
       getReadsAsArray(resolveCase(data, appointment)).length >= requiredReads
@@ -910,7 +967,11 @@ const filterAppointmentsByClinic = (appointments, clinicId) => {
  * @param {number | null} [maxDays] - Maximum days old (inclusive), if null, no upper bound
  * @returns {Array} Appointments within the specified day range
  */
-const filterAppointmentsByDayRange = (appointments, minDays, maxDays = null) => {
+const filterAppointmentsByDayRange = (
+  appointments,
+  minDays,
+  maxDays = null
+) => {
   if (!appointments || !Array.isArray(appointments)) return []
 
   return appointments.filter((appointment) =>
@@ -939,8 +1000,14 @@ const getFirstAppointmentInList = (appointments) => {
  * @param {boolean} wrap - Whether to wrap around to start if at end
  * @returns {object | null} Next appointment or null
  */
-const getNextAppointmentInList = (appointments, currentAppointmentId, wrap = true) => {
-  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
+const getNextAppointmentInList = (
+  appointments,
+  currentAppointmentId,
+  wrap = true
+) => {
+  const currentIndex = appointments.findIndex(
+    (e) => e.id === currentAppointmentId
+  )
   if (currentIndex === -1) return null
 
   // Next appointment exists
@@ -960,8 +1027,14 @@ const getNextAppointmentInList = (appointments, currentAppointmentId, wrap = tru
  * @param {boolean} wrap - Whether to wrap around to end if at start
  * @returns {object | null} Previous appointment or null
  */
-const getPreviousAppointmentInList = (appointments, currentAppointmentId, wrap = true) => {
-  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
+const getPreviousAppointmentInList = (
+  appointments,
+  currentAppointmentId,
+  wrap = true
+) => {
+  const currentIndex = appointments.findIndex(
+    (e) => e.id === currentAppointmentId
+  )
   if (currentIndex === -1) return null
 
   // Previous appointment exists
@@ -970,7 +1043,9 @@ const getPreviousAppointmentInList = (appointments, currentAppointmentId, wrap =
   }
 
   // Wrap around to last appointment
-  return wrap && appointments.length > 0 ? appointments[appointments.length - 1] : null
+  return wrap && appointments.length > 0
+    ? appointments[appointments.length - 1]
+    : null
 }
 
 /************************************************************************
@@ -985,7 +1060,11 @@ const getPreviousAppointmentInList = (appointments, currentAppointmentId, wrap =
  * @param {string | null} userId - User ID to check for
  * @returns {object | null} First appointment user can read or null if none
  */
-const getFirstUserReadableAppointment = function (data, appointments, userId = null) {
+const getFirstUserReadableAppointment = function (
+  data,
+  appointments,
+  userId = null
+) {
   // Get user ID from context if not provided and we're in a template context
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
@@ -1015,11 +1094,20 @@ const getNextUserReadableAppointment = function (
 ) {
   const { wrap = true } = options
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-  const currentIndex = appointments.findIndex((e) => e.id === currentAppointmentId)
+  const currentIndex = appointments.findIndex(
+    (e) => e.id === currentAppointmentId
+  )
   const appointmentsFromNext = wrap
-    ? [...appointments.slice(currentIndex + 1), ...appointments.slice(0, currentIndex)]
+    ? [
+        ...appointments.slice(currentIndex + 1),
+        ...appointments.slice(0, currentIndex)
+      ]
     : appointments.slice(currentIndex + 1)
-  return getFirstUserReadableAppointment(data, appointmentsFromNext, currentUserId)
+  return getFirstUserReadableAppointment(
+    data,
+    appointmentsFromNext,
+    currentUserId
+  )
 }
 
 /**
@@ -1072,7 +1160,11 @@ const getResumeAppointmentForUser = function (
     ...appointments.slice(lastActedIndex + 1),
     ...appointments.slice(0, lastActedIndex + 1)
   ]
-  return getFirstUserReadableAppointment(data, appointmentsFromNext, currentUserId)
+  return getFirstUserReadableAppointment(
+    data,
+    appointmentsFromNext,
+    currentUserId
+  )
 }
 
 /************************************************************************
@@ -1138,7 +1230,6 @@ const canUserReadAppointment = function (
   return canUserReadCase(resolveCase(data, appointment), currentUserId, options)
 }
 
-
 /************************************************************************
 // Sessions
 //***********************************************************************
@@ -1182,7 +1273,9 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
   const { type = 'custom', clinicId, filters = {} } = sessionOptions
   const currentUserId = data.currentUser.id
 
-  let appointments = data.appointments.filter((appointment) => eligibleForReading(appointment))
+  let appointments = data.appointments.filter((appointment) =>
+    eligibleForReading(appointment)
+  )
 
   if (type === 'clinic') {
     if (!clinicId)
@@ -1199,18 +1292,28 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
       appointments,
       filters.skipUserFilter ? null : currentUserId
     )
-    appointments = appointments.filter((appointment) => !awaitingPriors(appointment))
+    appointments = appointments.filter(
+      (appointment) => !awaitingPriors(appointment)
+    )
   } else {
     // 1. Filter to appointments the user can read (unless overridden)
     if (filters.userCanRead !== false) {
-      appointments = filterAppointmentsByUserCanRead(data, appointments, currentUserId)
+      appointments = filterAppointmentsByUserCanRead(
+        data,
+        appointments,
+        currentUserId
+      )
     }
 
     // 2. Apply awaiting priors filter
     if (type === 'awaiting_priors') {
-      appointments = appointments.filter((appointment) => awaitingPriors(appointment))
+      appointments = appointments.filter((appointment) =>
+        awaitingPriors(appointment)
+      )
     } else if (!filters.includeAwaitingPriors) {
-      appointments = appointments.filter((appointment) => !awaitingPriors(appointment))
+      appointments = appointments.filter(
+        (appointment) => !awaitingPriors(appointment)
+      )
     }
 
     // 3. Symptoms filter
@@ -1303,10 +1406,13 @@ const createReadingSession = (data, options) => {
 
   // Lazy sessions start with only the first appointment
   const initialAppointments =
-    isLazy && cappedAppointments.length > 0 ? [cappedAppointments[0]] : cappedAppointments
+    isLazy && cappedAppointments.length > 0
+      ? [cappedAppointments[0]]
+      : cappedAppointments
 
   // Clinic sessions have no fixed target — their size is however many eligible appointments exist
-  const sessionTargetSize = type === 'clinic' ? cappedAppointments.length : targetSize
+  const sessionTargetSize =
+    type === 'clinic' ? cappedAppointments.length : targetSize
 
   // Create and store the session
   const session = {
@@ -1426,7 +1532,11 @@ const getOrCreateClinicSession = (data, clinicId) => {
  * @param {string | null} [userId] - User ID (defaults to current user)
  * @returns {object | null} First readable appointment or null if none found
  */
-const getFirstReadableAppointmentInSession = (data, sessionId, userId = null) => {
+const getFirstReadableAppointmentInSession = (
+  data,
+  sessionId,
+  userId = null
+) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return null
 
@@ -1434,15 +1544,16 @@ const getFirstReadableAppointmentInSession = (data, sessionId, userId = null) =>
 
   // Get all appointments for the session
   const sessionAppointments = session.appointmentIds
-    .map((appointmentId) => data.appointments.find((e) => e.id === appointmentId))
+    .map((appointmentId) =>
+      data.appointments.find((e) => e.id === appointmentId)
+    )
     .filter(Boolean)
 
   // Find the first one the user can read
   return (
     sessionAppointments.find((appointment) =>
       canUserReadAppointment(data, appointment, currentUserId)
-    ) ||
-    null
+    ) || null
   )
 }
 
@@ -1539,7 +1650,9 @@ const getSessionReadingProgress = (
 
   // Get all appointments for the session
   const sessionAppointments = session.appointmentIds
-    .map((appointmentId) => data.appointments.find((e) => e.id === appointmentId))
+    .map((appointmentId) =>
+      data.appointments.find((e) => e.id === appointmentId)
+    )
     .filter(Boolean)
 
   // Use existing function for progress tracking, then add session-level size info

@@ -752,7 +752,10 @@ module.exports = (router) => {
       // but still needs to reach the arbitration compare page
       const session = getReadingSession(data, sessionId)
       const isArbitrationSession = session?.type === 'arbitration'
-      if (!isArbitrationSession && userHasReadAppointment(data, appointment, currentUserId)) {
+      if (
+        !isArbitrationSession &&
+        userHasReadAppointment(data, appointment, currentUserId)
+      ) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )
@@ -2089,11 +2092,13 @@ module.exports = (router) => {
 
       // Arbitration sessions find the next case without an arbitration read,
       // bypassing the user-can-read check (panel members may be original readers)
-      const currentIndex = sessionAppointments.findIndex((e) => e.id === appointmentId)
+      const currentIndex = sessionAppointments.findIndex(
+        (e) => e.id === appointmentId
+      )
       const nextUnreadAppointment = isArbitrationSave
-        ? sessionAppointments.slice(currentIndex + 1).find((appt) =>
-            !getArbitrationRead(getReadingCase(data, appt))
-          )
+        ? sessionAppointments
+            .slice(currentIndex + 1)
+            .find((appt) => !getArbitrationRead(getReadingCase(data, appt)))
         : getNextUserReadableAppointment(
             data,
             sessionAppointments,
@@ -2164,8 +2169,8 @@ module.exports = (router) => {
       } else {
         // Check if there are any readable cases left in the session
         const firstReadable = isArbitrationSave
-          ? sessionAppointments.find((appt) =>
-              !getArbitrationRead(getReadingCase(data, appt))
+          ? sessionAppointments.find(
+              (appt) => !getArbitrationRead(getReadingCase(data, appt))
             )
           : getFirstUserReadableAppointment(
               data,

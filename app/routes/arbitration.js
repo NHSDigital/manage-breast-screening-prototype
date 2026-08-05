@@ -75,8 +75,8 @@ const startArbitrationSession = (data, res, arbitration) => {
 
   // Panel arbitrators may have read every case in the session — fall back to
   // the first appointment so they still land on the arbitration compare page
-  const firstAppointmentId = firstReadableAppointment?.id
-    || session.appointmentIds[0]
+  const firstAppointmentId =
+    firstReadableAppointment?.id || session.appointmentIds[0]
 
   if (firstAppointmentId) {
     return res.redirect(
@@ -93,10 +93,15 @@ module.exports = (router) => {
     const data = req.session.data
 
     const backlogCount = getEligibleCandidatesForSession(data, {
+      type: 'arbitration',
+      filters: { skipUserFilter: true }
+    }).length
+
+    const soloCount = getEligibleCandidatesForSession(data, {
       type: 'arbitration'
     }).length
 
-    res.render('reading/arbitration/start', { backlogCount })
+    res.render('reading/arbitration/start', { backlogCount, soloCount })
   })
 
   router.post('/reading/arbitration/start-answer', (req, res) => {
@@ -130,7 +135,8 @@ module.exports = (router) => {
   router.post('/reading/arbitration/panel-answer', (req, res) => {
     const data = req.session.data
 
-    const panelUserIds = [].concat(data.arbitrationTemp?.panelUserIds || [])
+    const panelUserIds = []
+      .concat(data.arbitrationTemp?.panelUserIds || [])
       .filter(Boolean)
 
     delete data.arbitrationTemp

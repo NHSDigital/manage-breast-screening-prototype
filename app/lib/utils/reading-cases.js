@@ -147,7 +147,8 @@ const getReadForUser = (readingCase, userId) => {
   if (!userId) return null
 
   return (
-    getReadsAsArray(readingCase).find((read) => read.readerId === userId) || null
+    getReadsAsArray(readingCase).find((read) => read.readerId === userId) ||
+    null
   )
 }
 
@@ -170,8 +171,9 @@ const getOtherReads = (readingCase, userId) => {
  */
 const getArbitrationRead = (readingCase) => {
   return (
-    getReadsAsArray(readingCase).find((read) => read.readType === 'arbitration') ||
-    null
+    getReadsAsArray(readingCase).find(
+      (read) => read.readType === 'arbitration'
+    ) || null
   )
 }
 
@@ -443,8 +445,8 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
 
   const willArbitrate = Boolean(
     reads.length >= 2 &&
-      !arbitrationRead &&
-      willGoToArbitration(reads[0], reads[1], settings)
+    !arbitrationRead &&
+    willGoToArbitration(reads[0], reads[1], settings)
   )
 
   const provisionalOutcome =
@@ -700,7 +702,9 @@ const withRead = (readingCase, read) => {
 
   const updatedReads =
     existingIndex >= 0
-      ? reads.map((candidate, index) => (index === existingIndex ? read : candidate))
+      ? reads.map((candidate, index) =>
+          index === existingIndex ? read : candidate
+        )
       : [...reads, read]
 
   return { ...readingCase, reads: updatedReads }
