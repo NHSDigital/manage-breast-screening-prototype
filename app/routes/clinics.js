@@ -325,6 +325,19 @@ module.exports = (router) => {
   router.post('/clinics/:id/close', (req, res) => {
     const { id } = req.params
     const data = req.session.data
+
+    // Check all appointments have a final outcome
+    const finalStatuses = ['complete', 'partially_screened', 'did_not_attend', 'attended_not_screened', 'cancelled', 'rescheduled']
+    const clinicAppointments = data.appointments.filter((a) => a.clinicId === id)
+    const unresolved = clinicAppointments.filter((a) => !finalStatuses.includes(a.status))
+
+    if (unresolved.length > 0) {
+      req.flash('error', [{
+        text: `${unresolved.length} participant${unresolved.length === 1 ? '' : 's'} still need${unresolved.length === 1 ? 's' : ''} an outcome recorded before the clinic can be closed`
+      }])
+      return res.redirect(`/clinics/${id}/close`)
+    }
+
     const clinicIndex = data.clinics.findIndex((c) => c.id === id)
 
     if (clinicIndex !== -1) {
