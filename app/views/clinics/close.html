@@ -90,8 +90,8 @@
       {% set checkedInAppointments = allAppointments | where("status", "checked_in") %}
       {% if checkedInAppointments | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
-        <p>
-          <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" role="button">Mark all as attended not screened</a>
+        <p class="js-bulk-action-container">
+          <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened-all" role="button">Mark all as attended not screened</a>
         </p>
         {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
       {% endif %}
@@ -100,37 +100,38 @@
       {% set scheduledAppointments = allAppointments | where("status", "scheduled") %}
       {% if scheduledAppointments | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
-        <p>
-          <a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend" role="button">Mark all as did not attend</a>
+        <p class="js-bulk-action-container">
+          <a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend-all" role="button">Mark all as did not attend</a>
         </p>
         {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
       {% endif %}
     {% endset %}
 
     {{ card({
-      heading: "Needs an outcome",
+      heading: "Needs an outcome (" + needsOutcomeAppointments | length + ")",
       headingLevel: "2",
       feature: true,
       descriptionHtml: needsOutcomeHtml
     }) }}
   {% endif %}
 
-  {# Outcome recorded: appointments that already had a final status before visiting this page #}
+  {# Outcome recorded #}
   {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
 
-  {% if outcomeRecordedAppointments | length %}
-    {% set outcomeRecordedHtml %}
+  {% set outcomeRecordedHtml %}
+    <p><a href="" class="js-refresh-link" hidden>Refresh to update the list</a></p>
+    {% if outcomeRecordedAppointments | length %}
       {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
-    {% endset %}
+    {% endif %}
+  {% endset %}
 
-    {{ card({
-      heading: "Outcome recorded",
-      headingLevel: "2",
-      feature: true,
-      classes: "app-card--feature-green",
-      descriptionHtml: outcomeRecordedHtml
-    }) }}
-  {% endif %}
+  {{ card({
+    heading: "Outcome recorded (" + outcomeRecordedAppointments | length + ")",
+    headingLevel: "2",
+    feature: true,
+    classes: "app-card--feature-green",
+    descriptionHtml: outcomeRecordedHtml
+  }) }}
 
   </div>
 
@@ -180,6 +181,11 @@
       return ''
     }
 
+    function showRefreshLink() {
+      var link = container.querySelector('.js-refresh-link')
+      if (link) link.hidden = false
+    }
+
     function updateRow(row, newStatus) {
       var statusCell = row.querySelector('[data-cell="status"]')
       var actionsCell = row.querySelector('[data-cell="actions"]')
@@ -192,6 +198,27 @@
       }
     }
 
+    function replaceBulkButtonWithUndo(bulkLink, undoUrl, count, statusLabel) {
+      var containerEl = bulkLink.closest('.js-bulk-action-container')
+      if (!containerEl) return
+      var originalUrl = bulkLink.href
+      var originalLabel = bulkLink.textContent
+      var sourceStatus = bulkLink.getAttribute('data-source-status')
+      var newStatus = bulkLink.getAttribute('data-new-status')
+      containerEl.innerHTML = count + ' participants marked as ' + statusLabel + ' (<a href="' + undoUrl + '" class="js-close-clinic-action" data-bulk-undo="true" data-undo-url="' + originalUrl + '" data-undo-label="' + originalLabel + '" data-source-status="' + newStatus + '" data-new-status="' + sourceStatus + '">Undo</a>)'
+      bindActions()
+    }
+
+    function replaceBulkUndoWithButton(undoLink, originalUrl, originalLabel) {
+      var containerEl = undoLink.closest('.js-bulk-action-container')
+      if (!containerEl) return
+      var sourceStatus = undoLink.getAttribute('data-new-status')
+      var newStatus = undoLink.getAttribute('data-source-status')
+      var undoUrl = undoLink.href
+      containerEl.innerHTML = '<a href="' + originalUrl + '" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="' + sourceStatus + '" data-new-status="' + newStatus + '" data-undo-url="' + undoUrl + '" role="button">' + originalLabel + '</a>'
+      bindActions()
+    }
+
     function handleClick(e) {
       e.preventDefault()
       e.stopPropagation()
@@ -200,23 +227,44 @@
       var url = link.href
       var newStatus = link.getAttribute('data-new-status')
       var isBulk = link.getAttribute('data-bulk') === 'true'
+      var isBulkUndo = link.getAttribute('data-bulk-undo') === 'true'
 
       fetch(url, { headers: { 'Accept': 'application/json' } })
         .then(function (response) {
           if (!response.ok) throw new Error('Request failed')
           return response.json()
         })
-        .then(function () {
+        .then(function (data) {
           if (isBulk) {
+            var sourceStatus = link.getAttribute('data-source-status')
+            var count = 0
             container.querySelectorAll('tr[data-appointment-id]').forEach(function (row) {
               var actionLink = row.querySelector('[data-cell="actions"] .js-close-clinic-action')
               if (actionLink && actionLink.getAttribute('data-new-status') === newStatus) {
                 updateRow(row, newStatus)
+                count++
               }
             })
+            var undoUrl = link.getAttribute('data-undo-url')
+            var statusLabel = statusTags[newStatus] ? statusTags[newStatus].text.toLowerCase() : newStatus
+            replaceBulkButtonWithUndo(link, undoUrl, data.count || count, statusLabel)
+            showRefreshLink()
+          } else if (isBulkUndo) {
+            var revertStatus = link.getAttribute('data-new-status')
+            var sourceStatusUndo = link.getAttribute('data-source-status')
+            container.querySelectorAll('tr[data-appointment-id]').forEach(function (row) {
+              var actionLink = row.querySelector('[data-cell="actions"] .js-close-clinic-action')
+              if (actionLink && actionLink.getAttribute('data-new-status') === revertStatus) {
+                updateRow(row, revertStatus)
+              }
+            })
+            var originalUrl = link.getAttribute('data-undo-url')
+            var originalLabel = link.getAttribute('data-undo-label')
+            replaceBulkUndoWithButton(link, originalUrl, originalLabel)
           } else {
             var row = link.closest('tr')
             if (row) updateRow(row, newStatus)
+            showRefreshLink()
           }
         })
         .catch(function (error) {

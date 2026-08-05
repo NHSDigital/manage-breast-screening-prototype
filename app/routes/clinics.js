@@ -256,6 +256,29 @@ module.exports = (router) => {
     res.redirect(`/clinics/${id}/close`)
   })
 
+  // Bulk undo attended not screened (revert to checked_in)
+  router.get('/clinics/:id/close/undo-attended-not-screened-all', (req, res) => {
+    const { id } = req.params
+    const data = req.session.data
+    const resolvedKey = `closeClinicResolved_${id}`
+    const resolvedIds = req.session[resolvedKey] || []
+    const appointments = data.appointments.filter(
+      (a) => a.clinicId === id && a.status === 'attended_not_screened' && resolvedIds.includes(a.id)
+    )
+    appointments.forEach((a) => {
+      updateAppointmentStatus(data, a.id, 'checked_in')
+    })
+    if (req.session[resolvedKey]) {
+      req.session[resolvedKey] = req.session[resolvedKey].filter(
+        (i) => !appointments.find((a) => a.id === i)
+      )
+    }
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success', count: appointments.length })
+    }
+    res.redirect(`/clinics/${id}/close`)
+  })
+
   // Bulk mark all remaining as did not attend
   router.get('/clinics/:id/close/did-not-attend-all', (req, res) => {
     const { id } = req.params
@@ -269,6 +292,29 @@ module.exports = (router) => {
       updateAppointmentStatus(data, a.id, 'did_not_attend')
       if (!req.session[resolvedKey].includes(a.id)) req.session[resolvedKey].push(a.id)
     })
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({ status: 'success', count: appointments.length })
+    }
+    res.redirect(`/clinics/${id}/close`)
+  })
+
+  // Bulk undo did not attend (revert to scheduled)
+  router.get('/clinics/:id/close/undo-did-not-attend-all', (req, res) => {
+    const { id } = req.params
+    const data = req.session.data
+    const resolvedKey = `closeClinicResolved_${id}`
+    const resolvedIds = req.session[resolvedKey] || []
+    const appointments = data.appointments.filter(
+      (a) => a.clinicId === id && a.status === 'did_not_attend' && resolvedIds.includes(a.id)
+    )
+    appointments.forEach((a) => {
+      updateAppointmentStatus(data, a.id, 'scheduled')
+    })
+    if (req.session[resolvedKey]) {
+      req.session[resolvedKey] = req.session[resolvedKey].filter(
+        (i) => !appointments.find((a) => a.id === i)
+      )
+    }
     if (req.headers.accept?.includes('application/json')) {
       return res.json({ status: 'success', count: appointments.length })
     }
