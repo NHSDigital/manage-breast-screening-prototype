@@ -1957,7 +1957,9 @@ module.exports = (router) => {
           // Arbitration decisions are always confirmed, on the review page.
           if (isArbitrationSession && !isEditingExistingRead) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+              )
             )
           }
           if (
@@ -1983,7 +1985,9 @@ module.exports = (router) => {
               data.settings?.reading?.confirmTechnicalRecall !== 'false')
           ) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
+              )
             )
           }
           return res.redirect(
@@ -2002,7 +2006,9 @@ module.exports = (router) => {
               data.settings?.reading?.confirmRecallForAssessment !== 'false')
           ) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
+              )
             )
           }
           return res.redirect(
