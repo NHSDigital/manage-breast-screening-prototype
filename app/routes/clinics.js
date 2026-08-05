@@ -173,7 +173,6 @@ module.exports = (router) => {
     }
 
     const resolvedKey = `closeClinicResolved_${req.params.id}`
-    const resolvedAppointmentIds = req.session[resolvedKey] || []
 
     // Group by status so similar statuses appear together
     const statusOrder = ["in_progress", "paused", "checked_in", "scheduled", "attended_not_screened", "did_not_attend", "complete", "partially_screened", "cancelled", "rescheduled"]
@@ -184,8 +183,7 @@ module.exports = (router) => {
     res.render('clinics/close', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allAppointments: sortedAppointments,
-      resolvedAppointmentIds
+      allAppointments: sortedAppointments
     })
   })
 

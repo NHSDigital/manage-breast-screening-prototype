@@ -20,9 +20,7 @@
 
   <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
 
-  {# Needs an outcome: active appointments plus those just resolved on this page #}
   {% set needsOutcomeAppointments = allAppointments | removeWhere("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
-  {% set newlyResolvedIds = resolvedAppointmentIds or [] %}
 
   <div id="js-close-clinic-content">
 
@@ -36,10 +34,9 @@
     <tr data-appointment-id="{{ appointment.id }}">
       <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
       <td class="nhsuk-table__cell">
-        <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
-          <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">{{ participant | getFullName }}</a>
-        </p>
-        <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
+        <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
+        <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-1">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
+        <p class="nhsuk-u-margin-bottom-0"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
       </td>
       <td class="nhsuk-table__cell" data-cell="status">{{ appointment.status | toTag({ vocabulary: "appointment" }) }}</td>
       <td class="nhsuk-table__cell" data-cell="actions">
@@ -79,7 +76,7 @@
     </table>
   {% endmacro %}
 
-  {% if needsOutcomeAppointments | length or newlyResolvedIds | length %}
+  {% if needsOutcomeAppointments | length %}
     {% set needsOutcomeHtml %}
       {# In progress #}
       {% set inProgressAppointments = allAppointments | where("status", ["in_progress", "paused"]) %}
@@ -91,32 +88,22 @@
 
       {# Checked in, not screened #}
       {% set checkedInAppointments = allAppointments | where("status", "checked_in") %}
-      {% set newlyMarkedAns = allAppointments | where("status", "attended_not_screened") | where("id", newlyResolvedIds) %}
-      {% if checkedInAppointments | length or newlyMarkedAns | length %}
+      {% if checkedInAppointments | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
-        <p><a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened">Mark all as attended not screened</a></p>
-        {% set checkedInGroup = [] %}
-        {% for appointment in allAppointments %}
-          {% if appointment.status == "checked_in" or (appointment.status == "attended_not_screened" and appointment.id in newlyResolvedIds) %}
-            {% set checkedInGroup = checkedInGroup.concat(appointment) %}
-          {% endif %}
-        {% endfor %}
-        {{ statusGroupTable(checkedInGroup, clinicId, true) }}
+        <p>
+          <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" role="button">Mark all as attended not screened</a>
+        </p>
+        {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
       {% endif %}
 
       {# Did not check in #}
       {% set scheduledAppointments = allAppointments | where("status", "scheduled") %}
-      {% set newlyMarkedDna = allAppointments | where("status", "did_not_attend") | where("id", newlyResolvedIds) %}
-      {% if scheduledAppointments | length or newlyMarkedDna | length %}
+      {% if scheduledAppointments | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
-        <p><a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend">Mark all as did not attend</a></p>
-        {% set didNotCheckInGroup = [] %}
-        {% for appointment in allAppointments %}
-          {% if appointment.status == "scheduled" or (appointment.status == "did_not_attend" and appointment.id in newlyResolvedIds) %}
-            {% set didNotCheckInGroup = didNotCheckInGroup.concat(appointment) %}
-          {% endif %}
-        {% endfor %}
-        {{ statusGroupTable(didNotCheckInGroup, clinicId, true) }}
+        <p>
+          <a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend" role="button">Mark all as did not attend</a>
+        </p>
+        {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
       {% endif %}
     {% endset %}
 
@@ -129,7 +116,7 @@
   {% endif %}
 
   {# Outcome recorded: appointments that already had a final status before visiting this page #}
-  {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) | removeWhere("id", newlyResolvedIds) %}
+  {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
 
   {% if outcomeRecordedAppointments | length %}
     {% set outcomeRecordedHtml %}
