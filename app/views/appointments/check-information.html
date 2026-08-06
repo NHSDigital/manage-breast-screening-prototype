@@ -144,16 +144,28 @@
     }
   }) }}
 
-  {# Other relevant information card #}
-  {% set otherRelevantInformationHtml %}
+  {# Breast density factors card #}
+  {% set breastDensityFactorsHtml %}
+    {% include "_includes/forms/breast-density-factors.njk" %}
+  {% endset %}
+
+  {{ card({
+    heading: "Breast density factors",
+    headingLevel: "2",
+    feature: true,
+    descriptionHtml: breastDensityFactorsHtml
+  }) }}
+
+  {# Other medical information card #}
+  {% set otherMedicalInformationHtml %}
     {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
   {% endset %}
 
   {{ card({
-    heading: "Other relevant medical information",
+    heading: "Other medical information",
     headingLevel: "2",
     feature: true,
-    descriptionHtml: otherRelevantInformationHtml
+    descriptionHtml: otherMedicalInformationHtml
   }) }}
 
 {% endset %}

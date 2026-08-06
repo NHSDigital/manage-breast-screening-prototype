@@ -355,7 +355,12 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 367 |
 | `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 381 |
 | `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 403 |
+
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 419 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 455 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 490 |
 | `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 419 |
+
 
 ### annotation-summary.js
 

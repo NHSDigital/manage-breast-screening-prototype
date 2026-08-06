@@ -9,6 +9,64 @@ const {
 } = require('../../lib/utils/referrers')
 
 module.exports = (router) => {
+  // Auto-save breast density factors as they're changed
+  //
+  // These answers are edited in place on the review page rather than on a
+  // sub-page with its own submit, so there's no form post to carry them.
+  // Like the other medical information sections, this writes to the temp
+  // appointment and is committed when the appointment is completed or paused.
+  //
+  // The inputs are named outside the appointment[...] namespace on purpose.
+  // They render inside other forms, and the kit's unchecked-checkbox script
+  // adds an "_unchecked" value for every checkbox in whichever form is being
+  // submitted. Since auto-store-data replaces arrays rather than merging
+  // them, an appointment-namespaced name would let any other form on the page
+  // wipe these answers. Keeping them out of that namespace means only this
+  // route ever writes them.
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/breast-density-factors-save',
+    (req, res) => {
+      const { appointmentId } = req.params
+      const data = req.session.data
+
+      // An unticked checkbox group posts nothing at all, so a missing value
+      // means "none selected" rather than "unchanged"
+      const postedFactors = req.body?.breastDensityFactors
+      const factors = (
+        Array.isArray(postedFactors)
+          ? postedFactors
+          : postedFactors
+            ? [postedFactors]
+            : []
+      ).filter((factor) => factor && factor !== '_unchecked')
+
+      const postedHrt = req.body?.breastDensityFactorsHrt
+
+      // The appointment context middleware has already made the temp copy,
+      // so this is only defensive
+      if (data.appointment?.id !== appointmentId) {
+        res.status(409).send()
+        return
+      }
+
+      const medicalInformation = data.appointment.medicalInformation || {}
+      medicalInformation.breastDensityFactors = factors
+
+      if (postedHrt) {
+        medicalInformation.breastDensityFactorsHrt = postedHrt
+      }
+
+      data.appointment.medicalInformation = medicalInformation
+
+      // These aren't form fields for any other page - don't leave them in
+      // session data where auto-store-data has put them
+      delete data.breastDensityFactors
+      delete data.breastDensityFactorsHrt
+
+      res.status(204).send()
+    }
+  )
+
   // Save breast features (includes converting JSON string to structured data)
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information/record-breast-features/save',
