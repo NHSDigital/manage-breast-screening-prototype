@@ -100,17 +100,31 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   // computed outcome is not a finalised result - the episode moves on when
   // the reads are finalised (see finaliseUserReadsForSession below).
 
-  // If we have session context, remove this appointment from skipped appointments
-  // (readingSessions is per-session working data, so in-place edits are fine)
-  if (session) {
-    // Remove appointment from skipped list if present
-    const skippedIndex = session.skippedAppointments.indexOf(appointment.id)
-    if (skippedIndex !== -1) {
-      session.skippedAppointments.splice(skippedIndex, 1)
-    }
-  }
+  unskipAppointmentInSession(data, sessionId, appointment.id)
 
   return updatedCase
+}
+
+/**
+ * Take an appointment off a session's skipped list.
+ *
+ * Skipping says "not now" - so anything that settles the case, whether a read,
+ * a deferral or a request for priors, takes it off the list. Otherwise the
+ * session keeps sending the user back to a case there is nothing left to do on.
+ *
+ * @param {object} data - Session data
+ * @param {string | null} sessionId - Reading session ID
+ * @param {string} appointmentId - The appointment to unskip
+ */
+const unskipAppointmentInSession = (data, sessionId, appointmentId) => {
+  // readingSessions is per-session working data, so in-place edits are fine
+  const session = sessionId ? data.readingSessions?.[sessionId] : null
+  if (!session?.skippedAppointments) return
+
+  const skippedIndex = session.skippedAppointments.indexOf(appointmentId)
+  if (skippedIndex !== -1) {
+    session.skippedAppointments.splice(skippedIndex, 1)
+  }
 }
 
 /**
@@ -1146,18 +1160,22 @@ const getNextCaseInSession = (
     )
   }
 
+  // Skipped cases are deliberately passed over, so they aren't offered as the
+  // next case - reaching the end of the session with some still skipped is what
+  // sends the user to the skipped-review page
+  const skipped = new Set(session.skippedAppointments || [])
+
   const stillToArbitrate = (appointment) =>
     appointment.id !== currentAppointmentId &&
+    !skipped.has(appointment.id) &&
     !getArbitrationRead(getReadingCase(data, appointment))
 
   const currentIndex = sessionAppointments.findIndex(
     (appointment) => appointment.id === currentAppointmentId
   )
 
-  return (
-    sessionAppointments.slice(currentIndex + 1).find(stillToArbitrate) ||
-    sessionAppointments.slice(0, currentIndex).find(stillToArbitrate)
-  )
+  // Forward only: running out is what ends the session, same as reading
+  return sessionAppointments.slice(currentIndex + 1).find(stillToArbitrate)
 }
 
 /**
@@ -1883,6 +1901,7 @@ module.exports = {
   getOrCreateClinicSession,
   getFirstReadableAppointmentInSession,
   skipAppointmentInSession,
+  unskipAppointmentInSession,
   topUpSession,
   getSessionReadingProgress
 }

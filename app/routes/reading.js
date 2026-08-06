@@ -25,6 +25,7 @@ const {
   getOrCreateClinicSession,
   getSessionReadingProgress,
   skipAppointmentInSession,
+  unskipAppointmentInSession,
   topUpSession,
   getAppointmentReadingMetadata,
   appointmentHasBeenArbitrated,
@@ -949,6 +950,10 @@ module.exports = (router) => {
         return
       }
 
+      // Requesting priors settles what happens to this case for now, so it is
+      // no longer waiting to be come back to
+      unskipAppointmentInSession(data, sessionId, appointmentId)
+
       // Top up the batch with the next eligible appointment if under target size
       topUpSession(data, sessionId)
 
@@ -1089,6 +1094,10 @@ module.exports = (router) => {
         res.redirect(modalBreakout(returnUrl))
         return
       }
+
+      // A deferred case is settled for now, so it is no longer waiting to be
+      // come back to
+      unskipAppointmentInSession(data, sessionId, appointmentId)
 
       // Top up the session with the next eligible appointment if under target size
       topUpSession(data, sessionId)

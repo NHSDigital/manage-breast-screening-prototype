@@ -13,15 +13,24 @@
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
 
-    <span class="nhsuk-caption-l">Image reading</span>
+    {% set isArbitration = session.type == 'arbitration' %}
+
+    <span class="nhsuk-caption-l">{{ "Arbitration" if isArbitration else "Image reading" }}</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-    <p>An opinion must be given on all cases before this session can be completed.</p>
+    <p>
+      {%- if isArbitration -%}
+        Every case must be arbitrated before this session can be completed.
+      {%- else -%}
+        An opinion must be given on all cases before this session can be completed.
+      {%- endif -%}
+    </p>
 
     <div class="nhsuk-button-group">
       {% if firstSkippedAppointmentId %}
         {{ button({
-        text: "Read skipped " + ("case" | pluralise(session.skippedAppointments.length)),          href: "/reading/session/" + sessionId + "/appointments/" + firstSkippedAppointmentId
+          text: ("Arbitrate skipped " if isArbitration else "Read skipped ") + ("case" | pluralise(session.skippedAppointments.length)),
+          href: "/reading/session/" + sessionId + "/appointments/" + firstSkippedAppointmentId
         }) }}
       {% endif %}
       <a href="/reading/session/{{ sessionId }}" class="nhsuk-link nhsuk-button-group__item">Go to session overview</a>
