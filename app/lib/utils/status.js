@@ -26,12 +26,7 @@ const STATUS_GROUPS = {
     'attended_not_screened',
     'cancelled'
   ],
-  active: [
-    'scheduled',
-    'checked_in',
-    'in_progress',
-    'paused'
-  ],
+  active: ['scheduled', 'checked_in', 'in_progress', 'paused'],
   eligible_for_reading: ['complete', 'partially_screened']
 }
 
@@ -235,7 +230,10 @@ const STATUS_TAGS = {
     // appointment- and group-level vocabulary.
     'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
     'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'blue' },
-    'awaiting_finalisation': { label: 'Awaiting finalisation', colour: 'yellow' },
+    'awaiting_finalisation': {
+      label: 'Awaiting finalisation',
+      colour: 'yellow'
+    },
     'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'orange' },
     'in_arbitration': { label: 'In arbitration', colour: 'purple' },
     'concluded': { label: 'Concluded', colour: 'green' },
@@ -245,6 +243,7 @@ const STATUS_TAGS = {
     'skipped': { colour: 'grey' },
     'previously_skipped': { colour: 'grey' },
     'not_read': { colour: 'white' },
+    'not_arbitrated': { colour: 'white' },
     'complete': { colour: 'green' },
     'partial_first_read': { colour: 'blue' },
     'first_read_complete': { colour: 'yellow' },
@@ -400,9 +399,13 @@ const describeReadingCaseStatus = (status) => {
 const filterAppointmentsByStatus = (appointments, filter) => {
   switch (filter) {
     case 'scheduled':
-      return appointments.filter((appointment) => appointment.status === 'scheduled')
+      return appointments.filter(
+        (appointment) => appointment.status === 'scheduled'
+      )
     case 'checked-in':
-      return appointments.filter((appointment) => appointment.status === 'checked_in')
+      return appointments.filter(
+        (appointment) => appointment.status === 'checked_in'
+      )
     case 'in-progress':
       return appointments.filter(
         (appointment) =>
@@ -435,7 +438,10 @@ const isSpecialAppointment = (appointment) => {
  * @returns {boolean} Whether the appointment has an appointment note
  */
 const hasAppointmentNote = (appointment) => {
-  return appointment?.appointmentNote && appointment.appointmentNote.trim().length > 0
+  return (
+    appointment?.appointmentNote &&
+    appointment.appointmentNote.trim().length > 0
+  )
 }
 
 /**
