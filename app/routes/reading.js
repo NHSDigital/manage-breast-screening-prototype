@@ -28,6 +28,8 @@ const {
   topUpSession,
   getAppointmentReadingMetadata,
   appointmentHasBeenArbitrated,
+  getNextCaseInSession,
+  getFirstOutstandingCaseInSession,
   filterAppointmentsByEligibleForReading,
   filterAppointmentsByNeedsAnyRead,
   filterAppointmentsByUserCanRead
@@ -401,8 +403,9 @@ module.exports = (router) => {
         )
         .filter(Boolean)
 
-      const hasReadableCase = getFirstUserReadableAppointment(
+      const hasReadableCase = getFirstOutstandingCaseInSession(
         data,
+        session,
         loadedAppointments,
         data.currentUser.id
       )
@@ -432,11 +435,12 @@ module.exports = (router) => {
     }
 
     // Check if there are any readable cases left in the session
-    const firstReadable = getFirstUserReadableAppointment(
+    const firstReadable = getFirstOutstandingCaseInSession(
       data,
+      session,
       sessionAppointments,
       data.currentUser.id
-    )
+      )
     if (firstReadable) {
       res.redirect(`/reading/session/${sessionId}`)
     } else {
@@ -850,27 +854,13 @@ module.exports = (router) => {
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
 
-      // Arbitration looks for the next case without an arbitration read, since
-      // the user-can-read check rejects cases a panel member originally read
-      const isArbitrationSkip = session.type === 'arbitration'
-      const notYetArbitrated = (candidate) =>
-        candidate.id !== appointmentId &&
-        !getArbitrationRead(getReadingCase(data, candidate))
-
-      const currentIndex = sessionAppointments.findIndex(
-        (candidate) => candidate.id === appointmentId
+      const nextUnreadAppointment = getNextCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
       )
-
-      const nextUnreadAppointment = isArbitrationSkip
-        ? sessionAppointments.slice(currentIndex + 1).find(notYetArbitrated) ||
-          sessionAppointments.slice(0, currentIndex).find(notYetArbitrated)
-        : getNextUserReadableAppointment(
-            data,
-            sessionAppointments,
-            appointmentId,
-            currentUserId,
-            { wrap: false }
-          )
 
       if (nextUnreadAppointment) {
         res.redirect(
@@ -880,11 +870,12 @@ module.exports = (router) => {
         res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
-        )
+          )
         if (firstReadable) {
           res.redirect(`/reading/session/${sessionId}`)
         } else {
@@ -967,12 +958,12 @@ module.exports = (router) => {
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
+      const nextUnreadAppointment = getNextCaseInSession(
         data,
+        session,
         sessionAppointments,
         appointmentId,
-        currentUserId,
-        { wrap: false }
+        currentUserId
       )
 
       // Only store the banner if there is a next case to show it on
@@ -997,11 +988,12 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
-        )
+          )
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
@@ -1106,12 +1098,12 @@ module.exports = (router) => {
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
+      const nextUnreadAppointment = getNextCaseInSession(
         data,
+        session,
         sessionAppointments,
         appointmentId,
-        currentUserId,
-        { wrap: false }
+        currentUserId
       )
 
       // Show a banner on the next case if there is one
@@ -1136,11 +1128,12 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
-        )
+          )
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
@@ -2143,26 +2136,13 @@ module.exports = (router) => {
         .filter(Boolean)
       const isArbitrationSave = session?.type === 'arbitration'
 
-      // Arbitration sessions find the next case without an arbitration read,
-      // bypassing the user-can-read check (panel members may be original readers)
-      const currentIndex = sessionAppointments.findIndex(
-        (e) => e.id === appointmentId
+      const nextUnreadAppointment = getNextCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
       )
-      const notYetArbitrated = (appointment) =>
-        !getArbitrationRead(getReadingCase(data, appointment))
-
-      const nextUnreadAppointment = isArbitrationSave
-        ? // Look forward first, then wrap - a case skipped earlier in the
-          // session is still waiting to be arbitrated
-          sessionAppointments.slice(currentIndex + 1).find(notYetArbitrated) ||
-          sessionAppointments.slice(0, currentIndex).find(notYetArbitrated)
-        : getNextUserReadableAppointment(
-            data,
-            sessionAppointments,
-            appointmentId,
-            currentUserId,
-            { wrap: false }
-          )
 
       // Store banner message for the next case, but only if there is one.
       // Edits stay on the current case, so there's nowhere to show it.
@@ -2225,15 +2205,12 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = isArbitrationSave
-          ? sessionAppointments.find(
-              (appt) => !getArbitrationRead(getReadingCase(data, appt))
-            )
-          : getFirstUserReadableAppointment(
-              data,
-              sessionAppointments,
-              currentUserId
-            )
+        const firstReadable = getFirstOutstandingCaseInSession(
+          data,
+          session,
+          sessionAppointments,
+          currentUserId
+        )
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {

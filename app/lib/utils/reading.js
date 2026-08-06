@@ -1112,6 +1112,82 @@ const getNextUserReadableAppointment = function (
 }
 
 /**
+ * The next case to work on in a session, after the current one.
+ *
+ * What "still to do" means depends on the session: reading asks whether this
+ * user can read the case, arbitration whether the case has been arbitrated -
+ * the reading question rejects cases a panel member originally read, which
+ * would strand an arbitration session with nothing left to do.
+ *
+ * Arbitration wraps to the start, so a case passed over earlier isn't
+ * abandoned. Reading keeps its own no-wrap behaviour.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - The reading session
+ * @param {Array} sessionAppointments - The session's appointments, in order
+ * @param {string} currentAppointmentId - The case just finished with
+ * @param {string} userId - User ID
+ * @returns {object | undefined} The next appointment, or undefined if none
+ */
+const getNextCaseInSession = (
+  data,
+  session,
+  sessionAppointments,
+  currentAppointmentId,
+  userId
+) => {
+  if (session?.type !== 'arbitration') {
+    return getNextUserReadableAppointment(
+      data,
+      sessionAppointments,
+      currentAppointmentId,
+      userId,
+      { wrap: false }
+    )
+  }
+
+  const stillToArbitrate = (appointment) =>
+    appointment.id !== currentAppointmentId &&
+    !getArbitrationRead(getReadingCase(data, appointment))
+
+  const currentIndex = sessionAppointments.findIndex(
+    (appointment) => appointment.id === currentAppointmentId
+  )
+
+  return (
+    sessionAppointments.slice(currentIndex + 1).find(stillToArbitrate) ||
+    sessionAppointments.slice(0, currentIndex).find(stillToArbitrate)
+  )
+}
+
+/**
+ * The first case still to work on in a session, wherever it sits.
+ *
+ * The session-aware counterpart to getFirstUserReadableAppointment, used to
+ * decide whether a session has anything left to do at all.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - The reading session
+ * @param {Array} sessionAppointments - The session's appointments, in order
+ * @param {string} userId - User ID
+ * @returns {object | undefined} The first outstanding appointment, if any
+ */
+const getFirstOutstandingCaseInSession = (
+  data,
+  session,
+  sessionAppointments,
+  userId
+) => {
+  if (session?.type !== 'arbitration') {
+    return getFirstUserReadableAppointment(data, sessionAppointments, userId)
+  }
+
+  return sessionAppointments.find(
+    (appointment) => !getArbitrationRead(getReadingCase(data, appointment))
+  )
+}
+
+/**
  * Get the appointment the user should resume reading from.
  *
  * Finds the furthest point the user has reached by looking at the highest-index
@@ -1790,6 +1866,8 @@ module.exports = {
   // User functions
   getFirstUserReadableAppointment,
   getNextUserReadableAppointment,
+  getNextCaseInSession,
+  getFirstOutstandingCaseInSession,
   getResumeAppointmentForUser,
   // Booleans
   userHasReadAppointment,
