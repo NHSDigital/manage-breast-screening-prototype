@@ -83,10 +83,30 @@
           }
         ] %}
 
+        {% if caseStatusDisplay.nextAction %}
+          {% set caseRows = caseRows | push({
+            key: { text: "Next action" },
+            value: { text: caseStatusDisplay.nextAction }
+          }) %}
+        {% endif %}
+
         {% if caseOutcome %}
           {% set caseRows = caseRows | push({
             key: { text: "Outcome" },
             value: { html: caseOutcome | toTag }
+          }) %}
+        {% endif %}
+
+        {# A technical recall's substance is which views need retaking - say so
+           here rather than leaving the outcome tag to carry it alone #}
+        {% if caseOutcome == 'technical_recall' and decidingRead.technicalRecall.views %}
+          {% set retakeLines = [] %}
+          {% for viewCode, detail in decidingRead.technicalRecall.views %}
+            {% set retakeLines = retakeLines | push(viewCode + (' – ' + detail.reason | lower if detail.reason)) %}
+          {% endfor %}
+          {% set caseRows = caseRows | push({
+            key: { text: "Views to retake" },
+            value: { html: retakeLines | join('<br>') }
           }) %}
         {% endif %}
 
@@ -121,10 +141,34 @@
 
         {{ appSummaryList({ rows: caseRows }) }}
 
+        {% if caseOutcome == 'technical_recall' %}
+          {{ insetText({
+            html: "<p>This reading concluded that some images are not readable. The participant needs a technical recall appointment to retake them.</p>"
+          }) }}
+        {% endif %}
+
         {% if isDeferred %}
+          {% set deferralDetailHtml %}
+            <p>
+              Deferred from reading
+              {%- if readingCase.deferral.deferredBy %} by {{ readingCase.deferral.deferredBy | getUsername }}{% endif %}
+              on {{ readingCase.deferral.deferredAt | formatDate }}.
+              It needs review before it returns to the reading queue.
+            </p>
+            {% if readingCase.deferral.reason %}
+              <p class="nhsuk-u-margin-bottom-0">Reason: {{ readingCase.deferral.reason }}</p>
+            {% endif %}
+          {% endset %}
           {{ warningCallout({
             heading: "Deferred",
-            html: "<p>This case has been deferred from reading and needs review before it returns to the reading queue.</p>"
+            html: deferralDetailHtml
+          }) }}
+        {% endif %}
+
+        {% if caseAwaitingPriors %}
+          {{ warningCallout({
+            heading: "Awaiting prior mammograms",
+            html: "<p>Prior mammograms have been requested and not yet received. The case is held from reading until they arrive.</p>"
           }) }}
         {% endif %}
 

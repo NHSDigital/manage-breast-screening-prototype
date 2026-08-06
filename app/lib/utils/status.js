@@ -349,6 +349,47 @@ const getStatusText = (status, vocabulary = null) => {
   return findStatusTag(status, vocabulary)?.label || ''
 }
 
+// What needs to happen next to move a reading case on, keyed by case state.
+// awaiting_finalisation is handled in describeReadingCaseStatus - its next
+// action depends on where the case is heading.
+const READING_CASE_NEXT_ACTIONS = {
+  awaiting_first_read: 'First read',
+  awaiting_second_read: 'Second read',
+  awaiting_arbitration: 'Arbitration',
+  in_arbitration: 'Arbitration in progress',
+  concluded: null
+}
+
+/**
+ * The display facts for a reading case's status, composed from the facts
+ * getReadingCaseStatus (reading-cases.js) returns. Shared by the case backlog
+ * rows and the case view so the two surfaces can't drift apart.
+ *
+ * The state renders as a tag via the readingState vocabulary; destination is
+ * the journey the state alone hides - a finalising case bound for arbitration
+ * - and null everywhere else.
+ *
+ * @param {object} status - { state, finalised, willArbitrate, provisionalOutcome }
+ * @returns {{state: string, nextAction: string | null, destination: string | null} | null}
+ */
+const describeReadingCaseStatus = (status) => {
+  if (!status) return null
+
+  const headingToArbitration =
+    status.state === 'awaiting_finalisation' && status.willArbitrate
+
+  return {
+    state: status.state,
+    nextAction:
+      status.state === 'awaiting_finalisation'
+        ? headingToArbitration
+          ? 'Finalisation, then arbitration'
+          : 'Finalisation'
+        : READING_CASE_NEXT_ACTIONS[status.state] || null,
+    destination: headingToArbitration ? 'then arbitration' : null
+  }
+}
+
 /**
  * Filter appointments by status category
  *
@@ -423,6 +464,7 @@ module.exports = {
   eligibleForReading,
   getStatusTagColour,
   getStatusText,
+  describeReadingCaseStatus,
   filterAppointmentsByStatus,
   isSpecialAppointment,
   hasAppointmentNote,

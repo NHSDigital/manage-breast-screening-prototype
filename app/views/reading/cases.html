@@ -120,6 +120,9 @@
               {% if row.isDeferred %}
                 <br>{{ "Deferred" | toTag }}
               {% endif %}
+              {% if row.awaitingPriors %}
+                <br>{{ "Priors required" | toTag }}
+              {% endif %}
             </td>
             <td class="nhsuk-table__cell">
               {{ row.imagesTakenDate | formatDate }}
@@ -134,6 +137,12 @@
             <td class="nhsuk-table__cell">{{ row.readCount }}</td>
             <td class="nhsuk-table__cell">
               {{ row.state | toTag({ vocabulary: "readingState" }) }}
+              {% if row.statusDisplay.destination %}
+                <br>
+                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                  {{ row.statusDisplay.destination | sentenceCase }}
+                </span>
+              {% endif %}
             </td>
             <td class="nhsuk-table__cell">
               {% if row.outcome %}

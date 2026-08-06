@@ -20,13 +20,15 @@ const {
   READING_CASE_STATES,
   getReadingCases,
   getReadsAsArray,
-  getReadingCaseState,
+  getReadingCaseStatus,
   getReadingCaseOutcome,
   getReadingMetadata,
   getArbitrationRead,
   isCaseDeferred,
   canUserReadCase
 } = require('../lib/utils/reading-cases')
+const { describeReadingCaseStatus } = require('../lib/utils/status')
+const { awaitingPriors } = require('../lib/utils/prior-mammograms')
 
 module.exports = (router) => {
   // Reading case backlog. Filters are query params rather than path segments
@@ -109,6 +111,7 @@ module.exports = (router) => {
 
     const allReads = getReadsAsArray(readingCase)
     const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
+    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
 
     // The read the outcome came from - arbitration where there was one, else
     // either of the two agreeing reads. Its per-breast assessment is what the
@@ -131,11 +134,14 @@ module.exports = (router) => {
       reads: readsHidden ? [] : allReads,
       readsHidden,
       readCount: allReads.length,
-      caseState: getReadingCaseState(readingCase, data.settings),
+      caseState: caseStatus.state,
+      caseStatus,
+      caseStatusDisplay: describeReadingCaseStatus(caseStatus),
       caseOutcome,
       decidingRead: readsHidden ? null : decidingRead,
       readingMetadata: getReadingMetadata(readingCase, data.settings),
       isDeferred: isCaseDeferred(readingCase),
+      caseAwaitingPriors: appointment ? awaitingPriors(appointment) : false,
       casePosition,
       caseTotal: casesOnEpisode.length
     })

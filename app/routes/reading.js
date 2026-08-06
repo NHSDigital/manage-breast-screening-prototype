@@ -47,6 +47,7 @@ const {
   userRequestedPriors
 } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
+const { getReadingCaseStateCounts } = require('../lib/utils/reading-case-list')
 const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
@@ -79,8 +80,18 @@ module.exports = (router) => {
       }
     })
 
+    // The arbitration backlog, counted the same way the case list counts it
+    // so the card and /reading/cases agree. Only the complex layout shows the
+    // card, and the count walks every episode - don't pay for it otherwise
+    const arbitrationCount =
+      layout === 'complex'
+        ? getReadingCaseStateCounts(data, { scope: 'open' })
+            .awaiting_arbitration || 0
+        : null
+
     res.render(template, {
-      sessionProgressById
+      sessionProgressById,
+      arbitrationCount
     })
   })
 

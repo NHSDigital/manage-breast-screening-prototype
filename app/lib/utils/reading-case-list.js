@@ -16,10 +16,12 @@ const { getClinic, getClinicLocationName } = require('./clinics')
 const {
   getReadingCases,
   getReadsAsArray,
-  getReadingCaseState,
+  getReadingCaseStatus,
   getReadingCaseOutcome,
   isCaseDeferred
 } = require('./reading-cases')
+const { describeReadingCaseStatus } = require('./status')
+const { awaitingPriors } = require('./prior-mammograms')
 
 // How the list is scoped. Historic episodes are seeded summaries of past rounds
 // and outnumber live ones roughly five to one, so they stay out of the way
@@ -79,6 +81,8 @@ const buildRow = (data, episode, readingCase) => {
   const participant = getParticipant(data, episode.participantId)
   const clinic = appointment ? getClinic(data, appointment.clinicId) : null
 
+  const status = getReadingCaseStatus(readingCase, data.settings)
+
   return {
     readingCase,
     episode,
@@ -86,10 +90,13 @@ const buildRow = (data, episode, readingCase) => {
     participant,
     clinic,
     clinicLocationName: getClinicLocationName(data, clinic),
-    state: getReadingCaseState(readingCase, data.settings),
+    state: status.state,
+    status,
+    statusDisplay: describeReadingCaseStatus(status),
     outcome: getReadingCaseOutcome(readingCase, data.settings),
     readCount: getReadsAsArray(readingCase).length,
     isDeferred: isCaseDeferred(readingCase),
+    awaitingPriors: appointment ? awaitingPriors(appointment) : false,
     imagesTakenDate: readingCase.openedDate
   }
 }

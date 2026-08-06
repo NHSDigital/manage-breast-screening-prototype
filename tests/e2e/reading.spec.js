@@ -226,21 +226,27 @@ test.describe('Image reading', () => {
     // left to read
     await expect(page).toHaveURL(/\/no-more-cases/)
 
-    // The case now sits on the deferred list, waiting for manual review
+    // The case now sits on the deferred list, waiting for manual review.
+    // Scope everything to its card - the seed data carries deferred cases of
+    // its own, so the page is never otherwise empty
     await page.goto('/reading/deferred')
     await expect(
       page.getByRole('heading', { name: 'Deferred cases' })
     ).toBeVisible()
-    await expect(page.getByText(deferralReason)).toBeVisible()
+    const deferralCard = page
+      .locator('.nhsuk-summary-card')
+      .filter({ hasText: deferralReason })
+    await expect(deferralCard).toBeVisible()
 
     // Unflagging returns it to the queue, keeping a record of why it was held
-    await page.getByRole('button', { name: 'Unflag case' }).first().click()
+    await deferralCard.getByRole('button', { name: 'Unflag case' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Recently resolved' })
     ).toBeVisible()
-    await expect(page.getByText('No deferred cases.')).toBeVisible()
-    await expect(page.getByText(deferralReason)).toBeVisible()
+    await expect(
+      page.locator('.nhsuk-summary-card').filter({ hasText: deferralReason })
+    ).toContainText('Returned to queue')
   })
 
   test('keeps a lazy session lazy across a resume', async ({ page }) => {

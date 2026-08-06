@@ -20,7 +20,9 @@
   {% endif %}
 {% endfor %}
 
-{% set allReadsAppointmentsWithAwaitingPriors = data.appointments | filterAppointmentsByEligibleForReading | filterAppointmentsByNeedsAnyRead | sortAppointmentsByScreeningDate %}
+{# filterAppointmentsByNeedsAnyRead takes data first (it resolves each
+   appointment's reading case), so it can't be piped like the other filters #}
+{% set allReadsAppointmentsWithAwaitingPriors = filterAppointmentsByNeedsAnyRead(data, data.appointments | filterAppointmentsByEligibleForReading) | sortAppointmentsByScreeningDate %}
 
 {# Split readable appointments into awaiting priors and available for reading #}
 {# Appointments with 'requested' status mammograms are held from reading #}
@@ -103,11 +105,11 @@
 
 {# Arbitration card content #}
 {% set arbitrationContent %}
-<p>53 cases need arbitration</p>
+<p>{{ arbitrationCount }} {{ "case" | pluralise(arbitrationCount) }} need{{ "s" if arbitrationCount == 1 }} arbitration</p>
 {{ actionLink({
   classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
   text: "See cases",
-  href: "#"
+  href: "/reading/cases?state=awaiting_arbitration"
 }) }}
 {% endset %}
 

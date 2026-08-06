@@ -779,6 +779,78 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
     )
   }
 
+  // A FEW VERY RECENT SECOND READS: timestamped inside the finalisation delay,
+  // so the backlog carries live awaiting_finalisation cases - alternating
+  // concordant (finalising towards a conclusion) and forced discordant
+  // (finalising, then arbitration). Drawn from clinics[7], the first of the
+  // partial-first-read pair above - its first reads are recent, so the
+  // oldest-first session ordering the e2e journeys lean on is untouched.
+  if (clinics.length >= 9) {
+    const clinic = clinics[7]
+    const candidates = clinic.appointments
+      .filter((appointment) => readAppointmentIds.has(appointment.id))
+      .slice(0, 8)
+
+    let minutesAgo = 50
+    let count = 0
+
+    candidates.forEach((appointment, index) => {
+      const readingCase = casesByAppointmentId.get(appointment.id)
+      const firstRead = readingCase?.reads?.[0]
+      if (!firstRead) return
+
+      const opinion =
+        index % 2 === 0
+          ? pickSecondOpinion(firstRead, 0) // force disagreement
+          : firstRead.opinion
+
+      addRead(
+        readingCase,
+        appointment,
+        secondReader,
+        dayjs().subtract(minutesAgo, 'minute').toISOString(),
+        { forceOpinion: opinion, alignmentProbability }
+      )
+
+      minutesAgo -= 5
+      count++
+    })
+
+    console.log(
+      `Added ${count} very recent second reads, so cases sit awaiting finalisation`
+    )
+  }
+
+  // A COUPLE OF DEFERRED CASES: deferred by a reader with a reason, so the
+  // deferred list and the case view's deferral detail have real data behind
+  // them. Drawn from clinics[8]'s unread remainder, matching how deferral
+  // works in the flow (deferring after an opinion withdraws the read).
+  if (clinics.length >= 9) {
+    const clinic = clinics[8]
+    const deferralReasons = [
+      'Waiting for prior imaging to be uploaded',
+      'Needs discussion with colleague before reading'
+    ]
+
+    clinic.appointments
+      .filter((appointment) => !readAppointmentIds.has(appointment.id))
+      .slice(0, 2)
+      .forEach((appointment, index) => {
+        const readingCase = casesByAppointmentId.get(appointment.id)
+        if (!readingCase) return
+
+        readingCase.deferral = {
+          deferredAt: dayjs()
+            .subtract(3 + index, 'hour')
+            .toISOString(),
+          deferredBy: secondReader.id,
+          reason: deferralReasons[index]
+        }
+      })
+
+    console.log('Deferred 2 unread cases')
+  }
+
   console.log(`Total appointments with reading data: ${readAppointmentIds.size}`)
 }
 
