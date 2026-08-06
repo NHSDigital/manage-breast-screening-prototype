@@ -87,7 +87,10 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   }
 
   const readerType = data.users?.find((user) => user.id === userId)?.role
-  const read = buildRead(readingCase, userId, readerType, reading)
+  const session = sessionId ? data.readingSessions?.[sessionId] : null
+  const read = buildRead(readingCase, userId, readerType, reading, {
+    panelUserIds: session?.arbitration?.panelUserIds
+  })
   const updatedCase = withRead(readingCase, read)
 
   updateReadingCase(data, appointment.episodeId, updatedCase)
@@ -98,9 +101,7 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
 
   // If we have session context, remove this appointment from skipped appointments
   // (readingSessions is per-session working data, so in-place edits are fine)
-  if (sessionId && data.readingSessions?.[sessionId]) {
-    const session = data.readingSessions[sessionId]
-
+  if (session) {
     // Remove appointment from skipped list if present
     const skippedIndex = session.skippedAppointments.indexOf(appointment.id)
     if (skippedIndex !== -1) {

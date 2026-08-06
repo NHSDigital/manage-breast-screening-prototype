@@ -215,7 +215,13 @@
                 </h2>
                 <div class="nhsuk-summary-card__actions">
                   <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                    {{ thisRead.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }},
+                    {%- if thisRead.panelUserIds | length %}
+                      {%- for panelUserId in thisRead.panelUserIds %}
+                        {{ panelUserId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                      {%- endfor %}
+                    {%- else %}
+                      {{ thisRead.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                    {%- endif %},
                     {{ thisRead.timestamp | formatDate }}
                   </span>
                 </div>

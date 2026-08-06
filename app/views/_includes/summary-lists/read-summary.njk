@@ -252,6 +252,24 @@
   {% endif %}
 {% endif %}
 
+{# A panel arbitration was decided by several people together, so the read's
+   own reader byline doesn't tell the whole story #}
+{% if read.panelUserIds | length %}
+  {% set panelHtml %}
+    {%- for panelUserId in read.panelUserIds %}
+      {{ panelUserId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+    {%- endfor %}
+  {% endset %}
+  {% set rows = rows | push({
+    key: {
+      text: "Arbitrated by"
+    },
+    value: {
+      html: panelHtml
+    }
+  }) %}
+{% endif %}
+
 {{ summaryList({
   rows: rows | removeLastRowBorder
 } | handleSummaryListMissingInformation) }}

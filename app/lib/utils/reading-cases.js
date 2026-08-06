@@ -660,6 +660,7 @@ const shouldShowComparePage = (
  * @param {object} reading - The opinion and its details
  * @param {object} [options] - Options
  * @param {string} [options.timestamp] - When the read was made
+ * @param {string[]} [options.panelUserIds] - Who arbitrated together, if a panel
  * @returns {object} The read record
  */
 const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
@@ -674,7 +675,7 @@ const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
     ? 'arbitration'
     : READ_TYPES[Math.min(readNumber, READ_TYPES.length) - 1]
 
-  return {
+  const read = {
     ...reading,
     readerId: userId,
     readerType,
@@ -682,6 +683,14 @@ const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
     readNumber,
     timestamp: options.timestamp || new Date().toISOString()
   }
+
+  // Who was in the room is a fact about the arbitration read itself - the
+  // session is working data and won't survive to explain the read later
+  if (readType === 'arbitration' && options.panelUserIds?.length > 1) {
+    read.panelUserIds = options.panelUserIds
+  }
+
+  return read
 }
 
 /**
