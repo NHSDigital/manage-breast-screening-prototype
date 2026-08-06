@@ -17,6 +17,7 @@ const {
   userHasReadAppointment,
   writeReading,
   getUnfinalisedUserReadsForSession,
+  finaliseReadOnCase,
   finaliseUserReadsForSession,
   getEligibleCandidatesForSession,
   createReadingSession,
@@ -45,6 +46,7 @@ const {
   getArbitrationRead,
   getReadAuthorIds,
   caseHasBeenArbitrated,
+  isReadFinalised,
   isCaseDeferred,
   withoutRead,
   withArbitrationRelease
@@ -373,10 +375,18 @@ module.exports = (router) => {
     }
   })
 
-  // Route for viewing a batch
+  // Route for viewing a batch. Reading sessions have per-user views and live at
+  // /your-reads; arbitration has no yours-vs-everyone split, so it renders here.
   router.get('/reading/session/:sessionId', (req, res) => {
-    // Default to "your-reads" view
-    res.redirect(`/reading/session/${req.params.sessionId}/your-reads`)
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+
+    if (session?.type !== 'arbitration') {
+      return res.redirect(`/reading/session/${sessionId}/your-reads`)
+    }
+
+    renderSessionOverview(req, res, session, null)
   })
 
   // Route for resuming a session — jumps straight into the next readable case,
@@ -441,7 +451,7 @@ module.exports = (router) => {
       session,
       sessionAppointments,
       data.currentUser.id
-      )
+    )
     if (firstReadable) {
       res.redirect(`/reading/session/${sessionId}`)
     } else {
@@ -503,18 +513,20 @@ module.exports = (router) => {
     )
 
     if (finalisedCount > 0) {
+      const noun = session.type === 'arbitration' ? 'outcome' : 'read'
       req.flash(
         'success',
         finalisedCount === 1
-          ? '1 read finalised'
-          : `${finalisedCount} reads finalised`
+          ? `1 ${noun} finalised`
+          : `${finalisedCount} ${noun}s finalised`
       )
     }
 
     res.redirect(`/reading/session/${sessionId}`)
   })
 
-  // Route for viewing a session with specific view
+  // Route for viewing a reading session with a specific view. Arbitration
+  // sessions never reach here - they render their own overview above.
   router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
     const { sessionId, view } = req.params
@@ -523,12 +535,25 @@ module.exports = (router) => {
     // Validate view parameter
     const selectedView = validViews.includes(view) ? view : 'your-reads'
 
-    // Get the batch
     const session = getReadingSession(data, sessionId)
     if (!session) {
-      // req.flash('error', 'Session not found')
       return res.redirect('/reading')
     }
+
+    if (session.type === 'arbitration') {
+      return res.redirect(`/reading/session/${sessionId}`)
+    }
+
+    renderSessionOverview(req, res, session, selectedView)
+  })
+
+  // Build the session overview's view model and render the template that suits
+  // the session type. Reading gets tabbed per-user views; arbitration gets one
+  // list, because a case is arbitrated once for everyone.
+  const renderSessionOverview = (req, res, session, selectedView) => {
+    const data = req.session.data
+    const sessionId = session.id
+    const isArbitration = session.type === 'arbitration'
 
     // Get enhanced appointments with reading metadata
     const enhancedAppointments = session.appointmentIds
@@ -610,29 +635,36 @@ module.exports = (router) => {
       clinic = getClinic(data, session.clinicId)
     }
 
-    // Overall backlog count — used to gate the 'Start a new session' button.
-    // Checks only cases the current user can actually read (not already read by them,
-    // not fully read by others, not deferred or awaiting priors).
-    const backlogTotal = filterAppointmentsByUserCanRead(
-      data,
-      filterAppointmentsByEligibleForReading(data.appointments),
-      data.currentUser.id
-    ).length
+    // Overall backlog count — used to gate the 'Start a new session' button, so
+    // it counts the work a new session of *this* type would draw on. For
+    // reading that's cases the user can read (not already read by them, not
+    // fully read by others, not deferred or awaiting priors); for arbitration
+    // it's the cases they'd be eligible to arbitrate.
+    const backlogTotal = isArbitration
+      ? getEligibleCandidatesForSession(data, { type: 'arbitration' }).length
+      : filterAppointmentsByUserCanRead(
+          data,
+          filterAppointmentsByEligibleForReading(data.appointments),
+          data.currentUser.id
+        ).length
 
-    res.render('reading/session', {
-      session,
-      appointments: enhancedAppointments,
-      readingStatus,
-      sessionProgress,
-      resumeAppointment,
-      autoFinaliseAt,
-      arbitratedCount,
-      unfinalisedReadCount: unconfirmedReads.length,
-      clinic,
-      backlogTotal,
-      view: selectedView
-    })
-  })
+    res.render(
+      isArbitration ? 'reading/arbitration/session' : 'reading/session',
+      {
+        session,
+        appointments: enhancedAppointments,
+        readingStatus,
+        sessionProgress,
+        resumeAppointment,
+        autoFinaliseAt,
+        arbitratedCount,
+        unfinalisedReadCount: unconfirmedReads.length,
+        clinic,
+        backlogTotal,
+        view: selectedView
+      }
+    )
+  }
 
   // Middleware to make sure pages have the right data
   router.use(
@@ -835,6 +867,48 @@ module.exports = (router) => {
     }
   )
 
+  // Finalise this one case early, from the existing-read page. Redirects back
+  // to that page so the change is visible in place.
+  router.all(
+    '/reading/session/:sessionId/appointments/:appointmentId/finalise-read',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
+      const backHref = `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+
+      const appointment = data.appointments.find(
+        (candidate) => candidate.id === appointmentId
+      )
+      if (!appointment) {
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
+
+      const readingCase = getReadingCase(data, appointment)
+      const session = getReadingSession(data, sessionId)
+      const isArbitrationSession = session?.type === 'arbitration'
+
+      // The read this page is about - the case's arbitration read in an
+      // arbitration session, otherwise the user's own
+      const read = isArbitrationSession
+        ? getArbitrationRead(readingCase)
+        : getReadForUser(readingCase, currentUserId)
+
+      if (!read || isReadFinalised(read, data.settings)) {
+        return res.redirect(backHref)
+      }
+
+      finaliseReadOnCase(data, appointment, readingCase, currentUserId)
+
+      req.flash(
+        'success',
+        isArbitrationSession ? 'Outcome finalised' : 'Read finalised'
+      )
+
+      res.redirect(backHref)
+    }
+  )
+
   // Handle skipping an appointment in a batch
   router.get(
     '/reading/session/:sessionId/appointments/:appointmentId/skip',
@@ -876,7 +950,7 @@ module.exports = (router) => {
           session,
           sessionAppointments,
           currentUserId
-          )
+        )
         if (firstReadable) {
           res.redirect(`/reading/session/${sessionId}`)
         } else {
@@ -998,7 +1072,7 @@ module.exports = (router) => {
           session,
           sessionAppointments,
           currentUserId
-          )
+        )
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {
@@ -1142,7 +1216,7 @@ module.exports = (router) => {
           session,
           sessionAppointments,
           currentUserId
-          )
+        )
         if (firstReadable) {
           res.redirect(modalBreakout(`/reading/session/${sessionId}`))
         } else {

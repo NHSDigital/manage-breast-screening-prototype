@@ -141,9 +141,35 @@
 
     {# The read this page is about: in arbitration the case's one arbitration
        read, otherwise the current user's own #}
+    {% set thisRead = (readingCase | getArbitrationRead) if isArbitration else (readingCase | getReadForUser(data.currentUser.id)) %}
+    {% set isFinalised = thisRead | isReadFinalised(data.settings) %}
+    {% set finalisationNoun = "outcome" if isArbitration else "read" %}
+
+    {# Until it finalises, the result isn't yet real - nothing has been released
+       to arbitration or moved the episode on. Say when that happens, and offer
+       to bring it forward. Once finalised it can no longer be changed, so the
+       summary below drops its change links. #}
+    {% if thisRead and not isFinalised %}
+      {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings) %}
+      {% set finalisationInsetHtml %}
+        <p>
+          This {{ finalisationNoun }} has not been finalised
+          {%- if autoFinaliseAt %}. It will finalise automatically at {{ autoFinaliseAt | formatTime("h:mma") }}{% endif %}.
+          You can still change it until then.
+        </p>
+        <p class="nhsuk-u-margin-bottom-0">
+          <a href="./finalise-read">Finalise this {{ finalisationNoun }} now</a>
+        </p>
+      {% endset %}
+
+      {{ insetText({
+        html: finalisationInsetHtml
+      }) }}
+    {% endif %}
+
     {% set readSummaryHtml %}
-      {% set read = (readingCase | getArbitrationRead) if isArbitration else (readingCase | getReadForUser(data.currentUser.id)) %}
-      {% set allowEdits = true %}
+      {% set read = thisRead %}
+      {% set allowEdits = not isFinalised %}
       {% set changeOpinionUrl = "./opinion" %}
       {% set showAnnotationImages = withImages %}
       {% set annotationImagePaths = allPaths %}

@@ -1,0 +1,219 @@
+{# /app/views/reading/arbitration/session.html #}
+{# Arbitration session overview. Unlike reading there are no tabs: an
+   arbitration session shows both original reads by design, and a case is
+   arbitrated once for everyone, so there is no yours-vs-everyone split. #}
+
+{% extends 'layout-app.html' %}
+
+{% set back = {
+  href: "/reading",
+  text: "Back to image reading dashboard"
+} %}
+
+{% set pageHeading = session.name %}
+{% set gridColumn = "none" %}
+
+{% block pageContent %}
+
+{{ session | log("Session data") }}
+{{ appointments | log("Appointments in session") }}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-full">
+    <div class="app-header-with-status">
+      <span class="nhsuk-caption-l">Arbitration</span>
+      <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+    </div>
+  </div>
+</div>
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-full">
+
+    {% if session.arbitration.arbitratorIds | length %}
+      <p class="nhsuk-u-secondary-text-colour">
+        Arbitrated by
+        {%- for userId in session.arbitration.arbitratorIds %}
+          {{ userId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+        {%- endfor %}
+      </p>
+    {% endif %}
+
+    {% set arbitrationActionText = "Resume arbitrating" if arbitratedCount else "Start arbitrating" %}
+
+    {% if resumeAppointment %}
+      <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button app-reading-session-primary-action">
+        {{ arbitrationActionText }}
+      </a>
+    {% else %}
+      {% set sessionCompletePanelHtml %}
+        {% if unfinalisedReadCount > 0 %}
+          <p class="nhsuk-body-m">Outcome recorded for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}.{% if autoFinaliseAt %} The first outcome will be finalised automatically at {{ autoFinaliseAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise outcomes now</a></p>
+        {% else %}
+          <p class="nhsuk-body-m">Outcome recorded for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}. All outcomes are finalised.</p>
+        {% endif %}
+        <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+          {% if backlogTotal > 0 %}
+            {{ button({
+              text: "Start a new arbitration session",
+              href: "/reading/arbitration/start",
+              variant: "reverse",
+              classes: "nhsuk-u-margin-bottom-0"
+            }) }}
+          {% endif %}
+          <a href="/reading" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
+        </div>
+      {% endset %}
+
+      {{ panel({
+        titleText: "Session complete",
+        html: sessionCompletePanelHtml
+      }) }}
+    {% endif %}
+
+    {# Outcome summary — percentages across the cases arbitrated so far #}
+    {% set normalCount = 0 %}
+    {% set technicalRecallCount = 0 %}
+    {% set recallForAssessmentCount = 0 %}
+
+    {% for appointment in appointments %}
+      {% set arbitrationRead = appointment.readingCase | getArbitrationRead %}
+      {% if arbitrationRead.opinion == 'normal' %}
+        {% set normalCount = normalCount + 1 %}
+      {% elseif arbitrationRead.opinion == 'technical_recall' %}
+        {% set technicalRecallCount = technicalRecallCount + 1 %}
+      {% elseif arbitrationRead.opinion == 'recall_for_assessment' %}
+        {% set recallForAssessmentCount = recallForAssessmentCount + 1 %}
+      {% endif %}
+    {% endfor %}
+
+    {% set outcomeDenominator = arbitratedCount if arbitratedCount > 0 else 1 %}
+
+    {% if not resumeAppointment and arbitratedCount > 0 %}
+      <h2>Outcome summary</h2>
+
+      <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
+        {% for outcome in [
+          { label: "Normal", count: normalCount },
+          { label: "Technical recall", count: technicalRecallCount },
+          { label: "Recall for assessment", count: recallForAssessmentCount }
+        ] %}
+          {% set outcomeCardContent %}
+            <h2 class="nhsuk-card__heading app-reading-statistics-value nhsuk-u-margin-bottom-1">
+              <span role="text">
+                <span class="nhsuk-u-visually-hidden">{{ outcome.label }}:</span> {{ (outcome.count / outcomeDenominator * 100) | round }}%
+              </span>
+            </h2>
+            <p class="nhsuk-u-font-size-16">{{ outcome.label }}</p>
+            <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ outcome.count }} {{ "case" | pluralise(outcome.count) }}</p>
+          {% endset %}
+          <li class="nhsuk-grid-column-one-third app-reading-statistics-card">
+            {{ card({ descriptionHtml: outcomeCardContent }) }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <h2>Arbitration cases</h2>
+
+    {% set remainingCount = (appointments | length) - arbitratedCount %}
+    {% if remainingCount > 0 %}
+      <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated, {{ remainingCount }} remaining</p>
+    {% endif %}
+
+    <table class="nhsuk-table app-reading-session-table">
+      <thead>
+        <tr>
+          <th scope="col">No.</th>
+          <th scope="col">Case</th>
+          <th scope="col">Screening date</th>
+          <th scope="col">1st read</th>
+          <th scope="col">2nd read</th>
+          <th scope="col">Outcome</th>
+          <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appointment in appointments %}
+          {% set arbitrationRead = appointment.readingCase | getArbitrationRead %}
+          {% set isNextCase = resumeAppointment and appointment.id == resumeAppointment.id and not arbitrationRead %}
+          {% set originalReads = appointment.readingCase | getOriginalReads %}
+          <tr{% if isNextCase %} class="app-placeholder-row--next"{% endif %}>
+            <td>
+              <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
+            </td>
+            <td>
+              {% if appointment.medicalInformation.symptoms | length %}
+                <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
+              {% endif %}
+              <a href="/reading/session/{{ session.id }}/appointments/{{ appointment.id }}">{{ appointment.participant | getFullNameReversed }}</a>
+              <br>
+              <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
+                <a href="/participants/{{ appointment.participantId }}" target="_blank" rel="noopener" class="nhsuk-link--no-visited-state">Participant record</a>
+              </span>
+            </td>
+            <td>
+              {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
+              {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+                {{ "Urgent" | toTag }}<br>
+              {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+                {{ "Due soon" | toTag }}<br>
+              {% endif %}
+              {{ appointment.timing.startTime | formatDate }}<br>
+              <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
+                {{ appointment.timing.startTime | formatRelativeDate }}
+              </span>
+            </td>
+
+            {# The two original reads. Arbitration shows both by design - there
+               is no blind-reading gate here, the disagreement is the point. #}
+            {% for readIndex in [0, 1] %}
+              <td>
+                {% set originalRead = originalReads[readIndex] %}
+                {% if originalRead %}
+                  {# Forced grey so the two reads read as context, not as the outcome #}
+                  {{ originalRead.opinion | toTag({ colour: "grey" }) }}
+                  <br>
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by
+                    {%- for authorId in originalRead | getReadAuthorIds %}
+                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                    {%- endfor %}
+                  </span>
+                {% else %}
+                  {{ "Not read" | toTag }}
+                {% endif %}
+              </td>
+            {% endfor %}
+
+            <td>
+              {% if arbitrationRead %}
+                {{ arbitrationRead.opinion | toTag }}
+                <br>
+                {% if arbitrationRead | isReadFinalised(data.settings) %}
+                  {% set finalisedAt = arbitrationRead.finalisedAt or (arbitrationRead | getAutoFinaliseTime(data.settings)) %}
+                  {% if finalisedAt %}
+                    <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">finalised {{ finalisedAt | formatTime("h:mma") }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">awaiting finalisation</span>
+                {% endif %}
+              {% elseif appointment.readingCase | isCaseDeferred %}
+                {{ "Deferred" | toTag }}
+              {% elseif session.skippedAppointments | includes(appointment.id) %}
+                {{ "Skipped" | toTag }}
+              {% else %}
+                {{ "Not arbitrated" | toTag }}
+              {% endif %}
+            </td>
+            <td class="app-placeholder-action-cell">
+              {% if isNextCase %}
+                <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ arbitrationActionText }}</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

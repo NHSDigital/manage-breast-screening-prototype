@@ -178,6 +178,21 @@ const getArbitrationRead = (readingCase) => {
 }
 
 /**
+ * A case's ordinary reads - everything except the arbitration read.
+ *
+ * These are the reads an arbitration is deciding between, so display code that
+ * wants "the first and second read" wants this rather than every read.
+ *
+ * @param {object} readingCase - Reading case
+ * @returns {Array} The ordinary reads, oldest first
+ */
+const getOriginalReads = (readingCase) => {
+  return getReadsAsArray(readingCase).filter(
+    (read) => read.readType !== 'arbitration'
+  )
+}
+
+/**
  * Whether a user has read a case
  *
  * @param {object} readingCase - Reading case
@@ -396,6 +411,30 @@ const isReadFinalised = (read, settings = {}, now = null) => {
   const finalisesAt = new Date(read.timestamp).getTime() + delayMinutes * 60000
   const judgedAt = now ? new Date(now).getTime() : Date.now()
   return judgedAt >= finalisesAt
+}
+
+/**
+ * When a read will finalise itself, or null if it won't.
+ *
+ * Null covers both ends: an already-finalised read has no pending moment, and
+ * a 'never' delay means it only ever finalises by hand.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {string | null} ISO timestamp, or null
+ */
+const getAutoFinaliseTime = (read, settings = {}) => {
+  if (!read?.timestamp || read.finalisedAt) return null
+
+  const delay = settings?.reading?.finalisationDelay ?? '60'
+  if (delay === 'never') return null
+
+  const delayMinutes = parseInt(delay, 10)
+  if (Number.isNaN(delayMinutes)) return null
+
+  return new Date(
+    new Date(read.timestamp).getTime() + delayMinutes * 60000
+  ).toISOString()
 }
 
 /**
@@ -859,6 +898,7 @@ module.exports = {
   getReadForUser,
   getOtherReads,
   getArbitrationRead,
+  getOriginalReads,
   getReadAuthorIds,
   caseHasBeenArbitrated,
   userHasReadCase,
@@ -871,6 +911,7 @@ module.exports = {
   getComparisonInfo,
   shouldShowComparePage,
   isReadFinalised,
+  getAutoFinaliseTime,
   areAllReadsFinalised,
   getReadingCaseState,
   getReadingCaseOutcome,

@@ -78,12 +78,18 @@
    rather than one of several opinions #}
 {% set opinionLabel = "Outcome" if read.readType == 'arbitration' else "Opinion" %}
 {% if not hideOpinionRow %}
+  {% set opinionValueHtml %}
+    {{ read.opinion | toTag }}
+    {% if read.timestamp and not (read | isReadFinalised(data.settings)) %}
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">(awaiting finalisation)</span>
+    {% endif %}
+  {% endset %}
   {% set rows = rows | push({
     key: {
       text: opinionLabel
     },
     value: {
-      html: read.opinion | toTag
+      html: opinionValueHtml
     },
     actions: {
       items: [
@@ -270,6 +276,22 @@
       html: arbitratorsHtml
     }
   }) %}
+{% endif %}
+
+{# When it was finalised. Reads finalised by the delay passing have no
+   finalisedAt stamp, so fall back to the moment the delay ran out. #}
+{% if read.timestamp and (read | isReadFinalised(data.settings)) %}
+  {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
+  {% if finalisedAt %}
+    {% set rows = rows | push({
+      key: {
+        text: "Finalised"
+      },
+      value: {
+        text: finalisedAt | formatDateTime
+      }
+    }) %}
+  {% endif %}
 {% endif %}
 
 {{ summaryList({
