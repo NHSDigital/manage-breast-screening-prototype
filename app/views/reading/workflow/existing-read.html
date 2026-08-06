@@ -157,29 +157,8 @@
       descriptionHtml: readSummaryHtml
     }) }}
 
-    {# The reads that were arbitrated, for reference. They can't be changed now -
-       the arbitration outcome above is what settles the case. Reading keeps its
-       blind-reading gate, so it doesn't show the other read here. #}
-    {% if isArbitration %}
-      {% for originalRead in readingCase | getReadsAsArray %}
-        {% if originalRead.readType != 'arbitration' %}
-          {% set originalReadSummaryHtml %}
-            {% set read = originalRead %}
-            {% set allowEdits = false %}
-            {% set hideEmptyRows = true %}
-            {% set showAnnotationImages = withImages %}
-            {% set annotationImagePaths = allPaths %}
-            {% include "_includes/summary-lists/read-summary.njk" %}
-          {% endset %}
-
-          {{ card({
-            heading: (originalRead.readType | formatWords | sentenceCase) + " read by " + (originalRead.readerId | getUsername({ format: "short", identifyCurrentUser: true })),
-            headingLevel: "2",
-            descriptionHtml: originalReadSummaryHtml
-          }) }}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
+    {# The arbitration outcome above is what settles the case, so the reads it
+       arbitrated aren't shown here. #}
   {% endif %}
 
   {# Medical summary #}

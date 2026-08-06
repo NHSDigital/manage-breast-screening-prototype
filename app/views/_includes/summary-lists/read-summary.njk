@@ -74,11 +74,13 @@
 {# Build rows based on result type #}
 {% set rows = [] %}
 
-{# Opinion row #}
+{# Opinion row. An arbitration read settles the case, so it is the outcome
+   rather than one of several opinions #}
+{% set opinionLabel = "Outcome" if read.readType == 'arbitration' else "Opinion" %}
 {% if not hideOpinionRow %}
   {% set rows = rows | push({
     key: {
-      text: "Opinion"
+      text: opinionLabel
     },
     value: {
       html: read.opinion | toTag
@@ -88,7 +90,7 @@
         {
           href: changeOpinionUrl,
           text: "Change",
-          visuallyHiddenText: "opinion"
+          visuallyHiddenText: opinionLabel | lower
         }
       ]
     } if allowEdits and changeOpinionUrl

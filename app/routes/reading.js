@@ -679,10 +679,15 @@ module.exports = (router) => {
           !data.imageReadingTemp ||
           data.imageReadingTemp.appointmentId !== appointmentId
         ) {
-          const existingRead = getReadForUser(
-            getReadingCase(data, appointment),
-            currentUserId
-          )
+          // In arbitration the read being amended is the case's arbitration
+          // read, not the current user's own - a panel member may also have
+          // read this case as first or second reader
+          const readingCaseForTemp = getReadingCase(data, appointment)
+          const existingRead =
+            session.type === 'arbitration'
+              ? getArbitrationRead(readingCaseForTemp)
+              : getReadForUser(readingCaseForTemp, currentUserId)
+
           if (existingRead) {
             // User has already read this appointment - populate temp from saved read
             console.log(

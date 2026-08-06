@@ -940,10 +940,9 @@ const filterAppointmentsByUserCanReadOrHasRead = (
     // Include if the case isn't fully read yet, so they could still read it
     if (getReadsAsArray(readingCase).length < maxReadsPerCase) return true
 
-    // A case released to arbitration still takes its arbitration read
-    if (isCaseInArbitration(readingCase) && !getArbitrationRead(readingCase)) {
-      return true
-    }
+    // A case released to arbitration still takes its arbitration read, and
+    // stays navigable once arbitrated so it can be looked at again
+    if (isCaseInArbitration(readingCase)) return true
 
     // Exclude cases that are fully read by other users
     return false
