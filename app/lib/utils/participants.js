@@ -35,7 +35,7 @@ const getFullName = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
   return nunjucksSafe(
-    [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+    [firstName, middleName, lastName].filter(Boolean).join(' ')
   )
 }
 
@@ -62,7 +62,9 @@ const getFirstNames = (participant) => {
 const getFullNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
-  return [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+  return nunjucksSafe(
+    [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+  )
 }
 
 /**
@@ -74,7 +76,7 @@ const getFullNameReversed = (participant) => {
 const getShortName = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, lastName } = participant.demographicInformation
-  return nunjucksSafe(`${lastName.toUpperCase()}, ${firstName}`)
+  return nunjucksSafe(`${firstName} ${lastName}`)
 }
 
 /**

@@ -137,10 +137,10 @@
             <td>
               {% if reading.sessionId %}
               <a href="/reading/session/{{ reading.sessionId or 'clinic' }}/appointments/{{ reading.appointmentId }}">
-                {{ reading.participant | getFullName }}
+                {{ reading.participant | getFullNameReversed }}
               </a>
               {% else %}
-                {{ reading.participant | getFullName }}
+                {{ reading.participant | getFullNameReversed }}
               {% endif %}
 
 

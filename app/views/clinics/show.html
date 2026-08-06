@@ -162,9 +162,9 @@
             <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
               {# <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}/start" class="nhsuk-link"> #}
                 {# <a href="{{ participantHref }}" class="nhsuk-link">
-                  {{ participant | getFullName }}
+                  {{ participant | getFullNameReversed }}
                 </a> #}
-                {{ participant | getFullName }}
+                {{ participant | getFullNameReversed }}
             </p>
             <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
               {# DOB: {{ participant.demographicInformation.dateOfBirth | formatDate }} ({{

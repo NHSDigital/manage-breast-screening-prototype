@@ -115,7 +115,7 @@
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
               <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-link--no-visited-state">
-                {{ row.participant | getFullName }}
+                {{ row.participant | getFullNameReversed }}
               </a>
               {% if row.isDeferred %}
                 <br>{{ "Deferred" | toTag }}
