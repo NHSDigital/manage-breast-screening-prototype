@@ -19,8 +19,8 @@
 
 {% set participantName = participant | getFullName %}
 
-{% set hrtQuestion = "Has " + participantName + " begun a course of HRT since their last screening appointment?" %}
-{% set pregnantOrBreastfeedingQuestion = "Is " + participantName + " pregnant or breastfeeding?" %}
+{% set hrtQuestion = "Has " + participant.demographicInformation.firstName + " begun a course of HRT since their last screening appointment?" %}
+{% set pregnantOrBreastfeedingQuestion = "Is " + participant.demographicInformation.firstName + " pregnant or breastfeeding?" %}
 
 {% set hrtInputHtml %}
   {{ radios({
@@ -36,11 +36,11 @@
     items: [
       {
         value: "yes",
-        text: "Yes"
+        text: "Yes, has begun a course of HRT"
       },
       {
         value: "no",
-        text: "No"
+        text: "No, has not begun a course of HRT"
       }
     ]
   }) }}
