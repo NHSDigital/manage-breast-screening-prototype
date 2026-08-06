@@ -19,7 +19,7 @@
 
 {% set participantName = participant | getFullName %}
 
-{% set hrtQuestion = "Has " + participant.demographicInformation.firstName + " began a course of HRT since their last screening appointment?" %}
+{% set hrtQuestion = "Has " + participant.demographicInformation.firstName + " started a course of HRT since their last screening appointment?" %}
 {% set pregnantOrBreastfeedingQuestion = "Is " + participant.demographicInformation.firstName + " pregnant or breastfeeding?" %}
 
 {% set hrtInputHtml %}
@@ -36,11 +36,11 @@
     items: [
       {
         value: "yes",
-        text: "Yes, has began a course of HRT"
+        text: "Yes, has started a course of HRT"
       },
       {
         value: "no",
-        text: "No, has not began a course of HRT"
+        text: "No, has not started a course of HRT"
       }
     ]
   }) }}
@@ -72,9 +72,9 @@
 
 {% set hrtSummaryHtml %}
   {% if breastDensityFactors.hrt == "yes" %}
-    <p>Began a course of HRT since last screening appointment</p>
+    <p>Started a course of HRT since last screening appointment</p>
   {% elseif breastDensityFactors.hrt == "no" %}
-    <p>Not began a course of HRT since last screening appointment</p>
+    <p>Not started a course of HRT since last screening appointment</p>
   {% else %}
     <p>Not answered</p>
   {% endif %}
@@ -100,7 +100,7 @@
     rows: [
       {
         key: {
-          text: "Began a course of HRT since their last screening appointment?"
+          text: "HRT (hormone replacement therapy)"
         },
         value: {
           html: hrtInputHtml if allowEdits else hrtSummaryHtml
