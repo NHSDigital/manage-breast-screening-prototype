@@ -576,6 +576,13 @@ const caseNeedsSecondRead = (readingCase) => {
  * @returns {boolean}
  */
 const caseNeedsArbitration = (readingCase, settings = {}) => {
+  // A case already released into arbitration belongs to the backlog until it
+  // has been arbitrated, whatever its derived state says. Releasing it doesn't
+  // finalise the original reads, so the state stays awaiting_finalisation.
+  if (isCaseInArbitration(readingCase)) {
+    return !getArbitrationRead(readingCase)
+  }
+
   return getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
 }
 

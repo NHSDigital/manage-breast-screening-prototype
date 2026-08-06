@@ -470,6 +470,7 @@ module.exports = (router) => {
     }
     res.render('reading/no-more-cases', {
       sessionId,
+      session,
       unfinalisedReadCount: getUnfinalisedUserReadsForSession(
         data,
         sessionId,
@@ -2093,11 +2094,15 @@ module.exports = (router) => {
       // journey reaching here with a read in place started from that page —
       // and should return to it rather than moving on to the next case.
       // Must be checked before the read is written.
-      const isEditingExistingRead = userHasReadAppointment(
-        data,
-        appointment,
-        currentUserId
-      )
+      //
+      // In arbitration this means the arbitration read already exists. A panel
+      // member's own earlier read as first or second reader isn't an edit -
+      // they still have the arbitration to do.
+      const sessionForSave = getReadingSession(data, sessionId)
+      const isEditingExistingRead =
+        sessionForSave?.type === 'arbitration'
+          ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+          : userHasReadAppointment(data, appointment, currentUserId)
 
       delete data.imageReadingTemp
       delete res.locals.data?.imageReadingTemp
@@ -2128,10 +2133,14 @@ module.exports = (router) => {
       const currentIndex = sessionAppointments.findIndex(
         (e) => e.id === appointmentId
       )
+      const notYetArbitrated = (appointment) =>
+        !getArbitrationRead(getReadingCase(data, appointment))
+
       const nextUnreadAppointment = isArbitrationSave
-        ? sessionAppointments
-            .slice(currentIndex + 1)
-            .find((appt) => !getArbitrationRead(getReadingCase(data, appt)))
+        ? // Look forward first, then wrap - a case skipped earlier in the
+          // session is still waiting to be arbitrated
+          sessionAppointments.slice(currentIndex + 1).find(notYetArbitrated) ||
+          sessionAppointments.slice(0, currentIndex).find(notYetArbitrated)
         : getNextUserReadableAppointment(
             data,
             sessionAppointments,
