@@ -27,6 +27,7 @@ const {
   skipAppointmentInSession,
   topUpSession,
   getAppointmentReadingMetadata,
+  appointmentHasBeenArbitrated,
   filterAppointmentsByEligibleForReading,
   filterAppointmentsByNeedsAnyRead,
   filterAppointmentsByUserCanRead
@@ -772,15 +773,17 @@ module.exports = (router) => {
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
-      // Check if user has already read this appointment
-      // In arbitration, the user may have been an original reader (panel mode)
-      // but still needs to reach the arbitration compare page
+      // Returning to a case that has already been done shows what was recorded,
+      // rather than starting the flow again. In arbitration that means the
+      // arbitration read - a panel member's own earlier read as first or second
+      // reader isn't the thing this session is here to do.
       const session = getReadingSession(data, sessionId)
       const isArbitrationSession = session?.type === 'arbitration'
-      if (
-        !isArbitrationSession &&
-        userHasReadAppointment(data, appointment, currentUserId)
-      ) {
+      const alreadyDone = isArbitrationSession
+        ? appointmentHasBeenArbitrated(data, appointment)
+        : userHasReadAppointment(data, appointment, currentUserId)
+
+      if (alreadyDone) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )

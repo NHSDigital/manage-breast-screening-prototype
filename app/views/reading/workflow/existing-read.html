@@ -3,13 +3,13 @@
 
 {% extends 'layout-reading.html' %}
 
-{% set pageHeading = "Your outcome" if isArbitration else "Your opinion" %}
+{% set pageHeading = "Arbitration outcome" if isArbitration else "Your opinion" %}
 {% set showWorkflowNav = true %}
 
 {% block pageContent %}
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}
-  {% set hasUserRead = readingCase | userHasReadCase(data.currentUser.id) %}
+  {% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
   {% set isDeferredCase = readingCase | isCaseDeferred %}
 
   <span class="nhsuk-caption-l">
@@ -18,7 +18,7 @@
 
   {% if isDeferredCase and not hasUserRead %}
     {# Appointment has been deferred - show deferral summary #}
-    <h1 class="nhsuk-heading-l">{{ "Your outcome" if isArbitration else "Your opinion" }}</h1>
+    <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
     {% set deferral = readingCase.deferral %}
     {% set canUndo = deferral.deferredBy == data.currentUser.id %}
@@ -63,7 +63,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Arbitration outcome" if isArbitration else "Your read",
+      heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: deferralSummaryHtml
@@ -71,7 +71,7 @@
 
   {% elseif isAwaitingPriors and not hasUserRead %}
     {# Appointment is awaiting priors - show as the reader's opinion #}
-    <h1 class="nhsuk-heading-l">{{ "Your outcome" if isArbitration else "Your opinion" }}</h1>
+    <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
     {% set canUndo = appointment | userRequestedPriors(data.currentUser.id) %}
 
@@ -122,7 +122,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Arbitration outcome" if isArbitration else "Your read",
+      heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: priorsReadSummaryHtml
@@ -130,7 +130,7 @@
 
   {% else %}
     {# Normal existing read view #}
-    <h1 class="nhsuk-heading-l">{{ "Your outcome" if isArbitration else "Your opinion" }}</h1>
+    <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
     {# Read summary card #}
     {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
@@ -139,8 +139,10 @@
       {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% endif %}
 
+    {# The read this page is about: in arbitration the case's one arbitration
+       read, otherwise the current user's own #}
     {% set readSummaryHtml %}
-      {% set read = readingCase | getReadForUser(data.currentUser.id) %}
+      {% set read = (readingCase | getArbitrationRead) if isArbitration else (readingCase | getReadForUser(data.currentUser.id)) %}
       {% set allowEdits = true %}
       {% set changeOpinionUrl = "./opinion" %}
       {% set showAnnotationImages = withImages %}
@@ -149,32 +151,33 @@
     {% endset %}
 
     {{ card({
-      heading: "Arbitration outcome" if isArbitration else "Your read",
+      heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: readSummaryHtml
     }) }}
 
-    {# Other readers' assessments (for testing/debugging) #}
-    {% set otherReads = readingCase | getOtherReads(data.currentUser.id) %}
-    {% if otherReads | length > 0 %}
-      {% for otherRead in otherReads %}
-        {% set readerName = otherRead.readerId | getUsername %}
-        {% set otherReadSummaryHtml %}
-          {% set read = otherRead %}
-          {% set allowEdits = false %}
-          {% set showAnnotationImages = withImages %}
-          {% set annotationImagePaths = allPaths %}
-          {% include "_includes/summary-lists/read-summary.njk" %}
-        {% endset %}
+    {# The reads that were arbitrated, for reference. They can't be changed now -
+       the arbitration outcome above is what settles the case. Reading keeps its
+       blind-reading gate, so it doesn't show the other read here. #}
+    {% if isArbitration %}
+      {% for originalRead in readingCase | getReadsAsArray %}
+        {% if originalRead.readType != 'arbitration' %}
+          {% set originalReadSummaryHtml %}
+            {% set read = originalRead %}
+            {% set allowEdits = false %}
+            {% set hideEmptyRows = true %}
+            {% set showAnnotationImages = withImages %}
+            {% set annotationImagePaths = allPaths %}
+            {% include "_includes/summary-lists/read-summary.njk" %}
+          {% endset %}
 
-        {# Commented out until we decide whether to show other reads #}
-        {# {{ card({
-          heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
-          headingLevel: "2",
-          feature: true,
-          descriptionHtml: otherReadSummaryHtml
-        }) }} #}
+          {{ card({
+            heading: (originalRead.readType | formatWords | sentenceCase) + " read by " + (originalRead.readerId | getUsername({ format: "short", identifyCurrentUser: true })),
+            headingLevel: "2",
+            descriptionHtml: originalReadSummaryHtml
+          }) }}
+        {% endif %}
       {% endfor %}
     {% endif %}
   {% endif %}
