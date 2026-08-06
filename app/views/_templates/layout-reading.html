@@ -158,7 +158,7 @@
   {% if isReadingWorkflow and participant %}
     {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
     <meta name="mammogram-appointment-id" content="{{ appointmentId }}">
-    <meta name="mammogram-participant-name" content="{{ participant | getFullName }}">
+    <meta name="mammogram-participant-name" content="{{ participant | getFullNameReversed }}">
     <meta name="mammogram-nhs-number" content="{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}">
     <meta name="mammogram-sx-number" content="{{ participant.sxNumber }}">
     <meta name="mammogram-date-of-birth" content="{{ participant.demographicInformation.dateOfBirth | formatDate }} ({{ participant | getAge }} years)">
