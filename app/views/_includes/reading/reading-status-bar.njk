@@ -32,9 +32,10 @@
   }) %}
 {% endif %}
 
-{# Progress text #}
+{# Progress text. doneCount counts arbitrated cases in an arbitration session
+   and the user's own reads otherwise #}
 {% set progressText %}
-  {{ progress.userReadCount }} read
+  {{ progress.doneCount }} {{ "arbitrated" if isArbitration else "read" }}
   {%- if progress.userAwaitingPriorsCount > 0 -%}
     , {{ progress.userAwaitingPriorsCount }} awaiting priors
   {%- endif -%}

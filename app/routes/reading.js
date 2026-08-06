@@ -849,13 +849,28 @@ module.exports = (router) => {
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
-        data,
-        sessionAppointments,
-        appointmentId,
-        currentUserId,
-        { wrap: false }
+
+      // Arbitration looks for the next case without an arbitration read, since
+      // the user-can-read check rejects cases a panel member originally read
+      const isArbitrationSkip = session.type === 'arbitration'
+      const notYetArbitrated = (candidate) =>
+        candidate.id !== appointmentId &&
+        !getArbitrationRead(getReadingCase(data, candidate))
+
+      const currentIndex = sessionAppointments.findIndex(
+        (candidate) => candidate.id === appointmentId
       )
+
+      const nextUnreadAppointment = isArbitrationSkip
+        ? sessionAppointments.slice(currentIndex + 1).find(notYetArbitrated) ||
+          sessionAppointments.slice(0, currentIndex).find(notYetArbitrated)
+        : getNextUserReadableAppointment(
+            data,
+            sessionAppointments,
+            appointmentId,
+            currentUserId,
+            { wrap: false }
+          )
 
       if (nextUnreadAppointment) {
         res.redirect(
