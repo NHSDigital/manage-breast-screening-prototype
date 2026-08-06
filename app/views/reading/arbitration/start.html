@@ -35,15 +35,12 @@
         value: "alone",
         text: "Just me",
         hint: {
-          text: soloCount ~ " of " ~ backlogCount ~ " available to you (you read the others)"
+          text: soloCount ~ " of " ~ backlogCount ~ " available to you"
         } if soloCount != backlogCount else undefined
       },
       {
         value: "panel",
-        text: "Me with other people",
-        hint: {
-          text: "You’ll choose who on the next page"
-        }
+        text: "Me with other people"
       }
     ]
   }) }}
