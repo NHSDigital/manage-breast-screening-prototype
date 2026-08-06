@@ -9,10 +9,7 @@
 {% block bodyEnd %}
   {{ super() }}
 
-  {# Fullscreen toggle and auto-scroll to status bar on page load #}
-  {% if isReadingWorkflow %}
-    <script type="module" src="/assets/javascript/reading-scroll.js"></script>
-  {% endif %}
+
   {% if isReadingWorkflow and participant %}
     <script>
       (function() {

@@ -1,6 +1,6 @@
-// app/assets/javascript/reading-scroll.js
+// app/assets/javascript/workflow-scroll.js
 
-// Reading workflow: scroll the status bar into view on page load.
+// Scroll the status bar into view on page load for any workflow.
 // Uses getBoundingClientRect for an exact pixel position rather than
 // scrollIntoView, which can behave oddly near sticky/fixed elements.
 
