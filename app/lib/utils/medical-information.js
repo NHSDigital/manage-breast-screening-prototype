@@ -437,7 +437,7 @@ const getBreastDensityFactors = (medicalInformation) => {
 
   const hrt = medicalInformation?.breastDensityFactorsHrt
 
-  // "Not taking HRT" is an answer, but it isn't a density factor - only
+  // "Not started HRT" is an answer, but it isn't a density factor - only
   // count the things that actually affect density
   const count =
     (hrt === 'yes' ? 1 : 0) +
@@ -450,7 +450,7 @@ const getBreastDensityFactors = (medicalInformation) => {
     factors,
     hrt,
     count,
-    // Everything worth showing, including a recorded "no" to HRT - use this
+    // Everything worth showing, including a recorded "no" to HRT question - use this
     // to decide whether to show the row at all, and count for "n added"
     answeredCount: summaries.length,
     summaries
