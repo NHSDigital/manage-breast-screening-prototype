@@ -476,9 +476,9 @@ const summariseBreastDensityFactors = (medicalInformation) => {
   const summaries = []
 
   if (hrt === 'yes') {
-    summaries.push('Begun a course of HRT since last screening appointment')
+    summaries.push('Began a course of HRT since last screening appointment')
   } else if (hrt === 'no') {
-    summaries.push('Not begun a course of HRT since last screening appointment')
+    summaries.push('Not began a course of HRT since last screening appointment')
   }
 
   if (factors.includes('pregnant')) {
