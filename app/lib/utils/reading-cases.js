@@ -189,6 +189,37 @@ const userHasReadCase = (readingCase, userId) => {
 }
 
 /**
+ * Who made a read.
+ *
+ * An ordinary read has one reader; an arbitration read has however many people
+ * arbitrated together, all equal authors. Display code that just needs "who
+ * made this" can use this rather than knowing which shape it has.
+ *
+ * @param {object} read - A read
+ * @returns {string[]} User IDs, in no particular order
+ */
+const getReadAuthorIds = (read) => {
+  if (!read) return []
+  if (read.arbitratorIds?.length) return read.arbitratorIds
+  return read.readerId ? [read.readerId] : []
+}
+
+/**
+ * Whether a case has been arbitrated.
+ *
+ * Arbitration settles a case once, for everyone - so unlike a read there is no
+ * per-user version of this question. Who may arbitrate a case is decided when
+ * it is picked into a session (see getEligibleCandidatesForSession); from then
+ * on the only question is whether it has been done.
+ *
+ * @param {object} readingCase - Reading case
+ * @returns {boolean}
+ */
+const caseHasBeenArbitrated = (readingCase) => {
+  return Boolean(getArbitrationRead(readingCase))
+}
+
+/**
  * Whether a case has any reads
  *
  * @param {object} readingCase - Reading case
@@ -196,6 +227,29 @@ const userHasReadCase = (readingCase, userId) => {
  */
 const caseHasReads = (readingCase) => {
   return getReadsAsArray(readingCase).length > 0
+}
+
+/**
+ * Record that a case has been released for arbitration, if it wasn't already.
+ *
+ * Auto-finalisation by time never writes the release (there is no act to
+ * record) - reaching the case in an arbitration session is one. This is what
+ * makes buildRead stamp the eventual read as an arbitration read.
+ *
+ * @param {object} readingCase - Reading case
+ * @param {string} userId - Who released it
+ * @returns {object} The case, released
+ */
+const withArbitrationRelease = (readingCase, userId) => {
+  if (readingCase.arbitration?.releasedAt) return readingCase
+
+  return {
+    ...readingCase,
+    arbitration: {
+      releasedAt: new Date().toISOString(),
+      releasedBy: userId
+    }
+  }
 }
 
 /**
@@ -471,7 +525,7 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
  */
 const getReadingMetadata = (readingCase, settings = {}) => {
   const reads = getReadsAsArray(readingCase)
-  const uniqueReaderCount = new Set(reads.map((read) => read.readerId)).size
+  const uniqueReaderCount = new Set(reads.flatMap(getReadAuthorIds)).size
   const opinions = [...new Set(reads.map((read) => read.opinion))].filter(
     Boolean
   )
@@ -660,34 +714,46 @@ const shouldShowComparePage = (
  * @param {object} reading - The opinion and its details
  * @param {object} [options] - Options
  * @param {string} [options.timestamp] - When the read was made
- * @param {string[]} [options.panelUserIds] - Who arbitrated together, if a panel
+ * @param {string[]} [options.arbitratorIds] - Everyone arbitrating, if arbitration
  * @returns {object} The read record
  */
 const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
-  const existingRead = getReadForUser(readingCase, userId)
-  const otherReads = getOtherReads(readingCase, userId)
+  // A case already in arbitration is being settled, whoever is reading it
+  const isArbitration = isCaseInArbitration(readingCase)
+
+  // An arbitration amends the case's one arbitration read, not the user's own -
+  // a panel member may also have read this case as first or second reader
+  const existingRead = isArbitration
+    ? getArbitrationRead(readingCase)
+    : getReadForUser(readingCase, userId)
+
+  const otherReads = getReadsAsArray(readingCase).filter(
+    (read) => read !== existingRead
+  )
 
   // Amending a read keeps its place in the order; a new one takes the next
   const readNumber = existingRead?.readNumber || otherReads.length + 1
 
-  // A case already in arbitration is being settled, whoever is reading it
-  const readType = isCaseInArbitration(readingCase)
+  const readType = isArbitration
     ? 'arbitration'
     : READ_TYPES[Math.min(readNumber, READ_TYPES.length) - 1]
 
   const read = {
     ...reading,
-    readerId: userId,
     readerType,
     readType,
     readNumber,
     timestamp: options.timestamp || new Date().toISOString()
   }
 
-  // Who was in the room is a fact about the arbitration read itself - the
-  // session is working data and won't survive to explain the read later
-  if (readType === 'arbitration' && options.panelUserIds?.length > 1) {
-    read.panelUserIds = options.panelUserIds
+  // Arbitrators are equal authors of the one decision, so authorship is a set.
+  // An ordinary read has the single reader it belongs to.
+  if (isArbitration) {
+    read.arbitratorIds = options.arbitratorIds?.length
+      ? options.arbitratorIds
+      : [userId]
+  } else {
+    read.readerId = userId
   }
 
   return read
@@ -705,9 +771,18 @@ const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
  */
 const withRead = (readingCase, read) => {
   const reads = getReadsAsArray(readingCase)
-  const existingIndex = reads.findIndex(
-    (candidate) => candidate.readerId === read.readerId
-  )
+
+  // A case has one arbitration read whoever made it; an ordinary read replaces
+  // the same reader's own. Matching on readerId alone would treat two
+  // arbitration reads as the same read, both having no readerId.
+  const existingIndex =
+    read.readType === 'arbitration'
+      ? reads.findIndex((candidate) => candidate.readType === 'arbitration')
+      : reads.findIndex(
+          (candidate) =>
+            candidate.readType !== 'arbitration' &&
+            candidate.readerId === read.readerId
+        )
 
   const updatedReads =
     existingIndex >= 0
@@ -734,7 +809,7 @@ const withRead = (readingCase, read) => {
  */
 const withReadFinalised = (readingCase, userId, options = {}) => {
   const reads = getReadsAsArray(readingCase).map((read) =>
-    read.readerId === userId && !read.finalisedAt
+    getReadAuthorIds(read).includes(userId) && !read.finalisedAt
       ? {
           ...read,
           finalisedAt: options.finalisedAt || new Date().toISOString(),
@@ -777,8 +852,11 @@ module.exports = {
   getReadForUser,
   getOtherReads,
   getArbitrationRead,
+  getReadAuthorIds,
+  caseHasBeenArbitrated,
   userHasReadCase,
   caseHasReads,
+  withArbitrationRelease,
   isCaseDeferred,
   isCaseInArbitration,
   areReadsDiscordant,

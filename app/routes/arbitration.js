@@ -13,37 +13,6 @@ const {
   createReadingSession,
   getFirstReadableAppointmentInSession
 } = require('../lib/utils/reading')
-const { getReadingCase, updateReadingCase } = require('../lib/utils/episodes')
-
-/**
- * Record the release of each case in an arbitration session.
- *
- * Auto-finalisation by time never writes the release (there is no act to
- * record) - pulling a case into an arbitration session is one, so the release
- * gets recorded here if finalisation didn't already. This is what makes
- * buildRead stamp the eventual read as an arbitration read.
- *
- * @param {object} data - Session data
- * @param {object} session - The arbitration reading session
- */
-const recordArbitrationReleases = (data, session) => {
-  const releasedAt = new Date().toISOString()
-
-  for (const appointmentId of session.appointmentIds) {
-    const appointment = data.appointments.find(
-      (candidate) => candidate.id === appointmentId
-    )
-    if (!appointment) continue
-
-    const readingCase = getReadingCase(data, appointment)
-    if (!readingCase || readingCase.arbitration?.releasedAt) continue
-
-    updateReadingCase(data, appointment.episodeId, {
-      ...readingCase,
-      arbitration: { releasedAt, releasedBy: data.currentUser.id }
-    })
-  }
-}
 
 /**
  * Create the arbitration session and send the user into its first case,
@@ -53,7 +22,6 @@ const startArbitrationSession = (data, res, arbitration) => {
   const isPanel = arbitration.mode === 'panel'
   const sessionOptions = {
     type: 'arbitration',
-    lazy: false,
     filters: isPanel ? { skipUserFilter: true } : {}
   }
 
@@ -65,7 +33,8 @@ const startArbitrationSession = (data, res, arbitration) => {
   const session = createReadingSession(data, sessionOptions)
   session.arbitration = arbitration
 
-  recordArbitrationReleases(data, session)
+  // Cases are released as the user reaches them (see the per-case middleware in
+  // routes/reading.js), so a lazy session doesn't claim the whole backlog
 
   const firstReadableAppointment = getFirstReadableAppointmentInSession(
     data,
@@ -115,7 +84,7 @@ module.exports = (router) => {
 
     startArbitrationSession(data, res, {
       mode: 'alone',
-      panelUserIds: [data.currentUser.id]
+      arbitratorIds: [data.currentUser.id]
     })
   })
 
@@ -135,7 +104,8 @@ module.exports = (router) => {
   router.post('/reading/arbitration/panel-answer', (req, res) => {
     const data = req.session.data
 
-    const panelUserIds = []
+    // The picker chooses who else; the current user is an arbitrator too
+    const chosenUserIds = []
       .concat(data.arbitrationTemp?.panelUserIds || [])
       .filter(Boolean)
 
@@ -143,7 +113,7 @@ module.exports = (router) => {
 
     startArbitrationSession(data, res, {
       mode: 'panel',
-      panelUserIds: [data.currentUser.id, ...panelUserIds]
+      arbitratorIds: [data.currentUser.id, ...chosenUserIds]
     })
   })
 }

@@ -39,8 +39,11 @@ const {
   getReadsAsArray,
   getReadForUser,
   getArbitrationRead,
+  getReadAuthorIds,
+  caseHasBeenArbitrated,
   isCaseDeferred,
-  withoutRead
+  withoutRead,
+  withArbitrationRelease
 } = require('../lib/utils/reading-cases')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
 const {
@@ -548,6 +551,12 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
+    // Arbitration settles a case for everyone, so its progress is how many of
+    // the session's cases have been arbitrated - not what any one user has done
+    const arbitratedCount = enhancedAppointments.filter((appointment) =>
+      caseHasBeenArbitrated(appointment.readingCase)
+    ).length
+
     const sessionProgress = getSessionReadingProgress(
       data,
       sessionId,
@@ -610,6 +619,7 @@ module.exports = (router) => {
       sessionProgress,
       resumeAppointment,
       autoFinaliseAt,
+      arbitratedCount,
       unfinalisedReadCount: unconfirmedReads.length,
       clinic,
       backlogTotal,
@@ -710,6 +720,21 @@ module.exports = (router) => {
       // walking back to the episode
       res.locals.isReadingWorkflow = true
       res.locals.isArbitration = session.type === 'arbitration'
+
+      // Reaching a case in an arbitration session is the act that releases it.
+      // Lazy sessions bring cases in one at a time, so this is where release
+      // happens rather than over the whole backlog at session creation.
+      if (session.type === 'arbitration') {
+        const caseToRelease = getReadingCase(data, appointment)
+        if (caseToRelease && !caseToRelease.arbitration?.releasedAt) {
+          updateReadingCase(
+            data,
+            appointment.episodeId,
+            withArbitrationRelease(caseToRelease, currentUserId)
+          )
+        }
+      }
+
       res.locals.readingCase = getReadingCase(data, appointment)
       res.locals.session = session
       res.locals.appointmentData = {
@@ -2069,9 +2094,9 @@ module.exports = (router) => {
       delete data.imageReadingTemp
       delete res.locals.data?.imageReadingTemp
 
-      // Create and save the reading
+      // Create and save the reading. Authorship is settled by buildRead, which
+      // knows whether this is an arbitration (many authors) or a read (one)
       const readResult = {
-        readerId: currentUserId,
         readerType: data.currentUser.role,
         ...formData,
         timestamp: new Date().toISOString()
@@ -2616,6 +2641,7 @@ module.exports = (router) => {
           clinicId: appointment.clinicId,
           sessionId,
           readerId: reading.readerId,
+          arbitratorIds: reading.arbitratorIds,
           readType,
           opinion: reading.opinion,
           timestamp: reading.timestamp,
@@ -2634,8 +2660,8 @@ module.exports = (router) => {
     // Determine which readings to display based on view
     let readings = []
     if (view === 'mine') {
-      readings = recentReadings.filter(
-        (reading) => reading.readerId === currentUserId
+      readings = recentReadings.filter((reading) =>
+        getReadAuthorIds(reading).includes(currentUserId)
       )
     } else {
       readings = recentReadings

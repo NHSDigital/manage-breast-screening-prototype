@@ -29,6 +29,7 @@ const {
   isReadFinalised,
   isCaseDeferred,
   caseHasReads,
+  caseHasBeenArbitrated,
   caseNeedsFirstRead,
   caseNeedsSecondRead,
   caseNeedsArbitration,
@@ -89,7 +90,7 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
   const readerType = data.users?.find((user) => user.id === userId)?.role
   const session = sessionId ? data.readingSessions?.[sessionId] : null
   const read = buildRead(readingCase, userId, readerType, reading, {
-    panelUserIds: session?.arbitration?.panelUserIds
+    arbitratorIds: session?.arbitration?.arbitratorIds
   })
   const updatedCase = withRead(readingCase, read)
 
@@ -1184,6 +1185,20 @@ const getResumeAppointmentForUser = function (
  * @param {string} [userId] - User ID (falls back to current user from context)
  * @returns {boolean} Whether the user has read this appointment
  */
+/**
+ * Whether an appointment's case has been arbitrated.
+ *
+ * The appointment-shaped version of caseHasBeenArbitrated, for templates and
+ * callers that only have an appointment to hand.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment
+ * @returns {boolean}
+ */
+const appointmentHasBeenArbitrated = (data, appointment) => {
+  return caseHasBeenArbitrated(resolveCase(data, appointment))
+}
+
 const userHasReadAppointment = function (data, appointment, userId = null) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
@@ -1601,11 +1616,15 @@ const topUpSession = (data, sessionId) => {
   // Count appointments that are still actionable for this user — appointments they have read,
   // can still read, deferred, or awaiting priors. Appointments fully read by other readers
   // ('dead' slots) are excluded so the session can be topped up to replace them.
+  const isArbitration = session.type === 'arbitration'
   const actionableCount = session.appointmentIds.filter((appointmentId) => {
     const appointment = data.appointments.find((e) => e.id === appointmentId)
     if (!appointment) return false
+    const isDone = isArbitration
+      ? appointmentHasBeenArbitrated(data, appointment)
+      : userHasReadAppointment(data, appointment, currentUserId)
     return (
-      userHasReadAppointment(data, appointment, currentUserId) ||
+      isDone ||
       canUserReadAppointment(data, appointment, currentUserId) ||
       isCaseDeferred(getReadingCase(data, appointment)) ||
       awaitingPriors(appointment)
@@ -1682,9 +1701,14 @@ const getSessionReadingProgress = (
   // Dead appointments — fully read by other users and not actionable by this user.
   // They occupy session slots but can never be completed, so they don't count
   // toward reachable size. topUpSession will replace them when appointments are read.
+  const isArbitration = session.type === 'arbitration'
   const deadCount = sessionAppointments.filter((appointment) => {
+    const isDone = isArbitration
+      ? appointmentHasBeenArbitrated(data, appointment)
+      : userHasReadAppointment(data, appointment, resolvedUserId)
+
     return (
-      !userHasReadAppointment(data, appointment, resolvedUserId) &&
+      !isDone &&
       !canUserReadAppointment(data, appointment, resolvedUserId) &&
       !isCaseDeferred(getReadingCase(data, appointment)) &&
       !awaitingPriors(appointment)
@@ -1700,8 +1724,17 @@ const getSessionReadingProgress = (
     isCaseDeferred(getReadingCase(data, appointment))
   ).length
 
+  // Arbitration progress is how many cases have been settled, not what this
+  // user has read - an arbitrator may have read some of these cases before
+  const doneCount = isArbitration
+    ? sessionAppointments.filter((appointment) =>
+        appointmentHasBeenArbitrated(data, appointment)
+      ).length
+    : progress.userReadCount
+
   return {
     ...progress,
+    doneCount,
     // How many appointments are currently loaded vs the overall target
     populatedCount: sessionAppointments.length,
     targetSize: resolvedTargetSize,
@@ -1712,7 +1745,7 @@ const getSessionReadingProgress = (
     targetRemaining: Math.max(
       0,
       effectiveTargetSize -
-        progress.userReadCount -
+        doneCount -
         progress.userAwaitingPriorsCount -
         deferredCount
     )
@@ -1761,6 +1794,7 @@ module.exports = {
   getResumeAppointmentForUser,
   // Booleans
   userHasReadAppointment,
+  appointmentHasBeenArbitrated,
   canUserReadAppointment,
 
   // Sessions
