@@ -91,7 +91,7 @@
       {% if checkedInAppointments | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
         <p class="js-bulk-action-container">
-          <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened-all" role="button">Mark all as attended not screened</a>
+          <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened-all" role="button">Mark all as attended not screened</a>
         </p>
         {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
       {% endif %}
@@ -101,7 +101,7 @@
       {% if scheduledAppointments | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
         <p class="js-bulk-action-container">
-          <a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend-all" role="button">Mark all as did not attend</a>
+          <a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend-all" role="button">Mark all as did not attend</a>
         </p>
         {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
       {% endif %}
