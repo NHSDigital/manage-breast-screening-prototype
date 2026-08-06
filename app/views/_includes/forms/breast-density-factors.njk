@@ -72,9 +72,9 @@
 
 {% set hrtSummaryHtml %}
   {% if breastDensityFactors.hrt == "yes" %}
-    <p>Yes</p>
+    <p>Begun a course of HRT since last screening appointment</p>
   {% elseif breastDensityFactors.hrt == "no" %}
-    <p>No</p>
+    <p>Not begun a course of HRT since last screening appointment</p>
   {% else %}
     <p>Not answered</p>
   {% endif %}
@@ -100,7 +100,7 @@
     rows: [
       {
         key: {
-          text: "HRT (hormone replacement therapy)"
+          text: "Begun a course of HRT since their last screening appointment?"
         },
         value: {
           html: hrtInputHtml if allowEdits else hrtSummaryHtml
