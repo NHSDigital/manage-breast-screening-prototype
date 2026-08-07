@@ -1836,19 +1836,22 @@ const getSessionReadingProgress = (
   // Dead appointments — fully read by other users and not actionable by this user.
   // They occupy session slots but can never be completed, so they don't count
   // toward reachable size. topUpSession will replace them when appointments are read.
+  // Arbitration has no dead slots: every case is fully read by definition (so
+  // canUserReadAppointment is the wrong test) and the session's arbitrators can
+  // always settle a case that hasn't been arbitrated yet.
   const isArbitration = session.type === 'arbitration'
-  const deadCount = sessionAppointments.filter((appointment) => {
-    const isDone = isArbitration
-      ? appointmentHasBeenArbitrated(data, appointment)
-      : userHasReadAppointment(data, appointment, resolvedUserId)
+  const deadCount = isArbitration
+    ? 0
+    : sessionAppointments.filter((appointment) => {
+        const isDone = userHasReadAppointment(data, appointment, resolvedUserId)
 
-    return (
-      !isDone &&
-      !canUserReadAppointment(data, appointment, resolvedUserId) &&
-      !isCaseDeferred(getReadingCase(data, appointment)) &&
-      !awaitingPriors(appointment)
-    )
-  }).length
+        return (
+          !isDone &&
+          !canUserReadAppointment(data, appointment, resolvedUserId) &&
+          !isCaseDeferred(getReadingCase(data, appointment)) &&
+          !awaitingPriors(appointment)
+        )
+      }).length
 
   const reachableSessionSize =
     sessionAppointments.length - deadCount + availableTopUpCount

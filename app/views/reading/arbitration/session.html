@@ -116,7 +116,13 @@
 
     <h2>Arbitration cases</h2>
 
-    {% set remainingCount = (appointments | length) - arbitratedCount %}
+    {# Number of slots not yet populated in a lazy session #}
+    {% set sessionTotalCount = sessionProgress.effectiveTargetSize if sessionProgress else session.targetSize %}
+    {% set pendingCount = (sessionTotalCount - (session.appointmentIds | length)) if sessionTotalCount else 0 %}
+    {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
+
+    {# Remaining counts the whole session, including slots not yet claimed #}
+    {% set remainingCount = sessionProgress.targetRemaining if sessionProgress else (appointments | length) - arbitratedCount %}
     {% if remainingCount > 0 %}
       <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated, {{ remainingCount }} remaining</p>
     {% endif %}
@@ -206,6 +212,27 @@
                 <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ arbitrationActionText }}</a>
               {% endif %}
             </td>
+          </tr>
+        {% endfor %}
+
+        {# Placeholder rows for pending lazy session slots #}
+        {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
+        {% for i in range(0, placeholderRowsShown) %}
+          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
+            <td>
+              <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (appointments | length) + loop.index }}.</span>
+            </td>
+            <td>
+              <span class="app-placeholder-tag"></span>
+              {% if resumeAppointment and pendingCount > 3 and loop.last %}
+                <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
+              {% endif %}
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
           </tr>
         {% endfor %}
       </tbody>
