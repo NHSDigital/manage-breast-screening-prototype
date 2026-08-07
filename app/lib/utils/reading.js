@@ -1258,45 +1258,63 @@ const getFirstOutstandingCaseInSession = (
  * @param {Array} appointments - Array of all appointments in the session, in session order
  * @param {string | null} [userId] - User ID (falls back to current user from context)
  * @param {Array} [skippedAppointments] - Array of skipped appointment IDs from the session
+ * @param {object} [session] - The reading session; arbitration sessions resume by case state, not per-user readability
  * @returns {object | null} The appointment to resume from, or null if nothing to read
  */
 const getResumeAppointmentForUser = function (
   data,
   appointments,
   userId = null,
-  skippedAppointments = []
+  skippedAppointments = [],
+  session = null
 ) {
   const currentUserId = userId || this?.ctx?.data?.currentUser?.id
 
-  // Find the highest-index appointment the user has read or that has been skipped
+  // Arbitration settles a case for everyone, so both the resume position and
+  // the next case are case-shaped questions. The per-user readability tests
+  // below would wrongly exclude cases a panel arbitrator originally read.
+  const isArbitration = session?.type === 'arbitration'
+
+  const hasActed = (appointment) =>
+    skippedAppointments.includes(appointment.id) ||
+    (isArbitration
+      ? caseHasBeenArbitrated(resolveCase(data, appointment))
+      : userHasReadCase(resolveCase(data, appointment), currentUserId))
+
+  const firstActionable = (candidates) => {
+    if (!isArbitration) {
+      return getFirstUserReadableAppointment(data, candidates, currentUserId)
+    }
+    return (
+      candidates.find((appointment) => {
+        const readingCase = resolveCase(data, appointment)
+        return (
+          !caseHasBeenArbitrated(readingCase) && !isCaseDeferred(readingCase)
+        )
+      }) || null
+    )
+  }
+
+  // Find the highest-index appointment acted on - read/arbitrated or skipped
   let lastActedIndex = -1
 
   appointments.forEach((appointment, index) => {
-    const wasReadByUser = userHasReadCase(
-      resolveCase(data, appointment),
-      currentUserId
-    )
-    const wasSkipped = skippedAppointments.includes(appointment.id)
-    if (wasReadByUser || wasSkipped) {
+    if (hasActed(appointment)) {
       lastActedIndex = index
     }
   })
 
-  // Nothing acted on yet — fall back to first readable
+  // Nothing acted on yet — fall back to first actionable
   if (lastActedIndex === -1) {
-    return getFirstUserReadableAppointment(data, appointments, currentUserId)
+    return firstActionable(appointments)
   }
 
-  // Search for the first readable appointment after lastActedIndex, wrapping around
+  // Search for the first actionable appointment after lastActedIndex, wrapping around
   const appointmentsFromNext = [
     ...appointments.slice(lastActedIndex + 1),
     ...appointments.slice(0, lastActedIndex + 1)
   ]
-  return getFirstUserReadableAppointment(
-    data,
-    appointmentsFromNext,
-    currentUserId
-  )
+  return firstActionable(appointmentsFromNext)
 }
 
 /************************************************************************

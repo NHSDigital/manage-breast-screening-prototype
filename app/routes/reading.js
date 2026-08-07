@@ -436,7 +436,8 @@ module.exports = (router) => {
       data,
       sessionAppointments,
       data.currentUser.id,
-      session.skippedAppointments || []
+      session.skippedAppointments || [],
+      session
     )
 
     if (resumeAppointment) {
@@ -602,7 +603,8 @@ module.exports = (router) => {
       data,
       enhancedAppointments,
       data.currentUser.id,
-      session.skippedAppointments || []
+      session.skippedAppointments || [],
+      session
     )
 
     // The user's reads still awaiting finalisation, and when the first will
