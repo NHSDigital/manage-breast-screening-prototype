@@ -254,12 +254,10 @@
                 {% set readingHref -%}
                   /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
                 {%- endset %}
+                <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <span class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</span>
-
-                <br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
                   {% if data | userHasReadAppointment(appointment) %}
@@ -464,13 +462,11 @@
                 {% set readingHref -%}
                   /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
                 {%- endset %}
+                <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <span class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</span>
-
                 {% if appointment | awaitingPriors %}
-                <br>
                   {{ "Awaiting priors" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}

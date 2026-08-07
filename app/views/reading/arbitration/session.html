@@ -150,10 +150,10 @@
               <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
             </td>
             <td>
+              <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
               {% if appointment.medicalInformation.symptoms | length %}
                 <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
               {% endif %}
-              <span class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</span>
             </td>
             <td>
               {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
