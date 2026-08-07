@@ -1751,20 +1751,24 @@ const topUpSession = (data, sessionId) => {
   // Count appointments that are still actionable for this user — appointments they have read,
   // can still read, deferred, or awaiting priors. Appointments fully read by other readers
   // ('dead' slots) are excluded so the session can be topped up to replace them.
+  // Arbitration has no dead slots: every case is fully read by definition (so
+  // canUserReadAppointment is the wrong test) and a claimed case can always be
+  // settled by the session's arbitrators, so every slot counts.
   const isArbitration = session.type === 'arbitration'
-  const actionableCount = session.appointmentIds.filter((appointmentId) => {
-    const appointment = data.appointments.find((e) => e.id === appointmentId)
-    if (!appointment) return false
-    const isDone = isArbitration
-      ? appointmentHasBeenArbitrated(data, appointment)
-      : userHasReadAppointment(data, appointment, currentUserId)
-    return (
-      isDone ||
-      canUserReadAppointment(data, appointment, currentUserId) ||
-      isCaseDeferred(getReadingCase(data, appointment)) ||
-      awaitingPriors(appointment)
-    )
-  }).length
+  const actionableCount = isArbitration
+    ? session.appointmentIds.length
+    : session.appointmentIds.filter((appointmentId) => {
+        const appointment = data.appointments.find(
+          (e) => e.id === appointmentId
+        )
+        if (!appointment) return false
+        return (
+          userHasReadAppointment(data, appointment, currentUserId) ||
+          canUserReadAppointment(data, appointment, currentUserId) ||
+          isCaseDeferred(getReadingCase(data, appointment)) ||
+          awaitingPriors(appointment)
+        )
+      }).length
 
   if (!session.targetSize || actionableCount >= session.targetSize) return false
 
