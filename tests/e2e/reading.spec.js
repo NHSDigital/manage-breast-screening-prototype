@@ -289,7 +289,7 @@ test.describe('Image reading', () => {
     await pinSettings(page, {
       ...readingSettings,
       // Concordant reads conclude without arbitration
-      'settings[reading][arbitrationPolicy]': 'discordant_only'
+      'settings[reading][arbitration][policy]': 'discordant_only'
     })
 
     // Picked from the seed data so the first read's opinion is known - the

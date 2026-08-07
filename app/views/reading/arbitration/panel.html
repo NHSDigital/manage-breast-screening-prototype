@@ -1,0 +1,45 @@
+{# app/views/reading/arbitration/panel.html #}
+{# Arbitration setup - pick who else is arbitrating #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Who is arbitrating with you?" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set back = {
+  href: "/reading/arbitration/start",
+  text: "Back"
+} %}
+
+{% set formAction = "/reading/arbitration/panel-answer" %}
+
+{% block pageContent %}
+
+  {% set userItems = [] %}
+  {% for user in availableUsers %}
+    {% set userItems = userItems | push({
+      value: user.id,
+      text: user.firstName + " " + user.lastName
+    }) %}
+  {% endfor %}
+
+  {{ checkboxes({
+    idPrefix: "panel-users",
+    name: "arbitrationTemp[panelUserIds]",
+    fieldset: {
+      legend: {
+        text: pageHeading,
+        size: "l",
+        isPageHeading: true
+      }
+    },
+    hint: {
+      text: "Select everyone taking part. Outcomes will be recorded as agreed by the group."
+    },
+    items: userItems
+  } | populateErrors) }}
+
+  {{ button({
+    text: "Start arbitrating"
+  }) }}
+
+{% endblock %}

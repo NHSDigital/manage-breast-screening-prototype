@@ -780,18 +780,16 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
   }
 
   // A FEW VERY RECENT SECOND READS: timestamped inside the finalisation delay,
-  // so the backlog carries live awaiting_finalisation cases - alternating
-  // concordant (finalising towards a conclusion) and forced discordant
-  // (finalising, then arbitration). Drawn from clinics[7], the first of the
-  // partial-first-read pair above - its first reads are recent, so the
-  // oldest-first session ordering the e2e journeys lean on is untouched.
+  // so the backlog carries live awaiting_finalisation cases - mostly forced
+  // discordant (for arbitration), with every 4th concordant. Drawn from
+  // clinics[7] and clinics[8]'s read appointments.
   if (clinics.length >= 9) {
-    const clinic = clinics[7]
-    const candidates = clinic.appointments
+    const candidates = [clinics[7], clinics[8]]
+      .flatMap((clinic) => clinic.appointments)
       .filter((appointment) => readAppointmentIds.has(appointment.id))
-      .slice(0, 8)
+      .slice(0, 20)
 
-    let minutesAgo = 50
+    let minutesAgo = 100
     let count = 0
 
     candidates.forEach((appointment, index) => {
@@ -799,10 +797,11 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
       const firstRead = readingCase?.reads?.[0]
       if (!firstRead) return
 
+      // Most cases forced discordant (arbitration), every 5th concordant
       const opinion =
-        index % 2 === 0
-          ? pickSecondOpinion(firstRead, 0) // force disagreement
-          : firstRead.opinion
+        index % 5 === 4
+          ? firstRead.opinion
+          : pickSecondOpinion(firstRead, 0) // force disagreement
 
       addRead(
         readingCase,
@@ -812,12 +811,54 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
         { forceOpinion: opinion, alignmentProbability }
       )
 
-      minutesAgo -= 5
+      minutesAgo -= 3
       count++
     })
 
     console.log(
       `Added ${count} very recent second reads, so cases sit awaiting finalisation`
+    )
+  }
+
+  // MORE DISCORDANT SECOND READS: drawn from clinics[5] and clinics[6] (first
+  // read by secondReader), with thirdReader as the disagreeing second reader.
+  // Neither reader is the current user, so all are arbitrable by Jane Hitchin.
+  if (clinics.length >= 7) {
+    let minutesAgo = 95
+    let count = 0
+
+    const candidates = [clinics[5], clinics[6]]
+      .flatMap((clinic) => clinic.appointments)
+      .filter((appointment) => readAppointmentIds.has(appointment.id))
+      .filter((appointment) => {
+        const rc = casesByAppointmentId.get(appointment.id)
+        return rc && rc.reads?.length === 1
+      })
+      .slice(0, 20)
+
+    candidates.forEach((appointment, index) => {
+      const readingCase = casesByAppointmentId.get(appointment.id)
+      const firstRead = readingCase.reads[0]
+
+      const opinion =
+        index % 5 === 4
+          ? firstRead.opinion
+          : pickSecondOpinion(firstRead, 0)
+
+      addRead(
+        readingCase,
+        appointment,
+        thirdReader,
+        dayjs().subtract(minutesAgo, 'minute').toISOString(),
+        { forceOpinion: opinion, alignmentProbability }
+      )
+
+      minutesAgo -= 3
+      count++
+    })
+
+    console.log(
+      `Added ${count} discordant second reads from clinics 5-6 for arbitration`
     )
   }
 

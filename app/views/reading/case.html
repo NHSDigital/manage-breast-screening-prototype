@@ -215,7 +215,9 @@
                 </h2>
                 <div class="nhsuk-summary-card__actions">
                   <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                    {{ thisRead.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }},
+                    {%- for authorId in thisRead | getReadAuthorIds %}
+                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                    {%- endfor %},
                     {{ thisRead.timestamp | formatDate }}
                   </span>
                 </div>
@@ -286,7 +288,9 @@
                 {% set sideAnnotations = thisRead[side].annotations or [] %}
                 {% if sideAnnotations | length %}
                   <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-1 nhsuk-u-margin-top-3">
-                    {{ thisRead.readerId | getUsername({ format: "short", identifyCurrentUser: true }) }}
+                    {%- for authorId in thisRead | getReadAuthorIds %}
+                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                    {%- endfor %}
                     <span class="nhsuk-u-secondary-text-colour nhsuk-u-font-weight-normal">
                       ({{ thisRead.readType | formatWords }} read)
                     </span>

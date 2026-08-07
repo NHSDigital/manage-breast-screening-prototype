@@ -147,7 +147,8 @@ const getReadForUser = (readingCase, userId) => {
   if (!userId) return null
 
   return (
-    getReadsAsArray(readingCase).find((read) => read.readerId === userId) || null
+    getReadsAsArray(readingCase).find((read) => read.readerId === userId) ||
+    null
   )
 }
 
@@ -170,8 +171,24 @@ const getOtherReads = (readingCase, userId) => {
  */
 const getArbitrationRead = (readingCase) => {
   return (
-    getReadsAsArray(readingCase).find((read) => read.readType === 'arbitration') ||
-    null
+    getReadsAsArray(readingCase).find(
+      (read) => read.readType === 'arbitration'
+    ) || null
+  )
+}
+
+/**
+ * A case's ordinary reads - everything except the arbitration read.
+ *
+ * These are the reads an arbitration is deciding between, so display code that
+ * wants "the first and second read" wants this rather than every read.
+ *
+ * @param {object} readingCase - Reading case
+ * @returns {Array} The ordinary reads, oldest first
+ */
+const getOriginalReads = (readingCase) => {
+  return getReadsAsArray(readingCase).filter(
+    (read) => read.readType !== 'arbitration'
   )
 }
 
@@ -187,6 +204,37 @@ const userHasReadCase = (readingCase, userId) => {
 }
 
 /**
+ * Who made a read.
+ *
+ * An ordinary read has one reader; an arbitration read has however many people
+ * arbitrated together, all equal authors. Display code that just needs "who
+ * made this" can use this rather than knowing which shape it has.
+ *
+ * @param {object} read - A read
+ * @returns {string[]} User IDs, in no particular order
+ */
+const getReadAuthorIds = (read) => {
+  if (!read) return []
+  if (read.arbitratorIds?.length) return read.arbitratorIds
+  return read.readerId ? [read.readerId] : []
+}
+
+/**
+ * Whether a case has been arbitrated.
+ *
+ * Arbitration settles a case once, for everyone - so unlike a read there is no
+ * per-user version of this question. Who may arbitrate a case is decided when
+ * it is picked into a session (see getEligibleCandidatesForSession); from then
+ * on the only question is whether it has been done.
+ *
+ * @param {object} readingCase - Reading case
+ * @returns {boolean}
+ */
+const caseHasBeenArbitrated = (readingCase) => {
+  return Boolean(getArbitrationRead(readingCase))
+}
+
+/**
  * Whether a case has any reads
  *
  * @param {object} readingCase - Reading case
@@ -194,6 +242,29 @@ const userHasReadCase = (readingCase, userId) => {
  */
 const caseHasReads = (readingCase) => {
   return getReadsAsArray(readingCase).length > 0
+}
+
+/**
+ * Record that a case has been released for arbitration, if it wasn't already.
+ *
+ * Auto-finalisation by time never writes the release (there is no act to
+ * record) - reaching the case in an arbitration session is one. This is what
+ * makes buildRead stamp the eventual read as an arbitration read.
+ *
+ * @param {object} readingCase - Reading case
+ * @param {string} userId - Who released it
+ * @returns {object} The case, released
+ */
+const withArbitrationRelease = (readingCase, userId) => {
+  if (readingCase.arbitration?.releasedAt) return readingCase
+
+  return {
+    ...readingCase,
+    arbitration: {
+      releasedAt: new Date().toISOString(),
+      releasedBy: userId
+    }
+  }
 }
 
 /**
@@ -284,7 +355,7 @@ const areReadsDiscordant = (readA, readB) => {
  * Whether two reads mean the case needs arbitrating, taking the site's
  * arbitration policy into account.
  *
- * Policies (from settings.reading.arbitrationPolicy):
+ * Policies (from settings.reading.arbitration.policy):
  * - 'discordant_only' (default): only discordant reads need arbitration
  * - 'all_recalls': concordant recalls for assessment do too
  * - 'all_non_normal': any concordant non-normal outcome does too
@@ -301,7 +372,7 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
   if (areReadsDiscordant(readA, readB)) return true
 
   // Concordant but non-normal: depends on policy
-  const policy = settings?.reading?.arbitrationPolicy || 'discordant_only'
+  const policy = settings?.reading?.arbitration?.policy || 'discordant_only'
   if (policy === 'all_non_normal') {
     return readA.opinion !== 'normal'
   }
@@ -343,6 +414,30 @@ const isReadFinalised = (read, settings = {}, now = null) => {
 }
 
 /**
+ * When a read will finalise itself, or null if it won't.
+ *
+ * Null covers both ends: an already-finalised read has no pending moment, and
+ * a 'never' delay means it only ever finalises by hand.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {string | null} ISO timestamp, or null
+ */
+const getAutoFinaliseTime = (read, settings = {}) => {
+  if (!read?.timestamp || read.finalisedAt) return null
+
+  const delay = settings?.reading?.finalisationDelay ?? '60'
+  if (delay === 'never') return null
+
+  const delayMinutes = parseInt(delay, 10)
+  if (Number.isNaN(delayMinutes)) return null
+
+  return new Date(
+    new Date(read.timestamp).getTime() + delayMinutes * 60000
+  ).toISOString()
+}
+
+/**
  * Whether every read on a case is finalised
  *
  * @param {object} readingCase - Reading case
@@ -374,8 +469,13 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   if (reads.length === 0) return 'awaiting_first_read'
   if (reads.length === 1) return 'awaiting_second_read'
 
-  // An arbitration read settles the case whatever the first two said
-  if (getArbitrationRead(readingCase)) return 'concluded'
+  // An arbitration read settles the case whatever the first two said - but
+  // like any read it is not a result until finalised
+  if (getArbitrationRead(readingCase)) {
+    return areAllReadsFinalised(readingCase, settings, now)
+      ? 'concluded'
+      : 'awaiting_finalisation'
+  }
 
   // Two opinions are not a result until they are finalised
   if (!areAllReadsFinalised(readingCase, settings, now)) {
@@ -438,8 +538,8 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
 
   const willArbitrate = Boolean(
     reads.length >= 2 &&
-      !arbitrationRead &&
-      willGoToArbitration(reads[0], reads[1], settings)
+    !arbitrationRead &&
+    willGoToArbitration(reads[0], reads[1], settings)
   )
 
   const provisionalOutcome =
@@ -464,7 +564,7 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
  */
 const getReadingMetadata = (readingCase, settings = {}) => {
   const reads = getReadsAsArray(readingCase)
-  const uniqueReaderCount = new Set(reads.map((read) => read.readerId)).size
+  const uniqueReaderCount = new Set(reads.flatMap(getReadAuthorIds)).size
   const opinions = [...new Set(reads.map((read) => read.opinion))].filter(
     Boolean
   )
@@ -515,6 +615,13 @@ const caseNeedsSecondRead = (readingCase) => {
  * @returns {boolean}
  */
 const caseNeedsArbitration = (readingCase, settings = {}) => {
+  // A case already released into arbitration belongs to the backlog until it
+  // has been arbitrated, whatever its derived state says. Releasing it doesn't
+  // finalise the original reads, so the state stays awaiting_finalisation.
+  if (isCaseInArbitration(readingCase)) {
+    return !getArbitrationRead(readingCase)
+  }
+
   return getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
 }
 
@@ -532,12 +639,19 @@ const caseNeedsArbitration = (readingCase, settings = {}) => {
  * @returns {boolean}
  */
 const canUserReadCase = (readingCase, userId, options = {}) => {
-  const { maxReadsPerCase = 2 } = options
+  const { maxReadsPerCase = 2, panelArbitration = false } = options
 
   if (!userId) return false
 
   // A deferred case is out of the queue until someone reviews it
   if (isCaseDeferred(readingCase)) return false
+
+  // A case released to arbitration takes one more read - the arbitration
+  // read - from someone who hasn't read it already. Panel arbitrators may
+  // have been an original reader, so skip the user check for panels.
+  if (isCaseInArbitration(readingCase) && !getArbitrationRead(readingCase)) {
+    return panelArbitration || !userHasReadCase(readingCase, userId)
+  }
 
   // Enough readers have had it already
   if (getReadsAsArray(readingCase).length >= maxReadsPerCase) return false
@@ -646,28 +760,49 @@ const shouldShowComparePage = (
  * @param {object} reading - The opinion and its details
  * @param {object} [options] - Options
  * @param {string} [options.timestamp] - When the read was made
+ * @param {string[]} [options.arbitratorIds] - Everyone arbitrating, if arbitration
  * @returns {object} The read record
  */
 const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
-  const existingRead = getReadForUser(readingCase, userId)
-  const otherReads = getOtherReads(readingCase, userId)
+  // A case already in arbitration is being settled, whoever is reading it
+  const isArbitration = isCaseInArbitration(readingCase)
+
+  // An arbitration amends the case's one arbitration read, not the user's own -
+  // a panel member may also have read this case as first or second reader
+  const existingRead = isArbitration
+    ? getArbitrationRead(readingCase)
+    : getReadForUser(readingCase, userId)
+
+  const otherReads = getReadsAsArray(readingCase).filter(
+    (read) => read !== existingRead
+  )
 
   // Amending a read keeps its place in the order; a new one takes the next
   const readNumber = existingRead?.readNumber || otherReads.length + 1
 
-  // A case already in arbitration is being settled, whoever is reading it
-  const readType = isCaseInArbitration(readingCase)
+  const readType = isArbitration
     ? 'arbitration'
     : READ_TYPES[Math.min(readNumber, READ_TYPES.length) - 1]
 
-  return {
+  const read = {
     ...reading,
-    readerId: userId,
     readerType,
     readType,
     readNumber,
     timestamp: options.timestamp || new Date().toISOString()
   }
+
+  // Arbitrators are equal authors of the one decision, so authorship is a set.
+  // An ordinary read has the single reader it belongs to.
+  if (isArbitration) {
+    read.arbitratorIds = options.arbitratorIds?.length
+      ? options.arbitratorIds
+      : [userId]
+  } else {
+    read.readerId = userId
+  }
+
+  return read
 }
 
 /**
@@ -682,13 +817,24 @@ const buildRead = (readingCase, userId, readerType, reading, options = {}) => {
  */
 const withRead = (readingCase, read) => {
   const reads = getReadsAsArray(readingCase)
-  const existingIndex = reads.findIndex(
-    (candidate) => candidate.readerId === read.readerId
-  )
+
+  // A case has one arbitration read whoever made it; an ordinary read replaces
+  // the same reader's own. Matching on readerId alone would treat two
+  // arbitration reads as the same read, both having no readerId.
+  const existingIndex =
+    read.readType === 'arbitration'
+      ? reads.findIndex((candidate) => candidate.readType === 'arbitration')
+      : reads.findIndex(
+          (candidate) =>
+            candidate.readType !== 'arbitration' &&
+            candidate.readerId === read.readerId
+        )
 
   const updatedReads =
     existingIndex >= 0
-      ? reads.map((candidate, index) => (index === existingIndex ? read : candidate))
+      ? reads.map((candidate, index) =>
+          index === existingIndex ? read : candidate
+        )
       : [...reads, read]
 
   return { ...readingCase, reads: updatedReads }
@@ -709,7 +855,7 @@ const withRead = (readingCase, read) => {
  */
 const withReadFinalised = (readingCase, userId, options = {}) => {
   const reads = getReadsAsArray(readingCase).map((read) =>
-    read.readerId === userId && !read.finalisedAt
+    getReadAuthorIds(read).includes(userId) && !read.finalisedAt
       ? {
           ...read,
           finalisedAt: options.finalisedAt || new Date().toISOString(),
@@ -752,8 +898,12 @@ module.exports = {
   getReadForUser,
   getOtherReads,
   getArbitrationRead,
+  getOriginalReads,
+  getReadAuthorIds,
+  caseHasBeenArbitrated,
   userHasReadCase,
   caseHasReads,
+  withArbitrationRelease,
   isCaseDeferred,
   isCaseInArbitration,
   areReadsDiscordant,
@@ -761,6 +911,7 @@ module.exports = {
   getComparisonInfo,
   shouldShowComparePage,
   isReadFinalised,
+  getAutoFinaliseTime,
   areAllReadsFinalised,
   getReadingCaseState,
   getReadingCaseOutcome,

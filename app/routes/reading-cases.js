@@ -25,6 +25,7 @@ const {
   getReadingMetadata,
   getArbitrationRead,
   isCaseDeferred,
+  isCaseInArbitration,
   canUserReadCase
 } = require('../lib/utils/reading-cases')
 const { describeReadingCaseStatus } = require('../lib/utils/status')
@@ -104,10 +105,13 @@ module.exports = (router) => {
 
     // Blind reading: someone who could still read this case must not see what
     // the other reader said. Once they have read it - or it is no longer theirs
-    // to read - the reads are theirs to see.
+    // to read - the reads are theirs to see. Arbitration is the exception:
+    // the arbitrator's job is to weigh the two reads, so they see them.
     const blindReading = data.settings?.reading?.blindReading === 'true'
     const readsHidden =
-      blindReading && canUserReadCase(readingCase, data.currentUser?.id)
+      blindReading &&
+      !isCaseInArbitration(readingCase) &&
+      canUserReadCase(readingCase, data.currentUser?.id)
 
     const allReads = getReadsAsArray(readingCase)
     const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)

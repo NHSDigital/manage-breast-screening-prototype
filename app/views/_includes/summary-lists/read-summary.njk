@@ -74,21 +74,29 @@
 {# Build rows based on result type #}
 {% set rows = [] %}
 
-{# Opinion row #}
+{# Opinion row. An arbitration read settles the case, so it is the outcome
+   rather than one of several opinions #}
+{% set opinionLabel = "Outcome" if read.readType == 'arbitration' else "Opinion" %}
 {% if not hideOpinionRow %}
+  {% set opinionValueHtml %}
+    {{ read.opinion | toTag }}
+    {% if read.timestamp and not (read | isReadFinalised(data.settings)) %}
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">(awaiting finalisation)</span>
+    {% endif %}
+  {% endset %}
   {% set rows = rows | push({
     key: {
-      text: "Opinion"
+      text: opinionLabel
     },
     value: {
-      html: read.opinion | toTag
+      html: opinionValueHtml
     },
     actions: {
       items: [
         {
           href: changeOpinionUrl,
           text: "Change",
-          visuallyHiddenText: "opinion"
+          visuallyHiddenText: opinionLabel | lower
         }
       ]
     } if allowEdits and changeOpinionUrl
@@ -247,6 +255,40 @@
       },
       value: {
         text: read.normalComment
+      }
+    }) %}
+  {% endif %}
+{% endif %}
+
+{# A panel arbitration was decided by several people together, so the read's
+   own reader byline doesn't tell the whole story #}
+{% if read.arbitratorIds | length %}
+  {% set arbitratorsHtml %}
+    {%- for arbitratorId in read.arbitratorIds %}
+      {{ arbitratorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+    {%- endfor %}
+  {% endset %}
+  {% set rows = rows | push({
+    key: {
+      text: "Arbitrated by"
+    },
+    value: {
+      html: arbitratorsHtml
+    }
+  }) %}
+{% endif %}
+
+{# When it was finalised. Reads finalised by the delay passing have no
+   finalisedAt stamp, so fall back to the moment the delay ran out. #}
+{% if read.timestamp and (read | isReadFinalised(data.settings)) %}
+  {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
+  {% if finalisedAt %}
+    {% set rows = rows | push({
+      key: {
+        text: "Finalised"
+      },
+      value: {
+        text: finalisedAt | formatDateTime
       }
     }) %}
   {% endif %}

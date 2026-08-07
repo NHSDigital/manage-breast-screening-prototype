@@ -190,18 +190,35 @@
       {value: "never", label: "Manual only"}
     ], data.settings.reading.finalisationDelay, "60") }}
 
-    {# Arbitration policy #}
-    {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [
-      {value: "discordant_only", label: "Discordant reads only"},
-      {value: "all_recalls", label: "All recalls for assessment"},
-      {value: "all_non_normal", label: "All non-normal outcomes"}
-    ], data.settings.reading.arbitrationPolicy, "discordant_only") }}
-
     {# Mammogram view order #}
     {{ settingToggle("Mammogram view order", "settings[mammogramViewOrder]", [
       {value: "cc-first", label: "CC first"},
       {value: "mlo-first", label: "MLO first"}
     ], data.settings.mammogramViewOrder, "mlo-first") }}
+
+    <h2>Arbitration</h2>
+
+    {# Arbitration policy - which reads go to arbitration #}
+    {{ settingToggle("Arbitration policy", "settings[reading][arbitration][policy]", [
+      {value: "discordant_only", label: "Discordant reads only"},
+      {value: "all_recalls", label: "All recalls for assessment"},
+      {value: "all_non_normal", label: "All non-normal outcomes"}
+    ], data.settings.reading.arbitration.policy, "discordant_only") }}
+
+    {# Arbitration flow order - what an arbitration case opens on #}
+    {{ settingToggle("Arbitration flow", "settings[reading][arbitration][flow]", [
+      {value: "compare_first", label: "Compare reads first"},
+      {value: "opinion_first", label: "Own outcome first"}
+    ], data.settings.reading.arbitration.flow, "compare_first") }}
+
+    {# Confirm decision - show the review page before saving #}
+    {{ settingToggle("Confirm arbitration decision", "settings[reading][arbitration][confirmDecision]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.arbitration.confirmDecision, "true") }}
+
+    {# Original reads on the session overview #}
+    {{ settingToggle("Original reads on session overview", "settings[reading][arbitration][hideReadsUntilArbitrated]", [{value: "true", label: "Hidden until arbitrated"}, {value: "false", label: "Always shown"}], data.settings.reading.arbitration.hideReadsUntilArbitrated, "true") }}
+
+    {# Lazy sessions - arbitration sessions claim cases one at a time #}
+    {{ settingToggle("Lazy sessions", "settings[reading][arbitration][lazySessions]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.arbitration.lazySessions, "false") }}
 
     <h2>Generated data</h2>
 

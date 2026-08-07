@@ -104,6 +104,7 @@ const defaultSettings = {
     }
   },
   reading: {
+    indexLayout: 'complex', // 'simple' | 'complex'
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',
@@ -115,10 +116,16 @@ const defaultSettings = {
     annotationsMode: 'with-images-simple', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
-    arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_recalls' | 'all_non_normal'
     finalisationDelay: '60', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
     lazySessions: 'true',
-    defaultSessionSize: '25'
+    defaultSessionSize: '25',
+    arbitration: {
+      policy: 'discordant_only', // 'discordant_only' | 'all_recalls' | 'all_non_normal'
+      flow: 'compare_first', // 'compare_first' | 'opinion_first' - what an arbitration case opens on
+      confirmDecision: 'true', // show the review page before saving an arbitration decision
+      hideReadsUntilArbitrated: 'true', // overview hides the original opinions until the case is arbitrated
+      lazySessions: 'true'
+    }
   }
 }
 

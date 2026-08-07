@@ -422,7 +422,7 @@ Templates receive via `res.locals`:
 - `getOtherReads(appointment, userId)` - Get reads from other users (for comparison)
 - `writeReading(data, appointment, userId, reading, sessionId)` - Saves a read onto the appointment's case, settles readNumber and readType, removes from skipped list
 - `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
-- `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `arbitrationPolicy`
+- `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `settings.reading.arbitration.policy`
 - `getReadingCaseState(readingCase, settings, now)` - Where the case has got to: `awaiting_first_read` | `awaiting_second_read` | `awaiting_finalisation` | `awaiting_arbitration` | `in_arbitration` | `concluded`
 - `getReadingCaseOutcome(readingCase, settings, now)` - What it found: `normal` | `technical_recall` | `recall_for_assessment`, or `null` while reading is still under way. The arbitration read, where there is one, is the deciding read.
 - `isReadFinalised(read, settings, now)` - Whether a read is finalised: explicitly (`finalisedAt`) or automatically once `settings.reading.finalisationDelay` minutes have passed since the read (`'0'` immediate, `'never'` manual only)
@@ -551,9 +551,16 @@ Reading behavior is configured via:
 - `indexLayout` - Reading dashboard layout: `'simple'` (default) | `'complex'`
 - `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
 - `compareWhen` - Which cases trigger compare: `'non_normal'` (default) | `'discordant_only'`
-- `arbitrationPolicy` - When reads go to arbitration: `'discordant_only'` (default) | `'all_non_normal'`
 - `lazySessions` - Build sessions lazily one case at a time: `'true'` (default) | `'false'`
 - `defaultSessionSize` - Default session size (default: 25)
+
+**Arbitration settings** (in `settings.reading.arbitration`):
+
+- `policy` - When reads go to arbitration: `'discordant_only'` (default) | `'all_recalls'` | `'all_non_normal'`
+- `flow` - What an arbitration case opens on: `'compare_first'` (default) | `'opinion_first'`
+- `confirmDecision` - Confirm arbitration decisions on the review page: `'true'` (default) | `'false'`
+- `hideReadsUntilArbitrated` - Session overview hides the original opinions until the case is arbitrated: `'true'` (default) | `'false'`
+- `lazySessions` - Build arbitration sessions lazily, separate from reading's setting
 
 **Hard config** (in `config.reading`):
 
