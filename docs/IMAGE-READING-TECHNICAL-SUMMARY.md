@@ -559,6 +559,7 @@ Reading behavior is configured via:
 - `policy` - When reads go to arbitration: `'discordant_only'` (default) | `'all_recalls'` | `'all_non_normal'`
 - `flow` - What an arbitration case opens on: `'compare_first'` (default) | `'opinion_first'`
 - `confirmDecision` - Confirm arbitration decisions on the review page: `'true'` (default) | `'false'`
+- `hideReadsUntilArbitrated` - Session overview hides the original opinions until the case is arbitrated: `'true'` (default) | `'false'`
 - `lazySessions` - Build arbitration sessions lazily, separate from reading's setting
 
 **Hard config** (in `config.reading`):

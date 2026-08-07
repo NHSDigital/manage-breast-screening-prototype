@@ -214,6 +214,9 @@
     {# Confirm decision - show the review page before saving #}
     {{ settingToggle("Confirm arbitration decision", "settings[reading][arbitration][confirmDecision]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.arbitration.confirmDecision, "true") }}
 
+    {# Original reads on the session overview #}
+    {{ settingToggle("Original reads on session overview", "settings[reading][arbitration][hideReadsUntilArbitrated]", [{value: "true", label: "Hidden until arbitrated"}, {value: "false", label: "Always shown"}], data.settings.reading.arbitration.hideReadsUntilArbitrated, "true") }}
+
     {# Lazy sessions - arbitration sessions claim cases one at a time #}
     {{ settingToggle("Lazy sessions", "settings[reading][arbitration][lazySessions]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.arbitration.lazySessions, "false") }}
 

@@ -168,14 +168,20 @@
               </span>
             </td>
 
-            {# The two original reads. Arbitration shows both by design - there
-               is no blind-reading gate here, the disagreement is the point. #}
+            {# The two original reads. Until the case is arbitrated the opinions
+               can be hidden (per hideReadsUntilArbitrated) so the arbitrator
+               forms their own view first; who read is never sensitive. #}
+            {% set hideReads = (data.settings.reading.arbitration.hideReadsUntilArbitrated != 'false') and not arbitrationRead %}
             {% for readIndex in [0, 1] %}
               <td>
                 {% set originalRead = originalReads[readIndex] %}
                 {% if originalRead %}
-                  {# Forced grey so the two reads read as context, not as the outcome #}
-                  {{ originalRead.opinion | toTag({ colour: "grey" }) }}
+                  {% if hideReads %}
+                    {{ "Completed" | toTag({ colour: "grey" }) }}
+                  {% else %}
+                    {# Forced grey so the two reads read as context, not as the outcome #}
+                    {{ originalRead.opinion | toTag({ colour: "grey" }) }}
+                  {% endif %}
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by
                     {%- for authorId in originalRead | getReadAuthorIds %}
