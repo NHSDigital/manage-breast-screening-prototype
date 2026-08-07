@@ -147,10 +147,6 @@
                 <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
               {% endif %}
               <a href="/reading/session/{{ session.id }}/appointments/{{ appointment.id }}">{{ appointment.participant | getFullNameReversed }}</a>
-              <br>
-              <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
-                <a href="/participants/{{ appointment.participantId }}" target="_blank" rel="noopener" class="nhsuk-link--no-visited-state">Participant record</a>
-              </span>
             </td>
             <td>
               {% set daysSinceScreening = appointment.timing.startTime | daysSince %}

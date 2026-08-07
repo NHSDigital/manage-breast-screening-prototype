@@ -75,8 +75,18 @@ module.exports = (router) => {
 
   router.post('/reading/arbitration/start-answer', (req, res) => {
     const data = req.session.data
+    const mode = data.arbitrationTemp?.mode
 
-    if (data.arbitrationTemp?.mode === 'panel') {
+    if (!mode) {
+      req.flash('error', {
+        text: 'Select who is arbitrating',
+        name: 'arbitrationTemp[mode]',
+        href: '#arbitration-mode'
+      })
+      return res.redirect('/reading/arbitration/start')
+    }
+
+    if (mode === 'panel') {
       return res.redirect('/reading/arbitration/panel')
     }
 
@@ -107,7 +117,16 @@ module.exports = (router) => {
     // The picker chooses who else; the current user is an arbitrator too
     const chosenUserIds = []
       .concat(data.arbitrationTemp?.panelUserIds || [])
-      .filter(Boolean)
+      .filter((userId) => userId && userId !== '_unchecked')
+
+    if (chosenUserIds.length === 0) {
+      req.flash('error', {
+        text: 'Select who is arbitrating with you',
+        name: 'arbitrationTemp[panelUserIds]',
+        href: '#panel-users'
+      })
+      return res.redirect('/reading/arbitration/panel')
+    }
 
     delete data.arbitrationTemp
 

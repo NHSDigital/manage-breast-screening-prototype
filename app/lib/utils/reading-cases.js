@@ -355,7 +355,7 @@ const areReadsDiscordant = (readA, readB) => {
  * Whether two reads mean the case needs arbitrating, taking the site's
  * arbitration policy into account.
  *
- * Policies (from settings.reading.arbitrationPolicy):
+ * Policies (from settings.reading.arbitration.policy):
  * - 'discordant_only' (default): only discordant reads need arbitration
  * - 'all_recalls': concordant recalls for assessment do too
  * - 'all_non_normal': any concordant non-normal outcome does too
@@ -372,7 +372,7 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
   if (areReadsDiscordant(readA, readB)) return true
 
   // Concordant but non-normal: depends on policy
-  const policy = settings?.reading?.arbitrationPolicy || 'discordant_only'
+  const policy = settings?.reading?.arbitration?.policy || 'discordant_only'
   if (policy === 'all_non_normal') {
     return readA.opinion !== 'normal'
   }

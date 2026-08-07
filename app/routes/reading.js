@@ -854,7 +854,7 @@ module.exports = (router) => {
       // settings choice, with the compare step following the opinion instead
       if (
         isArbitrationSession &&
-        data.settings?.reading?.arbitrationFlow !== 'opinion_first'
+        data.settings?.reading?.arbitration?.flow !== 'opinion_first'
       ) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/arbitration-compare`
@@ -2050,7 +2050,7 @@ module.exports = (router) => {
       // its details rather than opening the case
       if (
         isArbitrationSession &&
-        data.settings?.reading?.arbitrationFlow === 'opinion_first' &&
+        data.settings?.reading?.arbitration?.flow === 'opinion_first' &&
         !formData?.comparisonComplete &&
         !isEditingExistingRead
       ) {
@@ -2085,12 +2085,21 @@ module.exports = (router) => {
         case 'normal':
           // opinion-details-complete is only reached for normal when the user
           // went through the normal-details page, so use confirmNormalWithDetails.
-          // Arbitration decisions are always confirmed, on the review page.
+          // Arbitration decisions confirm on the review page, unless the
+          // confirmDecision setting turns that off.
           if (isArbitrationSession && !isEditingExistingRead) {
-            return res.redirect(
-              modalBreakout(
-                `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+            if (
+              data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+            ) {
+              return res.redirect(
+                modalBreakout(
+                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                )
               )
+            }
+            return res.redirect(
+              307,
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
             )
           }
           if (
@@ -2112,8 +2121,9 @@ module.exports = (router) => {
             : ''
           if (
             !isEditingExistingRead &&
-            (isArbitrationSession ||
-              data.settings?.reading?.confirmTechnicalRecall !== 'false')
+            (isArbitrationSession
+              ? data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+              : data.settings?.reading?.confirmTechnicalRecall !== 'false')
           ) {
             return res.redirect(
               modalBreakout(
@@ -2133,8 +2143,9 @@ module.exports = (router) => {
             : ''
           if (
             !isEditingExistingRead &&
-            (isArbitrationSession ||
-              data.settings?.reading?.confirmRecallForAssessment !== 'false')
+            (isArbitrationSession
+              ? data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+              : data.settings?.reading?.confirmRecallForAssessment !== 'false')
           ) {
             return res.redirect(
               modalBreakout(
@@ -2399,17 +2410,21 @@ module.exports = (router) => {
       switch (opinion) {
         case 'normal':
           // Arbitration: opinion-first sends the outcome through the compare
-          // step; either way the decision is confirmed on the review page
+          // step; the decision then confirms on the review page unless the
+          // confirmDecision setting turns that off
           if (isArbitrationSession) {
             if (
-              data.settings?.reading?.arbitrationFlow === 'opinion_first' &&
+              data.settings?.reading?.arbitration?.flow === 'opinion_first' &&
               !data.imageReadingTemp.comparisonComplete
             ) {
               return res.redirect(
                 `/reading/session/${sessionId}/appointments/${appointmentId}/arbitration-compare`
               )
             }
-            if (!isEditingExistingRead) {
+            if (
+              !isEditingExistingRead &&
+              data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+            ) {
               return res.redirect(
                 `/reading/session/${sessionId}/appointments/${appointmentId}/review`
               )
@@ -2526,7 +2541,10 @@ module.exports = (router) => {
           }
         }
 
-        if (isEditingExistingRead) {
+        if (
+          isEditingExistingRead ||
+          data.settings?.reading?.arbitration?.confirmDecision === 'false'
+        ) {
           return res.redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
           )

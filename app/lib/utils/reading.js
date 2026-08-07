@@ -1498,7 +1498,8 @@ const getEligibleCandidatesForSession = (data, sessionOptions) => {
 /**
  * Create a session of appointments for reading based on specified criteria
  *
- * When lazy sessions are enabled (settings.reading.lazySessions), non-clinic sessions
+ * When lazy sessions are enabled (settings.reading.lazySessions, or
+ * settings.reading.arbitration.lazySessions for arbitration), non-clinic sessions
  * start with only the first eligible appointment. The session is topped up one appointment at a
  * time via topUpSession() as reads and skips happen, until targetSize is reached.
  *
@@ -1532,9 +1533,13 @@ const createReadingSession = (data, options) => {
 
   // Lazy loading: start with only the first appointment and top up as reads happen
   // Clinic sessions are always fully populated upfront
+  // Arbitration sessions have their own lazy setting
   // Explicit lazy param overrides the setting
-  const lazyEnabled =
-    lazy !== null ? lazy : data.settings?.reading?.lazySessions === 'true'
+  const lazySetting =
+    type === 'arbitration'
+      ? data.settings?.reading?.arbitration?.lazySessions
+      : data.settings?.reading?.lazySessions
+  const lazyEnabled = lazy !== null ? lazy : lazySetting === 'true'
   const isLazy = lazyEnabled && type !== 'clinic'
 
   // Get all eligible candidates using the shared helper
