@@ -143,7 +143,7 @@ const getFilteredClinics = (clinics, filter = 'all') => {
   switch (filter) {
     case 'today':
       return recentClinics.filter((clinic) =>
-        dayjs(clinic.date).isSame(today, 'day')
+        dayjs(clinic.date).isSame(today, 'day') && clinic.status !== 'closed'
       )
 
     case 'upcoming':
@@ -153,7 +153,10 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 
     case 'completed':
       return recentClinics
-        .filter((clinic) => dayjs(clinic.date).isBefore(today, 'day'))
+        .filter((clinic) =>
+          dayjs(clinic.date).isBefore(today, 'day') ||
+          (dayjs(clinic.date).isSame(today, 'day') && clinic.status === 'closed')
+        )
         .sort((a, b) => new Date(b.date) - new Date(a.date)) // Most recent first
 
     case 'all':
