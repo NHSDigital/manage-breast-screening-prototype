@@ -401,6 +401,10 @@
 .app-reads-card-reveal {
   margin-top: nhsuk-spacing(3);
 
+  &[open] {
+    margin-top: 0;
+  }
+
   &__toggle {
     display: inline-block;
     color: $nhsuk-link-colour;
@@ -423,4 +427,10 @@
   &:not([open]) &__toggle-text--open {
     display: none;
   }
+}
+
+// When the reveal is open the condensed lists repeat the reader/date facts,
+// so the closed-state meta list bows out
+.nhsuk-summary-list:has(+ .app-reads-card-reveal[open]) {
+  display: none;
 }

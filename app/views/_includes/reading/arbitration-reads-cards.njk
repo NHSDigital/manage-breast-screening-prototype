@@ -1,14 +1,26 @@
-{# The first and second reads as cards, each with a button to adopt it as the
+{# The first and second reads, each with a button to adopt it as the
    arbitration outcome. The adopt route copies the read into imageReadingTemp
    and goes to the review page, where it can be modified.
    Expects in context: readingCase, appointment, appointmentId, data
    Optional: readsLayout ('side-by-side' default | 'stacked' - natural-height
-   cards one above the other, for narrow columns), adoptButtonText,
-   hideAdoptButtons #}
+   cards one above the other | 'condensed' - plain summary lists, no card
+   chrome), adoptButtonText, hideAdoptButtons #}
 
 {% set originalReads = readingCase | getOriginalReads %}
 
-{% if readsLayout == 'stacked' %}
+{% if readsLayout == 'condensed' %}
+
+  {% for read in originalReads %}
+    {% if read %}
+      {% if not loop.first %}
+        <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-5 nhsuk-u-margin-bottom-5">
+      {% endif %}
+      {% set readLabel = "First read" if loop.first else "Second read" %}
+      {% include "_includes/reading/arbitration-read-condensed.njk" %}
+    {% endif %}
+  {% endfor %}
+
+{% elseif readsLayout == 'stacked' %}
 
   {% for read in originalReads %}
     {% if read %}

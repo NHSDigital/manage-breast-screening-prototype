@@ -57,7 +57,7 @@
   {% if revealStyle == 'expander' %}
 
     {% set readsCardsHtml %}
-      {% set readsLayout = 'stacked' %}
+      {% set readsLayout = 'condensed' %}
       {% include "_includes/reading/arbitration-reads-cards.njk" %}
     {% endset %}
     {{ details({
@@ -78,7 +78,7 @@
           <span class="app-reads-card-reveal__toggle-text--open">Hide the reads</span>
         </summary>
         <div class="nhsuk-u-margin-top-4">
-          {% set readsLayout = 'stacked' %}
+          {% set readsLayout = 'condensed' %}
           {% include "_includes/reading/arbitration-reads-cards.njk" %}
         </div>
       </details>

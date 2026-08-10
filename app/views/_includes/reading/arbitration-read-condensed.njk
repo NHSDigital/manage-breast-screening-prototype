@@ -1,9 +1,11 @@
 {# One original read as a plain summary list with an adopt button - no card
    chrome. For contexts that already say which read this is (a tab label),
-   so the outcome appears as the first row and the reader as a "Read by" row.
+   the outcome appears as the first row and the reader as a "Read by" row.
+   Pass readLabel ("First read") where nothing else says so - the reader row
+   moves to the top and carries the label instead.
    Expects in context: read, appointment, appointmentId, data
-   Optional: adoptButtonText, hideAdoptButtons, adoptViaFormaction (see
-   arbitration-read-card.njk) #}
+   Optional: readLabel, adoptButtonText, hideAdoptButtons, adoptViaFormaction
+   (see arbitration-read-card.njk) #}
 
 {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
 {% if withImages %}
@@ -14,6 +16,8 @@
 {% set allowEdits = false %}
 {% set hideOpinionRow = false %}
 {% set showReaderRow = true %}
+{% set readerRowLabel = readLabel or "Read by" %}
+{% set readerRowPosition = 'start' if readLabel else null %}
 {% set showAnnotationImages = withImages %}
 {% set annotationImagePaths = allPaths %}
 {% include "_includes/summary-lists/read-summary.njk" %}

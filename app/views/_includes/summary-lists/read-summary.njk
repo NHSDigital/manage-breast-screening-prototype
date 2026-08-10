@@ -13,6 +13,10 @@
     - annotationViewOrder: string - view order for thumbnails (default: "cc-first")
     - showReaderRow: boolean - add a "Read by" row with reader and date, for
       contexts with no card heading or label carrying that (default: false)
+    - readerRowLabel: string - key for the reader row (default: "Read by").
+      A read label ("First read") makes the row do double duty
+    - readerRowPosition: string - 'start' puts the reader row first, so
+      stacked lists open with which read this is (default: after the details)
 #}
 
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
@@ -75,6 +79,19 @@
 
 {# Build rows based on result type #}
 {% set rows = [] %}
+
+{% set readerRowHtml = (read.readerId | getUsername({ format: "short" })) + ", " + (read.timestamp | formatDate("D MMM YYYY")) %}
+
+{% if showReaderRow and read.readerId and readerRowPosition == 'start' %}
+  {% set rows = rows | push({
+    key: {
+      text: readerRowLabel or "Read by"
+    },
+    value: {
+      text: readerRowHtml
+    }
+  }) %}
+{% endif %}
 
 {# Opinion row. An arbitration read settles the case, so it is the outcome
    rather than one of several opinions #}
@@ -264,13 +281,13 @@
 
 {# Who read it and when, for contexts with no card heading or label carrying
    that already #}
-{% if showReaderRow and read.readerId %}
+{% if showReaderRow and read.readerId and readerRowPosition != 'start' %}
   {% set rows = rows | push({
     key: {
-      text: "Read by"
+      text: readerRowLabel or "Read by"
     },
     value: {
-      text: (read.readerId | getUsername({ format: "short" })) + ", " + (read.timestamp | formatDate("D MMM YYYY"))
+      text: readerRowHtml
     }
   }) %}
 {% endif %}
