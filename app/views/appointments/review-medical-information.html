@@ -35,6 +35,7 @@
         text: "Authorise and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
       }) }}
+      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">This will authorise imaging by {{ data.currentUser.firstName }} {{ data.currentUser.lastName }}</p>
     </div>
   </div>
 
@@ -45,8 +46,9 @@
   <div class="nhsuk-form-group">
     {{ button({
       text: "Authorise and continue",
-      classes: "js-complete-all-sections"
+      classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
     }) }}
+    <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5">This will authorise imaging by {{ data.currentUser.firstName }} {{ data.currentUser.lastName }}</p>
 
     {% include "screening-cannot-proceed-link.njk" %}
   </div>
