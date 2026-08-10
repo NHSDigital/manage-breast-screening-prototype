@@ -42,7 +42,7 @@
 
 {% if showReadsSetting == 'blind' and not caseIsArbitrated %}
 
-  <p class="nhsuk-u-secondary-text-color nhsuk-u-font-size-16 nhsuk-u-margin-top-4">
+  <p class="nhsuk-u-secondary-text-color">
     The first and second reads will be shown after you record an outcome.
   </p>
 
@@ -60,13 +60,11 @@
       {% set readsLayout = 'stacked' %}
       {% include "_includes/reading/arbitration-reads-cards.njk" %}
     {% endset %}
-    <div class="nhsuk-u-margin-top-4">
-      {{ details({
-        classes: "nhsuk-expander",
-        summaryText: "Show the first and second reads",
-        html: readsCardsHtml
-      }) }}
-    </div>
+    {{ details({
+      classes: "nhsuk-expander",
+      summaryText: "Show the first and second reads",
+      html: readsCardsHtml
+    }) }}
 
   {% elseif revealStyle == 'card' %}
 
@@ -89,7 +87,6 @@
       heading: "First and second reads",
       headingLevel: "2",
       feature: true,
-      classes: "nhsuk-u-margin-top-4",
       descriptionHtml: cardContentHtml
     }) }}
 
@@ -106,7 +103,6 @@
       heading: "First and second reads",
       headingLevel: "2",
       feature: true,
-      classes: "nhsuk-u-margin-top-4",
       descriptionHtml: cardContentHtml
     }) }}
 

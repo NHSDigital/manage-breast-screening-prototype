@@ -1,0 +1,42 @@
+{# One original read as a plain summary list with an adopt button - no card
+   chrome. For contexts that already say which read this is (a tab label),
+   so the outcome appears as the first row and the reader as a "Read by" row.
+   Expects in context: read, appointment, appointmentId, data
+   Optional: adoptButtonText, hideAdoptButtons, adoptViaFormaction (see
+   arbitration-read-card.njk) #}
+
+{% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
+{% if withImages %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+{% endif %}
+
+{% set allowEdits = false %}
+{% set hideOpinionRow = false %}
+{% set showReaderRow = true %}
+{% set showAnnotationImages = withImages %}
+{% set annotationImagePaths = allPaths %}
+{% include "_includes/summary-lists/read-summary.njk" %}
+
+{% if not hideAdoptButtons %}
+  {# The reader id rides on the button so a shared form container can
+     serialise whichever was clicked #}
+  {% if adoptViaFormaction %}
+    {{ button({
+      text: adoptButtonText or "Agree – use as the outcome",
+      name: "agreedReaderId",
+      value: read.readerId,
+      classes: "nhsuk-u-margin-bottom-0",
+      attributes: { formaction: "./arbitration-adopt-read" }
+    }) }}
+  {% else %}
+    <form action="./arbitration-adopt-read" method="post">
+      {{ button({
+        text: adoptButtonText or "Agree – use as the outcome",
+        name: "agreedReaderId",
+        value: read.readerId,
+        classes: "nhsuk-u-margin-bottom-0"
+      }) }}
+    </form>
+  {% endif %}
+{% endif %}

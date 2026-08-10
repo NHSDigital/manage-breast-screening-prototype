@@ -87,18 +87,17 @@
           {# Case information and the two reads as tabs - the reads hidden by
              default but one click away, and one read per tab #}
           {% set infoCardHtml %}
+            {% set infoCardBare = true %}
             {% include "_includes/reading/opinion-info-card.njk" %}
           {% endset %}
           {% set originalReads = readingCase | getOriginalReads %}
           {% set firstReadHtml %}
             {% set read = originalReads[0] %}
-            {% set readLabel = "First read" %}
-            {% include "_includes/reading/arbitration-read-card.njk" %}
+            {% include "_includes/reading/arbitration-read-condensed.njk" %}
           {% endset %}
           {% set secondReadHtml %}
             {% set read = originalReads[1] %}
-            {% set readLabel = "Second read" %}
-            {% include "_includes/reading/arbitration-read-card.njk" %}
+            {% include "_includes/reading/arbitration-read-condensed.njk" %}
           {% endset %}
           {{ tabs({
             items: [

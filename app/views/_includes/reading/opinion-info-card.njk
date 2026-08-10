@@ -1,6 +1,8 @@
 {# "Additional information" card for the opinion pages - priors, image notes
    and medical summary as sections.
-   Expects in context: appointment, data #}
+   Expects in context: appointment, data
+   Optional: infoCardBare - render the sections without the card wrapper, for
+   contexts that already box the content (a tab panel) #}
 
 {# Medical information summary #}
 {% set medicalSummaryHtml %}
@@ -39,10 +41,14 @@
   {{ medicalSummaryHtml | safe }}
 {% endset %}
 
-{{ card({
-  headingLevel: "2",
-  heading: "Additional information",
-  feature: true,
-  classes: "_app-card--feature-subtle",
-  descriptionHtml: combinedInfoHtml
-}) }}
+{% if infoCardBare %}
+  {{ combinedInfoHtml | safe }}
+{% else %}
+  {{ card({
+    headingLevel: "2",
+    heading: "Additional information",
+    feature: true,
+    classes: "_app-card--feature-subtle",
+    descriptionHtml: combinedInfoHtml
+  }) }}
+{% endif %}
