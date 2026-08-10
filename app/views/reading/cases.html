@@ -106,7 +106,7 @@
           <th scope="col">Images taken</th>
           <th scope="col">Screened at</th>
           <th scope="col">Reads</th>
-          <th scope="col">State</th>
+          <th scope="col">Case</th>
           <th scope="col">Outcome</th>
         </tr>
       </thead>
@@ -114,9 +114,7 @@
         {% for row in rows %}
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
-              <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-link--no-visited-state">
-                {{ row.participant | getFullNameReversed }}
-              </a>
+              <span class="nhsuk-u-font-weight-bold">{{ row.participant | getFullNameReversed }}</span>
               {% if row.isDeferred %}
                 <br>{{ "Deferred" | toTag }}
               {% endif %}
@@ -143,6 +141,8 @@
                   {{ row.statusDisplay.destination | sentenceCase }}
                 </span>
               {% endif %}
+              <br>
+              <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-link--no-visited-state nhsuk-u-margin-top-1" style="display: inline-block">View case</a>
             </td>
             <td class="nhsuk-table__cell">
               {% if row.outcome %}
