@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize progress
   updateProgress(sections, completedSections)
 
-  // Handle "Complete all and continue" button
+  // Handle "Authorise" button
   const completeAllButtons = document.querySelectorAll(
     '.js-complete-all-sections'
   )
@@ -322,7 +322,7 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
 // Function to highlight the completion button when all sections are done
 function highlightCompletionButton() {
   const completeButton = document.querySelector(
-    'button:contains("Complete all and continue")'
+    'button:contains("Authorise")'
   )
 
   if (!completeButton) {
@@ -330,7 +330,7 @@ function highlightCompletionButton() {
     const buttons = document.querySelectorAll('button')
 
     buttons.forEach((btn) => {
-      if (btn.textContent.includes('Complete all and continue')) {
+      if (btn.textContent.includes('Authorise')) {
         btn.classList.add('nhsuk-button--green') // Highlight in green
         btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
       }
