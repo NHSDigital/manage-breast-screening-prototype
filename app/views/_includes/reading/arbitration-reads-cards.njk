@@ -1,80 +1,40 @@
-{# The first and second reads as side-by-side cards, each with a button to
-   adopt it as the arbitration outcome. The adopt route copies the read into
-   imageReadingTemp and goes to the review page, where it can be modified.
+{# The first and second reads as cards, each with a button to adopt it as the
+   arbitration outcome. The adopt route copies the read into imageReadingTemp
+   and goes to the review page, where it can be modified.
    Expects in context: readingCase, appointment, appointmentId, data
-   Optional: adoptButtonText (defaults to "Agree – use as the outcome"),
+   Optional: readsLayout ('side-by-side' default | 'stacked' - natural-height
+   cards one above the other, for narrow columns), adoptButtonText,
    hideAdoptButtons #}
 
 {% set originalReads = readingCase | getOriginalReads %}
 
-{% set outcomeLabels = {
-  "normal": "Normal",
-  "technical_recall": "Technical recall",
-  "recall_for_assessment": "Recall for assessment"
-} %}
+{% if readsLayout == 'stacked' %}
 
-{% set outcomeCardClasses = {
-  "normal": "app-reading-compare-card--normal",
-  "technical_recall": "app-reading-compare-card--technical-recall",
-  "recall_for_assessment": "app-reading-compare-card--recall-for-assessment"
-} %}
-
-{# Get image paths for annotation thumbnails #}
-{% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
-{% if withImages %}
-  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
-  {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
-{% endif %}
-
-<div class="nhsuk-grid-row app-reading-compare-grid app-reading-compare-grid--bottom-actions">
   {% for read in originalReads %}
     {% if read %}
-      {% set readSummaryHtml %}
-        {% set allowEdits = false %}
-        {% set hideOpinionRow = true %}
-        {% set showAnnotationImages = withImages %}
-        {% set annotationImagePaths = allPaths %}
-        {% include "_includes/summary-lists/read-summary.njk" %}
-      {% endset %}
-
-      {% set cardContentHtml %}
-        {{ readSummaryHtml | safe }}
-        {% if not hideAdoptButtons %}
-          <div class="app-reading-compare-card__action app-reading-compare-card__action--bottom">
-            {# The reader id rides on the button itself so the modal's shared
-               data-form-action container can serialise whichever was clicked #}
-            <form action="./arbitration-adopt-read" method="post" class="app-reading-compare-card__action-form">
-              {{ button({
-                text: adoptButtonText or "Agree – use as the outcome",
-                name: "agreedReaderId",
-                value: read.readerId,
-                classes: "nhsuk-u-margin-bottom-0"
-              }) }}
-            </form>
-          </div>
-        {% endif %}
-      {% endset %}
-
-      <div class="nhsuk-grid-column-one-half">
-        <h3 class="nhsuk-u-margin-bottom-0 nhsuk-heading-s">
-          {{ "First read" if loop.first else "Second read" }}
-          <span class="nhsuk-u-font-weight-normal nhsuk-u-font-size-19">
-            – {{ read.readerId | getUsername({ format: "short" }) }},
-            {{ read.timestamp | formatDate("D MMM YYYY") }}
-          </span>
-        </h3>
-        {{ card({
-          heading: outcomeLabels[read.opinion] or read.opinion,
-          headingLevel: "3",
-          feature: true,
-          classes: "app-reading-compare-card " + (outcomeCardClasses[read.opinion] or ""),
-          descriptionHtml: cardContentHtml
-        }) }}
+      <div class="{{ "nhsuk-u-margin-top-4" if not loop.first }}">
+        {% set readLabel = "First read" if loop.first else "Second read" %}
+        {% include "_includes/reading/arbitration-read-card.njk" %}
       </div>
     {% endif %}
   {% endfor %}
-</div>
 
+{% else %}
+
+  <div class="nhsuk-grid-row app-reading-compare-grid app-reading-compare-grid--bottom-actions">
+    {% for read in originalReads %}
+      {% if read %}
+        <div class="nhsuk-grid-column-one-half">
+          {% set readLabel = "First read" if loop.first else "Second read" %}
+          {% include "_includes/reading/arbitration-read-card.njk" %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+{% endif %}
+
+{% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
 {% if withImages %}
   <script src="/assets/javascript/annotation-markers.js"></script>
   <script>AnnotationMarkers.correctAll()</script>

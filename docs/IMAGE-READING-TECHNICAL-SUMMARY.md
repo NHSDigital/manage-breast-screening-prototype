@@ -557,8 +557,8 @@ Reading behavior is configured via:
 **Arbitration settings** (in `settings.reading.arbitration`):
 
 - `policy` - When reads go to arbitration: `'discordant_only'` (default) | `'all_recalls'` | `'all_non_normal'`
-- `showReads` - When the original reads appear on the arbitration opinion page: `'immediate'` (default) | `'on_demand'` | `'blind'`
-- `revealStyle` - How `on_demand` presents the collapsed reads: `'bar'` (default) | `'outcomes'` | `'expander'` | `'modal'`
+- `showReads` - When the original reads appear on the arbitration opinion page: `'on_demand'` (default) | `'blind'`
+- `revealStyle` - How `on_demand` presents the reads: `'expander'` (default) | `'card'` | `'modal'` | `'tabs'`
 - `confirmDecision` - Confirm arbitration decisions on the review page: `'true'` (default) | `'false'`
 - `hideReadsUntilArbitrated` - Session overview hides the original opinions until the case is arbitrated: `'true'` (default) | `'false'`
 - `lazySessions` - Build arbitration sessions lazily, separate from reading's setting

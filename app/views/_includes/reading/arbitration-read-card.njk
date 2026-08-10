@@ -1,0 +1,79 @@
+{# One original read as an outcome-coloured card with an adopt button.
+   Expects in context: read, readLabel ("First read" / "Second read"),
+   appointment, appointmentId, data
+   Optional: adoptButtonText, hideAdoptButtons, hideReadLabel,
+   adoptViaFormaction - set when rendering inside the opinion page's form,
+   where a nested <form> would be invalid; the button overrides the outer
+   form's destination instead #}
+
+{% set outcomeLabels = {
+  "normal": "Normal",
+  "technical_recall": "Technical recall",
+  "recall_for_assessment": "Recall for assessment"
+} %}
+
+{% set outcomeCardClasses = {
+  "normal": "app-reading-compare-card--normal",
+  "technical_recall": "app-reading-compare-card--technical-recall",
+  "recall_for_assessment": "app-reading-compare-card--recall-for-assessment"
+} %}
+
+{# Get image paths for annotation thumbnails #}
+{% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
+{% if withImages %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+{% endif %}
+
+{% set readSummaryHtml %}
+  {% set allowEdits = false %}
+  {% set hideOpinionRow = true %}
+  {% set showAnnotationImages = withImages %}
+  {% set annotationImagePaths = allPaths %}
+  {% include "_includes/summary-lists/read-summary.njk" %}
+{% endset %}
+
+{% set cardContentHtml %}
+  {{ readSummaryHtml | safe }}
+  {% if not hideAdoptButtons %}
+    <div class="app-reading-compare-card__action app-reading-compare-card__action--bottom">
+      {# The reader id rides on the button itself so the modal's shared
+         data-form-action container can serialise whichever was clicked #}
+      {% if adoptViaFormaction %}
+        {{ button({
+          text: adoptButtonText or "Agree – use as the outcome",
+          name: "agreedReaderId",
+          value: read.readerId,
+          classes: "nhsuk-u-margin-bottom-0",
+          attributes: { formaction: "./arbitration-adopt-read" }
+        }) }}
+      {% else %}
+        <form action="./arbitration-adopt-read" method="post" class="app-reading-compare-card__action-form">
+          {{ button({
+            text: adoptButtonText or "Agree – use as the outcome",
+            name: "agreedReaderId",
+            value: read.readerId,
+            classes: "nhsuk-u-margin-bottom-0"
+          }) }}
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endset %}
+
+{% if not hideReadLabel %}
+  <h3 class="nhsuk-u-margin-bottom-0 nhsuk-heading-s">
+    {{ readLabel }}
+    <span class="nhsuk-u-font-weight-normal nhsuk-u-font-size-19">
+      – {{ read.readerId | getUsername({ format: "short" }) }},
+      {{ read.timestamp | formatDate("D MMM YYYY") }}
+    </span>
+  </h3>
+{% endif %}
+{{ card({
+  heading: outcomeLabels[read.opinion] or read.opinion,
+  headingLevel: "3",
+  feature: true,
+  classes: "app-reading-compare-card " + (outcomeCardClasses[read.opinion] or ""),
+  descriptionHtml: cardContentHtml
+}) }}

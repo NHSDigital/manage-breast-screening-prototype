@@ -1,95 +1,118 @@
-{# The prior-reads region of the arbitration opinion page. How and when the
-   reads appear is a settings choice:
-   - showReads 'immediate': cards shown up front
-   - showReads 'on_demand': collapsed, revealed per revealStyle
-     ('bar' | 'outcomes' | 'expander' | 'modal')
+{# The prior-reads region of the arbitration opinion page, rendered below the
+   opinion choice. How the reads appear is a settings choice:
+   - showReads 'on_demand': revealed per revealStyle
+     ('expander' | 'card' - feature card with reveal in place | 'modal' -
+     feature card linking to a modal | 'tabs' - handled by the page template,
+     which folds the reads into the additional-information tabs)
    - showReads 'blind': a note; the reads appear on the review page instead
    Expects in context: readingCase, appointment, appointmentId, data #}
 
-{% set showReadsSetting = data.settings.reading.arbitration.showReads or 'immediate' %}
-{% set revealStyle = data.settings.reading.arbitration.revealStyle or 'bar' %}
+{% set showReadsSetting = data.settings.reading.arbitration.showReads or 'on_demand' %}
+{% set revealStyle = data.settings.reading.arbitration.revealStyle or 'expander' %}
+
+{# Normalise values retired 2026-08-10 that may linger in existing sessions #}
+{% if showReadsSetting == 'immediate' %}
+  {% set showReadsSetting = 'on_demand' %}
+{% endif %}
+{% if not (revealStyle in ['expander', 'card', 'modal', 'tabs']) %}
+  {% set revealStyle = 'expander' %}
+{% endif %}
 
 {# Blindness is moot once the case has an outcome - show the reads when
    updating an arbitrated case #}
-{% if showReadsSetting == 'blind' and (readingCase | getArbitrationRead) %}
-  {% set showReadsSetting = 'immediate' %}
-{% endif %}
+{% set caseIsArbitrated = readingCase | getArbitrationRead %}
 
 {% set originalReads = readingCase | getOriginalReads %}
 
-{% set outcomeLabels = {
-  "normal": "Normal",
-  "technical_recall": "Technical recall",
-  "recall_for_assessment": "Recall for assessment"
-} %}
+{# Meta rows for the feature-card variants - when and who, but not what they
+   thought: that stays behind the reveal #}
+{% set readsMetaHtml %}
+  <dl class="nhsuk-summary-list nhsuk-u-margin-bottom-0">
+    {% for read in originalReads %}
+      <div class="nhsuk-summary-list__row">
+        <dt class="nhsuk-summary-list__key">{{ "First read" if loop.first else "Second read" }}</dt>
+        <dd class="nhsuk-summary-list__value">
+          {{ read.timestamp | formatDate("D MMM YYYY") }} –
+          {{ read.readerId | getUsername({ format: "short" }) }}
+        </dd>
+      </div>
+    {% endfor %}
+  </dl>
+{% endset %}
 
-{% if showReadsSetting == 'immediate' %}
+{% if showReadsSetting == 'blind' and not caseIsArbitrated %}
 
-  <h2 class="nhsuk-heading-m nhsuk-u-margin-bottom-2">First and second reads</h2>
-  {% include "_includes/reading/arbitration-reads-cards.njk" %}
-
-{% elseif showReadsSetting == 'blind' %}
-
-  <p class="nhsuk-u-secondary-text-color nhsuk-u-font-size-16 nhsuk-u-margin-bottom-3">
+  <p class="nhsuk-u-secondary-text-color nhsuk-u-font-size-16 nhsuk-u-margin-top-4">
     The first and second reads will be shown after you record an outcome.
   </p>
 
+{% elseif showReadsSetting == 'blind' and caseIsArbitrated %}
+
+  <h2 class="nhsuk-heading-m nhsuk-u-margin-top-5 nhsuk-u-margin-bottom-2">First and second reads</h2>
+  {% set readsLayout = 'stacked' %}
+  {% include "_includes/reading/arbitration-reads-cards.njk" %}
+
 {% elseif showReadsSetting == 'on_demand' %}
 
-  {% if revealStyle == 'modal' %}
-
-    <p class="nhsuk-u-margin-bottom-3">
-      {{ appLink({ text: "View the first and second reads", href: "./arbitration-reads", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-    </p>
-
-  {% elseif revealStyle == 'expander' %}
+  {% if revealStyle == 'expander' %}
 
     {% set readsCardsHtml %}
+      {% set readsLayout = 'stacked' %}
       {% include "_includes/reading/arbitration-reads-cards.njk" %}
     {% endset %}
-    {{ details({
-      classes: "nhsuk-expander",
-      summaryText: "Show the first and second reads",
-      html: readsCardsHtml
+    <div class="nhsuk-u-margin-top-4">
+      {{ details({
+        classes: "nhsuk-expander",
+        summaryText: "Show the first and second reads",
+        html: readsCardsHtml
+      }) }}
+    </div>
+
+  {% elseif revealStyle == 'card' %}
+
+    {# Feature card carrying the read metadata, with the reads revealed in
+       place #}
+    {% set cardContentHtml %}
+      {{ readsMetaHtml | safe }}
+      <details class="app-reads-card-reveal">
+        <summary class="app-reads-card-reveal__toggle">
+          <span class="app-reads-card-reveal__toggle-text--closed">Show the reads</span>
+          <span class="app-reads-card-reveal__toggle-text--open">Hide the reads</span>
+        </summary>
+        <div class="nhsuk-u-margin-top-4">
+          {% set readsLayout = 'stacked' %}
+          {% include "_includes/reading/arbitration-reads-cards.njk" %}
+        </div>
+      </details>
+    {% endset %}
+    {{ card({
+      heading: "First and second reads",
+      headingLevel: "2",
+      feature: true,
+      classes: "nhsuk-u-margin-top-4",
+      descriptionHtml: cardContentHtml
     }) }}
 
-  {% elseif revealStyle == 'outcomes' %}
+  {% elseif revealStyle == 'modal' %}
 
-    {# Outcomes-only teaser - the shape of the disagreement without the
-       reasoning or annotations that cause anchoring #}
-    <details class="app-reads-reveal">
-      <summary class="app-reads-reveal__summary">
-        <span class="app-reads-reveal__outcomes">
-          {% for read in originalReads %}
-            <span class="app-reads-reveal__outcome">
-              <span class="nhsuk-u-font-weight-bold">{{ "First read" if loop.first else "Second read" }}</span>
-              {{ (outcomeLabels[read.opinion] or read.opinion) | toTag }}
-              <span class="nhsuk-u-secondary-text-color">{{ read.readerId | getUsername({ format: "short" }) }}</span>
-            </span>
-          {% endfor %}
-        </span>
-        <span class="app-reads-reveal__toggle app-reads-reveal__toggle--closed">Show details</span>
-        <span class="app-reads-reveal__toggle app-reads-reveal__toggle--open">Hide details</span>
-      </summary>
-      <div class="app-reads-reveal__content">
-        {% include "_includes/reading/arbitration-reads-cards.njk" %}
-      </div>
-    </details>
-
-  {% else %}
-
-    {# Collapsed bar - signals availability, one click to expand in place #}
-    <details class="app-reads-reveal">
-      <summary class="app-reads-reveal__summary">
-        <span class="nhsuk-u-font-weight-bold">{{ originalReads | length }} reads recorded</span>
-        <span class="app-reads-reveal__toggle app-reads-reveal__toggle--closed">Show reads</span>
-        <span class="app-reads-reveal__toggle app-reads-reveal__toggle--open">Hide reads</span>
-      </summary>
-      <div class="app-reads-reveal__content">
-        {% include "_includes/reading/arbitration-reads-cards.njk" %}
-      </div>
-    </details>
+    {# Feature card carrying the read metadata, with the reads in a modal #}
+    {% set cardContentHtml %}
+      {{ readsMetaHtml | safe }}
+      <p class="nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0">
+        {{ appLink({ text: "View the reads", href: "./arbitration-reads", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+      </p>
+    {% endset %}
+    {{ card({
+      heading: "First and second reads",
+      headingLevel: "2",
+      feature: true,
+      classes: "nhsuk-u-margin-top-4",
+      descriptionHtml: cardContentHtml
+    }) }}
 
   {% endif %}
+
+  {# revealStyle 'tabs' renders nothing here - the page template folds the
+     reads into the additional-information tabs #}
 
 {% endif %}

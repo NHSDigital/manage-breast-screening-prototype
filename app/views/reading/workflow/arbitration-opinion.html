@@ -43,11 +43,13 @@
      Page layout
      ========================================================= #}
 
-  {% include "_includes/reading/opinion-header.njk" %}
+  {# Which presentation the reads get - the band handles most; 'tabs' folds
+     them into the additional-information tabs below #}
+  {% set showReadsSetting = data.settings.reading.arbitration.showReads or 'on_demand' %}
+  {% set revealStyle = data.settings.reading.arbitration.revealStyle or 'expander' %}
+  {% set readsAsTabs = showReadsSetting == 'on_demand' and revealStyle == 'tabs' %}
 
-  {# First and second reads - visibility per the showReads setting. Sits
-     outside the opinion form because the adopt buttons are their own forms. #}
-  {% include "_includes/reading/arbitration-reads-band.njk" %}
+  {% include "_includes/reading/opinion-header.njk" %}
 
   {# Opinion form with thumbnails #}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">
@@ -70,10 +72,60 @@
         {# Main opinion stuff #}
         {% include "_includes/reading/opinion-controls.njk" %}
 
+        {# First and second reads, below the opinion choice. This column sits
+           inside the opinion form, so adopt buttons override its destination
+           with formaction rather than nesting their own forms. #}
+        {% set adoptViaFormaction = true %}
+        {% if not readsAsTabs %}
+          {% include "_includes/reading/arbitration-reads-band.njk" %}
+        {% endif %}
+
         <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
-        {# Combined information card with priors, image notes, and medical summary as sections #}
-        {% include "_includes/reading/opinion-info-card.njk" %}
+        {% if readsAsTabs %}
+
+          {# Case information and the two reads as tabs - the reads hidden by
+             default but one click away, and one read per tab #}
+          {% set infoCardHtml %}
+            {% include "_includes/reading/opinion-info-card.njk" %}
+          {% endset %}
+          {% set originalReads = readingCase | getOriginalReads %}
+          {% set firstReadHtml %}
+            {% set read = originalReads[0] %}
+            {% set readLabel = "First read" %}
+            {% include "_includes/reading/arbitration-read-card.njk" %}
+          {% endset %}
+          {% set secondReadHtml %}
+            {% set read = originalReads[1] %}
+            {% set readLabel = "Second read" %}
+            {% include "_includes/reading/arbitration-read-card.njk" %}
+          {% endset %}
+          {{ tabs({
+            items: [
+              {
+                label: "Case information",
+                id: "case-information",
+                panel: { html: infoCardHtml }
+              },
+              {
+                label: "First read",
+                id: "first-read",
+                panel: { html: firstReadHtml }
+              },
+              {
+                label: "Second read",
+                id: "second-read",
+                panel: { html: secondReadHtml }
+              }
+            ]
+          }) }}
+
+        {% else %}
+
+          {# Combined information card with priors, image notes, and medical summary as sections #}
+          {% include "_includes/reading/opinion-info-card.njk" %}
+
+        {% endif %}
 
         {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">
