@@ -1,0 +1,88 @@
+{# Mammogram thumbnails card for the opinion pages.
+   Expects in context: appointment, appointmentId, data #}
+
+{% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
+{% set mammogramImages = getImagesForAppointment(appointmentId, mammogramImageSource, { appointment: appointment }) %}
+
+{# View order from config - determines if CC or MLO comes first #}
+{# Right breast views on left, left breast views on right #}
+{% if data.settings.mammogramViewOrder == 'mlo-first' %}
+  {% set viewOrder = [
+    { key: 'rmlo', label: 'RMLO', side: 'right' },
+    { key: 'lmlo', label: 'LMLO', side: 'left' },
+    { key: 'rcc', label: 'RCC', side: 'right' },
+    { key: 'lcc', label: 'LCC', side: 'left' }
+  ] %}
+{% else %}
+  {% set viewOrder = [
+    { key: 'rcc', label: 'RCC', side: 'right' },
+    { key: 'lcc', label: 'LCC', side: 'left' },
+    { key: 'rmlo', label: 'RMLO', side: 'right' },
+    { key: 'lmlo', label: 'LMLO', side: 'left' }
+  ] %}
+{% endif %}
+
+{# Count total images #}
+{% set imageCount = 0 %}
+{% for view in viewOrder %}
+  {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
+  {% if allPaths %}
+    {% if allPaths is string %}
+      {% set imageCount = imageCount + 1 %}
+    {% else %}
+      {% set imageCount = imageCount + allPaths | length %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{% call card({
+  heading: "Images (" + imageCount + ")",
+  headingLevel: 2,
+  headingSize: "s",
+  classes: "app-card--feature-grey",
+  feature: "true"
+}) %}
+<div class="app-mammogram-thumbnails">
+  {% for view in viewOrder %}
+    <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ view.side }}">
+      {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
+
+      {% if allPaths %}
+        {# Handle both single path (string) and multiple paths (array) #}
+        {% if allPaths is string %}
+          <div class="app-mammogram-thumbnail__image-wrapper">
+            <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+            <img
+              class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
+              src="{{ allPaths }}"
+              alt="{{ view.label }} view"
+              data-view="{{ view.label }}"
+            >
+          </div>
+        {% else %}
+          {# Multiple images - each with its own wrapper and label #}
+          {% for imagePath in allPaths %}
+            <div class="app-mammogram-thumbnail__image-wrapper">
+              <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+              <img
+                class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
+                src="{{ imagePath }}"
+                alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
+                data-view="{{ view.label }}"
+              >
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% else %}
+        {# Missing image placeholder #}
+        <div class="app-mammogram-thumbnail__image-wrapper">
+          <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
+          <div class="app-mammogram-thumbnail__missing">
+            <span class="app-mammogram-thumbnail__missing-text">No image</span>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endcall %}

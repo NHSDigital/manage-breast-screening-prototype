@@ -121,7 +121,8 @@ const defaultSettings = {
     defaultSessionSize: '25',
     arbitration: {
       policy: 'discordant_only', // 'discordant_only' | 'all_recalls' | 'all_non_normal'
-      flow: 'compare_first', // 'compare_first' | 'opinion_first' - what an arbitration case opens on
+      showReads: 'immediate', // 'blind' | 'on_demand' | 'immediate' - when the original reads appear on the opinion page
+      revealStyle: 'bar', // 'bar' | 'outcomes' | 'expander' | 'modal' - how on_demand presents the collapsed reads
       confirmDecision: 'true', // show the review page before saving an arbitration decision
       hideReadsUntilArbitrated: 'true', // overview hides the original opinions until the case is arbitrated
       lazySessions: 'true'

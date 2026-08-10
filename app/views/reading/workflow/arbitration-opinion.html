@@ -1,7 +1,8 @@
-{# app/views/reading/workflow/opinion.html #}
-{# Main reading opinion page - entry point for reading workflow.
-   Arbitration renders arbitration-opinion.html instead; the shared pieces
-   live in _includes/reading/opinion-*.njk #}
+{# app/views/reading/workflow/arbitration-opinion.html #}
+{# Arbitration opinion page - the reading opinion page (thumbnails, medical
+   history, priors) plus the first and second reads, whose visibility is the
+   showReads/revealStyle settings. Rendered for the /opinion step in
+   arbitration sessions. #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -19,11 +20,10 @@
 {% block pageContent %}
 
   {# =========================================================
-     Setup: read state
+     Setup: read state - the case's arbitration read, not a per-user one
      ========================================================= #}
 
-  {# Get existing read data for this user (saved read) #}
-  {% set existingRead = readingCase | getReadForUser(data.currentUser.id) %}
+  {% set existingRead = readingCase | getArbitrationRead %}
   {% set existingOpinion = existingRead.opinion %}
 
   {# Also check for in-progress read in temp data #}
@@ -33,7 +33,7 @@
   {% set hasExistingOpinion = existingOpinion or tempOpinion %}
   {% set currentOpinion = tempOpinion or existingOpinion %}
 
-  {% set opinionHeading = "Update review" if hasExistingOpinion else "Review images" %}
+  {% set opinionHeading = "Update outcome" if hasExistingOpinion else "Arbitrate case" %}
 
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
@@ -44,6 +44,10 @@
      ========================================================= #}
 
   {% include "_includes/reading/opinion-header.njk" %}
+
+  {# First and second reads - visibility per the showReads setting. Sits
+     outside the opinion form because the adopt buttons are their own forms. #}
+  {% include "_includes/reading/arbitration-reads-band.njk" %}
 
   {# Opinion form with thumbnails #}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">

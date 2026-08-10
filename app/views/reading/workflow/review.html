@@ -7,6 +7,12 @@
 
 {% set formAction = './save-opinion' | urlWithReferrer(referrerChain) %}
 
+{# Blind arbitration reveals the original reads here, alongside the outcome #}
+{% set showOriginalReads = isArbitration and data.settings.reading.arbitration.showReads == 'blind' %}
+{% if showOriginalReads %}
+  {% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
+{% endif %}
+
 {% block pageContent %}
 
   <div class="nhsuk-grid-row">
@@ -39,6 +45,14 @@
         feature: true,
         descriptionHtml: readSummaryHtml
       }) }}
+
+      {# Blind arbitration: first sight of the original reads - keep the
+         outcome above, or adopt one of these instead #}
+      {% if showOriginalReads %}
+        <h2 class="nhsuk-heading-m nhsuk-u-margin-bottom-2">First and second reads</h2>
+        {% set adoptButtonText = "Use this outcome instead" %}
+        {% include "_includes/reading/arbitration-reads-cards.njk" %}
+      {% endif %}
 
       {# Confirm and save form #}
       {{ button({

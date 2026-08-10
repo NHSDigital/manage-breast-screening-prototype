@@ -1,0 +1,48 @@
+{# "Additional information" card for the opinion pages - priors, image notes
+   and medical summary as sections.
+   Expects in context: appointment, data #}
+
+{# Medical information summary #}
+{% set medicalSummaryHtml %}
+  {# Only show rows that have data #}
+  {% set showOnlyPopulated = true %}
+  {# No edits allowed in image reading #}
+  {% set allowEdits = false %}
+  {# Priors are shown separately in the dedicated priors summary above #}
+  {% set hidePreviousMammograms = true %}
+  {% include "_includes/summary-lists/medical-info-summary.njk" %}
+  <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+    {{ appLink({ text: "View full medical information", href: "./medical-information", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+  </p>
+{% endset %}
+
+{# Image warnings (captured so we can check if content exists) #}
+{% set imageWarningsHtml %}
+  {% include "_includes/reading/image-warnings.njk" %}
+{% endset %}
+
+{# Previous (prior) mammograms - summary list with status and request route #}
+{% set priorsWarningHtml %}
+  {% include "_includes/reading/priors-summary.njk" %}
+{% endset %}
+
+{% set combinedInfoHtml %}
+  {% if priorsWarningHtml | trim %}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1">Previous mammograms disclosed</h3>
+    {{ priorsWarningHtml | safe }}
+  {% endif %}
+  {% if imageWarningsHtml | trim %}
+    <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1{% if priorsWarningHtml | trim %} nhsuk-u-margin-top-4{% endif %}">Image notes</h3>
+    {{ imageWarningsHtml | safe }}
+  {% endif %}
+  <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1{% if (priorsWarningHtml | trim) or (imageWarningsHtml | trim) %} nhsuk-u-margin-top-4{% endif %}">Medical summary</h3>
+  {{ medicalSummaryHtml | safe }}
+{% endset %}
+
+{{ card({
+  headingLevel: "2",
+  heading: "Additional information",
+  feature: true,
+  classes: "_app-card--feature-subtle",
+  descriptionHtml: combinedInfoHtml
+}) }}

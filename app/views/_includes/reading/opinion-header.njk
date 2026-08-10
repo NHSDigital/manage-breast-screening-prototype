@@ -1,0 +1,87 @@
+{# Page header with status tags for the opinion pages.
+   Expects in context: opinionHeading, participant, appointment, readingCase,
+   session, isArbitration, existingOpinion, data #}
+
+{% set priorsSummary = appointment | getPriorsSummary %}
+
+<div class="nhsuk-grid-row app-header-with-status">
+  <div class="nhsuk-grid-column-three-quarters">
+    <span class="nhsuk-caption-l">
+      {{ opinionHeading }}
+    </span>
+    <h1 class="nhsuk-heading-l js-image-count">
+      {{ participant | getFullName }}
+    </h1>
+  </div>
+  <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag">
+
+    {# Urgency tags #}
+    {% set appointmentAge = appointment.timing.startTime | daysSince %}
+    {% if appointmentAge >= data.config.reading.priorityThreshold %}
+      <div class="nhsuk-u-margin-bottom-2">
+        {% if appointmentAge >= data.config.reading.urgentThreshold %}
+          {{ "Urgent" | toTag }}
+        {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
+          {{ "Due soon" | toTag }}
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {# First/second read tag - arbitration is its own kind of read #}
+    {% if isArbitration %}
+      {{ "Arbitration" | toTag }}
+    {% else %}
+      {% set readCount = (readingCase | getReadingMetadata).readCount %}
+      {% if existingOpinion %}
+        {% if readCount == 1 %}
+          {{ "First read" | toTag }}
+        {% else %}
+          {{ "Second read" | toTag }}
+        {% endif %}
+      {% else %}
+        {% if readCount == 0 %}
+          {{ "First read" | toTag }}
+        {% else %}
+          {{ "Second read" | toTag }}
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {# Previously skipped tag #}
+    {% if session and session.skippedAppointments | includes(appointment.id) %}
+      {{ "Previously skipped" | toTag }}
+    {% endif %}
+
+    {# Prior mammogram status tags #}
+    {% if priorsSummary.total > 0 %}
+      {% if priorsSummary.hasAwaiting %}
+        {% set awaitingPriorsList = appointment | getAwaitingPriors %}
+        {{ "Awaiting priors" | toTag | safe }}<br>
+        {% for prior in awaitingPriorsList %}
+          {% if prior.requestedDate %}
+            Requested {{ prior.requestedDate | formatDate("D MMM YYYY") }}
+            {% if prior.requestReason %}
+              – {{ prior.requestReason }}
+            {% endif %}
+            {% if not loop.last %}<br>{% endif %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+
+    {% if (data.settings.debugMode | falsify) %}
+      {% if appointment | hasRecordedMammograms %}
+        {{ "Has priors" | toTag }}
+      {% endif %}
+      {% if appointment.mammogramData.metadata.hasAdditionalImages %}
+        <br>{{ "Has additional" | toTag }}
+      {% endif %}
+      {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
+          <br>{{ "Imperfect" | toTag }}
+      {% endif %}
+      {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
+          <br>{{ "Incomplete" | toTag }}
+      {% endif %}
+    {% endif %}
+  </div>
+</div>

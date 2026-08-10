@@ -852,17 +852,6 @@ module.exports = (router) => {
       // Delete temporary data from previous steps
       delete data.imageReadingTemp
 
-      // Arbitration cases open on the two reads by default; opinion-first is a
-      // settings choice, with the compare step following the opinion instead
-      if (
-        isArbitrationSession &&
-        data.settings?.reading?.arbitration?.flow !== 'opinion_first'
-      ) {
-        return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/arbitration-compare`
-        )
-      }
-
       res.redirect(
         `/reading/session/${sessionId}/appointments/${appointmentId}/opinion`
       )
@@ -1308,11 +1297,17 @@ module.exports = (router) => {
         'review',
         'existing-read',
         'compare',
-        'arbitration-compare',
+        'arbitration-reads',
         'request-priors',
         'defer-case',
         'medical-information'
       ]
+
+      // Arbitration renders its own opinion page - same URL, different
+      // information architecture (the original reads sit alongside the case)
+      if (step === 'opinion' && res.locals.isArbitration) {
+        return res.render('reading/workflow/arbitration-opinion')
+      }
 
       if (workflowSteps.includes(step)) {
         return res.render(`reading/workflow/${step}`)
@@ -2048,18 +2043,12 @@ module.exports = (router) => {
         ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
         : userHasReadAppointment(data, appointment, currentUserId)
 
-      // Arbitration, opinion-first: the compare step follows the outcome and
-      // its details rather than opening the case
-      if (
+      // Blind arbitration reveals the original reads on the review page, so
+      // the review step is required even when confirmDecision is off
+      const arbitrationNeedsReview =
         isArbitrationSession &&
-        data.settings?.reading?.arbitration?.flow === 'opinion_first' &&
-        !formData?.comparisonComplete &&
-        !isEditingExistingRead
-      ) {
-        return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/arbitration-compare`
-        )
-      }
+        (data.settings?.reading?.arbitration?.confirmDecision !== 'false' ||
+          data.settings?.reading?.arbitration?.showReads === 'blind')
 
       // Check for late comparison if not already done
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
@@ -2090,9 +2079,7 @@ module.exports = (router) => {
           // Arbitration decisions confirm on the review page, unless the
           // confirmDecision setting turns that off.
           if (isArbitrationSession && !isEditingExistingRead) {
-            if (
-              data.settings?.reading?.arbitration?.confirmDecision !== 'false'
-            ) {
+            if (arbitrationNeedsReview) {
               return res.redirect(
                 modalBreakout(
                   `/reading/session/${sessionId}/appointments/${appointmentId}/review`
@@ -2124,7 +2111,7 @@ module.exports = (router) => {
           if (
             !isEditingExistingRead &&
             (isArbitrationSession
-              ? data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+              ? arbitrationNeedsReview
               : data.settings?.reading?.confirmTechnicalRecall !== 'false')
           ) {
             return res.redirect(
@@ -2146,7 +2133,7 @@ module.exports = (router) => {
           if (
             !isEditingExistingRead &&
             (isArbitrationSession
-              ? data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+              ? arbitrationNeedsReview
               : data.settings?.reading?.confirmRecallForAssessment !== 'false')
           ) {
             return res.redirect(
@@ -2411,21 +2398,15 @@ module.exports = (router) => {
       // Handle different opinion types
       switch (opinion) {
         case 'normal':
-          // Arbitration: opinion-first sends the outcome through the compare
-          // step; the decision then confirms on the review page unless the
-          // confirmDecision setting turns that off
+          // Arbitration decisions confirm on the review page unless the
+          // confirmDecision setting turns that off; blind arbitration always
+          // reviews, as that's where the original reads are revealed
           if (isArbitrationSession) {
             if (
-              data.settings?.reading?.arbitration?.flow === 'opinion_first' &&
-              !data.imageReadingTemp.comparisonComplete
-            ) {
-              return res.redirect(
-                `/reading/session/${sessionId}/appointments/${appointmentId}/arbitration-compare`
-              )
-            }
-            if (
               !isEditingExistingRead &&
-              data.settings?.reading?.arbitration?.confirmDecision !== 'false'
+              (data.settings?.reading?.arbitration?.confirmDecision !==
+                'false' ||
+                data.settings?.reading?.arbitration?.showReads === 'blind')
             ) {
               return res.redirect(
                 `/reading/session/${sessionId}/appointments/${appointmentId}/review`
@@ -2490,10 +2471,12 @@ module.exports = (router) => {
     }
   )
 
-  // Handle the arbitration compare decision - agree with one of the reads,
-  // or keep the outcome already given on the opinion page (opinion-first flow)
+  // Adopt one of the original reads as the arbitration outcome. Copies the
+  // read into imageReadingTemp and goes to the review page, where any of it
+  // can be changed before saving - so adoption always confirms, whatever the
+  // confirmDecision setting says.
   router.post(
-    '/reading/session/:sessionId/appointments/:appointmentId/arbitration-compare-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/arbitration-adopt-read',
     (req, res) => {
       const { sessionId, appointmentId } = req.params
       const data = req.session.data
@@ -2501,67 +2484,45 @@ module.exports = (router) => {
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
 
-      // In arbitration, "editing" means the arbitration read already exists
-      const isEditingExistingRead = Boolean(
-        getArbitrationRead(getReadingCase(data, appointment))
-      )
-
-      data.imageReadingTemp = data.imageReadingTemp || { appointmentId }
-      data.imageReadingTemp.comparisonComplete = true
-
       const agreedReaderId = req.body.agreedReaderId
+      const reads = getReadsAsArray(getReadingCase(data, appointment))
+      const agreedRead = reads.find((read) => read.readerId === agreedReaderId)
 
-      if (agreedReaderId) {
-        const reads = getReadsAsArray(getReadingCase(data, appointment))
-        const agreedRead = reads.find(
-          (read) => read.readerId === agreedReaderId
-        )
-
-        if (agreedRead) {
-          // Adopt the read wholesale - outcome and details. The review page
-          // lets the arbitrator change any of it before saving.
-          data.imageReadingTemp.opinion = agreedRead.opinion
-          data.imageReadingTemp.agreedWithReaderId = agreedReaderId
-
-          if (agreedRead.technicalRecall) {
-            data.imageReadingTemp.technicalRecall = {
-              ...agreedRead.technicalRecall
-            }
-          }
-          if (agreedRead.left) {
-            data.imageReadingTemp.left = JSON.parse(
-              JSON.stringify(agreedRead.left)
-            )
-          }
-          if (agreedRead.right) {
-            data.imageReadingTemp.right = JSON.parse(
-              JSON.stringify(agreedRead.right)
-            )
-          }
-          if (agreedRead.normalDetails) {
-            data.imageReadingTemp.normalDetails = agreedRead.normalDetails
-          }
-        }
-
-        if (
-          isEditingExistingRead ||
-          data.settings?.reading?.arbitration?.confirmDecision === 'false'
-        ) {
-          return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
-          )
-        }
-
+      if (!agreedRead) {
         return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+          `/reading/session/${sessionId}/appointments/${appointmentId}/opinion`
         )
       }
 
-      // Keeping the outcome already given - back through the routing hub so
-      // details and confirmation happen as normal
+      // Adopt a copy of the read wholesale - outcome and details - never a
+      // reference to the original
+      data.imageReadingTemp = { appointmentId }
+      data.imageReadingTemp.opinion = agreedRead.opinion
+      data.imageReadingTemp.agreedWithReaderId = agreedReaderId
+
+      if (agreedRead.technicalRecall) {
+        data.imageReadingTemp.technicalRecall = {
+          ...agreedRead.technicalRecall
+        }
+      }
+      if (agreedRead.left) {
+        data.imageReadingTemp.left = JSON.parse(JSON.stringify(agreedRead.left))
+      }
+      if (agreedRead.right) {
+        data.imageReadingTemp.right = JSON.parse(
+          JSON.stringify(agreedRead.right)
+        )
+      }
+      if (agreedRead.normalDetails) {
+        data.imageReadingTemp.normalDetails = agreedRead.normalDetails
+      }
+
+      // Break out of the modal (reads-in-a-modal reveal style) so the review
+      // page renders full-page
       return res.redirect(
-        307,
-        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete`
+        modalBreakout(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+        )
       )
     }
   )

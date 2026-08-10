@@ -394,3 +394,60 @@
     padding-top: nhsuk-spacing(4);
   }
 }
+
+// Collapsed reveal for the first and second reads on the arbitration opinion
+// page - a slim full-width bar (or outcomes teaser) that expands in place
+.app-reads-reveal {
+  margin-bottom: nhsuk-spacing(4);
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: nhsuk-spacing(3);
+    flex-wrap: wrap;
+    padding: nhsuk-spacing(2) nhsuk-spacing(3);
+    background-color: nhsuk-colour("grey-5");
+    border: 1px solid nhsuk-colour("grey-3");
+    cursor: pointer;
+
+    // Hide the default disclosure triangle; the toggle text carries the affordance
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+  }
+
+  &__toggle {
+    color: $nhsuk-link-colour;
+    text-decoration: underline;
+    white-space: nowrap;
+  }
+
+  &[open] &__toggle--closed,
+  &:not([open]) &__toggle--open {
+    display: none;
+  }
+
+  &__summary:hover &__toggle {
+    color: $nhsuk-link-hover-colour;
+  }
+
+  &__outcomes {
+    display: flex;
+    align-items: center;
+    gap: nhsuk-spacing(4);
+    flex-wrap: wrap;
+  }
+
+  &__outcome {
+    display: inline-flex;
+    align-items: center;
+    gap: nhsuk-spacing(2);
+  }
+
+  &__content {
+    padding-top: nhsuk-spacing(3);
+  }
+}

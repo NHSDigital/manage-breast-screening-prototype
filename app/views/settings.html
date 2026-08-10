@@ -205,11 +205,20 @@
       {value: "all_non_normal", label: "All non-normal outcomes"}
     ], data.settings.reading.arbitration.policy, "discordant_only") }}
 
-    {# Arbitration flow order - what an arbitration case opens on #}
-    {{ settingToggle("Arbitration flow", "settings[reading][arbitration][flow]", [
-      {value: "compare_first", label: "Compare reads first"},
-      {value: "opinion_first", label: "Own outcome first"}
-    ], data.settings.reading.arbitration.flow, "compare_first") }}
+    {# When the original reads appear on the arbitration opinion page #}
+    {{ settingToggle("Original reads on opinion page", "settings[reading][arbitration][showReads]", [
+      {value: "immediate", label: "Shown up front"},
+      {value: "on_demand", label: "Available on demand"},
+      {value: "blind", label: "Hidden until an outcome is given"}
+    ], data.settings.reading.arbitration.showReads, "immediate") }}
+
+    {# How on-demand reads are revealed #}
+    {{ settingToggle("Reveal style (on demand only)", "settings[reading][arbitration][revealStyle]", [
+      {value: "bar", label: "Collapsed bar"},
+      {value: "outcomes", label: "Outcomes only, details on demand"},
+      {value: "expander", label: "Expander"},
+      {value: "modal", label: "Link opening a modal"}
+    ], data.settings.reading.arbitration.revealStyle, "bar") }}
 
     {# Confirm decision - show the review page before saving #}
     {{ settingToggle("Confirm arbitration decision", "settings[reading][arbitration][confirmDecision]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.arbitration.confirmDecision, "true") }}
