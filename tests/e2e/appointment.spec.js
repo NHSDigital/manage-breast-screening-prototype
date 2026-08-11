@@ -62,7 +62,7 @@ test.describe('Screening appointment', () => {
   test('records medical history and a symptom, then completes', async ({
     page
   }) => {
-    const { clinic, appointment, fullName } = findTodayAppointment({ index: 0 })
+    const { clinic, appointment, fullName, fullNameReversed } = findTodayAppointment({ index: 0 })
 
     await pinSettings(page, appointmentSettings)
     await page.goto(`/clinics/${clinic.id}`)
@@ -81,7 +81,7 @@ test.describe('Screening appointment', () => {
     await expect(
       page.getByRole('heading', { name: 'Confirm identity' })
     ).toBeVisible()
-    await expect(page.getByText(fullName).first()).toBeVisible()
+    await expect(page.getByText(fullNameReversed).first()).toBeVisible()
     await page.getByRole('button', { name: 'Confirm identity' }).first().click()
 
     await expect(
@@ -102,7 +102,9 @@ test.describe('Screening appointment', () => {
     )
     await cancerLocation.evaluate((element) => element.click())
     await expect(cancerLocation).toBeChecked()
-    await historyModal.getByRole('button', { name: 'Save' }).click()
+    const saveButton = historyModal.getByRole('button', { name: 'Save' })
+    await revealInModal(saveButton)
+    await saveButton.click()
     await expectModalClosed(historyModal)
 
     await expect(page.getByText('Cancer location')).toBeVisible()
