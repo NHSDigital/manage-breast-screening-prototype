@@ -32,7 +32,7 @@
       <div class="nhsuk-summary-list__row">
         <dt class="nhsuk-summary-list__key">{{ "First read" if loop.first else "Second read" }}</dt>
         <dd class="nhsuk-summary-list__value">
-          {{ read.timestamp | formatDate("D MMM YYYY") }} –
+          {{ read.timestamp | formatDate }} –
           {{ read.readerId | getUsername({ format: "short" }) }}
         </dd>
       </div>
@@ -68,10 +68,9 @@
 
   {% elseif revealStyle == 'card' %}
 
-    {# Feature card carrying the read metadata, with the reads revealed in
-       place #}
+    {# Feature card with the reads revealed in place. No meta rows here - the
+       condensed lists already carry the reader and date #}
     {% set cardContentHtml %}
-      {{ readsMetaHtml | safe }}
       <details class="app-reads-card-reveal">
         <summary class="app-reads-card-reveal__toggle">
           <span class="app-reads-card-reveal__toggle-text--closed">Show the reads</span>

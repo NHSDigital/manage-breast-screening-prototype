@@ -59,7 +59,7 @@
         {{ "Awaiting priors" | toTag | safe }}<br>
         {% for prior in awaitingPriorsList %}
           {% if prior.requestedDate %}
-            Requested {{ prior.requestedDate | formatDate("D MMM YYYY") }}
+            Requested {{ prior.requestedDate | formatDate }}
             {% if prior.requestReason %}
               – {{ prior.requestReason }}
             {% endif %}

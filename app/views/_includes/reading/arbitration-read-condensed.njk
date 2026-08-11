@@ -1,10 +1,10 @@
-{# One original read as a plain summary list with an adopt button - no card
-   chrome. For contexts that already say which read this is (a tab label),
-   the outcome appears as the first row and the reader as a "Read by" row.
-   Pass readLabel ("First read") where nothing else says so - the reader row
-   moves to the top and carries the label instead.
+{# One original read as a heading plus a plain summary list with an adopt
+   button - no card chrome. The heading says which read this is; the list
+   opens with the outcome and carries a "Read by" row near the bottom.
    Expects in context: read, appointment, appointmentId, data
-   Optional: readLabel, adoptButtonText, hideAdoptButtons, adoptViaFormaction
+   Optional: readLabel ("First read") - omit only where the surrounding
+   context already gives the read a heading; readHeadingLevel (default 3),
+   adoptButtonText, hideAdoptButtons, adoptViaFormaction
    (see arbitration-read-card.njk) #}
 
 {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
@@ -13,11 +13,16 @@
   {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
 {% endif %}
 
+{% if readLabel %}
+  {% set readHeadingLevel = readHeadingLevel or 3 %}
+  <h{{ readHeadingLevel }} class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ readLabel }}</h{{ readHeadingLevel }}>
+{% endif %}
+
 {% set allowEdits = false %}
 {% set hideOpinionRow = false %}
 {% set showReaderRow = true %}
-{% set readerRowLabel = readLabel or "Read by" %}
-{% set readerRowPosition = 'start' if readLabel else null %}
+{% set readerRowLabel = "Read by" %}
+{% set readerRowPosition = null %}
 {% set showAnnotationImages = withImages %}
 {% set annotationImagePaths = allPaths %}
 {% include "_includes/summary-lists/read-summary.njk" %}

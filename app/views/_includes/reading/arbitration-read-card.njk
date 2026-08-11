@@ -66,7 +66,7 @@
     {{ readLabel }}
     <span class="nhsuk-u-font-weight-normal nhsuk-u-font-size-19">
       – {{ read.readerId | getUsername({ format: "short" }) }},
-      {{ read.timestamp | formatDate("D MMM YYYY") }}
+      {{ read.timestamp | formatDate }}
     </span>
   </h3>
 {% endif %}

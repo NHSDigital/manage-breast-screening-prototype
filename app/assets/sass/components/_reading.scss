@@ -399,15 +399,12 @@
 // the arbitration opinion page - a details element whose summary reads as a
 // link
 .app-reads-card-reveal {
-  margin-top: nhsuk-spacing(3);
-
-  &[open] {
-    margin-top: 0;
-  }
+  margin-top: 0;
 
   &__toggle {
     display: inline-block;
     color: $nhsuk-link-colour;
+    @include nhsuk-font-size(19);
     text-decoration: underline;
     cursor: pointer;
 

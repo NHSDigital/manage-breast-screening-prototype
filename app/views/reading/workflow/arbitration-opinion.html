@@ -84,20 +84,15 @@
 
         {% if readsAsTabs %}
 
-          {# Case information and the two reads as tabs - the reads hidden by
-             default but one click away, and one read per tab #}
+          {# Case information and the reads as tabs - the reads hidden by
+             default but one click away, both together in a single tab #}
           {% set infoCardHtml %}
             {% set infoCardBare = true %}
             {% include "_includes/reading/opinion-info-card.njk" %}
           {% endset %}
-          {% set originalReads = readingCase | getOriginalReads %}
-          {% set firstReadHtml %}
-            {% set read = originalReads[0] %}
-            {% include "_includes/reading/arbitration-read-condensed.njk" %}
-          {% endset %}
-          {% set secondReadHtml %}
-            {% set read = originalReads[1] %}
-            {% include "_includes/reading/arbitration-read-condensed.njk" %}
+          {% set readsHtml %}
+            {% set readsLayout = 'condensed' %}
+            {% include "_includes/reading/arbitration-reads-cards.njk" %}
           {% endset %}
           {{ tabs({
             items: [
@@ -107,14 +102,9 @@
                 panel: { html: infoCardHtml }
               },
               {
-                label: "First read",
-                id: "first-read",
-                panel: { html: firstReadHtml }
-              },
-              {
-                label: "Second read",
-                id: "second-read",
-                panel: { html: secondReadHtml }
+                label: "First and second reads",
+                id: "first-and-second-reads",
+                panel: { html: readsHtml }
               }
             ]
           }) }}
