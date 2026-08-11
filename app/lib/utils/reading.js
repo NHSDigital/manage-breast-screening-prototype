@@ -1750,14 +1750,22 @@ const skipAppointmentInSession = (data, sessionId, appointmentId) => {
 }
 
 /**
- * Add the next eligible appointment to a session if it is under its target size
- * Called after each read or skip to grow the session one case at a time
+ * Add the next eligible appointment to a session if it needs one
+ *
+ * Called after each read or skip to grow the session one case at a time. A case
+ * is only added when the reader has nowhere forward to go: settling a case that
+ * still has a readable case after it - going back for a skipped case from the
+ * session overview, say - shouldn't pull in a case they haven't reached yet.
+ * The target size caps how large the session can ever grow.
  *
  * @param {object} data - Session data
  * @param {string} sessionId - Session ID
+ * @param {string} [currentAppointmentId] - The case just settled, if any. Omit
+ *   to ask only whether the session is under its target size, which is what the
+ *   resume route needs when no case is on screen yet.
  * @returns {boolean} Whether an appointment was added
  */
-const topUpSession = (data, sessionId) => {
+const topUpSession = (data, sessionId, currentAppointmentId = null) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return false
 
@@ -1766,12 +1774,11 @@ const topUpSession = (data, sessionId) => {
 
   const currentUserId = data.currentUser?.id
 
-  // Count appointments that are still actionable for this user — appointments they have read,
-  // can still read, deferred, or awaiting priors. Appointments fully read by other readers
-  // ('dead' slots) are excluded so the session can be topped up to replace them.
-  // Arbitration has no dead slots: every case is fully read by definition (so
-  // canUserReadAppointment is the wrong test) and a claimed case can always be
-  // settled by the session's arbitrators, so every slot counts.
+  // Count the slots this session has spent against its target. Appointments
+  // fully read by other readers ('dead' slots) are excluded so the session can
+  // be topped up to replace them. Arbitration has no dead slots: every case is
+  // fully read by definition (so canUserReadAppointment is the wrong test) and a
+  // claimed case can always be settled by the session's arbitrators.
   const isArbitration = session.type === 'arbitration'
   const actionableCount = isArbitration
     ? session.appointmentIds.length
@@ -1789,6 +1796,28 @@ const topUpSession = (data, sessionId) => {
       }).length
 
   if (!session.targetSize || actionableCount >= session.targetSize) return false
+
+  // Nothing to add while the reader still has a case to move on to. This asks
+  // the same question the redirect after a read asks, so the session grows
+  // exactly when navigation would otherwise run out of cases - forward only,
+  // and ignoring skipped cases, which are returned to via skipped-review
+  if (currentAppointmentId) {
+    const sessionAppointments = session.appointmentIds
+      .map((appointmentId) =>
+        data.appointments.find((e) => e.id === appointmentId)
+      )
+      .filter(Boolean)
+
+    const nextCase = getNextCaseInSession(
+      data,
+      session,
+      sessionAppointments,
+      currentAppointmentId,
+      currentUserId
+    )
+
+    if (nextCase) return false
+  }
 
   // Exclude appointments already in this session to avoid duplicates. Appointments that
   // are in other sessions are allowed — the same appointment can appear in multiple

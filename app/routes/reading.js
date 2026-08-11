@@ -911,7 +911,7 @@ module.exports = (router) => {
       skipAppointmentInSession(data, sessionId, appointmentId)
 
       // Top up the batch with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next readable appointment after current position (no wrap)
       const currentUserId = data.currentUser.id
@@ -1020,7 +1020,7 @@ module.exports = (router) => {
       unskipAppointmentInSession(data, sessionId, appointmentId)
 
       // Top up the batch with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next readable appointment in batch after the current position, wrapping
       // to the start if needed. This mirrors the navigation in save-opinion.
@@ -1165,7 +1165,7 @@ module.exports = (router) => {
       unskipAppointmentInSession(data, sessionId, appointmentId)
 
       // Top up the session with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next readable appointment after current position
       const session = getReadingSession(data, sessionId)
@@ -2210,7 +2210,7 @@ module.exports = (router) => {
       writeReading(data, appointment, currentUserId, readResult, sessionId)
 
       // Top up the session with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next unread appointment in session after the current position (no wrap)
       const session = getReadingSession(data, sessionId)
