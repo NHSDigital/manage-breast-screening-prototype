@@ -20,12 +20,21 @@
 
   <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
 
+  {# ANS with details is a final outcome; without details still needs action #}
+  {% set ansWithoutDetails = [] %}
+  {% for appointment in allAppointments %}
+    {% if appointment.status == "attended_not_screened" and not (appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length) %}
+      {% set ansWithoutDetails = ansWithoutDetails | push(appointment) %}
+    {% endif %}
+  {% endfor %}
+
   {% set needsOutcomeAppointments = allAppointments | removeWhere("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
+  {% set needsOutcomeCount = needsOutcomeAppointments | length + ansWithoutDetails | length %}
 
   <div id="js-close-clinic-content">
 
   {{ insetText({
-    html: "<p>Record an appointment outcome for every participant to close this clinic.</p><p>There were " + allAppointments | length + " total participants in this clinic, and " + needsOutcomeAppointments | length + " still need a final outcome assigned.</p>"
+    html: "<p>Record an appointment outcome for every participant to close this clinic.</p><p>There were " + allAppointments | length + " total participants in this clinic, and " + needsOutcomeCount + " still need a final outcome assigned.</p>"
   }) }}
 
   {# Macro for appointment table rows #}
@@ -49,9 +58,17 @@
           <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
         {% elseif appointment.status == "attended_not_screened" %}
           <a href="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>
+          {% if appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
+            <br><a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Manage details</a>
+          {% else %}
+            <br><a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Add details</a>
+          {% endif %}
         {% elseif appointment.status == "did_not_attend" %}
           <a href="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>
         {% endif %}
+        {% endif %}
+        {% if not showActions and appointment.status == "attended_not_screened" and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
+          <a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Manage details</a>
         {% endif %}
       </td>
     </tr>
@@ -76,7 +93,7 @@
     </table>
   {% endmacro %}
 
-  {% if needsOutcomeAppointments | length %}
+  {% if needsOutcomeCount %}
     {% set needsOutcomeHtml %}
       {# In progress #}
       {% set inProgressAppointments = allAppointments | where("status", ["in_progress", "paused"]) %}
@@ -86,14 +103,21 @@
         {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
       {% endif %}
 
-      {# Checked in, not screened #}
+      {# Checked in, not screened (includes ANS without details) #}
       {% set checkedInAppointments = allAppointments | where("status", "checked_in") %}
-      {% if checkedInAppointments | length %}
+      {% set checkedInAndAns = [] %}
+      {% for appointment in checkedInAppointments %}
+        {% set checkedInAndAns = checkedInAndAns | push(appointment) %}
+      {% endfor %}
+      {% for appointment in ansWithoutDetails %}
+        {% set checkedInAndAns = checkedInAndAns | push(appointment) %}
+      {% endfor %}
+      {% if checkedInAndAns | length %}
         <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
         <p class="js-bulk-action-container">
           <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened-all" role="button">Mark all as attended not screened</a>
         </p>
-        {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
+        {{ statusGroupTable(checkedInAndAns, clinicId, true) }}
       {% endif %}
 
       {# Did not check in #}
@@ -108,15 +132,20 @@
     {% endset %}
 
     {{ card({
-      heading: "Needs an outcome (" + needsOutcomeAppointments | length + ")",
+      heading: "Needs an outcome (" + needsOutcomeCount + ")",
       headingLevel: "2",
       feature: true,
       descriptionHtml: needsOutcomeHtml
     }) }}
   {% endif %}
 
-  {# Outcome recorded #}
-  {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
+  {# Outcome recorded — includes ANS with details #}
+  {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "cancelled", "rescheduled"]) %}
+  {% for appointment in allAppointments %}
+    {% if appointment.status == "attended_not_screened" and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
+      {% set outcomeRecordedAppointments = outcomeRecordedAppointments | push(appointment) %}
+    {% endif %}
+  {% endfor %}
 
   {% set outcomeRecordedHtml %}
     <p><a href="" class="js-refresh-link" hidden>Refresh to update the list</a></p>
@@ -167,7 +196,8 @@
 
     function renderActionCell(appointmentId, newStatus) {
       if (newStatus === 'attended_not_screened') {
-        return '<a href="/clinics/' + clinicId + '/close/undo-attended-not-screened/' + appointmentId + '" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>'
+        return '<a href="/clinics/' + clinicId + '/close/undo-attended-not-screened/' + appointmentId + '" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>' +
+          '<br><a href="/clinics/' + clinicId + '/close/reason/' + appointmentId + '" class="js-open-details-modal">Add details</a>'
       }
       if (newStatus === 'did_not_attend') {
         return '<a href="/clinics/' + clinicId + '/close/undo-did-not-attend/' + appointmentId + '" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>'
@@ -282,6 +312,19 @@
     }
 
     bindActions()
+
+    // Open details modal without page reload on close
+    container.addEventListener('click', function (e) {
+      var link = e.target.closest('.js-open-details-modal')
+      if (!link) return
+      e.preventDefault()
+      window.openModal('app-form-modal', {
+        loadUrl: link.href,
+        onSuccess: function () {
+          link.textContent = 'Manage details'
+        }
+      })
+    })
   })
 </script>
 {% endblock %}

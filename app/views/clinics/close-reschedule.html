@@ -1,8 +1,9 @@
 {# app/views/clinics/close-reschedule.html #}
 
-{% extends 'layout-app.html' %}
+{% extends parentLayout or 'layout-app.html' %}
 
 {% set pageHeading = "Request to reschedule this appointment" %}
+{% set formAction = "/clinics/" + clinicId + "/close/reschedule/" + appointment.id %}
 
 {% set back = {
   href: "/clinics/" + clinicId + "/close/reason/" + appointment.id,
@@ -13,7 +14,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullName }} ({{ currentIndex }} of {{ totalCount }})
+      {{ participant | getFullName }}
     </span>
     {{ pageHeading }}
   </h1>

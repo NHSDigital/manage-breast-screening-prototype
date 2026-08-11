@@ -1,8 +1,9 @@
 {# app/views/clinics/close-attended-not-screened-reason.html #}
 
-{% extends 'layout-app.html' %}
+{% extends parentLayout or 'layout-app.html' %}
 
 {% set pageHeading = "Why was this appointment stopped?" %}
+{% set formAction = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
 
 {% set back = {
   href: "/clinics/" + clinicId + "/close",
@@ -13,7 +14,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullName }} ({{ currentIndex }} of {{ totalCount }})
+      {{ participant | getFullName }}
     </span>
     {{ pageHeading }}
   </h1>

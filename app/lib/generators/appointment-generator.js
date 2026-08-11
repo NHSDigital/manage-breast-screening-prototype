@@ -394,6 +394,17 @@ const generateAppointment = ({
         startedBy: randomUser.id,
         endedAt: actualEndTime.toISOString()
       }
+
+      appointment.appointmentStopped = {
+        stoppedReason: [faker.helpers.arrayElement([
+          'Consent withdrawn',
+          'Physical health issue',
+          'Pain during screening',
+          'Technical issues at clinic',
+          'No qualified mammographer available'
+        ])],
+        needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
+      }
     }
 
     // Select image set for appointments with mammogram data
