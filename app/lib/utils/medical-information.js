@@ -91,7 +91,7 @@ const summariseMedicalHistoryItem = (item) => {
       break
 
     case 'breastImplantsAugmentation':
-      // Be specific about what procedures were done
+      // Be specific about what procedures were done, and which breast(s)
       const rightProcedures = item.proceduresRightBreast || []
       const leftProcedures = item.proceduresLeftBreast || []
       const hasRightImplants =
@@ -104,39 +104,59 @@ const summariseMedicalHistoryItem = (item) => {
       const hasLeftAugmentation =
         leftProcedures.includes && leftProcedures.includes('Other augmentation')
 
+      // Build a description that names each procedure with its side(s)
+      const implantParts = []
+      const augParts = []
+
+      if (hasRightImplants && hasLeftImplants) {
+        implantParts.push('Breast implants, both breasts')
+      } else if (hasRightImplants) {
+        implantParts.push('Breast implants, right breast')
+      } else if (hasLeftImplants) {
+        implantParts.push('Breast implants, left breast')
+      }
+
+      if (hasRightAugmentation && hasLeftAugmentation) {
+        augParts.push('other augmentation, both breasts')
+      } else if (hasRightAugmentation) {
+        augParts.push('other augmentation, right breast')
+      } else if (hasLeftAugmentation) {
+        augParts.push('other augmentation, left breast')
+      }
+
+      // When both procedures are on the same side(s), combine into one phrase
       let procedureType = ''
-      if (
-        (hasRightImplants || hasLeftImplants) &&
-        (hasRightAugmentation || hasLeftAugmentation)
-      ) {
-        procedureType = 'Breast implants and augmentation'
-      } else if (hasRightImplants || hasLeftImplants) {
-        procedureType = 'Breast implants'
-      } else if (hasRightAugmentation || hasLeftAugmentation) {
-        procedureType = 'Breast augmentation'
+      if (implantParts.length && augParts.length) {
+        // Different procedures — list separately with "and"
+        procedureType = implantParts[0] + ' and ' + augParts[0]
+      } else if (implantParts.length) {
+        procedureType = implantParts[0]
+      } else if (augParts.length) {
+        // Capitalise when augmentation is the only procedure
+        procedureType = augParts[0].charAt(0).toUpperCase() + augParts[0].slice(1)
       } else {
         procedureType = typeName
       }
 
       summary = procedureType
 
-      // Check if implants were removed
-      if (item.implantsRemoved === 'Yes' || item.yearRemoved) {
-        if (item.year) {
-          summary += ` (${item.year}, removed`
-          if (item.yearRemoved) {
-            summary += ` ${item.yearRemoved}`
-          }
-          summary += ')'
+      // implantsRemoved is stored as an array from checkboxes
+      const isImplantsRemoved = Array.isArray(item.implantsRemoved)
+        ? item.implantsRemoved.length > 0
+        : Boolean(item.implantsRemoved)
+
+      // Build parenthetical details
+      const implantDetails = []
+      if (item.year) implantDetails.push(item.year)
+      if (isImplantsRemoved || item.yearRemoved) {
+        if (item.yearRemoved) {
+          implantDetails.push(`removed ${item.yearRemoved}`)
         } else {
-          summary += ' (removed'
-          if (item.yearRemoved) {
-            summary += ` ${item.yearRemoved}`
-          }
-          summary += ')'
+          implantDetails.push('removed')
         }
-      } else if (item.year) {
-        summary += ` (${item.year})`
+      }
+      if (implantDetails.length) {
+        summary += ` (${implantDetails.join(', ')})`
       }
       return summary
 
