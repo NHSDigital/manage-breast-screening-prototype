@@ -137,12 +137,11 @@ const summariseMedicalHistoryItem = (item) => {
         notKnownParts.push('procedure not known, left breast')
       }
 
-      // Combine procedure descriptions with "and"
-      // Sort so right breast appears before left breast
+      // Sort: both breasts first, then right, then left
       const allProcParts = [...implantParts, ...augParts, ...notKnownParts]
       allProcParts.sort((a, b) => {
         const sideOrder = (s) =>
-          s.includes('right breast') ? 0 : s.includes('both breasts') ? 1 : 2
+          s.includes('both breasts') ? 0 : s.includes('right breast') ? 1 : 2
         return sideOrder(a) - sideOrder(b)
       })
       let procedureType = ''
