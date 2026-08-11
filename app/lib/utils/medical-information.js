@@ -103,10 +103,15 @@ const summariseMedicalHistoryItem = (item) => {
         rightProcedures.includes('Other augmentation')
       const hasLeftAugmentation =
         leftProcedures.includes && leftProcedures.includes('Other augmentation')
+      const hasRightNotKnown =
+        rightProcedures.includes && rightProcedures.includes('Not known')
+      const hasLeftNotKnown =
+        leftProcedures.includes && leftProcedures.includes('Not known')
 
       // Build a description that names each procedure with its side(s)
       const implantParts = []
       const augParts = []
+      const notKnownParts = []
 
       if (hasRightImplants && hasLeftImplants) {
         implantParts.push('Breast implants, both breasts')
@@ -124,16 +129,27 @@ const summariseMedicalHistoryItem = (item) => {
         augParts.push('other augmentation, left breast')
       }
 
-      // When both procedures are on the same side(s), combine into one phrase
+      if (hasRightNotKnown && hasLeftNotKnown) {
+        notKnownParts.push('procedure not known, both breasts')
+      } else if (hasRightNotKnown) {
+        notKnownParts.push('procedure not known, right breast')
+      } else if (hasLeftNotKnown) {
+        notKnownParts.push('procedure not known, left breast')
+      }
+
+      // Combine procedure descriptions with "and"
+      // Sort so right breast appears before left breast
+      const allProcParts = [...implantParts, ...augParts, ...notKnownParts]
+      allProcParts.sort((a, b) => {
+        const sideOrder = (s) =>
+          s.includes('right breast') ? 0 : s.includes('both breasts') ? 1 : 2
+        return sideOrder(a) - sideOrder(b)
+      })
       let procedureType = ''
-      if (implantParts.length && augParts.length) {
-        // Different procedures — list separately with "and"
-        procedureType = implantParts[0] + ' and ' + augParts[0]
-      } else if (implantParts.length) {
-        procedureType = implantParts[0]
-      } else if (augParts.length) {
-        // Capitalise when augmentation is the only procedure
-        procedureType = augParts[0].charAt(0).toUpperCase() + augParts[0].slice(1)
+      if (allProcParts.length > 0) {
+        // Capitalise the first part
+        allProcParts[0] = allProcParts[0].charAt(0).toUpperCase() + allProcParts[0].slice(1)
+        procedureType = allProcParts.join(' and ')
       } else {
         procedureType = typeName
       }
