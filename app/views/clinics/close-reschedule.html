@@ -1,0 +1,67 @@
+{# app/views/clinics/close-reschedule.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Request to reschedule this appointment" %}
+
+{% set back = {
+  href: "/clinics/" + clinicId + "/close/reason/" + appointment.id,
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }} ({{ currentIndex }} of {{ totalCount }})
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <form method="post" action="/clinics/{{ clinicId }}/close/reschedule/{{ appointment.id }}">
+
+    {{ radios({
+      name: "closeRescheduleForm[timing]",
+      value: data.closeRescheduleForm.timing,
+      fieldset: {
+        legend: {
+          text: "When should the appointment be?",
+          size: "m",
+          isPageHeading: false
+        }
+      },
+      items: [
+        {
+          value: "within-6-weeks",
+          text: "Within the next 6 weeks"
+        },
+        {
+          value: "more-than-6-weeks",
+          text: "More than 6 weeks away"
+        }
+      ]
+    } | populateErrors) }}
+
+    {{ textarea({
+      name: "closeRescheduleForm[note]",
+      label: {
+        text: "Note for rescheduling (optional)",
+        size: "m"
+      },
+      hint: {
+        text: "Include any other relevant information"
+      },
+      rows: 5,
+      value: data.closeRescheduleForm.note,
+      autocomplete: "off"
+    }) }}
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Continue"
+      }) }}
+    </div>
+
+  </form>
+
+{% endblock %}

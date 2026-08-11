@@ -321,6 +321,206 @@ module.exports = (router) => {
     res.redirect(`/clinics/${id}/close`)
   })
 
+  // Sequential reason collection for attended-not-screened appointments
+  router.get('/clinics/:id/close/reason/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    const data = req.session.data
+    const queueKey = `closeClinicReasonQueue_${id}`
+    const queue = req.session[queueKey] || []
+
+    const appointment = data.appointments.find((a) => a.id === appointmentId)
+    if (!appointment) {
+      return res.redirect(`/clinics/${id}/close`)
+    }
+
+    const participant = getParticipant(data, appointment.participantId)
+    const clinic = getClinic(data, id)
+    const currentIndex = queue.indexOf(appointmentId)
+
+    // Ensure form data object exists for template access
+    if (!data.closeReasonForm) {
+      data.closeReasonForm = {}
+    }
+
+    res.render('clinics/close-attended-not-screened-reason', {
+      clinicId: id,
+      clinic,
+      appointment,
+      participant,
+      currentIndex: currentIndex + 1,
+      totalCount: queue.length
+    })
+  })
+
+  router.post('/clinics/:id/close/reason/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    const data = req.session.data
+    const queueKey = `closeClinicReasonQueue_${id}`
+    const queue = req.session[queueKey] || []
+
+    const appointment = data.appointments.find((a) => a.id === appointmentId)
+    if (!appointment) {
+      return res.redirect(`/clinics/${id}/close`)
+    }
+
+    // Extract form values
+    const formData = data.closeReasonForm || {}
+    const stoppedReason = formData.stoppedReason
+    const needsReschedule = formData.needsReschedule
+    const otherDetails = formData.otherDetails
+    const hasOtherReasonButNoDetails =
+      stoppedReason?.includes('Other reason') && !otherDetails
+
+    // Validation
+    if (!stoppedReason || !needsReschedule || hasOtherReasonButNoDetails) {
+      if (!stoppedReason) {
+        req.flash('error', {
+          text: 'Select why this appointment has been stopped',
+          name: 'closeReasonForm[stoppedReason]',
+          href: '#stoppedReason'
+        })
+      }
+      if (hasOtherReasonButNoDetails) {
+        req.flash('error', {
+          text: 'Provide details about the other reason',
+          name: 'closeReasonForm[otherDetails]',
+          href: '#otherDetails'
+        })
+      }
+      if (!needsReschedule) {
+        req.flash('error', {
+          text: 'Select whether the appointment should be rescheduled',
+          name: 'closeReasonForm[needsReschedule]',
+          href: '#needsReschedule'
+        })
+      }
+      return res.redirect(`/clinics/${id}/close/reason/${appointmentId}`)
+    }
+
+    // Save the reason data to the appointment
+    appointment.appointmentStopped = {
+      stoppedReason,
+      needsReschedule,
+      otherDetails: formData.otherDetails,
+      failedIdentityDetails: formData.failedIdentityDetails,
+      painDetails: formData.painDetails,
+      symptomaticDetails: formData.symptomaticDetails,
+      consentDetails: formData.consentDetails,
+      physicalHealthDetails: formData.physicalHealthDetails,
+      mentalHealthDetails: formData.mentalHealthDetails,
+      languageDetails: formData.languageDetails,
+      mammographerDetails: formData.mammographerDetails,
+      technicalDetails: formData.technicalDetails,
+      optOutDetails: formData.optOutDetails
+    }
+
+    // Clear form data
+    delete data.closeReasonForm
+
+    // If reschedule requested, go to reschedule step before advancing
+    if (needsReschedule === 'yes') {
+      return res.redirect(`/clinics/${id}/close/reschedule/${appointmentId}`)
+    }
+
+    // Advance to next in queue or close the clinic
+    advanceCloseQueue(req, res, id, appointmentId)
+  })
+
+  // Reschedule step within the close loop
+  router.get('/clinics/:id/close/reschedule/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    const data = req.session.data
+    const queueKey = `closeClinicReasonQueue_${id}`
+    const queue = req.session[queueKey] || []
+
+    const appointment = data.appointments.find((a) => a.id === appointmentId)
+    if (!appointment) {
+      return res.redirect(`/clinics/${id}/close`)
+    }
+
+    const participant = getParticipant(data, appointment.participantId)
+    const clinic = getClinic(data, id)
+    const currentIndex = queue.indexOf(appointmentId)
+
+    // Ensure form data object exists for template access
+    if (!data.closeRescheduleForm) {
+      data.closeRescheduleForm = {}
+    }
+
+    res.render('clinics/close-reschedule', {
+      clinicId: id,
+      clinic,
+      appointment,
+      participant,
+      currentIndex: currentIndex + 1,
+      totalCount: queue.length
+    })
+  })
+
+  router.post('/clinics/:id/close/reschedule/:appointmentId', (req, res) => {
+    const { id, appointmentId } = req.params
+    const data = req.session.data
+
+    const appointment = data.appointments.find((a) => a.id === appointmentId)
+    if (!appointment) {
+      return res.redirect(`/clinics/${id}/close`)
+    }
+
+    const formData = data.closeRescheduleForm || {}
+    const timing = formData.timing
+
+    if (!timing) {
+      req.flash('error', {
+        text: 'Select when the appointment should be rescheduled',
+        name: 'closeRescheduleForm[timing]',
+        href: '#timing'
+      })
+      return res.redirect(`/clinics/${id}/close/reschedule/${appointmentId}`)
+    }
+
+    // Save reschedule data to the appointment
+    appointment.reschedule = {
+      timing,
+      note: formData.note
+    }
+    updateAppointmentStatus(data, appointmentId, 'rescheduled')
+
+    // Clear form data
+    delete data.closeRescheduleForm
+
+    // Advance to next in queue or close the clinic
+    advanceCloseQueue(req, res, id, appointmentId)
+  })
+
+  // Shared helper: advance to the next appointment in queue or close the clinic
+  const advanceCloseQueue = (req, res, clinicId, currentAppointmentId) => {
+    const data = req.session.data
+    const queueKey = `closeClinicReasonQueue_${clinicId}`
+    const queue = req.session[queueKey] || []
+    const currentIndex = queue.indexOf(currentAppointmentId)
+    const nextIndex = currentIndex + 1
+
+    if (nextIndex < queue.length) {
+      return res.redirect(`/clinics/${clinicId}/close/reason/${queue[nextIndex]}`)
+    }
+
+    // Queue complete — close the clinic
+    delete req.session[queueKey]
+
+    const clinicIndex = data.clinics.findIndex((c) => c.id === clinicId)
+    if (clinicIndex !== -1) {
+      const updatedClinic = { ...data.clinics[clinicIndex], status: 'closed' }
+      data.clinics[clinicIndex] = updatedClinic
+      if (data._changes?.clinics) {
+        data._changes.clinics[clinicId] = updatedClinic
+      }
+      req.flash('success', `Clinic ${updatedClinic.clinicCode} closed`)
+    }
+
+    delete req.session[`closeClinicResolved_${clinicId}`]
+    res.redirect('/clinics/completed')
+  }
+
   // Confirm and close clinic
   router.post('/clinics/:id/close', (req, res) => {
     const { id } = req.params
@@ -336,6 +536,17 @@ module.exports = (router) => {
         text: `${unresolved.length} participant${unresolved.length === 1 ? '' : 's'} still need${unresolved.length === 1 ? 's' : ''} an outcome recorded before the clinic can be closed`
       }])
       return res.redirect(`/clinics/${id}/close`)
+    }
+
+    // Check for attended-not-screened appointments missing a reason
+    const needsReason = clinicAppointments.filter(
+      (a) => a.status === 'attended_not_screened' && !a.appointmentStopped?.stoppedReason?.length
+    )
+
+    if (needsReason.length > 0) {
+      const queueKey = `closeClinicReasonQueue_${id}`
+      req.session[queueKey] = needsReason.map((a) => a.id)
+      return res.redirect(`/clinics/${id}/close/reason/${needsReason[0].id}`)
     }
 
     const clinicIndex = data.clinics.findIndex((c) => c.id === id)
