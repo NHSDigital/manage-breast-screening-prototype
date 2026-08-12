@@ -182,6 +182,9 @@ module.exports = (router) => {
     }
 
     const clinicData = getClinicData(req.session.data, req.params.id)
+    if (!clinicData) {
+      return res.redirect('/clinics')
+    }
     let remainingCount = filterAppointmentsByStatus(
       clinicData.appointments,
       'remaining'
