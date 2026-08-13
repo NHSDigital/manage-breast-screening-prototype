@@ -15,7 +15,7 @@ const {
 } = require('../lib/utils/referrers')
 const { getParticipant, getFullName } = require('../lib/utils/participants')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
-const { getAppointment } = require('../lib/utils/appointment-data')
+const { getAppointment, updateAppointmentData } = require('../lib/utils/appointment-data')
 
 /**
  * Get clinic and its related data from id
@@ -335,9 +335,12 @@ module.exports = (router) => {
     const participant = getParticipant(data, appointment.participantId)
     const clinic = getClinic(data, id)
 
-    if (!data.closeReasonForm) {
-      data.closeReasonForm = {}
-    }
+    // Pre-populate form with existing data, syncing both session and locals
+    const formData = appointment.appointmentStopped
+      ? { ...appointment.appointmentStopped }
+      : {}
+    data.closeReasonForm = formData
+    res.locals.data.closeReasonForm = formData
 
     res.render('clinics/close-attended-not-screened-reason', {
       clinicId: id,
@@ -389,22 +392,24 @@ module.exports = (router) => {
       return res.redirect(`/clinics/${id}/close/reason/${appointmentId}`)
     }
 
-    // Save the reason data to the appointment
-    appointment.appointmentStopped = {
-      stoppedReason,
-      needsReschedule,
-      otherDetails: formData.otherDetails,
-      failedIdentityDetails: formData.failedIdentityDetails,
-      painDetails: formData.painDetails,
-      symptomaticDetails: formData.symptomaticDetails,
-      consentDetails: formData.consentDetails,
-      physicalHealthDetails: formData.physicalHealthDetails,
-      mentalHealthDetails: formData.mentalHealthDetails,
-      languageDetails: formData.languageDetails,
-      mammographerDetails: formData.mammographerDetails,
-      technicalDetails: formData.technicalDetails,
-      optOutDetails: formData.optOutDetails
-    }
+    // Save the reason data to the appointment via updateAppointmentData (not direct mutation)
+    updateAppointmentData(data, appointmentId, {
+      appointmentStopped: {
+        stoppedReason,
+        needsReschedule,
+        otherDetails: formData.otherDetails,
+        failedIdentityDetails: formData.failedIdentityDetails,
+        painDetails: formData.painDetails,
+        symptomaticDetails: formData.symptomaticDetails,
+        consentDetails: formData.consentDetails,
+        physicalHealthDetails: formData.physicalHealthDetails,
+        mentalHealthDetails: formData.mentalHealthDetails,
+        languageDetails: formData.languageDetails,
+        mammographerDetails: formData.mammographerDetails,
+        technicalDetails: formData.technicalDetails,
+        optOutDetails: formData.optOutDetails
+      }
+    })
 
     delete data.closeReasonForm
 
@@ -433,9 +438,12 @@ module.exports = (router) => {
     const participant = getParticipant(data, appointment.participantId)
     const clinic = getClinic(data, id)
 
-    if (!data.closeRescheduleForm) {
-      data.closeRescheduleForm = {}
-    }
+    // Pre-populate form with existing data, syncing both session and locals
+    const rescheduleFormData = appointment.reschedule
+      ? { ...appointment.reschedule }
+      : {}
+    data.closeRescheduleForm = rescheduleFormData
+    res.locals.data.closeRescheduleForm = rescheduleFormData
 
     res.render('clinics/close-reschedule', {
       clinicId: id,
@@ -466,10 +474,12 @@ module.exports = (router) => {
       return res.redirect(`/clinics/${id}/close/reschedule/${appointmentId}`)
     }
 
-    appointment.reschedule = {
-      timing,
-      note: formData.note
-    }
+    updateAppointmentData(data, appointmentId, {
+      reschedule: {
+        timing,
+        note: formData.note
+      }
+    })
     updateAppointmentStatus(data, appointmentId, 'rescheduled')
 
     delete data.closeRescheduleForm

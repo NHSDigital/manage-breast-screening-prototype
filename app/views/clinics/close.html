@@ -47,7 +47,12 @@
         <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-1">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
         <p class="nhsuk-u-margin-bottom-0"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
       </td>
-      <td class="nhsuk-table__cell" data-cell="status">{{ appointment.status | toTag({ vocabulary: "appointment" }) }}</td>
+      <td class="nhsuk-table__cell" data-cell="status">
+        {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
+        {% if appointment.status == "rescheduled" and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
+          {{ "attended_not_screened" | toTag({ vocabulary: "appointment" }) }}
+        {% endif %}
+      </td>
       <td class="nhsuk-table__cell" data-cell="actions">
         {% if showActions %}
         {% if appointment.status == "in_progress" or appointment.status == "paused" %}
@@ -67,7 +72,7 @@
           <a href="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>
         {% endif %}
         {% endif %}
-        {% if not showActions and appointment.status == "attended_not_screened" and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
+        {% if not showActions and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
           <a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Manage details</a>
         {% endif %}
       </td>
