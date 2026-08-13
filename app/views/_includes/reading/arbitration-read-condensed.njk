@@ -35,7 +35,7 @@
       text: adoptButtonText or "Agree – use as the outcome",
       name: "agreedReaderId",
       value: read.readerId,
-      classes: "nhsuk-u-margin-bottom-0",
+      classes: "nhsuk-u-margin-bottom-0  nhsuk-button--secondary",
       attributes: { formaction: "./arbitration-adopt-read" }
     }) }}
   {% else %}
@@ -44,7 +44,7 @@
         text: adoptButtonText or "Agree – use as the outcome",
         name: "agreedReaderId",
         value: read.readerId,
-        classes: "nhsuk-u-margin-bottom-0"
+        classes: "nhsuk-u-margin-bottom-0  nhsuk-button--secondary"
       }) }}
     </form>
   {% endif %}
