@@ -129,12 +129,24 @@ module.exports = (router) => {
   router.post('/reading/arbitration/panel-answer', (req, res) => {
     const data = req.session.data
 
-    // The picker chooses who else; the current user is an arbitrator too
+    // The picker chooses who else; the current user is an arbitrator too.
+    // 'other' is just the marker that the free-text names below apply.
     const chosenUserIds = []
       .concat(data.arbitrationTemp?.panelUserIds || [])
-      .filter((userId) => userId && userId !== '_unchecked')
+      .filter(
+        (userId) => userId && userId !== '_unchecked' && userId !== 'other'
+      )
 
-    if (chosenUserIds.length === 0) {
+    // Arbitrators without an account are recorded by name. Display code falls
+    // back to showing an unrecognised id as-is, so these need no user record.
+    const otherArbitratorNames = []
+      .concat(data.arbitrationTemp?.otherArbitratorNames || [])
+      .map((name) => name.trim())
+      .filter(Boolean)
+
+    const arbitrators = [...chosenUserIds, ...otherArbitratorNames]
+
+    if (arbitrators.length === 0) {
       req.flash('error', {
         text: 'Select who is arbitrating with you',
         name: 'arbitrationTemp[panelUserIds]',
@@ -147,7 +159,7 @@ module.exports = (router) => {
 
     startArbitrationSession(data, res, {
       mode: 'panel',
-      arbitratorIds: [data.currentUser.id, ...chosenUserIds]
+      arbitratorIds: [data.currentUser.id, ...arbitrators]
     })
   })
 }

@@ -3,7 +3,7 @@
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Who is arbitrating with you?" %}
+{% set pageHeading = "Apart from you, who is involved in this arbitration session?" %}
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 {% set back = {
   href: "/reading/arbitration/start",
@@ -22,6 +22,29 @@
     }) %}
   {% endfor %}
 
+  {# Someone arbitrating who has no account - their name is recorded as typed #}
+  {% set otherArbitratorHtml %}
+    {{ input({
+      id: "panel-other-name",
+      name: "arbitrationTemp[otherArbitratorNames]",
+      classes: "nhsuk-u-width-two-thirds",
+      label: {
+        text: "Name"
+      }
+    }) }}
+    <p class="nhsuk-u-margin-top-2">
+      <a href="#">Add another</a>
+    </p>
+  {% endset %}
+
+  {% set userItems = userItems | push({
+    value: "other",
+    text: "Other",
+    conditional: {
+      html: otherArbitratorHtml
+    }
+  }) %}
+
   {{ checkboxes({
     idPrefix: "panel-users",
     name: "arbitrationTemp[panelUserIds]",
@@ -33,7 +56,7 @@
       }
     },
     hint: {
-      text: "Select everyone taking part. Outcomes will be recorded as agreed by the group."
+      text: "For clinical assurance, everyone attending must be recorded and be there during all case decisions"
     },
     items: userItems
   } | populateErrors) }}
