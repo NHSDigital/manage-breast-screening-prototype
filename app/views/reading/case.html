@@ -38,9 +38,18 @@
     <div class="app-header-with-status__status-tag">
       {{ caseState | toTag({ vocabulary: "readingState", classes: "nhsuk-u-margin-bottom-2" }) }}
 
-      {# The outcome is the headline once there is one #}
+      {# The outcome is the headline once there is one. With both reads in but
+         not yet finalised, the outcome is already knowable - show it, marked
+         as provisional the same way the session overviews do #}
       {% if caseOutcome %}
         <br>{{ caseOutcome | toTag }}
+      {% elseif caseStatus.provisionalOutcome %}
+        <br>{{ caseStatus.provisionalOutcome | toTag }}
+        <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
+      {% elseif caseStatus.willArbitrate and caseState == 'awaiting_finalisation' %}
+        {# Discordant reads: the settled outcome will come from arbitration #}
+        <br>{{ "Arbitration" | toTag }}
+        <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
       {% endif %}
 
       {# Urgency matters only while the case is still open #}
@@ -289,7 +298,7 @@
               {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
             {%- endfor %},
             {{ thisRead.timestamp | formatDate }}
-            {%- if not (thisRead | isReadFinalised(data.settings)) %} – awaiting finalisation{% endif %}
+            {%- if not (thisRead | isReadFinalised(data.settings)) %} <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">– awaiting finalisation</span>{% endif %}
           {% endset %}
 
           {# Until the second read exists, an opinion is only its author's to
@@ -352,6 +361,8 @@
             classes: "nhsuk-expander",
             summaryText: "Arbitration",
             subtitle: "In progress" if caseState == 'in_arbitration' else "Not started yet",
+            status: caseState,
+            statusOptions: { vocabulary: "readingState" },
             html: arbitrationPlaceholderHtml
           }) }}
         {% endif %}
