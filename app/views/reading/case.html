@@ -286,13 +286,23 @@
                 {{ "waiting less than a day" if waitingDays < 1 else "waiting " + waitingDays + " " + ("day" | pluralise(waitingDays)) }}
               </span>
             </p>
-            <p class="nhsuk-u-margin-bottom-0">
-              {% if caseState == 'in_arbitration' %}
-                Arbitration is in progress. The outcome will appear here once it is recorded.
+
+            {% if caseState != 'in_arbitration' %}
+              {# A reader of the case shouldn't normally be its arbitrator #}
+              {% if readingCase | userHasReadCase(data.currentUser.id) %}
+                {{ insetText({
+                  html: '<p>You read this case, so you would not normally arbitrate it yourself.</p>
+                    <p class="nhsuk-u-margin-bottom-0"><a href="#">Arbitrate anyway</a></p>',
+                  classes: "nhsuk-u-margin-bottom-0"
+                }) }}
               {% else %}
-                The first and second reads disagree, so this case needs arbitration. The outcome will appear here once it is recorded.
+                {{ button({
+                  text: "Arbitrate now",
+                  href: "#",
+                  classes: "nhsuk-button--secondary nhsuk-u-margin-bottom-0"
+                }) }}
               {% endif %}
-            </p>
+            {% endif %}
           {% endif %}
         {% endcall %}
       {% endif %}
