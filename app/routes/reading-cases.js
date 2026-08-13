@@ -47,10 +47,14 @@ module.exports = (router) => {
       ? req.query.state
       : null
 
+    // Blocking filters: the two individual reasons, plus a meta filter for
+    // cases blocked by either
     const deferred = req.query.deferred === 'true'
+    const awaitingPriors = req.query.priors === 'true'
+    const blocked = req.query.blocked === 'true'
     const query = req.query.q || ''
 
-    const filters = { scope, state, deferred, query }
+    const filters = { scope, state, deferred, awaitingPriors, blocked, query }
 
     const { rows, totalCount, truncated } = getReadingCaseList(data, filters)
     const counts = getReadingCaseStateCounts(data, filters)

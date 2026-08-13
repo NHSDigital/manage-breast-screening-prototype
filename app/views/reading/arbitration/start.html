@@ -21,6 +21,13 @@
     <a href="/reading/cases?state=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
   </p>
 
+  {# Blocked cases stay in the backlog but arbitration can't offer them #}
+  {% if backlog.blocked %}
+    {{ insetText({
+      html: '<p>' ~ backlog.blocked ~ ' of these ' ~ ("case is" if backlog.blocked == 1 else "cases are") ~ ' deferred or awaiting priors and cannot be arbitrated yet. <a href="#" class="nhsuk-link--no-visited-state">View blocked cases</a></p>'
+    }) }}
+  {% endif %}
+
   {# Checkbox shown conditionally when 'Just me' is selected #}
   {% set excludeOwnReadsHtml %}
     {{ checkboxes({
@@ -31,8 +38,8 @@
           value: "yes",
           text: "Exclude cases where I was a reader",
           hint: {
-            text: "This leaves " ~ soloCount ~ " of " ~ backlogCount ~ " cases available to you"
-          } if soloCount != backlogCount else undefined,
+            text: "This leaves " ~ soloCount ~ " of " ~ availableCount ~ " cases available to you"
+          } if soloCount != availableCount else undefined,
           checked: true
         }
       ]

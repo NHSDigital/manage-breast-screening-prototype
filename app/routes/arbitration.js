@@ -13,6 +13,9 @@ const {
   createReadingSession,
   getFirstReadableAppointmentInSession
 } = require('../lib/utils/reading')
+const {
+  getArbitrationBacklogCounts
+} = require('../lib/utils/reading-case-list')
 
 /**
  * Create the arbitration session and send the user into its first case,
@@ -61,16 +64,22 @@ module.exports = (router) => {
   router.get('/reading/arbitration/start', (req, res) => {
     const data = req.session.data
 
-    const backlogCount = getEligibleCandidatesForSession(data, {
-      type: 'arbitration',
-      filters: { skipUserFilter: true }
-    }).length
+    // The whole backlog, counted the way the reading index and case list count
+    // it, plus what's holding part of it up
+    const backlog = getArbitrationBacklogCounts(data, { scope: 'open' })
 
+    // What arbitration would actually offer: the backlog minus blocked cases,
+    // and minus the user's own reads when they choose to exclude them
     const soloCount = getEligibleCandidatesForSession(data, {
       type: 'arbitration'
     }).length
 
-    res.render('reading/arbitration/start', { backlogCount, soloCount })
+    res.render('reading/arbitration/start', {
+      backlogCount: backlog.total,
+      availableCount: backlog.available,
+      backlog,
+      soloCount
+    })
   })
 
   router.post('/reading/arbitration/start-answer', (req, res) => {

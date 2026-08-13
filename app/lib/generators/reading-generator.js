@@ -15,6 +15,24 @@ const generateId = require('../utils/id-generator')
 // This can be overridden by seed data profile settings
 const DEFAULT_ALIGNMENT_PROBABILITY = 0.95
 
+/**
+ * Whether an outstanding prior request holds an appointment back from reading.
+ *
+ * Reads are never generated for these: a case with two reads and an unfulfilled
+ * prior request is a state the service can't reach, and it leaves cases sitting
+ * in the arbitration backlog that arbitration itself won't offer.
+ *
+ * @param {object} appointment - Appointment
+ * @returns {boolean}
+ */
+const hasBlockingPriors = (appointment) =>
+  Array.isArray(appointment.previousMammograms) &&
+  appointment.previousMammograms.some(
+    (mammogram) =>
+      mammogram.requestStatus === 'pending' ||
+      mammogram.requestStatus === 'requested'
+  )
+
 // Default read result weights when no set or misaligned
 const DEFAULT_READ_WEIGHTS = {
   normal: 0.7,
@@ -423,23 +441,12 @@ const generateReadingDataWithBacklogLimit = (
   { firstReader, secondReader, thirdReader },
   { backlogLimit, backlogPartialReadRatio, alignmentProbability }
 ) => {
-  // Sort oldest first so the oldest cases become fully read (they appear in history)
-  const sorted = [...eligibleAppointments].sort(
+  // Sort oldest first so the oldest cases become fully read (they appear in
+  // history). Appointments awaiting priors arrive already filtered out by the
+  // caller, so resolving the priors later is what makes them readable.
+  const sortedReadable = [...eligibleAppointments].sort(
     (a, b) => new Date(a.timing.startTime) - new Date(b.timing.startTime)
   )
-
-  // Appointments with pending or requested priors cannot realistically have been read —
-  // they must remain unread regardless of the backlog limit. Exclude them from
-  // the fully-read and partially-read groups so that resolving the priors later
-  // actually makes them available to read.
-  const hasBlockingPriors = (appointment) =>
-    Array.isArray(appointment.previousMammograms) &&
-    appointment.previousMammograms.some(
-      (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
-    )
-
-  const sortedReadable = sorted.filter((e) => !hasBlockingPriors(e))
-  const blockedByPriorsAppointments = sorted.filter(hasBlockingPriors)
 
   const clampedLimit = Math.min(backlogLimit, sortedReadable.length)
   const fullyReadAppointments = sortedReadable.slice(0, sortedReadable.length - clampedLimit)
@@ -454,8 +461,7 @@ const generateReadingDataWithBacklogLimit = (
     `Backlog limit: ${backlogLimit} cases — ` +
       `${fullyReadAppointments.length} fully read, ` +
       `${partialAppointments.length} partially read, ` +
-      `${unreadAppointments.length} unread, ` +
-      `${blockedByPriorsAppointments.length} unread (awaiting priors)`
+      `${unreadAppointments.length} unread`
   )
 
   let baseTime = dayjs().subtract(72, 'hours')
@@ -538,7 +544,22 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
     `Generating reading data using ${firstReader.firstName} ${firstReader.lastName}, ${secondReader.firstName} ${secondReader.lastName}, and ${thirdReader.firstName} ${thirdReader.lastName} as readers`
   )
 
-  const recentAppointments = appointments.filter((appointment) => eligibleForReading(appointment))
+  const eligibleAppointments = appointments.filter((appointment) =>
+    eligibleForReading(appointment)
+  )
+
+  // Appointments still awaiting priors get no reads at all, on either pattern
+  const recentAppointments = eligibleAppointments.filter(
+    (appointment) => !hasBlockingPriors(appointment)
+  )
+
+  const blockedByPriorsCount =
+    eligibleAppointments.length - recentAppointments.length
+  if (blockedByPriorsCount > 0) {
+    console.log(
+      `Leaving ${blockedByPriorsCount} appointments unread (awaiting priors)`
+    )
+  }
 
   // If a backlog limit is set, use a simplified reading pattern instead of the
   // default clinic-by-clinic pattern. backlogLimit=0 means empty backlog.
@@ -859,6 +880,63 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
 
     console.log(
       `Added ${count} discordant second reads from clinics 5-6 for arbitration`
+    )
+  }
+
+  // A COUPLE OF DEFERRED ARBITRATION CASES: discordant and released into the
+  // arbitration backlog, then deferred by an arbitrator. These stay in
+  // arbitration - deferral holds a case up without moving it back a stage - so
+  // they count towards the backlog while being blocked from an arbitration
+  // session.
+  if (clinics.length >= 7) {
+    const arbitrationDeferralReasons = [
+      'Awaiting second opinion from the clinical lead',
+      'Deferred pending review at the next arbitration meeting'
+    ]
+
+    const deferredArbitrationCandidates = [clinics[5], clinics[6]]
+      .flatMap((clinic) => clinic.appointments)
+      .filter((appointment) => {
+        const readingCase = casesByAppointmentId.get(appointment.id)
+        if (!readingCase || readingCase.deferral) return false
+        const reads = readingCase.reads || []
+        // Two discordant reads - the shape that sends a case to arbitration
+        return reads.length === 2 && reads[0].opinion !== reads[1].opinion
+      })
+      .slice(0, 2)
+
+    deferredArbitrationCandidates.forEach((appointment, index) => {
+      const readingCase = casesByAppointmentId.get(appointment.id)
+
+      // Everything here follows the later read - a case can't be finalised,
+      // released or deferred before it was read
+      const lastReadAt = readingCase.reads
+        .map((read) => dayjs(read.timestamp))
+        .sort((a, b) => b.valueOf() - a.valueOf())[0]
+
+      const releasedAt = lastReadAt.add(5, 'minute').toISOString()
+
+      // Both original reads must be finalised for the case to have reached
+      // arbitration in the first place
+      readingCase.reads.forEach((read) => {
+        read.finalisedAt = read.finalisedAt || releasedAt
+        read.finalisedBy = read.finalisedBy || read.readerId
+      })
+
+      readingCase.arbitration = {
+        releasedAt,
+        releasedBy: secondReader.id
+      }
+
+      readingCase.deferral = {
+        deferredAt: lastReadAt.add(20 + index * 5, 'minute').toISOString(),
+        deferredBy: thirdReader.id,
+        reason: arbitrationDeferralReasons[index]
+      }
+    })
+
+    console.log(
+      `Deferred ${deferredArbitrationCandidates.length} cases already in arbitration`
     )
   }
 
