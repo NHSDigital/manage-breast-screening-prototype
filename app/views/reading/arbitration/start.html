@@ -21,6 +21,24 @@
     <a href="/reading/cases?state=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
   </p>
 
+  {# Checkbox shown conditionally when 'Just me' is selected #}
+  {% set excludeOwnReadsHtml %}
+    {{ checkboxes({
+      idPrefix: "exclude-own-reads",
+      name: "arbitrationTemp[excludeOwnReads]",
+      items: [
+        {
+          value: "yes",
+          text: "Exclude cases where I was a reader",
+          hint: {
+            text: "This leaves " ~ soloCount ~ " of " ~ backlogCount ~ " cases available to you"
+          } if soloCount != backlogCount else undefined,
+          checked: true
+        }
+      ]
+    }) }}
+  {% endset %}
+
   {{ radios({
     idPrefix: "arbitration-mode",
     name: "arbitrationTemp[mode]",
@@ -34,9 +52,9 @@
       {
         value: "alone",
         text: "Just me",
-        hint: {
-          text: soloCount ~ " of " ~ backlogCount ~ " available to you"
-        } if soloCount != backlogCount else undefined
+        conditional: {
+          html: excludeOwnReadsHtml
+        }
       },
       {
         value: "panel",

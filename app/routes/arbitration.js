@@ -19,10 +19,10 @@ const {
  * falling back to the session overview when nothing is readable.
  */
 const startArbitrationSession = (data, res, arbitration) => {
-  const isPanel = arbitration.mode === 'panel'
+  const skipUserFilter = arbitration.mode === 'panel' || arbitration.skipUserFilter
   const sessionOptions = {
     type: 'arbitration',
-    filters: isPanel ? { skipUserFilter: true } : {}
+    filters: skipUserFilter ? { skipUserFilter: true } : {}
   }
 
   const candidates = getEligibleCandidatesForSession(data, sessionOptions)
@@ -90,11 +90,15 @@ module.exports = (router) => {
       return res.redirect('/reading/arbitration/panel')
     }
 
+    // Checkbox returns ['yes'] when checked, absent when unchecked
+    const excludeOwnReads = [].concat(data.arbitrationTemp?.excludeOwnReads || []).includes('yes')
+
     delete data.arbitrationTemp
 
     startArbitrationSession(data, res, {
       mode: 'alone',
-      arbitratorIds: [data.currentUser.id]
+      arbitratorIds: [data.currentUser.id],
+      skipUserFilter: !excludeOwnReads
     })
   })
 
