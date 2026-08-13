@@ -38,6 +38,11 @@
     <div class="app-header-with-status__status-tag">
       {{ caseState | toTag({ vocabulary: "readingState", classes: "nhsuk-u-margin-bottom-2" }) }}
 
+      {# The outcome is the headline once there is one #}
+      {% if caseOutcome %}
+        <br>{{ caseOutcome | toTag }}
+      {% endif %}
+
       {# Urgency matters only while the case is still open #}
       {% if caseState != 'concluded' and appointment %}
         {% set appointmentAge = appointment.timing.startTime | daysSince %}
@@ -130,7 +135,24 @@
         }) }}
       {% endif %}
 
+      {# Episode context first, then the case's own facts #}
       {% set caseRows = [
+        {
+          key: { text: "Episode" },
+          value: { text: episode | getEpisodeLabel },
+          actions: {
+            items: [
+              {
+                href: "/participants/" + episode.participantId + "/episodes/" + episode.id,
+                text: "View episode"
+              }
+            ]
+          }
+        },
+        {
+          key: { text: "Screened at" },
+          value: { text: clinicLocationName or "Unknown" }
+        },
         {
           key: { text: "Images taken" },
           value: { html: (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span>' },
@@ -142,10 +164,6 @@
               }
             ]
           } if appointment
-        },
-        {
-          key: { text: "Screened at" },
-          value: { text: clinicLocationName or "Unknown" }
         }
       ] %}
 
@@ -156,18 +174,14 @@
         }) %}
       {% endif %}
 
-      {% set caseRows = caseRows | push({
-        key: { text: "Episode" },
-        value: { text: episode | getEpisodeLabel },
-        actions: {
-          items: [
-            {
-              href: "/participants/" + episode.participantId + "/episodes/" + episode.id,
-              text: "View episode"
-            }
-          ]
-        }
-      }) %}
+      {% if caseTotal > 1 %}
+        {# A technical recall opens a further case, covering the new images as
+           well as the originals - so say which of the round's cases this is #}
+        {% set caseRows = caseRows | push({
+          key: { text: "Case" },
+          value: { text: casePosition + " of " + caseTotal + " this round" }
+        }) %}
+      {% endif %}
 
       {# Reading progress in words rather than a bare count #}
       {% set arbitrationRead = readingCase | getArbitrationRead %}
@@ -189,13 +203,6 @@
         {% set caseRows = caseRows | push({
           key: { text: "Waiting on" },
           value: { text: caseStatusDisplay.nextAction }
-        }) %}
-      {% endif %}
-
-      {% if caseOutcome %}
-        {% set caseRows = caseRows | push({
-          key: { text: "Outcome" },
-          value: { html: caseOutcome | toTag }
         }) %}
       {% endif %}
 
@@ -232,15 +239,6 @@
         {% endfor %}
       {% endif %}
 
-      {% if caseTotal > 1 %}
-        {# A technical recall opens a further case, covering the new images as
-           well as the originals - so say which of the round's cases this is #}
-        {% set caseRows = caseRows | push({
-          key: { text: "Case" },
-          value: { text: casePosition + " of " + caseTotal + " this round" }
-        }) %}
-      {% endif %}
-
       {% call card({
         heading: "Case details",
         headingLevel: "2"
@@ -256,7 +254,34 @@
         <p>Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
       {% else %}
 
+        {# An arbitrated outcome settles the case, so it leads and stays open;
+           the original reads become the background beneath it #}
+        {% if arbitrationRead %}
+          {% set arbitrationSummaryHtml %}
+            {% set read = arbitrationRead %}
+            {% set allowEdits = false %}
+            {% set hideEmptyRows = true %}
+            {% set hideOpinionRow = false %}
+            {# A panel decision carries arbitratorIds and its own row; a solo
+               arbitration only has the reader, so say who that was #}
+            {% set showReaderRow = not (arbitrationRead.arbitratorIds | length) %}
+            {% set readerRowLabel = "Arbitrated by" %}
+            {% set showAnnotationImages = withImages %}
+            {% set annotationImagePaths = allPaths %}
+            {% include "_includes/summary-lists/read-summary.njk" %}
+          {% endset %}
+          {% call card({
+            heading: "Arbitration outcome",
+            headingLevel: "3"
+          }) %}
+            {{ arbitrationSummaryHtml | safe }}
+          {% endcall %}
+
+          <h3 class="nhsuk-heading-s">First and second reads</h3>
+        {% endif %}
+
         {% for thisRead in reads %}
+          {% if thisRead.readType != 'arbitration' %}
           {% set readLabel = (thisRead.readType | formatWords | sentenceCase) + " read" %}
           {% set readAuthorIds = thisRead | getReadAuthorIds %}
           {% set readByline %}
@@ -264,6 +289,7 @@
               {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
             {%- endfor %},
             {{ thisRead.timestamp | formatDate }}
+            {%- if not (thisRead | isReadFinalised(data.settings)) %} – awaiting finalisation{% endif %}
           {% endset %}
 
           {# Until the second read exists, an opinion is only its author's to
@@ -306,7 +332,29 @@
               html: readDetailHtml
             }) }}
           {% endif %}
+          {% endif %}
         {% endfor %}
+
+        {# A case bound for arbitration shows where its outcome will land,
+           so the empty space reads as pending rather than missing #}
+        {% if caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
+          {% set arbitrationPlaceholderHtml %}
+            <p class="nhsuk-u-margin-bottom-0">
+              {% if caseState == 'in_arbitration' %}
+                Arbitration is in progress.
+              {% else %}
+                The first and second reads disagree, so this case needs arbitration.
+              {% endif %}
+              The arbitration outcome will appear here once it is recorded.
+            </p>
+          {% endset %}
+          {{ appDetails({
+            classes: "nhsuk-expander",
+            summaryText: "Arbitration",
+            subtitle: "In progress" if caseState == 'in_arbitration' else "Not started yet",
+            html: arbitrationPlaceholderHtml
+          }) }}
+        {% endif %}
 
       {% endif %}
 

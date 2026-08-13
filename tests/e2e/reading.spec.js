@@ -459,14 +459,13 @@ test.describe('Image reading', () => {
     const summaryRow = (label) =>
       page.locator('.nhsuk-summary-list__row', { hasText: label })
 
-    // State lives in the header's status tag, not the summary list
-    await expect(
-      page.locator('.app-header-with-status__status-tag')
-    ).toContainText('Concluded')
+    // State and outcome live in the header's status tags, not the summary list
+    const statusTags = page.locator('.app-header-with-status__status-tag')
+    await expect(statusTags).toContainText('Concluded')
+    await expect(statusTags).toContainText('Normal')
     await expect(summaryRow('Reads')).toContainText(
       'First and second reads complete'
     )
-    await expect(summaryRow('Outcome')).toContainText('Normal')
   })
 
   test('finalises reads from the session overview', async ({ page }) => {

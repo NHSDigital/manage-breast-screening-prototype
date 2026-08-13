@@ -269,7 +269,7 @@
 {% if showReaderRow and read.readerId %}
   {% set rows = rows | push({
     key: {
-      text: "Read by"
+      text: readerRowLabel or "Read by"
     },
     value: {
       text: readerRowHtml
