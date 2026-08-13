@@ -459,8 +459,13 @@ test.describe('Image reading', () => {
     const summaryRow = (label) =>
       page.locator('.nhsuk-summary-list__row', { hasText: label })
 
-    await expect(summaryRow('State')).toContainText('Concluded')
-    await expect(summaryRow('Reads')).toContainText('2')
+    // State lives in the header's status tag, not the summary list
+    await expect(
+      page.locator('.app-header-with-status__status-tag')
+    ).toContainText('Concluded')
+    await expect(summaryRow('Reads')).toContainText(
+      'First and second reads complete'
+    )
     await expect(summaryRow('Outcome')).toContainText('Normal')
   })
 
@@ -507,10 +512,9 @@ test.describe('Image reading', () => {
       .find((candidate) => candidate.appointmentId === appointmentId)
 
     await page.goto(`/reading/cases/${readingCase.id}`)
-    const stateRow = page.locator('.nhsuk-summary-list__row', {
-      hasText: 'State'
-    })
-    await expect(stateRow).toContainText(/Concluded|Awaiting arbitration/)
+    await expect(
+      page.locator('.app-header-with-status__status-tag')
+    ).toContainText(/Concluded|Awaiting arbitration/)
   })
 
   test('shows the second reader the first read before saving', async ({

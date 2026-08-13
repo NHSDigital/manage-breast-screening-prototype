@@ -1,15 +1,15 @@
 {# app/views/reading/case.html
 
-   One reading case in reading chrome, in tabs: what the case concluded, what
-   each reader said, and every mark they made on the images.
+   One reading case on a single page: the whole reading story - where the case
+   is, what is holding it up, what each reader said, and the marks they made.
 
    The casework lens on the same content is the episode page's reading section.
-   When that grows a tab of its own, the panels below should move into shared
+   When that grows a view of its own, the sections below should move into shared
    includes rather than being written twice.
 
-   Read panels reuse _includes/summary-lists/read-summary.njk, the same include
-   the workflow's review and compare pages use, so a read looks the same
-   wherever it is shown. #}
+   Reads reuse _includes/summary-lists/read-summary.njk, the same include the
+   workflow's review and compare pages use, so a read looks the same wherever
+   it is shown. #}
 
 {% extends 'layout-app.html' %}
 
@@ -25,34 +25,43 @@
   text: "Back to reading cases"
 } %}
 
-{% set tabLabels = {
-  "summary": "Summary",
-  "reads": "Reads",
-  "annotations": "Annotations"
-} %}
-
 {% block pageContent %}
 
-  <span class="nhsuk-caption-l">Image reading case</span>
-  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+  {# Header with the case's state on the right, the same shape as the
+     appointment and reading workflow headers #}
+  <div class="app-header-with-status">
+    <h1 class="nhsuk-heading-l">
+      <span class="nhsuk-caption-l">Image reading case</span>
+      {{ pageHeading }}
+    </h1>
 
-  {% set tabNavItems = [] %}
-  {% for tabName in caseTabs %}
-    {% set tabHref %}/reading/cases/{{ readingCase.id }}{{ "/" + tabName if tabName != "summary" }}{% endset %}
-    {% set tabNavItems = tabNavItems | push({
-      text: tabLabels[tabName],
-      href: tabHref | trim,
-      current: true if tabName == tab
-    }) %}
-  {% endfor %}
+    <div class="app-header-with-status__status-tag">
+      {{ caseState | toTag({ vocabulary: "readingState", classes: "nhsuk-u-margin-bottom-2" }) }}
 
-  {{ appSecondaryNavigation({
-    visuallyHiddenTitle: "Reading case views",
-    items: tabNavItems
-  }) }}
+      {# Urgency matters only while the case is still open #}
+      {% if caseState != 'concluded' and appointment %}
+        {% set appointmentAge = appointment.timing.startTime | daysSince %}
+        {% if appointmentAge >= data.config.reading.urgentThreshold %}
+          <br>{{ "Urgent" | toTag }}
+        {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
+          <br>{{ "Due soon" | toTag }}
+        {% endif %}
+      {% endif %}
 
-  {# Image paths drive the annotation markers. Resolved once here rather than
-     per read, since the annotations tab pools every read onto one set. #}
+      {% if isDeferred %}
+        <br>{{ "Deferred" | toTag }}
+      {% endif %}
+      {% if caseAwaitingPriors %}
+        <br>{{ "Awaiting priors" | toTag }}
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="nhsuk-u-secondary-text-colour">
+    NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+  </p>
+
+  {# Image paths drive the annotation markers, resolved once for every read #}
   {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages and appointment %}
     {% set mammogramImages = getImagesForAppointment(appointment.id, "diagrams", { appointment: appointment }) %}
@@ -62,254 +71,319 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
-      {% if tab == "summary" %}
-
-        {% set caseRows = [
-          {
-            key: { text: "Images taken" },
-            value: { html: (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span>' }
-          },
-          {
-            key: { text: "Screened at" },
-            value: { text: clinicLocationName or "Unknown" }
-          },
-          {
-            key: { text: "State" },
-            value: { html: caseState | toTag({ vocabulary: "readingState" }) }
-          },
-          {
-            key: { text: "Reads" },
-            value: { text: readCount }
-          }
-        ] %}
-
-        {% if caseStatusDisplay.nextAction %}
-          {% set caseRows = caseRows | push({
-            key: { text: "Next action" },
-            value: { text: caseStatusDisplay.nextAction }
-          }) %}
-        {% endif %}
-
-        {% if caseOutcome %}
-          {% set caseRows = caseRows | push({
-            key: { text: "Outcome" },
-            value: { html: caseOutcome | toTag }
-          }) %}
-        {% endif %}
-
-        {# A technical recall's substance is which views need retaking - say so
-           here rather than leaving the outcome tag to carry it alone #}
-        {% if caseOutcome == 'technical_recall' and decidingRead.technicalRecall.views %}
-          {% set retakeLines = [] %}
-          {% for viewCode, detail in decidingRead.technicalRecall.views %}
-            {% set retakeLines = retakeLines | push(viewCode + (' – ' + detail.reason | lower if detail.reason)) %}
-          {% endfor %}
-          {% set caseRows = caseRows | push({
-            key: { text: "Views to retake" },
-            value: { html: retakeLines | join('<br>') }
-          }) %}
-        {% endif %}
-
-        {# What the case concluded per breast, from the deciding read #}
-        {% if decidingRead %}
-          {% for side in ["right", "left"] %}
-            {% set breast = decidingRead[side] %}
-            {% if breast and breast.breastAssessment %}
-              {% set assessmentKey = breast.breastAssessment | lower %}
-              {% set tagStatusMap = {
-                "normal": "normal",
-                "clinical": "clinical_recall",
-                "abnormal": "abnormal",
-                "technical": "technical_recall"
-              } %}
-              {% set caseRows = caseRows | push({
-                key: { text: side | sentenceCase + " breast" },
-                value: { html: (tagStatusMap[assessmentKey] or breast.breastAssessment) | toTag }
-              }) %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-
-        {% if caseTotal > 1 %}
-          {# A technical recall opens a further case, covering the new images as
-             well as the originals - so say which of the round's cases this is #}
-          {% set caseRows = caseRows | push({
-            key: { text: "Case" },
-            value: { text: casePosition + " of " + caseTotal + " this round" }
-          }) %}
-        {% endif %}
-
-        {{ appSummaryList({ rows: caseRows }) }}
-
-        {% if caseOutcome == 'technical_recall' %}
-          {{ insetText({
-            html: "<p>This reading concluded that some images are not readable. The participant needs a technical recall appointment to retake them.</p>"
-          }) }}
-        {% endif %}
-
-        {% if isDeferred %}
-          {% set deferralDetailHtml %}
-            <p>
-              Deferred from reading
-              {%- if readingCase.deferral.deferredBy %} by {{ readingCase.deferral.deferredBy | getUsername }}{% endif %}
-              on {{ readingCase.deferral.deferredAt | formatDate }}.
-              It needs review before it returns to the reading queue.
-            </p>
-            {% if readingCase.deferral.reason %}
-              <p class="nhsuk-u-margin-bottom-0">Reason: {{ readingCase.deferral.reason }}</p>
-            {% endif %}
-          {% endset %}
-          {{ warningCallout({
-            heading: "Deferred",
-            html: deferralDetailHtml
-          }) }}
-        {% endif %}
-
-        {% if caseAwaitingPriors %}
-          {{ warningCallout({
-            heading: "Awaiting prior mammograms",
-            html: "<p>Prior mammograms have been requested and not yet received. The case is held from reading until they arrive.</p>"
-          }) }}
-        {% endif %}
-
-        <h2 class="nhsuk-heading-m">Elsewhere</h2>
-        <ul class="nhsuk-list nhsuk-list--bullet">
-          <li>
-            <a href="/participants/{{ episode.participantId }}/episodes/{{ episode.id }}">
-              Episode this case belongs to
-            </a>
-          </li>
-          {% if appointment %}
-            <li>
-              <a href="/clinics/{{ appointment.clinicId }}/appointments/{{ appointment.id }}">
-                Appointment the images were taken at
-              </a>
-            </li>
+      {# What is holding the case up, before anything else - it is what anyone
+         chasing the case needs to know #}
+      {% if isDeferred %}
+        {% set deferralDetailHtml %}
+          <p>
+            Deferred from reading
+            {%- if readingCase.deferral.deferredBy %} by {{ readingCase.deferral.deferredBy | getUsername }}{% endif %}
+            on {{ readingCase.deferral.deferredAt | formatDate }}.
+            It needs review before it returns to the reading queue.
+          </p>
+          {% if readingCase.deferral.reason %}
+            <p class="nhsuk-u-margin-bottom-0">Reason: {{ readingCase.deferral.reason }}</p>
           {% endif %}
-        </ul>
+        {% endset %}
+        {{ warningCallout({
+          heading: "Deferred",
+          html: deferralDetailHtml
+        }) }}
+      {% endif %}
 
-      {% elseif tab == "reads" %}
+      {% if caseAwaitingPriors %}
+        {% set awaitingPriorsList = appointment | getAwaitingPriors %}
+        {% set priorsDetailHtml %}
+          <p>Prior mammograms have been requested and not yet received. The case is held from reading until they arrive.</p>
+          {% for prior in awaitingPriorsList %}
+            {% if prior.requestedDate %}
+              <p class="nhsuk-u-margin-bottom-0">
+                Requested {{ prior.requestedDate | formatDate }}
+                {%- if prior.requestReason %} – {{ prior.requestReason }}{% endif %}
+              </p>
+            {% endif %}
+          {% endfor %}
+        {% endset %}
+        {{ warningCallout({
+          heading: "Awaiting prior mammograms",
+          html: priorsDetailHtml
+        }) }}
+      {% endif %}
 
-        {% if readsHidden %}
-          <p>Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
-        {% elseif readCount == 0 %}
-          <p>This case has not been read yet.</p>
-        {% else %}
+      {% if caseState == 'awaiting_finalisation' %}
+        {% set finalisationHtml %}
+          <p class="nhsuk-u-margin-bottom-0">
+            Both reads are done but not yet finalised – the readers can still change their opinions.
+            {% if caseStatus.willArbitrate %}
+              The reads disagree, so the case will go to arbitration once they are finalised.
+            {% else %}
+              The case will conclude once they are finalised.
+            {% endif %}
+          </p>
+        {% endset %}
+        {{ insetText({ html: finalisationHtml }) }}
+      {% endif %}
 
-          {% for thisRead in reads %}
-            {# Opinion up front; the rest behind a disclosure, since the
-               question most of the time is just who said what #}
+      {% if caseOutcome == 'technical_recall' %}
+        {{ insetText({
+          html: "<p>This reading concluded that some images are not readable. The participant needs a technical recall appointment to retake them.</p>"
+        }) }}
+      {% endif %}
+
+      {% set caseRows = [
+        {
+          key: { text: "Images taken" },
+          value: { html: (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span>' },
+          actions: {
+            items: [
+              {
+                href: "/clinics/" + appointment.clinicId + "/appointments/" + appointment.id,
+                text: "View appointment"
+              }
+            ]
+          } if appointment
+        },
+        {
+          key: { text: "Screened at" },
+          value: { text: clinicLocationName or "Unknown" }
+        }
+      ] %}
+
+      {% if appointment.mammogramData.views %}
+        {% set caseRows = caseRows | push({
+          key: { text: "Images" },
+          value: { text: (appointment.mammogramData.views | getObjectValues | length) + " views" }
+        }) %}
+      {% endif %}
+
+      {% set caseRows = caseRows | push({
+        key: { text: "Episode" },
+        value: { text: episode | getEpisodeLabel },
+        actions: {
+          items: [
+            {
+              href: "/participants/" + episode.participantId + "/episodes/" + episode.id,
+              text: "View episode"
+            }
+          ]
+        }
+      }) %}
+
+      {# Reading progress in words rather than a bare count #}
+      {% set arbitrationRead = readingCase | getArbitrationRead %}
+      {% if arbitrationRead %}
+        {% set readsProgress = "First and second reads, plus arbitration" %}
+      {% elseif readCount >= 2 %}
+        {% set readsProgress = "First and second reads complete" %}
+      {% elseif readCount == 1 %}
+        {% set readsProgress = "First read complete" %}
+      {% else %}
+        {% set readsProgress = "Not read yet" %}
+      {% endif %}
+      {% set caseRows = caseRows | push({
+        key: { text: "Reads" },
+        value: { text: readsProgress }
+      }) %}
+
+      {% if caseStatusDisplay.nextAction and caseState != 'concluded' %}
+        {% set caseRows = caseRows | push({
+          key: { text: "Waiting on" },
+          value: { text: caseStatusDisplay.nextAction }
+        }) %}
+      {% endif %}
+
+      {% if caseOutcome %}
+        {% set caseRows = caseRows | push({
+          key: { text: "Outcome" },
+          value: { html: caseOutcome | toTag }
+        }) %}
+      {% endif %}
+
+      {# A technical recall's substance is which views need retaking - say so
+         here rather than leaving the outcome tag to carry it alone #}
+      {% if caseOutcome == 'technical_recall' and decidingRead.technicalRecall.views %}
+        {% set retakeLines = [] %}
+        {% for viewCode, detail in decidingRead.technicalRecall.views %}
+          {% set retakeLines = retakeLines | push(viewCode + (' – ' + detail.reason | lower if detail.reason)) %}
+        {% endfor %}
+        {% set caseRows = caseRows | push({
+          key: { text: "Views to retake" },
+          value: { html: retakeLines | join('<br>') }
+        }) %}
+      {% endif %}
+
+      {# What the case concluded per breast, from the deciding read #}
+      {% if decidingRead %}
+        {% for side in ["right", "left"] %}
+          {% set breast = decidingRead[side] %}
+          {% if breast and breast.breastAssessment %}
+            {% set assessmentKey = breast.breastAssessment | lower %}
+            {% set tagStatusMap = {
+              "normal": "normal",
+              "clinical": "clinical_recall",
+              "abnormal": "abnormal",
+              "technical": "technical_recall"
+            } %}
+            {% set caseRows = caseRows | push({
+              key: { text: side | sentenceCase + " breast" },
+              value: { html: (tagStatusMap[assessmentKey] or breast.breastAssessment) | toTag }
+            }) %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      {% if caseTotal > 1 %}
+        {# A technical recall opens a further case, covering the new images as
+           well as the originals - so say which of the round's cases this is #}
+        {% set caseRows = caseRows | push({
+          key: { text: "Case" },
+          value: { text: casePosition + " of " + caseTotal + " this round" }
+        }) %}
+      {% endif %}
+
+      {% call card({
+        heading: "Case details",
+        headingLevel: "2"
+      }) %}
+        {{ appSummaryList({ rows: caseRows }) }}
+      {% endcall %}
+
+      <h2 class="nhsuk-heading-m">Reads</h2>
+
+      {% if readCount == 0 %}
+        <p>This case has not been read yet.</p>
+      {% elseif readsHidden %}
+        <p>Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
+      {% else %}
+
+        {% for thisRead in reads %}
+          {% set readLabel = (thisRead.readType | formatWords | sentenceCase) + " read" %}
+          {% set readAuthorIds = thisRead | getReadAuthorIds %}
+          {% set readByline %}
+            {%- for authorId in readAuthorIds %}
+              {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+            {%- endfor %},
+            {{ thisRead.timestamp | formatDate }}
+          {% endset %}
+
+          {# Until the second read exists, an opinion is only its author's to
+             see - anyone else could be the second reader #}
+          {% set opinionHiddenFromViewer = hideFirstOpinion and not (readAuthorIds | includes(data.currentUser.id)) %}
+
+          {% if opinionHiddenFromViewer %}
+            {% set hiddenReadHtml %}
+              <p>
+                The opinion is hidden while the case waits for its second read,
+                so the next reader is not influenced by it.
+              </p>
+              <p class="nhsuk-u-margin-bottom-0">
+                <a href="#">Reveal the opinion</a> – revealing it means you can
+                no longer read this case yourself.
+              </p>
+            {% endset %}
+            {{ appDetails({
+              classes: "nhsuk-expander",
+              summaryText: readLabel,
+              subtitle: readByline | trim,
+              html: hiddenReadHtml
+            }) }}
+          {% else %}
             {% set readDetailHtml %}
               {% set read = thisRead %}
               {% set allowEdits = false %}
               {% set hideEmptyRows = true %}
               {% set hideOpinionRow = true %}
-              {% set showAnnotationImages = false %}
+              {% set showReaderRow = false %}
+              {% set showAnnotationImages = withImages %}
+              {% set annotationImagePaths = allPaths %}
               {% include "_includes/summary-lists/read-summary.njk" %}
             {% endset %}
-
-            <div class="nhsuk-summary-card">
-              <div class="nhsuk-summary-card__title-wrapper">
-                <h2 class="nhsuk-summary-card__title">
-                  {{ thisRead.readType | formatWords | sentenceCase }} read
-                </h2>
-                <div class="nhsuk-summary-card__actions">
-                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                    {%- for authorId in thisRead | getReadAuthorIds %}
-                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
-                    {%- endfor %},
-                    {{ thisRead.timestamp | formatDate }}
-                  </span>
-                </div>
-              </div>
-              <div class="nhsuk-summary-card__content">
-                <p class="nhsuk-u-margin-bottom-2">
-                  {{ thisRead.opinion | toTag if thisRead.opinion else "Opinion not recorded" }}
-                </p>
-
-                {{ appDetails({
-                  summaryText: "Show full read",
-                  html: readDetailHtml
-                }) }}
-              </div>
-            </div>
-          {% endfor %}
-
-        {% endif %}
+            {{ appDetails({
+              classes: "nhsuk-expander",
+              summaryText: readLabel,
+              subtitle: readByline | trim,
+              status: thisRead.opinion,
+              html: readDetailHtml
+            }) }}
+          {% endif %}
+        {% endfor %}
 
       {% endif %}
 
     </div>
   </div>
 
-  {# Annotations get the full width - two sides of images side by side #}
-  {% if tab == "annotations" %}
+  {# Every reader's marks pooled onto one set of images - only worth a section
+     once the case has concluded what it thinks and there is something to see.
+     Full width: two sides of images side by side. #}
+  {% set pooledAnnotationCount = 0 %}
+  {% for thisRead in reads %}
+    {% for side in ["right", "left"] %}
+      {% set pooledAnnotationCount = pooledAnnotationCount + (thisRead[side].annotations | length if thisRead[side].annotations else 0) %}
+    {% endfor %}
+  {% endfor %}
 
-    {% if readsHidden %}
-      <p>Annotations on this case are hidden because it is still yours to read.</p>
-    {% elseif readCount == 0 %}
-      <p>This case has not been read yet, so nothing has been annotated.</p>
-    {% else %}
+  {% if caseOutcome and pooledAnnotationCount > 0 %}
 
-      <div class="nhsuk-grid-row">
-        {% for side in ["right", "left"] %}
+    <h2 class="nhsuk-heading-m">Annotations</h2>
 
-          {# Pool every read's marks for this side onto one set of images, and
-             keep the numbering running so the lists beneath match the markers #}
-          {% set pooled = [] %}
-          {% for thisRead in reads %}
-            {% for annotation in (thisRead[side].annotations or []) %}
-              {% set pooled = pooled | push(annotation) %}
-            {% endfor %}
+    <div class="nhsuk-grid-row">
+      {% for side in ["right", "left"] %}
+
+        {# Pool every read's marks for this side onto one set of images, and
+           keep the numbering running so the lists beneath match the markers #}
+        {% set pooled = [] %}
+        {% for thisRead in reads %}
+          {% for annotation in (thisRead[side].annotations or []) %}
+            {% set pooled = pooled | push(annotation) %}
           {% endfor %}
-
-          <div class="nhsuk-grid-column-one-half">
-            <h2 class="nhsuk-heading-m">{{ side | sentenceCase }} breast</h2>
-
-            {% if pooled | length == 0 %}
-              <p class="nhsuk-u-secondary-text-colour">No annotations on this side.</p>
-            {% else %}
-
-              {% if withImages and allPaths %}
-                {{ appAnnotationImages({
-                  side: side,
-                  imagePaths: allPaths,
-                  viewOrder: data.settings.mammogramViewOrder or "cc-first",
-                  annotations: pooled,
-                  mode: "readonly",
-                  size: "thumbnail",
-                  showLabels: true
-                }) }}
-              {% endif %}
-
-              {# Attribute the marks: same numbering, grouped by who made them #}
-              {% set runningNumber = 1 %}
-              {% for thisRead in reads %}
-                {% set sideAnnotations = thisRead[side].annotations or [] %}
-                {% if sideAnnotations | length %}
-                  <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-1 nhsuk-u-margin-top-3">
-                    {%- for authorId in thisRead | getReadAuthorIds %}
-                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
-                    {%- endfor %}
-                    <span class="nhsuk-u-secondary-text-colour nhsuk-u-font-weight-normal">
-                      ({{ thisRead.readType | formatWords }} read)
-                    </span>
-                  </h3>
-                  {{ appAnnotationList({
-                    annotations: sideAnnotations,
-                    startNumber: runningNumber,
-                    editable: false
-                  }) }}
-                  {% set runningNumber = runningNumber + (sideAnnotations | length) %}
-                {% endif %}
-              {% endfor %}
-
-            {% endif %}
-          </div>
         {% endfor %}
-      </div>
 
-    {% endif %}
+        <div class="nhsuk-grid-column-one-half">
+          <h3 class="nhsuk-heading-s">{{ side | sentenceCase }} breast</h3>
+
+          {% if pooled | length == 0 %}
+            <p class="nhsuk-u-secondary-text-colour">No annotations on this side.</p>
+          {% else %}
+
+            {% if withImages and allPaths %}
+              {{ appAnnotationImages({
+                side: side,
+                imagePaths: allPaths,
+                viewOrder: data.settings.mammogramViewOrder or "cc-first",
+                annotations: pooled,
+                mode: "readonly",
+                size: "thumbnail",
+                showLabels: true
+              }) }}
+            {% endif %}
+
+            {# Attribute the marks: same numbering, grouped by who made them #}
+            {% set runningNumber = 1 %}
+            {% for thisRead in reads %}
+              {% set sideAnnotations = thisRead[side].annotations or [] %}
+              {% if sideAnnotations | length %}
+                <h4 class="nhsuk-heading-xs nhsuk-u-margin-bottom-1 nhsuk-u-margin-top-3">
+                  {%- for authorId in thisRead | getReadAuthorIds %}
+                    {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                  {%- endfor %}
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-u-font-weight-normal">
+                    ({{ thisRead.readType | formatWords }} read)
+                  </span>
+                </h4>
+                {{ appAnnotationList({
+                  annotations: sideAnnotations,
+                  startNumber: runningNumber,
+                  editable: false
+                }) }}
+                {% set runningNumber = runningNumber + (sideAnnotations | length) %}
+              {% endif %}
+            {% endfor %}
+
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
 
   {% endif %}
 

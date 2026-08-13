@@ -71,23 +71,14 @@ module.exports = (router) => {
     })
   })
 
-  // One reading case, in tabs. Summary is the default; the tab is a path
-  // segment so each is linkable, the same way the other reading views do views
-  // and filters.
-  //
-  // Registered as two paths rather than an optional `:tab?` - Express 5's
-  // path-to-regexp rejects that syntax.
-  const CASE_TABS = ['summary', 'reads', 'annotations']
+  // The old tabbed views collapsed into the one page
+  router.get('/reading/cases/:caseId/:tab', (req, res) => {
+    res.redirect(`/reading/cases/${req.params.caseId}`)
+  })
 
-  const caseViewPaths = [
-    '/reading/cases/:caseId',
-    '/reading/cases/:caseId/:tab'
-  ]
-
-  router.get(caseViewPaths, (req, res) => {
+  // One reading case on a single page: state, blockers, reads, annotations
+  router.get('/reading/cases/:caseId', (req, res) => {
     const data = req.session.data
-
-    const tab = CASE_TABS.includes(req.params.tab) ? req.params.tab : 'summary'
 
     const found = getReadingCaseById(data, req.params.caseId)
     if (!found) {
@@ -121,6 +112,11 @@ module.exports = (router) => {
     const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
     const caseStatus = getReadingCaseStatus(readingCase, data.settings)
 
+    // Until a case has its second read, the first opinion is only its
+    // author's to see - anyone else could be the second reader. The view
+    // still shows that the read happened, just not what it concluded.
+    const hideFirstOpinion = allReads.length < 2 && !caseOutcome
+
     // The read the outcome came from - arbitration where there was one, else
     // either of the two agreeing reads. Its per-breast assessment is what the
     // summary reports, since that is what the case concluded.
@@ -129,10 +125,6 @@ module.exports = (router) => {
       : null
 
     res.render('reading/case', {
-      tab,
-      // Not `tabs` - that name is taken by the NHS frontend tabs macro, which
-      // is imported globally and silently shadows a template variable
-      caseTabs: CASE_TABS,
       readingCase,
       episode,
       appointment,
@@ -141,6 +133,7 @@ module.exports = (router) => {
       clinicLocationName: getClinicLocationName(data, clinic),
       reads: readsHidden ? [] : allReads,
       readsHidden,
+      hideFirstOpinion,
       readCount: allReads.length,
       caseState: caseStatus.state,
       caseStatus,
