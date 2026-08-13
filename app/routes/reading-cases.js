@@ -99,14 +99,22 @@ module.exports = (router) => {
       casesOnEpisode.findIndex((candidate) => candidate.id === readingCase.id) + 1
 
     // Blind reading: someone who could still read this case must not see what
-    // the other reader said. Once they have read it - or it is no longer theirs
-    // to read - the reads are theirs to see. Arbitration is the exception:
-    // the arbitrator's job is to weigh the two reads, so they see them.
+    // the other reader said - the view shows a read happened, not its opinion.
+    // Once they have read it - or it is no longer theirs to read - the reads
+    // are theirs to see. Arbitration is the exception: the arbitrator's job is
+    // to weigh the two reads, so they see them.
     const blindReading = data.settings?.reading?.blindReading === 'true'
     const readsHidden =
       blindReading &&
       !isCaseInArbitration(readingCase) &&
       canUserReadCase(readingCase, data.currentUser?.id)
+
+    const caseAwaitingPriors = appointment ? awaitingPriors(appointment) : false
+
+    // Whether the case is the viewer's to read right now - outstanding priors
+    // hold reading up, so they block the offer too
+    const canReadCase =
+      !caseAwaitingPriors && canUserReadCase(readingCase, data.currentUser?.id)
 
     const allReads = getReadsAsArray(readingCase)
     const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
@@ -131,18 +139,19 @@ module.exports = (router) => {
       participant,
       clinic,
       clinicLocationName: getClinicLocationName(data, clinic),
-      reads: readsHidden ? [] : allReads,
+      reads: allReads,
       readsHidden,
       hideFirstOpinion,
+      canReadCase,
       readCount: allReads.length,
       caseState: caseStatus.state,
       caseStatus,
       caseStatusDisplay: describeReadingCaseStatus(caseStatus),
       caseOutcome,
-      decidingRead: readsHidden ? null : decidingRead,
+      decidingRead,
       readingMetadata: getReadingMetadata(readingCase, data.settings),
       isDeferred: isCaseDeferred(readingCase),
-      caseAwaitingPriors: appointment ? awaitingPriors(appointment) : false,
+      caseAwaitingPriors,
       casePosition,
       caseTotal: casesOnEpisode.length
     })

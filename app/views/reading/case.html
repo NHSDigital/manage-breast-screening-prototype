@@ -257,7 +257,7 @@
 
       {# Arbitration gets its own card once it is part of the case's story,
          ahead of the reads it settles #}
-      {% if not readsHidden and (arbitrationRead or caseStatus.willArbitrate or caseState == 'awaiting_arbitration' or caseState == 'in_arbitration') %}
+      {% if arbitrationRead or caseStatus.willArbitrate or caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
         {% call card({
           heading: "Arbitration",
           headingLevel: "2"
@@ -312,19 +312,19 @@
         headingLevel: "2"
       }) %}
 
-      {% if readsHidden %}
-        <p class="nhsuk-u-margin-bottom-0">Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
-      {% else %}
+      {# An opinion stays hidden from everyone but its author while the case is
+         still the viewer's to read (blind reading), or until the second read
+         exists - anyone else could be the second reader #}
+      {% set hideOpinionsFromNonAuthors = readsHidden or hideFirstOpinion %}
 
-        {# Reads whose full detail the viewer may see. Until the second read
-           exists, an opinion is only its author's to see - anyone else could
-           be the second reader. The arbitration read has its own card. #}
-        {% set visibleFullReads = [] %}
-        {% for candidate in reads %}
-          {% if candidate.readType != 'arbitration' and not (hideFirstOpinion and not ((candidate | getReadAuthorIds) | includes(data.currentUser.id))) %}
-            {% set visibleFullReads = visibleFullReads | push(candidate) %}
-          {% endif %}
-        {% endfor %}
+      {# Reads whose full detail the viewer may see. The arbitration read has
+         its own card. #}
+      {% set visibleFullReads = [] %}
+      {% for candidate in reads %}
+        {% if candidate.readType != 'arbitration' and not (hideOpinionsFromNonAuthors and not ((candidate | getReadAuthorIds) | includes(data.currentUser.id))) %}
+          {% set visibleFullReads = visibleFullReads | push(candidate) %}
+        {% endif %}
+      {% endfor %}
 
         {# One row per read, pending ones included, so the case's expected
            shape - and how far it has got - is always visible at a glance #}
@@ -350,11 +350,13 @@
                   {%- if not (slotRead | isReadFinalised(data.settings)) %} – awaiting finalisation{% endif %}
                 </span>
               {% endset %}
-              {% if (not hideFirstOpinion) or (slotAuthorIds | includes(data.currentUser.id)) %}
+              {% if (not hideOpinionsFromNonAuthors) or (slotAuthorIds | includes(data.currentUser.id)) %}
                 {{ slotRead.opinion | toTag }}<br>
                 {{ bylineHtml | safe }}
               {% else %}
-                <span class="nhsuk-u-secondary-text-colour">Opinion hidden until the case has its second read</span><br>
+                {# The opinion is not the viewer's to see - mark the read done
+                   without saying what it found, as the session overviews do #}
+                {{ "Completed" | toTag({ colour: "grey" }) }}<br>
                 {{ bylineHtml | safe }}<br>
                 <span class="nhsuk-body-s"><a href="#">Reveal opinion</a>
                   <span class="nhsuk-u-secondary-text-colour">– you could then no longer read this case yourself</span></span>
@@ -391,7 +393,13 @@
           }) }}
         {% endif %}
 
-      {% endif %}
+        {% if canReadCase %}
+          {{ button({
+            text: "Read now",
+            href: "#",
+            classes: "nhsuk-button--secondary nhsuk-u-margin-bottom-0"
+          }) }}
+        {% endif %}
 
       {% endcall %}
 
