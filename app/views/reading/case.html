@@ -255,18 +255,48 @@
         {{ appSummaryList({ rows: caseRows }) }}
       {% endcall %}
 
-      <h2 class="nhsuk-heading-m">Reads</h2>
+      {# Arbitration gets its own card once it is part of the case's story,
+         ahead of the reads it settles #}
+      {% if not readsHidden and (arbitrationRead or caseStatus.willArbitrate or caseState == 'awaiting_arbitration' or caseState == 'in_arbitration') %}
+        {% call card({
+          heading: "Arbitration",
+          headingLevel: "2"
+        }) %}
+          {% if arbitrationRead %}
+            {% set read = arbitrationRead %}
+            {% set allowEdits = false %}
+            {% set hideEmptyRows = true %}
+            {% set hideOpinionRow = false %}
+            {# A panel arbitration carries arbitratorIds and its own row; a
+               solo one only has the reader, so say who that was #}
+            {% set showReaderRow = not (arbitrationRead.arbitratorIds | length) %}
+            {% set readerRowLabel = "Arbitrated by" %}
+            {% set showAnnotationImages = withImages %}
+            {% set annotationImagePaths = allPaths %}
+            {% include "_includes/summary-lists/read-summary.njk" %}
+          {% elseif caseState == 'in_arbitration' %}
+            <p class="nhsuk-u-margin-bottom-0">Arbitration is in progress. The outcome will appear here once it is recorded.</p>
+          {% else %}
+            <p class="nhsuk-u-margin-bottom-0">The first and second reads disagree, so this case needs arbitration. The outcome will appear here once it is recorded.</p>
+          {% endif %}
+        {% endcall %}
+      {% endif %}
+
+      {% call card({
+        heading: "First and second reads",
+        headingLevel: "2"
+      }) %}
 
       {% if readsHidden %}
-        <p>Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
+        <p class="nhsuk-u-margin-bottom-0">Reads on this case are hidden because it is still yours to read. They become visible once you have given your opinion.</p>
       {% else %}
 
         {# Reads whose full detail the viewer may see. Until the second read
            exists, an opinion is only its author's to see - anyone else could
-           be the second reader. #}
+           be the second reader. The arbitration read has its own card. #}
         {% set visibleFullReads = [] %}
         {% for candidate in reads %}
-          {% if not (hideFirstOpinion and not ((candidate | getReadAuthorIds) | includes(data.currentUser.id))) %}
+          {% if candidate.readType != 'arbitration' and not (hideFirstOpinion and not ((candidate | getReadAuthorIds) | includes(data.currentUser.id))) %}
             {% set visibleFullReads = visibleFullReads | push(candidate) %}
           {% endif %}
         {% endfor %}
@@ -313,45 +343,18 @@
           }) %}
         {% endfor %}
 
-        {# The arbitration row appears once arbitration is part of this case's
-           story - pending it reads as expected, done it carries the outcome #}
-        {% if arbitrationRead or caseStatus.willArbitrate or caseState == 'in_arbitration' %}
-          {% set arbitrationValueHtml %}
-            {% if arbitrationRead %}
-              {{ arbitrationRead.opinion | toTag }}<br>
-              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                {%- for authorId in arbitrationRead | getReadAuthorIds %}
-                  {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
-                {%- endfor %},
-                {{ arbitrationRead.timestamp | formatDate }}
-                {%- if not (arbitrationRead | isReadFinalised(data.settings)) %} – awaiting finalisation{% endif %}
-              </span>
-            {% elseif caseState == 'in_arbitration' %}
-              <span class="nhsuk-u-secondary-text-colour">In progress</span>
-            {% else %}
-              <span class="nhsuk-u-secondary-text-colour">Not started yet</span>
-            {% endif %}
-          {% endset %}
-          {% set readRows = readRows | push({
-            key: { text: "Arbitration" },
-            value: { html: arbitrationValueHtml }
-          }) %}
-        {% endif %}
-
         {{ appSummaryList({ rows: readRows }) }}
 
         {% if visibleFullReads | length %}
           {% set fullReadsHtml %}
             {% for thisRead in visibleFullReads %}
-              {% set readLabel = "Arbitration" if thisRead.readType == 'arbitration' else (thisRead.readType | formatWords | sentenceCase) + " read" %}
-              <h3 class="nhsuk-heading-s {{ 'nhsuk-u-margin-top-5' if not loop.first }}">{{ readLabel }}</h3>
+              <h3 class="nhsuk-heading-s {{ 'nhsuk-u-margin-top-5' if not loop.first }}">{{ (thisRead.readType | formatWords | sentenceCase) + " read" }}</h3>
               {% set read = thisRead %}
               {% set allowEdits = false %}
               {% set hideEmptyRows = true %}
               {% set hideOpinionRow = false %}
-              {# A panel arbitration carries arbitratorIds and its own row #}
-              {% set showReaderRow = not (thisRead.arbitratorIds | length) %}
-              {% set readerRowLabel = "Arbitrated by" if thisRead.readType == 'arbitration' else "Read by" %}
+              {% set showReaderRow = true %}
+              {% set readerRowLabel = "Read by" %}
               {% set showAnnotationImages = withImages %}
               {% set annotationImagePaths = allPaths %}
               {% include "_includes/summary-lists/read-summary.njk" %}
@@ -364,6 +367,8 @@
         {% endif %}
 
       {% endif %}
+
+      {% endcall %}
 
     </div>
   </div>
