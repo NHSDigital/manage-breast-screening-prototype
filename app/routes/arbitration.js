@@ -74,11 +74,13 @@ module.exports = (router) => {
       type: 'arbitration'
     }).length
 
+    // Excluding own reads is the default, so the hint names what it takes away
+    const ownReadsCount = backlog.available - soloCount
+
     res.render('reading/arbitration/start', {
       backlogCount: backlog.total,
-      availableCount: backlog.available,
       backlog,
-      soloCount
+      ownReadsCount
     })
   })
 

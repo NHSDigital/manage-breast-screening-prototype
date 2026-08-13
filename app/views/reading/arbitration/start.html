@@ -38,8 +38,8 @@
           value: "yes",
           text: "Exclude cases where I was a reader",
           hint: {
-            text: "This leaves " ~ soloCount ~ " of " ~ availableCount ~ " cases available to you"
-          } if soloCount != availableCount else undefined,
+            text: "Excludes " ~ ownReadsCount ~ " " ~ ("case" | pluralise(ownReadsCount)) ~ " you already read"
+          } if ownReadsCount else undefined,
           checked: true
         }
       ]
