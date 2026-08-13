@@ -7,7 +7,8 @@ const { eligibleForReading } = require('../utils/status')
 const { buildRead } = require('../utils/reading-cases')
 const {
   getSetById,
-  getResolvedAnnotations
+  getResolvedAnnotations,
+  getImageSetForAppointment
 } = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
 
@@ -313,6 +314,41 @@ const generateAbnormalData = (appointment, set) => {
   return { left, right }
 }
 
+// Where breast tissue sits in each view, as a fraction of the frame.
+//
+// The views are mirrored: in the right views the chest wall is on the right of
+// the frame with the nipple pointing left, and the left views are the reverse.
+// A marker placed without regard to that lands in the black surround, which is
+// what made placeholder annotations look arbitrary.
+const TISSUE_REGIONS = {
+  rmlo: { xMin: 0.32, xMax: 0.6, yMin: 0.32, yMax: 0.7 },
+  rcc: { xMin: 0.42, xMax: 0.68, yMin: 0.36, yMax: 0.66 },
+  lmlo: { xMin: 0.36, xMax: 0.62, yMin: 0.32, yMax: 0.64 },
+  lcc: { xMin: 0.3, xMax: 0.56, yMin: 0.36, yMax: 0.66 }
+}
+
+/**
+ * A position somewhere on the breast tissue for a given view.
+ *
+ * @param {string} view - View key (rmlo, rcc, lmlo, lcc)
+ * @returns {object} { x, y } in 0-1 coordinates
+ */
+const randomPositionOnTissue = (view) => {
+  const region = TISSUE_REGIONS[view] || {
+    xMin: 0.3,
+    xMax: 0.7,
+    yMin: 0.3,
+    yMax: 0.7
+  }
+  const between = (min, max) =>
+    Math.round((min + Math.random() * (max - min)) * 1000) / 1000
+
+  return {
+    x: between(region.xMin, region.xMax),
+    y: between(region.yMin, region.yMax)
+  }
+}
+
 /**
  * Generate a placeholder annotation when set doesn't have detailed annotations
  */
@@ -334,14 +370,10 @@ const generatePlaceholderAnnotation = (side, breastData) => {
     abnormalityType = findingMap[breastData.finding] || abnormalityType
   }
 
-  // Generate random positions for both views (0-1 format, 3 decimal places)
-  // Keep positions in a realistic range (avoiding edges)
-  const randomPos = () => Math.round((0.2 + Math.random() * 0.6) * 1000) / 1000
-
   const viewKeys = side === 'right' ? ['rmlo', 'rcc'] : ['lmlo', 'lcc']
   const positions = {}
   viewKeys.forEach((view) => {
-    positions[view] = { x: randomPos(), y: randomPos() }
+    positions[view] = randomPositionOnTissue(view)
   })
 
   return {
@@ -404,21 +436,135 @@ const addRead = (readingCase, appointment, reader, timestamp, options = {}) => {
 }
 
 /**
+ * The disagreement an image set can plausibly support.
+ *
+ * A second reader differs from the first because the images are equivocal, not
+ * at random: on an abnormal or indeterminate set the argument is whether the
+ * finding warrants recall, so the pair runs normal <-> recall for assessment;
+ * on a technical set it is whether the images are diagnostic, so the pair runs
+ * technical recall <-> normal. Reaching for a third, unrelated opinion is what
+ * produced arbitration cases nobody could account for from the images.
+ */
+const PLAUSIBLE_DISAGREEMENTS = {
+  abnormal: ['normal', 'recall_for_assessment'],
+  indeterminate: ['normal', 'recall_for_assessment'],
+  technical: ['normal', 'technical_recall'],
+  normal: ['normal', 'recall_for_assessment']
+}
+
+/**
  * Pick an opinion for a second read: usually agreeing with the first, sometimes
  * not, so some cases land in arbitration.
  *
+ * When the set is known, a disagreement moves to the other end of that set's
+ * plausible pair rather than to any other opinion.
+ *
  * @param {object} firstRead - The first read
  * @param {number} [agreementProbability] - Chance of agreeing
+ * @param {object} [set] - The image set being read
  * @returns {string} The opinion to force
  */
-const pickSecondOpinion = (firstRead, agreementProbability = 0.8) => {
+const pickSecondOpinion = (firstRead, agreementProbability = 0.8, set = null) => {
   if (Math.random() <= agreementProbability) return firstRead.opinion
+
+  const pair = PLAUSIBLE_DISAGREEMENTS[set?.tag]
+
+  if (pair) {
+    const alternative = pair.find((opinion) => opinion !== firstRead.opinion)
+    // The first read may already sit outside the pair (a misaligned read). Move
+    // it back onto the pair rather than inventing a third opinion.
+    if (alternative) return alternative
+  }
 
   const otherOpinions = [...new Set(Object.values(TAG_TO_RESULT))].filter(
     (opinion) => opinion !== firstRead.opinion
   )
 
   return faker.helpers.arrayElement(otherOpinions)
+}
+
+/**
+ * The image set behind an appointment, if it has one.
+ *
+ * @param {object} appointment - Appointment
+ * @returns {object|null} The set, or null
+ */
+const getAppointmentSet = (appointment) => {
+  const setId = appointment?.mammogramData?.selectedSetId
+  return setId ? getSetById(setId, 'diagrams') : null
+}
+
+// What the images look like behind an arbitration case. Most disagreements
+// happen because there is something equivocal to argue about; the rest are a
+// reader over-calling normal images, which is real but should be the minority.
+//
+// Arbitrated cases land on recall for assessment roughly 30-80% of the time,
+// so the abnormal and indeterminate share is what carries that, while the
+// technical share stays small - technical recall at arbitration is rare.
+const ARBITRATION_SET_MIX = {
+  abnormal: 0.45,
+  indeterminate: 0.2,
+  normal: 0.25,
+  technical: 0.1
+}
+
+/**
+ * Give an arbitration cohort image sets that can account for the disagreement.
+ *
+ * Set selection runs per appointment long before this, weighted for a realistic
+ * population - on the realistic profile ~87% of sets are normal, so any two
+ * clinics hold only a handful of equivocal cases and filtering alone can never
+ * fill an arbitration list. Reassigning the set for this cohort is what makes
+ * arbitration cases have something in the images to disagree about.
+ *
+ * The re-pick goes through the normal selection path, so hard context
+ * constraints (implants, repeats, extra images) are still honoured.
+ *
+ * @param {Array} appointments - Candidate appointments, in preference order
+ * @param {number} limit - How many are wanted
+ * @returns {Array} The cohort, at most `limit` long
+ */
+const assignArbitrationImageSets = (appointments, limit) => {
+  const cohort = appointments.slice(0, limit)
+
+  // Cases whose set is already equivocal keep it - no need to disturb them
+  const alreadyEquivocal = cohort.filter((appointment) => {
+    const tag = getAppointmentSet(appointment)?.tag
+    return tag && tag !== 'normal'
+  })
+
+  const wanted = []
+  Object.entries(ARBITRATION_SET_MIX).forEach(([tag, share]) => {
+    const count = Math.round(cohort.length * share)
+    for (let index = 0; index < count; index++) wanted.push(tag)
+  })
+
+  // Those already equivocal cover part of the mix, so drop one wanted slot per
+  // matching tag rather than reassigning them to the same thing
+  alreadyEquivocal.forEach((appointment) => {
+    const tag = getAppointmentSet(appointment).tag
+    const slot = wanted.indexOf(tag)
+    if (slot >= 0) wanted.splice(slot, 1)
+  })
+
+  const untouched = cohort.filter(
+    (appointment) => !alreadyEquivocal.includes(appointment)
+  )
+
+  untouched.forEach((appointment, index) => {
+    const tag = wanted[index]
+    // Anything past the wanted mix keeps the set it was given
+    if (!tag || !appointment.mammogramData) return
+
+    const set = getImageSetForAppointment(appointment.id, 'diagrams', {
+      appointment,
+      tag
+    })
+
+    if (set) appointment.mammogramData.selectedSetId = set.id
+  })
+
+  return cohort
 }
 
 /**
@@ -615,6 +761,20 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
   // Track which appointments have been dealt with, so later passes skip them
   const readAppointmentIds = new Set()
 
+  // Give the clinics that later become arbitration cases image sets worth
+  // disagreeing over. This has to happen before any reads are generated, since
+  // reads are generated from the set.
+  ;[
+    { clinicIndexes: [7, 8], limit: 20 },
+    { clinicIndexes: [5, 6], limit: 20 }
+  ].forEach(({ clinicIndexes, limit }) => {
+    if (clinics.length <= Math.max(...clinicIndexes)) return
+    assignArbitrationImageSets(
+      clinicIndexes.flatMap((index) => clinics[index].appointments),
+      limit
+    )
+  })
+
   // Function to generate a recent timestamp (within past 7 days)
   const generateRecentTimestamp = (minHours = 2, maxHours = 36) => {
     const hoursAgo =
@@ -692,7 +852,11 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
           .toISOString()
 
         addRead(readingCase, appointment, firstReader, secondReadTime, {
-          forceOpinion: pickSecondOpinion(firstRead),
+          forceOpinion: pickSecondOpinion(
+            firstRead,
+            0.8,
+            getAppointmentSet(appointment)
+          ),
           alignmentProbability
         })
 
@@ -739,7 +903,14 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
         appointment,
         secondReader,
         baseReadTime.toISOString(),
-        { forceOpinion: pickSecondOpinion(firstRead), alignmentProbability }
+        {
+          forceOpinion: pickSecondOpinion(
+            firstRead,
+            0.8,
+            getAppointmentSet(appointment)
+          ),
+          alignmentProbability
+        }
       )
     })
 
@@ -822,7 +993,7 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
       const opinion =
         index % 5 === 4
           ? firstRead.opinion
-          : pickSecondOpinion(firstRead, 0) // force disagreement
+          : pickSecondOpinion(firstRead, 0, getAppointmentSet(appointment)) // force disagreement
 
       addRead(
         readingCase,
@@ -864,7 +1035,7 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
       const opinion =
         index % 5 === 4
           ? firstRead.opinion
-          : pickSecondOpinion(firstRead, 0)
+          : pickSecondOpinion(firstRead, 0, getAppointmentSet(appointment))
 
       addRead(
         readingCase,
