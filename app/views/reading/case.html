@@ -274,10 +274,25 @@
             {% set showAnnotationImages = withImages %}
             {% set annotationImagePaths = allPaths %}
             {% include "_includes/summary-lists/read-summary.njk" %}
-          {% elseif caseState == 'in_arbitration' %}
-            <p class="nhsuk-u-margin-bottom-0">Arbitration is in progress. The outcome will appear here once it is recorded.</p>
           {% else %}
-            <p class="nhsuk-u-margin-bottom-0">The first and second reads disagree, so this case needs arbitration. The outcome will appear here once it is recorded.</p>
+            {# How long it has sat - counted from the second read, which is
+               when the disagreement became known #}
+            {% set originalReads = readingCase | getOriginalReads %}
+            {% set secondReadAt = (originalReads | last).timestamp if originalReads | length >= 2 else null %}
+            {% set waitingDays = (secondReadAt | daysSince) if secondReadAt else 3 %}
+            <p class="nhsuk-u-margin-bottom-2">
+              {{ caseState | toTag({ vocabulary: "readingState" }) }}
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                {{ "waiting less than a day" if waitingDays < 1 else "waiting " + waitingDays + " " + ("day" | pluralise(waitingDays)) }}
+              </span>
+            </p>
+            <p class="nhsuk-u-margin-bottom-0">
+              {% if caseState == 'in_arbitration' %}
+                Arbitration is in progress. The outcome will appear here once it is recorded.
+              {% else %}
+                The first and second reads disagree, so this case needs arbitration. The outcome will appear here once it is recorded.
+              {% endif %}
+            </p>
           {% endif %}
         {% endcall %}
       {% endif %}
