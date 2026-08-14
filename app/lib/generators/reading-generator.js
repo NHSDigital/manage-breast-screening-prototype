@@ -464,7 +464,11 @@ const PLAUSIBLE_DISAGREEMENTS = {
  * @param {object} [set] - The image set being read
  * @returns {string} The opinion to force
  */
-const pickSecondOpinion = (firstRead, agreementProbability = 0.8, set = null) => {
+const pickSecondOpinion = (
+  firstRead,
+  agreementProbability = 0.8,
+  set = null
+) => {
   if (Math.random() <= agreementProbability) return firstRead.opinion
 
   const pair = PLAUSIBLE_DISAGREEMENTS[set?.tag]
@@ -595,8 +599,13 @@ const generateReadingDataWithBacklogLimit = (
   )
 
   const clampedLimit = Math.min(backlogLimit, sortedReadable.length)
-  const fullyReadAppointments = sortedReadable.slice(0, sortedReadable.length - clampedLimit)
-  const backlogAppointments = sortedReadable.slice(sortedReadable.length - clampedLimit)
+  const fullyReadAppointments = sortedReadable.slice(
+    0,
+    sortedReadable.length - clampedLimit
+  )
+  const backlogAppointments = sortedReadable.slice(
+    sortedReadable.length - clampedLimit
+  )
   const partialCount = Math.floor(
     backlogAppointments.length * backlogPartialReadRatio
   )
@@ -664,7 +673,12 @@ const generateReadingDataWithBacklogLimit = (
  * @param {Array} episodes - Array of episodes, holding the reading cases
  * @param {object} [seedProfile] - Active seed profile
  */
-const generateReadingData = (appointments, users, episodes, seedProfile = {}) => {
+const generateReadingData = (
+  appointments,
+  users,
+  episodes,
+  seedProfile = {}
+) => {
   const alignmentProbability =
     seedProfile?.reads?.probabilityFirstReaderOpinionMatchesImages ??
     DEFAULT_ALIGNMENT_PROBABILITY
@@ -1061,8 +1075,8 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
   // session.
   if (clinics.length >= 7) {
     const arbitrationDeferralReasons = [
-      'Awaiting second opinion from the clinical lead',
-      'Deferred pending review at the next arbitration meeting'
+      'LCC and RCC images swapped. Needs correcting on PACS',
+      'Images appear to be from a different patient. Needs checking.'
     ]
 
     const deferredArbitrationCandidates = [clinics[5], clinics[6]]
@@ -1141,7 +1155,9 @@ const generateReadingData = (appointments, users, episodes, seedProfile = {}) =>
     console.log('Deferred 2 unread cases')
   }
 
-  console.log(`Total appointments with reading data: ${readAppointmentIds.size}`)
+  console.log(
+    `Total appointments with reading data: ${readAppointmentIds.size}`
+  )
 }
 
 module.exports = {
