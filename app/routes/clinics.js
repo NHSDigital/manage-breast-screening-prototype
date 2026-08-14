@@ -170,9 +170,6 @@ module.exports = (router) => {
     )
 
     if (appointmentIndex === -1) {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(404).json({ error: 'Appointment not found' })
-      }
       return res.redirect(`/clinics/${clinicId}/${currentFilter}`)
     }
 
@@ -181,9 +178,6 @@ module.exports = (router) => {
 
     // Only allow check-in if currently scheduled
     if (appointment.status !== 'scheduled') {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(400).json({ error: 'Appointment cannot be checked in' })
-      }
       return res.redirect(`/clinics/${clinicId}/${currentFilter}`)
     }
 
@@ -193,11 +187,13 @@ module.exports = (router) => {
     // Save back to session
     req.session.data = data
 
-    // If this was an AJAX request, send JSON response
-    if (req.headers.accept?.includes('application/json')) {
-      return res.json({
-        status: 'success',
-        appointment: data.appointments[appointmentIndex]
+    // Fetch requests get the re-rendered row so the page can update in place
+    if (req.xhr) {
+      const updatedAppointment = data.appointments[appointmentIndex]
+      return res.render('clinics/clinic-appointment-row', {
+        appointment: updatedAppointment,
+        participant: getParticipant(data, updatedAppointment.participantId),
+        clinicId
       })
     }
 

@@ -1,8 +1,10 @@
-// Close clinic page - progressively enhances the outcome action links so
-// status changes happen without a full page reload. Without JS every link
-// still works as a normal navigation. Changed rows are re-rendered
-// server-side (the appointment-row fragment route) and swapped in place, so
-// tags and action links can't drift from the server's rendering.
+// Close clinic page - page-specific enhancements on top of
+// fragment-actions.js, which already handles the single outcome links
+// (marked data-fragment-action in the row macro). This file adds the parts
+// with wider effects: bulk actions, revealing the refresh hint when counts
+// go stale, and refreshing a row after its details modal saves.
+
+import { refreshFragment } from './fragment-actions.js'
 
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('js-close-clinic-content')
@@ -18,47 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (link) link.hidden = false
   }
 
-  const rowFor = (appointmentId) =>
-    container.querySelector(`tr[data-appointment-id="${appointmentId}"]`)
+  // Any swapped row means the page counts may be stale
+  container.addEventListener('fragment:swapped', showRefreshLink)
 
-  // Replace a row with its server-rendered replacement
-  const swapRow = (row, html) => {
-    const template = document.createElement('template')
-    template.innerHTML = html.trim()
-    const newRow = template.content.querySelector('tr[data-appointment-id]')
-    if (!newRow || newRow.dataset.appointmentId !== row.dataset.appointmentId) {
-      throw new Error('Response was not the expected row')
-    }
-    row.replaceWith(newRow)
-  }
+  const rowFor = (appointmentId) =>
+    container.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
 
   // Re-fetch one row and swap it in place
   const refreshRow = (row) => {
     const showActions = row.closest('table')?.dataset.showActions || 'false'
-    const url = `/clinics/${clinicId}/close/appointment-row/${row.dataset.appointmentId}?showActions=${showActions}`
-    return fetch(url, fetchOptions)
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to refresh row')
-        return response.text()
-      })
-      .then((html) => swapRow(row, html))
-  }
-
-  // Single outcome change - the response is the re-rendered row
-  const handleActionClick = (link) => {
-    const row = link.closest('tr')
-    fetch(link.href, fetchOptions)
-      .then((response) => {
-        if (!response.ok) throw new Error('Request failed')
-        return response.text()
-      })
-      .then((html) => {
-        swapRow(row, html)
-        showRefreshLink()
-      })
-      .catch(() => {
-        window.location.href = link.href
-      })
+    const url = `/clinics/${clinicId}/close/appointment-row/${row.dataset.fragmentId}?showActions=${showActions}`
+    return refreshFragment(row, url)
   }
 
   // Bulk outcome change - refresh each affected row, then swap the button
@@ -92,13 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   container.addEventListener('click', (event) => {
-    const actionLink = event.target.closest('.js-close-clinic-action')
-    if (actionLink) {
-      event.preventDefault()
-      handleActionClick(actionLink)
-      return
-    }
-
     const bulkLink = event.target.closest('.js-bulk-action')
     if (bulkLink) {
       event.preventDefault()
@@ -113,15 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalLink) {
       event.preventDefault()
       event.stopPropagation()
-      const appointmentId = modalLink.closest('tr')?.dataset.appointmentId
+      const appointmentId = modalLink.closest('tr')?.dataset.fragmentId
       window.openModal(modalLink.dataset.modalId || 'app-form-modal', {
         loadUrl: modalLink.dataset.loadModalUrl,
         onSuccess: () => {
           const row = rowFor(appointmentId)
           if (!row) return window.location.reload()
-          refreshRow(row)
-            .then(showRefreshLink)
-            .catch(() => window.location.reload())
+          refreshRow(row).catch(() => window.location.reload())
         }
       })
     }

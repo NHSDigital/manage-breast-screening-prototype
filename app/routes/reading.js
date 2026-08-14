@@ -214,17 +214,11 @@ module.exports = (router) => {
     // Only accept known request statuses - the value comes straight from
     // the request body
     if (!PRIOR_REQUEST_STATUSES.includes(newStatus)) {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(400).json({ error: 'Unknown request status' })
-      }
       return res.redirect('/reading/priors')
     }
 
     const appointment = getAppointment(data, appointmentId)
     if (!appointment || !appointment.previousMammograms) {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(404).json({ error: 'Appointment not found' })
-      }
       return res.redirect('/reading/priors')
     }
 
@@ -232,9 +226,6 @@ module.exports = (router) => {
       (m) => m.id === mammogramId
     )
     if (!mammogram) {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(404).json({ error: 'Mammogram not found' })
-      }
       return res.redirect('/reading/priors')
     }
 
@@ -263,14 +254,13 @@ module.exports = (router) => {
     })
 
     // Saves to the appointment and mirrors into data.appointment if it matches
-    updateAppointmentData(data, appointmentId, { previousMammograms })
+    const updatedAppointment = updateAppointmentData(data, appointmentId, { previousMammograms })
 
-    // If this was a fetch request, send JSON response for in-place update
-    if (req.headers.accept?.includes('application/json')) {
-      return res.json({
-        status: 'success',
-        newStatus,
-        mammogramId
+    // Fetch requests get the re-rendered row so the page can update in place
+    if (req.xhr) {
+      return res.render('reading/prior-mammogram-row', {
+        appointment: updatedAppointment,
+        mammogram: updatedAppointment.previousMammograms.find((m) => m.id === mammogramId)
       })
     }
 
