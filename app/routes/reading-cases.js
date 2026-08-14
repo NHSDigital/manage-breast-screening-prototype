@@ -20,14 +20,17 @@ const {
   READING_CASE_STATES,
   getReadingCases,
   getReadsAsArray,
+  getReadAuthorIds,
   getReadingCaseStatus,
   getReadingCaseOutcome,
   getReadingMetadata,
   getArbitrationRead,
   isCaseDeferred,
   isCaseInArbitration,
+  isReadFinalised,
   canUserReadCase
 } = require('../lib/utils/reading-cases')
+const { finaliseReadOnCase } = require('../lib/utils/reading')
 const { describeReadingCaseStatus } = require('../lib/utils/status')
 const { awaitingPriors } = require('../lib/utils/prior-mammograms')
 
@@ -69,6 +72,38 @@ module.exports = (router) => {
       scopes: CASE_SCOPES,
       states: READING_CASE_STATES
     })
+  })
+
+  // Finalise every outstanding read on a case, concluding it now rather than
+  // waiting out the auto-finalise delay. Registered before the :tab redirect
+  // below, which would otherwise swallow the path.
+  router.get('/reading/cases/:caseId/finalise', (req, res) => {
+    const data = req.session.data
+
+    const found = getReadingCaseById(data, req.params.caseId)
+    if (!found) {
+      return res.redirect('/reading/cases')
+    }
+
+    const appointment = getAppointment(data, found.readingCase.appointmentId)
+    const finalisedAt = new Date().toISOString()
+
+    // finaliseReadOnCase stores an updated case each time, so re-fetch it for
+    // each author rather than reusing the stale record
+    for (const read of getReadsAsArray(found.readingCase)) {
+      if (isReadFinalised(read, data.settings)) continue
+      const { readingCase } = getReadingCaseById(data, req.params.caseId)
+      finaliseReadOnCase(
+        data,
+        appointment,
+        readingCase,
+        getReadAuthorIds(read)[0],
+        finalisedAt
+      )
+    }
+
+    req.flash('success', 'Outcome finalised')
+    res.redirect(`/reading/cases/${req.params.caseId}`)
   })
 
   // The old tabbed views collapsed into the one page

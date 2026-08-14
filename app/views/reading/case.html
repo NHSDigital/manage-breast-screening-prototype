@@ -73,6 +73,8 @@
     NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
   </p>
 
+  {% set arbitrationRead = readingCase | getArbitrationRead %}
+
   {# Image paths drive the annotation markers, resolved once for every read #}
   {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages and appointment %}
@@ -123,10 +125,15 @@
       {% endif %}
 
       {% if caseState == 'awaiting_finalisation' %}
+        {% if caseStatus.willArbitrate %}
+          {% set finalisationBannerText = "The reads disagree – this case goes to arbitration once they are finalised." %}
+        {% elseif arbitrationRead %}
+          {% set finalisationBannerText = "This case will conclude once its arbitration outcome is finalised." %}
+        {% else %}
+          {% set finalisationBannerText = "This case will conclude once its reads are finalised." %}
+        {% endif %}
         {{ appNotificationBanner({
-          compact: true,
-          text: "The reads disagree – this case goes to arbitration once they are finalised." if caseStatus.willArbitrate
-            else "This case will conclude once its reads are finalised."
+          text: finalisationBannerText
         }) }}
       {% endif %}
 
@@ -177,7 +184,6 @@
       {% endif %}
 
       {# Reading progress in words rather than a bare count #}
-      {% set arbitrationRead = readingCase | getArbitrationRead %}
       {% if arbitrationRead %}
         {% set readsProgress = "First and second reads, plus arbitration" %}
       {% elseif readCount >= 2 %}
@@ -313,6 +319,23 @@
             key: { text: "Readers" },
             value: { html: readersHtml }
           }] %}
+          {# Until finalisation, the finalised row says when the decision was
+             made and offers to conclude the case right away #}
+          {% if not caseOutcome %}
+            {% set decidedAt = arbitrationRead.timestamp if arbitrationRead else (originalReads | last).timestamp %}
+            {% set extraRows = extraRows | push({
+              key: { text: "Finalised" },
+              value: { html: ("Arbitration done " if arbitrationRead else "Reads done ") + (decidedAt | formatDateTime) + '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>' },
+              actions: {
+                items: [
+                  {
+                    href: "/reading/cases/" + readingCase.id + "/finalise",
+                    text: "Finalise outcome now"
+                  }
+                ]
+              }
+            }) %}
+          {% endif %}
           {% include "_includes/summary-lists/read-summary.njk" %}
         {% endcall %}
 
