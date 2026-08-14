@@ -39,7 +39,7 @@
     "cssnano": "^8.0.2",
     "eslint": "^10.8.1",
     "globals": "^17.9.0",
-    "postcss": "^8.5.25",
+    "postcss": "^8.5.26",
     "prettier": "^3.9.6",
     "purgecss": "^8.0.0"
   }
