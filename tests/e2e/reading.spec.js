@@ -459,10 +459,13 @@ test.describe('Image reading', () => {
     const summaryRow = (label) =>
       page.locator('.nhsuk-summary-list__row', { hasText: label })
 
-    // State and outcome live in the header's status tags, not the summary list
+    // Once concluded, the outcome is the header's single status tag, and the
+    // decision gets its own card
     const statusTags = page.locator('.app-header-with-status__status-tag')
-    await expect(statusTags).toContainText('Concluded')
     await expect(statusTags).toContainText('Normal')
+    await expect(
+      page.getByRole('heading', { name: 'Outcome', exact: true })
+    ).toBeVisible()
     await expect(summaryRow('Reads')).toContainText(
       'First and second reads complete'
     )
