@@ -210,7 +210,7 @@ const STATUS_TAGS = {
     complete: { label: 'Screened', colour: 'green' },
     partially_screened: { label: 'Partially screened', colour: 'orange' },
     did_not_attend: { label: 'Did not attend', colour: 'red' },
-    attended_not_screened: { label: 'Attended not screened', colour: 'red' },
+    attended_not_screened: { label: 'Attended not screened', colour: 'orange' },
     cancelled: { label: 'Cancelled', colour: 'red' },
     rescheduled: { label: 'Reschedule requested', colour: 'red' }
   },
@@ -402,6 +402,16 @@ const hasSymptoms = (appointment) => {
   )
 }
 
+/**
+ * Check if an attended-not-screened appointment has its reasons recorded
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether stopped reasons have been recorded
+ */
+const hasStoppedDetails = (appointment) => {
+  return Boolean(appointment?.appointmentStopped?.stoppedReason?.length)
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -418,6 +428,7 @@ module.exports = {
   isSpecialAppointment,
   hasAppointmentNote,
   hasSymptoms,
+  hasStoppedDetails,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,
   STATUS_TAGS

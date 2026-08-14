@@ -35,7 +35,7 @@
     <div class="app-header-with-status__status-tag">
       {{ clinic.status | toTag({ vocabulary: "clinic" }) }}
       <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-1">
-        <a href="/reports/{{ clinic.id }}">View clinic report</a>
+        <a href="/reports/{{ clinicId }}">View clinic report</a>
       </p>
       {% if clinic.status !== "closed" and clinic.status !== "scheduled" %}
       <p class="nhsuk-u-margin-bottom-0">

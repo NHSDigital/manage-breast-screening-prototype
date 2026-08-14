@@ -6,6 +6,7 @@ const weighted = require('weighted')
 const dayjs = require('dayjs')
 const config = require('../../config')
 const { STATUS_GROUPS, isCompleted } = require('../utils/status')
+const { getStoppedReasons } = require('../utils/appointment-data')
 const { generateMammogramImages } = require('./mammogram-generator')
 const {
   generateMedicalInformation
@@ -395,15 +396,13 @@ const generateAppointment = ({
         endedAt: actualEndTime.toISOString()
       }
 
-      appointment.appointmentStopped = {
-        stoppedReason: [faker.helpers.arrayElement([
-          'Consent withdrawn',
-          'Physical health issue',
-          'Pain during screening',
-          'Technical issues at clinic',
-          'No qualified mammographer available'
-        ])],
-        needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
+      // Most stopped appointments have their reasons recorded already; leave
+      // some without so the close clinic flow's 'add details' state is seeded
+      if (Math.random() < 0.7) {
+        appointment.appointmentStopped = {
+          stoppedReason: [faker.helpers.arrayElement(getStoppedReasons()).value],
+          needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
+        }
       }
     }
 

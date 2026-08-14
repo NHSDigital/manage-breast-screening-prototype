@@ -1,6 +1,9 @@
 {# app/views/clinics/close.html #}
 
 {% extends 'layout-app.html' %}
+
+{% from "_includes/close-clinic-appointment-row.njk" import closeClinicAppointmentRow with context %}
+
 {% set pageHeading = "Close clinic " ~ clinic.clinicCode %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -11,8 +14,6 @@
 
 {% block pageContent %}
 
-  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
-
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">{{ unit.name }}</span>
     {{ pageHeading }}
@@ -20,152 +21,88 @@
 
   <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
 
-  {# ANS with details is a final outcome; without details still needs action #}
-  {% set ansWithoutDetails = [] %}
-  {% for appointment in allAppointments %}
-    {% if appointment.status == "attended_not_screened" and not (appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length) %}
-      {% set ansWithoutDetails = ansWithoutDetails | push(appointment) %}
-    {% endif %}
-  {% endfor %}
-
-  {% set needsOutcomeAppointments = allAppointments | removeWhere("status", ["complete", "partially_screened", "did_not_attend", "attended_not_screened", "cancelled", "rescheduled"]) %}
-  {% set needsOutcomeCount = needsOutcomeAppointments | length + ansWithoutDetails | length %}
-
-  <div id="js-close-clinic-content">
-
-  {{ insetText({
-    html: "<p>Record an appointment outcome for every participant to close this clinic.</p><p>There were " + allAppointments | length + " total participants in this clinic, and " + needsOutcomeCount + " still need a final outcome assigned.</p>"
-  }) }}
-
-  {# Macro for appointment table rows #}
-  {% macro appointmentRow(appointment, clinicId, showActions) %}
-    {% set participant = data.participants | findById(appointment.participantId) %}
-    <tr data-appointment-id="{{ appointment.id }}">
-      <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
-      <td class="nhsuk-table__cell">
-        <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
-        <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-1">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
-        <p class="nhsuk-u-margin-bottom-0"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
-      </td>
-      <td class="nhsuk-table__cell" data-cell="status">
-        {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
-        {% if appointment.status == "rescheduled" and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
-          {{ "attended_not_screened" | toTag({ vocabulary: "appointment" }) }}
-        {% endif %}
-      </td>
-      <td class="nhsuk-table__cell" data-cell="actions">
-        {% if showActions %}
-        {% if appointment.status == "in_progress" or appointment.status == "paused" %}
-          <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
-        {% elseif appointment.status == "checked_in" %}
-          <a href="/clinics/{{ clinicId }}/close/attended-not-screened/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}">Mark as attended not screened</a>
-        {% elseif appointment.status == "scheduled" %}
-          <a href="/clinics/{{ clinicId }}/close/did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}">Mark as did not attend</a>
-        {% elseif appointment.status == "attended_not_screened" %}
-          <a href="/clinics/{{ clinicId }}/close/undo-attended-not-screened/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>
-          {% if appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
-            <br><a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Manage details</a>
-          {% else %}
-            <br><a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Add details</a>
-          {% endif %}
-        {% elseif appointment.status == "did_not_attend" %}
-          <a href="/clinics/{{ clinicId }}/close/undo-did-not-attend/{{ appointment.id }}" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>
-        {% endif %}
-        {% endif %}
-        {% if not showActions and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
-          <a href="/clinics/{{ clinicId }}/close/reason/{{ appointment.id }}" class="js-open-details-modal">Manage details</a>
-        {% endif %}
-      </td>
-    </tr>
-  {% endmacro %}
-
-  {# Macro for a status group table #}
+  {# Table of appointments in one status group #}
   {% macro statusGroupTable(appointments, clinicId, showActions) %}
-    <table class="nhsuk-table app-clinic-appointments-table nhsuk-u-margin-bottom-0">
+    <table class="nhsuk-table app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0" data-show-actions="{{ "true" if showActions else "false" }}">
       <thead class="nhsuk-table__head">
         <tr>
           <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
           <th class="nhsuk-table__header">Details</th>
-          <th class="nhsuk-table__header" style="width: 25%">Status</th>
-          <th class="nhsuk-table__header" style="width: 30%">{{ "Actions" if showActions }}</th>
+          <th class="nhsuk-table__header app-clinic-appointments-table__status-column">Status</th>
+          <th class="nhsuk-table__header app-clinic-appointments-table__actions-column">{{ "Actions" if showActions }}</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for appointment in appointments %}
-          {{ appointmentRow(appointment, clinicId, showActions) }}
+          {{ closeClinicAppointmentRow(appointment, appointment.participant, clinicId, showActions) }}
         {% endfor %}
       </tbody>
     </table>
   {% endmacro %}
 
-  {% if needsOutcomeCount %}
-    {% set needsOutcomeHtml %}
-      {# In progress #}
-      {% set inProgressAppointments = allAppointments | where("status", ["in_progress", "paused"]) %}
-      {% if inProgressAppointments | length %}
-        <h3 class="nhsuk-heading-s">In progress</h3>
-        <p>Complete or end these appointments to close the clinic.</p>
-        {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
-      {% endif %}
+  {# Bulk action button - close-clinic.js swaps it for the undo message once used #}
+  {% macro bulkActionControl(clinicId, markStatus, undoStatus, buttonText, markedLabel) %}
+    <p class="js-bulk-action-container">
+      <a href="/clinics/{{ clinicId }}/close/set-status-all/{{ markStatus }}" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-bulk-action" role="button">{{ buttonText }}</a>
+      <span hidden class="js-bulk-undo-message"><span class="js-bulk-count"></span> marked as {{ markedLabel }} (<a href="/clinics/{{ clinicId }}/close/set-status-all/{{ undoStatus }}" class="js-bulk-action">Undo</a>)</span>
+    </p>
+  {% endmacro %}
 
-      {# Checked in, not screened (includes ANS without details) #}
-      {% set checkedInAppointments = allAppointments | where("status", "checked_in") %}
-      {% set checkedInAndAns = [] %}
-      {% for appointment in checkedInAppointments %}
-        {% set checkedInAndAns = checkedInAndAns | push(appointment) %}
-      {% endfor %}
-      {% for appointment in ansWithoutDetails %}
-        {% set checkedInAndAns = checkedInAndAns | push(appointment) %}
-      {% endfor %}
-      {% if checkedInAndAns | length %}
-        <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
-        <p class="js-bulk-action-container">
-          <a href="/clinics/{{ clinicId }}/close/attended-not-screened-all" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="checked_in" data-new-status="attended_not_screened" data-undo-url="/clinics/{{ clinicId }}/close/undo-attended-not-screened-all" role="button">Mark all as attended not screened</a>
-        </p>
-        {{ statusGroupTable(checkedInAndAns, clinicId, true) }}
-      {% endif %}
+  <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
 
-      {# Did not check in #}
-      {% set scheduledAppointments = allAppointments | where("status", "scheduled") %}
-      {% if scheduledAppointments | length %}
-        <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
-        <p class="js-bulk-action-container">
-          <a href="/clinics/{{ clinicId }}/close/did-not-attend-all" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="scheduled" data-new-status="did_not_attend" data-undo-url="/clinics/{{ clinicId }}/close/undo-did-not-attend-all" role="button">Mark all as did not attend</a>
-        </p>
-        {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
+    {% set introHtml %}
+      <p>Record an appointment outcome for every participant to close this clinic.</p>
+      <p>There were {{ appointmentCount }} total participants in this clinic, and {{ needsOutcomeCount }} still need a final outcome assigned.</p>
+    {% endset %}
+
+    {{ insetText({
+      html: introHtml
+    }) }}
+
+    {% if needsOutcomeCount %}
+      {% set needsOutcomeHtml %}
+        {% if inProgressAppointments | length %}
+          <h3 class="nhsuk-heading-s">In progress</h3>
+          <p>Complete or end these appointments to close the clinic.</p>
+          {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
+        {% endif %}
+
+        {# Checked in, not screened - includes attended not screened appointments still needing details #}
+        {% if checkedInAppointments | length %}
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
+          {{ bulkActionControl(clinicId, "attended_not_screened", "checked_in", "Mark all as attended not screened", "attended not screened") }}
+          {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
+        {% endif %}
+
+        {% if scheduledAppointments | length %}
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
+          {{ bulkActionControl(clinicId, "did_not_attend", "scheduled", "Mark all as did not attend", "did not attend") }}
+          {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
+        {% endif %}
+      {% endset %}
+
+      {{ card({
+        heading: "Needs an outcome (" + needsOutcomeCount + ")",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: needsOutcomeHtml
+      }) }}
+    {% endif %}
+
+    {% set outcomeRecordedHtml %}
+      <p><a href="" class="js-refresh-link" hidden>Refresh to update the list</a></p>
+      {% if outcomeRecordedAppointments | length %}
+        {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
       {% endif %}
     {% endset %}
 
     {{ card({
-      heading: "Needs an outcome (" + needsOutcomeCount + ")",
+      heading: "Outcome recorded (" + outcomeRecordedAppointments | length + ")",
       headingLevel: "2",
       feature: true,
-      descriptionHtml: needsOutcomeHtml
+      classes: "app-card--feature-green",
+      descriptionHtml: outcomeRecordedHtml
     }) }}
-  {% endif %}
-
-  {# Outcome recorded — includes ANS with details #}
-  {% set outcomeRecordedAppointments = allAppointments | where("status", ["complete", "partially_screened", "did_not_attend", "cancelled", "rescheduled"]) %}
-  {% for appointment in allAppointments %}
-    {% if appointment.status == "attended_not_screened" and appointment.appointmentStopped and appointment.appointmentStopped.stoppedReason | length %}
-      {% set outcomeRecordedAppointments = outcomeRecordedAppointments | push(appointment) %}
-    {% endif %}
-  {% endfor %}
-
-  {% set outcomeRecordedHtml %}
-    <p><a href="" class="js-refresh-link" hidden>Refresh to update the list</a></p>
-    {% if outcomeRecordedAppointments | length %}
-      {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
-    {% endif %}
-  {% endset %}
-
-  {{ card({
-    heading: "Outcome recorded (" + outcomeRecordedAppointments | length + ")",
-    headingLevel: "2",
-    feature: true,
-    classes: "app-card--feature-green",
-    descriptionHtml: outcomeRecordedHtml
-  }) }}
 
   </div>
 
@@ -178,158 +115,5 @@
 {% endblock %}
 
 {% block pageScripts %}
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var container = document.getElementById('js-close-clinic-content')
-    if (!container) return
-
-    var statusTags = {
-      checked_in: { text: 'Checked in', colour: '' },
-      scheduled: { text: 'Scheduled', colour: '' },
-      attended_not_screened: { text: 'Attended not screened', colour: 'red' },
-      did_not_attend: { text: 'Did not attend', colour: 'red' }
-    }
-
-    var clinicId = window.location.pathname.split('/')[2]
-
-    function renderTag(status) {
-      var config = statusTags[status]
-      if (!config) return ''
-      var colourClass = config.colour ? ' nhsuk-tag--' + config.colour : ''
-      return '<strong class="nhsuk-tag app-nowrap' + colourClass + '">' + config.text + '</strong>'
-    }
-
-    function renderActionCell(appointmentId, newStatus) {
-      if (newStatus === 'attended_not_screened') {
-        return '<a href="/clinics/' + clinicId + '/close/undo-attended-not-screened/' + appointmentId + '" class="js-close-clinic-action" data-new-status="checked_in">Undo</a>' +
-          '<br><a href="/clinics/' + clinicId + '/close/reason/' + appointmentId + '" class="js-open-details-modal">Add details</a>'
-      }
-      if (newStatus === 'did_not_attend') {
-        return '<a href="/clinics/' + clinicId + '/close/undo-did-not-attend/' + appointmentId + '" class="js-close-clinic-action" data-new-status="scheduled">Undo</a>'
-      }
-      if (newStatus === 'checked_in') {
-        return '<a href="/clinics/' + clinicId + '/close/attended-not-screened/' + appointmentId + '" class="js-close-clinic-action" data-new-status="attended_not_screened">Mark as attended not screened</a>'
-      }
-      if (newStatus === 'scheduled') {
-        return '<a href="/clinics/' + clinicId + '/close/did-not-attend/' + appointmentId + '" class="js-close-clinic-action" data-new-status="did_not_attend">Mark as did not attend</a>'
-      }
-      return ''
-    }
-
-    function showRefreshLink() {
-      var link = container.querySelector('.js-refresh-link')
-      if (link) link.hidden = false
-    }
-
-    function updateRow(row, newStatus) {
-      var statusCell = row.querySelector('[data-cell="status"]')
-      var actionsCell = row.querySelector('[data-cell="actions"]')
-      var appointmentId = row.getAttribute('data-appointment-id')
-
-      if (statusCell) statusCell.innerHTML = renderTag(newStatus)
-      if (actionsCell) {
-        actionsCell.innerHTML = renderActionCell(appointmentId, newStatus)
-        bindActions()
-      }
-    }
-
-    function replaceBulkButtonWithUndo(bulkLink, undoUrl, count, statusLabel) {
-      var containerEl = bulkLink.closest('.js-bulk-action-container')
-      if (!containerEl) return
-      var originalUrl = bulkLink.href
-      var originalLabel = bulkLink.textContent
-      var sourceStatus = bulkLink.getAttribute('data-source-status')
-      var newStatus = bulkLink.getAttribute('data-new-status')
-      containerEl.innerHTML = count + ' participants marked as ' + statusLabel + ' (<a href="' + undoUrl + '" class="js-close-clinic-action" data-bulk-undo="true" data-undo-url="' + originalUrl + '" data-undo-label="' + originalLabel + '" data-source-status="' + newStatus + '" data-new-status="' + sourceStatus + '">Undo</a>)'
-      bindActions()
-    }
-
-    function replaceBulkUndoWithButton(undoLink, originalUrl, originalLabel) {
-      var containerEl = undoLink.closest('.js-bulk-action-container')
-      if (!containerEl) return
-      var sourceStatus = undoLink.getAttribute('data-new-status')
-      var newStatus = undoLink.getAttribute('data-source-status')
-      var undoUrl = undoLink.href
-      containerEl.innerHTML = '<a href="' + originalUrl + '" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-close-clinic-action" data-bulk="true" data-source-status="' + sourceStatus + '" data-new-status="' + newStatus + '" data-undo-url="' + undoUrl + '" role="button">' + originalLabel + '</a>'
-      bindActions()
-    }
-
-    function handleClick(e) {
-      e.preventDefault()
-      e.stopPropagation()
-
-      var link = e.currentTarget
-      var url = link.href
-      var newStatus = link.getAttribute('data-new-status')
-      var isBulk = link.getAttribute('data-bulk') === 'true'
-      var isBulkUndo = link.getAttribute('data-bulk-undo') === 'true'
-
-      fetch(url, { headers: { 'Accept': 'application/json' } })
-        .then(function (response) {
-          if (!response.ok) throw new Error('Request failed')
-          return response.json()
-        })
-        .then(function (data) {
-          if (isBulk) {
-            var sourceStatus = link.getAttribute('data-source-status')
-            var count = 0
-            container.querySelectorAll('tr[data-appointment-id]').forEach(function (row) {
-              var actionLink = row.querySelector('[data-cell="actions"] .js-close-clinic-action')
-              if (actionLink && actionLink.getAttribute('data-new-status') === newStatus) {
-                updateRow(row, newStatus)
-                count++
-              }
-            })
-            var undoUrl = link.getAttribute('data-undo-url')
-            var statusLabel = statusTags[newStatus] ? statusTags[newStatus].text.toLowerCase() : newStatus
-            replaceBulkButtonWithUndo(link, undoUrl, data.count || count, statusLabel)
-            showRefreshLink()
-          } else if (isBulkUndo) {
-            var revertStatus = link.getAttribute('data-new-status')
-            var sourceStatusUndo = link.getAttribute('data-source-status')
-            container.querySelectorAll('tr[data-appointment-id]').forEach(function (row) {
-              var actionLink = row.querySelector('[data-cell="actions"] .js-close-clinic-action')
-              if (actionLink && actionLink.getAttribute('data-new-status') === revertStatus) {
-                updateRow(row, revertStatus)
-              }
-            })
-            var originalUrl = link.getAttribute('data-undo-url')
-            var originalLabel = link.getAttribute('data-undo-label')
-            replaceBulkUndoWithButton(link, originalUrl, originalLabel)
-          } else {
-            var row = link.closest('tr')
-            if (row) updateRow(row, newStatus)
-            showRefreshLink()
-          }
-        })
-        .catch(function (error) {
-          console.error('Error:', error)
-          window.location.href = url
-        })
-    }
-
-    function bindActions() {
-      container.querySelectorAll('.js-close-clinic-action').forEach(function (link) {
-        if (link.getAttribute('data-bound')) return
-        link.setAttribute('data-bound', 'true')
-        link.addEventListener('click', handleClick)
-      })
-    }
-
-    bindActions()
-
-    // Open details modal without page reload on close
-    container.addEventListener('click', function (e) {
-      var link = e.target.closest('.js-open-details-modal')
-      if (!link) return
-      e.preventDefault()
-      window.openModal('app-form-modal', {
-        loadUrl: link.href,
-        onSuccess: function () {
-          link.textContent = 'Manage details'
-        }
-      })
-    })
-  })
-</script>
+  <script type="module" src="/assets/javascript/close-clinic.js"></script>
 {% endblock %}
