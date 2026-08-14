@@ -125,12 +125,14 @@ module.exports = (router) => {
     // still shows that the read happened, just not what it concluded.
     const hideFirstOpinion = allReads.length < 2 && !caseOutcome
 
-    // The read the outcome came from - arbitration where there was one, else
-    // either of the two agreeing reads. Its per-breast assessment is what the
-    // summary reports, since that is what the case concluded.
-    const decidingRead = caseOutcome
-      ? getArbitrationRead(readingCase) || allReads[0]
-      : null
+    // The read the outcome comes from - arbitration where there was one, else
+    // either of the two agreeing reads. Present as soon as the case's
+    // direction is known, even before finalisation - the outcome card marks
+    // an unfinalised decision as provisional.
+    const decidingRead =
+      caseOutcome || caseStatus.provisionalOutcome
+        ? getArbitrationRead(readingCase) || allReads[0]
+        : null
 
     res.render('reading/case', {
       readingCase,

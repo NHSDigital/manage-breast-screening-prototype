@@ -19,6 +19,10 @@
       shown whatever the read's own opinion - lets a caller pool annotations
       from several reads (default: built from this read's own annotations)
     - extraRows: array - summary list rows to add before the finalised row
+    - awaitingFinalisation: boolean - treat the read as awaiting finalisation
+      whatever its own state, marking the opinion and hiding the finalised
+      row - for case-level summaries where the case has not yet concluded
+      even though this read may have (default: false)
 
   Callers set these with set before including; a caller reusing this include
   after another has set opinionLabel, annotationRowHtml or extraRows should
@@ -94,7 +98,7 @@
 {% if not hideOpinionRow %}
   {% set opinionValueHtml %}
     {{ read.opinion | toTag }}
-    {% if read.timestamp and not (read | isReadFinalised(data.settings)) %}
+    {% if awaitingFinalisation or (read.timestamp and not (read | isReadFinalised(data.settings))) %}
       <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">(awaiting finalisation)</span>
     {% endif %}
   {% endset %}
@@ -326,7 +330,7 @@
 
 {# When it was finalised. Reads finalised by the delay passing have no
    finalisedAt stamp, so fall back to the moment the delay ran out. #}
-{% if read.timestamp and (read | isReadFinalised(data.settings)) %}
+{% if not awaitingFinalisation and read.timestamp and (read | isReadFinalised(data.settings)) %}
   {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
   {% if finalisedAt %}
     {% set rows = rows | push({

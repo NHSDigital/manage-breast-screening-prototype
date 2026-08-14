@@ -14,6 +14,7 @@
 {% extends 'layout-app.html' %}
 
 {% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
+{% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/details/macro.njk' import appDetails %}
 
@@ -122,17 +123,11 @@
       {% endif %}
 
       {% if caseState == 'awaiting_finalisation' %}
-        {% set finalisationHtml %}
-          <p class="nhsuk-u-margin-bottom-0">
-            Both reads are done but not yet finalised – the readers can still change their opinions.
-            {% if caseStatus.willArbitrate %}
-              The reads disagree, so the case will go to arbitration once they are finalised.
-            {% else %}
-              The case will conclude once they are finalised.
-            {% endif %}
-          </p>
-        {% endset %}
-        {{ insetText({ html: finalisationHtml }) }}
+        {{ appNotificationBanner({
+          compact: true,
+          text: "The reads disagree – this case goes to arbitration once they are finalised." if caseStatus.willArbitrate
+            else "This case will conclude once its reads are finalised."
+        }) }}
       {% endif %}
 
 
@@ -213,23 +208,29 @@
         {{ appSummaryList({ rows: caseRows }) }}
       {% endcall %}
 
-      {# Outcome card - shown once the case has concluded. The decision, who
-         made it, and the detail behind it, rendered by the same read summary
-         include as everywhere else - the deciding read's assessment is the
-         case's outcome. Annotations are pooled from every read, since anyone
-         acting on the outcome wants all the marks, whoever made them. #}
-      {% if caseOutcome %}
+      {# Outcome card - shown as soon as the case's decision is known, marked
+         provisional until finalisation. The decision, who made it, and the
+         detail behind it, rendered by the same read summary include as
+         everywhere else - the deciding read's assessment is the case's
+         outcome. When agreeing reads decided the case, annotations are pooled
+         from both, since either reader's marks stand behind the shared
+         opinion; an arbitrated outcome is the arbitrator's alone, so only
+         their read's detail belongs here - the earlier marks stay with their
+         reads below. #}
+      {% if decidingRead %}
 
         {% set rightPooled = [] %}
         {% set leftPooled = [] %}
-        {% for thisRead in reads %}
-          {% for annotation in (thisRead.right.annotations or []) %}
-            {% set rightPooled = rightPooled | push(annotation) %}
+        {% if not arbitrationRead %}
+          {% for thisRead in reads %}
+            {% for annotation in (thisRead.right.annotations or []) %}
+              {% set rightPooled = rightPooled | push(annotation) %}
+            {% endfor %}
+            {% for annotation in (thisRead.left.annotations or []) %}
+              {% set leftPooled = leftPooled | push(annotation) %}
+            {% endfor %}
           {% endfor %}
-          {% for annotation in (thisRead.left.annotations or []) %}
-            {% set leftPooled = leftPooled | push(annotation) %}
-          {% endfor %}
-        {% endfor %}
+        {% endif %}
         {% set pooledAnnotationCount = (rightPooled | length) + (leftPooled | length) %}
 
         {% set pooledAnnotationsHtml %}
@@ -304,8 +305,9 @@
              agreeing reads needs no reader row - the readers row covers it. #}
           {% set showReaderRow = arbitrationRead and not (arbitrationRead.arbitratorIds | length) %}
           {% set readerRowLabel = "Arbitrated by" %}
-          {% set showAnnotationImages = false %}
-          {% set annotationImagePaths = null %}
+          {% set awaitingFinalisation = not caseOutcome %}
+          {% set showAnnotationImages = withImages if arbitrationRead else false %}
+          {% set annotationImagePaths = allPaths if arbitrationRead else null %}
           {% set annotationRowHtml = pooledAnnotationsHtml if pooledAnnotationCount else null %}
           {% set extraRows = [{
             key: { text: "Readers" },
@@ -436,6 +438,7 @@
               {% set opinionLabel = null %}
               {% set annotationRowHtml = null %}
               {% set extraRows = null %}
+              {% set awaitingFinalisation = false %}
               {# A panel arbitration carries arbitratorIds and its own row; a
                  solo one only has the reader, so say who that was #}
               {% set showReaderRow = not (thisRead.arbitratorIds | length) %}
