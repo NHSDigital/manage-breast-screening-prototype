@@ -128,8 +128,7 @@
           <th scope="col">Images taken</th>
           <th scope="col">Screened at</th>
           <th scope="col">Reads</th>
-          <th scope="col">Case</th>
-          <th scope="col">Outcome</th>
+          <th scope="col">Status</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
@@ -156,19 +155,16 @@
             </td>
             <td class="nhsuk-table__cell">{{ row.readCount }}</td>
             <td class="nhsuk-table__cell">
-              {{ row.state | toTag({ vocabulary: "readingState" }) }}
-              {% if row.statusDisplay.destination %}
-                <br>
-                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                  {{ row.statusDisplay.destination | sentenceCase }}
-                </span>
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
               {% if row.outcome %}
                 {{ row.outcome | toTag }}
               {% else %}
-                <span class="nhsuk-u-secondary-text-colour">Not yet</span>
+                {{ row.state | toTag({ vocabulary: "readingState" }) }}
+                {% if row.statusDisplay.destination %}
+                  <br>
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                    {{ row.statusDisplay.destination | sentenceCase }}
+                  </span>
+                {% endif %}
               {% endif %}
             </td>
           </tr>
