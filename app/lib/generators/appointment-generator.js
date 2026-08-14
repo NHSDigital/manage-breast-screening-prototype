@@ -396,13 +396,11 @@ const generateAppointment = ({
         endedAt: actualEndTime.toISOString()
       }
 
-      // Most stopped appointments have their reasons recorded already; leave
-      // some without so the close clinic flow's 'add details' state is seeded
-      if (Math.random() < 0.7) {
-        appointment.appointmentStopped = {
-          stoppedReason: [faker.helpers.arrayElement(getStoppedReasons()).value],
-          needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
-        }
+      // Stopping an appointment in the appointment flow requires reasons, so
+      // seeded attended-not-screened appointments always have them
+      appointment.appointmentStopped = {
+        stoppedReason: [faker.helpers.arrayElement(getStoppedReasons()).value],
+        needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
       }
     }
 
