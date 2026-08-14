@@ -2,8 +2,6 @@
 
 {% extends 'layout-appointment.html' %}
 
-{% from "_includes/forms/attended-not-screened-fields.njk" import attendedNotScreenedFields with context %}
-
 {% set pageHeading = "Appointment cannot proceed" %}
 
 {% set formAction = './attended-not-screened-answer' %}
@@ -33,7 +31,9 @@
     html: insetHtml
   }) }}
 
-  {{ attendedNotScreenedFields("appointment[appointmentStopped]", appointment.appointmentStopped, participant) }}
+  {% set stoppedFieldsNamePrefix = "appointment[appointmentStopped]" %}
+  {% set stoppedFieldsValues = appointment.appointmentStopped %}
+  {% include "_includes/forms/attended-not-screened-fields.njk" %}
 
   <div class="nhsuk-button-group">
     {{ button({

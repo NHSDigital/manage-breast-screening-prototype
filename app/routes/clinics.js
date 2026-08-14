@@ -13,7 +13,7 @@ const {
   isFinal,
   hasStoppedDetails
 } = require('../lib/utils/status')
-const { getReturnUrl, modalBreakout } = require('../lib/utils/referrers')
+const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const { getAppointment, updateAppointmentData } = require('../lib/utils/appointment-data')
@@ -422,7 +422,13 @@ module.exports = (router) => {
     updateAppointmentStatus(data, appointmentId, 'rescheduled')
 
     delete data.closeRescheduleForm
-    res.redirect(modalBreakout(`/clinics/${clinicId}/close`))
+
+    // In modal context reply with an empty success, so the modal closes and
+    // the page updates the row in place rather than reloading
+    if (res.locals.parentLayout) {
+      return res.send('')
+    }
+    res.redirect(`/clinics/${clinicId}/close`)
   })
 
   // Confirm and close clinic

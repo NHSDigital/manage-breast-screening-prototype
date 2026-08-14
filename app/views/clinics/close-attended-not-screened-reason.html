@@ -2,8 +2,6 @@
 
 {% extends parentLayout or 'layout-app.html' %}
 
-{% from "_includes/forms/attended-not-screened-fields.njk" import attendedNotScreenedFields with context %}
-
 {% set pageHeading = "Why was this appointment stopped?" %}
 {% set formAction = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
 
@@ -21,7 +19,9 @@
     {{ pageHeading }}
   </h1>
 
-  {{ attendedNotScreenedFields("closeReasonForm", data.closeReasonForm, participant) }}
+  {% set stoppedFieldsNamePrefix = "closeReasonForm" %}
+  {% set stoppedFieldsValues = data.closeReasonForm %}
+  {% include "_includes/forms/attended-not-screened-fields.njk" %}
 
   <div class="nhsuk-button-group">
     {{ button({

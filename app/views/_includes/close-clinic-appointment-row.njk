@@ -45,6 +45,8 @@
           <br>{{ appLink(detailsLink | openInModal) }}
         {% elseif appointment.status == "did_not_attend" %}
           <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled" class="js-close-clinic-action">Undo</a>
+        {% elseif appointment.status == "rescheduled" and appointment | hasStoppedDetails %}
+          {{ appLink(detailsLink | openInModal) }}
         {% endif %}
       {% elseif appointment | hasStoppedDetails %}
         {{ appLink(detailsLink | openInModal) }}
