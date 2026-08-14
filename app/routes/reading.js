@@ -17,6 +17,7 @@ const {
   userHasReadAppointment,
   writeReading,
   getUnfinalisedUserReadsForSession,
+  finaliseReadOnCase,
   finaliseUserReadsForSession,
   getEligibleCandidatesForSession,
   createReadingSession,
@@ -25,8 +26,12 @@ const {
   getOrCreateClinicSession,
   getSessionReadingProgress,
   skipAppointmentInSession,
+  unskipAppointmentInSession,
   topUpSession,
   getAppointmentReadingMetadata,
+  appointmentHasBeenArbitrated,
+  getNextCaseInSession,
+  getFirstOutstandingCaseInSession,
   filterAppointmentsByEligibleForReading,
   filterAppointmentsByNeedsAnyRead,
   filterAppointmentsByUserCanRead
@@ -38,8 +43,13 @@ const {
   getReadingMetadata,
   getReadsAsArray,
   getReadForUser,
+  getArbitrationRead,
+  getReadAuthorIds,
+  caseHasBeenArbitrated,
+  isReadFinalised,
   isCaseDeferred,
-  withoutRead
+  withoutRead,
+  withArbitrationRelease
 } = require('../lib/utils/reading-cases')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
 const {
@@ -47,7 +57,9 @@ const {
   userRequestedPriors
 } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
-const { getReadingCaseStateCounts } = require('../lib/utils/reading-case-list')
+const {
+  getArbitrationBacklogCounts
+} = require('../lib/utils/reading-case-list')
 const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
@@ -80,13 +92,13 @@ module.exports = (router) => {
       }
     })
 
-    // The arbitration backlog, counted the same way the case list counts it
-    // so the card and /reading/cases agree. Only the complex layout shows the
-    // card, and the count walks every episode - don't pay for it otherwise
+    // The arbitration backlog, counted the same way the case list and the
+    // arbitration setup page count it so the three agree. Only the complex
+    // layout shows the card, and the count walks every episode - don't pay
+    // for it otherwise
     const arbitrationCount =
       layout === 'complex'
-        ? getReadingCaseStateCounts(data, { scope: 'open' })
-            .awaiting_arbitration || 0
+        ? getArbitrationBacklogCounts(data, { scope: 'open' }).total
         : null
 
     res.render(template, {
@@ -365,10 +377,18 @@ module.exports = (router) => {
     }
   })
 
-  // Route for viewing a batch
+  // Route for viewing a batch. Reading sessions have per-user views and live at
+  // /your-reads; arbitration has no yours-vs-everyone split, so it renders here.
   router.get('/reading/session/:sessionId', (req, res) => {
-    // Default to "your-reads" view
-    res.redirect(`/reading/session/${req.params.sessionId}/your-reads`)
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+
+    if (session?.type !== 'arbitration') {
+      return res.redirect(`/reading/session/${sessionId}/your-reads`)
+    }
+
+    renderSessionOverview(req, res, session, null)
   })
 
   // Route for resuming a session — jumps straight into the next readable case,
@@ -396,8 +416,9 @@ module.exports = (router) => {
         )
         .filter(Boolean)
 
-      const hasReadableCase = getFirstUserReadableAppointment(
+      const hasReadableCase = getFirstOutstandingCaseInSession(
         data,
+        session,
         loadedAppointments,
         data.currentUser.id
       )
@@ -417,7 +438,8 @@ module.exports = (router) => {
       data,
       sessionAppointments,
       data.currentUser.id,
-      session.skippedAppointments || []
+      session.skippedAppointments || [],
+      session
     )
 
     if (resumeAppointment) {
@@ -427,8 +449,9 @@ module.exports = (router) => {
     }
 
     // Check if there are any readable cases left in the session
-    const firstReadable = getFirstUserReadableAppointment(
+    const firstReadable = getFirstOutstandingCaseInSession(
       data,
+      session,
       sessionAppointments,
       data.currentUser.id
     )
@@ -465,6 +488,7 @@ module.exports = (router) => {
     }
     res.render('reading/no-more-cases', {
       sessionId,
+      session,
       unfinalisedReadCount: getUnfinalisedUserReadsForSession(
         data,
         sessionId,
@@ -492,18 +516,20 @@ module.exports = (router) => {
     )
 
     if (finalisedCount > 0) {
+      const noun = session.type === 'arbitration' ? 'outcome' : 'read'
       req.flash(
         'success',
         finalisedCount === 1
-          ? '1 read finalised'
-          : `${finalisedCount} reads finalised`
+          ? `1 ${noun} finalised`
+          : `${finalisedCount} ${noun}s finalised`
       )
     }
 
     res.redirect(`/reading/session/${sessionId}`)
   })
 
-  // Route for viewing a session with specific view
+  // Route for viewing a reading session with a specific view. Arbitration
+  // sessions never reach here - they render their own overview above.
   router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
     const { sessionId, view } = req.params
@@ -512,12 +538,25 @@ module.exports = (router) => {
     // Validate view parameter
     const selectedView = validViews.includes(view) ? view : 'your-reads'
 
-    // Get the batch
     const session = getReadingSession(data, sessionId)
     if (!session) {
-      // req.flash('error', 'Session not found')
       return res.redirect('/reading')
     }
+
+    if (session.type === 'arbitration') {
+      return res.redirect(`/reading/session/${sessionId}`)
+    }
+
+    renderSessionOverview(req, res, session, selectedView)
+  })
+
+  // Build the session overview's view model and render the template that suits
+  // the session type. Reading gets tabbed per-user views; arbitration gets one
+  // list, because a case is arbitrated once for everyone.
+  const renderSessionOverview = (req, res, session, selectedView) => {
+    const data = req.session.data
+    const sessionId = session.id
+    const isArbitration = session.type === 'arbitration'
 
     // Get enhanced appointments with reading metadata
     const enhancedAppointments = session.appointmentIds
@@ -547,6 +586,12 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
+    // Arbitration settles a case for everyone, so its progress is how many of
+    // the session's cases have been arbitrated - not what any one user has done
+    const arbitratedCount = enhancedAppointments.filter((appointment) =>
+      caseHasBeenArbitrated(appointment.readingCase)
+    ).length
+
     const sessionProgress = getSessionReadingProgress(
       data,
       sessionId,
@@ -560,7 +605,8 @@ module.exports = (router) => {
       data,
       enhancedAppointments,
       data.currentUser.id,
-      session.skippedAppointments || []
+      session.skippedAppointments || [],
+      session
     )
 
     // The user's reads still awaiting finalisation, and when the first will
@@ -593,28 +639,36 @@ module.exports = (router) => {
       clinic = getClinic(data, session.clinicId)
     }
 
-    // Overall backlog count — used to gate the 'Start a new session' button.
-    // Checks only cases the current user can actually read (not already read by them,
-    // not fully read by others, not deferred or awaiting priors).
-    const backlogTotal = filterAppointmentsByUserCanRead(
-      data,
-      filterAppointmentsByEligibleForReading(data.appointments),
-      data.currentUser.id
-    ).length
+    // Overall backlog count — used to gate the 'Start a new session' button, so
+    // it counts the work a new session of *this* type would draw on. For
+    // reading that's cases the user can read (not already read by them, not
+    // fully read by others, not deferred or awaiting priors); for arbitration
+    // it's the cases they'd be eligible to arbitrate.
+    const backlogTotal = isArbitration
+      ? getEligibleCandidatesForSession(data, { type: 'arbitration' }).length
+      : filterAppointmentsByUserCanRead(
+          data,
+          filterAppointmentsByEligibleForReading(data.appointments),
+          data.currentUser.id
+        ).length
 
-    res.render('reading/session', {
-      session,
-      appointments: enhancedAppointments,
-      readingStatus,
-      sessionProgress,
-      resumeAppointment,
-      autoFinaliseAt,
-      unfinalisedReadCount: unconfirmedReads.length,
-      clinic,
-      backlogTotal,
-      view: selectedView
-    })
-  })
+    res.render(
+      isArbitration ? 'reading/arbitration/session' : 'reading/session',
+      {
+        session,
+        appointments: enhancedAppointments,
+        readingStatus,
+        sessionProgress,
+        resumeAppointment,
+        autoFinaliseAt,
+        arbitratedCount,
+        unfinalisedReadCount: unconfirmedReads.length,
+        clinic,
+        backlogTotal,
+        view: selectedView
+      }
+    )
+  }
 
   // Middleware to make sure pages have the right data
   router.use(
@@ -667,10 +721,15 @@ module.exports = (router) => {
           !data.imageReadingTemp ||
           data.imageReadingTemp.appointmentId !== appointmentId
         ) {
-          const existingRead = getReadForUser(
-            getReadingCase(data, appointment),
-            currentUserId
-          )
+          // In arbitration the read being amended is the case's arbitration
+          // read, not the current user's own - a panel member may also have
+          // read this case as first or second reader
+          const readingCaseForTemp = getReadingCase(data, appointment)
+          const existingRead =
+            session.type === 'arbitration'
+              ? getArbitrationRead(readingCaseForTemp)
+              : getReadForUser(readingCaseForTemp, currentUserId)
+
           if (existingRead) {
             // User has already read this appointment - populate temp from saved read
             console.log(
@@ -708,6 +767,22 @@ module.exports = (router) => {
       // workflow templates can work in reading-case terms without each of them
       // walking back to the episode
       res.locals.isReadingWorkflow = true
+      res.locals.isArbitration = session.type === 'arbitration'
+
+      // Reaching a case in an arbitration session is the act that releases it.
+      // Lazy sessions bring cases in one at a time, so this is where release
+      // happens rather than over the whole backlog at session creation.
+      if (session.type === 'arbitration') {
+        const caseToRelease = getReadingCase(data, appointment)
+        if (caseToRelease && !caseToRelease.arbitration?.releasedAt) {
+          updateReadingCase(
+            data,
+            appointment.episodeId,
+            withArbitrationRelease(caseToRelease, currentUserId)
+          )
+        }
+      }
+
       res.locals.readingCase = getReadingCase(data, appointment)
       res.locals.session = session
       res.locals.appointmentData = {
@@ -745,8 +820,17 @@ module.exports = (router) => {
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
-      // Check if user has already read this appointment
-      if (userHasReadAppointment(data, appointment, currentUserId)) {
+      // Returning to a case that has already been done shows what was recorded,
+      // rather than starting the flow again. In arbitration that means the
+      // arbitration read - a panel member's own earlier read as first or second
+      // reader isn't the thing this session is here to do.
+      const session = getReadingSession(data, sessionId)
+      const isArbitrationSession = session?.type === 'arbitration'
+      const alreadyDone = isArbitrationSession
+        ? appointmentHasBeenArbitrated(data, appointment)
+        : userHasReadAppointment(data, appointment, currentUserId)
+
+      if (alreadyDone) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )
@@ -776,6 +860,48 @@ module.exports = (router) => {
     }
   )
 
+  // Finalise this one case early, from the existing-read page. Redirects back
+  // to that page so the change is visible in place.
+  router.all(
+    '/reading/session/:sessionId/appointments/:appointmentId/finalise-read',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
+      const backHref = `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+
+      const appointment = data.appointments.find(
+        (candidate) => candidate.id === appointmentId
+      )
+      if (!appointment) {
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
+
+      const readingCase = getReadingCase(data, appointment)
+      const session = getReadingSession(data, sessionId)
+      const isArbitrationSession = session?.type === 'arbitration'
+
+      // The read this page is about - the case's arbitration read in an
+      // arbitration session, otherwise the user's own
+      const read = isArbitrationSession
+        ? getArbitrationRead(readingCase)
+        : getReadForUser(readingCase, currentUserId)
+
+      if (!read || isReadFinalised(read, data.settings)) {
+        return res.redirect(backHref)
+      }
+
+      finaliseReadOnCase(data, appointment, readingCase, currentUserId)
+
+      req.flash(
+        'success',
+        isArbitrationSession ? 'Outcome finalised' : 'Read finalised'
+      )
+
+      res.redirect(backHref)
+    }
+  )
+
   // Handle skipping an appointment in a batch
   router.get(
     '/reading/session/:sessionId/appointments/:appointmentId/skip',
@@ -787,7 +913,7 @@ module.exports = (router) => {
       skipAppointmentInSession(data, sessionId, appointmentId)
 
       // Top up the batch with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next readable appointment after current position (no wrap)
       const currentUserId = data.currentUser.id
@@ -795,12 +921,13 @@ module.exports = (router) => {
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
+
+      const nextUnreadAppointment = getNextCaseInSession(
         data,
+        session,
         sessionAppointments,
         appointmentId,
-        currentUserId,
-        { wrap: false }
+        currentUserId
       )
 
       if (nextUnreadAppointment) {
@@ -811,8 +938,9 @@ module.exports = (router) => {
         res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
         )
@@ -889,8 +1017,12 @@ module.exports = (router) => {
         return
       }
 
+      // Requesting priors settles what happens to this case for now, so it is
+      // no longer waiting to be come back to
+      unskipAppointmentInSession(data, sessionId, appointmentId)
+
       // Top up the batch with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next readable appointment in batch after the current position, wrapping
       // to the start if needed. This mirrors the navigation in save-opinion.
@@ -898,12 +1030,12 @@ module.exports = (router) => {
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
+      const nextUnreadAppointment = getNextCaseInSession(
         data,
+        session,
         sessionAppointments,
         appointmentId,
-        currentUserId,
-        { wrap: false }
+        currentUserId
       )
 
       // Only store the banner if there is a next case to show it on
@@ -928,8 +1060,9 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
         )
@@ -1029,20 +1162,24 @@ module.exports = (router) => {
         return
       }
 
+      // A deferred case is settled for now, so it is no longer waiting to be
+      // come back to
+      unskipAppointmentInSession(data, sessionId, appointmentId)
+
       // Top up the session with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next readable appointment after current position
       const session = getReadingSession(data, sessionId)
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
+      const nextUnreadAppointment = getNextCaseInSession(
         data,
+        session,
         sessionAppointments,
         appointmentId,
-        currentUserId,
-        { wrap: false }
+        currentUserId
       )
 
       // Show a banner on the next case if there is one
@@ -1067,8 +1204,9 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
         )
@@ -1161,10 +1299,17 @@ module.exports = (router) => {
         'review',
         'existing-read',
         'compare',
+        'arbitration-reads',
         'request-priors',
         'defer-case',
         'medical-information'
       ]
+
+      // Arbitration renders its own opinion page - same URL, different
+      // information architecture (the original reads sit alongside the case)
+      if (step === 'opinion' && res.locals.isArbitration) {
+        return res.render('reading/workflow/arbitration-opinion')
+      }
 
       if (workflowSteps.includes(step)) {
         return res.render(`reading/workflow/${step}`)
@@ -1892,15 +2037,28 @@ module.exports = (router) => {
       // Editing a read the user has already saved. The existing-read page they
       // came from is itself a summary of the read, so the confirmation step is
       // redundant — save straight away regardless of the confirmation settings.
-      const isEditingExistingRead = userHasReadAppointment(
-        data,
-        appointment,
-        currentUserId
-      )
+      // In arbitration, "editing" means the arbitration read exists - not that
+      // the user was an original reader (panel members may have been).
+      const isArbitrationSession =
+        getReadingSession(data, sessionId)?.type === 'arbitration'
+      const isEditingExistingRead = isArbitrationSession
+        ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+        : userHasReadAppointment(data, appointment, currentUserId)
+
+      // Blind arbitration reveals the original reads on the review page, so
+      // the review step is required even when confirmDecision is off
+      const arbitrationNeedsReview =
+        isArbitrationSession &&
+        (data.settings?.reading?.arbitration?.confirmDecision !== 'false' ||
+          data.settings?.reading?.arbitration?.showReads === 'blind')
 
       // Check for late comparison if not already done
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
-      if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
+      if (
+        comparisonSetting === 'late' &&
+        !isArbitrationSession &&
+        !formData?.comparisonComplete
+      ) {
         if (
           shouldShowComparePage(
             getReadingCase(data, appointment),
@@ -1919,7 +2077,22 @@ module.exports = (router) => {
       switch (opinion) {
         case 'normal':
           // opinion-details-complete is only reached for normal when the user
-          // went through the normal-details page, so use confirmNormalWithDetails
+          // went through the normal-details page, so use confirmNormalWithDetails.
+          // Arbitration decisions confirm on the review page, unless the
+          // confirmDecision setting turns that off.
+          if (isArbitrationSession && !isEditingExistingRead) {
+            if (arbitrationNeedsReview) {
+              return res.redirect(
+                modalBreakout(
+                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                )
+              )
+            }
+            return res.redirect(
+              307,
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
+          }
           if (
             !isEditingExistingRead &&
             data.settings?.reading?.confirmNormalWithDetails === 'true'
@@ -1939,10 +2112,14 @@ module.exports = (router) => {
             : ''
           if (
             !isEditingExistingRead &&
-            data.settings?.reading?.confirmTechnicalRecall !== 'false'
+            (isArbitrationSession
+              ? arbitrationNeedsReview
+              : data.settings?.reading?.confirmTechnicalRecall !== 'false')
           ) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
+              )
             )
           }
           return res.redirect(
@@ -1957,10 +2134,14 @@ module.exports = (router) => {
             : ''
           if (
             !isEditingExistingRead &&
-            data.settings?.reading?.confirmRecallForAssessment !== 'false'
+            (isArbitrationSession
+              ? arbitrationNeedsReview
+              : data.settings?.reading?.confirmRecallForAssessment !== 'false')
           ) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
+              )
             )
           }
           return res.redirect(
@@ -2006,18 +2187,22 @@ module.exports = (router) => {
       // journey reaching here with a read in place started from that page —
       // and should return to it rather than moving on to the next case.
       // Must be checked before the read is written.
-      const isEditingExistingRead = userHasReadAppointment(
-        data,
-        appointment,
-        currentUserId
-      )
+      //
+      // In arbitration this means the arbitration read already exists. A panel
+      // member's own earlier read as first or second reader isn't an edit -
+      // they still have the arbitration to do.
+      const sessionForSave = getReadingSession(data, sessionId)
+      const isEditingExistingRead =
+        sessionForSave?.type === 'arbitration'
+          ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+          : userHasReadAppointment(data, appointment, currentUserId)
 
       delete data.imageReadingTemp
       delete res.locals.data?.imageReadingTemp
 
-      // Create and save the reading
+      // Create and save the reading. Authorship is settled by buildRead, which
+      // knows whether this is an arbitration (many authors) or a read (one)
       const readResult = {
-        readerId: currentUserId,
         readerType: data.currentUser.role,
         ...formData,
         timestamp: new Date().toISOString()
@@ -2027,19 +2212,21 @@ module.exports = (router) => {
       writeReading(data, appointment, currentUserId, readResult, sessionId)
 
       // Top up the session with the next eligible appointment if under target size
-      topUpSession(data, sessionId)
+      topUpSession(data, sessionId, appointmentId)
 
       // Find next unread appointment in session after the current position (no wrap)
       const session = getReadingSession(data, sessionId)
       const sessionAppointments = session.appointmentIds
         .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadAppointment = getNextUserReadableAppointment(
+      const isArbitrationSave = session?.type === 'arbitration'
+
+      const nextUnreadAppointment = getNextCaseInSession(
         data,
+        session,
         sessionAppointments,
         appointmentId,
-        currentUserId,
-        { wrap: false }
+        currentUserId
       )
 
       // Store banner message for the next case, but only if there is one.
@@ -2057,7 +2244,9 @@ module.exports = (router) => {
           recall_for_assessment: 'Recall for assessment'
         }
         const resultLabel = resultLabels[formData.opinion] || 'Opinion'
-        const message = `${resultLabel} opinion recorded for ${shortName}`
+        const message = isArbitrationSave
+          ? `${resultLabel} outcome recorded for ${shortName}`
+          : `${resultLabel} opinion recorded for ${shortName}`
 
         data.readingOpinionBanner = {
           text: message,
@@ -2101,8 +2290,9 @@ module.exports = (router) => {
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableAppointment(
+        const firstReadable = getFirstOutstandingCaseInSession(
           data,
+          session,
           sessionAppointments,
           currentUserId
         )
@@ -2183,9 +2373,14 @@ module.exports = (router) => {
       // Clean up previousOpinion - only needed for change detection
       delete data.imageReadingTemp.previousOpinion
 
+      // Arbitration has its own compare step, so the second-reader comparison
+      // gates below don't apply
+      const isArbitrationSession =
+        getReadingSession(data, sessionId)?.type === 'arbitration'
+
       // Check for early comparison (second reader only, not normal+normal)
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
-      if (comparisonSetting === 'early') {
+      if (comparisonSetting === 'early' && !isArbitrationSession) {
         const currentUserId = data.currentUser?.id
         if (
           shouldShowComparePage(
@@ -2205,9 +2400,28 @@ module.exports = (router) => {
       // Handle different opinion types
       switch (opinion) {
         case 'normal':
+          // Arbitration decisions confirm on the review page unless the
+          // confirmDecision setting turns that off; blind arbitration always
+          // reviews, as that's where the original reads are revealed
+          if (isArbitrationSession) {
+            if (
+              !isEditingExistingRead &&
+              (data.settings?.reading?.arbitration?.confirmDecision !==
+                'false' ||
+                data.settings?.reading?.arbitration?.showReads === 'blind')
+            ) {
+              return res.redirect(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+              )
+            }
+            return res.redirect(
+              307,
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
+          }
           // For late comparison, normal still needs to go through compare if discordant
           // (since there's no review page to intercept)
-          if (comparisonSetting === 'late') {
+          if (comparisonSetting === 'late' && !isArbitrationSession) {
             if (
               shouldShowComparePage(
                 getReadingCase(data, appointment),
@@ -2256,6 +2470,62 @@ module.exports = (router) => {
             `/reading/session/${sessionId}/appointments/${appointmentId}`
           )
       }
+    }
+  )
+
+  // Adopt one of the original reads as the arbitration outcome. Copies the
+  // read into imageReadingTemp and goes to the review page, where any of it
+  // can be changed before saving - so adoption always confirms, whatever the
+  // confirmDecision setting says.
+  router.post(
+    '/reading/session/:sessionId/appointments/:appointmentId/arbitration-adopt-read',
+    (req, res) => {
+      const { sessionId, appointmentId } = req.params
+      const data = req.session.data
+
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      const agreedReaderId = req.body.agreedReaderId
+      const reads = getReadsAsArray(getReadingCase(data, appointment))
+      const agreedRead = reads.find((read) => read.readerId === agreedReaderId)
+
+      if (!agreedRead) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/opinion`
+        )
+      }
+
+      // Adopt a copy of the read wholesale - outcome and details - never a
+      // reference to the original
+      data.imageReadingTemp = { appointmentId }
+      data.imageReadingTemp.opinion = agreedRead.opinion
+      data.imageReadingTemp.agreedWithReaderId = agreedReaderId
+
+      if (agreedRead.technicalRecall) {
+        data.imageReadingTemp.technicalRecall = {
+          ...agreedRead.technicalRecall
+        }
+      }
+      if (agreedRead.left) {
+        data.imageReadingTemp.left = JSON.parse(JSON.stringify(agreedRead.left))
+      }
+      if (agreedRead.right) {
+        data.imageReadingTemp.right = JSON.parse(
+          JSON.stringify(agreedRead.right)
+        )
+      }
+      if (agreedRead.normalDetails) {
+        data.imageReadingTemp.normalDetails = agreedRead.normalDetails
+      }
+
+      // Break out of the modal (reads-in-a-modal reveal style) so the review
+      // page renders full-page
+      return res.redirect(
+        modalBreakout(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+        )
+      )
     }
   )
 
@@ -2446,6 +2716,7 @@ module.exports = (router) => {
           clinicId: appointment.clinicId,
           sessionId,
           readerId: reading.readerId,
+          arbitratorIds: reading.arbitratorIds,
           readType,
           opinion: reading.opinion,
           timestamp: reading.timestamp,
@@ -2464,8 +2735,8 @@ module.exports = (router) => {
     // Determine which readings to display based on view
     let readings = []
     if (view === 'mine') {
-      readings = recentReadings.filter(
-        (reading) => reading.readerId === currentUserId
+      readings = recentReadings.filter((reading) =>
+        getReadAuthorIds(reading).includes(currentUserId)
       )
     } else {
       readings = recentReadings

@@ -1,0 +1,77 @@
+{# app/views/reading/arbitration/start.html #}
+{# Arbitration setup - who is arbitrating #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Start arbitration" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set back = {
+  href: "/reading",
+  text: "Back to reading"
+} %}
+
+{% set formAction = "/reading/arbitration/start-answer" %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p>
+    {{ backlogCount }} {{ "case" | pluralise(backlogCount) }} {{ "is" if backlogCount == 1 else "are" }} waiting for arbitration.
+    <a href="/reading/cases?state=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
+  </p>
+
+  {# Blocked cases stay in the backlog but arbitration can't offer them #}
+  {% if backlog.blocked %}
+    {{ insetText({
+      html: '<p>' ~ backlog.blocked ~ ' of these ' ~ ("case is" if backlog.blocked == 1 else "cases are") ~ ' deferred or awaiting priors and cannot be arbitrated yet. <a href="#" class="nhsuk-link--no-visited-state">View blocked cases</a></p>'
+    }) }}
+  {% endif %}
+
+  {# Checkbox shown conditionally when 'Just me' is selected #}
+  {% set excludeOwnReadsHtml %}
+    {{ checkboxes({
+      idPrefix: "exclude-own-reads",
+      name: "arbitrationTemp[excludeOwnReads]",
+      items: [
+        {
+          value: "yes",
+          text: "Exclude cases where I was a reader",
+          hint: {
+            text: "Excludes " ~ ownReadsCount ~ " " ~ ("case" | pluralise(ownReadsCount)) ~ " you already read"
+          } if ownReadsCount else undefined,
+          checked: true
+        }
+      ]
+    }) }}
+  {% endset %}
+
+  {{ radios({
+    idPrefix: "arbitration-mode",
+    name: "arbitrationTemp[mode]",
+    fieldset: {
+      legend: {
+        text: "Who is arbitrating?",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "alone",
+        text: "Just me",
+        conditional: {
+          html: excludeOwnReadsHtml
+        }
+      },
+      {
+        value: "panel",
+        text: "Me with other people"
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}

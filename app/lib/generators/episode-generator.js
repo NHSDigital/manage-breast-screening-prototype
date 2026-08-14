@@ -781,7 +781,13 @@ const checkEpisodes = (episodes, appointmentsById) => {
           )
         }
       })
-      if (new Set(reads.map((read) => read.readerId)).size !== reads.length) {
+      // Nobody reads a case twice. An arbitration read is the group's rather
+      // than one reader's, so it is exempt - its authors may include the
+      // original readers.
+      const readerIds = reads
+        .filter((read) => read.readType !== 'arbitration')
+        .map((read) => read.readerId)
+      if (new Set(readerIds).size !== readerIds.length) {
         problems.push(
           `reading case ${readingCase.id} has the same reader twice`
         )

@@ -147,10 +147,12 @@
             </td>
             {% if view == 'all' %}
             <td>
-              {{ reading.readerId | getUsername({
-                format: 'short',
-                identifyCurrentUser: true
-              }) }}
+              {%- for authorId in reading | getReadAuthorIds %}
+                {{ authorId | getUsername({
+                  format: 'short',
+                  identifyCurrentUser: true
+                }) }}{{ "," if not loop.last }}
+              {%- endfor %}
             </td>
             {% endif %}
             <td>

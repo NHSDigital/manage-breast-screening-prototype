@@ -3,13 +3,13 @@
 
 {% extends 'layout-reading.html' %}
 
-{% set pageHeading = "Your opinion" %}
+{% set pageHeading = "Arbitration outcome" if isArbitration else "Your opinion" %}
 {% set showWorkflowNav = true %}
 
 {% block pageContent %}
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}
-  {% set hasUserRead = readingCase | userHasReadCase(data.currentUser.id) %}
+  {% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
   {% set isDeferredCase = readingCase | isCaseDeferred %}
 
   <span class="nhsuk-caption-l">
@@ -18,7 +18,7 @@
 
   {% if isDeferredCase and not hasUserRead %}
     {# Appointment has been deferred - show deferral summary #}
-    <h1 class="nhsuk-heading-l">Your opinion</h1>
+    <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
     {% set deferral = readingCase.deferral %}
     {% set canUndo = deferral.deferredBy == data.currentUser.id %}
@@ -63,7 +63,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Your read",
+      heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: deferralSummaryHtml
@@ -71,7 +71,7 @@
 
   {% elseif isAwaitingPriors and not hasUserRead %}
     {# Appointment is awaiting priors - show as the reader's opinion #}
-    <h1 class="nhsuk-heading-l">Your opinion</h1>
+    <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
     {% set canUndo = appointment | userRequestedPriors(data.currentUser.id) %}
 
@@ -122,7 +122,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Your read",
+      heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: priorsReadSummaryHtml
@@ -130,7 +130,7 @@
 
   {% else %}
     {# Normal existing read view #}
-    <h1 class="nhsuk-heading-l">Your opinion</h1>
+    <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
     {# Read summary card #}
     {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
@@ -139,9 +139,37 @@
       {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% endif %}
 
+    {# The read this page is about: in arbitration the case's one arbitration
+       read, otherwise the current user's own #}
+    {% set thisRead = (readingCase | getArbitrationRead) if isArbitration else (readingCase | getReadForUser(data.currentUser.id)) %}
+    {% set isFinalised = thisRead | isReadFinalised(data.settings) %}
+    {% set finalisationNoun = "outcome" if isArbitration else "read" %}
+
+    {# Until it finalises, the result isn't yet real - nothing has been released
+       to arbitration or moved the episode on. Say when that happens, and offer
+       to bring it forward. Once finalised it can no longer be changed, so the
+       summary below drops its change links. #}
+    {% if thisRead and not isFinalised %}
+      {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings) %}
+      {% set finalisationInsetHtml %}
+        <p>
+          This {{ finalisationNoun }} has not been finalised
+          {%- if autoFinaliseAt %}. It will finalise automatically at {{ autoFinaliseAt | formatTime("h:mma") }}{% endif %}.
+          You can still change it until then.
+        </p>
+        <p class="nhsuk-u-margin-bottom-0">
+          <a href="./finalise-read">Finalise this {{ finalisationNoun }} now</a>
+        </p>
+      {% endset %}
+
+      {{ insetText({
+        html: finalisationInsetHtml
+      }) }}
+    {% endif %}
+
     {% set readSummaryHtml %}
-      {% set read = readingCase | getReadForUser(data.currentUser.id) %}
-      {% set allowEdits = true %}
+      {% set read = thisRead %}
+      {% set allowEdits = not isFinalised %}
       {% set changeOpinionUrl = "./opinion" %}
       {% set showAnnotationImages = withImages %}
       {% set annotationImagePaths = allPaths %}
@@ -149,34 +177,14 @@
     {% endset %}
 
     {{ card({
-      heading: "Your read",
+      heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: readSummaryHtml
     }) }}
 
-    {# Other readers' assessments (for testing/debugging) #}
-    {% set otherReads = readingCase | getOtherReads(data.currentUser.id) %}
-    {% if otherReads | length > 0 %}
-      {% for otherRead in otherReads %}
-        {% set readerName = otherRead.readerId | getUsername %}
-        {% set otherReadSummaryHtml %}
-          {% set read = otherRead %}
-          {% set allowEdits = false %}
-          {% set showAnnotationImages = withImages %}
-          {% set annotationImagePaths = allPaths %}
-          {% include "_includes/summary-lists/read-summary.njk" %}
-        {% endset %}
-
-        {# Commented out until we decide whether to show other reads #}
-        {# {{ card({
-          heading: (otherRead.readNumber | getOrdinalName | sentenceCase) + " read",
-          headingLevel: "2",
-          feature: true,
-          descriptionHtml: otherReadSummaryHtml
-        }) }} #}
-      {% endfor %}
-    {% endif %}
+    {# The arbitration outcome above is what settles the case, so the reads it
+       arbitrated aren't shown here. #}
   {% endif %}
 
   {# Medical summary #}

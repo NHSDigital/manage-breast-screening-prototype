@@ -18,6 +18,7 @@ const {
   getReadsAsArray,
   getReadingCaseStatus,
   getReadingCaseOutcome,
+  caseNeedsArbitration,
   isCaseDeferred
 } = require('./reading-cases')
 const { describeReadingCaseStatus } = require('./status')
@@ -83,6 +84,9 @@ const buildRow = (data, episode, readingCase) => {
 
   const status = getReadingCaseStatus(readingCase, data.settings)
 
+  const isDeferred = isCaseDeferred(readingCase)
+  const isAwaitingPriors = appointment ? awaitingPriors(appointment) : false
+
   return {
     readingCase,
     episode,
@@ -95,8 +99,15 @@ const buildRow = (data, episode, readingCase) => {
     statusDisplay: describeReadingCaseStatus(status),
     outcome: getReadingCaseOutcome(readingCase, data.settings),
     readCount: getReadsAsArray(readingCase).length,
-    isDeferred: isCaseDeferred(readingCase),
-    awaitingPriors: appointment ? awaitingPriors(appointment) : false,
+    isDeferred,
+    awaitingPriors: isAwaitingPriors,
+    // Deferral and outstanding priors hold a case up without moving it out of
+    // the stage it's in - so a blocked case still counts towards its stage
+    isBlocked: isDeferred || isAwaitingPriors,
+    // The arbitration backlog, which is wider than the awaiting_arbitration
+    // state: a case released into arbitration stays in the backlog until it
+    // has been arbitrated, even though its state reads awaiting_finalisation
+    inArbitration: caseNeedsArbitration(readingCase, data.settings),
     imagesTakenDate: readingCase.openedDate
   }
 }
@@ -124,6 +135,24 @@ const rowMatchesQuery = (row, query) => {
 }
 
 /**
+ * Whether a row belongs to a state filter.
+ *
+ * Every state matches on the row's own state, except arbitration: there the
+ * filter means the backlog, which also holds cases already released to an
+ * arbitrator but not yet arbitrated. Those read as awaiting_finalisation until
+ * an arbitration read lands, so a plain state match would lose them.
+ *
+ * @param {object} row - A row from buildRow
+ * @param {string} state - A reading case state
+ * @returns {boolean}
+ */
+const rowInState = (row, state) => {
+  if (state === 'awaiting_arbitration') return row.inArbitration
+
+  return row.state === state
+}
+
+/**
  * Every matching row, uncapped and sorted oldest images first.
  *
  * @param {object} data - Session data
@@ -131,7 +160,14 @@ const rowMatchesQuery = (row, query) => {
  * @returns {Array} Rows
  */
 const collectRows = (data, filters) => {
-  const { scope = 'open', state = null, deferred = false, query = '' } = filters
+  const {
+    scope = 'open',
+    state = null,
+    deferred = false,
+    awaitingPriors: awaitingPriorsFilter = false,
+    blocked = false,
+    query = ''
+  } = filters
 
   const rows = []
 
@@ -141,8 +177,10 @@ const collectRows = (data, filters) => {
     for (const readingCase of getReadingCases(episode)) {
       const row = buildRow(data, episode, readingCase)
 
-      if (state && row.state !== state) continue
+      if (state && !rowInState(row, state)) continue
       if (deferred && !row.isDeferred) continue
+      if (awaitingPriorsFilter && !row.awaitingPriors) continue
+      if (blocked && !row.isBlocked) continue
       if (query && !rowMatchesQuery(row, query)) continue
 
       rows.push(row)
@@ -162,6 +200,8 @@ const collectRows = (data, filters) => {
  * @param {string} [filters.scope] - One of CASE_SCOPES, default 'open'
  * @param {string} [filters.state] - A single reading case state
  * @param {boolean} [filters.deferred] - Only deferred cases
+ * @param {boolean} [filters.awaitingPriors] - Only cases awaiting priors
+ * @param {boolean} [filters.blocked] - Only cases blocked for any reason
  * @param {string} [filters.query] - Participant name or NHS number
  * @returns {object} `{ rows, totalCount, truncated }` - rows capped at MAX_ROWS
  */
@@ -178,34 +218,79 @@ const getReadingCaseList = (data, filters = {}) => {
 /**
  * How many cases sit in each state, for the filter links.
  *
- * Counted within the current scope but ignoring the state and deferred filters,
+ * Counted within the current scope but ignoring the state and blocking filters,
  * so the counts don't collapse to whichever filter is active. Uncapped - a
  * count that stopped at MAX_ROWS would be a lie.
  *
  * @param {object} data - Session data
  * @param {object} [filters] - Same filters as getReadingCaseList
- * @returns {object} State value -> count, plus `all` and `deferred`
+ * @returns {object} State value -> count, plus `all`, `deferred`,
+ *   `awaitingPriors` and `blocked`
  */
 const getReadingCaseStateCounts = (data, filters = {}) => {
   const rows = collectRows(data, {
     ...filters,
     state: null,
-    deferred: false
+    deferred: false,
+    awaitingPriors: false,
+    blocked: false
   })
 
-  const counts = { all: rows.length, deferred: 0 }
+  const counts = {
+    all: rows.length,
+    deferred: 0,
+    awaitingPriors: 0,
+    blocked: 0
+  }
 
   for (const row of rows) {
     counts[row.state] = (counts[row.state] || 0) + 1
     if (row.isDeferred) counts.deferred += 1
+    if (row.awaitingPriors) counts.awaitingPriors += 1
+    if (row.isBlocked) counts.blocked += 1
   }
 
+  // The arbitration backlog is wider than the state - see rowInState
+  counts.awaiting_arbitration = rows.filter((row) => row.inArbitration).length
+
   return counts
+}
+
+/**
+ * The arbitration backlog and what's holding parts of it up.
+ *
+ * One count for every surface that talks about arbitration - the reading index
+ * card, the arbitration setup page and the case list - so they can't drift
+ * apart. `available` is what an arbitration session would actually offer.
+ *
+ * @param {object} data - Session data
+ * @param {object} [filters] - Same filters as getReadingCaseList
+ * @returns {object} `{ total, available, blocked, deferred, awaitingPriors }`
+ */
+const getArbitrationBacklogCounts = (data, filters = {}) => {
+  const rows = collectRows(data, {
+    ...filters,
+    state: 'awaiting_arbitration',
+    deferred: false,
+    awaitingPriors: false,
+    blocked: false
+  })
+
+  const blockedRows = rows.filter((row) => row.isBlocked)
+
+  return {
+    total: rows.length,
+    available: rows.length - blockedRows.length,
+    blocked: blockedRows.length,
+    deferred: blockedRows.filter((row) => row.isDeferred).length,
+    awaitingPriors: blockedRows.filter((row) => row.awaitingPriors).length
+  }
 }
 
 module.exports = {
   CASE_SCOPES,
   MAX_ROWS,
   getReadingCaseList,
-  getReadingCaseStateCounts
+  getReadingCaseStateCounts,
+  getArbitrationBacklogCounts
 }

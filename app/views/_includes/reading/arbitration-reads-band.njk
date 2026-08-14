@@ -1,0 +1,113 @@
+{# The prior-reads region of the arbitration opinion page, rendered below the
+   opinion choice. How the reads appear is a settings choice:
+   - showReads 'on_demand': revealed per revealStyle
+     ('expander' | 'card' - feature card with reveal in place | 'modal' -
+     feature card linking to a modal | 'tabs' - handled by the page template,
+     which folds the reads into the additional-information tabs)
+   - showReads 'blind': a note; the reads appear on the review page instead
+   Expects in context: readingCase, appointment, appointmentId, data #}
+
+{% set showReadsSetting = data.settings.reading.arbitration.showReads or 'on_demand' %}
+{% set revealStyle = data.settings.reading.arbitration.revealStyle or 'expander' %}
+
+{# Normalise values retired 2026-08-10 that may linger in existing sessions #}
+{% if showReadsSetting == 'immediate' %}
+  {% set showReadsSetting = 'on_demand' %}
+{% endif %}
+{% if not (revealStyle in ['expander', 'card', 'modal', 'tabs']) %}
+  {% set revealStyle = 'expander' %}
+{% endif %}
+
+{# Blindness is moot once the case has an outcome - show the reads when
+   updating an arbitrated case #}
+{% set caseIsArbitrated = readingCase | getArbitrationRead %}
+
+{% set originalReads = readingCase | getOriginalReads %}
+
+{# Meta rows for the feature-card variants - when and who, but not what they
+   thought: that stays behind the reveal #}
+{% set readsMetaHtml %}
+  <dl class="nhsuk-summary-list nhsuk-u-margin-bottom-0">
+    {% for read in originalReads %}
+      <div class="nhsuk-summary-list__row">
+        <dt class="nhsuk-summary-list__key">{{ "First read" if loop.first else "Second read" }}</dt>
+        <dd class="nhsuk-summary-list__value">
+          {{ read.timestamp | formatDate }} –
+          {{ read.readerId | getUsername({ format: "short" }) }}
+        </dd>
+      </div>
+    {% endfor %}
+  </dl>
+{% endset %}
+
+{% if showReadsSetting == 'blind' and not caseIsArbitrated %}
+
+  <p class="nhsuk-u-secondary-text-color">
+    The first and second reads will be shown after you record an outcome.
+  </p>
+
+{% elseif showReadsSetting == 'blind' and caseIsArbitrated %}
+
+  <h2 class="nhsuk-heading-m nhsuk-u-margin-top-5 nhsuk-u-margin-bottom-2">First and second reads</h2>
+  {% set readsLayout = 'stacked' %}
+  {% include "_includes/reading/arbitration-reads-cards.njk" %}
+
+{% elseif showReadsSetting == 'on_demand' %}
+
+  {% if revealStyle == 'expander' %}
+
+    {% set readsCardsHtml %}
+      {% set readsLayout = 'condensed' %}
+      {% include "_includes/reading/arbitration-reads-cards.njk" %}
+    {% endset %}
+    {{ details({
+      classes: "nhsuk-expander",
+      summaryText: "Show the first and second reads",
+      html: readsCardsHtml
+    }) }}
+
+  {% elseif revealStyle == 'card' %}
+
+    {# Feature card with the reads revealed in place. No meta rows here - the
+       condensed lists already carry the reader and date #}
+    {% set cardContentHtml %}
+      <details class="app-reads-card-reveal">
+        <summary class="app-reads-card-reveal__toggle">
+          <span class="app-reads-card-reveal__toggle-text--closed">Show the reads</span>
+          <span class="app-reads-card-reveal__toggle-text--open">Hide the reads</span>
+        </summary>
+        <div class="nhsuk-u-margin-top-4">
+          {% set readsLayout = 'condensed' %}
+          {% include "_includes/reading/arbitration-reads-cards.njk" %}
+        </div>
+      </details>
+    {% endset %}
+    {{ card({
+      heading: "First and second reads",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: cardContentHtml
+    }) }}
+
+  {% elseif revealStyle == 'modal' %}
+
+    {# Feature card carrying the read metadata, with the reads in a modal #}
+    {% set cardContentHtml %}
+      {{ readsMetaHtml | safe }}
+      <p class="nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0">
+        {{ appLink({ text: "View the reads", href: "./arbitration-reads", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+      </p>
+    {% endset %}
+    {{ card({
+      heading: "First and second reads",
+      headingLevel: "2",
+      feature: true,
+      descriptionHtml: cardContentHtml
+    }) }}
+
+  {% endif %}
+
+  {# revealStyle 'tabs' renders nothing here - the page template folds the
+     reads into the additional-information tabs #}
+
+{% endif %}

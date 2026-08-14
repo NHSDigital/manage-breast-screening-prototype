@@ -11,6 +11,22 @@
     - showAnnotationImages: boolean - if true, show thumbnail images with markers (default: false)
     - annotationImagePaths: object - image paths for thumbnails (required if showAnnotationImages)
     - annotationViewOrder: string - view order for thumbnails (default: "cc-first")
+    - showReaderRow: boolean - add a "Read by" row with reader and date, for
+      contexts with no card heading or label carrying that (default: false)
+    - opinionLabel: string - override the opinion row's label (default:
+      "Outcome" for arbitration reads, otherwise "Opinion")
+    - annotationRowHtml: string - supplied content for the annotations row,
+      shown whatever the read's own opinion - lets a caller pool annotations
+      from several reads (default: built from this read's own annotations)
+    - extraRows: array - summary list rows to add before the finalised row
+    - awaitingFinalisation: boolean - treat the read as awaiting finalisation
+      whatever its own state, marking the opinion and hiding the finalised
+      row - for case-level summaries where the case has not yet concluded
+      even though this read may have (default: false)
+
+  Callers set these with set before including; a caller reusing this include
+  after another has set opinionLabel, annotationRowHtml or extraRows should
+  reset them to null.
 #}
 
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
@@ -74,21 +90,31 @@
 {# Build rows based on result type #}
 {% set rows = [] %}
 
-{# Opinion row #}
+{% set readerRowHtml = (read.readerId | getUsername({ format: "short" })) + ", " + (read.timestamp | formatDate) %}
+
+{# Opinion row. An arbitration read settles the case, so it is the outcome
+   rather than one of several opinions #}
+{% set opinionLabel = opinionLabel if opinionLabel else ("Outcome" if read.readType == 'arbitration' else "Opinion") %}
 {% if not hideOpinionRow %}
+  {% set opinionValueHtml %}
+    {{ read.opinion | toTag }}
+    {% if awaitingFinalisation or (read.timestamp and not (read | isReadFinalised(data.settings))) %}
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">(awaiting finalisation)</span>
+    {% endif %}
+  {% endset %}
   {% set rows = rows | push({
     key: {
-      text: "Opinion"
+      text: opinionLabel
     },
     value: {
-      html: read.opinion | toTag
+      html: opinionValueHtml
     },
     actions: {
       items: [
         {
           href: changeOpinionUrl,
           text: "Change",
-          visuallyHiddenText: "opinion"
+          visuallyHiddenText: opinionLabel | lower
         }
       ]
     } if allowEdits and changeOpinionUrl
@@ -216,13 +242,13 @@
   {% endif %}
 
   {# Only show annotations if we have data, or if not hiding empty rows #}
-  {% if not hideEmptyRows or hasAnnotations %}
+  {% if annotationRowHtml or not hideEmptyRows or hasAnnotations %}
     {% set rows = rows | push({
       key: {
         text: "Annotations"
       },
       value: {
-        html: annotationSummaryHtml
+        html: annotationRowHtml or annotationSummaryHtml
       },
       actions: {
         items: [
@@ -235,7 +261,20 @@
       } if allowEdits
     }) %}
   {% endif %}
-  
+
+{% endif %}
+
+{# Supplied annotations (eg pooled from every read) still get their row when
+   the read's own opinion would not show one #}
+{% if annotationRowHtml and read.opinion != 'recall_for_assessment' %}
+  {% set rows = rows | push({
+    key: {
+      text: "Annotations"
+    },
+    value: {
+      html: annotationRowHtml
+    }
+  }) %}
 {% endif %}
 
 {# Normal with details #}
@@ -247,6 +286,59 @@
       },
       value: {
         text: read.normalComment
+      }
+    }) %}
+  {% endif %}
+{% endif %}
+
+{# Who read it and when, for contexts with no card heading or label carrying
+   that already #}
+{% if showReaderRow and read.readerId %}
+  {% set rows = rows | push({
+    key: {
+      text: readerRowLabel or "Read by"
+    },
+    value: {
+      text: readerRowHtml
+    }
+  }) %}
+{% endif %}
+
+{# A panel arbitration was decided by several people together, so the read's
+   own reader byline doesn't tell the whole story #}
+{% if read.arbitratorIds | length %}
+  {% set arbitratorsHtml %}
+    {%- for arbitratorId in read.arbitratorIds %}
+      {{ arbitratorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+    {%- endfor %}
+  {% endset %}
+  {% set rows = rows | push({
+    key: {
+      text: "Arbitrated by"
+    },
+    value: {
+      html: arbitratorsHtml
+    }
+  }) %}
+{% endif %}
+
+{# Rows the caller wants beyond the read's own - eg who the original readers
+   were, when this summary reports a case's outcome #}
+{% for extraRow in extraRows or [] %}
+  {% set rows = rows | push(extraRow) %}
+{% endfor %}
+
+{# When it was finalised. Reads finalised by the delay passing have no
+   finalisedAt stamp, so fall back to the moment the delay ran out. #}
+{% if not awaitingFinalisation and read.timestamp and (read | isReadFinalised(data.settings)) %}
+  {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
+  {% if finalisedAt %}
+    {% set rows = rows | push({
+      key: {
+        text: "Finalised"
+      },
+      value: {
+        text: finalisedAt | formatDateTime
       }
     }) %}
   {% endif %}
