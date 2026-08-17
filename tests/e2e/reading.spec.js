@@ -2,7 +2,8 @@
 //
 // Journeys through image reading. Between them they cover the four ways a
 // reader can leave a case - normal, recall for assessment, technical recall,
-// and deferral - plus the second reader's comparison step.
+// and deferral - plus the second reader's comparison step, and a concordant
+// second read taking a case to its concluded outcome.
 //
 // Sessions are created with an explicit limit so each test reads a known,
 // small number of cases rather than working through a default-sized session.
@@ -13,6 +14,10 @@
 
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings, readingSettings } = require('./helpers/settings')
+const {
+  findCaseAwaitingSecondRead,
+  readCollection
+} = require('./helpers/seed-data')
 const {
   clickToOpenModal,
   clickLinkToOpenModal,
@@ -60,6 +65,21 @@ const recordNormal = async (page) => {
   // The modal has to finish closing before the next case's opinion page is
   // clickable - its overlay swallows pointer events while it is still open
   await expectModalClosed(detailsModal)
+}
+
+/**
+ * Record a normal outcome on the arbitration case currently on screen.
+ *
+ * Arbitration confirms the outcome on a review step before saving it, rather
+ * than saving straight from the opinion buttons the way a read does.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page
+ */
+const recordArbitrationNormal = async (page) => {
+  await page.getByRole('button', { name: 'Normal (N)' }).first().click()
+
+  await expect(page).toHaveURL(/\/review/)
+  await page.getByRole('button', { name: 'Confirm and save' }).first().click()
 }
 
 /**
@@ -221,21 +241,27 @@ test.describe('Image reading', () => {
     // left to read
     await expect(page).toHaveURL(/\/no-more-cases/)
 
-    // The case now sits on the deferred list, waiting for manual review
+    // The case now sits on the deferred list, waiting for manual review.
+    // Scope everything to its card - the seed data carries deferred cases of
+    // its own, so the page is never otherwise empty
     await page.goto('/reading/deferred')
     await expect(
       page.getByRole('heading', { name: 'Deferred cases' })
     ).toBeVisible()
-    await expect(page.getByText(deferralReason)).toBeVisible()
+    const deferralCard = page
+      .locator('.nhsuk-summary-card')
+      .filter({ hasText: deferralReason })
+    await expect(deferralCard).toBeVisible()
 
     // Unflagging returns it to the queue, keeping a record of why it was held
-    await page.getByRole('button', { name: 'Unflag case' }).first().click()
+    await deferralCard.getByRole('button', { name: 'Unflag case' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Recently resolved' })
     ).toBeVisible()
-    await expect(page.getByText('No deferred cases.')).toBeVisible()
-    await expect(page.getByText(deferralReason)).toBeVisible()
+    await expect(
+      page.locator('.nhsuk-summary-card').filter({ hasText: deferralReason })
+    ).toContainText('Returned to queue')
   })
 
   test('keeps a lazy session lazy across a resume', async ({ page }) => {
@@ -268,6 +294,229 @@ test.describe('Image reading', () => {
 
     await page.goto(`/reading/session/${sessionId}/all-reads`)
     await expect(caseRows).toHaveCount(rowsBefore)
+  })
+
+  test('does not load an extra case when a skipped case is read out of order', async ({
+    page
+  }) => {
+    // Settling a case only earns the session a new one when it has nothing left
+    // to work on. Going back for a skipped case while a loaded case is still
+    // unread used to add one anyway, leaving the session permanently a case
+    // ahead of where the reader had actually got to.
+    await pinSettings(page, readingSettings)
+
+    await page.goto('/reading/create-session?type=all_reads&limit=10&lazy=true')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const caseRows = page.locator(
+      '.app-reading-session-table tbody tr:not(.app-placeholder-row) a[href*="/appointments/"]'
+    )
+
+    // Read the first case, which loads the second
+    await recordNormal(page)
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    // Skip the second case, which loads the third and moves the reader to it
+    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
+    )
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    const rowsBefore = await caseRows.count()
+
+    // Go back and read the skipped case. The third case is still unread, so the
+    // session already has somewhere to send the reader next
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${skippedAppointmentId}`
+    )
+    await recordNormal(page)
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    await expect(caseRows).toHaveCount(rowsBefore)
+  })
+
+  test('still loads a case when the only one left behind was skipped', async ({
+    page
+  }) => {
+    // The counterpart to the test above: a skipped case sitting behind the
+    // reader isn't somewhere they can be sent next, so finishing the case at the
+    // front of the session does have to load a new one.
+    await pinSettings(page, readingSettings)
+
+    await page.goto('/reading/create-session?type=all_reads&limit=10&lazy=true')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const caseRows = page.locator(
+      '.app-reading-session-table tbody tr:not(.app-placeholder-row) a[href*="/appointments/"]'
+    )
+
+    // Skip the first case, which loads the second and moves the reader to it
+    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
+    )
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    const rowsBefore = await caseRows.count()
+
+    // Read the case at the front. Only the skipped case sits behind it, so the
+    // session has to load another to have anywhere to send the reader
+    await page.goto(`/reading/session/${sessionId}/resume`)
+    await expect(page).toHaveURL(/\/appointments\//)
+    await recordNormal(page)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    await expect(caseRows).toHaveCount(rowsBefore + 1)
+  })
+
+  test('does not load an extra arbitration case when one is settled out of order', async ({
+    page
+  }) => {
+    // Arbitration sessions are lazy on the same terms as reading ones, and grow
+    // through the same top-up, so the out-of-order case has to hold here too.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][arbitration][lazySessions]': 'true',
+      'settings[reading][lazySessions]': 'true'
+    })
+
+    // Arbitrating alone rather than as a panel
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page.getByRole('button', { name: /Continue/i }).first().click()
+
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const caseRows = page.locator(
+      '.app-reading-session-table tbody tr:not(.app-placeholder-row) a[href*="/appointments/"]'
+    )
+
+    await recordArbitrationNormal(page)
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    // Skip the second case, which loads the third and moves the reader to it
+    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
+    )
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    const rowsBefore = await caseRows.count()
+
+    // Settle the skipped case while the third is still outstanding
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${skippedAppointmentId}`
+    )
+    await recordArbitrationNormal(page)
+    await expect(page).toHaveURL(/\/appointments\//)
+
+    await page.goto(`/reading/session/${sessionId}/all-reads`)
+    await expect(caseRows).toHaveCount(rowsBefore)
+  })
+
+  test('concludes a case after a concordant second read', async ({ page }) => {
+    // The safety net under the reading state derivation: a case with one
+    // seeded normal read gets a matching second read, and the case view then
+    // shows it concluded with a normal outcome. Anything that breaks
+    // getReadingCaseState or getReadingCaseOutcome shows up here first.
+    await pinSettings(page, {
+      ...readingSettings,
+      // Concordant reads conclude without arbitration
+      'settings[reading][arbitration][policy]': 'discordant_only'
+    })
+
+    // Picked from the seed data so the first read's opinion is known - the
+    // second read mirrors it, making the pair concordant
+    const { readingCase, appointment } = findCaseAwaitingSecondRead({
+      firstOpinion: 'normal'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=100&lazy=false'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+
+    // Go straight to the chosen case rather than whichever the session leads
+    // with - the appointment routes resolve any readable case by id
+    await page.goto(`/reading/session/${sessionId}/appointments/${appointment.id}`)
+    await recordNormal(page)
+
+    // Saving moves on to another case (or session complete) - wait for that
+    // before leaving, so the save has landed
+    await expect(page).not.toHaveURL(new RegExp(appointment.id))
+
+    // The case view derives state and outcome from the reads
+    await page.goto(`/reading/cases/${readingCase.id}`)
+
+    const summaryRow = (label) =>
+      page.locator('.nhsuk-summary-list__row', { hasText: label })
+
+    // Once concluded, the outcome is the header's single status tag, and the
+    // decision gets its own card
+    const statusTags = page.locator('.app-header-with-status__status-tag')
+    await expect(statusTags).toContainText('Normal')
+    await expect(
+      page.getByRole('heading', { name: 'Outcome', exact: true })
+    ).toBeVisible()
+    await expect(summaryRow('Reads')).toContainText(
+      'First and second reads complete'
+    )
+  })
+
+  test('finalises reads from the session overview', async ({ page }) => {
+    // With a finalisation delay, a fresh read sits unfinalised. Finalisation
+    // deliberately lives on the session overview - behind a chance to review
+    // what was read - not on the session-complete page, which only points
+    // there. The seeded first read is hours old, so it has auto-finalised -
+    // finalising ours settles the case.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][finalisationDelay]': '60'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=1&lazy=false'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    // The case in hand, for finding its case view afterwards
+    const appointmentId = page.url().split('/appointments/')[1].split('/')[0]
+
+    await recordNormal(page)
+
+    // The only case is read, so the session is complete - the page notes the
+    // unfinalised read but sends the reader to the overview to finalise it
+    await expect(page).toHaveURL(/\/no-more-cases/)
+    await expect(page.getByText('not yet finalised')).toBeVisible()
+    await page.getByRole('button', { name: 'See session overview' }).click()
+
+    // The session-complete panel carries the auto-finalisation time and the
+    // finalise action
+    await expect(page.getByText('finalised automatically')).toBeVisible()
+    await page.getByRole('link', { name: 'Finalise opinions now' }).click()
+
+    // Finalised: the prompt gives way to the settled state
+    await expect(page.getByText('All opinions are finalised')).toBeVisible()
+
+    // Both reads now finalised, so the case has settled - concluded if the
+    // reads agreed, awaiting arbitration if not
+    const episodes = readCollection('episodes.json', 'episodes')
+    const readingCase = episodes
+      .flatMap((episode) => episode.readingCases || [])
+      .find((candidate) => candidate.appointmentId === appointmentId)
+
+    await page.goto(`/reading/cases/${readingCase.id}`)
+    await expect(
+      page.locator('.app-header-with-status__status-tag')
+    ).toContainText(/Concluded|Awaiting arbitration/)
   })
 
   test('shows the second reader the first read before saving', async ({

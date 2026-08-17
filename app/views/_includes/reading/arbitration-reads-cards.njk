@@ -1,0 +1,53 @@
+{# The first and second reads, each with a button to adopt it as the
+   arbitration outcome. The adopt route copies the read into imageReadingTemp
+   and goes to the review page, where it can be modified.
+   Expects in context: readingCase, appointment, appointmentId, data
+   Optional: readsLayout ('side-by-side' default | 'stacked' - natural-height
+   cards one above the other | 'condensed' - plain summary lists, no card
+   chrome), adoptButtonText, hideAdoptButtons #}
+
+{% set originalReads = readingCase | getOriginalReads %}
+
+{% if readsLayout == 'condensed' %}
+
+  {% for read in originalReads %}
+    {% if read %}
+      {% if not loop.first %}
+        <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-5 nhsuk-u-margin-bottom-5">
+      {% endif %}
+      {% set readLabel = "First read" if loop.first else "Second read" %}
+      {% include "_includes/reading/arbitration-read-condensed.njk" %}
+    {% endif %}
+  {% endfor %}
+
+{% elseif readsLayout == 'stacked' %}
+
+  {% for read in originalReads %}
+    {% if read %}
+      <div class="{{ "nhsuk-u-margin-top-4" if not loop.first }}">
+        {% set readLabel = "First read" if loop.first else "Second read" %}
+        {% include "_includes/reading/arbitration-read-card.njk" %}
+      </div>
+    {% endif %}
+  {% endfor %}
+
+{% else %}
+
+  <div class="nhsuk-grid-row app-reading-compare-grid app-reading-compare-grid--bottom-actions">
+    {% for read in originalReads %}
+      {% if read %}
+        <div class="nhsuk-grid-column-one-half">
+          {% set readLabel = "First read" if loop.first else "Second read" %}
+          {% include "_includes/reading/arbitration-read-card.njk" %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+{% endif %}
+
+{% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
+{% if withImages %}
+  <script src="/assets/javascript/annotation-markers.js"></script>
+  <script>AnnotationMarkers.correctAll()</script>
+{% endif %}

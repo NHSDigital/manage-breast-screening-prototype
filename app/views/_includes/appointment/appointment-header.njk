@@ -36,7 +36,7 @@
     <span class="nhsuk-caption-l">
       {{ clinic.clinicType | sentenceCase }} appointment
     </span>
-    {{ participant | getFullName | safe }}
+    {{ participant | getFullNameReversed }}
   </h1>
 
   <div class="app-header-with-status__status-tag">

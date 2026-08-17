@@ -2,7 +2,7 @@
 
 {% extends 'layout-appointment.html' %}
 
-{% set pageHeading = "Review other relevant information" %}
+{% set pageHeading = "Review other medical information" %}
 {% set showNavigation = false %}
 {% set activeWorkflowStep = 'check-information' %}
 {% set hideBackLink = true %}
@@ -11,7 +11,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
-{% set scrollTo = "other-relevant-information" %}
+{% set scrollTo = "other-medical-information" %}
 
 {% block pageContent %}
 
@@ -24,19 +24,17 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  {# Include the full other relevant information summary in a feature card #}
-  {% set otherRelevantInformationHtml %}
+  {% set otherMedicalInformationHtml %}
     {% include "_includes/summary-lists/medical-information/other-relevant-information.njk" %}
   {% endset %}
 
   {{ card({
-    heading: "Other relevant medical information",
+    heading: "Other medical information",
     headingLevel: "2",
     feature: true,
-    descriptionHtml: otherRelevantInformationHtml
+    descriptionHtml: otherMedicalInformationHtml
   }) }}
 
-  {# Continue button back to check information #}
   <div class="nhsuk-form-group">
     {{ button({
       text: "Continue",

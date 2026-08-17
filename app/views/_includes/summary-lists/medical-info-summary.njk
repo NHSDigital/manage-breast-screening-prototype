@@ -127,23 +127,30 @@
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
-{# Other relevant information summary #}
-{# Get other relevant information summaries #}
-{% set otherRelevantInfoSummaries = appointment.medicalInformation | summariseOtherRelevantInformation %}
-{% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
+{# Breast density factors summary #}
+{% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+{# Show the row whenever there's an answer to show, including "not started a course of HRT since last screening appointment" #}
+{% set breastDensityCount = breastDensityFactors.answeredCount %}
 
-{# Build other relevant information HTML #}
-{% set otherRelevantInfoHtml %}
-  {% if otherRelevantInfoCount == 0 %}
-    <p>No other information added</p>
-  {% elif otherRelevantInfoCount == 1 %}
-    <p>{{ otherRelevantInfoSummaries[0] }}</p>
-  {% else %}
+{% set breastDensityFactorsHtml %}
+  {% if breastDensityFactors.summaries | length %}
     <ul class="nhsuk-list">
-      {% for summary in otherRelevantInfoSummaries %}
+      {% for summary in breastDensityFactors.summaries %}
         <li>{{ summary }}</li>
       {% endfor %}
     </ul>
+  {% else %}
+    <p>No breast density factors added</p>
+  {% endif %}
+{% endset %}
+
+{# Other medical information summary #}
+{% set otherMedicalInfo = appointment.medicalInformation | summariseOtherMedicalInformation %}
+{% set otherMedicalInfoHtml %}
+  {% if otherMedicalInfo %}
+    <p>{{ otherMedicalInfo }}</p>
+  {% else %}
+    <p>No other medical information added</p>
   {% endif %}
 {% endset %}
 
@@ -266,20 +273,40 @@
   }) %}
 {% endif %}
 
-{% if not showOnlyPopulated or otherRelevantInfoCount > 0 %}
+{% if not showOnlyPopulated or breastDensityCount > 0 %}
   {% set rows = rows | push({
     key: {
-      text: "Other relevant information"
+      text: "Breast density factors"
     },
     value: {
-      html: otherRelevantInfoHtml
+      html: breastDensityFactorsHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./confirm-information/breast-density-factors") | urlWithReferrer(currentUrl),
+          text: "View or change",
+          visuallyHiddenText: "breast density factors"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or otherMedicalInfo %}
+  {% set rows = rows | push({
+    key: {
+      text: "Other medical information"
+    },
+    value: {
+      html: otherMedicalInfoHtml
     },
     actions: {
       items: [
         {
           href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
           text: "View or change",
-          visuallyHiddenText: "other relevant information"
+          visuallyHiddenText: "other medical information"
         }
       ]
     } if allowEdits

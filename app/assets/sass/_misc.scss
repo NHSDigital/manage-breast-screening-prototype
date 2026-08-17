@@ -75,13 +75,19 @@ body.js-enabled .app-no-js-only {
 }
 
 // Opinion button layout switching — stacked shown on mobile, horizontal shown on tablet+
+// Bottom margin keeps whatever follows (reads, info card) clear of the
+// sub-action link
 .app-opinion-buttons--horizontal {
+  margin-bottom: nhsuk-spacing(4);
+
   @include nhsuk-media-query($until: tablet) {
     display: none;
   }
 }
 
 .app-opinion-buttons--stacked {
+  margin-bottom: nhsuk-spacing(4);
+
   @include nhsuk-media-query($from: tablet) {
     display: none;
   }

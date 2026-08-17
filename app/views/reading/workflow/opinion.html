@@ -1,5 +1,7 @@
 {# app/views/reading/workflow/opinion.html #}
-{# Main reading opinion page - entry point for reading workflow #}
+{# Main reading opinion page - entry point for reading workflow.
+   Arbitration renders arbitration-opinion.html instead; the shared pieces
+   live in _includes/reading/opinion-*.njk #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -31,412 +33,23 @@
   {% set hasExistingOpinion = existingOpinion or tempOpinion %}
   {% set currentOpinion = tempOpinion or existingOpinion %}
 
-  {% set opinionHeading = "Review images" %}
-  {% if hasExistingOpinion %}
-    {% set opinionHeading = "Update review" %}
-  {% endif %}
-
-  {% set questionText = "What is your opinion of these images?" %}
-
-  {# =========================================================
-     Setup: mammogram images and view order
-     ========================================================= #}
-
-  {# Get mammogram images for thumbnails #}
-  {% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
-  {% set mammogramImages = getImagesForAppointment(appointmentId, mammogramImageSource, { appointment: appointment }) %}
-
-  {# View order from config - determines if CC or MLO comes first #}
-  {# Right breast views on left, left breast views on right #}
-  {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-    {% set viewOrder = [
-      { key: 'rmlo', label: 'RMLO', side: 'right' },
-      { key: 'lmlo', label: 'LMLO', side: 'left' },
-      { key: 'rcc', label: 'RCC', side: 'right' },
-      { key: 'lcc', label: 'LCC', side: 'left' }
-    ] %}
-  {% else %}
-    {% set viewOrder = [
-      { key: 'rcc', label: 'RCC', side: 'right' },
-      { key: 'lcc', label: 'LCC', side: 'left' },
-      { key: 'rmlo', label: 'RMLO', side: 'right' },
-      { key: 'lmlo', label: 'LMLO', side: 'left' }
-    ] %}
-  {% endif %}
-
-  {# Count total images #}
-  {% set imageCount = 0 %}
-  {% for view in viewOrder %}
-    {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
-    {% if allPaths %}
-      {% if allPaths is string %}
-        {% set imageCount = imageCount + 1 %}
-      {% else %}
-        {% set imageCount = imageCount + allPaths | length %}
-      {% endif %}
-    {% endif %}
-  {% endfor %}
-
-  {# =========================================================
-     Setup: priors and opinion delay
-     ========================================================= #}
-
-  {% set priorsSummary = appointment | getPriorsSummary %}
+  {% set opinionHeading = "Update review" if hasExistingOpinion else "Review images" %}
 
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
   {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
 
   {# =========================================================
-     HTML content blocks
-     ========================================================= #}
-
-  {# Buttons or radios for giving an opinion #}
-  {% set opinionOptionsHtml %}
-    {% if hasExistingOpinion %}
-      {# Show radios when updating an existing or in-progress opinion #}
-      {{ radios({
-        name: "imageReadingTemp[opinion]",
-        fieldset: {
-          legend: {
-            text: questionText,
-            size: "m",
-            isPageHeading: false
-          }
-        },
-        items: [
-          {
-            value: "normal",
-            html: "Normal <span class='app-shortcut-hint'>(N)</span>",
-            checked: currentOpinion == 'normal' and not existingRead.normalDetails,
-            attributes: { "data-shortcut-radio": "n" }
-          },
-          {
-            value: "normal_with_details",
-            text: "Normal, but add details",
-            checked: (currentOpinion == 'normal' and existingRead.normalDetails) or currentOpinion == 'normal_with_details'
-          },
-          {
-            value: "technical_recall",
-            html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
-            attributes: { "data-shortcut-radio": "t" }
-          },
-          {
-            value: "recall_for_assessment",
-            html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
-            attributes: { "data-shortcut-radio": "r" }
-          }
-        ],
-        value: currentOpinion
-      }) }}
-
-      {{ button({
-        text: "Update opinion"
-      } | openInModal) }}
-
-    {% else %}
-
-      {# Stacked (vertical) button layout #}
-      {% set opinionButtonsStackedHtml %}
-        {% if hasSymptoms %}
-          {{ button({
-            html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
-            value: "normal_with_details",
-            name: "imageReadingTemp[opinion]",
-            classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-            attributes: { "data-shortcut": "n" }
-          } | openInModal) }}
-        {% else %}
-          {{ button({
-            html: "Normal <span class='app-shortcut-hint'>(N)</span>",
-            value: "normal",
-            name: "imageReadingTemp[opinion]",
-            classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-            attributes: { "data-shortcut": "n" }
-          }) }}
-          <p class="nhsuk-u-margin-bottom-4">
-            {# Raw button element intentional — app-button-link styles it as a link,
-              which doesn't work with the NHS button macro (adds conflicting styles).
-              data-modal-submit added manually for modal support. #}
-            <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-              Normal, but add details
-            </button>
-          </p>
-        {% endif %}
-        {{ button({
-          html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
-          value: "technical_recall",
-          name: "imageReadingTemp[opinion]",
-          variant: "secondary",
-          classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-          attributes: { "data-shortcut": "t" }
-        } | openInModal) }}
-        {{ button({
-          html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
-          value: "recall_for_assessment",
-          name: "imageReadingTemp[opinion]",
-          variant: "warning",
-          classes: "app-button-full-width nhsuk-u-margin-bottom-1",
-          attributes: { "data-shortcut": "r" }
-        } | openInModal) }}
-      {% endset %}
-
-      {# Horizontal equal-width button layout #}
-      {# Horizontal equal-width button layout.
-         CSS Grid places the three buttons in row 1 (uniform height) and the
-         sub-action link in row 2 col 1 via explicit placement — no wrapper needed. #}
-      {% set opinionButtonsHorizontalHtml %}
-        <div class="app-button-group--equal">
-          {% if hasSymptoms %}
-            {{ button({
-              html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
-              value: "normal_with_details",
-              name: "imageReadingTemp[opinion]",
-              attributes: { "data-shortcut": "n" }
-            } | openInModal) }}
-          {% else %}
-            {{ button({
-              html: "Normal <span class='app-shortcut-hint'>(N)</span>",
-              value: "normal",
-              name: "imageReadingTemp[opinion]",
-              attributes: { "data-shortcut": "n" }
-            }) }}
-            {# Sub-action placed between Normal and Technical recall in DOM so it auto-flows
-               after Normal on mobile (stacked layout); CSS pins it to row 2 col 1 on desktop. #}
-            <p class="app-button-group__sub-action">
-              {# Raw button element intentional — app-button-link styles it as a link,
-                which doesn't work with the NHS button macro (adds conflicting styles).
-                data-modal-submit added manually for modal support. #}
-              <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-                Normal, but add details
-              </button>
-            </p>
-          {% endif %}
-          {{ button({
-            html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
-            value: "technical_recall",
-            name: "imageReadingTemp[opinion]",
-            variant: "secondary",
-            attributes: { "data-shortcut": "t" }
-          } | openInModal) }}
-          {{ button({
-            html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
-            value: "recall_for_assessment",
-            name: "imageReadingTemp[opinion]",
-            variant: "warning",
-            attributes: { "data-shortcut": "r" }
-          } | openInModal) }}
-        </div>
-      {% endset %}
-
-      {# Both layouts are rendered; CSS shows the appropriate one per breakpoint.
-         This ensures the link always appears in the correct position (stacked layout
-         has it between Normal and Technical recall in DOM order). #}
-      {# {% call card({
-        heading: questionText,
-        headingLevel: 2,
-        headingSize: "m",
-        feature: false
-      }) %} #}
-        <h2 class="nhsuk-u-margin-top-5">{{ questionText }}</h2>
-        <div class="app-opinion-buttons--stacked">
-          
-          {{ opinionButtonsStackedHtml | safe }}
-        </div>
-        <div class="app-opinion-buttons--horizontal {{- " nhsuk-u-margin-bottom-6" if hasSymptoms -}}">
-          {{ opinionButtonsHorizontalHtml | safe }}
-        </div>
-      {# {% endcall %} #}
-
-    {% endif %}
-  {% endset %}
-
-  {# Medical information summary #}
-  {% set medicalSummaryHtml %}
-    {# Only show rows that have data #}
-    {% set showOnlyPopulated = true %}
-    {# No edits allowed in image reading #}
-    {% set allowEdits = false %}
-    {# Priors are shown separately in the dedicated priors summary above #}
-    {% set hidePreviousMammograms = true %}
-    {% include "_includes/summary-lists/medical-info-summary.njk" %}
-    <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-      {{ appLink({ text: "View full medical information", href: "./medical-information", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
-    </p>
-  {% endset %}
-
-  {# Image warnings (captured so we can check if content exists) #}
-  {% set imageWarningsHtml %}
-    {% include "_includes/reading/image-warnings.njk" %}
-  {% endset %}
-
-  {# Symptoms warning #}
-  {% set symptomsWarningHtml %}
-    {% if appointment.medicalInformation.symptoms | length %}
-      {% set symptoms = appointment.medicalInformation.symptoms %}
-      {% include "_includes/symptomsWarningCard.njk" %}
-    {% endif %}
-  {% endset %}
-
-  {# Previous (prior) mammograms - summary list with status and request route #}
-  {% set priorsWarningHtml %}
-    {% include "_includes/reading/priors-summary.njk" %}
-  {% endset %}
-
-  {# Mammogram thumbnails #}
-  {% set thumbnailsHtml %}
-    {% call card({
-      heading: "Images (" + imageCount + ")",
-      headingLevel: 2,
-      headingSize: "s",
-      classes: "app-card--feature-grey",
-      feature: "true"
-    }) %}
-    <div class="app-mammogram-thumbnails">
-      {% for view in viewOrder %}
-        <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ view.side }}">
-          {% set allPaths = mammogramImages.allPaths[view.key] if mammogramImages and mammogramImages.allPaths else null %}
-
-          {% if allPaths %}
-            {# Handle both single path (string) and multiple paths (array) #}
-            {% if allPaths is string %}
-              <div class="app-mammogram-thumbnail__image-wrapper">
-                <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                <img
-                  class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
-                  src="{{ allPaths }}"
-                  alt="{{ view.label }} view"
-                  data-view="{{ view.label }}"
-                >
-              </div>
-            {% else %}
-              {# Multiple images - each with its own wrapper and label #}
-              {% for imagePath in allPaths %}
-                <div class="app-mammogram-thumbnail__image-wrapper">
-                  <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-                  <img
-                    class="app-mammogram-thumbnail__image{% if mammogramImageSource == 'diagrams' %} app-mammogram-thumbnail__image--diagram{% endif %}"
-                    src="{{ imagePath }}"
-                    alt="{{ view.label }} view ({{ loop.index }} of {{ loop.length }})"
-                    data-view="{{ view.label }}"
-                  >
-                </div>
-              {% endfor %}
-            {% endif %}
-          {% else %}
-            {# Missing image placeholder #}
-            <div class="app-mammogram-thumbnail__image-wrapper">
-              <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-              <div class="app-mammogram-thumbnail__missing">
-                <span class="app-mammogram-thumbnail__missing-text">No image</span>
-              </div>
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-    {% endcall %}
-  {% endset %}
-
-  {# =========================================================
      Page layout
      ========================================================= #}
 
-  {# Page header with status tags #}
-  <div class="nhsuk-grid-row app-header-with-status">
-    <div class="nhsuk-grid-column-three-quarters">
-      <span class="nhsuk-caption-l">
-        {{ opinionHeading }}
-      </span>
-      <h1 class="nhsuk-heading-l js-image-count">
-        {{ participant | getFullName }}
-      </h1>
-    </div>
-    <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag">
-
-      {# Urgency tags #}
-      {% set appointmentAge = appointment.timing.startTime | daysSince %}
-      {% if appointmentAge >= data.config.reading.priorityThreshold %}
-        <div class="nhsuk-u-margin-bottom-2">
-          {% if appointmentAge >= data.config.reading.urgentThreshold %}
-            {{ "Urgent" | toTag }}
-          {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
-            {{ "Due soon" | toTag }}
-          {% endif %}
-        </div>
-      {% endif %}
-
-      {# First/second read tag #}
-      {% set readCount = (readingCase | getReadingMetadata).readCount %}
-      {% if existingOpinion %}
-        {% if readCount == 1 %}
-          {{ "First read" | toTag }}
-        {% else %}
-          {{ "Second read" | toTag }}
-        {% endif %}
-      {% else %}
-        {% if readCount == 0 %}
-          {{ "First read" | toTag }}
-        {% else %}
-          {{ "Second read" | toTag }}
-        {% endif %}
-      {% endif %}
-
-      {# Previously skipped tag #}
-      {% if session and session.skippedAppointments | includes(appointment.id) %}
-        {{ "Previously skipped" | toTag }}
-      {% endif %}
-
-      {# Prior mammogram status tags #}
-      {% if priorsSummary.total > 0 %}
-        {% if priorsSummary.hasAwaiting %}
-          {% set awaitingPriorsList = appointment | getAwaitingPriors %}
-          {{ "Awaiting priors" | toTag | safe }}<br>
-          {% for prior in awaitingPriorsList %}
-            {% if prior.requestedDate %}
-              Requested {{ prior.requestedDate | formatDate("D MMM YYYY") }}
-              {% if prior.requestReason %}
-                – {{ prior.requestReason }}
-              {% endif %}
-              {% if not loop.last %}<br>{% endif %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endif %}
-
-      {% if (data.settings.debugMode | falsify) %}
-        {% if appointment | hasRecordedMammograms %}
-          {{ "Has priors" | toTag }}
-        {% endif %}
-        {% if appointment.mammogramData.metadata.hasAdditionalImages %}
-          <br>{{ "Has additional" | toTag }}
-        {% endif %}
-        {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
-            <br>{{ "Imperfect" | toTag }}
-        {% endif %}
-        {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
-            <br>{{ "Incomplete" | toTag }}
-        {% endif %}
-      {% endif %}
-    </div>
-  </div>
+  {% include "_includes/reading/opinion-header.njk" %}
 
   {# Opinion form with thumbnails #}
-
-  {# Todo: do we need a form here? is the parent layout's form not enough? #}
   <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">
 
     {# Hidden field to track previous opinion for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">
-
-    {# Symptoms warning and priors banners - full width #}
-    {% if (symptomsWarningHtml | trim) or (priorsWarningHtml | trim) %}
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-full">
-          
-        </div>
-      </div>
-    {% endif %}
 
     {# Opinion and thumbnails #}
     <div class="app-reading-opinion-columns">
@@ -444,35 +57,19 @@
       {# Opinion buttons/radios #}
       <div class="app-grid-column-main">
 
-        {# Conditional stuff #}
-        {{ symptomsWarningHtml | safe }}
+        {# Symptoms warning #}
+        {% if hasSymptoms %}
+          {% set symptoms = appointment.medicalInformation.symptoms %}
+          {% include "_includes/symptomsWarningCard.njk" %}
+        {% endif %}
 
         {# Main opinion stuff #}
-        {{ opinionOptionsHtml | safe }}
+        {% include "_includes/reading/opinion-controls.njk" %}
 
         <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
-        
-        {# Combined information card with priors, image notes, and medical summary as sections #}
-        {% set combinedInfoHtml %}
-          {% if priorsWarningHtml | trim %}
-            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1">Previous mammograms disclosed</h3>
-            {{ priorsWarningHtml | safe }}
-          {% endif %}
-          {% if imageWarningsHtml | trim %}
-            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1{% if priorsWarningHtml | trim %} nhsuk-u-margin-top-4{% endif %}">Image notes</h3>
-            {{ imageWarningsHtml | safe }}
-          {% endif %}
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-1{% if (priorsWarningHtml | trim) or (imageWarningsHtml | trim) %} nhsuk-u-margin-top-4{% endif %}">Medical summary</h3>
-          {{ medicalSummaryHtml | safe }}
-        {% endset %}
 
-        {{ card({
-          headingLevel: "2",
-          heading: "Additional information",
-          feature: true,
-          classes: "_app-card--feature-subtle",
-          descriptionHtml: combinedInfoHtml
-        }) }}
+        {# Combined information card with priors, image notes, and medical summary as sections #}
+        {% include "_includes/reading/opinion-info-card.njk" %}
 
         {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">
@@ -483,55 +80,11 @@
       {# Mammogram thumbnails #}
       {# Using custom grid/class so that they have fixed width rather than % #}
       <div class="app-grid-column-images">
-        {{ thumbnailsHtml | safe }}
+        {% include "_includes/reading/opinion-thumbnails.njk" %}
       </div>
 
     </div>
 
   </form>
 
-{% endblock %}
-
-{% block pageScripts %}
-
-{# TODO: can this be removed? don't think we have zoom on these any more #}
-<script>
-// Thumbnail zoom functionality
-document.addEventListener('DOMContentLoaded', () => {
-  const enableThumbnailZoom = false
-
-  if (!enableThumbnailZoom)
-  {
-    return
-  }
-
-  const thumbnails = document.querySelectorAll('.app-mammogram-thumbnail__image')
-  
-  thumbnails.forEach(img => {
-    img.addEventListener('click', (e) => {
-      const src = e.target.src
-      const view = e.target.dataset.view || ''
-      
-      // Create zoom overlay
-      const overlay = document.createElement('div')
-      overlay.className = 'app-mammogram-zoom'
-      overlay.innerHTML = `
-        <span class="app-mammogram-zoom__label">${view}</span>
-        <img class="app-mammogram-zoom__image" src="${src}" alt="${view} view">
-      `
-      
-      // Close on click or escape
-      overlay.addEventListener('click', () => overlay.remove())
-      document.addEventListener('keydown', function escHandler(e) {
-        if (e.key === 'Escape') {
-          overlay.remove()
-          document.removeEventListener('keydown', escHandler)
-        }
-      })
-      
-      document.body.appendChild(overlay)
-    })
-  })
-})
-</script>
 {% endblock %}

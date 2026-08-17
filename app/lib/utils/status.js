@@ -26,12 +26,7 @@ const STATUS_GROUPS = {
     'attended_not_screened',
     'cancelled'
   ],
-  active: [
-    'scheduled',
-    'checked_in',
-    'in_progress',
-    'paused'
-  ],
+  active: ['scheduled', 'checked_in', 'in_progress', 'paused'],
   eligible_for_reading: ['complete', 'partially_screened']
 }
 
@@ -230,12 +225,25 @@ const STATUS_TAGS = {
   },
   // Reading journey state - mostly derived, reached via snake-cased tag text
   readingState: {
+    // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
+    // set of images has got to. The entries below them are the older
+    // appointment- and group-level vocabulary.
+    'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
+    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'blue' },
+    'awaiting_finalisation': {
+      label: 'Awaiting finalisation',
+      colour: 'yellow'
+    },
+    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'orange' },
+    'in_arbitration': { label: 'In arbitration', colour: 'purple' },
+    'concluded': { label: 'Concluded', colour: 'green' },
     'waiting_for_1st_read': { colour: 'grey' },
     'waiting_for_2nd_read': { colour: 'grey' },
     'not_started': { colour: 'grey' },
     'skipped': { colour: 'grey' },
     'previously_skipped': { colour: 'grey' },
     'not_read': { colour: 'white' },
+    'not_arbitrated': { colour: 'white' },
     'complete': { colour: 'green' },
     'partial_first_read': { colour: 'blue' },
     'first_read_complete': { colour: 'yellow' },
@@ -340,6 +348,47 @@ const getStatusText = (status, vocabulary = null) => {
   return findStatusTag(status, vocabulary)?.label || ''
 }
 
+// What needs to happen next to move a reading case on, keyed by case state.
+// awaiting_finalisation is handled in describeReadingCaseStatus - its next
+// action depends on where the case is heading.
+const READING_CASE_NEXT_ACTIONS = {
+  awaiting_first_read: 'First read',
+  awaiting_second_read: 'Second read',
+  awaiting_arbitration: 'Arbitration',
+  in_arbitration: 'Arbitration in progress',
+  concluded: null
+}
+
+/**
+ * The display facts for a reading case's status, composed from the facts
+ * getReadingCaseStatus (reading-cases.js) returns. Shared by the case backlog
+ * rows and the case view so the two surfaces can't drift apart.
+ *
+ * The state renders as a tag via the readingState vocabulary; destination is
+ * the journey the state alone hides - a finalising case bound for arbitration
+ * - and null everywhere else.
+ *
+ * @param {object} status - { state, finalised, willArbitrate, provisionalOutcome }
+ * @returns {{state: string, nextAction: string | null, destination: string | null} | null}
+ */
+const describeReadingCaseStatus = (status) => {
+  if (!status) return null
+
+  const headingToArbitration =
+    status.state === 'awaiting_finalisation' && status.willArbitrate
+
+  return {
+    state: status.state,
+    nextAction:
+      status.state === 'awaiting_finalisation'
+        ? headingToArbitration
+          ? 'Finalisation, then arbitration'
+          : 'Finalisation'
+        : READING_CASE_NEXT_ACTIONS[status.state] || null,
+    destination: headingToArbitration ? 'then arbitration' : null
+  }
+}
+
 /**
  * Filter appointments by status category
  *
@@ -350,9 +399,13 @@ const getStatusText = (status, vocabulary = null) => {
 const filterAppointmentsByStatus = (appointments, filter) => {
   switch (filter) {
     case 'scheduled':
-      return appointments.filter((appointment) => appointment.status === 'scheduled')
+      return appointments.filter(
+        (appointment) => appointment.status === 'scheduled'
+      )
     case 'checked-in':
-      return appointments.filter((appointment) => appointment.status === 'checked_in')
+      return appointments.filter(
+        (appointment) => appointment.status === 'checked_in'
+      )
     case 'in-progress':
       return appointments.filter(
         (appointment) =>
@@ -385,7 +438,10 @@ const isSpecialAppointment = (appointment) => {
  * @returns {boolean} Whether the appointment has an appointment note
  */
 const hasAppointmentNote = (appointment) => {
-  return appointment?.appointmentNote && appointment.appointmentNote.trim().length > 0
+  return (
+    appointment?.appointmentNote &&
+    appointment.appointmentNote.trim().length > 0
+  )
 }
 
 /**
@@ -424,6 +480,7 @@ module.exports = {
   eligibleForReading,
   getStatusTagColour,
   getStatusText,
+  describeReadingCaseStatus,
   filterAppointmentsByStatus,
   isSpecialAppointment,
   hasAppointmentNote,

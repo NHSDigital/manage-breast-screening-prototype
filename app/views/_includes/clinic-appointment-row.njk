@@ -42,7 +42,7 @@
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
-        {{ participant | getFullName }}
+        {{ participant | getFullNameReversed }}
       </p>
       <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
         NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}

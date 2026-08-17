@@ -69,14 +69,67 @@ const findTodayAppointment = ({ status = 'scheduled', index = 0 } = {}) => {
     clinic,
     appointment,
     participant,
-    // Built the same way getFullName does, middle name included - some
-    // participants have one, and which participant a run picks depends on the
-    // seed data, so a first+last name only matches some of the time
-    fullName: [firstName, middleName, lastName].filter(Boolean).join(' ')
+    // Natural order for flash messages (getFullName format)
+    fullName: [firstName, middleName, lastName].filter(Boolean).join(' '),
+    // Reversed format for identity displays (getFullNameReversed format)
+    fullNameReversed: [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
   }
+}
+
+/**
+ * Find a reading case holding exactly one seeded read, ready for the current
+ * user to give the second.
+ *
+ * The first read must be someone else's (nobody reads the same case twice) and
+ * carry the requested opinion, so a test can mirror it and land a concordant
+ * pair. Skips deferred cases and appointments awaiting priors, which the
+ * reading routes would bounce to the existing-read page.
+ *
+ * @param {object} [options] - Options
+ * @param {string} [options.firstOpinion] - Opinion the seeded read must carry
+ * @returns {{episode: object, readingCase: object, appointment: object}} The subject
+ */
+const findCaseAwaitingSecondRead = ({ firstOpinion = 'normal' } = {}) => {
+  // The journeys run as the default user, users[0] - the same pick
+  // session-data-defaults.js makes for currentUser
+  const users = require('../../../app/data/users')
+  const currentUserId = users[0].id
+
+  const episodes = readCollection('episodes.json', 'episodes')
+  const appointments = readCollection('appointments.json', 'appointments')
+
+  for (const episode of episodes) {
+    for (const readingCase of episode.readingCases || []) {
+      const reads = readingCase.reads || []
+      if (reads.length !== 1) continue
+      if (reads[0].opinion !== firstOpinion) continue
+      if (reads[0].readerId === currentUserId) continue
+      if (readingCase.deferral) continue
+
+      const appointment = appointments.find(
+        (item) => item.id === readingCase.appointmentId
+      )
+      if (!appointment) continue
+
+      const priorsPending = (appointment.previousMammograms || []).some(
+        (mammogram) =>
+          mammogram.requestStatus === 'pending' ||
+          mammogram.requestStatus === 'requested'
+      )
+      if (priorsPending) continue
+
+      return { episode, readingCase, appointment }
+    }
+  }
+
+  throw new Error(
+    `Seed data has no case awaiting a second read with a "${firstOpinion}" ` +
+      'first read from another reader. Regenerate the data with "npm run generate".'
+  )
 }
 
 module.exports = {
   readCollection,
-  findTodayAppointment
+  findTodayAppointment,
+  findCaseAwaitingSecondRead
 }

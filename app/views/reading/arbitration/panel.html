@@ -1,0 +1,68 @@
+{# app/views/reading/arbitration/panel.html #}
+{# Arbitration setup - pick who else is arbitrating #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Apart from you, who is involved in this arbitration session?" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set back = {
+  href: "/reading/arbitration/start",
+  text: "Back"
+} %}
+
+{% set formAction = "/reading/arbitration/panel-answer" %}
+
+{% block pageContent %}
+
+  {% set userItems = [] %}
+  {% for user in availableUsers %}
+    {% set userItems = userItems | push({
+      value: user.id,
+      text: user.firstName + " " + user.lastName
+    }) %}
+  {% endfor %}
+
+  {# Someone arbitrating who has no account - their name is recorded as typed #}
+  {% set otherArbitratorHtml %}
+    {{ input({
+      id: "panel-other-name",
+      name: "arbitrationTemp[otherArbitratorNames]",
+      classes: "nhsuk-u-width-two-thirds",
+      label: {
+        text: "Name"
+      }
+    }) }}
+    <p class="nhsuk-u-margin-top-2">
+      <a href="#">Add another</a>
+    </p>
+  {% endset %}
+
+  {% set userItems = userItems | push({
+    value: "other",
+    text: "Other",
+    conditional: {
+      html: otherArbitratorHtml
+    }
+  }) %}
+
+  {{ checkboxes({
+    idPrefix: "panel-users",
+    name: "arbitrationTemp[panelUserIds]",
+    fieldset: {
+      legend: {
+        text: pageHeading,
+        size: "l",
+        isPageHeading: true
+      }
+    },
+    hint: {
+      text: "For clinical assurance, everyone attending must be recorded and be there during all case decisions"
+    },
+    items: userItems
+  } | populateErrors) }}
+
+  {{ button({
+    text: "Start arbitrating"
+  }) }}
+
+{% endblock %}

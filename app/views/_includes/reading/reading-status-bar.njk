@@ -7,9 +7,15 @@
 {% set firstRowItems = [] %}
 
 {# Environment tag - always first item #}
-{% set firstRowItems = firstRowItems | push({
-  html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
-}) %}
+{% if isArbitration %}
+  {% set firstRowItems = firstRowItems | push({
+    html: '<strong class="nhsuk-tag nhsuk-tag--orange">Arbitration</strong>'
+  }) %}
+{% else %}
+  {% set firstRowItems = firstRowItems | push({
+    html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
+  }) %}
+{% endif %}
 
 {# Clinic context item (session context has no label, just the environment tag) #}
 {% if isClinicContext %}
@@ -26,9 +32,10 @@
   }) %}
 {% endif %}
 
-{# Progress text #}
+{# Progress text. doneCount counts arbitrated cases in an arbitration session
+   and the user's own reads otherwise #}
 {% set progressText %}
-  {{ progress.userReadCount }} read
+  {{ progress.doneCount }} {{ "arbitrated" if isArbitration else "read" }}
   {%- if progress.userAwaitingPriorsCount > 0 -%}
     , {{ progress.userAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
@@ -65,7 +72,7 @@
 
   {# Full name #}
   {% set nameWithAge %}
-    {{ participant | getFullName }}
+    {{ participant | getFullNameReversed }}
   {% endset %}
   {% set participantRowItems = participantRowItems | push({
     html: "<strong>" + nameWithAge + "</strong>"

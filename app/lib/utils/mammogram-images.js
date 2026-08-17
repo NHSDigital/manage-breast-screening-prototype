@@ -785,17 +785,22 @@ const getResolvedAnnotations = (set, source = 'diagrams') => {
       const viewDefs = Array.isArray(viewDef) ? viewDef : [viewDef]
 
       for (const def of viewDefs) {
-        if (def.from && !visitedSets.has(def.from)) {
+        if (def.from) {
           sourceSetsBySide[side].add(def.from)
         }
       }
     }
 
-    // Collect annotations from source sets, but only for the relevant side
+    // Collect annotations from source sets, but only for the relevant side.
+    // A set can be referenced from both sides (a retake of one view alongside
+    // the other views), so track what's been taken per side rather than per
+    // set - otherwise the first side consumes the set and the second loses its
+    // annotations.
     for (const side of ['left', 'right']) {
       for (const sourceSetId of sourceSetsBySide[side]) {
-        if (visitedSets.has(sourceSetId)) continue
-        visitedSets.add(sourceSetId)
+        const visitKey = `${side}:${sourceSetId}`
+        if (visitedSets.has(visitKey)) continue
+        visitedSets.add(visitKey)
 
         const sourceSet = getSetById(sourceSetId, source)
         if (sourceSet && sourceSet.annotations) {

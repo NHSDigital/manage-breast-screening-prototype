@@ -67,8 +67,7 @@
                 {{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }} old
               {% endset %}
               <a href="/participants/{{ participant.id }}" class="nhsuk-link">
-                {# {{ participant | getFullNameReversed }} #}
-                {{ participant | getFullName }}
+                {{ participant | getFullNameReversed }}
               </a><br>
               {{ dob | asHint }}
             </td>

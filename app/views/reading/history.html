@@ -137,20 +137,22 @@
             <td>
               {% if reading.sessionId %}
               <a href="/reading/session/{{ reading.sessionId or 'clinic' }}/appointments/{{ reading.appointmentId }}">
-                {{ reading.participant | getFullName }}
+                {{ reading.participant | getFullNameReversed }}
               </a>
               {% else %}
-                {{ reading.participant | getFullName }}
+                {{ reading.participant | getFullNameReversed }}
               {% endif %}
 
 
             </td>
             {% if view == 'all' %}
             <td>
-              {{ reading.readerId | getUsername({
-                format: 'short',
-                identifyCurrentUser: true
-              }) }}
+              {%- for authorId in reading | getReadAuthorIds %}
+                {{ authorId | getUsername({
+                  format: 'short',
+                  identifyCurrentUser: true
+                }) }}{{ "," if not loop.last }}
+              {%- endfor %}
             </td>
             {% endif %}
             <td>
@@ -175,7 +177,9 @@
                 {{ "Waiting for 1st read" | toTag }}
               {% elseif caseState == 'awaiting_second_read' %}
                 {{ "Waiting for 2nd read" | toTag }}
-              {% elseif caseState == 'arbitration_required' or caseState == 'in_arbitration' %}
+              {% elseif caseState == 'awaiting_finalisation' %}
+                {{ "Awaiting finalisation" | toTag }}
+              {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
                 {{ "Arbitration" | toTag }}
               {% else %}
                 {{ (thisCase | getReadingCaseOutcome(data.settings)) | toTag }}

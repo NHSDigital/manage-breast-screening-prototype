@@ -17,7 +17,7 @@
     {% set thisParticipant = data | getParticipant(appointment.participantId) %}
     <td>
       <a href="/clinics/{{ appointment.clinicId }}/appointments/{{ appointment.id }}">
-        {{ thisParticipant | getFullName }}
+        {{ thisParticipant | getFullNameReversed }}
       </a>
     </td>
 

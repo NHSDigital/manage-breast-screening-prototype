@@ -40,6 +40,7 @@ const skippedPaths = [
   { pattern: /\/undo-check-in$/, reason: 'reverses a check-in' },
   { pattern: /\/complete$/, reason: 'completes an appointment' },
   { pattern: /\/save-opinion$/, reason: 'saves a reading opinion' },
+  { pattern: /\/finalise-reads$/, reason: 'finalises reading opinions' },
   {
     pattern: /^\/reading\/create-session/,
     reason: 'creates a reading session'
@@ -139,6 +140,7 @@ const collectParams = async (sessionFetch) => {
   const appointments = require(
     path.join(generatedPath, 'appointments.json')
   ).appointments
+  const episodes = require(path.join(generatedPath, 'episodes.json')).episodes
 
   const today = dayjs().format('YYYY-MM-DD')
   const clinic = clinics.find((item) => item.date === today) ?? clinics[0]
@@ -148,15 +150,28 @@ const collectParams = async (sessionFetch) => {
     throw new Error(`No appointments found on clinic ${clinic.id}`)
   }
 
+  // Reading cases live inside episodes, so the case views need an id from one
+  // that actually has a case rather than one derived from the appointment above
+  const episodeWithReadingCase = episodes.find(
+    (item) => item.readingCases?.length
+  )
+
+  if (!episodeWithReadingCase) {
+    throw new Error('No episodes with reading cases found')
+  }
+
   const params = {
     clinicId: clinic.id,
     id: clinic.id,
     appointmentId: appointment.id,
     participantId: appointment.participantId,
     episodeId: appointment.episodeId,
+    caseId: episodeWithReadingCase.readingCases[0].id,
     // Filters and views are named tabs; "all" exists on every set of them
     filter: 'all',
     view: 'all',
+    // The reading case view's tabs - "reads" exercises more than the default
+    tab: 'reads',
     // A medical history type, by slug
     type: 'breast-cancer'
   }

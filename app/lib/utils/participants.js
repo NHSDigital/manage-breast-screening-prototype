@@ -57,12 +57,14 @@ const getFirstNames = (participant) => {
  * @param {object} participant - Participant object
  * @returns {string} Reversed full name, or empty string if unavailable
  * @example
- * getFullNameReversed(participant) // 'Smith, Jane Louise'
+ * getFullNameReversed(participant) // 'SMITH, Jane Louise'
  */
 const getFullNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
-  return [`${lastName},`, firstName, middleName].filter(Boolean).join(' ')
+  return nunjucksSafe(
+    [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+  )
 }
 
 /**

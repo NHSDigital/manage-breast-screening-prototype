@@ -1,0 +1,135 @@
+{# app/views/reading/workflow/arbitration-opinion.html #}
+{# Arbitration opinion page - the reading opinion page (thumbnails, medical
+   history, priors) plus the first and second reads, whose visibility is the
+   showReads/revealStyle settings. Rendered for the /opinion step in
+   arbitration sessions. #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set pageHeading = participant | getFullName %}
+{% set gridColumn = "none" %}
+{% set showWorkflowNav = true %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
+
+{# Reduce default top padding of main on opinion page to save on scrolling #}
+{% set mainClasses = "nhsuk-u-padding-top-1" %}
+
+{% set hasSymptoms = appointment.medicalInformation.symptoms | length > 0 %}
+
+
+{% block pageContent %}
+
+  {# =========================================================
+     Setup: read state - the case's arbitration read, not a per-user one
+     ========================================================= #}
+
+  {% set existingRead = readingCase | getArbitrationRead %}
+  {% set existingOpinion = existingRead.opinion %}
+
+  {# Also check for in-progress read in temp data #}
+  {% set tempOpinion = data.imageReadingTemp.opinion if data.imageReadingTemp else null %}
+
+  {# Show update UI if there's either a saved read or an in-progress one #}
+  {% set hasExistingOpinion = existingOpinion or tempOpinion %}
+  {% set currentOpinion = tempOpinion or existingOpinion %}
+
+  {% set opinionHeading = "Update outcome" if hasExistingOpinion else "Arbitrate case" %}
+
+  {# Opinion form data attributes are used to manage the first-load lockout #}
+  {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
+  {% set opinionDelayLocked = 'true' if opinionDelayEnabled and not hasExistingOpinion else 'false' %}
+
+  {# =========================================================
+     Page layout
+     ========================================================= #}
+
+  {# Which presentation the reads get - the band handles most; 'tabs' folds
+     them into the additional-information tabs below #}
+  {% set showReadsSetting = data.settings.reading.arbitration.showReads or 'on_demand' %}
+  {% set revealStyle = data.settings.reading.arbitration.revealStyle or 'expander' %}
+  {% set readsAsTabs = showReadsSetting == 'on_demand' and revealStyle == 'tabs' %}
+
+  {% include "_includes/reading/opinion-header.njk" %}
+
+  {# Opinion form with thumbnails #}
+  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">
+
+    {# Hidden field to track previous opinion for opinion change detection #}
+    <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">
+
+    {# Opinion and thumbnails #}
+    <div class="app-reading-opinion-columns">
+
+      {# Opinion buttons/radios #}
+      <div class="app-grid-column-main">
+
+        {# Symptoms warning #}
+        {% if hasSymptoms %}
+          {% set symptoms = appointment.medicalInformation.symptoms %}
+          {% include "_includes/symptomsWarningCard.njk" %}
+        {% endif %}
+
+        {# Main opinion stuff #}
+        {% include "_includes/reading/opinion-controls.njk" %}
+
+        {# First and second reads, below the opinion choice. This column sits
+           inside the opinion form, so adopt buttons override its destination
+           with formaction rather than nesting their own forms. #}
+        {% set adoptViaFormaction = true %}
+        {% if not readsAsTabs %}
+          {% include "_includes/reading/arbitration-reads-band.njk" %}
+        {% endif %}
+
+        <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+        {% if readsAsTabs %}
+
+          {# Case information and the reads as tabs - the reads hidden by
+             default but one click away, both together in a single tab #}
+          {% set infoCardHtml %}
+            {% set infoCardBare = true %}
+            {% include "_includes/reading/opinion-info-card.njk" %}
+          {% endset %}
+          {% set readsHtml %}
+            {% set readsLayout = 'condensed' %}
+            {% include "_includes/reading/arbitration-reads-cards.njk" %}
+          {% endset %}
+          {{ tabs({
+            items: [
+              {
+                label: "Case information",
+                id: "case-information",
+                panel: { html: infoCardHtml }
+              },
+              {
+                label: "First and second reads",
+                id: "first-and-second-reads",
+                panel: { html: readsHtml }
+              }
+            ]
+          }) }}
+
+        {% else %}
+
+          {# Combined information card with priors, image notes, and medical summary as sections #}
+          {% include "_includes/reading/opinion-info-card.njk" %}
+
+        {% endif %}
+
+        {# Defer case option #}
+        <p class="nhsuk-u-margin-top-2">
+          {{ appLink({ text: "Defer this case", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+        </p>
+      </div>
+
+      {# Mammogram thumbnails #}
+      {# Using custom grid/class so that they have fixed width rather than % #}
+      <div class="app-grid-column-images">
+        {% include "_includes/reading/opinion-thumbnails.njk" %}
+      </div>
+
+    </div>
+
+  </form>
+
+{% endblock %}

@@ -33,8 +33,7 @@ generate-seed-data.js (main orchestrator)
   │     └─> medical-information/ generators (for completed and in-progress
   │           appointments)
   │           ├─> symptoms-generator.js
-  │           ├─> hrt-generator.js
-  │           ├─> pregnancy-and-breastfeeding-generator.js
+  │           ├─> breast-density-factors-generator.js
   │           ├─> other-medical-information-generator.js
   │           ├─> breast-features-generator.js
   │           └─> medical-history-generator.js
@@ -338,7 +337,9 @@ For complex data with multiple sub-generators, use an umbrella generator to orch
 // app/lib/generators/medical-information-generator.js
 
 const { generateSymptoms } = require('./medical-information/symptoms-generator')
-const { generateHRT } = require('./medical-information/hrt-generator')
+const {
+  generateBreastDensityFactors
+} = require('./medical-information/breast-density-factors-generator')
 // ... other generators
 
 const generateMedicalInformation = (options = {}) => {
@@ -362,13 +363,12 @@ const generateMedicalInformation = (options = {}) => {
     medicalInfo.symptoms = symptoms
   }
 
-  const hrt = generateHRT({
-    probability: probabilityOfHRT
+  // Sub-generators can return several keys at once, merged into the parent object
+  const breastDensityFactors = generateBreastDensityFactors({
+    probabilityOfHrt: probabilityOfHRT
   })
 
-  if (hrt) {
-    medicalInfo.hrt = hrt
-  }
+  Object.assign(medicalInfo, breastDensityFactors)
 
   // Only return if we generated anything
   return medicalInfo
@@ -511,7 +511,7 @@ app/lib/generators/
 ├── medical-information-generator.js  # Umbrella generator
 ├── medical-information/              # Sub-generators
 │   ├── symptoms-generator.js
-│   ├── hrt-generator.js
+│   ├── breast-density-factors-generator.js
 │   └── medical-history-generator.js
 └── [new]-generator.js                # New generators here
 ```

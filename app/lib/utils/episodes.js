@@ -253,6 +253,39 @@ const getReadingCase = (data, appointment) => {
 }
 
 /**
+ * Find a reading case by its own id, with the episode that holds it.
+ *
+ * Cases live inside episodes, so a case id on its own is not enough to reach
+ * one - hence the store index. Callers that have an appointment should use
+ * getReadingCase instead; this is for the case views, which are reached by case
+ * id and need the episode anyway (for the participant and the appointment).
+ *
+ * @param {object} data - Session data
+ * @param {string} caseId - Reading case ID
+ * @returns {{ readingCase: object, episode: object } | null} Both, or null
+ */
+const getReadingCaseById = (data, caseId) => {
+  if (!caseId) return null
+
+  const episodeId = dataStore.state.episodeIdByReadingCase.get(caseId)
+
+  // A case opened this session exists only in _changes, so isn't in the index
+  const episode = episodeId
+    ? getEpisode(data, episodeId)
+    : Object.values(data._changes?.episodes || {}).find((candidate) =>
+        getReadingCases(candidate).some((readingCase) => readingCase.id === caseId)
+      )
+
+  if (!episode) return null
+
+  const readingCase = getReadingCases(episode).find(
+    (candidate) => candidate.id === caseId
+  )
+
+  return readingCase ? { readingCase, episode } : null
+}
+
+/**
  * Get an episode's reading cases, oldest first
  *
  * @param {object} episode - Episode object
@@ -676,12 +709,12 @@ const advanceEpisodeForAppointmentStatus = (data, appointment) => {
  * Move an appointment's episode to wherever its reading outcome leaves it.
  *
  * Deliberately NOT called when a read is saved. Two opinions and a computed
- * outcome is not a confirmed result: there is no confirmation step in the
+ * outcome is not a finalised result: there is no finalisation step in the
  * app yet, so writing a read leaves the episode in `reading`. This is what
- * that confirmation step should call once it exists.
+ * that finalisation step should call once it exists.
  *
  * The seed generator uses the same map to settle rounds read long enough ago
- * that they would have been confirmed by now.
+ * that they would have been finalised by now.
  *
  * @param {object} data - Session data
  * @param {object} appointment - The appointment that was read
@@ -711,6 +744,7 @@ module.exports = {
   getCurrentEpisode,
   getEpisodeAppointments,
   getReadingCase,
+  getReadingCaseById,
   getEpisodeReadingCases,
   getEpisodeReadingCase,
   getEpisodeReadingOutcome,

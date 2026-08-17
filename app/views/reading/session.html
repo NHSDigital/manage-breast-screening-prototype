@@ -47,8 +47,7 @@
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
 
-    {% set currentUserHasRead = readingStatus.userReadCount > 0 %}
-    {% set readingActionText = "Resume reading" if currentUserHasRead else "Start reading" %}
+    {% set readingActionText = "Resume reading" if readingStatus.userReadCount else "Start reading" %}
 
     {% if resumeAppointment %}
       <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button app-reading-session-primary-action">
@@ -56,7 +55,12 @@
       </a>
     {% else %}
       {% set sessionCompletePanelHtml %}
-        <p class="nhsuk-body-m">An opinion has been provided for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. The first opinion will be automatically finalised at {{ autoFinaliseAt | formatTime("h:mma") }}. <a href="/reading/clinics" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        {% set panelDoneCount = readingStatus.userReadCount %}
+        {% if unfinalisedReadCount > 0 %}
+          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+        {% else %}
+          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}. All opinions are finalised.</p>
+        {% endif %}
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {% if backlogTotal > 0 %}
             {{ button({
@@ -107,7 +111,8 @@
       {# YOUR READS VIEW - Shows cases from user's perspective #}
       {% set userReadableAppointments = [] %}
       {% for appointment in appointments %}
-        {% if (data | canUserReadAppointment(appointment)) or (data | userHasReadAppointment(appointment)) or (appointment | userRequestedPriors(data.currentUser.id)) or (appointment.readingCase | isCaseDeferred) %}
+        {% set isDone = data | userHasReadAppointment(appointment) %}
+        {% if (data | canUserReadAppointment(appointment)) or isDone or (appointment | userRequestedPriors(data.currentUser.id)) or (appointment.readingCase | isCaseDeferred) %}
           {% set userReadableAppointments = userReadableAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
@@ -124,7 +129,8 @@
         {% set deferredAppointments = [] %}
 
         {% for appointment in userReadableAppointments %}
-          {% if data | userHasReadAppointment(appointment) %}
+          {% set isDone = data | userHasReadAppointment(appointment) %}
+{% if isDone %}
             {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
             {% if read.opinion == 'normal' %}
               {% set normalAppointments = normalAppointments | push(appointment) %}
@@ -220,10 +226,11 @@
         {% endif %}
 
         <h2>Reading session cases</h2>
-        {% set userSessionRemainingCount = sessionTotalCount - readingStatus.userReadCount - readingStatus.userAwaitingPriorsCount - deferredCount %}
+        {% set doneCount = readingStatus.userReadCount %}
+        {% set userSessionRemainingCount = sessionTotalCount - doneCount - readingStatus.userAwaitingPriorsCount - deferredCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
         {% if userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 or deferredCount > 0 %}
-          <p class="nhsuk-body app-text-grey">Progress: {{ readingStatus.userReadCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if deferredCount > 0 -%}, {{ deferredCount }} deferred{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
+          <p class="nhsuk-body app-text-grey">Progress: {{ doneCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if deferredCount > 0 -%}, {{ deferredCount }} deferred{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
         {% endif %}
 
         <table class="nhsuk-table app-reading-session-table">
@@ -247,12 +254,10 @@
                 {% set readingHref -%}
                   /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
                 {%- endset %}
+                <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <a href="{{ readingHref }}">{{ appointment.participant | getFullName }}</a>
-
-                <br>
                 <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
                   {% set readCount = metadata.readCount %}
                   {% if data | userHasReadAppointment(appointment) %}
@@ -285,12 +290,13 @@
                   <br>
                 {% endif %}
                 {{ appointment.timing.startTime | formatDate }}<br>
-                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">
                   {{ appointment.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
               <td>
-                {% if data | userHasReadAppointment(appointment) %}
+                {% set isDone = data | userHasReadAppointment(appointment) %}
+{% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
                     {{ read.opinion | toTag }}
@@ -308,6 +314,17 @@
               <td class="app-placeholder-action-cell">
                 {% if resumeAppointment and appointment.id == resumeAppointment.id and not (data | userHasReadAppointment(appointment)) %}
                   <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
+                {% else %}
+                  {# The link says what opening the case will do, with the name
+                     hidden for screen readers so each row's link is distinct #}
+                  {% if data | userHasReadAppointment(appointment) %}
+                    {% set caseActionText = "View read" %}
+                  {% elseif (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
+                    {% set caseActionText = "View case" %}
+                  {% else %}
+                    {% set caseActionText = "Read case" %}
+                  {% endif %}
+                  <a href="{{ readingHref }}" class="app-nowrap">{{ caseActionText }} {{- ((" for " + (appointment.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
                 {% endif %}
               </td>
             </tr>
@@ -355,7 +372,7 @@
           {% set allViewTechnicalRecallAppointments = allViewTechnicalRecallAppointments | push(appointment) %}
         {% elseif appointmentOutcome == 'recall_for_assessment' %}
           {% set allViewRecallForAssessmentAppointments = allViewRecallForAssessmentAppointments | push(appointment) %}
-        {% elseif appointmentState == 'arbitration_required' or appointmentState == 'in_arbitration' %}
+        {% elseif appointmentState == 'awaiting_arbitration' or appointmentState == 'in_arbitration' %}
           {% set allViewArbitrationAppointments = allViewArbitrationAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
@@ -431,6 +448,7 @@
             <th scope="col">1st read</th>
             <th scope="col">2nd read</th>
             <th scope="col">Outcome</th>
+            <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
           </tr>
         </thead>
         <tbody>
@@ -444,13 +462,11 @@
                 {% set readingHref -%}
                   /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
                 {%- endset %}
+                <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <a href="{{ readingHref }}">{{ appointment.participant | getFullName }}</a>
-
                 {% if appointment | awaitingPriors %}
-                <br>
                   {{ "Awaiting priors" | toTag }}
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
@@ -542,11 +558,25 @@
                   {{ "Waiting for 1st read" | toTag }}
                 {% elseif caseState == 'awaiting_second_read' %}
                   {{ "Waiting for 2nd read" | toTag }}
-                {% elseif caseState == 'arbitration_required' or caseState == 'in_arbitration' %}
+                {% elseif caseState == 'awaiting_finalisation' %}
+                  {{ "Awaiting finalisation" | toTag }}
+                {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
                   {{ "Arbitration" | toTag }}
                 {% else %}
                   {{ (appointment.readingCase | getReadingCaseOutcome(data.settings)) | toTag }}
                 {% endif %}
+              </td>
+              <td class="app-placeholder-action-cell">
+                {# The link says what opening the case will do, with the name
+                   hidden for screen readers so each row's link is distinct #}
+                {% if data | userHasReadAppointment(appointment) %}
+                  {% set caseActionText = "View read" %}
+                {% elseif (data | canUserReadAppointment(appointment)) and not (appointment | userRequestedPriors(data.currentUser.id)) %}
+                  {% set caseActionText = "Read case" %}
+                {% else %}
+                  {% set caseActionText = "View case" %}
+                {% endif %}
+                <a href="{{ readingHref }}" class="app-nowrap">{{ caseActionText }} {{- ((" for " + (appointment.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
               </td>
             </tr>
           {% endfor %}
@@ -564,6 +594,7 @@
                 <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
               {% endif %}
             </td>
+            <td></td>
             <td></td>
             <td></td>
             <td></td>

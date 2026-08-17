@@ -79,7 +79,7 @@
 
 {# Full name with age #}
 {% set nameWithAge %}
-  {{ participant | getFullName }}
+  {{ participant | getFullNameReversed }}
 
 {% endset %}
 {% set participantRowItems = participantRowItems | push({
