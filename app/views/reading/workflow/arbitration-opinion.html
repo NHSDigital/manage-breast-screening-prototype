@@ -1,7 +1,8 @@
-{# app/views/reading/workflow/opinion.html #}
-{# Main reading opinion page - entry point for reading workflow.
-   Arbitration renders arbitration-opinion.html instead; the shared pieces
-   live in _includes/reading/opinion-*.njk #}
+{# app/views/reading/workflow/arbitration-opinion.html #}
+{# Arbitration opinion page - the reading opinion page (thumbnails, medical
+   history, priors) plus the first and second reads, whose visibility is the
+   showReads/revealStyle settings. Rendered for the /opinion step in
+   arbitration sessions. #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -19,11 +20,10 @@
 {% block pageContent %}
 
   {# =========================================================
-     Setup: read state
+     Setup: read state - the case's arbitration read, not a per-user one
      ========================================================= #}
 
-  {# Get existing read data for this user (saved read) #}
-  {% set existingRead = readingCase | getReadForUser(data.currentUser.id) %}
+  {% set existingRead = readingCase | getArbitrationRead %}
   {% set existingOpinion = existingRead.opinion %}
 
   {# Also check for in-progress read in temp data #}
@@ -33,7 +33,7 @@
   {% set hasExistingOpinion = existingOpinion or tempOpinion %}
   {% set currentOpinion = tempOpinion or existingOpinion %}
 
-  {% set opinionHeading = "Update review" if hasExistingOpinion else "Review images" %}
+  {% set opinionHeading = "Update outcome" if hasExistingOpinion else "Arbitrate case" %}
 
   {# Opinion form data attributes are used to manage the first-load lockout #}
   {% set opinionDelayEnabled = data.settings.reading.enableOpinionDelay != 'false' %}
@@ -42,6 +42,12 @@
   {# =========================================================
      Page layout
      ========================================================= #}
+
+  {# Which presentation the reads get - the band handles most; 'tabs' folds
+     them into the additional-information tabs below #}
+  {% set showReadsSetting = data.settings.reading.arbitration.showReads or 'on_demand' %}
+  {% set revealStyle = data.settings.reading.arbitration.revealStyle or 'expander' %}
+  {% set readsAsTabs = showReadsSetting == 'on_demand' and revealStyle == 'tabs' %}
 
   {% include "_includes/reading/opinion-header.njk" %}
 
@@ -66,10 +72,49 @@
         {# Main opinion stuff #}
         {% include "_includes/reading/opinion-controls.njk" %}
 
+        {# First and second reads, below the opinion choice. This column sits
+           inside the opinion form, so adopt buttons override its destination
+           with formaction rather than nesting their own forms. #}
+        {% set adoptViaFormaction = true %}
+        {% if not readsAsTabs %}
+          {% include "_includes/reading/arbitration-reads-band.njk" %}
+        {% endif %}
+
         <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
-        {# Combined information card with priors, image notes, and medical summary as sections #}
-        {% include "_includes/reading/opinion-info-card.njk" %}
+        {% if readsAsTabs %}
+
+          {# Case information and the reads as tabs - the reads hidden by
+             default but one click away, both together in a single tab #}
+          {% set infoCardHtml %}
+            {% set infoCardBare = true %}
+            {% include "_includes/reading/opinion-info-card.njk" %}
+          {% endset %}
+          {% set readsHtml %}
+            {% set readsLayout = 'condensed' %}
+            {% include "_includes/reading/arbitration-reads-cards.njk" %}
+          {% endset %}
+          {{ tabs({
+            items: [
+              {
+                label: "Case information",
+                id: "case-information",
+                panel: { html: infoCardHtml }
+              },
+              {
+                label: "First and second reads",
+                id: "first-and-second-reads",
+                panel: { html: readsHtml }
+              }
+            ]
+          }) }}
+
+        {% else %}
+
+          {# Combined information card with priors, image notes, and medical summary as sections #}
+          {% include "_includes/reading/opinion-info-card.njk" %}
+
+        {% endif %}
 
         {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">

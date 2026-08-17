@@ -1,0 +1,51 @@
+{# One original read as a heading plus a plain summary list with an adopt
+   button - no card chrome. The heading says which read this is; the list
+   opens with the outcome and carries a "Read by" row near the bottom.
+   Expects in context: read, appointment, appointmentId, data
+   Optional: readLabel ("First read") - omit only where the surrounding
+   context already gives the read a heading; readHeadingLevel (default 3),
+   adoptButtonText, hideAdoptButtons, adoptViaFormaction
+   (see arbitration-read-card.njk) #}
+
+{% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
+{% if withImages %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
+{% endif %}
+
+{% if readLabel %}
+  {% set readHeadingLevel = readHeadingLevel or 3 %}
+  <h{{ readHeadingLevel }} class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ readLabel }}</h{{ readHeadingLevel }}>
+{% endif %}
+
+{% set allowEdits = false %}
+{% set hideOpinionRow = false %}
+{% set showReaderRow = true %}
+{% set readerRowLabel = "Read by" %}
+{% set readerRowPosition = null %}
+{% set showAnnotationImages = withImages %}
+{% set annotationImagePaths = allPaths %}
+{% include "_includes/summary-lists/read-summary.njk" %}
+
+{% if not hideAdoptButtons %}
+  {# The reader id rides on the button so a shared form container can
+     serialise whichever was clicked #}
+  {% if adoptViaFormaction %}
+    {{ button({
+      text: adoptButtonText or "Agree – use as the outcome",
+      name: "agreedReaderId",
+      value: read.readerId,
+      classes: "nhsuk-u-margin-bottom-0  nhsuk-button--secondary",
+      attributes: { formaction: "./arbitration-adopt-read" }
+    }) }}
+  {% else %}
+    <form action="./arbitration-adopt-read" method="post">
+      {{ button({
+        text: adoptButtonText or "Agree – use as the outcome",
+        name: "agreedReaderId",
+        value: read.readerId,
+        classes: "nhsuk-u-margin-bottom-0  nhsuk-button--secondary"
+      }) }}
+    </form>
+  {% endif %}
+{% endif %}

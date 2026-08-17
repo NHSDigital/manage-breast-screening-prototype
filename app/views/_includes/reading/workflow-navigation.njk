@@ -18,7 +18,11 @@
 
     {% if progress.hasNextUserReadable %}
       <div class="nhsuk-grid-column-one-third app-align-right">
-        {% if data | canUserReadAppointment(appointment) %}
+        {# Still to do on this case, so skipping past it is meaningful. In
+           arbitration that's whether it has been arbitrated - a panel member
+           may have read it originally and still owe the arbitration #}
+        {% set stillToDo = (not (data | appointmentHasBeenArbitrated(appointment))) if isArbitration else (data | canUserReadAppointment(appointment)) %}
+        {% if stillToDo %}
           {{ appForwardLink({
             href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
             text: "Skip to next"

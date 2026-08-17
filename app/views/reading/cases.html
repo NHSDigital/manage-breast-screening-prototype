@@ -14,16 +14,21 @@
   text: "Back to reading"
 } %}
 
-{# Build a filtered URL, carrying the filters that aren't being changed #}
-{%- macro casesUrl(scope, state, deferred, query) -%}
-  /reading/cases?scope={{ scope }}
-  {%- if state %}&state={{ state }}{% endif -%}
-  {%- if deferred %}&deferred=true{% endif -%}
-  {%- if query %}&q={{ query | urlencode }}{% endif -%}
+{# Build a filtered URL, carrying the filters that aren't being changed.
+   Takes the current filters and an object of overrides, so a link only names
+   what it changes. #}
+{%- macro casesUrl(filters, changes) -%}
+  {%- set merged = filters | mergeObjects(changes) -%}
+  /reading/cases?scope={{ merged.scope }}
+  {%- if merged.state %}&state={{ merged.state }}{% endif -%}
+  {%- if merged.deferred %}&deferred=true{% endif -%}
+  {%- if merged.awaitingPriors %}&priors=true{% endif -%}
+  {%- if merged.blocked %}&blocked=true{% endif -%}
+  {%- if merged.query %}&q={{ merged.query | urlencode }}{% endif -%}
 {%- endmacro -%}
 
 {% set scopeLabels = {
-  "open": "Open rounds",
+  "open": "Open cases",
   "recently-closed": "Recently closed",
   "all": "All, including history"
 } %}
@@ -38,6 +43,8 @@
     <input type="hidden" name="scope" value="{{ filters.scope }}">
     {% if filters.state %}<input type="hidden" name="state" value="{{ filters.state }}">{% endif %}
     {% if filters.deferred %}<input type="hidden" name="deferred" value="true">{% endif %}
+    {% if filters.awaitingPriors %}<input type="hidden" name="priors" value="true">{% endif %}
+    {% if filters.blocked %}<input type="hidden" name="blocked" value="true">{% endif %}
 
     {{ searchInput({
       id: "case-search",
@@ -54,7 +61,7 @@
   {% for scope in scopes %}
     {% set scopeNavItems = scopeNavItems | push({
       text: scopeLabels[scope],
-      href: casesUrl(scope, filters.state, filters.deferred, filters.query) | trim,
+      href: casesUrl(filters, { scope: scope }) | trim,
       current: true if scope == filters.scope
     }) %}
   {% endfor %}
@@ -67,23 +74,38 @@
   {# State filters, with counts from the current scope #}
   <p class="nhsuk-u-margin-bottom-2">
     <strong>State:</strong>
-    <a href="{{ casesUrl(filters.scope, null, filters.deferred, filters.query) | trim }}"
+    <a href="{{ casesUrl(filters, { state: null }) | trim }}"
        class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if not filters.state }}">
       All ({{ counts.all }})
     </a>
     {% for state in states %}
       {% if counts[state] %}
         &nbsp;·&nbsp;
-        <a href="{{ casesUrl(filters.scope, state, filters.deferred, filters.query) | trim }}"
+        <a href="{{ casesUrl(filters, { state: state }) | trim }}"
            class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.state == state }}">
           {{ state | getStatusText("readingState") or (state | formatWords | sentenceCase) }} ({{ counts[state] }})
         </a>
       {% endif %}
     {% endfor %}
+  </p>
+
+  {# Blocked filters - what's holding a case up, whatever stage it's at. Each
+     reason on its own, plus one for blocked by either #}
+  <p class="nhsuk-u-margin-bottom-2">
+    <strong>Blocked:</strong>
+    <a href="{{ casesUrl(filters, { blocked: (not filters.blocked), deferred: false, awaitingPriors: false }) | trim }}"
+       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.blocked }}">
+      Any reason ({{ counts.blocked }})
+    </a>
     &nbsp;·&nbsp;
-    <a href="{{ casesUrl(filters.scope, filters.state, (not filters.deferred), filters.query) | trim }}"
+    <a href="{{ casesUrl(filters, { deferred: (not filters.deferred), blocked: false }) | trim }}"
        class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.deferred }}">
       Deferred ({{ counts.deferred }})
+    </a>
+    &nbsp;·&nbsp;
+    <a href="{{ casesUrl(filters, { awaitingPriors: (not filters.awaitingPriors), blocked: false }) | trim }}"
+       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.awaitingPriors }}">
+      Awaiting priors ({{ counts.awaitingPriors }})
     </a>
   </p>
 
@@ -106,17 +128,14 @@
           <th scope="col">Images taken</th>
           <th scope="col">Screened at</th>
           <th scope="col">Reads</th>
-          <th scope="col">State</th>
-          <th scope="col">Outcome</th>
+          <th scope="col">Status</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for row in rows %}
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
-              <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-link--no-visited-state">
-                {{ row.participant | getFullNameReversed }}
-              </a>
+              <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-u-font-weight-bold nhsuk-link--no-visited-state">{{ row.participant | getFullNameReversed }}</a>
               {% if row.isDeferred %}
                 <br>{{ "Deferred" | toTag }}
               {% endif %}
@@ -136,19 +155,16 @@
             </td>
             <td class="nhsuk-table__cell">{{ row.readCount }}</td>
             <td class="nhsuk-table__cell">
-              {{ row.state | toTag({ vocabulary: "readingState" }) }}
-              {% if row.statusDisplay.destination %}
-                <br>
-                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                  {{ row.statusDisplay.destination | sentenceCase }}
-                </span>
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
               {% if row.outcome %}
                 {{ row.outcome | toTag }}
               {% else %}
-                <span class="nhsuk-u-secondary-text-colour">Not yet</span>
+                {{ row.state | toTag({ vocabulary: "readingState" }) }}
+                {% if row.statusDisplay.destination %}
+                  <br>
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                    {{ row.statusDisplay.destination | sentenceCase }}
+                  </span>
+                {% endif %}
               {% endif %}
             </td>
           </tr>

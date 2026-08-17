@@ -45,7 +45,7 @@
       {% endset %}
 
       {% set deferredHtml %}
-        {{ deferral.deferredAt | formatDate("D MMM YYYY") }}
+        {{ deferral.deferredAt | formatDate }}
         <span class="nhsuk-u-secondary-text-colour">({{ deferral.deferredAt | formatRelativeDate }})</span>
       {% endset %}
 
@@ -104,7 +104,7 @@
       {% set deferral = row.deferral %}
 
       {% set deferredHtml %}
-        {{ deferral.deferredAt | formatDate("D MMM YYYY") }}
+        {{ deferral.deferredAt | formatDate }}
         <span class="nhsuk-u-secondary-text-colour">({{ deferral.deferredAt | formatRelativeDate }})</span>
       {% endset %}
 
@@ -123,7 +123,7 @@
       {% endset %}
 
       {% set resolvedHtml %}
-        {{ deferral.resolvedAt | formatDate("D MMM YYYY") }}
+        {{ deferral.resolvedAt | formatDate }}
         {% if deferral.resolvedBy %}
           by {{ deferral.resolvedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
         {% endif %}

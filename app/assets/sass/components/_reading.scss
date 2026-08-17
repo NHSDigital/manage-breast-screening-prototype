@@ -117,7 +117,6 @@
 
 .app-placeholder-action-cell {
   padding-right: 15px;
-  text-align: right;
   white-space: nowrap;
 }
 
@@ -394,4 +393,41 @@
     margin-top: auto;
     padding-top: nhsuk-spacing(4);
   }
+}
+
+// Reveal-in-place toggle inside the first-and-second-reads feature card on
+// the arbitration opinion page - a details element whose summary reads as a
+// link
+.app-reads-card-reveal {
+  margin-top: 0;
+
+  &__toggle {
+    display: inline-block;
+    color: $nhsuk-link-colour;
+    @include nhsuk-font-size(19);
+    text-decoration: underline;
+    cursor: pointer;
+
+    // Hide the default disclosure triangle; the link text carries the affordance
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &:hover {
+      color: $nhsuk-link-hover-colour;
+    }
+  }
+
+  &[open] &__toggle-text--closed,
+  &:not([open]) &__toggle-text--open {
+    display: none;
+  }
+}
+
+// When the reveal is open the condensed lists repeat the reader/date facts,
+// so the closed-state meta list bows out
+.nhsuk-summary-list:has(+ .app-reads-card-reveal[open]) {
+  display: none;
 }
