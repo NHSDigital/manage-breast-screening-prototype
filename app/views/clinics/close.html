@@ -1,0 +1,119 @@
+{# app/views/clinics/close.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from "_includes/close-clinic-appointment-row.njk" import closeClinicAppointmentRow with context %}
+
+{% set pageHeading = "Close clinic " ~ clinic.clinicCode %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set back = {
+  href: "/clinics/" + clinicId,
+  text: "Back to clinic"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ unit.name }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
+
+  {# Table of appointments in one status group #}
+  {% macro statusGroupTable(appointments, clinicId, showActions) %}
+    <table class="nhsuk-table app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0" data-show-actions="{{ "true" if showActions else "false" }}">
+      <thead class="nhsuk-table__head">
+        <tr>
+          <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
+          <th class="nhsuk-table__header">Details</th>
+          <th class="nhsuk-table__header app-clinic-appointments-table__status-column">Status</th>
+          <th class="nhsuk-table__header app-clinic-appointments-table__actions-column">{{ "Actions" if showActions }}</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        {% for appointment in appointments %}
+          {{ closeClinicAppointmentRow(appointment, appointment.participant, clinicId, showActions) }}
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endmacro %}
+
+  {# Bulk action button - close-clinic.js swaps it for the undo message once used #}
+  {% macro bulkActionControl(clinicId, markStatus, undoStatus, buttonText, markedLabel) %}
+    <p class="js-bulk-action-container">
+      <a href="/clinics/{{ clinicId }}/close/set-status-all/{{ markStatus }}" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-bulk-action" role="button">{{ buttonText }}</a>
+      <span hidden class="js-bulk-undo-message"><span class="js-bulk-count"></span> marked as {{ markedLabel }} (<a href="/clinics/{{ clinicId }}/close/set-status-all/{{ undoStatus }}" class="js-bulk-action">Undo</a>)</span>
+    </p>
+  {% endmacro %}
+
+  <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
+
+    {% set introHtml %}
+      <p>Record an appointment outcome for every participant to close this clinic.</p>
+      <p>There were {{ appointmentCount }} total participants in this clinic, and {{ needsOutcomeCount }} still need a final outcome assigned.</p>
+    {% endset %}
+
+    {{ insetText({
+      html: introHtml
+    }) }}
+
+    {% if needsOutcomeCount %}
+      {% set needsOutcomeHtml %}
+        {% if inProgressAppointments | length %}
+          <h3 class="nhsuk-heading-s">In progress</h3>
+          <p>Complete or end these appointments to close the clinic.</p>
+          {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
+        {% endif %}
+
+        {# Checked in, not screened - includes attended not screened appointments still needing details #}
+        {% if checkedInAppointments | length %}
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
+          {{ bulkActionControl(clinicId, "attended_not_screened", "checked_in", "Mark all as attended not screened", "attended not screened") }}
+          {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
+        {% endif %}
+
+        {% if scheduledAppointments | length %}
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
+          {{ bulkActionControl(clinicId, "did_not_attend", "scheduled", "Mark all as did not attend", "did not attend") }}
+          {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
+        {% endif %}
+      {% endset %}
+
+      {{ card({
+        heading: "Needs an outcome (" + needsOutcomeCount + ")",
+        headingLevel: "2",
+        feature: true,
+        descriptionHtml: needsOutcomeHtml
+      }) }}
+    {% endif %}
+
+    {% set outcomeRecordedHtml %}
+      <p><a href="" class="js-refresh-link" hidden>Refresh to update the list</a></p>
+      {% if outcomeRecordedAppointments | length %}
+        {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
+      {% endif %}
+    {% endset %}
+
+    {{ card({
+      heading: "Outcome recorded (" + outcomeRecordedAppointments | length + ")",
+      headingLevel: "2",
+      feature: true,
+      classes: "app-card--feature-green",
+      descriptionHtml: outcomeRecordedHtml
+    }) }}
+
+  </div>
+
+  <form method="post" action="/clinics/{{ clinicId }}/close">
+    {{ button({
+      text: "Confirm and close clinic"
+    }) }}
+  </form>
+
+{% endblock %}
+
+{% block pageScripts %}
+  <script type="module" src="/assets/javascript/close-clinic.js"></script>
+{% endblock %}

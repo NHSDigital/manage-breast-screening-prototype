@@ -143,7 +143,7 @@ const getFilteredClinics = (clinics, filter = 'all') => {
   switch (filter) {
     case 'today':
       return recentClinics.filter((clinic) =>
-        dayjs(clinic.date).isSame(today, 'day')
+        dayjs(clinic.date).isSame(today, 'day') && clinic.status !== 'closed'
       )
 
     case 'upcoming':
@@ -153,7 +153,10 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 
     case 'completed':
       return recentClinics
-        .filter((clinic) => dayjs(clinic.date).isBefore(today, 'day'))
+        .filter((clinic) =>
+          dayjs(clinic.date).isBefore(today, 'day') ||
+          (dayjs(clinic.date).isSame(today, 'day') && clinic.status === 'closed')
+        )
         .sort((a, b) => new Date(b.date) - new Date(a.date)) // Most recent first
 
     case 'all':
@@ -164,6 +167,29 @@ const getFilteredClinics = (clinics, filter = 'all') => {
   }
 }
 
+/**
+ * Find and update a clinic in session data
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @param {object} updates - Fields to merge into the clinic
+ * @returns {object | null} Updated clinic or null if not found
+ */
+const updateClinic = (data, clinicId, updates) => {
+  const clinicIndex = data.clinics.findIndex((c) => c.id === clinicId)
+  if (clinicIndex === -1) return null
+
+  // Update in the attached array (same-request reads) and record the change
+  // in data._changes (persistence - the attached array is rebuilt from the
+  // shared data store on every request; see middleware in app/routes.js)
+  const updatedClinic = { ...data.clinics[clinicIndex], ...updates }
+  data.clinics[clinicIndex] = updatedClinic
+  if (data._changes?.clinics) {
+    data._changes.clinics[clinicId] = updatedClinic
+  }
+  return updatedClinic
+}
+
 module.exports = {
   getClinic,
   getClinicLocationName,
@@ -171,5 +197,6 @@ module.exports = {
   getFilteredClinics,
   getClinicAppointments,
   formatTimeSlot,
-  getClinicHours
+  getClinicHours,
+  updateClinic
 }

@@ -1,0 +1,104 @@
+{# app/views/_includes/reading/prior-mammogram-row.njk #}
+{#
+  A single prior mammogram row on the priors management page. Also rendered
+  on its own by the prior-mammogram-row fragment route so fragment-actions.js
+  can swap a row in place after a status change - keep it self-contained.
+
+  appointment - the screening appointment the prior belongs to
+  mammogram - the prior mammogram record (one entry of previousMammograms)
+
+  Import with context - the row reads participants, reading thresholds and
+  the current user from data.
+#}
+
+{% macro priorMammogramRow(appointment, mammogram) %}
+  <tr data-fragment-id="{{ mammogram.id }}">
+    {# Participant name - look up from session data #}
+    {% set thisParticipant = data | getParticipant(appointment.participantId) %}
+    <td>
+      <a href="/clinics/{{ appointment.clinicId }}/appointments/{{ appointment.id }}">
+        {{ thisParticipant | getFullNameReversed }}
+      </a>
+    </td>
+
+    {# Screening date #}
+    <td>
+      {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
+      {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+        {{ "Urgent" | toTag }}<br>
+      {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+        {{ "Due soon" | toTag }}<br>
+      {% endif %}
+      {{ appointment.timing.startTime | formatDate }}<br>
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+        {{ appointment.timing.startTime | formatRelativeDate }}
+      </span>
+    </td>
+
+    {# Mammogram location and date, then the request story - who
+       requested or actioned it, when, and the reader's reason #}
+    <td>
+      {% if mammogram.requestStatus == "pending" %}
+        {# Requested by a reader, so the request date is theirs #}
+        {% set changedLabel = "Requested" %}
+        {% set changedDate = mammogram.requestedDate %}
+        {% set changedBy = mammogram.requestedBy %}
+      {% elseif mammogram.requestStatus != "not_requested" %}
+        {# Actioned by admin staff #}
+        {% set changedLabel = "Requested" if mammogram.requestStatus == "requested" else "Updated" %}
+        {% set changedDate = mammogram.statusChangedDate %}
+        {% set changedBy = mammogram.statusChangedBy %}
+      {% endif %}
+
+      <p class="nhsuk-u-margin-bottom-0">{{ mammogram | summarisePriorMammogram }}</p>
+
+      {% if changedDate or mammogram.requestReason %}
+        <p class="nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0">
+          {% if changedDate %}
+            <span>
+              {{- changedLabel }}
+              {%- if changedBy %} by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+              on {{ changedDate | formatDate("D MMMM YYYY") -}}
+            </span>
+          {% endif %}
+          {% if mammogram.requestReason %}
+            {% if changedDate %}<br>{% endif %}
+            Reason: {{ mammogram.requestReason }}
+          {% endif %}
+        </p>
+      {% endif %}
+    </td>
+
+    {# Status #}
+    <td>
+      {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
+    </td>
+
+    {# Actions - each a one-click form, submitted in place by fragment-actions.js #}
+    <td>
+      {% set availableActions = [] %}
+      {% if mammogram.requestStatus == "not_requested" or mammogram.requestStatus == "pending" %}
+        {% set availableActions = [
+          { status: "requested", label: "Mark as requested" },
+          { status: "not_available", label: "Not available" },
+          { status: "not_needed", label: "Not needed" }
+        ] %}
+      {% elseif mammogram.requestStatus == "requested" %}
+        {% set availableActions = [
+          { status: "received", label: "Mark as received" },
+          { status: "not_available", label: "Not available" },
+          { status: "not_needed", label: "Not needed" }
+        ] %}
+      {% endif %}
+
+      {% for action in availableActions %}
+        <form action="/reading/priors/update-status" method="POST" data-fragment-action>
+          <input type="hidden" name="appointmentId" value="{{ appointment.id }}">
+          <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
+          <input type="hidden" name="newStatus" value="{{ action.status }}">
+          <button type="submit" class="nhsuk-link--no-visited-state app-link-button">{{ action.label }}</button>
+        </form>
+      {% endfor %}
+    </td>
+  </tr>
+{% endmacro %}
