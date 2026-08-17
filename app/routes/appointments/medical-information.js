@@ -67,6 +67,37 @@ module.exports = (router) => {
     }
   )
 
+  // Save pregnancy/breastfeeding from modal form
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding-save',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+
+      const postedFactors = req.body?.breastDensityFactors
+      const factors = (
+        Array.isArray(postedFactors)
+          ? postedFactors
+          : postedFactors
+            ? [postedFactors]
+            : []
+      ).filter((factor) => factor && factor !== '_unchecked')
+
+      if (data.appointment?.id !== appointmentId) {
+        res.status(409).send()
+        return
+      }
+
+      const medicalInformation = data.appointment.medicalInformation || {}
+      medicalInformation.breastDensityFactors = factors
+      data.appointment.medicalInformation = medicalInformation
+
+      delete data.breastDensityFactors
+
+      res.redirect(modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`))
+    }
+  )
+
   // Save breast features (includes converting JSON string to structured data)
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information/record-breast-features/save',

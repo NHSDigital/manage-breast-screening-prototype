@@ -105,15 +105,16 @@
         value: {
           html: hrtInputHtml if allowEdits else hrtSummaryHtml
         }
-      },
-      {
-        key: {
-          text: "Pregnant or breastfeeding"
-        },
-        value: {
-          html: pregnantOrBreastfeedingInputHtml if allowEdits else pregnantOrBreastfeedingSummaryHtml
-        }
       }
     ]
   } | removeLastRowBorder ) }}
+
+  <p class="nhsuk-u-margin-top-4">
+    {{ button({
+      text: "Add pregnancy and breastfeeding",
+      href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
+      variant: "secondary",
+      small: true
+    } | openInModal) }}
+  </p>
 </div>
