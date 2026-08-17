@@ -210,7 +210,7 @@ const STATUS_TAGS = {
     complete: { label: 'Screened', colour: 'green' },
     partially_screened: { label: 'Partially screened', colour: 'orange' },
     did_not_attend: { label: 'Did not attend', colour: 'red' },
-    attended_not_screened: { label: 'Attended not screened', colour: 'orange' },
+    attended_not_screened: { label: 'Attended not screened', colour: 'red' },
     cancelled: { label: 'Cancelled', colour: 'red' },
     rescheduled: { label: 'Reschedule requested', colour: 'red' }
   },
