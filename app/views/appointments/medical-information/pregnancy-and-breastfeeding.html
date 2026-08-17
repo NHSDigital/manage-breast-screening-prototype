@@ -1,0 +1,40 @@
+{# app/views/appointments/medical-information/pregnancy-and-breastfeeding.html #}
+
+{% extends parentLayout or 'layout-appointment.html' %}
+
+{% set pageHeading = "Pregnancy and breastfeeding" %}
+{% set formAction = "./pregnancy-and-breastfeeding-save" %}
+
+{% block pageContent %}
+
+  {% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {{ checkboxes({
+    name: "breastDensityFactors",
+    values: breastDensityFactors.factors,
+    classes: "nhsuk-checkboxes--small",
+    fieldset: {
+      legend: {
+        text: "Is " + participant.demographicInformation.firstName + " pregnant or breastfeeding?",
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "pregnant",
+        text: "Pregnant"
+      },
+      {
+        value: "breastfeeding",
+        text: "Breastfeeding"
+      }
+    ]
+  }) }}
+
+  {{ button({
+    text: "Save"
+  }) }}
+
+{% endblock %}

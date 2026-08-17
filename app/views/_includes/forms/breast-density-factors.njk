@@ -105,15 +105,11 @@
         value: {
           html: hrtInputHtml if allowEdits else hrtSummaryHtml
         }
-      },
-      {
-        key: {
-          text: "Pregnant or breastfeeding"
-        },
-        value: {
-          html: pregnantOrBreastfeedingInputHtml if allowEdits else pregnantOrBreastfeedingSummaryHtml
-        }
       }
     ]
   } | removeLastRowBorder ) }}
+
+  <p class="nhsuk-u-margin-top-4">
+    {{ appLink({ text: "Pregnancy and breastfeeding", href: contextUrl + "/medical-information/pregnancy-and-breastfeeding" } | openInModal) }}
+  </p>
 </div>
