@@ -13,6 +13,19 @@
 {# Display format for medical information sections #}
 {% set displayFormat = "expander" %}
 
+{# Check if participant has active (non-removed) breast implants #}
+{% set hasActiveImplants = false %}
+{% set implantRecords = appointment.medicalInformation.medicalHistory.breastImplantsAugmentation %}
+{% if implantRecords | length %}
+  {% for implant in implantRecords %}
+    {% if not implant.hasBeenRemoved %}
+      {% set hasActiveImplants = true %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+
+{% set defaultAuthoriser = "J. Wyatt" %}
+
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">
@@ -29,28 +42,129 @@
     value: appointment.workflowStatus['review-breast-features-after-imaging']
   }) }}
 
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
+  {% if hasActiveImplants and appointment.workflowStatus['review-medical-information'] != 'completed' %}
+    {{ insetText({
+      html: "<p>You do not have permission to authorise some views.</p>"
+    }) }}
+    <div class="nhsuk-button-group">
       {{ button({
-        text: "Authorise and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
-        classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
+        text: "Authorise with " + defaultAuthoriser + " and continue",
+        classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections js-irmer-authorise-button"
       }) }}
-      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">This will authorise imaging by {{ data.currentUser.firstName }} {{ data.currentUser.lastName }}</p>
+      <a href="#" class="js-choose-authoriser-link">Choose alternative authoriser</a>
     </div>
-  </div>
+  {% else %}
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        {{ button({
+          text: "Authorise and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
+          classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
+        }) }}
+        <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">This will authorise imaging by {{ data.currentUser.firstName }} {{ data.currentUser.lastName }}</p>
+      </div>
+    </div>
+  {% endif %}
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
   {% include "_includes/medical-information/index.njk" %}
 
   <div class="nhsuk-form-group">
-    {{ button({
-      text: "Authorise and continue",
-      classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
-    }) }}
-    <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5">This will authorise imaging by {{ data.currentUser.firstName }} {{ data.currentUser.lastName }}</p>
+    {% if hasActiveImplants and appointment.workflowStatus['review-medical-information'] != 'completed' %}
+      {{ insetText({
+        html: "<p>You do not have permission to authorise some views.</p>"
+      }) }}
+      <div class="nhsuk-button-group">
+        {{ button({
+          text: "Authorise with " + defaultAuthoriser + " and continue",
+          classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections js-irmer-authorise-button"
+        }) }}
+        <a href="#" class="js-choose-authoriser-link">Choose alternative authoriser</a>
+      </div>
+    {% else %}
+      {{ button({
+        text: "Authorise and continue",
+        classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
+      }) }}
+      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5">This will authorise imaging by {{ data.currentUser.firstName }} {{ data.currentUser.lastName }}</p>
+    {% endif %}
 
-    {% include "screening-cannot-proceed-link.njk" %}
+    <div class="nhsuk-u-margin-top-6">
+      {% include "screening-cannot-proceed-link.njk" %}
+    </div>
   </div>
 
+  {# Alternative authoriser modal #}
+  {% if hasActiveImplants %}
+    {% set authoriserModalContent %}
+      {{ radios({
+        name: "irmerAuthoriser",
+        fieldset: {
+          legend: {
+            text: "Select an alternative authoriser"
+          }
+        },
+        items: [
+          { value: "S. Patel", text: "S. Patel" },
+          { value: "R. Thompson", text: "R. Thompson" },
+          { value: "L. Okonkwo", text: "L. Okonkwo" },
+          { value: "H. Chambers", text: "H. Chambers" },
+          { value: "F. Kaur", text: "F. Kaur" }
+        ]
+      }) }}
+    {% endset %}
+
+    {{ appModal({
+      id: "choose-authoriser-modal",
+      title: "Choose alternative authoriser",
+      showCloseButton: true,
+      content: authoriserModalContent,
+      actions: [
+        {
+          text: "Save",
+          action: "close",
+          classes: "js-select-authoriser"
+        },
+        {
+          text: "Cancel",
+          element: "link",
+          action: "close"
+        }
+      ]
+    }) }}
+  {% endif %}
+
 {% endblock %}
+
+{% if hasActiveImplants %}
+{% block pageScripts %}
+  <script>
+    // IRMER alternative authoriser selection
+    document.addEventListener("DOMContentLoaded", () => {
+      const modal = document.getElementById("choose-authoriser-modal")
+      if (!modal) return
+
+      // Open modal when "Choose alternative authoriser" is clicked
+      document.querySelectorAll(".js-choose-authoriser-link").forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault()
+          window.openModal("choose-authoriser-modal")
+        })
+      })
+
+      // Update all authorise buttons when an authoriser is selected
+      const selectButton = modal.querySelector(".js-select-authoriser")
+      if (selectButton) {
+        selectButton.addEventListener("click", () => {
+          const selected = modal.querySelector("input[name='irmerAuthoriser']:checked")
+          if (selected) {
+            document.querySelectorAll(".js-irmer-authorise-button").forEach((btn) => {
+              btn.textContent = "Authorise with " + selected.value + " and continue"
+            })
+          }
+        })
+      }
+    })
+  </script>
+{% endblock %}
+{% endif %}
