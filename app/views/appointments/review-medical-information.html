@@ -24,8 +24,6 @@
   {% endfor %}
 {% endif %}
 
-{% set defaultAuthoriser = "J. Wyatt" %}
-
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">
@@ -48,10 +46,11 @@
     }) }}
     <div class="nhsuk-button-group">
       {{ button({
-        text: "Authorise with " + defaultAuthoriser + " and continue",
-        classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections js-irmer-authorise-button"
+        text: "Choose an authoriser",
+        classes: "nhsuk-u-margin-bottom-0 js-irmer-authorise-button js-choose-authoriser-link",
+        attributes: { type: "button" }
       }) }}
-      <a href="#" class="js-choose-authoriser-link">Choose alternative authoriser</a>
+      <a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link" style="display:none">Choose alternative authoriser</a>
     </div>
   {% else %}
     <div class="nhsuk-grid-row">
@@ -76,10 +75,11 @@
       }) }}
       <div class="nhsuk-button-group">
         {{ button({
-          text: "Authorise with " + defaultAuthoriser + " and continue",
-          classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections js-irmer-authorise-button"
+          text: "Choose an authoriser",
+          classes: "nhsuk-u-margin-bottom-0 js-irmer-authorise-button js-choose-authoriser-link",
+          attributes: { type: "button" }
         }) }}
-        <a href="#" class="js-choose-authoriser-link">Choose alternative authoriser</a>
+        <a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link" style="display:none">Choose alternative authoriser</a>
       </div>
     {% else %}
       {{ button({
@@ -101,7 +101,7 @@
         name: "irmerAuthoriser",
         fieldset: {
           legend: {
-            text: "Select an alternative authoriser"
+            text: "Select an authoriser"
           }
         },
         items: [
@@ -116,7 +116,7 @@
 
     {{ appModal({
       id: "choose-authoriser-modal",
-      title: "Choose alternative authoriser",
+      title: "Choose an authoriser",
       showCloseButton: true,
       content: authoriserModalContent,
       actions: [
@@ -128,6 +128,12 @@
         {
           text: "Cancel",
           element: "link",
+          action: "close"
+        },
+        {
+          text: "Appointment cannot proceed",
+          element: "link",
+          href: "/clinics/" + clinicId + "/appointments/" + appointmentId + "/attended-not-screened-reason",
           action: "close"
         }
       ]
@@ -144,7 +150,7 @@
       const modal = document.getElementById("choose-authoriser-modal")
       if (!modal) return
 
-      // Open modal when "Choose alternative authoriser" is clicked
+      // Open modal when authoriser button is clicked
       document.querySelectorAll(".js-choose-authoriser-link").forEach((link) => {
         link.addEventListener("click", (event) => {
           event.preventDefault()
@@ -152,7 +158,7 @@
         })
       })
 
-      // Update all authorise buttons when an authoriser is selected
+      // Update buttons and enable form submission when an authoriser is selected
       const selectButton = modal.querySelector(".js-select-authoriser")
       if (selectButton) {
         selectButton.addEventListener("click", () => {
@@ -160,6 +166,13 @@
           if (selected) {
             document.querySelectorAll(".js-irmer-authorise-button").forEach((btn) => {
               btn.textContent = "Authorise with " + selected.value + " and continue"
+              btn.removeAttribute("type")
+              btn.classList.add("js-complete-all-sections")
+              btn.classList.remove("js-choose-authoriser-link")
+            })
+            // Show the alternative authoriser links
+            document.querySelectorAll(".js-alternative-authoriser-link").forEach((link) => {
+              link.style.display = ""
             })
           }
         })
