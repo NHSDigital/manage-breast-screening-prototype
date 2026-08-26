@@ -1,0 +1,132 @@
+{# app/views/_includes/priors/disclosed-mammogram-card.njk
+
+   One disclosed prior mammogram as a card: the full details the participant
+   gave, then the request status, history and actions. The data-mammogram-*
+   attributes are the hooks the shared in-place update script targets,
+   matching the dashboard's table cells.
+
+   Expects: mammogram, thisAppointment. Optional: priorsReturnTo. #}
+
+{# Details of the mammogram itself #}
+{% set mammogramRows = [] %}
+
+{% set mammogramRows = mammogramRows | push({
+  key: { text: "Location" },
+  value: { text: describePriorMammogramLocation(mammogram) or "Not known" }
+}) %}
+
+{% if mammogram.sameName == "differentName" %}
+  {% set mammogramRows = mammogramRows | push({
+    key: { text: "Previous name" },
+    value: { text: mammogram.previousName }
+  }) %}
+{% endif %}
+
+{% if mammogram.otherDetails %}
+  {% set mammogramRows = mammogramRows | push({
+    key: { text: "Additional information" },
+    value: { html: mammogram.otherDetails | nl2br | safe }
+  }) %}
+{% endif %}
+
+{% set recordedHtml %}
+  {{ mammogram.dateAdded | formatDate }}
+  {% if mammogram.addedBy %}
+    by {{ mammogram.addedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+  {% endif %}
+{% endset %}
+{% set mammogramRows = mammogramRows | push({
+  key: { text: "Recorded" },
+  value: { html: recordedHtml },
+  actions: {
+    items: [
+      {
+        href: getAppointmentUrl(thisAppointment),
+        text: "View appointment"
+      }
+    ]
+  }
+}) %}
+
+{# The request for the images #}
+{% set requestRows = [] %}
+
+{% set statusHtml %}
+  <div data-mammogram-status="{{ mammogram.id }}">
+    {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
+  </div>
+{% endset %}
+{% set requestRows = requestRows | push({
+  key: { text: "Request status" },
+  value: { html: statusHtml }
+}) %}
+
+{# The request story - who requested or actioned it, when, and the reader's
+   reason. Same shape as the dashboard's details cell so the shared script can
+   update it in place #}
+{% if mammogram.requestStatus == "pending" %}
+  {% set changedLabel = "Requested" %}
+  {% set changedDate = mammogram.requestedDate %}
+  {% set changedBy = mammogram.requestedBy %}
+{% elseif mammogram.requestStatus != "not_requested" %}
+  {# Seeded requests carry requestedDate only, so fall back to it #}
+  {% set changedLabel = "Requested" if mammogram.requestStatus == "requested" else "Updated" %}
+  {% set changedDate = mammogram.statusChangedDate or mammogram.requestedDate %}
+  {% set changedBy = mammogram.statusChangedBy or mammogram.requestedBy %}
+{% endif %}
+
+{% set requestHistoryHtml %}
+  <div data-mammogram-details="{{ mammogram.id }}">
+    {% if changedDate %}
+      <p class="nhsuk-u-margin-bottom-0">
+        <span class="js-prior-request">
+          {{- changedLabel }}
+          {%- if changedBy %} by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+          on {{ changedDate | formatDate("D MMMM YYYY") -}}
+        </span>
+      </p>
+    {% endif %}
+    {% if mammogram.requestReason %}
+      <p class="nhsuk-u-margin-bottom-0">Reason: {{ mammogram.requestReason }}</p>
+    {% endif %}
+    {% if not changedDate and not mammogram.requestReason %}
+      {# The span is the shared script's target, so an in-place update
+         replaces this placeholder rather than appending below it #}
+      <p class="nhsuk-u-margin-bottom-0 nhsuk-u-secondary-text-colour"><span class="js-prior-request">No request activity yet</span></p>
+    {% endif %}
+  </div>
+{% endset %}
+{% set requestRows = requestRows | push({
+  key: { text: "Request history" },
+  value: { html: requestHistoryHtml }
+}) %}
+
+{# No row at all when the request is resolved and nothing can be done #}
+{% if mammogram.requestStatus in ["not_requested", "pending", "requested"] %}
+  {% set actionsHtml %}
+    <div data-mammogram-actions="{{ mammogram.id }}">
+      {% include "_includes/priors/prior-actions.njk" %}
+    </div>
+  {% endset %}
+  {% set requestRows = requestRows | push({
+    key: { text: "Actions" },
+    value: { html: actionsHtml }
+  }) %}
+{% endif %}
+
+{# Titled by when the mammogram was taken - the fact most likely to tell
+   priors apart #}
+{# Lower case reads naturally after "from" ("from spring 2024") #}
+{% set dateTakenText = describePriorMammogramDate(mammogram) %}
+{% set cardTitle = ("Mammogram from " + dateTakenText) if dateTakenText else "Mammogram, date not known" %}
+
+{% call card({
+  heading: cardTitle,
+  headingLevel: "3",
+  headingClasses: "nhsuk-heading-s"
+}) %}
+  {{ summaryList({ rows: mammogramRows }) }}
+
+  <h4 class="nhsuk-heading-xs">Images request</h4>
+  {{ summaryList({ rows: requestRows } | removeLastRowBorder) }}
+{% endcall %}

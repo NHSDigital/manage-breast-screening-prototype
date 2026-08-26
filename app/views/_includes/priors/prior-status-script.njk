@@ -111,6 +111,10 @@
             const newActions = actionsForStatus[newStatus] || []
             if (newActions.length === 0) {
               actionsCell.innerHTML = ''
+              // On the case cards the actions sit in a summary list row whose
+              // "Actions" label would linger - hide the whole row
+              const actionsRow = actionsCell.closest('.nhsuk-summary-list__row')
+              if (actionsRow) actionsRow.hidden = true
             } else {
               actionsCell.innerHTML = newActions.map(function (action) {
                 return '<form action="/reading/priors/update-status" method="POST"' +

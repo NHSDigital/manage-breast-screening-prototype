@@ -118,35 +118,25 @@ const userRequestedPriors = (appointment, userId) => {
 }
 
 /**
- * Summarise a single prior mammogram into a one-line string for display
- * Suitable for image readers who need a quick overview of each prior.
+ * Describe where a prior mammogram was taken
  *
- * Format follows other summary functions: primary label with detail in parentheses.
- * e.g. "St James's Hospital (March 2018, 8 years ago)"
+ * Phrases are lower case so they read after a prefix ("Taken at another
+ * BSU…"); with no prefix the first letter is capitalised so the phrase reads
+ * at the start of a line, list item or card title.
  *
  * @param {Object} mammogram - A prior mammogram object from appointment.previousMammograms
  * @param {Object} [options] - Optional config
  * @param {string} [options.unitName] - Display name for the current BSU (used when location === 'currentBsu')
- * @param {boolean} [options.includeAdditionalInfo] - Whether to append otherDetails (default: false)
- * @param {boolean} [options.includeDate] - Whether to append the parenthesised date detail (default: true)
- * @param {string} [options.prefix] - Optional leading verb, e.g. "Taken"; the location phrase then reads lower case after it
- * @returns {string} One-line summary, e.g. "At another BSU: St James's Hospital (March 2018)"
+ * @param {string} [options.prefix] - Optional leading verb, e.g. "Taken"
+ * @returns {string} Location phrase, e.g. "At another BSU: St James's Hospital"
  */
-const summarisePriorMammogram = (mammogram, options = {}) => {
+const describePriorMammogramLocation = (mammogram, options = {}) => {
   if (!mammogram) return ''
 
-  const {
-    unitName = null,
-    includeAdditionalInfo = false,
-    includeDate = true,
-    prefix = null
-  } = options
+  const { unitName = null, prefix = null } = options
 
-  // Location: a generic category phrase, plus the specific place the
-  // participant named where we have one, e.g. "at another BSU: St James's".
-  // Phrases are lower case so they read after a prefix ("Taken at another
-  // BSU…"); when there's no prefix the first letter is capitalised so the
-  // phrase reads at the start of a line or list item.
+  // A generic category phrase, plus the specific place the participant named
+  // where we have one
   let place = ''
   let specificPlace = ''
   switch (mammogram.location) {
@@ -182,8 +172,19 @@ const summarisePriorMammogram = (mammogram, options = {}) => {
     }
   }
 
-  // Date detail — parenthesised suffix. Uses the participant's approximate
-  // wording when they didn't give an exact date.
+  return location
+}
+
+/**
+ * Describe when a prior mammogram was taken, using the participant's
+ * approximate wording when they didn't give an exact date
+ *
+ * @param {Object} mammogram - A prior mammogram object from appointment.previousMammograms
+ * @returns {string} Date description, e.g. "March 2018, 8 years ago", or '' if unknown
+ */
+const describePriorMammogramDate = (mammogram) => {
+  if (!mammogram) return ''
+
   const dateParts = []
   if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
     dateParts.push(formatDate(mammogram.dateTaken, 'MMMM YYYY'))
@@ -196,8 +197,41 @@ const summarisePriorMammogram = (mammogram, options = {}) => {
     dateParts.push('less than 6 months ago')
   }
 
-  const dateDetail =
-    includeDate && dateParts.length > 0 ? `(${dateParts.join(', ')})` : ''
+  return dateParts.join(', ')
+}
+
+/**
+ * Summarise a single prior mammogram into a one-line string for display
+ * Suitable for image readers who need a quick overview of each prior.
+ *
+ * Format follows other summary functions: primary label with detail in parentheses.
+ * e.g. "St James's Hospital (March 2018, 8 years ago)"
+ *
+ * @param {Object} mammogram - A prior mammogram object from appointment.previousMammograms
+ * @param {Object} [options] - Optional config
+ * @param {string} [options.unitName] - Display name for the current BSU (used when location === 'currentBsu')
+ * @param {boolean} [options.includeAdditionalInfo] - Whether to append otherDetails (default: false)
+ * @param {boolean} [options.includeDate] - Whether to append the parenthesised date detail (default: true)
+ * @param {string} [options.prefix] - Optional leading verb, e.g. "Taken"; the location phrase then reads lower case after it
+ * @returns {string} One-line summary, e.g. "At another BSU: St James's Hospital (March 2018)"
+ */
+const summarisePriorMammogram = (mammogram, options = {}) => {
+  if (!mammogram) return ''
+
+  const {
+    unitName = null,
+    includeAdditionalInfo = false,
+    includeDate = true,
+    prefix = null
+  } = options
+
+  const location = describePriorMammogramLocation(mammogram, {
+    unitName,
+    prefix
+  })
+
+  const dateText = describePriorMammogramDate(mammogram)
+  const dateDetail = includeDate && dateText ? `(${dateText})` : ''
 
   // Optional additional information appended as a separate sentence
   const additionalInfo =
@@ -231,6 +265,8 @@ module.exports = {
   getUnrequestedPriors,
   getAwaitingPriors,
   userRequestedPriors,
+  describePriorMammogramLocation,
+  describePriorMammogramDate,
   summarisePriorMammogram,
   summarisePriorMammograms
 }

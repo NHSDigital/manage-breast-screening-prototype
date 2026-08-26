@@ -104,16 +104,17 @@
           {% set thisAppointment = row.appointment %}
           {% set mammogram = row.mammogram %}
               <tr data-mammogram-row="{{ mammogram.id }}">
-                {# Participant name links to the case's priors tab - the
-                   per-case view of the same requests. Falls back to the
-                   appointment for the odd case that doesn't exist yet #}
+                {# Plain name - a participant-name link should go to the
+                   participant, so the case gets its own link, to the case's
+                   priors view. Falls back to the appointment for the odd
+                   case that doesn't exist yet #}
                 {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
                 {% set thisEpisode = data | getEpisode(thisAppointment.episodeId) %}
                 {% set thisReadingCase = getReadingCaseForAppointment(thisEpisode, thisAppointment.id) if thisEpisode %}
+                {% set caseHref = (getReadingCaseUrl(thisReadingCase) + '/priors') if thisReadingCase else getAppointmentUrl(thisAppointment) %}
                 <td>
-                  <a href="{{ (getReadingCaseUrl(thisReadingCase) + '/priors') if thisReadingCase else getAppointmentUrl(thisAppointment) }}">
-                    {{ thisParticipant | getFullNameReversed }}
-                  </a>
+                  <div class="nhsuk-u-font-weight-bold">{{ thisParticipant | getFullNameReversed }}</div>
+                  <a href="{{ caseHref }}" class="app-nowrap">View case {{- ((" for " + (thisParticipant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
                 </td>
 
                 {# Screening date #}

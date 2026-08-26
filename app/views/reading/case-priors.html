@@ -1,9 +1,10 @@
 {# app/views/reading/case-priors.html
 
-   The reading case's prior mammograms: what priors are known about, the state
-   of each request, and the actions to progress them. The same rows appear on
-   the priors dashboard (reading/priors.html) via the shared include - this tab
-   is the per-case view, the dashboard the cross-case queue. #}
+   The prior mammograms the participant disclosed for this case: full details
+   of each, its request state, and the actions to progress it. "Disclosed"
+   rather than "prior" - these are what the participant told us about, not
+   necessarily the complete set. The same requests appear on the priors
+   dashboard (reading/priors.html); this tab is the per-case view. #}
 
 {% extends 'layout-app.html' %}
 
@@ -24,38 +25,24 @@
   {% include "_includes/reading-case/case-header.njk" %}
   {% include "_includes/reading-case/case-nav.njk" %}
 
-  <h2 class="nhsuk-heading-m">Prior mammograms</h2>
+  <h2 class="nhsuk-heading-m">Disclosed mammograms</h2>
 
-  {% set priorMammograms = appointment.previousMammograms if appointment and appointment.previousMammograms else [] %}
-
-  {% if priorMammograms | length == 0 %}
-    <p>No prior mammograms are recorded for this case.</p>
-  {% else %}
-    {% if caseAwaitingPriors %}
-      <p>The case is held from reading until outstanding priors arrive or are marked unavailable or not needed.</p>
-    {% endif %}
-
-    <table class="nhsuk-table" data-current-username="{{ data.currentUser.id | getUsername({ format: 'short', identifyCurrentUser: true }) }}">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col">Prior mammogram</th>
-          <th scope="col">Status</th>
-          <th scope="col">Action</th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for mammogram in priorMammograms %}
-          {% set thisAppointment = appointment %}
-          {% set priorsReturnTo = getReadingCaseUrl(readingCase) + "/priors" %}
-          <tr data-mammogram-row="{{ mammogram.id }}">
-            {% include "_includes/priors/prior-row-cells.njk" %}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <p><a href="/reading/priors">View all priors requests</a></p>
+  {# The route redirects to the case when there are no disclosed mammograms,
+     so there is always at least one card here #}
+  <p>Mammograms the participant told us about at their appointment.</p>
+  {% if caseAwaitingPriors %}
+    <p>The case is held from reading until outstanding priors arrive or are marked unavailable or not needed.</p>
   {% endif %}
+
+  <div data-current-username="{{ data.currentUser.id | getUsername({ format: 'short', identifyCurrentUser: true }) }}">
+    {% for mammogram in appointment.previousMammograms %}
+      {% set thisAppointment = appointment %}
+      {% set priorsReturnTo = getReadingCaseUrl(readingCase) + "/priors" %}
+      {% include "_includes/priors/disclosed-mammogram-card.njk" %}
+    {% endfor %}
+  </div>
+
+  <p><a href="/reading/priors">View all priors requests</a></p>
 
 {% endblock %}
 

@@ -121,6 +121,11 @@ module.exports = (router) => {
     const appointment = getAppointment(data, readingCase.appointmentId)
     const participant = getParticipant(data, episode.participantId)
 
+    // No disclosed mammograms means no tab - back to the case
+    if (!appointment?.previousMammograms?.length) {
+      return res.redirect(`/reading/cases/${req.params.caseId}`)
+    }
+
     const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
     const caseStatus = getReadingCaseStatus(readingCase, data.settings)
 
