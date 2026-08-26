@@ -36,8 +36,8 @@
    and the user's own reads otherwise #}
 {% set progressText %}
   {{ progress.doneCount }} {{ "arbitrated" if isArbitration else "read" }}
-  {%- if progress.userAwaitingPriorsCount > 0 -%}
-    , {{ progress.userAwaitingPriorsCount }} awaiting priors
+  {%- if progress.sessionAwaitingPriorsCount > 0 -%}
+    , {{ progress.sessionAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
   {%- if progress.deferredCount > 0 -%}
     , {{ progress.deferredCount }} deferred

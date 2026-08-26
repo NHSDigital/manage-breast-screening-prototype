@@ -107,6 +107,24 @@ const getAwaitingPriors = (appointment) => {
 }
 
 /**
+ * Resolve a single awaiting-priors status for a whole case.
+ *
+ * The dashboard shows one tag per prior; a case list has room for only one, so
+ * we surface the least-progressed outstanding status - 'pending' ('Priors
+ * required') outranks 'requested' because the request still needs sending.
+ * Returns null when nothing is outstanding.
+ *
+ * @param {object} appointment - Appointment object
+ * @returns {'pending'|'requested'|null}
+ */
+const getAwaitingPriorsStatus = (appointment) => {
+  const awaiting = getAwaitingPriors(appointment)
+  if (awaiting.some((m) => m.requestStatus === 'pending')) return 'pending'
+  if (awaiting.length > 0) return 'requested'
+  return null
+}
+
+/**
  * Returns true if the given user has a pending prior request on this appointment.
  * Only 'pending' is checked — once admin moves to 'requested', the reader can no longer undo.
  */
@@ -264,6 +282,7 @@ module.exports = {
   getPriorsSummary,
   getUnrequestedPriors,
   getAwaitingPriors,
+  getAwaitingPriorsStatus,
   userRequestedPriors,
   describePriorMammogramLocation,
   describePriorMammogramDate,

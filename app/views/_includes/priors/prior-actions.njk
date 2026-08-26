@@ -5,7 +5,9 @@
    the priors dashboard cells and the case's disclosed mammogram cards.
 
    Expects: mammogram, thisAppointment. Optional: priorsReturnTo - where the
-   no-JS form submit returns to (defaults to the priors dashboard). #}
+   no-JS form submit returns to (defaults to the priors dashboard); and
+   priorsFragment - which fragment view the surface wants re-rendered for an
+   in-place update ("row" or "card"), set by the row and card partials. #}
 
 {% if mammogram.requestStatus == "not_requested" or mammogram.requestStatus == "pending" %}
   {% set priorActions = ["requested", "not_available", "not_needed"] %}
@@ -23,12 +25,15 @@
 } %}
 
 {% for action in priorActions %}
-  <form action="/reading/priors/update-status" method="POST" class="js-prior-status-form">
+  <form action="/reading/priors/update-status" method="POST" data-fragment-action>
     <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
     <input type="hidden" name="mammogramId" value="{{ mammogram.id }}">
     <input type="hidden" name="newStatus" value="{{ action }}">
     {% if priorsReturnTo %}
       <input type="hidden" name="returnTo" value="{{ priorsReturnTo }}">
+    {% endif %}
+    {% if priorsFragment %}
+      <input type="hidden" name="fragment" value="{{ priorsFragment }}">
     {% endif %}
     <button type="submit" class="nhsuk-link--no-visited-state app-link-button">{{ priorActionLabels[action] }}</button>
   </form>

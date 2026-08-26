@@ -71,15 +71,39 @@ const recordNormal = async (page) => {
  * Record a normal outcome on the arbitration case currently on screen.
  *
  * Arbitration confirms the outcome on a review step before saving it, rather
- * than saving straight from the opinion buttons the way a read does.
+ * than saving straight from the opinion buttons the way a read does. As with
+ * a read, a participant with significant symptoms gets "Normal, and add
+ * details" and an acknowledgement step instead of a plain "Normal".
  *
  * @param {import('@playwright/test').Page} page - Playwright page
  */
 const recordArbitrationNormal = async (page) => {
-  await page.getByRole('button', { name: 'Normal (N)' }).first().click()
+  // The opinion buttons have to be on the page before asking which variant it
+  // offers - isVisible() answers immediately, so checking mid-navigation would
+  // send this down the details path on a page that never had it
+  await expect(
+    page.getByRole('heading', { name: 'What is the outcome for this case?' })
+  ).toBeVisible()
+
+  const plainNormal = page.getByRole('button', { name: 'Normal (N)' }).first()
+
+  if (await plainNormal.isVisible()) {
+    await plainNormal.click()
+  } else {
+    const detailsModal = await clickToOpenModal(
+      page,
+      'Normal, and add details (N)'
+    )
+
+    await detailsModal
+      .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+      .check()
+    await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
+    await expectModalClosed(detailsModal)
+  }
 
   await expect(page).toHaveURL(/\/review/)
-  await page.getByRole('button', { name: 'Confirm and save' }).first().click()
+  await page.getByRole('button', { name: 'Confirm and continue' }).first().click()
 }
 
 /**
@@ -175,7 +199,7 @@ test.describe('Image reading', () => {
       page.getByRole('heading', { name: 'Confirm your opinion' })
     ).toBeVisible()
     await expect(page.getByText('Recall for assessment').first()).toBeVisible()
-    await page.getByRole('button', { name: 'Confirm and save' }).click()
+    await page.getByRole('button', { name: 'Confirm and continue' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
@@ -214,7 +238,7 @@ test.describe('Image reading', () => {
     await expect(reviewPage.getByText('Technical recall').first()).toBeVisible()
     await expect(reviewPage.getByText('RMLO').first()).toBeVisible()
     await expect(reviewPage.getByText('Image blurred')).toBeVisible()
-    await reviewPage.getByRole('button', { name: 'Confirm and save' }).click()
+    await reviewPage.getByRole('button', { name: 'Confirm and continue' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })

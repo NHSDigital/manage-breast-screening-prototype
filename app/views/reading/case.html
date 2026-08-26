@@ -25,7 +25,7 @@
 
 {% set back = {
   href: "/reading/cases",
-  text: "Back to reading cases"
+  text: "All reading cases"
 } %}
 
 {% block pageContent %}
@@ -131,7 +131,7 @@
         },
         {
           key: { text: "Screening" },
-          value: { html: '<p>' + (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span></p><p class="nhsuk-u-margin-bottom-0">' + (clinicLocationName or "Unknown") + '</p>' },
+          value: { html: '<p>' + (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span></p><p class="nhsuk-u-margin-bottom-0">' + (clinicLocationName or "Unknown location") + '</p>' },
           actions: {
             items: [
               {

@@ -1,11 +1,15 @@
 // app/assets/javascript/live-filters.js
 
 // Live filtering for index pages, as progressive enhancement.
-// A filter form marked `data-live-filters="<region selector>"` stops being a
-// plain GET submission: ticking a checkbox, typing in the search box or
-// following a filter link fetches the same URL and morphs the named region
-// in place, so the panel counts, selected filters, view tabs and results all
-// update together without a page load.
+// A form marked `data-live-filters="<region selector>"` stops being a plain
+// GET submission: ticking a checkbox, typing in the search box, choosing an
+// order or following a filter link fetches the same URL and morphs the named
+// region in place, so the panel counts, selected filters, view tabs and
+// results all update together without a page load.
+//
+// Several forms can drive the same region - the filter panel and the sort
+// control - and one instance covers them all, since the listeners are
+// delegated to the region rather than the forms.
 //
 // Without JavaScript nothing here runs and the form submits normally.
 
@@ -45,18 +49,17 @@ class LiveFilters {
       })
     })
 
+    this.active = true
+
     this.enhance()
   }
 
   // The morph replaces the panel with server HTML, so anything the script adds
   // to it has to be reapplied every time
   enhance() {
-    const form = this.getForm()
-    if (form) form.classList.add('app-live-filters')
-  }
-
-  getForm() {
-    return this.region.querySelector('[data-live-filters]')
+    this.region
+      .querySelectorAll('[data-live-filters]')
+      .forEach((form) => form.classList.add('app-live-filters'))
   }
 
   // The form's current state as a URL: empty values are dropped so the address
@@ -76,8 +79,13 @@ class LiveFilters {
 
   handleChange(event) {
     const input = event.target
-    if (!(input instanceof HTMLInputElement)) return
-    if (input.type !== 'checkbox' && input.type !== 'radio') return
+    const isTickable =
+      input instanceof HTMLInputElement &&
+      (input.type === 'checkbox' || input.type === 'radio')
+
+    // A select fires change on selection - waiting for blur would strand a
+    // keyboard user part-way down the list
+    if (!isTickable && !(input instanceof HTMLSelectElement)) return
 
     const form = input.closest('[data-live-filters]')
     if (!form) return
@@ -229,8 +237,17 @@ const createStatusRegion = () => {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // One instance per region, not per form - a second instance on the same
+  // region would duplicate its delegated listeners and fetch twice
+  const claimedRegions = new Set()
+
   document.querySelectorAll('[data-live-filters]').forEach((form) => {
-    new LiveFilters(form)
+    const region = document.querySelector(form.dataset.liveFilters || '')
+    if (region && claimedRegions.has(region)) return
+
+    // Only a working instance claims the region - one that bailed leaves the
+    // next form on the same region free to try
+    if (new LiveFilters(form).active && region) claimedRegions.add(region)
   })
 })
 

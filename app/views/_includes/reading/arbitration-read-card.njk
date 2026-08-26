@@ -1,10 +1,10 @@
 {# One original read as an outcome-coloured card with an adopt button.
    Expects in context: read, readLabel ("First read" / "Second read"),
    appointment, appointmentId, data
-   Optional: adoptButtonText, hideAdoptButtons, hideReadLabel,
-   adoptViaFormaction - set when rendering inside the opinion page's form,
-   where a nested <form> would be invalid; the button overrides the outer
-   form's destination instead #}
+   Optional: adoptButtonText, defaultAdoptButtonText, hideAdoptButtons,
+   hideReadLabel, adoptViaFormaction - set when rendering inside the outcome
+   page's form, where a nested <form> would be invalid; the button overrides
+   the outer form's destination instead #}
 
 {# Opinion label from the shared vocabulary; card class derives from the
    opinion key so there's no map to keep in step with it #}
@@ -23,6 +23,10 @@
   {% set hideOpinionRow = true %}
   {% set showAnnotationImages = withImages %}
   {% set annotationImagePaths = allPaths %}
+  {# An original read is one of two opinions, not the case outcome, and when
+     it finalised is no part of arbitrating it #}
+  {% set isOutcome = false %}
+  {% set hideFinalisedRow = true %}
   {% include "_includes/summary-lists/read-summary.njk" %}
 {% endset %}
 
@@ -34,7 +38,7 @@
          data-form-action container can serialise whichever was clicked #}
       {% if adoptViaFormaction %}
         {{ button({
-          text: adoptButtonText or "Agree – use as the outcome",
+          text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
           name: "agreedReaderId",
           value: read.readerId,
           classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary",
@@ -43,7 +47,7 @@
       {% else %}
         <form action="./arbitration-adopt-read" method="post" class="app-reading-compare-card__action-form">
           {{ button({
-            text: adoptButtonText or "Agree – use as the outcome",
+            text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
             name: "agreedReaderId",
             value: read.readerId,
             classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"

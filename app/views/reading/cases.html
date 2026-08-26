@@ -41,7 +41,8 @@
       }) }}
 
     </div>
-    <div class="nhsuk-grid-column-two-thirds">
+    {# Custom top margin to push column down to line up with start of search card (minus feature outdent) #}
+    <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
 
       {% if isFiltered %}
         <div class="app-selected-filters">
@@ -80,18 +81,60 @@
         <p>No reading cases match these filters.</p>
       {% else %}
 
-        <p class="nhsuk-u-secondary-text-colour">
-          Showing <b>1</b> to <b>{{ shownCount }}</b> of <b>{{ totalCount }}</b> {{ "case" | pluralise(totalCount) }}
-        </p>
+        {# The count and the order sit on one line: the order is about these
+           results, not about the population the filter panel picks #}
+        <div class="app-results-bar">
+          <p class="app-results-bar__count nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
+            Showing <b>1</b> to <b>{{ shownCount }}</b> of <b>{{ totalCount }}</b> {{ "case" | pluralise(totalCount) }}
+          </p>
+
+          {# Its own form, so choosing an order leaves the search and filters
+             alone - they ride along as hidden fields. With JavaScript the
+             select updates the list in place; without it, the button submits #}
+          <form class="app-results-bar__sort" method="get" action="/reading/cases" data-live-filters="#filter-results">
+            {% for name, value in sortHiddenFields %}
+              {% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+            {% endfor %}
+            {% for name, values in selected %}
+              {% for value in values %}
+                <input type="hidden" name="{{ name }}" value="{{ value }}">
+              {% endfor %}
+            {% endfor %}
+
+            {% set sortItems = [] %}
+            {% for option in sorts %}
+              {% set sortItems = sortItems | push({
+                value: option.value,
+                text: option.label,
+                selected: true if option.value == sort
+              }) %}
+            {% endfor %}
+
+            {{ select({
+              id: "case-sort",
+              name: "sort",
+              label: { text: "Sort by", classes: "app-results-bar__sort-label" },
+              formGroup: { classes: "app-results-bar__sort-group" },
+              items: sortItems
+            }) }}
+
+            {# Redundant once live updating is running - hidden by CSS then #}
+            {{ button({
+              text: "Sort",
+              small: true,
+              classes: "app-results-bar__sort-button nhsuk-u-margin-bottom-0"
+            }) }}
+          </form>
+        </div>
 
         <table class="nhsuk-table">
           <thead class="nhsuk-table__head">
             <tr>
               <th scope="col">Participant</th>
-              <th scope="col">Screening date</th>
+              <th scope="col">Screened</th>
               <th scope="col">Reads</th>
               <th scope="col">Outcome</th>
-              <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+              <th scope="col">Case</th>
             </tr>
           </thead>
           <tbody class="nhsuk-table__body">
@@ -100,12 +143,22 @@
                 <td class="nhsuk-table__cell">
                   {# The name isn't a link: names only link to a participant record.
                      The row's link to the case sits in the action column instead #}
-                  <span class="nhsuk-u-font-weight-bold">{{ row.participant | getFullNameReversed }}</span>
-                  {% if row.isDeferred %}
-                    <br>{{ "Deferred" | toTag }}
-                  {% endif %}
-                  {% if row.awaitingPriors %}
-                    <br>{{ "Priors required" | toTag }}
+                  <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                    {{ row.participant | getFullNameReversed }}
+                  </p>
+                  <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+                    NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+                  </p>
+                  {% if row.isDeferred or row.awaitingPriorsStatus %}
+                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+                      {% if row.isDeferred %}
+                        {{ "Deferred" | toTag }}
+                      {% endif %}
+                      {% if row.awaitingPriorsStatus %}
+                        {% if row.isDeferred %}<br>{% endif %}
+                        {{ row.awaitingPriorsStatus | toTag({ vocabulary: "priorsRequest" }) }}
+                      {% endif %}
+                    </p>
                   {% endif %}
                 </td>
                 <td class="nhsuk-table__cell">

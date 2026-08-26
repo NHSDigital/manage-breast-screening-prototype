@@ -33,7 +33,7 @@
       }
     }) }}
     <p class="nhsuk-u-margin-top-2">
-      <a href="#">Add another</a>
+      <a href="#" class="nhsuk-link--no-visited-state">Add another</a>
     </p>
   {% endset %}
 
@@ -56,13 +56,13 @@
       }
     },
     hint: {
-      text: "For clinical assurance, everyone attending must be recorded and be there during all case decisions"
+      text: "For clinical assurance, you must document everyone who will be present during all decisions"
     },
     items: userItems
   } | populateErrors) }}
 
   {{ button({
-    text: "Start arbitrating"
+    text: "Start session"
   }) }}
 
 {% endblock %}

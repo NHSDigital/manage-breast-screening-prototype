@@ -45,25 +45,34 @@
       <table class="nhsuk-table">
         <thead class="nhsuk-table__head">
           <tr>
+            <th scope="col">Started</th>
             <th scope="col">Type</th>
-            <th scope="col">Created</th>
             <th scope="col">Cases</th>
             <th scope="col">Status</th>
-            <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+            <th scope="col">Session</th>
           </tr>
         </thead>
         <tbody class="nhsuk-table__body">
           {% for session in sessions %}
             {% set p = session.progress %}
             {% set sessionTotal = p.effectiveTargetSize if p else null %}
-            {% set isComplete = p and session.userCompletedCount >= sessionTotal %}
+            {# A session is done with once it has been ended - whether it was
+               worked through or stopped early #}
+            {% set isComplete = session.endedAt or (p and session.userCompletedCount >= sessionTotal) %}
             {% set isArbitration = session.type === 'arbitration' %}
             <tr>
+              {# When the session started leads the row, matching the reads
+                 tables - they open on their date too #}
+              <td>
+                {{ session.createdAt | formatDate | noWrap }}<br>
+                <strong>{{ session.createdAt | formatTime }}</strong>
+              </td>
+
               {# Arbitration is a different kind of work to reading, so the list
                  says which it was, and for arbitration who was on it #}
               <td>
                 {% if isArbitration %}
-                  Arbitration
+                  <span class="nhsuk-u-font-weight-bold">Arbitration</span>
                   <br>
                   <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
                     {{- "Group" if session.arbitration.mode === 'panel' else "On your own" }}
@@ -74,7 +83,7 @@
                     {%- endif %}
                   </span>
                 {% else %}
-                  Reading
+                  <span class="nhsuk-u-font-weight-bold">Reading</span>
                   <br>
                   <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
                     {%- if session.type === 'first_reads' -%}
@@ -94,32 +103,35 @@
                 {% endif %}
               </td>
               <td>
-                {{ session.createdAt | formatDate | noWrap }}<br>
-                <strong>{{ session.createdAt | formatTime }}</strong>
-              </td>
-              <td>
                 {% if p %}
                   {{ sessionTotal }} total
-                  {% if not isComplete %}
+                  {# A session ended early got through some of its cases, not
+                     all of them - the count says which #}
+                  {% if session.userCompletedCount < sessionTotal %}
                     <br>{{ session.userCompletedCount }} {{ "arbitrated" if isArbitration else "read" }}
                   {% endif %}
                 {% else %}
                   —
                 {% endif %}
               </td>
-              {# Working through every case isn't the end of a session: the
-                 opinions still have to be finalised before it's finished #}
+              {# Ending a session doesn't finalise what was recorded in it, so
+                 outstanding records are noted under the status #}
               <td>
-                {% if isComplete and session.unfinalisedReadCount %}
-                  {{ "Awaiting finalisation" | toTag }}
-                {% elseif isComplete %}
+                {% if isComplete %}
                   {{ "Complete" | toTag }}
+                  {% if session.unfinalisedReadCount %}
+                    <br>
+                    <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                      Unfinalised {{ "outcomes" if isArbitration else "reads" }}
+                    </span>
+                  {% endif %}
                 {% else %}
                   {{ "Incomplete" | toTag }}
                 {% endif %}
               </td>
               <td>
-                <a href="/reading/session/{{ session.id }}" class="app-nowrap">View session</a>
+                {# Historic sessions are stand-ins with no cases to open #}
+                <a href="{{ "#" if session.isHistoric else "/reading/session/" + session.id }}" class="app-nowrap">View session</a>
               </td>
             </tr>
           {% endfor %}
@@ -152,7 +164,7 @@
           <th scope="col">
             Outcome
           </th>
-          <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
+          <th scope="col">Case</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
@@ -165,9 +177,14 @@
               <strong>{{ reading.timestamp | formatTime }}</strong>
             </td>
             {# The name isn't a link: names only link to a participant record.
-               The row's link to the case sits in the action column instead #}
+               The row's link to the case sits in the last column instead #}
             <td>
-              <span class="nhsuk-u-font-weight-bold">{{ reading.participant | getFullNameReversed }}</span>
+              <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                {{ reading.participant | getFullNameReversed }}
+              </p>
+              <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+                NHS: {{ reading.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+              </p>
             </td>
             {% if view == 'all' %}
             <td>

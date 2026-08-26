@@ -18,14 +18,14 @@
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
   "dependencies": {
-    "@faker-js/faker": "^10.5.0",
+    "@faker-js/faker": "^10.6.0",
     "accessible-autocomplete": "^3.0.1",
     "cookie-parser": "^1.4.7",
-    "dayjs": "^1.11.21",
+    "dayjs": "^1.11.23",
     "idiomorph": "^0.7.4",
     "lodash": "^4.18.1",
     "markdown-it": "^15.0.0",
-    "nhsuk-frontend": "^10.4.2",
+    "nhsuk-frontend": "^10.6.0",
     "nhsuk-prototype-kit": "^8.3.0",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
@@ -37,9 +37,9 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
-    "cssnano": "^8.0.5",
+    "cssnano": "^8.0.7",
     "eslint": "^10.8.1",
-    "globals": "^17.9.0",
+    "globals": "^17.11.0",
     "postcss": "^8.5.26",
     "prettier": "^3.9.6",
     "purgecss": "^8.0.0"

@@ -37,8 +37,8 @@
     .nhsuk-table__cell {
       padding-top: nhsuk-spacing(2);
       padding-bottom: nhsuk-spacing(2);
-      padding-left: nhsuk-spacing(2);
-      padding-right: nhsuk-spacing(2);
+      // padding-left: nhsuk-spacing(2);
+      // padding-right: nhsuk-spacing(2);
     }
 
     > p {
@@ -114,12 +114,6 @@
   }
 
   .app-clinic-appointments-table {
-    table-layout: fixed;
-    width: 100%;
-
-    .app-clinic-appointments-table__time-column {
-      width: 22%;
-    }
 
     .app-clinic-appointments-table__time-column .nhsuk-tag {
       display: inline-block;
@@ -269,3 +263,4 @@
     @include nhsuk-font($size: 22, $weight: bold);
   }
 }
+

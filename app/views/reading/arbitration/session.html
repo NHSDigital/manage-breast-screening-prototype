@@ -40,14 +40,30 @@
       </p>
     {% endif %}
 
-    {% set arbitrationActionText = "Resume arbitrating" if arbitratedCount else "Start arbitrating" %}
+    {% set arbitrationActionText = "Resume session" if arbitratedCount else "Start session" %}
 
     {% if resumeAppointment %}
-      <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button app-reading-session-primary-action">
-        {{ arbitrationActionText }}
-      </a>
+      <div class="nhsuk-button-group">
+        <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button">
+          {{ arbitrationActionText }}
+        </a>
+        {% if canEndSessionEarly %}
+          {{ appLink({
+            text: "End session",
+            href: "/reading/session/" + session.id + "/end",
+            classes: "nhsuk-link--no-visited-state nhsuk-button-group__item"
+          } | openInModal) }}
+        {% endif %}
+      </div>
     {% else %}
+      {# A session ended before its cases ran out didn't complete, and says so #}
+      {% set unarbitratedCount = sessionProgress.targetRemaining if sessionProgress else 0 %}
+      {% set endedEarly = sessionEnded and unarbitratedCount > 0 %}
+
       {% set sessionCompletePanelHtml %}
+        {% if endedEarly %}
+          <p class="nhsuk-body-m">{{ unarbitratedCount }} {{ "case" | pluralise(unarbitratedCount) }} you did not arbitrate {{ "stays" if unarbitratedCount == 1 else "stay" }} in the arbitration queue.</p>
+        {% endif %}
         {% if unfinalisedReadCount > 0 %}
           <p class="nhsuk-body-m">Outcome recorded for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}.{% if autoFinaliseAt %} The first outcome will be finalised automatically at {{ autoFinaliseAt | formatTimeString }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise outcomes now</a></p>
         {% else %}
@@ -67,7 +83,7 @@
       {% endset %}
 
       {{ panel({
-        titleText: "Session complete",
+        titleText: "Session ended" if endedEarly else "Session complete",
         html: sessionCompletePanelHtml
       }) }}
     {% endif %}
@@ -121,23 +137,30 @@
     {% set sessionTotalCount = sessionProgress.effectiveTargetSize if sessionProgress else session.targetSize %}
     {% set pendingCount = (sessionTotalCount - (session.appointmentIds | length)) if sessionTotalCount else 0 %}
     {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
+    {# An ended session will never claim its unfilled slots, so nothing stands in for them #}
+    {% set pendingCount = 0 if sessionEnded else pendingCount %}
 
-    {# Remaining counts the whole session, including slots not yet claimed #}
+    {# Remaining counts the whole session, including slots not yet claimed.
+       Cases held up by priors or a deferral are neither arbitrated nor
+       remaining, so they are counted in their own right - the same breakdown
+       the status bar gives inside the workflow #}
     {% set remainingCount = sessionProgress.targetRemaining if sessionProgress else (appointments | length) - arbitratedCount %}
-    {% if remainingCount > 0 %}
-      <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated, {{ remainingCount }} remaining</p>
+    {% set awaitingPriorsCount = sessionProgress.sessionAwaitingPriorsCount if sessionProgress else 0 %}
+    {% set sessionDeferredCount = sessionProgress.deferredCount if sessionProgress else 0 %}
+    {% if not sessionEnded and (remainingCount > 0 or awaitingPriorsCount > 0 or sessionDeferredCount > 0) %}
+      <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated{%- if awaitingPriorsCount > 0 -%}, {{ awaitingPriorsCount }} awaiting priors{%- endif -%}{%- if sessionDeferredCount > 0 -%}, {{ sessionDeferredCount }} deferred{%- endif -%}, {{ remainingCount }} remaining</p>
     {% endif %}
 
     <table class="nhsuk-table app-reading-session-table">
       <thead>
         <tr>
           <th scope="col">No.</th>
-          <th scope="col">Case</th>
+          <th scope="col">Participant</th>
           <th scope="col">Screening date</th>
           <th scope="col">1st read</th>
           <th scope="col">2nd read</th>
           <th scope="col">Outcome</th>
-          <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
+          <th scope="col">Action</th>
         </tr>
       </thead>
       <tbody>
@@ -150,7 +173,12 @@
               <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
             </td>
             <td>
-              <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
+              <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                {{ appointment.participant | getFullNameReversed }}
+              </p>
+              <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-1">
+                NHS: {{ appointment.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+              </p>
               {% if appointment.medicalInformation.symptoms | length %}
                 <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
               {% endif %}
@@ -198,6 +226,10 @@
                 {% include "_includes/reading/case-outcome-tag.njk" %}
               {% elseif appointment.readingCase | isCaseDeferred %}
                 {{ "Deferred" | toTag }}
+              {% elseif appointment | awaitingPriors %}
+                {# Priors hold the case up for the whole panel, not just
+                   whoever asked for them #}
+                {{ "Priors required" | toTag }}
               {% elseif session.skippedAppointments | includes(appointment.id) %}
                 {{ "Skipped" | toTag }}
               {% else %}
@@ -212,12 +244,21 @@
                    hidden for screen readers so each row's link is distinct #}
                 {% if arbitrationRead %}
                   {% set caseActionText = "View outcome" %}
-                {% elseif appointment.readingCase | isCaseDeferred %}
+                {% elseif (appointment.readingCase | isCaseDeferred) or (appointment | awaitingPriors) or sessionEnded %}
                   {% set caseActionText = "View case" %}
                 {% else %}
                   {% set caseActionText = "Arbitrate case" %}
                 {% endif %}
-                <a href="/reading/session/{{ session.id }}/appointments/{{ appointment.id }}" class="app-nowrap">{{ caseActionText }} {{- ((" for " + (appointment.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                {# An ended session takes no more outcomes, so its rows link to
+                   the case itself rather than back into the session #}
+                {% set caseHref -%}
+                  {%- if sessionEnded -%}
+                    /reading/cases/{{ appointment.readingCase.id }}
+                  {%- else -%}
+                    /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
+                  {%- endif -%}
+                {%- endset %}
+                <a href="{{ caseHref }}" class="app-nowrap">{{ caseActionText }} {{- ((" for " + (appointment.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
               {% endif %}
             </td>
           </tr>

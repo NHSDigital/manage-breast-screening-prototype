@@ -307,9 +307,11 @@ const isCaseDeferred = (readingCase) => {
 /**
  * Whether a case has been released into arbitration.
  *
- * Nothing performs the release yet - the flow that does is future work - so
- * this is false for every case today. It exists so the state vocabulary is
- * whole, rather than growing a new value later across every call site.
+ * Two things perform the release: finalising reads the rules send to
+ * arbitration, and reaching the case in an arbitration session (see
+ * withArbitrationRelease). Once released, a case belongs to the arbitration
+ * backlog until it has been arbitrated, and the next read on it is the
+ * arbitration read - whoever makes it.
  *
  * @param {object} readingCase - Reading case
  * @returns {boolean}

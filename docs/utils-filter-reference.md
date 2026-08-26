@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-08-24 11:19 UTC
+- **Generated:** 2026-08-25 15:47 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -22,28 +22,28 @@
 | `appointment-data.js` | Appointment lookups and mutations in session data | 170 |
 | `episodes.js` | Episode lookups and stage changes | 184 |
 | `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 221 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 237 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 282 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 336 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 357 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 380 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 393 |
-| `objects.js` | Object utilities for extracting and flattening values. | 411 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 422 |
-| `random.js` | Seeded random functions for stable prototype data | 433 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 450 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 464 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 474 |
-| `roles-and-permissions.js` | User role checks | 487 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 505 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 520 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 532 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 238 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 283 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 339 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 361 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 384 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 397 |
+| `objects.js` | Object utilities for extracting and flattening values. | 415 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 426 |
+| `random.js` | Seeded random functions for stable prototype data | 437 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 454 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 468 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 478 |
+| `roles-and-permissions.js` | User role checks | 491 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 509 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 524 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 536 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 548 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 560 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 572 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 586 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 596 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 552 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 564 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 576 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 590 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 600 |
 
 ---
 
@@ -228,11 +228,12 @@ Clinic filtering by time period, slot formatting, and opening hours calculation.
 |---|---|---|
 | `getClinic(data, clinicId)` | Get a clinic by ID | 8 |
 | `getClinicLocationName(data, clinic)` | Where a clinic was held, as one line. | 28 |
-| `getTodaysClinics(clinics)` | Get today's clinics | 57 |
-| `getClinicAppointments(appointments, clinicId)` | Get appointments for a specific clinic | 68 |
-| `formatTimeSlot(dateTime)` | Format clinic time slot | 82 |
-| `getClinicHours(clinic)` | Get clinic opening hours | 108 |
-| `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 126 |
+| `getBreastScreeningUnitName(data, unitId)` | Get a breast screening unit's name by id. | 57 |
+| `getTodaysClinics(clinics)` | Get today's clinics | 74 |
+| `getClinicAppointments(appointments, clinicId)` | Get appointments for a specific clinic | 85 |
+| `formatTimeSlot(dateTime)` | Format clinic time slot | 99 |
+| `getClinicHours(clinic)` | Get clinic opening hours | 125 |
+| `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 143 |
 
 ### reading-cases.js
 
@@ -330,8 +331,10 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 | `getReadingSession(data, sessionId)` | Get a reading session by ID | 1654 |
 | `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1691 |
 | `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1724 |
-| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1747 |
-| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1834 |
+| `isSessionEnded(session)` | Whether a session has been ended. | 1747 |
+| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1761 |
+| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1785 |
+| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1875 |
 
 ### prior-mammograms.js
 
@@ -348,11 +351,12 @@ Prior mammogram request state (awaiting, unrequested, resolved) and one-line sum
 | `getPriorsSummary(appointment)` | Get a summary of prior mammogram statuses for display | 44 |
 | `getUnrequestedPriors(appointment)` | Get priors with requestStatus 'not_requested' (for the request priors UI) | 93 |
 | `getAwaitingPriors(appointment)` | Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) | 101 |
-| `userRequestedPriors(appointment, userId)` | Returns true if the given user has a pending prior request on this appointment. | 109 |
-| `describePriorMammogramLocation(mammogram, [options], [options.unitName], [options.prefix])` | Describe where a prior mammogram was taken | 120 |
-| `describePriorMammogramDate(mammogram)` | Describe when a prior mammogram was taken, using the participant's | 178 |
-| `summarisePriorMammogram(mammogram, [options], [options.unitName], [options.includeAdditionalInfo], [options.includeDate], [options.prefix])` | Summarise a single prior mammogram into a one-line string for display | 203 |
-| `summarisePriorMammograms(appointment, [options])` | Summarise all prior mammograms for an appointment into an array of one-line strings | 245 |
+| `getAwaitingPriorsStatus(appointment)` | Resolve a single awaiting-priors status for a whole case. | 109 |
+| `userRequestedPriors(appointment, userId)` | Returns true if the given user has a pending prior request on this appointment. | 127 |
+| `describePriorMammogramLocation(mammogram, [options], [options.unitName], [options.prefix])` | Describe where a prior mammogram was taken | 138 |
+| `describePriorMammogramDate(mammogram)` | Describe when a prior mammogram was taken, using the participant's | 196 |
+| `summarisePriorMammogram(mammogram, [options], [options.unitName], [options.includeAdditionalInfo], [options.includeDate], [options.prefix])` | Summarise a single prior mammogram into a one-line string for display | 221 |
+| `summarisePriorMammograms(appointment, [options])` | Summarise all prior mammograms for an appointment into an array of one-line strings | 263 |
 
 ### medical-information.js
 
@@ -510,12 +514,12 @@ Generic checkbox filtering for index pages: parse selected values from the query
 
 | Function | Description | Line |
 |---|---|---|
-| `parseFilterQuery(query, groups)` | Read the selected filter values out of a query string, discarding anything | 34 |
-| `applyFilterGroups(rows, groups, selected)` | The rows matching every group's selection. An unselected group filters | 85 |
-| `getFilterCounts(rows, groups, selected)` | How many rows each option would show. | 98 |
-| `buildFilterUrl(baseUrl, [selected], [extraParams])` | Build a URL carrying a filter selection plus any params the page keeps | 130 |
-| `describeSelectedFilters(groups, selected, baseUrl, [extraParams])` | The active filters as a flat list, each with the URL that removes it - the | 158 |
-| `hasSelectedFilters(selected)` | Whether anything is selected at all - for showing or hiding the summary. | 203 |
+| `parseFilterQuery(query, groups)` | Read the selected filter values out of a query string, discarding anything | 36 |
+| `applyFilterGroups(rows, groups, selected)` | The rows matching every group's selection. An unselected group filters | 91 |
+| `getFilterCounts(rows, groups, selected)` | How many rows each option would show. | 104 |
+| `buildFilterUrl(baseUrl, [selected], [extraParams])` | Build a URL carrying a filter selection plus any params the page keeps | 136 |
+| `describeSelectedFilters(groups, selected, baseUrl, [extraParams])` | The active filters as a flat list, each with the URL that removes it - the | 164 |
+| `hasSelectedFilters(selected)` | Whether anything is selected at all - for showing or hiding the summary. | 209 |
 
 ### search.js
 

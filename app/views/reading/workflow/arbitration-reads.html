@@ -1,6 +1,6 @@
 {# app/views/reading/workflow/arbitration-reads.html #}
 {# The first and second reads on their own page - the modal reveal style for
-   the arbitration opinion page. Adopt buttons post as normal (full page). #}
+   the arbitration outcome page. Adopt buttons post as normal (full page). #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -8,7 +8,7 @@
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
 
-{% set back = { href: "./opinion", text: "Back to case" } %}
+{% set back = { href: "./outcome", text: "Back to case" } %}
 
 {# The modal layout wraps content in a data-form-action container - this wires
    both adopt buttons to the adopt endpoint; the clicked button carries the

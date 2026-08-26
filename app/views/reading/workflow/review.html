@@ -23,6 +23,29 @@
       </span>
       <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
+      {# Adopting one of the reads copies it, so say which read this outcome
+         started from and that changing it here leaves that read alone. Choosing
+         an outcome directly clears the adoption, and with it this inset. #}
+      {% set agreedReaderId = data.imageReadingTemp.agreedWithReaderId %}
+      {% if isArbitration and agreedReaderId %}
+        {% set agreedReadLabel = "" %}
+        {% for originalRead in readingCase | getOriginalReads %}
+          {% if originalRead.readerId == agreedReaderId %}
+            {% set agreedReadLabel = "first read" if loop.first else "second read" %}
+          {% endif %}
+        {% endfor %}
+
+        {% if agreedReadLabel %}
+          {% set insetTextHtml %}
+            <p>You are using the {{ agreedReadLabel }} as the basis for the case outcome. Add or amend any details identified during arbitration. These changes do not affect the existing read.</p>
+          {% endset %}
+
+          {{ insetText({
+            html: insetTextHtml
+          }) }}
+        {% endif %}
+      {% endif %}
+
       {# Assessment summary card #}
       {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
       {% if withImages %}
@@ -32,15 +55,18 @@
 
       {% set readSummaryHtml %}
         {% set read = data.imageReadingTemp %}
+        {# The in-progress decision has no readType yet, so say what it is #}
+        {% set isOutcome = isArbitration %}
+        {% set hideFinalisedRow = false %}
         {% set allowEdits = true %}
-        {% set changeOpinionUrl = "./opinion" %}
+        {% set changeOpinionUrl = "./" + decisionStep %}
         {% set showAnnotationImages = withImages %}
         {% set annotationImagePaths = allPaths %}
         {% include "_includes/summary-lists/read-summary.njk" %}
       {% endset %}
 
       {{ card({
-        heading: "Arbitration outcome" if isArbitration else "Your read",
+        heading: "Arbitration decision" if isArbitration else "Your read",
         headingLevel: "2",
         feature: true,
         descriptionHtml: readSummaryHtml
@@ -54,9 +80,9 @@
         {% include "_includes/reading/arbitration-reads-cards.njk" %}
       {% endif %}
 
-      {# Confirm and save form #}
+      {# Confirm and continue form #}
       {{ button({
-        text: "Confirm and save",
+        text: "Confirm and continue",
         preventDoubleClick: true
       }) }}
 

@@ -11,6 +11,8 @@ const {
   getReadingCaseList,
   getReadingCaseRows,
   READING_CASE_FILTER_GROUPS,
+  READING_CASE_SORTS,
+  DEFAULT_CASE_SORT,
   CASE_VIEWS,
   CASE_VIEW_LABELS,
   MAX_ROWS
@@ -26,7 +28,11 @@ const {
 const { getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getParticipant } = require('../lib/utils/participants')
-const { getClinic, getClinicLocationName } = require('../lib/utils/clinics')
+const {
+  getClinic,
+  getClinicLocationName,
+  getBreastScreeningUnitName
+} = require('../lib/utils/clinics')
 const {
   getReadingCases,
   getReadsAsArray,
@@ -76,8 +82,16 @@ module.exports = (router) => {
   router.get('/reading/cases', (req, res) => {
     const data = req.session.data
 
-    const view = CASE_VIEWS.includes(req.query.view) ? req.query.view : 'current'
+    const view = CASE_VIEWS.includes(req.query.view)
+      ? req.query.view
+      : 'current'
     const query = req.query.q || ''
+
+    const sort = READING_CASE_SORTS.some(
+      (candidate) => candidate.value === req.query.sort
+    )
+      ? req.query.sort
+      : DEFAULT_CASE_SORT
 
     const groups = READING_CASE_FILTER_GROUPS
     const selected = parseFilterQuery(req.query, groups)
@@ -89,11 +103,18 @@ module.exports = (router) => {
     const { rows, totalCount, truncated } = getReadingCaseList(data, {
       view,
       query,
+      sort,
       groups,
       selected
     })
 
-    const carriedParams = { view, q: query }
+    // The default order stays out of the URL, so a shared link only carries
+    // what someone actually chose
+    const carriedParams = {
+      view,
+      q: query,
+      sort: sort === DEFAULT_CASE_SORT ? '' : sort
+    }
 
     // Each view tab shows how many cases it holds under the current search
     // and filters - the current view's count is just the result total
@@ -114,8 +135,8 @@ module.exports = (router) => {
       CASE_VIEWS.map((candidate) => [
         candidate,
         buildFilterUrl('/reading/cases', selected, {
-          view: candidate,
-          q: query
+          ...carriedParams,
+          view: candidate
         })
       ])
     )
@@ -141,6 +162,8 @@ module.exports = (router) => {
       views: CASE_VIEWS,
       viewLabels: CASE_VIEW_LABELS,
       query,
+      sort,
+      sorts: READING_CASE_SORTS,
       groups,
       selected,
       counts: getFilterCounts(baseRows, groups, selected),
@@ -152,8 +175,11 @@ module.exports = (router) => {
       ),
       isFiltered: hasSelectedFilters(selected),
       // The search is a real field in the filter form now, so only the view
-      // rides along as a hidden field - and clearing keeps it
-      hiddenFields: { view },
+      // and the chosen order ride along as hidden fields - and clearing keeps
+      // them
+      hiddenFields: { view, sort: carriedParams.sort },
+      // What the sort form has to carry to leave the rest of the list alone
+      sortHiddenFields: { view, q: query },
       viewCounts,
       viewUrls,
       acrossViewCount,
@@ -254,7 +280,8 @@ module.exports = (router) => {
     // than wrong - worth saying which you are looking at.
     const casesOnEpisode = getReadingCases(episode)
     const casePosition =
-      casesOnEpisode.findIndex((candidate) => candidate.id === readingCase.id) + 1
+      casesOnEpisode.findIndex((candidate) => candidate.id === readingCase.id) +
+      1
 
     // Blind reading: someone who could still read this case must not see what
     // the other reader said - the view shows a read happened, not its opinion.
@@ -292,13 +319,24 @@ module.exports = (router) => {
         ? getArbitrationRead(readingCase) || allReads[0]
         : null
 
+    // A historic round has no appointment or clinic to name a location from -
+    // just the unit it was screened at, held on its mammogram entry instead
+    const clinicLocationName =
+      getClinicLocationName(data, clinic) ||
+      (episode.isHistoric
+        ? getBreastScreeningUnitName(
+            data,
+            episode.mammograms?.[0]?.breastScreeningUnitId
+          )
+        : '')
+
     res.render('reading/case', {
       readingCase,
       episode,
       appointment,
       participant,
       clinic,
-      clinicLocationName: getClinicLocationName(data, clinic),
+      clinicLocationName,
       reads: allReads,
       readsHidden,
       hideFirstOpinion,

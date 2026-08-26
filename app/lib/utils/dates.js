@@ -300,6 +300,31 @@ const formatTimeString = (input) => {
 }
 
 /**
+ * Format a span between two times, sharing the meridiem where both sit in the
+ * same half of the day - eg "4:52 and 5:52pm"
+ *
+ * @param {string} startInput - ISO date string or time string
+ * @param {string} endInput - ISO date string or time string
+ * @returns {string} Formatted span (e.g. "4:52 and 5:52pm"), or the single
+ *   time when both are the same
+ */
+const formatTimeSpan = (startInput, endInput) => {
+  if (!startInput || !endInput) return ''
+
+  const start = formatTimeString(startInput)
+  const end = formatTimeString(endInput)
+  if (start === end) return start
+
+  // "midday" and "midnight" carry no meridiem to share
+  const sharedMeridiem = ['am', 'pm'].find(
+    (meridiem) => start.endsWith(meridiem) && end.endsWith(meridiem)
+  )
+  const startText = sharedMeridiem ? start.slice(0, -2) : start
+
+  return `${startText} and ${end}`
+}
+
+/**
  * Format clinic session times for display
  *
  * @param {object} times - Object containing startTime and endTime
@@ -829,6 +854,7 @@ module.exports = {
   formatMonthYear,
   formatTime,
   formatTimeString,
+  formatTimeSpan,
   formatTimeRange,
   formatDateTime,
   formatRelativeDate,

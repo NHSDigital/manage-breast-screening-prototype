@@ -5,7 +5,7 @@
 {% set pageHeading = "Defer this case" %}
 {% set formAction = './defer-case-answer' | urlWithReferrer(referrerChain) %}
 {% set back = {
-  href: "./opinion",
+  href: "./" + decisionStep,
   text: "Back"
 } %}
 
@@ -24,7 +24,7 @@
       </h1>
 
       <p>
-        This case will be removed from the reading queue. It must be manually reviewed before it can be read.
+        This case will be put on hold. It must be manually reviewed before it can be read.
       </p>
 
       {{ textarea({

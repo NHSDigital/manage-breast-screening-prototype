@@ -15,7 +15,7 @@
 
 {% set back = {
   href: "/reading/cases",
-  text: "Back to reading cases"
+  text: "All reading cases"
 } %}
 
 {% set caseNavActive = 'priors' %}
@@ -34,18 +34,12 @@
     <p>The case is held from reading until outstanding priors arrive or are marked unavailable or not needed.</p>
   {% endif %}
 
-  <div data-current-username="{{ data.currentUser.id | getUsername({ format: 'short', identifyCurrentUser: true }) }}">
-    {% for mammogram in appointment.previousMammograms %}
-      {% set thisAppointment = appointment %}
-      {% set priorsReturnTo = getReadingCaseUrl(readingCase) + "/priors" %}
-      {% include "_includes/priors/disclosed-mammogram-card.njk" %}
-    {% endfor %}
-  </div>
+  {% for mammogram in appointment.previousMammograms %}
+    {% set thisAppointment = appointment %}
+    {% set priorsReturnTo = getReadingCaseUrl(readingCase) + "/priors" %}
+    {% include "_includes/priors/disclosed-mammogram-card.njk" %}
+  {% endfor %}
 
   <p><a href="/reading/priors">View all priors requests</a></p>
 
-{% endblock %}
-
-{% block pageScripts %}
-  {% include "_includes/priors/prior-status-script.njk" %}
 {% endblock %}

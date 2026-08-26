@@ -16,6 +16,7 @@
         <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-5 nhsuk-u-margin-bottom-5">
       {% endif %}
       {% set readLabel = "First read" if loop.first else "Second read" %}
+      {% set defaultAdoptButtonText = "Use first read as outcome" if loop.first else "Use second read as outcome" %}
       {% include "_includes/reading/arbitration-read-condensed.njk" %}
     {% endif %}
   {% endfor %}
@@ -26,6 +27,7 @@
     {% if read %}
       <div class="{{ "nhsuk-u-margin-top-4" if not loop.first }}">
         {% set readLabel = "First read" if loop.first else "Second read" %}
+        {% set defaultAdoptButtonText = "Use first read as outcome" if loop.first else "Use second read as outcome" %}
         {% include "_includes/reading/arbitration-read-card.njk" %}
       </div>
     {% endif %}
@@ -38,6 +40,7 @@
       {% if read %}
         <div class="nhsuk-grid-column-one-half">
           {% set readLabel = "First read" if loop.first else "Second read" %}
+          {% set defaultAdoptButtonText = "Use first read as outcome" if loop.first else "Use second read as outcome" %}
           {% include "_includes/reading/arbitration-read-card.njk" %}
         </div>
       {% endif %}

@@ -37,6 +37,42 @@
   gap: nhsuk-spacing(2);
 }
 
+// The line above the results: how many there are, and the order they are in
+.app-results-bar {
+  align-items: baseline;
+  column-gap: nhsuk-spacing(3);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: nhsuk-spacing(3);
+}
+
+.app-results-bar__sort {
+  align-items: baseline;
+  display: flex;
+  gap: nhsuk-spacing(2);
+}
+
+// Label and select sit on one line - the control is furniture above a list,
+// not a question being asked
+.app-results-bar__sort-group {
+  align-items: baseline;
+  display: flex;
+  gap: nhsuk-spacing(2);
+  margin-bottom: 0;
+}
+
+.app-results-bar__sort-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+// Sorting happens on selection once live filtering is running, so the button
+// only exists for the no-JavaScript case
+.app-live-filters .app-results-bar__sort-button {
+  display: none;
+}
+
 // The removable filters shown above the results - pill-style tags with a
 // cross, after the MoJ design system's filter pattern
 // Flex rather than inline-block items: the whitespace between inline items

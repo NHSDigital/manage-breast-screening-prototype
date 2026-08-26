@@ -1,11 +1,16 @@
 {# app/views/_includes/priors/disclosed-mammogram-card.njk
 
    One disclosed prior mammogram as a card: the full details the participant
-   gave, then the request status, history and actions. The data-mammogram-*
-   attributes are the hooks the shared in-place update script targets,
-   matching the dashboard's table cells.
+   gave, then the request status, history and actions. Also rendered on its
+   own by the prior-mammogram-card fragment route so fragment-actions.js can
+   swap a card in place after a status change - keep it self-contained.
 
    Expects: mammogram, thisAppointment. Optional: priorsReturnTo. #}
+
+{%- from 'card/macro.njk' import card %}
+{%- from 'summary-list/macro.njk' import summaryList %}
+
+{% set priorsFragment = "card" %}
 
 {# Details of the mammogram itself #}
 {% set mammogramRows = [] %}
@@ -52,9 +57,7 @@
 {% set requestRows = [] %}
 
 {% set statusHtml %}
-  <div data-mammogram-status="{{ mammogram.id }}">
-    {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
-  </div>
+  {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
 {% endset %}
 {% set requestRows = requestRows | push({
   key: { text: "Request status" },
@@ -62,8 +65,7 @@
 }) %}
 
 {# The request story - who requested or actioned it, when, and the reader's
-   reason. Same shape as the dashboard's details cell so the shared script can
-   update it in place #}
+   reason #}
 {% if mammogram.requestStatus == "pending" %}
   {% set changedLabel = "Requested" %}
   {% set changedDate = mammogram.requestedDate %}
@@ -76,25 +78,19 @@
 {% endif %}
 
 {% set requestHistoryHtml %}
-  <div data-mammogram-details="{{ mammogram.id }}">
-    {% if changedDate %}
-      <p class="nhsuk-u-margin-bottom-0">
-        <span class="js-prior-request">
-          {{- changedLabel }}
-          {%- if changedBy %} by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
-          on {{ changedDate | formatDate("D MMMM YYYY") -}}
-        </span>
-      </p>
-    {% endif %}
-    {% if mammogram.requestReason %}
-      <p class="nhsuk-u-margin-bottom-0">Reason: {{ mammogram.requestReason }}</p>
-    {% endif %}
-    {% if not changedDate and not mammogram.requestReason %}
-      {# The span is the shared script's target, so an in-place update
-         replaces this placeholder rather than appending below it #}
-      <p class="nhsuk-u-margin-bottom-0 nhsuk-u-secondary-text-colour"><span class="js-prior-request">No request activity yet</span></p>
-    {% endif %}
-  </div>
+  {% if changedDate %}
+    <p class="nhsuk-u-margin-bottom-0">
+      {{- changedLabel }}
+      {%- if changedBy %} by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+      on {{ changedDate | formatDate("D MMMM YYYY") -}}
+    </p>
+  {% endif %}
+  {% if mammogram.requestReason %}
+    <p class="nhsuk-u-margin-bottom-0">Reason: {{ mammogram.requestReason }}</p>
+  {% endif %}
+  {% if not changedDate and not mammogram.requestReason %}
+    <p class="nhsuk-u-margin-bottom-0 nhsuk-u-secondary-text-colour">No request activity yet</p>
+  {% endif %}
 {% endset %}
 {% set requestRows = requestRows | push({
   key: { text: "Request history" },
@@ -104,9 +100,7 @@
 {# No row at all when the request is resolved and nothing can be done #}
 {% if mammogram.requestStatus in ["not_requested", "pending", "requested"] %}
   {% set actionsHtml %}
-    <div data-mammogram-actions="{{ mammogram.id }}">
-      {% include "_includes/priors/prior-actions.njk" %}
-    </div>
+    {% include "_includes/priors/prior-actions.njk" %}
   {% endset %}
   {% set requestRows = requestRows | push({
     key: { text: "Actions" },
@@ -123,7 +117,8 @@
 {% call card({
   heading: cardTitle,
   headingLevel: "3",
-  headingClasses: "nhsuk-heading-s"
+  headingClasses: "nhsuk-heading-s",
+  attributes: { "data-fragment-id": mammogram.id }
 }) %}
   {{ summaryList({ rows: mammogramRows }) }}
 

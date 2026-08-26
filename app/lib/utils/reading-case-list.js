@@ -24,7 +24,10 @@ const {
   isCaseDeferred
 } = require('./reading-cases')
 const { getStatusText } = require('./status')
-const { awaitingPriors } = require('./prior-mammograms')
+const {
+  awaitingPriors,
+  getAwaitingPriorsStatus
+} = require('./prior-mammograms')
 const { participantMatchesQuery } = require('./search')
 const { applyFilterGroups } = require('./filter-list')
 
@@ -57,7 +60,9 @@ const getAllEpisodes = (data) => {
   const changedIds = new Set(Object.keys(changed))
 
   return [
-    ...dataStore.state.episodes.filter((episode) => !changedIds.has(episode.id)),
+    ...dataStore.state.episodes.filter(
+      (episode) => !changedIds.has(episode.id)
+    ),
     ...Object.values(changed)
   ]
 }
@@ -96,6 +101,23 @@ const getFinalisationStage = (outcome, status) => {
 }
 
 /**
+ * When something last happened on a case: the most recent read or
+ * finalisation, falling back to when the images were taken.
+ *
+ * @param {object} readingCase - The case
+ * @returns {string} An ISO date string
+ */
+const getLastActivityDate = (readingCase) => {
+  const stamps = getReadsAsArray(readingCase)
+    .flatMap((read) => [read.timestamp, read.finalisedAt])
+    .filter(Boolean)
+
+  return stamps.length
+    ? stamps.reduce((latest, stamp) => (stamp > latest ? stamp : latest))
+    : readingCase.openedDate
+}
+
+/**
  * Build one row for a case - everything the list and its filters need.
  *
  * @param {object} data - Session data
@@ -112,9 +134,16 @@ const buildRow = (data, episode, readingCase) => {
 
   const isDeferred = isCaseDeferred(readingCase)
   const isAwaitingPriors = appointment ? awaitingPriors(appointment) : false
+  // The case-level status ('pending'/'requested') behind the awaiting-priors
+  // union, so the row tag can match the priors dashboard rather than always
+  // reading 'Priors required'
+  const awaitingPriorsStatus = appointment
+    ? getAwaitingPriorsStatus(appointment)
+    : null
 
   const imagesTakenDate = readingCase.openedDate
   const outcome = getReadingCaseOutcome(readingCase, data.settings)
+  const finalisation = getFinalisationStage(outcome, status)
 
   return {
     readingCase,
@@ -127,10 +156,14 @@ const buildRow = (data, episode, readingCase) => {
     status,
     finalised: status.finalised,
     outcome,
-    finalisation: getFinalisationStage(outcome, status),
+    finalisation,
+    // Whether the case still has reading work on it - the axis the priority
+    // sort bands on. A case with a provisional outcome isn't done yet
+    isLive: finalisation !== 'finalised',
     readCount: getReadsAsArray(readingCase).length,
     isDeferred,
     awaitingPriors: isAwaitingPriors,
+    awaitingPriorsStatus,
     // Deferral and outstanding priors hold a case up without moving it out of
     // the stage it's in - so a blocked case still counts towards its stage
     isBlocked: isDeferred || isAwaitingPriors,
@@ -139,7 +172,8 @@ const buildRow = (data, episode, readingCase) => {
     urgency: outcome
       ? null
       : getReadingUrgency(imagesTakenDate, data.config?.reading),
-    imagesTakenDate
+    imagesTakenDate,
+    lastActivityDate: getLastActivityDate(readingCase)
   }
 }
 
@@ -222,19 +256,103 @@ const READING_CASE_FILTER_GROUPS = [
 ]
 
 /**
+ * A case's name key for alphabetical ordering - surname, then first name.
+ *
+ * @param {object} row - A row from buildRow
+ * @returns {string} Sort key
+ */
+const getNameKey = (row) => {
+  const { firstName, lastName } = row.participant?.demographicInformation || {}
+
+  return `${lastName || ''} ${firstName || ''}`.trim().toLowerCase()
+}
+
+const compareDates = (a, b) => new Date(a) - new Date(b)
+
+// Cases sharing a sort value need a stable order - a technical recall opens a
+// second case on the same day, and one person can hold several rounds - so
+// every sort falls back to name, then screening date, then case id
+const compareTieBreak = (a, b) =>
+  getNameKey(a).localeCompare(getNameKey(b)) ||
+  compareDates(a.imagesTakenDate, b.imagesTakenDate) ||
+  a.readingCase.id.localeCompare(b.readingCase.id)
+
+/**
+ * The orders the list can be shown in, in the order they appear in the menu.
+ *
+ * Priority leads because the list serves two jobs at once: a work queue in the
+ * 'current' view, a record in 'all'. It bands on whether a case still has
+ * reading work on it, so an open case from this week sits above a round that
+ * closed years ago - then reads oldest-first within the live band (which is
+ * urgency order, since urgency comes from image age) and newest-first within
+ * the closed one.
+ */
+const READING_CASE_SORTS = [
+  {
+    value: 'priority',
+    label: 'Priority',
+    compare: (a, b) => {
+      if (a.isLive !== b.isLive) return a.isLive ? -1 : 1
+
+      return a.isLive
+        ? compareDates(a.imagesTakenDate, b.imagesTakenDate)
+        : compareDates(b.imagesTakenDate, a.imagesTakenDate)
+    }
+  },
+  {
+    value: 'screening_date_asc',
+    label: 'Screening date – oldest first',
+    compare: (a, b) => compareDates(a.imagesTakenDate, b.imagesTakenDate)
+  },
+  {
+    value: 'screening_date_desc',
+    label: 'Screening date – newest first',
+    compare: (a, b) => compareDates(b.imagesTakenDate, a.imagesTakenDate)
+  },
+  {
+    value: 'activity_desc',
+    label: 'Last activity – newest first',
+    compare: (a, b) => compareDates(b.lastActivityDate, a.lastActivityDate)
+  },
+  {
+    value: 'activity_asc',
+    label: 'Last activity – oldest first',
+    compare: (a, b) => compareDates(a.lastActivityDate, b.lastActivityDate)
+  },
+  {
+    value: 'surname',
+    label: 'Surname A to Z',
+    compare: (a, b) => getNameKey(a).localeCompare(getNameKey(b))
+  }
+]
+
+const DEFAULT_CASE_SORT = 'priority'
+
+/**
+ * The sort to apply, falling back to the default when the value is unknown.
+ *
+ * @param {string} [value] - A sort value
+ * @returns {object} An entry from READING_CASE_SORTS
+ */
+const getCaseSort = (value) =>
+  READING_CASE_SORTS.find((sort) => sort.value === value) ||
+  READING_CASE_SORTS.find((sort) => sort.value === DEFAULT_CASE_SORT)
+
+/**
  * Every case in a view matching the search, before any filter group applies -
  * the population the filter counts describe.
  *
- * Uncapped and sorted oldest images first.
+ * Uncapped, in the order the sort asks for.
  *
  * @param {object} data - Session data
  * @param {object} [filters] - Filters
  * @param {string} [filters.view] - One of CASE_VIEWS, default 'current'
  * @param {string} [filters.query] - Participant name or NHS number
+ * @param {string} [filters.sort] - One of READING_CASE_SORTS, default 'priority'
  * @returns {Array} Rows
  */
 const getReadingCaseRows = (data, filters = {}) => {
-  const { view = 'current', query = '' } = filters
+  const { view = 'current', query = '', sort } = filters
 
   const rows = []
 
@@ -250,18 +368,19 @@ const getReadingCaseRows = (data, filters = {}) => {
     }
   }
 
-  return rows.sort(
-    (a, b) => new Date(a.imagesTakenDate) - new Date(b.imagesTakenDate)
-  )
+  const { compare } = getCaseSort(sort)
+
+  return rows.sort((a, b) => compare(a, b) || compareTieBreak(a, b))
 }
 
 /**
- * The reading case backlog, filtered and sorted oldest images first.
+ * The reading case backlog, filtered and sorted.
  *
  * @param {object} data - Session data
  * @param {object} [filters] - Filters
  * @param {string} [filters.view] - One of CASE_VIEWS, default 'current'
  * @param {string} [filters.query] - Participant name or NHS number
+ * @param {string} [filters.sort] - One of READING_CASE_SORTS, default 'priority'
  * @param {Array} [filters.groups] - Filter groups (READING_CASE_FILTER_GROUPS)
  * @param {object} [filters.selected] - Group name -> selected values
  * @returns {object} `{ rows, totalCount, truncated }` - rows capped at MAX_ROWS
@@ -324,6 +443,8 @@ module.exports = {
   CASE_VIEWS,
   CASE_VIEW_LABELS,
   READING_CASE_FILTER_GROUPS,
+  READING_CASE_SORTS,
+  DEFAULT_CASE_SORT,
   MAX_ROWS,
   getReadingCaseRows,
   getReadingCaseList,

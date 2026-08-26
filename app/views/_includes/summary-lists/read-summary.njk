@@ -13,8 +13,14 @@
     - annotationViewOrder: string - view order for thumbnails (default: "cc-first")
     - showReaderRow: boolean - add a "Read by" row with reader and date, for
       contexts with no card heading or label carrying that (default: false)
+    - isOutcome: boolean - the read settles the case rather than offering one
+      of several opinions, so its rows are labelled as an outcome (default:
+      true for arbitration reads). Callers rendering an in-progress
+      arbitration decision, which has no readType yet, set this themselves
     - opinionLabel: string - override the opinion row's label (default:
-      "Outcome" for arbitration reads, otherwise "Opinion")
+      "Outcome" when isOutcome, otherwise "Opinion")
+    - hideFinalisedRow: boolean - if true, never show the finalised row - for
+      contexts where when a read finalised isn't the point (default: false)
     - annotationRowHtml: string - supplied content for the annotations row,
       shown whatever the read's own opinion - lets a caller pool annotations
       from several reads (default: built from this read's own annotations)
@@ -25,8 +31,8 @@
       even though this read may have (default: false)
 
   Callers set these with set before including; a caller reusing this include
-  after another has set opinionLabel, annotationRowHtml or extraRows should
-  reset them to null.
+  after another has set isOutcome, opinionLabel, hideFinalisedRow,
+  annotationRowHtml or extraRows should reset them.
 #}
 
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
@@ -36,6 +42,7 @@
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
 {% set hideEmptyRows = hideEmptyRows if hideEmptyRows is defined else false %}
 {% set hideOpinionRow = hideOpinionRow if hideOpinionRow is defined else false %}
+{% set hideFinalisedRow = hideFinalisedRow if hideFinalisedRow is defined else false %}
 {# Support legacy opinionOnly parameter #}
 {% if opinionOnly is defined and opinionOnly %}
   {% set hideEmptyRows = true %}
@@ -92,9 +99,10 @@
 
 {% set readerRowHtml = (read.readerId | getUsername({ format: "short" })) + ", " + (read.timestamp | formatDate) %}
 
-{# Opinion row. An arbitration read settles the case, so it is the outcome
-   rather than one of several opinions #}
-{% set opinionLabel = opinionLabel if opinionLabel else ("Outcome" if read.readType == 'arbitration' else "Opinion") %}
+{# An arbitration read settles the case, so it is the outcome rather than one
+   of several opinions - and its rows say so #}
+{% set isOutcome = isOutcome if isOutcome is defined else (read.readType == 'arbitration') %}
+{% set opinionLabel = opinionLabel if opinionLabel else ("Outcome" if isOutcome else "Opinion") %}
 {% if not hideOpinionRow %}
   {% set opinionValueHtml %}
     {% set readOpinionRead = read %}
@@ -221,11 +229,12 @@
     </div>
   {% endset %}
 
-  {# Only show detailed opinion if we have data, or if not hiding empty rows #}
+  {# Only show the detail row if we have data, or if not hiding empty rows #}
+  {% set breastAssessmentLabel = "Outcome details" if isOutcome else "Detailed opinion" %}
   {% if not hideEmptyRows or hasBreastAssessment %}
     {% set rows = rows | push({
       key: {
-        text: "Detailed opinion"
+        text: breastAssessmentLabel
       },
       value: {
         html: breastAssessmentHtml
@@ -235,7 +244,7 @@
           {
             href: "./recall-for-assessment-details" | urlWithReferrer(currentUrl),
             text: "Change",
-            visuallyHiddenText: "detailed opinion"
+            visuallyHiddenText: breastAssessmentLabel | lower
           }
         ]
       } if allowEdits
@@ -331,7 +340,7 @@
 
 {# When it was finalised. Reads finalised by the delay passing have no
    finalisedAt stamp, so fall back to the moment the delay ran out. #}
-{% if not awaitingFinalisation and read.timestamp and (read | isReadFinalised(data.settings)) %}
+{% if not hideFinalisedRow and not awaitingFinalisation and read.timestamp and (read | isReadFinalised(data.settings)) %}
   {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
   {% if finalisedAt %}
     {% set rows = rows | push({
