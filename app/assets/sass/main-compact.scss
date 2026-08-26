@@ -9,9 +9,8 @@
   $nhsuk-gutter: 24px,
 
   // Reduce layout spacing points (5–9). Points 0–4 stay at NHS defaults.
-  // Note: checkbox and radio input sizes are decoupled from the spacing scale
-  // since nhsuk-frontend 10.5 (fix #1934), so spacing(6) no longer affects input geometry.
-  // _compact.scss intentionally applies the --small variant to all checkboxes/radios.
+  // Checkbox and radio geometry is fixed in px rather than driven by the spacing scale,
+  // and _compact.scss applies the --small variant to all checkboxes/radios.
   $nhsuk-spacing-points: (
       0: 0,
       1: 4px,

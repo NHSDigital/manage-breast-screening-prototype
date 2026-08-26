@@ -1,5 +1,7 @@
-@use "sass:math";
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
+// Loaded so the compact overrides below can @extend their --small variants
+@use "nhsuk-frontend/dist/nhsuk/components/checkboxes";
+@use "nhsuk-frontend/dist/nhsuk/components/radios";
 
 // app/assets/sass/components/_compact.scss
 // Compact mode styles are only active when compact mode is enabled.
@@ -18,175 +20,14 @@
   // checkboxes and radios in compact mode, so tighter inputs are applied globally without
   // needing to add small: true to every macro call.
   //
-  // Since nhsuk-frontend 10.5 (fix #1934), checkbox and radio sizes are hardcoded in px
-  // and no longer depend on the spacing scale, so our spacing adjustments don't break
-  // input geometry. The values below match the nhsuk-frontend --small variant exactly.
-
-  // Apply .nhsuk-checkboxes--small equivalent to all checkboxes in compact mode.
+  // Extending the nhsuk-frontend variants rather than copying their values means the
+  // geometry stays correct when nhsuk-frontend changes how the components are laid out.
   .nhsuk-checkboxes {
-    $small-size: nhsuk-px-to-rem(24px); // 1.5rem — NHS small variant size, fixed
-    $touch-target: nhsuk-px-to-rem(44px); // matches NHS --small, overrides reduced spacing(6)
-    $input-offset: math.div($touch-target - $small-size, 2); // 0.625rem (10px)
-
-    .nhsuk-checkboxes__item {
-      margin-top: 0;
-    }
-
-    .nhsuk-checkboxes__input {
-      width: $touch-target;
-      height: $touch-target;
-      margin-left: $input-offset * -1;
-    }
-
-    .nhsuk-checkboxes__label {
-      // Touch target is 44px so label starts at 34px — same as NHS --small, so 1px gap suffices.
-      padding-left: 1px;
-    }
-
-    .nhsuk-checkboxes__label::before {
-      top: $input-offset;
-      left: 0;
-      width: $small-size;
-      height: $small-size;
-    }
-
-    // Tick mark positions from the NHS --small source (sized for 24px box)
-    .nhsuk-checkboxes__label::after {
-      top: nhsuk-px-to-rem(18px);
-      left: nhsuk-px-to-rem(6px); // 18px - 12px ($nhsuk-checkboxes-check-horizontal-position)
-      width: nhsuk-px-to-rem(12px);
-      height: nhsuk-px-to-rem(6px);
-      border-width: 0 0 nhsuk-px-to-rem(3px) nhsuk-px-to-rem(3px);
-    }
-
-    .nhsuk-checkboxes__hint {
-      padding-left: $small-size + $input-offset;
-    }
-
-    .nhsuk-checkboxes__conditional {
-      $margin-left: math.div($small-size, 2) - nhsuk-px-to-rem($nhsuk-border-width-form-element);
-      margin-left: $margin-left;
-      padding-left: ($touch-target - $input-offset) - ($margin-left + nhsuk-px-to-rem($nhsuk-border-width));
-    }
-
-    .nhsuk-checkboxes__divider {
-      width: $small-size;
-      margin: nhsuk-spacing(1) - $nhsuk-border-width-form-element 0;
-      padding: 0;
-    }
-
-    .nhsuk-checkboxes__input:not(:disabled):hover + .nhsuk-checkboxes__label::before,
-    .nhsuk-checkboxes__input:not(:disabled) + .nhsuk-checkboxes__label:hover::before {
-      outline: nhsuk-px-to-rem($nhsuk-focus-width) dashed transparent;
-      outline-offset: 1px;
-      box-shadow: 0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
-    }
-
-    .nhsuk-checkboxes__input:focus:hover + .nhsuk-checkboxes__label::before,
-    .nhsuk-checkboxes__input:focus + .nhsuk-checkboxes__label:hover::before {
-      box-shadow:
-        0 0 0 nhsuk-px-to-rem($nhsuk-focus-width) $nhsuk-focus-colour,
-        0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
-
-      @media screen and (forced-colors: active), (-ms-high-contrast: active) {
-        outline-color: Highlight;
-      }
-    }
-
-    @media (hover: none), (pointer: coarse) {
-      .nhsuk-checkboxes__input:not(:disabled):hover + .nhsuk-checkboxes__label::before,
-      .nhsuk-checkboxes__input:not(:disabled) + .nhsuk-checkboxes__label:hover::before {
-        box-shadow: initial;
-      }
-
-      .nhsuk-checkboxes__input:focus:hover + .nhsuk-checkboxes__label::before,
-      .nhsuk-checkboxes__input:focus + .nhsuk-checkboxes__label:hover::before {
-        box-shadow: 0 0 0 nhsuk-px-to-rem($nhsuk-focus-width) $nhsuk-focus-colour;
-      }
-    }
+    @extend .nhsuk-checkboxes--small;
   }
 
-  // Apply .nhsuk-radios--small equivalent to all radios in compact mode.
   .nhsuk-radios {
-    $small-size: nhsuk-px-to-rem(24px); // 1.5rem — NHS small variant size, fixed
-    $touch-target: nhsuk-px-to-rem(44px); // matches NHS --small, overrides reduced spacing(6)
-    $input-offset: math.div($touch-target - $small-size, 2); // 0.625rem (10px)
-    $focus-width: nhsuk-px-to-rem($nhsuk-focus-width + 1px); // 0.3125rem (bumped for curved edge)
-
-    .nhsuk-radios__item {
-      margin-top: 0;
-    }
-
-    .nhsuk-radios__input {
-      width: $touch-target;
-      height: $touch-target;
-      margin-left: $input-offset * -1;
-    }
-
-    .nhsuk-radios__label {
-      // Touch target is 44px so label starts at 34px — same as NHS --small, so 1px gap suffices.
-      padding-left: 1px;
-    }
-
-    .nhsuk-radios__label::before {
-      top: $input-offset;
-      left: 0;
-      width: $small-size;
-      height: $small-size;
-    }
-
-    .nhsuk-radios__label::after {
-      $dot-size: nhsuk-px-to-rem(5px); // small variant uses 5px dot vs 10px default
-      top: math.div($touch-target, 2) - $dot-size;
-      left: math.div($touch-target, 2) - $dot-size - $input-offset;
-      border-width: $dot-size;
-    }
-
-    .nhsuk-radios__hint {
-      padding-left: $small-size + $input-offset;
-    }
-
-    .nhsuk-radios__conditional {
-      $margin-left: math.div($small-size, 2) - nhsuk-px-to-rem($nhsuk-border-width-form-element);
-      margin-left: $margin-left;
-      padding-left: ($touch-target - $input-offset) - ($margin-left + nhsuk-px-to-rem($nhsuk-border-width));
-    }
-
-    .nhsuk-radios__divider {
-      width: $small-size;
-      margin: nhsuk-spacing(1) - $nhsuk-border-width-form-element 0;
-      padding: 0;
-    }
-
-    .nhsuk-radios__input:not(:disabled):hover + .nhsuk-radios__label::before,
-    .nhsuk-radios__input:not(:disabled) + .nhsuk-radios__label:hover::before {
-      outline: $focus-width dashed transparent;
-      outline-offset: 1px;
-      box-shadow: 0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
-    }
-
-    .nhsuk-radios__input:focus:hover + .nhsuk-radios__label::before,
-    .nhsuk-radios__input:focus + .nhsuk-radios__label:hover::before {
-      box-shadow:
-        0 0 0 $focus-width $nhsuk-focus-colour,
-        0 0 0 $nhsuk-hover-width $nhsuk-hover-colour;
-
-      @media screen and (forced-colors: active), (-ms-high-contrast: active) {
-        outline-color: Highlight;
-      }
-    }
-
-    @media (hover: none), (pointer: coarse) {
-      .nhsuk-radios__input:not(:disabled):hover + .nhsuk-radios__label::before,
-      .nhsuk-radios__input:not(:disabled) + .nhsuk-radios__label:hover::before {
-        box-shadow: initial;
-      }
-
-      .nhsuk-radios__input:focus:hover + .nhsuk-radios__label::before,
-      .nhsuk-radios__input:focus + .nhsuk-radios__label:hover::before {
-        box-shadow: 0 0 0 $focus-width $nhsuk-focus-colour;
-      }
-    }
+    @extend .nhsuk-radios--small;
   }
 
   .nhsuk-table {
