@@ -98,7 +98,7 @@ module.exports = (router) => {
     // for it otherwise
     const arbitrationCount =
       layout === 'complex'
-        ? getArbitrationBacklogCounts(data, { scope: 'open' }).total
+        ? getArbitrationBacklogCounts(data, { view: 'current' }).total
         : null
 
     res.render(template, {

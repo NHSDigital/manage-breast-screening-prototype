@@ -2,8 +2,8 @@
 
    Shared header for the reading case pages (case view and priors tab):
    participant name with the case's state on the right, then NHS number.
-   Expects the case context locals: pageHeading, readingCase, caseState,
-   appointment, isDeferred, caseAwaitingPriors, participant. #}
+   Expects the case context locals: pageHeading, readingCase, caseOutcome,
+   isDeferred, caseAwaitingPriors, participant. #}
 
 <div class="app-header-with-status">
   <h1 class="nhsuk-heading-l">
@@ -17,12 +17,12 @@
     {% set outcomeTagClasses = "nhsuk-u-margin-bottom-2" %}
     {% include "_includes/reading/case-outcome-tag.njk" %}
 
-    {# Urgency matters only while the case is still open #}
-    {% if caseState != 'concluded' and appointment %}
-      {% set appointmentAge = appointment.timing.startTime | daysSince %}
-      {% if appointmentAge >= data.config.reading.urgentThreshold %}
+    {# Ageing matters only while the case still owes a final outcome #}
+    {% if not caseOutcome %}
+      {% set caseUrgency = readingCase.openedDate | getReadingUrgency(data.config.reading) %}
+      {% if caseUrgency == 'urgent' %}
         <br>{{ "Urgent" | toTag }}
-      {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
+      {% elseif caseUrgency == 'due_soon' %}
         <br>{{ "Due soon" | toTag }}
       {% endif %}
     {% endif %}

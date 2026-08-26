@@ -22,6 +22,7 @@
     "accessible-autocomplete": "^3.0.1",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.21",
+    "idiomorph": "^0.7.4",
     "lodash": "^4.18.1",
     "markdown-it": "^15.0.0",
     "nhsuk-frontend": "^10.4.2",

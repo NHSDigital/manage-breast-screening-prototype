@@ -18,7 +18,7 @@
 
   <p>
     {{ backlogCount }} {{ "case" | pluralise(backlogCount) }} {{ "is" if backlogCount == 1 else "are" }} waiting for arbitration.
-    <a href="/reading/cases?state=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
+    <a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
   </p>
 
   {# Blocked cases stay in the backlog but arbitration can't offer them #}

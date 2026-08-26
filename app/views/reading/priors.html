@@ -119,10 +119,10 @@
 
                 {# Screening date #}
                 <td>
-                  {% set daysSinceScreening = thisAppointment.timing.startTime | daysSince %}
-                  {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+                  {% set urgency = thisAppointment.timing.startTime | getReadingUrgency(data.config.reading) %}
+                  {% if urgency == "urgent" %}
                     {{ "Urgent" | toTag }}<br>
-                  {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+                  {% elseif urgency == "due_soon" %}
                     {{ "Due soon" | toTag }}<br>
                   {% endif %}
                   {{ thisAppointment.timing.startTime | formatDate }}<br>

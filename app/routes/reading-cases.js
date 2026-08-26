@@ -9,15 +9,25 @@
 
 const {
   getReadingCaseList,
-  getReadingCaseStateCounts,
-  CASE_SCOPES
+  getReadingCaseRows,
+  READING_CASE_FILTER_GROUPS,
+  CASE_VIEWS,
+  CASE_VIEW_LABELS,
+  MAX_ROWS
 } = require('../lib/utils/reading-case-list')
+const {
+  parseFilterQuery,
+  applyFilterGroups,
+  getFilterCounts,
+  describeSelectedFilters,
+  buildFilterUrl,
+  hasSelectedFilters
+} = require('../lib/utils/filter-list')
 const { getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getParticipant } = require('../lib/utils/participants')
 const { getClinic, getClinicLocationName } = require('../lib/utils/clinics')
 const {
-  READING_CASE_STATES,
   getReadingCases,
   getReadsAsArray,
   getReadAuthorIds,
@@ -34,43 +44,120 @@ const { finaliseReadOnCase } = require('../lib/utils/reading')
 const { describeReadingCaseStatus } = require('../lib/utils/status')
 const { awaitingPriors } = require('../lib/utils/prior-mammograms')
 
+/**
+ * Pagination items for a list that isn't really paged.
+ *
+ * The list is capped at MAX_ROWS rather than paged, so page one is the only
+ * page there is - the rest are a stand-in that shows how big the backlog is.
+ * The macro doesn't insert its own ellipsis, so long runs are trimmed here.
+ *
+ * @param {number} pageCount - How many pages the total would fill
+ * @returns {Array} Items for the pagination macro
+ */
+const buildPaginationItems = (pageCount) => {
+  const allPages = [...Array(pageCount).keys()].map((index) => index + 1)
+
+  // null stands for the ellipsis
+  const numbers = pageCount > 4 ? [1, 2, 3, null, pageCount] : allPages
+
+  return numbers.map((number) =>
+    number === null
+      ? { ellipsis: true }
+      : { number, href: '#', current: number === 1 }
+  )
+}
+
 module.exports = (router) => {
   // Reading case backlog. Filters are query params rather than path segments
-  // because this list has several facets at once (state, scope, deferred,
-  // search) where the other reading lists have one - and it keeps the URL
-  // shareable.
+  // because this list has several facets at once (status, outcome, urgency,
+  // blocking, search) where the other reading lists have one - and it keeps
+  // the URL shareable. Checkboxes send repeated params, so a facet can hold
+  // several values at once.
   router.get('/reading/cases', (req, res) => {
     const data = req.session.data
 
-    const scope = CASE_SCOPES.includes(req.query.scope)
-      ? req.query.scope
-      : 'open'
-
-    const state = READING_CASE_STATES.includes(req.query.state)
-      ? req.query.state
-      : null
-
-    // Blocking filters: the two individual reasons, plus a meta filter for
-    // cases blocked by either
-    const deferred = req.query.deferred === 'true'
-    const awaitingPriors = req.query.priors === 'true'
-    const blocked = req.query.blocked === 'true'
+    const view = CASE_VIEWS.includes(req.query.view) ? req.query.view : 'current'
     const query = req.query.q || ''
 
-    const filters = { scope, state, deferred, awaitingPriors, blocked, query }
+    const groups = READING_CASE_FILTER_GROUPS
+    const selected = parseFilterQuery(req.query, groups)
 
-    const { rows, totalCount, truncated } = getReadingCaseList(data, filters)
-    const counts = getReadingCaseStateCounts(data, filters)
+    // Everything in the view matching the search, before the filter groups -
+    // what the faceted counts are drawn from
+    const baseRows = getReadingCaseRows(data, { view, query })
+
+    const { rows, totalCount, truncated } = getReadingCaseList(data, {
+      view,
+      query,
+      groups,
+      selected
+    })
+
+    const carriedParams = { view, q: query }
+
+    // Each view tab shows how many cases it holds under the current search
+    // and filters - the current view's count is just the result total
+    const viewCounts = Object.fromEntries(
+      CASE_VIEWS.map((candidate) => [
+        candidate,
+        candidate === view
+          ? totalCount
+          : applyFilterGroups(
+              getReadingCaseRows(data, { view: candidate, query }),
+              groups,
+              selected
+            ).length
+      ])
+    )
+
+    const viewUrls = Object.fromEntries(
+      CASE_VIEWS.map((candidate) => [
+        candidate,
+        buildFilterUrl('/reading/cases', selected, {
+          view: candidate,
+          q: query
+        })
+      ])
+    )
+
+    // A search only covers the current view, so say when the other one holds
+    // matches too. History is the superset, so this only arises on 'current'.
+    // The count and link carry the filters, matching the view tab above it.
+    const acrossViewCount =
+      query && view === 'current' && viewCounts.all > totalCount
+        ? viewCounts.all
+        : 0
 
     res.render('reading/cases', {
       rows,
       totalCount,
       truncated,
       shownCount: rows.length,
-      counts,
-      filters,
-      scopes: CASE_SCOPES,
-      states: READING_CASE_STATES
+      paginationItems:
+        totalCount > MAX_ROWS
+          ? buildPaginationItems(Math.ceil(totalCount / MAX_ROWS))
+          : [],
+      view,
+      views: CASE_VIEWS,
+      viewLabels: CASE_VIEW_LABELS,
+      query,
+      groups,
+      selected,
+      counts: getFilterCounts(baseRows, groups, selected),
+      selectedFilters: describeSelectedFilters(
+        groups,
+        selected,
+        '/reading/cases',
+        carriedParams
+      ),
+      isFiltered: hasSelectedFilters(selected),
+      // The search is a real field in the filter form now, so only the view
+      // rides along as a hidden field - and clearing keeps it
+      hiddenFields: { view },
+      viewCounts,
+      viewUrls,
+      acrossViewCount,
+      acrossViewUrl: viewUrls.all
     })
   })
 

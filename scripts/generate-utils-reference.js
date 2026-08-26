@@ -98,6 +98,14 @@ const FILE_META = {
     label: 'roles-and-permissions.js',
     description: 'User role checks. Use these instead of comparing role strings directly.'
   },
+  'app/lib/utils/filter-list.js': {
+    label: 'filter-list.js',
+    description: 'Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected. See docs/filtering.md.'
+  },
+  'app/lib/utils/search.js': {
+    label: 'search.js',
+    description: 'Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number.'
+  },
   'app/lib/utils/utility.js': {
     label: 'utility.js',
     description: 'General-purpose type coercion (`falsify`) and limiting utilities.'
@@ -146,6 +154,8 @@ const UTILS_FILES = [
   'app/lib/utils/breadcrumbs.js',
   'app/lib/utils/referrers.js',
   'app/lib/utils/roles-and-permissions.js',
+  'app/lib/utils/filter-list.js',
+  'app/lib/utils/search.js',
   'app/lib/utils/utility.js'
 ]
 

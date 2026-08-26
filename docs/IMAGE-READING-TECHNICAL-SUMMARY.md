@@ -257,7 +257,7 @@ data.readingSessions = {
 /reading/clinics/all                  # All clinics
 /reading/clinics/:clinicId            # Loads/creates clinic session, redirects to session view
 /reading/clinics/:clinicId/start      # Creates clinic session, starts first appointment
-/reading/cases                        # Reading case backlog (query-param filters: scope, state, q)
+/reading/cases                        # Reading case backlog (query params: view, q, and the repeated filter groups status, outcome, finalisation, urgency, blocked)
 /reading/cases/:caseId                # One reading case: state, blockers, reads, annotations
 /reading/cases/:caseId/priors        # The case's prior mammograms with request actions
 /reading/cases/:caseId/finalise      # Finalise every outstanding read on a case now

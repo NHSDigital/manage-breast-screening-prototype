@@ -19,6 +19,7 @@
 // getReadingCase.
 
 const generateId = require('./id-generator')
+const { daysSince } = require('./dates')
 
 // What kind of read this was, recorded when the read is written rather than
 // worked out later from its position. Once arbitration has a manual gate in
@@ -60,6 +61,28 @@ const READING_CASE_OUTCOMES = [
   'technical_recall',
   'recall_for_assessment'
 ]
+
+/**
+ * How overdue a case's images are for reading.
+ *
+ * The thresholds live in `config.reading` so every surface that flags an
+ * ageing case - the backlog list, the deferred and priors dashboards, the
+ * case header - agrees on when "due soon" becomes "urgent".
+ *
+ * @param {string | Date} imagesTakenDate - When the images were taken
+ * @param {object} [config] - `data.config.reading`
+ * @returns {string | null} 'urgent', 'due_soon', or null when neither
+ */
+const getReadingUrgency = (imagesTakenDate, config = {}) => {
+  if (!imagesTakenDate) return null
+
+  const days = daysSince(imagesTakenDate)
+
+  if (days >= config.urgentThreshold) return 'urgent'
+  if (days >= config.priorityThreshold) return 'due_soon'
+
+  return null
+}
 
 /**
  * Build a new reading case for one set of images.
@@ -898,6 +921,7 @@ module.exports = {
   READ_TYPES,
   READING_CASE_STATES,
   READING_CASE_OUTCOMES,
+  getReadingUrgency,
   buildReadingCase,
   getReadingCases,
   getLatestReadingCase,
