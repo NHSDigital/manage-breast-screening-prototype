@@ -9,11 +9,11 @@
 {# Environment tag - always first item #}
 {% if isArbitration %}
   {% set firstRowItems = firstRowItems | push({
-    html: '<strong class="nhsuk-tag nhsuk-tag--orange">Arbitration</strong>'
+    html: "Arbitration" | toTag({ colour: "purple" })
   }) %}
 {% else %}
   {% set firstRowItems = firstRowItems | push({
-    html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
+    html: "Reading" | toTag({ colour: "aqua-green" })
   }) %}
 {% endif %}
 

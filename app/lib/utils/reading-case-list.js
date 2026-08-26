@@ -18,10 +18,8 @@ const {
   getReadsAsArray,
   getReadingCaseStatus,
   getReadingCaseOutcome,
-  caseNeedsArbitration,
   isCaseDeferred
 } = require('./reading-cases')
-const { describeReadingCaseStatus } = require('./status')
 const { awaitingPriors } = require('./prior-mammograms')
 
 // How the list is scoped. Historic episodes are seeded summaries of past rounds
@@ -96,7 +94,6 @@ const buildRow = (data, episode, readingCase) => {
     clinicLocationName: getClinicLocationName(data, clinic),
     state: status.state,
     status,
-    statusDisplay: describeReadingCaseStatus(status),
     outcome: getReadingCaseOutcome(readingCase, data.settings),
     readCount: getReadsAsArray(readingCase).length,
     isDeferred,
@@ -104,10 +101,6 @@ const buildRow = (data, episode, readingCase) => {
     // Deferral and outstanding priors hold a case up without moving it out of
     // the stage it's in - so a blocked case still counts towards its stage
     isBlocked: isDeferred || isAwaitingPriors,
-    // The arbitration backlog, which is wider than the awaiting_arbitration
-    // state: a case released into arbitration stays in the backlog until it
-    // has been arbitrated, even though its state reads awaiting_finalisation
-    inArbitration: caseNeedsArbitration(readingCase, data.settings),
     imagesTakenDate: readingCase.openedDate
   }
 }
@@ -135,20 +128,15 @@ const rowMatchesQuery = (row, query) => {
 }
 
 /**
- * Whether a row belongs to a state filter.
- *
- * Every state matches on the row's own state, except arbitration: there the
- * filter means the backlog, which also holds cases already released to an
- * arbitrator but not yet arbitrated. Those read as awaiting_finalisation until
- * an arbitration read lands, so a plain state match would lose them.
+ * Whether a row belongs to a state filter. A plain state match covers the
+ * whole arbitration backlog too: a disagreeing case is awaiting_arbitration
+ * from the moment the disagreement exists, finalised or not.
  *
  * @param {object} row - A row from buildRow
  * @param {string} state - A reading case state
  * @returns {boolean}
  */
 const rowInState = (row, state) => {
-  if (state === 'awaiting_arbitration') return row.inArbitration
-
   return row.state === state
 }
 
@@ -250,9 +238,6 @@ const getReadingCaseStateCounts = (data, filters = {}) => {
     if (row.isBlocked) counts.blocked += 1
   }
 
-  // The arbitration backlog is wider than the state - see rowInState
-  counts.awaiting_arbitration = rows.filter((row) => row.inArbitration).length
-
   return counts
 }
 
@@ -265,7 +250,7 @@ const getReadingCaseStateCounts = (data, filters = {}) => {
  *
  * @param {object} data - Session data
  * @param {object} [filters] - Same filters as getReadingCaseList
- * @returns {object} `{ total, available, blocked, deferred, awaitingPriors }`
+ * @returns {object} `{ total, available, unfinalised, blocked, deferred, awaitingPriors }`
  */
 const getArbitrationBacklogCounts = (data, filters = {}) => {
   const rows = collectRows(data, {
@@ -278,9 +263,16 @@ const getArbitrationBacklogCounts = (data, filters = {}) => {
 
   const blockedRows = rows.filter((row) => row.isBlocked)
 
+  // In the backlog but not yet arbitrable - the reads behind the disagreement
+  // haven't finalised
+  const unfinalisedRows = rows.filter(
+    (row) => !row.isBlocked && !row.status.finalised
+  )
+
   return {
     total: rows.length,
-    available: rows.length - blockedRows.length,
+    available: rows.length - blockedRows.length - unfinalisedRows.length,
+    unfinalised: unfinalisedRows.length,
     blocked: blockedRows.length,
     deferred: blockedRows.filter((row) => row.isDeferred).length,
     awaitingPriors: blockedRows.filter((row) => row.awaitingPriors).length

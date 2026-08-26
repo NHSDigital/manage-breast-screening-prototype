@@ -29,12 +29,13 @@ const READ_TYPES = ['first', 'second', 'arbitration']
 // Where a case has got to. Derived from its reads plus the acts recorded on it
 // - never stored, so it can't drift from the reads it describes.
 //
-// Two reads are not a result by themselves: the result becomes real once the
-// reads are finalised - explicitly by the reader, or automatically when the
-// finalisation delay passes. `awaiting_finalisation` is that gap. A case whose
-// destination is arbitration is still `awaiting_finalisation` until then - the
-// destination is a fact about the case (see getReadingCaseStatus), not a
-// separate state.
+// A read is not a result until finalised - explicitly by the reader, or
+// automatically when the finalisation delay passes. `awaiting_finalisation` is
+// that gap, and only where a final outcome is already known: agreeing reads,
+// or an arbitration read. Disagreeing reads are `awaiting_arbitration` from
+// the moment the disagreement exists - nothing final comes until the
+// arbitration read lands - with whether the underlying reads have finalised
+// carried as a fact (see getReadingCaseStatus), not a separate state.
 //
 // `in_arbitration` is reserved for a future claim/lock - a case being actively
 // worked in an arbitration session. Nothing sets it yet.
@@ -477,15 +478,17 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
       : 'awaiting_finalisation'
   }
 
-  // Two opinions are not a result until they are finalised
-  if (!areAllReadsFinalised(readingCase, settings, now)) {
-    return 'awaiting_finalisation'
-  }
-
   const [firstRead, secondRead] = reads
 
+  // Disagreeing reads are bound for arbitration whether or not they have
+  // finalised - nothing final comes until the arbitration read lands
   if (willGoToArbitration(firstRead, secondRead, settings)) {
     return 'awaiting_arbitration'
+  }
+
+  // Agreeing opinions are the outcome, but not a result until finalised
+  if (!areAllReadsFinalised(readingCase, settings, now)) {
+    return 'awaiting_finalisation'
   }
 
   return 'concluded'
@@ -518,10 +521,11 @@ const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
 /**
  * The facts about where a case stands, for composing status displays.
  *
- * Facts rather than labels, so "awaiting finalisation, then arbitration" is
- * one state with a destination instead of a fourth state - willArbitrate is
- * just willGoToArbitration asked as soon as two reads exist, rather than at
- * finalisation.
+ * Facts rather than labels: a disagreeing case reads awaiting_arbitration from
+ * the moment the disagreement exists, with `finalised` saying whether the
+ * reads behind it have settled yet - displays caption that gap rather than it
+ * being a state of its own. willArbitrate is willGoToArbitration asked as soon
+ * as two reads exist.
  *
  * getReadingCaseOutcome stays strict (null until concluded);
  * provisionalOutcome is what the outcome will be once the reads finalise,
@@ -616,13 +620,17 @@ const caseNeedsSecondRead = (readingCase) => {
  */
 const caseNeedsArbitration = (readingCase, settings = {}) => {
   // A case already released into arbitration belongs to the backlog until it
-  // has been arbitrated, whatever its derived state says. Releasing it doesn't
-  // finalise the original reads, so the state stays awaiting_finalisation.
+  // has been arbitrated, whatever its derived state says
   if (isCaseInArbitration(readingCase)) {
     return !getArbitrationRead(readingCase)
   }
 
-  return getReadingCaseState(readingCase, settings) === 'awaiting_arbitration'
+  // Disagreeing cases sit in awaiting_arbitration as soon as the disagreement
+  // exists, but only become arbitrable once the reads behind it are finalised
+  return (
+    getReadingCaseState(readingCase, settings) === 'awaiting_arbitration' &&
+    areAllReadsFinalised(readingCase, settings)
+  )
 }
 
 /**

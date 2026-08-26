@@ -165,6 +165,17 @@ body.js-enabled .app-no-js-only {
   display: inline;
 }
 
+// Constrain prose in a full-width container to a comfortable line length
+.app-reading-width {
+  @include nhsuk-reading-width;
+}
+
+// Actions below a card's prose - body sized, so a plain link next to an
+// .app-link-button matches it rather than inheriting a smaller size
+.app-card-actions {
+  @include nhsuk-font(19);
+}
+
 // Annotation list item — number, summary text, and change link on one line
 .app-annotation-item {
   display: flex;

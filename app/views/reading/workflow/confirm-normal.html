@@ -6,7 +6,7 @@
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 
-{% set formAction = './save-opinion' %}
+{% set formAction = './save-opinion' | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 
@@ -19,7 +19,8 @@
   </h1>
 
   {{ button({
-    text: "Confirm"
+    text: "Confirm",
+    preventDoubleClick: true
   }) }}
 
 {% endblock %}

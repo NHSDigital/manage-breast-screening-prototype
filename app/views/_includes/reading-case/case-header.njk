@@ -2,8 +2,8 @@
 
    Shared header for the reading case pages (case view and priors tab):
    participant name with the case's state on the right, then NHS number.
-   Expects the case context locals: pageHeading, caseOutcome, caseStatus,
-   caseState, appointment, isDeferred, caseAwaitingPriors, participant. #}
+   Expects the case context locals: pageHeading, readingCase, caseState,
+   appointment, isDeferred, caseAwaitingPriors, participant. #}
 
 <div class="app-header-with-status">
   <h1 class="nhsuk-heading-l">
@@ -13,17 +13,9 @@
 
   <div class="app-header-with-status__status-tag">
     {# Single status: outcome once concluded, otherwise the in-progress state #}
-    {% if caseOutcome %}
-      {{ caseOutcome | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-    {% elseif caseStatus.provisionalOutcome %}
-      {{ caseStatus.provisionalOutcome | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-      <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
-    {% elseif caseStatus.willArbitrate and caseState == 'awaiting_finalisation' %}
-      {{ "Arbitration" | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-      <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
-    {% else %}
-      {{ caseState | toTag({ vocabulary: "readingState", classes: "nhsuk-u-margin-bottom-2" }) }}
-    {% endif %}
+    {% set outcomeTagCase = readingCase %}
+    {% set outcomeTagClasses = "nhsuk-u-margin-bottom-2" %}
+    {% include "_includes/reading/case-outcome-tag.njk" %}
 
     {# Urgency matters only while the case is still open #}
     {% if caseState != 'concluded' and appointment %}

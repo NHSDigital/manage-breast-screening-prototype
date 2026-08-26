@@ -32,24 +32,13 @@
     {% set pageHeading = "You and the first reader gave the same opinion" %}
   {% endif %}
 
-  {# Format opinion labels #}
-  {% set opinionLabels = {
-    "normal": "Normal",
-    "technical_recall": "Technical recall",
-    "recall_for_assessment": "Recall for assessment"
-  } %}
+  {# Opinion labels come from the shared vocabulary; card classes derive from
+     the opinion key so there's no map to keep in step with it #}
+  {% set firstOpinionLabel = (firstOpinion | getStatusText("opinion")) or (firstOpinion | formatWords | sentenceCase) %}
+  {% set secondOpinionLabel = (secondOpinion | getStatusText("opinion")) or (secondOpinion | formatWords | sentenceCase) %}
 
-  {% set firstOpinionLabel = opinionLabels[firstOpinion] or firstOpinion %}
-  {% set secondOpinionLabel = opinionLabels[secondOpinion] or secondOpinion %}
-
-  {% set opinionCardClasses = {
-    "normal": "app-reading-compare-card--normal",
-    "technical_recall": "app-reading-compare-card--technical-recall",
-    "recall_for_assessment": "app-reading-compare-card--recall-for-assessment"
-  } %}
-
-  {% set firstOpinionCardClass = opinionCardClasses[firstOpinion] or "" %}
-  {% set secondOpinionCardClass = opinionCardClasses[secondOpinion] or "" %}
+  {% set firstOpinionCardClass = ("app-reading-compare-card--" + (firstOpinion | replace("_", "-"))) if firstOpinion else "" %}
+  {% set secondOpinionCardClass = ("app-reading-compare-card--" + (secondOpinion | replace("_", "-"))) if secondOpinion else "" %}
 
   {# 
     Determine if opinions need/have details:

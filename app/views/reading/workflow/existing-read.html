@@ -154,7 +154,7 @@
       {% set finalisationInsetHtml %}
         <p>
           This {{ finalisationNoun }} has not been finalised
-          {%- if autoFinaliseAt %}. It will finalise automatically at {{ autoFinaliseAt | formatTime("h:mma") }}{% endif %}.
+          {%- if autoFinaliseAt %}. It will finalise automatically at {{ autoFinaliseAt | formatTimeString }}{% endif %}.
           You can still change it until then.
         </p>
         <p class="nhsuk-u-margin-bottom-0">
@@ -170,7 +170,7 @@
     {% set readSummaryHtml %}
       {% set read = thisRead %}
       {% set allowEdits = not isFinalised %}
-      {% set changeOpinionUrl = "./opinion" %}
+      {% set changeOpinionUrl = "./opinion" | urlWithReferrer(currentUrl) %}
       {% set showAnnotationImages = withImages %}
       {% set annotationImagePaths = allPaths %}
       {% include "_includes/summary-lists/read-summary.njk" %}

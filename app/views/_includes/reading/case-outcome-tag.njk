@@ -1,0 +1,45 @@
+{# app/views/_includes/reading/case-outcome-tag.njk
+
+   The single way to show where a reading case has got to: the outcome once
+   concluded, the provisional outcome (with an "Unfinalised" caption) once one
+   can be said, otherwise the in-progress state. Every page that shows a case
+   outcome or status uses this, so wording and colour stay consistent.
+
+   Set before including:
+   - outcomeTagCase - the reading case (required)
+   - outcomeTagClasses - extra classes for the tag (optional)
+   - outcomeTagShowFinalisedTime - show a "finalised {time}" caption on
+     concluded arbitration outcomes (optional)
+   - outcomeTagUnfinalisedCaption - caption for a provisional outcome, in
+     place of the default "Unfinalised". Rows whose opinion cell already says
+     "Unfinalised" pass "After reads finalise" so the outcome column explains
+     the relationship instead of repeating the word (optional)
+
+   The option locals are reset at the end so they can't leak between rows. #}
+
+{% set outcomeTagStatus = outcomeTagCase | getReadingCaseStatus(data.settings) %}
+
+{% if outcomeTagStatus.state == 'concluded' %}
+  {{ (outcomeTagCase | getReadingCaseOutcome(data.settings)) | toTag({ classes: outcomeTagClasses }) }}
+  {% if outcomeTagShowFinalisedTime %}
+    {% set outcomeTagArbitrationRead = outcomeTagCase | getArbitrationRead %}
+    {% if outcomeTagArbitrationRead %}
+      {% set outcomeTagFinalisedAt = outcomeTagArbitrationRead.finalisedAt or (outcomeTagArbitrationRead | getAutoFinaliseTime(data.settings)) %}
+      {% if outcomeTagFinalisedAt %}
+        <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Finalised {{ outcomeTagFinalisedAt | formatTimeString }}</span>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% elseif outcomeTagStatus.provisionalOutcome %}
+  {{ outcomeTagStatus.provisionalOutcome | toTag({ classes: outcomeTagClasses }) }}
+  <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">{{ outcomeTagUnfinalisedCaption or "Unfinalised" }}</span>
+{% elseif outcomeTagStatus.state == 'awaiting_arbitration' and not outcomeTagStatus.finalised %}
+  {{ "awaiting_arbitration" | toTag({ vocabulary: "readingState", classes: outcomeTagClasses }) }}
+  <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">After reads finalise</span>
+{% else %}
+  {{ outcomeTagStatus.state | toTag({ vocabulary: "readingState", classes: outcomeTagClasses }) }}
+{% endif %}
+
+{% set outcomeTagClasses = null %}
+{% set outcomeTagShowFinalisedTime = null %}
+{% set outcomeTagUnfinalisedCaption = null %}

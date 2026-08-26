@@ -57,7 +57,7 @@
       {% set sessionCompletePanelHtml %}
         {% set panelDoneCount = readingStatus.userReadCount %}
         {% if unfinalisedReadCount > 0 %}
-          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTimeString }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         {% else %}
           <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}. All opinions are finalised.</p>
         {% endif %}
@@ -299,7 +299,10 @@
 {% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
-                    {{ read.opinion | toTag }}
+                    {% set readOpinionRead = read %}
+                    {% set readOpinionContext = 'own' %}
+                    {% set readOpinionShowFinalisation = true %}
+                    {% include "_includes/reading/read-opinion-tag.njk" %}
                   {% endif %}
                 {% elseif appointment.readingCase | isCaseDeferred %}
                   {{ "Deferred" | toTag }}
@@ -508,12 +511,9 @@
                   {% set firstRead = allReads[0] %}
                   {% set isCurrentUserRead = firstRead.readerId === data.currentUser.id %}
 
-                  {% if isBlind and not isCurrentUserRead and metadata.readCount < 2 %}
-                    {{ "Completed (blind)" | toTag }}
-                  {% else %}
-                    {# Override default colour and make sure it's always grey #}
-                    {{ firstRead.opinion | toTag({colour: "grey"}) }}
-                  {% endif %}
+                  {% set readOpinionRead = firstRead %}
+                  {% set readOpinionBlinded = isBlind and not isCurrentUserRead and metadata.readCount < 2 %}
+                  {% include "_includes/reading/read-opinion-tag.njk" %}
 
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({
@@ -534,8 +534,8 @@
                 {% if metadata.readCount >= 2 %}
                   {% set secondRead = allReads[1] %}
                   {% set isCurrentUserRead = secondRead.readerId === data.currentUser.id %}
-                  {# Force tags to grey #}
-                  {{ secondRead.opinion | toTag({colour: "grey"}) }}
+                  {% set readOpinionRead = secondRead %}
+                  {% include "_includes/reading/read-opinion-tag.njk" %}
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
                     format: 'short',
@@ -548,23 +548,13 @@
                     {{ "Not read" | toTag }}
                   {% endif %}
                 {% else %}
-                  {{ "Waiting for 1st read" | toTag }}
+                  {{ "awaiting_first_read" | toTag({ vocabulary: "readingState" }) }}
                 {% endif %}
               </td>
               {# Outcome column — the case state respects the site's arbitration policy #}
               <td>
-                {% set caseState = appointment.readingCase | getReadingCaseState(data.settings) %}
-                {% if caseState == 'awaiting_first_read' %}
-                  {{ "Waiting for 1st read" | toTag }}
-                {% elseif caseState == 'awaiting_second_read' %}
-                  {{ "Waiting for 2nd read" | toTag }}
-                {% elseif caseState == 'awaiting_finalisation' %}
-                  {{ "Awaiting finalisation" | toTag }}
-                {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
-                  {{ "Arbitration" | toTag }}
-                {% else %}
-                  {{ (appointment.readingCase | getReadingCaseOutcome(data.settings)) | toTag }}
-                {% endif %}
+                {% set outcomeTagCase = appointment.readingCase %}
+                {% include "_includes/reading/case-outcome-tag.njk" %}
               </td>
               <td class="app-placeholder-action-cell">
                 {# The link says what opening the case will do, with the name

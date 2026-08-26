@@ -128,14 +128,17 @@
           <th scope="col">Images taken</th>
           <th scope="col">Screened at</th>
           <th scope="col">Reads</th>
-          <th scope="col">Status</th>
+          <th scope="col">Outcome</th>
+          <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for row in rows %}
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
-              <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="nhsuk-u-font-weight-bold nhsuk-link--no-visited-state">{{ row.participant | getFullNameReversed }}</a>
+              {# The name isn't a link: names only link to a participant record.
+                 The row's link to the case sits in the action column instead #}
+              <span class="nhsuk-u-font-weight-bold">{{ row.participant | getFullNameReversed }}</span>
               {% if row.isDeferred %}
                 <br>{{ "Deferred" | toTag }}
               {% endif %}
@@ -155,17 +158,11 @@
             </td>
             <td class="nhsuk-table__cell">{{ row.readCount }}</td>
             <td class="nhsuk-table__cell">
-              {% if row.outcome %}
-                {{ row.outcome | toTag }}
-              {% else %}
-                {{ row.state | toTag({ vocabulary: "readingState" }) }}
-                {% if row.statusDisplay.destination %}
-                  <br>
-                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                    {{ row.statusDisplay.destination | sentenceCase }}
-                  </span>
-                {% endif %}
-              {% endif %}
+              {% set outcomeTagCase = row.readingCase %}
+              {% include "_includes/reading/case-outcome-tag.njk" %}
+            </td>
+            <td class="nhsuk-table__cell">
+              <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="app-nowrap">View case {{- ((" for " + (row.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
             </td>
           </tr>
         {% endfor %}

@@ -392,11 +392,6 @@ const enhanceAppointmentsWithReadingData = (
     return {
       ...enhanced,
       participant: participantMap.get(appointment.participantId),
-      readStatus:
-        metadata.readCount > 0 ? `Read (${metadata.readCount})` : 'Not read',
-      tagColor: getStatusTagColour(
-        metadata.readCount > 0 ? 'read' : 'not_read'
-      ),
       readingMetadata: metadata,
       canUserRead: canUserReadAppointment(data, enhanced, userId)
     }

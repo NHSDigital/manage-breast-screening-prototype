@@ -12,15 +12,12 @@
     <tr>
       <th scope="col">Images taken</th>
       <th scope="col">Reads</th>
-      <th scope="col">State</th>
       <th scope="col">Outcome</th>
       <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
     </tr>
   </thead>
   <tbody class="nhsuk-table__body">
     {% for readingCase in episode.readingCases %}
-      {% set caseState = readingCase | getReadingCaseState(data.settings) %}
-      {% set caseOutcome = readingCase | getReadingCaseOutcome(data.settings) %}
       <tr class="nhsuk-table__row">
         <td class="nhsuk-table__cell">
           {{ readingCase.openedDate | formatDate }}
@@ -29,14 +26,8 @@
           {{ (readingCase | getReadsAsArray) | length }}
         </td>
         <td class="nhsuk-table__cell">
-          {{ caseState | toTag({ vocabulary: "readingState" }) }}
-        </td>
-        <td class="nhsuk-table__cell">
-          {% if caseOutcome %}
-            {{ caseOutcome | toTag }}
-          {% else %}
-            <span class="nhsuk-u-secondary-text-colour">Not yet</span>
-          {% endif %}
+          {% set outcomeTagCase = readingCase %}
+          {% include "_includes/reading/case-outcome-tag.njk" %}
         </td>
         <td class="nhsuk-table__cell">
           <a href="{{ getReadingCaseUrl(readingCase) }}">View case</a>

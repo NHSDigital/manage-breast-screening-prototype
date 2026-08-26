@@ -1,0 +1,45 @@
+{# app/views/_includes/reading/read-opinion-tag.njk
+
+   The single way to show one read's opinion as a tag. Colour is reserved for
+   the case outcome, so a read shown as context is always grey; a blinded read
+   shows "Completed" without revealing the opinion. Bylines, reveal links and
+   not-read fallbacks stay with the caller - this is just the tag.
+
+   Set before including:
+   - readOpinionRead - the read (required)
+   - readOpinionContext - 'own' shows the viewer's own opinion in full colour;
+     anything else (or unset) is another reader's opinion, shown grey
+   - readOpinionBlinded - true hides the opinion behind a grey "Completed"
+   - readOpinionShowFinalisation - true adds a caption with the read's
+     finalisation state: "Unfinalised" while pending, "Finalised {time}" after.
+     'unfinalised' captions only the pending state - for contexts that already
+     show the finalised time elsewhere, like the case view
+   - readOpinionForceUnfinalised - treat the read as unfinalised whatever
+     isReadFinalised says (for callers with their own wider condition)
+
+   The option locals are reset at the end so they can't leak between rows. #}
+
+{% if readOpinionBlinded %}
+  {{ "Completed" | toTag({ colour: "grey" }) }}
+{% elseif readOpinionContext == 'own' %}
+  {{ readOpinionRead.opinion | toTag }}
+{% else %}
+  {{ readOpinionRead.opinion | toTag({ colour: "grey" }) }}
+{% endif %}
+
+{% if readOpinionShowFinalisation and not readOpinionBlinded %}
+  {% set readOpinionIsFinalised = (readOpinionRead | isReadFinalised(data.settings)) and not readOpinionForceUnfinalised %}
+  {% if not readOpinionIsFinalised %}
+    <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Unfinalised</span>
+  {% elseif readOpinionShowFinalisation != 'unfinalised' %}
+    {% set readOpinionFinalisedAt = readOpinionRead.finalisedAt or (readOpinionRead | getAutoFinaliseTime(data.settings)) %}
+    {% if readOpinionFinalisedAt %}
+      <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Finalised {{ readOpinionFinalisedAt | formatTimeString }}</span>
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+{% set readOpinionContext = null %}
+{% set readOpinionBlinded = null %}
+{% set readOpinionShowFinalisation = null %}
+{% set readOpinionForceUnfinalised = null %}

@@ -10,6 +10,7 @@
 
 {% set navActive = "reading" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
 
 {% block pageContent %}
   <h1>{{ pageHeading }}</h1>
@@ -48,6 +49,7 @@
             <th scope="col">Created</th>
             <th scope="col">Cases</th>
             <th scope="col">Status</th>
+            <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
           </tr>
         </thead>
         <tbody class="nhsuk-table__body">
@@ -55,44 +57,69 @@
             {% set p = session.progress %}
             {% set sessionTotal = p.effectiveTargetSize if p else null %}
             {% set isComplete = p and session.userCompletedCount >= sessionTotal %}
+            {% set isArbitration = session.type === 'arbitration' %}
             <tr>
+              {# Arbitration is a different kind of work to reading, so the list
+                 says which it was, and for arbitration who was on it #}
               <td>
-                <a href="/reading/session/{{ session.id }}">
-                  {%- if session.type === 'first_reads' -%}
-                    1st reads
-                  {%- elseif session.type === 'second_reads' -%}
-                    2nd reads
-                  {%- elseif session.type === 'all_reads' -%}
-                    All reads
-                  {%- elseif session.type === 'awaiting_priors' -%}
-                    Awaiting priors
-                  {%- elseif session.type === 'clinic' -%}
-                    {{ session.name }}
-                  {%- else -%}
-                    Custom
-                  {%- endif -%}
-                </a>
+                {% if isArbitration %}
+                  Arbitration
+                  <br>
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                    {{- "Group" if session.arbitration.mode === 'panel' else "On your own" }}
+                    {%- if session.arbitration.arbitratorIds | length %} &ndash;
+                      {%- for userId in session.arbitration.arbitratorIds %}
+                        {{ userId | getUsername({ format: 'short', identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                      {%- endfor %}
+                    {%- endif %}
+                  </span>
+                {% else %}
+                  Reading
+                  <br>
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                    {%- if session.type === 'first_reads' -%}
+                      1st reads
+                    {%- elseif session.type === 'second_reads' -%}
+                      2nd reads
+                    {%- elseif session.type === 'all_reads' -%}
+                      All reads
+                    {%- elseif session.type === 'awaiting_priors' -%}
+                      Awaiting priors
+                    {%- elseif session.type === 'clinic' -%}
+                      {{ session.name }}
+                    {%- else -%}
+                      Custom
+                    {%- endif -%}
+                  </span>
+                {% endif %}
               </td>
               <td>
-                {{ session.createdAt | formatDate }}<br>
+                {{ session.createdAt | formatDate | noWrap }}<br>
                 <strong>{{ session.createdAt | formatTime }}</strong>
               </td>
               <td>
                 {% if p %}
                   {{ sessionTotal }} total
                   {% if not isComplete %}
-                    <br>{{ session.userCompletedCount }} read
+                    <br>{{ session.userCompletedCount }} {{ "arbitrated" if isArbitration else "read" }}
                   {% endif %}
                 {% else %}
                   —
                 {% endif %}
               </td>
+              {# Working through every case isn't the end of a session: the
+                 opinions still have to be finalised before it's finished #}
               <td>
-                {% if isComplete %}
-                  {{ "complete" | toTag }}
+                {% if isComplete and session.unfinalisedReadCount %}
+                  {{ "Awaiting finalisation" | toTag }}
+                {% elseif isComplete %}
+                  {{ "Complete" | toTag }}
                 {% else %}
-                  {{ "incomplete" | toTag }}
+                  {{ "Incomplete" | toTag }}
                 {% endif %}
+              </td>
+              <td>
+                <a href="/reading/session/{{ session.id }}" class="app-nowrap">View session</a>
               </td>
             </tr>
           {% endfor %}
@@ -119,31 +146,28 @@
             {% if view === 'mine' %}
               Your opinion
             {% else %}
-              Opinon
+              Opinion
             {% endif %}
           </th>
           <th scope="col">
             Outcome
           </th>
+          <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for reading in readings %}
+          {% set appointment = data.appointments | find('id', reading.appointmentId) %}
+          {% set readingCase = data | getReadingCase(appointment) %}
           <tr>
             <td>
-              {{ reading.timestamp | formatDate }}<br>
+              {{ reading.timestamp | formatDate | noWrap }}<br>
               <strong>{{ reading.timestamp | formatTime }}</strong>
             </td>
+            {# The name isn't a link: names only link to a participant record.
+               The row's link to the case sits in the action column instead #}
             <td>
-              {% if reading.sessionId %}
-              <a href="/reading/session/{{ reading.sessionId or 'clinic' }}/appointments/{{ reading.appointmentId }}">
-                {{ reading.participant | getFullNameReversed }}
-              </a>
-              {% else %}
-                {{ reading.participant | getFullNameReversed }}
-              {% endif %}
-
-
+              <span class="nhsuk-u-font-weight-bold">{{ reading.participant | getFullNameReversed }}</span>
             </td>
             {% if view == 'all' %}
             <td>
@@ -155,34 +179,39 @@
               {%- endfor %}
             </td>
             {% endif %}
-            <td>
+            <td class="app-nowrap">
               {% if reading.readType == 'first' %}
                 First read
-              {% elif reading.readType == 'second' %}
+              {% elseif reading.readType == 'second' %}
                 Second read
-              {% elif reading.readType == 'arbitration' %}
-                Arbitration
+              {% elseif reading.readType == 'arbitration' %}
+                Arbitration read
               {% else %}
                 Unknown
               {% endif %}
             </td>
             <td>
-              {{ reading.opinion | toTag }}
+              {% set readOpinionRead = reading %}
+              {% set readOpinionContext = 'own' if (reading | getReadAuthorIds) | includes(data.currentUser.id) else 'context' %}
+              {% set readOpinionShowFinalisation = 'unfinalised' %}
+              {% include "_includes/reading/read-opinion-tag.njk" %}
             </td>
             <td>
-              {% set appointment = data.appointments | find('id', reading.appointmentId) %}
-              {% set thisCase = data | getReadingCase(appointment) %}
-              {% set caseState = thisCase | getReadingCaseState(data.settings) %}
-              {% if caseState == 'awaiting_first_read' %}
-                {{ "Waiting for 1st read" | toTag }}
-              {% elseif caseState == 'awaiting_second_read' %}
-                {{ "Waiting for 2nd read" | toTag }}
-              {% elseif caseState == 'awaiting_finalisation' %}
-                {{ "Awaiting finalisation" | toTag }}
-              {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
-                {{ "Arbitration" | toTag }}
-              {% else %}
-                {{ (thisCase | getReadingCaseOutcome(data.settings)) | toTag }}
+              {% set outcomeTagCase = readingCase %}
+              {# The opinion cell already marks this row's read unfinalised -
+                 rather than repeat the word, say how the outcome follows
+                 from it. The plain "Unfinalised" stays when the case is held
+                 up by the other read, which the opinion cell can't show #}
+              {% if not (reading | isReadFinalised(data.settings)) %}
+                {% set outcomeTagUnfinalisedCaption = "After reads finalise" %}
+              {% endif %}
+              {% include "_includes/reading/case-outcome-tag.njk" %}
+            </td>
+            <td>
+              {# The case holds all the reads and the images, so it's the more
+                 useful destination than the single opinion this row records #}
+              {% if readingCase %}
+                <a href="{{ getReadingCaseUrl(readingCase) }}" class="app-nowrap">View case {{- ((" for " + (reading.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
               {% endif %}
             </td>
           </tr>

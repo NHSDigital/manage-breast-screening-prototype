@@ -6,17 +6,10 @@
    where a nested <form> would be invalid; the button overrides the outer
    form's destination instead #}
 
-{% set outcomeLabels = {
-  "normal": "Normal",
-  "technical_recall": "Technical recall",
-  "recall_for_assessment": "Recall for assessment"
-} %}
-
-{% set outcomeCardClasses = {
-  "normal": "app-reading-compare-card--normal",
-  "technical_recall": "app-reading-compare-card--technical-recall",
-  "recall_for_assessment": "app-reading-compare-card--recall-for-assessment"
-} %}
+{# Opinion label from the shared vocabulary; card class derives from the
+   opinion key so there's no map to keep in step with it #}
+{% set outcomeLabel = (read.opinion | getStatusText("opinion")) or (read.opinion | formatWords | sentenceCase) %}
+{% set outcomeCardClass = ("app-reading-compare-card--" + (read.opinion | replace("_", "-"))) if read.opinion else "" %}
 
 {# Get image paths for annotation thumbnails #}
 {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
@@ -71,9 +64,9 @@
   </h3>
 {% endif %}
 {{ card({
-  heading: outcomeLabels[read.opinion] or read.opinion,
+  heading: outcomeLabel,
   headingLevel: "3",
   feature: true,
-  classes: "app-reading-compare-card " + (outcomeCardClasses[read.opinion] or ""),
+  classes: "app-reading-compare-card " + outcomeCardClass,
   descriptionHtml: cardContentHtml
 }) }}

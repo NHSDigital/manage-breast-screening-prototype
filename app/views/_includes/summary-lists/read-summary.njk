@@ -97,10 +97,11 @@
 {% set opinionLabel = opinionLabel if opinionLabel else ("Outcome" if read.readType == 'arbitration' else "Opinion") %}
 {% if not hideOpinionRow %}
   {% set opinionValueHtml %}
-    {{ read.opinion | toTag }}
-    {% if awaitingFinalisation or (read.timestamp and not (read | isReadFinalised(data.settings))) %}
-      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">(awaiting finalisation)</span>
-    {% endif %}
+    {% set readOpinionRead = read %}
+    {% set readOpinionContext = 'own' %}
+    {% set readOpinionShowFinalisation = 'unfinalised' if read.timestamp or awaitingFinalisation %}
+    {% set readOpinionForceUnfinalised = awaitingFinalisation %}
+    {% include "_includes/reading/read-opinion-tag.njk" %}
   {% endset %}
   {% set rows = rows | push({
     key: {
@@ -139,7 +140,7 @@
     actions: {
       items: [
         {
-          href: "./normal-details",
+          href: "./normal-details" | urlWithReferrer(currentUrl),
           text: "Change",
           visuallyHiddenText: "details"
         } | openInModal

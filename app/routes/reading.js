@@ -684,6 +684,13 @@ module.exports = (router) => {
       const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
 
+      // Reading pages reflect a case's current state, so they must not be served
+      // from the browser's cache. Without this, going back to a step page after
+      // finishing a case restores the stale page from the back/forward cache -
+      // no request is made, so the redirect guarding those steps never runs, and
+      // the reader is shown a confirmation for a decision already recorded.
+      res.set('Cache-Control', 'no-store, must-revalidate')
+
       // Get the batch
       const session = getReadingSession(data, sessionId)
       if (!session) {
@@ -1315,6 +1322,49 @@ module.exports = (router) => {
         'defer-case',
         'medical-information'
       ]
+
+      // Steps that only make sense while a case is still being decided. Once it
+      // has been, they are stale: the confirmation pages would offer to save a
+      // decision already recorded, and the detail pages would collect details
+      // for it. The case URL already sends finished cases to existing-read -
+      // these are the same door, further in, reachable by back-navigation.
+      //
+      // Editing is the exception, and says so with a referrer chain: those
+      // journeys deliberately reopen a finished case, and must be let through.
+      const stepsRequiringUnfinishedCase = [
+        'opinion',
+        'normal-details',
+        'confirm-normal',
+        'technical-recall',
+        'recall-for-assessment-details',
+        'confirm-abnormal',
+        'recommended-assessment',
+        'review',
+        'compare',
+        'arbitration-reads'
+      ]
+
+      if (
+        stepsRequiringUnfinishedCase.includes(step) &&
+        !req.query.referrerChain
+      ) {
+        const data = req.session.data
+        const appointment = data.appointments.find(
+          (candidate) => candidate.id === appointmentId
+        )
+        const session = getReadingSession(data, sessionId)
+        const caseIsSettled = appointment
+          ? session?.type === 'arbitration'
+            ? appointmentHasBeenArbitrated(data, appointment)
+            : userHasReadAppointment(data, appointment, data.currentUser?.id)
+          : false
+
+        if (caseIsSettled) {
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+          )
+        }
+      }
 
       // Arbitration renders its own opinion page - same URL, different
       // information architecture (the original reads sit alongside the case)
@@ -2045,6 +2095,15 @@ module.exports = (router) => {
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
 
+      // Completing the detail pages is a deliberate act, so whatever follows is
+      // a real save. Detail edits reach save-opinion without passing through
+      // opinion-answer, so the temp may still carry the savedAt it was seeded
+      // with - clear it here too, or save-opinion's replay guard would block
+      // the edit. Done after validation so a bounced-back form keeps its state.
+      if (data.imageReadingTemp) {
+        delete data.imageReadingTemp.savedAt
+      }
+
       // Editing a read the user has already saved. The existing-read page they
       // came from is itself a summary of the read, so the confirmation step is
       // redundant — save straight away regardless of the confirmation settings.
@@ -2084,6 +2143,15 @@ module.exports = (router) => {
         }
       }
 
+      // Keep the referrer chain on the way to the next step, so an edit that
+      // began on the existing-read page returns there once saved. The technical
+      // recall and recall for assessment branches below do the same by hand.
+      const detailsReferrerChain = req.query.referrerChain
+      const withChain = (url) =>
+        detailsReferrerChain
+          ? `${url}${url.includes('?') ? '&' : '?'}referrerChain=${encodeURIComponent(detailsReferrerChain)}`
+          : url
+
       // Route based on opinion type
       switch (opinion) {
         case 'normal':
@@ -2095,13 +2163,17 @@ module.exports = (router) => {
             if (arbitrationNeedsReview) {
               return res.redirect(
                 modalBreakout(
-                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                  withChain(
+                    `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                  )
                 )
               )
             }
             return res.redirect(
               307,
-              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+              )
             )
           }
           if (
@@ -2109,12 +2181,16 @@ module.exports = (router) => {
             data.settings?.reading?.confirmNormalWithDetails === 'true'
           ) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
+              )
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
           )
         case 'technical_recall': {
           const trReferrer = req.query.referrerChain
@@ -2193,6 +2269,69 @@ module.exports = (router) => {
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
+      // Where the reader goes once this case is settled: the next case, or
+      // whichever end-of-session page applies. Shared by a genuine save and by
+      // a replay of one, so a repeated save lands where the original did.
+      const onwardDestination = () => {
+        const currentSession = getReadingSession(data, sessionId)
+        const currentAppointments = currentSession.appointmentIds
+          .map((id) => data.appointments.find((e) => e.id === id))
+          .filter(Boolean)
+        const nextCase = getNextCaseInSession(
+          data,
+          currentSession,
+          currentAppointments,
+          appointmentId,
+          currentUserId
+        )
+
+        if (nextCase) {
+          return `/reading/session/${sessionId}/appointments/${nextCase.id}`
+        }
+        if (currentSession.skippedAppointments.length > 0) {
+          return `/reading/session/${sessionId}/skipped-review`
+        }
+        return getFirstOutstandingCaseInSession(
+          data,
+          currentSession,
+          currentAppointments,
+          currentUserId
+        )
+          ? `/reading/session/${sessionId}`
+          : `/reading/session/${sessionId}/no-more-cases`
+      }
+
+      // A replay of a save that already happened, rather than a new one.
+      //
+      // This route is reachable by GET, and the workflow middleware refills
+      // imageReadingTemp from the saved read on any GET back into the case. So
+      // a back-navigation, a refresh on the redirect, or a double submit can
+      // arrive here with a temp that looks like a fresh opinion but is really
+      // the read that was just written. Writing again would duplicate the read,
+      // and - because the check below infers intent from whether a read exists -
+      // would send the reader to their existing read instead of the next case.
+      //
+      // savedAt is stamped on the read when it is written, so a temp carrying
+      // one came from an already-saved read. A replay goes where the original
+      // save went: confirming twice is still one decision, so the reader should
+      // end up on the next case rather than back on the one they just finished.
+      if (formData.savedAt) {
+        console.log(
+          `Ignoring replayed save-opinion for appointment ${appointmentId}`
+        )
+        const replayReferrerChain = req.query.referrerChain
+        return res.redirect(
+          modalBreakout(
+            replayReferrerChain
+              ? getReturnUrl(
+                  `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`,
+                  replayReferrerChain
+                )
+              : onwardDestination()
+          )
+        )
+      }
+
       // Whether this save is an edit of a read the user had already made.
       // The case URL only routes already-read users via existing-read, so any
       // journey reaching here with a read in place started from that page —
@@ -2212,11 +2351,16 @@ module.exports = (router) => {
       delete res.locals.data?.imageReadingTemp
 
       // Create and save the reading. Authorship is settled by buildRead, which
-      // knows whether this is an arbitration (many authors) or a read (one)
+      // knows whether this is an arbitration (many authors) or a read (one).
+      //
+      // savedAt marks the read as written. The workflow middleware seeds
+      // imageReadingTemp from the saved read, so this is what lets a replayed
+      // save be told apart from a genuine one (see the guard above).
       const readResult = {
         readerType: data.currentUser.role,
         ...formData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        savedAt: new Date().toISOString()
       }
 
       // Write the reading (passing session context to handle skipped appointments)
@@ -2289,32 +2433,7 @@ module.exports = (router) => {
       }
 
       // Redirect to next unread appointment or end-of-session page
-      if (nextUnreadAppointment) {
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
-          )
-        )
-      } else if (session.skippedAppointments.length > 0) {
-        res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
-        )
-      } else {
-        // Check if there are any readable cases left in the session
-        const firstReadable = getFirstOutstandingCaseInSession(
-          data,
-          session,
-          sessionAppointments,
-          currentUserId
-        )
-        if (firstReadable) {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
-        } else {
-          res.redirect(
-            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
-          )
-        }
-      }
+      res.redirect(modalBreakout(onwardDestination()))
     }
   )
 
@@ -2331,6 +2450,24 @@ module.exports = (router) => {
         'imageReadingTemp:',
         JSON.stringify(data.imageReadingTemp, null, 2)
       )
+
+      // Carry the referrer chain on to whichever step comes next, so a journey
+      // that began on the existing-read page can find its way back there after
+      // saving. The chain only applies within this case's workflow - links that
+      // leave it (back to the session, say) are already the end of the journey.
+      const opinionReferrerChain = req.query.referrerChain
+      const redirect = (...redirectArgs) => {
+        const target = redirectArgs.pop()
+        const keepsChain =
+          opinionReferrerChain &&
+          typeof target === 'string' &&
+          target.includes(`/appointments/${appointmentId}/`) &&
+          !target.includes('referrerChain=')
+        const url = keepsChain
+          ? `${target}${target.includes('?') ? '&' : '?'}referrerChain=${encodeURIComponent(opinionReferrerChain)}`
+          : target
+        return res.redirect(...redirectArgs, url)
+      }
 
       // Opinion and previousOpinion are auto-saved to data.imageReadingTemp via form binding
       const opinion = data.imageReadingTemp?.opinion
@@ -2355,6 +2492,12 @@ module.exports = (router) => {
         data.imageReadingTemp = { appointmentId: appointmentId }
       }
       data.imageReadingTemp.appointmentId = appointmentId
+
+      // Submitting the opinion form is a deliberate act, so whatever follows is
+      // a real save rather than a replay. The temp may carry a savedAt from the
+      // read it was seeded with when editing - clear it so save-opinion's replay
+      // guard doesn't mistake this edit for a repeat of the original save.
+      delete data.imageReadingTemp.savedAt
 
       // Normalise normal_with_details to normal (it just goes to details page first)
       const normalisedOpinion =
@@ -2402,7 +2545,7 @@ module.exports = (router) => {
           )
         ) {
           // Second reader with opinions that need comparison
-          return res.redirect(
+          return redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/compare`
           )
         }
@@ -2421,11 +2564,11 @@ module.exports = (router) => {
                 'false' ||
                 data.settings?.reading?.arbitration?.showReads === 'blind')
             ) {
-              return res.redirect(
+              return redirect(
                 `/reading/session/${sessionId}/appointments/${appointmentId}/review`
               )
             }
-            return res.redirect(
+            return redirect(
               307,
               `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
             )
@@ -2441,7 +2584,7 @@ module.exports = (router) => {
                 data.settings
               )
             ) {
-              return res.redirect(
+              return redirect(
                 `/reading/session/${sessionId}/appointments/${appointmentId}/compare`
               )
             }
@@ -2450,34 +2593,34 @@ module.exports = (router) => {
             !isEditingExistingRead &&
             data.settings.reading.confirmNormal === 'true'
           ) {
-            return res.redirect(
+            return redirect(
               `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
             )
           } else {
-            return res.redirect(
+            return redirect(
               307,
               `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
             )
           }
         case 'normal_with_details':
           // Result already set to 'normal' above - go to details page
-          return res.redirect(
+          return redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/normal-details`
           )
         case 'technical_recall':
-          return res.redirect(
+          return redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
           )
         case 'recall_for_assessment':
           // Break out of modal immediately — recall for assessment is a complex
           // multi-step flow that should run as a full page journey
-          return res.redirect(
+          return redirect(
             modalBreakout(
               `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
             )
           )
         default:
-          return res.redirect(
+          return redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}`
           )
       }
@@ -2573,6 +2716,11 @@ module.exports = (router) => {
 
       // Mark comparison as complete so save-opinion doesn't redirect back here
       data.imageReadingTemp.comparisonComplete = true
+
+      // Adopting the first reader's opinion can route straight to save-opinion,
+      // so clear any savedAt carried over from a seeded read - as with the other
+      // deliberate submits, this is a real save rather than a replay.
+      delete data.imageReadingTemp.savedAt
 
       if (decision === 'adopt') {
         // Copy first reader's data to our temp
@@ -2690,10 +2838,8 @@ module.exports = (router) => {
     const currentUserId = data.currentUser.id
     const view = req.params.view || 'all'
 
-    // Get all recent readings across all appointments - last 30 days
-    const thirtyDaysAgo = dayjs().subtract(30, 'days').toISOString()
-
-    // Collect all reads across the reading cases
+    // Collect all reads across the reading cases. There's no date bound: the
+    // seed data holds no historic sessions, so everything here is recent.
     const allReadings = []
 
     data.appointments.forEach((appointment) => {
@@ -2731,6 +2877,7 @@ module.exports = (router) => {
           readType,
           opinion: reading.opinion,
           timestamp: reading.timestamp,
+          finalisedAt: reading.finalisedAt,
           participant
         }
       })
@@ -2738,19 +2885,18 @@ module.exports = (router) => {
       allReadings.push(...appointmentReadings)
     })
 
-    // Filter for recent readings
-    const recentReadings = allReadings
-      .filter((reading) => reading.timestamp > thirtyDaysAgo)
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    const sortedReadings = allReadings.sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    )
 
     // Determine which readings to display based on view
     let readings = []
     if (view === 'mine') {
-      readings = recentReadings.filter((reading) =>
+      readings = sortedReadings.filter((reading) =>
         getReadAuthorIds(reading).includes(currentUserId)
       )
     } else {
-      readings = recentReadings
+      readings = sortedReadings
     }
 
     // Build session list for the sessions tab
@@ -2763,21 +2909,33 @@ module.exports = (router) => {
           currentUserId
         )
 
-        // Count cases the user has "dealt with" — either given an opinion or requested priors
-        // This is separate from userReadCount so the utility stays semantically pure
+        // Count cases the user has "dealt with". For arbitration that means the
+        // case has been settled by the panel, not read by this user - an
+        // arbitration session would otherwise never register any progress.
         const sessionAppointments = session.appointmentIds
           .map((id) => data.appointments.find((e) => e.id === id))
           .filter(Boolean)
-        const userCompletedCount = sessionAppointments.filter(
-          (appointment) =>
-            userHasReadAppointment(data, appointment, currentUserId) ||
-            userRequestedPriors(appointment, currentUserId)
+        const isArbitration = session.type === 'arbitration'
+        const userCompletedCount = sessionAppointments.filter((appointment) =>
+          isArbitration
+            ? appointmentHasBeenArbitrated(data, appointment)
+            : userHasReadAppointment(data, appointment, currentUserId) ||
+              userRequestedPriors(appointment, currentUserId)
+        ).length
+
+        // A session that has been worked through can still hold opinions the
+        // user hasn't finalised, so completeness has two steps rather than one
+        const unfinalisedReadCount = getUnfinalisedUserReadsForSession(
+          data,
+          session.id,
+          currentUserId
         ).length
 
         return {
           ...session,
           progress,
-          userCompletedCount
+          userCompletedCount,
+          unfinalisedReadCount
         }
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
