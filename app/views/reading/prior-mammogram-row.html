@@ -1,7 +1,0 @@
-{# app/views/reading/prior-mammogram-row.html #}
-{# Bare fragment - a single priors table row, fetched by fragment-actions.js
-   to update the priors page in place after a status change #}
-
-{% from "_includes/reading/prior-mammogram-row.njk" import priorMammogramRow with context %}
-
-{{ priorMammogramRow(appointment, mammogram) }}

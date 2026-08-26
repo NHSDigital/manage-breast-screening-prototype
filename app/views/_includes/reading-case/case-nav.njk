@@ -1,0 +1,22 @@
+{# app/views/_includes/reading-case/case-nav.njk
+
+   Secondary navigation between the reading case's sections. Pages set
+   caseNavActive ('case' or 'priors'). Expects readingCase and appointment. #}
+
+{% set casePriorsCount = appointment.previousMammograms | length if appointment and appointment.previousMammograms else 0 %}
+
+{{ appSecondaryNavigation({
+  visuallyHiddenTitle: "Reading case sections",
+  items: [
+    {
+      text: "Case",
+      href: getReadingCaseUrl(readingCase),
+      current: true if caseNavActive == 'case'
+    },
+    {
+      text: ("Prior mammograms " + appCount(casePriorsCount)) | safe,
+      href: getReadingCaseUrl(readingCase) + "/priors",
+      current: true if caseNavActive == 'priors'
+    }
+  ]
+}) }}

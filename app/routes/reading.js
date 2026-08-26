@@ -239,11 +239,17 @@ module.exports = (router) => {
     // Only accept known request statuses - the value comes straight from
     // the request body
     if (!PRIOR_REQUEST_STATUSES.includes(newStatus)) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(400).json({ error: 'Unknown request status' })
+      }
       return res.redirect('/reading/priors')
     }
 
     const appointment = getAppointment(data, appointmentId)
     if (!appointment || !appointment.previousMammograms) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(404).json({ error: 'Appointment not found' })
+      }
       return res.redirect('/reading/priors')
     }
 
@@ -251,6 +257,9 @@ module.exports = (router) => {
       (m) => m.id === mammogramId
     )
     if (!mammogram) {
+      if (req.headers.accept?.includes('application/json')) {
+        return res.status(404).json({ error: 'Mammogram not found' })
+      }
       return res.redirect('/reading/priors')
     }
 
@@ -279,16 +288,23 @@ module.exports = (router) => {
     })
 
     // Saves to the appointment and mirrors into data.appointment if it matches
-    const updatedAppointment = updateAppointmentData(data, appointmentId, { previousMammograms })
+    updateAppointmentData(data, appointmentId, { previousMammograms })
 
-    // Fetch requests get the re-rendered row so the page can update in place
-    if (req.xhr) {
-      return res.render('reading/prior-mammogram-row', {
-        appointment: updatedAppointment,
-        mammogram: updatedAppointment.previousMammograms.find((m) => m.id === mammogramId)
+    // If this was a fetch request, send JSON response for in-place update
+    if (req.headers.accept?.includes('application/json')) {
+      return res.json({
+        status: 'success',
+        newStatus,
+        mammogramId
       })
     }
 
+    // returnTo lets other surfaces (the case priors tab) reuse this action
+    // and land back where the user was. Local paths only
+    const returnTo = req.body.returnTo
+    if (returnTo && returnTo.startsWith('/')) {
+      return res.redirect(returnTo)
+    }
     res.redirect('/reading/priors')
   })
 
@@ -1266,6 +1282,11 @@ module.exports = (router) => {
       req.flash('success', `${shortName} returned to reading queue`)
     }
 
+    // returnTo lets the case page reuse this action and land back there
+    const returnTo = req.body.returnTo
+    if (returnTo && returnTo.startsWith('/')) {
+      return res.redirect(returnTo)
+    }
     res.redirect('/reading/deferred')
   })
 

@@ -717,12 +717,10 @@ class AppModal {
             this.close()
             window.location.href = finalUrl
           } else {
-            // Flow complete — close and refresh. Capture the callback before
-            // close(), which resets it.
-            const onSuccess = this._onSuccessCallback
+            // Flow complete — close and refresh
             this.close()
-            if (onSuccess) {
-              onSuccess()
+            if (this._onSuccessCallback) {
+              this._onSuccessCallback()
             } else {
               window.location.reload()
             }

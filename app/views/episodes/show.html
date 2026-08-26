@@ -4,20 +4,7 @@
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set hideBackLink = true %}
 
-{% block beforeContent %}
-  {{ breadcrumb({
-    items: [
-      {
-        href: "/participants",
-        text: "Participants"
-      },
-      {
-        href: participantUrl,
-        text: participant | getFullNameReversed
-      }
-    ]
-  }) }}
-{% endblock %}
+{% set breadcrumbItems = getCaseBreadcrumb(participant) %}
 
 {% block pageContent %}
 
@@ -32,7 +19,7 @@
       <span class="nhsuk-u-visually-hidden">Information: </span>
       <p>
         This participant has an episode in progress -
-        <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
+        <a href="{{ getEpisodeUrl(currentEpisode) }}">
           {{ currentEpisode | getEpisodeLabel }}</a>.
       </p>
     </div>
@@ -225,7 +212,7 @@
                 }) }}
               </td>
               <td class="nhsuk-table__cell">
-                <a href="/clinics/{{ row.clinic.id }}/appointments/{{ row.appointment.id }}">
+                <a href="{{ getAppointmentUrl(row.appointment) }}">
                   View appointment
                 </a>
               </td>
@@ -295,12 +282,12 @@
       previous: {
         text: "Previous episode",
         labelText: previousEpisode | getEpisodeLabel,
-        href: participantUrl + "/episodes/" + previousEpisode.id
+        href: getEpisodeUrl(previousEpisode)
       } if previousEpisode,
       next: {
         text: "Next episode",
         labelText: nextEpisode | getEpisodeLabel,
-        href: participantUrl + "/episodes/" + nextEpisode.id
+        href: getEpisodeUrl(nextEpisode)
       } if nextEpisode
     }) }}
   {% endif %}

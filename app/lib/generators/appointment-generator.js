@@ -6,7 +6,6 @@ const weighted = require('weighted')
 const dayjs = require('dayjs')
 const config = require('../../config')
 const { STATUS_GROUPS, isCompleted } = require('../utils/status')
-const { getStoppedReasons } = require('../utils/appointment-data')
 const { generateMammogramImages } = require('./mammogram-generator')
 const {
   generateMedicalInformation
@@ -394,13 +393,6 @@ const generateAppointment = ({
         startedAt: actualStartTime.toISOString(),
         startedBy: randomUser.id,
         endedAt: actualEndTime.toISOString()
-      }
-
-      // Stopping an appointment in the appointment flow requires reasons, so
-      // seeded attended-not-screened appointments always have them
-      appointment.appointmentStopped = {
-        stoppedReason: [faker.helpers.arrayElement(getStoppedReasons()).value],
-        needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
       }
     }
 

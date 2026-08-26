@@ -7,6 +7,12 @@
 {% set bodyClasses = (bodyClasses if bodyClasses) + (" app-dark-mode" if data.settings.darkMode == 'true') + (" app-compact-mode" if data.settings.compactMode in ['true', true]) %}
 
 {% block beforeContent %}
+  {# Case pages set breadcrumbItems (usually via getCaseBreadcrumb) - the
+     participant-rooted trail. A back link can show alongside it: the
+     breadcrumb is the records axis, the back link the workflow container. #}
+  {% if breadcrumbItems %}
+    {{ breadcrumb({ items: breadcrumbItems }) }}
+  {% endif %}
   {% if not hideBackLink %}
     {{ backLink({
       href: back.href or "javascript:history.back();",

@@ -106,6 +106,37 @@ module.exports = (router) => {
     res.redirect(`/reading/cases/${req.params.caseId}`)
   })
 
+  // The case's prior mammograms: request statuses and the actions to progress
+  // them. Registered before the :tab redirect below.
+  router.get('/reading/cases/:caseId/priors', (req, res) => {
+    const data = req.session.data
+
+    const found = getReadingCaseById(data, req.params.caseId)
+    if (!found) {
+      return res.redirect('/reading/cases')
+    }
+
+    const { readingCase, episode } = found
+
+    const appointment = getAppointment(data, readingCase.appointmentId)
+    const participant = getParticipant(data, episode.participantId)
+
+    const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
+    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
+
+    res.render('reading/case-priors', {
+      readingCase,
+      episode,
+      appointment,
+      participant,
+      caseState: caseStatus.state,
+      caseStatus,
+      caseOutcome,
+      isDeferred: isCaseDeferred(readingCase),
+      caseAwaitingPriors: appointment ? awaitingPriors(appointment) : false
+    })
+  })
+
   // The old tabbed views collapsed into the one page
   router.get('/reading/cases/:caseId/:tab', (req, res) => {
     res.redirect(`/reading/cases/${req.params.caseId}`)

@@ -39,7 +39,7 @@
           {% endif %}
         </td>
         <td class="nhsuk-table__cell">
-          <a href="/reading/cases/{{ readingCase.id }}">View case</a>
+          <a href="{{ getReadingCaseUrl(readingCase) }}">View case</a>
         </td>
       </tr>
     {% endfor %}

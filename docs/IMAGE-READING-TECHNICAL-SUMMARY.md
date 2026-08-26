@@ -63,6 +63,9 @@ app/
 │   │   ├── reading-statistics.html  # Reading statistics dashboard
 │   │   ├── create-custom-session.html # Custom session creation
 │   │   ├── priors.html              # Prior mammogram management (admin/co-ordinator view)
+│   │   ├── cases.html               # Reading case backlog
+│   │   ├── case.html                # One reading case: state, blockers, reads
+│   │   ├── case-priors.html         # The case's prior mammograms tab
 │   │   ├── batch.html               # Unused — predates the batch→session rename
 │   │   ├── workflow/                # Reading workflow pages
 │   │   │   ├── opinion.html         # Main opinion page (entry point)
@@ -254,9 +257,13 @@ data.readingSessions = {
 /reading/clinics/all                  # All clinics
 /reading/clinics/:clinicId            # Loads/creates clinic session, redirects to session view
 /reading/clinics/:clinicId/start      # Creates clinic session, starts first appointment
+/reading/cases                        # Reading case backlog (query-param filters: scope, state, q)
+/reading/cases/:caseId                # One reading case: state, blockers, reads, annotations
+/reading/cases/:caseId/priors        # The case's prior mammograms with request actions
+/reading/cases/:caseId/finalise      # Finalise every outstanding read on a case now
 /reading/priors                       # Prior mammogram management (redirects to /all)
 /reading/priors/:filter               # Filter: all | not-requested | pending | requested | resolved
-/reading/priors/update-status         # POST: Update mammogram request status
+/reading/priors/update-status         # POST: Update mammogram request status (accepts returnTo)
 /reading/create-session               # Creates session from query params, redirects to first appointment
 /reading/deferred                     # Deferred cases list
 /reading/deferred/undo                # POST: Undo a deferral
@@ -631,6 +638,8 @@ A reader can defer a case out of the reading queue (for example to raise it with
 - `getDeferredCases(data)` / `getResolvedDeferrals(data)` (in `lib/utils/reading.js`) build the lists the deferred cases page shows
 - Deferred cases are excluded from reading; `/reading/deferred` lists them, and a deferral can be undone (via `/reading/deferred/undo` or the per-case `/undo-defer` route), returning the case to the queue
 - The workflow's `defer-case.html` step collects an optional reason (`deferralReason`)
+- The deferred list's cards link to the reading case page (`/reading/cases/:caseId`), which shows the deferral and offers the unflag action itself (`/reading/deferred/undo` accepts a `returnTo` path)
+- Similarly the priors dashboard's rows link to the case's priors tab (`/reading/cases/:caseId/priors`); the row cells and their in-place update script are shared includes under `_includes/priors/`
 
 ---
 

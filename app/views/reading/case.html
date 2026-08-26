@@ -21,6 +21,8 @@
 {% set pageHeading = participant | getFullName %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
+{% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}
+
 {% set back = {
   href: "/reading/cases",
   text: "Back to reading cases"
@@ -28,50 +30,9 @@
 
 {% block pageContent %}
 
-  {# Header with the case's state on the right, the same shape as the
-     appointment and reading workflow headers #}
-  <div class="app-header-with-status">
-    <h1 class="nhsuk-heading-l">
-      <span class="nhsuk-caption-l">Image reading case</span>
-      {{ pageHeading }}
-    </h1>
-
-    <div class="app-header-with-status__status-tag">
-      {# Single status: outcome once concluded, otherwise the in-progress state #}
-      {% if caseOutcome %}
-        {{ caseOutcome | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-      {% elseif caseStatus.provisionalOutcome %}
-        {{ caseStatus.provisionalOutcome | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-        <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
-      {% elseif caseStatus.willArbitrate and caseState == 'awaiting_finalisation' %}
-        {{ "Arbitration" | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-        <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
-      {% else %}
-        {{ caseState | toTag({ vocabulary: "readingState", classes: "nhsuk-u-margin-bottom-2" }) }}
-      {% endif %}
-
-      {# Urgency matters only while the case is still open #}
-      {% if caseState != 'concluded' and appointment %}
-        {% set appointmentAge = appointment.timing.startTime | daysSince %}
-        {% if appointmentAge >= data.config.reading.urgentThreshold %}
-          <br>{{ "Urgent" | toTag }}
-        {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
-          <br>{{ "Due soon" | toTag }}
-        {% endif %}
-      {% endif %}
-
-      {% if isDeferred %}
-        <br>{{ "Deferred" | toTag }}
-      {% endif %}
-      {% if caseAwaitingPriors %}
-        <br>{{ "Awaiting priors" | toTag }}
-      {% endif %}
-    </div>
-  </div>
-
-  <p class="nhsuk-u-secondary-text-colour">
-    NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
-  </p>
+  {% set caseNavActive = 'case' %}
+  {% include "_includes/reading-case/case-header.njk" %}
+  {% include "_includes/reading-case/case-nav.njk" %}
 
   {% set arbitrationRead = readingCase | getArbitrationRead %}
 
@@ -96,8 +57,18 @@
             It needs review before it returns to the reading queue.
           </p>
           {% if readingCase.deferral.reason %}
-            <p class="nhsuk-u-margin-bottom-0">Reason: {{ readingCase.deferral.reason }}</p>
+            <p>Reason: {{ readingCase.deferral.reason }}</p>
           {% endif %}
+          <p class="nhsuk-u-margin-bottom-0">
+            <form action="/reading/deferred/undo" method="POST" class="app-inline-form">
+              <input type="hidden" name="appointmentId" value="{{ appointment.id }}">
+              <input type="hidden" name="returnTo" value="{{ getReadingCaseUrl(readingCase) }}">
+              <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
+                Unflag case<span class="nhsuk-u-visually-hidden"> for {{ participant | getFullName }}</span>
+              </button>
+            </form>
+            <a href="/reading/deferred" class="nhsuk-u-margin-left-3">View all deferred cases</a>
+          </p>
         {% endset %}
         {{ warningCallout({
           heading: "Deferred",
@@ -111,12 +82,13 @@
           <p>Prior mammograms have been requested and not yet received. The case is held from reading until they arrive.</p>
           {% for prior in awaitingPriorsList %}
             {% if prior.requestedDate %}
-              <p class="nhsuk-u-margin-bottom-0">
+              <p>
                 Requested {{ prior.requestedDate | formatDate }}
                 {%- if prior.requestReason %} – {{ prior.requestReason }}{% endif %}
               </p>
             {% endif %}
           {% endfor %}
+          <p class="nhsuk-u-margin-bottom-0"><a href="{{ getReadingCaseUrl(readingCase) }}/priors">View priors for this case</a></p>
         {% endset %}
         {{ warningCallout({
           heading: "Awaiting prior mammograms",
@@ -147,7 +119,7 @@
           actions: {
             items: [
               {
-                href: "/participants/" + episode.participantId + "/episodes/" + episode.id,
+                href: getEpisodeUrl(episode),
                 text: "View episode"
               }
             ]
@@ -159,7 +131,7 @@
           actions: {
             items: [
               {
-                href: "/clinics/" + appointment.clinicId + "/appointments/" + appointment.id,
+                href: getAppointmentUrl(appointment),
                 text: "View appointment"
               }
             ]
@@ -329,7 +301,7 @@
               actions: {
                 items: [
                   {
-                    href: "/reading/cases/" + readingCase.id + "/finalise",
+                    href: getReadingCaseUrl(readingCase) + "/finalise",
                     text: "Finalise outcome now"
                   }
                 ]

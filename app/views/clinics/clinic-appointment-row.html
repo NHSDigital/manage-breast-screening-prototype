@@ -1,7 +1,0 @@
-{# app/views/clinics/clinic-appointment-row.html #}
-{# Bare fragment - a single clinic appointment list row, fetched by main.js
-   to update the clinic page in place after checking in #}
-
-{% from "_includes/clinic-appointment-row.njk" import clinicAppointmentRow with context %}
-
-{{ clinicAppointmentRow(appointment, participant, clinicId) }}

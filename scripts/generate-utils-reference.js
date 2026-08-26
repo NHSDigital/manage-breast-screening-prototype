@@ -82,6 +82,14 @@ const FILE_META = {
     label: 'random.js',
     description: 'Seeded random functions for stable prototype data. Results are stable per page URL — use the `name` param to get different values for different purposes on the same page.'
   },
+  'app/lib/utils/urls.js': {
+    label: 'urls.js',
+    description: 'Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case). Build links through these rather than concatenating paths.'
+  },
+  'app/lib/utils/breadcrumbs.js': {
+    label: 'breadcrumbs.js',
+    description: 'The participant-rooted breadcrumb trail case pages carry. Pages set breadcrumbItems with getCaseBreadcrumb; layout-base renders it.'
+  },
   'app/lib/utils/referrers.js': {
     label: 'referrers.js',
     description: 'Referrer chain navigation for multi-level back links. Use these instead of hardcoded back link URLs. See the module-level comment in the file for full usage examples.'
@@ -134,6 +142,8 @@ const UTILS_FILES = [
   'app/lib/utils/objects.js',
   'app/lib/utils/summary-list.js',
   'app/lib/utils/random.js',
+  'app/lib/utils/urls.js',
+  'app/lib/utils/breadcrumbs.js',
   'app/lib/utils/referrers.js',
   'app/lib/utils/roles-and-permissions.js',
   'app/lib/utils/utility.js'

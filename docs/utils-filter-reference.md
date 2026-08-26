@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-08-06 16:33 UTC
+- **Generated:** 2026-08-17 12:33 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -15,31 +15,33 @@
 
 | File | Purpose | Line |
 |---|---|---|
-| `dates.js` | Date formatting and calculation using dayjs | 50 |
-| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 86 |
-| `status.js` | Appointment status checks and display helpers | 121 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 146 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 166 |
-| `episodes.js` | Episode lookups and stage changes | 180 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 217 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 233 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 277 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 331 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 350 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 371 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 384 |
-| `objects.js` | Object utilities for extracting and flattening values. | 402 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 412 |
-| `random.js` | Seeded random functions for stable prototype data | 423 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 440 |
-| `roles-and-permissions.js` | User role checks | 453 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 471 |
+| `dates.js` | Date formatting and calculation using dayjs | 52 |
+| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 88 |
+| `status.js` | Appointment status checks and display helpers | 123 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 148 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 168 |
+| `episodes.js` | Episode lookups and stage changes | 182 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 219 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 235 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 279 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 333 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 352 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 375 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 388 |
+| `objects.js` | Object utilities for extracting and flattening values. | 406 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 417 |
+| `random.js` | Seeded random functions for stable prototype data | 428 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 445 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 459 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 469 |
+| `roles-and-permissions.js` | User role checks | 482 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 500 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 487 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 499 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 511 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 525 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 535 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 516 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 528 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 540 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 554 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 564 |
 
 ---
 
@@ -315,18 +317,18 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 | `getNextUserReadableAppointment(data, appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 1131 |
 | `getNextCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The next case to work on in a session, after the current one. | 1165 |
 | `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1218 |
-| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments])` | Get the appointment the user should resume reading from. | 1245 |
-| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1318 |
-| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1345 |
-| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1410 |
-| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1498 |
-| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1590 |
-| `generateSessionId()` | Generate a unique ID for a session | 1627 |
-| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1636 |
-| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1673 |
-| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1706 |
-| `topUpSession(data, sessionId)` | Add the next eligible appointment to a session if it is under its target size | 1729 |
-| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1783 |
+| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1245 |
+| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1336 |
+| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1363 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1428 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1516 |
+| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1613 |
+| `generateSessionId()` | Generate a unique ID for a session | 1650 |
+| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1659 |
+| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1696 |
+| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1729 |
+| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1752 |
+| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1839 |
 
 ### prior-mammograms.js
 
@@ -359,19 +361,16 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 18 |
 | `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 31 |
 | `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 42 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 215 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 244 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 266 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 288 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 367 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 381 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 403 |
-
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 419 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 455 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 490 |
-| `summariseOtherRelevantInformation(medicalInformation)` | Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info) | 419 |
-
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 250 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 279 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 301 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 323 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 402 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 416 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 438 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 454 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 495 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 530 |
 
 ### annotation-summary.js
 
@@ -413,6 +412,7 @@ Object utilities for extracting and flattening values.
 | Function | Description | Line |
 |---|---|---|
 | `getObjectValues(obj, [options], [options.recursive], [options.includeArrays], [options.removeEmpty])` | Extract all values from an object into a flat array — e.g. `getObjectValues({ name: 'Jane', age: 30 }) // Returns ['Jane', 30]` | 5 |
+| `mergeObjects(target, [changes])` | Shallow-merge two objects, the second winning. — e.g. `mergeObjects({ scope: 'open', state: 'x' }, { state: 'y' })` | 55 |
 
 ### summary-list.js
 
@@ -441,6 +441,30 @@ Seeded random functions for stable prototype data. Results are stable per page U
 | `randomWeighted(weights, [name], [seed])` | Use weighted selection with consistent results | 181 |
 | `seededFaker([name], [seed])` | Create a seeded faker instance with consistent results | 224 |
 | `resetCallSequence()` | Reset the per-render call sequence counter — call once per page load (via middleware) | 256 |
+
+### urls.js
+
+`app/lib/utils/urls.js`
+
+Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case). Build links through these rather than concatenating paths.
+
+| Function | Description | Line |
+|---|---|---|
+| `getParticipantUrl(participantOrId)` | Get the URL for a participant's record — e.g. `getParticipantUrl(participant) // '/participants/bc724e9f'` | 7 |
+| `getEpisodeUrl(episode)` | Get the URL for an episode page — e.g. `getEpisodeUrl(episode) // '/participants/bc724e9f/episodes/ep1234'` | 20 |
+| `getClinicUrl(clinicOrId)` | Get the URL for a clinic page — e.g. `getClinicUrl(clinic) // '/clinics/a9ovz0oj'` | 32 |
+| `getAppointmentUrl(appointment)` | Get the URL for an appointment page — e.g. `getAppointmentUrl(appointment) // '/clinics/a9ovz0oj/appointments/9vqig4uc'` | 45 |
+| `getReadingCaseUrl(readingCaseOrId)` | Get the URL for a reading case page — e.g. `getReadingCaseUrl(readingCase) // '/reading/cases/ruj64jdd'` | 57 |
+
+### breadcrumbs.js
+
+`app/lib/utils/breadcrumbs.js`
+
+The participant-rooted breadcrumb trail case pages carry. Pages set breadcrumbItems with getCaseBreadcrumb; layout-base renders it.
+
+| Function | Description | Line |
+|---|---|---|
+| `getCaseBreadcrumb([participant], [episode])` | Build breadcrumb items for a case page, ending at the deepest ancestor — e.g. `getCaseBreadcrumb() // Participants` | 12 |
 
 ### referrers.js
 

@@ -153,6 +153,13 @@ body.js-enabled .app-no-js-only {
   }
 }
 
+// A breadcrumb and back link can show together (records trail plus workflow
+// container) - keep the back link on its own line below the trail
+.nhsuk-breadcrumb + .nhsuk-back-link {
+  display: block;
+  margin-top: nhsuk-spacing(2);
+}
+
 // Inline form with no extra spacing
 .app-inline-form {
   display: inline;

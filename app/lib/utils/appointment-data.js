@@ -149,30 +149,9 @@ const saveTempAppointmentToAppointment = (data) => {
   return updatedAppointment
 }
 
-/**
- * Reasons an appointment can be stopped (attended not screened), each with
- * the form field that holds its optional details. Defined once so the reason
- * forms and the seed generator stay in step. "Other reason" is handled
- * separately by the form as its details are required rather than optional.
- *
- * @returns {Array} List of { value, detailsField } reason options
- */
-const getStoppedReasons = () => [
-  { value: 'Failed identity check', detailsField: 'failedIdentityDetails' },
-  { value: 'Pain during screening', detailsField: 'painDetails' },
-  { value: 'Has a symptomatic appointment', detailsField: 'symptomaticDetails' },
-  { value: 'Consent withdrawn', detailsField: 'consentDetails' },
-  { value: 'Physical health issue', detailsField: 'physicalHealthDetails' },
-  { value: 'Mental health issue', detailsField: 'mentalHealthDetails' },
-  { value: 'Language difficulties', detailsField: 'languageDetails' },
-  { value: 'No qualified mammographer available', detailsField: 'mammographerDetails' },
-  { value: 'Technical issues at clinic', detailsField: 'technicalDetails' }
-]
-
 module.exports = {
   getAppointment,
   getAppointmentData,
-  getStoppedReasons,
   updateAppointment,
   updateAppointmentData,
   saveTempAppointmentToAppointment

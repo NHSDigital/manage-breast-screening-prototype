@@ -2,8 +2,6 @@
 
 {% extends 'layout-app.html' %}
 
-{% from "_includes/reading/prior-mammogram-row.njk" import priorMammogramRow with context %}
-
 {% set pageHeading = "Prior mammograms" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -91,7 +89,7 @@
     <p>No prior mammograms in this view.</p>
   {% else %}
 
-    <table class="nhsuk-table">
+    <table class="nhsuk-table" data-current-username="{{ data.currentUser.id | getUsername({ format: 'short', identifyCurrentUser: true }) }}">
       <thead class="nhsuk-table__head">
         <tr>
           <th scope="col">Participant</th>
@@ -103,10 +101,44 @@
       </thead>
       <tbody class="nhsuk-table__body">
         {% for row in displayRows %}
-          {{ priorMammogramRow(row.appointment, row.mammogram) }}
+          {% set thisAppointment = row.appointment %}
+          {% set mammogram = row.mammogram %}
+              <tr data-mammogram-row="{{ mammogram.id }}">
+                {# Participant name links to the case's priors tab - the
+                   per-case view of the same requests. Falls back to the
+                   appointment for the odd case that doesn't exist yet #}
+                {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
+                {% set thisEpisode = data | getEpisode(thisAppointment.episodeId) %}
+                {% set thisReadingCase = getReadingCaseForAppointment(thisEpisode, thisAppointment.id) if thisEpisode %}
+                <td>
+                  <a href="{{ (getReadingCaseUrl(thisReadingCase) + '/priors') if thisReadingCase else getAppointmentUrl(thisAppointment) }}">
+                    {{ thisParticipant | getFullNameReversed }}
+                  </a>
+                </td>
+
+                {# Screening date #}
+                <td>
+                  {% set daysSinceScreening = thisAppointment.timing.startTime | daysSince %}
+                  {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+                    {{ "Urgent" | toTag }}<br>
+                  {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+                    {{ "Due soon" | toTag }}<br>
+                  {% endif %}
+                  {{ thisAppointment.timing.startTime | formatDate }}<br>
+                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                    {{ thisAppointment.timing.startTime | formatRelativeDate }}
+                  </span>
+                </td>
+
+                {% include "_includes/priors/prior-row-cells.njk" %}
+              </tr>
         {% endfor %}
       </tbody>
     </table>
   {% endif %}
 
+{% endblock %}
+
+{% block pageScripts %}
+  {% include "_includes/priors/prior-status-script.njk" %}
 {% endblock %}
