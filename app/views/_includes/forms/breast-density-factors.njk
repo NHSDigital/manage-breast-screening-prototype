@@ -19,28 +19,55 @@
 
 {% set participantName = participant | getFullName %}
 
-{% set hrtQuestion = "Has " + participant.demographicInformation.firstName + " started a course of HRT since their last screening appointment?" %}
+{% set hrtQuestion = "Is " + participant.demographicInformation.firstName + " currently taking HRT?" %}
 {% set pregnantOrBreastfeedingQuestion = "Is " + participant.demographicInformation.firstName + " pregnant or breastfeeding?" %}
+
+{% set hrtYesConditionalHtml %}
+  <div class="nhsuk-form-group">
+    <label class="nhsuk-label" for="breastDensityFactorsHrtYearStarted">
+      Approx. year started
+    </label>
+    <input class="nhsuk-input nhsuk-input--width-4" id="breastDensityFactorsHrtYearStarted" name="breastDensityFactorsHrtYearStarted" type="text" value="{{ breastDensityFactors.hrtYearStarted }}">
+  </div>
+{% endset %}
+
+{% set hrtNoConditionalHtml %}
+  <div class="nhsuk-form-group">
+    <label class="nhsuk-label" for="breastDensityFactorsHrtYearStopped">
+      Approx. year stopped if previously taken
+    </label>
+    <input class="nhsuk-input nhsuk-input--width-4" id="breastDensityFactorsHrtYearStopped" name="breastDensityFactorsHrtYearStopped" type="text" value="{{ breastDensityFactors.hrtYearStopped }}">
+  </div>
+{% endset %}
 
 {% set hrtInputHtml %}
   {{ radios({
     name: "breastDensityFactorsHrt",
     value: breastDensityFactors.hrt,
-    classes: "nhsuk-radios--inline nhsuk-radios--small",
+    classes: "nhsuk-radios--small",
     fieldset: {
       legend: {
         text: hrtQuestion,
         classes: "nhsuk-fieldset__legend--s"
       }
     },
+    hint: {
+      text: "(optional)"
+    },
     items: [
       {
         value: "yes",
-        text: "Yes, has started a course of HRT"
+        text: "Yes",
+        conditional: {
+          html: hrtYesConditionalHtml
+        }
       },
       {
         value: "no",
-        text: "No, has not started a course of HRT"
+        text: "No",
+        conditional: {
+          html: hrtNoConditionalHtml
+        }
       }
     ]
   }) }}
@@ -72,9 +99,9 @@
 
 {% set hrtSummaryHtml %}
   {% if breastDensityFactors.hrt == "yes" %}
-    <p>Started a course of HRT since last screening appointment</p>
+    <p>Currently taking HRT{% if breastDensityFactors.hrtYearStarted %} (started: {{ breastDensityFactors.hrtYearStarted }}){% endif %}</p>
   {% elseif breastDensityFactors.hrt == "no" %}
-    <p>Not started a course of HRT since last screening appointment</p>
+    <p>Not currently taking HRT{% if breastDensityFactors.hrtYearStopped %} (stopped: {{ breastDensityFactors.hrtYearStopped }}){% endif %}</p>
   {% else %}
     <p>Not answered</p>
   {% endif %}
@@ -88,6 +115,9 @@
       {% endif %}
       {% if breastDensityFactors.factors | includes("breastfeeding") %}
         <li>Breastfeeding</li>
+      {% endif %}
+      {% if breastDensityFactors.factors | includes("stopped-less-than-3-months") %}
+        <li>Pregnancy or breastfeeding stopped less than 3 months ago</li>
       {% endif %}
     </ul>
   {% else %}
@@ -109,12 +139,33 @@
     ]
   } | removeLastRowBorder ) }}
 
-  <p class="nhsuk-u-margin-top-4">
-    {{ button({
-      text: "Add pregnancy and breastfeeding",
-      href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
-      variant: "secondary",
-      small: true
-    } | openInModal) }}
-  </p>
+  {% if breastDensityFactors.factors | length %}
+    {% call card({
+      heading: "Pregnancy and breastfeeding",
+      headingLevel: 4,
+      headingSize: "s",
+      classes: "nhsuk-u-margin-bottom-4 nhsuk-u-margin-top-4",
+      actions: {
+        items: [
+          {
+            href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
+            text: "Change"
+          } | openInModal
+        ]
+      } if allowEdits
+    }) %}
+      {{ pregnantOrBreastfeedingSummaryHtml | safe }}
+    {% endcall %}
+  {% endif %}
+
+  {% if allowEdits and not breastDensityFactors.factors | length %}
+    <p class="nhsuk-u-margin-top-4">
+      {{ button({
+        text: "Add pregnancy and breastfeeding",
+        href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
+        variant: "secondary",
+        small: true
+      } | openInModal) }}
+    </p>
+  {% endif %}
 </div>

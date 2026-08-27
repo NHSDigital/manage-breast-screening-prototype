@@ -12,7 +12,7 @@
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
   {{ checkboxes({
-    name: "breastDensityFactors",
+    name: "appointment[medicalInformation][breastDensityFactors]",
     values: breastDensityFactors.factors,
     classes: "nhsuk-checkboxes--small",
     fieldset: {
@@ -29,6 +29,14 @@
       {
         value: "breastfeeding",
         text: "Breastfeeding"
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "stopped-less-than-3-months",
+        text: "Pregnancy or breastfeeding stopped less than 3 months ago",
+        exclusive: true
       }
     ]
   }) }}
@@ -36,5 +44,13 @@
   {{ button({
     text: "Save"
   }) }}
+
+  {% if breastDensityFactors.factors | length %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ contextUrl }}/medical-information/pregnancy-and-breastfeeding-delete" class="nhsuk-link app-link--warning">
+        Delete this item
+      </a>
+    </p>
+  {% endif %}
 
 {% endblock %}

@@ -29,71 +29,64 @@ module.exports = (router) => {
       const { appointmentId } = req.params
       const data = req.session.data
 
-      // An unticked checkbox group posts nothing at all, so a missing value
-      // means "none selected" rather than "unchanged"
-      const postedFactors = req.body?.breastDensityFactors
-      const factors = (
-        Array.isArray(postedFactors)
-          ? postedFactors
-          : postedFactors
-            ? [postedFactors]
-            : []
-      ).filter((factor) => factor && factor !== '_unchecked')
-
       const postedHrt = req.body?.breastDensityFactorsHrt
+      const postedHrtYearStarted = req.body?.breastDensityFactorsHrtYearStarted
+      const postedHrtYearStopped = req.body?.breastDensityFactorsHrtYearStopped
 
-      // The appointment context middleware has already made the temp copy,
-      // so this is only defensive
       if (data.appointment?.id !== appointmentId) {
         res.status(409).send()
         return
       }
 
       const medicalInformation = data.appointment.medicalInformation || {}
-      medicalInformation.breastDensityFactors = factors
 
       if (postedHrt) {
         medicalInformation.breastDensityFactorsHrt = postedHrt
       }
 
+      if (postedHrtYearStarted !== undefined) {
+        medicalInformation.breastDensityFactorsHrtYearStarted = postedHrtYearStarted
+      }
+
+      if (postedHrtYearStopped !== undefined) {
+        medicalInformation.breastDensityFactorsHrtYearStopped = postedHrtYearStopped
+      }
+
       data.appointment.medicalInformation = medicalInformation
 
-      // These aren't form fields for any other page - don't leave them in
-      // session data where auto-store-data has put them
-      delete data.breastDensityFactors
       delete data.breastDensityFactorsHrt
+      delete data.breastDensityFactorsHrtYearStarted
+      delete data.breastDensityFactorsHrtYearStopped
 
       res.status(204).send()
     }
   )
 
-  // Save pregnancy/breastfeeding from modal form
+  // Pregnancy/breastfeeding modal form — data is auto-saved by the kit
+  // via the field name; we just need the modalBreakout redirect.
+  // Pregnancy/breastfeeding modal — auto-store-data saves the field
+  // directly to appointment.medicalInformation.breastDensityFactors;
+  // route only handles the modalBreakout redirect.
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding-save',
     (req, res) => {
       const { clinicId, appointmentId } = req.params
+      res.redirect(modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`))
+    }
+  )
+
+  // Delete pregnancy/breastfeeding
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding-delete',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
       const data = req.session.data
 
-      const postedFactors = req.body?.breastDensityFactors
-      const factors = (
-        Array.isArray(postedFactors)
-          ? postedFactors
-          : postedFactors
-            ? [postedFactors]
-            : []
-      ).filter((factor) => factor && factor !== '_unchecked')
-
-      if (data.appointment?.id !== appointmentId) {
-        res.status(409).send()
-        return
+      if (data.appointment?.medicalInformation) {
+        delete data.appointment.medicalInformation.breastDensityFactors
       }
 
-      const medicalInformation = data.appointment.medicalInformation || {}
-      medicalInformation.breastDensityFactors = factors
-      data.appointment.medicalInformation = medicalInformation
-
-      delete data.breastDensityFactors
-
+      req.flash('success', 'Pregnancy and breastfeeding deleted')
       res.redirect(modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`))
     }
   )

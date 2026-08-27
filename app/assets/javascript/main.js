@@ -201,13 +201,13 @@ function setupBreastDensityFactorsAutosave() {
     return
   }
 
-  const factorsName = 'breastDensityFactors'
   const hrtName = 'breastDensityFactorsHrt'
+  const hrtYearStartedName = 'breastDensityFactorsHrtYearStarted'
+  const hrtYearStoppedName = 'breastDensityFactorsHrtYearStopped'
 
-  const checkboxes = container.querySelectorAll(`input[name="${factorsName}"]`)
   const hrtRadios = container.querySelectorAll(`input[name="${hrtName}"]`)
 
-  if (checkboxes.length === 0 && hrtRadios.length === 0) {
+  if (hrtRadios.length === 0) {
     return
   }
 
@@ -223,13 +223,8 @@ function setupBreastDensityFactorsAutosave() {
       return
     }
 
-    // "No" to HRT is an answer, not a factor - match the count in
-    // getBreastDensityFactors so the two never disagree
-    const checkedFactors = container.querySelectorAll(
-      `input[name="${factorsName}"]:checked`
-    ).length
     const hrtYes = container.querySelector(`input[name="${hrtName}"]:checked`)?.value === 'yes'
-    const count = checkedFactors + (hrtYes ? 1 : 0)
+    const count = hrtYes ? 1 : 0
 
     if (count === 0) {
       summary.textContent = 'No breast density factors added'
@@ -244,16 +239,22 @@ function setupBreastDensityFactorsAutosave() {
   // queue - otherwise an earlier response could be the last one to arrive
   let pendingSave = Promise.resolve()
 
-  const saveFactors = () => {
+  const saveHrt = () => {
     const formData = new URLSearchParams()
-
-    container
-      .querySelectorAll(`input[name="${factorsName}"]:checked`)
-      .forEach((checkbox) => formData.append(factorsName, checkbox.value))
 
     const selectedHrt = container.querySelector(`input[name="${hrtName}"]:checked`)
     if (selectedHrt) {
       formData.append(hrtName, selectedHrt.value)
+    }
+
+    const yearStartedInput = container.querySelector(`input[name="${hrtYearStartedName}"]`)
+    if (yearStartedInput) {
+      formData.append(hrtYearStartedName, yearStartedInput.value)
+    }
+
+    const yearStoppedInput = container.querySelector(`input[name="${hrtYearStoppedName}"]`)
+    if (yearStoppedInput) {
+      formData.append(hrtYearStoppedName, yearStoppedInput.value)
     }
 
     updateContentsSummary()
@@ -279,8 +280,12 @@ function setupBreastDensityFactorsAutosave() {
   }
 
   container
-    .querySelectorAll(`input[name="${factorsName}"], input[name="${hrtName}"]`)
-    .forEach((input) => input.addEventListener('change', saveFactors))
+    .querySelectorAll(`input[name="${hrtName}"]`)
+    .forEach((input) => input.addEventListener('change', saveHrt))
+
+  container
+    .querySelectorAll(`input[name="${hrtYearStartedName}"], input[name="${hrtYearStoppedName}"]`)
+    .forEach((input) => input.addEventListener('change', saveHrt))
 }
 
 // Quick settings modal — press backtick (`) to open settings in a modal overlay.

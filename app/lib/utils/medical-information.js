@@ -464,26 +464,32 @@ const summariseBreastFeatures = (features) => {
  */
 const getBreastDensityFactors = (medicalInformation) => {
   const rawFactors = medicalInformation?.breastDensityFactors
-  const factors = Array.isArray(rawFactors)
-    ? rawFactors.filter(Boolean)
+  const factors = (Array.isArray(rawFactors)
+    ? rawFactors
     : rawFactors
       ? [rawFactors]
       : []
+  ).filter((f) => f && f !== '_unchecked')
 
   const hrt = medicalInformation?.breastDensityFactorsHrt
+  const hrtYearStarted = medicalInformation?.breastDensityFactorsHrtYearStarted
+  const hrtYearStopped = medicalInformation?.breastDensityFactorsHrtYearStopped
 
   // "Not started HRT" is an answer, but it isn't a density factor - only
   // count the things that actually affect density
   const count =
     (hrt === 'yes' ? 1 : 0) +
     (factors.includes('pregnant') ? 1 : 0) +
-    (factors.includes('breastfeeding') ? 1 : 0)
+    (factors.includes('breastfeeding') ? 1 : 0) +
+    (factors.includes('stopped-less-than-3-months') ? 1 : 0)
 
   const summaries = summariseBreastDensityFactors(medicalInformation)
 
   return {
     factors,
     hrt,
+    hrtYearStarted,
+    hrtYearStopped,
     count,
     // Everything worth showing, including a recorded "no" to HRT question - use this
     // to decide whether to show the row at all, and count for "n added"
@@ -507,13 +513,15 @@ const summariseBreastDensityFactors = (medicalInformation) => {
       : []
 
   const hrt = medicalInformation?.breastDensityFactorsHrt
+  const hrtYearStarted = medicalInformation?.breastDensityFactorsHrtYearStarted
+  const hrtYearStopped = medicalInformation?.breastDensityFactorsHrtYearStopped
 
   const summaries = []
 
   if (hrt === 'yes') {
-    summaries.push('Started a course of HRT since last screening appointment')
+    summaries.push('Currently taking HRT' + (hrtYearStarted ? ` (started: ${hrtYearStarted})` : ''))
   } else if (hrt === 'no') {
-    summaries.push('Not started a course of HRT since last screening appointment')
+    summaries.push('Not currently taking HRT' + (hrtYearStopped ? ` (stopped: ${hrtYearStopped})` : ''))
   }
 
   if (factors.includes('pregnant')) {
@@ -522,6 +530,10 @@ const summariseBreastDensityFactors = (medicalInformation) => {
 
   if (factors.includes('breastfeeding')) {
     summaries.push('Breastfeeding')
+  }
+
+  if (factors.includes('stopped-less-than-3-months')) {
+    summaries.push('Pregnancy or breastfeeding stopped less than 3 months ago')
   }
 
   return summaries
