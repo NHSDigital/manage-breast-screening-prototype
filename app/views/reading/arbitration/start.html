@@ -3,7 +3,7 @@
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = "Start arbitration" %}
+{% set pageHeading = "Start arbitration session" %}
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
 {% set back = {
   href: "/reading",
@@ -17,14 +17,14 @@
   <h1>{{ pageHeading }}</h1>
 
   <p>
-    {{ backlogCount }} {{ "case" | pluralise(backlogCount) }} {{ "is" if backlogCount == 1 else "are" }} waiting for arbitration.
-    <a href="/reading/cases?state=awaiting_arbitration" class="nhsuk-link--no-visited-state">View the cases</a>
+    {{ backlogCount }} {{ "case" | pluralise(backlogCount) }} {{ "is" if backlogCount == 1 else "are" }} awaiting arbitration.
+    <a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a>
   </p>
 
   {# Blocked cases stay in the backlog but arbitration can't offer them #}
   {% if backlog.blocked %}
     {{ insetText({
-      html: '<p>' ~ backlog.blocked ~ ' of these ' ~ ("case is" if backlog.blocked == 1 else "cases are") ~ ' deferred or awaiting priors and cannot be arbitrated yet. <a href="#" class="nhsuk-link--no-visited-state">View blocked cases</a></p>'
+      html: '<p>' ~ backlog.blocked ~ (" case is" if backlog.blocked == 1 else " cases are") ~ ' deferred or awaiting priors and cannot be arbitrated yet. <a href="/reading/cases?status=awaiting_arbitration&amp;blocked=deferred&amp;blocked=awaiting_priors" class="nhsuk-link--no-visited-state">View blocked cases</a></p>'
     }) }}
   {% endif %}
 
@@ -36,9 +36,9 @@
       items: [
         {
           value: "yes",
-          text: "Exclude cases where I was a reader",
+          text: "Exclude cases I have read",
           hint: {
-            text: "Excludes " ~ ownReadsCount ~ " " ~ ("case" | pluralise(ownReadsCount)) ~ " you already read"
+            text: ownReadsCount ~ " " ~ ("case" | pluralise(ownReadsCount)) ~ " will not be included in this session"
           } if ownReadsCount else undefined,
           checked: true
         }

@@ -17,61 +17,23 @@
 {% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/details/macro.njk' import appDetails %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set pageHeading = participant | getFullName %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
+{% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}
+
 {% set back = {
   href: "/reading/cases",
-  text: "Back to reading cases"
+  text: "All reading cases"
 } %}
 
 {% block pageContent %}
 
-  {# Header with the case's state on the right, the same shape as the
-     appointment and reading workflow headers #}
-  <div class="app-header-with-status">
-    <h1 class="nhsuk-heading-l">
-      <span class="nhsuk-caption-l">Image reading case</span>
-      {{ pageHeading }}
-    </h1>
-
-    <div class="app-header-with-status__status-tag">
-      {# Single status: outcome once concluded, otherwise the in-progress state #}
-      {% if caseOutcome %}
-        {{ caseOutcome | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-      {% elseif caseStatus.provisionalOutcome %}
-        {{ caseStatus.provisionalOutcome | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-        <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
-      {% elseif caseStatus.willArbitrate and caseState == 'awaiting_finalisation' %}
-        {{ "Arbitration" | toTag({ classes: "nhsuk-u-margin-bottom-2" }) }}
-        <br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>
-      {% else %}
-        {{ caseState | toTag({ vocabulary: "readingState", classes: "nhsuk-u-margin-bottom-2" }) }}
-      {% endif %}
-
-      {# Urgency matters only while the case is still open #}
-      {% if caseState != 'concluded' and appointment %}
-        {% set appointmentAge = appointment.timing.startTime | daysSince %}
-        {% if appointmentAge >= data.config.reading.urgentThreshold %}
-          <br>{{ "Urgent" | toTag }}
-        {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
-          <br>{{ "Due soon" | toTag }}
-        {% endif %}
-      {% endif %}
-
-      {% if isDeferred %}
-        <br>{{ "Deferred" | toTag }}
-      {% endif %}
-      {% if caseAwaitingPriors %}
-        <br>{{ "Awaiting priors" | toTag }}
-      {% endif %}
-    </div>
-  </div>
-
-  <p class="nhsuk-u-secondary-text-colour">
-    NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
-  </p>
+  {% set caseNavActive = 'case' %}
+  {% include "_includes/reading-case/case-header.njk" %}
+  {% include "_includes/reading-case/case-nav.njk" %}
 
   {% set arbitrationRead = readingCase | getArbitrationRead %}
 
@@ -96,11 +58,24 @@
             It needs review before it returns to the reading queue.
           </p>
           {% if readingCase.deferral.reason %}
-            <p class="nhsuk-u-margin-bottom-0">Reason: {{ readingCase.deferral.reason }}</p>
+            <p>Reason: {{ readingCase.deferral.reason }}</p>
           {% endif %}
+          {# A p can't contain a form - browsers unnest it, which dropped the
+             link out of the paragraph and its font sizing #}
+          <div class="app-card-actions">
+            <form action="/reading/deferred/undo" method="POST" class="app-inline-form">
+              <input type="hidden" name="appointmentId" value="{{ appointment.id }}">
+              <input type="hidden" name="returnTo" value="{{ getReadingCaseUrl(readingCase) }}">
+              <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
+                Unflag case<span class="nhsuk-u-visually-hidden"> for {{ participant | getFullName }}</span>
+              </button>
+            </form>
+            <a href="/reading/deferred" class="nhsuk-u-margin-left-3">View all deferred cases</a>
+          </div>
         {% endset %}
         {{ warningCallout({
           heading: "Deferred",
+          classes: "app-reading-width",
           html: deferralDetailHtml
         }) }}
       {% endif %}
@@ -111,23 +86,25 @@
           <p>Prior mammograms have been requested and not yet received. The case is held from reading until they arrive.</p>
           {% for prior in awaitingPriorsList %}
             {% if prior.requestedDate %}
-              <p class="nhsuk-u-margin-bottom-0">
+              <p>
                 Requested {{ prior.requestedDate | formatDate }}
                 {%- if prior.requestReason %} – {{ prior.requestReason }}{% endif %}
               </p>
             {% endif %}
           {% endfor %}
+          <p class="nhsuk-u-margin-bottom-0"><a href="{{ getReadingCaseUrl(readingCase) }}/priors">View disclosed mammograms for this case</a></p>
         {% endset %}
         {{ warningCallout({
           heading: "Awaiting prior mammograms",
+          classes: "app-reading-width",
           html: priorsDetailHtml
         }) }}
       {% endif %}
 
+      {# awaiting_finalisation means the outcome is known - agreeing reads or
+         an arbitration read - and just needs to become final #}
       {% if caseState == 'awaiting_finalisation' %}
-        {% if caseStatus.willArbitrate %}
-          {% set finalisationBannerText = "The reads disagree – this case goes to arbitration once they are finalised." %}
-        {% elseif arbitrationRead %}
+        {% if arbitrationRead %}
           {% set finalisationBannerText = "This case will conclude once its arbitration outcome is finalised." %}
         {% else %}
           {% set finalisationBannerText = "This case will conclude once its reads are finalised." %}
@@ -147,7 +124,7 @@
           actions: {
             items: [
               {
-                href: "/participants/" + episode.participantId + "/episodes/" + episode.id,
+                href: getEpisodeUrl(episode),
                 text: "View episode"
               }
             ]
@@ -155,11 +132,11 @@
         },
         {
           key: { text: "Screening" },
-          value: { html: '<p>' + (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span></p><p class="nhsuk-u-margin-bottom-0">' + (clinicLocationName or "Unknown") + '</p>' },
+          value: { html: '<p>' + (readingCase.openedDate | formatDate) + ' <span class="nhsuk-u-secondary-text-colour">(' + (readingCase.openedDate | formatRelativeDate) + ')</span></p><p class="nhsuk-u-margin-bottom-0">' + (clinicLocationName or "Unknown location") + '</p>' },
           actions: {
             items: [
               {
-                href: "/clinics/" + appointment.clinicId + "/appointments/" + appointment.id,
+                href: getAppointmentUrl(appointment),
                 text: "View appointment"
               }
             ]
@@ -299,7 +276,8 @@
 
         {% call card({
           heading: "Outcome",
-          headingLevel: "2"
+          headingLevel: "2",
+          feature: true
         }) %}
           {% set read = decidingRead %}
           {% set allowEdits = false %}
@@ -325,11 +303,11 @@
             {% set decidedAt = arbitrationRead.timestamp if arbitrationRead else (originalReads | last).timestamp %}
             {% set extraRows = extraRows | push({
               key: { text: "Finalised" },
-              value: { html: ("Arbitration done " if arbitrationRead else "Reads done ") + (decidedAt | formatDateTime) + '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">awaiting finalisation</span>' },
+              value: { html: ("Arbitration done " if arbitrationRead else "Reads done ") + (decidedAt | formatDateTime) + '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">Unfinalised</span>' },
               actions: {
                 items: [
                   {
-                    href: "/reading/cases/" + readingCase.id + "/finalise",
+                    href: getReadingCaseUrl(readingCase) + "/finalise",
                     text: "Finalise outcome now"
                   }
                 ]
@@ -344,7 +322,7 @@
       {# Arbitration gets its own card while it is pending - the state, how
          long it has waited, and the action. Once done, the arbitration read
          lives in the Outcome card and the reads list below. #}
-      {% if not arbitrationRead and (caseStatus.willArbitrate or caseState == 'awaiting_arbitration' or caseState == 'in_arbitration') %}
+      {% if not arbitrationRead and caseState in ['awaiting_arbitration', 'in_arbitration'] %}
         {% call card({
           heading: "Arbitration",
           headingLevel: "2"
@@ -357,11 +335,17 @@
           <p class="nhsuk-u-margin-bottom-2">
             {{ caseState | toTag({ vocabulary: "readingState" }) }}
             <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-              {{ "waiting less than a day" if waitingDays < 1 else "waiting " + waitingDays + " " + ("day" | pluralise(waitingDays)) }}
+              {% if not caseStatus.finalised %}
+                Waiting for the reads to finalise
+              {% else %}
+                {{ "Waiting less than a day" if waitingDays < 1 else "Waiting " + waitingDays + " " + ("day" | pluralise(waitingDays)) }}
+              {% endif %}
             </span>
           </p>
 
-          {% if caseState != 'in_arbitration' %}
+          {# No arbitrating until the reads have finalised - the disagreement
+             isn't a result until then #}
+          {% if caseState == 'awaiting_arbitration' and caseStatus.finalised %}
             {# A reader of the case shouldn't normally be its arbitrator #}
             {% if readingCase | userHasReadCase(data.currentUser.id) %}
               {{ insetText({
@@ -416,7 +400,7 @@
 
           {% set rowValueHtml %}
             {% if not slotRead %}
-              <span class="nhsuk-u-secondary-text-colour">Not done yet</span>
+              <span class="nhsuk-u-secondary-text-colour">Not read</span>
             {% else %}
               {% set slotAuthorIds = slotRead | getReadAuthorIds %}
               {% set bylineHtml %}
@@ -425,16 +409,18 @@
                     {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                   {%- endfor %},
                   {{ slotRead.timestamp | formatDate }}
-                  {%- if not (slotRead | isReadFinalised(data.settings)) %} – awaiting finalisation{% endif %}
                 </span>
               {% endset %}
               {% if (not hideOpinionsFromNonAuthors) or (slotAuthorIds | includes(data.currentUser.id)) %}
-                {{ slotRead.opinion | toTag }}<br>
+                {# On the case page the reads are the content, not context
+                   beside an outcome column - so they keep their colour.
+                   No <br> needed - the caption and byline spans are block-level #}
+                {{ readOpinionTag(slotRead, { context: 'own', showFinalisation: 'unfinalised' }) }}
                 {{ bylineHtml | safe }}
               {% else %}
                 {# The opinion is not the viewer's to see - mark the read done
                    without saying what it found, as the session overviews do #}
-                {{ "Completed" | toTag({ colour: "grey" }) }}<br>
+                {{ readOpinionTag(slotRead, { blinded: true }) }}<br>
                 {{ bylineHtml | safe }}<br>
                 <span class="nhsuk-body-s"><a href="#">Reveal opinion</a>
                   <span class="nhsuk-u-secondary-text-colour">– you could then no longer read this case yourself</span></span>

@@ -1,0 +1,113 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Search and filter column for index pages. Sits in a one-third grid column
+// alongside the results, rendered as a grey feature card.
+.app-filter-panel {
+  margin-bottom: nhsuk-spacing(5);
+}
+
+.app-filter-panel__card {
+  padding: nhsuk-spacing(3);
+
+  // The feature heading label's negative margin assumes the card's default
+  // responsive padding - realign it to this card's fixed tighter padding.
+  // The selectors mirror the nhsuk ones (both card structures) so they win
+  // on source order alone.
+  > .nhsuk-card__heading-container > .nhsuk-card__heading,
+  > .nhsuk-card__content > .nhsuk-card__heading {
+    margin-left: #{nhsuk-spacing(-3) - 1px};
+    padding-left: nhsuk-spacing(3);
+    padding-right: nhsuk-spacing(3);
+  }
+}
+
+.app-filter-panel__group {
+  margin-bottom: nhsuk-spacing(4);
+}
+
+// Applying is automatic once live filtering is running, so the button only
+// exists for the no-JavaScript case
+.app-live-filters .app-filter-panel__apply {
+  display: none;
+}
+
+.app-filter-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: nhsuk-spacing(2);
+}
+
+// The line above the results: how many there are, and the order they are in
+.app-results-bar {
+  align-items: baseline;
+  column-gap: nhsuk-spacing(3);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: nhsuk-spacing(3);
+}
+
+.app-results-bar__sort {
+  align-items: baseline;
+  display: flex;
+  gap: nhsuk-spacing(2);
+}
+
+// Label and select sit on one line - the control is furniture above a list,
+// not a question being asked
+.app-results-bar__sort-group {
+  align-items: baseline;
+  display: flex;
+  gap: nhsuk-spacing(2);
+  margin-bottom: 0;
+}
+
+.app-results-bar__sort-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+}
+
+// Sorting happens on selection once live filtering is running, so the button
+// only exists for the no-JavaScript case
+.app-live-filters .app-results-bar__sort-button {
+  display: none;
+}
+
+// The removable filters shown above the results - pill-style tags with a
+// cross, after the MoJ design system's filter pattern
+// Flex rather than inline-block items: the whitespace between inline items
+// adds to the line box, so the list's height changed with the number of pills
+.app-selected-filters__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: nhsuk-spacing(1);
+  list-style: none;
+  margin: 0 0 nhsuk-spacing(3);
+  padding: 0;
+}
+
+// The base list styles give every item but the last a bottom margin, which
+// made the row taller once a second pill appeared - the flex gap does the
+// spacing instead
+.app-selected-filters__item {
+  margin: 0;
+}
+
+.app-selected-filters__tag {
+  display: inline-block;
+  padding: 2px nhsuk-spacing(2);
+  border: 1px solid $nhsuk-text-colour;
+  background-color: nhsuk-colour("white");
+  text-decoration: none;
+
+  // Explicit link states, or the global visited-link purple shows through
+  &:link,
+  &:visited {
+    color: $nhsuk-text-colour;
+  }
+
+  &:hover {
+    background-color: $nhsuk-text-colour;
+    color: nhsuk-colour("white");
+  }
+}

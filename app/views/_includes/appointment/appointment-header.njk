@@ -113,11 +113,6 @@
   {{ appointment.timing.startTime | formatTimeString }} ({{ appointment.timing.duration }} minutes) - {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})
 </p>
 
-{# Suppressed until we decide whether to ship the participant record #}
-{% if data.settings.appointment.showParticipantSection | falsify %}
-  <p class="nhsuk-u-margin-bottom-4"><a href="{{ '/participants/' + participant.id | urlWithReferrer(currentUrl) }}">View participant record</a></p>
-{% endif %}
-
 {% if currentUser | isClinician %}
   {% if appointment | isPaused or (appointment | isInProgress and appointment | startedByCurrentUser) %}
     <div class="nhsuk-button-group">

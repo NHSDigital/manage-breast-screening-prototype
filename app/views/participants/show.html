@@ -10,16 +10,7 @@
 
 {% set hideBackLink = true %}
 
-{% block beforeContent %}
-  {{ breadcrumb({
-    items: [
-      {
-        href: "/participants",
-        text: "Participants"
-      }
-    ]
-  }) }}
-{% endblock %}
+{% set breadcrumbItems = getCaseBreadcrumb() %}
 
 {% block pageContent %}
 
@@ -63,7 +54,7 @@
       {% set nextAppointment = data | getNextAppointment(participant.id) %}
 
       {% set episodeLinkHtml %}
-        <a href="{{ participantUrl }}/episodes/{{ currentEpisode.id }}">
+        <a href="{{ getEpisodeUrl(currentEpisode) }}">
           {{ currentEpisode | getEpisodeLabel }}
         </a>
       {% endset %}

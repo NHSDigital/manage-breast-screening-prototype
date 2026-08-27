@@ -22,12 +22,21 @@
 {# Set referrerChain to current URL for change links #}
 {% set referrerChain = referrerChain or currentUrl %}
 
-{# Set back link for tab view mode (unless explicitly overridden) #}
-{% if showNavigation and not isAppointmentWorkflow and not back %}
-  {% set back = {
-    href: "/clinics/" + clinicId,
-    text: "Back to clinic"
-  } %}
+{# Tab view mode is the appointment's record view, so it carries the case
+   breadcrumb; the back link stays fixed to the clinic (the workflow
+   container). Workflow and form modes keep their minimal chrome. #}
+{% if showNavigation and not isAppointmentWorkflow %}
+  {# activeTab marks the tabbed record view - anything with a workflow step
+     (even dual-mode pages that also set activeTab) gets no breadcrumb #}
+  {% if activeTab and not activeWorkflowStep %}
+    {% set breadcrumbItems = breadcrumbItems or getCaseBreadcrumb(participant, episode) %}
+  {% endif %}
+  {% if not back %}
+    {% set back = {
+      href: "/clinics/" + clinicId,
+      text: "Back to clinic"
+    } %}
+  {% endif %}
 {% endif %}
 
 {% block header %}

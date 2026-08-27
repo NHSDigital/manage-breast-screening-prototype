@@ -42,6 +42,10 @@ const skippedPaths = [
   { pattern: /\/save-opinion$/, reason: 'saves a reading opinion' },
   { pattern: /\/finalise-reads$/, reason: 'finalises reading opinions' },
   {
+    pattern: /\/no-more-cases$/,
+    reason: 'ends a reading session that has run out of work'
+  },
+  {
     pattern: /^\/reading\/create-session/,
     reason: 'creates a reading session'
   },

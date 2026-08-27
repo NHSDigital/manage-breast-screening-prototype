@@ -5,7 +5,7 @@
 {% set pageHeading = "Request prior images" %}
 {% set formAction = './request-priors-answer' | urlWithReferrer(referrerChain) %}
 {% set back = {
-  href: "./opinion",
+  href: "./" + decisionStep,
   text: "Back"
 } %}
 
@@ -38,7 +38,7 @@
         </p>
 
         <p>
-          The case will be returned to the reading list once images are received, or after 5 days if they could not be retrieved.
+          The case will be available again once images are received, or after 5 days if they could not be retrieved.
         </p>
 
         {# If only one unrequested mammogram, show details without checkboxes #}

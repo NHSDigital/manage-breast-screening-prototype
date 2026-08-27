@@ -55,6 +55,23 @@ const getClinicLocationName = (data, clinic) => {
 }
 
 /**
+ * Get a breast screening unit's name by id.
+ *
+ * For places that only have a unit id and no clinic to hang a full location
+ * name off - historic episodes, which have no appointment or clinic record.
+ *
+ * @param {object} data - Session data
+ * @param {string} unitId - Breast screening unit id
+ * @returns {string} Unit name, or an empty string if it can't be resolved
+ */
+const getBreastScreeningUnitName = (data, unitId) => {
+  const unit = (data.breastScreeningUnits || []).find(
+    (candidate) => candidate.id === unitId
+  )
+  return unit?.name || ''
+}
+
+/**
  * Get today's clinics
  *
  * @param {Array} clinics - Array of all clinics
@@ -193,6 +210,7 @@ const updateClinic = (data, clinicId, updates) => {
 module.exports = {
   getClinic,
   getClinicLocationName,
+  getBreastScreeningUnitName,
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,

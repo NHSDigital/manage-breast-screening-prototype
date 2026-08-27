@@ -153,12 +153,11 @@
       {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings) %}
       {% set finalisationInsetHtml %}
         <p>
-          This {{ finalisationNoun }} has not been finalised
-          {%- if autoFinaliseAt %}. It will finalise automatically at {{ autoFinaliseAt | formatTime("h:mma") }}{% endif %}.
-          You can still change it until then.
+          This {{ finalisationNoun }} {%- if autoFinaliseAt %} will be automatically finalised at {{ autoFinaliseAt | formatTimeString }}. You can add or amend information until then.{% else %} has not been finalised.
+          {% endif %}
         </p>
         <p class="nhsuk-u-margin-bottom-0">
-          <a href="./finalise-read">Finalise this {{ finalisationNoun }} now</a>
+          <a href="./finalise-read">Finalise now</a>
         </p>
       {% endset %}
 
@@ -170,14 +169,14 @@
     {% set readSummaryHtml %}
       {% set read = thisRead %}
       {% set allowEdits = not isFinalised %}
-      {% set changeOpinionUrl = "./opinion" %}
+      {% set changeOpinionUrl = ("./" + decisionStep) | urlWithReferrer(currentUrl) %}
       {% set showAnnotationImages = withImages %}
       {% set annotationImagePaths = allPaths %}
       {% include "_includes/summary-lists/read-summary.njk" %}
     {% endset %}
 
     {{ card({
-      heading: "Outcome" if isArbitration else "Your read",
+      heading: "Arbitration decision" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
       descriptionHtml: readSummaryHtml
@@ -196,12 +195,13 @@
     {% include "_includes/summary-lists/medical-info-summary.njk" %}
   {% endset %}
 
-  {{ card({
+  {# Hidden for now - we'll probably make something available from case page #}
+  {# {{ card({
     heading: "Medical summary",
     headingLevel: "2",
     feature: true,
     descriptionHtml: medicalSummaryHtml
-  }) }}
+  }) }} #}
 
   {% if withImages %}
     <script src="/assets/javascript/annotation-markers.js"></script>

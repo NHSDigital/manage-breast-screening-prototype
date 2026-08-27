@@ -1,6 +1,8 @@
 {# /app/views/reading/session.html #}
 
 {% extends 'layout-app.html' %}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set isClinicContext = session.clinicId %}
 
@@ -50,14 +52,30 @@
     {% set readingActionText = "Resume reading" if readingStatus.userReadCount else "Start reading" %}
 
     {% if resumeAppointment %}
-      <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button app-reading-session-primary-action">
-        {{ readingActionText }}
-      </a>
+      <div class="nhsuk-button-group">
+        <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button">
+          {{ readingActionText }}
+        </a>
+        {% if canEndSessionEarly %}
+          {{ appLink({
+            text: "End session",
+            href: "/reading/session/" + session.id + "/end",
+            classes: "nhsuk-link--no-visited-state nhsuk-button-group__item"
+          } | openInModal) }}
+        {% endif %}
+      </div>
     {% else %}
+      {# A session ended before its cases ran out didn't complete, and says so #}
+      {% set unreadCount = sessionProgress.targetRemaining if sessionProgress else 0 %}
+      {% set endedEarly = sessionEnded and unreadCount > 0 %}
+
       {% set sessionCompletePanelHtml %}
         {% set panelDoneCount = readingStatus.userReadCount %}
+        {% if endedEarly %}
+          <p class="nhsuk-body-m">{{ unreadCount }} {{ "case" | pluralise(unreadCount) }} you did not read {{ "stays" if unreadCount == 1 else "stay" }} in the reading queue.</p>
+        {% endif %}
         {% if unfinalisedReadCount > 0 %}
-          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTime("h:mma") }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
+          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTimeString }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         {% else %}
           <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}. All opinions are finalised.</p>
         {% endif %}
@@ -75,7 +93,7 @@
       {% endset %}
 
       {{ panel({
-        titleText: "Session complete",
+        titleText: "Session ended" if endedEarly else "Session complete",
         html: sessionCompletePanelHtml
       }) }}
     {% endif %}
@@ -106,6 +124,8 @@
     {% set sessionTotalCount = sessionProgress.effectiveTargetSize if sessionProgress else session.targetSize %}
     {% set pendingCount = (sessionTotalCount - (session.appointmentIds | length)) if sessionTotalCount else 0 %}
     {% set pendingCount = 0 if pendingCount < 0 else pendingCount %}
+    {# An ended session will never claim its unfilled slots, so nothing stands in for them #}
+    {% set pendingCount = 0 if sessionEnded else pendingCount %}
 
     {% if view == 'your-reads' %}
       {# YOUR READS VIEW - Shows cases from user's perspective #}
@@ -118,7 +138,11 @@
       {% endfor %}
 
       {% if userReadableAppointments | length == 0 %}
-        <p>You don't have any cases you can read in this session.</p>
+        {% if sessionEnded %}
+          <p>You did not read any cases in this session.</p>
+        {% else %}
+          <p>You don't have any cases you can read in this session.</p>
+        {% endif %}
       {% else %}
 
         {# Build opinion counts from appointments the user has read #}
@@ -229,7 +253,7 @@
         {% set doneCount = readingStatus.userReadCount %}
         {% set userSessionRemainingCount = sessionTotalCount - doneCount - readingStatus.userAwaitingPriorsCount - deferredCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
-        {% if userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 or deferredCount > 0 %}
+        {% if not sessionEnded and (userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 or deferredCount > 0) %}
           <p class="nhsuk-body app-text-grey">Progress: {{ doneCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if deferredCount > 0 -%}, {{ deferredCount }} deferred{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
         {% endif %}
 
@@ -237,10 +261,10 @@
           <thead>
             <tr>
               <th scope="col">No.</th>
-              <th scope="col">Case</th>
+              <th scope="col">Participant</th>
               <th scope="col">Screening date</th>
               <th scope="col">Your opinion</th>
-              <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
+              <th scope="col">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -251,10 +275,21 @@
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
               <td>
+                {# An ended session takes no more reads, so its rows link to the
+                   case itself rather than back into the session #}
                 {% set readingHref -%}
-                  /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
+                  {%- if sessionEnded -%}
+                    /reading/cases/{{ appointment.readingCase.id }}
+                  {%- else -%}
+                    /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
+                  {%- endif -%}
                 {%- endset %}
-                <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
+                <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                  {{ appointment.participant | getFullNameReversed }}
+                </p>
+                <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-1">
+                  NHS: {{ appointment.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+                </p>
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
@@ -299,7 +334,7 @@
 {% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
-                    {{ read.opinion | toTag }}
+                    {{ readOpinionTag(read, { context: 'own', showFinalisation: true }) }}
                   {% endif %}
                 {% elseif appointment.readingCase | isCaseDeferred %}
                   {{ "Deferred" | toTag }}
@@ -320,6 +355,8 @@
                   {% if data | userHasReadAppointment(appointment) %}
                     {% set caseActionText = "View read" %}
                   {% elseif (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
+                    {% set caseActionText = "View case" %}
+                  {% elseif sessionEnded %}
                     {% set caseActionText = "View case" %}
                   {% else %}
                     {% set caseActionText = "Read case" %}
@@ -443,12 +480,12 @@
         <thead>
           <tr>
             <th scope="col">No.</th>
-            <th scope="col">Case</th>
+            <th scope="col">Participant</th>
             <th scope="col">Screening date</th>
             <th scope="col">1st read</th>
             <th scope="col">2nd read</th>
             <th scope="col">Outcome</th>
-            <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
+            <th scope="col">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -459,10 +496,21 @@
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
               <td>
+                {# An ended session takes no more reads, so its rows link to the
+                   case itself rather than back into the session #}
                 {% set readingHref -%}
-                  /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
+                  {%- if sessionEnded -%}
+                    /reading/cases/{{ appointment.readingCase.id }}
+                  {%- else -%}
+                    /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
+                  {%- endif -%}
                 {%- endset %}
-                <div class="nhsuk-u-font-weight-bold">{{ appointment.participant | getFullNameReversed }}</div>
+                <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                  {{ appointment.participant | getFullNameReversed }}
+                </p>
+                <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-1">
+                  NHS: {{ appointment.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+                </p>
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
@@ -508,12 +556,9 @@
                   {% set firstRead = allReads[0] %}
                   {% set isCurrentUserRead = firstRead.readerId === data.currentUser.id %}
 
-                  {% if isBlind and not isCurrentUserRead and metadata.readCount < 2 %}
-                    {{ "Completed (blind)" | toTag }}
-                  {% else %}
-                    {# Override default colour and make sure it's always grey #}
-                    {{ firstRead.opinion | toTag({colour: "grey"}) }}
-                  {% endif %}
+                  {{ readOpinionTag(firstRead, {
+                    blinded: isBlind and not isCurrentUserRead and metadata.readCount < 2
+                  }) }}
 
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({
@@ -534,8 +579,7 @@
                 {% if metadata.readCount >= 2 %}
                   {% set secondRead = allReads[1] %}
                   {% set isCurrentUserRead = secondRead.readerId === data.currentUser.id %}
-                  {# Force tags to grey #}
-                  {{ secondRead.opinion | toTag({colour: "grey"}) }}
+                  {{ readOpinionTag(secondRead) }}
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
                     format: 'short',
@@ -548,30 +592,19 @@
                     {{ "Not read" | toTag }}
                   {% endif %}
                 {% else %}
-                  {{ "Waiting for 1st read" | toTag }}
+                  {{ "awaiting_first_read" | toTag({ vocabulary: "readingState" }) }}
                 {% endif %}
               </td>
               {# Outcome column — the case state respects the site's arbitration policy #}
               <td>
-                {% set caseState = appointment.readingCase | getReadingCaseState(data.settings) %}
-                {% if caseState == 'awaiting_first_read' %}
-                  {{ "Waiting for 1st read" | toTag }}
-                {% elseif caseState == 'awaiting_second_read' %}
-                  {{ "Waiting for 2nd read" | toTag }}
-                {% elseif caseState == 'awaiting_finalisation' %}
-                  {{ "Awaiting finalisation" | toTag }}
-                {% elseif caseState == 'awaiting_arbitration' or caseState == 'in_arbitration' %}
-                  {{ "Arbitration" | toTag }}
-                {% else %}
-                  {{ (appointment.readingCase | getReadingCaseOutcome(data.settings)) | toTag }}
-                {% endif %}
+                {{ caseOutcomeTag(appointment.readingCase) }}
               </td>
               <td class="app-placeholder-action-cell">
                 {# The link says what opening the case will do, with the name
                    hidden for screen readers so each row's link is distinct #}
                 {% if data | userHasReadAppointment(appointment) %}
                   {% set caseActionText = "View read" %}
-                {% elseif (data | canUserReadAppointment(appointment)) and not (appointment | userRequestedPriors(data.currentUser.id)) %}
+                {% elseif (data | canUserReadAppointment(appointment)) and not sessionEnded and not (appointment | userRequestedPriors(data.currentUser.id)) %}
                   {% set caseActionText = "Read case" %}
                 {% else %}
                   {% set caseActionText = "View case" %}

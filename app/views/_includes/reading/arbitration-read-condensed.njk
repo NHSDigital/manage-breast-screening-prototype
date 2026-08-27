@@ -4,8 +4,8 @@
    Expects in context: read, appointment, appointmentId, data
    Optional: readLabel ("First read") - omit only where the surrounding
    context already gives the read a heading; readHeadingLevel (default 3),
-   adoptButtonText, hideAdoptButtons, adoptViaFormaction
-   (see arbitration-read-card.njk) #}
+   adoptButtonText, defaultAdoptButtonText, hideAdoptButtons,
+   adoptViaFormaction (see arbitration-read-card.njk) #}
 
 {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
 {% if withImages %}
@@ -25,6 +25,10 @@
 {% set readerRowPosition = null %}
 {% set showAnnotationImages = withImages %}
 {% set annotationImagePaths = allPaths %}
+{# An original read is one of two opinions, not the case outcome, and when
+   it finalised is no part of arbitrating it #}
+{% set isOutcome = false %}
+{% set hideFinalisedRow = true %}
 {% include "_includes/summary-lists/read-summary.njk" %}
 
 {% if not hideAdoptButtons %}
@@ -32,7 +36,7 @@
      serialise whichever was clicked #}
   {% if adoptViaFormaction %}
     {{ button({
-      text: adoptButtonText or "Agree – use as the outcome",
+      text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
       name: "agreedReaderId",
       value: read.readerId,
       classes: "nhsuk-u-margin-bottom-0  nhsuk-button--secondary",
@@ -41,7 +45,7 @@
   {% else %}
     <form action="./arbitration-adopt-read" method="post">
       {{ button({
-        text: adoptButtonText or "Agree – use as the outcome",
+        text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
         name: "agreedReaderId",
         value: read.readerId,
         classes: "nhsuk-u-margin-bottom-0  nhsuk-button--secondary"

@@ -15,7 +15,7 @@
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
 
 {% macro clinicAppointmentRow(appointment, participant, clinicId) %}
-  {% set appointmentBaseUrl = "/clinics/" + clinicId + "/appointments/" + appointment.id %}
+  {% set appointmentBaseUrl = getAppointmentUrl(appointment) %}
   {% set statusTagId = "status-tag-" + appointment.id %}
 
   <tr class="appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
@@ -44,7 +44,7 @@
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
         {{ participant | getFullNameReversed }}
       </p>
-      <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
+      <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
         NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
       </p>
     </td>

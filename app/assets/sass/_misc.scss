@@ -153,9 +153,27 @@ body.js-enabled .app-no-js-only {
   }
 }
 
+// A breadcrumb and back link can show together (records trail plus workflow
+// container) - keep the back link on its own line below the trail
+.nhsuk-breadcrumb + .nhsuk-back-link {
+  display: block;
+  margin-top: nhsuk-spacing(2);
+}
+
 // Inline form with no extra spacing
 .app-inline-form {
   display: inline;
+}
+
+// Constrain prose in a full-width container to a comfortable line length
+.app-reading-width {
+  @include nhsuk-reading-width;
+}
+
+// Actions below a card's prose - body sized, so a plain link next to an
+// .app-link-button matches it rather than inheriting a smaller size
+.app-card-actions {
+  @include nhsuk-font(19);
 }
 
 // Annotation list item — number, summary text, and change link on one line

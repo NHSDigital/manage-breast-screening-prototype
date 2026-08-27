@@ -5,32 +5,15 @@
    shareable. #}
 
 {% extends 'layout-app.html' %}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 
 {% set pageHeading = "Reading cases" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
 
 {% set back = {
   href: "/reading",
   text: "Back to reading"
-} %}
-
-{# Build a filtered URL, carrying the filters that aren't being changed.
-   Takes the current filters and an object of overrides, so a link only names
-   what it changes. #}
-{%- macro casesUrl(filters, changes) -%}
-  {%- set merged = filters | mergeObjects(changes) -%}
-  /reading/cases?scope={{ merged.scope }}
-  {%- if merged.state %}&state={{ merged.state }}{% endif -%}
-  {%- if merged.deferred %}&deferred=true{% endif -%}
-  {%- if merged.awaitingPriors %}&priors=true{% endif -%}
-  {%- if merged.blocked %}&blocked=true{% endif -%}
-  {%- if merged.query %}&q={{ merged.query | urlencode }}{% endif -%}
-{%- endmacro -%}
-
-{% set scopeLabels = {
-  "open": "Open cases",
-  "recently-closed": "Recently closed",
-  "all": "All, including history"
 } %}
 
 {% block pageContent %}
@@ -38,140 +21,194 @@
   <span class="nhsuk-caption-l">Image reading</span>
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {# Search first - the fastest way to a known case, before any browsing #}
-  <form action="/reading/cases" method="get" class="nhsuk-u-margin-bottom-4">
-    <input type="hidden" name="scope" value="{{ filters.scope }}">
-    {% if filters.state %}<input type="hidden" name="state" value="{{ filters.state }}">{% endif %}
-    {% if filters.deferred %}<input type="hidden" name="deferred" value="true">{% endif %}
-    {% if filters.awaitingPriors %}<input type="hidden" name="priors" value="true">{% endif %}
-    {% if filters.blocked %}<input type="hidden" name="blocked" value="true">{% endif %}
+  {# The whole row is the live region: with JavaScript the panel counts, the
+     selected filters, the view tabs and the table all update together #}
+  <div class="nhsuk-grid-row" id="filter-results">
+    <div class="nhsuk-grid-column-one-third">
 
-    {{ searchInput({
-      id: "case-search",
-      name: "q",
-      value: filters.query,
-      label: { text: "Search by name or NHS number" },
-      width: 20,
-      button: { variant: "secondary" }
-    }) }}
-  </form>
+      {{ appFilterPanel({
+        action: "/reading/cases",
+        groups: groups,
+        selected: selected,
+        counts: counts,
+        search: {
+          id: "case-search",
+          name: "q",
+          value: query,
+          label: { text: "Search by name or NHS number" }
+        },
+        hiddenFields: hiddenFields,
+        live: "#filter-results"
+      }) }}
 
-  {# Scope next - it decides which population the state counts describe #}
-  {% set scopeNavItems = [] %}
-  {% for scope in scopes %}
-    {% set scopeNavItems = scopeNavItems | push({
-      text: scopeLabels[scope],
-      href: casesUrl(filters, { scope: scope }) | trim,
-      current: true if scope == filters.scope
-    }) %}
-  {% endfor %}
+    </div>
+    {# Custom top margin to push column down to line up with start of search card (minus feature outdent) #}
+    <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
 
-  {{ appSecondaryNavigation({
-    visuallyHiddenTitle: "Which rounds to show",
-    items: scopeNavItems
-  }) }}
-
-  {# State filters, with counts from the current scope #}
-  <p class="nhsuk-u-margin-bottom-2">
-    <strong>State:</strong>
-    <a href="{{ casesUrl(filters, { state: null }) | trim }}"
-       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if not filters.state }}">
-      All ({{ counts.all }})
-    </a>
-    {% for state in states %}
-      {% if counts[state] %}
-        &nbsp;·&nbsp;
-        <a href="{{ casesUrl(filters, { state: state }) | trim }}"
-           class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.state == state }}">
-          {{ state | getStatusText("readingState") or (state | formatWords | sentenceCase) }} ({{ counts[state] }})
-        </a>
+      {% if isFiltered %}
+        <div class="app-selected-filters">
+          <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Selected filters</h2>
+          <ul class="app-selected-filters__list">
+            {% for item in selectedFilters %}
+              <li class="app-selected-filters__item">
+                <a href="{{ item.href }}" class="app-selected-filters__tag">
+                  <span class="nhsuk-u-visually-hidden">Remove this filter:</span>
+                  {{ item.label }}
+                  <span aria-hidden="true">✕</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
       {% endif %}
-    {% endfor %}
-  </p>
 
-  {# Blocked filters - what's holding a case up, whatever stage it's at. Each
-     reason on its own, plus one for blocked by either #}
-  <p class="nhsuk-u-margin-bottom-2">
-    <strong>Blocked:</strong>
-    <a href="{{ casesUrl(filters, { blocked: (not filters.blocked), deferred: false, awaitingPriors: false }) | trim }}"
-       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.blocked }}">
-      Any reason ({{ counts.blocked }})
-    </a>
-    &nbsp;·&nbsp;
-    <a href="{{ casesUrl(filters, { deferred: (not filters.deferred), blocked: false }) | trim }}"
-       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.deferred }}">
-      Deferred ({{ counts.deferred }})
-    </a>
-    &nbsp;·&nbsp;
-    <a href="{{ casesUrl(filters, { awaitingPriors: (not filters.awaitingPriors), blocked: false }) | trim }}"
-       class="nhsuk-link--no-visited-state {{ 'nhsuk-u-font-weight-bold' if filters.awaitingPriors }}">
-      Awaiting priors ({{ counts.awaitingPriors }})
-    </a>
-  </p>
+      {# The views split the population; their counts carry the current search
+         and filters #}
+      {% set viewNavItems = [] %}
+      {% for candidate in views %}
+        {% set viewNavItems = viewNavItems | push({
+          text: viewLabels[candidate] + " (" + viewCounts[candidate] + ")",
+          href: viewUrls[candidate],
+          current: true if candidate == view
+        }) %}
+      {% endfor %}
 
-  {% if totalCount == 0 %}
-    <p>No reading cases match these filters.</p>
-  {% else %}
+      {{ appSecondaryNavigation({
+        visuallyHiddenTitle: "Which cases to show",
+        items: viewNavItems
+      }) }}
 
-    <p class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-      {% if truncated %}
-        Showing the {{ shownCount }} oldest of {{ totalCount }} cases. Filter or search to narrow this down.
+      {% if totalCount == 0 %}
+        <p>No reading cases match these filters.</p>
       {% else %}
-        {{ totalCount }} {{ "case" | pluralise(totalCount) }}.
-      {% endif %}
-    </p>
 
-    <table class="nhsuk-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col">Participant</th>
-          <th scope="col">Images taken</th>
-          <th scope="col">Screened at</th>
-          <th scope="col">Reads</th>
-          <th scope="col">Status</th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for row in rows %}
-          <tr class="nhsuk-table__row">
-            <td class="nhsuk-table__cell">
-              <a href="/reading/cases/{{ row.readingCase.id }}" class="nhsuk-u-font-weight-bold nhsuk-link--no-visited-state">{{ row.participant | getFullNameReversed }}</a>
-              {% if row.isDeferred %}
-                <br>{{ "Deferred" | toTag }}
-              {% endif %}
-              {% if row.awaitingPriors %}
-                <br>{{ "Priors required" | toTag }}
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ row.imagesTakenDate | formatDate }}
-              <br>
-              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                {{ row.imagesTakenDate | formatRelativeDate }}
-              </span>
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ row.clinicLocationName or "Unknown" }}
-            </td>
-            <td class="nhsuk-table__cell">{{ row.readCount }}</td>
-            <td class="nhsuk-table__cell">
-              {% if row.outcome %}
-                {{ row.outcome | toTag }}
-              {% else %}
-                {{ row.state | toTag({ vocabulary: "readingState" }) }}
-                {% if row.statusDisplay.destination %}
+        {# The count and the order sit on one line: the order is about these
+           results, not about the population the filter panel picks #}
+        <div class="app-results-bar">
+          <p class="app-results-bar__count nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
+            Showing <b>1</b> to <b>{{ shownCount }}</b> of <b>{{ totalCount }}</b> {{ "case" | pluralise(totalCount) }}
+          </p>
+
+          {# Its own form, so choosing an order leaves the search and filters
+             alone - they ride along as hidden fields. With JavaScript the
+             select updates the list in place; without it, the button submits #}
+          <form class="app-results-bar__sort" method="get" action="/reading/cases" data-live-filters="#filter-results">
+            {% for name, value in sortHiddenFields %}
+              {% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+            {% endfor %}
+            {% for name, values in selected %}
+              {% for value in values %}
+                <input type="hidden" name="{{ name }}" value="{{ value }}">
+              {% endfor %}
+            {% endfor %}
+
+            {% set sortItems = [] %}
+            {% for option in sorts %}
+              {% set sortItems = sortItems | push({
+                value: option.value,
+                text: option.label,
+                selected: true if option.value == sort
+              }) %}
+            {% endfor %}
+
+            {{ select({
+              id: "case-sort",
+              name: "sort",
+              label: { text: "Sort by", classes: "app-results-bar__sort-label" },
+              formGroup: { classes: "app-results-bar__sort-group" },
+              items: sortItems
+            }) }}
+
+            {# Redundant once live updating is running - hidden by CSS then #}
+            {{ button({
+              text: "Sort",
+              small: true,
+              classes: "app-results-bar__sort-button nhsuk-u-margin-bottom-0"
+            }) }}
+          </form>
+        </div>
+
+        <table class="nhsuk-table">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th scope="col">Participant</th>
+              <th scope="col">Screened</th>
+              <th scope="col">Reads</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Case</th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for row in rows %}
+              <tr class="nhsuk-table__row">
+                <td class="nhsuk-table__cell">
+                  {# The name isn't a link: names only link to a participant record.
+                     The row's link to the case sits in the action column instead #}
+                  <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                    {{ row.participant | getFullNameReversed }}
+                  </p>
+                  <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+                    NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+                  </p>
+                  {% if row.isDeferred or row.awaitingPriorsStatus %}
+                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+                      {% if row.isDeferred %}
+                        {{ "Deferred" | toTag }}
+                      {% endif %}
+                      {% if row.awaitingPriorsStatus %}
+                        {% if row.isDeferred %}<br>{% endif %}
+                        {{ row.awaitingPriorsStatus | toTag({ vocabulary: "priorsRequest" }) }}
+                      {% endif %}
+                    </p>
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {# Urgency comes from the row - the list decides when a case
+                     is ageing, not the template #}
+                  {% if row.urgency == "urgent" %}
+                    {{ "Urgent" | toTag }}<br>
+                  {% elseif row.urgency == "due_soon" %}
+                    {{ "Due soon" | toTag }}<br>
+                  {% endif %}
+                  {{ row.imagesTakenDate | formatDate }}
                   <br>
-                  <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-                    {{ row.statusDisplay.destination | sentenceCase }}
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
+                    {{ row.imagesTakenDate | formatRelativeDate }}
                   </span>
-                {% endif %}
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+                </td>
+                <td class="nhsuk-table__cell">{{ row.readCount }}</td>
+                <td class="nhsuk-table__cell">
+                  {{ caseOutcomeTag(row.readingCase) }}
+                </td>
+                <td class="nhsuk-table__cell">
+                  <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="app-nowrap">View case {{- ((" for " + (row.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
 
-  {% endif %}
+        {# Pagination is a facade - the list is capped rather than paged, so
+           the pages beyond the first are a stand-in built by the route #}
+        {% if paginationItems | length %}
+          {{ pagination({
+            items: paginationItems,
+            next: { href: "#" }
+          }) }}
+        {% endif %}
+
+      {% endif %}
+
+      {# The search only covered this view - point at the matches it couldn't
+         reach #}
+      {% if acrossViewCount %}
+        {% set acrossViewHtml %}
+          <p><a href="{{ acrossViewUrl }}">{{ acrossViewCount }} matching {{ "case" | pluralise(acrossViewCount) }} in “{{ viewLabels.all }}”</a></p>
+        {% endset %}
+        {{ insetText({ html: acrossViewHtml }) }}
+      {% endif %}
+
+    </div>
+  </div>
 
 {% endblock %}

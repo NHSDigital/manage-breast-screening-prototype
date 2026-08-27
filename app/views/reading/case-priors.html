@@ -1,0 +1,45 @@
+{# app/views/reading/case-priors.html
+
+   The prior mammograms the participant disclosed for this case: full details
+   of each, its request state, and the actions to progress it. "Disclosed"
+   rather than "prior" - these are what the participant told us about, not
+   necessarily the complete set. The same requests appear on the priors
+   dashboard (reading/priors.html); this tab is the per-case view. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = participant | getFullName %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}
+
+{% set back = {
+  href: "/reading/cases",
+  text: "All reading cases"
+} %}
+
+{% set caseNavActive = 'priors' %}
+
+{% block pageContent %}
+
+  {% include "_includes/reading-case/case-header.njk" %}
+  {% include "_includes/reading-case/case-nav.njk" %}
+
+  <h2 class="nhsuk-heading-m">Disclosed mammograms</h2>
+
+  {# The route redirects to the case when there are no disclosed mammograms,
+     so there is always at least one card here #}
+  <p>Mammograms the participant told us about at their appointment.</p>
+  {% if caseAwaitingPriors %}
+    <p>The case is held from reading until outstanding priors arrive or are marked unavailable or not needed.</p>
+  {% endif %}
+
+  {% for mammogram in appointment.previousMammograms %}
+    {% set thisAppointment = appointment %}
+    {% set priorsReturnTo = getReadingCaseUrl(readingCase) + "/priors" %}
+    {% include "_includes/priors/disclosed-mammogram-card.njk" %}
+  {% endfor %}
+
+  <p><a href="/reading/priors">View all priors requests</a></p>
+
+{% endblock %}

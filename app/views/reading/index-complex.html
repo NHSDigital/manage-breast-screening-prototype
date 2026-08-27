@@ -1,4 +1,4 @@
-{# app/views/appointments/image-reading/index.html #}
+{# app/views/reading/index-complex.html #}
 
 {% extends 'layout-app.html' %}
 
@@ -9,8 +9,6 @@
 
 {% block pageContent %}
   <h1>{{ pageHeading }}</h1>
-
-<h2>Start new reading session</h2>
 
 {# Awaiting priors — count across all eligible appointments, not just those needing reads #}
 {% set awaitingPriorsAppointments = [] %}
@@ -60,12 +58,12 @@
 
   {% set allReadCount = allReadsAppointments | length %}
 
-  {% set hasPriortyTags = priorityAppointments or urgentAppointments %}
-  <p class="{{ "nhsuk-u-margin-bottom-2" if hasPriortyTags }}">
+  {% set hasPriorityTags = priorityAppointments or urgentAppointments %}
+  <p class="{{ "nhsuk-u-margin-bottom-2" if hasPriorityTags }}">
     {{ allReadCount }} cases needing reading
   </p>
 
-  {% if hasPriortyTags %}
+  {% if hasPriorityTags %}
     <div class="nhsuk-u-margin-bottom-4">
       {% if urgentAppointments | length %}
         {{ ((urgentAppointments | length) ~ " urgent cases") | toTag({colour: "red"}) }}
@@ -93,16 +91,6 @@
 
 {% endset %}
 
-{# Custom session card content #}
-{% set customSessionContent %}
-<p>Choose what cases to read</p>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "Start custom session",
-  href: "/reading/create-custom-session"
-}) }}
-{% endset %}
-
 {# Arbitration card content #}
 {% set arbitrationContent %}
 <p>{{ arbitrationCount }} {{ "case" | pluralise(arbitrationCount) }} need{{ "s" if arbitrationCount == 1 }} arbitration</p>
@@ -115,17 +103,17 @@
 {{ actionLink({
   classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
   text: "See arbitration cases",
-  href: "/reading/cases?state=awaiting_arbitration"
+  href: "/reading/cases?status=awaiting_arbitration"
 }) }}
 {% endset %}
 
-{# Reading history card content #}
-{% set readingHistoryContent %}
-<p>View your reading history and all recently read cases</p>
+{# Reading cases card content #}
+{% set readingCasesContent %}
+<p>{{ readingCaseCount }} open and recently closed {{ "case" | pluralise(readingCaseCount) }}</p>
 {{ actionLink({
   classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "View history",
-  href: "/reading/history"
+  text: "View reading cases",
+  href: "/reading/cases"
 }) }}
 {% endset %}
 
@@ -140,21 +128,30 @@
 
   <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
     {{ card({
-      heading: "Custom reading session",
-      headingClasses: "nhsuk-heading-s",
-      descriptionHtml: customSessionContent
-    }) }}
-  </li>
-
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
       heading: "Arbitration",
       headingClasses: "nhsuk-heading-s",
       descriptionHtml: arbitrationContent
     }) }}
   </li>
 
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Reading cases",
+      headingClasses: "nhsuk-heading-s",
+      descriptionHtml: readingCasesContent
+    }) }}
+  </li>
 
+  {# Custom sessions are parked while the case list covers picking cases -
+     /reading/create-custom-session still works if it's wanted back
+  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+    {{ card({
+      heading: "Custom reading session",
+      headingClasses: "nhsuk-heading-s",
+      descriptionHtml: customSessionContent
+    }) }}
+  </li>
+  #}
 </ul>
 
 <h2>Other options</h2>
@@ -171,7 +168,6 @@
     {{ card({
       heading: "Reading history",
       headingClasses: "nhsuk-heading-s",
-      _descriptionHtml: readingHistoryContent,
       clickable: true,
       href: "/reading/history"
     }) }}

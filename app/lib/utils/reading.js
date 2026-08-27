@@ -158,9 +158,16 @@ const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
     if (!appointment) continue
 
     const readingCase = getReadingCase(data, appointment)
-    const read = getReadsAsArray(readingCase).find((candidate) =>
+
+    // A panel arbitrator may also have read the case originally, so pick the
+    // read this session produced rather than whichever of theirs comes first
+    const userReads = getReadsAsArray(readingCase).filter((candidate) =>
       getReadAuthorIds(candidate).includes(userId)
     )
+    const read =
+      session.type === 'arbitration'
+        ? userReads.find((candidate) => candidate.readType === 'arbitration')
+        : userReads.find((candidate) => candidate.readType !== 'arbitration')
     if (!read) continue
     if (isReadFinalised(read, data.settings)) continue
 
@@ -392,11 +399,6 @@ const enhanceAppointmentsWithReadingData = (
     return {
       ...enhanced,
       participant: participantMap.get(appointment.participantId),
-      readStatus:
-        metadata.readCount > 0 ? `Read (${metadata.readCount})` : 'Not read',
-      tagColor: getStatusTagColour(
-        metadata.readCount > 0 ? 'read' : 'not_read'
-      ),
       readingMetadata: metadata,
       canUserRead: canUserReadAppointment(data, enhanced, userId)
     }
@@ -1288,8 +1290,12 @@ const getResumeAppointmentForUser = function (
     return (
       candidates.find((appointment) => {
         const readingCase = resolveCase(data, appointment)
+        // Outstanding priors hold a case up for the panel just as a deferral
+        // does - there is nothing to arbitrate until they arrive
         return (
-          !caseHasBeenArbitrated(readingCase) && !isCaseDeferred(readingCase)
+          !caseHasBeenArbitrated(readingCase) &&
+          !isCaseDeferred(readingCase) &&
+          !awaitingPriors(appointment)
         )
       }) || null
     )
@@ -1750,6 +1756,44 @@ const skipAppointmentInSession = (data, sessionId, appointmentId) => {
 }
 
 /**
+ * Whether a session has been ended.
+ *
+ * Ending is recorded as an act - who ended it and when - and the state is read
+ * back from its presence, the same shape deferral and arbitration release take.
+ * It covers both endings: working the session through, and stopping early.
+ *
+ * @param {object} session - Reading session
+ * @returns {boolean}
+ */
+const isSessionEnded = (session) => {
+  return Boolean(session?.endedAt)
+}
+
+/**
+ * End a session, if it isn't ended already.
+ *
+ * An ended session takes no more reads: it can't be resumed, topped up, or
+ * navigated into. It says nothing about finalisation - reads made in it
+ * finalise on their own schedule, or by hand.
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - Session ID
+ * @param {string} userId - Who ended it
+ * @param {string} [endedAt] - When; defaults to now
+ * @returns {boolean} Whether this call was the one that ended it
+ */
+const endSession = (data, sessionId, userId, endedAt = null) => {
+  const session = getReadingSession(data, sessionId)
+  if (!session || isSessionEnded(session)) return false
+
+  // readingSessions is per-session working data, so in-place edits are fine
+  session.endedAt = endedAt || new Date().toISOString()
+  session.endedBy = userId || null
+
+  return true
+}
+
+/**
  * Add the next eligible appointment to a session if it needs one
  *
  * Called after each read or skip to grow the session one case at a time. A case
@@ -1768,6 +1812,9 @@ const skipAppointmentInSession = (data, sessionId, appointmentId) => {
 const topUpSession = (data, sessionId, currentAppointmentId = null) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return false
+
+  // An ended session takes no more cases
+  if (isSessionEnded(session)) return false
 
   // Clinic sessions are fully populated at creation
   if (session.type === 'clinic') return false
@@ -1913,6 +1960,13 @@ const getSessionReadingProgress = (
     isCaseDeferred(getReadingCase(data, appointment))
   ).length
 
+  // Outstanding priors hold a case up for whoever is working it. In reading
+  // that is the reader who asked for them; in arbitration the case waits for
+  // everyone, since it is arbitrated once
+  const sessionAwaitingPriorsCount = isArbitration
+    ? progress.awaitingPriorsCount
+    : progress.userAwaitingPriorsCount
+
   // Arbitration progress is how many cases have been settled, not what this
   // user has read - an arbitrator may have read some of these cases before
   const doneCount = isArbitration
@@ -1930,12 +1984,13 @@ const getSessionReadingProgress = (
     effectiveTargetSize,
     // Deferred appointments count as 'done' for session progress purposes
     deferredCount,
+    sessionAwaitingPriorsCount,
     // Remaining reads against the target (not just currently loaded appointments)
     targetRemaining: Math.max(
       0,
       effectiveTargetSize -
         doneCount -
-        progress.userAwaitingPriorsCount -
+        sessionAwaitingPriorsCount -
         deferredCount
     )
   }
@@ -1999,6 +2054,8 @@ module.exports = {
   getFirstReadableAppointmentInSession,
   skipAppointmentInSession,
   unskipAppointmentInSession,
+  isSessionEnded,
+  endSession,
   topUpSession,
   getSessionReadingProgress
 }

@@ -11,6 +11,7 @@ const {
 } = require('../../lib/utils/appointment-data')
 const { createDynamicTemplateRoute } = require('../../lib/utils/dynamic-routing')
 const { isAppointmentWorkflow } = require('../../lib/utils/status')
+const { getEpisode } = require('../../lib/utils/episodes')
 
 module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics
@@ -97,6 +98,7 @@ module.exports = (router) => {
 
     res.locals.participant = data.participant
     res.locals.participantId = participantId
+    res.locals.episode = getEpisode(data, data.appointment.episodeId)
     res.locals.originalParticipant = savedParticipant
     res.locals.appointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
     res.locals.contextUrl = `/clinics/${clinicId}/appointments/${appointmentId}`

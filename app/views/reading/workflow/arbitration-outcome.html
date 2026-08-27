@@ -1,8 +1,8 @@
-{# app/views/reading/workflow/arbitration-opinion.html #}
-{# Arbitration opinion page - the reading opinion page (thumbnails, medical
+{# app/views/reading/workflow/arbitration-outcome.html #}
+{# Arbitration outcome page - the reading opinion page (thumbnails, medical
    history, priors) plus the first and second reads, whose visibility is the
-   showReads/revealStyle settings. Rendered for the /opinion step in
-   arbitration sessions. #}
+   showReads/revealStyle settings. Rendered for the /outcome step, which is
+   where an arbitration session's cases are decided. #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -52,7 +52,7 @@
   {% include "_includes/reading/opinion-header.njk" %}
 
   {# Opinion form with thumbnails #}
-  <form action="./opinion-answer" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">
+  <form action="{{ './opinion-answer' | urlWithReferrer(referrerChain) }}" method="POST" class="app-reading-opinion" data-reading-opinion-form="true" data-reading-opinion-locked="{{ opinionDelayLocked }}" data-appointment-id="{{ appointment.id }}" data-session-id="{{ session.id if session }}">
 
     {# Hidden field to track previous opinion for opinion change detection #}
     <input type="hidden" name="imageReadingTemp[previousOpinion]" value="{{ currentOpinion }}">

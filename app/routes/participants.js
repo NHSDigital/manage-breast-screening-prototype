@@ -15,6 +15,7 @@ const {
 const { getEpisodeReadingStatus } = require('../lib/utils/reading')
 const { getClinic } = require('../lib/utils/clinics')
 const { findById } = require('../lib/utils/arrays')
+const { participantMatchesQuery } = require('../lib/utils/search')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
   getReturnUrl,
@@ -45,30 +46,17 @@ module.exports = (router) => {
       res.locals.data.search = searchTerm
 
       filteredParticipants = allParticipants.filter((participant) => {
-        const info = participant.demographicInformation
+        // Name and NHS number matching is shared with the other searches in the
+        // service; postcode and SX number are this index's own
+        if (participantMatchesQuery(participant, searchTerm)) return true
 
-        const nameVariations = [
-          [info.firstName, info.middleName, info.lastName]
-            .filter(Boolean)
-            .join(' '),
-          `${info.firstName} ${info.lastName}`
-        ].map((name) => name.toLowerCase())
-
-        const postcode = cleanSearchTerm(info.address.postcode)
-        const nhsNumber = cleanSearchTerm(
-          participant.medicalInformation.nhsNumber
+        const postcode = cleanSearchTerm(
+          participant.demographicInformation.address.postcode
         )
         const sxNumber = cleanSearchTerm(participant.sxNumber)
 
-        const nameMatch = nameVariations.some((name) =>
-          name.includes(searchTerm.toLowerCase())
-        )
-
         return (
-          nameMatch ||
-          postcode.includes(cleanedSearch) ||
-          nhsNumber.includes(cleanedSearch) ||
-          sxNumber.includes(cleanedSearch)
+          postcode.includes(cleanedSearch) || sxNumber.includes(cleanedSearch)
         )
       })
     }

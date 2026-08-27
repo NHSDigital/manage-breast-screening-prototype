@@ -9,15 +9,31 @@
 
 const {
   getReadingCaseList,
-  getReadingCaseStateCounts,
-  CASE_SCOPES
+  getReadingCaseRows,
+  READING_CASE_FILTER_GROUPS,
+  READING_CASE_SORTS,
+  DEFAULT_CASE_SORT,
+  CASE_VIEWS,
+  CASE_VIEW_LABELS,
+  MAX_ROWS
 } = require('../lib/utils/reading-case-list')
+const {
+  parseFilterQuery,
+  applyFilterGroups,
+  getFilterCounts,
+  describeSelectedFilters,
+  buildFilterUrl,
+  hasSelectedFilters
+} = require('../lib/utils/filter-list')
 const { getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getParticipant } = require('../lib/utils/participants')
-const { getClinic, getClinicLocationName } = require('../lib/utils/clinics')
 const {
-  READING_CASE_STATES,
+  getClinic,
+  getClinicLocationName,
+  getBreastScreeningUnitName
+} = require('../lib/utils/clinics')
+const {
   getReadingCases,
   getReadsAsArray,
   getReadAuthorIds,
@@ -34,43 +50,140 @@ const { finaliseReadOnCase } = require('../lib/utils/reading')
 const { describeReadingCaseStatus } = require('../lib/utils/status')
 const { awaitingPriors } = require('../lib/utils/prior-mammograms')
 
+/**
+ * Pagination items for a list that isn't really paged.
+ *
+ * The list is capped at MAX_ROWS rather than paged, so page one is the only
+ * page there is - the rest are a stand-in that shows how big the backlog is.
+ * The macro doesn't insert its own ellipsis, so long runs are trimmed here.
+ *
+ * @param {number} pageCount - How many pages the total would fill
+ * @returns {Array} Items for the pagination macro
+ */
+const buildPaginationItems = (pageCount) => {
+  const allPages = [...Array(pageCount).keys()].map((index) => index + 1)
+
+  // null stands for the ellipsis
+  const numbers = pageCount > 4 ? [1, 2, 3, null, pageCount] : allPages
+
+  return numbers.map((number) =>
+    number === null
+      ? { ellipsis: true }
+      : { number, href: '#', current: number === 1 }
+  )
+}
+
 module.exports = (router) => {
   // Reading case backlog. Filters are query params rather than path segments
-  // because this list has several facets at once (state, scope, deferred,
-  // search) where the other reading lists have one - and it keeps the URL
-  // shareable.
+  // because this list has several facets at once (status, outcome, urgency,
+  // blocking, search) where the other reading lists have one - and it keeps
+  // the URL shareable. Checkboxes send repeated params, so a facet can hold
+  // several values at once.
   router.get('/reading/cases', (req, res) => {
     const data = req.session.data
 
-    const scope = CASE_SCOPES.includes(req.query.scope)
-      ? req.query.scope
-      : 'open'
-
-    const state = READING_CASE_STATES.includes(req.query.state)
-      ? req.query.state
-      : null
-
-    // Blocking filters: the two individual reasons, plus a meta filter for
-    // cases blocked by either
-    const deferred = req.query.deferred === 'true'
-    const awaitingPriors = req.query.priors === 'true'
-    const blocked = req.query.blocked === 'true'
+    const view = CASE_VIEWS.includes(req.query.view)
+      ? req.query.view
+      : 'current'
     const query = req.query.q || ''
 
-    const filters = { scope, state, deferred, awaitingPriors, blocked, query }
+    const sort = READING_CASE_SORTS.some(
+      (candidate) => candidate.value === req.query.sort
+    )
+      ? req.query.sort
+      : DEFAULT_CASE_SORT
 
-    const { rows, totalCount, truncated } = getReadingCaseList(data, filters)
-    const counts = getReadingCaseStateCounts(data, filters)
+    const groups = READING_CASE_FILTER_GROUPS
+    const selected = parseFilterQuery(req.query, groups)
+
+    // Everything in the view matching the search, before the filter groups -
+    // what the faceted counts are drawn from
+    const baseRows = getReadingCaseRows(data, { view, query })
+
+    const { rows, totalCount, truncated } = getReadingCaseList(data, {
+      view,
+      query,
+      sort,
+      groups,
+      selected
+    })
+
+    // The default order stays out of the URL, so a shared link only carries
+    // what someone actually chose
+    const carriedParams = {
+      view,
+      q: query,
+      sort: sort === DEFAULT_CASE_SORT ? '' : sort
+    }
+
+    // Each view tab shows how many cases it holds under the current search
+    // and filters - the current view's count is just the result total
+    const viewCounts = Object.fromEntries(
+      CASE_VIEWS.map((candidate) => [
+        candidate,
+        candidate === view
+          ? totalCount
+          : applyFilterGroups(
+              getReadingCaseRows(data, { view: candidate, query }),
+              groups,
+              selected
+            ).length
+      ])
+    )
+
+    const viewUrls = Object.fromEntries(
+      CASE_VIEWS.map((candidate) => [
+        candidate,
+        buildFilterUrl('/reading/cases', selected, {
+          ...carriedParams,
+          view: candidate
+        })
+      ])
+    )
+
+    // A search only covers the current view, so say when the other one holds
+    // matches too. History is the superset, so this only arises on 'current'.
+    // The count and link carry the filters, matching the view tab above it.
+    const acrossViewCount =
+      query && view === 'current' && viewCounts.all > totalCount
+        ? viewCounts.all
+        : 0
 
     res.render('reading/cases', {
       rows,
       totalCount,
       truncated,
       shownCount: rows.length,
-      counts,
-      filters,
-      scopes: CASE_SCOPES,
-      states: READING_CASE_STATES
+      paginationItems:
+        totalCount > MAX_ROWS
+          ? buildPaginationItems(Math.ceil(totalCount / MAX_ROWS))
+          : [],
+      view,
+      views: CASE_VIEWS,
+      viewLabels: CASE_VIEW_LABELS,
+      query,
+      sort,
+      sorts: READING_CASE_SORTS,
+      groups,
+      selected,
+      counts: getFilterCounts(baseRows, groups, selected),
+      selectedFilters: describeSelectedFilters(
+        groups,
+        selected,
+        '/reading/cases',
+        carriedParams
+      ),
+      isFiltered: hasSelectedFilters(selected),
+      // The search is a real field in the filter form now, so only the view
+      // and the chosen order ride along as hidden fields - and clearing keeps
+      // them
+      hiddenFields: { view, sort: carriedParams.sort },
+      // What the sort form has to carry to leave the rest of the list alone
+      sortHiddenFields: { view, q: query },
+      viewCounts,
+      viewUrls,
+      acrossViewCount,
+      acrossViewUrl: viewUrls.all
     })
   })
 
@@ -106,6 +219,42 @@ module.exports = (router) => {
     res.redirect(`/reading/cases/${req.params.caseId}`)
   })
 
+  // The case's prior mammograms: request statuses and the actions to progress
+  // them. Registered before the :tab redirect below.
+  router.get('/reading/cases/:caseId/priors', (req, res) => {
+    const data = req.session.data
+
+    const found = getReadingCaseById(data, req.params.caseId)
+    if (!found) {
+      return res.redirect('/reading/cases')
+    }
+
+    const { readingCase, episode } = found
+
+    const appointment = getAppointment(data, readingCase.appointmentId)
+    const participant = getParticipant(data, episode.participantId)
+
+    // No disclosed mammograms means no tab - back to the case
+    if (!appointment?.previousMammograms?.length) {
+      return res.redirect(`/reading/cases/${req.params.caseId}`)
+    }
+
+    const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
+    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
+
+    res.render('reading/case-priors', {
+      readingCase,
+      episode,
+      appointment,
+      participant,
+      caseState: caseStatus.state,
+      caseStatus,
+      caseOutcome,
+      isDeferred: isCaseDeferred(readingCase),
+      caseAwaitingPriors: appointment ? awaitingPriors(appointment) : false
+    })
+  })
+
   // The old tabbed views collapsed into the one page
   router.get('/reading/cases/:caseId/:tab', (req, res) => {
     res.redirect(`/reading/cases/${req.params.caseId}`)
@@ -131,7 +280,8 @@ module.exports = (router) => {
     // than wrong - worth saying which you are looking at.
     const casesOnEpisode = getReadingCases(episode)
     const casePosition =
-      casesOnEpisode.findIndex((candidate) => candidate.id === readingCase.id) + 1
+      casesOnEpisode.findIndex((candidate) => candidate.id === readingCase.id) +
+      1
 
     // Blind reading: someone who could still read this case must not see what
     // the other reader said - the view shows a read happened, not its opinion.
@@ -169,13 +319,24 @@ module.exports = (router) => {
         ? getArbitrationRead(readingCase) || allReads[0]
         : null
 
+    // A historic round has no appointment or clinic to name a location from -
+    // just the unit it was screened at, held on its mammogram entry instead
+    const clinicLocationName =
+      getClinicLocationName(data, clinic) ||
+      (episode.isHistoric
+        ? getBreastScreeningUnitName(
+            data,
+            episode.mammograms?.[0]?.breastScreeningUnitId
+          )
+        : '')
+
     res.render('reading/case', {
       readingCase,
       episode,
       appointment,
       participant,
       clinic,
-      clinicLocationName: getClinicLocationName(data, clinic),
+      clinicLocationName,
       reads: allReads,
       readsHidden,
       hideFirstOpinion,
