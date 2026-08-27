@@ -5,6 +5,7 @@
    shareable. #}
 
 {% extends 'layout-app.html' %}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 
 {% set pageHeading = "Reading cases" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
@@ -177,8 +178,7 @@
                 </td>
                 <td class="nhsuk-table__cell">{{ row.readCount }}</td>
                 <td class="nhsuk-table__cell">
-                  {% set outcomeTagCase = row.readingCase %}
-                  {% include "_includes/reading/case-outcome-tag.njk" %}
+                  {{ caseOutcomeTag(row.readingCase) }}
                 </td>
                 <td class="nhsuk-table__cell">
                   <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="app-nowrap">View case {{- ((" for " + (row.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>

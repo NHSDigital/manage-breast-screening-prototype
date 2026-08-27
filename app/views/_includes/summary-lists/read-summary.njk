@@ -37,6 +37,7 @@
 
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
@@ -105,11 +106,11 @@
 {% set opinionLabel = opinionLabel if opinionLabel else ("Outcome" if isOutcome else "Opinion") %}
 {% if not hideOpinionRow %}
   {% set opinionValueHtml %}
-    {% set readOpinionRead = read %}
-    {% set readOpinionContext = 'own' %}
-    {% set readOpinionShowFinalisation = 'unfinalised' if read.timestamp or awaitingFinalisation %}
-    {% set readOpinionForceUnfinalised = awaitingFinalisation %}
-    {% include "_includes/reading/read-opinion-tag.njk" %}
+    {{ readOpinionTag(read, {
+      context: 'own',
+      showFinalisation: 'unfinalised' if read.timestamp or awaitingFinalisation,
+      forceUnfinalised: awaitingFinalisation
+    }) }}
   {% endset %}
   {% set rows = rows | push({
     key: {

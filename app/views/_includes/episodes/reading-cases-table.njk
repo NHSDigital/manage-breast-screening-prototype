@@ -1,3 +1,4 @@
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 {# app/views/_includes/episodes/reading-cases-table.njk
 
    One row per reading case - one set of images read. Shared by past and live
@@ -26,8 +27,7 @@
           {{ (readingCase | getReadsAsArray) | length }}
         </td>
         <td class="nhsuk-table__cell">
-          {% set outcomeTagCase = readingCase %}
-          {% include "_includes/reading/case-outcome-tag.njk" %}
+          {{ caseOutcomeTag(readingCase) }}
         </td>
         <td class="nhsuk-table__cell">
           <a href="{{ getReadingCaseUrl(readingCase) }}">View case</a>

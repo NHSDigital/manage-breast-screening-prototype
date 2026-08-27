@@ -1,3 +1,4 @@
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 {# app/views/_includes/reading-case/case-header.njk
 
    Shared header for the reading case pages (case view and priors tab):
@@ -13,9 +14,7 @@
 
   <div class="app-header-with-status__status-tag">
     {# Single status: outcome once concluded, otherwise the in-progress state #}
-    {% set outcomeTagCase = readingCase %}
-    {% set outcomeTagClasses = "nhsuk-u-margin-bottom-2" %}
-    {% include "_includes/reading/case-outcome-tag.njk" %}
+    {{ caseOutcomeTag(readingCase, { classes: "nhsuk-u-margin-bottom-2" }) }}
 
     {# Ageing matters only while the case still owes a final outcome #}
     {% if not caseOutcome %}

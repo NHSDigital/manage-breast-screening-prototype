@@ -4,6 +4,8 @@
    arbitrated once for everyone, so there is no yours-vs-everyone split. #}
 
 {% extends 'layout-app.html' %}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set back = {
   href: "/reading",
@@ -204,9 +206,7 @@
               <td>
                 {% set originalRead = originalReads[readIndex] %}
                 {% if originalRead %}
-                  {% set readOpinionRead = originalRead %}
-                  {% set readOpinionBlinded = hideReads %}
-                  {% include "_includes/reading/read-opinion-tag.njk" %}
+                  {{ readOpinionTag(originalRead, { blinded: hideReads }) }}
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by
                     {%- for authorId in originalRead | getReadAuthorIds %}
@@ -221,9 +221,7 @@
 
             <td>
               {% if arbitrationRead %}
-                {% set outcomeTagCase = appointment.readingCase %}
-                {% set outcomeTagShowFinalisedTime = true %}
-                {% include "_includes/reading/case-outcome-tag.njk" %}
+                {{ caseOutcomeTag(appointment.readingCase, { showFinalisedTime: true }) }}
               {% elseif appointment.readingCase | isCaseDeferred %}
                 {{ "Deferred" | toTag }}
               {% elseif appointment | awaitingPriors %}

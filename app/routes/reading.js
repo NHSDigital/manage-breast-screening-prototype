@@ -2581,9 +2581,6 @@ module.exports = (router) => {
       // save went: confirming twice is still one decision, so the reader should
       // end up on the next case rather than back on the one they just finished.
       if (formData.savedAt) {
-        console.log(
-          `Ignoring replayed save-opinion for appointment ${appointmentId}`
-        )
         const replayReferrerChain = req.query.referrerChain
         return res.redirect(
           modalBreakout(

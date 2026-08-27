@@ -17,6 +17,7 @@
 {% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/details/macro.njk' import appDetails %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set pageHeading = participant | getFullName %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
@@ -411,20 +412,15 @@
                 </span>
               {% endset %}
               {% if (not hideOpinionsFromNonAuthors) or (slotAuthorIds | includes(data.currentUser.id)) %}
-                {% set readOpinionRead = slotRead %}
                 {# On the case page the reads are the content, not context
-                   beside an outcome column - so they keep their colour #}
-                {% set readOpinionContext = 'own' %}
-                {% set readOpinionShowFinalisation = 'unfinalised' %}
-                {# No <br> needed - the caption and byline spans are block-level #}
-                {% include "_includes/reading/read-opinion-tag.njk" %}
+                   beside an outcome column - so they keep their colour.
+                   No <br> needed - the caption and byline spans are block-level #}
+                {{ readOpinionTag(slotRead, { context: 'own', showFinalisation: 'unfinalised' }) }}
                 {{ bylineHtml | safe }}
               {% else %}
                 {# The opinion is not the viewer's to see - mark the read done
                    without saying what it found, as the session overviews do #}
-                {% set readOpinionRead = slotRead %}
-                {% set readOpinionBlinded = true %}
-                {% include "_includes/reading/read-opinion-tag.njk" %}<br>
+                {{ readOpinionTag(slotRead, { blinded: true }) }}<br>
                 {{ bylineHtml | safe }}<br>
                 <span class="nhsuk-body-s"><a href="#">Reveal opinion</a>
                   <span class="nhsuk-u-secondary-text-colour">– you could then no longer read this case yourself</span></span>

@@ -1,6 +1,8 @@
 {# /app/views/reading/session.html #}
 
 {% extends 'layout-app.html' %}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set isClinicContext = session.clinicId %}
 
@@ -332,10 +334,7 @@
 {% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
-                    {% set readOpinionRead = read %}
-                    {% set readOpinionContext = 'own' %}
-                    {% set readOpinionShowFinalisation = true %}
-                    {% include "_includes/reading/read-opinion-tag.njk" %}
+                    {{ readOpinionTag(read, { context: 'own', showFinalisation: true }) }}
                   {% endif %}
                 {% elseif appointment.readingCase | isCaseDeferred %}
                   {{ "Deferred" | toTag }}
@@ -557,9 +556,9 @@
                   {% set firstRead = allReads[0] %}
                   {% set isCurrentUserRead = firstRead.readerId === data.currentUser.id %}
 
-                  {% set readOpinionRead = firstRead %}
-                  {% set readOpinionBlinded = isBlind and not isCurrentUserRead and metadata.readCount < 2 %}
-                  {% include "_includes/reading/read-opinion-tag.njk" %}
+                  {{ readOpinionTag(firstRead, {
+                    blinded: isBlind and not isCurrentUserRead and metadata.readCount < 2
+                  }) }}
 
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({
@@ -580,8 +579,7 @@
                 {% if metadata.readCount >= 2 %}
                   {% set secondRead = allReads[1] %}
                   {% set isCurrentUserRead = secondRead.readerId === data.currentUser.id %}
-                  {% set readOpinionRead = secondRead %}
-                  {% include "_includes/reading/read-opinion-tag.njk" %}
+                  {{ readOpinionTag(secondRead) }}
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
                     format: 'short',
@@ -599,8 +597,7 @@
               </td>
               {# Outcome column — the case state respects the site's arbitration policy #}
               <td>
-                {% set outcomeTagCase = appointment.readingCase %}
-                {% include "_includes/reading/case-outcome-tag.njk" %}
+                {{ caseOutcomeTag(appointment.readingCase) }}
               </td>
               <td class="app-placeholder-action-cell">
                 {# The link says what opening the case will do, with the name

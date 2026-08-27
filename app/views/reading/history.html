@@ -1,6 +1,8 @@
 {# app/views/reading/history.html #}
 
 {% extends 'layout-app.html' %}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set pageHeading = "Reading history" %}
 {% set back = {
@@ -208,21 +210,19 @@
               {% endif %}
             </td>
             <td>
-              {% set readOpinionRead = reading %}
-              {% set readOpinionContext = 'own' if (reading | getReadAuthorIds) | includes(data.currentUser.id) else 'context' %}
-              {% set readOpinionShowFinalisation = 'unfinalised' %}
-              {% include "_includes/reading/read-opinion-tag.njk" %}
+              {{ readOpinionTag(reading, {
+                context: 'own' if (reading | getReadAuthorIds) | includes(data.currentUser.id) else 'context',
+                showFinalisation: 'unfinalised'
+              }) }}
             </td>
             <td>
-              {% set outcomeTagCase = readingCase %}
               {# The opinion cell already marks this row's read unfinalised -
                  rather than repeat the word, say how the outcome follows
                  from it. The plain "Unfinalised" stays when the case is held
                  up by the other read, which the opinion cell can't show #}
-              {% if not (reading | isReadFinalised(data.settings)) %}
-                {% set outcomeTagUnfinalisedCaption = "After reads finalise" %}
-              {% endif %}
-              {% include "_includes/reading/case-outcome-tag.njk" %}
+              {{ caseOutcomeTag(readingCase, {
+                unfinalisedCaption: "After reads finalise" if not (reading | isReadFinalised(data.settings))
+              }) }}
             </td>
             <td>
               {# The case holds all the reads and the images, so it's the more
