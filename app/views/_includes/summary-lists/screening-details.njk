@@ -1,6 +1,7 @@
 
-{% call appSummaryList(
-) %}
+{% call appSummaryList({
+  lastRowBorder: false
+}) %}
   {% include "_includes/summary-lists/rows/sx-number.njk" %}
   {% include "_includes/summary-lists/rows/screening-protocol.njk" %}
 
