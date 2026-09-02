@@ -6,23 +6,29 @@
    may have read it originally and still owe the arbitration #}
 {% set stillToDo = (not (data | appointmentHasBeenArbitrated(appointment))) if isArbitration else (data | canUserReadAppointment(appointment)) %}
 
+{# The first case in a session has nothing to go back to. An empty grid column
+   is zero height, and a zero-height float takes no width, so the forward link
+   spans the row itself rather than being pushed across by a spacer #}
+{% set forwardColumnClass = "nhsuk-grid-column-one-third" if progress.hasPreviousCase else "nhsuk-grid-column-full" %}
+
 <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
   {# Toast message for previously read case #}
   {% include "_includes/reading/opinion-banner.njk" %}
-  <div class="nhsuk-grid-column-two-thirds">
-    {% if progress.hasPreviousCase %}
+
+  {% if progress.hasPreviousCase %}
+    <div class="nhsuk-grid-column-two-thirds">
       {# Link to appointment base URL - route handles redirect to existing-read or opinion #}
       {{ backLink({
         href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ progress.previousCaseId,
         text: "Previous case"
       }) }}
-    {% endif %}
-  </div>
+    </div>
+  {% endif %}
 
   {# Both forward links ask the session where to go next, so neither needs to
      know whether there is a case to go to - a lazy session grows one, and a
      session with nothing left ends #}
-  <div class="nhsuk-grid-column-one-third app-align-right">
+  <div class="{{ forwardColumnClass }} app-align-right">
     {% if stillToDo %}
       {{ appForwardLink({
         href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
