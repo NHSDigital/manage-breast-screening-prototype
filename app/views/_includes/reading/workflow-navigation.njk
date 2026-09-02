@@ -1,8 +1,18 @@
 {# app/views/_includes/reading/workflow-navigation.njk #}
 {# Navigation controls for reading workflow - prev/next case #}
 
+{# Still to do on this case, so skipping past it is meaningful. In
+   arbitration that's whether it has been arbitrated - a panel member
+   may have read it originally and still owe the arbitration #}
+{% set stillToDo = (not (data | appointmentHasBeenArbitrated(appointment))) if isArbitration else (data | canUserReadAppointment(appointment)) %}
+
+{# Skipping needs somewhere to skip to. Moving on from a settled case doesn't:
+   the next-case route asks the session where to go, and a lazy session grows
+   a case when there is nothing left to move on to #}
+{% set showForwardLink = progress.hasNextUserReadable if stillToDo else true %}
+
 {# Previous/next case navigation #}
-{% if progress.hasPreviousUserReadable or progress.hasNextUserReadable %}
+{% if progress.hasPreviousUserReadable or showForwardLink %}
   <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
     {# Toast message for previously read case #}
     {% include "_includes/reading/opinion-banner.njk" %}
@@ -16,21 +26,17 @@
       {% endif %}
     </div>
 
-    {% if progress.hasNextUserReadable %}
+    {% if showForwardLink %}
       <div class="nhsuk-grid-column-one-third app-align-right">
-        {# Still to do on this case, so skipping past it is meaningful. In
-           arbitration that's whether it has been arbitrated - a panel member
-           may have read it originally and still owe the arbitration #}
-        {% set stillToDo = (not (data | appointmentHasBeenArbitrated(appointment))) if isArbitration else (data | canUserReadAppointment(appointment)) %}
         {% if stillToDo %}
           {{ appForwardLink({
             href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
             text: "Skip to next"
           }) }}
         {% else %}
-          {# We already have a reading so don't need to skip #}
+          {# Already settled, so there's nothing to skip - move the session on #}
           {{ appForwardLink({
-            href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ progress.nextUserReadableId,
+            href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/next-case",
             text: "Next case"
           }) }}
         {% endif %}

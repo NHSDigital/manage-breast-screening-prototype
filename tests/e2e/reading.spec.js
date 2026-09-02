@@ -446,6 +446,77 @@ test.describe('Image reading', () => {
     await expect(caseRows).toHaveCount(rowsBefore)
   })
 
+  test('moves on from a settled arbitration case rather than looping', async ({
+    page
+  }) => {
+    // The workflow navigation's "Next case" asks the session where to go, so a
+    // reader looking at a case they have already settled is moved forward -
+    // not back round to another finished case.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][arbitration][lazySessions]': 'true',
+      'settings[reading][lazySessions]': 'true'
+    })
+
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const settled = []
+
+    for (let caseNumber = 0; caseNumber < 3; caseNumber++) {
+      settled.push(page.url().split('/appointments/')[1].split('/')[0])
+      await recordArbitrationNormal(page)
+      await expect(page).toHaveURL(/\/appointments\//)
+    }
+
+    const outstanding = page.url().split('/appointments/')[1].split('/')[0]
+
+    // Back to the case just settled, which shows its recorded outcome
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${settled[2]}`
+    )
+    await expect(page).toHaveURL(/\/existing-read/)
+
+    await page.getByRole('link', { name: 'Next case' }).first().click()
+    await expect(page).toHaveURL(
+      new RegExp(`/appointments/${outstanding}/outcome`)
+    )
+  })
+
+  test('a repeated save lands where the first one did', async ({ page }) => {
+    // A double click or a held shortcut key submits the decision twice. The
+    // first save clears the working data, so the second arrives with nothing
+    // to save - it must still follow the first to the next case, rather than
+    // stranding the reader on the case they have just finished.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][arbitration][lazySessions]': 'true',
+      'settings[reading][lazySessions]': 'true'
+    })
+
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const firstCase = page.url().split('/appointments/')[1].split('/')[0]
+
+    await recordArbitrationNormal(page)
+    await expect(page).toHaveURL(/\/appointments\//)
+    const nextCase = page.url().split('/appointments/')[1].split('/')[0]
+
+    const landedAt = await page.evaluate(async (url) => {
+      const response = await fetch(url, { method: 'POST', redirect: 'follow' })
+      return response.url
+    }, `/reading/session/${sessionId}/appointments/${firstCase}/save-opinion`)
+
+    expect(landedAt).toContain(`/appointments/${nextCase}`)
+  })
+
   test('concludes a case after a concordant second read', async ({ page }) => {
     // The safety net under the reading state derivation: a case with one
     // seeded normal read gets a matching second read, and the case view then
