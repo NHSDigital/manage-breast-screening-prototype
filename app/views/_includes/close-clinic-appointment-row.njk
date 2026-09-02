@@ -16,20 +16,38 @@
 
 {% macro closeClinicAppointmentRow(appointment, participant, clinicId, showActions) %}
   {% set detailsLink = {
-    text: "Manage details" if appointment | hasStoppedDetails else "Add details",
+    text: "Change details" if appointment | hasStoppedDetails else "Add details",
     href: "/clinics/" + clinicId + "/close/reason/" + appointment.id
   } %}
   <tr data-fragment-id="{{ appointment.id }}">
     <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
     <td class="nhsuk-table__cell">
-      <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
+      <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullNameReversed }}</p>
       <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-1">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
       <p class="nhsuk-u-margin-bottom-0"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
     </td>
     <td class="nhsuk-table__cell">
       {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
+      {% if appointment.status == "in_progress" and appointment.sessionDetails.startedBy %}
+        <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ appointment.sessionDetails.startedBy | getUsername({
+          format: 'short',
+          identifyCurrentUser: true
+        }) }}</span>
+      {% endif %}
       {% if appointment.status == "rescheduled" and appointment | hasStoppedDetails %}
         {{ "attended_not_screened" | toTag({ vocabulary: "appointment" }) }}
+      {% endif %}
+      {% if appointment | hasStoppedDetails %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">{{ appointment.appointmentStopped.stoppedReason | join(", ") }}</p>
+      {% endif %}
+      {% if showActions and appointment.status == "checked_in" %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled_from_checked_in" data-fragment-action>Change to scheduled</a>
+        </p>
+      {% elseif showActions and appointment.status == "scheduled" %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in_from_scheduled" data-fragment-action>Change to checked in</a>
+        </p>
       {% endif %}
     </td>
     <td class="nhsuk-table__cell">
@@ -41,10 +59,10 @@
         {% elseif appointment.status == "scheduled" %}
           <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/did_not_attend" data-fragment-action>Mark as did not attend</a>
         {% elseif appointment.status == "attended_not_screened" %}
-          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in" data-fragment-action>Undo</a>
+          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in" data-fragment-action>Undo status</a>
           <br>{{ appLink(detailsLink | openInModal) }}
         {% elseif appointment.status == "did_not_attend" %}
-          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled" data-fragment-action>Undo</a>
+          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled" data-fragment-action>Undo status</a>
         {% elseif appointment.status == "rescheduled" and appointment | hasStoppedDetails %}
           {{ appLink(detailsLink | openInModal) }}
         {% endif %}

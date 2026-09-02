@@ -52,7 +52,7 @@
 
     {% set introHtml %}
       <p>Record an appointment outcome for every participant to close this clinic.</p>
-      <p>There were {{ appointmentCount }} total participants in this clinic, and {{ needsOutcomeCount }} still need a final outcome assigned.</p>
+      <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
     {% endset %}
 
     {{ insetText({
@@ -63,26 +63,29 @@
       {% set needsOutcomeHtml %}
         {% if inProgressAppointments | length %}
           <h3 class="nhsuk-heading-s">In progress</h3>
-          <p>Complete or end these appointments to close the clinic.</p>
+          {% if inProgressAppointments | length == 1 %}
+            <p>This appointment needs to be completed or ended by the mammographer it is assigned to.</p>
+          {% else %}
+            <p>These appointments need to be completed or ended by the mammographers they are assigned to.</p>
+          {% endif %}
           {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
         {% endif %}
 
-        {# Checked in, not screened - includes attended not screened appointments still needing details #}
+        {# Checked in, not started - includes attended not screened appointments still needing details #}
         {% if checkedInAppointments | length %}
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not screened</h3>
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not started</h3>
           {{ bulkActionControl(clinicId, "attended_not_screened", "checked_in", "Mark all as attended not screened", "attended not screened") }}
           {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
         {% endif %}
 
         {% if scheduledAppointments | length %}
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Did not check in</h3>
-          {{ bulkActionControl(clinicId, "did_not_attend", "scheduled", "Mark all as did not attend", "did not attend") }}
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Not checked in</h3>
           {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
         {% endif %}
       {% endset %}
 
       {{ card({
-        heading: "Needs an outcome (" + needsOutcomeCount + ")",
+        heading: "To be completed (" + needsOutcomeCount + ")",
         headingLevel: "2",
         feature: true,
         descriptionHtml: needsOutcomeHtml
@@ -97,7 +100,7 @@
     {% endset %}
 
     {{ card({
-      heading: "Outcome recorded (" + outcomeRecordedAppointments | length + ")",
+      heading: "Completed appointments (" + outcomeRecordedAppointments | length + ")",
       headingLevel: "2",
       feature: true,
       classes: "app-card--feature-green",
