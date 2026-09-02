@@ -6,41 +6,34 @@
    may have read it originally and still owe the arbitration #}
 {% set stillToDo = (not (data | appointmentHasBeenArbitrated(appointment))) if isArbitration else (data | canUserReadAppointment(appointment)) %}
 
-{# Skipping needs somewhere to skip to. Moving on from a settled case doesn't:
-   the next-case route asks the session where to go, and a lazy session grows
-   a case when there is nothing left to move on to #}
-{% set showForwardLink = progress.hasNextUserReadable if stillToDo else true %}
-
-{# Previous/next case navigation #}
-{% if progress.hasPreviousUserReadable or showForwardLink %}
-  <div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
-    {# Toast message for previously read case #}
-    {% include "_includes/reading/opinion-banner.njk" %}
-    <div class="nhsuk-grid-column-two-thirds">
-      {% if progress.hasPreviousUserReadable %}
-        {# Link to appointment base URL - route handles redirect to existing-read or opinion #}
-        {{ backLink({
-          href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ progress.previousUserReadableId,
-          text: "Previous case"
-        }) }}
-      {% endif %}
-    </div>
-
-    {% if showForwardLink %}
-      <div class="nhsuk-grid-column-one-third app-align-right">
-        {% if stillToDo %}
-          {{ appForwardLink({
-            href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
-            text: "Skip to next"
-          }) }}
-        {% else %}
-          {# Already settled, so there's nothing to skip - move the session on #}
-          {{ appForwardLink({
-            href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/next-case",
-            text: "Next case"
-          }) }}
-        {% endif %}
-      </div>
+<div class="nhsuk-grid-row app-position-relative nhsuk-u-margin-bottom-3">
+  {# Toast message for previously read case #}
+  {% include "_includes/reading/opinion-banner.njk" %}
+  <div class="nhsuk-grid-column-two-thirds">
+    {% if progress.hasPreviousCase %}
+      {# Link to appointment base URL - route handles redirect to existing-read or opinion #}
+      {{ backLink({
+        href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ progress.previousCaseId,
+        text: "Previous case"
+      }) }}
     {% endif %}
   </div>
-{% endif %}
+
+  {# Both forward links ask the session where to go next, so neither needs to
+     know whether there is a case to go to - a lazy session grows one, and a
+     session with nothing left ends #}
+  <div class="nhsuk-grid-column-one-third app-align-right">
+    {% if stillToDo %}
+      {{ appForwardLink({
+        href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/skip",
+        text: "Skip to next"
+      }) }}
+    {% else %}
+      {# Already settled, so there's nothing to skip - move the session on #}
+      {{ appForwardLink({
+        href: "/reading/session/" ~ sessionId ~ "/appointments/" ~ appointmentId ~ "/next-case",
+        text: "Next case"
+      }) }}
+    {% endif %}
+  </div>
+</div>

@@ -6,13 +6,10 @@ const {
 } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
 const {
-  getFirstUserReadableAppointment,
-  getNextUserReadableAppointment,
   getResumeAppointmentForUser,
   getReadableAppointmentsForClinic,
   getReadingStatusForAppointments,
   getReadingClinics,
-  getReadingProgress,
   canUserReadAppointment,
   userHasReadAppointment,
   writeReading,
