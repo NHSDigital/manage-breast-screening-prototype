@@ -414,7 +414,7 @@ Templates receive via `res.locals`:
 - `appointment` - Current appointment (use `appointment | getReadingMetadata` to compute metadata)
 - `participant` - Participant data
 - `clinic`, `unit`, `location` - Clinic context
-- `progress` - Reading progress object (includes `previousUserHasRead`, `nextUserHasRead`)
+- `progress` - Reading progress object (counts, plus `hasPreviousCase` and `previousCaseId` for the back link)
 - `sessionId`, `appointmentId` - Route params
 - `isReadingWorkflow` - Boolean flag for workflow mode
 
@@ -447,7 +447,7 @@ Templates receive via `res.locals`:
 ### reading.js — Multiple Appointments
 
 - `getReadingStatusForAppointments(appointments, userId)` - Aggregated status with counts
-- `getReadingProgress(appointments, currentAppointmentId, skippedAppointments, userId)` - Navigation progress
+- `getReadingProgress(data, appointments, skippedAppointments, userId)` - Progress counts
 - `enhanceAppointmentsWithReadingData(appointments, participants, userId)` - Adds metadata to appointments
 - `sortAppointmentsByScreeningDate(appointments)` - Oldest-first sort
 - `getReadingClinics(data, options)` - All clinics with reading status attached

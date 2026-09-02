@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHS prototype kit</title>
+    <style>
+      body {
+        background-color: #f9fbfb;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .app-frame__outer {
+        position: relative;
+        padding: 32px;
+      }
+
+      .app-frame__handle {
+        position: absolute;
+        z-index: 1;
+      }
+
+      .app-frame__handle::after {
+        content: '';
+        position: absolute;
+        background: #425563;
+        border-radius: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .app-frame__handle--left,
+      .app-frame__handle--right {
+        top: 79px;
+        bottom: 79px;
+        width: 44px;
+        cursor: ew-resize;
+      }
+
+      .app-frame__handle--left::after,
+      .app-frame__handle--right::after {
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 80px;
+      }
+
+      .app-frame__handle--left {
+        left: 0;
+      }
+
+      .app-frame__handle--left::after {
+        right: 20px;
+      }
+
+      .app-frame__handle--right {
+        right: 0;
+      }
+
+      .app-frame__handle--right::after {
+        left: 20px;
+      }
+
+      .app-frame__handle--top,
+      .app-frame__handle--bottom {
+        left: 79px;
+        right: 79px;
+        height: 44px;
+        cursor: ns-resize;
+      }
+
+      .app-frame__handle--top::after,
+      .app-frame__handle--bottom::after {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 6px;
+      }
+
+      .app-frame__handle--top {
+        top: 0;
+      }
+
+      .app-frame__handle--top::after {
+        bottom: 20px;
+      }
+
+      .app-frame__handle--bottom {
+        bottom: 0;
+      }
+
+      .app-frame__handle--bottom::after {
+        top: 20px;
+      }
+
+      .app-frame__handles--horizontal,
+      .app-frame__handles--vertical {
+        display: contents;
+      }
+
+      .app-frame__handles--horizontal:has(:hover, .app-frame__handle--dragging) .app-frame__handle::after,
+      .app-frame__handles--vertical:has(:hover, .app-frame__handle--dragging) .app-frame__handle::after,
+      .app-frame__outer:has(.app-frame__handle--corner:hover, .app-frame__handle--corner.app-frame__handle--dragging) .app-frame__handle::after {
+        opacity: 1;
+      }
+
+      .app-frame__handle--corner {
+        width: 80px;
+        height: 80px;
+        z-index: 2;
+      }
+
+      .app-frame__handle--corner::after {
+        display: none;
+      }
+
+      .app-frame__handle--top-left {
+        top: 0;
+        left: 0;
+        cursor: nwse-resize;
+        clip-path: polygon(0 0, 80px 0, 80px 44px, 44px 44px, 44px 80px, 0 80px);
+      }
+
+      .app-frame__handle--top-right {
+        top: 0;
+        right: 0;
+        cursor: nesw-resize;
+        clip-path: polygon(0 0, 80px 0, 80px 80px, 36px 80px, 36px 44px, 0 44px);
+      }
+
+      .app-frame__handle--bottom-left {
+        bottom: 0;
+        left: 0;
+        cursor: nesw-resize;
+        clip-path: polygon(0 0, 44px 0, 44px 36px, 80px 36px, 80px 80px, 0 80px);
+      }
+
+      .app-frame__handle--bottom-right {
+        bottom: 0;
+        right: 0;
+        cursor: nwse-resize;
+        clip-path: polygon(36px 0, 80px 0, 80px 80px, 0 80px, 0 36px, 36px 36px);
+      }
+
+      .app-frame__container {
+        position: relative;
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 852px;
+        width: 393px;
+        border: 12px solid black;
+        border-radius: 47px;
+        overflow: hidden;
+        transform: translateZ(0);
+        outline: 6px solid #f9fbfb;
+        transition: border-radius 0.3s;
+      }
+
+      .app-frame__container--tablet {
+        border-radius: 20px;
+      }
+
+      .app-frame__iframe {
+        height: 100%;
+        width: 100%;
+        border: none;
+        border-radius: 35px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        transition: border-radius 0.3s;
+      }
+
+      .app-frame__container--tablet .app-frame__iframe {
+        border-radius: 8px;
+      }
+
+      .app-frame__iframe::-webkit-scrollbar {
+        display: none;
+      }
+
+      .app-frame__camera-cutout {
+        position: absolute;
+        top: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 126px;
+        height: 37px;
+        border-radius: 20px;
+        background: black;
+        z-index: 10;
+        opacity: 1;
+        cursor: pointer;
+        transition: opacity 0.3s, width 0.3s, height 0.3s, border-radius 0.3s, top 0.3s, left 0.3s, right 0.3s, transform 0.3s;
+      }
+
+      /* Disables the transition above so rotating the frame moves the cutout instantly */
+      .app-frame__camera-cutout--instant {
+        transition: none;
+      }
+
+      .app-frame__container--tablet .app-frame__camera-cutout {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .app-frame__container--pixel {
+        border-radius: 28px;
+      }
+
+      .app-frame__container--pixel .app-frame__iframe {
+        border-radius: 16px;
+      }
+
+      /* Pixel punch-hole camera */
+      .app-frame__container--pixel .app-frame__camera-cutout {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        top: 14px;
+      }
+
+      /* Rotated orientation: move the camera cutout to the side to simulate the phone being turned */
+      .app-frame__container--rotate-left .app-frame__camera-cutout,
+      .app-frame__container--rotate-right .app-frame__camera-cutout {
+        top: 50%;
+        width: 37px;
+        height: 126px;
+        transform: translateY(-50%);
+      }
+
+      .app-frame__container--rotate-left .app-frame__camera-cutout {
+        left: 12px;
+        right: auto;
+      }
+
+      .app-frame__container--rotate-right .app-frame__camera-cutout {
+        left: auto;
+        right: 12px;
+      }
+
+      .app-frame__container--pixel.app-frame__container--rotate-left .app-frame__camera-cutout,
+      .app-frame__container--pixel.app-frame__container--rotate-right .app-frame__camera-cutout {
+        width: 14px;
+        height: 14px;
+      }
+
+      .app-frame__container--pixel.app-frame__container--rotate-left .app-frame__camera-cutout {
+        left: 14px;
+      }
+
+      .app-frame__container--pixel.app-frame__container--rotate-right .app-frame__camera-cutout {
+        right: 14px;
+      }
+
+      .app-frame__rotate-controls {
+        position: absolute;
+        bottom: -32px;
+        left: 79px;
+        right: 79px;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .app-frame__rotate-controls:hover,
+      .app-frame__rotate-controls:focus-within {
+        opacity: 1;
+      }
+
+      .app-frame__rotate-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        background: #425563;
+        color: white;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .app-frame__rotate-btn:hover {
+        background: #005eb8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-frame__outer">
+      <div class="app-frame__container">
+        <div class="app-frame__camera-cutout" aria-hidden="true" title="Switch to Pixel"></div>
+        <iframe
+          class="app-frame__iframe"
+          title="Prototype"
+          src="/">
+        </iframe>
+      </div>
+      <div class="app-frame__handles--horizontal">
+        <div class="app-frame__handle app-frame__handle--left" aria-hidden="true"></div>
+        <div class="app-frame__handle app-frame__handle--right" aria-hidden="true"></div>
+      </div>
+      <div class="app-frame__handles--vertical">
+        <div class="app-frame__handle app-frame__handle--top" aria-hidden="true"></div>
+        <div class="app-frame__handle app-frame__handle--bottom" aria-hidden="true"></div>
+      </div>
+      <div class="app-frame__handle app-frame__handle--corner app-frame__handle--top-left" aria-hidden="true"></div>
+      <div class="app-frame__handle app-frame__handle--corner app-frame__handle--top-right" aria-hidden="true"></div>
+      <div class="app-frame__handle app-frame__handle--corner app-frame__handle--bottom-left" aria-hidden="true"></div>
+      <div class="app-frame__handle app-frame__handle--corner app-frame__handle--bottom-right" aria-hidden="true"></div>
+      <div class="app-frame__rotate-controls">
+        <button type="button" class="app-frame__rotate-btn app-frame__rotate-btn--left" aria-label="Rotate frame left" title="Rotate left">&#8634;</button>
+        <button type="button" class="app-frame__rotate-btn app-frame__rotate-btn--right" aria-label="Rotate frame right" title="Rotate right">&#8635;</button>
+      </div>
+    </div>
+    <script>
+      const DEFAULT_WIDTH = 393
+      const DEFAULT_HEIGHT = 852
+      const MIN_WIDTH = 320
+      const MIN_HEIGHT = 568
+      // Keeps resize handles and rotate controls clear of the viewport edge
+      const VIEWPORT_MARGIN = 48
+      const container = document.querySelector('.app-frame__container')
+      const handles = document.querySelectorAll('.app-frame__handle')
+      const iframe = document.querySelector('.app-frame__iframe')
+      const cameraCutout = document.querySelector('.app-frame__camera-cutout')
+      const rotateLeftBtn = document.querySelector('.app-frame__rotate-btn--left')
+      const rotateRightBtn = document.querySelector('.app-frame__rotate-btn--right')
+      let injectedStyle = null
+      let device = new URLSearchParams(window.location.search).get('device') || 'ios'
+      let orientation = 'portrait'
+      // Unrotated (portrait) dimensions – null means "use the default size"
+      let frameWidth = null
+      let frameHeight = null
+
+      if (device === 'pixel') {
+        container.classList.add('app-frame__container--pixel')
+        cameraCutout.title = 'Switch to iOS'
+      }
+
+      function getIframeStyle(isTablet) {
+        let padding = ''
+        if (!isTablet) {
+          const inset = device === 'pixel' ? 40 : 59
+          // Landscape keeps content centred by insetting both sides equally, not just the notch side
+          padding = orientation === 'left' || orientation === 'right'
+            ? `padding-left: ${inset}px; padding-right: ${inset}px; `
+            : `padding-top: ${inset}px; `
+        }
+        return `html { ${padding}background-color: #d8dde0; }`
+      }
+
+      function setTabletMode(isTablet) {
+        container.classList.toggle('app-frame__container--tablet', isTablet)
+        if (injectedStyle) {
+          injectedStyle.textContent = getIframeStyle(isTablet)
+        }
+      }
+
+      // Renders the portrait width/height, swapped when rotated left/right
+      function renderSize() {
+        const isRotated = orientation !== 'portrait'
+        if (frameWidth === null && frameHeight === null && !isRotated) {
+          container.style.removeProperty('width')
+          container.style.removeProperty('height')
+          return
+        }
+        const width = frameWidth !== null ? frameWidth : DEFAULT_WIDTH
+        const height = frameHeight !== null ? frameHeight : DEFAULT_HEIGHT
+        container.style.width = (isRotated ? height : width) + 'px'
+        container.style.height = (isRotated ? width : height) + 'px'
+      }
+
+      // width/height are in rendered (on-screen) pixels, converted to portrait dimensions for storage
+      function setFrameSize(renderedWidth, renderedHeight) {
+        const maxWidth = window.innerWidth - VIEWPORT_MARGIN * 2
+        const maxHeight = window.innerHeight - VIEWPORT_MARGIN * 2
+        renderedWidth = Math.min(renderedWidth, maxWidth)
+        renderedHeight = Math.min(renderedHeight, maxHeight)
+        const isRotated = orientation !== 'portrait'
+        frameWidth = isRotated ? renderedHeight : renderedWidth
+        frameHeight = isRotated ? renderedWidth : renderedHeight
+        renderSize()
+        setTabletMode(frameWidth >= 744)
+      }
+
+      function setOrientation(newOrientation) {
+        orientation = newOrientation
+        // Suppress the cutout's transition so it snaps to its new position instantly, in sync with the frame resize
+        cameraCutout.classList.add('app-frame__camera-cutout--instant')
+        container.classList.toggle('app-frame__container--rotate-left', orientation === 'left')
+        container.classList.toggle('app-frame__container--rotate-right', orientation === 'right')
+        // Only the button for the opposite direction stays visible, and resets back to portrait
+        rotateLeftBtn.hidden = orientation === 'left'
+        rotateRightBtn.hidden = orientation === 'right'
+        renderSize()
+        if (injectedStyle) {
+          injectedStyle.textContent = getIframeStyle(container.classList.contains('app-frame__container--tablet'))
+        }
+        void cameraCutout.offsetWidth
+        cameraCutout.classList.remove('app-frame__camera-cutout--instant')
+      }
+
+      function persistToUrl(urlParam) {
+        const frameUrl = new URL(window.location.href)
+        const currentUrl = urlParam !== undefined ? urlParam : frameUrl.searchParams.get('url')
+        frameUrl.searchParams.delete('device')
+        frameUrl.searchParams.delete('width')
+        frameUrl.searchParams.delete('height')
+        frameUrl.searchParams.delete('orientation')
+        frameUrl.searchParams.delete('url')
+        if (device !== 'ios') frameUrl.searchParams.set('device', device)
+        if (frameWidth !== null) frameUrl.searchParams.set('width', frameWidth)
+        if (frameHeight !== null) frameUrl.searchParams.set('height', frameHeight)
+        if (orientation !== 'portrait') frameUrl.searchParams.set('orientation', orientation)
+        if (currentUrl !== null) frameUrl.searchParams.set('url', currentUrl)
+        history.replaceState(null, '', frameUrl)
+      }
+
+      const initParams = new URLSearchParams(window.location.search)
+      const initWidth = initParams.get('width')
+      const initHeight = initParams.get('height')
+      const initOrientation = initParams.get('orientation')
+      if (initWidth) frameWidth = Math.min(parseInt(initWidth), window.innerWidth - VIEWPORT_MARGIN * 2)
+      if (initHeight) frameHeight = Math.min(parseInt(initHeight), window.innerHeight - VIEWPORT_MARGIN * 2)
+      if (frameWidth !== null) setTabletMode(frameWidth >= 744)
+      if (initOrientation === 'left' || initOrientation === 'right') {
+        setOrientation(initOrientation)
+      } else {
+        renderSize()
+      }
+
+      handles.forEach((handle) => {
+        const isCorner = handle.classList.contains('app-frame__handle--corner')
+        const isLeft = handle.classList.contains('app-frame__handle--left') || handle.classList.contains('app-frame__handle--top-left') || handle.classList.contains('app-frame__handle--bottom-left')
+        const isTop = handle.classList.contains('app-frame__handle--top') || handle.classList.contains('app-frame__handle--top-left') || handle.classList.contains('app-frame__handle--top-right')
+        const isVertical = handle.classList.contains('app-frame__handle--top') || handle.classList.contains('app-frame__handle--bottom')
+        let startX, startY, startWidth, startHeight
+
+        handle.addEventListener('pointerdown', (e) => {
+          e.preventDefault()
+          handle.setPointerCapture(e.pointerId)
+          startX = e.clientX
+          startY = e.clientY
+          startWidth = container.offsetWidth
+          startHeight = container.offsetHeight
+          handle.classList.add('app-frame__handle--dragging')
+          if (isCorner) {
+            document.body.style.cursor = (handle.classList.contains('app-frame__handle--top-left') || handle.classList.contains('app-frame__handle--bottom-right')) ? 'nwse-resize' : 'nesw-resize'
+          } else {
+            document.body.style.cursor = isVertical ? 'ns-resize' : 'ew-resize'
+          }
+          document.body.style.userSelect = 'none'
+        })
+
+        handle.addEventListener('pointermove', (e) => {
+          if (!handle.hasPointerCapture(e.pointerId)) return
+          const deltaX = e.clientX - startX
+          const deltaY = e.clientY - startY
+
+          // Rendered width/height are swapped relative to portrait width/height when rotated, so their minimums swap too
+          const isRotated = orientation !== 'portrait'
+          const minRenderedWidth = isRotated ? MIN_HEIGHT : MIN_WIDTH
+          const minRenderedHeight = isRotated ? MIN_WIDTH : MIN_HEIGHT
+
+          if (isCorner) {
+            const aspectRatio = startWidth / startHeight
+            const xSign = isLeft ? -1 : 1
+            const ySign = isTop ? -1 : 1
+            const diagLen = Math.sqrt(startWidth * startWidth + startHeight * startHeight)
+            const projected = (deltaX * xSign * startWidth + deltaY * ySign * startHeight) / diagLen
+            const scale = 1 + (2 * projected) / diagLen
+            let newWidth = startWidth * scale
+            let newHeight = startHeight * scale
+            if (newWidth < minRenderedWidth) {
+              newWidth = minRenderedWidth
+              newHeight = newWidth / aspectRatio
+            }
+            if (newHeight < minRenderedHeight) {
+              newHeight = minRenderedHeight
+              newWidth = newHeight * aspectRatio
+            }
+            setFrameSize(newWidth, newHeight)
+          } else if (isVertical) {
+            const newHeight = isTop ? startHeight - 2 * deltaY : startHeight + 2 * deltaY
+            setFrameSize(startWidth, Math.max(minRenderedHeight, newHeight))
+          } else {
+            const newWidth = isLeft ? startWidth - 2 * deltaX : startWidth + 2 * deltaX
+            setFrameSize(Math.max(minRenderedWidth, newWidth), startHeight)
+          }
+        })
+
+        handle.addEventListener('pointerup', (e) => {
+          handle.releasePointerCapture(e.pointerId)
+          handle.classList.remove('app-frame__handle--dragging')
+          document.body.style.cursor = ''
+          document.body.style.userSelect = ''
+          persistToUrl()
+        })
+      })
+
+      cameraCutout.addEventListener('click', () => {
+        device = device === 'pixel' ? 'ios' : 'pixel'
+        container.classList.toggle('app-frame__container--pixel', device === 'pixel')
+        setTabletMode(container.classList.contains('app-frame__container--tablet'))
+        cameraCutout.title = device === 'pixel' ? 'Switch to iOS' : 'Switch to Pixel'
+        if (injectedStyle) {
+          injectedStyle.textContent = getIframeStyle(false)
+        }
+        persistToUrl()
+      })
+
+      rotateLeftBtn.addEventListener('click', () => {
+        setOrientation(orientation === 'portrait' ? 'left' : 'portrait')
+        persistToUrl()
+      })
+
+      rotateRightBtn.addEventListener('click', () => {
+        setOrientation(orientation === 'portrait' ? 'right' : 'portrait')
+        persistToUrl()
+      })
+
+      // Emulate device safe area and push content below camera cutout
+      iframe.addEventListener('load', () => {
+        try {
+          injectedStyle = iframe.contentDocument.createElement('style')
+          injectedStyle.textContent = getIframeStyle(container.classList.contains('app-frame__container--tablet'))
+          iframe.contentDocument.head.appendChild(injectedStyle)
+          document.title = iframe.contentDocument.title || 'NHS prototype kit'
+
+          // Keep ?url= in sync so reloads return to the current page
+          const { pathname, search } = iframe.contentDocument.location
+          persistToUrl(pathname + search)
+        } catch (_) {
+          // Cross-origin – cannot inject styles
+        }
+      })
+    </script>
+  </body>
+</html>

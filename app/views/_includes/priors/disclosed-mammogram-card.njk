@@ -123,5 +123,5 @@
   {{ summaryList({ rows: mammogramRows }) }}
 
   <h4 class="nhsuk-heading-xs">Images request</h4>
-  {{ summaryList({ rows: requestRows } | removeLastRowBorder) }}
+  {{ summaryList({ rows: requestRows, lastRowBorder: false }) }}
 {% endcall %}

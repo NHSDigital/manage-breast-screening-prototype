@@ -407,5 +407,6 @@
 {# {% endif %} #}
 
 {{ summaryList({
-  rows: summaryRows
-} | handleSummaryListMissingInformation | removeLastRowBorder) }}
+  rows: summaryRows,
+  lastRowBorder: false
+} | handleSummaryListMissingInformation) }}

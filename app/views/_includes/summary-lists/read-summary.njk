@@ -356,5 +356,6 @@
 {% endif %}
 
 {{ summaryList({
-  rows: rows | removeLastRowBorder
+  rows: rows,
+  lastRowBorder: false
 } | handleSummaryListMissingInformation) }}

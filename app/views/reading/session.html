@@ -49,7 +49,7 @@
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
 
-    {% set readingActionText = "Resume reading" if readingStatus.userReadCount else "Start reading" %}
+    {% set readingActionText = "Resume reading" if sessionStarted else "Start reading" %}
 
     {% if resumeAppointment %}
       <div class="nhsuk-button-group">

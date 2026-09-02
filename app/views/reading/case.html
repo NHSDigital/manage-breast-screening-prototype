@@ -19,7 +19,7 @@
 {% from '_components/details/macro.njk' import appDetails %}
 {% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
-{% set pageHeading = participant | getFullName %}
+{% set pageHeading = participant | getFullNameReversed %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}
@@ -188,7 +188,7 @@
         heading: "Case details",
         headingLevel: "2"
       }) %}
-        {{ appSummaryList({ rows: caseRows }) }}
+        {{ appSummaryList({ rows: caseRows, lastRowBorder: false }) }}
       {% endcall %}
 
       {# Outcome card - shown as soon as the case's decision is known, marked

@@ -11,10 +11,6 @@
 
 {% block pageContent %}
 
-  {% set caption %}
-    {{ participant | getFullName }}
-  {% endset %}
-
   {% set unrequestedPriors = appointment | getUnrequestedPriors %}
 
   {# Get existing reason from any pending/requested mammogram for pre-filling when editing #}
@@ -29,7 +25,7 @@
     <div class="nhsuk-grid-column-two-thirds">
 
       <h1 class="nhsuk-heading-l">
-        <span class="nhsuk-caption-l">{{ caption }}</span>
+        <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
         {{ pageHeading }}
       </h1>
 

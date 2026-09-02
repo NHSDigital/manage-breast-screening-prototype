@@ -13,7 +13,7 @@
   {% set isDeferredCase = readingCase | isCaseDeferred %}
 
   <span class="nhsuk-caption-l">
-    {{ participant | getFullName }}
+    {{ participant | getFullNameReversed }}
   </span>
 
   {% if isDeferredCase and not hasUserRead %}

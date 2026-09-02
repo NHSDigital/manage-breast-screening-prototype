@@ -38,7 +38,7 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Nine journeys:
+JavaScript. Fourteen journeys:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
@@ -53,6 +53,12 @@ JavaScript. Nine journeys:
 - finalising a read from the session overview, settling a case that was
   awaiting finalisation
 - a lazy session staying lazy across leaving and resuming it
+- a lazy session not growing when a skipped case is read out of order, in
+  reading and again in arbitration
+- a lazy session still finding a case when the only one left was skipped
+- moving on from a settled arbitration case, which advances the session rather
+  than looping back through finished ones
+- a decision submitted twice landing where the first submit did
 
 Between them the reading journeys cover all four ways a reader can leave a case
 — normal, recall for assessment, technical recall and deferral — which is what

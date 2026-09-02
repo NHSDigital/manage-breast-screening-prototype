@@ -6,13 +6,10 @@ const {
 } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
 const {
-  getFirstUserReadableAppointment,
-  getNextUserReadableAppointment,
   getResumeAppointmentForUser,
   getReadableAppointmentsForClinic,
   getReadingStatusForAppointments,
   getReadingClinics,
-  getReadingProgress,
   canUserReadAppointment,
   userHasReadAppointment,
   writeReading,
@@ -565,6 +562,45 @@ module.exports = (router) => {
     return `/reading/session/${sessionId}/appointments/${appointmentId}/${step}`
   }
 
+  // Where the reader goes once they are finished with a case: the next case
+  // still to do, or whichever end-of-session page applies. Shared by saving a
+  // decision and by the "Next case" link, so both answer the question the same
+  // way - and both top the session up first, since a lazy session only grows
+  // when navigation would otherwise run out of cases.
+  const onwardFromCase = (data, sessionId, appointmentId) => {
+    const currentUserId = data.currentUser?.id
+
+    topUpSession(data, sessionId, appointmentId)
+
+    const session = getReadingSession(data, sessionId)
+    const sessionAppointments = session.appointmentIds
+      .map((id) => data.appointments.find((e) => e.id === id))
+      .filter(Boolean)
+
+    const nextCase = getNextCaseInSession(
+      data,
+      session,
+      sessionAppointments,
+      appointmentId,
+      currentUserId
+    )
+
+    if (nextCase) {
+      return `/reading/session/${sessionId}/appointments/${nextCase.id}`
+    }
+    if (session.skippedAppointments.length > 0) {
+      return `/reading/session/${sessionId}/skipped-review`
+    }
+    return getFirstOutstandingCaseInSession(
+      data,
+      session,
+      sessionAppointments,
+      currentUserId
+    )
+      ? `/reading/session/${sessionId}`
+      : `/reading/session/${sessionId}/no-more-cases`
+  }
+
   // Finalise the user's reads from this session - linked from the session
   // overview's session-complete panel, so a plain link can reach it.
   // Finalisation is what makes a result real: it releases discordant cases
@@ -795,6 +831,12 @@ module.exports = (router) => {
     const sessionId = session.id
     const isArbitration = session.type === 'arbitration'
 
+    // The overview reflects the state of the session's cases, so it must not be
+    // served from the browser's cache - the same reason the case pages say so.
+    // It is the page a reader goes back to, and a restored copy would show the
+    // session as it was before they worked any of it.
+    res.set('Cache-Control', 'no-store, must-revalidate')
+
     // Get enhanced appointments with reading metadata
     const enhancedAppointments = session.appointmentIds
       .map((appointmentId) =>
@@ -828,6 +870,15 @@ module.exports = (router) => {
     const arbitratedCount = enhancedAppointments.filter((appointment) =>
       caseHasBeenArbitrated(appointment.readingCase)
     ).length
+
+    // Whether the reader has begun this session - what tells "Start" from
+    // "Resume". Any work on a case counts, not just a decision: skipping,
+    // deferring and asking for priors are all ways of having started.
+    const sessionStarted =
+      (session.skippedAppointments || []).length > 0 ||
+      enhancedAppointments.some((appointment) =>
+        wasWorkedInSession(data, session, appointment, data.currentUser.id)
+      )
 
     const sessionProgress = getSessionReadingProgress(
       data,
@@ -909,6 +960,7 @@ module.exports = (router) => {
         resumeAppointment,
         autoFinaliseAt,
         arbitratedCount,
+        sessionStarted,
         unfinalisedReadCount: unconfirmedReads.length,
         sessionEnded,
         canEndSessionEarly: canEndSessionEarly(session),
@@ -1215,6 +1267,20 @@ module.exports = (router) => {
           res.redirect(`/reading/session/${sessionId}/no-more-cases`)
         }
       }
+    }
+  )
+
+  // Move on from a case that is already settled - the "Next case" link on the
+  // workflow navigation. Asking the session where to go next (rather than
+  // linking straight at an appointment) is what lets a lazy session grow: the
+  // reader gets a new case rather than looping back through finished ones.
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId/next-case',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+
+      res.redirect(onwardFromCase(data, sessionId, appointmentId))
     }
   )
 
@@ -2521,13 +2587,6 @@ module.exports = (router) => {
       const currentUserId = data.currentUser.id
       const formData = data.imageReadingTemp
 
-      if (!formData || !formData.opinion) {
-        console.log('No opinion in imageReadingTemp - cannot save')
-        return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}`
-        )
-      }
-
       // Find the appointment
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) {
@@ -2537,33 +2596,32 @@ module.exports = (router) => {
       // Where the reader goes once this case is settled: the next case, or
       // whichever end-of-session page applies. Shared by a genuine save and by
       // a replay of one, so a repeated save lands where the original did.
-      const onwardDestination = () => {
-        const currentSession = getReadingSession(data, sessionId)
-        const currentAppointments = currentSession.appointmentIds
-          .map((id) => data.appointments.find((e) => e.id === id))
-          .filter(Boolean)
-        const nextCase = getNextCaseInSession(
-          data,
-          currentSession,
-          currentAppointments,
-          appointmentId,
-          currentUserId
-        )
+      const onwardDestination = () =>
+        onwardFromCase(data, sessionId, appointmentId)
 
-        if (nextCase) {
-          return `/reading/session/${sessionId}/appointments/${nextCase.id}`
-        }
-        if (currentSession.skippedAppointments.length > 0) {
-          return `/reading/session/${sessionId}/skipped-review`
-        }
-        return getFirstOutstandingCaseInSession(
-          data,
-          currentSession,
-          currentAppointments,
-          currentUserId
+      // Nothing to save. Either the decision was already recorded and this is a
+      // repeat submit - a double click, a held shortcut key - whose temp the
+      // first save cleared, or the reader never gave one. A repeat submit is
+      // still one decision, so it goes where the original went; anything else
+      // goes back to the step that asks for the decision.
+      //
+      // Not the case URL: that sends a settled case to its existing read, which
+      // would strand the reader on the case they just finished.
+      if (!formData || !formData.opinion) {
+        console.log('No opinion in imageReadingTemp - cannot save')
+        const sessionForEmptySave = getReadingSession(data, sessionId)
+        const caseIsSettled =
+          sessionForEmptySave?.type === 'arbitration'
+            ? appointmentHasBeenArbitrated(data, appointment)
+            : userHasReadAppointment(data, appointment, currentUserId)
+
+        return res.redirect(
+          modalBreakout(
+            caseIsSettled
+              ? onwardDestination()
+              : caseDecisionUrl(data, sessionId, appointmentId)
+          )
         )
-          ? `/reading/session/${sessionId}`
-          : `/reading/session/${sessionId}/no-more-cases`
       }
 
       // A replay of a save that already happened, rather than a new one.
@@ -2683,17 +2741,11 @@ module.exports = (router) => {
         return
       }
 
-      // An edit returns to the read it was made from, so the reader can see the
-      // change they've just made rather than being pushed on to the next case
-      if (isEditingExistingRead) {
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
-          )
-        )
-        return
-      }
-
+      // An edit returns to the read it was made from, and says so with the
+      // referrer chain handled above - the only door into a settled case's
+      // workflow is the existing-read page, which sets it. Without a chain
+      // this is a reader finishing a case, so they move on.
+      //
       // Redirect to next unread appointment or end-of-session page
       res.redirect(modalBreakout(onwardDestination()))
     }
