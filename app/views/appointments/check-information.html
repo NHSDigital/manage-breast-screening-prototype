@@ -277,8 +277,9 @@
             ]
           }
         }
-      ]
-    } | openInModal | handleSummaryListMissingInformation | removeLastRowBorder) }}
+      ],
+      lastRowBorder: false
+    } | openInModal | handleSummaryListMissingInformation) }}
   {% endset %}
 
   {{ card({

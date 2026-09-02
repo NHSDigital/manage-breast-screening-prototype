@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-02 12:16 UTC
+- **Generated:** 2026-09-02 13:09 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -30,20 +30,20 @@
 | `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 399 |
 | `objects.js` | Object utilities for extracting and flattening values. | 417 |
 | `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 428 |
-| `random.js` | Seeded random functions for stable prototype data | 439 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 456 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 470 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 480 |
-| `roles-and-permissions.js` | User role checks | 493 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 511 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 526 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 538 |
+| `random.js` | Seeded random functions for stable prototype data | 438 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 455 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 469 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 479 |
+| `roles-and-permissions.js` | User role checks | 492 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 510 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 525 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 537 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 554 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 566 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 578 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 592 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 602 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 553 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 565 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 577 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 591 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 601 |
 
 ---
 
@@ -434,7 +434,6 @@ NHS summary list helpers: replace empty row values with "Enter X" links or "Not 
 | Function | Description | Line |
 |---|---|---|
 | `handleSummaryListMissingInformation(input, showNotProvidedText)` | Convert value object to "Enter X" link if empty, or show "Not provided" | 18 |
-| `removeLastRowBorder(input)` | Add no-border class to the last summary list row | 108 |
 
 ### random.js
 

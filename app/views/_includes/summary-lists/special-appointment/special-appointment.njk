@@ -75,6 +75,7 @@
 {% if specialAppointmentRows | length > 0 %}
   {{ summaryList({
     rows: specialAppointmentRows,
-    classes: summaryListClasses if summaryListClasses else "nhsuk-summary-list"
-  } | removeLastRowBorder) }}
+    classes: summaryListClasses if summaryListClasses else "nhsuk-summary-list",
+    lastRowBorder: false
+  }) }}
 {% endif %}
