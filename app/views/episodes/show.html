@@ -1,3 +1,16 @@
+{# app/views/episodes/show.html
+
+   One screening episode on a single page: where the round has got to, what it
+   concluded, and the casework beneath it - appointments, what was recorded on
+   the day, and how the images were read.
+
+   Laid out like the reading case page: a header carrying the round's single
+   status, then a card per section, with the outcome given a feature card once
+   there is one.
+
+   A past round is held as a summary rather than as records, so it carries
+   stand-ins in place of appointments. Both shapes share the sections below. #}
+
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = episode | getEpisodeLabel %}
@@ -8,272 +21,250 @@
 
 {% block pageContent %}
 
-  <h1 class="nhsuk-heading-l">
-    <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
-    {{ pageHeading }}
-  </h1>
+  <div class="app-header-with-status">
+    <h1 class="nhsuk-heading-l">
+      <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
+      {{ pageHeading }}
+    </h1>
+
+    {# A single status: the outcome once the round has one, otherwise where it
+       has got to #}
+    <div class="app-header-with-status__status-tag">
+      {% if episode.outcome %}
+        {{ tag({
+          text: episode.outcome | getEpisodeOutcomeText,
+          colour: episode.outcome | getEpisodeOutcomeTagColour
+        }) }}
+      {% else %}
+        {{ tag({
+          text: episode.stage | getEpisodeStageText,
+          colour: episode.stage | getEpisodeStageTagColour
+        }) }}
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="nhsuk-u-secondary-text-colour">
+    NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+  </p>
 
   {# Looking at a past round while another is in progress - flag the live one #}
   {% if currentEpisode and currentEpisode.id !== episode.id %}
-    <div class="nhsuk-inset-text">
-      <span class="nhsuk-u-visually-hidden">Information: </span>
-      <p>
+    {% set inProgressHtml %}
+      <p class="nhsuk-u-margin-bottom-0">
         This participant has an episode in progress -
         <a href="{{ getEpisodeUrl(currentEpisode) }}">
           {{ currentEpisode | getEpisodeLabel }}</a>.
       </p>
-    </div>
+    {% endset %}
+    {{ insetText({ html: inProgressHtml }) }}
   {% endif %}
 
+  {# The round's own facts, and the screening summary a past round carries in
+     place of records #}
   {% if episode.isHistoric %}
-
-    {# Past rounds are held as summaries - what the round concluded, not how
-       it got there. There is no appointment record, but the round does carry a
-       summary of its reading. #}
-
-    <div class="nhsuk-inset-text">
-      <span class="nhsuk-u-visually-hidden">Information: </span>
-      <p>
-        This is a past screening episode, held as a summary only.
-      </p>
-    </div>
-
     {% set mammogram = episode.mammograms | last %}
     {% set screeningUnit = data.breastScreeningUnits | findById(mammogram.breastScreeningUnitId) if mammogram else null %}
+  {% endif %}
 
-    {% set rows = [
-      {
+  {# Outcome leads, as it is what anyone opening a finished round came for #}
+  {% if episode.outcome %}
+    {% call card({
+      heading: "Outcome",
+      headingLevel: "2",
+      feature: true
+    }) %}
+      {{ appSummaryList({
+        rows: [
+          {
+            key: { text: "Outcome" },
+            value: { html: tag({
+              text: episode.outcome | getEpisodeOutcomeText,
+              colour: episode.outcome | getEpisodeOutcomeTagColour
+            }) }
+          },
+          {
+            key: { text: "Closed" },
+            value: { text: episode.closedDate | formatDate if episode.closedDate else "Not closed" }
+          }
+        ]
+      }) }}
+    {% endcall %}
+  {% endif %}
+
+  {% call card({
+    heading: "Episode details",
+    headingLevel: "2"
+  }) %}
+
+    {# No stage row - the header tag carries it #}
+    {% set episodeRows = [] %}
+
+    {% set episodeRows = episodeRows | push({
+      key: { text: "Type" },
+      value: { text: episode.type | sentenceCase }
+    }) %}
+
+    {% set episodeRows = episodeRows | push({
+      key: { text: "Opened" },
+      value: { text: episode.openedDate | formatDate }
+    }) %}
+
+    {# An open round has no outcome card, so it says here that it owes one #}
+    {% if not episode.outcome %}
+      {% set episodeRows = episodeRows | push({
         key: { text: "Outcome" },
-        value: { html: tag({
-          text: episode.outcome | getEpisodeOutcomeText,
-          colour: episode.outcome | getEpisodeOutcomeTagColour
-        }) }
-      },
-      {
-        key: { text: "Type" },
-        value: { text: episode.type | sentenceCase }
-      },
-      {
-        key: { text: "Opened" },
-        value: { text: episode.openedDate | formatDate }
-      },
-      {
+        value: { text: "Not yet – the episode is still open" }
+      }) %}
+      {% set episodeRows = episodeRows | push({
+        key: { text: "Closed" },
+        value: { text: episode.closedDate | formatDate if episode.closedDate else "Not closed" }
+      }) %}
+    {% endif %}
+
+    {# A past round holds where it was screened and an image count, but no
+       records beneath them #}
+    {% if episode.isHistoric %}
+      {% set episodeRows = episodeRows | push({
         key: { text: "Mammograms taken" },
         value: { text: mammogram.takenDate | formatDate if mammogram else "Not screened" }
-      }
-    ] %}
-
-    {# A summary round holds where it was screened and an image count, but
-       no appointment or reading records beneath them #}
-    {% if mammogram %}
-      {% set rows = rows.concat([
-        {
+      }) %}
+      {% if mammogram %}
+        {% set episodeRows = episodeRows | push({
           key: { text: "Screened at" },
           value: { text: screeningUnit.name if screeningUnit else "Not known" }
-        },
-        {
+        }) %}
+        {% set episodeRows = episodeRows | push({
           key: { text: "Images" },
           value: { text: mammogram.viewCount + " views" }
-        }
-      ]) %}
-    {% endif %}
-
-    {% set rows = rows.concat([
-      {
-        key: { text: "Closed" },
-        value: { text: episode.closedDate | formatDate }
-      }
-    ]) %}
-
-    {{ summaryList({ rows: rows }) }}
-
-    {# A past round holds stand-ins rather than appointment records, so the list
-       is shaped the same as a live round's but has nothing to open. Showing it
-       as a list rather than a single block is deliberate: an episode can hold
-       more than one appointment, and a past one is no different. #}
-    <h2>Appointments</h2>
-
-    {% if episode.summaryAppointments.length %}
-      <table class="nhsuk-table">
-        <thead class="nhsuk-table__head">
-          <tr class="nhsuk-table__row">
-            <th scope="col" class="nhsuk-table__header">Dater</th>
-            <th scope="col" class="nhsuk-table__header">Type</th>
-            <th scope="col" class="nhsuk-table__header">Status</th>
-            <th scope="col" class="nhsuk-table__header">Appointment</th>
-          </tr>
-        </thead>
-        <tbody class="nhsuk-table__body">
-          {% for summaryAppointment in episode.summaryAppointments %}
-            <tr class="nhsuk-table__row">
-              <td class="nhsuk-table__cell">
-                {{ summaryAppointment.startTime | formatDate }}
-              </td>
-              <td class="nhsuk-table__cell">
-                {{ summaryAppointment.type | formatWords | sentenceCase }}
-              </td>
-              <td class="nhsuk-table__cell">
-                {{ tag({
-                  text: summaryAppointment.status | getStatusText('appointment'),
-                  colour: summaryAppointment.status | getStatusTagColour('appointment')
-                }) }}
-              </td>
-              <td class="nhsuk-table__cell">
-                {# Alludes to the page a past appointment would have. Nothing
-                   serves it yet, so it deliberately goes nowhere. #}
-                <a href="#">View appointment</a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>This round was not screened, so it has no appointments.</p>
-    {% endif %}
-
-    {# What was recorded on the day #}
-    {% set latestSummaryAppointment = episode.summaryAppointments | last %}
-    {% if latestSummaryAppointment %}
-
-      <h2 class="nhsuk-heading-m">Medical information recorded</h2>
-
-      {# The shared summary reads `appointment.medicalInformation`, and the
-         stand-in carries the same shape, so it can be reused as-is #}
-      {% set appointment = latestSummaryAppointment %}
-      {% include "_includes/summary-lists/medical-info-summary.njk" %}
-
-    {% endif %}
-
-    {# One row per set of images read. The individual reads belong on the case
-       view rather than here - this is the round's shape, not its detail. #}
-    {% if episode.readingCases.length %}
-      <h2>Image reading</h2>
-      {% include "_includes/episodes/reading-cases-table.njk" %}
-    {% endif %}
-
-  {% else %}
-
-    {{ summaryList({
-      rows: [
-        {
-          key: { text: "Stage" },
-          value: { html: tag({
-            text: episode.stage | getEpisodeStageText,
-            colour: episode.stage | getEpisodeStageTagColour
-          }) }
-        },
-        {
-          key: { text: "Outcome" },
-          value: { html: tag({
-            text: episode.outcome | getEpisodeOutcomeText,
-            colour: episode.outcome | getEpisodeOutcomeTagColour
-          }) if episode.outcome else "Not yet - the episode is still open" }
-        },
-        {
-          key: { text: "Type" },
-          value: { text: episode.type | sentenceCase }
-        },
-        {
-          key: { text: "Opened" },
-          value: { text: episode.openedDate | formatDate }
-        },
-        {
-          key: { text: "Closed" },
-          value: { text: episode.closedDate | formatDate if episode.closedDate else "Not closed" }
-        }
-      ]
-    }) }}
-
-    <h2>Appointments</h2>
-
-    {% if episodeAppointments.length %}
-      <table class="nhsuk-table">
-        <thead class="nhsuk-table__head">
-          <tr>
-            <th scope="col">Date</th>
-            <th scope="col">Type</th>
-            <th scope="col">Status</th>
-            <th scope="col">Appointment</th>
-          </tr>
-        </thead>
-        <tbody class="nhsuk-table__body">
-          {% for row in episodeAppointments %}
-            <tr class="nhsuk-table__row">
-              <td class="nhsuk-table__cell">
-                {{ row.appointment.timing.startTime | formatDate }}
-              </td>
-              <td class="nhsuk-table__cell">
-                {{ row.clinic.clinicType | formatWords | sentenceCase }}
-              </td>
-              <td class="nhsuk-table__cell">
-                {{ tag({
-                  text: row.appointment.status | getStatusText('appointment'),
-                  colour: row.appointment.status | getStatusTagColour('appointment')
-                }) }}
-              </td>
-              <td class="nhsuk-table__cell">
-                <a href="{{ getAppointmentUrl(row.appointment) }}">
-                  View appointment
-                </a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      {# What was recorded at the appointment, the same as a past round shows.
-         The latest appointment that got as far as recording anything: an
-         episode can hold more than one, and a booked-but-not-yet-attended one
-         has nothing to show. #}
-      {% set appointmentsWithInfo = [] %}
-      {% for row in episodeAppointments %}
-        {% if row.appointment.medicalInformation %}
-          {% set appointmentsWithInfo = appointmentsWithInfo | push(row.appointment) %}
-        {% endif %}
-      {% endfor %}
-      {% set latestWithInfo = appointmentsWithInfo | last %}
-
-      {% if latestWithInfo %}
-        <h2 class="nhsuk-heading-m">Medical information recorded</h2>
-
-        {% if appointmentsWithInfo | length > 1 %}
-          <p class="nhsuk-u-secondary-text-colour">
-            As recorded at the {{ latestWithInfo.timing.startTime | formatDate }} appointment.
-          </p>
-        {% endif %}
-
-        {% set appointment = latestWithInfo %}
-        {% include "_includes/summary-lists/medical-info-summary.njk" %}
+        }) %}
       {% endif %}
+    {% endif %}
 
-      <h2>Image reading</h2>
-      {% if episode.readingCases.length %}
-        {% include "_includes/episodes/reading-cases-table.njk" %}
-      {% else %}
-        <p>
-          Reading state across this episode’s appointments:
-          {{ tag({
-            text: readingStatus.status | formatWords | sentenceCase,
-            colour: readingStatus.statusColor
-          }) }}
+    {{ appSummaryList({ rows: episodeRows }) }}
+
+    {% if episode.isHistoric %}
+      <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
+        This is a past screening episode, held as a summary only.
+      </p>
+    {% endif %}
+
+  {% endcall %}
+
+  {# Appointments, normalised so a past round's stand-ins and a live round's
+     records render through the same table #}
+  {% set appointmentRows = [] %}
+  {% if episode.isHistoric %}
+    {% for summaryAppointment in episode.summaryAppointments %}
+      {% set appointmentRows = appointmentRows | push({
+        date: summaryAppointment.startTime,
+        type: summaryAppointment.type,
+        status: summaryAppointment.status
+      }) %}
+    {% endfor %}
+  {% else %}
+    {% for row in episodeAppointments %}
+      {% set appointmentRows = appointmentRows | push({
+        date: row.appointment.timing.startTime,
+        type: row.clinic.clinicType,
+        status: row.appointment.status,
+        href: getAppointmentUrl(row.appointment)
+      }) %}
+    {% endfor %}
+  {% endif %}
+
+  {% call card({
+    heading: "Appointments",
+    headingLevel: "2"
+  }) %}
+    {% if appointmentRows | length %}
+      {% include "_includes/episodes/appointments-table.njk" %}
+    {% elseif episode.isHistoric %}
+      <p class="nhsuk-u-margin-bottom-0">This round was not screened, so it has no appointments.</p>
+    {% else %}
+      <p class="nhsuk-u-margin-bottom-0">This episode has no appointments.</p>
+    {% endif %}
+  {% endcall %}
+
+  {# What was recorded on the day. The latest appointment that got as far as
+     recording anything: an episode can hold more than one, and a booked-but-
+     not-yet-attended one has nothing to show. #}
+  {% set appointmentsWithInfo = [] %}
+  {% if episode.isHistoric %}
+    {# The shared summary reads `appointment.medicalInformation`, and the
+       stand-in carries the same shape, so it can be reused as-is #}
+    {% for summaryAppointment in episode.summaryAppointments %}
+      {% if summaryAppointment.medicalInformation %}
+        {% set appointmentsWithInfo = appointmentsWithInfo | push(summaryAppointment) %}
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    {% for row in episodeAppointments %}
+      {% if row.appointment.medicalInformation %}
+        {% set appointmentsWithInfo = appointmentsWithInfo | push(row.appointment) %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% set latestWithInfo = appointmentsWithInfo | last %}
+
+  {% if latestWithInfo %}
+    {% call card({
+      heading: "Medical information recorded",
+      headingLevel: "2"
+    }) %}
+      {% if appointmentsWithInfo | length > 1 %}
+        <p class="nhsuk-u-secondary-text-colour">
+          As recorded at the {{ latestWithInfo.timing.startTime | formatDate if latestWithInfo.timing else latestWithInfo.startTime | formatDate }} appointment.
         </p>
       {% endif %}
 
-    {% else %}
-      <p>This episode has no appointments.</p>
-    {% endif %}
+      {% set appointment = latestWithInfo %}
+      {% include "_includes/summary-lists/medical-info-summary.njk" %}
+    {% endcall %}
+  {% endif %}
 
-    <h2>History</h2>
+  {# One row per set of images read. The individual reads belong on the case
+     view rather than here - this is the round's shape, not its detail. #}
+  {# A closed round with nothing read has nothing to say here - only an open
+     one owes a reading state #}
+  {% if episode.readingCases.length or episode.stage != 'closed' %}
+    {% call card({
+      heading: "Image reading",
+      headingLevel: "2"
+    }) %}
+      {% if episode.readingCases.length %}
+        {% include "_includes/episodes/reading-cases-table.njk" %}
+      {% else %}
+        {{ appSummaryList({
+          rows: [
+            {
+              key: { text: "Status" },
+              value: { html: tag({
+                text: readingStatus.status | formatWords | sentenceCase,
+                colour: readingStatus.statusColor
+              }) }
+            }
+          ]
+        }) }}
+      {% endif %}
+    {% endcall %}
+  {% endif %}
 
-    <ol class="nhsuk-list nhsuk-list--number">
+  {# How the round moved through its stages - the live round's own record #}
+  {% if episode.stageHistory | length %}
+    {% call card({
+      heading: "Episode history",
+      headingLevel: "2"
+    }) %}
+      {% set historyRows = [] %}
       {% for entry in episode.stageHistory %}
-        <li>
-          {{ entry.stage | getEpisodeStageText }} -
-          {{ entry.timestamp | formatDate }}
-        </li>
+        {% set historyRows = historyRows | push({
+          key: { text: entry.stage | getEpisodeStageText },
+          value: { text: entry.timestamp | formatDate }
+        }) %}
       {% endfor %}
-    </ol>
-
+      {{ appSummaryList({ rows: historyRows }) }}
+    {% endcall %}
   {% endif %}
 
   {# Step between this participant's rounds without going back to their record #}
