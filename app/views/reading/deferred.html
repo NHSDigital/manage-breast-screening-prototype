@@ -68,7 +68,7 @@
           {# The name isn't a link: names only link to a participant record.
              The link to the case sits with the card's other actions #}
           <h2 class="nhsuk-summary-card__title">
-            {{ thisParticipant | getFullName }}
+            {{ thisParticipant | getFullNameReversed }}
           </h2>
           <ul class="nhsuk-summary-card__actions">
             <li class="nhsuk-summary-card__action">
@@ -137,7 +137,7 @@
       <div class="nhsuk-summary-card">
         <div class="nhsuk-summary-card__title-wrapper">
           <h3 class="nhsuk-summary-card__title">
-            {{ thisParticipant | getFullName }}
+            {{ thisParticipant | getFullNameReversed }}
           </h3>
           <div class="nhsuk-summary-card__actions">
             <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="nhsuk-link--no-visited-state">View case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span></a>

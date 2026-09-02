@@ -5,7 +5,7 @@
 
 {% extends parentLayout or 'layout-reading.html' %}
 
-{% set pageHeading = participant | getFullName %}
+{% set pageHeading = participant | getFullNameReversed %}
 {% set gridColumn = "none" %}
 {% set showWorkflowNav = true %}
 {% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
