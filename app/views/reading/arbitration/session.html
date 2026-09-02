@@ -42,7 +42,7 @@
       </p>
     {% endif %}
 
-    {% set arbitrationActionText = "Resume session" if arbitratedCount else "Start session" %}
+    {% set arbitrationActionText = "Resume session" if sessionStarted else "Start session" %}
 
     {% if resumeAppointment %}
       <div class="nhsuk-button-group">

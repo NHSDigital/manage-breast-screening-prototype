@@ -831,6 +831,12 @@ module.exports = (router) => {
     const sessionId = session.id
     const isArbitration = session.type === 'arbitration'
 
+    // The overview reflects the state of the session's cases, so it must not be
+    // served from the browser's cache - the same reason the case pages say so.
+    // It is the page a reader goes back to, and a restored copy would show the
+    // session as it was before they worked any of it.
+    res.set('Cache-Control', 'no-store, must-revalidate')
+
     // Get enhanced appointments with reading metadata
     const enhancedAppointments = session.appointmentIds
       .map((appointmentId) =>
@@ -864,6 +870,15 @@ module.exports = (router) => {
     const arbitratedCount = enhancedAppointments.filter((appointment) =>
       caseHasBeenArbitrated(appointment.readingCase)
     ).length
+
+    // Whether the reader has begun this session - what tells "Start" from
+    // "Resume". Any work on a case counts, not just a decision: skipping,
+    // deferring and asking for priors are all ways of having started.
+    const sessionStarted =
+      (session.skippedAppointments || []).length > 0 ||
+      enhancedAppointments.some((appointment) =>
+        wasWorkedInSession(data, session, appointment, data.currentUser.id)
+      )
 
     const sessionProgress = getSessionReadingProgress(
       data,
@@ -945,6 +960,7 @@ module.exports = (router) => {
         resumeAppointment,
         autoFinaliseAt,
         arbitratedCount,
+        sessionStarted,
         unfinalisedReadCount: unconfirmedReads.length,
         sessionEnded,
         canEndSessionEarly: canEndSessionEarly(session),
