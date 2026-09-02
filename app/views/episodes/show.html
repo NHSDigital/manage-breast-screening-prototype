@@ -87,7 +87,8 @@
             key: { text: "Closed" },
             value: { text: episode.closedDate | formatDate if episode.closedDate else "Not closed" }
           }
-        ]
+        ],
+        lastRowBorder: false
       }) }}
     {% endcall %}
   {% endif %}
@@ -141,7 +142,7 @@
       {% endif %}
     {% endif %}
 
-    {{ appSummaryList({ rows: episodeRows }) }}
+    {{ appSummaryList({ rows: episodeRows, lastRowBorder: false }) }}
 
     {% if episode.isHistoric %}
       <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
@@ -244,7 +245,8 @@
                 colour: readingStatus.statusColor
               }) }
             }
-          ]
+          ],
+          lastRowBorder: false
         }) }}
       {% endif %}
     {% endcall %}
@@ -263,7 +265,7 @@
           value: { text: entry.timestamp | formatDate }
         }) %}
       {% endfor %}
-      {{ appSummaryList({ rows: historyRows }) }}
+      {{ appSummaryList({ rows: historyRows, lastRowBorder: false }) }}
     {% endcall %}
   {% endif %}
 

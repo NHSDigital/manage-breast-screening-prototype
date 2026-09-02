@@ -30,8 +30,17 @@
 
 {% endfor -%}
 
+{#- Border modifiers, matching the default component - without these the
+    patched version silently drops `border` and `lastRowBorder` #}
+{%- set borderClasses = "" %}
+{%- if params.border === false and not (params.classes and "nhsuk-summary-list--no-border" in params.classes) %}
+  {% set borderClasses = " nhsuk-summary-list--no-border" %}
+{% elseif params.lastRowBorder === false and not (params.classes and "nhsuk-summary-list--no-last-row-border" in params.classes) %}
+  {% set borderClasses = " nhsuk-summary-list--no-last-row-border" %}
+{% endif %}
+
 {%- set summaryList -%}
-<dl class="nhsuk-summary-list {%- if params.classes %} {{ params.classes }}{% endif %}" {{- nhsukAttributes(params.attributes) }}>
+<dl class="nhsuk-summary-list{{ borderClasses }} {%- if params.classes %} {{ params.classes }}{% endif %}" {{- nhsukAttributes(params.attributes) }}>
   {% if caller %}
     {{ caller() | safe }}
   {% else %}
