@@ -10,7 +10,7 @@
 const {
   getReadingCaseList,
   getReadingCaseRows,
-  READING_CASE_FILTER_GROUPS,
+  getReadingCaseFilterGroups,
   READING_CASE_SORTS,
   DEFAULT_CASE_SORT,
   CASE_VIEWS,
@@ -93,7 +93,7 @@ module.exports = (router) => {
       ? req.query.sort
       : DEFAULT_CASE_SORT
 
-    const groups = READING_CASE_FILTER_GROUPS
+    const groups = getReadingCaseFilterGroups(data)
     const selected = parseFilterQuery(req.query, groups)
 
     // Everything in the view matching the search, before the filter groups -

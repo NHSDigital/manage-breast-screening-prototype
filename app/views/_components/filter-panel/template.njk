@@ -7,7 +7,11 @@
    params:
      action       - form action, the page's own path
      groups       - filter groups: { name, legend, options: [{ value, label }],
-                    style } - style "radios" renders a single-value group
+                    style } - style "radios" or "select" renders a
+                    single-value group; a select's "no choice" option is
+                    labelled by the group's emptyLabel. An option revealing
+                    another group renders it inside a conditional reveal
+                    rather than as a group of its own
      selected     - group name -> selected values
      counts       - group name -> option value -> count
      search       - optional search control: { name, value, label, id }
@@ -21,6 +25,7 @@
 {% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}
 {% from "nhsuk/components/radios/macro.njk" import radios %}
 {% from "nhsuk/components/search-input/macro.njk" import searchInput %}
+{% from "nhsuk/components/select/macro.njk" import select %}
 {% from "nhsuk/components/button/macro.njk" import button %}
 
 {% set panelHtml %}
@@ -42,17 +47,55 @@
     }) }}
   {% endif %}
 
+  {# Groups another group reveals are rendered inside that reveal, not here #}
+  {% set revealedGroupNames = params.groups | getRevealedGroupNames %}
+
   {% for group in params.groups %}
+    {% if group.name not in revealedGroupNames %}
+
     {% set selectedValues = (params.selected[group.name] or []) %}
     {% set groupCounts = (params.counts[group.name] or {}) %}
 
-    {% set items = [] %}
+    {# A select needs a "no choice" option first - unticking isn't available
+       the way it is for checkboxes #}
+    {% set items = [{ value: "", text: group.emptyLabel or "All" }] if group.style == "select" else [] %}
     {% for option in group.options %}
       {% set count = groupCounts[option.value] or 0 %}
+
+      {# An option can reveal a whole group - a person picker under "Someone
+         else", say - shown only once that option is chosen #}
+      {% set conditionalHtml = "" %}
+      {% if option.reveals %}
+        {% set revealed = params.groups | find("name", option.reveals) %}
+        {% set revealedSelected = (params.selected[revealed.name] or []) %}
+        {% set revealedCounts = (params.counts[revealed.name] or {}) %}
+
+        {% set revealedItems = [{ value: "", text: revealed.emptyLabel or "All" }] %}
+        {% for revealedOption in revealed.options %}
+          {% set revealedItems = revealedItems | push({
+            value: revealedOption.value,
+            text: revealedOption.label + " (" + (revealedCounts[revealedOption.value] or 0) + ")",
+            selected: true if revealedOption.value in revealedSelected
+          }) %}
+        {% endfor %}
+
+        {% set conditionalHtml %}
+          {{ select({
+            id: "filter-" + revealed.name,
+            name: revealed.name,
+            label: { text: revealed.legend },
+            formGroup: { classes: "nhsuk-u-margin-bottom-0" },
+            items: revealedItems
+          }) }}
+        {% endset %}
+      {% endif %}
+
       {% set items = items | push({
         value: option.value,
-        text: option.label + " (" + count + ")",
-        checked: true if option.value in selectedValues
+        text: option.label + (" (" + count + ")" if not option.hideCount else ""),
+        checked: true if option.value in selectedValues,
+        selected: true if option.value in selectedValues,
+        conditional: { html: conditionalHtml } if conditionalHtml | trim else undefined
       }) %}
     {% endfor %}
 
@@ -70,10 +113,22 @@
       items: items
     } %}
 
-    {% if group.style == "radios" %}
+    {% if group.style == "select" %}
+      {# A long list of options - people, say - would swamp the column as
+         checkboxes, so it narrows to one at a time #}
+      {{ select({
+        id: "filter-" + group.name,
+        name: group.name,
+        label: { text: group.legend, classes: "nhsuk-label--s" },
+        formGroup: { classes: "app-filter-panel__group" },
+        items: items
+      }) }}
+    {% elseif group.style == "radios" %}
       {{ radios(groupParams) }}
     {% else %}
       {{ checkboxes(groupParams) }}
+    {% endif %}
+
     {% endif %}
   {% endfor %}
 

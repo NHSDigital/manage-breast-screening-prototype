@@ -18,6 +18,7 @@ const {
   READING_CASE_OUTCOMES,
   getReadingCases,
   getReadsAsArray,
+  getReadAuthorIds,
   getReadingCaseStatus,
   getReadingCaseOutcome,
   getReadingUrgency,
@@ -118,6 +119,17 @@ const getLastActivityDate = (readingCase) => {
 }
 
 /**
+ * Everyone who has worked on a case: the reader behind each ordinary read,
+ * plus every arbitrator on an arbitration read.
+ *
+ * @param {object} readingCase - The case
+ * @returns {string[]} User IDs, each once
+ */
+const getCaseReaderIds = (readingCase) => {
+  return [...new Set(getReadsAsArray(readingCase).flatMap(getReadAuthorIds))]
+}
+
+/**
  * Build one row for a case - everything the list and its filters need.
  *
  * @param {object} data - Session data
@@ -161,6 +173,9 @@ const buildRow = (data, episode, readingCase) => {
     // sort bands on. A case with a provisional outcome isn't done yet
     isLive: finalisation !== 'finalised',
     readCount: getReadsAsArray(readingCase).length,
+    // Everyone who has read or arbitrated this case - the involvement filters
+    // ask whether a given person is in here
+    readerIds: getCaseReaderIds(readingCase),
     isDeferred,
     awaitingPriors: isAwaitingPriors,
     awaitingPriorsStatus,
@@ -197,9 +212,9 @@ const CASE_OUTCOME_LABELS = {
   recall_for_assessment: 'Recall for assessment'
 }
 
-// The filters offered on the reading case list, in the order they appear in
-// the filter column. See filter-list.js for the shape.
-const READING_CASE_FILTER_GROUPS = [
+// The filters that don't depend on who is signed in or who else exists, in the
+// order they appear in the filter column. See filter-list.js for the shape.
+const STANDING_FILTER_GROUPS = [
   {
     name: 'status',
     legend: 'Status',
@@ -254,6 +269,96 @@ const READING_CASE_FILTER_GROUPS = [
       )
   }
 ]
+
+/**
+ * The filters offered on the reading case list.
+ *
+ * The reader filter depends on session data: who is signed in, and who else
+ * there is to pick from. It is one question in the panel - whose cases these
+ * are - so the person picker is a group revealed by the "Someone else" option
+ * rather than a filter standing on its own.
+ *
+ * @param {object} data - Session data
+ * @returns {Array} Filter groups
+ */
+const getReadingCaseFilterGroups = (data = {}) => {
+  const groups = [...STANDING_FILTER_GROUPS]
+
+  const currentUserId = data.currentUser?.id
+
+  const otherReaders = (data.users || [])
+    .filter((user) => user.id !== currentUserId)
+    .sort((a, b) =>
+      `${a.lastName} ${a.firstName}`.localeCompare(
+        `${b.lastName} ${b.firstName}`
+      )
+    )
+
+  if (currentUserId) {
+    groups.push({
+      name: 'readers',
+      legend: 'Readers',
+      // One reader at a time - the three answers are alternatives, not a set
+      style: 'radios',
+      options: [
+        {
+          value: 'me',
+          label: 'My cases',
+          tagLabel: 'My cases'
+        },
+        {
+          // Cases nobody has read yet count here too: what's being asked is
+          // whether this is one of yours, and an unread case isn't
+          value: 'not_me',
+          label: 'Anyone but me',
+          tagLabel: 'Anyone but me'
+        },
+        ...(otherReaders.length
+          ? [
+              {
+                value: 'someone_else',
+                label: 'Someone else',
+                // A mode rather than a filter: on its own it narrows nothing,
+                // so it has no count and no selected-filter tag of its own
+                reveals: 'reader',
+                hideCount: true
+              }
+            ]
+          : [])
+      ],
+      matches: (row, values) =>
+        values.some((value) => {
+          if (value === 'me') return row.readerIds.includes(currentUserId)
+          if (value === 'not_me') return !row.readerIds.includes(currentUserId)
+
+          // 'someone_else' leaves the narrowing to the reader group
+          return true
+        })
+    })
+  }
+
+  if (otherReaders.length) {
+    groups.push({
+      name: 'reader',
+      legend: 'Reader',
+      style: 'select',
+      emptyLabel: 'Select a reader',
+      options: otherReaders.map((user) => {
+        const name = `${user.firstName} ${user.lastName}`.trim()
+
+        return {
+          value: user.id,
+          label: name,
+          tagLabel: `Read by ${name}`
+        }
+      }),
+      matches: (row, values) =>
+        values.some((value) => row.readerIds.includes(value))
+    })
+  }
+
+  return groups
+}
 
 /**
  * A case's name key for alphabetical ordering - surname, then first name.
@@ -381,7 +486,7 @@ const getReadingCaseRows = (data, filters = {}) => {
  * @param {string} [filters.view] - One of CASE_VIEWS, default 'current'
  * @param {string} [filters.query] - Participant name or NHS number
  * @param {string} [filters.sort] - One of READING_CASE_SORTS, default 'priority'
- * @param {Array} [filters.groups] - Filter groups (READING_CASE_FILTER_GROUPS)
+ * @param {Array} [filters.groups] - Filter groups (getReadingCaseFilterGroups)
  * @param {object} [filters.selected] - Group name -> selected values
  * @returns {object} `{ rows, totalCount, truncated }` - rows capped at MAX_ROWS
  */
@@ -442,7 +547,7 @@ const getArbitrationBacklogCounts = (data, filters = {}) => {
 module.exports = {
   CASE_VIEWS,
   CASE_VIEW_LABELS,
-  READING_CASE_FILTER_GROUPS,
+  getReadingCaseFilterGroups,
   READING_CASE_SORTS,
   DEFAULT_CASE_SORT,
   MAX_ROWS,
