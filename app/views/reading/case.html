@@ -404,7 +404,7 @@
             {% else %}
               {% set slotAuthorIds = slotRead | getReadAuthorIds %}
               {% set bylineHtml %}
-                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-1">
                   {%- for authorId in slotAuthorIds %}
                     {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                   {%- endfor %},
@@ -420,10 +420,10 @@
               {% else %}
                 {# The opinion is not the viewer's to see - mark the read done
                    without saying what it found, as the session overviews do #}
-                {{ readOpinionTag(slotRead, { blinded: true }) }}<br>
-                {{ bylineHtml | safe }}<br>
-                <span class="nhsuk-body-s"><a href="#">Reveal opinion</a>
-                  <span class="nhsuk-u-secondary-text-colour">– you could then no longer read this case yourself</span></span>
+                {{ readOpinionTag(slotRead, { blinded: true }) }}
+                {{ bylineHtml | safe }}
+                <span class="nhsuk-body-s nhsuk-u-margin-bottom-0"><a href="#">Reveal opinion</a>
+                  <span class="nhsuk-u-secondary-text-colour">– you will not be eligible to read this case yourself</span></span>
               {% endif %}
             {% endif %}
           {% endset %}

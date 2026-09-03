@@ -15,11 +15,21 @@
 //     legend: 'Status',                        // fieldset legend
 //     options: [{ value, label }],             // the checkboxes
 //     matches: (row, values) => boolean,       // OR within the group
-//     style: 'radios'                          // optional, single value
+//     style: 'radios',                         // optional, single value
+//     emptyLabel: 'Anyone'                     // select only: the "no choice" option
 //   }
 //
 // Multi-select within a group is OR; groups combine with AND. A group with
-// `style: 'radios'` holds one value at a time instead.
+// `style: 'radios'` or `style: 'select'` holds one value at a time instead.
+//
+// An option may carry a `tagLabel` for the selected-filters summary, where its
+// group's legend isn't there to give it context.
+//
+// An option may also `reveal` another group by name - the revealed group is
+// rendered inside the option's conditional reveal rather than as a group of
+// its own, and only applies while that option is chosen. The revealing option
+// is a mode rather than a filter, so it narrows nothing itself and takes no
+// tag; `hideCount: true` keeps a meaningless count off it.
 
 /**
  * Coerce a query param to an array. Express gives a string for one value and
@@ -31,6 +41,42 @@
 const toValueArray = (value) => {
   if (value === undefined || value === null || value === '') return []
   return Array.isArray(value) ? value : [value]
+}
+
+/**
+ * The names of every group that another group's option reveals - the groups a
+ * filter panel renders inside a conditional rather than on their own.
+ *
+ * @param {Array} groups - Filter groups
+ * @returns {string[]} Group names
+ */
+const getRevealedGroupNames = (groups = []) => {
+  return groups.flatMap((group) =>
+    group.options.map((option) => option.reveals).filter(Boolean)
+  )
+}
+
+/**
+ * Whether a group is revealed by an option that isn't currently chosen - so
+ * its own selection shouldn't count.
+ *
+ * @param {object} group - The group to test
+ * @param {Array} groups - Every filter group
+ * @param {object} selected - Group name -> selected values
+ * @returns {boolean} True when the group is revealed but its option isn't chosen
+ */
+const isRevealed = (group, groups, selected) => {
+  for (const candidate of groups) {
+    for (const option of candidate.options) {
+      if (option.reveals !== group.name) continue
+
+      if (!(selected[candidate.name] || []).includes(String(option.value))) {
+        return true
+      }
+    }
+  }
+
+  return false
 }
 
 /**
@@ -57,9 +103,20 @@ const parseFilterQuery = (query = {}, groups = []) => {
 
     const unique = [...new Set(values)]
 
-    // A radios group holds one value at a time, so a URL offering several
-    // keeps the first
-    selected[group.name] = group.style === 'radios' ? unique.slice(0, 1) : unique
+    // A radios or select group holds one value at a time, so a URL offering
+    // several keeps the first
+    const singleValue = group.style === 'radios' || group.style === 'select'
+
+    selected[group.name] = singleValue ? unique.slice(0, 1) : unique
+  }
+
+  // A revealed group only applies while the option revealing it is chosen -
+  // without JavaScript the hidden select still submits its value, and a stale
+  // one would silently narrow the list
+  for (const group of groups) {
+    if (!isRevealed(group, groups, selected)) continue
+
+    selected[group.name] = []
   }
 
   return selected
@@ -72,12 +129,12 @@ const parseFilterQuery = (query = {}, groups = []) => {
  * @param {object} row - A row
  * @param {Array} groups - Filter groups
  * @param {object} selected - Group name -> selected values
- * @param {string} [ignoreGroupName] - Group to leave out of the test
+ * @param {string[]} [ignoreGroupNames] - Groups to leave out of the test
  * @returns {boolean}
  */
-const rowMatchesGroups = (row, groups, selected, ignoreGroupName = null) => {
+const rowMatchesGroups = (row, groups, selected, ignoreGroupNames = []) => {
   for (const group of groups) {
-    if (group.name === ignoreGroupName) continue
+    if (ignoreGroupNames.includes(group.name)) continue
 
     const values = selected[group.name] || []
     if (!values.length) continue
@@ -104,9 +161,9 @@ const applyFilterGroups = (rows = [], groups = [], selected = {}) => {
 /**
  * How many rows each option would show.
  *
- * Faceted: a group's own selection is left out of its own counts, so ticking
- * one option doesn't zero out the rest of that group. Every other group's
- * selection still applies.
+ * Faceted: a group's own selection - and that of any group it reveals - is
+ * left out of its own counts, so ticking one option doesn't zero out the rest
+ * of that group. Every other group's selection still applies.
  *
  * @param {Array} rows - Rows before any group filtering
  * @param {Array} groups - Filter groups
@@ -117,13 +174,22 @@ const getFilterCounts = (rows = [], groups = [], selected = {}) => {
   const counts = {}
 
   for (const group of groups) {
+    // A group and the groups it reveals are one question in the panel, so a
+    // revealed group's selection doesn't shape its revealer's counts
+    const ignored = [
+      group.name,
+      ...group.options.map((option) => option.reveals).filter(Boolean)
+    ]
+
     const candidates = rows.filter((row) =>
-      rowMatchesGroups(row, groups, selected, group.name)
+      rowMatchesGroups(row, groups, selected, ignored)
     )
 
     counts[group.name] = {}
 
     for (const option of group.options) {
+      if (option.hideCount) continue
+
       counts[group.name][option.value] = candidates.filter((row) =>
         group.matches(row, [option.value])
       ).length
@@ -186,6 +252,10 @@ const describeSelectedFilters = (
       )
       if (!option) continue
 
+      // A revealing option is a mode, not a filter - the group it reveals
+      // carries the meaning, and its own tag
+      if (option.reveals) continue
+
       const remaining = {
         ...selected,
         [group.name]: (selected[group.name] || []).filter(
@@ -197,7 +267,7 @@ const describeSelectedFilters = (
         groupName: group.name,
         legend: group.legend,
         value: option.value,
-        label: option.label,
+        label: option.tagLabel || option.label,
         href: buildFilterUrl(baseUrl, remaining, extraParams)
       })
     }
@@ -218,6 +288,7 @@ const hasSelectedFilters = (selected = {}) => {
 
 module.exports = {
   parseFilterQuery,
+  getRevealedGroupNames,
   applyFilterGroups,
   getFilterCounts,
   describeSelectedFilters,
