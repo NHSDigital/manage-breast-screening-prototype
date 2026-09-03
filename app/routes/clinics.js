@@ -66,7 +66,9 @@ const CLOSE_STATUS_ACTIONS = {
   attended_not_screened: { from: 'checked_in', resolves: true },
   did_not_attend: { from: 'scheduled', resolves: true },
   checked_in: { from: 'attended_not_screened', resolves: false },
-  scheduled: { from: 'did_not_attend', resolves: false }
+  scheduled: { from: 'did_not_attend', resolves: false },
+  checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in', resolves: false },
+  scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled', resolves: false }
 }
 
 /**
@@ -261,7 +263,7 @@ module.exports = (router) => {
     }
 
     const data = req.session.data
-    updateAppointmentStatus(data, appointmentId, status)
+    updateAppointmentStatus(data, appointmentId, action.to || status)
     trackCloseResolvedIds(data, clinicId, [appointmentId], action.resolves)
 
     if (req.xhr) {
@@ -454,7 +456,9 @@ module.exports = (router) => {
 
     const updatedClinic = updateClinic(data, clinicId, { status: 'closed' })
     if (updatedClinic) {
-      req.flash('success', `Clinic ${updatedClinic.clinicCode} closed`)
+      req.flash('success', {
+        html: `Clinic ${updatedClinic.clinicCode} closed. <a href="/reports/${clinicId}">View report</a>`
+      })
     }
 
     // This clinic's close flow is finished - drop its resolved tracking
