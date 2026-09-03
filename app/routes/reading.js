@@ -994,12 +994,6 @@ module.exports = (router) => {
         return res.redirect('/reading')
       }
 
-      // An ended session takes no more reads, however its cases are reached -
-      // a bookmarked URL, or the back button after ending
-      if (isSessionEnded(session)) {
-        return res.redirect(`/reading/session/${sessionId}`)
-      }
-
       // Check if appointment exists in this session
       if (!session.appointmentIds.includes(appointmentId)) {
         // req.flash('error', 'Appointment not found in this session')
@@ -1014,6 +1008,17 @@ module.exports = (router) => {
       if (!appointment) {
         // req.flash('error', 'Appointment not found')
         console.log(`Appointment ${appointmentId} not found`)
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
+
+      // An ended session takes no more new work, however its cases are reached
+      // - a bookmarked URL, or the back button after ending. The cases it did
+      // work stay open, so the reader can still see and amend what was
+      // recorded until it finalises.
+      if (
+        isSessionEnded(session) &&
+        !wasWorkedInSession(data, session, appointment, currentUserId)
+      ) {
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
@@ -1299,6 +1304,9 @@ module.exports = (router) => {
       }
 
       const reason = req.body.requestPriorReason || ''
+      // The kit's autoStoreData copies every posted field into the session, so
+      // the reason would otherwise resurface on the next case's form
+      delete data.requestPriorReason
 
       // Find the appointment in the main appointments array
       const appointment = data.appointments.find((e) => e.id === appointmentId)
@@ -1459,6 +1467,9 @@ module.exports = (router) => {
       const currentUserId = data.currentUser?.id
 
       const reason = req.body.deferralReason || ''
+      // The kit's autoStoreData copies every posted field into the session, so
+      // the reason would otherwise resurface on the next case's form
+      delete data.deferralReason
 
       // Find the appointment and save deferral data. Work on a clone rather than
       // mutating in place - appointment records are shared read-only data; writes

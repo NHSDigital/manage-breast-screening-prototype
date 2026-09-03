@@ -9,7 +9,7 @@
 
 {% set back = {
   href: "/reading",
-  text: "Back to image reading dashboard"
+  text: "Image reading dashboard"
 } %}
 
 {% set pageHeading = session.name %}
@@ -240,17 +240,23 @@
               {% else %}
                 {# The link says what opening the case will do, with the name
                    hidden for screen readers so each row's link is distinct #}
-                {% if arbitrationRead %}
+                {# What the panel did with this case in the session: its
+                   outcome, or the deferral or priors request standing in its
+                   place #}
+                {% set panelWorkedCase = arbitrationRead or (appointment.readingCase | isCaseDeferred) or (appointment | awaitingPriors) %}
+
+                {% if panelWorkedCase %}
                   {% set caseActionText = "View outcome" %}
-                {% elseif (appointment.readingCase | isCaseDeferred) or (appointment | awaitingPriors) or sessionEnded %}
+                {% elseif sessionEnded %}
                   {% set caseActionText = "View case" %}
                 {% else %}
                   {% set caseActionText = "Arbitrate case" %}
                 {% endif %}
-                {# An ended session takes no more outcomes, so its rows link to
-                   the case itself rather than back into the session #}
+                {# An ended session takes no more work, so rows it holds nothing
+                   for link out to the case. Worked rows stay in the session,
+                   showing what was recorded #}
                 {% set caseHref -%}
-                  {%- if sessionEnded -%}
+                  {%- if sessionEnded and not panelWorkedCase -%}
                     /reading/cases/{{ appointment.readingCase.id }}
                   {%- else -%}
                     /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
