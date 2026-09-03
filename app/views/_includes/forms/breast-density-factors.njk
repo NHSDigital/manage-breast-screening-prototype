@@ -25,7 +25,7 @@
 {% set hrtYesConditionalHtml %}
   <div class="nhsuk-form-group">
     <label class="nhsuk-label" for="breastDensityFactorsHrtYearStarted">
-      Approx. year started
+      Approximate year started
     </label>
     <input class="nhsuk-input nhsuk-input--width-4" id="breastDensityFactorsHrtYearStarted" name="breastDensityFactorsHrtYearStarted" type="text" value="{{ breastDensityFactors.hrtYearStarted }}">
   </div>
@@ -34,7 +34,7 @@
 {% set hrtNoConditionalHtml %}
   <div class="nhsuk-form-group">
     <label class="nhsuk-label" for="breastDensityFactorsHrtYearStopped">
-      Approx. year stopped if previously taken
+      Approximate year stopped if previously taken
     </label>
     <input class="nhsuk-input nhsuk-input--width-4" id="breastDensityFactorsHrtYearStopped" name="breastDensityFactorsHrtYearStopped" type="text" value="{{ breastDensityFactors.hrtYearStopped }}">
   </div>
@@ -111,10 +111,10 @@
   {% if breastDensityFactors.factors | length %}
     <ul class="nhsuk-list">
       {% if breastDensityFactors.factors | includes("pregnant") %}
-        <li>Pregnant</li>
+        <li>Currently pregnant</li>
       {% endif %}
       {% if breastDensityFactors.factors | includes("breastfeeding") %}
-        <li>Breastfeeding</li>
+        <li>Currently breastfeeding</li>
       {% endif %}
       {% if breastDensityFactors.factors | includes("stopped-less-than-3-months") %}
         <li>Pregnancy or breastfeeding stopped less than 3 months ago</li>
@@ -126,8 +126,8 @@
 {% endset %}
 
 <div data-breast-density-factors-save-url="{{ contextUrl }}/medical-information/breast-density-factors-save">
-  {{ summaryList({
-    rows: [
+  {% if displayFormat == "expander" %}
+    {% set breastDensityRows = [
       {
         key: {
           text: "HRT (hormone replacement therapy)"
@@ -136,26 +136,63 @@
           html: hrtInputHtml if allowEdits else hrtSummaryHtml
         }
       }
-    ]
-  } | removeLastRowBorder ) }}
+    ] %}
 
-  {% if breastDensityFactors.factors | length %}
-    {% call card({
-      heading: "Pregnancy and breastfeeding",
-      headingLevel: 4,
-      headingSize: "s",
-      classes: "nhsuk-u-margin-bottom-4 nhsuk-u-margin-top-4",
-      actions: {
-        items: [
-          {
-            href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
-            text: "Change"
-          } | openInModal
-        ]
-      } if allowEdits
-    }) %}
-      {{ pregnantOrBreastfeedingSummaryHtml | safe }}
-    {% endcall %}
+    {% if breastDensityFactors.factors | length %}
+      {% set breastDensityRows = breastDensityRows | push({
+        key: {
+          text: "Pregnancy and breastfeeding"
+        },
+        value: {
+          html: pregnantOrBreastfeedingSummaryHtml
+        },
+        actions: {
+          items: [
+            {
+              href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
+              text: "Change"
+            } | openInModal
+          ]
+        } if allowEdits
+      }) %}
+    {% endif %}
+
+    {{ summaryList({
+      rows: breastDensityRows,
+      lastRowBorder: false
+    }) }}
+  {% else %}
+    {{ summaryList({
+      rows: [
+        {
+          key: {
+            text: "HRT (hormone replacement therapy)"
+          },
+          value: {
+            html: hrtInputHtml if allowEdits else hrtSummaryHtml
+          }
+        }
+      ]
+    } | removeLastRowBorder ) }}
+  {% endif %}
+
+  {% if breastDensityFactors.factors | length and displayFormat != "expander" %}
+      {% call card({
+        heading: "Pregnancy and breastfeeding",
+        headingLevel: 4,
+        headingSize: "s",
+        classes: "nhsuk-u-margin-bottom-4 nhsuk-u-margin-top-4",
+        actions: {
+          items: [
+            {
+              href: contextUrl + "/medical-information/pregnancy-and-breastfeeding",
+              text: "Change"
+            } | openInModal
+          ]
+        } if allowEdits
+      }) %}
+        {{ pregnantOrBreastfeedingSummaryHtml | safe }}
+      {% endcall %}
   {% endif %}
 
   {% if allowEdits and not breastDensityFactors.factors | length %}

@@ -519,17 +519,17 @@ const summariseBreastDensityFactors = (medicalInformation) => {
   const summaries = []
 
   if (hrt === 'yes') {
-    summaries.push('Currently taking HRT' + (hrtYearStarted ? ` (started: ${hrtYearStarted})` : ''))
+    summaries.push('Currently taking HRT' + (hrtYearStarted ? ` (Approximate year started: ${hrtYearStarted})` : ''))
   } else if (hrt === 'no') {
     summaries.push('Not currently taking HRT' + (hrtYearStopped ? ` (stopped: ${hrtYearStopped})` : ''))
   }
 
   if (factors.includes('pregnant')) {
-    summaries.push('Pregnant')
+    summaries.push('Currently pregnant')
   }
 
   if (factors.includes('breastfeeding')) {
-    summaries.push('Breastfeeding')
+    summaries.push('Currently breastfeeding')
   }
 
   if (factors.includes('stopped-less-than-3-months')) {
