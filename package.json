@@ -25,7 +25,7 @@
     "idiomorph": "^0.7.4",
     "lodash": "^4.18.1",
     "markdown-it": "^15.0.1",
-    "nhsuk-frontend": "^10.6.0",
+    "nhsuk-frontend": "^10.6.1",
     "nhsuk-prototype-kit": "^8.3.0",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
