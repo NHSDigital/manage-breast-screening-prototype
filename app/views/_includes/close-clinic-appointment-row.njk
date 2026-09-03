@@ -55,7 +55,7 @@
         {% if appointment.status == "in_progress" or appointment.status == "paused" %}
           <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
         {% elseif appointment.status == "checked_in" %}
-          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/attended_not_screened" data-fragment-action>Mark as attended not screened</a>
+          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/attended_not_screened" data-fragment-action data-open-details-after-action>Mark as attended not screened</a>
         {% elseif appointment.status == "scheduled" %}
           <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/did_not_attend" data-fragment-action>Mark as did not attend</a>
         {% elseif appointment.status == "attended_not_screened" %}
