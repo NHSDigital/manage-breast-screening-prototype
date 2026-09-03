@@ -404,7 +404,7 @@
             {% else %}
               {% set slotAuthorIds = slotRead | getReadAuthorIds %}
               {% set bylineHtml %}
-                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">
+                <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-1">
                   {%- for authorId in slotAuthorIds %}
                     {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                   {%- endfor %},
