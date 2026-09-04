@@ -518,27 +518,22 @@ const getPregnancyAndBreastfeeding = (medicalInformation) => {
  * breastfeeding answers.
  *
  * @param {Object} medicalInformation - The medicalInformation object from appointment
- * @returns {{hrt: Object, hrtSummary: string|null, pregnancyAndBreastfeeding: Object, count: number, answeredCount: number, summaries: Array<string>}}
+ * @returns {{hrt: Object, hrtSummary: string|null, pregnancyAndBreastfeeding: Object, count: number, summaries: Array<string>}}
  */
 const getBreastDensityFactors = (medicalInformation) => {
   const hrt = medicalInformation?.hrt || {}
   const pregnancyAndBreastfeeding =
     getPregnancyAndBreastfeeding(medicalInformation)
 
-  const summaries = summariseBreastDensityFactors(medicalInformation)
-
   return {
     hrt,
     hrtSummary: summariseHrt(medicalInformation),
     pregnancyAndBreastfeeding,
-    // "Not taking HRT" is an answer, but it isn't a density factor - only
-    // count the things that actually affect density
-    count:
-      (hrt.status === 'yes' ? 1 : 0) + pregnancyAndBreastfeeding.values.length,
-    // Everything worth showing, including a recorded "no" to the HRT question -
-    // use this to decide whether to show the row at all
-    answeredCount: summaries.length,
-    summaries
+    // Every recorded answer counts, a "no" to HRT included - recently stopping
+    // matters as much as currently taking it. Use this to decide whether to
+    // show the section at all, and for the "n added" line
+    count: (hrt.status ? 1 : 0) + pregnancyAndBreastfeeding.values.length,
+    summaries: summariseBreastDensityFactors(medicalInformation)
   }
 }
 

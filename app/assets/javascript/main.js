@@ -171,7 +171,7 @@ function setupBreastDensityFactorsAutosave() {
   // Only the review page wraps these in an expander, so this does nothing
   // elsewhere. Pregnancy and breastfeeding is edited on its own page, so its
   // count comes from the server - match getBreastDensityFactors so the two
-  // never disagree
+  // never disagree, answering "no" to HRT included
   const updateContentsSummary = () => {
     const summary = container
       .closest('.js-expandable-section')
@@ -182,8 +182,8 @@ function setupBreastDensityFactorsAutosave() {
     }
 
     const factorCount = Number(container.dataset.breastDensityFactorCount) || 0
-    const takingHrt = container.querySelector(`input[name="${statusName}"]:checked`)?.value === 'yes'
-    const count = factorCount + (takingHrt ? 1 : 0)
+    const hrtAnswered = !!container.querySelector(`input[name="${statusName}"]:checked`)
+    const count = factorCount + (hrtAnswered ? 1 : 0)
 
     if (count === 0) {
       summary.textContent = 'No breast density factors added'
