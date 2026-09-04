@@ -41,6 +41,7 @@ const {
   getReadingCaseOutcome,
   getReadingMetadata,
   getArbitrationRead,
+  getAutoFinaliseTime,
   isCaseDeferred,
   isCaseInArbitration,
   isReadFinalised,
@@ -311,12 +312,18 @@ module.exports = (router) => {
     const hideFirstOpinion = allReads.length < 2 && !caseOutcome
 
     // The read the outcome comes from - arbitration where there was one, else
-    // either of the two agreeing reads. Present as soon as the case's
-    // direction is known, even before finalisation - the outcome card marks
-    // an unfinalised decision as provisional.
+    // whichever of the agreeing reads finalised last, since that is the moment
+    // the case concluded. Present as soon as the case's direction is known,
+    // even before finalisation - the outcome card marks an unfinalised
+    // decision as provisional.
+    const finalisedTimeOf = (read) =>
+      read.finalisedAt || getAutoFinaliseTime(read, data.settings) || ''
+    const lastFinalisedRead = [...allReads].sort((a, b) =>
+      finalisedTimeOf(b).localeCompare(finalisedTimeOf(a))
+    )[0]
     const decidingRead =
       caseOutcome || caseStatus.provisionalOutcome
-        ? getArbitrationRead(readingCase) || allReads[0]
+        ? getArbitrationRead(readingCase) || lastFinalisedRead
         : null
 
     // A historic round has no appointment or clinic to name a location from -
