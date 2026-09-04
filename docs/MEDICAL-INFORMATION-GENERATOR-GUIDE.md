@@ -36,8 +36,8 @@ appointment: {
   participantId: string,
   medicalInformation: {
     symptoms: [],                    // ✅ Array of symptom objects
-    breastDensityFactorsHrt: string, // ✅ 'yes' or 'no' - absent if not asked
-    breastDensityFactors: [],        // ✅ Any of 'pregnant', 'breastfeeding' - absent if none
+    hrt: {},                         // ✅ status ('yes'/'no') plus optional year - absent if not asked
+    pregnancyAndBreastfeeding: [],   // ✅ Any of the pregnancy/breastfeeding values - absent if none
     otherMedicalInformation: string, // ✅ Freetext medical info
     breastFeatures: [],              // ✅ Array of breast feature objects
     medicalHistory: {                // Object with arrays for each type
@@ -192,7 +192,7 @@ Replaces the separate HRT and pregnancy/breastfeeding generators. The question i
 **Key features:**
 
 - Generates the factors that affect breast density: HRT, pregnancy and breastfeeding
-- 80% default probability the question was asked at all — if it wasn't, `breastDensityFactorsHrt` is left unset, so summaries can distinguish “not answered” from a recorded “no”
+- 80% default probability the question was asked at all — if it wasn't, `hrt` is left unset, so summaries can distinguish “not answered” from a recorded “no”
 - 30% default probability of currently taking HRT
 - 5% default probability of being pregnant or breastfeeding (appropriate for the screening age group), split 70/30 towards breastfeeding
 - Returns a plain object of keys the umbrella generator merges with `Object.assign`, rather than a nested sub-object
@@ -211,10 +211,17 @@ generateBreastDensityFactors({
 
 ```javascript
 {
-  // Absent if the question wasn't asked
-  breastDensityFactorsHrt: 'yes' | 'no',
-  // Absent if neither applies
-  breastDensityFactors: ['pregnant' | 'breastfeeding']
+  // Absent if the question wasn't asked. yearStarted is only set when taking HRT;
+  // yearStopped is only ever entered by a user
+  hrt: {
+    status: 'yes' | 'no',
+    yearStarted: string,
+    yearStopped: string
+  },
+  // Absent if none apply
+  pregnancyAndBreastfeeding: [
+    'currently-pregnant' | 'currently-breastfeeding' | 'stopped-less-than-3-months'
+  ]
 }
 ```
 

@@ -9,85 +9,41 @@ const {
 } = require('../../lib/utils/referrers')
 
 module.exports = (router) => {
-  // Auto-save breast density factors as they're changed
+  // Auto-save the HRT answer as it's changed
   //
-  // These answers are edited in place on the review page rather than on a
-  // sub-page with its own submit, so there's no form post to carry them.
-  // Like the other medical information sections, this writes to the temp
-  // appointment and is committed when the appointment is completed or paused.
-  //
-  // The inputs are named outside the appointment[...] namespace on purpose.
-  // They render inside other forms, and the kit's unchecked-checkbox script
-  // adds an "_unchecked" value for every checkbox in whichever form is being
-  // submitted. Since auto-store-data replaces arrays rather than merging
-  // them, an appointment-namespaced name would let any other form on the page
-  // wipe these answers. Keeping them out of that namespace means only this
-  // route ever writes them.
+  // HRT is edited in place on the review page rather than on a sub-page with
+  // its own submit, so there's no form post to carry it. The fields are named
+  // against the appointment, so auto-store-data has already written them to
+  // the temp appointment by the time this runs - the route exists only to give
+  // the fetch something to post to that doesn't render a whole page. Without
+  // JavaScript the surrounding form's submit saves the same fields the same way.
   router.post(
-    '/clinics/:clinicId/appointments/:appointmentId/medical-information/breast-density-factors-save',
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/hrt-save',
     (req, res) => {
-      const { appointmentId } = req.params
-      const data = req.session.data
-
-      const postedHrt = req.body?.breastDensityFactorsHrt
-      const postedHrtYearStarted = req.body?.breastDensityFactorsHrtYearStarted
-      const postedHrtYearStopped = req.body?.breastDensityFactorsHrtYearStopped
-
-      if (data.appointment?.id !== appointmentId) {
-        res.status(409).send()
-        return
-      }
-
-      const medicalInformation = data.appointment.medicalInformation || {}
-
-      if (postedHrt) {
-        medicalInformation.breastDensityFactorsHrt = postedHrt
-      }
-
-      if (postedHrtYearStarted !== undefined) {
-        medicalInformation.breastDensityFactorsHrtYearStarted = postedHrtYearStarted
-      }
-
-      if (postedHrtYearStopped !== undefined) {
-        medicalInformation.breastDensityFactorsHrtYearStopped = postedHrtYearStopped
-      }
-
-      data.appointment.medicalInformation = medicalInformation
-
-      delete data.breastDensityFactorsHrt
-      delete data.breastDensityFactorsHrtYearStarted
-      delete data.breastDensityFactorsHrtYearStopped
-
       res.status(204).send()
     }
   )
 
-  // Pregnancy/breastfeeding modal form — data is auto-saved by the kit
-  // via the field name; we just need the modalBreakout redirect.
-  // Pregnancy/breastfeeding modal — auto-store-data saves the field
-  // directly to appointment.medicalInformation.breastDensityFactors;
-  // route only handles the modalBreakout redirect.
-  router.post(
-    '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding-save',
-    (req, res) => {
-      const { clinicId, appointmentId } = req.params
-      res.redirect(modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`))
-    }
-  )
-
-  // Delete pregnancy/breastfeeding
+  // Delete pregnancy and breastfeeding
   router.get(
-    '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding-delete',
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding/delete',
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
 
       if (data.appointment?.medicalInformation) {
-        delete data.appointment.medicalInformation.breastDensityFactors
+        delete data.appointment.medicalInformation.pregnancyAndBreastfeeding
       }
 
       req.flash('success', 'Pregnancy and breastfeeding deleted')
-      res.redirect(modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`))
+
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`,
+        req.query.referrerChain,
+        req.query.scrollTo
+      )
+
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 

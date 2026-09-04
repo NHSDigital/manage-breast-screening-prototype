@@ -188,8 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })
 
-// Breast density factors are edited in place rather than on their own page,
-// so there's no submit button to save them - each change posts on its own.
+// The HRT answer is edited in place rather than on its own page, so there's no
+// submit button to save it - each change posts on its own.
 function setupBreastDensityFactorsAutosave() {
   const container = document.querySelector('[data-breast-density-factors-save-url]')
   if (!container) {
@@ -201,19 +201,21 @@ function setupBreastDensityFactorsAutosave() {
     return
   }
 
-  const hrtName = 'breastDensityFactorsHrt'
-  const hrtYearStartedName = 'breastDensityFactorsHrtYearStarted'
-  const hrtYearStoppedName = 'breastDensityFactorsHrtYearStopped'
+  const statusName = 'appointment[medicalInformation][hrt][status]'
+  const yearStartedName = 'appointment[medicalInformation][hrt][yearStarted]'
+  const yearStoppedName = 'appointment[medicalInformation][hrt][yearStopped]'
 
-  const hrtRadios = container.querySelectorAll(`input[name="${hrtName}"]`)
+  const statusRadios = container.querySelectorAll(`input[name="${statusName}"]`)
 
-  if (hrtRadios.length === 0) {
+  if (statusRadios.length === 0) {
     return
   }
 
   // Keep the expander's "n factors added" line in step with the inputs.
   // Only the review page wraps these in an expander, so this does nothing
-  // elsewhere.
+  // elsewhere. Pregnancy and breastfeeding is edited on its own page, so its
+  // count comes from the server - match getBreastDensityFactors so the two
+  // never disagree
   const updateContentsSummary = () => {
     const summary = container
       .closest('.js-expandable-section')
@@ -223,8 +225,9 @@ function setupBreastDensityFactorsAutosave() {
       return
     }
 
-    const hrtYes = container.querySelector(`input[name="${hrtName}"]:checked`)?.value === 'yes'
-    const count = hrtYes ? 1 : 0
+    const factorCount = Number(container.dataset.breastDensityFactorCount) || 0
+    const takingHrt = container.querySelector(`input[name="${statusName}"]:checked`)?.value === 'yes'
+    const count = factorCount + (takingHrt ? 1 : 0)
 
     if (count === 0) {
       summary.textContent = 'No breast density factors added'
@@ -242,20 +245,17 @@ function setupBreastDensityFactorsAutosave() {
   const saveHrt = () => {
     const formData = new URLSearchParams()
 
-    const selectedHrt = container.querySelector(`input[name="${hrtName}"]:checked`)
-    if (selectedHrt) {
-      formData.append(hrtName, selectedHrt.value)
+    const selectedStatus = container.querySelector(`input[name="${statusName}"]:checked`)
+    if (selectedStatus) {
+      formData.append(statusName, selectedStatus.value)
     }
 
-    const yearStartedInput = container.querySelector(`input[name="${hrtYearStartedName}"]`)
-    if (yearStartedInput) {
-      formData.append(hrtYearStartedName, yearStartedInput.value)
-    }
-
-    const yearStoppedInput = container.querySelector(`input[name="${hrtYearStoppedName}"]`)
-    if (yearStoppedInput) {
-      formData.append(hrtYearStoppedName, yearStoppedInput.value)
-    }
+    ;[yearStartedName, yearStoppedName].forEach((name) => {
+      const input = container.querySelector(`input[name="${name}"]`)
+      if (input) {
+        formData.append(name, input.value)
+      }
+    })
 
     updateContentsSummary()
 
@@ -280,11 +280,9 @@ function setupBreastDensityFactorsAutosave() {
   }
 
   container
-    .querySelectorAll(`input[name="${hrtName}"]`)
-    .forEach((input) => input.addEventListener('change', saveHrt))
-
-  container
-    .querySelectorAll(`input[name="${hrtYearStartedName}"], input[name="${hrtYearStoppedName}"]`)
+    .querySelectorAll(
+      `input[name="${statusName}"], input[name="${yearStartedName}"], input[name="${yearStoppedName}"]`
+    )
     .forEach((input) => input.addEventListener('change', saveHrt))
 }
 
