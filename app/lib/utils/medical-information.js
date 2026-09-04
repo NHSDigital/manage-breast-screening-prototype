@@ -533,6 +533,14 @@ const getBreastDensityFactors = (medicalInformation) => {
 const summarisePregnancyAndBreastfeeding = (medicalInformation) => {
   const factors = toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding)
 
+  // Both at once reads better as one line than as two
+  if (
+    factors.includes('currently-pregnant') &&
+    factors.includes('currently-breastfeeding')
+  ) {
+    return ['Currently pregnant and breastfeeding']
+  }
+
   return pregnancyAndBreastfeedingOptions
     .filter((option) => option.value && factors.includes(option.value))
     .map((option) => option.text)
@@ -565,13 +573,13 @@ const summariseHrt = (medicalInformation) => {
   // say so rather than reading as an exact date
   if (hrt.status === 'yes') {
     return hrt.yearStarted
-      ? `Currently taking HRT (started approximately ${hrt.yearStarted})`
+      ? `Currently taking HRT (approximate start: ${hrt.yearStarted})`
       : 'Currently taking HRT'
   }
 
   if (hrt.status === 'no') {
     return hrt.yearStopped
-      ? `Not currently taking HRT (stopped approximately ${hrt.yearStopped})`
+      ? `Not currently taking HRT (approximate stop: ${hrt.yearStopped})`
       : 'Not currently taking HRT'
   }
 
