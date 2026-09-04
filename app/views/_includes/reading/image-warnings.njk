@@ -58,9 +58,8 @@
           text: "More images due",
           colour: "orange"
         }) }}
-        {% if appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails %}
-          <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">Note for scheduling recall appointment:<br>{{ appointment.mammogramData.incompleteMammographyFollowUpAppointmentDetails }}</p>
-        {% endif %}
+        <p class="nhsuk-u-secondary-text-colour">Give your opinion based on the images currently available</p>
+        
       {% endif %}
     {% endif %}
   {% endset %}
