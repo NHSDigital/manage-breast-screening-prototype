@@ -12,9 +12,6 @@
   whichever form is submitted. Since this section renders inside other forms,
   editing it inline would let an unrelated submit wipe the answers - so it
   gets its own page instead.
-
-  Set displayFormat to "expander" to fold pregnancy and breastfeeding into the
-  summary list; otherwise it renders as its own card below.
 #}
 
 {% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
@@ -97,18 +94,7 @@
   {% endif %}
 {% endset %}
 
-{# The card macro appends its own heading to the action, so only the summary
-   list row needs the visually hidden text spelling out #}
-{% set changeInCardAction = {
-  items: [
-    {
-      href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
-      text: "Change"
-    } | openInModal
-  ]
-} if allowEdits %}
-
-{% set changeInRowAction = {
+{% set changePregnancyAndBreastfeedingAction = {
   items: [
     {
       href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
@@ -129,9 +115,7 @@
   }
 ] %}
 
-{# In the expander the pregnancy answers sit in the same list as HRT; elsewhere
-   they get their own card below so the change action is easier to spot #}
-{% if breastDensityFactors.factors | length and displayFormat == "expander" %}
+{% if breastDensityFactors.factors | length %}
   {% set breastDensityRows = breastDensityRows | push({
     key: {
       text: "Pregnancy and breastfeeding"
@@ -139,7 +123,7 @@
     value: {
       html: pregnancyAndBreastfeedingSummaryHtml
     },
-    actions: changeInRowAction
+    actions: changePregnancyAndBreastfeedingAction
   }) %}
 {% endif %}
 
@@ -150,18 +134,6 @@
     rows: breastDensityRows,
     lastRowBorder: false
   }) }}
-
-  {% if breastDensityFactors.factors | length and displayFormat != "expander" %}
-    {% call card({
-      heading: "Pregnancy and breastfeeding",
-      headingLevel: 4,
-      headingSize: "s",
-      classes: "nhsuk-u-margin-bottom-4 nhsuk-u-margin-top-4",
-      actions: changeInCardAction
-    }) %}
-      {{ pregnancyAndBreastfeedingSummaryHtml | safe }}
-    {% endcall %}
-  {% endif %}
 
   {% if allowEdits and not breastDensityFactors.factors | length %}
     <p class="nhsuk-u-margin-top-4">
