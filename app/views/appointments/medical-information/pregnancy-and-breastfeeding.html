@@ -10,7 +10,7 @@
 
 {% block pageContent %}
 
-  {% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+  {% set pregnancyAndBreastfeeding = appointment.medicalInformation | getPregnancyAndBreastfeeding %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
@@ -21,7 +21,7 @@
 
   {{ checkboxes({
     name: "appointment[medicalInformation][pregnancyAndBreastfeeding]",
-    values: breastDensityFactors.factors,
+    values: pregnancyAndBreastfeeding.values,
     classes: "nhsuk-checkboxes--small",
     fieldset: {
       legend: {
@@ -29,14 +29,14 @@
         classes: "nhsuk-fieldset__legend--s"
       }
     },
-    items: breastDensityFactors.options
+    items: pregnancyAndBreastfeeding.options
   }) }}
 
   {{ button({
     text: "Save"
   }) }}
 
-  {% if breastDensityFactors.factors | length %}
+  {% if pregnancyAndBreastfeeding.values | length %}
     {% set deleteHref %}
       ./pregnancy-and-breastfeeding/delete{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
     {% endset %}

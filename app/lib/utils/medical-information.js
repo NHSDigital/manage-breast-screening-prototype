@@ -492,35 +492,53 @@ const toCheckboxArray = (value) => {
 }
 
 /**
+ * Read the pregnancy and breastfeeding answers off an appointment's medical
+ * information
+ *
+ * A checkbox group stores a bare string when one box is ticked and an array
+ * when several are, so reading it here means callers get one shape to work
+ * with rather than repeating the coercion.
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {{values: Array<string>, summaries: Array<string>, options: Array<Object>}}
+ */
+const getPregnancyAndBreastfeeding = (medicalInformation) => {
+  return {
+    values: toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding),
+    summaries: summarisePregnancyAndBreastfeeding(medicalInformation),
+    options: pregnancyAndBreastfeedingOptions
+  }
+}
+
+/**
  * Read the breast density factors off an appointment's medical information
  *
  * Breast density factors are a display grouping rather than a stored object -
  * they pull together the separately stored HRT answer and pregnancy and
- * breastfeeding answers. Reading them here means templates get a single shape
- * to work with rather than repeating the coercion at every call site.
+ * breastfeeding answers.
  *
  * @param {Object} medicalInformation - The medicalInformation object from appointment
- * @returns {{factors: Array<string>, hrt: Object, count: number, answeredCount: number, summaries: Array<string>, factorSummaries: Array<string>, options: Array<Object>}}
+ * @returns {{hrt: Object, hrtSummary: string|null, pregnancyAndBreastfeeding: Object, count: number, answeredCount: number, summaries: Array<string>}}
  */
 const getBreastDensityFactors = (medicalInformation) => {
-  const factors = toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding)
   const hrt = medicalInformation?.hrt || {}
+  const pregnancyAndBreastfeeding =
+    getPregnancyAndBreastfeeding(medicalInformation)
 
   const summaries = summariseBreastDensityFactors(medicalInformation)
 
   return {
-    factors,
     hrt,
+    hrtSummary: summariseHrt(medicalInformation),
+    pregnancyAndBreastfeeding,
     // "Not taking HRT" is an answer, but it isn't a density factor - only
     // count the things that actually affect density
-    count: (hrt.status === 'yes' ? 1 : 0) + factors.length,
+    count:
+      (hrt.status === 'yes' ? 1 : 0) + pregnancyAndBreastfeeding.values.length,
     // Everything worth showing, including a recorded "no" to the HRT question -
     // use this to decide whether to show the row at all
     answeredCount: summaries.length,
-    summaries,
-    factorSummaries: summarisePregnancyAndBreastfeeding(medicalInformation),
-    hrtSummary: summariseHrt(medicalInformation),
-    options: pregnancyAndBreastfeedingOptions
+    summaries
   }
 }
 
@@ -615,6 +633,7 @@ module.exports = {
   summariseBreastFeature,
   summariseBreastFeatures,
   getBreastDensityFactors,
+  getPregnancyAndBreastfeeding,
   summariseBreastDensityFactors,
   summarisePregnancyAndBreastfeeding,
   summariseHrt,

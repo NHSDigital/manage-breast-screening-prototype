@@ -15,6 +15,7 @@
 #}
 
 {% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+{% set pregnancyAndBreastfeeding = breastDensityFactors.pregnancyAndBreastfeeding %}
 
 {% set hrtQuestion = "Is " + participant.demographicInformation.firstName + " currently taking HRT?" %}
 
@@ -81,14 +82,14 @@
 {% endset %}
 
 {% set pregnancyAndBreastfeedingSummaryHtml %}
-  {% if breastDensityFactors.factorSummaries | length > 1 %}
+  {% if pregnancyAndBreastfeeding.summaries | length > 1 %}
     <ul class="nhsuk-list">
-      {% for summary in breastDensityFactors.factorSummaries %}
+      {% for summary in pregnancyAndBreastfeeding.summaries %}
         <li>{{ summary }}</li>
       {% endfor %}
     </ul>
-  {% elseif breastDensityFactors.factorSummaries | length %}
-    <p>{{ breastDensityFactors.factorSummaries | first }}</p>
+  {% elseif pregnancyAndBreastfeeding.summaries | length %}
+    <p>{{ pregnancyAndBreastfeeding.summaries | first }}</p>
   {% else %}
     <p>No</p>
   {% endif %}
@@ -115,7 +116,7 @@
   }
 ] %}
 
-{% if breastDensityFactors.factors | length %}
+{% if pregnancyAndBreastfeeding.values | length %}
   {% set breastDensityRows = breastDensityRows | push({
     key: {
       text: "Pregnancy and breastfeeding"
@@ -134,11 +135,11 @@
   lastRowBorder: false,
   attributes: {
     "data-breast-density-factors-save-url": contextUrl + "/medical-information/hrt-save",
-    "data-breast-density-factor-count": breastDensityFactors.factors | length
+    "data-breast-density-factor-count": pregnancyAndBreastfeeding.values | length
   }
 }) }}
 
-{% if allowEdits and not breastDensityFactors.factors | length %}
+{% if allowEdits and not pregnancyAndBreastfeeding.values | length %}
   <p class="nhsuk-u-margin-top-4">
     {{ button({
       text: "Add pregnancy and breastfeeding",
