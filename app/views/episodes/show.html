@@ -171,43 +171,6 @@
     {% endif %}
   {% endcall %}
 
-  {# What was recorded on the day. The latest appointment that got as far as
-     recording anything: an episode can hold more than one, and a booked-but-
-     not-yet-attended one has nothing to show. #}
-  {% set appointmentsWithInfo = [] %}
-  {% if episode.isHistoric %}
-    {# The shared summary reads `appointment.medicalInformation`, and the
-       stand-in carries the same shape, so it can be reused as-is #}
-    {% for summaryAppointment in episode.summaryAppointments %}
-      {% if summaryAppointment.medicalInformation %}
-        {% set appointmentsWithInfo = appointmentsWithInfo | push(summaryAppointment) %}
-      {% endif %}
-    {% endfor %}
-  {% else %}
-    {% for row in episodeAppointments %}
-      {% if row.appointment.medicalInformation %}
-        {% set appointmentsWithInfo = appointmentsWithInfo | push(row.appointment) %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-  {% set latestWithInfo = appointmentsWithInfo | last %}
-
-  {% if latestWithInfo %}
-    {% call card({
-      heading: "Medical information recorded",
-      headingLevel: "2"
-    }) %}
-      {% if appointmentsWithInfo | length > 1 %}
-        <p class="nhsuk-u-secondary-text-colour">
-          As recorded at the {{ latestWithInfo.timing.startTime | formatDate if latestWithInfo.timing else latestWithInfo.startTime | formatDate }} appointment.
-        </p>
-      {% endif %}
-
-      {% set appointment = latestWithInfo %}
-      {% include "_includes/summary-lists/medical-info-summary.njk" %}
-    {% endcall %}
-  {% endif %}
-
   {# One row per set of images read. The individual reads belong on the case
      view rather than here - this is the round's shape, not its detail. #}
   {# A closed round with nothing read has nothing to say here - only an open
