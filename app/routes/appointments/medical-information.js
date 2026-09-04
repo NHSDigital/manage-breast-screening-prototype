@@ -9,61 +9,41 @@ const {
 } = require('../../lib/utils/referrers')
 
 module.exports = (router) => {
-  // Auto-save breast density factors as they're changed
+  // Auto-save the HRT answer as it's changed
   //
-  // These answers are edited in place on the review page rather than on a
-  // sub-page with its own submit, so there's no form post to carry them.
-  // Like the other medical information sections, this writes to the temp
-  // appointment and is committed when the appointment is completed or paused.
-  //
-  // The inputs are named outside the appointment[...] namespace on purpose.
-  // They render inside other forms, and the kit's unchecked-checkbox script
-  // adds an "_unchecked" value for every checkbox in whichever form is being
-  // submitted. Since auto-store-data replaces arrays rather than merging
-  // them, an appointment-namespaced name would let any other form on the page
-  // wipe these answers. Keeping them out of that namespace means only this
-  // route ever writes them.
+  // HRT is edited in place on the review page rather than on a sub-page with
+  // its own submit, so there's no form post to carry it. The fields are named
+  // against the appointment, so auto-store-data has already written them to
+  // the temp appointment by the time this runs - the route exists only to give
+  // the fetch something to post to that doesn't render a whole page. Without
+  // JavaScript the surrounding form's submit saves the same fields the same way.
   router.post(
-    '/clinics/:clinicId/appointments/:appointmentId/medical-information/breast-density-factors-save',
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/hrt-save',
     (req, res) => {
-      const { appointmentId } = req.params
+      res.status(204).send()
+    }
+  )
+
+  // Delete pregnancy and breastfeeding
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/pregnancy-and-breastfeeding/delete',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
       const data = req.session.data
 
-      // An unticked checkbox group posts nothing at all, so a missing value
-      // means "none selected" rather than "unchanged"
-      const postedFactors = req.body?.breastDensityFactors
-      const factors = (
-        Array.isArray(postedFactors)
-          ? postedFactors
-          : postedFactors
-            ? [postedFactors]
-            : []
-      ).filter((factor) => factor && factor !== '_unchecked')
-
-      const postedHrt = req.body?.breastDensityFactorsHrt
-
-      // The appointment context middleware has already made the temp copy,
-      // so this is only defensive
-      if (data.appointment?.id !== appointmentId) {
-        res.status(409).send()
-        return
+      if (data.appointment?.medicalInformation) {
+        delete data.appointment.medicalInformation.pregnancyAndBreastfeeding
       }
 
-      const medicalInformation = data.appointment.medicalInformation || {}
-      medicalInformation.breastDensityFactors = factors
+      req.flash('success', 'Pregnancy and breastfeeding deleted')
 
-      if (postedHrt) {
-        medicalInformation.breastDensityFactorsHrt = postedHrt
-      }
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`,
+        req.query.referrerChain,
+        req.query.scrollTo
+      )
 
-      data.appointment.medicalInformation = medicalInformation
-
-      // These aren't form fields for any other page - don't leave them in
-      // session data where auto-store-data has put them
-      delete data.breastDensityFactors
-      delete data.breastDensityFactorsHrt
-
-      res.status(204).send()
+      res.redirect(modalBreakout(returnUrl))
     }
   )
 

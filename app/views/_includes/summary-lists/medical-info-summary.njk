@@ -129,8 +129,8 @@
 
 {# Breast density factors summary #}
 {% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
-{# Show the row whenever there's an answer to show, including "not started a course of HRT since last screening appointment" #}
-{% set breastDensityCount = breastDensityFactors.answeredCount %}
+{# Show the row whenever there's an answer to show, a recorded "no" to HRT included #}
+{% set breastDensityCount = breastDensityFactors.count %}
 
 {% set breastDensityFactorsHtml %}
   {% if breastDensityFactors.summaries | length %}

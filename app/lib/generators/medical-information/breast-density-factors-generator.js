@@ -14,7 +14,7 @@
  * @param {number} [options.probabilityOfHrt] - Chance of currently taking HRT (0-1)
  * @param {number} [options.probabilityOfPregnancyBreastfeeding] - Chance of being pregnant or breastfeeding (0-1)
  * @param {number} [options.probabilityOfBeingAsked=0.8] - Chance the question was asked at all
- * @returns {object} Object with breastDensityFactors and breastDensityFactorsHrt, either may be absent
+ * @returns {object} Object with hrt and pregnancyAndBreastfeeding, either may be absent
  */
 const generateBreastDensityFactors = (options = {}) => {
   const {
@@ -29,8 +29,17 @@ const generateBreastDensityFactors = (options = {}) => {
   // keeps "no medical information" a possible outcome, and lets the summaries
   // distinguish "not answered" from a recorded "no"
   if (Math.random() < probabilityOfBeingAsked) {
-    result.breastDensityFactorsHrt =
-      Math.random() < probabilityOfHrt ? 'yes' : 'no'
+    const isTakingHrt = Math.random() < probabilityOfHrt
+    const currentYear = new Date().getFullYear()
+
+    result.hrt = {
+      status: isTakingHrt ? 'yes' : 'no'
+    }
+
+    // Years are strings because that's what the form fields post back
+    if (isTakingHrt) {
+      result.hrt.yearStarted = String(currentYear - Math.floor(Math.random() * 10))
+    }
   }
 
   const factors = []
@@ -38,14 +47,14 @@ const generateBreastDensityFactors = (options = {}) => {
   if (Math.random() < probabilityOfPregnancyBreastfeeding) {
     // Breastfeeding is the more likely of the two at screening age
     if (Math.random() < 0.7) {
-      factors.push('breastfeeding')
+      factors.push('currently-breastfeeding')
     } else {
-      factors.push('pregnant')
+      factors.push('currently-pregnant')
     }
   }
 
   if (factors.length > 0) {
-    result.breastDensityFactors = factors
+    result.pregnancyAndBreastfeeding = factors
   }
 
   return result

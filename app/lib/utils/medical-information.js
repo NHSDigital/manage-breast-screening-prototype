@@ -451,45 +451,112 @@ const summariseBreastFeatures = (features) => {
     .filter(Boolean)
 }
 
+// Pregnancy and breastfeeding options, in display order. The stored value and
+// the label shown back to the user come from here, so the form and every
+// summary can never drift apart.
+const pregnancyAndBreastfeedingOptions = [
+  {
+    value: 'currently-pregnant',
+    text: 'Currently pregnant'
+  },
+  {
+    value: 'currently-breastfeeding',
+    text: 'Currently breastfeeding'
+  },
+  {
+    divider: 'or'
+  },
+  {
+    value: 'stopped-less-than-3-months',
+    text: 'Pregnancy or breastfeeding stopped less than 3 months ago',
+    behaviour: 'exclusive'
+  }
+]
+
+/**
+ * Normalise a checkbox group's stored value to an array
+ *
+ * A checkbox group posts a bare string when one box is ticked and an array
+ * when several are, so the stored value needs coercing before anything can
+ * read it.
+ *
+ * @param {*} value - The stored value
+ * @returns {Array<string>} The value as an array, empty if nothing is stored
+ */
+const toCheckboxArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean)
+  }
+
+  return value ? [value] : []
+}
+
+/**
+ * Read the pregnancy and breastfeeding answers off an appointment's medical
+ * information
+ *
+ * A checkbox group stores a bare string when one box is ticked and an array
+ * when several are, so reading it here means callers get one shape to work
+ * with rather than repeating the coercion.
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {{values: Array<string>, summaries: Array<string>, options: Array<Object>}}
+ */
+const getPregnancyAndBreastfeeding = (medicalInformation) => {
+  return {
+    values: toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding),
+    summaries: summarisePregnancyAndBreastfeeding(medicalInformation),
+    options: pregnancyAndBreastfeedingOptions
+  }
+}
+
 /**
  * Read the breast density factors off an appointment's medical information
  *
- * A checkbox group posts a bare string when one box is ticked and an array
- * when several are, so the stored value needs normalising before anything can
- * read it. Doing that here means templates get a single shape to work with
- * rather than repeating the coercion at every call site.
+ * Breast density factors are a display grouping rather than a stored object -
+ * they pull together the separately stored HRT answer and pregnancy and
+ * breastfeeding answers.
  *
  * @param {Object} medicalInformation - The medicalInformation object from appointment
- * @returns {{factors: Array<string>, hrt: string|undefined, count: number, answeredCount: number, summaries: Array<string>}}
+ * @returns {{hrt: Object, hrtSummary: string|null, pregnancyAndBreastfeeding: Object, count: number, summaries: Array<string>}}
  */
 const getBreastDensityFactors = (medicalInformation) => {
-  const rawFactors = medicalInformation?.breastDensityFactors
-  const factors = Array.isArray(rawFactors)
-    ? rawFactors.filter(Boolean)
-    : rawFactors
-      ? [rawFactors]
-      : []
-
-  const hrt = medicalInformation?.breastDensityFactorsHrt
-
-  // "Not started HRT" is an answer, but it isn't a density factor - only
-  // count the things that actually affect density
-  const count =
-    (hrt === 'yes' ? 1 : 0) +
-    (factors.includes('pregnant') ? 1 : 0) +
-    (factors.includes('breastfeeding') ? 1 : 0)
-
-  const summaries = summariseBreastDensityFactors(medicalInformation)
+  const hrt = medicalInformation?.hrt || {}
+  const pregnancyAndBreastfeeding =
+    getPregnancyAndBreastfeeding(medicalInformation)
 
   return {
-    factors,
     hrt,
-    count,
-    // Everything worth showing, including a recorded "no" to HRT question - use this
-    // to decide whether to show the row at all, and count for "n added"
-    answeredCount: summaries.length,
-    summaries
+    hrtSummary: summariseHrt(medicalInformation),
+    pregnancyAndBreastfeeding,
+    // Every recorded answer counts, a "no" to HRT included - recently stopping
+    // matters as much as currently taking it. Use this to decide whether to
+    // show the section at all, and for the "n added" line
+    count: (hrt.status ? 1 : 0) + pregnancyAndBreastfeeding.values.length,
+    summaries: summariseBreastDensityFactors(medicalInformation)
   }
+}
+
+/**
+ * Summarise the pregnancy and breastfeeding answers into an array of labels
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {Array<string>} Array of summary strings
+ */
+const summarisePregnancyAndBreastfeeding = (medicalInformation) => {
+  const factors = toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding)
+
+  // Both at once reads better as one line than as two
+  if (
+    factors.includes('currently-pregnant') &&
+    factors.includes('currently-breastfeeding')
+  ) {
+    return ['Currently pregnant and breastfeeding']
+  }
+
+  return pregnancyAndBreastfeedingOptions
+    .filter((option) => option.value && factors.includes(option.value))
+    .map((option) => option.text)
 }
 
 /**
@@ -499,32 +566,37 @@ const getBreastDensityFactors = (medicalInformation) => {
  * @returns {Array<string>} Array of summary strings
  */
 const summariseBreastDensityFactors = (medicalInformation) => {
-  const rawFactors = medicalInformation?.breastDensityFactors
-  const factors = Array.isArray(rawFactors)
-    ? rawFactors.filter(Boolean)
-    : rawFactors
-      ? [rawFactors]
-      : []
+  const hrtSummary = summariseHrt(medicalInformation)
 
-  const hrt = medicalInformation?.breastDensityFactorsHrt
+  return (hrtSummary ? [hrtSummary] : []).concat(
+    summarisePregnancyAndBreastfeeding(medicalInformation)
+  )
+}
 
-  const summaries = []
+/**
+ * Summarise the HRT answer, including the year if one was recorded
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {string|null} Summary string, or null if the question wasn't answered
+ */
+const summariseHrt = (medicalInformation) => {
+  const hrt = medicalInformation?.hrt || {}
 
-  if (hrt === 'yes') {
-    summaries.push('Started a course of HRT since last screening appointment')
-  } else if (hrt === 'no') {
-    summaries.push('Not started a course of HRT since last screening appointment')
+  // The year fields only ever ask for an approximate year, so the summaries
+  // say so rather than reading as an exact date
+  if (hrt.status === 'yes') {
+    return hrt.yearStarted
+      ? `Currently taking HRT (approximate start: ${hrt.yearStarted})`
+      : 'Currently taking HRT'
   }
 
-  if (factors.includes('pregnant')) {
-    summaries.push('Pregnant')
+  if (hrt.status === 'no') {
+    return hrt.yearStopped
+      ? `Not currently taking HRT (approximate stop: ${hrt.yearStopped})`
+      : 'Not currently taking HRT'
   }
 
-  if (factors.includes('breastfeeding')) {
-    summaries.push('Breastfeeding')
-  }
-
-  return summaries
+  return null
 }
 
 /**
@@ -556,6 +628,9 @@ module.exports = {
   summariseBreastFeature,
   summariseBreastFeatures,
   getBreastDensityFactors,
+  getPregnancyAndBreastfeeding,
   summariseBreastDensityFactors,
+  summarisePregnancyAndBreastfeeding,
+  summariseHrt,
   summariseOtherMedicalInformation
 }

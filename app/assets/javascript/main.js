@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })
 
-// Breast density factors are edited in place rather than on their own page,
-// so there's no submit button to save them - each change posts on its own.
+// The HRT answer is edited in place rather than on its own page, so there's no
+// submit button to save it - each change posts on its own.
 function setupBreastDensityFactorsAutosave() {
   const container = document.querySelector('[data-breast-density-factors-save-url]')
   if (!container) {
@@ -157,19 +157,21 @@ function setupBreastDensityFactorsAutosave() {
     return
   }
 
-  const factorsName = 'breastDensityFactors'
-  const hrtName = 'breastDensityFactorsHrt'
+  const statusName = 'appointment[medicalInformation][hrt][status]'
+  const yearStartedName = 'appointment[medicalInformation][hrt][yearStarted]'
+  const yearStoppedName = 'appointment[medicalInformation][hrt][yearStopped]'
 
-  const checkboxes = container.querySelectorAll(`input[name="${factorsName}"]`)
-  const hrtRadios = container.querySelectorAll(`input[name="${hrtName}"]`)
+  const statusRadios = container.querySelectorAll(`input[name="${statusName}"]`)
 
-  if (checkboxes.length === 0 && hrtRadios.length === 0) {
+  if (statusRadios.length === 0) {
     return
   }
 
   // Keep the expander's "n factors added" line in step with the inputs.
   // Only the review page wraps these in an expander, so this does nothing
-  // elsewhere.
+  // elsewhere. Pregnancy and breastfeeding is edited on its own page, so its
+  // count comes from the server - match getBreastDensityFactors so the two
+  // never disagree, answering "no" to HRT included
   const updateContentsSummary = () => {
     const summary = container
       .closest('.js-expandable-section')
@@ -179,13 +181,9 @@ function setupBreastDensityFactorsAutosave() {
       return
     }
 
-    // "No" to HRT is an answer, not a factor - match the count in
-    // getBreastDensityFactors so the two never disagree
-    const checkedFactors = container.querySelectorAll(
-      `input[name="${factorsName}"]:checked`
-    ).length
-    const hrtYes = container.querySelector(`input[name="${hrtName}"]:checked`)?.value === 'yes'
-    const count = checkedFactors + (hrtYes ? 1 : 0)
+    const factorCount = Number(container.dataset.breastDensityFactorCount) || 0
+    const hrtAnswered = !!container.querySelector(`input[name="${statusName}"]:checked`)
+    const count = factorCount + (hrtAnswered ? 1 : 0)
 
     if (count === 0) {
       summary.textContent = 'No breast density factors added'
@@ -200,17 +198,20 @@ function setupBreastDensityFactorsAutosave() {
   // queue - otherwise an earlier response could be the last one to arrive
   let pendingSave = Promise.resolve()
 
-  const saveFactors = () => {
+  const saveHrt = () => {
     const formData = new URLSearchParams()
 
-    container
-      .querySelectorAll(`input[name="${factorsName}"]:checked`)
-      .forEach((checkbox) => formData.append(factorsName, checkbox.value))
-
-    const selectedHrt = container.querySelector(`input[name="${hrtName}"]:checked`)
-    if (selectedHrt) {
-      formData.append(hrtName, selectedHrt.value)
+    const selectedStatus = container.querySelector(`input[name="${statusName}"]:checked`)
+    if (selectedStatus) {
+      formData.append(statusName, selectedStatus.value)
     }
+
+    ;[yearStartedName, yearStoppedName].forEach((name) => {
+      const input = container.querySelector(`input[name="${name}"]`)
+      if (input) {
+        formData.append(name, input.value)
+      }
+    })
 
     updateContentsSummary()
 
@@ -235,8 +236,10 @@ function setupBreastDensityFactorsAutosave() {
   }
 
   container
-    .querySelectorAll(`input[name="${factorsName}"], input[name="${hrtName}"]`)
-    .forEach((input) => input.addEventListener('change', saveFactors))
+    .querySelectorAll(
+      `input[name="${statusName}"], input[name="${yearStartedName}"], input[name="${yearStoppedName}"]`
+    )
+    .forEach((input) => input.addEventListener('change', saveHrt))
 }
 
 // Quick settings modal — press backtick (`) to open settings in a modal overlay.
