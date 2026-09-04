@@ -561,15 +561,17 @@ const summariseBreastDensityFactors = (medicalInformation) => {
 const summariseHrt = (medicalInformation) => {
   const hrt = medicalInformation?.hrt || {}
 
+  // The year fields only ever ask for an approximate year, so the summaries
+  // say so rather than reading as an exact date
   if (hrt.status === 'yes') {
     return hrt.yearStarted
-      ? `Currently taking HRT (started ${hrt.yearStarted})`
+      ? `Currently taking HRT (started approximately ${hrt.yearStarted})`
       : 'Currently taking HRT'
   }
 
   if (hrt.status === 'no') {
     return hrt.yearStopped
-      ? `Not currently taking HRT (stopped ${hrt.yearStopped})`
+      ? `Not currently taking HRT (stopped approximately ${hrt.yearStopped})`
       : 'Not currently taking HRT'
   }
 
