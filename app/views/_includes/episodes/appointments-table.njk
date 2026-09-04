@@ -7,36 +7,29 @@
    Expects `appointmentRows`: { date, type, status, href } per appointment,
    where href is absent for a round with nothing to open. #}
 
-<table class="nhsuk-table app-table--flush">
-  <thead class="nhsuk-table__head">
-    <tr>
-      <th scope="col">Date</th>
-      <th scope="col">Type</th>
-      <th scope="col">Status</th>
-      <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
-    </tr>
-  </thead>
-  <tbody class="nhsuk-table__body">
-    {% for appointmentRow in appointmentRows %}
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell">
-          {{ appointmentRow.date | formatDate }}
-        </td>
-        <td class="nhsuk-table__cell">
-          {{ appointmentRow.type | formatWords | sentenceCase }}
-        </td>
-        <td class="nhsuk-table__cell">
-          {{ tag({
-            text: appointmentRow.status | getStatusText('appointment'),
-            colour: appointmentRow.status | getStatusTagColour('appointment')
-          }) }}
-        </td>
-        <td class="nhsuk-table__cell">
-          {# A past round alludes to the page an appointment would have, but
-             nothing serves it yet - so it deliberately goes nowhere #}
-          <a href="{{ appointmentRow.href or '#' }}">View appointment</a>
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{# A past round alludes to the page an appointment would have, but nothing
+   serves it yet - so its link deliberately goes nowhere #}
+{% set tableRows = [] %}
+{% for appointmentRow in appointmentRows %}
+  {% set tableRows = tableRows | push([
+    { text: appointmentRow.date | formatDate },
+    { text: appointmentRow.type | formatWords | sentenceCase },
+    { html: tag({
+      text: appointmentRow.status | getStatusText('appointment'),
+      colour: appointmentRow.status | getStatusTagColour('appointment')
+    }) },
+    { html: '<a href="' + (appointmentRow.href or '#') + '">View appointment</a>' }
+  ]) %}
+{% endfor %}
+
+{{ table({
+  head: [
+    { text: "Date" },
+    { text: "Type" },
+    { text: "Status" },
+    { html: '<span class="nhsuk-u-visually-hidden">Actions</span>' }
+  ],
+  rows: tableRows,
+  lastRowBorder: false,
+  classes: "nhsuk-u-margin-bottom-0"
+}) }}
