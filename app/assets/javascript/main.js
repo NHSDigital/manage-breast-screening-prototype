@@ -2,92 +2,48 @@
 
 // ES6 or Vanilla JavaScript
 
+import { swapFragment } from './fragment-actions.js'
+
 document.addEventListener('DOMContentLoaded', () => {
-  // Inline check in without requiring page reload
+  // Inline check-in without a page reload. The server responds with the
+  // re-rendered appointment row (see the check-in route), which replaces the
+  // old one. Handled here rather than by fragment-actions.js directly because
+  // the trigger can be a button inside the confirm-identity modal, which
+  // lives inside the row being replaced.
   const checkInLinks = document.querySelectorAll('.js-check-in-link')
 
   checkInLinks.forEach((link) => {
     link.addEventListener('click', async (e) => {
       e.preventDefault()
-      const link = e.currentTarget
-      const clinicId = link.dataset.clinicId
-      const appointmentId = link.dataset.appointmentId
-      const statusTagId = link.dataset.statusTagId
+      const { clinicId, appointmentId } = e.currentTarget.dataset
+      const url = `/clinics/${clinicId}/check-in/${appointmentId}`
 
       try {
-        const response = await fetch(
-          `/clinics/${clinicId}/check-in/${appointmentId}`,
-          {
-            method: 'GET',
-            headers: {
-              Accept: 'application/json'
-            }
-          }
-        )
-
+        const response = await fetch(url, {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
         if (!response.ok) {
           throw new Error('Failed to check in participant')
         }
+        const html = await response.text()
 
-        // Update the status tag if we have an ID
-        if (statusTagId) {
-          const statusTag = document.getElementById(statusTagId)
-          if (statusTag) {
-            // Update the existing tag's text and classes
-            statusTag.textContent = 'Checked in'
-            statusTag.className = 'nhsuk-tag app-nowrap'
-          }
-        }
-
-        // Show the start appointment link by removing the hidden class
-        const appointmentRow = document.getElementById(`appointment-row-${appointmentId}`)
-        if (appointmentRow) {
-          const startAppointmentLink = appointmentRow.querySelector(
-            '.js-start-appointment-link'
-          )
-          if (startAppointmentLink) {
-            startAppointmentLink.classList.remove('app-display-none')
-          }
-
-          // Set focus on the row for accessibility
-          appointmentRow.setAttribute('tabindex', '-1')
-          appointmentRow.focus()
-        }
-
-        // Remove the check-in link
-        // Check if this is a modal button or a direct link
-        const isModalButton = link.closest('.app-modal')
-
-        if (isModalButton) {
-          // For modal buttons, find the original check-in link on the main page
-          // Look for a link that opens the modal for this specific appointment
-          const modalId = `check-in-modal-${appointmentId}`
-          const originalCheckInLink = document.querySelector(
-            `a[onclick*="openModal('${modalId}')"]`
-          )
-
-          if (originalCheckInLink) {
-            const checkInParagraph = originalCheckInLink.closest('p')
-            if (checkInParagraph) {
-              checkInParagraph.remove()
-            }
-          }
-        } else {
-          // For direct links, remove the paragraph containing the link
-          const checkInParagraph = link.closest('p')
-          if (checkInParagraph) {
-            checkInParagraph.remove()
-          }
-        }
-
-        // Close any open modal (for modal-based check-ins)
+        // Close the confirm-identity modal before the swap - its markup
+        // lives inside the row that's about to be replaced
         const openModal = document.querySelector('.app-modal:not([hidden])')
         if (openModal && window.closeModal) {
           window.closeModal(openModal.id)
         }
+
+        const row = document.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
+        if (!row) throw new Error('Appointment row not found')
+        const newRow = swapFragment(row, html)
+
+        // Set focus on the row for accessibility
+        newRow.setAttribute('tabindex', '-1')
+        newRow.focus()
       } catch (error) {
         console.error('Error checking in participant:', error)
-        window.location.href = link.href
+        window.location.href = url
       }
     })
   })

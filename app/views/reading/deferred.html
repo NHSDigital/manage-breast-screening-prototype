@@ -34,10 +34,10 @@
       {% set deferral = row.deferral %}
 
       {% set screenedHtml %}
-        {% set daysSinceScreening = thisAppointment.timing.startTime | daysSince %}
-        {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
+        {% set urgency = thisAppointment.timing.startTime | getReadingUrgency(data.config.reading) %}
+        {% if urgency == "urgent" %}
           {{ "Urgent" | toTag }}<br>
-        {% elseif daysSinceScreening >= data.config.reading.priorityThreshold %}
+        {% elseif urgency == "due_soon" %}
           {{ "Due soon" | toTag }}<br>
         {% endif %}
         {{ thisAppointment.timing.startTime | formatDate }}
@@ -65,19 +65,24 @@
 
       <div class="nhsuk-summary-card">
         <div class="nhsuk-summary-card__title-wrapper">
+          {# The name isn't a link: names only link to a participant record.
+             The link to the case sits with the card's other actions #}
           <h2 class="nhsuk-summary-card__title">
-            <a href="/clinics/{{ thisAppointment.clinicId }}/appointments/{{ thisAppointment.id }}" class="nhsuk-link--no-visited-state">
-              {{ thisParticipant | getFullName }}
-            </a>
+            {{ thisParticipant | getFullNameReversed }}
           </h2>
-          <div class="nhsuk-summary-card__actions">
-            <form action="/reading/deferred/undo" method="POST">
-              <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
-              <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
-                Unflag case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span>
-              </button>
-            </form>
-          </div>
+          <ul class="nhsuk-summary-card__actions">
+            <li class="nhsuk-summary-card__action">
+              <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="nhsuk-link--no-visited-state">View case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span></a>
+            </li>
+            <li class="nhsuk-summary-card__action">
+              <form action="/reading/deferred/undo" method="POST">
+                <input type="hidden" name="appointmentId" value="{{ thisAppointment.id }}">
+                <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
+                  Unflag case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span>
+                </button>
+              </form>
+            </li>
+          </ul>
         </div>
         <div class="nhsuk-summary-card__content">
           {{ appSummaryList({
@@ -132,10 +137,11 @@
       <div class="nhsuk-summary-card">
         <div class="nhsuk-summary-card__title-wrapper">
           <h3 class="nhsuk-summary-card__title">
-            <a href="/clinics/{{ thisAppointment.clinicId }}/appointments/{{ thisAppointment.id }}" class="nhsuk-link--no-visited-state">
-              {{ thisParticipant | getFullName }}
-            </a>
+            {{ thisParticipant | getFullNameReversed }}
           </h3>
+          <div class="nhsuk-summary-card__actions">
+            <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="nhsuk-link--no-visited-state">View case<span class="nhsuk-u-visually-hidden"> for {{ thisParticipant | getFullName }}</span></a>
+          </div>
         </div>
         <div class="nhsuk-summary-card__content">
           {{ appSummaryList({

@@ -1,0 +1,54 @@
+{# app/views/_includes/reading/prior-mammogram-row.njk #}
+{#
+  A single prior mammogram row on the priors management page. Also rendered
+  on its own by the prior-mammogram-row fragment route so fragment-actions.js
+  can swap a row in place after a status change - keep it self-contained.
+
+  thisAppointment - the screening appointment the prior belongs to
+  mammogram - the prior mammogram record (one entry of previousMammograms)
+
+  Import with context - the row reads participants, reading thresholds and
+  the current user from data.
+#}
+
+{% macro priorMammogramRow(thisAppointment, mammogram) %}
+  {% set priorsFragment = "row" %}
+  <tr data-fragment-id="{{ mammogram.id }}">
+    {# The name isn't a link: names only link to a participant record. The
+       row's link to the case sits in the last column instead, pointing at
+       the case's priors view - falling back to the appointment for the odd
+       case that doesn't exist yet #}
+    {% set thisParticipant = data | getParticipant(thisAppointment.participantId) %}
+    {% set thisEpisode = data | getEpisode(thisAppointment.episodeId) %}
+    {% set thisReadingCase = getReadingCaseForAppointment(thisEpisode, thisAppointment.id) if thisEpisode %}
+    {% set caseHref = (getReadingCaseUrl(thisReadingCase) + '/priors') if thisReadingCase else getAppointmentUrl(thisAppointment) %}
+    <td>
+      <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+        {{ thisParticipant | getFullNameReversed }}
+      </p>
+      <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+        NHS: {{ thisParticipant.medicalInformation.nhsNumber | formatNhsNumber }}
+      </p>
+    </td>
+
+    {# Screening date #}
+    <td>
+      {% set urgency = thisAppointment.timing.startTime | getReadingUrgency(data.config.reading) %}
+      {% if urgency == "urgent" %}
+        {{ "Urgent" | toTag }}<br>
+      {% elseif urgency == "due_soon" %}
+        {{ "Due soon" | toTag }}<br>
+      {% endif %}
+      {{ thisAppointment.timing.startTime | formatDate }}<br>
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
+        {{ thisAppointment.timing.startTime | formatRelativeDate }}
+      </span>
+    </td>
+
+    {% include "_includes/priors/prior-row-cells.njk" %}
+
+    <td>
+      <a href="{{ caseHref }}" class="app-nowrap">View case {{- ((" for " + (thisParticipant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+    </td>
+  </tr>
+{% endmacro %}

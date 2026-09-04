@@ -71,15 +71,39 @@ const recordNormal = async (page) => {
  * Record a normal outcome on the arbitration case currently on screen.
  *
  * Arbitration confirms the outcome on a review step before saving it, rather
- * than saving straight from the opinion buttons the way a read does.
+ * than saving straight from the opinion buttons the way a read does. As with
+ * a read, a participant with significant symptoms gets "Normal, and add
+ * details" and an acknowledgement step instead of a plain "Normal".
  *
  * @param {import('@playwright/test').Page} page - Playwright page
  */
 const recordArbitrationNormal = async (page) => {
-  await page.getByRole('button', { name: 'Normal (N)' }).first().click()
+  // The opinion buttons have to be on the page before asking which variant it
+  // offers - isVisible() answers immediately, so checking mid-navigation would
+  // send this down the details path on a page that never had it
+  await expect(
+    page.getByRole('heading', { name: 'What is the outcome for this case?' })
+  ).toBeVisible()
+
+  const plainNormal = page.getByRole('button', { name: 'Normal (N)' }).first()
+
+  if (await plainNormal.isVisible()) {
+    await plainNormal.click()
+  } else {
+    const detailsModal = await clickToOpenModal(
+      page,
+      'Normal, and add details (N)'
+    )
+
+    await detailsModal
+      .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+      .check()
+    await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
+    await expectModalClosed(detailsModal)
+  }
 
   await expect(page).toHaveURL(/\/review/)
-  await page.getByRole('button', { name: 'Confirm and save' }).first().click()
+  await page.getByRole('button', { name: 'Confirm and continue' }).first().click()
 }
 
 /**
@@ -175,7 +199,7 @@ test.describe('Image reading', () => {
       page.getByRole('heading', { name: 'Confirm your opinion' })
     ).toBeVisible()
     await expect(page.getByText('Recall for assessment').first()).toBeVisible()
-    await page.getByRole('button', { name: 'Confirm and save' }).click()
+    await page.getByRole('button', { name: 'Confirm and continue' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
@@ -204,16 +228,17 @@ test.describe('Image reading', () => {
 
     await recordTechnicalRecallDetails(recallModal, 'RMLO', 'Image blurred')
 
-    // The review step stays in the modal, and the opinion page underneath still
-    // has its own "Technical recall" button - so assert against the modal, not
-    // the page, or the hidden button below matches first
+    // Continuing breaks out of the modal: the review step is a terminal
+    // confirmation, so the route redirects via modalBreakout and the browser
+    // navigates to the full page. Assert against main, not the modal.
+    const reviewPage = page.getByRole('main')
     await expect(
-      recallModal.getByRole('heading', { name: 'Confirm your opinion' })
+      reviewPage.getByRole('heading', { name: 'Confirm your opinion' })
     ).toBeVisible()
-    await expect(recallModal.getByText('Technical recall').first()).toBeVisible()
-    await expect(recallModal.getByText('RMLO').first()).toBeVisible()
-    await expect(recallModal.getByText('Image blurred')).toBeVisible()
-    await recallModal.getByRole('button', { name: 'Confirm and save' }).click()
+    await expect(reviewPage.getByText('Technical recall').first()).toBeVisible()
+    await expect(reviewPage.getByText('RMLO').first()).toBeVisible()
+    await expect(reviewPage.getByText('Image blurred')).toBeVisible()
+    await reviewPage.getByRole('button', { name: 'Confirm and continue' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
@@ -421,6 +446,77 @@ test.describe('Image reading', () => {
     await expect(caseRows).toHaveCount(rowsBefore)
   })
 
+  test('moves on from a settled arbitration case rather than looping', async ({
+    page
+  }) => {
+    // The workflow navigation's "Next case" asks the session where to go, so a
+    // reader looking at a case they have already settled is moved forward -
+    // not back round to another finished case.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][arbitration][lazySessions]': 'true',
+      'settings[reading][lazySessions]': 'true'
+    })
+
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const settled = []
+
+    for (let caseNumber = 0; caseNumber < 3; caseNumber++) {
+      settled.push(page.url().split('/appointments/')[1].split('/')[0])
+      await recordArbitrationNormal(page)
+      await expect(page).toHaveURL(/\/appointments\//)
+    }
+
+    const outstanding = page.url().split('/appointments/')[1].split('/')[0]
+
+    // Back to the case just settled, which shows its recorded outcome
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${settled[2]}`
+    )
+    await expect(page).toHaveURL(/\/existing-read/)
+
+    await page.getByRole('link', { name: 'Next case' }).first().click()
+    await expect(page).toHaveURL(
+      new RegExp(`/appointments/${outstanding}/outcome`)
+    )
+  })
+
+  test('a repeated save lands where the first one did', async ({ page }) => {
+    // A double click or a held shortcut key submits the decision twice. The
+    // first save clears the working data, so the second arrives with nothing
+    // to save - it must still follow the first to the next case, rather than
+    // stranding the reader on the case they have just finished.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][arbitration][lazySessions]': 'true',
+      'settings[reading][lazySessions]': 'true'
+    })
+
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const firstCase = page.url().split('/appointments/')[1].split('/')[0]
+
+    await recordArbitrationNormal(page)
+    await expect(page).toHaveURL(/\/appointments\//)
+    const nextCase = page.url().split('/appointments/')[1].split('/')[0]
+
+    const landedAt = await page.evaluate(async (url) => {
+      const response = await fetch(url, { method: 'POST', redirect: 'follow' })
+      return response.url
+    }, `/reading/session/${sessionId}/appointments/${firstCase}/save-opinion`)
+
+    expect(landedAt).toContain(`/appointments/${nextCase}`)
+  })
+
   test('concludes a case after a concordant second read', async ({ page }) => {
     // The safety net under the reading state derivation: a case with one
     // seeded normal read gets a matching second read, and the case view then
@@ -506,17 +602,23 @@ test.describe('Image reading', () => {
     // Finalised: the prompt gives way to the settled state
     await expect(page.getByText('All opinions are finalised')).toBeVisible()
 
-    // Both reads now finalised, so the case has settled - concluded if the
-    // reads agreed, awaiting arbitration if not
+    // Both reads now finalised, so the case has settled. The case header shows
+    // a single tag: the outcome once concluded (the agreed opinion), or
+    // "Awaiting arbitration" where the reads disagreed. Either way it must no
+    // longer be waiting on a read or on finalisation.
     const episodes = readCollection('episodes.json', 'episodes')
     const readingCase = episodes
       .flatMap((episode) => episode.readingCases || [])
       .find((candidate) => candidate.appointmentId === appointmentId)
 
     await page.goto(`/reading/cases/${readingCase.id}`)
-    await expect(
-      page.locator('.app-header-with-status__status-tag')
-    ).toContainText(/Concluded|Awaiting arbitration/)
+    const statusTag = page.locator('.app-header-with-status__status-tag')
+    // A negative assertion alone would pass against a missing tag, so pin that
+    // the tag exists and says something first
+    await expect(statusTag).toContainText(/\w/)
+    await expect(statusTag).not.toContainText(/Awaiting (1st|2nd) read/)
+    await expect(statusTag).not.toContainText('Awaiting finalisation')
+    await expect(statusTag).not.toContainText('Unfinalised')
   })
 
   test('shows the second reader the first read before saving', async ({

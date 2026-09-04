@@ -9,11 +9,11 @@
 {# Environment tag - always first item #}
 {% if isArbitration %}
   {% set firstRowItems = firstRowItems | push({
-    html: '<strong class="nhsuk-tag nhsuk-tag--orange">Arbitration</strong>'
+    html: "Arbitration" | toTag({ colour: "purple" })
   }) %}
 {% else %}
   {% set firstRowItems = firstRowItems | push({
-    html: '<strong class="nhsuk-tag nhsuk-tag--aqua-green">Reading</strong>'
+    html: "Reading" | toTag({ colour: "aqua-green" })
   }) %}
 {% endif %}
 
@@ -36,8 +36,8 @@
    and the user's own reads otherwise #}
 {% set progressText %}
   {{ progress.doneCount }} {{ "arbitrated" if isArbitration else "read" }}
-  {%- if progress.userAwaitingPriorsCount > 0 -%}
-    , {{ progress.userAwaitingPriorsCount }} awaiting priors
+  {%- if progress.sessionAwaitingPriorsCount > 0 -%}
+    , {{ progress.sessionAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
   {%- if progress.deferredCount > 0 -%}
     , {{ progress.deferredCount }} deferred

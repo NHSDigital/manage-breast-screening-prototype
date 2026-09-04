@@ -317,6 +317,7 @@
   <p class="nhsuk-body">No medical information added.</p>
 {% else %}
   {{ summaryList({
-    rows: rows | removeLastRowBorder
+    rows: rows,
+    lastRowBorder: false
   }) }}
 {% endif %}

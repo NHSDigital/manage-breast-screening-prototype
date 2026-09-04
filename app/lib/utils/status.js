@@ -194,8 +194,8 @@ const eligibleForReading = (appointment) => {
 //
 // Keys are matched against snake_cased tag text as well as status keys -
 // the toTag filter tries the raw status first, then snakeCase(status), so
-// `"Waiting for 1st read" | toTag` reaches 'waiting_for_1st_read' here.
-// Check both forms before treating an entry as unused.
+// `"Not read" | toTag` reaches 'not_read' here. Check both forms before
+// treating an entry as unused.
 const STATUS_TAGS = {
   appointment: {
     scheduled: { label: 'Scheduled', colour: 'blue' },
@@ -205,7 +205,7 @@ const STATUS_TAGS = {
     complete: { label: 'Screened', colour: 'green' },
     partially_screened: { label: 'Partially screened', colour: 'orange' },
     did_not_attend: { label: 'Did not attend', colour: 'red' },
-    attended_not_screened: { label: 'Attended not screened', colour: 'orange' },
+    attended_not_screened: { label: 'Attended not screened', colour: 'red' },
     cancelled: { label: 'Cancelled', colour: 'red' },
     rescheduled: { label: 'Reschedule requested', colour: 'red' }
   },
@@ -214,31 +214,34 @@ const STATUS_TAGS = {
     in_progress: { colour: 'blue' },
     closed: { colour: 'grey' }
   },
-  // Image reading results and outcomes
+  // Image reading results and outcomes. Colour lanes: the warm clinical
+  // colours (green/orange/red) belong to opinions and outcomes alone -
+  // process states and flags stay out of them so a scan for colour reads
+  // as a scan for clinical results.
   opinion: {
     normal: { colour: 'green' },
     recall_for_assessment: { label: 'Recall for assessment', colour: 'red' },
     technical_recall: { label: 'Technical recall', colour: 'orange' },
     clinical_recall: { label: 'Clinical recall', colour: 'yellow' },
     abnormal: { label: 'Abnormal', colour: 'red' },
-    arbitration: { colour: 'orange' }
+    arbitration: { colour: 'purple' }
   },
-  // Reading journey state - mostly derived, reached via snake-cased tag text
+  // Reading journey state - mostly derived, reached via snake-cased tag text.
+  // Process lane: grey while waiting, blue while in progress, purple for
+  // arbitration, white for null states, green once done.
   readingState: {
     // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
     // set of images has got to. The entries below them are the older
     // appointment- and group-level vocabulary.
     'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
-    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'blue' },
+    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'grey' },
     'awaiting_finalisation': {
       label: 'Awaiting finalisation',
-      colour: 'yellow'
+      colour: 'grey'
     },
-    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'orange' },
+    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'purple' },
     'in_arbitration': { label: 'In arbitration', colour: 'purple' },
     'concluded': { label: 'Concluded', colour: 'green' },
-    'waiting_for_1st_read': { colour: 'grey' },
-    'waiting_for_2nd_read': { colour: 'grey' },
     'not_started': { colour: 'grey' },
     'skipped': { colour: 'grey' },
     'previously_skipped': { colour: 'grey' },
@@ -246,24 +249,25 @@ const STATUS_TAGS = {
     'not_arbitrated': { colour: 'white' },
     'complete': { colour: 'green' },
     'partial_first_read': { colour: 'blue' },
-    'first_read_complete': { colour: 'yellow' },
+    'first_read_complete': { colour: 'blue' },
     'partial_second_read': { colour: 'blue' },
-    'mixed_reads': { colour: 'yellow' },
+    'mixed_reads': { colour: 'blue' },
     'no_appointments': { colour: 'grey' },
-    'completed_(blind)': { colour: 'grey' },
     'first_read': { colour: 'blue' },
     'second_read': { colour: 'blue' }
   },
   // External prior mammogram request tracking (episode.priors)
   priorsRequest: {
     not_requested: { label: 'Not requested', colour: 'white' },
-    pending: { label: 'Priors required', colour: 'orange' },
+    pending: { label: 'Priors required', colour: 'yellow' },
     requested: { label: 'Requested', colour: 'yellow' },
     received: { label: 'Received', colour: 'green' },
     not_available: { label: 'Not available', colour: 'grey' },
     not_needed: { label: 'Not needed', colour: 'grey' }
   },
-  // Ad-hoc case tags, reached via snake-cased tag text
+  // Ad-hoc case tags, reached via snake-cased tag text. Flag lane: yellow
+  // means a human needs to look or unblock - the one exception is Urgent,
+  // which deliberately keeps red so it shouts.
   misc: {
     // Initial status on medical-information review sections ("To review" |
     // toTag); later statuses are applied client-side by
@@ -271,14 +275,15 @@ const STATUS_TAGS = {
     to_review: { colour: 'blue' },
     has_symptoms: { colour: 'yellow' },
     highlight_to_image_readers: { colour: 'yellow' },
-    imperfect: { colour: 'orange' },
-    incomplete: { colour: 'orange' },
+    imperfect: { colour: 'yellow' },
+    incomplete: { colour: 'yellow' },
     urgent: { colour: 'red' },
-    due_soon: { colour: 'orange' },
+    due_soon: { colour: 'yellow' },
     // Case-level equivalent of priorsRequest.pending - same words and colour,
     // so readers and admin staff see one status rather than two
-    priors_required: { colour: 'orange' },
-    deferred: { colour: 'orange' }
+    priors_required: { colour: 'yellow' },
+    awaiting_priors: { colour: 'yellow' },
+    deferred: { colour: 'yellow' }
   }
 }
 
@@ -349,11 +354,12 @@ const getStatusText = (status, vocabulary = null) => {
 }
 
 // What needs to happen next to move a reading case on, keyed by case state.
-// awaiting_finalisation is handled in describeReadingCaseStatus - its next
-// action depends on where the case is heading.
+// An awaiting_arbitration case whose reads haven't finalised gets its own
+// wording in describeReadingCaseStatus.
 const READING_CASE_NEXT_ACTIONS = {
   awaiting_first_read: 'First read',
   awaiting_second_read: 'Second read',
+  awaiting_finalisation: 'Finalisation',
   awaiting_arbitration: 'Arbitration',
   in_arbitration: 'Arbitration in progress',
   concluded: null
@@ -374,18 +380,15 @@ const READING_CASE_NEXT_ACTIONS = {
 const describeReadingCaseStatus = (status) => {
   if (!status) return null
 
-  const headingToArbitration =
-    status.state === 'awaiting_finalisation' && status.willArbitrate
+  const readsStillFinalising =
+    status.state === 'awaiting_arbitration' && !status.finalised
 
   return {
     state: status.state,
-    nextAction:
-      status.state === 'awaiting_finalisation'
-        ? headingToArbitration
-          ? 'Finalisation, then arbitration'
-          : 'Finalisation'
-        : READING_CASE_NEXT_ACTIONS[status.state] || null,
-    destination: headingToArbitration ? 'then arbitration' : null
+    nextAction: readsStillFinalising
+      ? 'Finalisation, then arbitration'
+      : READING_CASE_NEXT_ACTIONS[status.state] || null,
+    destination: readsStillFinalising ? 'then arbitration' : null
   }
 }
 
@@ -458,6 +461,16 @@ const hasSymptoms = (appointment) => {
   )
 }
 
+/**
+ * Check if an attended-not-screened appointment has its reasons recorded
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether stopped reasons have been recorded
+ */
+const hasStoppedDetails = (appointment) => {
+  return Boolean(appointment?.appointmentStopped?.stoppedReason?.length)
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -475,6 +488,7 @@ module.exports = {
   isSpecialAppointment,
   hasAppointmentNote,
   hasSymptoms,
+  hasStoppedDetails,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,
   STATUS_TAGS

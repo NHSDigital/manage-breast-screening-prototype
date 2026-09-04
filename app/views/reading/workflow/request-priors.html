@@ -5,15 +5,11 @@
 {% set pageHeading = "Request prior images" %}
 {% set formAction = './request-priors-answer' | urlWithReferrer(referrerChain) %}
 {% set back = {
-  href: "./opinion",
+  href: "./" + decisionStep,
   text: "Back"
 } %}
 
 {% block pageContent %}
-
-  {% set caption %}
-    {{ participant | getFullName }}
-  {% endset %}
 
   {% set unrequestedPriors = appointment | getUnrequestedPriors %}
 
@@ -29,7 +25,7 @@
     <div class="nhsuk-grid-column-two-thirds">
 
       <h1 class="nhsuk-heading-l">
-        <span class="nhsuk-caption-l">{{ caption }}</span>
+        <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
         {{ pageHeading }}
       </h1>
 
@@ -38,7 +34,7 @@
         </p>
 
         <p>
-          The case will be returned to the reading list once images are received, or after 5 days if they could not be retrieved.
+          The case will be available again once images are received, or after 5 days if they could not be retrieved.
         </p>
 
         {# If only one unrequested mammogram, show details without checkboxes #}
@@ -92,7 +88,7 @@
             text: "Add information that could be relevant to other readers."
           },
           rows: 3,
-          value: data.requestPriorReason if data.requestPriorReason else requestReason
+          value: requestReason
         }) }}
 
         {{ button({

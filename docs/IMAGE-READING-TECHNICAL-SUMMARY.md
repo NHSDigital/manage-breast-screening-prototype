@@ -61,8 +61,11 @@ app/
 │   │   ├── deferred.html            # Deferred cases list
 │   │   ├── history.html             # Reading history
 │   │   ├── reading-statistics.html  # Reading statistics dashboard
-│   │   ├── create-custom-session.html # Custom session creation
+│   │   ├── create-custom-session.html # Custom session creation (card commented out on the homepage)
 │   │   ├── priors.html              # Prior mammogram management (admin/co-ordinator view)
+│   │   ├── cases.html               # Reading case backlog
+│   │   ├── case.html                # One reading case: state, blockers, reads
+│   │   ├── case-priors.html         # The case's prior mammograms tab
 │   │   ├── batch.html               # Unused — predates the batch→session rename
 │   │   ├── workflow/                # Reading workflow pages
 │   │   │   ├── opinion.html         # Main opinion page (entry point)
@@ -77,6 +80,8 @@ app/
 │   │   │   ├── medical-information.html  # Full medical information view
 │   │   │   ├── recommended-assessment.html  # Not currently used in routing
 │   │   │   ├── compare.html         # Second-reader comparison page
+│   │   │   ├── arbitration-outcome.html  # Arbitrator's deciding outcome
+│   │   │   ├── arbitration-reads.html    # The first and second reads being arbitrated
 │   │   │   ├── request-priors.html  # Request prior images during reading
 │   │   │   ├── review.html          # Review before saving (non-normal opinions)
 │   │   │   └── existing-read.html   # View saved read with change option
@@ -84,7 +89,6 @@ app/
 │   │   ├── reading-status-bar.njk   # Session/clinic context bar
 │   │   ├── workflow-navigation.njk  # Prev/next case links
 │   │   ├── opinion-banner.njk       # Success banner shown on next case after saving
-│   │   ├── opinion-ui.njk           # Opinion selection UI component
 │   │   ├── image-warnings.njk       # Warnings about image quality
 │   │   ├── priors-summary.njk       # Prior mammograms summary
 │   │   ├── annotation-form.njk      # Annotation form fields
@@ -233,11 +237,15 @@ data.readingSessions = {
     targetSize: 25,                        // desired final size (clinic sessions: however many eligible appointments exist)
     clinicId: null,  // Only for clinic sessions
     createdAt: '2025-01-15T10:00:00.000Z',
+    endedAt: null,                         // set when the session is ended; absent while it is live
+    endedBy: null,
     skippedAppointments: ['appointment3'],
     filters: { hasSymptoms, includeAwaitingPriors, complexOnly }
   }
 }
 ```
+
+**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
 
 **Lazy sessions**: When `data.settings.reading.lazySessions === 'true'` (default), non-clinic sessions start with only the first appointment. `topUpSession()` is called after each read or skip to add the next eligible appointment, growing the session one case at a time up to `targetSize`. Clinic sessions are always fully populated at creation.
 
@@ -254,9 +262,13 @@ data.readingSessions = {
 /reading/clinics/all                  # All clinics
 /reading/clinics/:clinicId            # Loads/creates clinic session, redirects to session view
 /reading/clinics/:clinicId/start      # Creates clinic session, starts first appointment
+/reading/cases                        # Reading case backlog (query params: view, q, and the repeated filter groups status, outcome, finalisation, urgency, blocked)
+/reading/cases/:caseId                # One reading case: state, blockers, reads, annotations
+/reading/cases/:caseId/priors         # The case's prior mammograms with request actions
+/reading/cases/:caseId/finalise       # Finalise every outstanding read on a case now
 /reading/priors                       # Prior mammogram management (redirects to /all)
 /reading/priors/:filter               # Filter: all | not-requested | pending | requested | resolved
-/reading/priors/update-status         # POST: Update mammogram request status
+/reading/priors/update-status         # POST: Update mammogram request status (accepts returnTo)
 /reading/create-session               # Creates session from query params, redirects to first appointment
 /reading/deferred                     # Deferred cases list
 /reading/deferred/undo                # POST: Undo a deferral
@@ -264,6 +276,8 @@ data.readingSessions = {
 /reading/session/:sessionId/resume    # Resume at the next readable appointment
 /reading/session/:sessionId/skipped-review  # End-of-session page when skipped cases remain
 /reading/session/:sessionId/no-more-cases   # Shown when no readable cases remain
+/reading/session/:sessionId/end        # Confirm ending a reading or arbitration session early
+/reading/session/:sessionId/end-answer # POST: End the session, or return to it
 /reading/session/:sessionId/:view     # Session with view (your-reads | all-reads)
 /reading/session/:sessionId/appointments/:appointmentId              # Appointment entry (redirects to opinion, existing-read, or request-priors)
 /reading/session/:sessionId/appointments/:appointmentId/:step        # GET: Render workflow step template
@@ -400,7 +414,7 @@ Templates receive via `res.locals`:
 - `appointment` - Current appointment (use `appointment | getReadingMetadata` to compute metadata)
 - `participant` - Participant data
 - `clinic`, `unit`, `location` - Clinic context
-- `progress` - Reading progress object (includes `previousUserHasRead`, `nextUserHasRead`)
+- `progress` - Reading progress object (counts, plus `hasPreviousCase` and `previousCaseId` for the back link)
 - `sessionId`, `appointmentId` - Route params
 - `isReadingWorkflow` - Boolean flag for workflow mode
 
@@ -433,7 +447,7 @@ Templates receive via `res.locals`:
 ### reading.js — Multiple Appointments
 
 - `getReadingStatusForAppointments(appointments, userId)` - Aggregated status with counts
-- `getReadingProgress(appointments, currentAppointmentId, skippedAppointments, userId)` - Navigation progress
+- `getReadingProgress(data, appointments, skippedAppointments, userId)` - Progress counts
 - `enhanceAppointmentsWithReadingData(appointments, participants, userId)` - Adds metadata to appointments
 - `sortAppointmentsByScreeningDate(appointments)` - Oldest-first sort
 - `getReadingClinics(data, options)` - All clinics with reading status attached
@@ -458,6 +472,8 @@ Templates receive via `res.locals`:
 - `getDefaultSessionName(type, clinicId, data)` - Default display name for a session
 - `generateSessionId()` - New session id
 - `topUpSession(data, sessionId)` - Adds next eligible appointment if session is below target size
+- `endSession(data, sessionId, userId)` - Ends a session, if it isn't ended already
+- `isSessionEnded(session)` - Whether a session has been ended
 - `getReadingSession(data, sessionId)` - Retrieves session
 - `getOrCreateClinicSession(data, clinicId)` - Gets/creates clinic-based session (keyed by clinicId)
 - `getFirstReadableAppointmentInSession(data, sessionId, userId)` - First appointment user can read
@@ -631,6 +647,8 @@ A reader can defer a case out of the reading queue (for example to raise it with
 - `getDeferredCases(data)` / `getResolvedDeferrals(data)` (in `lib/utils/reading.js`) build the lists the deferred cases page shows
 - Deferred cases are excluded from reading; `/reading/deferred` lists them, and a deferral can be undone (via `/reading/deferred/undo` or the per-case `/undo-defer` route), returning the case to the queue
 - The workflow's `defer-case.html` step collects an optional reason (`deferralReason`)
+- The deferred list's cards link to the reading case page (`/reading/cases/:caseId`), which shows the deferral and offers the unflag action itself (`/reading/deferred/undo` accepts a `returnTo` path)
+- Similarly the priors dashboard's rows link to the case's priors tab (`/reading/cases/:caseId/priors`); the row cells and their in-place update script are shared includes under `_includes/priors/`
 
 ---
 

@@ -34,7 +34,6 @@ const {
   caseNeedsFirstRead,
   caseNeedsSecondRead,
   caseNeedsArbitration,
-  isCaseInArbitration,
   getArbitrationRead,
   canUserReadCase,
   userHasReadCase,
@@ -158,9 +157,16 @@ const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
     if (!appointment) continue
 
     const readingCase = getReadingCase(data, appointment)
-    const read = getReadsAsArray(readingCase).find((candidate) =>
+
+    // A panel arbitrator may also have read the case originally, so pick the
+    // read this session produced rather than whichever of theirs comes first
+    const userReads = getReadsAsArray(readingCase).filter((candidate) =>
       getReadAuthorIds(candidate).includes(userId)
     )
+    const read =
+      session.type === 'arbitration'
+        ? userReads.find((candidate) => candidate.readType === 'arbitration')
+        : userReads.find((candidate) => candidate.readType !== 'arbitration')
     if (!read) continue
     if (isReadFinalised(read, data.settings)) continue
 
@@ -392,11 +398,6 @@ const enhanceAppointmentsWithReadingData = (
     return {
       ...enhanced,
       participant: participantMap.get(appointment.participantId),
-      readStatus:
-        metadata.readCount > 0 ? `Read (${metadata.readCount})` : 'Not read',
-      tagColor: getStatusTagColour(
-        metadata.readCount > 0 ? 'read' : 'not_read'
-      ),
       readingMetadata: metadata,
       canUserRead: canUserReadAppointment(data, enhanced, userId)
     }
@@ -609,12 +610,14 @@ const getReadingStatusForAppointments = function (
 }
 
 /**
- * Get progress through reading a set of appointments
- * Enhanced to include user-specific navigation
+ * Get progress through reading a set of appointments.
+ *
+ * Counts only - which case comes next, and which came before, are questions
+ * about a session rather than a list, and are answered by
+ * getNextCaseInSession and getPreviousCaseInSession.
  *
  * @param {object} data - Session data
  * @param {Array} appointments - Array of appointments to track progress through
- * @param {string} currentAppointmentId - ID of current appointment
  * @param {Array} skippedAppointments - Array of appointment IDs that have been skipped
  * @param {string} [userId] - Optional user ID (defaults to current user if available)
  * @returns {object} Progress information
@@ -622,11 +625,9 @@ const getReadingStatusForAppointments = function (
 const getReadingProgress = function (
   data,
   appointments,
-  currentAppointmentId,
   skippedAppointments = [],
   userId = null
 ) {
-  // Get base metrics
   const metrics = calculateReadingMetrics.call(
     this,
     data,
@@ -635,114 +636,9 @@ const getReadingProgress = function (
     skippedAppointments
   )
 
-  // Get user ID from context if not provided and we're in a template context
-  const currentUserId = userId || this?.ctx?.data?.currentUser?.id
-
-  // Find current appointment index
-  const currentIndex = appointments.findIndex(
-    (e) => e.id === currentAppointmentId
-  )
-
-  // Basic sequential navigation
-  const nextAppointment = getNextAppointmentInList(
-    appointments,
-    currentAppointmentId,
-    false
-  )
-  const previousAppointment = getPreviousAppointmentInList(
-    appointments,
-    currentAppointmentId,
-    false
-  )
-
-  // Get appointments needing any reads (first or second)
-  const readableAppointments = filterAppointmentsByNeedsAnyRead(
-    data,
-    appointments
-  )
-
-  // Find next/previous of each type
-  const nextReadableAppointment =
-    currentIndex !== -1
-      ? getNextAppointmentInList(
-          readableAppointments,
-          currentAppointmentId,
-          true
-        )
-      : null
-  const previousReadableAppointment =
-    currentIndex !== -1
-      ? getPreviousAppointmentInList(
-          readableAppointments,
-          currentAppointmentId,
-          true
-        )
-      : null
-
-  // For user-specific navigation, get appointments this user can read or has read
-  let userNavigableAppointments = appointments
-  if (currentUserId) {
-    userNavigableAppointments = filterAppointmentsByUserCanReadOrHasRead(
-      data,
-      appointments,
-      currentUserId
-    )
-  }
-
-  // Find next/previous user-readable appointments if userId provided
-  let nextUserReadableAppointment = null
-  let previousUserReadableAppointment = null
-
-  if (currentUserId && currentIndex !== -1) {
-    nextUserReadableAppointment = getNextAppointmentInList(
-      userNavigableAppointments,
-      currentAppointmentId,
-      true
-    )
-    previousUserReadableAppointment = getPreviousAppointmentInList(
-      userNavigableAppointments,
-      currentAppointmentId,
-      true
-    )
-  }
-
   return {
     ...metrics,
-    current: currentIndex + 1,
-    // Appointment navigation
-    hasNext: !!nextAppointment,
-    hasPrevious: !!previousAppointment,
-    nextAppointmentId: nextAppointment?.id || null,
-    previousAppointmentId: previousAppointment?.id || null,
-    hasNextReadableAppointment: !!nextReadableAppointment,
-    hasPreviousReadableAppointment: !!previousReadableAppointment,
-    nextReadableAppointmentId: nextReadableAppointment?.id || null,
-    previousReadableAppointmentId: previousReadableAppointment?.id || null,
-    // User-specific navigation
-    hasNextUserReadable: !!nextUserReadableAppointment,
-    hasPreviousUserReadable: !!previousUserReadableAppointment,
-    nextUserReadableId: nextUserReadableAppointment?.id || null,
-    previousUserReadableId: previousUserReadableAppointment?.id || null,
-    // Whether user has already read the previous/next appointment (for review page links)
-    previousUserHasRead: previousUserReadableAppointment
-      ? userHasReadAppointment(
-          data,
-          previousUserReadableAppointment,
-          currentUserId
-        )
-      : false,
-    nextUserHasRead: nextUserReadableAppointment
-      ? userHasReadAppointment(data, nextUserReadableAppointment, currentUserId)
-      : false,
-    // Skipped appointments
-    skippedAppointments,
-    isCurrentSkipped: skippedAppointments.includes(currentAppointmentId),
-    nextAppointmentSkipped: nextAppointment
-      ? skippedAppointments.includes(nextAppointment.id)
-      : false,
-    previousAppointmentSkipped: previousAppointment
-      ? skippedAppointments.includes(previousAppointment.id)
-      : false
+    skippedAppointments
   }
 }
 
@@ -964,43 +860,6 @@ const filterAppointmentsByUserCanRead = (data, appointments, userId) => {
 }
 
 /**
- * Filter appointments that user can read or has already read
- *
- * @param {object} data - Session data
- * @param {Array} appointments - Array of appointments to filter
- * @param {string} userId - User ID to check
- * @param {object} [options] - Options for determining eligibility
- * @returns {Array} Appointments user can read or has read
- *
- *   Primarily to support navigating backwards through appointments
- */
-const filterAppointmentsByUserCanReadOrHasRead = (
-  data,
-  appointments,
-  userId,
-  options = {}
-) => {
-  const { maxReadsPerCase = 2 } = options
-
-  return appointments.filter((appointment) => {
-    const readingCase = resolveCase(data, appointment)
-
-    // Include if the user has already read this case
-    if (userHasReadCase(readingCase, userId)) return true
-
-    // Include if the case isn't fully read yet, so they could still read it
-    if (getReadsAsArray(readingCase).length < maxReadsPerCase) return true
-
-    // A case released to arbitration still takes its arbitration read, and
-    // stays navigable once arbitrated so it can be looked at again
-    if (isCaseInArbitration(readingCase)) return true
-
-    // Exclude cases that are fully read by other users
-    return false
-  })
-}
-
-/**
  * Filter appointments for a specific clinic
  *
  * @param {Array} appointments - All appointments
@@ -1034,71 +893,6 @@ const filterAppointmentsByDayRange = (
 /************************************************************************
 // Selector functions
 //***********************************************************************
-
-/**
- * Get the first appointment from an array
- * @param {Array} appointments - Array of appointments
- * @returns {Object|null} First appointment or null
- */
-const getFirstAppointmentInList = (appointments) => {
-  return appointments.length > 0 ? appointments[0] : null
-}
-
-/**
- * Get the next appointment after a specific appointment
- *
- * @param {Array} appointments - Array of appointments
- * @param {string} currentAppointmentId - Current appointment ID
- * @param {boolean} wrap - Whether to wrap around to start if at end
- * @returns {object | null} Next appointment or null
- */
-const getNextAppointmentInList = (
-  appointments,
-  currentAppointmentId,
-  wrap = true
-) => {
-  const currentIndex = appointments.findIndex(
-    (e) => e.id === currentAppointmentId
-  )
-  if (currentIndex === -1) return null
-
-  // Next appointment exists
-  if (currentIndex < appointments.length - 1) {
-    return appointments[currentIndex + 1]
-  }
-
-  // Wrap around to first appointment
-  return wrap && appointments.length > 0 ? appointments[0] : null
-}
-
-/**
- * Get the previous appointment before a specific appointment
- *
- * @param {Array} appointments - Array of appointments
- * @param {string} currentAppointmentId - Current appointment ID
- * @param {boolean} wrap - Whether to wrap around to end if at start
- * @returns {object | null} Previous appointment or null
- */
-const getPreviousAppointmentInList = (
-  appointments,
-  currentAppointmentId,
-  wrap = true
-) => {
-  const currentIndex = appointments.findIndex(
-    (e) => e.id === currentAppointmentId
-  )
-  if (currentIndex === -1) return null
-
-  // Previous appointment exists
-  if (currentIndex > 0) {
-    return appointments[currentIndex - 1]
-  }
-
-  // Wrap around to last appointment
-  return wrap && appointments.length > 0
-    ? appointments[appointments.length - 1]
-    : null
-}
 
 /************************************************************************
 / User functions
@@ -1216,6 +1010,69 @@ const getNextCaseInSession = (
 }
 
 /**
+ * Whether a case in a session can be opened by the reader.
+ *
+ * Not the same question as whether it is still to do: a case they have
+ * settled, deferred, or sent for priors opens on a page that shows what was
+ * recorded. In arbitration every case in the session opens - it is in the
+ * session because it needed arbitrating, and once arbitrated it shows its
+ * outcome. What can't be opened is a reading case someone else finished while
+ * the reader was working: it would ask them for an opinion they can't give.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - The reading session
+ * @param {object} appointment - The appointment to check
+ * @param {string} userId - User ID
+ * @returns {boolean}
+ */
+const canOpenCaseInSession = (data, session, appointment, userId) => {
+  if (session?.type === 'arbitration') return true
+
+  const readingCase = getReadingCase(data, appointment)
+
+  return (
+    isCaseDeferred(readingCase) ||
+    awaitingPriors(appointment) ||
+    userHasReadAppointment(data, appointment, userId) ||
+    canUserReadAppointment(data, appointment, userId)
+  )
+}
+
+/**
+ * The case before the current one in a session, if there is one to go back to.
+ *
+ * The backward counterpart to getNextCaseInSession, and forward-only in the
+ * same way: a back link that wraps round to the end of the session is a jump,
+ * not a step back.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - The reading session
+ * @param {Array} sessionAppointments - The session's appointments, in order
+ * @param {string} currentAppointmentId - The case being looked at
+ * @param {string} userId - User ID
+ * @returns {object | undefined} The previous appointment, or undefined if none
+ */
+const getPreviousCaseInSession = (
+  data,
+  session,
+  sessionAppointments,
+  currentAppointmentId,
+  userId
+) => {
+  const currentIndex = sessionAppointments.findIndex(
+    (appointment) => appointment.id === currentAppointmentId
+  )
+  if (currentIndex === -1) return undefined
+
+  return sessionAppointments
+    .slice(0, currentIndex)
+    .reverse()
+    .find((appointment) =>
+      canOpenCaseInSession(data, session, appointment, userId)
+    )
+}
+
+/**
  * The first case still to work on in a session, wherever it sits.
  *
  * The session-aware counterpart to getFirstUserReadableAppointment, used to
@@ -1288,8 +1145,12 @@ const getResumeAppointmentForUser = function (
     return (
       candidates.find((appointment) => {
         const readingCase = resolveCase(data, appointment)
+        // Outstanding priors hold a case up for the panel just as a deferral
+        // does - there is nothing to arbitrate until they arrive
         return (
-          !caseHasBeenArbitrated(readingCase) && !isCaseDeferred(readingCase)
+          !caseHasBeenArbitrated(readingCase) &&
+          !isCaseDeferred(readingCase) &&
+          !awaitingPriors(appointment)
         )
       }) || null
     )
@@ -1750,6 +1611,44 @@ const skipAppointmentInSession = (data, sessionId, appointmentId) => {
 }
 
 /**
+ * Whether a session has been ended.
+ *
+ * Ending is recorded as an act - who ended it and when - and the state is read
+ * back from its presence, the same shape deferral and arbitration release take.
+ * It covers both endings: working the session through, and stopping early.
+ *
+ * @param {object} session - Reading session
+ * @returns {boolean}
+ */
+const isSessionEnded = (session) => {
+  return Boolean(session?.endedAt)
+}
+
+/**
+ * End a session, if it isn't ended already.
+ *
+ * An ended session takes no more reads: it can't be resumed, topped up, or
+ * navigated into. It says nothing about finalisation - reads made in it
+ * finalise on their own schedule, or by hand.
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - Session ID
+ * @param {string} userId - Who ended it
+ * @param {string} [endedAt] - When; defaults to now
+ * @returns {boolean} Whether this call was the one that ended it
+ */
+const endSession = (data, sessionId, userId, endedAt = null) => {
+  const session = getReadingSession(data, sessionId)
+  if (!session || isSessionEnded(session)) return false
+
+  // readingSessions is per-session working data, so in-place edits are fine
+  session.endedAt = endedAt || new Date().toISOString()
+  session.endedBy = userId || null
+
+  return true
+}
+
+/**
  * Add the next eligible appointment to a session if it needs one
  *
  * Called after each read or skip to grow the session one case at a time. A case
@@ -1768,6 +1667,9 @@ const skipAppointmentInSession = (data, sessionId, appointmentId) => {
 const topUpSession = (data, sessionId, currentAppointmentId = null) => {
   const session = getReadingSession(data, sessionId)
   if (!session) return false
+
+  // An ended session takes no more cases
+  if (isSessionEnded(session)) return false
 
   // Clinic sessions are fully populated at creation
   if (session.type === 'clinic') return false
@@ -1865,13 +1767,25 @@ const getSessionReadingProgress = (
   const progress = getReadingProgress(
     data,
     sessionAppointments,
-    currentAppointmentId,
     session.skippedAppointments,
     userId || data.currentUser.id
   )
 
   const resolvedTargetSize = session.targetSize || sessionAppointments.length
   const resolvedUserId = userId || data.currentUser.id
+
+  // The case to go back to from the one being looked at. Where to go forward
+  // to isn't answered here: it depends on topping the session up, so it is
+  // asked at the point of navigating (see the next-case route)
+  const previousCase = currentAppointmentId
+    ? getPreviousCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        currentAppointmentId,
+        resolvedUserId
+      )
+    : undefined
 
   // Work out how large this session can actually become right now once we
   // account for unclaimed eligible cases. This prevents showing "25 remaining"
@@ -1913,6 +1827,13 @@ const getSessionReadingProgress = (
     isCaseDeferred(getReadingCase(data, appointment))
   ).length
 
+  // Outstanding priors hold a case up for whoever is working it. In reading
+  // that is the reader who asked for them; in arbitration the case waits for
+  // everyone, since it is arbitrated once
+  const sessionAwaitingPriorsCount = isArbitration
+    ? progress.awaitingPriorsCount
+    : progress.userAwaitingPriorsCount
+
   // Arbitration progress is how many cases have been settled, not what this
   // user has read - an arbitrator may have read some of these cases before
   const doneCount = isArbitration
@@ -1923,6 +1844,8 @@ const getSessionReadingProgress = (
 
   return {
     ...progress,
+    hasPreviousCase: Boolean(previousCase),
+    previousCaseId: previousCase?.id || null,
     doneCount,
     // How many appointments are currently loaded vs the overall target
     populatedCount: sessionAppointments.length,
@@ -1930,12 +1853,13 @@ const getSessionReadingProgress = (
     effectiveTargetSize,
     // Deferred appointments count as 'done' for session progress purposes
     deferredCount,
+    sessionAwaitingPriorsCount,
     // Remaining reads against the target (not just currently loaded appointments)
     targetRemaining: Math.max(
       0,
       effectiveTargetSize -
         doneCount -
-        progress.userAwaitingPriorsCount -
+        sessionAwaitingPriorsCount -
         deferredCount
     )
   }
@@ -1971,17 +1895,15 @@ module.exports = {
   filterAppointmentsByNeedsArbitration,
   filterAppointmentsByFullyRead,
   filterAppointmentsByUserCanRead,
-  filterAppointmentsByUserCanReadOrHasRead,
   filterAppointmentsByClinic,
   filterAppointmentsByDayRange,
   // Selector functions
-  getFirstAppointmentInList,
-  getNextAppointmentInList,
-  getPreviousAppointmentInList,
   // User functions
   getFirstUserReadableAppointment,
   getNextUserReadableAppointment,
   getNextCaseInSession,
+  getPreviousCaseInSession,
+  canOpenCaseInSession,
   getFirstOutstandingCaseInSession,
   getResumeAppointmentForUser,
   // Booleans
@@ -1999,6 +1921,8 @@ module.exports = {
   getFirstReadableAppointmentInSession,
   skipAppointmentInSession,
   unskipAppointmentInSession,
+  isSessionEnded,
+  endSession,
   topUpSession,
   getSessionReadingProgress
 }

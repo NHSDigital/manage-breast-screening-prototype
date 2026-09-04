@@ -8,3 +8,13 @@
   background-color: nhsuk-colour("grey-1");
   color: nhsuk-colour("white");
 }
+
+.nhsuk-card--feature.app-card--feature-orange .nhsuk-card__heading {
+  background-color: nhsuk-colour("orange");
+  color: nhsuk-colour("white");
+}
+
+.nhsuk-card--feature.app-card--feature-green .nhsuk-card__heading {
+  background-color: nhsuk-colour("green");
+  color: nhsuk-colour("white");
+}

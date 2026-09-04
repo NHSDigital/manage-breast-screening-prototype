@@ -5,26 +5,22 @@
 {% set pageHeading = "Defer this case" %}
 {% set formAction = './defer-case-answer' | urlWithReferrer(referrerChain) %}
 {% set back = {
-  href: "./opinion",
+  href: "./" + decisionStep,
   text: "Back"
 } %}
 
 {% block pageContent %}
 
-  {% set caption %}
-    {{ participant | getFullName }}
-  {% endset %}
-
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
 
       <h1 class="nhsuk-heading-l">
-        <span class="nhsuk-caption-l">{{ caption }}</span>
+        <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
         {{ pageHeading }}
       </h1>
 
       <p>
-        This case will be removed from the reading queue. It must be manually reviewed before it can be read.
+        This case will be put on hold. It must be manually reviewed before it can be read.
       </p>
 
       {{ textarea({
@@ -38,7 +34,7 @@
           text: "Explain why you are unable to give an opinion on this case"
         },
         rows: 4,
-        value: data.deferralReason if data.deferralReason else readingCase.deferral.reason
+        value: readingCase.deferral.reason
       }) }}
 
       {{ button({

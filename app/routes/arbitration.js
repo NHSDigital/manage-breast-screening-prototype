@@ -66,7 +66,7 @@ module.exports = (router) => {
 
     // The whole backlog, counted the way the reading index and case list count
     // it, plus what's holding part of it up
-    const backlog = getArbitrationBacklogCounts(data, { scope: 'open' })
+    const backlog = getArbitrationBacklogCounts(data, { view: 'current' })
 
     // What arbitration would actually offer: the backlog minus blocked cases,
     // and minus the user's own reads when they choose to exclude them

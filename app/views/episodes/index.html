@@ -47,18 +47,21 @@
           <th scope="col">Type</th>
           <th scope="col">Stage</th>
           <th scope="col">Outcome</th>
-          <th scope="col">
-            <span class="nhsuk-u-visually-hidden">Actions</span>
-          </th>
+          <th scope="col">Episode</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for row in episodes %}
           <tr class="nhsuk-table__row">
             <td class="nhsuk-table__cell">
-              <a href="/participants/{{ row.episode.participantId }}">
+              {# The name isn't a link: the row's link goes to the episode,
+                 in the last column #}
+              <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
                 {{ row.participant | getFullNameReversed }}
-              </a>
+              </p>
+              <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+                NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+              </p>
             </td>
             <td class="nhsuk-table__cell">
               {{ row.episode.openedDate | formatDate }}

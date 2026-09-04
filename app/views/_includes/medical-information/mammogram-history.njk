@@ -25,8 +25,9 @@
         html: systemRecordHtml
       }
     }
-  ]
-} | removeLastRowBorder) }}
+  ],
+  lastRowBorder: false
+}) }}
 
 {# User-added unverified mammograms #}
 {% if hasAdditionalMammograms %}
@@ -120,6 +121,7 @@
   {% endfor %}
 
   {{ summaryList({
-    rows: userMammogramRows
-  } | openInModal | removeLastRowBorder) }}
+    rows: userMammogramRows,
+    lastRowBorder: false
+  } | openInModal) }}
 {% endif %}

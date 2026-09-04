@@ -95,7 +95,7 @@ const defaultSettings = {
   appointment: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
-    showParticipantSection: 'false',
+    showParticipantSection: 'true',
     useCondensedReviewSummaries: 'true',
     addedToWorklist: 'true',
     imageStreaming: {
@@ -104,7 +104,7 @@ const defaultSettings = {
     }
   },
   reading: {
-    indexLayout: 'complex', // 'simple' | 'complex'
+    indexLayout: 'simple', // 'simple' | 'complex'
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',

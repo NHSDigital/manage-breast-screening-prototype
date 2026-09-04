@@ -32,25 +32,26 @@
       createdAt: session.createdAt,
       targetSize: targetSize,
       userReadCount: userReadCount,
-      isComplete: progress and progress.targetRemaining == 0
+      isFinished: session.endedAt or (progress and progress.targetRemaining == 0)
     }) %}
   {% endif %}
 {% endfor %}
 
 {% set userSessions = userSessions | sort(true, false, 'createdAt') %}
 
-{# In-progress = the user's most recent session that isn't complete #}
+{# In-progress = the user's most recent session that hasn't finished - worked
+   through, or ended early #}
 {% set inProgressSession = null %}
 {% for session in userSessions %}
-  {% if not inProgressSession and not session.isComplete %}
+  {% if not inProgressSession and not session.isFinished %}
     {% set inProgressSession = session %}
   {% endif %}
 {% endfor %}
 
-{# Previous (completed) sessions — show 3 most recent #}
+{# Previous (finished) sessions — show 3 most recent #}
 {% set previousSessions = [] %}
 {% for session in userSessions %}
-  {% if session.isComplete and previousSessions | length < 3 %}
+  {% if session.isFinished and previousSessions | length < 3 %}
     {% set previousSessions = previousSessions | push(session) %}
   {% endif %}
 {% endfor %}

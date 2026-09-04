@@ -6,6 +6,7 @@
 
 const { EPISODE_STAGES, getEpisode } = require('../lib/utils/episodes')
 const { getParticipant } = require('../lib/utils/participants')
+const { getEpisodeUrl } = require('../lib/utils/urls')
 
 // Enough rows to browse without rendering thousands
 const INDEX_LIMIT = 100
@@ -58,8 +59,6 @@ module.exports = (router) => {
 
     if (!episode) return next()
 
-    res.redirect(
-      `/participants/${episode.participantId}/episodes/${episode.id}`
-    )
+    res.redirect(getEpisodeUrl(episode))
   })
 }

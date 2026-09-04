@@ -82,6 +82,14 @@ const FILE_META = {
     label: 'random.js',
     description: 'Seeded random functions for stable prototype data. Results are stable per page URL — use the `name` param to get different values for different purposes on the same page.'
   },
+  'app/lib/utils/urls.js': {
+    label: 'urls.js',
+    description: 'Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case). Build links through these rather than concatenating paths.'
+  },
+  'app/lib/utils/breadcrumbs.js': {
+    label: 'breadcrumbs.js',
+    description: 'The participant-rooted breadcrumb trail case pages carry. Pages set breadcrumbItems with getCaseBreadcrumb; layout-base renders it.'
+  },
   'app/lib/utils/referrers.js': {
     label: 'referrers.js',
     description: 'Referrer chain navigation for multi-level back links. Use these instead of hardcoded back link URLs. See the module-level comment in the file for full usage examples.'
@@ -89,6 +97,14 @@ const FILE_META = {
   'app/lib/utils/roles-and-permissions.js': {
     label: 'roles-and-permissions.js',
     description: 'User role checks. Use these instead of comparing role strings directly.'
+  },
+  'app/lib/utils/filter-list.js': {
+    label: 'filter-list.js',
+    description: 'Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected. See docs/filtering.md.'
+  },
+  'app/lib/utils/search.js': {
+    label: 'search.js',
+    description: 'Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number.'
   },
   'app/lib/utils/utility.js': {
     label: 'utility.js',
@@ -134,8 +150,12 @@ const UTILS_FILES = [
   'app/lib/utils/objects.js',
   'app/lib/utils/summary-list.js',
   'app/lib/utils/random.js',
+  'app/lib/utils/urls.js',
+  'app/lib/utils/breadcrumbs.js',
   'app/lib/utils/referrers.js',
   'app/lib/utils/roles-and-permissions.js',
+  'app/lib/utils/filter-list.js',
+  'app/lib/utils/search.js',
   'app/lib/utils/utility.js'
 ]
 

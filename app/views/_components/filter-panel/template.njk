@@ -1,0 +1,167 @@
+{# app/views/_components/filter-panel/template.njk
+
+   A search and filter column for an index page, rendered as a grey feature
+   card. Groups are data (see app/lib/utils/filter-list.js) - this only knows
+   how to render them.
+
+   params:
+     action       - form action, the page's own path
+     groups       - filter groups: { name, legend, options: [{ value, label }],
+                    style } - style "radios" or "select" renders a
+                    single-value group; a select's "no choice" option is
+                    labelled by the group's emptyLabel. An option revealing
+                    another group renders it inside a conditional reveal
+                    rather than as a group of its own
+     selected     - group name -> selected values
+     counts       - group name -> option value -> count
+     search       - optional search control: { name, value, label, id }
+     hiddenFields - params to carry through filtering (the current view)
+     live         - optional CSS selector for a region to update in place with
+                    JavaScript (see app/assets/javascript/live-filters.js). The
+                    region must contain this form. Without JavaScript the form
+                    submits as normal. #}
+
+{% from "nhsuk/components/card/macro.njk" import card %}
+{% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}
+{% from "nhsuk/components/radios/macro.njk" import radios %}
+{% from "nhsuk/components/search-input/macro.njk" import searchInput %}
+{% from "nhsuk/components/select/macro.njk" import select %}
+{% from "nhsuk/components/button/macro.njk" import button %}
+
+{% set panelHtml %}
+
+  {% for name, value in params.hiddenFields %}
+    {% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+  {% endfor %}
+
+  {# Search is part of the same form as the filters, so searching narrows
+     what's on screen rather than resetting the selection #}
+  {% if params.search %}
+    {{ searchInput({
+      id: params.search.id or ("filter-" + params.search.name),
+      name: params.search.name,
+      value: params.search.value,
+      label: params.search.label,
+      formGroup: { classes: "app-filter-panel__group" },
+      button: { variant: "secondary" }
+    }) }}
+  {% endif %}
+
+  {# Groups another group reveals are rendered inside that reveal, not here #}
+  {% set revealedGroupNames = params.groups | getRevealedGroupNames %}
+
+  {% for group in params.groups %}
+    {% if group.name not in revealedGroupNames %}
+
+    {% set selectedValues = (params.selected[group.name] or []) %}
+    {% set groupCounts = (params.counts[group.name] or {}) %}
+
+    {# A select needs a "no choice" option first - unticking isn't available
+       the way it is for checkboxes #}
+    {% set items = [{ value: "", text: group.emptyLabel or "All" }] if group.style == "select" else [] %}
+    {% for option in group.options %}
+      {% set count = groupCounts[option.value] or 0 %}
+
+      {# An option can reveal a whole group - a person picker under "Someone
+         else", say - shown only once that option is chosen #}
+      {% set conditionalHtml = "" %}
+      {% if option.reveals %}
+        {% set revealed = params.groups | find("name", option.reveals) %}
+        {% set revealedSelected = (params.selected[revealed.name] or []) %}
+        {% set revealedCounts = (params.counts[revealed.name] or {}) %}
+
+        {% set revealedItems = [{ value: "", text: revealed.emptyLabel or "All" }] %}
+        {% for revealedOption in revealed.options %}
+          {% set revealedItems = revealedItems | push({
+            value: revealedOption.value,
+            text: revealedOption.label + " (" + (revealedCounts[revealedOption.value] or 0) + ")",
+            selected: true if revealedOption.value in revealedSelected
+          }) %}
+        {% endfor %}
+
+        {% set conditionalHtml %}
+          {{ select({
+            id: "filter-" + revealed.name,
+            name: revealed.name,
+            label: { text: revealed.legend },
+            formGroup: { classes: "nhsuk-u-margin-bottom-0" },
+            items: revealedItems
+          }) }}
+        {% endset %}
+      {% endif %}
+
+      {% set items = items | push({
+        value: option.value,
+        text: option.label + (" (" + count + ")" if not option.hideCount else ""),
+        checked: true if option.value in selectedValues,
+        selected: true if option.value in selectedValues,
+        conditional: { html: conditionalHtml } if conditionalHtml | trim else undefined
+      }) %}
+    {% endfor %}
+
+    {% set groupParams = {
+      idPrefix: "filter-" + group.name,
+      name: group.name,
+      small: true,
+      classes: "app-filter-panel__group",
+      fieldset: {
+        legend: {
+          text: group.legend,
+          classes: "nhsuk-fieldset__legend--s"
+        }
+      },
+      items: items
+    } %}
+
+    {% if group.style == "select" %}
+      {# A long list of options - people, say - would swamp the column as
+         checkboxes, so it narrows to one at a time #}
+      {{ select({
+        id: "filter-" + group.name,
+        name: group.name,
+        label: { text: group.legend, classes: "nhsuk-label--s" },
+        formGroup: { classes: "app-filter-panel__group" },
+        items: items
+      }) }}
+    {% elseif group.style == "radios" %}
+      {{ radios(groupParams) }}
+    {% else %}
+      {{ checkboxes(groupParams) }}
+    {% endif %}
+
+    {% endif %}
+  {% endfor %}
+
+  <div class="app-filter-panel__actions">
+    {# Redundant once live updating is running - hidden by CSS in that case #}
+    {{ button({
+      text: "Apply filters",
+      small: true,
+      classes: "app-filter-panel__apply nhsuk-u-margin-bottom-0"
+    }) }}
+
+    {# Clearing keeps the view - it's the filters and the search being cleared,
+       not which population is on screen #}
+    {% if (params.selected | hasSelectedFilters) or params.search.value %}
+      {{ button({
+        text: "Clear filters",
+        href: params.action | buildFilterUrl({}, params.hiddenFields),
+        variant: "secondary",
+        small: true,
+        classes: "nhsuk-u-margin-bottom-0"
+      }) }}
+    {% endif %}
+  </div>
+
+{% endset %}
+
+<form class="app-filter-panel" method="get" action="{{ params.action }}"{% if params.live %} data-live-filters="{{ params.live }}"{% endif %}>
+  {{ card({
+    heading: "Search and filter",
+    headingLevel: 2,
+    headingSize: "s",
+    feature: true,
+    classes: "app-card--feature-grey app-filter-panel__card",
+    descriptionHtml: panelHtml
+  }) }}
+</form>
