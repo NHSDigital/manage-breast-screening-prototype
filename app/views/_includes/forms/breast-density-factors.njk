@@ -127,22 +127,24 @@
   }) %}
 {% endif %}
 
-<div data-breast-density-factors-save-url="{{ contextUrl }}/medical-information/hrt-save"
-     data-breast-density-factor-count="{{ breastDensityFactors.factors | length }}">
+{# The autosave finds the list by its save URL, and takes the factor count from
+   here so it can't disagree with what the server stored #}
+{{ summaryList({
+  rows: breastDensityRows,
+  lastRowBorder: false,
+  attributes: {
+    "data-breast-density-factors-save-url": contextUrl + "/medical-information/hrt-save",
+    "data-breast-density-factor-count": breastDensityFactors.factors | length
+  }
+}) }}
 
-  {{ summaryList({
-    rows: breastDensityRows,
-    lastRowBorder: false
-  }) }}
-
-  {% if allowEdits and not breastDensityFactors.factors | length %}
-    <p class="nhsuk-u-margin-top-4">
-      {{ button({
-        text: "Add pregnancy and breastfeeding",
-        href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
-        variant: "secondary",
-        small: true
-      } | openInModal) }}
-    </p>
-  {% endif %}
-</div>
+{% if allowEdits and not breastDensityFactors.factors | length %}
+  <p class="nhsuk-u-margin-top-4">
+    {{ button({
+      text: "Add pregnancy and breastfeeding",
+      href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
+      variant: "secondary",
+      small: true
+    } | openInModal) }}
+  </p>
+{% endif %}
