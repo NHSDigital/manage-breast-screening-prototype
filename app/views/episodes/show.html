@@ -48,16 +48,18 @@
     NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
   </p>
 
-  {# Looking at a past round while another is in progress - flag the live one #}
-  {% if currentEpisode and currentEpisode.id !== episode.id %}
-    {% set inProgressHtml %}
+  {# A past round is a summary, not the live record - say so, and point at
+     the round in progress where there is one #}
+  {% if episode.isHistoric or (currentEpisode and currentEpisode.id !== episode.id) %}
+    {% set pastEpisodeHtml %}
       <p class="nhsuk-u-margin-bottom-0">
-        This participant has an episode in progress -
-        <a href="{{ getEpisodeUrl(currentEpisode) }}">
-          {{ currentEpisode | getEpisodeLabel }}</a>.
+        This is a summary of a past screening episode.
+        {% if currentEpisode and currentEpisode.id !== episode.id -%}
+          <a href="{{ getEpisodeUrl(currentEpisode) }}">View the current episode in progress</a>.
+        {%- endif %}
       </p>
     {% endset %}
-    {{ insetText({ html: inProgressHtml }) }}
+    {{ insetText({ html: pastEpisodeHtml }) }}
   {% endif %}
 
   {# The round's own facts, and the screening summary a past round carries in
@@ -111,18 +113,6 @@
       value: { text: episode.openedDate | formatDate }
     }) %}
 
-    {# An open round has no outcome card, so it says here that it owes one #}
-    {% if not episode.outcome %}
-      {% set episodeRows = episodeRows | push({
-        key: { text: "Outcome" },
-        value: { text: "Not yet – the episode is still open" }
-      }) %}
-      {% set episodeRows = episodeRows | push({
-        key: { text: "Closed" },
-        value: { text: episode.closedDate | formatDate if episode.closedDate else "Not closed" }
-      }) %}
-    {% endif %}
-
     {# A past round holds where it was screened and an image count, but no
        records beneath them #}
     {% if episode.isHistoric %}
@@ -143,12 +133,6 @@
     {% endif %}
 
     {{ appSummaryList({ rows: episodeRows, lastRowBorder: false }) }}
-
-    {% if episode.isHistoric %}
-      <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
-        This is a past screening episode, held as a summary only.
-      </p>
-    {% endif %}
 
   {% endcall %}
 
@@ -186,43 +170,6 @@
       <p class="nhsuk-u-margin-bottom-0">This episode has no appointments.</p>
     {% endif %}
   {% endcall %}
-
-  {# What was recorded on the day. The latest appointment that got as far as
-     recording anything: an episode can hold more than one, and a booked-but-
-     not-yet-attended one has nothing to show. #}
-  {% set appointmentsWithInfo = [] %}
-  {% if episode.isHistoric %}
-    {# The shared summary reads `appointment.medicalInformation`, and the
-       stand-in carries the same shape, so it can be reused as-is #}
-    {% for summaryAppointment in episode.summaryAppointments %}
-      {% if summaryAppointment.medicalInformation %}
-        {% set appointmentsWithInfo = appointmentsWithInfo | push(summaryAppointment) %}
-      {% endif %}
-    {% endfor %}
-  {% else %}
-    {% for row in episodeAppointments %}
-      {% if row.appointment.medicalInformation %}
-        {% set appointmentsWithInfo = appointmentsWithInfo | push(row.appointment) %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-  {% set latestWithInfo = appointmentsWithInfo | last %}
-
-  {% if latestWithInfo %}
-    {% call card({
-      heading: "Medical information recorded",
-      headingLevel: "2"
-    }) %}
-      {% if appointmentsWithInfo | length > 1 %}
-        <p class="nhsuk-u-secondary-text-colour">
-          As recorded at the {{ latestWithInfo.timing.startTime | formatDate if latestWithInfo.timing else latestWithInfo.startTime | formatDate }} appointment.
-        </p>
-      {% endif %}
-
-      {% set appointment = latestWithInfo %}
-      {% include "_includes/summary-lists/medical-info-summary.njk" %}
-    {% endcall %}
-  {% endif %}
 
   {# One row per set of images read. The individual reads belong on the case
      view rather than here - this is the round's shape, not its detail. #}

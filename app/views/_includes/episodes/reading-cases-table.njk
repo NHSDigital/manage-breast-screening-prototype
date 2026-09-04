@@ -8,31 +8,25 @@
    The individual reads deliberately aren't here. They belong on the case view,
    which is where a reader goes to see who said what. #}
 
-<table class="nhsuk-table">
-  <thead class="nhsuk-table__head">
-    <tr>
-      <th scope="col">Images taken</th>
-      <th scope="col">Reads</th>
-      <th scope="col">Outcome</th>
-      <th scope="col">Case</th>
-    </tr>
-  </thead>
-  <tbody class="nhsuk-table__body">
-    {% for readingCase in episode.readingCases %}
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell">
-          {{ readingCase.openedDate | formatDate }}
-        </td>
-        <td class="nhsuk-table__cell">
-          {{ (readingCase | getReadsAsArray) | length }}
-        </td>
-        <td class="nhsuk-table__cell">
-          {{ caseOutcomeTag(readingCase) }}
-        </td>
-        <td class="nhsuk-table__cell">
-          <a href="{{ getReadingCaseUrl(readingCase) }}">View case</a>
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+{% set tableRows = [] %}
+{% for readingCase in episode.readingCases %}
+  {% set outcomeDate = readingCase | getReadingCaseOutcomeDate(data.settings) %}
+  {% set tableRows = tableRows | push([
+    { text: outcomeDate | formatDate if outcomeDate else "Not yet concluded" },
+    { text: (readingCase | getReadsAsArray) | length },
+    { html: caseOutcomeTag(readingCase) },
+    { html: '<a href="' + getReadingCaseUrl(readingCase) + '">View case</a>' }
+  ]) %}
+{% endfor %}
+
+{{ table({
+  head: [
+    { text: "Outcome date" },
+    { text: "Reads" },
+    { text: "Outcome" },
+    { text: "Case" }
+  ],
+  rows: tableRows,
+  lastRowBorder: false,
+  classes: "nhsuk-u-margin-bottom-0"
+}) }}
