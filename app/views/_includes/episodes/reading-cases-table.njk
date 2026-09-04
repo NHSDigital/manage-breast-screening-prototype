@@ -11,7 +11,7 @@
 <table class="nhsuk-table">
   <thead class="nhsuk-table__head">
     <tr>
-      <th scope="col">Images taken</th>
+      <th scope="col">Outcome date</th>
       <th scope="col">Reads</th>
       <th scope="col">Outcome</th>
       <th scope="col">Case</th>
@@ -21,7 +21,8 @@
     {% for readingCase in episode.readingCases %}
       <tr class="nhsuk-table__row">
         <td class="nhsuk-table__cell">
-          {{ readingCase.openedDate | formatDate }}
+          {% set outcomeDate = readingCase | getReadingCaseOutcomeDate(data.settings) %}
+          {{ outcomeDate | formatDate if outcomeDate else "Not yet concluded" }}
         </td>
         <td class="nhsuk-table__cell">
           {{ (readingCase | getReadsAsArray) | length }}

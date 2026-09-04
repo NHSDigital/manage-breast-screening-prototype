@@ -464,6 +464,54 @@ const getAutoFinaliseTime = (read, settings = {}) => {
 }
 
 /**
+ * When a read finalised, or will: its explicit stamp, else the moment the
+ * delay ran out or runs out. Null for a read that only finalises by hand.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {string | null} ISO timestamp, or null
+ */
+const getReadFinalisedTime = (read, settings = {}) => {
+  return read?.finalisedAt || getAutoFinaliseTime(read, settings)
+}
+
+/**
+ * The read a case's outcome comes from: the arbitration read where there was
+ * one, else whichever of the agreeing reads finalised last - the moment the
+ * case concluded. Null until the case has two reads.
+ *
+ * @param {object} readingCase - Reading case
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {object | null} The deciding read, or null
+ */
+const getDecidingRead = (readingCase, settings = {}) => {
+  const arbitrationRead = getArbitrationRead(readingCase)
+  if (arbitrationRead) return arbitrationRead
+
+  const reads = getReadsAsArray(readingCase)
+  if (reads.length < 2) return null
+
+  return [...reads].sort((a, b) =>
+    (getReadFinalisedTime(b, settings) || '').localeCompare(
+      getReadFinalisedTime(a, settings) || ''
+    )
+  )[0]
+}
+
+/**
+ * When a case's outcome finalised - the deciding read's finalised time. Null
+ * until the case has concluded.
+ *
+ * @param {object} readingCase - Reading case
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {string | null} ISO timestamp, or null
+ */
+const getReadingCaseOutcomeDate = (readingCase, settings = {}) => {
+  if (!getReadingCaseOutcome(readingCase, settings)) return null
+  return getReadFinalisedTime(getDecidingRead(readingCase, settings), settings)
+}
+
+/**
  * Whether every read on a case is finalised
  *
  * @param {object} readingCase - Reading case
@@ -946,6 +994,9 @@ module.exports = {
   shouldShowComparePage,
   isReadFinalised,
   getAutoFinaliseTime,
+  getReadFinalisedTime,
+  getDecidingRead,
+  getReadingCaseOutcomeDate,
   areAllReadsFinalised,
   getReadingCaseState,
   getReadingCaseOutcome,
