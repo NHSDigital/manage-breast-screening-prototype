@@ -322,7 +322,7 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
 // Function to highlight the completion button when all sections are done
 function highlightCompletionButton() {
   const completeButton = document.querySelector(
-    'button:contains("Authorise")'
+    'button:contains("Complete all and continue")'
   )
 
   if (!completeButton) {
