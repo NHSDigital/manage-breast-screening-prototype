@@ -42,7 +42,7 @@
 
   {% if hasActiveImplants and appointment.workflowStatus['review-medical-information'] != 'completed' %}
     {{ insetText({
-      html: "<p>You do not have permission to take all the required views for this participant. Nominate an authorised mammographer to take these images, or <a href="/exit-appointment">exit the appointment</a>.</p>"
+      html: "<p>You do not have permission to take all the required views for this participant. Nominate an authorised mammographer to take these images, or <a href='/exit-appointment'>exit the appointment</a>.</p>"
     }) }}
     <div class="nhsuk-button-group">
       {{ button({
@@ -50,7 +50,7 @@
         classes: "nhsuk-u-margin-bottom-0 js-irmer-authorise-button js-choose-authoriser-link",
         attributes: { type: "button" }
       }) }}
-      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5 js-authoriser-confirmation"> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link" style="display:none">change nominated mammographer</a>)</p>
+      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5 js-authoriser-confirmation" style="display:none"><span class="js-authoriser-confirmation-text"></span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change nominated mammographer</a>)</p>
     </div>
   {% else %}
     <div class="nhsuk-grid-row">
@@ -59,7 +59,7 @@
           text: "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
           classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
         }) }}
-        <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">Continuing will authorise you ({{ data.currentUser.firstName }} {{ data.currentUser.lastName }}) to take all appointment images (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link" style="display:none">change nominated mammographer</a>)</p>
+        <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 js-authoriser-confirmation"><span class="js-authoriser-confirmation-text">Continuing will authorise you ({{ data.currentUser.firstName }} {{ data.currentUser.lastName }}) to take all appointment images</span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change mammographer</a>)</p>
       </div>
     </div>
   {% endif %}
@@ -71,7 +71,7 @@
   <div class="nhsuk-form-group">
     {% if hasActiveImplants and appointment.workflowStatus['review-medical-information'] != 'completed' %}
       {{ insetText({
-        html: "<p>You do not have permission to take all the required views for this participant. Nominate an authorised mammographer to take these images, or <a href="/exit-appointment">exit the appointment</a>.</p>"
+        html: "<p>You do not have permission to take all the required views for this participant. Nominate an authorised mammographer to take these images, or <a href='/exit-appointment'>exit the appointment</a>.</p>"
       }) }}
       <div class="nhsuk-button-group">
         {{ button({
@@ -79,14 +79,14 @@
           classes: "nhsuk-u-margin-bottom-0 js-irmer-authorise-button js-choose-authoriser-link",
           attributes: { type: "button" }
         }) }}
-        <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5 js-authoriser-confirmation"> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link" style="display:none">change nominated mammographer</a>)</p>
+        <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5 js-authoriser-confirmation" style="display:none"><span class="js-authoriser-confirmation-text"></span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change nominated mammographer</a>)</p>
       </div>
     {% else %}
       {{ button({
         text: "Complete all and continue",
         classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
       }) }}
-      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">Continuing will authorise you ({{ data.currentUser.firstName }} {{ data.currentUser.lastName }}) to take all appointment images (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link" style="display:none">change nominated mammographer</a>)</p>
+      <p class="nhsuk-body-s nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 js-authoriser-confirmation"><span class="js-authoriser-confirmation-text">Continuing will authorise you ({{ data.currentUser.firstName }} {{ data.currentUser.lastName }}) to take all appointment images</span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change mammographer</a>)</p>
     {% endif %}
 
     <div class="nhsuk-u-margin-top-6">
@@ -95,8 +95,7 @@
   </div>
 
   {# Alternative authoriser modal #}
-  {% if hasActiveImplants %}
-    {% set authoriserModalContent %}
+  {% set authoriserModalContent %}
       {{ radios({
         name: "irmerAuthoriser",
         fieldset: {
@@ -110,6 +109,19 @@
           { value: "L. Okonkwo", text: "L. Okonkwo" },
           { value: "H. Chambers", text: "H. Chambers" },
           { value: "F. Kaur", text: "F. Kaur" }
+        ]
+      }) }}
+
+      {{ radios({
+        name: "irmerImagesScope",
+        fieldset: {
+          legend: {
+            text: "Which images are they taking?"
+          }
+        },
+        items: [
+          { value: "all-views", text: "All views" },
+          { value: "additional-views", text: "Just the additional views" }
         ]
       }) }}
     {% endset %}
@@ -138,11 +150,9 @@
         }
       ]
     }) }}
-  {% endif %}
 
 {% endblock %}
 
-{% if hasActiveImplants %}
 {% block pageScripts %}
   <script>
     // IRMER alternative authoriser selection
@@ -171,18 +181,13 @@
               btn.classList.remove("js-choose-authoriser-link")
             })
 
-document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
-  p.textContent = `Continuing will authorise ${selected.value} to take all images for this appointment`;
-});
+            document.querySelectorAll(".js-authoriser-confirmation-text").forEach((span) => {
+              span.textContent = `Continuing will authorise ${selected.value} to take all images for this appointment`
+            })
 
-            // Show the alternative authoriser links
-document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
-  p.textContent = `Continuing will authorise ${selected.value} to take all images for this appointment`;
-});
-
-            // Show the alternative authoriser links
-            document.querySelectorAll(".js-alternative-authoriser-link").forEach((link) => {
-              link.style.display = ""
+            // Show the confirmation message now that a mammographer has been nominated
+            document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
+              p.style.display = ""
             })
           }
         })
@@ -190,4 +195,3 @@ document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
     })
   </script>
 {% endblock %}
-{% endif %}
