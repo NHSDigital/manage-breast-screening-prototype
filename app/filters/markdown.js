@@ -30,6 +30,44 @@ md.renderer.rules.heading_open = (tokens, index, options, env, self) => {
 }
 
 /**
+ * The headings in a markdown document, for building a table of contents
+ *
+ * Uses the same parser and slugs as the renderer, so the ids always match the
+ * ones on the rendered page.
+ *
+ * @param {string} content - The markdown content to read
+ * @param {number} [level] - Heading level to collect, 2 (h2) by default
+ * @returns {Array<{text: string, id: string}>} Headings in document order
+ * @example
+ * {{ content | markdownHeadings }}
+ */
+const markdownHeadings = (content, level = 2) => {
+  if (!content) {
+    return []
+  }
+
+  const tag = `h${level}`
+  const tokens = md.parse(content, {})
+  const headings = []
+
+  // The token stream is flat - a heading's text is in the inline token that
+  // follows its heading_open
+  tokens.forEach((token, index) => {
+    if (token.type !== 'heading_open' || token.tag !== tag) return
+
+    const inline = tokens[index + 1]
+    if (!inline || inline.type !== 'inline') return
+
+    headings.push({
+      text: inline.content,
+      id: token.attrGet('id') || slugifyHeading(inline.content)
+    })
+  })
+
+  return headings
+}
+
+/**
  * Convert markdown to HTML
  * Output is automatically marked as safe, no need for | safe filter
  *
@@ -46,4 +84,4 @@ const markdown = (content) => {
   return nunjucksSafe(md.render(content))
 }
 
-module.exports = { markdown }
+module.exports = { markdown, markdownHeadings }

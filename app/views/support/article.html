@@ -8,7 +8,15 @@
 
 {% block pageContent %}
 
-  <h1>{{ pageHeading }}</h1>
+  <span class="nhsuk-caption-xl">{{ article.section }}</span>
+  <h1 class="nhsuk-heading-xl">{{ pageHeading }}</h1>
+
+  {% if article.contents.length %}
+    {{ contentsList({
+      items: article.contents,
+      landmarkLabel: "Contents"
+    }) }}
+  {% endif %}
 
   <div class="app-support-article">
     {{ article.body | markdown }}

@@ -15,6 +15,7 @@
 const fs = require('fs')
 const path = require('path')
 const matter = require('gray-matter')
+const { markdownHeadings } = require('../../filters/markdown')
 const { sentenceCase, formatWords } = require('./strings')
 
 const contentRoot = path.join(__dirname, '../../content/support')
@@ -60,16 +61,29 @@ const readArticle = (sectionSlug, sectionPath, fileName) => {
   const file = matter(fs.readFileSync(path.join(sectionPath, fileName), 'utf8'))
   const data = file.data || {}
 
+  // The table of contents lists the page's h2s. A single entry is no use as a
+  // contents list, so it is left empty - as it is when the page turns the
+  // contents off with `contents: false`.
+  const headings =
+    data.contents === false
+      ? []
+      : markdownHeadings(file.content, 2).map((heading) => ({
+          ...heading,
+          href: `#${heading.id}`
+        }))
+
   return {
     slug,
     order,
     sectionSlug,
+    section: titleFromSlug(sectionSlug),
     title: data.title || titleFromSlug(slug),
     subtitle: data.subtitle || null,
     // Dates come back as Date objects when unquoted in the frontmatter
     published: data.published ? String(data.published) : null,
     updated: data.updated ? String(data.updated) : null,
     href: `/support/${sectionSlug}/${slug}`,
+    contents: headings.length > 1 ? headings : [],
     body: file.content
   }
 }
