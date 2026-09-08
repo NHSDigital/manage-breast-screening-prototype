@@ -165,7 +165,7 @@
           const selected = modal.querySelector("input[name='irmerAuthoriser']:checked")
           if (selected) {
             document.querySelectorAll(".js-irmer-authorise-button").forEach((btn) => {
-              btn.textContent = "Authorise with " + selected.value + " and continue"
+              btn.textContent = "Complete all and continue"
               btn.removeAttribute("type")
               btn.classList.add("js-complete-all-sections")
               btn.classList.remove("js-choose-authoriser-link")
