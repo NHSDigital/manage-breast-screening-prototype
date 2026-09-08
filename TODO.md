@@ -7,3 +7,4 @@
 - appointment.spec.js:62 (medical history and symptom) fails under parallel load, passes solo - the modal Save click times out
 - `returnTo` treats `//evil.example` as a local path, so a posted form can redirect off-site (app/routes/reading.js, the startsWith('/') checks)
 - Reading history rows and the case-index pagination render `href="#"` stand-ins that research participants will click and get nothing
+- Section navigation is vendored from nhsuk-frontend PR #1886 (app/views/_components/section-navigation, app/assets/sass/components/_section-navigation.scss) — when the PR ships, delete both and swap `appSectionNavigation(` for `sectionNavigation(`

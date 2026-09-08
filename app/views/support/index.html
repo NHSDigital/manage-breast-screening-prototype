@@ -1,0 +1,57 @@
+{# app/views/support/index.html #}
+{# Dashboard of every support page, generated from the content tree. The first
+   section leads as cards; the rest are laid out two to a row. #}
+
+{% extends "layout-support.html" %}
+
+{% set pageHeading = "Support" %}
+{# The index lists every page already, so it does without the left-hand nav #}
+{% set hideSupportNav = true %}
+
+{% block pageContent %}
+
+  <h1>{{ pageHeading }}</h1>
+
+  <p class="nhsuk-body-l">Guidance on using Manage breast screening.</p>
+
+  {% set leadSection = supportSections[0] %}
+  {% set remainingSections = supportSections.slice(1) %}
+
+  {% if leadSection %}
+    <h2>{{ leadSection.title }}</h2>
+    <ul class="nhsuk-grid-row nhsuk-card-group">
+      {% for article in leadSection.articles %}
+        <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
+          {{ card({
+            clickable: true,
+            primary: true,
+            href: article.href,
+            heading: article.title,
+            headingLevel: 3,
+            headingSize: "m",
+            description: article.subtitle
+          }) }}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <div class="nhsuk-grid-row">
+    {% for section in remainingSections %}
+      <div class="nhsuk-grid-column-one-half">
+        <h2>{{ section.title }}</h2>
+        <ul class="nhsuk-list nhsuk-list--border">
+          {% for article in section.articles %}
+            <li>
+              <a href="{{ article.href }}">{{ article.title }}</a>
+              {% if article.subtitle %}
+                <p class="nhsuk-u-margin-bottom-0">{{ article.subtitle }}</p>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </div>
+
+{% endblock %}
