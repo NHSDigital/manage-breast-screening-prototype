@@ -164,7 +164,7 @@ test.describe('Screening appointment', () => {
       page.getByRole('heading', { name: 'Review medical information' })
     ).toBeVisible()
     await page
-      .getByRole('button', { name: 'Authorise' })
+      .getByRole('button', { name: 'Complete all and continue' })
       .first()
       .click()
 
