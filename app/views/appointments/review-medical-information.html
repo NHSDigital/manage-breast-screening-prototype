@@ -71,7 +71,7 @@
   <div class="nhsuk-form-group">
     {% if hasActiveImplants and appointment.workflowStatus['review-medical-information'] != 'completed' %}
       {{ insetText({
-        html: "<p>You do not have permission to authorise some views.</p>"
+        html: "<p>You do not have permission to take all the required views for this participant. Nominate an authorised mammographer to take these images, or <a href="/exit-appointment">exit the appointment</a>.</p>"
       }) }}
       <div class="nhsuk-button-group">
         {{ button({
