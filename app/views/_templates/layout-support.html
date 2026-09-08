@@ -1,0 +1,51 @@
+{# app/views/_templates/layout-support.html #}
+{# Two-column layout for the support section - the left-hand nav and the
+   breadcrumb are built from the content tree, so support pages get both
+   without doing anything. Set supportArticle for an article page, and
+   hideSupportNav on a page that lists the content itself. #}
+
+{% extends "layout-base.html" %}
+
+{% set hideBackLink = true %}
+
+{% block beforeContent %}
+  {# The trail ends at the current page's parent - the breadcrumb macro does not
+     include the page itself. Sections have no page of their own, so an article's
+     parent is the support index. #}
+  {% set breadcrumbItems = [{ href: "/", text: "Home" }] %}
+  {% if supportArticle %}
+    {% set breadcrumbItems = breadcrumbItems.concat([{ href: "/support", text: "Support" }]) %}
+  {% endif %}
+  {{ breadcrumb({ items: breadcrumbItems }) }}
+{% endblock %}
+
+{% block pageStructure %}
+  <div class="nhsuk-grid-row">
+
+    {% if not hideSupportNav %}
+    <div class="nhsuk-grid-column-one-quarter">
+      <nav class="app-support-nav" aria-label="Support pages">
+        {% for section in supportSections %}
+          <h2 class="app-support-nav__heading nhsuk-heading-s">{{ section.title }}</h2>
+          <ul class="app-support-nav__list nhsuk-list">
+            {% for article in section.articles %}
+              <li class="app-support-nav__item">
+                {% if article.href == currentUrl %}
+                  <a class="app-support-nav__link" href="{{ article.href }}" aria-current="page"><strong>{{ article.title }}</strong></a>
+                {% else %}
+                  <a class="app-support-nav__link" href="{{ article.href }}">{{ article.title }}</a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
+      </nav>
+    </div>
+    {% endif %}
+
+    <div class="{{ "nhsuk-grid-column-full" if hideSupportNav else "nhsuk-grid-column-three-quarters" }}">
+      {% block pageContent %}{% endblock %}
+    </div>
+
+  </div>
+{% endblock pageStructure %}

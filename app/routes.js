@@ -317,6 +317,7 @@ require('./routes/reading')(router)
 require('./routes/reading-cases')(router)
 require('./routes/arbitration')(router)
 require('./routes/reports')(router)
+require('./routes/support')(router)
 
 router.get('/modal-examples', (req, res) => {
   res.render('_components/modal/examples')
