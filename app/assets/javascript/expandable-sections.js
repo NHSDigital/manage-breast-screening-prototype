@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize progress
   updateProgress(sections, completedSections)
 
-  // Handle "Authorise" button
+  // Handle "Complete all and continue" button
   const completeAllButtons = document.querySelectorAll(
     '.js-complete-all-sections'
   )
