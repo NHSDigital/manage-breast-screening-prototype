@@ -3,6 +3,7 @@ title: Article one title
 subtitle: Subtitle here
 published: 2026-09-08
 updated: 2026-09-08
+showContentsList: false
 ---
 
 Introduction paragraph here. A sentence or two setting out what this page covers.

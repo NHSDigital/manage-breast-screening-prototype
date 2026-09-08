@@ -48,7 +48,7 @@ Put your smartcard in the reader before you open Manage.
 | `subtitle` | No | One-line description under the link on the support index |
 | `published` | No | Shown at the foot of the page if there is no `updated` date |
 | `updated` | No | Shown at the foot of the page |
-| `contents` | No | Set to `false` to hide the contents list at the top of the page |
+| `showContentsList` | No | Set to `false` to hide the contents list at the top of the page |
 
 If you leave `title` out, the file name is used instead.
 
@@ -62,7 +62,7 @@ Headings get an id automatically, so `## Signing in` can be linked to as `/suppo
 
 Pages with two or more `##` headings get a contents list at the top, linking to each one. It is built from the page, so there is nothing to keep up to date.
 
-To hide it on a particular page, add `contents: false` to the frontmatter.
+To hide it on a particular page, add `showContentsList: false` to the frontmatter.
 
 ## Section names
 

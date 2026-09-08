@@ -61,11 +61,11 @@ const readArticle = (sectionSlug, sectionPath, fileName) => {
   const file = matter(fs.readFileSync(path.join(sectionPath, fileName), 'utf8'))
   const data = file.data || {}
 
-  // The table of contents lists the page's h2s. A single entry is no use as a
-  // contents list, so it is left empty - as it is when the page turns the
-  // contents off with `contents: false`.
+  // The contents list links to the page's h2s. A single entry is no use as a
+  // contents list, so it is left empty - as it is when the page turns the list
+  // off with `showContentsList: false`.
   const headings =
-    data.contents === false
+    data.showContentsList === false
       ? []
       : markdownHeadings(file.content, 2).map((heading) => ({
           ...heading,
