@@ -176,6 +176,11 @@ document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
 });
 
             // Show the alternative authoriser links
+document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
+  p.textContent = `Continuing will authorise ${selected.value} to take all images for this appointment`;
+});
+
+            // Show the alternative authoriser links
             document.querySelectorAll(".js-alternative-authoriser-link").forEach((link) => {
               link.style.display = ""
             })
