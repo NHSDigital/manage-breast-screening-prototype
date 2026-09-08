@@ -4,8 +4,9 @@
 // COMPONENTS / #SUPPORT
 // ==========================================================================
 
-// Left-hand nav on support pages: headings for each section, links to the
-// articles within it. Generated from the markdown content tree.
+// Left-hand nav on support pages: a heading per section, with the section
+// navigation component listing that section's articles. Generated from the
+// markdown content tree.
 
 .app-support-nav {
   @include nhsuk-media-query($until: desktop) {
@@ -17,16 +18,4 @@
 
 .app-support-nav__heading {
   margin-bottom: nhsuk-spacing(2);
-}
-
-.app-support-nav__list {
-  margin-bottom: nhsuk-spacing(5);
-}
-
-.app-support-nav__item {
-  margin-bottom: nhsuk-spacing(1);
-}
-
-.app-support-nav__link {
-  @include nhsuk-font-size(16);
 }
