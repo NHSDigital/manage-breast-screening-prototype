@@ -132,7 +132,7 @@ test.describe('Screening appointment', () => {
     await expect(page.getByText('Lump').first()).toBeVisible()
 
     await page
-      .getByRole('button', { name: 'Authorise' })
+      .getByRole('button', { name: 'Complete all and continue' })
       .first()
       .click()
 
