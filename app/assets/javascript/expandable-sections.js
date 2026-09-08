@@ -330,7 +330,7 @@ function highlightCompletionButton() {
     const buttons = document.querySelectorAll('button')
 
     buttons.forEach((btn) => {
-      if (btn.textContent.includes('Authorise')) {
+      if (btn.textContent.includes('Complete all and continue')) {
         btn.classList.add('nhsuk-button--green') // Highlight in green
         btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
       }
