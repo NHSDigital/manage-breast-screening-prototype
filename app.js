@@ -30,12 +30,20 @@ const entryPoints = [
   'app/data/generated/**/*.json'
 ]
 
+// Headless instances - the route sweep, or a server started just to check a
+// page - share this checkout's public/ directory with any dev server already
+// running. The kit's esbuild build empties public/ before writing to it and
+// then watches it, so building from a second instance strips the running
+// server's assets. Those instances only need HTML, so they skip
+// the build. Meant for `PROXY=true` runs: without the build, the entry points
+// no longer reach nodemon's ignore list, so `npm start` with this set would
+// restart on every seed data regeneration.
+const skipAssetBuild = process.env.SKIP_ASSET_BUILD === 'true'
+
 async function init() {
   const prototype = await NHSPrototypeKit.init({
     serviceName: config.serviceName,
-    buildOptions: {
-      entryPoints
-    },
+    buildOptions: skipAssetBuild ? undefined : { entryPoints },
     viewsPath,
     routes,
     locals,
