@@ -2,9 +2,27 @@
 
 const {
   getParticipant,
-  sortBySurname,
   saveTempParticipantToParticipant
 } = require('../lib/utils/participants')
+const {
+  MAX_ROWS,
+  PARTICIPANT_VIEWS,
+  PARTICIPANT_VIEW_LABELS,
+  DEFAULT_PARTICIPANT_VIEW,
+  PARTICIPANT_SORTS,
+  DEFAULT_PARTICIPANT_SORT,
+  PARTICIPANT_FILTER_GROUPS,
+  getParticipantRows,
+  getParticipantList
+} = require('../lib/utils/participant-list')
+const {
+  parseFilterQuery,
+  applyFilterGroups,
+  getFilterCounts,
+  describeSelectedFilters,
+  buildFilterUrl,
+  hasSelectedFilters
+} = require('../lib/utils/filter-list')
 const {
   getEpisode,
   getEpisodesForParticipant,
@@ -15,7 +33,6 @@ const {
 const { getEpisodeReadingStatus } = require('../lib/utils/reading')
 const { getClinic } = require('../lib/utils/clinics')
 const { findById } = require('../lib/utils/arrays')
-const { participantMatchesQuery } = require('../lib/utils/search')
 const { createDynamicTemplateRoute } = require('../lib/utils/dynamic-routing')
 const {
   getReturnUrl,
@@ -30,42 +47,111 @@ module.exports = (router) => {
     next()
   })
 
-  const cleanSearchTerm = (term) => term.toLowerCase().replace(/\s+/g, '')
-
-  // Redirect to default tab
+  // The participant index. Filters are query params rather than path segments
+  // because the list has several facets at once (appointment, last screened,
+  // age, risk) - and it keeps the URL shareable. Checkboxes send repeated
+  // params, so a facet can hold several values at once.
   router.get('/participants', (req, res) => {
     const data = req.session.data
-    const searchTerm = req.query.search?.trim() || ''
-    const cleanedSearch = cleanSearchTerm(searchTerm)
 
-    const allParticipants = sortBySurname(data.participants)
-    let filteredParticipants = allParticipants
+    const view = PARTICIPANT_VIEWS.includes(req.query.view)
+      ? req.query.view
+      : DEFAULT_PARTICIPANT_VIEW
+    const query = req.query.search?.trim() || ''
 
-    if (searchTerm) {
-      data.search = searchTerm
-      res.locals.data.search = searchTerm
+    const sort = PARTICIPANT_SORTS.some(
+      (candidate) => candidate.value === req.query.sort
+    )
+      ? req.query.sort
+      : DEFAULT_PARTICIPANT_SORT
 
-      filteredParticipants = allParticipants.filter((participant) => {
-        // Name and NHS number matching is shared with the other searches in the
-        // service; postcode and SX number are this index's own
-        if (participantMatchesQuery(participant, searchTerm)) return true
+    const groups = PARTICIPANT_FILTER_GROUPS
+    const selected = parseFilterQuery(req.query, groups)
 
-        const postcode = cleanSearchTerm(
-          participant.demographicInformation.address.postcode
-        )
-        const sxNumber = cleanSearchTerm(participant.sxNumber)
+    // Everything in the view matching the search, before the filter groups -
+    // what the faceted counts are drawn from
+    const baseRows = getParticipantRows(data, { view, query })
 
-        return (
-          postcode.includes(cleanedSearch) || sxNumber.includes(cleanedSearch)
-        )
-      })
+    const { rows, totalCount, truncated } = getParticipantList(data, {
+      view,
+      query,
+      sort,
+      groups,
+      selected
+    })
+
+    // The default view and order stay out of the URL, so a shared link only
+    // carries what someone actually chose
+    const carriedParams = {
+      view: view === DEFAULT_PARTICIPANT_VIEW ? '' : view,
+      search: query,
+      sort: sort === DEFAULT_PARTICIPANT_SORT ? '' : sort
     }
 
+    // Each view tab shows how many participants it holds under the current
+    // search and filters - the current view's count is just the result total
+    const viewCounts = Object.fromEntries(
+      PARTICIPANT_VIEWS.map((candidate) => [
+        candidate,
+        candidate === view
+          ? totalCount
+          : applyFilterGroups(
+              getParticipantRows(data, { view: candidate, query }),
+              groups,
+              selected
+            ).length
+      ])
+    )
+
+    const viewUrls = Object.fromEntries(
+      PARTICIPANT_VIEWS.map((candidate) => [
+        candidate,
+        buildFilterUrl('/participants', selected, {
+          ...carriedParams,
+          view: candidate === DEFAULT_PARTICIPANT_VIEW ? '' : candidate
+        })
+      ])
+    )
+
+    // A search only covers the current view, so say when the widest one holds
+    // matches too - otherwise someone searching inside a narrowed view is
+    // told a participant doesn't exist when they simply have no open round
+    const acrossViewCount =
+      query && view !== 'all' && viewCounts.all > totalCount
+        ? viewCounts.all
+        : 0
+
     res.render('participants/index', {
-      allParticipants,
-      filteredParticipants,
-      search: searchTerm,
-      isFiltered: searchTerm.length > 0
+      rows,
+      totalCount,
+      truncated,
+      shownCount: rows.length,
+      maxRows: MAX_ROWS,
+      view,
+      views: PARTICIPANT_VIEWS,
+      viewLabels: PARTICIPANT_VIEW_LABELS,
+      viewCounts,
+      viewUrls,
+      acrossViewCount,
+      acrossViewUrl: viewUrls.all,
+      sort,
+      sorts: PARTICIPANT_SORTS,
+      groups,
+      selected,
+      counts: getFilterCounts(baseRows, groups, selected),
+      selectedFilters: describeSelectedFilters(
+        groups,
+        selected,
+        '/participants',
+        carriedParams
+      ),
+      isFiltered: hasSelectedFilters(selected),
+      search: query,
+      // The search is a real field in the filter form, so only the view and
+      // the chosen order ride along as hidden fields - and clearing keeps them
+      hiddenFields: { view: carriedParams.view, sort: carriedParams.sort },
+      // What the sort form has to carry to leave the rest of the list alone
+      sortHiddenFields: { view: carriedParams.view, search: query }
     })
   })
 
