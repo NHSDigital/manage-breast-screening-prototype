@@ -1,8 +1,14 @@
+{# app/views/participants/index.html
+
+   Every participant on the system. Filters are query params so several can
+   apply at once and the URL stays shareable. #}
+
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = "All participants" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
 
 {% set back = {
   href: "/dashboard",
@@ -11,101 +17,200 @@
 
 {% block pageContent %}
 
-  <h1 class="nhsuk-heading-l">
-    {{ pageHeading }}
-  </h1>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
+  {# The whole row is the live region: with JavaScript the panel counts, the
+     selected filters and the table all update together #}
+  <div class="nhsuk-grid-row" id="filter-results">
+    <div class="nhsuk-grid-column-one-third">
 
-
-  {% if filteredParticipants.length === 0 %}
-    <p>No participants found</p>
-  {% else %}
-
-    {# Truncate particpants until we have filtering / pagination #}
-    {% set limitedParticipants = filteredParticipants | limitTo(100) %}
-
-    {{ limitedParticipants | log }}
-
-    <form method="get" action="/participants">
-      {{ input({
-        label: {
-          text: "Search",
-          size: "m"
+      {{ appFilterPanel({
+        action: "/participants",
+        groups: groups,
+        selected: selected,
+        counts: counts,
+        search: {
+          id: "participant-search",
+          name: "search",
+          value: search,
+          label: { text: "Search by name, postcode, NHS or SX number" }
         },
-        hint: {
-          text: "Search by name, postcode, NHS or SX number"
-        },
-        classes: "nhsuk-u-width-two-thirds",
-        id: "example",
-        value: search,
-        name: "search"
+        hiddenFields: hiddenFields,
+        live: "#filter-results"
       }) }}
 
-      <button type="submit" class="nhsuk-button">Search</button>
-      {% if search %}
-        <p><a class="nhsuk-link nhsuk-link--no-visited-state" href="/participants">Clear search</a></p>
+    </div>
+    {# Custom top margin to push column down to line up with start of search card (minus feature outdent) #}
+    <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
+
+      {% if isFiltered %}
+        <div class="app-selected-filters">
+          <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Selected filters</h2>
+          <ul class="app-selected-filters__list">
+            {% for item in selectedFilters %}
+              <li class="app-selected-filters__item">
+                <a href="{{ item.href }}" class="app-selected-filters__tag">
+                  <span class="nhsuk-u-visually-hidden">Remove this filter:</span>
+                  {{ item.label }}
+                  <span aria-hidden="true">✕</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
       {% endif %}
 
-    </form>
+      {# The views split the population; their counts carry the current search
+         and filters #}
+      {% set viewNavItems = [] %}
+      {% for candidate in views %}
+        {% set viewNavItems = viewNavItems | push({
+          text: viewLabels[candidate] + " (" + viewCounts[candidate] + ")",
+          href: viewUrls[candidate],
+          current: true if candidate == view
+        }) %}
+      {% endfor %}
 
-
-    <table class="nhsuk-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th class="nhsuk-table__header">Name</th>
-          <th class="nhsuk-table__header">Postcode</th>
-          <th class="nhsuk-table__header">NHS number</th>
-          <th class="nhsuk-table__header">Last screened</th>
-          <th class="nhsuk-table__header">Next screening</th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for participant in limitedParticipants %}
-          <tr>
-            <td class="nhsuk-table__cell">
-              {% set dob %}
-                {{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true) }} old
-              {% endset %}
-              <a href="/participants/{{ participant.id }}" class="nhsuk-link">
-                {{ participant | getFullNameReversed }}
-              </a><br>
-              {{ dob | asHint }}
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ participant.demographicInformation.address.postcode }}
-            </td>
-            <td class="nhsuk-table__cell">{{ participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap }}</td>
-            <td class="nhsuk-table__cell">
-              {% set lastMammogram = data | getLastMammogram(participant.id) %}
-              {% if lastMammogram %}
-                {{ lastMammogram.date | formatDate }}<br>
-                {{ lastMammogram.date | formatDate | formatRelativeDate | asHint }}
-              {% else %}
-                  {{ "Not known" | asHint }}
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
-              {% set nextAppointment = data | getNextAppointment(participant.id) %}
-              {% if nextAppointment %}
-                {{ nextAppointment.timing.startTime | formatDate }}<br>
-                {{ nextAppointment.timing.startTime | formatDate | formatRelativeDate | asHint }}
-              {% else %}
-                  {{ "Not known" | asHint }}
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    {% if limitedParticipants | length === 100 %}
-      {{ pagination({
-        nextUrl: "#",
-        nextPage: " "
+      {{ appSecondaryNavigation({
+        visuallyHiddenTitle: "Which participants to show",
+        items: viewNavItems
       }) }}
-    {% endif %}
 
-  {% endif %}
+      {% if totalCount == 0 %}
+        {# Search came to this page long before the filters did, so say which
+           of the two found nothing rather than blaming the filters #}
+        {% if search and not isFiltered %}
+          <p>No participants match “{{ search }}”.</p>
+        {% elseif search %}
+          <p>No participants match “{{ search }}” and these filters.</p>
+        {% else %}
+          <p>No participants match these filters.</p>
+        {% endif %}
+      {% else %}
 
+        {# The count and the order sit on one line: the order is about these
+           results, not about the population the filter panel picks #}
+        <div class="app-results-bar">
+          <p class="app-results-bar__count nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
+            Showing <b>1</b> to <b>{{ shownCount }}</b> of <b>{{ totalCount }}</b> {{ "participant" | pluralise(totalCount) }}
+          </p>
+
+          {# Its own form, so choosing an order leaves the search and filters
+             alone - they ride along as hidden fields. With JavaScript the
+             select updates the list in place; without it, the button submits #}
+          <form class="app-results-bar__sort" method="get" action="/participants" data-live-filters="#filter-results">
+            {% for name, value in sortHiddenFields %}
+              {% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+            {% endfor %}
+            {% for name, values in selected %}
+              {% for value in values %}
+                <input type="hidden" name="{{ name }}" value="{{ value }}">
+              {% endfor %}
+            {% endfor %}
+
+            {% set sortItems = [] %}
+            {% for option in sorts %}
+              {% set sortItems = sortItems | push({
+                value: option.value,
+                text: option.label,
+                selected: true if option.value == sort
+              }) %}
+            {% endfor %}
+
+            {{ select({
+              id: "participant-sort",
+              name: "sort",
+              label: { text: "Sort by", classes: "app-results-bar__sort-label" },
+              formGroup: { classes: "app-results-bar__sort-group" },
+              items: sortItems
+            }) }}
+
+            {# Redundant once live updating is running - hidden by CSS then #}
+            {{ button({
+              text: "Sort",
+              small: true,
+              classes: "app-results-bar__sort-button nhsuk-u-margin-bottom-0"
+            }) }}
+          </form>
+        </div>
+
+        <table class="nhsuk-table">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Postcode</th>
+              <th scope="col">NHS number</th>
+              <th scope="col">Last screened</th>
+              <th scope="col">Next screening</th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for row in rows %}
+              <tr class="nhsuk-table__row">
+                <td class="nhsuk-table__cell">
+                  {# The exact age, not a relative date - a rounded "70 years"
+                     for someone of 69 would contradict the age filter and sort #}
+                  {% set dob %}
+                    {{ row.age }} years old
+                  {% endset %}
+                  <a href="/participants/{{ row.participant.id }}" class="nhsuk-link">
+                    {{ row.participant | getFullNameReversed }}
+                  </a><br>
+                  {{ dob | asHint }}
+                  {% if row.hasSpecialAppointment %}
+                    <br>
+                    {{ tag({
+                      text: "Special appointment",
+                      colour: "yellow",
+                      classes: "nhsuk-u-margin-top-1 app-nowrap"
+                    }) }}
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {{ row.participant.demographicInformation.address.postcode }}
+                </td>
+                <td class="nhsuk-table__cell">{{ row.participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap }}</td>
+                <td class="nhsuk-table__cell">
+                  {% if row.lastScreenedDate %}
+                    {{ row.lastScreenedDate | formatDate }}<br>
+                    {{ row.lastScreenedDate | formatDate | formatRelativeDate | asHint }}
+                  {% else %}
+                    {{ "Not known" | asHint }}
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {% if row.nextAppointment %}
+                    {{ row.nextAppointment.timing.startTime | formatDate }}<br>
+                    {{ row.nextAppointment.timing.startTime | formatDate | formatRelativeDate | asHint }}
+                  {% else %}
+                    {{ "Not known" | asHint }}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        {# Pagination is a facade - the list is capped rather than paged #}
+        {% if truncated %}
+          {{ pagination({
+            nextUrl: "#",
+            nextPage: " "
+          }) }}
+        {% endif %}
+
+      {% endif %}
+
+      {# The search only covered this view - point at the matches it couldn't
+         reach #}
+      {% if acrossViewCount %}
+        {% set acrossViewHtml %}
+          <p><a href="{{ acrossViewUrl }}">{{ acrossViewCount }} matching {{ "participant" | pluralise(acrossViewCount) }} in “{{ viewLabels.all }}”</a></p>
+        {% endset %}
+        {{ insetText({ html: acrossViewHtml }) }}
+      {% endif %}
+
+    </div>
+  </div>
 
 {% endblock %}
