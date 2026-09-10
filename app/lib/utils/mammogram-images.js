@@ -3,6 +3,7 @@
 const path = require('path')
 const fs = require('fs')
 const config = require('../../config')
+const { isMedicalHistoryItemRemoved } = require('./medical-information')
 
 // Image sources
 const IMAGE_SOURCES = {
@@ -123,15 +124,14 @@ const extractAppointmentContext = (appointment) => {
     context.symptomSides = Array.from(sides)
   }
 
-  // Check for breast implants (array with items means has implants)
+  // Check for breast implants still in place - removed implants do not need
+  // the implant image sets
   const implants =
     appointment.medicalInformation?.medicalHistory?.breastImplantsAugmentation || []
   if (implants.length > 0) {
-    // Check if implants have been removed
-    const hasActiveImplants = implants.some(
-      (implant) => !implant.hasBeenRemoved
+    context.hasImplants = implants.some(
+      (implant) => !isMedicalHistoryItemRemoved(implant)
     )
-    context.hasImplants = hasActiveImplants
   }
 
   // Check for imperfect images

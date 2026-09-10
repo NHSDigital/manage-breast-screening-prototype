@@ -2,6 +2,7 @@
 
 const medicalHistoryTypes = require('../../data/medical-history-types')
 const { startLowerCase } = require('./strings')
+const { falsify } = require('./utility')
 
 /**
  * Check whether a string names a medical history type, by type or slug
@@ -37,6 +38,26 @@ const getMedicalHistoryType = (type) => {
 const getMedicalHistoryKeyFromSlug = (slug) => {
   const item = medicalHistoryTypes.find((item) => item.slug === slug)
   return item ? item.type : null
+}
+
+/**
+ * Check whether a medical history item records something that has since been removed
+ *
+ * Each type captures removal under its own field name, and values arrive as
+ * either an array (from checkboxes) or a plain string (from seed data or
+ * query params), so both shapes are handled.
+ *
+ * @param {Object} item - The medical history item
+ * @returns {boolean} Whether the item has been removed
+ */
+const isMedicalHistoryItemRemoved = (item) => {
+  if (!item) return false
+
+  const removalFields = [item.implantsRemoved, item.deviceRemoved]
+
+  return removalFields.some((value) =>
+    Array.isArray(value) ? value.length > 0 : falsify(value)
+  )
 }
 
 /**
@@ -619,6 +640,7 @@ module.exports = {
   isValidMedicalHistoryType,
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug,
+  isMedicalHistoryItemRemoved,
   summariseMedicalHistoryItem,
   summariseMedicalHistory,
   getMedicalHistoryItems,
