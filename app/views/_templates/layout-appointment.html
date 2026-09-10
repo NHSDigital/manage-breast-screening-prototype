@@ -3,13 +3,6 @@
 {% extends 'layout-base.html' %}
 
 
-
-{# Wider page for workflow mode with side nav #}
-{% if isAppointmentWorkflow and showNavigation %}
-  {# {% set containerClasses = "nhsuk-width-container nhsuk-width-container--wide" %} #}
-  {% set bodyClasses = (bodyClasses or "") + " app-workflow-mode" %}
-{% endif %}
-
 {# Pages set these variables to control behaviour #}
 {% set showNavigation = showNavigation if showNavigation != undefined else false %}
 {% set activeTab = activeTab or "" %}

@@ -1,3 +1,5 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
 .app-sidebar-sticky {
   position: sticky;
   top: 20px;
@@ -31,7 +33,7 @@
 }
 
 .app-sticky-bottom-container .nhsuk-grid-row {
-  max-width: 960px;
+  max-width: $nhsuk-page-width;
   margin: 0 auto;
 }
 
