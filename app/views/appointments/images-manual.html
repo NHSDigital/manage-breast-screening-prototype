@@ -18,6 +18,10 @@
 
   {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
 
+  {# Determine whether a different mammographer was nominated to take the images #}
+  {% set currentUserName = data.currentUser.firstName + " " + data.currentUser.lastName %}
+  {% set operatorChanged = appointment.operator and appointment.operator != currentUserName %}
+
   {# Determine current room name #}
   {% set currentRoomName = "" %}
   {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
@@ -38,9 +42,16 @@
     <p>
       Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ currentRoomName }}</span>.
       {% if not isMobileClinic %}
-        <br><a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Change room or machine details</a>
+        (<a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">change</a>)
       {% endif %}
     </p>
+
+    {% if operatorChanged %}
+      <p>
+        Authorised operator: <span class="nhsuk-u-font-weight-bold">{{ appointment.operator }}</span>
+        (<a href="{{ (appointmentUrl + '/review-medical-information') | urlWithReferrer(referrerChain) }}">change</a>)
+      </p>
+    {% endif %}
 
     {{ appHiddenInput({
       name: "appointment[mammogramDataTemp][machineRoom]",
@@ -148,7 +159,7 @@
     name: "appointment[mammogramDataTemp][isStandardSet]",
     fieldset: {
       legend: {
-        text: "Have you taken a standard set of images?",
+        text: "Were a standard set of images taken?",
         size: "m",
         isPageHeading: false
       }

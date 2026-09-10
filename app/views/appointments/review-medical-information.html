@@ -38,6 +38,9 @@
 {# Nominating an alternative mammographer is only relevant when implants or devices require authorisation #}
 {% set requiresAuthorisation = hasActiveImplants or hasActiveMedicalDevices %}
 
+{# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
+{% set operatorName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
+
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">
@@ -52,6 +55,12 @@
   {{ appHiddenInput({
     name: "appointment[workflowStatus][review-breast-features-after-imaging]",
     value: appointment.workflowStatus['review-breast-features-after-imaging']
+  }) }}
+
+  {{ appHiddenInput({
+    id: "irmer-operator-input",
+    name: "appointment[operator]",
+    value: operatorName
   }) }}
 
   {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' %}
@@ -211,6 +220,12 @@
             document.querySelectorAll(".js-authoriser-confirmation-text").forEach((span) => {
               span.textContent = `Continuing will authorise ${selected.value} to take all images for this appointment`
             })
+
+            // Persist the nominated mammographer as the operator for this appointment
+            const operatorInput = document.getElementById("irmer-operator-input")
+            if (operatorInput) {
+              operatorInput.value = selected.value
+            }
 
             // Show the confirmation message now that a mammographer has been nominated
             document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {

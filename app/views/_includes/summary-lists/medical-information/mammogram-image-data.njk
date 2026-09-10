@@ -250,6 +250,16 @@
   } if allowEdits
 }) %}
 
+{# Operator - defaults to the logged in user, unless an alternative mammographer was nominated #}
+{% set summaryRows = summaryRows | push({
+  key: {
+    text: "Operator"
+  },
+  value: {
+    text: appointment.operator
+  }
+}) %}
+
 {# OLD Views taken (split into separate rows) - keeping for reference #}
 {# {% set summaryRows = summaryRows | push({
   key: {
