@@ -5,23 +5,36 @@
 // ─── Image grid ───────────────────────────────────────────────────────────────
 
 .app-annotation-images__row {
+  // Column count and gap drive the max-width calculation below, so they are
+  // custom properties rather than repeated literals.
+  --app-annotation-images-columns: 2;
+  --app-annotation-images-gap: #{nhsuk-spacing(3)};
+
+  // Panels stretch to fill their column, so on a wide page two images each
+  // become taller than the viewport. Capping the width one panel can reach
+  // keeps them scannable, while more panels still use the full page width
+  // because the cap only binds once there is space to spare.
+  --app-annotation-images-panel-max-width: 440px;
+
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(var(--app-annotation-images-columns), minmax(0, 1fr));
   grid-auto-rows: auto;
-  gap: nhsuk-spacing(3);
+  gap: var(--app-annotation-images-gap);
+  max-width: calc(
+    var(--app-annotation-images-columns) * var(--app-annotation-images-panel-max-width) +
+      (var(--app-annotation-images-columns) - 1) * var(--app-annotation-images-gap)
+  );
 
   @include nhsuk-media-query($from: tablet) {
-    gap: nhsuk-spacing(4);
+    --app-annotation-images-gap: #{nhsuk-spacing(4)};
   }
 
-  // Single image: constrain width
   &[data-panel-count="1"] {
-    grid-template-columns: minmax(0, 45%);
+    --app-annotation-images-columns: 1;
   }
 
-  // Three images
   &[data-panel-count="3"] {
-    grid-template-columns: repeat(3, 1fr);
+    --app-annotation-images-columns: 3;
   }
 }
 
