@@ -78,7 +78,9 @@
   {% endif %}
 
   <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
+    {# Reading width rather than a two-thirds column: this page also renders
+       inside the modal, where a fraction of the dialog would be far too narrow. #}
+    <div class="nhsuk-grid-column-full nhsuk-u-reading-width">
 
       {# Text location field — shown when images are not available #}
       {% if not showImages %}
