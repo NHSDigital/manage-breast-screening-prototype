@@ -15,6 +15,7 @@ const { spawn } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const dayjs = require('dayjs')
+const { getSupportSections } = require('../app/lib/utils/support-content')
 
 const port = Number(process.env.SWEEP_PORT || 3011)
 const baseUrl = `http://localhost:${port}`
@@ -58,14 +59,21 @@ const skippedPaths = [
  * Start the prototype as a plain Express process and wait for it to answer.
  *
  * PROXY=true makes the kit skip its nodemon/browsersync watch wrapper, which
- * would otherwise leave a process we cannot cleanly kill.
+ * would otherwise leave a process we cannot cleanly kill. SKIP_ASSET_BUILD
+ * leaves public/ alone - the sweep needs no CSS, and building would empty the
+ * directory a dev server running from this checkout is serving.
  *
  * @returns {Promise<import('child_process').ChildProcess>} The running server
  */
 const startServer = async () => {
   const server = spawn('node', ['.'], {
     cwd: rootPath,
-    env: { ...process.env, PORT: String(port), PROXY: 'true' },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      PROXY: 'true',
+      SKIP_ASSET_BUILD: 'true'
+    },
     stdio: ['ignore', 'ignore', 'pipe']
   })
 
@@ -180,6 +188,14 @@ const collectParams = async (sessionFetch) => {
     type: 'breast-cancer'
   }
 
+  // Support articles are swept in full below; these just stop the route that
+  // serves them being reported as unfillable
+  const firstSection = getSupportSections()[0]
+  if (firstSection) {
+    params.sectionSlug = firstSection.slug
+    params.articleSlug = firstSection.articles[0].slug
+  }
+
   // Create a reading session so the /reading/session/... routes can be swept
   const created = await sessionFetch(
     `${baseUrl}/reading/create-session?type=all_reads&limit=5&lazy=false`
@@ -279,6 +295,19 @@ const getTemplateSubPaths = (viewsDirectory, includedTemplates) => {
 }
 
 /**
+ * Every support article URL, from the markdown content on disk.
+ *
+ * One route serves every article, so sweeping the route alone would only check
+ * a single page.
+ *
+ * @returns {Array<string>} URLs to sweep
+ */
+const getSupportUrls = () =>
+  getSupportSections().flatMap((section) =>
+    section.articles.map((article) => article.href)
+  )
+
+/**
  * URLs for the pages served by the wildcard template routes
  *
  * @param {Record<string, string>} params - Parameter values
@@ -374,7 +403,7 @@ const run = async () => {
       urls.add(built.url)
     }
 
-    for (const url of getTemplateUrls(params)) {
+    for (const url of [...getTemplateUrls(params), ...getSupportUrls()]) {
       urls.add(url)
     }
 
