@@ -18,7 +18,7 @@
 {% set showImages = data.settings.reading.annotationsMode != 'without-images'
   or (annotation.positions and (annotation.positions | length > 0)) %}
 
-{% set formAction = './annotation/save' %}
+{% set formAction = './annotation/save' | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 
@@ -112,9 +112,7 @@
 
         {# Only show delete link if this is a previously saved annotation #}
         {% if annotation.id %}
-          {% set deleteHref %}
-            ./annotation/delete/{{ annotation.id }}
-          {% endset %}
+          {% set deleteHref = ('./annotation/delete/' + annotation.id) | urlWithReferrer(referrerChain) %}
           <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
             Delete this annotation
           </a>

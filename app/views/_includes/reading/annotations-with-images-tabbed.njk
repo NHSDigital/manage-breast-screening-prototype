@@ -68,6 +68,7 @@
                       interactive: true,
                       editable: true,
                       editHrefPrefix: "./annotation/edit/",
+                      referrerChain: referrerChain,
                       useModals: data.settings.modalForms == 'true'
                     }) }}
                   </div>
@@ -78,7 +79,7 @@
                     variant: "secondary",
                     small: true,
                     classes: "nhsuk-u-margin-bottom-0",
-                    href: "./annotation/add?side=" + breastSide
+                    href: ("./annotation/add?side=" + breastSide) | urlWithReferrer(referrerChain)
                   }) }}
                 </div>
               </div>

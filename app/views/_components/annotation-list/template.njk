@@ -12,6 +12,7 @@
     addHref        — URL for "Add annotation" button (optional, only shown if editable)
     addAttributes  — additional attributes for the add button (e.g. data-load-modal-url)
     useModals      — boolean, add data-load-modal-url to edit links and add button (default: false)
+    referrerChain  — referrer chain carried on the edit and add links (optional)
     emptyText      — text shown when no annotations (default: "If abnormal, add an annotation (concern level 3 or higher)")
     classes        — additional CSS classes on the wrapper
     id             — id attribute on the wrapper element
@@ -72,10 +73,11 @@
             {% endif %}
 
             {% if _editable and params.editHrefPrefix %}
+              {% set _editHref = (params.editHrefPrefix + annotation.id) | urlWithReferrer(params.referrerChain) %}
               <div class="app-annotation-list__actions">
-                <a href="{{ params.editHrefPrefix }}{{ annotation.id }}"
+                <a href="{{ _editHref }}"
                    class="nhsuk-link nhsuk-link--no-visited-state"
-                   {% if _useModals %}data-load-modal-url="{{ params.editHrefPrefix }}{{ annotation.id }}"{% endif %}>
+                   {% if _useModals %}data-load-modal-url="{{ _editHref }}"{% endif %}>
                   Change<span class="nhsuk-u-visually-hidden"> annotation {{ _number }}</span>
                 </a>
               </div>
@@ -88,9 +90,10 @@
   {% endif %}
 
   {% if _editable and params.addHref %}
+    {% set _addHref = params.addHref | urlWithReferrer(params.referrerChain) %}
     {% set _addButtonAttributes = {} %}
     {% if _useModals %}
-      {% set _addButtonAttributes = { "data-load-modal-url": params.addHref } %}
+      {% set _addButtonAttributes = { "data-load-modal-url": _addHref } %}
     {% endif %}
 
     {{ button({
@@ -98,7 +101,7 @@
       variant: "secondary",
       small: true,
       classes: "nhsuk-u-margin-bottom-0",
-      href: params.addHref,
+      href: _addHref,
       attributes: _addButtonAttributes
     }) }}
   {% endif %}

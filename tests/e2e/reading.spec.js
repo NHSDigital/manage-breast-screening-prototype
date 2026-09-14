@@ -107,6 +107,31 @@ const recordArbitrationNormal = async (page) => {
 }
 
 /**
+ * Add a level 4 annotation of the given type from the recall for assessment
+ * page, described in text (the 'without-images' annotation mode).
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {string} abnormalityType - Per-type add button to click, eg 'Ill-defined mass'
+ */
+const addTextAnnotation = async (page, abnormalityType) => {
+  const annotationModal = await clickToOpenModal(page, abnormalityType)
+  await annotationModal.locator('#modal-location').fill('Upper outer quadrant')
+  // The level of concern control hides its radios behind a custom picker,
+  // so the label is the thing to click
+  await annotationModal
+    .locator(
+      'label[for="modal-imageReadingTemp[annotationTemp][levelOfConcern]-4"]'
+    )
+    .click()
+  const saveAnnotation = annotationModal
+    .getByRole('button', { name: 'Save' })
+    .first()
+  await revealInModal(saveAnnotation)
+  await saveAnnotation.click()
+  await expectModalClosed(annotationModal)
+}
+
+/**
  * Fill in the technical recall details for one view and continue.
  *
  * The technical recall form opens in the shared modal - unlike recall for
@@ -174,23 +199,7 @@ test.describe('Image reading', () => {
       .check()
 
     // An abnormal breast needs at least one annotation before it can be saved
-    const annotationModal = await clickToOpenModal(page, 'Ill-defined mass')
-    await annotationModal
-      .locator('#modal-location')
-      .fill('Upper outer quadrant')
-    // The level of concern control hides its radios behind a custom picker,
-    // so the label is the thing to click
-    await annotationModal
-      .locator(
-        'label[for="modal-imageReadingTemp[annotationTemp][levelOfConcern]-4"]'
-      )
-      .click()
-    const saveAnnotation = annotationModal
-      .getByRole('button', { name: 'Save' })
-      .first()
-    await revealInModal(saveAnnotation)
-    await saveAnnotation.click()
-    await expectModalClosed(annotationModal)
+    await addTextAnnotation(page, 'Ill-defined mass')
 
     await expect(page.getByText('Level 4 (suspicious)')).toBeVisible()
     await page.getByRole('button', { name: 'Continue' }).first().click()
@@ -204,6 +213,69 @@ test.describe('Image reading', () => {
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
     ).toBeVisible()
+  })
+
+  test('changes a normal read to recall, adding and deleting annotations', async ({
+    page
+  }) => {
+    // Changing a finished read reopens its workflow, which is let through only
+    // while the referrer chain from the existing-read page is carried along.
+    // The annotation pages loop back to the recall page, so they carry it too -
+    // and the final save uses it to return to the existing-read page.
+    await pinSettings(page, {
+      ...readingSettings,
+      // A finalised read can't be changed, so hold it open
+      'settings[reading][finalisationDelay]': '60'
+    })
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().match(/\/reading\/session\/[^/]+\/appointments\/[^/?]+/)[0]
+
+    await recordNormal(page)
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+
+    await page.goto(caseUrl)
+    await expect(page).toHaveURL(/\/existing-read/)
+    await page.locator('a[href^="./opinion?referrerChain="]').first().click()
+
+    // Changing an opinion offers radios and an update button, not the
+    // one-click opinion buttons
+    await page.getByLabel('Recall for assessment (R)').check()
+    await page.getByRole('button', { name: 'Update opinion' }).click()
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await page
+      .locator(
+        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
+      )
+      .check()
+    await page
+      .locator(
+        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
+      )
+      .check()
+
+    await addTextAnnotation(page, 'Ill-defined mass')
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await expect(page.getByText('Level 4 (suspicious)')).toBeVisible()
+
+    // Deleting goes through the annotation's own page, in the modal
+    const editModal = await clickLinkToOpenModal(page, /Change annotation 1/)
+    await editModal
+      .getByRole('link', { name: 'Delete this annotation' })
+      .click()
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await expect(page.getByText('Level 4 (suspicious)')).toHaveCount(0)
+
+    await addTextAnnotation(page, 'Ill-defined mass')
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+
+    // An edit skips the confirmation step and saves straight back to the read
+    await expect(page).toHaveURL(/\/existing-read/)
+    await expect(page.getByText('Recall for assessment').first()).toBeVisible()
+    await expect(page.getByText('Level 4 (suspicious)')).toHaveCount(1)
   })
 
   test('records a technical recall', async ({ page }) => {
