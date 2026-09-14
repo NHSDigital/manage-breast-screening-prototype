@@ -48,7 +48,7 @@
 
     {% if operatorChanged %}
       <p>
-        Authorised operator: <span class="nhsuk-u-font-weight-bold">{{ appointment.operator }}</span>
+        Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ appointment.operator }}</span>
         (<a href="{{ (appointmentUrl + '/review-medical-information') | urlWithReferrer(referrerChain) }}">change</a>)
       </p>
     {% endif %}

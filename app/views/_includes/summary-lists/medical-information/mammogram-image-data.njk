@@ -253,7 +253,7 @@
 {# Operator - defaults to the logged in user, unless an alternative mammographer was nominated #}
 {% set summaryRows = summaryRows | push({
   key: {
-    text: "Operator"
+    text: operatorLabel | default("Operator")
   },
   value: {
     text: appointment.operator
