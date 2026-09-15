@@ -4,9 +4,15 @@
 
 // ─── Image grid ───────────────────────────────────────────────────────────────
 
+// Panels stretch to fill their column, so on a wide page two images each
+// become taller than the viewport. Capping each column keeps them scannable,
+// while three panels still use the full page width because the cap only
+// binds once there is space to spare.
+$app-annotation-images-panel-max-width: 440px;
+
 .app-annotation-images__row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, $app-annotation-images-panel-max-width));
   grid-auto-rows: auto;
   gap: nhsuk-spacing(3);
 
@@ -14,14 +20,12 @@
     gap: nhsuk-spacing(4);
   }
 
-  // Single image: constrain width
   &[data-panel-count="1"] {
-    grid-template-columns: minmax(0, 45%);
+    grid-template-columns: minmax(0, $app-annotation-images-panel-max-width);
   }
 
-  // Three images
   &[data-panel-count="3"] {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, $app-annotation-images-panel-max-width));
   }
 }
 

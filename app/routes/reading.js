@@ -68,6 +68,15 @@ const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
+// Carry the request's referrer chain on to a redirect within the same case, so
+// an edit that began on the existing-read page can find its way back there
+const keepReferrerChain = (url, req) => {
+  const referrerChain = req.query.referrerChain
+  if (!referrerChain) return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}referrerChain=${encodeURIComponent(referrerChain)}`
+}
+
 module.exports = (router) => {
   // Set nav state
   router.use('/reading', (req, res, next) => {
@@ -1734,7 +1743,10 @@ module.exports = (router) => {
       // Validate side parameter
       if (!side || !['left', 'right'].includes(side)) {
         return res.redirect(
-          `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/recall-for-assessment-details`
+          keepReferrerChain(
+            `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/recall-for-assessment-details`,
+            req
+          )
         )
       }
 
@@ -1762,7 +1774,10 @@ module.exports = (router) => {
       }
 
       res.redirect(
-        `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/annotation`
+        keepReferrerChain(
+          `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/annotation`,
+          req
+        )
       )
     }
   )
@@ -1802,7 +1817,10 @@ module.exports = (router) => {
 
       // Always use the unified annotation page
       res.redirect(
-        `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`
+        keepReferrerChain(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`,
+          req
+        )
       )
     }
   )
@@ -1836,7 +1854,10 @@ module.exports = (router) => {
 
       if (!annotationTemp) {
         return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+            req
+          )
         )
       }
 
@@ -1956,7 +1977,10 @@ module.exports = (router) => {
       if (errors.length > 0) {
         errors.forEach((error) => req.flash('error', error))
         return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`,
+            req
+          )
         )
       }
 
@@ -1968,7 +1992,10 @@ module.exports = (router) => {
 
         if (!side) {
           return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+            keepReferrerChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+              req
+            )
           )
         }
 
@@ -2039,12 +2066,18 @@ module.exports = (router) => {
         const side =
           req.body.side || data.imageReadingTemp?.annotationTemp?.side
         res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}`,
+            req
+          )
         )
       } else {
         res.redirect(
           modalBreakout(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+            keepReferrerChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+              req
+            )
           )
         )
       }
@@ -2073,7 +2106,10 @@ module.exports = (router) => {
 
       res.redirect(
         modalBreakout(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+            req
+          )
         )
       )
     }
@@ -2175,7 +2211,10 @@ module.exports = (router) => {
       const addAnnotationSide = req.body.addAnnotationSide
       if (addAnnotationSide && ['left', 'right'].includes(addAnnotationSide)) {
         return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${addAnnotationSide}`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${addAnnotationSide}`,
+            req
+          )
         )
       }
 
@@ -2194,7 +2233,10 @@ module.exports = (router) => {
             ? `&abnormalityType=${encodeURIComponent(abnormalityType)}`
             : ''
           return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}${typeParam}`
+            keepReferrerChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}${typeParam}`,
+              req
+            )
           )
         }
       }

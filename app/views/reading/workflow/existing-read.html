@@ -6,6 +6,9 @@
 {% set pageHeading = "Arbitration outcome" if isArbitration else "Your opinion" %}
 {% set showWorkflowNav = true %}
 
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
+
+
 {% block pageContent %}
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}

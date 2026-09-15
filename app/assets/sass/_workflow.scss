@@ -2,15 +2,6 @@
 
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
-// Wider container for workflow mode
-.nhsuk-width-container--wide {
-  @include nhsuk-width-container(1200px);
-}
-
-.app-workflow-mode .nhsuk-width-container {
-  @include nhsuk-width-container(1200px);
-}
-
 // Use flexbox for workflow layout to allow nav column to stretch for sticky positioning
 .app-workflow-container__row {
   @include nhsuk-media-query($from: desktop) {
