@@ -137,7 +137,7 @@
   }) %}
 {% endif %}
 
-{# Machine room #}
+{# Mammogram location #}
 {% if appointment.mammogramData.machineRoom %}
   {# Check if this is a mobile clinic #}
   {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
@@ -148,14 +148,14 @@
       {
         href: "./images-room-selection" | urlWithReferrer(referrerChain, scrollTo),
         text: "Change",
-        visuallyHiddenText: "machine room"
+        visuallyHiddenText: "mammogram location"
       }
     ] %}
   {% endif %}
   
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Machine room"
+      text: "Mammogram location"
     },
     value: {
       text: appointment.mammogramData.machineRoom
@@ -165,6 +165,33 @@
     }
   }) %}
 {% endif %}
+
+{# Authorised mammographer - defaults to the logged in user, unless an alternative mammographer was nominated #}
+{% set operatorDisplayName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
+{% set operatorActions = [] %}
+{% if allowEdits and operatorChangeHref %}
+  {% set operatorActions = [
+    ({
+      href: operatorChangeHref,
+      text: "Change",
+      visuallyHiddenText: "authorised mammographer"
+    } | openInModal)
+  ] %}
+{% endif %}
+
+{% set operatorValueHtml %}<span class="js-operator-name">{{ operatorDisplayName }}</span>{% endset %}
+
+{% set summaryRows = summaryRows | push({
+  key: {
+    text: operatorLabel | default("Operator")
+  },
+  value: {
+    html: operatorValueHtml
+  },
+  actions: {
+    items: operatorActions
+  }
+}) %}
 
 {# Combined views taken (showing all view information in one row) #}
 {# Sort views by side and standard order before displaying #}
@@ -248,16 +275,6 @@
       }
     ]
   } if allowEdits
-}) %}
-
-{# Operator - defaults to the logged in user, unless an alternative mammographer was nominated #}
-{% set summaryRows = summaryRows | push({
-  key: {
-    text: operatorLabel | default("Operator")
-  },
-  value: {
-    text: appointment.operator
-  }
 }) %}
 
 {# OLD Views taken (split into separate rows) - keeping for reference #}

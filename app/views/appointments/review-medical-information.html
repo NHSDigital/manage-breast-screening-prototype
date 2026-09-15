@@ -9,6 +9,7 @@
 {% set hideBackLink = true %}
 
 {% set formAction = "./take-images" | getReturnUrl(referrerChain) %}
+{% set exitAppointmentUrl = ("/clinics/" + clinicId + "/appointments/" + appointmentId + "/exit-appointment") | urlWithReferrer(referrerChain) %}
 
 {# Display format for medical information sections #}
 {% set displayFormat = "expander" %}
@@ -49,6 +50,8 @@
 
 {# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
 {% set operatorName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
+{% set mammographerNominated = appointment.mammographerNominated %}
+{% set changeMammographerHref = (appointmentUrl + "/change-mammographer?context=take-images&returnPath=review-medical-information") | urlWithReferrer(currentUrl) %}
 
 {% block pageContent %}
 
@@ -72,10 +75,10 @@
     value: operatorName
   }) }}
 
-  {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' %}
-    <div class="js-irmer-permission-notice">
+  {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not mammographerNominated %}
+    <div>
       {{ insetText({
-        html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + "/clinics/" + clinicId + "/appointments/" + appointmentId + "/attended-not-screened-reason" + "'>exit the appointment</a>.</p>"
+        html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + exitAppointmentUrl + "'>exit the appointment</a>.</p>"
       }) }}
     </div>
     <div class="nhsuk-grid-row">
@@ -83,10 +86,9 @@
         <div class="nhsuk-button-group">
           {{ button({
             text: "Change mammographer",
-            classes: "nhsuk-u-margin-bottom-0 js-irmer-authorise-button js-choose-authoriser-link",
-            attributes: { type: "button" }
-          }) }}
-          <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5 js-authoriser-confirmation" style="display:none"><span class="js-authoriser-confirmation-text"></span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change mammographer</a>)</p>
+            href: changeMammographerHref,
+            classes: "nhsuk-u-margin-bottom-0"
+          } | openInModal) }}
         </div>
       </div>
     </div>
@@ -98,7 +100,7 @@
           classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
         }) }}
         {% if requiresAuthorisation %}
-          <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 js-authoriser-confirmation"><span class="js-authoriser-confirmation-text">Continuing will authorise you ({{ data.currentUser.firstName }} {{ data.currentUser.lastName }}) to take all appointment images</span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change mammographer</a>)</p>
+          <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">Continuing will authorise {{ operatorName }} to take all appointment images ({{ appLink({ text: "change mammographer", href: changeMammographerHref, classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})</p>
         {% endif %}
       </div>
     </div>
@@ -109,10 +111,10 @@
   {% include "_includes/medical-information/index.njk" %}
 
   <div class="nhsuk-form-group">
-    {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' %}
-      <div class="js-irmer-permission-notice">
+    {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not mammographerNominated %}
+      <div>
         {{ insetText({
-          html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + "/clinics/" + clinicId + "/appointments/" + appointmentId + "/attended-not-screened-reason" + "'>exit the appointment</a>.</p>"
+          html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + exitAppointmentUrl + "'>exit the appointment</a>.</p>"
         }) }}
       </div>
       <div class="nhsuk-grid-row">
@@ -120,10 +122,9 @@
           <div class="nhsuk-button-group">
             {{ button({
               text: "Change mammographer",
-              classes: "nhsuk-u-margin-bottom-0 js-irmer-authorise-button js-choose-authoriser-link",
-              attributes: { type: "button" }
-            }) }}
-            <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-5 js-authoriser-confirmation" style="display:none"><span class="js-authoriser-confirmation-text"></span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change mammographer</a>)</p>
+              href: changeMammographerHref,
+              classes: "nhsuk-u-margin-bottom-0"
+            } | openInModal) }}
           </div>
         </div>
       </div>
@@ -135,7 +136,7 @@
             classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
           }) }}
           {% if requiresAuthorisation %}
-            <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2 js-authoriser-confirmation"><span class="js-authoriser-confirmation-text">Continuing will authorise you ({{ data.currentUser.firstName }} {{ data.currentUser.lastName }}) to take all appointment images</span> (<a href="#" class="js-choose-authoriser-link js-alternative-authoriser-link">change mammographer</a>)</p>
+            <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">Continuing will authorise {{ operatorName }} to take all appointment images ({{ appLink({ text: "change mammographer", href: changeMammographerHref, classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})</p>
           {% endif %}
         </div>
       </div>
@@ -146,126 +147,4 @@
     </div>
   </div>
 
-  {# Alternative authoriser modal #}
-  {% set authoriserModalContent %}
-      {{ insetText({
-        text: "Ensure the person selected is also logged into the mammogram machine before images are taken"
-      }) }}
-      {{ radios({
-        name: "irmerAuthoriser",
-        fieldset: {
-          legend: {
-            text: "Who is taking images for this appointment?"
-          }
-        },
-        items: [
-          { value: "S. Patel", text: "S. Patel" },
-          { value: "R. Thompson", text: "R. Thompson" },
-          { value: "L. Okonkwo", text: "L. Okonkwo" },
-          { value: "H. Chambers", text: "H. Chambers" },
-          { value: "F. Kaur", text: "F. Kaur" },
-          { divider: "or" },
-          {
-            value: "Other",
-            text: "Other",
-            conditional: {
-              html: input({
-                id: "irmer-authoriser-other",
-                name: "irmerAuthoriserOther",
-                label: {
-                  text: "Enter the mammographer's full name"
-                },
-                autocomplete: "off"
-              })
-            }
-          }
-        ]
-      }) }}
-    {% endset %}
-
-    {{ appModal({
-      id: "choose-authoriser-modal",
-      title: "Change mammographer",
-      showCloseButton: true,
-      content: authoriserModalContent,
-      actions: [
-        {
-          text: "Save",
-          action: "close",
-          classes: "js-select-authoriser"
-        },
-        {
-          text: "Cancel",
-          element: "link",
-          action: "close"
-        },
-        {
-          text: "Appointment cannot proceed",
-          element: "link",
-          href: "/clinics/" + clinicId + "/appointments/" + appointmentId + "/attended-not-screened-reason",
-          action: "close"
-        }
-      ]
-    }) }}
-
-{% endblock %}
-
-{% block pageScripts %}
-  <script>
-    // IRMER alternative authoriser selection
-    document.addEventListener("DOMContentLoaded", () => {
-      const modal = document.getElementById("choose-authoriser-modal")
-      if (!modal) return
-
-      // Open modal when authoriser button is clicked - checked at click time so
-      // buttons that have been converted to complete-and-continue buttons submit normally
-      document.addEventListener("click", (event) => {
-        const link = event.target.closest(".js-choose-authoriser-link")
-        if (!link) return
-        event.preventDefault()
-        window.openModal("choose-authoriser-modal")
-      })
-
-      // Update buttons and enable form submission when an authoriser is selected
-      const selectButton = modal.querySelector(".js-select-authoriser")
-      if (selectButton) {
-        selectButton.addEventListener("click", () => {
-          const selected = modal.querySelector("input[name='irmerAuthoriser']:checked")
-          if (selected) {
-            const otherName = modal.querySelector("input[name='irmerAuthoriserOther']")
-            const selectedName = selected.value === "Other" && otherName?.value.trim()
-              ? otherName.value.trim()
-              : selected.value
-
-            document.querySelectorAll(".js-irmer-authorise-button").forEach((btn) => {
-              btn.textContent = "Complete all and continue"
-              btn.removeAttribute("type")
-              btn.classList.add("js-complete-all-sections")
-              btn.classList.remove("js-choose-authoriser-link")
-            })
-
-            // Hide the permission notice now that a mammographer has been nominated
-            document.querySelectorAll(".js-irmer-permission-notice").forEach((notice) => {
-              notice.style.display = "none"
-            })
-
-            document.querySelectorAll(".js-authoriser-confirmation-text").forEach((span) => {
-              span.textContent = `Continuing will authorise ${selectedName} to take all images for this appointment`
-            })
-
-            // Persist the nominated mammographer as the operator for this appointment
-            const operatorInput = document.getElementById("irmer-operator-input")
-            if (operatorInput) {
-              operatorInput.value = selectedName
-            }
-
-            // Show the confirmation message now that a mammographer has been nominated
-            document.querySelectorAll(".js-authoriser-confirmation").forEach((p) => {
-              p.style.display = ""
-            })
-          }
-        })
-      }
-    })
-  </script>
 {% endblock %}

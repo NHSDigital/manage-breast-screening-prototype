@@ -337,6 +337,47 @@ module.exports = (router) => {
     }
   )
 
+  // Change the authorised mammographer from the in-page modal, then return to
+  // the page it was opened from with a success banner if it actually changed
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/change-mammographer-answer',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const currentUserName = `${data.currentUser.firstName} ${data.currentUser.lastName}`
+
+      const selected = data.irmerAuthoriser
+      const otherName = (data.irmerAuthoriserOther || '').toString().trim()
+      const newOperator =
+        selected === 'Other' && otherName ? otherName : selected
+
+      // The hidden operator field was bound to the appointment before this
+      // route ran, so it still holds the previous value to compare against
+      const previousOperator = data.appointment?.operator || currentUserName
+
+      if (newOperator && data.appointment) {
+        data.appointment.operator = newOperator
+        // Records that an authorised mammographer has been explicitly chosen,
+        // so the review step can show "Complete all and continue"
+        data.appointment.mammographerNominated = true
+        if (newOperator !== previousOperator) {
+          req.flash('success', `Authorised mammographer updated to ${newOperator}`)
+        }
+      }
+
+      // Clear the transient modal fields so they don't leak into other forms
+      delete data.irmerAuthoriser
+      delete data.irmerAuthoriserOther
+
+      const returnPath = req.query.returnPath || 'check-information'
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/appointments/${appointmentId}/${returnPath}`,
+        req.query.referrerChain
+      )
+      res.redirect(modalBreakout(returnUrl))
+    }
+  )
+
   // Appointment within clinic context
   router.get('/clinics/:clinicId/appointments/:appointmentId', (req, res) => {
     const { clinicId, appointmentId } = req.params

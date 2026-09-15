@@ -50,6 +50,21 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  {# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
+  {% set operatorName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
+  {% set changeMammographerHref = (appointmentUrl + "/change-mammographer?context=take-images&returnPath=take-images") | urlWithReferrer(currentUrl) %}
+
+  <p>
+    Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span>
+    ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})
+  </p>
+
+  {{ appHiddenInput({
+    id: "irmer-operator-input",
+    name: "appointment[operator]",
+    value: operatorName
+  }) }}
+
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h2>Observations during mammogram</h2>
