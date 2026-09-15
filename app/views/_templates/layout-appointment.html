@@ -9,7 +9,7 @@
 {% set activeWorkflowStep = activeWorkflowStep or "" %}
 
 {# Full width when showing navigation - as these tend to be summary lists #}
-{% set gridDefault = "nhsuk-grid-column-full" if showNavigation else "nhsuk-grid-column-two-thirds" %}
+{% set gridDefault = "nhsuk-grid-column-full app-u-max-width-three-quarters" if showNavigation else "nhsuk-grid-column-two-thirds" %}
 {% set gridColumn = gridColumn or gridDefault %}
 
 {# Set referrerChain to current URL for change links #}
@@ -65,7 +65,10 @@
     {% block pageNavigation %}
       {# View mode: appointment header with tabs (outside main form) #}
       {% if showNavigation and not isAppointmentWorkflow %}
-        {% include "_includes/flash-messages.njk" %}
+        <div class="app-u-max-width-three-quarters">
+          {% include "_includes/flash-messages.njk" %}
+        </div>
+        
         {% include "_includes/appointment/appointment-header.njk" %}
       {% endif %}
     {% endblock %}
@@ -75,7 +78,9 @@
   {% set wrappedPageContent %}
     {# Flash messages for all pages - except appointment with navigation #}
     {% if (isAppointmentWorkflow or (not isAppointmentWorkflow and not showNavigation)) %}
-      {% include "_includes/flash-messages.njk" %}
+      <div class="app-u-max-width-three-quarters">
+        {% include "_includes/flash-messages.njk" %}
+      </div>
     {% endif %}
 
     {% if gridColumn != "none" %}

@@ -1,3 +1,4 @@
+@use "sass:math";
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-nowrap {
@@ -21,4 +22,30 @@
 .app-code-font {
   font-family: $nhsuk-code-font;
   word-spacing: -0.5ch;
+}
+
+// Max-width caps matching each grid column's content width at full page
+// width. The grid row's negative margins widen it by one gutter, so a column's
+// content is the fraction of (page width + gutter) minus its own gutter padding.
+// Lets content in a wide column stay at its desktop size without shrinking
+// further on narrower screens, unlike a proportional column would.
+//
+// Works on an element inside a column, or on the column itself - a column is
+// border-box with gutter padding, so its cap is one gutter wider.
+//
+// No breakpoint: a cap of one-half or wider never bites below desktop because
+// the container is narrower than it anyway. One-third and smaller would still
+// constrain content on a phone, where a real column is full width.
+@each $name, $fraction in $nhsuk-grid-widths {
+  @if $name != full {
+    $column-width: math.div(($nhsuk-page-width + $nhsuk-gutter) * $fraction, 100%);
+
+    .app-u-max-width-#{$name} {
+      max-width: $column-width - $nhsuk-gutter !important;
+    }
+
+    [class*="nhsuk-grid-column-"].app-u-max-width-#{$name} {
+      max-width: $column-width !important;
+    }
+  }
 }

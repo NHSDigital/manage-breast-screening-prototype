@@ -5,7 +5,7 @@
 {% from "_includes/close-clinic-appointment-row.njk" import closeClinicAppointmentRow with context %}
 
 {% set pageHeading = "Close clinic " ~ clinic.clinicCode %}
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 {% set back = {
   href: "/clinics/" + clinicId,
