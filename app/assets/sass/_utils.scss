@@ -38,10 +38,11 @@
 // constrain content on a phone, where a real column is full width.
 @each $name, $fraction in $nhsuk-grid-widths {
   @if $name != full {
-    $column-width: math.div(($nhsuk-page-width + $nhsuk-gutter) * $fraction, 100%);
+    // Row margins and column padding are both $nhsuk-gutter-half per side
+    $column-width: math.div(($nhsuk-page-width + $nhsuk-gutter-half * 2) * $fraction, 100%);
 
     .app-u-max-width-#{$name} {
-      max-width: $column-width - $nhsuk-gutter !important;
+      max-width: $column-width - $nhsuk-gutter-half * 2 !important;
     }
 
     [class*="nhsuk-grid-column-"].app-u-max-width-#{$name} {
