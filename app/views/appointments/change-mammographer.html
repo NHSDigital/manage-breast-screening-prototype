@@ -20,14 +20,20 @@
     }) }}
   {% endif %}
 
+  {# Current user sits at the top, pre-selected unless another mammographer was already nominated #}
+  {% set currentUserShort = (data.currentUser.firstName | first) + ". " + data.currentUser.lastName %}
+  {% set selectedOperator = appointment.operator if appointment.mammographerNominated else currentUserShort %}
+
   {{ radios({
     name: "irmerAuthoriser",
+    value: selectedOperator,
     fieldset: {
       legend: {
         text: legendText
       }
     },
     items: [
+      { value: currentUserShort, text: currentUserShort + " (you)" },
       { value: "S. Patel", text: "S. Patel" },
       { value: "R. Thompson", text: "R. Thompson" },
       { value: "L. Okonkwo", text: "L. Okonkwo" },
@@ -51,8 +57,16 @@
     ]
   }) }}
 
-  {{ button({
-    text: "Save"
-  }) }}
+  {% set returnPageHref = (appointmentUrl + "/" + (query.returnPath or "check-information")) | urlWithReferrer(referrerChain) %}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save"
+    }) }}
+    {{ appLink({ text: "Cancel", href: returnPageHref, attributes: { "data-modal-action": "close" } }) | trim | safe }}
+    {% if not imagesTaken %}
+      {{ appLink({ text: "Exit appointment", href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain) }) | trim | safe }}
+    {% endif %}
+  </div>
 
 {% endblock %}

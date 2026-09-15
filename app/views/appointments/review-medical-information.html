@@ -50,7 +50,10 @@
 
 {# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
 {% set operatorName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
-{% set mammographerNominated = appointment.mammographerNominated %}
+{# The logged-in user lacks implant-imaging permission, so the appointment can only proceed once a different (authorised) mammographer is set #}
+{% set currentUserFull = data.currentUser.firstName + " " + data.currentUser.lastName %}
+{% set currentUserShort = (data.currentUser.firstName | first) + ". " + data.currentUser.lastName %}
+{% set hasAuthorisedMammographer = appointment.operator and appointment.operator != currentUserFull and appointment.operator != currentUserShort %}
 {% set changeMammographerHref = (appointmentUrl + "/change-mammographer?context=take-images&returnPath=review-medical-information") | urlWithReferrer(currentUrl) %}
 
 {% block pageContent %}
@@ -75,7 +78,7 @@
     value: operatorName
   }) }}
 
-  {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not mammographerNominated %}
+  {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not hasAuthorisedMammographer %}
     <div>
       {{ insetText({
         html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + exitAppointmentUrl + "'>exit the appointment</a>.</p>"
@@ -100,7 +103,7 @@
           classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
         }) }}
         {% if requiresAuthorisation %}
-          <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">Continuing will authorise {{ operatorName }} to take all appointment images ({{ appLink({ text: "change mammographer", href: changeMammographerHref, classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})</p>
+          <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
         {% endif %}
       </div>
     </div>
@@ -111,7 +114,7 @@
   {% include "_includes/medical-information/index.njk" %}
 
   <div class="nhsuk-form-group">
-    {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not mammographerNominated %}
+    {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not hasAuthorisedMammographer %}
       <div>
         {{ insetText({
           html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + exitAppointmentUrl + "'>exit the appointment</a>.</p>"
@@ -136,7 +139,7 @@
             classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
           }) }}
           {% if requiresAuthorisation %}
-            <p class="nhsuk-u-font-size-16 nhsuk-u-secondary-text-color nhsuk-u-margin-top-2">Continuing will authorise {{ operatorName }} to take all appointment images ({{ appLink({ text: "change mammographer", href: changeMammographerHref, classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})</p>
+            <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
           {% endif %}
         </div>
       </div>
