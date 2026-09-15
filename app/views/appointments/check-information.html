@@ -22,6 +22,9 @@
 
 {% set activeTab = 'review' %}
 {% set showReviewAfterImagingReminder = appointment.workflowStatus['review-breast-features-after-imaging'] == 'yes' %}
+{% set operatorLabel = "Authorised mammographer" %}
+{% set operatorName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
+{% set operatorChangeHref = (appointmentUrl + "/change-mammographer?context=check-information&returnPath=check-information") | urlWithReferrer(currentUrl) %}
 
 
 
@@ -290,6 +293,12 @@
   }) }}
 
   {# Finish #}
+
+  {{ appHiddenInput({
+    id: "irmer-operator-input",
+    name: "appointment[operator]",
+    value: operatorName
+  }) }}
 
   {{ button({
     text: "Complete screening and return to clinic"

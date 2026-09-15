@@ -1,0 +1,72 @@
+{# app/views/appointments/change-mammographer.html #}
+
+{% extends parentLayout or '_templates/layout-appointment.html' %}
+
+{# Wording differs depending on whether images have already been taken #}
+{% set imagesTaken = query.context == 'check-information' %}
+
+{% set pageHeading = "Change mammographer" %}
+{% set formAction = ("./change-mammographer-answer?returnPath=" + (query.returnPath or 'check-information')) | urlWithReferrer(referrerChain) %}
+
+{% set legendText = "Who took the images for this appointment?" if imagesTaken else "Who is taking images for this appointment?" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% if not imagesTaken %}
+    {{ insetText({
+      text: "Ensure the person selected is also logged into the mammogram machine before images are taken"
+    }) }}
+  {% endif %}
+
+  {# Current user sits at the top, pre-selected unless another mammographer was already nominated #}
+  {% set currentUserShort = (data.currentUser.firstName | first) + ". " + data.currentUser.lastName %}
+  {% set selectedOperator = appointment.operator if appointment.mammographerNominated else currentUserShort %}
+
+  {{ radios({
+    name: "irmerAuthoriser",
+    value: selectedOperator,
+    fieldset: {
+      legend: {
+        text: legendText
+      }
+    },
+    items: [
+      { value: currentUserShort, text: currentUserShort + " (you)" },
+      { value: "S. Patel", text: "S. Patel" },
+      { value: "R. Thompson", text: "R. Thompson" },
+      { value: "L. Okonkwo", text: "L. Okonkwo" },
+      { value: "H. Chambers", text: "H. Chambers" },
+      { value: "F. Kaur", text: "F. Kaur" },
+      { divider: "or" },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            id: "irmer-authoriser-other",
+            name: "irmerAuthoriserOther",
+            label: {
+              text: "Enter the mammographer's full name"
+            },
+            autocomplete: "off"
+          })
+        }
+      }
+    ]
+  }) }}
+
+  {% set returnPageHref = (appointmentUrl + "/" + (query.returnPath or "check-information")) | urlWithReferrer(referrerChain) %}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save"
+    }) }}
+    {{ appLink({ text: "Cancel", href: returnPageHref, attributes: { "data-modal-action": "close" } }) | trim | safe }}
+    {% if not imagesTaken %}
+      {{ appLink({ text: "Exit appointment", href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain) }) | trim | safe }}
+    {% endif %}
+  </div>
+
+{% endblock %}
