@@ -137,16 +137,23 @@ const getImplantImagingReason = (appointment) => {
 }
 
 /**
- * Get the clinicians who can image participants with implants or devices
+ * Get the clinicians who can image participants with implants or devices,
+ * sorted by surname then first name
  *
  * @param {object[]} users - Array of user objects
  * @returns {object[]} Clinicians holding the implantImaging permission
  */
 const getImplantImagingUsers = (users) => {
   if (!Array.isArray(users)) return []
-  return users.filter(
-    (user) => isClinician(user) && hasPermission(user, 'implantImaging')
-  )
+  return users
+    .filter(
+      (user) => isClinician(user) && hasPermission(user, 'implantImaging')
+    )
+    .sort(
+      (userA, userB) =>
+        userA.lastName.localeCompare(userB.lastName) ||
+        userA.firstName.localeCompare(userB.firstName)
+    )
 }
 
 /**
