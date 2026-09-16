@@ -409,7 +409,7 @@ module.exports = (router) => {
           (user) => user.id === selectedUserId
         )
         const newAuthorisedMammographerName = selectedUser
-          ? `${selectedUser.firstName} ${selectedUser.lastName}`
+          ? `${selectedUser.lastName.toUpperCase()}, ${selectedUser.firstName}`
           : otherName
         req.flash(
           'success',

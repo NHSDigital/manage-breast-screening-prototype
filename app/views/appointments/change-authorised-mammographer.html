@@ -29,7 +29,7 @@
   {% set authorisedMammographerItems = [
     {
       value: data.currentUser.id,
-      text: data.currentUser.id | getUsername({ format: "short", identifyCurrentUser: true })
+      text: data.currentUser.id | getUsername({ format: "reversed", identifyCurrentUser: true })
     }
   ] %}
 
@@ -37,7 +37,7 @@
     {% if user.id != data.currentUser.id and (user | canUserScreenAppointment(appointment)) %}
       {% set authorisedMammographerItems = authorisedMammographerItems | push({
         value: user.id,
-        text: user.id | getUsername({ format: "short" })
+        text: user.id | getUsername({ format: "reversed" })
       }) %}
     {% endif %}
   {% endfor %}

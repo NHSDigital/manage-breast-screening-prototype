@@ -51,7 +51,7 @@
   <h1>{{ pageHeading }}</h1>
 
   {# The authorised mammographer defaults to the logged in user, unless an alternative has been nominated #}
-  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName) or (currentUser.id | getUsername) %}
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
   {% set authorisedMammographerChangeHref = (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
 
   <p>

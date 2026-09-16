@@ -168,12 +168,12 @@
 
 {# Authorised mammographer - whoever was nominated to take the images, falling
    back to whoever ran the appointment #}
-{% set authorisedMammographerName = appointment | getAuthorisedMammographerName %}
+{% set authorisedMammographerName = appointment | getAuthorisedMammographerName({ format: "reversed" }) %}
 {% if not authorisedMammographerName %}
   {% if appointment.sessionDetails.endedBy %}
-    {% set authorisedMammographerName = appointment.sessionDetails.endedBy | getUsername %}
+    {% set authorisedMammographerName = appointment.sessionDetails.endedBy | getUsername({ format: "reversed" }) %}
   {% else %}
-    {% set authorisedMammographerName = appointment.sessionDetails.startedBy | getUsername %}
+    {% set authorisedMammographerName = appointment.sessionDetails.startedBy | getUsername({ format: "reversed" }) %}
   {% endif %}
 {% endif %}
 

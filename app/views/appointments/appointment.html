@@ -232,11 +232,22 @@
             text: "Run by"
           },
           value: {
-            html: (appointment.sessionDetails.endedBy | getUsername) + 
-                  ((" and " + (appointment.sessionDetails.authors | last).userId | getUsername) 
+            html: (appointment.sessionDetails.endedBy | getUsername({ format: "reversed" })) + 
+                  ((" and " + ((appointment.sessionDetails.authors | last).userId | getUsername({ format: "reversed" }))) 
                    if appointment.sessionDetails.authors and appointment.sessionDetails.authors.length > 0 
                    and (appointment.sessionDetails.authors | last).userId != appointment.sessionDetails.endedBy
                    else "")
+          },
+          actions: {
+            items: []
+          }
+        } if appointment.status == "complete" and appointment.sessionDetails.endedBy else {},
+        {
+          key: {
+            text: "Authorised mammographer"
+          },
+          value: {
+            html: (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment.sessionDetails.endedBy | getUsername({ format: "reversed" })) or (appointment.sessionDetails.startedBy | getUsername({ format: "reversed" }))
           },
           actions: {
             items: []

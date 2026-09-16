@@ -41,7 +41,7 @@
 
 {% else %}
 
-  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName) or (currentUser.id | getUsername) %}
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
