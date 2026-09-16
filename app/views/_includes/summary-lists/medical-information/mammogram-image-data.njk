@@ -168,21 +168,21 @@
 
 {# Authorised mammographer - whoever was nominated to take the images, falling
    back to whoever ran the appointment #}
-{% set operatorDisplayName = appointment | getAppointmentOperatorName %}
-{% if not operatorDisplayName %}
+{% set authorisedMammographerName = appointment | getAuthorisedMammographerName %}
+{% if not authorisedMammographerName %}
   {% if appointment.sessionDetails.endedBy %}
-    {% set operatorDisplayName = appointment.sessionDetails.endedBy | getUsername %}
+    {% set authorisedMammographerName = appointment.sessionDetails.endedBy | getUsername %}
   {% else %}
-    {% set operatorDisplayName = appointment.sessionDetails.startedBy | getUsername %}
+    {% set authorisedMammographerName = appointment.sessionDetails.startedBy | getUsername %}
   {% endif %}
 {% endif %}
 
-{% if operatorDisplayName %}
-  {% set operatorActions = [] %}
-  {% if allowEdits and operatorChangeHref %}
-    {% set operatorActions = [
+{% if authorisedMammographerName %}
+  {% set authorisedMammographerActions = [] %}
+  {% if allowEdits and authorisedMammographerChangeHref %}
+    {% set authorisedMammographerActions = [
       ({
-        href: operatorChangeHref,
+        href: authorisedMammographerChangeHref,
         text: "Change",
         visuallyHiddenText: "authorised mammographer"
       } | openInModal)
@@ -191,13 +191,13 @@
 
   {% set summaryRows = summaryRows | push({
     key: {
-      text: operatorLabel | default("Operator")
+      text: "Authorised mammographer"
     },
     value: {
-      text: operatorDisplayName
+      text: authorisedMammographerName
     },
     actions: {
-      items: operatorActions
+      items: authorisedMammographerActions
     }
   }) %}
 {% endif %}

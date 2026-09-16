@@ -18,8 +18,8 @@
 
   {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
 
-  {# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
-  {% set operatorDisplayName = (appointment | getAppointmentOperatorName) or (currentUser.id | getUsername) %}
+  {# The authorised mammographer defaults to the logged in user, unless an alternative has been nominated #}
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName) or (currentUser.id | getUsername) %}
 
   {# Determine current room name #}
   {% set currentRoomName = "" %}
@@ -46,8 +46,8 @@
     </p>
 
     <p>
-      Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorDisplayName }}</span>
-      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
+      Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
+      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
     </p>
 
     {{ appHiddenInput({

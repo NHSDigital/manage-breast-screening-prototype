@@ -137,31 +137,35 @@ const getImplantImagingReason = (appointment) => {
 }
 
 /**
- * Check whether a mammographer other than the current user has been nominated
- * to take the images for an appointment
+ * Check whether an authorised mammographer other than the current user has
+ * been nominated to take the images for an appointment
  *
  * @param {object} appointment - Appointment object
- * @returns {boolean} Whether a mammographer has been nominated
+ * @returns {boolean} Whether an authorised mammographer has been nominated
  */
-const hasNominatedOperator = (appointment) => {
-  return Boolean(appointment?.operatorId || appointment?.operatorOtherName)
+const hasNominatedAuthorisedMammographer = (appointment) => {
+  return Boolean(
+    appointment?.authorisedMammographerId ||
+      appointment?.authorisedMammographerOtherName
+  )
 }
 
 /**
- * Get the display name of the mammographer nominated for an appointment
+ * Get the display name of the authorised mammographer nominated for an
+ * appointment
  *
  * Returns '' when nobody has been nominated, so callers can decide their own
  * fallback.
  *
  * @param {object} appointment - Appointment object
  * @param {object} [options] - Display options, as accepted by getUsername
- * @returns {string} Nominated mammographer's name, or ''
+ * @returns {string} Nominated authorised mammographer's name, or ''
  */
-const getAppointmentOperatorName = function (appointment, options = {}) {
-  if (appointment?.operatorId) {
-    return getUsername.call(this, appointment.operatorId, options)
+const getAuthorisedMammographerName = function (appointment, options = {}) {
+  if (appointment?.authorisedMammographerId) {
+    return getUsername.call(this, appointment.authorisedMammographerId, options)
   }
-  return appointment?.operatorOtherName || ''
+  return appointment?.authorisedMammographerOtherName || ''
 }
 
 /**
@@ -266,8 +270,8 @@ module.exports = {
   hasAnyPermission,
   requiresImplantImaging,
   getImplantImagingReason,
-  hasNominatedOperator,
-  getAppointmentOperatorName,
+  hasNominatedAuthorisedMammographer,
+  getAuthorisedMammographerName,
   canUserScreenAppointment,
   isClinician,
   isAdministrative,

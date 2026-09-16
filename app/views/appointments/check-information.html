@@ -22,8 +22,7 @@
 
 {% set activeTab = 'review' %}
 {% set showReviewAfterImagingReminder = appointment.workflowStatus['review-breast-features-after-imaging'] == 'yes' %}
-{% set operatorLabel = "Authorised mammographer" %}
-{% set operatorChangeHref = (appointmentUrl + "/change-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
+{% set authorisedMammographerChangeHref = (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
 
 
 

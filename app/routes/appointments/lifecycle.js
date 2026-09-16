@@ -340,28 +340,31 @@ module.exports = (router) => {
   // Change the authorised mammographer from the in-page modal, then return to
   // the page it was opened from with a success banner if it actually changed
   router.post(
-    '/clinics/:clinicId/appointments/:appointmentId/change-mammographer-answer',
+    '/clinics/:clinicId/appointments/:appointmentId/change-authorised-mammographer-answer',
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
       const appointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
-      const operatorTemp = data.appointment?.operatorTemp || {}
-      const selectedUserId = operatorTemp.userId
-      const otherName = (operatorTemp.otherName || '').toString().trim()
+      const authorisedMammographerTemp =
+        data.appointment?.authorisedMammographerTemp || {}
+      const selectedUserId = authorisedMammographerTemp.userId
+      const otherName = (authorisedMammographerTemp.otherName || '')
+        .toString()
+        .trim()
 
       const errors = []
       if (!selectedUserId) {
         errors.push({
           text: 'Select who is taking the images',
-          name: 'appointment[operatorTemp][userId]',
-          href: '#operatorUserId'
+          name: 'appointment[authorisedMammographerTemp][userId]',
+          href: '#authorisedMammographerUserId'
         })
       } else if (selectedUserId === 'other' && !otherName) {
         errors.push({
           text: "Enter the mammographer's full name",
-          name: 'appointment[operatorTemp][otherName]',
-          href: '#operatorOtherName'
+          name: 'appointment[authorisedMammographerTemp][otherName]',
+          href: '#authorisedMammographerOtherName'
         })
       }
 
@@ -371,42 +374,46 @@ module.exports = (router) => {
         // the referrer chain has to be carried by hand
         return res.redirect(
           urlWithReferrer(
-            `${appointmentUrl}/change-mammographer`,
+            `${appointmentUrl}/change-authorised-mammographer`,
             req.query.referrerChain
           )
         )
       }
 
-      const previousOperatorId = data.appointment?.operatorId
-      const previousOtherName = data.appointment?.operatorOtherName
+      const previousAuthorisedMammographerId =
+        data.appointment?.authorisedMammographerId
+      const previousAuthorisedMammographerOtherName =
+        data.appointment?.authorisedMammographerOtherName
 
       if (selectedUserId === 'other') {
-        data.appointment.operatorId = null
-        data.appointment.operatorOtherName = otherName
+        data.appointment.authorisedMammographerId = null
+        data.appointment.authorisedMammographerOtherName = otherName
       } else {
         // Nominating yourself is the same as no nomination at all
-        data.appointment.operatorId =
+        data.appointment.authorisedMammographerId =
           selectedUserId === data.currentUser?.id ? null : selectedUserId
-        data.appointment.operatorOtherName = null
+        data.appointment.authorisedMammographerOtherName = null
       }
 
       // Clear the transient modal fields so they don't leak into other forms
-      delete data.appointment.operatorTemp
+      delete data.appointment.authorisedMammographerTemp
 
       const hasChanged =
-        data.appointment.operatorId !== (previousOperatorId || null) ||
-        data.appointment.operatorOtherName !== (previousOtherName || null)
+        data.appointment.authorisedMammographerId !==
+          (previousAuthorisedMammographerId || null) ||
+        data.appointment.authorisedMammographerOtherName !==
+          (previousAuthorisedMammographerOtherName || null)
 
       if (hasChanged) {
         const selectedUser = (data.users || []).find(
           (user) => user.id === selectedUserId
         )
-        const newOperatorName = selectedUser
+        const newAuthorisedMammographerName = selectedUser
           ? `${selectedUser.firstName} ${selectedUser.lastName}`
           : otherName
         req.flash(
           'success',
-          `Authorised mammographer updated to ${newOperatorName}`
+          `Authorised mammographer updated to ${newAuthorisedMammographerName}`
         )
       }
 

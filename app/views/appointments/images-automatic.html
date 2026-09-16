@@ -50,13 +50,13 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  {# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
-  {% set operatorDisplayName = (appointment | getAppointmentOperatorName) or (currentUser.id | getUsername) %}
-  {% set changeMammographerHref = (appointmentUrl + "/change-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
+  {# The authorised mammographer defaults to the logged in user, unless an alternative has been nominated #}
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName) or (currentUser.id | getUsername) %}
+  {% set authorisedMammographerChangeHref = (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
 
   <p>
-    Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorDisplayName }}</span>
-    ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})
+    Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
+    ({{ appLink({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})
   </p>
 
   <div class="nhsuk-grid-row">
