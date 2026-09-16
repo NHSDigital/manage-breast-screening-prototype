@@ -137,26 +137,6 @@ const getImplantImagingReason = (appointment) => {
 }
 
 /**
- * Get the clinicians who can image participants with implants or devices,
- * sorted by surname then first name
- *
- * @param {object[]} users - Array of user objects
- * @returns {object[]} Clinicians holding the implantImaging permission
- */
-const getImplantImagingUsers = (users) => {
-  if (!Array.isArray(users)) return []
-  return users
-    .filter(
-      (user) => isClinician(user) && hasPermission(user, 'implantImaging')
-    )
-    .sort(
-      (userA, userB) =>
-        userA.lastName.localeCompare(userB.lastName) ||
-        userA.firstName.localeCompare(userB.firstName)
-    )
-}
-
-/**
  * Check whether a mammographer other than the current user has been nominated
  * to take the images for an appointment
  *
@@ -286,7 +266,6 @@ module.exports = {
   hasAnyPermission,
   requiresImplantImaging,
   getImplantImagingReason,
-  getImplantImagingUsers,
   hasNominatedOperator,
   getAppointmentOperatorName,
   canUserScreenAppointment,

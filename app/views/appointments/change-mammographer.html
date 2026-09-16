@@ -23,8 +23,9 @@
     }) }}
   {% endif %}
 
-  {# Current user sits at the top, followed by the other mammographers trained
-     to image participants with implants #}
+  {# Current user sits at the top, followed by every other clinician able to
+     screen this appointment - only those with implant imaging training when
+     the participant has implants or a device #}
   {% set operatorItems = [
     {
       value: data.currentUser.id,
@@ -32,8 +33,8 @@
     }
   ] %}
 
-  {% for user in data.users | getImplantImagingUsers %}
-    {% if user.id != data.currentUser.id %}
+  {% for user in data.users | sort(false, false, "lastName") %}
+    {% if user.id != data.currentUser.id and (user | canUserScreenAppointment(appointment)) %}
       {% set operatorItems = operatorItems | push({
         value: user.id,
         text: user.id | getUsername({ format: "short" })
