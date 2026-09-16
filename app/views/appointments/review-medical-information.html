@@ -102,9 +102,7 @@
           text: "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
           classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
         }) }}
-        {% if requiresAuthorisation %}
-          <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
-        {% endif %}
+        <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
       </div>
     </div>
   {% endif %}
@@ -138,9 +136,7 @@
             text: "Complete all and continue",
             classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
           }) }}
-          {% if requiresAuthorisation %}
-            <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
-          {% endif %}
+          <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
         </div>
       </div>
     {% endif %}
