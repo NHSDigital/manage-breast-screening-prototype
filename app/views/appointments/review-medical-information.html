@@ -9,52 +9,9 @@
 {% set hideBackLink = true %}
 
 {% set formAction = "./take-images" | getReturnUrl(referrerChain) %}
-{% set exitAppointmentUrl = ("/clinics/" + clinicId + "/appointments/" + appointmentId + "/exit-appointment") | urlWithReferrer(referrerChain) %}
 
 {# Display format for medical information sections #}
 {% set displayFormat = "expander" %}
-
-{# Check if participant has active (non-removed) breast implants #}
-{% set hasActiveImplants = false %}
-{% set implantRecords = appointment.medicalInformation.medicalHistory.breastImplantsAugmentation %}
-{% if implantRecords | length %}
-  {% for implant in implantRecords %}
-    {% if not (implant | isMedicalHistoryItemRemoved) %}
-      {% set hasActiveImplants = true %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
-{# Check if participant has active (non-removed) implanted medical devices #}
-{% set hasActiveMedicalDevices = false %}
-{% set medicalDeviceRecords = appointment.medicalInformation.medicalHistory.implantedMedicalDevice %}
-{% if medicalDeviceRecords | length %}
-  {% for device in medicalDeviceRecords %}
-    {% if not (device | isMedicalHistoryItemRemoved) %}
-      {% set hasActiveMedicalDevices = true %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
-
-{% set permissionReason = "" %}
-{% if hasActiveImplants and hasActiveMedicalDevices %}
-  {% set permissionReason = "breast implants and an implanted medical device" %}
-{% elseif hasActiveImplants %}
-  {% set permissionReason = "breast implants" %}
-{% elseif hasActiveMedicalDevices %}
-  {% set permissionReason = "an implanted medical device" %}
-{% endif %}
-
-{# Nominating an alternative mammographer is only relevant when implants or devices require authorisation #}
-{% set requiresAuthorisation = hasActiveImplants or hasActiveMedicalDevices %}
-
-{# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
-{% set operatorName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
-{# The logged-in user lacks implant-imaging permission, so the appointment can only proceed once a different (authorised) mammographer is set #}
-{% set currentUserFull = data.currentUser.firstName + " " + data.currentUser.lastName %}
-{% set currentUserShort = (data.currentUser.firstName | first) + ". " + data.currentUser.lastName %}
-{% set hasAuthorisedMammographer = appointment.operator and appointment.operator != currentUserFull and appointment.operator != currentUserShort %}
-{% set changeMammographerHref = (appointmentUrl + "/change-mammographer?context=take-images&returnPath=review-medical-information") | urlWithReferrer(currentUrl) %}
 
 {% block pageContent %}
 
@@ -72,74 +29,16 @@
     value: appointment.workflowStatus['review-breast-features-after-imaging']
   }) }}
 
-  {{ appHiddenInput({
-    id: "irmer-operator-input",
-    name: "appointment[operator]",
-    value: operatorName
-  }) }}
-
-  {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not hasAuthorisedMammographer %}
-    <div>
-      {{ insetText({
-        html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + exitAppointmentUrl + "'>exit the appointment</a>.</p>"
-      }) }}
-    </div>
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
-        <div class="nhsuk-button-group">
-          {{ button({
-            text: "Change mammographer",
-            href: changeMammographerHref,
-            classes: "nhsuk-u-margin-bottom-0"
-          } | openInModal) }}
-        </div>
-      </div>
-    </div>
-  {% else %}
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
-        {{ button({
-          text: "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section",
-          classes: "nhsuk-u-margin-bottom-0 nhsuk-button js-complete-all-sections"
-        }) }}
-        <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
-      </div>
-    </div>
-  {% endif %}
+  {% set continueButtonText = "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section" %}
+  {% include "_includes/authorised-mammographer.njk" %}
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
   {% include "_includes/medical-information/index.njk" %}
 
   <div class="nhsuk-form-group">
-    {% if requiresAuthorisation and appointment.workflowStatus['review-medical-information'] != 'completed' and not hasAuthorisedMammographer %}
-      <div>
-        {{ insetText({
-          html: "<p>Due to " + permissionReason + " you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or <a href='" + exitAppointmentUrl + "'>exit the appointment</a>.</p>"
-        }) }}
-      </div>
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-two-thirds">
-          <div class="nhsuk-button-group">
-            {{ button({
-              text: "Change mammographer",
-              href: changeMammographerHref,
-              classes: "nhsuk-u-margin-bottom-0"
-            } | openInModal) }}
-          </div>
-        </div>
-      </div>
-    {% else %}
-      <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-two-thirds">
-          {{ button({
-            text: "Complete all and continue",
-            classes: "js-complete-all-sections nhsuk-u-margin-bottom-0"
-          }) }}
-          <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span> ({{ appLink({ text: "change", href: changeMammographerHref } | openInModal) | trim | safe }})</p>
-        </div>
-      </div>
-    {% endif %}
+    {% set continueButtonText = "Complete all and continue" %}
+    {% include "_includes/authorised-mammographer.njk" %}
 
     <div class="nhsuk-u-margin-top-6">
       {% include "screening-cannot-proceed-link.njk" %}

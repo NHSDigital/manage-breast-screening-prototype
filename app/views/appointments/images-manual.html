@@ -19,8 +19,7 @@
   {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
 
   {# Operator defaults to the logged in user, unless an alternative mammographer has been nominated #}
-  {% set currentUserName = data.currentUser.firstName + " " + data.currentUser.lastName %}
-  {% set operatorName = appointment.operator or currentUserName %}
+  {% set operatorDisplayName = (appointment | getAppointmentOperatorName) or (currentUser.id | getUsername) %}
 
   {# Determine current room name #}
   {% set currentRoomName = "" %}
@@ -47,15 +46,9 @@
     </p>
 
     <p>
-      Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorName }}</span>
-      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-mammographer?context=take-images&returnPath=take-images") | urlWithReferrer(currentUrl) } | openInModal) | trim | safe }})
+      Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ operatorDisplayName }}</span>
+      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
     </p>
-
-    {{ appHiddenInput({
-      id: "irmer-operator-input",
-      name: "appointment[operator]",
-      value: operatorName
-    }) }}
 
     {{ appHiddenInput({
       name: "appointment[mammogramDataTemp][machineRoom]",

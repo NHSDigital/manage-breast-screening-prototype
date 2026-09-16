@@ -1,6 +1,7 @@
 // app/lib/utils/roles-and-permissions.js
 
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
+const { getUsername } = require('../../filters/nunjucks')
 
 // Implanted devices that need a mammographer with implant imaging training.
 // The prototype treats every device type as needing it - narrow this list if
@@ -79,17 +80,9 @@ const hasAnyPermission = (user, permissions) => {
   return permissions.some((permission) => hasPermission(user, permission))
 }
 
-/**
- * Check whether an appointment needs a user with implant imaging training
- *
- * Breast implants and implanted medical devices both need it, but only while
- * they are still in place - once removed, any clinician can image the
- * participant.
- *
- * @param {object} appointment - Appointment object
- * @returns {boolean} Whether implant imaging training is needed
- */
-const requiresImplantImaging = (appointment) => {
+// Breakdown of what on an appointment needs implant imaging training. Kept
+// unexported so it doesn't become a Nunjucks filter.
+const getImplantImagingNeeds = (appointment) => {
   const medicalHistory = appointment?.medicalInformation?.medicalHistory || {}
 
   const hasActiveBreastImplants = (
@@ -104,7 +97,84 @@ const requiresImplantImaging = (appointment) => {
     }
   )
 
+  return { hasActiveBreastImplants, hasActiveDevice }
+}
+
+/**
+ * Check whether an appointment needs a user with implant imaging training
+ *
+ * Breast implants and implanted medical devices both need it, but only while
+ * they are still in place - once removed, any clinician can image the
+ * participant.
+ *
+ * @param {object} appointment - Appointment object
+ * @returns {boolean} Whether implant imaging training is needed
+ */
+const requiresImplantImaging = (appointment) => {
+  const { hasActiveBreastImplants, hasActiveDevice } =
+    getImplantImagingNeeds(appointment)
+
   return hasActiveBreastImplants || hasActiveDevice
+}
+
+/**
+ * Describe why an appointment needs a mammographer with implant imaging
+ * training, for use in page content
+ *
+ * @param {object} appointment - Appointment object
+ * @returns {string} Reason text, or '' when implant imaging is not needed
+ */
+const getImplantImagingReason = (appointment) => {
+  const { hasActiveBreastImplants, hasActiveDevice } =
+    getImplantImagingNeeds(appointment)
+
+  if (hasActiveBreastImplants && hasActiveDevice) {
+    return 'breast implants and an implanted medical device'
+  }
+  if (hasActiveBreastImplants) return 'breast implants'
+  if (hasActiveDevice) return 'an implanted medical device'
+  return ''
+}
+
+/**
+ * Get the clinicians who can image participants with implants or devices
+ *
+ * @param {object[]} users - Array of user objects
+ * @returns {object[]} Clinicians holding the implantImaging permission
+ */
+const getImplantImagingUsers = (users) => {
+  if (!Array.isArray(users)) return []
+  return users.filter(
+    (user) => isClinician(user) && hasPermission(user, 'implantImaging')
+  )
+}
+
+/**
+ * Check whether a mammographer other than the current user has been nominated
+ * to take the images for an appointment
+ *
+ * @param {object} appointment - Appointment object
+ * @returns {boolean} Whether a mammographer has been nominated
+ */
+const hasNominatedOperator = (appointment) => {
+  return Boolean(appointment?.operatorId || appointment?.operatorOtherName)
+}
+
+/**
+ * Get the display name of the mammographer nominated for an appointment
+ *
+ * Returns '' when nobody has been nominated, so callers can decide their own
+ * fallback.
+ *
+ * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
+ * @returns {string} Nominated mammographer's name, or ''
+ */
+const getAppointmentOperatorName = function (appointment, options = {}) {
+  if (appointment?.operatorId) {
+    return getUsername.call(this, appointment.operatorId, options)
+  }
+  return appointment?.operatorOtherName || ''
 }
 
 /**
@@ -208,6 +278,10 @@ module.exports = {
   hasPermission,
   hasAnyPermission,
   requiresImplantImaging,
+  getImplantImagingReason,
+  getImplantImagingUsers,
+  hasNominatedOperator,
+  getAppointmentOperatorName,
   canUserScreenAppointment,
   isClinician,
   isAdministrative,

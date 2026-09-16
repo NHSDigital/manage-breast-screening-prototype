@@ -3,12 +3,15 @@
 {% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {# Wording differs depending on whether images have already been taken #}
-{% set imagesTaken = query.context == 'check-information' %}
+{% set imagesTaken = appointment.workflowStatus['take-images'] == 'completed' %}
 
 {% set pageHeading = "Change mammographer" %}
-{% set formAction = ("./change-mammographer-answer?returnPath=" + (query.returnPath or 'check-information')) | urlWithReferrer(referrerChain) %}
+{% set formAction = "./change-mammographer-answer" | urlWithReferrer(referrerChain) %}
 
 {% set legendText = "Who took the images for this appointment?" if imagesTaken else "Who is taking images for this appointment?" %}
+
+{# Where Save and Cancel return to - the page the modal was opened from #}
+{% set returnPageHref = (appointmentUrl + "/check-information") | getReturnUrl(referrerChain) %}
 
 {% block pageContent %}
 
@@ -20,44 +23,68 @@
     }) }}
   {% endif %}
 
-  {# Current user sits at the top, pre-selected unless another mammographer was already nominated #}
-  {% set currentUserShort = (data.currentUser.firstName | first) + ". " + data.currentUser.lastName %}
-  {% set selectedOperator = appointment.operator if appointment.mammographerNominated else currentUserShort %}
+  {# Current user sits at the top, followed by the other mammographers trained
+     to image participants with implants #}
+  {% set operatorItems = [
+    {
+      value: data.currentUser.id,
+      text: data.currentUser.id | getUsername({ format: "short", identifyCurrentUser: true })
+    }
+  ] %}
+
+  {% for user in data.users | getImplantImagingUsers %}
+    {% if user.id != data.currentUser.id %}
+      {% set operatorItems = operatorItems | push({
+        value: user.id,
+        text: user.id | getUsername({ format: "short" })
+      }) %}
+    {% endif %}
+  {% endfor %}
+
+  {% set otherNameHtml %}
+    {{ input({
+      id: "operatorOtherName",
+      name: "appointment[operatorTemp][otherName]",
+      value: appointment.operatorTemp.otherName or appointment.operatorOtherName,
+      label: {
+        text: "Enter the mammographer's full name"
+      },
+      autocomplete: "off"
+    } | populateErrors) }}
+  {% endset %}
+
+  {% set operatorItems = operatorItems | push({ divider: "or" }) %}
+  {% set operatorItems = operatorItems | push({
+    value: "other",
+    text: "Other",
+    conditional: {
+      html: otherNameHtml
+    }
+  }) %}
+
+  {# Nominating yourself is stored as no nomination, so default to the current user #}
+  {% set selectedOperator = data.currentUser.id %}
+  {% if appointment.operatorOtherName %}
+    {% set selectedOperator = "other" %}
+  {% endif %}
+  {% if appointment.operatorId %}
+    {% set selectedOperator = appointment.operatorId %}
+  {% endif %}
+  {% if appointment.operatorTemp.userId %}
+    {% set selectedOperator = appointment.operatorTemp.userId %}
+  {% endif %}
 
   {{ radios({
-    name: "irmerAuthoriser",
+    idPrefix: "operatorUserId",
+    name: "appointment[operatorTemp][userId]",
     value: selectedOperator,
     fieldset: {
       legend: {
         text: legendText
       }
     },
-    items: [
-      { value: currentUserShort, text: currentUserShort + " (you)" },
-      { value: "S. Patel", text: "S. Patel" },
-      { value: "R. Thompson", text: "R. Thompson" },
-      { value: "L. Okonkwo", text: "L. Okonkwo" },
-      { value: "H. Chambers", text: "H. Chambers" },
-      { value: "F. Kaur", text: "F. Kaur" },
-      { divider: "or" },
-      {
-        value: "Other",
-        text: "Other",
-        conditional: {
-          html: input({
-            id: "irmer-authoriser-other",
-            name: "irmerAuthoriserOther",
-            label: {
-              text: "Enter the mammographer's full name"
-            },
-            autocomplete: "off"
-          })
-        }
-      }
-    ]
-  }) }}
-
-  {% set returnPageHref = (appointmentUrl + "/" + (query.returnPath or "check-information")) | urlWithReferrer(referrerChain) %}
+    items: operatorItems
+  } | populateErrors) }}
 
   <div class="nhsuk-button-group">
     {{ button({

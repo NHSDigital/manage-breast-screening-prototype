@@ -344,34 +344,74 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const currentUserName = `${data.currentUser.firstName} ${data.currentUser.lastName}`
+      const appointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
-      const selected = data.irmerAuthoriser
-      const otherName = (data.irmerAuthoriserOther || '').toString().trim()
-      const newOperator =
-        selected === 'Other' && otherName ? otherName : selected
+      const operatorTemp = data.appointment?.operatorTemp || {}
+      const selectedUserId = operatorTemp.userId
+      const otherName = (operatorTemp.otherName || '').toString().trim()
 
-      // The hidden operator field was bound to the appointment before this
-      // route ran, so it still holds the previous value to compare against
-      const previousOperator = data.appointment?.operator || currentUserName
+      const errors = []
+      if (!selectedUserId) {
+        errors.push({
+          text: 'Select who is taking the images',
+          name: 'appointment[operatorTemp][userId]',
+          href: '#operatorUserId'
+        })
+      } else if (selectedUserId === 'other' && !otherName) {
+        errors.push({
+          text: "Enter the mammographer's full name",
+          name: 'appointment[operatorTemp][otherName]',
+          href: '#operatorOtherName'
+        })
+      }
 
-      if (newOperator && data.appointment) {
-        data.appointment.operator = newOperator
-        // Records that an authorised mammographer has been explicitly chosen,
-        // so the review step can show "Complete all and continue"
-        data.appointment.mammographerNominated = true
-        if (newOperator !== previousOperator) {
-          req.flash('success', `Authorised mammographer updated to ${newOperator}`)
-        }
+      if (errors.length) {
+        errors.forEach((error) => req.flash('error', error))
+        // Back to the modal page - _modal is threaded by the modal middleware,
+        // the referrer chain has to be carried by hand
+        return res.redirect(
+          urlWithReferrer(
+            `${appointmentUrl}/change-mammographer`,
+            req.query.referrerChain
+          )
+        )
+      }
+
+      const previousOperatorId = data.appointment?.operatorId
+      const previousOtherName = data.appointment?.operatorOtherName
+
+      if (selectedUserId === 'other') {
+        data.appointment.operatorId = null
+        data.appointment.operatorOtherName = otherName
+      } else {
+        // Nominating yourself is the same as no nomination at all
+        data.appointment.operatorId =
+          selectedUserId === data.currentUser?.id ? null : selectedUserId
+        data.appointment.operatorOtherName = null
       }
 
       // Clear the transient modal fields so they don't leak into other forms
-      delete data.irmerAuthoriser
-      delete data.irmerAuthoriserOther
+      delete data.appointment.operatorTemp
 
-      const returnPath = req.query.returnPath || 'check-information'
+      const hasChanged =
+        data.appointment.operatorId !== (previousOperatorId || null) ||
+        data.appointment.operatorOtherName !== (previousOtherName || null)
+
+      if (hasChanged) {
+        const selectedUser = (data.users || []).find(
+          (user) => user.id === selectedUserId
+        )
+        const newOperatorName = selectedUser
+          ? `${selectedUser.firstName} ${selectedUser.lastName}`
+          : otherName
+        req.flash(
+          'success',
+          `Authorised mammographer updated to ${newOperatorName}`
+        )
+      }
+
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}/appointments/${appointmentId}/${returnPath}`,
+        `${appointmentUrl}/check-information`,
         req.query.referrerChain
       )
       res.redirect(modalBreakout(returnUrl))

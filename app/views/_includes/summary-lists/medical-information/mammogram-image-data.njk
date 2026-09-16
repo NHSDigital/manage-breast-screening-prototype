@@ -166,32 +166,41 @@
   }) %}
 {% endif %}
 
-{# Authorised mammographer - defaults to the logged in user, unless an alternative mammographer was nominated #}
-{% set operatorDisplayName = appointment.operator or (data.currentUser.firstName + " " + data.currentUser.lastName) %}
-{% set operatorActions = [] %}
-{% if allowEdits and operatorChangeHref %}
-  {% set operatorActions = [
-    ({
-      href: operatorChangeHref,
-      text: "Change",
-      visuallyHiddenText: "authorised mammographer"
-    } | openInModal)
-  ] %}
+{# Authorised mammographer - whoever was nominated to take the images, falling
+   back to whoever ran the appointment #}
+{% set operatorDisplayName = appointment | getAppointmentOperatorName %}
+{% if not operatorDisplayName %}
+  {% if appointment.sessionDetails.endedBy %}
+    {% set operatorDisplayName = appointment.sessionDetails.endedBy | getUsername %}
+  {% else %}
+    {% set operatorDisplayName = appointment.sessionDetails.startedBy | getUsername %}
+  {% endif %}
 {% endif %}
 
-{% set operatorValueHtml %}<span class="js-operator-name">{{ operatorDisplayName }}</span>{% endset %}
+{% if operatorDisplayName %}
+  {% set operatorActions = [] %}
+  {% if allowEdits and operatorChangeHref %}
+    {% set operatorActions = [
+      ({
+        href: operatorChangeHref,
+        text: "Change",
+        visuallyHiddenText: "authorised mammographer"
+      } | openInModal)
+    ] %}
+  {% endif %}
 
-{% set summaryRows = summaryRows | push({
-  key: {
-    text: operatorLabel | default("Operator")
-  },
-  value: {
-    html: operatorValueHtml
-  },
-  actions: {
-    items: operatorActions
-  }
-}) %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: operatorLabel | default("Operator")
+    },
+    value: {
+      text: operatorDisplayName
+    },
+    actions: {
+      items: operatorActions
+    }
+  }) %}
+{% endif %}
 
 {# Combined views taken (showing all view information in one row) #}
 {# Sort views by side and standard order before displaying #}
