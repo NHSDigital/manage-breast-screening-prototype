@@ -32,6 +32,15 @@
             {{ role | sentenceCase -}}
             {% if not loop.last %}, {% endif %}
           {% endfor %}
+          {% if user.permissions | length %}
+            <br>
+            <span class="nhsuk-u-secondary-text-color">Permissions:
+            {% for permission in user.permissions %}
+              {{ permission | kebabCase | formatWords("-") | sentenceCase -}}
+              {% if not loop.last %}, {% endif %}
+            {% endfor %}
+            </span>
+          {% endif %}
         </p>
 
       </li>
