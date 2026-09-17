@@ -76,7 +76,8 @@ appointment(s) for that round sit in. Every appointment has an `episodeId`, and
 every episode lists its `appointmentIds`. Accessors live in
 [app/lib/utils/episodes.js](../app/lib/utils/episodes.js) (and so are
 available as Nunjucks filters): `getEpisode`, `getEpisodesForParticipant`,
-`getCurrentEpisode`, `getEpisodeAppointments`, `getEpisodeReadingStatus`.
+`getCurrentEpisode`, `getEpisodeAppointments`. `getEpisodeReadingStatus` lives in
+[app/lib/utils/reading.js](../app/lib/utils/reading.js).
 
 ### Open or closed
 

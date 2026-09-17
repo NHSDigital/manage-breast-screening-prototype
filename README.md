@@ -38,6 +38,7 @@ The prototype will generate example data on first run, and from then on once per
 - You can also run the generator directly with `node app/lib/generate-seed-data.js`
 - Uses NHS design system components and patterns
 - Use `tree app` to generate a tree diagram of the project
+- Documentation for the codebase, including how pages, forms, routes and data work, is in [docs/](docs/README.md). Instructions for coding assistants are in [.github/copilot-instructions.md](.github/copilot-instructions.md)
 
 ## Security
 
