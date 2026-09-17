@@ -137,7 +137,7 @@
   }) %}
 {% endif %}
 
-{# Machine room #}
+{# Mammogram location #}
 {% if appointment.mammogramData.machineRoom %}
   {# Check if this is a mobile clinic #}
   {% set isMobileClinic = (clinic.location.type == 'mobile_unit') %}
@@ -148,20 +148,56 @@
       {
         href: "./images-room-selection" | urlWithReferrer(referrerChain, scrollTo),
         text: "Change",
-        visuallyHiddenText: "machine room"
+        visuallyHiddenText: "mammogram location"
       }
     ] %}
   {% endif %}
   
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Machine room"
+      text: "Mammogram location"
     },
     value: {
       text: appointment.mammogramData.machineRoom
     },
     actions: {
       items: machineRoomActions
+    }
+  }) %}
+{% endif %}
+
+{# Authorised mammographer - whoever was nominated to take the images, falling
+   back to whoever ran the appointment #}
+{% set authorisedMammographerName = appointment | getAuthorisedMammographerName({ format: "reversed" }) %}
+{% if not authorisedMammographerName %}
+  {% if appointment.sessionDetails.endedBy %}
+    {% set authorisedMammographerName = appointment.sessionDetails.endedBy | getUsername({ format: "reversed" }) %}
+  {% else %}
+    {% set authorisedMammographerName = appointment.sessionDetails.startedBy | getUsername({ format: "reversed" }) %}
+  {% endif %}
+{% endif %}
+
+{% if authorisedMammographerName %}
+  {% set authorisedMammographerActions = [] %}
+  {% if allowEdits and authorisedMammographerChangeHref %}
+    {% set authorisedMammographerActions = [
+      ({
+        href: authorisedMammographerChangeHref,
+        text: "Change",
+        visuallyHiddenText: "authorised mammographer"
+      } | openInModal)
+    ] %}
+  {% endif %}
+
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Authorised mammographer"
+    },
+    value: {
+      text: authorisedMammographerName
+    },
+    actions: {
+      items: authorisedMammographerActions
     }
   }) %}
 {% endif %}

@@ -20,7 +20,7 @@
 {% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
 
 {% set pageHeading = participant | getFullNameReversed %}
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 {% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}
 
@@ -45,7 +45,7 @@
   {% endif %}
 
   <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-full">
+    <div class="nhsuk-grid-column-full app-u-max-width-three-quarters">
 
       {# What is holding the case up, before anything else - it is what anyone
          chasing the case needs to know #}

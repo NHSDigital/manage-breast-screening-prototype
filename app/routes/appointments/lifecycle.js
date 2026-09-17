@@ -337,6 +337,94 @@ module.exports = (router) => {
     }
   )
 
+  // Change the authorised mammographer from the in-page modal, then return to
+  // the page it was opened from with a success banner if it actually changed
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/change-authorised-mammographer-answer',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const appointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
+
+      const authorisedMammographerTemp =
+        data.appointment?.authorisedMammographerTemp || {}
+      const selectedUserId = authorisedMammographerTemp.userId
+      const otherName = (authorisedMammographerTemp.otherName || '')
+        .toString()
+        .trim()
+
+      const errors = []
+      if (!selectedUserId) {
+        errors.push({
+          text: 'Select who is taking the images',
+          name: 'appointment[authorisedMammographerTemp][userId]',
+          href: '#authorisedMammographerUserId'
+        })
+      } else if (selectedUserId === 'other' && !otherName) {
+        errors.push({
+          text: "Enter the mammographer's full name",
+          name: 'appointment[authorisedMammographerTemp][otherName]',
+          href: '#authorisedMammographerOtherName'
+        })
+      }
+
+      if (errors.length) {
+        errors.forEach((error) => req.flash('error', error))
+        // Back to the modal page - _modal is threaded by the modal middleware,
+        // the referrer chain has to be carried by hand
+        return res.redirect(
+          urlWithReferrer(
+            `${appointmentUrl}/change-authorised-mammographer`,
+            req.query.referrerChain
+          )
+        )
+      }
+
+      const previousAuthorisedMammographerId =
+        data.appointment?.authorisedMammographerId
+      const previousAuthorisedMammographerOtherName =
+        data.appointment?.authorisedMammographerOtherName
+
+      if (selectedUserId === 'other') {
+        data.appointment.authorisedMammographerId = null
+        data.appointment.authorisedMammographerOtherName = otherName
+      } else {
+        // Nominating yourself is the same as no nomination at all
+        data.appointment.authorisedMammographerId =
+          selectedUserId === data.currentUser?.id ? null : selectedUserId
+        data.appointment.authorisedMammographerOtherName = null
+      }
+
+      // Clear the transient modal fields so they don't leak into other forms
+      delete data.appointment.authorisedMammographerTemp
+
+      const hasChanged =
+        data.appointment.authorisedMammographerId !==
+          (previousAuthorisedMammographerId || null) ||
+        data.appointment.authorisedMammographerOtherName !==
+          (previousAuthorisedMammographerOtherName || null)
+
+      if (hasChanged) {
+        const selectedUser = (data.users || []).find(
+          (user) => user.id === selectedUserId
+        )
+        const newAuthorisedMammographerName = selectedUser
+          ? `${selectedUser.lastName.toUpperCase()}, ${selectedUser.firstName}`
+          : otherName
+        req.flash(
+          'success',
+          `Authorised mammographer updated to ${newAuthorisedMammographerName}`
+        )
+      }
+
+      const returnUrl = getReturnUrl(
+        `${appointmentUrl}/check-information`,
+        req.query.referrerChain
+      )
+      res.redirect(modalBreakout(returnUrl))
+    }
+  )
+
   // Appointment within clinic context
   router.get('/clinics/:clinicId/appointments/:appointmentId', (req, res) => {
     const { clinicId, appointmentId } = req.params

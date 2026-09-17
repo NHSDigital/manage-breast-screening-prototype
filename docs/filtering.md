@@ -1,6 +1,6 @@
 # Filtering an index page
 
-Index pages filter with checkboxes in a left-hand column. The setup is generic: a page declares its filters as **data** and passes them through one set of helpers and one component. Reading cases (`app/routes/reading-cases.js`, `app/views/reading/cases.html`) is the worked example.
+Index pages filter with checkboxes in a left-hand column. The setup is generic: a page declares its filters as **data** and passes them through one set of helpers and one component. Reading cases (`app/routes/reading-cases.js`, `app/views/reading/cases.html`) is the worked example; the participant index (`app/routes/participants.js`, `app/views/participants/index.html`) is the second, with the same parts arranged for a different job.
 
 ## 1. Declare the filter groups
 
@@ -16,7 +16,7 @@ A filter group is plain data plus one function that knows the page's row shape:
 }
 ```
 
-Multi-select within a group is OR; groups combine with AND. A group with `style: 'radios'` renders NHS radios instead of checkboxes and holds a single value: `parseFilterQuery` keeps the first valid one, so a hand-written URL offering several still resolves. Keep the array next to whatever builds the rows — reading cases keeps `READING_CASE_FILTER_GROUPS` in `app/lib/utils/reading-case-list.js`.
+Multi-select within a group is OR; groups combine with AND. A group with `style: 'radios'` renders NHS radios instead of checkboxes and holds a single value: `parseFilterQuery` keeps the first valid one, so a hand-written URL offering several still resolves. Keep the array next to whatever builds the rows — reading cases keeps `READING_CASE_FILTER_GROUPS` in `app/lib/utils/reading-case-list.js`, participants keep `PARTICIPANT_FILTER_GROUPS` in `app/lib/utils/participant-list.js`.
 
 ## 2. Wire the route
 

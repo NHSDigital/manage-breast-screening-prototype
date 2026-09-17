@@ -6,7 +6,7 @@
 
 {% set pageHeading = "Take mammogram images" %}
 
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-two-thirds" %}
 
 {% set formAction = './images-manual-answer' %}
 
@@ -17,6 +17,9 @@
   <h1>{{ pageHeading }}</h1>
 
   {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
+
+  {# The authorised mammographer defaults to the logged in user, unless an alternative has been nominated #}
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
 
   {# Determine current room name #}
   {% set currentRoomName = "" %}
@@ -38,8 +41,13 @@
     <p>
       Mammogram location: <span class="nhsuk-u-font-weight-bold">{{ currentRoomName }}</span>.
       {% if not isMobileClinic %}
-        <br><a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">Change room or machine details</a>
+        (<a href="{{ './images-room-selection' | urlWithReferrer(referrerChain) }}">change</a>)
       {% endif %}
+    </p>
+
+    <p>
+      Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
+      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
     </p>
 
     {{ appHiddenInput({
@@ -148,7 +156,7 @@
     name: "appointment[mammogramDataTemp][isStandardSet]",
     fieldset: {
       legend: {
-        text: "Have you taken a standard set of images?",
+        text: "Were a standard set of images taken?",
         size: "m",
         isPageHeading: false
       }

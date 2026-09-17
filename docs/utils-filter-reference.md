@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-02 13:09 UTC
+- **Generated:** 2026-09-10 15:04 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -23,27 +23,27 @@
 | `episodes.js` | Episode lookups and stage changes | 187 |
 | `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 224 |
 | `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 242 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 287 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 341 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 363 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 386 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 399 |
-| `objects.js` | Object utilities for extracting and flattening values. | 417 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 428 |
-| `random.js` | Seeded random functions for stable prototype data | 438 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 455 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 469 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 479 |
-| `roles-and-permissions.js` | User role checks | 492 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 510 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 525 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 537 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 290 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 344 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 366 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 392 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 405 |
+| `objects.js` | Object utilities for extracting and flattening values. | 423 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 434 |
+| `random.js` | Seeded random functions for stable prototype data | 444 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 461 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 475 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 485 |
+| `roles-and-permissions.js` | User role checks | 498 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 516 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 532 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 544 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 553 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 565 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 577 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 591 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 601 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 560 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 572 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 584 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 598 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 608 |
 
 ---
 
@@ -268,21 +268,24 @@ A reading case is one set of mammograms being read, held on the episode as episo
 | `willGoToArbitration(readA, readB, [settings])` | Whether two reads mean the case needs arbitrating, taking the site's | 380 |
 | `isReadFinalised(read, [settings], [now])` | Whether a read is finalised. | 412 |
 | `getAutoFinaliseTime(read, [settings])` | When a read will finalise itself, or null if it won't. | 442 |
-| `areAllReadsFinalised(readingCase, [settings], [now])` | Whether every read on a case is finalised | 466 |
-| `getReadingCaseState(readingCase, [settings], [now])` | Where a case has got to. | 480 |
-| `getReadingCaseOutcome(readingCase, [settings], [now])` | What a case found, or null while reading is still under way. | 522 |
-| `getReadingCaseStatus(readingCase, [settings], [now])` | The facts about where a case stands, for composing status displays. | 546 |
-| `getReadingMetadata(readingCase, [settings])` | Summary counts and flags for a case, for lists and progress displays | 587 |
-| `caseNeedsFirstRead(readingCase)` | Whether a case still needs a first read | 618 |
-| `caseNeedsSecondRead(readingCase)` | Whether a case has a first read and still needs a second | 628 |
-| `caseNeedsArbitration(readingCase, [settings])` | Whether a case sits in the arbitration backlog - finalised reads whose | 638 |
-| `canUserReadCase(readingCase, userId, [options], [options.maxReadsPerCase])` | Whether a user can read a case. | 661 |
-| `getComparisonInfo(readingCase, secondReadData, userId, [settings])` | Work out what the second reader should be shown about the first read. | 696 |
-| `shouldShowComparePage(readingCase, secondReadData, userId, [settings])` | Whether the compare page should be shown to the second reader. | 745 |
-| `buildRead(readingCase, userId, readerType, reading, [options], [options.timestamp], [options.arbitratorIds])` | Build the read record for a user's opinion on a case. | 784 |
-| `withRead(readingCase, read)` | Add or replace a user's read on a case, returning a new case record. | 841 |
-| `withReadFinalised(readingCase, userId, [options], [options.finalisedAt], [options.finalisedBy])` | Mark a user's read on a case as finalised, returning a new case record. | 876 |
-| `withoutRead(readingCase, userId)` | Remove a user's read from a case, returning a new case record. | 903 |
+| `getReadFinalisedTime(read, [settings])` | When a read finalised, or will: its explicit stamp, else the moment the | 466 |
+| `getDecidingRead(readingCase, [settings])` | The read a case's outcome comes from: the arbitration read where there was | 478 |
+| `getReadingCaseOutcomeDate(readingCase, [settings])` | When a case's outcome finalised - the deciding read's finalised time. Null | 501 |
+| `areAllReadsFinalised(readingCase, [settings], [now])` | Whether every read on a case is finalised | 514 |
+| `getReadingCaseState(readingCase, [settings], [now])` | Where a case has got to. | 528 |
+| `getReadingCaseOutcome(readingCase, [settings], [now])` | What a case found, or null while reading is still under way. | 570 |
+| `getReadingCaseStatus(readingCase, [settings], [now])` | The facts about where a case stands, for composing status displays. | 594 |
+| `getReadingMetadata(readingCase, [settings])` | Summary counts and flags for a case, for lists and progress displays | 635 |
+| `caseNeedsFirstRead(readingCase)` | Whether a case still needs a first read | 666 |
+| `caseNeedsSecondRead(readingCase)` | Whether a case has a first read and still needs a second | 676 |
+| `caseNeedsArbitration(readingCase, [settings])` | Whether a case sits in the arbitration backlog - finalised reads whose | 686 |
+| `canUserReadCase(readingCase, userId, [options], [options.maxReadsPerCase])` | Whether a user can read a case. | 709 |
+| `getComparisonInfo(readingCase, secondReadData, userId, [settings])` | Work out what the second reader should be shown about the first read. | 744 |
+| `shouldShowComparePage(readingCase, secondReadData, userId, [settings])` | Whether the compare page should be shown to the second reader. | 793 |
+| `buildRead(readingCase, userId, readerType, reading, [options], [options.timestamp], [options.arbitratorIds])` | Build the read record for a user's opinion on a case. | 832 |
+| `withRead(readingCase, read)` | Add or replace a user's read on a case, returning a new case record. | 889 |
+| `withReadFinalised(readingCase, userId, [options], [options.finalisedAt], [options.finalisedBy])` | Mark a user's read on a case as finalised, returning a new case record. | 924 |
+| `withoutRead(readingCase, userId)` | Remove a user's read from a case, returning a new case record. | 951 |
 
 ### reading.js
 
@@ -379,9 +382,12 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 402 |
 | `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 416 |
 | `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 438 |
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 454 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 495 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 530 |
+| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 494 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 513 |
+| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 540 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 562 |
+| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 576 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 602 |
 
 ### annotation-summary.js
 
@@ -515,12 +521,13 @@ Generic checkbox filtering for index pages: parse selected values from the query
 
 | Function | Description | Line |
 |---|---|---|
-| `parseFilterQuery(query, groups)` | Read the selected filter values out of a query string, discarding anything | 36 |
-| `applyFilterGroups(rows, groups, selected)` | The rows matching every group's selection. An unselected group filters | 91 |
-| `getFilterCounts(rows, groups, selected)` | How many rows each option would show. | 104 |
-| `buildFilterUrl(baseUrl, [selected], [extraParams])` | Build a URL carrying a filter selection plus any params the page keeps | 136 |
-| `describeSelectedFilters(groups, selected, baseUrl, [extraParams])` | The active filters as a flat list, each with the URL that removes it - the | 164 |
-| `hasSelectedFilters(selected)` | Whether anything is selected at all - for showing or hiding the summary. | 209 |
+| `getRevealedGroupNames(groups)` | The names of every group that another group's option reveals - the groups a | 46 |
+| `parseFilterQuery(query, groups)` | Read the selected filter values out of a query string, discarding anything | 82 |
+| `applyFilterGroups(rows, groups, selected)` | The rows matching every group's selection. An unselected group filters | 148 |
+| `getFilterCounts(rows, groups, selected)` | How many rows each option would show. | 161 |
+| `buildFilterUrl(baseUrl, [selected], [extraParams])` | Build a URL carrying a filter selection plus any params the page keeps | 202 |
+| `describeSelectedFilters(groups, selected, baseUrl, [extraParams])` | The active filters as a flat list, each with the URL that removes it - the | 230 |
+| `hasSelectedFilters(selected)` | Whether anything is selected at all - for showing or hiding the summary. | 279 |
 
 ### search.js
 

@@ -110,7 +110,7 @@ const getUsername = function (userId, options = {}) {
   const user = users.find((u) => u.id === userId)
   if (!user) return userId
 
-  // Format options: full (default), short (initial + surname), initial (just initials)
+  // Format options: full (default), short (initial + surname), initial (just initials), reversed (SURNAME, First)
   const format = options.format || 'full'
 
   let formattedName
@@ -120,6 +120,9 @@ const getUsername = function (userId, options = {}) {
       break
     case 'initial':
       formattedName = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+      break
+    case 'reversed':
+      formattedName = `${user.lastName.toUpperCase()}, ${user.firstName}`
       break
     case 'full':
     default:
