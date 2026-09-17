@@ -1,4 +1,4 @@
-# Image Reading - Technical Summary
+# Image reading: technical summary
 
 This document provides a technical overview of the image reading section of the prototype. It covers data flow, storage patterns, routing, layouts, and areas for refactoring.
 
@@ -17,14 +17,6 @@ This document provides a technical overview of the image reading section of the 
 
 - [ ] Should we have UI to let you return to a session? Index of sessions you've worked on?
 - [ ] No good way to navigate by person / see people in general
-- [ ] No good way to see the size and age of the backlog
-
-#### Summary Pages
-
-Need pages to view completed readings outside the workflow:
-
-- View a single appointment's readings (both readers' opinions, annotations)
-- View all readings for a participant
 
 ---
 
@@ -46,9 +38,12 @@ The image reading section allows radiologists to review mammogram images from sc
 ```
 app/
 ├── routes/
-│   └── reading.js                    # All reading routes
+│   ├── reading.js                    # Sessions and the reading workflow
+│   ├── reading-cases.js              # Case backlog and case detail pages
+│   └── arbitration.js                # Arbitration sessions and panels
 ├── lib/utils/
-│   ├── reading.js                    # Reading utility functions
+│   ├── reading.js                    # Sessions, writing reads, progress
+│   ├── reading-cases.js              # Reading case state, outcome and metadata
 │   └── prior-mammograms.js           # Prior mammogram utilities
 ├── views/
 │   ├── reading/
@@ -66,7 +61,6 @@ app/
 │   │   ├── cases.html               # Reading case backlog
 │   │   ├── case.html                # One reading case: state, blockers, reads
 │   │   ├── case-priors.html         # The case's prior mammograms tab
-│   │   ├── batch.html               # Unused — predates the batch→session rename
 │   │   ├── workflow/                # Reading workflow pages
 │   │   │   ├── opinion.html         # Main opinion page (entry point)
 │   │   │   ├── normal-details.html  # Optional details for normal opinion
@@ -78,7 +72,7 @@ app/
 │   │   │   ├── confirm-abnormal.html
 │   │   │   ├── defer-case.html      # Defer a case out of the reading queue
 │   │   │   ├── medical-information.html  # Full medical information view
-│   │   │   ├── recommended-assessment.html  # Not currently used in routing
+│   │   │   ├── recommended-assessment.html  # Recommended assessment step
 │   │   │   ├── compare.html         # Second-reader comparison page
 │   │   │   ├── arbitration-outcome.html  # Arbitrator's deciding outcome
 │   │   │   ├── arbitration-reads.html    # The first and second reads being arbitrated
@@ -299,6 +293,7 @@ data.readingSessions = {
 /reading/session/:sessionId/appointments/:appointmentId/annotate-v2/save         # POST: Save from the newer annotation UI
 /reading/session/:sessionId/appointments/:appointmentId/save-annotations-json    # POST: Save annotations posted as JSON
 /reading/session/:sessionId/appointments/:appointmentId/save-breast-assessment   # POST: Save per-breast assessment
+/reading/arbitration/...              # Arbitration sessions and panels, see app/routes/arbitration.js
 /reading/history                      # Reading history (redirects to /mine)
 /reading/history/:view                # History view (mine | all)
 ```
@@ -392,7 +387,7 @@ On `/compare`, the second reader can:
 
 ### layout-reading.html
 
-Extends `layout-app.html` and provides (~60 lines):
+Extends `layout-app.html` and provides:
 
 1. **Status bar** (via `reading-status-bar.njk`, shown when `isReadingWorkflow`):
    - Session/clinic context
@@ -428,7 +423,9 @@ Templates receive via `res.locals`:
 
 ## Utility Functions
 
-### reading.js — Single Appointment
+### reading-cases.js — one reading case
+
+All of these except `writeReading` (which is in `reading.js`) live in `app/lib/utils/reading-cases.js`.
 
 - `getReadingMetadata(readingCase, settings)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions, state, outcome }` (computed on demand). `getAppointmentReadingMetadata(data, appointment)` is the appointment-shaped wrapper.
 - `getReadsAsArray(appointment)` - Returns reads sorted by readNumber (or timestamp fallback)

@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-10 15:04 UTC
+- **Generated:** 2026-09-17 10:43 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -26,24 +26,24 @@
 | `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 290 |
 | `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 344 |
 | `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 366 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 392 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 405 |
-| `objects.js` | Object utilities for extracting and flattening values. | 423 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 434 |
-| `random.js` | Seeded random functions for stable prototype data | 444 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 461 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 475 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 485 |
-| `roles-and-permissions.js` | User role checks | 498 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 516 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 532 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 544 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 393 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 406 |
+| `objects.js` | Object utilities for extracting and flattening values. | 424 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 435 |
+| `random.js` | Seeded random functions for stable prototype data | 445 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 462 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 476 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 486 |
+| `roles-and-permissions.js` | User role checks | 499 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 524 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 540 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 552 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 560 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 572 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 584 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 598 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 608 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 568 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 580 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 592 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 606 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 616 |
 
 ---
 
@@ -371,23 +371,24 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 
 | Function | Description | Line |
 |---|---|---|
-| `isValidMedicalHistoryType(type)` | Check whether a string names a medical history type, by type or slug | 6 |
-| `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 18 |
-| `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 31 |
-| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 42 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 250 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 279 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 301 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 323 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 402 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 416 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 438 |
-| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 494 |
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 513 |
-| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 540 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 562 |
-| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 576 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 602 |
+| `isValidMedicalHistoryType(type)` | Check whether a string names a medical history type, by type or slug | 7 |
+| `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 19 |
+| `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 32 |
+| `isMedicalHistoryItemRemoved(item)` | Check whether a medical history item records something that has since been removed | 43 |
+| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 63 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 271 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 300 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 322 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 344 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 423 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 437 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 459 |
+| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 515 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 534 |
+| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 561 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 583 |
+| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 597 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 623 |
 
 ### annotation-summary.js
 
@@ -490,10 +491,10 @@ Referrer chain navigation for multi-level back links. Use these instead of hardc
 
 | Function | Description | Line |
 |---|---|---|
-| `getReturnUrl(url, referrerChain, [scrollToId])` | Get destination from referrer chain, falling back to provided URL if no referrer — e.g. `<a href="{{ '/default-path' \| getReturnUrl(referrerChain) }}">Back</a>` | 131 |
-| `urlWithReferrer(url, referrerChain, [scrollToId])` | Add referrer to URL as query parameter with optional scroll anchor — e.g. `<a href="{{ '/next-page' \| urlWithReferrer(referrer) }}">Continue</a>` | 214 |
-| `appendReferrer(existingReferrerChain, newUrl)` | Append a URL to an existing referrer chain — e.g. `{% set updatedReferrer = referrerChain \| appendReferrer(currentUrl) %}` | 240 |
-| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 264 |
+| `getReturnUrl(url, referrerChain, [scrollToId])` | Get destination from referrer chain, falling back to provided URL if no referrer — e.g. `<a href="{{ '/default-path' \| getReturnUrl(referrerChain) }}">Back</a>` | 27 |
+| `urlWithReferrer(url, referrerChain, [scrollToId])` | Add referrer to URL as query parameter with optional scroll anchor — e.g. `<a href="{{ '/next-page' \| urlWithReferrer(referrer) }}">Continue</a>` | 110 |
+| `appendReferrer(existingReferrerChain, newUrl)` | Append a URL to an existing referrer chain — e.g. `{% set updatedReferrer = referrerChain \| appendReferrer(currentUrl) %}` | 136 |
+| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 160 |
 
 ### roles-and-permissions.js
 
@@ -503,15 +504,22 @@ User role checks. Use these instead of comparing role strings directly.
 
 | Function | Description | Line |
 |---|---|---|
-| `hasRole(user, role)` | Check if a user has a specific role | 3 |
-| `hasAnyRole(user, roles)` | Check if a user has any of the specified roles | 17 |
-| `hasAllRoles(user, roles)` | Check if a user has all of the specified roles | 31 |
-| `isClinician(user)` | Check if a user is a clinician | 45 |
-| `isAdministrative(user)` | Check if a user has an administrative role | 55 |
-| `isHybridUser(user)` | Check if a user has both clinical and administrative roles | 65 |
-| `getRolesText(user, separator)` | Get all roles for a user as formatted string | 75 |
-| `isCurrentUser(user)` | Check if a user is the current user | 89 |
-| `startedByCurrentUser(appointment)` | Check if an appointment was started by the current user | 103 |
+| `hasRole(user, role)` | Check if a user has a specific role | 11 |
+| `hasAnyRole(user, roles)` | Check if a user has any of the specified roles | 25 |
+| `hasAllRoles(user, roles)` | Check if a user has all of the specified roles | 39 |
+| `hasPermission(user, permission)` | Check if a user has a specific permission | 53 |
+| `hasAnyPermission(user, permissions)` | Check if a user has any of the specified permissions | 71 |
+| `requiresImplantImaging(appointment)` | Check whether an appointment needs a user with implant imaging training | 103 |
+| `getImplantImagingReason(appointment)` | Describe why an appointment needs a mammographer with implant imaging | 120 |
+| `hasNominatedAuthorisedMammographer(appointment)` | Check whether an authorised mammographer other than the current user has | 139 |
+| `getAuthorisedMammographerName(appointment, [options])` | Get the display name of the authorised mammographer nominated for an | 153 |
+| `canUserScreenAppointment(user, appointment)` | Check whether a user is able to screen a given appointment | 171 |
+| `isClinician(user)` | Check if a user is a clinician | 189 |
+| `isAdministrative(user)` | Check if a user has an administrative role | 199 |
+| `isHybridUser(user)` | Check if a user has both clinical and administrative roles | 209 |
+| `getRolesText(user, separator)` | Get all roles for a user as formatted string | 219 |
+| `isCurrentUser(user)` | Check if a user is the current user | 233 |
+| `startedByCurrentUser(appointment)` | Check if an appointment was started by the current user | 247 |
 
 ### filter-list.js
 
@@ -592,8 +600,8 @@ Nunjucks-specific helpers: joining arrays, resolving user names from IDs, templa
 | `log(a, [description])` | Render a value to the browser console via an inline script tag (for template debugging) | 5 |
 | `join(input, [delimiter], [attribute], [options], [options.filterEmpty], [options.toString])` | Safely join array elements with proper undefined/null handling — e.g. `join(['a', 'b', 'c'], ', ') // 'a, b, c'` | 22 |
 | `getUsername(userId, [options], [options.identifyCurrentUser], [options.useYou], [options.format])` | Get user name by user ID with format options | 94 |
-| `getContext()` | Return the full Nunjucks template context — useful for debugging | 142 |
-| `parseJsonString(value)` | Safely parse a JSON string and return the resulting object, or return structured data as-is | 151 |
+| `getContext()` | Return the full Nunjucks template context — useful for debugging | 145 |
+| `parseJsonString(value)` | Safely parse a JSON string and return the resulting object, or return structured data as-is | 154 |
 
 ### tags.js
 

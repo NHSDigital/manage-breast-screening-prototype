@@ -20,7 +20,8 @@ own:
 
 ## The three layers
 
-**Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. When code moves
+**Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. It ignores
+`tests/lib/`, which holds inherited Jest specs that cannot run. When code moves
 between modules — a routes split, a rename — it is easy to leave a helper
 behind in one file while its callers move to another. Node only throws when
 that route actually runs, so nothing notices until someone clicks the page.
@@ -38,7 +39,7 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Fourteen journeys:
+JavaScript. Fifteen journeys:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
@@ -111,6 +112,7 @@ npx playwright show-trace test-results/<dir>/trace.zip
 - The image-marking annotation modes in image reading (`with-images-simple` and
   friends), which need pixel-accurate clicks on the mammogram views. The reading
   spec pins `without-images`, where the location is typed instead.
-- Arbitration, and the second reader adopting the first reader's opinion
-  (the comparison journey covers keeping their own)
+- Most of arbitration: the journeys settle an arbitration case with a normal
+  outcome, nothing beyond that. Also the second reader adopting the first
+  reader's opinion (the comparison journey covers keeping their own)
 - CI — the suite runs on demand, not on every push

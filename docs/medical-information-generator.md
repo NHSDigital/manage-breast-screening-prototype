@@ -1,6 +1,6 @@
-# Medical Information Generator Guide
+# Medical information generator
 
-This document explains how medical information is generated and stored in the seed data system, specifically to guide the implementation of a consolidated medical information generator.
+How medical information is generated and stored in the seed data. This started as the plan for the consolidated generator, which now exists at `app/lib/generators/medical-information-generator.js`. Where this doc and the generators disagree, the code is right.
 
 ## Overview
 
@@ -236,7 +236,7 @@ generateBreastDensityFactors({
 - Generates freetext medical information
 - Realistic examples of other health conditions and medications
 - Simple string field
-- 15% default probability
+- 20% default probability
 
 **Data structure:**
 
@@ -259,7 +259,7 @@ string  // e.g., 'Takes warfarin for atrial fibrillation. Last INR check was two
 - Smart positioning with slight randomness to avoid perfect centering
 - Weighted towards more visible anatomical areas
 - Avoids generating multiple features in same region
-- 20% default probability of having any features
+- 15% default probability of having any features
 - 30% chance of multiple if they have any (weighted towards 2 features)
 
 **Data structure:**
@@ -314,11 +314,12 @@ All medical history items should include:
 ```javascript
 {
   id: string,                      // Unique ID
+  medicalHistoryType: string,      // The type key, e.g. 'breastCancer'
   dateAdded: string (ISO),         // When added
   addedBy: string,                 // User ID who added it
-  procedureYear: string,           // Optional year (if applicable)
-  additionalDetails: string,       // Optional free text
-  treatmentLocation: string        // Optional location
+  year: string,                    // Optional year (if applicable)
+  location: string,                // Optional location (where treated)
+  additionalDetails: string        // Optional free text
 }
 ```
 
@@ -342,35 +343,38 @@ All medical history items should include:
 - `proceduresLeftBreast`: string
 - `otherSurgeryRightBreast`: array - Reconstruction, Symmetrisation
 - `otherSurgeryLeftBreast`: array
-- `mastectomyLumpectomySurgeryReason`: string - Risk reduction, Gender-affirmation, etc.
-- `mastectomyLumpectomySurgeryReasonDetails`: string (if 'Other reason')
+- `mastectomyLumpectomySurgeryReason`: string - Risk reduction or Gender-affirmation (the generator never picks 'Other reason', so no details field is generated)
 
 #### Breast Implants/Augmentation
 
-- `proceduresRightBreast`: array - Breast implants, Breast reduction, etc.
+- `proceduresRightBreast`: array - `['Breast implants']` or `['No procedures']`
 - `proceduresLeftBreast`: array
 - `breastAugmentationReason`: string - Reconstruction, Cosmetic, etc.
 - `consentGiven`: 'yes'|'no' (required if breast implants selected)
 
 #### Implanted Medical Device
 
-- `deviceTypes`: array - Pacemaker, Insulin pump, etc.
-- `deviceLocation`: string - Location description
+- `type`: string - Cardiac device or Hickman line
+- `deviceRemoved`: 'yes'|'no', with `yearRemoved` when removed
 
 #### Cysts
 
-- `cystLocation`: array - Right breast, Left breast, Both breasts
-- `lastDrained`: object - { month, year } (optional)
+- `cystsStatus`: string - Drainage or removal, or No treatment
+- `additionalDetails`: string
 
 #### Benign Lumps
 
-- `lumpLocation`: array - Right breast, Left breast, Both breasts
-- `lumpType`: string - Fibroadenoma, Papilloma, etc.
+- `proceduresRightBreast`: array - Needle biopsy, Lump removed
+- `proceduresLeftBreast`: array
+- `year`, `location`, `additionalDetails`
 
 #### Other Procedures
 
-- `procedureDetails`: string - Free text description
-- `procedureLocation`: array - Right breast, Left breast, Both breasts
+- `type`: string - Breast reduction, Breast symmetrisation, Nipple correction, Other
+- A details field per type, for example `breastReductionDetails`
+- `year`, `additionalDetails`
+
+The generator for all of these is `app/lib/generators/medical-information/medical-history-generator.js`.
 
 ## Integration Points
 
@@ -379,7 +383,6 @@ All medical history items should include:
 ✅ **Implemented:** Medical information is added to completed appointments using the umbrella generator:
 
 ```javascript
-// Around line 246 in appointment-generator.js
 if (isCompleted(appointmentStatus)) {
   // Generate medical information (symptoms, medical history, etc.)
   // All attributed to the user who ran the appointment
@@ -400,115 +403,21 @@ if (isCompleted(appointmentStatus)) {
 - ✅ Default probabilities set only in umbrella generator (single source of truth)
 - ✅ Supports config overrides for test scenarios
 
-### ✅ Umbrella Generator (Implemented)
+### Umbrella generator
 
-**Goal:** Reduce complexity in `appointment-generator.js` by creating a unified medical information generator.
+`app/lib/generators/medical-information-generator.js` calls each sub-generator and merges the results into one `medicalInformation` object. It is the single place default probabilities are set:
 
-✅ **Created:** `app/lib/generators/medical-information-generator.js`
+| Option | Default |
+|---|---|
+| `probabilityOfSymptoms` | 0.15 |
+| `probabilityOfHRT` | 0.3 |
+| `probabilityOfPregnancyBreastfeeding` | 0.05 |
+| `probabilityOfOtherMedicalInfo` | 0.2 |
+| `probabilityOfBreastFeatures` | 0.15 |
+| `probabilityOfMultipleBreastFeatures` | 0.3 |
+| `probabilityOfMedicalHistory` | 0.5 |
 
-```javascript
-// app/lib/generators/medical-information-generator.js
-
-const { generateSymptoms } = require('./medical-information/symptoms-generator')
-const {
-  generateBreastDensityFactors
-} = require('./medical-information/breast-density-factors-generator')
-const {
-  generateOtherMedicalInformation
-} = require('./medical-information/other-medical-information-generator')
-const {
-  generateBreastFeatures
-} = require('./medical-information/breast-features-generator')
-
-/**
- * Generate complete medical information for an appointment
- *
- * All medical information is attributed to the user who ran the appointment
- *
- * @param {object} options - Generation options
- * @param {string} [options.addedByUserId] - User ID who collected this information
- * @param {number} [options.probabilityOfSymptoms=0.85] - Chance of having symptoms
- * @param {number} [options.probabilityOfHRT=0.30] - Chance of currently taking HRT
- * @param {number} [options.probabilityOfPregnancyBreastfeeding=0.05] - Chance of being pregnant or breastfeeding
- * @param {number} [options.probabilityOfOtherMedicalInfo=0.15] - Chance of other medical info
- * @param {number} [options.probabilityOfBreastFeatures=0.20] - Chance of having breast features
- * @param {object} [options.config] - Participant config for overrides
- * @returns {object} Complete medicalInformation object
- */
-const generateMedicalInformation = (options = {}) => {
-  const {
-    addedByUserId,
-    probabilityOfSymptoms = 0.85,
-    probabilityOfHRT = 0.30,
-    probabilityOfPregnancyBreastfeeding = 0.05,
-    probabilityOfOtherMedicalInfo = 0.15,
-    probabilityOfBreastFeatures = 0.20,
-    config
-  } = options
-
-  const medicalInfo = {}
-
-  // Generate symptoms
-  const symptoms = generateSymptoms({
-    probabilityOfSymptoms,
-    addedByUserId
-  })
-
-  if (symptoms.length > 0) {
-    medicalInfo.symptoms = symptoms
-  }
-
-  // Generate breast density factors (HRT, pregnancy, breastfeeding)
-  // This generator returns top-level keys, so its result is merged in
-  const breastDensityFactors = generateBreastDensityFactors({
-    probabilityOfHrt: probabilityOfHRT,
-    probabilityOfPregnancyBreastfeeding
-  })
-
-  Object.assign(medicalInfo, breastDensityFactors)
-
-  // Generate other medical information
-  const otherMedicalInformation = generateOtherMedicalInformation({
-    probability: probabilityOfOtherMedicalInfo
-  })
-
-  if (otherMedicalInformation) {
-    medicalInfo.otherMedicalInformation = otherMedicalInformation
-  }
-
-  // Generate breast features
-  const breastFeatures = generateBreastFeatures({
-    probabilityOfAnyFeatures: probabilityOfBreastFeatures,
-    config
-  })
-
-  if (breastFeatures && breastFeatures.length > 0) {
-    medicalInfo.breastFeatures = breastFeatures
-  }
-
-  // Future: Add medical history generation here
-  // const medicalHistory = generateMedicalHistory({
-  //   addedByUserId,
-  //   probability: 0.20,
-  //   config
-  // })
-  // if (Object.keys(medicalHistory).length > 0) {
-  //   medicalInfo.medicalHistory = medicalHistory
-  // }
-
-  return medicalInfo
-}
-
-module.exports = {
-  generateMedicalInformation
-}
-```
-
-**Key points:**
-- ✅ Default probabilities set here (single source of truth)
-- ✅ Passes `addedByUserId` to all sub-generators
-- ✅ Medical info generators organized in `medical-information/` subfolder
-- ✅ Breast features generation integrated
+It also takes `addedByUserId` (passed to every sub-generator), `forceMedicalHistoryTypes` (an array of type keys to guarantee) and `config` (participant config for overrides). See the JSDoc in the file for the current signature.
 
 ### ✅ Medical History Generator (Implemented)
 
@@ -628,7 +537,7 @@ const maxItems = typeConfig.canHaveMultiple ? 3 : 1
 
 - Always include: `id`, `dateAdded`, `addedBy`
 - Conditionally include based on other selections
-- Make `procedureYear`, `additionalDetails`, `treatmentLocation` optional
+- Make `year`, `additionalDetails`, `location` optional
 - Check underlying form views to see how data is collected
 
 ```javascript
@@ -745,7 +654,7 @@ const generateMedicalHistory = (options = {}) => {
           id: 'bc-001',
           cancerLocation: ['Left breast'],
           proceduresLeftBreast: 'Lumpectomy',
-          procedureYear: '2018'
+          year: '2018'
         }]
       }
     }
@@ -1008,7 +917,7 @@ const generateBreastCancerItem = (options = {}) => {
 
   // Year (70% of time)
   if (Math.random() < 0.7) {
-    item.procedureYear = faker.number.int({ min: 2010, max: 2023 }).toString()
+    item.year = faker.number.int({ min: 2010, max: 2023 }).toString()
   }
 
   // Treatment details (50% of time)
@@ -1110,7 +1019,7 @@ module.exports = [
         //     id: 'bc-specific',
         //     cancerLocation: ['Left breast'],
         //     proceduresLeftBreast: 'Lumpectomy',
-        //     procedureYear: '2018',
+        //     year: '2018',
         //     systemicTreatments: ['Chemotherapy', 'Hormone therapy']
         //   }]
         // },
@@ -1176,17 +1085,17 @@ if (isCompleted(appointmentStatus)) {
 
 5. ✅ **Implemented symptoms generator:**
    - Moved to `app/lib/generators/medical-information/symptoms-generator.js`
-   - 85% default probability
+   - 15% default probability
    - Generates realistic symptom data matching form structure
 
 6. ✅ **Implemented HRT generator:**
-   - Created `app/lib/generators/medical-information/hrt-generator.js`
+   - Since merged into `app/lib/generators/medical-information/breast-density-factors-generator.js`
    - 30% default probability
    - Conditional fields based on HRT status
    - Data matches form structure exactly
 
 7. ✅ **Implemented pregnancy and breastfeeding generator:**
-   - Created `app/lib/generators/medical-information/pregnancy-and-breastfeeding-generator.js`
+   - Since merged into `app/lib/generators/medical-information/breast-density-factors-generator.js`
    - 5% default probability (appropriate for screening age group)
    - Smart conditional logic (pregnant → not breastfeeding, etc.)
    - Data matches form structure exactly
@@ -1233,7 +1142,7 @@ None outstanding — all seven medical history types are implemented with weight
 
 ### Routes & Views (for reference)
 
-- `app/routes/appointments.js` - Routes that handle medical information (shows expected data structure)
+- `app/routes/appointments/` - Routes that handle medical information (shows expected data structure)
 - `app/views/_includes/forms/breast-density-factors.njk` - Breast density factors form fields
 - `app/views/appointments/confirm-information/breast-density-factors.html` - Breast density factors edit and review page
 - `app/routes/appointments/medical-information.js` and `app/routes/appointments/medical-history.js` - Routes that handle medical information (show expected data structure)

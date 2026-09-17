@@ -67,7 +67,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 
 - **Diagrams**: `app/assets/images/mammogram-diagrams/`
   - Complete sets: `set-XX/` folders with 4 views
-  - Image library: `library/` folder with individual images
+  - Image library: `image-library/` folder with individual images
 - **Real images** (future): `app/assets/images/mammogram-sets/`
 
 Each complete set contains four views: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.png`
@@ -78,10 +78,10 @@ Each complete set contains four views: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.p
 
 ```json
 {
-  "images": [
+  "imageLibrary": [
     {
       "id": "blur-2-rmlo",
-      "path": "library/blur-2-rmlo.png",
+      "path": "image-library/blur-2-rmlo.png",
       "view": "rmlo",
       "status": "technical",
       "issue": "blur"
@@ -131,7 +131,7 @@ Context is extracted from appointment data by `extractAppointmentContext()` in `
 
 When no context requires hard filtering, sets are selected using weighted random based on tag:
 
-- Default: 75% normal, 15% abnormal, 5% indeterminate, 5% technical
+- Default (from `app/config.js`): 70% normal, 15% abnormal, 10% indeterminate, 5% technical
 - With symptoms: 30% normal, 50% abnormal, 10% indeterminate, 10% technical
 - With imperfect images: 10% normal, 10% abnormal, 0% indeterminate, 80% technical
 - Configured in `config.reading.mammogramTagWeights`
@@ -196,7 +196,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 | Setting                | Default                                                                  | Description                             |
 | ---------------------- | ------------------------------------------------------------------------ | --------------------------------------- |
 | `mammogramImageSource` | `'diagrams'`                                                             | Image source: `'diagrams'` or `'real'`  |
-| `mammogramTagWeights`  | `{ normal: 0.75, abnormal: 0.15, indeterminate: 0.05, technical: 0.05 }` | Distribution weights for image set tags |
+| `mammogramTagWeights`  | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags |
 
 ---
 
@@ -222,7 +222,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 | File                                                 | Purpose                                          |
 | ---------------------------------------------------- | ------------------------------------------------ |
-| `app/assets/images/mammogram-diagrams/manifest.json` | Image set metadata (25 sets)                     |
+| `app/assets/images/mammogram-diagrams/manifest.json` | Image set metadata (90 sets)                     |
 | `app/data/session-data-defaults.js`                  | `autoOpenPacsViewer` setting default             |
 | `app/config.js`                                      | `mammogramImageSource` and `mammogramTagWeights` |
 
@@ -315,7 +315,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 
 The following planned features have been implemented:
 
-- [x] **Image library**: Individual images stored in `library/` folder with metadata
+- [x] **Image library**: Individual images stored in `image-library/` folder with metadata
 - [x] **Composite sets**: Sets can reference other sets (`from`) or image library (`image`)
 - [x] **Per-breast metadata**: `left` and `right` status on sets
 - [x] **Context-aware selection**: Symptoms, implants, imperfect images, repeats
@@ -372,20 +372,20 @@ This enables smarter selection:
 
 The manifest supports composing sets from other sets and the image library:
 
-1. **Image library**: Individual images stored with metadata in `library/` folder.
+1. **Image library**: Individual images stored with metadata in `image-library/` folder.
 
    ```json
    {
-     "images": [
+     "imageLibrary": [
        {
          "id": "normal-rmlo-01",
-         "path": "library/normal-rmlo-01.png",
+         "path": "image-library/normal-rmlo-01.png",
          "view": "rmlo",
          "status": "normal"
        },
        {
          "id": "blurry-lcc-01",
-         "path": "library/blurry-lcc-01.png",
+         "path": "image-library/blurry-lcc-01.png",
          "view": "lcc",
          "status": "technical",
          "issue": "blurry"
