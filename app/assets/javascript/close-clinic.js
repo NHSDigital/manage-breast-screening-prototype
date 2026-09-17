@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const clinicId = container.dataset.clinicId
   const fetchOptions = { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+  let detailsToOpen = null
 
   // Counts in the card headings and inset text aren't updated in place -
   // this link invites a refresh instead
@@ -21,7 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Any swapped row means the page counts may be stale
-  container.addEventListener('fragment:swapped', showRefreshLink)
+  container.addEventListener('fragment:swapped', (event) => {
+    showRefreshLink()
+
+    if (detailsToOpen !== event.detail.fragment.dataset.fragmentId) return
+
+    const appointmentId = detailsToOpen
+    detailsToOpen = null
+    window.openModal('app-form-modal', {
+      loadUrl: `/clinics/${clinicId}/close/reason/${appointmentId}`,
+      onSuccess: () => {
+        const row = rowFor(appointmentId)
+        if (!row) return window.location.reload()
+        refreshRow(row).catch(() => window.location.reload())
+      }
+    })
+  })
 
   const rowFor = (appointmentId) =>
     container.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
@@ -64,6 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   container.addEventListener('click', (event) => {
+    const actionLink = event.target.closest('a[data-open-details-after-action]')
+    if (actionLink) {
+      detailsToOpen = actionLink.closest('[data-fragment-id]')?.dataset.fragmentId
+    }
+
     const bulkLink = event.target.closest('.js-bulk-action')
     if (bulkLink) {
       event.preventDefault()
