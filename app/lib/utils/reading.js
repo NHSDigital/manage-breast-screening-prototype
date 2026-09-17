@@ -1073,6 +1073,40 @@ const getPreviousCaseInSession = (
 }
 
 /**
+ * The case after the current one in a session, if there is one to open.
+ *
+ * The forward counterpart to getPreviousCaseInSession: steps through the
+ * session in order, finished cases included. For looking back over a session
+ * with nothing left to do - getNextCaseInSession skips finished cases, so it
+ * has nowhere to go once they all are.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - The reading session
+ * @param {Array} sessionAppointments - The session's appointments, in order
+ * @param {string} currentAppointmentId - The case being looked at
+ * @param {string} userId - User ID
+ * @returns {object | undefined} The following appointment, or undefined if none
+ */
+const getFollowingCaseInSession = (
+  data,
+  session,
+  sessionAppointments,
+  currentAppointmentId,
+  userId
+) => {
+  const currentIndex = sessionAppointments.findIndex(
+    (appointment) => appointment.id === currentAppointmentId
+  )
+  if (currentIndex === -1) return undefined
+
+  return sessionAppointments
+    .slice(currentIndex + 1)
+    .find((appointment) =>
+      canOpenCaseInSession(data, session, appointment, userId)
+    )
+}
+
+/**
  * The first case still to work on in a session, wherever it sits.
  *
  * The session-aware counterpart to getFirstUserReadableAppointment, used to
@@ -1903,6 +1937,7 @@ module.exports = {
   getNextUserReadableAppointment,
   getNextCaseInSession,
   getPreviousCaseInSession,
+  getFollowingCaseInSession,
   canOpenCaseInSession,
   getFirstOutstandingCaseInSession,
   getResumeAppointmentForUser,
