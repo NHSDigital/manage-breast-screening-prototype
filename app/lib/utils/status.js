@@ -8,31 +8,26 @@ const dayjs = require('dayjs')
  * @type {object}
  */
 const STATUS_GROUPS = {
-  not_started: ['event_scheduled', 'event_checked_in'],
-  completed: ['event_complete', 'event_partially_screened'],
+  not_started: ['scheduled', 'checked_in'],
+  completed: ['complete', 'partially_screened'],
   final: [
-    'event_complete',
-    'event_partially_screened',
-    'event_did_not_attend',
-    'event_attended_not_screened',
-    'event_cancelled',
-    'event_rescheduled'
+    'complete',
+    'partially_screened',
+    'did_not_attend',
+    'attended_not_screened',
+    'cancelled',
+    'rescheduled'
   ],
-  // Final statuses for seed data generation - excludes event_rescheduled which is user-initiated only
+  // Final statuses for seed data generation - excludes rescheduled which is user-initiated only
   final_seed_data: [
-    'event_complete',
-    'event_partially_screened',
-    'event_did_not_attend',
-    'event_attended_not_screened',
-    'event_cancelled'
+    'complete',
+    'partially_screened',
+    'did_not_attend',
+    'attended_not_screened',
+    'cancelled'
   ],
-  active: [
-    'event_scheduled',
-    'event_checked_in',
-    'event_in_progress',
-    'event_paused'
-  ],
-  eligible_for_reading: ['event_complete', 'event_partially_screened']
+  active: ['scheduled', 'checked_in', 'in_progress', 'paused'],
+  eligible_for_reading: ['complete', 'partially_screened']
 }
 
 /**
@@ -48,9 +43,9 @@ const isStatusInGroup = (status, group) => {
 }
 
 /**
- * Get status from either a status string or event object
+ * Get status from either a status string or appointment object
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {string|null} The status or null if invalid
  */
 const getStatus = (input) => {
@@ -60,9 +55,9 @@ const getStatus = (input) => {
 }
 
 /**
- * Check if a status represents a not started event
+ * Check if a status represents a not started appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is not started
  */
 const hasNotStarted = (input) => {
@@ -72,9 +67,9 @@ const hasNotStarted = (input) => {
 }
 
 /**
- * Check if a status represents a completed event
+ * Check if a status represents a completed appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is completed
  */
 const isCompleted = (input) => {
@@ -84,45 +79,45 @@ const isCompleted = (input) => {
 }
 
 /**
- * Check if a status represents an in-progress event (includes paused)
+ * Check if a status represents an in-progress appointment (includes paused)
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is in progress or paused
  */
 const isInProgress = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'event_in_progress' || status === 'event_paused'
+  return status === 'in_progress' || status === 'paused'
 }
 
 /**
- * Check if a status represents a paused event
+ * Check if a status represents a paused appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is paused
  */
 const isPaused = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'event_paused'
+  return status === 'paused'
 }
 
 /**
- * Check if a status represents an in-progress event that is not paused
+ * Check if a status represents an in-progress appointment that is not paused
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is in progress but not paused
  */
 const isInProgressNotPaused = (input) => {
   const status = getStatus(input)
   if (!status) return false
-  return status === 'event_in_progress'
+  return status === 'in_progress'
 }
 
 /**
  * Check if a status represents a final state
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is final
  */
 const isFinal = (input) => {
@@ -132,9 +127,9 @@ const isFinal = (input) => {
 }
 
 /**
- * Check if a status represents an active event
+ * Check if a status represents an active appointment
  *
- * @param {string | object} input - Status string or event object
+ * @param {string | object} input - Status string or appointment object
  * @returns {boolean} Whether the status is active
  */
 const isActive = (input) => {
@@ -144,22 +139,22 @@ const isActive = (input) => {
 }
 
 /**
- * Check if an event is in the appointment workflow for the current user
+ * Check if an appointment is in the appointment workflow for the current user
  *
- * @param {object} event - Event to check
+ * @param {object} appointment - Appointment to check
  * @param {object | string} currentUser - User object with id property, or user id string directly
- * @returns {boolean} Whether the event is in the appointment workflow for this user
+ * @returns {boolean} Whether the appointment is in the appointment workflow for this user
  */
-const isAppointmentWorkflow = function (event, currentUser) {
-  if (!event) return false
+const isAppointmentWorkflow = function (appointment, currentUser) {
+  if (!appointment) return false
 
   // Get currentUser from context if not provided
   currentUser = currentUser || this?.ctx?.data?.currentUser
 
-  const startedBy = event?.sessionDetails?.startedBy
+  const startedBy = appointment?.sessionDetails?.startedBy
   if (!currentUser || !startedBy) {
     console.log(
-      `User or event not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
+      `User or appointment not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
     )
     return false
   }
@@ -169,230 +164,311 @@ const isAppointmentWorkflow = function (event, currentUser) {
     typeof currentUser === 'string' ? currentUser : currentUser.id
   if (!currentUserId) return false
 
-  // Check if event is in progress (not paused) and started by current user
-  const eventInProgressNotPaused = isInProgressNotPaused(event)
+  // Check if appointment is in progress (not paused) and started by current user
+  const appointmentInProgressNotPaused = isInProgressNotPaused(appointment)
 
-  return eventInProgressNotPaused && startedBy === currentUserId
+  return appointmentInProgressNotPaused && startedBy === currentUserId
 }
 
 /**
  * Check if a status indicates reading is eligible
  *
- * @param {string | object} event - Status string or event object
+ * @param {string | object} appointment - Status string or appointment object
  * @returns {boolean} Whether reading is needed
  */
-const eligibleForReading = (event) => {
-  const status = getStatus(event)
+const eligibleForReading = (appointment) => {
+  const status = getStatus(appointment)
   if (!status) return false
   const cutoffDate = dayjs().subtract(30, 'days').startOf('day')
   return (
     isStatusInGroup(status, 'eligible_for_reading') &&
-    dayjs(event.timing.startTime).isAfter(cutoffDate)
+    dayjs(appointment.timing.startTime).isAfter(cutoffDate)
   )
+}
+
+// How statuses are shown, one vocabulary per entity. Each entry gives the
+// tag colour and (where the label differs from sentence-cased words) the
+// label. Callers can name the vocabulary (toTag's vocabulary option, or the
+// second argument to the getters); without one, DEFAULT_VOCABULARY_ORDER
+// below decides which vocabulary wins a shared key.
+//
+// Keys are matched against snake_cased tag text as well as status keys -
+// the toTag filter tries the raw status first, then snakeCase(status), so
+// `"Not read" | toTag` reaches 'not_read' here. Check both forms before
+// treating an entry as unused.
+const STATUS_TAGS = {
+  appointment: {
+    scheduled: { label: 'Scheduled', colour: 'blue' },
+    checked_in: { label: 'Checked in', colour: '' }, // no colour will get solid dark blue
+    in_progress: { label: 'In progress', colour: 'aqua-green' },
+    paused: { label: 'Paused', colour: 'orange' },
+    complete: { label: 'Screened', colour: 'green' },
+    partially_screened: { label: 'Partially screened', colour: 'orange' },
+    did_not_attend: { label: 'Did not attend', colour: 'red' },
+    attended_not_screened: { label: 'Attended not screened', colour: 'red' },
+    cancelled: { label: 'Cancelled', colour: 'red' },
+    rescheduled: { label: 'Reschedule requested', colour: 'red' }
+  },
+  clinic: {
+    scheduled: { colour: 'blue' },
+    in_progress: { colour: 'blue' },
+    closed: { colour: 'grey' }
+  },
+  // Image reading results and outcomes. Colour lanes: the warm clinical
+  // colours (green/orange/red) belong to opinions and outcomes alone -
+  // process states and flags stay out of them so a scan for colour reads
+  // as a scan for clinical results.
+  opinion: {
+    normal: { colour: 'green' },
+    recall_for_assessment: { label: 'Recall for assessment', colour: 'red' },
+    technical_recall: { label: 'Technical recall', colour: 'orange' },
+    clinical_recall: { label: 'Clinical recall', colour: 'yellow' },
+    abnormal: { label: 'Abnormal', colour: 'red' },
+    arbitration: { colour: 'purple' }
+  },
+  // Reading journey state - mostly derived, reached via snake-cased tag text.
+  // Process lane: grey while waiting, blue while in progress, purple for
+  // arbitration, white for null states, green once done.
+  readingState: {
+    // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
+    // set of images has got to. The entries below them are the older
+    // appointment- and group-level vocabulary.
+    'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
+    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'grey' },
+    'awaiting_finalisation': {
+      label: 'Awaiting finalisation',
+      colour: 'grey'
+    },
+    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'purple' },
+    'in_arbitration': { label: 'In arbitration', colour: 'purple' },
+    'concluded': { label: 'Concluded', colour: 'green' },
+    'not_started': { colour: 'grey' },
+    'skipped': { colour: 'grey' },
+    'previously_skipped': { colour: 'grey' },
+    'not_read': { colour: 'white' },
+    'not_arbitrated': { colour: 'white' },
+    'complete': { colour: 'green' },
+    'partial_first_read': { colour: 'blue' },
+    'first_read_complete': { colour: 'blue' },
+    'partial_second_read': { colour: 'blue' },
+    'mixed_reads': { colour: 'blue' },
+    'no_appointments': { colour: 'grey' },
+    'first_read': { colour: 'blue' },
+    'second_read': { colour: 'blue' }
+  },
+  // External prior mammogram request tracking (episode.priors)
+  priorsRequest: {
+    not_requested: { label: 'Not requested', colour: 'white' },
+    pending: { label: 'Priors required', colour: 'yellow' },
+    requested: { label: 'Requested', colour: 'yellow' },
+    received: { label: 'Received', colour: 'green' },
+    not_available: { label: 'Not available', colour: 'grey' },
+    not_needed: { label: 'Not needed', colour: 'grey' }
+  },
+  // Ad-hoc case tags, reached via snake-cased tag text. Flag lane: yellow
+  // means a human needs to look or unblock - the one exception is Urgent,
+  // which deliberately keeps red so it shouts.
+  misc: {
+    // Initial status on medical-information review sections ("To review" |
+    // toTag); later statuses are applied client-side by
+    // expandable-sections.js / expanded-state-tracker.js
+    to_review: { colour: 'blue' },
+    has_symptoms: { colour: 'yellow' },
+    highlight_to_image_readers: { colour: 'yellow' },
+    imperfect: { colour: 'yellow' },
+    incomplete: { colour: 'yellow' },
+    urgent: { colour: 'red' },
+    due_soon: { colour: 'yellow' },
+    // Case-level equivalent of priorsRequest.pending - same words and colour,
+    // so readers and admin staff see one status rather than two
+    priors_required: { colour: 'yellow' },
+    awaiting_priors: { colour: 'yellow' },
+    deferred: { colour: 'yellow' }
+  }
+}
+
+// Which vocabulary wins a shared key when the caller doesn't name one.
+// Mirrors the behaviour of the old single shared map: unhinted 'in_progress'
+// and 'complete' read as clinic/reading values, and appointment statuses
+// resolve last - appointment call sites should pass the vocabulary.
+// priorsRequest is deliberately absent: its unprefixed keys are only
+// reachable with an explicit vocabulary, as they were only reachable with
+// the old prior_ display prefix before.
+const DEFAULT_VOCABULARY_ORDER = [
+  'clinic',
+  'readingState',
+  'opinion',
+  'misc',
+  'appointment'
+]
+
+/**
+ * Find a status's display entry, in one vocabulary or across the default
+ * search order
+ *
+ * @param {string} status - The status to look up
+ * @param {string} [vocabulary] - Vocabulary to look in (e.g. 'appointment')
+ * @returns {object | null} { label?, colour } or null if not found
+ */
+const findStatusTag = (status, vocabulary = null) => {
+  if (!status) return null
+
+  const key = String(status).toLowerCase()
+
+  if (vocabulary) {
+    return STATUS_TAGS[vocabulary]?.[key] || null
+  }
+
+  for (const name of DEFAULT_VOCABULARY_ORDER) {
+    if (STATUS_TAGS[name][key]) return STATUS_TAGS[name][key]
+  }
+  return null
 }
 
 /**
  * Map a status key to its NHS tag colour string
  *
  * @param {string} status - The status to map
+ * @param {string} [vocabulary] - Vocabulary to look in (e.g. 'appointment')
  * @returns {string} NHS tag colour (e.g. 'green', 'red', 'orange') or empty string for default blue
  * @example
- * getStatusTagColour('event_complete') // 'green'
- * getStatusTagColour('event_did_not_attend') // 'red'
+ * getStatusTagColour('complete', 'appointment') // 'green'
+ * getStatusTagColour('did_not_attend') // 'red'
  */
-const getStatusTagColour = (status) => {
-  const colourMap = {
-    // Clinic statuses
-    'scheduled': 'blue', // default blue
-    'in_progress': 'blue',
-    'closed': 'grey',
-
-    // Event statuses
-    'event_scheduled': 'blue', // default blue
-    'event_checked_in': '', // no colour will get solid dark blue
-    'event_in_progress': 'aqua-green',
-    'event_paused': 'orange',
-    'event_complete': 'green',
-    'event_partially_screened': 'orange',
-    'event_did_not_attend': 'red',
-    'event_cancelled': 'red',
-    'event_rescheduled': 'red',
-    'event_attended_not_screened': 'orange',
-
-    // Task list
-    'incomplete': 'blue',
-    'complete': 'green',
-    'to_review': 'blue',
-    'reviewed': 'green',
-
-    // Image reading
-    'not_started': 'grey',
-    'not_provided': 'grey',
-    'not_read': 'white',
-    'skipped': 'grey',
-    'previously_skipped': 'grey',
-
-    // Image reading results
-    'normal': 'green',
-    'recall_for_assessment': 'red',
-    'technical_recall': 'orange',
-    'clinical_recall': 'yellow',
-    'abnormal': 'red',
-
-    // Image status
-    'available': 'green',
-    'requested': 'orange',
-    'images_requested': 'orange',
-    'not_in_pacs': 'grey',
-
-    // Metadata
-    'has_symptoms': 'yellow',
-    'has_repeat': 'yellow',
-    'significant_symptom': 'yellow',
-    'highlight_to_image_readers': 'yellow',
-
-    // Reading statuses
-    'waiting_for_1st_read': 'grey',
-    'waiting_for_2nd_read': 'grey',
-    'not_started': 'grey',
-    'skipped': 'grey',
-    'not_read': 'white',
-    'complete': 'green',
-    'partial_first_read': 'blue',
-    'first_read_complete': 'yellow',
-    'partial_second_read': 'blue',
-    'mixed_reads': 'yellow',
-    'mixed_with_arbitration': 'yellow',
-    'imperfect': 'orange',
-    'incomplete': 'orange',
-
-    'no_events': 'grey',
-
-    // Outcomes
-    'arbitration': 'orange',
-    'completed_(blind)': 'grey',
-
-    'first_read': 'blue',
-    'second_read': 'blue',
-
-    'urgent': 'red',
-    'due_soon': 'orange',
-
-    // Prior mammogram request statuses
-    'prior_not_requested': 'white',
-    'prior_pending': 'orange',
-    'prior_requested': 'yellow',
-    'priors_requested': 'yellow',
-    'deferred': 'orange',
-    'prior_received': 'green',
-    'prior_not_available': 'grey',
-    'prior_not_needed': 'grey'
-  }
-  return colourMap[status.toLowerCase()] || ''
+const getStatusTagColour = (status, vocabulary = null) => {
+  return findStatusTag(status, vocabulary)?.colour || ''
 }
 
 /**
  * Map a status key to its display text
  *
  * @param {string} status - The status to map
+ * @param {string} [vocabulary] - Vocabulary to look in (e.g. 'appointment')
  * @returns {string} Human-readable status text, or empty string if unknown
  * @example
- * getStatusText('event_complete') // 'Screened'
- * getStatusText('event_did_not_attend') // 'Did not attend'
+ * getStatusText('complete', 'appointment') // 'Screened'
+ * getStatusText('did_not_attend') // 'Did not attend'
  */
-const getStatusText = (status) => {
-  const statusMap = {
-    // Clinic statuses
-    event_scheduled: 'Scheduled',
-    // Event statuses
-    event_checked_in: 'Checked in',
-    event_in_progress: 'In progress',
-    event_paused: 'Paused',
-    event_complete: 'Screened',
-    event_partially_screened: 'Partially screened',
-    event_did_not_attend: 'Did not attend',
-    event_attended_not_screened: 'Attended not screened',
-    event_cancelled: 'Cancelled',
-    event_rescheduled: 'Reschedule requested',
+const getStatusText = (status, vocabulary = null) => {
+  return findStatusTag(status, vocabulary)?.label || ''
+}
 
-    // Image reading opinions
-    technical_recall: 'Technical recall',
-    clinical_recall: 'Clinical recall',
-    recall_for_assessment: 'Recall for assessment',
-    abnormal: 'Abnormal',
-
-    // Prior mammogram request statuses
-    prior_not_requested: 'Not requested',
-    prior_pending: 'Needs requesting',
-    prior_requested: 'Requested',
-    prior_received: 'Received',
-    prior_not_available: 'Not available',
-    prior_not_needed: 'Not needed'
-
-    // "technical-recall": 'Technical recall',
-    // "recall-for-assesment": 'Recall for assessment',
-  }
-  return statusMap[status] || ''
+// What needs to happen next to move a reading case on, keyed by case state.
+// An awaiting_arbitration case whose reads haven't finalised gets its own
+// wording in describeReadingCaseStatus.
+const READING_CASE_NEXT_ACTIONS = {
+  awaiting_first_read: 'First read',
+  awaiting_second_read: 'Second read',
+  awaiting_finalisation: 'Finalisation',
+  awaiting_arbitration: 'Arbitration',
+  in_arbitration: 'Arbitration in progress',
+  concluded: null
 }
 
 /**
- * Filter events by status category
+ * The display facts for a reading case's status, composed from the facts
+ * getReadingCaseStatus (reading-cases.js) returns. Shared by the case backlog
+ * rows and the case view so the two surfaces can't drift apart.
  *
- * @param {Array} events - Events to filter
- * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
- * @returns {Array} Filtered events
+ * The state renders as a tag via the readingState vocabulary; destination is
+ * the journey the state alone hides - a finalising case bound for arbitration
+ * - and null everywhere else.
+ *
+ * @param {object} status - { state, finalised, willArbitrate, provisionalOutcome }
+ * @returns {{state: string, nextAction: string | null, destination: string | null} | null}
  */
-const filterEventsByStatus = (events, filter) => {
+const describeReadingCaseStatus = (status) => {
+  if (!status) return null
+
+  const readsStillFinalising =
+    status.state === 'awaiting_arbitration' && !status.finalised
+
+  return {
+    state: status.state,
+    nextAction: readsStillFinalising
+      ? 'Finalisation, then arbitration'
+      : READING_CASE_NEXT_ACTIONS[status.state] || null,
+    destination: readsStillFinalising ? 'then arbitration' : null
+  }
+}
+
+/**
+ * Filter appointments by status category
+ *
+ * @param {Array} appointments - Appointments to filter
+ * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
+ * @returns {Array} Filtered appointments
+ */
+const filterAppointmentsByStatus = (appointments, filter) => {
   switch (filter) {
     case 'scheduled':
-      return events.filter((e) => e.status === 'event_scheduled')
+      return appointments.filter(
+        (appointment) => appointment.status === 'scheduled'
+      )
     case 'checked-in':
-      return events.filter((e) => e.status === 'event_checked_in')
+      return appointments.filter(
+        (appointment) => appointment.status === 'checked_in'
+      )
     case 'in-progress':
-      return events.filter(
-        (e) => e.status === 'event_in_progress' || e.status === 'event_paused'
+      return appointments.filter(
+        (appointment) =>
+          appointment.status === 'in_progress' ||
+          appointment.status === 'paused'
       )
     case 'complete':
-      return events.filter((e) => isFinal(e))
+      return appointments.filter((appointment) => isFinal(appointment))
     case 'remaining':
-      return events.filter((e) => hasNotStarted(e))
+      return appointments.filter((appointment) => hasNotStarted(appointment))
     default:
-      return events
+      return appointments
   }
 }
 
 /**
- * Check if an event is a special appointment
+ * Check if an appointment is a special appointment
  *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event is a special appointment
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment is a special appointment
  */
-const isSpecialAppointment = (event) => {
-  return event?.specialAppointment?.supportTypes?.length > 0
+const isSpecialAppointment = (appointment) => {
+  return appointment?.specialAppointment?.supportTypes?.length > 0
 }
 
 /**
- * Check if an event has an appointment note
+ * Check if an appointment has an appointment note
  *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event has an appointment note
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment has an appointment note
  */
-const hasAppointmentNote = (event) => {
-  return event?.appointmentNote && event.appointmentNote.trim().length > 0
-}
-
-/**
- * Check if an event has recorded symptoms
- *
- * @param {object} event - Event object to check
- * @returns {boolean} Whether the event has any symptoms
- */
-const hasSymptoms = (event) => {
-  // symptoms stored at event.medicalInformation.symptoms[]
+const hasAppointmentNote = (appointment) => {
   return (
-    event?.medicalInformation?.symptoms &&
-    event.medicalInformation.symptoms.length > 0
+    appointment?.appointmentNote &&
+    appointment.appointmentNote.trim().length > 0
   )
+}
+
+/**
+ * Check if an appointment has recorded symptoms
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment has any symptoms
+ */
+const hasSymptoms = (appointment) => {
+  // symptoms stored at appointment.medicalInformation.symptoms[]
+  return (
+    appointment?.medicalInformation?.symptoms &&
+    appointment.medicalInformation.symptoms.length > 0
+  )
+}
+
+/**
+ * Check if an attended-not-screened appointment has its reasons recorded
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether stopped reasons have been recorded
+ */
+const hasStoppedDetails = (appointment) => {
+  return Boolean(appointment?.appointmentStopped?.stoppedReason?.length)
 }
 
 module.exports = {
@@ -407,10 +483,13 @@ module.exports = {
   eligibleForReading,
   getStatusTagColour,
   getStatusText,
-  filterEventsByStatus,
+  describeReadingCaseStatus,
+  filterAppointmentsByStatus,
   isSpecialAppointment,
   hasAppointmentNote,
   hasSymptoms,
-  // Export groups for testing/reference
-  STATUS_GROUPS
+  hasStoppedDetails,
+  // Export groups and display vocabularies for testing/reference
+  STATUS_GROUPS,
+  STATUS_TAGS
 }

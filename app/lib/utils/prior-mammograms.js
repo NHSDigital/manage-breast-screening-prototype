@@ -1,32 +1,42 @@
 // app/lib/utils/prior-mammograms.js
 //
 // Utility functions for working with prior mammograms (previously recorded
-// mammograms from other facilities). These derive event-level state from
-// per-mammogram request tracking on event.previousMammograms[].
+// mammograms from other facilities). These derive appointment-level state from
+// per-mammogram request tracking on appointment.previousMammograms[].
 
 const { formatDate, formatRelativeDate } = require('./dates')
 
-/** Returns true if the event has any previously recorded mammograms */
-const hasRecordedMammograms = (event) => {
-  if (!event) return false
+/** The known requestStatus values for a prior mammogram */
+const PRIOR_REQUEST_STATUSES = [
+  'not_requested',
+  'pending',
+  'requested',
+  'received',
+  'not_available',
+  'not_needed'
+]
+
+/** Returns true if the appointment has any previously recorded mammograms */
+const hasRecordedMammograms = (appointment) => {
+  if (!appointment) return false
   return (
-    Array.isArray(event.previousMammograms) &&
-    event.previousMammograms.length > 0
+    Array.isArray(appointment.previousMammograms) &&
+    appointment.previousMammograms.length > 0
   )
 }
 
 /** Returns true if any prior mammogram has requestStatus 'pending' or 'requested' (holds case from reading) */
-const awaitingPriors = (event) => {
-  if (!hasRecordedMammograms(event)) return false
-  return event.previousMammograms.some(
+const awaitingPriors = (appointment) => {
+  if (!hasRecordedMammograms(appointment)) return false
+  return appointment.previousMammograms.some(
     (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
   )
 }
 
 /** Returns true if any prior mammogram has requestStatus 'not_requested' */
-const hasUnrequestedPriors = (event) => {
-  if (!hasRecordedMammograms(event)) return false
-  return event.previousMammograms.some(
+const hasUnrequestedPriors = (appointment) => {
+  if (!hasRecordedMammograms(appointment)) return false
+  return appointment.previousMammograms.some(
     (m) => m.requestStatus === 'not_requested'
   )
 }
@@ -34,11 +44,11 @@ const hasUnrequestedPriors = (event) => {
 /**
  * Get a summary of prior mammogram statuses for display
  *
- * @param {object} event - Event object
+ * @param {object} appointment - Appointment object
  * @returns {{total: number, counts: object, hasAwaiting: boolean, hasUnrequested: boolean, allResolved: boolean}}
  */
-const getPriorsSummary = (event) => {
-  if (!hasRecordedMammograms(event)) {
+const getPriorsSummary = (appointment) => {
+  if (!hasRecordedMammograms(appointment)) {
     return {
       total: 0,
       counts: {},
@@ -57,14 +67,14 @@ const getPriorsSummary = (event) => {
     not_needed: 0
   }
 
-  event.previousMammograms.forEach((m) => {
+  appointment.previousMammograms.forEach((m) => {
     const status = m.requestStatus || 'not_requested'
     if (counts[status] !== undefined) {
       counts[status]++
     }
   })
 
-  const total = event.previousMammograms.length
+  const total = appointment.previousMammograms.length
   const hasAwaiting = counts.pending > 0 || counts.requested > 0
   const hasUnrequested = counts.not_requested > 0
   const resolvedCount =
@@ -81,30 +91,131 @@ const getPriorsSummary = (event) => {
 }
 
 /** Get priors with requestStatus 'not_requested' (for the request priors UI) */
-const getUnrequestedPriors = (event) => {
-  if (!hasRecordedMammograms(event)) return []
-  return event.previousMammograms.filter(
+const getUnrequestedPriors = (appointment) => {
+  if (!hasRecordedMammograms(appointment)) return []
+  return appointment.previousMammograms.filter(
     (m) => m.requestStatus === 'not_requested'
   )
 }
 
 /** Get priors with requestStatus 'pending' or 'requested' (awaiting arrival) */
-const getAwaitingPriors = (event) => {
-  if (!hasRecordedMammograms(event)) return []
-  return event.previousMammograms.filter(
+const getAwaitingPriors = (appointment) => {
+  if (!hasRecordedMammograms(appointment)) return []
+  return appointment.previousMammograms.filter(
     (m) => m.requestStatus === 'pending' || m.requestStatus === 'requested'
   )
 }
 
 /**
- * Returns true if the given user has a pending prior request on this event.
+ * Resolve a single awaiting-priors status for a whole case.
+ *
+ * The dashboard shows one tag per prior; a case list has room for only one, so
+ * we surface the least-progressed outstanding status - 'pending' ('Priors
+ * required') outranks 'requested' because the request still needs sending.
+ * Returns null when nothing is outstanding.
+ *
+ * @param {object} appointment - Appointment object
+ * @returns {'pending'|'requested'|null}
+ */
+const getAwaitingPriorsStatus = (appointment) => {
+  const awaiting = getAwaitingPriors(appointment)
+  if (awaiting.some((m) => m.requestStatus === 'pending')) return 'pending'
+  if (awaiting.length > 0) return 'requested'
+  return null
+}
+
+/**
+ * Returns true if the given user has a pending prior request on this appointment.
  * Only 'pending' is checked — once admin moves to 'requested', the reader can no longer undo.
  */
-const userRequestedPriors = (event, userId) => {
-  if (!hasRecordedMammograms(event)) return false
-  return event.previousMammograms.some(
+const userRequestedPriors = (appointment, userId) => {
+  if (!hasRecordedMammograms(appointment)) return false
+  return appointment.previousMammograms.some(
     (m) => m.requestStatus === 'pending' && m.requestedBy === userId
   )
+}
+
+/**
+ * Describe where a prior mammogram was taken
+ *
+ * Phrases are lower case so they read after a prefix ("Taken at another
+ * BSU…"); with no prefix the first letter is capitalised so the phrase reads
+ * at the start of a line, list item or card title.
+ *
+ * @param {Object} mammogram - A prior mammogram object from appointment.previousMammograms
+ * @param {Object} [options] - Optional config
+ * @param {string} [options.unitName] - Display name for the current BSU (used when location === 'currentBsu')
+ * @param {string} [options.prefix] - Optional leading verb, e.g. "Taken"
+ * @returns {string} Location phrase, e.g. "At another BSU: St James's Hospital"
+ */
+const describePriorMammogramLocation = (mammogram, options = {}) => {
+  if (!mammogram) return ''
+
+  const { unitName = null, prefix = null } = options
+
+  // A generic category phrase, plus the specific place the participant named
+  // where we have one
+  let place = ''
+  let specificPlace = ''
+  switch (mammogram.location) {
+    case 'bsu':
+      place = 'at another BSU'
+      specificPlace = mammogram.bsu
+      break
+    case 'otherUk':
+      place = 'elsewhere in the UK'
+      specificPlace = mammogram.otherUk
+      break
+    case 'otherNonUk':
+      place = 'outside the UK'
+      specificPlace = mammogram.otherNonUk
+      break
+    case 'currentBsu':
+      place = `at ${unitName || 'this BSU'}`
+      break
+    case 'preferNotToSay':
+      place = 'at an undisclosed location'
+      break
+    default:
+      place = ''
+  }
+
+  let location = specificPlace ? `${place}: ${specificPlace}` : place
+
+  if (location) {
+    if (prefix) {
+      location = `${prefix} ${location}`
+    } else {
+      location = location.charAt(0).toUpperCase() + location.slice(1)
+    }
+  }
+
+  return location
+}
+
+/**
+ * Describe when a prior mammogram was taken, using the participant's
+ * approximate wording when they didn't give an exact date
+ *
+ * @param {Object} mammogram - A prior mammogram object from appointment.previousMammograms
+ * @returns {string} Date description, e.g. "March 2018, 8 years ago", or '' if unknown
+ */
+const describePriorMammogramDate = (mammogram) => {
+  if (!mammogram) return ''
+
+  const dateParts = []
+  if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
+    dateParts.push(formatDate(mammogram.dateTaken, 'MMMM YYYY'))
+    if (mammogram._rawDate) {
+      dateParts.push(formatRelativeDate(mammogram._rawDate))
+    }
+  } else if (mammogram.dateType === 'moreThanSixMonths') {
+    dateParts.push(mammogram.approximateDate || 'over 6 months ago')
+  } else if (mammogram.dateType === 'lessThanSixMonths') {
+    dateParts.push('less than 6 months ago')
+  }
+
+  return dateParts.join(', ')
 }
 
 /**
@@ -114,53 +225,31 @@ const userRequestedPriors = (event, userId) => {
  * Format follows other summary functions: primary label with detail in parentheses.
  * e.g. "St James's Hospital (March 2018, 8 years ago)"
  *
- * @param {Object} mammogram - A prior mammogram object from event.previousMammograms
+ * @param {Object} mammogram - A prior mammogram object from appointment.previousMammograms
  * @param {Object} [options] - Optional config
  * @param {string} [options.unitName] - Display name for the current BSU (used when location === 'currentBsu')
  * @param {boolean} [options.includeAdditionalInfo] - Whether to append otherDetails (default: false)
- * @returns {string} One-line summary, e.g. "St James's Hospital (March 2018, 8 years ago)"
+ * @param {boolean} [options.includeDate] - Whether to append the parenthesised date detail (default: true)
+ * @param {string} [options.prefix] - Optional leading verb, e.g. "Taken"; the location phrase then reads lower case after it
+ * @returns {string} One-line summary, e.g. "At another BSU: St James's Hospital (March 2018)"
  */
 const summarisePriorMammogram = (mammogram, options = {}) => {
   if (!mammogram) return ''
 
-  const { unitName = null, includeAdditionalInfo = false } = options
+  const {
+    unitName = null,
+    includeAdditionalInfo = false,
+    includeDate = true,
+    prefix = null
+  } = options
 
-  // Location part (primary label)
-  let location = ''
-  switch (mammogram.location) {
-    case 'bsu':
-      location = 'At another BSU'
-      break
-    case 'otherUk':
-      location = 'Elsewhere in the UK'
-      break
-    case 'otherNonUk':
-      location = 'Outside the UK'
-      break
-    case 'currentBsu':
-      location = `At ${unitName || 'this BSU'}`
-      break
-    case 'preferNotToSay':
-      location = 'Location not provided'
-      break
-    default:
-      location = ''
-  }
+  const location = describePriorMammogramLocation(mammogram, {
+    unitName,
+    prefix
+  })
 
-  // Date detail — combine formatted date and relative time into parenthesised suffix
-  const dateParts = []
-  if (mammogram.dateType === 'dateKnown' && mammogram.dateTaken) {
-    dateParts.push(formatDate(mammogram.dateTaken, 'MMM YYYY'))
-    if (mammogram._rawDate) {
-      dateParts.push(formatRelativeDate(mammogram._rawDate))
-    }
-  } else if (mammogram.dateType === 'moreThanSixMonths') {
-    dateParts.push('over 6 months ago')
-  } else if (mammogram.dateType === 'lessThanSixMonths') {
-    dateParts.push('less than 6 months ago')
-  }
-
-  const dateDetail = dateParts.length > 0 ? `(${dateParts.join(', ')})` : ''
+  const dateText = describePriorMammogramDate(mammogram)
+  const dateDetail = includeDate && dateText ? `(${dateText})` : ''
 
   // Optional additional information appended as a separate sentence
   const additionalInfo =
@@ -172,27 +261,31 @@ const summarisePriorMammogram = (mammogram, options = {}) => {
 }
 
 /**
- * Summarise all prior mammograms for an event into an array of one-line strings
+ * Summarise all prior mammograms for an appointment into an array of one-line strings
  *
- * @param {Object} event - The event object (must have previousMammograms array)
+ * @param {Object} appointment - The appointment object (must have previousMammograms array)
  * @param {Object} [options] - Optional config passed through to summarisePriorMammogram
  * @returns {Array<string>} Array of summary strings
  */
-const summarisePriorMammograms = (event, options = {}) => {
-  if (!hasRecordedMammograms(event)) return []
-  return event.previousMammograms
+const summarisePriorMammograms = (appointment, options = {}) => {
+  if (!hasRecordedMammograms(appointment)) return []
+  return appointment.previousMammograms
     .map((m) => summarisePriorMammogram(m, options))
     .filter(Boolean)
 }
 
 module.exports = {
+  PRIOR_REQUEST_STATUSES,
   hasRecordedMammograms,
   awaitingPriors,
   hasUnrequestedPriors,
   getPriorsSummary,
   getUnrequestedPriors,
   getAwaitingPriors,
+  getAwaitingPriorsStatus,
   userRequestedPriors,
+  describePriorMammogramLocation,
+  describePriorMammogramDate,
   summarisePriorMammogram,
   summarisePriorMammograms
 }

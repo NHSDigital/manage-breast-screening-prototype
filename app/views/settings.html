@@ -88,36 +88,36 @@
     {# Modal forms — open forms in a modal dialog rather than a new page #}
     {{ settingToggle("Modal forms (spike)", "settings[modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.modalForms, "false") }}
 
-    <h2>Screening</h2>
+    <h2>Appointment</h2>
     {# Confirm identity on check-in #}
-    {{ settingToggle("Confirm identity on check-in", "settings[screening][confirmIdentityOnCheckIn]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.screening.confirmIdentityOnCheckIn, "true") }}
+    {{ settingToggle("Confirm identity on check-in", "settings[appointment][confirmIdentityOnCheckIn]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.appointment.confirmIdentityOnCheckIn, "true") }}
 
     {# Manual image collection #}
-    {{ settingToggle("Image collection method", "settings[screening][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic (via gateway)"}], data.settings.screening.manualImageCollection, "false") }}
+    {{ settingToggle("Image collection method", "settings[appointment][manualImageCollection]", [{value: "true", label: "Manual"}, {value: "false", label: "Automatic (via gateway)"}], data.settings.appointment.manualImageCollection, "false") }}
 
     {# Image streaming simulation #}
-    {{ settingToggle("Simulate images streaming from gateway", "settings[screening][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.screening.imageStreaming.enabled, "true") }}
+    {{ settingToggle("Simulate images streaming from gateway", "settings[appointment][imageStreaming][enabled]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.appointment.imageStreaming.enabled, "true") }}
 
-    {% if data.settings.screening.imageStreaming.enabled != 'false' %}
+    {% if data.settings.appointment.imageStreaming.enabled != 'false' %}
       {% call insetText() %}
-        {{ settingToggle("Streaming interval", "settings[screening][imageStreaming][intervalMs]", [
+        {{ settingToggle("Streaming interval", "settings[appointment][imageStreaming][intervalMs]", [
           {value: "1000", label: "1s"},
           {value: "2000", label: "2s"},
           {value: "3000", label: "3s"},
           {value: "5000", label: "5s"},
           {value: "10000", label: "10s"}
-        ], data.settings.screening.imageStreaming.intervalMs, "3000") }}
+        ], data.settings.appointment.imageStreaming.intervalMs, "3000") }}
       {% endcall %}
     {% endif %}
 
     {# Use condensed review summaries #}
-    {{ settingToggle("Review summaries", "settings[screening][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.screening.useCondensedReviewSummaries, "false") }}
+    {{ settingToggle("Review summaries", "settings[appointment][useCondensedReviewSummaries]", [{value: "true", label: "Condensed"}, {value: "false", label: "Full"}], data.settings.appointment.useCondensedReviewSummaries, "false") }}
 
     {# Show participant section #}
-    {{ settingToggle("Participant section", "settings[screening][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.screening.showParticipantSection, "true") }}
+    {{ settingToggle("Participant section", "settings[appointment][showParticipantSection]", [{value: "true", label: "Shown"}, {value: "false", label: "Hidden"}], data.settings.appointment.showParticipantSection, "true") }}
 
     {# Participant added to worklist — toggles success/fail state shown in appointment header #}
-    {{ settingToggle("Participant added to worklist", "settings[screening][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.screening.addedToWorklist, "true") }}
+    {{ settingToggle("Participant added to worklist", "settings[appointment][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.appointment.addedToWorklist, "true") }}
 
     <h2>Image reading</h2>
     {# Reading index layout #}
@@ -182,17 +182,51 @@
     {% endif %}
     
 
-    {# Arbitration policy #}
-    {{ settingToggle("Arbitration policy", "settings[reading][arbitrationPolicy]", [
-      {value: "discordant_only", label: "Discordant reads only"},
-      {value: "all_non_normal", label: "All non-normal outcomes"}
-    ], data.settings.reading.arbitrationPolicy, "discordant_only") }}
+    {# Read finalisation delay #}
+    {{ settingToggle("Read finalisation", "settings[reading][finalisationDelay]", [
+      {value: "0", label: "Immediate"},
+      {value: "60", label: "After 1 hour"},
+      {value: "1440", label: "After 24 hours"},
+      {value: "never", label: "Manual only"}
+    ], data.settings.reading.finalisationDelay, "60") }}
 
     {# Mammogram view order #}
     {{ settingToggle("Mammogram view order", "settings[mammogramViewOrder]", [
       {value: "cc-first", label: "CC first"},
       {value: "mlo-first", label: "MLO first"}
     ], data.settings.mammogramViewOrder, "mlo-first") }}
+
+    <h2>Arbitration</h2>
+
+    {# Arbitration policy - which reads go to arbitration #}
+    {{ settingToggle("Arbitration policy", "settings[reading][arbitration][policy]", [
+      {value: "discordant_only", label: "Discordant reads only"},
+      {value: "all_recalls", label: "All recalls for assessment"},
+      {value: "all_non_normal", label: "All non-normal outcomes"}
+    ], data.settings.reading.arbitration.policy, "discordant_only") }}
+
+    {# When the original reads appear on the arbitration opinion page #}
+    {{ settingToggle("Original reads on opinion page", "settings[reading][arbitration][showReads]", [
+      {value: "on_demand", label: "Available on demand"},
+      {value: "blind", label: "Hidden until an outcome is given"}
+    ], data.settings.reading.arbitration.showReads, "on_demand") }}
+
+    {# How on-demand reads are revealed #}
+    {{ settingToggle("Reveal style (on demand only)", "settings[reading][arbitration][revealStyle]", [
+      {value: "expander", label: "Expander"},
+      {value: "card", label: "Card, reveal in place"},
+      {value: "modal", label: "Card, reads in a modal"},
+      {value: "tabs", label: "Tabs"}
+    ], data.settings.reading.arbitration.revealStyle, "expander") }}
+
+    {# Confirm decision - show the review page before saving #}
+    {{ settingToggle("Confirm arbitration decision", "settings[reading][arbitration][confirmDecision]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.arbitration.confirmDecision, "true") }}
+
+    {# Original reads on the session overview #}
+    {{ settingToggle("Original reads on session overview", "settings[reading][arbitration][hideReadsUntilArbitrated]", [{value: "true", label: "Hidden until arbitrated"}, {value: "false", label: "Always shown"}], data.settings.reading.arbitration.hideReadsUntilArbitrated, "true") }}
+
+    {# Lazy sessions - arbitration sessions claim cases one at a time #}
+    {{ settingToggle("Lazy sessions", "settings[reading][arbitration][lazySessions]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.arbitration.lazySessions, "false") }}
 
     <h2>Generated data</h2>
 
@@ -231,8 +265,13 @@
       </div>
 
       <div class="nhsuk-summary-list__row">
-        <dt class="nhsuk-summary-list__key">Events</dt>
-        <dd class="nhsuk-summary-list__value">{{ data.generationInfo.stats.events }}</dd>
+        <dt class="nhsuk-summary-list__key">Appointments</dt>
+        <dd class="nhsuk-summary-list__value">{{ data.generationInfo.stats.appointments }}</dd>
+      </div>
+
+      <div class="nhsuk-summary-list__row">
+        <dt class="nhsuk-summary-list__key">Episodes</dt>
+        <dd class="nhsuk-summary-list__value">{{ data.generationInfo.stats.episodes }}</dd>
       </div>
     </dl>
 
@@ -268,7 +307,7 @@
       <ul>
         <li>create new test participants</li>
         <li>generate new clinics for the next few days</li>
-        <li>reset all events and appointments</li>
+        <li>reset all appointments and appointments</li>
         <li>clear any changes you've made to the data</li>
       </ul>
     {% endset %}

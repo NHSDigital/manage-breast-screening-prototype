@@ -11,7 +11,7 @@
 
 {% set pageHeading = "Technical recall" %}
 
-{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 {# POST to route handler that cleans up unselected views before redirecting to review #}
 {% set formAction = './technical-recall-answer' | urlWithReferrer(referrerChain) %}
@@ -19,7 +19,7 @@
 {% block pageContent %}
 
   <span class="nhsuk-caption-l">
-    {{ participant | getFullName }}
+    {{ participant | getFullNameReversed }}
   </span>
 
   <h1 class="nhsuk-heading-l js-image-count">
@@ -84,14 +84,13 @@
         items: selectItems
       } | populateErrors) }}
 
-      {% call appCollapsibleInput({ text: "Add additional details" }) %}
+      {% call appCollapsibleInput({ text: "Add additional details (optional)" }) %}
         {{ input({
           id: "technicalRecall-" + viewCode + "-additionalDetails",
           name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
           value: viewData.additionalDetails,
           label: {
-            text: "Additional details (optional)",
-            size: "s"
+            text: "Additional details (optional)"
           }
         }) }}
       {% endcall %}

@@ -18,7 +18,7 @@ const INCOMPLETE_MAMMOGRAPHY_REASONS = [
 
 // Follow-up appointment options
 const INCOMPLETE_MAMMOGRAPHY_FOLLOW_UP_OPTIONS = [
-  "Yes, record as 'to be recalled'",
+  "Yes, record as 'more images due'",
   "No, record as 'partial mammography'"
 ]
 
@@ -145,7 +145,7 @@ const generateViewImages = ({
  *
  * @param {object} [options] - Generation options
  * @param {Date|string} [options.startTime] - Starting timestamp (defaults to now)
- * @param {string} [options.accessionNumber] - Accession number for this study (from the event)
+ * @param {string} [options.accessionNumber] - Accession number for this study (from the appointment)
  * @param {boolean} [options.isSeedData] - Whether generating seed data
  * @param {object} [options.config] - Optional configuration for specific scenarios
  * @param {string} [options.config.scenario] - Force a specific scenario ('standard', 'extraImages', 'technicalRepeat', 'incomplete', 'incompleteImperfect')
@@ -164,9 +164,9 @@ const generateMammogramImages = ({
   notesForReaderChanceWithoutImperfect = 0.05
 } = {}) => {
   // Use the provided accession number as base, or fall back to a random number
-  const accessionBase = accessionNumber || faker.number
-    .int({ min: 100000000, max: 999999999 })
-    .toString()
+  const accessionBase =
+    accessionNumber ||
+    faker.number.int({ min: 100000000, max: 999999999 }).toString()
   let currentIndex = 1
   let currentTime = dayjs(startTime)
   const views = {}
@@ -289,7 +289,7 @@ const generateMammogramImages = ({
   if (isSeedData && hasMissingViews) {
     const reason = faker.helpers.arrayElement(INCOMPLETE_MAMMOGRAPHY_REASONS)
     const followUp = weighted.select({
-      "Yes, record as 'to be recalled'": 0.4,
+      "Yes, record as 'more images due'": 0.4,
       "No, record as 'partial mammography'": 0.6
     })
 
@@ -312,7 +312,7 @@ const generateMammogramImages = ({
     }
 
     // Add details if follow-up is YES
-    if (followUp === "Yes, record as 'to be recalled'") {
+    if (followUp === "Yes, record as 'more images due'") {
       incompleteMammographyData.incompleteMammographyFollowUpAppointmentDetails =
         faker.helpers.arrayElement([
           'Participant has a shoulder injury that should heal in 4-6 weeks.',

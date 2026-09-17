@@ -1,0 +1,56 @@
+{# app/views/_includes/authorised-mammographer.njk #}
+
+{#
+  The authorised mammographer for an in-progress appointment, alongside the
+  button that continues the workflow.
+
+  Where the current user cannot image this participant themselves and nobody
+  else has been nominated, the workflow is blocked until an authorised
+  mammographer with implant imaging training is chosen.
+
+  Set continueButtonText before including.
+#}
+
+{% set authorisedMammographerChangeHref = (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
+
+{% set needsNominatedAuthorisedMammographer = appointment.workflowStatus['review-medical-information'] != 'completed'
+  and not (currentUser | canUserScreenAppointment(appointment))
+  and not (appointment | hasNominatedAuthorisedMammographer) %}
+
+{% if needsNominatedAuthorisedMammographer %}
+
+  {% set insetTextHtml %}
+    <p>Due to {{ appointment | getImplantImagingReason }} you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or {{ appLink({ text: "exit the appointment", href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain) }) | trim | safe }}.</p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetTextHtml
+  }) }}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <div class="nhsuk-button-group">
+        {{ button({
+          text: "Change mammographer",
+          href: authorisedMammographerChangeHref,
+          classes: "nhsuk-u-margin-bottom-0"
+        } | openInModal) }}
+      </div>
+    </div>
+  </div>
+
+{% else %}
+
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      {{ button({
+        text: continueButtonText,
+        classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections"
+      }) }}
+      <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span> ({{ appLink({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})</p>
+    </div>
+  </div>
+
+{% endif %}

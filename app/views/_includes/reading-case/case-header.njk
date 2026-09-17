@@ -1,0 +1,40 @@
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{# app/views/_includes/reading-case/case-header.njk
+
+   Shared header for the reading case pages (case view and priors tab):
+   participant name with the case's state on the right, then NHS number.
+   Expects the case context locals: pageHeading, readingCase, caseOutcome,
+   isDeferred, caseAwaitingPriors, participant. #}
+
+<div class="app-header-with-status">
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">Image reading case</span>
+    {{ pageHeading }}
+  </h1>
+
+  <div class="app-header-with-status__status-tag">
+    {# Single status: outcome once concluded, otherwise the in-progress state #}
+    {{ caseOutcomeTag(readingCase, { classes: "nhsuk-u-margin-bottom-2" }) }}
+
+    {# Ageing matters only while the case still owes a final outcome #}
+    {% if not caseOutcome %}
+      {% set caseUrgency = readingCase.openedDate | getReadingUrgency(data.config.reading) %}
+      {% if caseUrgency == 'urgent' %}
+        <br>{{ "Urgent" | toTag }}
+      {% elseif caseUrgency == 'due_soon' %}
+        <br>{{ "Due soon" | toTag }}
+      {% endif %}
+    {% endif %}
+
+    {% if isDeferred %}
+      <br>{{ "Deferred" | toTag }}
+    {% endif %}
+    {% if caseAwaitingPriors %}
+      <br>{{ "Awaiting priors" | toTag }}
+    {% endif %}
+  </div>
+</div>
+
+<p class="nhsuk-u-secondary-text-colour">
+  NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+</p>

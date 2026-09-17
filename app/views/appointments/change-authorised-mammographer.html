@@ -1,0 +1,100 @@
+{# app/views/appointments/change-authorised-mammographer.html #}
+
+{% extends parentLayout or '_templates/layout-appointment.html' %}
+
+{# Wording differs depending on whether images have already been taken #}
+{% set imagesTaken = appointment.workflowStatus['take-images'] == 'completed' %}
+
+{% set pageHeading = "Change mammographer" %}
+{% set formAction = "./change-authorised-mammographer-answer" | urlWithReferrer(referrerChain) %}
+
+{% set legendText = "Who took the images for this appointment?" if imagesTaken else "Who is taking images for this appointment?" %}
+
+{# Where Save and Cancel return to - the page the modal was opened from #}
+{% set returnPageHref = (appointmentUrl + "/check-information") | getReturnUrl(referrerChain) %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% if not imagesTaken %}
+    {{ insetText({
+      text: "Ensure the person selected is also logged into the mammogram machine before images are taken"
+    }) }}
+  {% endif %}
+
+  {# Current user sits at the top, followed by every other clinician able to
+     screen this appointment - only those with implant imaging training when
+     the participant has implants or a device #}
+  {% set authorisedMammographerItems = [
+    {
+      value: data.currentUser.id,
+      text: data.currentUser.id | getUsername({ format: "reversed", identifyCurrentUser: true })
+    }
+  ] %}
+
+  {% for user in data.users | sort(false, false, "lastName") %}
+    {% if user.id != data.currentUser.id and (user | canUserScreenAppointment(appointment)) %}
+      {% set authorisedMammographerItems = authorisedMammographerItems | push({
+        value: user.id,
+        text: user.id | getUsername({ format: "reversed" })
+      }) %}
+    {% endif %}
+  {% endfor %}
+
+  {% set otherNameHtml %}
+    {{ input({
+      id: "authorisedMammographerOtherName",
+      name: "appointment[authorisedMammographerTemp][otherName]",
+      value: appointment.authorisedMammographerTemp.otherName or appointment.authorisedMammographerOtherName,
+      label: {
+        text: "Enter the mammographer's full name"
+      },
+      autocomplete: "off"
+    } | populateErrors) }}
+  {% endset %}
+
+  {% set authorisedMammographerItems = authorisedMammographerItems | push({ divider: "or" }) %}
+  {% set authorisedMammographerItems = authorisedMammographerItems | push({
+    value: "other",
+    text: "Other",
+    conditional: {
+      html: otherNameHtml
+    }
+  }) %}
+
+  {# Nominating yourself is stored as no nomination, so default to the current user #}
+  {% set selectedAuthorisedMammographer = data.currentUser.id %}
+  {% if appointment.authorisedMammographerOtherName %}
+    {% set selectedAuthorisedMammographer = "other" %}
+  {% endif %}
+  {% if appointment.authorisedMammographerId %}
+    {% set selectedAuthorisedMammographer = appointment.authorisedMammographerId %}
+  {% endif %}
+  {% if appointment.authorisedMammographerTemp.userId %}
+    {% set selectedAuthorisedMammographer = appointment.authorisedMammographerTemp.userId %}
+  {% endif %}
+
+  {{ radios({
+    idPrefix: "authorisedMammographerUserId",
+    name: "appointment[authorisedMammographerTemp][userId]",
+    value: selectedAuthorisedMammographer,
+    fieldset: {
+      legend: {
+        text: legendText
+      }
+    },
+    items: authorisedMammographerItems
+  } | populateErrors) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save"
+    }) }}
+    {{ appLink({ text: "Cancel", href: returnPageHref, attributes: { "data-modal-action": "close" } }) | trim | safe }}
+    {% if not imagesTaken %}
+      {{ appLink({ text: "Exit appointment", href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain) }) | trim | safe }}
+    {% endif %}
+  </div>
+
+{% endblock %}

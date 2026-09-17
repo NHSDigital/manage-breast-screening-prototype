@@ -1,10 +1,9 @@
 // app/lib/generators/medical-information-generator.js
 
 const { generateSymptoms } = require('./medical-information/symptoms-generator')
-const { generateHRT } = require('./medical-information/hrt-generator')
 const {
-  generatePregnancyAndBreastfeeding
-} = require('./medical-information/pregnancy-and-breastfeeding-generator')
+  generateBreastDensityFactors
+} = require('./medical-information/breast-density-factors-generator')
 const {
   generateOtherMedicalInformation
 } = require('./medical-information/other-medical-information-generator')
@@ -16,7 +15,7 @@ const {
 } = require('./medical-information/medical-history-generator')
 
 /**
- * Generate complete medical information for an event
+ * Generate complete medical information for an appointment
  *
  * All medical information is attributed to the user who ran the appointment
  *
@@ -59,23 +58,13 @@ const generateMedicalInformation = (options = {}) => {
     medicalInfo.symptoms = symptoms
   }
 
-  // Generate HRT information
-  const hrt = generateHRT({
-    probability: probabilityOfHRT
+  // Generate breast density factors (HRT, pregnancy, breastfeeding)
+  const breastDensityFactors = generateBreastDensityFactors({
+    probabilityOfHrt: probabilityOfHRT,
+    probabilityOfPregnancyBreastfeeding
   })
 
-  if (hrt) {
-    medicalInfo.hrt = hrt
-  }
-
-  // Generate pregnancy and breastfeeding information
-  const pregnancyAndBreastfeeding = generatePregnancyAndBreastfeeding({
-    probability: probabilityOfPregnancyBreastfeeding
-  })
-
-  if (pregnancyAndBreastfeeding) {
-    medicalInfo.pregnancyAndBreastfeeding = pregnancyAndBreastfeeding
-  }
+  Object.assign(medicalInfo, breastDensityFactors)
 
   // Generate other medical information
   const otherMedicalInformation = generateOtherMedicalInformation({

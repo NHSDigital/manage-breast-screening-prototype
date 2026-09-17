@@ -1,0 +1,42 @@
+{# app/views/_includes/reading/read-opinion-tag.njk
+
+   The single way to show one read's opinion as a tag. Colour is reserved for
+   the case outcome, so a read shown as context is always grey; a blinded read
+   shows "Completed" without revealing the opinion. Bylines, reveal links and
+   not-read fallbacks stay with the caller - this is just the tag.
+
+   Import with context - the tag reads settings from data.
+
+   Arguments:
+   - read - the read (required)
+   - options.context - 'own' shows the viewer's own opinion in full colour;
+     anything else (or unset) is another reader's opinion, shown grey
+   - options.blinded - true hides the opinion behind a grey "Completed"
+   - options.showFinalisation - true adds a caption with the read's
+     finalisation state: "Unfinalised" while pending, "Finalised {time}" after.
+     'unfinalised' captions only the pending state - for contexts that already
+     show the finalised time elsewhere, like the case view
+   - options.forceUnfinalised - treat the read as unfinalised whatever
+     isReadFinalised says (for callers with their own wider condition) #}
+
+{% macro readOpinionTag(read, options = {}) %}
+  {% if options.blinded %}
+    {{ "Completed" | toTag({ colour: "grey" }) }}
+  {% elseif options.context == 'own' %}
+    {{ read.opinion | toTag }}
+  {% else %}
+    {{ read.opinion | toTag({ colour: "grey" }) }}
+  {% endif %}
+
+  {% if options.showFinalisation and not options.blinded %}
+    {% set isFinalised = (read | isReadFinalised(data.settings)) and not options.forceUnfinalised %}
+    {% if not isFinalised %}
+      <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Unfinalised</span>
+    {% elseif options.showFinalisation != 'unfinalised' %}
+      {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
+      {% if finalisedAt %}
+        <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Finalised {{ finalisedAt | formatTimeString }}</span>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+{% endmacro %}

@@ -1,0 +1,79 @@
+{# app/views/appointments/medical-information/medical-history/other-procedures.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set pageHeading = "Add procedure details" %}
+{% set medicalHistoryType = "otherProcedures" %}
+
+{% block formContent %}
+
+  {{ radios({
+    name: "appointment[medicalHistoryTemp][type]",
+    value: appointment.medicalHistoryTemp.type,
+    fieldset: {
+      legend: {
+        text: "What procedure has " + (participant.demographicInformation.firstName or "the participant") + " had?",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "Breast reduction",
+        text: "Breast reduction",
+        conditional: {
+          html: input({
+            name: "appointment[medicalHistoryTemp][breastReductionDetails]",
+            value: appointment.medicalHistoryTemp.breastReductionDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Breast symmetrisation",
+        text: "Breast symmetrisation",
+        conditional: {
+          html: input({
+            name: "appointment[medicalHistoryTemp][breastSymmetrisationDetails]",
+            value: appointment.medicalHistoryTemp.breastSymmetrisationDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Nipple correction",
+        text: "Nipple correction",
+        conditional: {
+          html: input({
+            name: "appointment[medicalHistoryTemp][nippleCorrectionDetails]",
+            value: appointment.medicalHistoryTemp.nippleCorrectionDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: input({
+            name: "appointment[medicalHistoryTemp][typeOtherDetails]",
+            value: appointment.medicalHistoryTemp.typeOtherDetails,
+            label: {
+              text: "Provide details"
+            }
+          })
+        }
+      }
+    ]
+  }) }}
+
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}

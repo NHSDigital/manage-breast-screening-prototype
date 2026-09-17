@@ -45,7 +45,7 @@
         {
           value: "clinical",
           text: "Normal, symptoms need clinical assessment"
-        } if event.medicalInformation.symptoms | length > 0,
+        } if appointment.medicalInformation.symptoms | length > 0,
         {
           value: "abnormal",
           text: "Abnormal, recall for assessment"
@@ -73,12 +73,18 @@
       <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
       <div id="{{ params.side }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if params.annotationError }}">
         <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">{{ params.side | sentenceCase }} breast annotations</h3>
-        {% if params.annotationError %}
+        {# Error before the list when annotations exist (wrong level); after hint text when none exist #}
+        {% if params.annotationError and params.annotationCount > 0 %}
           <span class="app-annotation-section__error-message">
             <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
           </span>
         {% endif %}
         {{ params.annotationsHtml | safe }}
+        {% if params.annotationError and params.annotationCount == 0 %}
+          <span class="app-annotation-section__error-message">
+            <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
+          </span>
+        {% endif %}
       </div>
       {{ params.annotationsButtonHtml | safe }}
     {% endif %}
@@ -101,7 +107,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <span class="nhsuk-caption-l">
-        {{ participant | getFullName }}
+        {{ participant | getFullNameReversed }}
       </span>
       <h1 class="nhsuk-heading-l js-image-count">
         {{ pageHeading }}
@@ -111,14 +117,14 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-full">
-      {% set symptoms = event.medicalInformation.symptoms %}
+      {% set symptoms = appointment.medicalInformation.symptoms %}
       {% include "symptomsWarningCard.njk" %}
     </div>
   </div>
 
   {# Set up annotation data early — needed by both breast cards and tab modes #}
   {% if annotationsMode != 'without-images' %}
-    {% set mammogramImages = getImagesForEvent(eventId, "diagrams", { event: event }) %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
   {% endif %}
@@ -171,6 +177,7 @@
             annotations: sideAnnotations,
             editable: true,
             editHrefPrefix: "./annotation/edit/",
+            referrerChain: referrerChain,
             useModals: data.settings.modalForms == 'true',
             classes: "nhsuk-u-margin-bottom-3" if sideAnnotations | length > 0
           }) }}
@@ -224,7 +231,8 @@
           side: breastSide,
           annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode,
           annotationsButtonHtml: sideAnnotationsButtonHtml if isInlineAnnotationsMode,
-          annotationError: _sideAnnotationsError if isInlineAnnotationsMode
+          annotationError: _sideAnnotationsError if isInlineAnnotationsMode,
+          annotationCount: sideAnnotations | length
         }) }}
       </div>
     {% endfor %}
@@ -273,6 +281,7 @@
       var annotationsMode = '{{ annotationsMode }}'
       var useModals = {{ "true" if data.settings.modalForms == 'true' else "false" }}
       var autoOpenAnnotationForm = {{ "true" if data.settings.reading.autoOpenAnnotationForm == 'true' else "false" }}
+      var referrerChainParam = {{ (("&referrerChain=" + (referrerChain | urlencode)) if referrerChain else "") | dump | safe }}
 
       document.addEventListener('change', function (e) {
         if (!e.target.matches('input[type="radio"]')) return
@@ -312,7 +321,7 @@
           // so the server has the breast side info in the session when rendering the annotation page
           fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
             .then(() => {
-              var url = './annotation/add?side=' + side
+              var url = './annotation/add?side=' + side + referrerChainParam
               if (useModals && typeof window.openModal === 'function') {
                 window.openModal('app-form-modal', { loadUrl: url })
               } else {
@@ -321,7 +330,7 @@
             })
             .catch(() => {
               // Graceful degradation: open even if save fails
-              var url = './annotation/add?side=' + side
+              var url = './annotation/add?side=' + side + referrerChainParam
               if (useModals && typeof window.openModal === 'function') {
                 window.openModal('app-form-modal', { loadUrl: url })
               } else {

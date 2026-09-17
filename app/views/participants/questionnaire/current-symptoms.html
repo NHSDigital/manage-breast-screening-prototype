@@ -21,7 +21,7 @@
 
     <form action="{{formAction or './'}}" method="POST">
       <h1>
-        <span class="nhsuk-caption-l">{{( participant | getFullName ) or "Jane Smith" }} pre-screening questionnaire</span>
+        <span class="nhsuk-caption-l">{{( participant | getFullNameReversed ) or "SMITH, Jane" }} pre-screening questionnaire</span>
         {{ pageHeading }}
       </h1>
 
@@ -235,7 +235,7 @@
         fieldset: {
           legend: {
             text: "Do you have any scars on your breasts?",
-            size: "s",,
+            size: "s",
             isPageHeading: false
           }
         },

@@ -220,6 +220,12 @@ const generateSymptom = (options = {}) => {
     symptom.isSignificant = Math.random() < 0.1
   }
 
+  // Some symptoms are signs noted by the mammographer rather than reported
+  // by the participant. Breast pain is excluded as it cannot be observed.
+  if (type !== 'Breast pain' && Math.random() < 0.2) {
+    symptom.isMammographerObserved = true
+  }
+
   // Add user who added the symptom
   if (options.addedByUserId) {
     symptom.addedByUserId = options.addedByUserId
@@ -335,8 +341,9 @@ const generateSymptom = (options = {}) => {
     }
   }
 
-  // 20% chance of symptom notes
-  if (Math.random() < 0.2) {
+  // 20% chance of symptom notes - skipped for mammographer-noted signs as
+  // the note options are all participant-reported
+  if (!symptom.isMammographerObserved && Math.random() < 0.2) {
     const symptomNotesOptions = [
       'Noticed during self-examination',
       'Partner noticed the change',

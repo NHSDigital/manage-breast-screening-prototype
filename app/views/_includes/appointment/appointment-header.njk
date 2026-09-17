@@ -1,7 +1,7 @@
 {# app/views/_includes/appointment-header.njk #}
 
-{# Banner if event is paused #}
-{% if event | isPaused %}
+{# Banner if appointment is paused #}
+{% if appointment | isPaused %}
   {% set pausedBannerHtml %}
     <p class="nhsuk-notification-banner__heading">
       This appointment is paused.
@@ -14,11 +14,11 @@
   }) }}
 {% endif %}
 
-{# Banner if event is in progress (not paused) by someone else #}
-{% if (event | isInProgressNotPaused) and not event | startedByCurrentUser %}
+{# Banner if appointment is in progress (not paused) by someone else #}
+{% if (appointment | isInProgressNotPaused) and not appointment | startedByCurrentUser %}
   {% set notificationBannerHtml %}
     <p class="nhsuk-notification-banner__heading">
-      This appointment is currently being run by {{ event.sessionDetails.startedBy | getUsername({
+      This appointment is currently being run by {{ appointment.sessionDetails.startedBy | getUsername({
         format: 'short',
         identifyCurrentUser: true
       }) }}.
@@ -36,33 +36,23 @@
     <span class="nhsuk-caption-l">
       {{ clinic.clinicType | sentenceCase }} appointment
     </span>
-    {{ participant | getFullName | safe }}
+    {{ participant | getFullNameReversed }}
   </h1>
 
   <div class="app-header-with-status__status-tag">
-    {% set statusTagId = "status-tag-" + event.id %}
-    {% if event.status === "event_rescheduled" %}
-      {{ tag({
-        text: "Reschedule requested",
-        colour: "red",
-        classes: "nhsuk-u-margin-bottom-2",
-        attributes: {
-          id: statusTagId
-        }
-      }) }}
-    {% else %}
-      {{ event.status | toTag({
-        id: statusTagId,
-        classes: "nhsuk-u-margin-bottom-2"
-      }) }}
-    {% endif %}
+    {% set statusTagId = "status-tag-" + appointment.id %}
+    {{ appointment.status | toTag({
+      vocabulary: "appointment",
+      id: statusTagId,
+      classes: "nhsuk-u-margin-bottom-2"
+    }) }}
 
-    {% if event.status == 'event_scheduled' %}
+    {% if appointment.status == 'scheduled' %}
       {{ appCheckIn({
         clinicId: clinicId,
-        event: event,
+        appointment: appointment,
         participant: participant,
-        confirmIdentityOnCheckIn: true if data.settings.screening.confirmIdentityOnCheckIn == 'true' else false,
+        confirmIdentityOnCheckIn: true if data.settings.appointment.confirmIdentityOnCheckIn == 'true' else false,
         statusTagId: statusTagId
       }) }}
     {% endif %}
@@ -74,13 +64,13 @@
         <li>
           {{ appLink({
             text: "Cancel or reschedule appointment",
-            href: (eventUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(eventUrl)
+            href: (appointmentUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(appointmentUrl)
           } | openInModal) }}
         </li>
         <li>
           {{ appLink({
-            text: "Make special appointment" if not event | isSpecialAppointment else "Change special appointment details",
-            href: (eventUrl + '/special-appointment/edit') | urlWithReferrer(eventUrl)
+            text: "Make special appointment" if not appointment | isSpecialAppointment else "Change special appointment details",
+            href: (appointmentUrl + '/special-appointment/edit') | urlWithReferrer(appointmentUrl)
           } | openInModal) }}
         </li>
       </ul>
@@ -100,8 +90,8 @@
           variant: "secondary"
         },
         {
-          text: "Make this appointment a special appointment" if not event | isSpecialAppointment else "Change special appointment details",
-          href: eventUrl ~ "/special-appointment/edit" | urlWithReferrer(eventUrl),
+          text: "Make this appointment a special appointment" if not appointment | isSpecialAppointment else "Change special appointment details",
+          href: appointmentUrl ~ "/special-appointment/edit" | urlWithReferrer(appointmentUrl),
           variant: "secondary"
         }
       ],
@@ -120,32 +110,37 @@
 </p>
 
 <p>
-  {{ event.timing.startTime | formatTimeString }} ({{ event.timing.duration }} minutes) - {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})
+  {{ appointment.timing.startTime | formatTimeString }} ({{ appointment.timing.duration }} minutes) - {{ clinic.date | formatDate }} ({{ clinic.date | formatRelativeDate }})
 </p>
 
-{# Suppressed until we decide whether to ship the participant record #}
-{% if data.settings.screening.showParticipantSection | falsify %}
-  <p class="nhsuk-u-margin-bottom-4"><a href="{{ '/participants/' + participant.id | urlWithReferrer(currentUrl) }}">View participant record</a></p>
-{% endif %}
-
 {% if currentUser | isClinician %}
-  {% if event | isPaused or (event | isInProgress and event | startedByCurrentUser) %}
+  {% if appointment | isPaused or (appointment | isInProgress and appointment | startedByCurrentUser) %}
     <div class="nhsuk-button-group">
       {{ button({
         text: "Resume appointment",
         href: "./resume"
       }) }}
-      <a href="{{ (eventUrl + '/attended-not-screened-reason') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning">
+      <a href="{{ (appointmentUrl + '/attended-not-screened-reason') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning">
         Appointment cannot proceed
       </a>
     </div>
-  {% elseif event | hasNotStarted %}
+  {% elseif appointment | hasNotStarted %}
     <div class="nhsuk-button-group">
       {{ button({
         text: "Start this appointment",
         href: "./start"
       }) }}
+      {% if appointment.status == 'scheduled' %}
+        <a href="{{ (appointmentUrl + '/mark-did-not-attend') | urlWithReferrer(currentUrl) }}" class="nhsuk-link app-link--warning nhsuk-link--no-visited-state">
+          Did not attend
+        </a>
+      {% endif %}
     </div>
+  {% elseif appointment.status == 'did_not_attend' %}
+    {{ insetText({
+      html: (participant | getFullName | safe) + ' did not attend this appointment<br><a href="' + ((appointmentUrl + '/undo-did-not-attend') | urlWithReferrer(currentUrl)) + '" class="nhsuk-link nhsuk-link--no-visited-state">Undo</a>',
+      classes: 'nhsuk-body'
+    }) }}
   {% endif %}
 {% endif %}
 

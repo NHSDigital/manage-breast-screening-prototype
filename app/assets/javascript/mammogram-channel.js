@@ -18,7 +18,7 @@ const getChannel = () => {
 /**
  * Broadcast a message to show mammograms for a participant
  * @param {object} data - The data to broadcast
- * @param {string} data.eventId - The event ID (used for image selection)
+ * @param {string} data.appointmentId - The appointment ID (used for image selection)
  * @param {string} data.participantName - Display name for the participant
  * @param {string} data.nhsNumber - NHS number (optional)
  * @param {string} data.sxNumber - SX number (optional)
@@ -33,7 +33,7 @@ const broadcastShowParticipant = (data) => {
 
   ch.postMessage({
     type: 'show',
-    eventId: data.eventId,
+    appointmentId: data.appointmentId,
     participantName: data.participantName,
     nhsNumber: data.nhsNumber || null,
     sxNumber: data.sxNumber || null,
@@ -157,7 +157,7 @@ const isViewerOpen = () => {
 
 // Auto-broadcast on page load if we have participant data in meta tags
 document.addEventListener('DOMContentLoaded', () => {
-  const eventIdMeta = document.querySelector('meta[name="mammogram-event-id"]')
+  const appointmentIdMeta = document.querySelector('meta[name="mammogram-appointment-id"]')
   const participantNameMeta = document.querySelector(
     'meta[name="mammogram-participant-name"]'
   )
@@ -167,12 +167,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Helper to get current participant data from meta tags
   const getCurrentParticipantData = () => {
-    if (!eventIdMeta || !participantNameMeta) return null
+    if (!appointmentIdMeta || !participantNameMeta) return null
 
-    const eventId = eventIdMeta.getAttribute('content')
+    const appointmentId = appointmentIdMeta.getAttribute('content')
     const participantName = participantNameMeta.getAttribute('content')
 
-    if (!eventId || !participantName) return null
+    if (!appointmentId || !participantName) return null
 
     const nhsNumber = document
       .querySelector('meta[name="mammogram-nhs-number"]')
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return {
-      eventId,
+      appointmentId,
       participantName,
       nhsNumber,
       sxNumber,
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })
   }
 
-  if (eventIdMeta && participantNameMeta) {
+  if (appointmentIdMeta && participantNameMeta) {
     const data = getCurrentParticipantData()
 
     // Auto-open viewer if enabled and viewer is not already open

@@ -9,7 +9,7 @@
   - Notes for reader textarea
   
   Parameters:
-  - namePrefix: string - prefix for form field names (e.g., "event[mammogramData]" or "event[mammogramDataTemp]")
+  - namePrefix: string - prefix for form field names (e.g., "appointment[mammogramData]" or "appointment[mammogramDataTemp]")
   - mammogramSource: object - object containing the mammogram data with values
 #}
 
@@ -94,8 +94,8 @@
     },
     items: [
       {
-        value: "Yes, record as 'to be recalled'",
-        text: "Yes, record as 'to be recalled'",
+        value: "Yes, record as 'more images due'",
+        text: "Yes, record as 'more images due'",
         conditional: {
           html: yesRecallRescheduleDetailsHtml
         }

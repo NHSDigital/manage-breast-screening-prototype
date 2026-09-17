@@ -1,7 +1,7 @@
 {% set specialAppointmentRows = [] %}
 {% set showChangeLink = false %}
 
-{% set specialAppointmentData = event.specialAppointment %}
+{% set specialAppointmentData = appointment.specialAppointment %}
 
 {% if specialAppointmentData and specialAppointmentData.supportTypes %}
   {% for supportType in specialAppointmentData.supportTypes %}
@@ -75,6 +75,7 @@
 {% if specialAppointmentRows | length > 0 %}
   {{ summaryList({
     rows: specialAppointmentRows,
-    classes: summaryListClasses if summaryListClasses else "nhsuk-summary-list"
-  } | removeLastRowBorder) }}
+    classes: summaryListClasses if summaryListClasses else "nhsuk-summary-list",
+    lastRowBorder: false
+  }) }}
 {% endif %}

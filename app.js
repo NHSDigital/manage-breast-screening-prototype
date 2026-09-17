@@ -21,6 +21,12 @@ const entryPoints = [
   'app/assets/sass/main.scss',
   'app/assets/sass/main-compact.scss',
   'app/assets/javascript/*.js',
+
+  // Not a real build target: the kit adds every entry point to nodemon's
+  // ignore list, and without this glob each seed data regeneration (which
+  // writes app/data/generated/*.json) would restart the server. The
+  // public/data/generated/*.js files esbuild emits as a result are an
+  // unused side effect.
   'app/data/generated/**/*.json'
 ]
 
@@ -42,7 +48,7 @@ async function init() {
     prototype.nunjucks.addGlobal(name, global)
   }
 
-  prototype.start(config.port)
+  prototype.start(port)
 }
 
 init()

@@ -8,7 +8,7 @@ function initializeBreastFeatures() {
   const config = window.breastFeaturesConfig || {}
   const readOnly = config.readOnly || false
   const hiddenFieldName =
-    config.hiddenFieldName || 'event[medicalInformation][breastFeaturesRaw]'
+    config.hiddenFieldName || 'appointment[medicalInformation][breastFeaturesRaw]'
   const hiddenFieldId = config.hiddenFieldId || 'breastFeaturesRaw'
   const existingFeatures = config.existingFeatures || []
   const featureTypes = config.featureTypes || [
@@ -1281,6 +1281,16 @@ if (document.readyState === 'loading') {
 window.addEventListener('load', function () {
   if (!window.breastFeaturesInitialized) {
     console.log('Attempting initialization after window load...')
+    initializeBreastFeatures()
+  }
+})
+
+// Re-initialize when a modal loads content that includes the breast diagram.
+// Module scripts are cached by the browser and do not re-execute when the modal
+// re-creates the <script> element, so we rely on the app:init event instead.
+document.addEventListener('app:init', function () {
+  if (document.querySelector('.breast-features__diagram')) {
+    window.breastFeaturesInitialized = false
     initializeBreastFeatures()
   }
 })

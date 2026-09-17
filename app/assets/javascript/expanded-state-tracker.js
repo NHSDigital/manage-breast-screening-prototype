@@ -140,7 +140,11 @@
         'nhsuk-tag--yellow'
       )
 
-      if (statusText === 'Complete' || statusText === 'Reviewed') {
+      if (
+        statusText === 'Complete' ||
+        statusText === 'Reviewed' ||
+        statusText === 'Review at imaging'
+      ) {
         statusElement.classList.add('nhsuk-tag--green')
       } else if (statusText === 'Incomplete') {
         statusElement.classList.add('nhsuk-tag--blue')
@@ -191,8 +195,8 @@
   function clearExpandedStateIfNeeded() {
     const path = window.location.pathname
 
-    // Clear if on main event page (not sub-pages)
-    if (path.match(/^\/clinics\/[^\/]+\/events\/[^\/]+\/?$/)) {
+    // Clear if on main appointment page (not sub-pages)
+    if (path.match(/^\/clinics\/[^\/]+\/appointments\/[^\/]+\/?$/)) {
       clearAllExpandedStates()
     }
   }

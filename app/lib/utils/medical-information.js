@@ -1,6 +1,64 @@
 // app/lib/utils/medical-information.js
 
 const medicalHistoryTypes = require('../../data/medical-history-types')
+const { startLowerCase } = require('./strings')
+const { falsify } = require('./utility')
+
+/**
+ * Check whether a string names a medical history type, by type or slug
+ *
+ * @param {string} type - camelCase type or kebab-case slug
+ * @returns {boolean} Whether it matches a known medical history type
+ */
+const isValidMedicalHistoryType = (type) => {
+  return medicalHistoryTypes.some(
+    (item) => item.type === type || item.slug === type
+  )
+}
+
+/**
+ * Get a medical history type object, by type or slug
+ *
+ * @param {string} type - camelCase type or kebab-case slug
+ * @returns {Object | undefined} The medical history type object
+ */
+const getMedicalHistoryType = (type) => {
+  return (
+    medicalHistoryTypes.find((item) => item.type === type) ||
+    medicalHistoryTypes.find((item) => item.slug === type)
+  )
+}
+
+/**
+ * Get the camelCase data key for a medical history type from its slug
+ *
+ * @param {string} slug - kebab-case slug
+ * @returns {string | null} The camelCase type, or null if not found
+ */
+const getMedicalHistoryKeyFromSlug = (slug) => {
+  const item = medicalHistoryTypes.find((item) => item.slug === slug)
+  return item ? item.type : null
+}
+
+/**
+ * Check whether a medical history item records something that has since been removed
+ *
+ * Each type captures removal under its own field name, and values arrive as
+ * either an array (from checkboxes) or a plain string (from seed data or
+ * query params), so both shapes are handled.
+ *
+ * @param {Object} item - The medical history item
+ * @returns {boolean} Whether the item has been removed
+ */
+const isMedicalHistoryItemRemoved = (item) => {
+  if (!item) return false
+
+  const removalFields = [item.implantsRemoved, item.deviceRemoved]
+
+  return removalFields.some((value) =>
+    Array.isArray(value) ? value.length > 0 : falsify(value)
+  )
+}
 
 /**
  * Summarise a single medical history item into a concise string
@@ -54,7 +112,7 @@ const summariseMedicalHistoryItem = (item) => {
       break
 
     case 'breastImplantsAugmentation':
-      // Be specific about what procedures were done
+      // Be specific about what procedures were done, and which breast(s)
       const rightProcedures = item.proceduresRightBreast || []
       const leftProcedures = item.proceduresLeftBreast || []
       const hasRightImplants =
@@ -66,40 +124,75 @@ const summariseMedicalHistoryItem = (item) => {
         rightProcedures.includes('Other augmentation')
       const hasLeftAugmentation =
         leftProcedures.includes && leftProcedures.includes('Other augmentation')
+      const hasRightNotKnown =
+        rightProcedures.includes && rightProcedures.includes('Not known')
+      const hasLeftNotKnown =
+        leftProcedures.includes && leftProcedures.includes('Not known')
 
+      // Build a description that names each procedure with its side(s)
+      const implantParts = []
+      const augParts = []
+      const notKnownParts = []
+
+      if (hasRightImplants && hasLeftImplants) {
+        implantParts.push('Breast implants, both breasts')
+      } else if (hasRightImplants) {
+        implantParts.push('Breast implants, right breast')
+      } else if (hasLeftImplants) {
+        implantParts.push('Breast implants, left breast')
+      }
+
+      if (hasRightAugmentation && hasLeftAugmentation) {
+        augParts.push('other augmentation, both breasts')
+      } else if (hasRightAugmentation) {
+        augParts.push('other augmentation, right breast')
+      } else if (hasLeftAugmentation) {
+        augParts.push('other augmentation, left breast')
+      }
+
+      if (hasRightNotKnown && hasLeftNotKnown) {
+        notKnownParts.push('procedure not known, both breasts')
+      } else if (hasRightNotKnown) {
+        notKnownParts.push('procedure not known, right breast')
+      } else if (hasLeftNotKnown) {
+        notKnownParts.push('procedure not known, left breast')
+      }
+
+      // Sort: both breasts first, then right, then left
+      const allProcParts = [...implantParts, ...augParts, ...notKnownParts]
+      allProcParts.sort((a, b) => {
+        const sideOrder = (s) =>
+          s.includes('both breasts') ? 0 : s.includes('right breast') ? 1 : 2
+        return sideOrder(a) - sideOrder(b)
+      })
       let procedureType = ''
-      if (
-        (hasRightImplants || hasLeftImplants) &&
-        (hasRightAugmentation || hasLeftAugmentation)
-      ) {
-        procedureType = 'Breast implants and augmentation'
-      } else if (hasRightImplants || hasLeftImplants) {
-        procedureType = 'Breast implants'
-      } else if (hasRightAugmentation || hasLeftAugmentation) {
-        procedureType = 'Breast augmentation'
+      if (allProcParts.length > 0) {
+        // Capitalise the first part
+        allProcParts[0] = allProcParts[0].charAt(0).toUpperCase() + allProcParts[0].slice(1)
+        procedureType = allProcParts.join(' and ')
       } else {
         procedureType = typeName
       }
 
       summary = procedureType
 
-      // Check if implants were removed
-      if (item.implantsRemoved === 'Yes' || item.yearRemoved) {
-        if (item.year) {
-          summary += ` (${item.year}, removed`
-          if (item.yearRemoved) {
-            summary += ` ${item.yearRemoved}`
-          }
-          summary += ')'
+      // implantsRemoved is stored as an array from checkboxes
+      const isImplantsRemoved = Array.isArray(item.implantsRemoved)
+        ? item.implantsRemoved.length > 0
+        : Boolean(item.implantsRemoved)
+
+      // Build parenthetical details
+      const implantDetails = []
+      if (item.year) implantDetails.push(item.year)
+      if (isImplantsRemoved || item.yearRemoved) {
+        if (item.yearRemoved) {
+          implantDetails.push(`removed ${item.yearRemoved}`)
         } else {
-          summary += ' (removed'
-          if (item.yearRemoved) {
-            summary += ` ${item.yearRemoved}`
-          }
-          summary += ')'
+          implantDetails.push('removed')
         }
-      } else if (item.year) {
-        summary += ` (${item.year})`
+      }
+      if (implantDetails.length) {
+        summary += ` (${implantDetails.join(', ')})`
       }
       return summary
 
@@ -251,15 +344,17 @@ const countMedicalHistoryItems = (medicalHistory) => {
 /**
  * Summarise a single symptom into a concise string
  *
+ * Output is lowercase - run through the sentenceCase filter when displaying
+ *
  * @param {Object} symptom - The symptom object
- * @returns {string} A summary string like "Lump (right breast)" or "Nipple change: bloody discharge (both nipples)"
+ * @returns {string} A summary string like "lump (right breast)" or "nipple change: bloody discharge (both nipples)"
  */
 const summariseSymptom = (symptom) => {
   if (!symptom || !symptom.type) {
     return ''
   }
 
-  let summary = symptom.type
+  let summary = startLowerCase(symptom.type)
 
   // Add sub-type details for specific symptom types
   if (symptom.type === 'Nipple change' && symptom.nippleChangeType) {
@@ -267,15 +362,15 @@ const summariseSymptom = (symptom) => {
       symptom.nippleChangeType === 'other' && symptom.nippleChangeDescription
         ? symptom.nippleChangeDescription
         : symptom.nippleChangeType
-    summary += `: ${changeType}`
+    summary += `, ${changeType}`
   } else if (symptom.type === 'Skin change' && symptom.skinChangeType) {
     const changeType =
       symptom.skinChangeType === 'other' && symptom.skinChangeDescription
         ? symptom.skinChangeDescription
         : symptom.skinChangeType
-    summary += `: ${changeType}`
+    summary += `, ${changeType}`
   } else if (symptom.type === 'Other' && symptom.otherDescription) {
-    summary = symptom.otherDescription
+    summary = startLowerCase(symptom.otherDescription)
   }
 
   // Add location
@@ -315,6 +410,11 @@ const summariseSymptom = (symptom) => {
 
   if (location) {
     summary += ` (${location})`
+  }
+
+  // Flag signs noted by the mammographer rather than reported by the participant
+  if (symptom.isMammographerObserved) {
+    summary = `sign: ${summary}`
   }
 
   return summary
@@ -372,89 +472,175 @@ const summariseBreastFeatures = (features) => {
     .filter(Boolean)
 }
 
+// Pregnancy and breastfeeding options, in display order. The stored value and
+// the label shown back to the user come from here, so the form and every
+// summary can never drift apart.
+const pregnancyAndBreastfeedingOptions = [
+  {
+    value: 'currently-pregnant',
+    text: 'Currently pregnant'
+  },
+  {
+    value: 'currently-breastfeeding',
+    text: 'Currently breastfeeding'
+  },
+  {
+    divider: 'or'
+  },
+  {
+    value: 'stopped-less-than-3-months',
+    text: 'Pregnancy or breastfeeding stopped less than 3 months ago',
+    behaviour: 'exclusive'
+  }
+]
+
 /**
- * Summarise other relevant medical information (HRT, pregnancy/breastfeeding, other info)
+ * Normalise a checkbox group's stored value to an array
  *
- * @param {Object} medicalInformation - The medicalInformation object from event
+ * A checkbox group posts a bare string when one box is ticked and an array
+ * when several are, so the stored value needs coercing before anything can
+ * read it.
+ *
+ * @param {*} value - The stored value
+ * @returns {Array<string>} The value as an array, empty if nothing is stored
+ */
+const toCheckboxArray = (value) => {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean)
+  }
+
+  return value ? [value] : []
+}
+
+/**
+ * Read the pregnancy and breastfeeding answers off an appointment's medical
+ * information
+ *
+ * A checkbox group stores a bare string when one box is ticked and an array
+ * when several are, so reading it here means callers get one shape to work
+ * with rather than repeating the coercion.
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {{values: Array<string>, summaries: Array<string>, options: Array<Object>}}
+ */
+const getPregnancyAndBreastfeeding = (medicalInformation) => {
+  return {
+    values: toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding),
+    summaries: summarisePregnancyAndBreastfeeding(medicalInformation),
+    options: pregnancyAndBreastfeedingOptions
+  }
+}
+
+/**
+ * Read the breast density factors off an appointment's medical information
+ *
+ * Breast density factors are a display grouping rather than a stored object -
+ * they pull together the separately stored HRT answer and pregnancy and
+ * breastfeeding answers.
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {{hrt: Object, hrtSummary: string|null, pregnancyAndBreastfeeding: Object, count: number, summaries: Array<string>}}
+ */
+const getBreastDensityFactors = (medicalInformation) => {
+  const hrt = medicalInformation?.hrt || {}
+  const pregnancyAndBreastfeeding =
+    getPregnancyAndBreastfeeding(medicalInformation)
+
+  return {
+    hrt,
+    hrtSummary: summariseHrt(medicalInformation),
+    pregnancyAndBreastfeeding,
+    // Every recorded answer counts, a "no" to HRT included - recently stopping
+    // matters as much as currently taking it. Use this to decide whether to
+    // show the section at all, and for the "n added" line
+    count: (hrt.status ? 1 : 0) + pregnancyAndBreastfeeding.values.length,
+    summaries: summariseBreastDensityFactors(medicalInformation)
+  }
+}
+
+/**
+ * Summarise the pregnancy and breastfeeding answers into an array of labels
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
  * @returns {Array<string>} Array of summary strings
  */
-const summariseOtherRelevantInformation = (medicalInformation) => {
-  if (!medicalInformation) {
-    return []
+const summarisePregnancyAndBreastfeeding = (medicalInformation) => {
+  const factors = toCheckboxArray(medicalInformation?.pregnancyAndBreastfeeding)
+
+  // Both at once reads better as one line than as two
+  if (
+    factors.includes('currently-pregnant') &&
+    factors.includes('currently-breastfeeding')
+  ) {
+    return ['Currently pregnant and breastfeeding']
   }
 
-  const summaries = []
+  return pregnancyAndBreastfeedingOptions
+    .filter((option) => option.value && factors.includes(option.value))
+    .map((option) => option.text)
+}
 
-  // HRT summary
-  const hrt = medicalInformation.hrt
-  if (hrt) {
-    if (hrt.hrtQuestion === 'yes') {
-      summaries.push(
-        `Taking HRT (started ${hrt.hrtDateStarted || 'date not specified'})`
-      )
-    } else if (hrt.hrtQuestion === 'no-recently-stopped') {
-      if (hrt.hrtDateStopped) {
-        summaries.push(`Recently stopped HRT (stopped ${hrt.hrtDateStopped})`)
-      } else {
-        summaries.push('Recently stopped HRT')
-      }
-    }
-    // Don't add anything for 'no' - that's the default/negative state
+/**
+ * Summarise breast density factors into an array of summary strings
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {Array<string>} Array of summary strings
+ */
+const summariseBreastDensityFactors = (medicalInformation) => {
+  const hrtSummary = summariseHrt(medicalInformation)
+
+  return (hrtSummary ? [hrtSummary] : []).concat(
+    summarisePregnancyAndBreastfeeding(medicalInformation)
+  )
+}
+
+/**
+ * Summarise the HRT answer, including the year if one was recorded
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {string|null} Summary string, or null if the question wasn't answered
+ */
+const summariseHrt = (medicalInformation) => {
+  const hrt = medicalInformation?.hrt || {}
+
+  // The year fields only ever ask for an approximate year, so the summaries
+  // say so rather than reading as an exact date
+  if (hrt.status === 'yes') {
+    return hrt.yearStarted
+      ? `Currently taking HRT (approximate start: ${hrt.yearStarted})`
+      : 'Currently taking HRT'
   }
 
-  // Pregnancy and breastfeeding summary
-  const pregBf = medicalInformation.pregnancyAndBreastfeeding
-  if (pregBf) {
-    // Pregnancy
-    if (pregBf.pregnancyStatus === 'yes') {
-      if (pregBf.pregnancyDueDate) {
-        summaries.push(`Pregnant (due ${pregBf.pregnancyDueDate})`)
-      } else {
-        summaries.push('Pregnant')
-      }
-    } else if (pregBf.pregnancyStatus === 'noButRecently') {
-      if (pregBf.pregnancyEndDate) {
-        summaries.push(`Recently pregnant (ended ${pregBf.pregnancyEndDate})`)
-      } else {
-        summaries.push('Recently pregnant')
-      }
-    }
-
-    // Breastfeeding
-    if (pregBf.breastfeedingStatus === 'yes') {
-      if (pregBf.breastfeedingStartDate) {
-        summaries.push(
-          `Breastfeeding (started ${pregBf.breastfeedingStartDate})`
-        )
-      } else {
-        summaries.push('Breastfeeding')
-      }
-    } else if (pregBf.breastfeedingStatus === 'recentlyStopped') {
-      if (pregBf.breastfeedingStopDate) {
-        summaries.push(
-          `Recently breastfeeding (stopped ${pregBf.breastfeedingStopDate})`
-        )
-      } else {
-        summaries.push('Recently breastfeeding')
-      }
-    }
+  if (hrt.status === 'no') {
+    return hrt.yearStopped
+      ? `Not currently taking HRT (approximate stop: ${hrt.yearStopped})`
+      : 'Not currently taking HRT'
   }
 
-  // Other medical information (free text)
-  if (medicalInformation.otherMedicalInformation) {
-    // Truncate if very long, otherwise show as-is
-    const otherInfo = medicalInformation.otherMedicalInformation.trim()
-    if (otherInfo.length > 100) {
-      summaries.push(otherInfo.substring(0, 100) + '...')
-    } else {
-      summaries.push(otherInfo)
-    }
+  return null
+}
+
+/**
+ * Summarise the free-text other medical information, truncating if long
+ *
+ * @param {Object} medicalInformation - The medicalInformation object from appointment
+ * @returns {string|null} Summary string, or null if there's nothing recorded
+ */
+const summariseOtherMedicalInformation = (medicalInformation) => {
+  const otherInfo = medicalInformation?.otherMedicalInformation?.trim()
+
+  if (!otherInfo) {
+    return null
   }
 
-  return summaries
+  return otherInfo.length > 100 ? otherInfo.substring(0, 100) + '...' : otherInfo
 }
 
 module.exports = {
+  isValidMedicalHistoryType,
+  getMedicalHistoryType,
+  getMedicalHistoryKeyFromSlug,
+  isMedicalHistoryItemRemoved,
   summariseMedicalHistoryItem,
   summariseMedicalHistory,
   getMedicalHistoryItems,
@@ -463,5 +649,10 @@ module.exports = {
   summariseSymptoms,
   summariseBreastFeature,
   summariseBreastFeatures,
-  summariseOtherRelevantInformation
+  getBreastDensityFactors,
+  getPregnancyAndBreastfeeding,
+  summariseBreastDensityFactors,
+  summarisePregnancyAndBreastfeeding,
+  summariseHrt,
+  summariseOtherMedicalInformation
 }

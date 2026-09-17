@@ -1,0 +1,25 @@
+// app/assets/sass/components/_clinic-appointments-table.scss
+// Appointment tables on the clinic pages (clinic view and close clinic)
+
+.app-clinic-appointments-table {
+  table-layout: fixed;
+  width: 100%;
+
+  .app-clinic-appointments-table__time-column {
+    width: 22%;
+  }
+
+  .app-clinic-appointments-table__status-column {
+    width: 25%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 30%;
+  }
+}
+
+// Flush variant - sits at the bottom of a card, which provides the spacing,
+// so drop the final row border
+.app-clinic-appointments-table--flush .nhsuk-table__body tr:last-child .nhsuk-table__cell {
+  border-bottom: 0;
+}

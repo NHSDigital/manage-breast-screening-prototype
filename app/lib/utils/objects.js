@@ -52,6 +52,24 @@ const getObjectValues = (obj, options = {}) => {
   return values
 }
 
+/**
+ * Shallow-merge two objects, the second winning.
+ *
+ * For templates building a variant of a set of values - a filtered URL that
+ * changes one filter and carries the rest.
+ *
+ * @param {object} target - The base object
+ * @param {object} [changes] - Values to override with
+ * @returns {object} A new merged object
+ * @example
+ * mergeObjects({ scope: 'open', state: 'x' }, { state: 'y' })
+ * // Returns { scope: 'open', state: 'y' }
+ */
+const mergeObjects = (target, changes = {}) => {
+  return { ...(target || {}), ...(changes || {}) }
+}
+
 module.exports = {
-  getObjectValues
+  getObjectValues,
+  mergeObjects
 }

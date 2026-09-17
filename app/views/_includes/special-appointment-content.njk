@@ -1,9 +1,9 @@
 {# app/views/_includes/special-appointment-content.njk #}
 {# 
   Displays special appointment needs with bold category headings and details
-  Requires: event object with specialAppointment data
+  Requires: appointment object with specialAppointment data
 #}
-{% set specialAppointmentData = event.specialAppointment %}
+{% set specialAppointmentData = appointment.specialAppointment %}
 {% if specialAppointmentData and specialAppointmentData.supportTypes %}
   {% for supportType in specialAppointmentData.supportTypes %}
     {# Skip the _unchecked form artifact #}

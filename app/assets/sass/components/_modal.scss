@@ -64,6 +64,7 @@ body.app-modal-open {
 // Close button — black square with white ×, flush with top-right of modal border
 .app-modal__close {
   position: absolute;
+  z-index: 1; // stay above scrollable content (cards etc.) inside the modal
   top: -$nhsuk-focus-width;
   right: -$nhsuk-focus-width;
   display: flex;

@@ -27,13 +27,10 @@ if (!fs.existsSync(generatedDataPath)) {
   fs.mkdirSync(generatedDataPath)
 }
 
-let participants = []
-let clinics = []
-let events = []
 let generationInfo = {
   generatedAt: 'Never',
   seedDataProfile: DEFAULT_SEED_DATA_PROFILE,
-  stats: { participants: 0, clinics: 0, events: 0 }
+  stats: { participants: 0, clinics: 0, appointments: 0, episodes: 0 }
 }
 
 // Load generation info
@@ -73,16 +70,16 @@ if (needsRegeneration(generationInfo)) {
   if (!generationInfo.seedDataProfile) {
     generationInfo.seedDataProfile = DEFAULT_SEED_DATA_PROFILE
   }
+
+  // The shared data store may already have loaded the stale files (require
+  // order at boot), so reload it now the generator has written fresh ones
+  require('../lib/data-store').reload()
 }
 
-// Load generated data
-try {
-  participants = require('./generated/participants.json').participants
-  clinics = require('./generated/clinics.json').clinics
-  events = require('./generated/events.json').events
-} catch (err) {
-  console.warn('Error loading generated data:', err)
-}
+// The generated collections (participants, clinics, appointments) are NOT loaded
+// here: they live in the shared data store (app/lib/data-store.js) and are
+// attached to each request by middleware in app/routes.js, so they never get
+// copied into (or serialised with) sessions. Same for generationInfo.
 
 const defaultSettings = {
   darkMode: 'false',
@@ -95,10 +92,10 @@ const defaultSettings = {
     ...createSeedProfilesState(),
     selectedKey: generationInfo.seedDataProfile
   },
-  screening: {
+  appointment: {
     confirmIdentityOnCheckIn: 'true',
     manualImageCollection: 'true',
-    showParticipantSection: 'false',
+    showParticipantSection: 'true',
     useCondensedReviewSummaries: 'true',
     addedToWorklist: 'true',
     imageStreaming: {
@@ -107,6 +104,7 @@ const defaultSettings = {
     }
   },
   reading: {
+    indexLayout: 'simple', // 'simple' | 'complex'
     blindReading: config.reading.blindReading,
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',
@@ -118,9 +116,17 @@ const defaultSettings = {
     annotationsMode: 'with-images-simple', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
-    arbitrationPolicy: 'discordant_only', // 'discordant_only' | 'all_non_normal'
+    finalisationDelay: '60', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
     lazySessions: 'true',
-    defaultSessionSize: '25'
+    defaultSessionSize: '25',
+    arbitration: {
+      policy: 'discordant_only', // 'discordant_only' | 'all_recalls' | 'all_non_normal'
+      showReads: 'on_demand', // 'blind' | 'on_demand' - when the original reads appear on the opinion page
+      revealStyle: 'tabs', // 'expander' | 'card' | 'modal' | 'tabs' - how on_demand presents the reads
+      confirmDecision: 'true', // show the review page before saving an arbitration decision
+      hideReadsUntilArbitrated: 'true', // overview hides the original opinions until the case is arbitrated
+      lazySessions: 'true'
+    }
   }
 }
 
@@ -132,10 +138,6 @@ const defaults = {
   breastScreeningUnits,
   allBreastScreeningUnits,
   screeningRooms,
-  participants,
-  clinics,
-  events,
-  generationInfo,
   config,
   settings: defaultSettings,
   defaultSettings,

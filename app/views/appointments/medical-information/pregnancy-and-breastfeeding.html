@@ -1,0 +1,50 @@
+{# app/views/appointments/medical-information/pregnancy-and-breastfeeding.html #}
+
+{% extends parentLayout or 'layout-appointment.html' %}
+
+{% set pageHeading = "Pregnancy and breastfeeding" %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% set formAction = './../review-medical-information' | getReturnUrl(referrerChain, query.scrollTo) %}
+
+{% block pageContent %}
+
+  {% set pregnancyAndBreastfeeding = appointment.medicalInformation | getPregnancyAndBreastfeeding %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullName }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {{ checkboxes({
+    name: "appointment[medicalInformation][pregnancyAndBreastfeeding]",
+    values: pregnancyAndBreastfeeding.values,
+    classes: "nhsuk-checkboxes--small",
+    fieldset: {
+      legend: {
+        text: "Is " + participant.demographicInformation.firstName + " pregnant or breastfeeding?",
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: pregnancyAndBreastfeeding.options
+  }) }}
+
+  {{ button({
+    text: "Save"
+  }) }}
+
+  {% if pregnancyAndBreastfeeding.values | length %}
+    {% set deleteHref %}
+      ./pregnancy-and-breastfeeding/delete{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
+    {% endset %}
+    <p class="nhsuk-u-margin-top-4">
+      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
+        Delete this item
+      </a>
+    </p>
+  {% endif %}
+
+{% endblock %}

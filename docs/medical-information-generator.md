@@ -1,0 +1,1151 @@
+# Medical information generator
+
+How medical information is generated and stored in the seed data. This started as the plan for the consolidated generator, which now exists at `app/lib/generators/medical-information-generator.js`. Where this doc and the generators disagree, the code is right.
+
+## Overview
+
+The prototype generates seed data to populate a breast screening management system. **Medical information** is the umbrella term covering:
+
+- **Medical history** (breast cancer, mastectomy, implants, etc.) - ✅ _implemented (all 7 types)_
+- **Symptoms** (lumps, pain, nipple changes, etc.) - ✅ _implemented_
+- **Breast density factors** (HRT, pregnancy, breastfeeding) - ✅ _implemented_
+- **Other medical information** (freetext) - ✅ _implemented_
+- **Breast features** (moles, scars, etc.) - ✅ _implemented_
+
+## Data Architecture
+
+### Storage Locations
+
+#### Participant Object
+
+```javascript
+participant: {
+  id: string,
+  medicalInformation: {
+    nhsNumber: string,
+    gp: { name, practiceName, address }
+  },
+}
+```
+
+#### Appointment Object
+
+```javascript
+appointment: {
+  id: string,
+  participantId: string,
+  medicalInformation: {
+    symptoms: [],                    // ✅ Array of symptom objects
+    hrt: {},                         // ✅ status ('yes'/'no') plus optional year - absent if not asked
+    pregnancyAndBreastfeeding: [],   // ✅ Any of the pregnancy/breastfeeding values - absent if none
+    otherMedicalInformation: string, // ✅ Freetext medical info
+    breastFeatures: [],              // ✅ Array of breast feature objects
+    medicalHistory: {                // Object with arrays for each type
+      breastCancer: [],
+      mastectomyLumpectomy: [],
+      implantedMedicalDevice: [],
+      breastImplantsAugmentation: [],
+      cysts: [],
+      benignLumps: [],
+      otherProcedures: []
+    }
+  }
+}
+```
+
+**Important:** Medical information is primarily stored at the **appointment level**, not the participant level. This is intentional as it represents information collected during appointments.
+
+## Generator Pattern
+
+### File Structure
+
+Generators live in `app/lib/generators/` and follow a consistent pattern:
+
+```
+app/lib/generators/
+├── participant-generator.js                      # Generates participant records
+├── appointment-generator.js                            # Generates appointment records
+├── medical-information-generator.js              # ✅ Umbrella generator for all medical info
+├── medical-information/                          # ✅ Subfolder for medical info generators
+│   ├── symptoms-generator.js                     # ✅ Generates symptoms
+│   ├── breast-density-factors-generator.js       # ✅ Generates HRT, pregnancy and breastfeeding data
+│   ├── other-medical-information-generator.js    # ✅ Generates freetext medical info
+│   ├── breast-features-generator.js              # ✅ Generates breast features
+│   └── medical-history-generator.js              # ✅ Generates medical history
+├── special-appointment-generator.js
+└── [new]-generator.js                            # Your new generator here
+```
+
+### Generator Template
+
+```javascript
+// app/lib/generators/[type]-generator.js
+
+const { faker } = require('@faker-js/faker')
+const weighted = require('weighted')
+const generateId = require('../utils/id-generator')
+
+// Configuration with weights and options
+const CONFIG = {
+  // Define options with weights for realistic distribution
+  someOption: {
+    weight: 0.5,
+    values: ['option1', 'option2']
+  }
+}
+
+/**
+ * Generate a single item
+ * @param {object} [options] - Generation options
+ * @returns {object} Generated item
+ */
+const generateItem = (options = {}) => {
+  return {
+    id: generateId(),
+    // ... your fields here
+    dateAdded: new Date().toISOString(),
+    addedByUserId: options.addedByUserId || null
+  }
+}
+
+/**
+ * Generate multiple items
+ * @param {object} [options] - Generation options
+ * @param {number} [options.probability] - Chance of having any items (0-1)
+ * @param {number} [options.maxItems] - Maximum number of items to generate
+ * @returns {Array} Array of generated items
+ */
+const generateItems = (options = {}) => {
+  const { probability = 0.15, maxItems = 3 } = options
+
+  // Check if they have any items at all
+  if (Math.random() > probability) {
+    return []
+  }
+
+  // Weighted selection for how many
+  const numberOfItems = weighted.select({
+    1: 0.7,
+    2: 0.2,
+    3: 0.1
+  })
+
+  // Generate items
+  return Array.from({ length: Math.min(numberOfItems, maxItems) }, () =>
+    generateItem(options)
+  )
+}
+
+module.exports = {
+  generateItem,
+  generateItems
+}
+```
+
+### Key Principles
+
+1. **Use weighted randomization** - Makes data feel realistic
+2. **Export both singular and plural functions** - Allows flexibility
+3. **Accept an options parameter** - Enables overrides for test scenarios
+4. **Use faker for realistic fake data** - Generates convincing names, dates, etc.
+5. **Generate IDs consistently** - Use the shared `generateId()` utility
+
+## Existing Medical Information Generators
+
+### Symptoms Generator
+
+**File:** `app/lib/generators/medical-information/symptoms-generator.js`
+
+**Key features:**
+
+- Generates symptoms based on symptom types from `app/data/symptom-types.js`
+- Each symptom type has configuration (weight, requiresLocation, descriptions)
+- Handles type-specific fields (e.g., nippleChangeType for nipple changes)
+- Marks symptoms as significant based on type
+- 15% probability of participants having symptoms
+- Weighted towards 1 symptom (80%), 2 symptoms (15%), 3 symptoms (5%)
+
+**Data structure:**
+
+```javascript
+{
+  id: string,
+  type: string,                    // e.g., 'Lump', 'Breast pain'
+  dateType: string,                // 'dateKnown', 'Less than 3 months', etc.
+  hasBeenInvestigated: 'yes'|'no',
+  isSignificant: boolean,
+  location: string,                // For most types
+  // Type-specific fields...
+  dateAdded: string (ISO),
+  addedByUserId: string
+}
+```
+
+**Integration:** Called from umbrella generator for completed appointments only.
+
+### Breast density factors generator
+
+**File:** `app/lib/generators/medical-information/breast-density-factors-generator.js`
+
+Replaces the separate HRT and pregnancy/breastfeeding generators. The question is now a simple yes/no for HRT plus a checkbox group for pregnancy and breastfeeding, so the generated data is just as simple.
+
+**Key features:**
+
+- Generates the factors that affect breast density: HRT, pregnancy and breastfeeding
+- 80% default probability the question was asked at all — if it wasn't, `hrt` is left unset, so summaries can distinguish “not answered” from a recorded “no”
+- 30% default probability of currently taking HRT
+- 5% default probability of being pregnant or breastfeeding (appropriate for the screening age group), split 70/30 towards breastfeeding
+- Returns a plain object of keys the umbrella generator merges with `Object.assign`, rather than a nested sub-object
+
+**Options:**
+
+```javascript
+generateBreastDensityFactors({
+  probabilityOfHrt: 0.3,                      // Chance of currently taking HRT
+  probabilityOfPregnancyBreastfeeding: 0.05,  // Chance of being pregnant or breastfeeding
+  probabilityOfBeingAsked: 0.8                // Chance the question was asked at all
+})
+```
+
+**Data structure:**
+
+```javascript
+{
+  // Absent if the question wasn't asked. yearStarted is only set when taking HRT;
+  // yearStopped is only ever entered by a user
+  hrt: {
+    status: 'yes' | 'no',
+    yearStarted: string,
+    yearStopped: string
+  },
+  // Absent if none apply
+  pregnancyAndBreastfeeding: [
+    'currently-pregnant' | 'currently-breastfeeding' | 'stopped-less-than-3-months'
+  ]
+}
+```
+
+**Integration:** Called from umbrella generator for completed appointments only.
+
+### Other Medical Information Generator
+
+**File:** `app/lib/generators/medical-information/other-medical-information-generator.js`
+
+**Key features:**
+
+- Generates freetext medical information
+- Realistic examples of other health conditions and medications
+- Simple string field
+- 20% default probability
+
+**Data structure:**
+
+```javascript
+string  // e.g., 'Takes warfarin for atrial fibrillation. Last INR check was two weeks ago.'
+```
+
+**Integration:** Called from umbrella generator for completed appointments only.
+
+### Breast Features Generator
+
+**File:** `app/lib/generators/medical-information/breast-features-generator.js`
+
+**Key features:**
+
+- Generates visible breast features marked on anatomical diagram
+- Feature types: moles, warts, non-surgical scars, bruising/trauma, other
+- Uses anatomical regions from breast diagram with SVG coordinates
+- Separate probability controls for having any features vs multiple features
+- Smart positioning with slight randomness to avoid perfect centering
+- Weighted towards more visible anatomical areas
+- Avoids generating multiple features in same region
+- 15% default probability of having any features
+- 30% chance of multiple if they have any (weighted towards 2 features)
+
+**Data structure:**
+
+```javascript
+[
+  {
+    id: number,                       // Unique ID
+    number: number,                   // Display number (1, 2, 3...)
+    text: string,                     // e.g., 'Mole', 'Wart', 'Other: Birthmark'
+    region: string,                   // Anatomical region name (e.g., 'upper outer')
+    side: string,                     // 'left', 'right', or 'center'
+    centerX: number,                  // SVG X coordinate for positioning
+    centerY: number                   // SVG Y coordinate for positioning
+  }
+]
+```
+
+**Integration:** Called from umbrella generator for completed appointments only. No user attribution needed (features are visual markers, not clinical records).
+
+## Medical History Types Status
+
+**Implemented (all 7):**
+- ✅ Breast cancer
+- ✅ Implanted medical device
+- ✅ Breast implants/augmentation
+- ✅ Mastectomy/lumpectomy
+- ✅ Cysts
+- ✅ Benign lumps
+- ✅ Other procedures
+
+## Medical History Types
+
+### Configuration
+
+Medical history types are defined in `app/data/medical-history-types.js`:
+
+```javascript
+{
+  type: 'breastCancer',           // camelCase - used as data key
+  name: 'Breast cancer',          // Display name
+  slug: 'breast-cancer',          // kebab-case - used in URLs
+  canHaveMultiple: true,          // Can add multiple entries
+  yearLabel: 'Diagnosis year'     // Label for year field
+}
+```
+
+### Common Fields
+
+All medical history items should include:
+
+```javascript
+{
+  id: string,                      // Unique ID
+  medicalHistoryType: string,      // The type key, e.g. 'breastCancer'
+  dateAdded: string (ISO),         // When added
+  addedBy: string,                 // User ID who added it
+  year: string,                    // Optional year (if applicable)
+  location: string,                // Optional location (where treated)
+  additionalDetails: string        // Optional free text
+}
+```
+
+### Type-Specific Fields
+
+#### Breast Cancer
+
+- `cancerLocation`: array - ['Right breast', 'Left breast', 'Does not know']
+- `proceduresRightBreast`: string - Lumpectomy, Mastectomy types, etc.
+- `proceduresLeftBreast`: string
+- `otherSurgeryRightBreast`: array - Lymph node surgery, Reconstruction, etc.
+- `otherSurgeryLeftBreast`: array
+- `treatmentRightBreast`: array - Radiotherapy types
+- `treatmentLeftBreast`: array
+- `systemicTreatments`: array - Chemotherapy, Hormone therapy, etc.
+- `otherTreatmentDetails`: string (if 'Other treatment' selected)
+
+#### Mastectomy/Lumpectomy
+
+- `proceduresRightBreast`: string - Procedure type
+- `proceduresLeftBreast`: string
+- `otherSurgeryRightBreast`: array - Reconstruction, Symmetrisation
+- `otherSurgeryLeftBreast`: array
+- `mastectomyLumpectomySurgeryReason`: string - Risk reduction or Gender-affirmation (the generator never picks 'Other reason', so no details field is generated)
+
+#### Breast Implants/Augmentation
+
+- `proceduresRightBreast`: array - `['Breast implants']` or `['No procedures']`
+- `proceduresLeftBreast`: array
+- `breastAugmentationReason`: string - Reconstruction, Cosmetic, etc.
+- `consentGiven`: 'yes'|'no' (required if breast implants selected)
+
+#### Implanted Medical Device
+
+- `type`: string - Cardiac device or Hickman line
+- `deviceRemoved`: 'yes'|'no', with `yearRemoved` when removed
+
+#### Cysts
+
+- `cystsStatus`: string - Drainage or removal, or No treatment
+- `additionalDetails`: string
+
+#### Benign Lumps
+
+- `proceduresRightBreast`: array - Needle biopsy, Lump removed
+- `proceduresLeftBreast`: array
+- `year`, `location`, `additionalDetails`
+
+#### Other Procedures
+
+- `type`: string - Breast reduction, Breast symmetrisation, Nipple correction, Other
+- A details field per type, for example `breastReductionDetails`
+- `year`, `additionalDetails`
+
+The generator for all of these is `app/lib/generators/medical-information/medical-history-generator.js`.
+
+## Integration Points
+
+### In appointment-generator.js
+
+✅ **Implemented:** Medical information is added to completed appointments using the umbrella generator:
+
+```javascript
+if (isCompleted(appointmentStatus)) {
+  // Generate medical information (symptoms, medical history, etc.)
+  // All attributed to the user who ran the appointment
+  const medicalInformation = generateMedicalInformation({
+    addedByUserId: appointment.sessionDetails.startedBy,
+    config: participant.config
+  })
+
+  // Store medical information if any was generated
+  if (Object.keys(medicalInformation).length > 0) {
+    appointment.medicalInformation = medicalInformation
+  }
+}
+```
+
+**Key improvements:**
+- ✅ All medical information attributed to `sessionDetails.startedBy` (user who ran the appointment)
+- ✅ Default probabilities set only in umbrella generator (single source of truth)
+- ✅ Supports config overrides for test scenarios
+
+### Umbrella generator
+
+`app/lib/generators/medical-information-generator.js` calls each sub-generator and merges the results into one `medicalInformation` object. It is the single place default probabilities are set:
+
+| Option | Default |
+|---|---|
+| `probabilityOfSymptoms` | 0.15 |
+| `probabilityOfHRT` | 0.3 |
+| `probabilityOfPregnancyBreastfeeding` | 0.05 |
+| `probabilityOfOtherMedicalInfo` | 0.2 |
+| `probabilityOfBreastFeatures` | 0.15 |
+| `probabilityOfMultipleBreastFeatures` | 0.3 |
+| `probabilityOfMedicalHistory` | 0.5 |
+
+It also takes `addedByUserId` (passed to every sub-generator), `forceMedicalHistoryTypes` (an array of type keys to guarantee) and `config` (participant config for overrides). See the JSDoc in the file for the current signature.
+
+### ✅ Medical History Generator (Implemented)
+
+**File:** `app/lib/generators/medical-information/medical-history-generator.js`
+
+**Implemented types (all 7):**
+- ✅ Breast cancer (can have multiple)
+- ✅ Implanted medical device (can have multiple)
+- ✅ Breast implants/augmentation (single entry, includes consent)
+- ✅ Mastectomy/lumpectomy (can have multiple)
+- ✅ Cysts (single entry only)
+- ✅ Benign lumps (can have multiple)
+- ✅ Other procedures (can have multiple)
+
+**Notes:**
+- All field names corrected to match forms (`year` not `procedureYear`, `location` not `treatmentLocation`)
+- Types are selected via weighted probabilities (`typeWeights` in the generator — cysts and benign lumps most common, implants/augmentation least)
+- Multiple types per appointment are possible, without duplicates
+
+## Common Patterns & Helpers
+
+### Weighted Random Selection
+
+```javascript
+const weighted = require('weighted')
+
+// Select one item based on weights
+const choice = weighted.select({
+  'option1': 0.7,  // 70% chance
+  'option2': 0.2,  // 20% chance
+  'option3': 0.1   // 10% chance
+})
+
+// Select multiple items
+const items = weighted.select(
+  ['item1', 'item2', 'item3'],
+  [0.5, 0.3, 0.2],
+  2  // select 2 items
+)
+```
+
+### Generating Dates
+
+```javascript
+const dayjs = require('dayjs')
+
+// Random date in past
+const date = faker.date.past({ years: 5 })
+
+// Specific date format
+const year = dayjs().subtract(faker.number.int({ min: 1, max: 10 }), 'year').year()
+
+// Month and year object (common pattern)
+const dateObject = {
+  month: faker.number.int({ min: 1, max: 12 }),
+  year: faker.number.int({ min: 2015, max: 2024 })
+}
+```
+
+### Avoiding Duplicates
+
+```javascript
+// Track used types/items to avoid duplicates
+const usedTypes = new Set()
+const items = []
+
+while (items.length < numberOfItems) {
+  const availableTypes = allTypes.filter(type => !usedTypes.has(type))
+  if (availableTypes.length === 0) break
+
+  const type = weighted.select(weightsByType(availableTypes))
+  items.push(generateItem({ type }))
+  usedTypes.add(type)
+}
+```
+
+## Gotchas and Pitfalls
+
+### 1. CamelCase vs Kebab-Case
+
+**Problem:** Medical history types use different casing in different contexts.
+
+- **Data storage:** camelCase (e.g., `breastCancer`)
+- **URLs:** kebab-case (e.g., `breast-cancer`)
+- **Display:** Sentence case (e.g., 'Breast cancer')
+
+**Solution:** The routes handle this conversion. Stick to camelCase in generated data.
+
+```javascript
+// In appointments.js routes
+const dataKey = getMedicalHistoryKeyFromSlug(type) || type
+// Converts 'breast-cancer' → 'breastCancer'
+```
+
+### 2. Appointment vs Participant Storage
+
+**Problem:** It's tempting to store medical history on the participant.
+
+**Solution:** Medical information goes on appointments, not participants. This represents information collected during appointments.
+
+### 3. Multiple Entries
+
+**Problem:** Some types can have multiple entries, some cannot.
+
+**Solution:** Check the `canHaveMultiple` flag in `medical-history-types.js`. Store as array regardless, but limit generation accordingly.
+
+```javascript
+const typeConfig = medicalHistoryTypes.find(t => t.type === 'cysts')
+const maxItems = typeConfig.canHaveMultiple ? 3 : 1
+```
+
+### 4. Required vs Optional Fields
+
+**Problem:** Some fields are always required, some only in certain conditions.
+
+**Solution:**
+
+- Always include: `id`, `dateAdded`, `addedBy`
+- Conditionally include based on other selections
+- Make `year`, `additionalDetails`, `location` optional
+- Check underlying form views to see how data is collected
+
+```javascript
+// Example: Only include details if 'Other' was selected
+if (item.reason === 'Other reason') {
+  item.reasonDetails = faker.lorem.sentence()
+}
+```
+
+### 5. Probability Management
+
+**Problem:** Too many participants with medical history looks unrealistic.
+
+**Solution:** Use layered probabilities:
+
+1. 20% chance of ANY medical history
+2. If yes, weighted selection of which types (favour common ones)
+3. For each type, weighted selection of how many entries (favour 1)
+
+```javascript
+// Layer 1: Any medical history?
+if (Math.random() > 0.20) return {}
+
+// Layer 2: Which types?
+const numberOfTypes = weighted.select({
+  1: 0.6,
+  2: 0.3,
+  3: 0.1
+})
+
+// Layer 3: How many of each type? (if canHaveMultiple)
+const numberOfItems = weighted.select({
+  1: 0.8,
+  2: 0.15,
+  3: 0.05
+})
+```
+
+### 6. User IDs
+
+**Problem:** Need to attribute who added medical information.
+
+**Solution:** appointment generator sets a user who completed the appointment - use this user when attributing data
+
+### 7. Test Scenarios & Explicit Overrides
+
+**Problem:** Need specific test data for user research, but test scenarios are awkwardly implemented and passed around.
+
+**Current state:** Test scenarios in `app/data/test-scenarios.js` allow overriding participant/appointment data, but the implementation is clunky:
+
+- Passed through multiple function calls
+- Inconsistent parameter naming
+- Hard to track what can be overridden
+
+**Solution:** Support both complete overrides and forced inclusion in your generators.
+
+#### Complete Override (Replace All)
+
+```javascript
+// Medical history generator
+const generateMedicalHistory = (options = {}) => {
+  // Allow complete override for test scenarios
+  if (options.medicalHistory) {
+    return options.medicalHistory
+  }
+
+  // Normal generation...
+}
+```
+
+#### Forced Inclusion (Guarantee Specific Items)
+
+```javascript
+// Medical history generator
+const generateMedicalHistory = (options = {}) => {
+  const {
+    forceMedicalHistoryTypes = [],  // Force specific types to be included
+    users = []
+  } = options
+
+  const history = {}
+
+  // First, generate any forced types
+  forceMedicalHistoryTypes.forEach(type => {
+    if (type === 'breastCancer') {
+      history.breastCancer = generateBreastCancerHistory({ users })
+    }
+    // ... other types
+  })
+
+  // Then add random types if we want more variety
+  if (Math.random() < someOtherProbability) {
+    // Add additional random types...
+  }
+
+  return history
+}
+```
+
+#### Example Usage in Test Scenarios
+
+```javascript
+// app/data/test-scenarios.js
+{
+  participant: {
+    id: 'test-123',
+    config: {
+      // Force this participant to have specific medical history
+      forceMedicalHistoryTypes: ['breastCancer', 'implantedDevice'],
+
+      // Or provide complete medical history data
+      medicalHistory: {
+        breastCancer: [{
+          id: 'bc-001',
+          cancerLocation: ['Left breast'],
+          proceduresLeftBreast: 'Lumpectomy',
+          year: '2018'
+        }]
+      }
+    }
+  }
+}
+```
+
+#### Pattern for Umbrella Generator
+
+```javascript
+// medical-information-generator.js
+const generateMedicalInformation = (options = {}) => {
+  const { config } = options
+  const medicalInfo = {}
+
+  // Generate symptoms (with possible override)
+  const symptoms = generateSymptoms({
+    ...options,
+    forceSymptomTypes: config?.forceSymptomTypes
+  })
+  if (symptoms.length > 0) {
+    medicalInfo.symptoms = symptoms
+  }
+
+  // Generate medical history (with possible override)
+  const medicalHistory = generateMedicalHistory({
+    ...options,
+    medicalHistory: config?.medicalHistory,  // Complete override
+    forceMedicalHistoryTypes: config?.forceMedicalHistoryTypes  // Force types
+  })
+  if (Object.keys(medicalHistory).length > 0) {
+    medicalInfo.medicalHistory = medicalHistory
+  }
+
+  return medicalInfo
+}
+```
+
+**Note:** This is a known issue - test scenarios work but could be better architected in future refactoring.
+
+### 8. Breast-Specific Fields
+
+**Problem:** Many medical history types ask about left/right breast separately.
+
+**Solution:** Use consistent field naming pattern:
+
+```javascript
+{
+  proceduresRightBreast: string | array,
+  proceduresLeftBreast: string | array,
+  // Can have different values/selections for each side
+}
+```
+
+Not all participants will have procedures on both breasts - weight accordingly:
+
+```javascript
+const breastSelection = weighted.select({
+  'right-only': 0.4,
+  'left-only': 0.4,
+  'both': 0.15,
+  'neither': 0.05
+})
+```
+
+### 9. Date Flexibility
+
+**Problem:** Not all dates are known precisely.
+
+**Solution:** Support multiple date formats:
+
+- Specific date: `{ day, month, year }`
+- Month/Year: `{ month, year }`
+- Year only: `{ year }`
+- Approximate: `"About 3 years ago"`
+
+```javascript
+const dateType = weighted.select({
+  'year-only': 0.6,
+  'month-year': 0.3,
+  'unknown': 0.1
+})
+```
+
+### 10. Consistency Within Appointment
+
+**Problem:** Data should be consistent (e.g., if they had breast cancer, relevant procedures should be present).
+
+**Solution:** Generate related fields together and check for consistency:
+
+```javascript
+// If they had breast cancer on right side, they should have procedures
+if (cancerLocation.includes('Right breast')) {
+  proceduresRightBreast = generateCancerProcedure('right')
+}
+```
+
+### 11. Inconsistent Generator Arguments
+
+**Problem:** Generator function arguments have evolved organically and are inconsistent.
+
+**Examples of inconsistency:**
+
+- Some generators accept `{ users }`, others `{ addedByUserId }`
+- Some use `probability`, others `probabilityOfSymptoms`
+- Parameters added over time without refactoring existing ones
+
+**Solution for new generators:**
+
+- Document what parameters you accept
+- Try to follow existing patterns where they make sense
+- Don't worry about perfect consistency - it's a known issue
+- Focus on making your generator work correctly
+
+```javascript
+// Your generator - be clear about what you accept
+/**
+ * @param {object} options
+ * @param {number} [options.probability=0.20] - Chance of having medical history
+ * @param {Array} [options.users=[]] - Array of user objects for attribution
+ * @param {object} [options.config] - Participant config for overrides
+ */
+const generateMedicalHistory = (options = {}) => {
+  // Extract what you need, provide defaults
+  const { probability = 0.20, users = [], config } = options
+  // ...
+}
+```
+
+## Data Distribution Priorities
+
+**Important:** This is a prototype for usability testing, not a realistic simulation.
+
+### Prioritize Test Coverage Over Realism
+
+- **Over-include** features you want to test in research sessions
+- Don't aim for NHS-realistic statistics
+- Make edge cases more common if they're important to test
+
+Should be possible to set general propabilities, but also say that a test scenario has high probabilities.
+
+**Example probabilities for good test coverage:**
+
+```javascript
+// Testing-friendly distributions (not realistic)
+const MEDICAL_HISTORY_PROBABILITY = 0.30  // 30% have history (higher than real)
+
+const HISTORY_TYPE_WEIGHTS = {
+  breastCancer: 0.15,           // 15% (higher to ensure we test this)
+  mastectomyLumpectomy: 0.20,   // 20% (common in testing)
+  breastImplants: 0.10,         // 10% (higher than real 1-3%)
+  implantedDevice: 0.15,        // 15% (higher to test consent flows)
+  cysts: 0.20,                  // 20% (common, good for testing)
+  benignLumps: 0.15,            // 15%
+  otherProcedures: 0.05         // 5%
+}
+```
+
+### When Realism Matters
+
+Use lower, more realistic probabilities if:
+
+- You want to see what a "normal" clinic day looks like
+- Testing search/filtering features (need more records without the feature)
+- Demonstrating the system to stakeholders
+
+**Realistic NHS distributions** (for reference only):
+
+- Any medical history: 15-25% of screening participants
+- Breast cancer history: 2-5%
+- Benign conditions: 10-15%
+- Breast implants: 1-3%
+- Previous surgery: 3-6%
+- Implanted devices: 2-4%
+
+### Recommendation
+
+**Start high** (30-40% probability) to ensure features appear in testing, then adjust down if needed.
+
+## Testing Your Generator
+
+### Manual Testing
+
+1. Run the generator: `node app/lib/generate-seed-data.js`
+2. Check generated files in `app/data/generated/`
+3. Load the app: `npm run dev`
+4. Navigate to appointments and check medical information displays correctly
+
+### Verification Checklist
+
+- [ ] Data structure matches routes expectations
+- [ ] All required fields are present
+- [ ] Optional fields appear sometimes, not always
+- [ ] Distributions look realistic (not too many/few)
+- [ ] Related fields are consistent with each other
+- [ ] Different types have different probabilities
+- [ ] Data displays correctly in UI
+- [ ] Edit/delete flows work with generated data
+
+## Supporting Test Scenarios: Practical Examples
+
+### Example: Medical History with Override Support
+
+Here's how to structure the medical history generator to support test scenarios:
+
+```javascript
+// app/lib/generators/medical-history-generator.js
+
+const { faker } = require('@faker-js/faker')
+const weighted = require('weighted')
+const generateId = require('../utils/id-generator')
+const medicalHistoryTypes = require('../../data/medical-history-types')
+
+const BREAST_CANCER_PROCEDURES = {
+  'right-only': 0.4,
+  'left-only': 0.4,
+  'both': 0.15,
+  'unknown': 0.05
+}
+
+const PROCEDURE_TYPES = [
+  'Lumpectomy',
+  'Mastectomy (tissue remaining)',
+  'Mastectomy (no tissue remaining)',
+  'No procedure'
+]
+
+const generateBreastCancerItem = (options = {}) => {
+  const { addedByUserId } = options
+
+  // Determine which breast(s) affected
+  const breastAffected = weighted.select(BREAST_CANCER_PROCEDURES)
+
+  const item = {
+    id: generateId(),
+    dateAdded: new Date().toISOString(),
+    addedBy: addedByUserId
+  }
+
+  // Cancer location
+  if (breastAffected === 'right-only') {
+    item.cancerLocation = ['Right breast']
+  } else if (breastAffected === 'left-only') {
+    item.cancerLocation = ['Left breast']
+  } else if (breastAffected === 'both') {
+    item.cancerLocation = ['Right breast', 'Left breast']
+  } else {
+    item.cancerLocation = ['Does not know']
+  }
+
+  // Procedures (if known)
+  if (breastAffected !== 'unknown') {
+    if (breastAffected === 'right-only' || breastAffected === 'both') {
+      item.proceduresRightBreast = faker.helpers.arrayElement(PROCEDURE_TYPES)
+    }
+    if (breastAffected === 'left-only' || breastAffected === 'both') {
+      item.proceduresLeftBreast = faker.helpers.arrayElement(PROCEDURE_TYPES)
+    }
+  }
+
+  // Year (70% of time)
+  if (Math.random() < 0.7) {
+    item.year = faker.number.int({ min: 2010, max: 2023 }).toString()
+  }
+
+  // Treatment details (50% of time)
+  if (Math.random() < 0.5) {
+    item.systemicTreatments = faker.helpers.arrayElements(
+      ['Chemotherapy', 'Hormone therapy'],
+      { min: 0, max: 2 }
+    )
+  }
+
+  return item
+}
+
+const generateMedicalHistory = (options = {}) => {
+  const {
+    probability = 0.20,
+    users = [],
+    medicalHistory,  // Complete override
+    forceMedicalHistoryTypes = []  // Force specific types
+  } = options
+
+  // Support complete override from test scenarios
+  if (medicalHistory) {
+    return medicalHistory
+  }
+
+  const history = {}
+  const addedByUserId = users.length > 0
+    ? faker.helpers.arrayElement(users).id
+    : null
+
+  // Always generate forced types first
+  if (forceMedicalHistoryTypes.includes('breastCancer')) {
+    const numberOfItems = weighted.select({
+      1: 0.9,
+      2: 0.1
+    })
+    history.breastCancer = Array.from({ length: numberOfItems }, () =>
+      generateBreastCancerItem({ addedByUserId })
+    )
+  }
+
+  // If we have forced types, skip probability check - we already have history
+  if (forceMedicalHistoryTypes.length === 0) {
+    // Check if they have any medical history (normal random generation)
+    if (Math.random() > probability) {
+      return {}
+    }
+  }
+
+  // Generate additional random types (if we want more variety beyond forced types)
+  const hasBreastCancer =
+    !history.breastCancer && Math.random() < 0.25  // 25% of those with history
+
+  if (hasBreastCancer) {
+    const numberOfItems = weighted.select({
+      1: 0.9,
+      2: 0.1
+    })
+    history.breastCancer = Array.from({ length: numberOfItems }, () =>
+      generateBreastCancerItem({ addedByUserId })
+    )
+  }
+
+  // Add other types here...
+
+  return history
+}
+
+module.exports = {
+  generateMedicalHistory,
+  generateBreastCancerItem
+}
+```
+
+### Example: Test Scenario with Medical History
+
+```javascript
+// app/data/test-scenarios.js
+module.exports = [
+  {
+    participant: {
+      id: 'medical-history-test',
+      demographicInformation: {
+        firstName: 'Sarah',
+        lastName: 'Johnson',
+        dateOfBirth: '1965-03-15'
+      },
+      config: {
+        appointmentId: 'medhist01',  // ids are opaque strings
+        defaultRiskLevel: 'routine',
+
+        // Force this participant to have breast cancer and implanted device
+        forceMedicalHistoryTypes: ['breastCancer', 'implantedMedicalDevice'],
+
+        // Or provide specific medical history data
+        // medicalHistory: {
+        //   breastCancer: [{
+        //     id: 'bc-specific',
+        //     cancerLocation: ['Left breast'],
+        //     proceduresLeftBreast: 'Lumpectomy',
+        //     year: '2018',
+        //     systemicTreatments: ['Chemotherapy', 'Hormone therapy']
+        //   }]
+        // },
+
+        scheduling: {
+          whenRelativeToToday: 0,
+          status: 'complete',
+          approximateTime: '10:00'
+        }
+      }
+    }
+  }
+]
+```
+
+### How Config Flows Through
+
+```javascript
+// In appointment-generator.js
+const appointment = generateAppointment({
+  slot,
+  participant,
+  clinic,
+  // ...
+})
+
+// Inside generateAppointment, for completed appointments:
+if (isCompleted(appointmentStatus)) {
+  // Pass participant config to medical information generator
+  const medicalInfo = generateMedicalInformation({
+    users,
+    config: participant.config  // Contains forceMedicalHistoryTypes, etc.
+  })
+
+  if (Object.keys(medicalInfo).length > 0) {
+    appointment.medicalInformation = medicalInfo
+  }
+}
+```
+
+## Implementation Progress
+
+### ✅ Completed
+
+1. ✅ **Created umbrella generator:** `app/lib/generators/medical-information-generator.js`
+   - Orchestrates all medical information generation
+   - Reduces complexity in appointment-generator.js
+   - Calls out to specialized generators
+   - Default probabilities set as single source of truth
+
+2. ✅ **Organized file structure:**
+   - Moved symptoms generator to `app/lib/generators/medical-information/`
+   - Medical info generators now in dedicated subfolder
+
+3. ✅ **Updated appointment-generator.js:**
+   - Replaced direct `generateSymptoms()` calls with `generateMedicalInformation()`
+   - Simplified medical information logic
+   - All medical info attributed to `sessionDetails.startedBy`
+
+4. ✅ **Fixed user attribution:**
+   - All medical information attributed to the user who ran the appointment
+   - Consistent across all medical info types
+
+5. ✅ **Implemented symptoms generator:**
+   - Moved to `app/lib/generators/medical-information/symptoms-generator.js`
+   - 15% default probability
+   - Generates realistic symptom data matching form structure
+
+6. ✅ **Implemented HRT generator:**
+   - Since merged into `app/lib/generators/medical-information/breast-density-factors-generator.js`
+   - 30% default probability
+   - Conditional fields based on HRT status
+   - Data matches form structure exactly
+
+7. ✅ **Implemented pregnancy and breastfeeding generator:**
+   - Since merged into `app/lib/generators/medical-information/breast-density-factors-generator.js`
+   - 5% default probability (appropriate for screening age group)
+   - Smart conditional logic (pregnant → not breastfeeding, etc.)
+   - Data matches form structure exactly
+
+   _Both of these were later replaced by the breast density factors generator when the questions were redesigned into a single yes/no plus a checkbox group._
+
+8. ✅ **Implemented other medical information generator:**
+   - Created `app/lib/generators/medical-information/other-medical-information-generator.js`
+   - 15% default probability
+   - Realistic freetext medical information examples
+   - Data matches form structure exactly
+
+9. ✅ **Implemented breast features generator:**
+   - Created `app/lib/generators/medical-information/breast-features-generator.js`
+   - 20% default probability of any features, 30% chance of multiple
+   - Generates features on anatomical diagram with SVG coordinates
+   - Feature types: moles, warts, non-surgical scars, bruising/trauma, other
+   - Smart positioning with regional weighting
+   - Integrated into umbrella generator
+
+### Next Steps
+
+None outstanding — all seven medical history types are implemented with weighted probabilities.
+
+## Related Files
+
+### Core Files
+
+- `app/lib/generate-seed-data.js` - Main generator orchestration
+- `app/lib/generators/appointment-generator.js` - ✅ Updated to use umbrella generator
+
+### Medical Information Generators
+
+- `app/lib/generators/medical-information-generator.js` - ✅ Umbrella generator (orchestrator)
+- `app/lib/generators/medical-information/symptoms-generator.js` - ✅ Symptoms generator
+- `app/lib/generators/medical-information/breast-density-factors-generator.js` - ✅ Breast density factors generator (HRT, pregnancy, breastfeeding)
+- `app/lib/generators/medical-information/other-medical-information-generator.js` - ✅ Other medical info generator
+- `app/lib/generators/medical-information/breast-features-generator.js` - ✅ Breast features generator
+- `app/lib/generators/medical-information/medical-history-generator.js` - ✅ Medical history generator (all 7 types)
+
+### Data & Configuration
+
+- `app/data/medical-history-types.js` - Type definitions for medical history
+
+### Routes & Views (for reference)
+
+- `app/routes/appointments/` - Routes that handle medical information (shows expected data structure)
+- `app/views/_includes/forms/breast-density-factors.njk` - Breast density factors form fields
+- `app/views/appointments/confirm-information/breast-density-factors.html` - Breast density factors edit and review page
+- `app/routes/appointments/medical-information.js` and `app/routes/appointments/medical-history.js` - Routes that handle medical information (show expected data structure)
+- `app/views/appointments/medical-information/other-medical-information.html` - Other medical info form template
+- `app/views/appointments/medical-information/record-breast-features.html` - Breast features diagram interface
+- `app/views/appointments/medical-information/medical-history/*.html` - Medical history form templates

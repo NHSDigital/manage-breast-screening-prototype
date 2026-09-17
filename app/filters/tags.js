@@ -9,6 +9,8 @@ const { getStatusTagColour, getStatusText } = require('../lib/utils/status')
  *
  * @param {string} status - Status to convert
  * @param {object} [options] - Optional configuration
+ * @param {string} [options.vocabulary] - Status vocabulary to look in
+ *   (e.g. 'appointment', 'clinic' - see STATUS_TAGS in lib/utils/status.js)
  * @returns {string} HTML for tag component
  */
 const toTag = (status, options = {}) => {
@@ -16,7 +18,9 @@ const toTag = (status, options = {}) => {
 
   // Format the status text for display
   const text =
-    options.text || getStatusText(status) || sentenceCase(formatWords(status))
+    options.text ||
+    getStatusText(status, options.vocabulary) ||
+    sentenceCase(formatWords(status))
 
   // Format the status for use in class names
   const statusForClass = snakeCase(status)
@@ -24,8 +28,8 @@ const toTag = (status, options = {}) => {
   // Get the colour class
   const colourClass =
     options.colour ||
-    getStatusTagColour(status) ||
-    getStatusTagColour(statusForClass)
+    getStatusTagColour(status, options.vocabulary) ||
+    getStatusTagColour(statusForClass, options.vocabulary)
 
   // Build classes string
   const classes = [

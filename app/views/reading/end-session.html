@@ -1,0 +1,87 @@
+{# app/views/reading/end-session.html #}
+{# Ending a session early. Opened in place by the modal system where it's on,
+   and works as an ordinary page where it isn't. #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% set isArbitration = session.type == 'arbitration' %}
+{% set pageHeading = "End this session" %}
+{% set formAction = "./end-answer" %}
+{% set back = {
+  href: "/reading/session/" + session.id,
+  text: "Back to session"
+} %}
+
+{% set remainingCount = sessionProgress.targetRemaining if sessionProgress else 0 %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ session.name }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  {% if remainingCount > 0 %}
+    <p>
+      {{ remainingCount }} {{ "case" | pluralise(remainingCount) }} will be returned to the {{ "arbitration" if isArbitration else "reading" }} list.
+    </p>
+  {% endif %}
+
+  {# Nothing is finalised by ending. Where reads are outstanding, the reader
+     gets the choice they'd otherwise have to make from the session overview. #}
+  {% if unfinalisedReadCount > 0 %}
+    {% set recordNoun = "outcome" if isArbitration else "opinion" %}
+    {# Each record finalises on its own delay, so several of them finalise
+       across a span of time rather than all at once #}
+    {% set firstFinaliseTime = autoFinaliseAt | formatTimeString %}
+    {% set lastFinaliseTime = lastAutoFinaliseAt | formatTimeString %}
+    {% set leaveHint %}
+      {%- if autoFinaliseAt and lastFinaliseTime and lastFinaliseTime != firstFinaliseTime -%}
+        Between {{ autoFinaliseAt | formatTimeSpan(lastAutoFinaliseAt) }}
+      {%- elseif autoFinaliseAt -%}
+        At {{ firstFinaliseTime }}
+      {%- else -%}
+        {{ "They" if unfinalisedReadCount > 1 else "It" }} will stay unfinalised until you finalise {{ "them" if unfinalisedReadCount > 1 else "it" }}
+      {%- endif -%}
+    {% endset %}
+
+    {% set legendText %}
+      {{ unfinalisedReadCount }} {{ recordNoun | pluralise(unfinalisedReadCount) }} {{ "are" if unfinalisedReadCount > 1 else "is" }} not yet finalised
+    {% endset %}
+
+    {{ radios({
+      idPrefix: "finalise-reads",
+      name: "endSessionTemp[finalise]",
+      fieldset: {
+        legend: {
+          text: legendText | trim,
+          size: "m"
+        }
+      },
+      items: [
+        {
+          value: "yes",
+          text: "Finalise " + ("them" if unfinalisedReadCount > 1 else "it") + " now",
+          checked: data.endSessionTemp.finalise == "yes"
+        },
+        {
+          value: "no",
+          text: "Wait for " + ("them" if unfinalisedReadCount > 1 else "it") + " to automatically finalise",
+          hint: { text: leaveHint | trim },
+          checked: data.endSessionTemp.finalise == "no"
+        }
+      ]
+    } | populateErrors) }}
+  {% endif %}
+
+  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+    {{ button({ text: "End session", classes: "nhsuk-u-margin-bottom-0" }) }}
+    {{ appLink({
+      text: "Cancel",
+      href: "/reading/session/" + session.id,
+      classes: "nhsuk-link--no-visited-state nhsuk-button-group__item",
+      attributes: { "data-modal-action": "close" }
+    }) }}
+  </div>
+
+{% endblock %}

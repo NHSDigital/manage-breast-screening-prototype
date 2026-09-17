@@ -1458,7 +1458,26 @@
         "status": "abnormal",
         "finding": "lymph-nodes",
         "location": "axillary"
-      }
+      },
+      "annotations": [
+        {
+          "side": "right",
+          "positions": {
+            "rmlo": {
+              "x": 0.548,
+              "y": 0.132
+            },
+            "rcc": {
+              "x": 0.784,
+              "y": 0.318
+            }
+          },
+          "scale": 2.5,
+          "abnormalityType": "Asymmetric density",
+          "levelOfConcern": "4",
+          "notes": "Enlarged axillary lymph nodes"
+        }
+      ]
     },
     {
       "id": "set-06",

@@ -4,11 +4,11 @@
   { id: 'appointment', label: 'Appointment' },
   { id: 'participant', label: 'Participant' },
   { id: 'medical-information', label: 'Medical information' },
-  { id: 'images', label: 'Images' } if event | isCompleted,
+  { id: 'images', label: 'Images' } if appointment | isCompleted,
   { id: 'appointment-note', label: 'Note' }
 ] | removeEmpty) %}
   {% set href -%}
-    /clinics/{{ clinicId }}/events/{{event.id}}{{ ("/" + item.id) if item.id !== 'all' }}
+    /clinics/{{ clinicId }}/appointments/{{appointment.id}}{{ ("/" + item.id) if item.id !== 'all' }}
   {% endset %}
 
   {% set secondaryNavItems = secondaryNavItems | push({
@@ -20,7 +20,7 @@
 {% endfor %}
 
 {# Margins end up doubling up when there's a warning card immeditely after secondary nav - selectively remove margin here if that's the case. This is hacky! #}
-{% set suppressMargin = true if (activeTab == 'appointment') and ((event | isSpecialAppointment) or (event | hasAppointmentNote)) %}
+{% set suppressMargin = true if (activeTab == 'appointment') and ((appointment | isSpecialAppointment) or (appointment | hasAppointmentNote)) %}
 
 
 {{ appSecondaryNavigation({

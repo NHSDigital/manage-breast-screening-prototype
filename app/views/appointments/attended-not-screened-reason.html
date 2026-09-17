@@ -1,0 +1,44 @@
+{# app/views/appointments/attended-not-screened-reason.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Appointment cannot proceed" %}
+
+{% set formAction = './attended-not-screened-answer' %}
+
+{# Suppress nav as we don't want the user to leave without making a decision #}
+{% set useMinimalNav = true %}
+
+{% block pageContent %}
+
+  {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullNameReversed }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {% set insetHtml %}
+    <p>{{ appLink({
+      text: "Add details of a previous mammogram",
+      href: './previous-mammograms/add' | urlWithReferrer(currentUrl)
+    } | openInModal) }} if the appointment is being stopped because the participant has recently had one</p>
+  {% endset %}
+
+  {{ insetText({
+    html: insetHtml
+  }) }}
+
+  {% set stoppedFieldsNamePrefix = "appointment[appointmentStopped]" %}
+  {% set stoppedFieldsValues = appointment.appointmentStopped %}
+  {% include "_includes/forms/attended-not-screened-fields.njk" %}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Continue"
+    }) }}
+  </div>
+
+{% endblock %}

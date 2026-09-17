@@ -3,7 +3,7 @@
 {% set symptomsCardHtml %}
   {% include "summary-lists/medical-information/symptoms/summary.njk" %}
 
-  {% set hasSymptoms = event.medicalInformation.symptoms and event.medicalInformation.symptoms | length %}
+  {% set hasSymptoms = appointment.medicalInformation.symptoms and appointment.medicalInformation.symptoms | length %}
 
   {% if not hasSymptoms %}
     {% set insetHtml %}

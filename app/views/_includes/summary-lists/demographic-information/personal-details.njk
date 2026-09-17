@@ -1,5 +1,6 @@
-{% call appSummaryList(
-) %}
+{% call appSummaryList({
+  lastRowBorder: false
+}) %}
   {% include "_includes/summary-lists/rows/nhs-number.njk" %}
   {% include "_includes/summary-lists/rows/full-name.njk" %}
   {% include "_includes/summary-lists/rows/gender.njk" %}

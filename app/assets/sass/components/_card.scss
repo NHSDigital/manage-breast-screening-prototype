@@ -1,0 +1,20 @@
+@use "sass:color";
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+.nhsuk-card--feature.app-card--feature-grey {
+  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%) !important;
+}
+.nhsuk-card--feature.app-card--feature-grey .nhsuk-card__heading {
+  background-color: nhsuk-colour("grey-1");
+  color: nhsuk-colour("white");
+}
+
+.nhsuk-card--feature.app-card--feature-orange .nhsuk-card__heading {
+  background-color: nhsuk-colour("orange");
+  color: nhsuk-colour("white");
+}
+
+.nhsuk-card--feature.app-card--feature-green .nhsuk-card__heading {
+  background-color: nhsuk-colour("green");
+  color: nhsuk-colour("white");
+}

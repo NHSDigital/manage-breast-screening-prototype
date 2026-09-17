@@ -5,8 +5,8 @@
 {% set specificDate %}
   {{ dateInput({
     id: "specificDate",
-    namePrefix: "event[medicalHistoryTemp][specificDate]",
-    values: event.medicalHistoryTemp.specificDate,
+    namePrefix: "appointment[medicalHistoryTemp][specificDate]",
+    values: appointment.medicalHistoryTemp.specificDate,
     fieldset: {
       legend: {
         text: "Enter the date",
@@ -21,8 +21,8 @@
 {% endset %}
 
 {{ radios({
-  name: "event[medicalHistoryTemp][generalDate]",
-  value: event.medicalHistoryTemp.generalDate,
+  name: "appointment[medicalHistoryTemp][generalDate]",
+  value: appointment.medicalHistoryTemp.generalDate,
   fieldset: {
     legend: {
       text: dateQuestionText or "When did it happen?",

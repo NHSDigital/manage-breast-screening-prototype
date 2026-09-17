@@ -12,10 +12,10 @@
 
 {# Medical history summary #}
 {# Count medical history items #}
-{% set medicalHistoryCount = event.medicalInformation.medicalHistory | countMedicalHistoryItems %}
+{% set medicalHistoryCount = appointment.medicalInformation.medicalHistory | countMedicalHistoryItems %}
 
 {# Get medical history summaries #}
-{% set medicalHistorySummaries = event.medicalInformation.medicalHistory | summariseMedicalHistory %}
+{% set medicalHistorySummaries = appointment.medicalInformation.medicalHistory | summariseMedicalHistory %}
 
 {# Build medical history HTML #}
 {% set medicalHistoryHtml %}
@@ -37,21 +37,21 @@
 
 {# Symptoms summary #}
 {# Count symptoms #}
-{% set symptomsCount = event.medicalInformation.symptoms | length %}
+{% set symptomsCount = appointment.medicalInformation.symptoms | length %}
 
 {# Get symptom summaries #}
-{% set symptomSummaries = event.medicalInformation.symptoms | summariseSymptoms %}
+{% set symptomSummaries = appointment.medicalInformation.symptoms | summariseSymptoms %}
 
 {# Build symptoms HTML #}
 {% set symptomsHtml %}
   {% if symptomsCount == 0 %}
     <p>No symptoms added</p>
   {% elif symptomsCount == 1 %}
-    <p>{{ symptomSummaries[0] }}</p>
+    <p>{{ symptomSummaries[0] | sentenceCase }}</p>
   {% else %}
     <ul class="nhsuk-list">
       {% for summary in symptomSummaries %}
-        <li>{{ summary }}</li>
+        <li>{{ summary | sentenceCase }}</li>
       {% endfor %}
     </ul>
   {% endif %}
@@ -62,8 +62,8 @@
 
 {# Breast features summary #}
 {# Count breast features #}
-{% set rawBreastFeatures = event.medicalInformation.breastFeaturesRaw | parseJsonString %}
-{% set breastFeatures = event.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set rawBreastFeatures = appointment.medicalInformation.breastFeaturesRaw | parseJsonString %}
+{% set breastFeatures = appointment.medicalInformation.breastFeatures or rawBreastFeatures %}
 {% set breastFeaturesCount = breastFeatures | length %}
 
 {# Get breast feature summaries #}
@@ -86,17 +86,17 @@
 
 {# Previous mammograms summary #}
 {# Count additional mammograms #}
-{% set additionalMammogramsCount = event.previousMammograms | length %}
+{% set additionalMammogramsCount = appointment.previousMammograms | length %}
 
 {# Build previous mammograms HTML #}
 {% set previousMammogramsHtml %}
   {% if additionalMammogramsCount == 0 %}
     <p>No additional mammograms added</p>
   {% elif additionalMammogramsCount == 1 %}
-    {% set mammogram = event.previousMammograms[0] %}
+    {% set mammogram = appointment.previousMammograms[0] %}
     <p>
       {{ mammogram | summarisePriorMammogram }}
-      {{ ("prior_" + mammogram.requestStatus) | toTag }}
+      {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
       {% if mammogram.requestedBy or mammogram.requestReason %}
         <br>
         <span class="nhsuk-u-secondary-text-colour">
@@ -107,10 +107,10 @@
     </p>
   {% else %}
     <ul class="nhsuk-list">
-      {% for mammogram in event.previousMammograms %}
+      {% for mammogram in appointment.previousMammograms %}
         <li>
           {{ mammogram | summarisePriorMammogram }}
-          {{ ("prior_" + mammogram.requestStatus) | toTag }}
+          {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
           {% if mammogram.requestedBy or mammogram.requestReason %}
             <br>
             <span class="nhsuk-u-secondary-text-colour">
@@ -127,23 +127,30 @@
 {# Build referrer chain for add journey: confirmation -> review #}
 {% set mammogramsAddReferrerChain = currentUrl | appendReferrer(contextUrl + "/confirm-information/previous-mammograms") %}
 
-{# Other relevant information summary #}
-{# Get other relevant information summaries #}
-{% set otherRelevantInfoSummaries = event.medicalInformation | summariseOtherRelevantInformation %}
-{% set otherRelevantInfoCount = otherRelevantInfoSummaries | length %}
+{# Breast density factors summary #}
+{% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+{# Show the row whenever there's an answer to show, a recorded "no" to HRT included #}
+{% set breastDensityCount = breastDensityFactors.count %}
 
-{# Build other relevant information HTML #}
-{% set otherRelevantInfoHtml %}
-  {% if otherRelevantInfoCount == 0 %}
-    <p>No other information added</p>
-  {% elif otherRelevantInfoCount == 1 %}
-    <p>{{ otherRelevantInfoSummaries[0] }}</p>
-  {% else %}
+{% set breastDensityFactorsHtml %}
+  {% if breastDensityFactors.summaries | length %}
     <ul class="nhsuk-list">
-      {% for summary in otherRelevantInfoSummaries %}
+      {% for summary in breastDensityFactors.summaries %}
         <li>{{ summary }}</li>
       {% endfor %}
     </ul>
+  {% else %}
+    <p>No breast density factors added</p>
+  {% endif %}
+{% endset %}
+
+{# Other medical information summary #}
+{% set otherMedicalInfo = appointment.medicalInformation | summariseOtherMedicalInformation %}
+{% set otherMedicalInfoHtml %}
+  {% if otherMedicalInfo %}
+    <p>{{ otherMedicalInfo }}</p>
+  {% else %}
+    <p>No other medical information added</p>
   {% endif %}
 {% endset %}
 
@@ -200,7 +207,9 @@
 {# Build summary list content #}
 {% set rows = [] %}
 
-{% if not showOnlyPopulated or additionalMammogramsCount > 0 %}
+{# hidePreviousMammograms lets a page suppress this row when priors are shown
+   separately (e.g. the reading opinion page has a dedicated priors summary) #}
+{% if not hidePreviousMammograms and (not showOnlyPopulated or additionalMammogramsCount > 0) %}
   {% set rows = rows | push({
     key: {
       text: "Mammograms added"
@@ -264,20 +273,40 @@
   }) %}
 {% endif %}
 
-{% if not showOnlyPopulated or otherRelevantInfoCount > 0 %}
+{% if not showOnlyPopulated or breastDensityCount > 0 %}
   {% set rows = rows | push({
     key: {
-      text: "Other relevant information"
+      text: "Breast density factors"
     },
     value: {
-      html: otherRelevantInfoHtml
+      html: breastDensityFactorsHtml
+    },
+    actions: {
+      items: [
+        {
+          href: ("./confirm-information/breast-density-factors") | urlWithReferrer(currentUrl),
+          text: "View or change",
+          visuallyHiddenText: "breast density factors"
+        }
+      ]
+    } if allowEdits
+  }) %}
+{% endif %}
+
+{% if not showOnlyPopulated or otherMedicalInfo %}
+  {% set rows = rows | push({
+    key: {
+      text: "Other medical information"
+    },
+    value: {
+      html: otherMedicalInfoHtml
     },
     actions: {
       items: [
         {
           href: ("./confirm-information/other-relevant-information") | urlWithReferrer(currentUrl),
           text: "View or change",
-          visuallyHiddenText: "other relevant information"
+          visuallyHiddenText: "other medical information"
         }
       ]
     } if allowEdits
@@ -288,6 +317,7 @@
   <p class="nhsuk-body">No medical information added.</p>
 {% else %}
   {{ summaryList({
-    rows: rows | removeLastRowBorder
+    rows: rows,
+    lastRowBorder: false
   }) }}
 {% endif %}

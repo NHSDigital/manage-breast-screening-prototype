@@ -107,7 +107,7 @@ const SUPPORT_TYPES = {
 }
 
 /**
- * Generate special appointment requirements for an event
+ * Generate special appointment requirements for an appointment
  *
  * @param {object} [options] - Generation options
  * @param {number} [options.probability] - Probability of needing special appointment

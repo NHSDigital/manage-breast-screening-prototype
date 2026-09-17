@@ -1,17 +1,17 @@
-{# /app/views/events/reading/confirm-normal.html #}
+{# /app/views/appointments/reading/confirm-normal.html #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading = "Confirm normal result" %}
 
-{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
-{% set formAction = './save-opinion' %}
+{% set formAction = './save-opinion' | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 
   <span class="nhsuk-caption-l">
-    {{ participant | getFullName }}
+    {{ participant | getFullNameReversed }}
   </span>
 
   <h1 class="nhsuk-heading-l js-image-count">
@@ -19,7 +19,8 @@
   </h1>
 
   {{ button({
-    text: "Confirm"
+    text: "Confirm",
+    preventDoubleClick: true
   }) }}
 
 {% endblock %}

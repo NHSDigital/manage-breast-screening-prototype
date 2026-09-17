@@ -28,8 +28,12 @@
     var img = panel.querySelector('img')
     if (!img || !img.naturalWidth || !img.naturalHeight) return null
 
+    // A panel inside a hidden tab or collapsed expander measures 0x0. Mapping
+    // against that divides by zero, so callers must wait until it has a size.
     var panelW = panel.clientWidth
     var panelH = panel.clientHeight
+    if (!panelW || !panelH) return null
+
     var scale = Math.min(panelW / img.naturalWidth, panelH / img.naturalHeight)
     var renderedW = img.naturalWidth * scale
     var renderedH = img.naturalHeight * scale
@@ -1718,14 +1722,45 @@
         if (img.complete) onLoad()
         else img.addEventListener('load', onLoad, { once: true })
       })
+
+      observeContainer(cont)
     })
+  }
+
+  // Panels hidden at load — inside a tab panel or a collapsed expander — have
+  // no size to map against, and resizing changes the letterboxing. Re-correct
+  // whenever a panel's box changes so positions stay right in both cases.
+  function observeContainer(cont) {
+    if (cont.dataset.markerResizeObserved) return
+    if (typeof ResizeObserver === 'undefined') return
+    cont.dataset.markerResizeObserved = 'true'
+
+    var observer = new ResizeObserver(function () {
+      correctContainer(cont)
+    })
+    cont
+      .querySelectorAll(
+        '.app-annotation-images__panel:not(.app-annotation-images__panel--no-image)'
+      )
+      .forEach(function (panel) {
+        observer.observe(panel)
+      })
   }
 
   function correctContainer(cont) {
     var panels = cont.querySelectorAll(
       '.app-annotation-images__panel:not(.app-annotation-images__panel--no-image)'
     )
+    var allPanelsMeasured = true
+
     panels.forEach(function (panel) {
+      // Zero-sized while hidden: leave the markers alone and wait for the
+      // resize observer to call back once the panel is laid out
+      if (!panel.clientWidth || !panel.clientHeight) {
+        allPanelsMeasured = false
+        return
+      }
+
       panel.querySelectorAll('.app-ann-marker').forEach(function (marker) {
         var rawX = parseFloat(marker.dataset.posX) / 100
         var rawY = parseFloat(marker.dataset.posY) / 100
@@ -1738,8 +1773,10 @@
         marker.style.top = corrected.y + '%'
       })
     })
-    // Reveal markers now they're in the correct position
-    cont.classList.add('is-corrected')
+
+    // Reveal markers now they're in the correct position. Held back until every
+    // panel has been measured, so nothing shows at an uncorrected position.
+    if (allPanelsMeasured) cont.classList.add('is-corrected')
   }
 
   // ─── Public API ──────────────────────────────────────────────────────────────

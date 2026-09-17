@@ -1,14 +1,7 @@
 {# app/views/_templates/layout-appointment.html #}
-{# Layout for appointment/event pages with three modes: workflow, tab view, and form #}
+{# Layout for appointment/appointment pages with three modes: workflow, tab view, and form #}
 {% extends 'layout-base.html' %}
 
-
-
-{# Wider page for workflow mode with side nav #}
-{% if isAppointmentWorkflow and showNavigation %}
-  {# {% set containerClasses = "nhsuk-width-container nhsuk-width-container--wide" %} #}
-  {% set bodyClasses = (bodyClasses or "") + " app-workflow-mode" %}
-{% endif %}
 
 {# Pages set these variables to control behaviour #}
 {% set showNavigation = showNavigation if showNavigation != undefined else false %}
@@ -16,18 +9,27 @@
 {% set activeWorkflowStep = activeWorkflowStep or "" %}
 
 {# Full width when showing navigation - as these tend to be summary lists #}
-{% set gridDefault = "nhsuk-grid-column-full" if showNavigation else "nhsuk-grid-column-two-thirds" %}
+{% set gridDefault = "nhsuk-grid-column-full app-u-max-width-three-quarters" if showNavigation else "nhsuk-grid-column-two-thirds" %}
 {% set gridColumn = gridColumn or gridDefault %}
 
 {# Set referrerChain to current URL for change links #}
 {% set referrerChain = referrerChain or currentUrl %}
 
-{# Set back link for tab view mode (unless explicitly overridden) #}
-{% if showNavigation and not isAppointmentWorkflow and not back %}
-  {% set back = {
-    href: "/clinics/" + clinicId,
-    text: "Back to clinic"
-  } %}
+{# Tab view mode is the appointment's record view, so it carries the case
+   breadcrumb; the back link stays fixed to the clinic (the workflow
+   container). Workflow and form modes keep their minimal chrome. #}
+{% if showNavigation and not isAppointmentWorkflow %}
+  {# activeTab marks the tabbed record view - anything with a workflow step
+     (even dual-mode pages that also set activeTab) gets no breadcrumb #}
+  {% if activeTab and not activeWorkflowStep %}
+    {% set breadcrumbItems = breadcrumbItems or getCaseBreadcrumb(participant, episode) %}
+  {% endif %}
+  {% if not back %}
+    {% set back = {
+      href: "/clinics/" + clinicId,
+      text: "Back to clinic"
+    } %}
+  {% endif %}
 {% endif %}
 
 {% block header %}
@@ -63,7 +65,10 @@
     {% block pageNavigation %}
       {# View mode: appointment header with tabs (outside main form) #}
       {% if showNavigation and not isAppointmentWorkflow %}
-        {% include "_includes/flash-messages.njk" %}
+        <div class="app-u-max-width-three-quarters">
+          {% include "_includes/flash-messages.njk" %}
+        </div>
+        
         {% include "_includes/appointment/appointment-header.njk" %}
       {% endif %}
     {% endblock %}
@@ -73,7 +78,9 @@
   {% set wrappedPageContent %}
     {# Flash messages for all pages - except appointment with navigation #}
     {% if (isAppointmentWorkflow or (not isAppointmentWorkflow and not showNavigation)) %}
-      {% include "_includes/flash-messages.njk" %}
+      <div class="app-u-max-width-three-quarters">
+        {% include "_includes/flash-messages.njk" %}
+      </div>
     {% endif %}
 
     {% if gridColumn != "none" %}

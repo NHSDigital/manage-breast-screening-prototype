@@ -1,0 +1,7 @@
+{# app/views/clinics/close-appointment-row.html #}
+{# Bare fragment - a single table row fetched by close-clinic.js to update
+   the close clinic page in place after a status change #}
+
+{% from "_includes/close-clinic-appointment-row.njk" import closeClinicAppointmentRow with context %}
+
+{{ closeClinicAppointmentRow(appointment, participant, clinicId, showActions) }}

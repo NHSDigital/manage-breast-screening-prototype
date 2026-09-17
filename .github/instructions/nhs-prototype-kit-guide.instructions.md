@@ -1,0 +1,465 @@
+---
+applyTo: "**/*.njk, **/*.html, app/**/*.js"
+---
+
+# NHS prototype kit guide
+
+A guide for building prototypes with the NHS prototype kit. This is kept separate from the main NHS frontend guide as it focuses on specifics of using the prototype kit rather than general NHS frontend usage.
+
+---
+## General
+- Prefer clean html code with whitespace and line breaks for readability
+
+## Prototypes are not production code
+
+Prototypes are for testing ideas quickly - they are thrown away, not shipped. Unless specifically asked, do not add:
+
+- Automated tests, linters, or type checking
+- Production error handling or logging
+- Security hardening or authentication
+- A database - all data lives in the session
+
+Prefer the simplest thing that makes the user journey work.
+
+## Styles
+- Prefer using NHS frontend classes and components over custom styles.
+- Avoid inline styles in views - use override classes or new classes instead.
+- Keep SCSS files organised by component or page rather than putting everything in main.scss.
+
+## Nunjucks preferences
+
+- Prefer splitting object keys over separate lines
+- Trailing commas are not supported by Nunjucks
+- Use `elseif` rather than `elif`
+- Default to pre-filling existing answers in components.
+- Prefer using `set` or `call` blocks for HTML in components rather than inline.
+
+## Pages
+
+Pages are `.html` files in `app/views`. The URL comes from the file path, so `app/views/contact-preference.html` is served at `/contact-preference` with no route needed. Each page extends the layout, sets `pageName` (used for the `<title>`) and fills the content block. Back links go in the `beforeContent` block.
+
+The layout provides the width container and main wrapper. Inside the content block, wrap content in a grid row and column. Question pages and body text use two thirds width.
+
+```nunjucks
+{% extends "layout.html" %}
+
+{% set pageName = "Contact preference" %}
+
+{% block beforeContent %}
+  {{ backLink({
+    href: "start",
+    text: "Back"
+  }) }}
+{% endblock %}
+
+{% block content %}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+      <h1 class="nhsuk-heading-l">{{ pageName }}</h1>
+
+      <p>Page content</p>
+    </div>
+  </div>
+{% endblock %}
+```
+
+## Saving data
+
+All data submitted via POST or GET will be saved to `req.session.data` using the 'name' parameter.
+
+```nunjucks
+{{ input({
+  label: {
+    text: "Full name"
+  },
+  id: "fullName",
+  name: "fullName"
+}) }}
+```
+
+This data will be available in routes at `req.session.data.fullName` or in views as `data.fullName` or `data["fullName"]`.
+
+To save to nested properties use square brackets and no quotation marks. Express will expand this. Eg `name: "person[fullName]"`, will expand to `req.session.data.person.fullName`. `name: "person[address][line1]"` will expand to `req.session.data.person.address.line1`.
+
+Prefer `camelCase` for names.
+
+## Routes and branching
+
+**In most cases, routes aren't needed.** The prototype kit automatically saves form data and handles navigation. You only need routes when:
+- Deciding which page to show next based on user answers (branching)
+- Doing custom processing of data before saving
+- Redirecting users based on missing data
+- Dynamically rendering several pages with the same view (eg a generic summary page)
+- The kit uses a post, redirect, get pattern. If you post to a page, it will redirect to a GET on the same page.
+
+### Creating a route
+
+When adding a route, **don't post to the same page**. Instead, post to a separate route. For example, if your page is `contact-preference`, post to `contact-preference-answer`. If no branching or data manipulation is needed, you can just POST to the next page in the flow.
+
+**In your view (e.g., `contact-preference.html`):**
+```nunjucks
+<form method="post" action="contact-preference-answer">
+  {{ radios({
+    name: "contactPreference",
+    fieldset: {
+      legend: {
+        text: "How would you like to be contacted?",
+        size: "l",
+        isPageHeading: true
+      }
+    },
+    items: [
+      {
+        value: "Email",
+        text: "Email"
+      },
+      {
+        value: "Phone",
+        text: "Phone"
+      },
+      {
+        value: "Text message",
+        text: "Text message"
+      }
+    ]
+  }) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+</form>
+```
+
+**In your routes file (e.g., `app/routes.js`):**
+```javascript
+router.post('/contact-preference-answer', function (req, res) {
+  const data = req.session.data
+  const contactPreference = data.contactPreference
+
+  // Branch based on the answer
+  if (contactPreference === 'Email') {
+    res.redirect('email-address')
+  } else if (contactPreference === 'Phone') {
+    res.redirect('phone-number')
+  } else if (contactPreference === 'Text message') {
+    res.redirect('mobile-number')
+  } else {
+    // Redirect back if no valid answer
+    res.redirect('contact-preference')
+  }
+})
+```
+
+Bad:
+
+```javascript
+// Route unnecessary if no branching or data manipulation is needed
+router.post('/power-type-answer', function (req, res) {
+  res.redirect('magical-origin')
+})
+```
+
+### Checking for missing data
+
+**In most cases, error validation isn't necessary in a prototype.** However, you can use a route to check for likely missing data and redirect back if needed:
+
+```javascript
+router.post('/contact-preference-answer', function (req, res) {
+  const data = req.session.data
+  const contactPreference = data.contactPreference
+
+  // Redirect back if no answer provided
+  if (!contactPreference) {
+    res.redirect('contact-preference')
+    return
+  }
+
+  // Continue with branching logic
+  if (contactPreference === 'Email') {
+    res.redirect('email-address')
+  } else {
+    res.redirect('phone-number')
+  }
+})
+```
+
+**Note:** This doesn't show error messages - it just prevents users progressing without answering. For most prototypes, this level of validation is sufficient.
+
+## Prefilling data
+
+Form components support either a `value` or `values` param for pre-filling existing data. Default to pre-filling existing answers unless asked not to or it doesn't make sense.
+
+```nunjucks
+{{ input({
+  label: {
+    text: "Full name"
+  },
+  id: "fullName",
+  name: "fullName",
+  value: data.fullName
+}) }}
+```
+
+```nunjucks
+{{ checkboxes({
+  idPrefix: "contactMethods",
+  name: "contactMethods",
+  fieldset: {
+    legend: {
+      text: "How would you like to be contacted?",
+      size: "l",
+      isPageHeading: true
+    }
+  },
+  hint: {
+    text: "Select all options that are relevant to you"
+  },
+  values: data.contactMethods,
+  items: [
+    {
+      value: "Email",
+      text: "Email"
+    },
+    {
+      value: "Phone",
+      text: "Phone"
+    },
+    {
+      value: "Text message",
+      text: "Text message"
+    }
+  ]
+}) }}
+```
+
+## Default data
+
+Default data can be added in `app/data/session-data-defaults.js`. This is imported when the kit starts or restarts, or if a user visits the reset data route.
+
+Default data can be useful for:
+
+* Pre-setting user answers for testing returning journeys to flows
+* Storing sets of reference data - lists of countries, medical conditions
+* Storing other static content that might want to get reused
+* Storing lists of users (or user objects) for testing multi-user flows
+
+Keys included in `session-data-defaults.js` will be available in views as `data.[key]` and in routes as `req.session.data.[key]`.
+
+## Radios / checkboxes / select components
+
+Radios, Checkboxes and Select components support directly setting a `checked` or `selected` boolean param on each item - this should be rarely needed.
+
+Default to using identical text for `value` as for `text` - eg correct casing and spacing. This makes it quicker to display data. Use `camelCase` otherwise where the data will need logic applied.
+
+Good:
+
+```nunjucks
+items: [
+  {
+    value: "Email",
+    text: "Email"
+  },
+  {
+    value: "Phone",
+    text: "Phone"
+  },
+  {
+    value: "Text message",
+    text: "Text message"
+  }
+]
+```
+
+Bad:
+
+```nunjucks
+items: [
+  {
+    value: "email",
+    text: "Email"
+  },
+  {
+    value: "phone",
+    text: "Phone"
+  },
+  {
+    value: "text-message",
+    text: "Text message"
+  }
+]
+```
+
+## Logic in components
+
+Simple logic can be applied inline in components.
+
+```nunjucks
+{% set fruit = [
+  "Apple",
+  "Pears",
+  "Bananas" if includeBananas,
+  "Oranges"
+] %}
+```
+
+Inline logic can include else:
+`"Bananas" if includeBananas else "Other"`
+
+If the logic is more than one or two conditions, prefer using a `set` or `call` block instead to create the data.
+
+## HTML in components
+
+Avoid directly setting html in components - prefer `set` or `call` blocks instead.
+
+Good:
+
+```nunjucks
+{% set addressHtml %}
+  <ul class="nhsuk-list">
+    <li>Line 1</li>
+    <li>Line 2</li>
+    <li>Line 3</li>
+  </ul>
+{% endset %}
+
+{{ summaryList({
+  rows: [
+    {
+      key: {
+        text: "Address"
+      },
+      value: {
+        html: addressHtml
+      },
+      actions: {
+        items: [
+          {
+            href: "#",
+            text: "Change",
+            visuallyHiddenText: "address"
+          }
+        ]
+      }
+    }
+  ]
+}) }}
+```
+
+Bad:
+
+```nunjucks
+{{ summaryList({
+  rows: [
+    {
+      key: {
+        text: "Address"
+      },
+      value: {
+        html: "<ul class='nhsuk-list'><li>Line 1</li><li>Line 2</li><li>Line 3</li></ul>"
+      },
+      actions: {
+        items: [
+          {
+            href: "#",
+            text: "Change",
+            visuallyHiddenText: "address"
+          }
+        ]
+      }
+    }
+  ]
+}) }}
+```
+
+## Fieldsets
+
+Do not use a fieldset to wrap a single input. They are only needed when grouping related inputs together - like address input. They're already included for radios and checkboxes.
+
+## Page headings and single or multiple questions on a page
+
+If a form input is the only question on the page, set `isPageHeading: true` and `size: "l"` on its label or legend.
+
+If a form component is not the only question on the page, set `isPageHeading: false` with a smaller size. There should be a separate h1 on the page.
+
+Checkboxes as only question on page:
+
+```nunjucks
+{{ checkboxes({
+  idPrefix: "contactMethods",
+  name: "contactMethods",
+  fieldset: {
+    legend: {
+      text: "How would you like to be contacted?",
+      size: "l",
+      isPageHeading: true
+    }
+  },
+  hint: {
+    text: "Select all options that are relevant to you"
+  },
+  values: data.contactMethods,
+  items: [
+    {
+      value: "Email",
+      text: "Email"
+    },
+    {
+      value: "Phone",
+      text: "Phone"
+    },
+    {
+      value: "Text message",
+      text: "Text message"
+    }
+  ]
+}) }}
+```
+
+Checkboxes where there are other questions or another h1 on the page:
+
+```nunjucks
+{{ checkboxes({
+  idPrefix: "contactMethods",
+  name: "contactMethods",
+  fieldset: {
+    legend: {
+      text: "How would you like to be contacted?",
+      size: "m",
+      isPageHeading: false
+    }
+  },
+  hint: {
+    text: "Select all options that are relevant to you"
+  },
+  values: data.contactMethods,
+  items: [
+    {
+      value: "Email",
+      text: "Email"
+    },
+    {
+      value: "Phone",
+      text: "Phone"
+    },
+    {
+      value: "Text message",
+      text: "Text message"
+    }
+  ]
+}) }}
+```
+
+Text input as only question on page:
+
+```nunjucks
+{{ input({
+  label: {
+    text: "What is your home postcode?",
+    size: "l",
+    isPageHeading: true
+  },
+  classes: "nhsuk-input--width-10",
+  name: "postcode",
+  autocomplete: "postal-code"
+}) }}
+```

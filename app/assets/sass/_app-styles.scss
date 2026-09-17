@@ -13,6 +13,9 @@
 @forward "components/secondary-navigation";
 @forward "components/secondary-navigation-overrides";
 @forward "components/count";
+@forward "components/card";
+@forward "components/clinic-appointments-table";
+@forward "components/filter-panel";
 @forward "components/forward-link";
 @forward "components/status";
 @forward "components/status-bar";
@@ -31,7 +34,6 @@
 @forward "components/notification-banner";
 @forward "components/checkboxes";
 @forward "components/breast-features";
-@forward "components/sticky-appointment-bar";
 @forward "components/annotation";
 @forward "components/stepper-input";
 @forward "components/collapsible-input";

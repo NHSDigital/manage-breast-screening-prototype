@@ -45,7 +45,7 @@
 }
 
 .app-status-bar__key {
-  @include nhsuk-typography-weight-bold($important: true);
+  @include nhsuk-font-weight-bold($important: true);
   opacity: 0.9;
 }
 

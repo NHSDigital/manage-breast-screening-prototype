@@ -40,7 +40,7 @@
   </details>
   {% if params.status %}
     <div class="app-details__status">
-      {{ params.status | toTag }}
+      {{ params.status | toTag(params.statusOptions) }}
     </div>
   {% endif %}
 </div>

@@ -3,6 +3,73 @@
 const dayjs = require('dayjs')
 
 const config = require('../../config')
+const dataStore = require('../data-store')
+
+/**
+ * Get a clinic by ID
+ *
+ * Reads the session's changed records first, then the shared store's id
+ * index, so it avoids a linear scan of the merged clinics array. Falls back
+ * to scanning data.clinics for records that exist only in the passed data.
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @returns {object | null} Clinic object or null if not found
+ */
+const getClinic = (data, clinicId) => {
+  return (
+    data._changes?.clinics?.[clinicId] ??
+    dataStore.state.clinicsById.get(clinicId) ??
+    data.clinics?.find((c) => c.id === clinicId) ??
+    null
+  )
+}
+
+/**
+ * Where a clinic was held, as one line.
+ *
+ * A mobile unit is named by both the unit and the site it was parked at, since
+ * the unit alone doesn't say where anyone went. Templates have long written
+ * this inline as `location.name at clinic.siteName`; this is the same rule in
+ * one place, for callers that only want the string.
+ *
+ * @param {object} data - Session data
+ * @param {object} clinic - Clinic object
+ * @returns {string} Display name, or an empty string if it can't be resolved
+ */
+const getClinicLocationName = (data, clinic) => {
+  if (!clinic) return ''
+
+  const unit = (data.breastScreeningUnits || []).find(
+    (candidate) => candidate.id === clinic.breastScreeningUnitId
+  )
+  const location = (unit?.locations || []).find(
+    (candidate) => candidate.id === clinic.locationId
+  )
+
+  if (!location) return clinic.siteName || ''
+
+  return location.type === 'mobile_unit' && clinic.siteName
+    ? `${location.name} at ${clinic.siteName}`
+    : location.name
+}
+
+/**
+ * Get a breast screening unit's name by id.
+ *
+ * For places that only have a unit id and no clinic to hang a full location
+ * name off - historic episodes, which have no appointment or clinic record.
+ *
+ * @param {object} data - Session data
+ * @param {string} unitId - Breast screening unit id
+ * @returns {string} Unit name, or an empty string if it can't be resolved
+ */
+const getBreastScreeningUnitName = (data, unitId) => {
+  const unit = (data.breastScreeningUnits || []).find(
+    (candidate) => candidate.id === unitId
+  )
+  return unit?.name || ''
+}
 
 /**
  * Get today's clinics
@@ -16,17 +83,17 @@ const getTodaysClinics = (clinics) => {
 }
 
 /**
- * Get events for a specific clinic
+ * Get appointments for a specific clinic
  *
- * @param {Array} events - Array of all events
+ * @param {Array} appointments - Array of all appointments
  * @param {string} clinicId - Clinic ID to filter by
- * @returns {Array} Events belonging to the given clinic
+ * @returns {Array} Appointments belonging to the given clinic
  */
-const getClinicEvents = (events, clinicId) => {
-  if (!events || !clinicId) return []
-  // console.log(`Looking for events with clinicId: ${clinicId}`);
-  // console.log(`Found ${events.filter(e => e.clinicId === clinicId).length} events`);
-  return events.filter((e) => e.clinicId === clinicId)
+const getClinicAppointments = (appointments, clinicId) => {
+  if (!appointments || !clinicId) return []
+  // console.log(`Looking for appointments with clinicId: ${clinicId}`);
+  // console.log(`Found ${appointments.filter(e => e.clinicId === clinicId).length} appointments`);
+  return appointments.filter((e) => e.clinicId === clinicId)
 }
 
 /**
@@ -93,7 +160,7 @@ const getFilteredClinics = (clinics, filter = 'all') => {
   switch (filter) {
     case 'today':
       return recentClinics.filter((clinic) =>
-        dayjs(clinic.date).isSame(today, 'day')
+        dayjs(clinic.date).isSame(today, 'day') && clinic.status !== 'closed'
       )
 
     case 'upcoming':
@@ -103,7 +170,10 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 
     case 'completed':
       return recentClinics
-        .filter((clinic) => dayjs(clinic.date).isBefore(today, 'day'))
+        .filter((clinic) =>
+          dayjs(clinic.date).isBefore(today, 'day') ||
+          (dayjs(clinic.date).isSame(today, 'day') && clinic.status === 'closed')
+        )
         .sort((a, b) => new Date(b.date) - new Date(a.date)) // Most recent first
 
     case 'all':
@@ -114,10 +184,37 @@ const getFilteredClinics = (clinics, filter = 'all') => {
   }
 }
 
+/**
+ * Find and update a clinic in session data
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @param {object} updates - Fields to merge into the clinic
+ * @returns {object | null} Updated clinic or null if not found
+ */
+const updateClinic = (data, clinicId, updates) => {
+  const clinicIndex = data.clinics.findIndex((c) => c.id === clinicId)
+  if (clinicIndex === -1) return null
+
+  // Update in the attached array (same-request reads) and record the change
+  // in data._changes (persistence - the attached array is rebuilt from the
+  // shared data store on every request; see middleware in app/routes.js)
+  const updatedClinic = { ...data.clinics[clinicIndex], ...updates }
+  data.clinics[clinicIndex] = updatedClinic
+  if (data._changes?.clinics) {
+    data._changes.clinics[clinicId] = updatedClinic
+  }
+  return updatedClinic
+}
+
 module.exports = {
+  getClinic,
+  getClinicLocationName,
+  getBreastScreeningUnitName,
   getTodaysClinics,
   getFilteredClinics,
-  getClinicEvents,
+  getClinicAppointments,
   formatTimeSlot,
-  getClinicHours
+  getClinicHours,
+  updateClinic
 }

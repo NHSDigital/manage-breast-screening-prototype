@@ -5,8 +5,8 @@
 
 {# Date and time #}
 {% set appointmentDateTimeHtml %}
-  {{ clinic.date | formatDate }} at {{ event.timing.startTime | formatTimeString }}
-  {% if event | isSpecialAppointment %}
+  {{ clinic.date | formatDate }} at {{ appointment.timing.startTime | formatTimeString }}
+  {% if appointment | isSpecialAppointment %}
     {{ tag({
       text: "Special appointment",
       colour: "yellow",
@@ -21,13 +21,13 @@
 
 {# Worklist status #}
 {% set worklistStatusHtml %}
-  {% if data.settings.screening.addedToWorklist == 'false' and not data.event.isOnWorklist %}
+  {% if data.settings.appointment.addedToWorklist == 'false' and not appointment.isOnWorklist %}
     <span class="app-header-status app-header-status--fail">
       {{ appIcon("cross", { classes: "app-header-status__icon" }) }}
-      {% if data.event.isManualImageCollection %}
+      {% if appointment.isManualImageCollection %}
         <span>Worklist issue, manual mode enabled</span>
       {% else %}
-        <span>Not on worklist (<a href="{{ ('/clinics/' + clinicId + '/events/' + event.id + '/retry-worklist-connection') | urlWithReferrer(currentUrl) }}">Retry</a>)</span>
+        <span>Not on worklist (<a href="{{ ('/clinics/' + clinicId + '/appointments/' + appointment.id + '/retry-worklist-connection') | urlWithReferrer(currentUrl) }}">Retry</a>)</span>
       {% endif %}
     </span>
   {% else %}
@@ -39,9 +39,9 @@
 {% endset %}
 
 {# Worklist accession number with inline worklist status #}
-{% set accessionNumberFormatted = event.accessionNumber | formatAccessionNumber %}
+{% set accessionNumberFormatted = appointment.accessionNumber | formatAccessionNumber %}
 {% set accessionCopyButtonHtml %}
-  {{ appCopyToClipboard({ text: event.accessionNumber, label: "accession number" })}}
+  {{ appCopyToClipboard({ text: appointment.accessionNumber, label: "accession number" })}}
 {% endset %}
 {% set appointmentRowItems = appointmentRowItems | push({
   key: '<abbr title="Accession number">Accn</abbr>:',
@@ -59,9 +59,9 @@
 }) %} #}
 
 {% set statusHtml %}
-  {{ event.status | getStatusText | default(event.status | formatWords | sentenceCase) }}
+  {{ appointment.status | getStatusText('appointment') | default(appointment.status | formatWords | sentenceCase) }}
 
-  {% if event | isSpecialAppointment %}
+  {% if appointment | isSpecialAppointment %}
   {# <br> #}
     {{ tag({
       text: "Special appointment",
@@ -82,7 +82,7 @@
 
 {# Full name with age #}
 {% set nameWithAge %}
-  {{ participant | getFullName }}
+  {{ participant | getFullNameReversed }}
 
 {% endset %}
 {% set participantRowItems = participantRowItems | push({

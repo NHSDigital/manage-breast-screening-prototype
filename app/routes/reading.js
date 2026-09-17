@@ -1,38 +1,82 @@
-// app/routes/image-reading.js
-const { getEventData } = require('../lib/utils/event-data')
+// app/routes/reading.js
 const {
-  getFirstUserReadableEvent,
-  getNextUserReadableEvent,
-  getResumeEventForUser,
-  getReadableEventsForClinic,
-  getReadingStatusForEvents,
+  getAppointment,
+  getAppointmentData,
+  updateAppointmentData
+} = require('../lib/utils/appointment-data')
+const { getClinic } = require('../lib/utils/clinics')
+const {
+  getResumeAppointmentForUser,
+  getReadableAppointmentsForClinic,
+  getReadingStatusForAppointments,
   getReadingClinics,
-  getReadingProgress,
-  hasReads,
-  canUserReadEvent,
-  userHasReadEvent,
+  canUserReadAppointment,
+  userHasReadAppointment,
   writeReading,
+  getUnfinalisedUserReadsForSession,
+  finaliseReadOnCase,
+  finaliseUserReadsForSession,
   getEligibleCandidatesForSession,
   createReadingSession,
-  getFirstReadableEventInSession,
+  getFirstReadableAppointmentInSession,
   getReadingSession,
   getOrCreateClinicSession,
   getSessionReadingProgress,
-  skipEventInSession,
+  skipAppointmentInSession,
+  unskipAppointmentInSession,
+  isSessionEnded,
+  endSession,
   topUpSession,
-  getReadingMetadata,
+  getAppointmentReadingMetadata,
+  appointmentHasBeenArbitrated,
+  getNextCaseInSession,
+  getFollowingCaseInSession,
+  getFirstOutstandingCaseInSession,
+  filterAppointmentsByEligibleForReading,
+  filterAppointmentsByNeedsAnyRead,
+  filterAppointmentsByUserCanRead
+} = require('../lib/utils/reading')
+const { getReadingCase, updateReadingCase } = require('../lib/utils/episodes')
+const {
   getComparisonInfo,
   shouldShowComparePage,
-  filterEventsByEligibleForReading,
-  filterEventsByNeedsAnyRead,
-  filterEventsByUserCanRead
-} = require('../lib/utils/reading')
-const { getShortName } = require('../lib/utils/participants')
-const { userRequestedPriors } = require('../lib/utils/prior-mammograms')
+  getReadingMetadata,
+  getReadsAsArray,
+  getReadForUser,
+  getArbitrationRead,
+  getReadAuthorIds,
+  caseHasBeenArbitrated,
+  isReadFinalised,
+  isCaseDeferred,
+  withoutRead,
+  withArbitrationRelease
+} = require('../lib/utils/reading-cases')
+const { getParticipant, getShortName } = require('../lib/utils/participants')
+const {
+  PRIOR_REQUEST_STATUSES,
+  awaitingPriors,
+  userRequestedPriors
+} = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
+const {
+  getArbitrationBacklogCounts,
+  getReadingCaseRows
+} = require('../lib/utils/reading-case-list')
+const {
+  getHistoricReadingSessions
+} = require('../lib/utils/historic-reading-sessions')
 const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
+
+// Carry the request's referrer chain on to a redirect within the same case, so
+// an edit that began on the existing-read page can find its way back there
+const keepReferrerChain = (url, req) => {
+  const referrerChain = req.query.referrerChain
+  if (!referrerChain) return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}referrerChain=${encodeURIComponent(referrerChain)}`
+}
 
 module.exports = (router) => {
   // Set nav state
@@ -62,8 +106,26 @@ module.exports = (router) => {
       }
     })
 
+    // The arbitration backlog, counted the same way the case list and the
+    // arbitration setup page count it so the three agree. Only the complex
+    // layout shows the card, and the count walks every episode - don't pay
+    // for it otherwise
+    const arbitrationCount =
+      layout === 'complex'
+        ? getArbitrationBacklogCounts(data, { view: 'current' }).total
+        : null
+
+    // What the reading case list card offers - the same population its
+    // default view shows
+    const readingCaseCount =
+      layout === 'complex'
+        ? getReadingCaseRows(data, { view: 'current' }).length
+        : null
+
     res.render(template, {
-      sessionProgressById
+      sessionProgressById,
+      arbitrationCount,
+      readingCaseCount
     })
   })
 
@@ -111,7 +173,7 @@ module.exports = (router) => {
   router.get('/reading/clinics/:clinicId', (req, res) => {
     const { clinicId } = req.params
     const data = req.session.data
-    const clinic = data.clinics.find((c) => c.id === clinicId)
+    const clinic = getClinic(data, clinicId)
 
     if (!clinic) return res.redirect('/reading')
 
@@ -133,27 +195,27 @@ module.exports = (router) => {
     const data = req.session.data
     const currentUserId = data.currentUser.id
 
-    const clinic = data.clinics.find((c) => c.id === clinicId)
+    const clinic = getClinic(data, clinicId)
     if (!clinic) return res.redirect('/reading')
 
     try {
       // Convert clinic to session
       const session = getOrCreateClinicSession(data, clinicId)
 
-      // Find first readable event in the session
-      const firstReadableEvent = getFirstReadableEventInSession(
+      // Find first readable appointment in the session
+      const firstReadableAppointment = getFirstReadableAppointmentInSession(
         data,
         session.id,
         currentUserId
       )
 
-      if (firstReadableEvent) {
-        // Redirect directly to the first readable event
+      if (firstReadableAppointment) {
+        // Redirect directly to the first readable appointment
         res.redirect(
-          `/reading/session/${session.id}/events/${firstReadableEvent.id}`
+          `/reading/session/${session.id}/appointments/${firstReadableAppointment.id}`
         )
       } else {
-        // No readable events, go to batch overview
+        // No readable appointments, go to batch overview
         res.redirect(`/reading/session/${session.id}`)
       }
     } catch (error) {
@@ -193,53 +255,78 @@ module.exports = (router) => {
   // Update mammogram request status from priors management page
   router.post('/reading/priors/update-status', (req, res) => {
     const data = req.session.data
-    const { eventId, mammogramId, newStatus } = req.body
+    const { appointmentId, mammogramId, newStatus } = req.body
     const currentUserId = data.currentUser?.id
 
-    const event = data.events.find((e) => e.id === eventId)
-    if (!event || !event.previousMammograms) {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(404).json({ error: 'Event not found' })
-      }
+    // Only accept known request statuses - the value comes straight from
+    // the request body
+    if (!PRIOR_REQUEST_STATUSES.includes(newStatus)) {
       return res.redirect('/reading/priors')
     }
 
-    const mammogram = event.previousMammograms.find((m) => m.id === mammogramId)
+    const appointment = getAppointment(data, appointmentId)
+    if (!appointment || !appointment.previousMammograms) {
+      return res.redirect('/reading/priors')
+    }
+
+    const mammogram = appointment.previousMammograms.find(
+      (m) => m.id === mammogramId
+    )
     if (!mammogram) {
-      if (req.headers.accept?.includes('application/json')) {
-        return res.status(404).json({ error: 'Mammogram not found' })
-      }
       return res.redirect('/reading/priors')
     }
 
-    // Update the status
-    mammogram.requestStatus = newStatus
-    mammogram.statusChangedDate = new Date().toISOString()
-    mammogram.statusChangedBy = currentUserId
+    // Build an updated mammogram list rather than mutating in place - appointment
+    // records are shared read-only data; writes go through the update helpers
+    const previousMammograms = appointment.previousMammograms.map((m) => {
+      if (m.id !== mammogramId) return m
 
-    // Set additional fields based on status
-    if (newStatus === 'requested') {
-      // Admin is formally sending the IEP request
-      mammogram.requestedDate = new Date().toISOString()
-      mammogram.requestedBy = currentUserId
-    } else if (newStatus === 'received') {
-      mammogram.receivedDate = new Date().toISOString()
-    }
+      const updated = {
+        ...m,
+        requestStatus: newStatus,
+        statusChangedDate: new Date().toISOString(),
+        statusChangedBy: currentUserId
+      }
 
-    // Also update mirrored event in data.event if it matches
-    if (data.event && data.event.id === eventId) {
-      data.event.previousMammograms = event.previousMammograms
-    }
+      // Set additional fields based on status
+      if (newStatus === 'requested') {
+        // Admin is formally sending the IEP request
+        updated.requestedDate = new Date().toISOString()
+        updated.requestedBy = currentUserId
+      } else if (newStatus === 'received') {
+        updated.receivedDate = new Date().toISOString()
+      }
 
-    // If this was a fetch request, send JSON response for in-place update
-    if (req.headers.accept?.includes('application/json')) {
-      return res.json({
-        status: 'success',
-        newStatus,
-        mammogramId
+      return updated
+    })
+
+    // Saves to the appointment and mirrors into data.appointment if it matches
+    const updatedAppointment = updateAppointmentData(data, appointmentId, { previousMammograms })
+
+    // returnTo lets other surfaces (the case priors tab) reuse this action
+    // and land back where the user was. Local paths only
+    const returnTo = req.body.returnTo?.startsWith('/') ? req.body.returnTo : null
+
+    // Fetch requests get the fragment the surface asked for re-rendered, so
+    // the page can update in place - a table row on the priors dashboard, a
+    // card on the case's priors tab
+    if (req.xhr) {
+      const fragmentViews = {
+        row: 'reading/prior-mammogram-row',
+        card: 'reading/prior-mammogram-card'
+      }
+      const fragmentView = fragmentViews[req.body.fragment] || fragmentViews.row
+
+      return res.render(fragmentView, {
+        thisAppointment: updatedAppointment,
+        mammogram: updatedAppointment.previousMammograms.find((m) => m.id === mammogramId),
+        priorsReturnTo: returnTo
       })
     }
 
+    if (returnTo) {
+      return res.redirect(returnTo)
+    }
     res.redirect('/reading/priors')
   })
 
@@ -298,16 +385,16 @@ module.exports = (router) => {
         return
       }
 
-      // Redirect to batch view or first event if available
-      const firstReadableEvent = getFirstReadableEventInSession(
+      // Redirect to batch view or first appointment if available
+      const firstReadableAppointment = getFirstReadableAppointmentInSession(
         data,
         session.id,
         currentUserId
       )
 
-      if (firstReadableEvent) {
+      if (firstReadableAppointment) {
         res.redirect(
-          `/reading/session/${session.id}/events/${firstReadableEvent.id}`
+          `/reading/session/${session.id}/appointments/${firstReadableAppointment.id}`
         )
       } else {
         res.redirect(`/reading/session/${session.id}`)
@@ -318,10 +405,18 @@ module.exports = (router) => {
     }
   })
 
-  // Route for viewing a batch
+  // Route for viewing a batch. Reading sessions have per-user views and live at
+  // /your-reads; arbitration has no yours-vs-everyone split, so it renders here.
   router.get('/reading/session/:sessionId', (req, res) => {
-    // Default to "your-reads" view
-    res.redirect(`/reading/session/${req.params.sessionId}/your-reads`)
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+
+    if (session?.type !== 'arbitration') {
+      return res.redirect(`/reading/session/${sessionId}/your-reads`)
+    }
+
+    renderSessionOverview(req, res, session, null)
   })
 
   // Route for resuming a session — jumps straight into the next readable case,
@@ -334,34 +429,63 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
 
-    // Fill any dead slots (events fully read by others) before looking for the
-    // next readable case. topUpSession adds one event at a time so loop until
-    // it can no longer add anything.
+    // An ended session has nothing to resume - show what it came to instead
+    if (isSessionEnded(session)) {
+      return res.redirect(`/reading/session/${sessionId}`)
+    }
+
+    // A session can end up with nothing readable in it — every loaded case
+    // taken by other readers — while the backlog still has cases waiting. Top
+    // up until one readable case appears, and no further.
+    //
+    // Not "until topUpSession stops adding": it grows the session towards its
+    // target size, so running it to exhaustion here would load every remaining
+    // case at once and defeat lazy sessions. The bound is a backstop only.
     const maxTopUps = session.targetSize || 25
     for (let count = 0; count < maxTopUps; count++) {
+      const loadedAppointments = session.appointmentIds
+        .map((appointmentId) =>
+          data.appointments.find((e) => e.id === appointmentId)
+        )
+        .filter(Boolean)
+
+      const hasReadableCase = getFirstOutstandingCaseInSession(
+        data,
+        session,
+        loadedAppointments,
+        data.currentUser.id
+      )
+      if (hasReadableCase) break
+
       if (!topUpSession(data, sessionId)) break
     }
 
     // Rebuild after potential top-ups
-    const sessionEvents = session.eventIds
-      .map((eventId) => data.events.find((e) => e.id === eventId))
+    const sessionAppointments = session.appointmentIds
+      .map((appointmentId) =>
+        data.appointments.find((e) => e.id === appointmentId)
+      )
       .filter(Boolean)
 
-    const resumeEvent = getResumeEventForUser(
-      sessionEvents,
+    const resumeAppointment = getResumeAppointmentForUser(
+      data,
+      sessionAppointments,
       data.currentUser.id,
-      session.skippedEvents || []
+      session.skippedAppointments || [],
+      session
     )
 
-    if (resumeEvent) {
+    if (resumeAppointment) {
       return res.redirect(
-        `/reading/session/${sessionId}/events/${resumeEvent.id}`
+        `/reading/session/${sessionId}/appointments/${resumeAppointment.id}`
       )
     }
 
     // Check if there are any readable cases left in the session
-    const firstReadable = getFirstUserReadableEvent(
-      sessionEvents,
+    const firstReadable = getFirstOutstandingCaseInSession(
+      data,
+      session,
+      sessionAppointments,
       data.currentUser.id
     )
     if (firstReadable) {
@@ -379,11 +503,11 @@ module.exports = (router) => {
     if (!session) {
       return res.redirect('/reading')
     }
-    const firstSkippedEventId = session.skippedEvents[0] || null
+    const firstSkippedAppointmentId = session.skippedAppointments[0] || null
     res.render('reading/skipped-review', {
       session,
       sessionId,
-      firstSkippedEventId
+      firstSkippedAppointmentId
     })
   })
 
@@ -395,51 +519,376 @@ module.exports = (router) => {
     if (!session) {
       return res.redirect('/reading')
     }
+
+    // Reaching this page is the session being worked through - the end of it,
+    // and where that gets recorded. Ending says nothing about finalisation:
+    // the reads made in it finalise on their own schedule, or by hand.
+    // Judged on the target rather than on what's loaded, so a lazy session
+    // that could still top up isn't ended just because another reader
+    // currently holds the cases it would have loaded next.
+    const sessionProgress = getSessionReadingProgress(
+      data,
+      sessionId,
+      null,
+      data.currentUser?.id
+    )
+
+    if (
+      isSessionEndable(session) &&
+      !isSessionEnded(session) &&
+      sessionProgress?.targetRemaining === 0
+    ) {
+      endSession(data, sessionId, data.currentUser?.id)
+    }
+
     res.render('reading/no-more-cases', {
-      sessionId
+      sessionId,
+      session,
+      unfinalisedReadCount: getUnfinalisedUserReadsForSession(
+        data,
+        sessionId,
+        data.currentUser?.id
+      ).length
     })
   })
 
-  // Route for viewing a session with specific view
+  // The URL that actually renders a session's overview. A reading session
+  // renders under /your-reads, so redirecting to the bare session URL costs an
+  // extra redirect - and any flash message with it, since res.locals consumes
+  // the flash on every request.
+  const sessionOverviewUrl = (session) => {
+    return session.type === 'arbitration'
+      ? `/reading/session/${session.id}`
+      : `/reading/session/${session.id}/your-reads`
+  }
+
+  // The step where a case is decided - arbitration decides an outcome on its
+  // own page, reading gives an opinion on the standard one.
+  const caseDecisionUrl = (data, sessionId, appointmentId) => {
+    const step =
+      getReadingSession(data, sessionId)?.type === 'arbitration'
+        ? 'outcome'
+        : 'opinion'
+    return `/reading/session/${sessionId}/appointments/${appointmentId}/${step}`
+  }
+
+  // Where the reader goes once they are finished with a case: the next case
+  // still to do, or whichever end-of-session page applies. Shared by saving a
+  // decision and by the "Next case" link, so both answer the question the same
+  // way - and both top the session up first, since a lazy session only grows
+  // when navigation would otherwise run out of cases.
+  const onwardFromCase = (data, sessionId, appointmentId) => {
+    const currentUserId = data.currentUser?.id
+
+    topUpSession(data, sessionId, appointmentId)
+
+    const session = getReadingSession(data, sessionId)
+    const sessionAppointments = session.appointmentIds
+      .map((id) => data.appointments.find((e) => e.id === id))
+      .filter(Boolean)
+
+    const nextCase = getNextCaseInSession(
+      data,
+      session,
+      sessionAppointments,
+      appointmentId,
+      currentUserId
+    )
+
+    if (nextCase) {
+      return `/reading/session/${sessionId}/appointments/${nextCase.id}`
+    }
+    if (session.skippedAppointments.length > 0) {
+      return `/reading/session/${sessionId}/skipped-review`
+    }
+    return getFirstOutstandingCaseInSession(
+      data,
+      session,
+      sessionAppointments,
+      currentUserId
+    )
+      ? `/reading/session/${sessionId}`
+      : `/reading/session/${sessionId}/no-more-cases`
+  }
+
+  // Finalise the user's reads from this session - linked from the session
+  // overview's session-complete panel, so a plain link can reach it.
+  // Finalisation is what makes a result real: it releases discordant cases
+  // into the arbitration backlog and moves concluded episodes on.
+  router.all('/reading/session/:sessionId/finalise-reads', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    const { finalisedCount } = finaliseUserReadsForSession(
+      data,
+      sessionId,
+      data.currentUser?.id
+    )
+
+    if (finalisedCount > 0) {
+      const noun = session.type === 'arbitration' ? 'outcome' : 'read'
+      req.flash(
+        'success',
+        finalisedCount === 1
+          ? `1 ${noun} finalised`
+          : `${finalisedCount} ${noun}s finalised`
+      )
+    }
+
+    res.redirect(sessionOverviewUrl(session))
+  })
+
+  // The user's outstanding reads from a session, and when the first of them
+  // will finalise itself. Both the session overview and the end-session
+  // interstitial ask this, and must give the same answer.
+  const getSessionFinalisationInfo = (data, sessionId, userId) => {
+    const unfinalisedReads = getUnfinalisedUserReadsForSession(
+      data,
+      sessionId,
+      userId
+    )
+
+    const finalisationDelayMinutes = parseInt(
+      data.settings?.reading?.finalisationDelay,
+      10
+    )
+    const unfinalisedTimestamps = unfinalisedReads
+      .map(({ read }) => read.timestamp)
+      .sort()
+
+    const autoFinaliseTime = (timestamp) =>
+      timestamp && !Number.isNaN(finalisationDelayMinutes)
+        ? dayjs(timestamp).add(finalisationDelayMinutes, 'minute').toISOString()
+        : null
+
+    // Each read finalises on its own delay, so several outstanding reads
+    // finalise across a span rather than at one moment
+    const autoFinaliseAt = autoFinaliseTime(unfinalisedTimestamps[0])
+    const lastAutoFinaliseAt = autoFinaliseTime(
+      unfinalisedTimestamps[unfinalisedTimestamps.length - 1]
+    )
+
+    return { unfinalisedReads, autoFinaliseAt, lastAutoFinaliseAt }
+  }
+
+  // A clinic's cases are a shared body of work rather than one reader's queue,
+  // and every reader of that clinic works through the same session - so a
+  // clinic session is never ended, by hand or by running out of cases.
+  const isSessionEndable = (session) => {
+    return Boolean(session) && !session.clinicId
+  }
+
+  const canEndSessionEarly = (session) => {
+    return isSessionEndable(session) && !isSessionEnded(session)
+  }
+
+  // Whether a case carries any of the work a session is judged by - what an
+  // ended session has to show for itself. Reading counts the user's own acts;
+  // arbitration counts the panel's, since a case is arbitrated once for
+  // everyone.
+  const wasWorkedInSession = (data, session, appointment, userId) => {
+    const readingCase = getReadingCase(data, appointment)
+
+    if (session.type === 'arbitration') {
+      return (
+        appointmentHasBeenArbitrated(data, appointment) ||
+        isCaseDeferred(readingCase) ||
+        awaitingPriors(appointment)
+      )
+    }
+
+    return (
+      userHasReadAppointment(data, appointment, userId) ||
+      userRequestedPriors(appointment, userId) ||
+      isCaseDeferred(readingCase)
+    )
+  }
+
+  // Ending a session early - the interstitial. Says what ending does, and where
+  // reads are outstanding, offers finalising them now rather than leaving them
+  // to the finalisation delay.
+  router.get('/reading/session/:sessionId/end', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    if (!canEndSessionEarly(session)) {
+      return res.redirect(`/reading/session/${sessionId}`)
+    }
+
+    // A fresh visit starts with nothing chosen
+    delete data.endSessionTemp
+
+    const { unfinalisedReads, autoFinaliseAt, lastAutoFinaliseAt } =
+      getSessionFinalisationInfo(data, sessionId, data.currentUser?.id)
+
+    const sessionProgress = getSessionReadingProgress(
+      data,
+      sessionId,
+      null,
+      data.currentUser?.id
+    )
+
+    res.render('reading/end-session', {
+      session,
+      sessionId,
+      sessionProgress,
+      unfinalisedReadCount: unfinalisedReads.length,
+      autoFinaliseAt,
+      lastAutoFinaliseAt
+    })
+  })
+
+  router.post('/reading/session/:sessionId/end-answer', (req, res) => {
+    const data = req.session.data
+    const { sessionId } = req.params
+    const currentUserId = data.currentUser?.id
+    const session = getReadingSession(data, sessionId)
+    if (!session) {
+      return res.redirect('/reading')
+    }
+
+    if (!canEndSessionEarly(session)) {
+      return res.redirect(modalBreakout(sessionOverviewUrl(session)))
+    }
+
+    const isArbitration = session.type === 'arbitration'
+    const { unfinalisedReads } = getSessionFinalisationInfo(
+      data,
+      sessionId,
+      currentUserId
+    )
+
+    // The choice only exists when there is something to finalise
+    const finaliseAnswer = data.endSessionTemp?.finalise
+    if (unfinalisedReads.length > 0 && !finaliseAnswer) {
+      req.flash('error', {
+        text: isArbitration
+          ? 'Select whether to finalise the outcomes from this session'
+          : 'Select whether to finalise your opinions from this session',
+        name: 'endSessionTemp[finalise]',
+        href: '#finalise-reads'
+      })
+      return res.redirect(`/reading/session/${sessionId}/end`)
+    }
+
+    if (finaliseAnswer === 'yes') {
+      finaliseUserReadsForSession(data, sessionId, currentUserId)
+    }
+
+    delete data.endSessionTemp
+
+    // Nothing was recorded, so there is nothing to keep: the session is
+    // discarded rather than left as an empty overview and a blank history row
+    const sessionAppointments = (session.appointmentIds || [])
+      .map((appointmentId) =>
+        data.appointments.find((appointment) => appointment.id === appointmentId)
+      )
+      .filter(Boolean)
+
+    const anythingRecorded = sessionAppointments.some((appointment) =>
+      wasWorkedInSession(data, session, appointment, currentUserId)
+    )
+
+    if (!anythingRecorded) {
+      delete data.readingSessions[sessionId]
+      req.flash('success', 'Session ended')
+      return res.redirect(modalBreakout('/reading'))
+    }
+
+    endSession(data, sessionId, currentUserId)
+
+    // No flash: the session overview leads with a "Session ended" panel that
+    // says what was recorded and whether it finalised
+
+    res.redirect(modalBreakout(sessionOverviewUrl(session)))
+  })
+
+  // Route for viewing a reading session with a specific view. Arbitration
+  // sessions never reach here - they render their own overview above.
   router.get('/reading/session/:sessionId/:view', (req, res) => {
     const data = req.session.data
     const { sessionId, view } = req.params
-    const autoFinaliseWindowMinutes = 30
     const validViews = ['your-reads', 'all-reads']
 
     // Validate view parameter
     const selectedView = validViews.includes(view) ? view : 'your-reads'
 
-    // Get the batch
     const session = getReadingSession(data, sessionId)
     if (!session) {
-      // req.flash('error', 'Session not found')
       return res.redirect('/reading')
     }
 
-    // Get enhanced events with reading metadata
-    const enhancedEvents = session.eventIds
-      .map((eventId) => data.events.find((e) => e.id === eventId))
+    if (session.type === 'arbitration') {
+      return res.redirect(`/reading/session/${sessionId}`)
+    }
+
+    renderSessionOverview(req, res, session, selectedView)
+  })
+
+  // Build the session overview's view model and render the template that suits
+  // the session type. Reading gets tabbed per-user views; arbitration gets one
+  // list, because a case is arbitrated once for everyone.
+  const renderSessionOverview = (req, res, session, selectedView) => {
+    const data = req.session.data
+    const sessionId = session.id
+    const isArbitration = session.type === 'arbitration'
+
+    // The overview reflects the state of the session's cases, so it must not be
+    // served from the browser's cache - the same reason the case pages say so.
+    // It is the page a reader goes back to, and a restored copy would show the
+    // session as it was before they worked any of it.
+    res.set('Cache-Control', 'no-store, must-revalidate')
+
+    // Get enhanced appointments with reading metadata
+    const enhancedAppointments = session.appointmentIds
+      .map((appointmentId) =>
+        data.appointments.find((e) => e.id === appointmentId)
+      )
       .filter(Boolean)
-      .map((event) => {
-        // Add participant data and reading metadata
+      .map((appointment) => {
+        // Add participant data, the reading case, and its metadata
         const participant = data.participants.find(
-          (p) => p.id === event.participantId
+          (p) => p.id === appointment.participantId
         )
-        const metadata = getReadingMetadata(event)
+        const readingCase = getReadingCase(data, appointment)
 
         return {
-          ...event,
+          ...appointment,
           participant,
-          readingMetadata: metadata
+          readingCase,
+          readingMetadata: getReadingMetadata(readingCase, data.settings)
         }
       })
 
     // Get reading status for the session
-    const readingStatus = getReadingStatusForEvents(
-      enhancedEvents,
+    const readingStatus = getReadingStatusForAppointments(
+      data,
+      enhancedAppointments,
       data.currentUser.id
     )
+
+    // Arbitration settles a case for everyone, so its progress is how many of
+    // the session's cases have been arbitrated - not what any one user has done
+    const arbitratedCount = enhancedAppointments.filter((appointment) =>
+      caseHasBeenArbitrated(appointment.readingCase)
+    ).length
+
+    // Whether the reader has begun this session - what tells "Start" from
+    // "Resume". Any work on a case counts, not just a decision: skipping,
+    // deferring and asking for priors are all ways of having started.
+    const sessionStarted =
+      (session.skippedAppointments || []).length > 0 ||
+      enhancedAppointments.some((appointment) =>
+        wasWorkedInSession(data, session, appointment, data.currentUser.id)
+      )
 
     const sessionProgress = getSessionReadingProgress(
       data,
@@ -448,27 +897,37 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
+    // A session that has run out of work is over, and this is where that gets
+    // recorded for a session the reader never walked to the end of. Judged on
+    // the target rather than on what's loaded, so a lazy session that could
+    // still top up isn't ended prematurely.
+    if (
+      isSessionEndable(session) &&
+      !isSessionEnded(session) &&
+      sessionProgress?.targetRemaining === 0
+    ) {
+      endSession(data, sessionId, data.currentUser.id)
+    }
+
+    const sessionEnded = isSessionEnded(session)
+
     // Find where the user should resume — first readable after the furthest
-    // point they've reached (reads or skips), falling back to first readable
-    const resumeEvent = getResumeEventForUser(
-      enhancedEvents,
-      data.currentUser.id,
-      session.skippedEvents || []
-    )
+    // point they've reached (reads or skips), falling back to first readable.
+    // An ended session has nowhere to resume to.
+    const resumeAppointment = sessionEnded
+      ? null
+      : getResumeAppointmentForUser(
+          data,
+          enhancedAppointments,
+          data.currentUser.id,
+          session.skippedAppointments || [],
+          session
+        )
 
-    // Countdown starts when the current user records their first opinion in this session
-    const firstUserReadTimestamp = enhancedEvents
-      .map(
-        (event) => event.imageReading?.reads?.[data.currentUser.id]?.timestamp
-      )
-      .filter(Boolean)
-      .sort((a, b) => new Date(a) - new Date(b))[0]
-
-    const autoFinaliseAt = firstUserReadTimestamp
-      ? dayjs(firstUserReadTimestamp)
-          .add(autoFinaliseWindowMinutes, 'minute')
-          .toISOString()
-      : dayjs().add(autoFinaliseWindowMinutes, 'minute').toISOString()
+    // The user's reads still awaiting finalisation, and when the first will
+    // finalise itself - drives the session-complete panel's finalise prompt
+    const { unfinalisedReads: unconfirmedReads, autoFinaliseAt } =
+      getSessionFinalisationInfo(data, sessionId, data.currentUser.id)
 
     // Clear any lingering opinion banner from a previous session
     delete data.readingOpinionBanner
@@ -476,37 +935,66 @@ module.exports = (router) => {
     // Get clinic data if this is a clinic session
     let clinic = null
     if (session.clinicId) {
-      clinic = data.clinics.find((c) => c.id === session.clinicId)
+      clinic = getClinic(data, session.clinicId)
     }
 
-    // Overall backlog count — used to gate the 'Start a new session' button.
-    // Checks only cases the current user can actually read (not already read by them,
-    // not fully read by others, not deferred or awaiting priors).
-    const backlogTotal = filterEventsByUserCanRead(
-      filterEventsByEligibleForReading(data.events),
-      data.currentUser.id
-    ).length
+    // Overall backlog count — used to gate the 'Start a new session' button, so
+    // it counts the work a new session of *this* type would draw on. For
+    // reading that's cases the user can read (not already read by them, not
+    // fully read by others, not deferred or awaiting priors); for arbitration
+    // it's the cases they'd be eligible to arbitrate.
+    const backlogTotal = isArbitration
+      ? getEligibleCandidatesForSession(data, { type: 'arbitration' }).length
+      : filterAppointmentsByUserCanRead(
+          data,
+          filterAppointmentsByEligibleForReading(data.appointments),
+          data.currentUser.id
+        ).length
 
-    res.render('reading/session', {
-      session,
-      events: enhancedEvents,
-      readingStatus,
-      sessionProgress,
-      resumeEvent,
-      autoFinaliseAt,
-      clinic,
-      backlogTotal,
-      view: selectedView
-    })
-  })
+    // An ended session shows the work that was done in it. Cases it had loaded
+    // but nobody got to were never part of that work - they went back to the
+    // queue, and the panel counts them there.
+    const listedAppointments = sessionEnded
+      ? enhancedAppointments.filter((appointment) =>
+          wasWorkedInSession(data, session, appointment, data.currentUser.id)
+        )
+      : enhancedAppointments
+
+    res.render(
+      isArbitration ? 'reading/arbitration/session' : 'reading/session',
+      {
+        session,
+        appointments: listedAppointments,
+        readingStatus,
+        sessionProgress,
+        resumeAppointment,
+        autoFinaliseAt,
+        arbitratedCount,
+        sessionStarted,
+        unfinalisedReadCount: unconfirmedReads.length,
+        sessionEnded,
+        canEndSessionEarly: canEndSessionEarly(session),
+        clinic,
+        backlogTotal,
+        view: selectedView
+      }
+    )
+  }
 
   // Middleware to make sure pages have the right data
   router.use(
-    '/reading/session/:sessionId/events/:eventId',
+    '/reading/session/:sessionId/appointments/:appointmentId',
     (req, res, next) => {
       const data = req.session.data
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
+
+      // Reading pages reflect a case's current state, so they must not be served
+      // from the browser's cache. Without this, going back to a step page after
+      // finishing a case restores the stale page from the back/forward cache -
+      // no request is made, so the redirect guarding those steps never runs, and
+      // the reader is shown a confirmation for a decision already recorded.
+      res.set('Cache-Control', 'no-store, must-revalidate')
 
       // Get the batch
       const session = getReadingSession(data, sessionId)
@@ -516,55 +1004,76 @@ module.exports = (router) => {
         return res.redirect('/reading')
       }
 
-      // Check if event exists in this session
-      if (!session.eventIds.includes(eventId)) {
-        // req.flash('error', 'Event not found in this session')
-        console.log(`Event ${sessionId} not found in this session`)
+      // Check if appointment exists in this session
+      if (!session.appointmentIds.includes(appointmentId)) {
+        // req.flash('error', 'Appointment not found in this session')
+        console.log(
+          `Appointment ${appointmentId} not found in session ${sessionId}`
+        )
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
-      // Get the event data
-      const event = data.events.find((e) => e.id === eventId)
-      if (!event) {
-        // req.flash('error', 'Event not found')
-        console.log(`Event ${eventId} not found`)
+      // Get the appointment data
+      const appointment = getAppointment(data, appointmentId)
+      if (!appointment) {
+        // req.flash('error', 'Appointment not found')
+        console.log(`Appointment ${appointmentId} not found`)
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
+
+      // An ended session takes no more new work, however its cases are reached
+      // - a bookmarked URL, or the back button after ending. The cases it did
+      // work stay open, so the reader can still see and amend what was
+      // recorded until it finalises.
+      if (
+        isSessionEnded(session) &&
+        !wasWorkedInSession(data, session, appointment, currentUserId)
+      ) {
         return res.redirect(`/reading/session/${sessionId}`)
       }
 
       // Get participant and clinic data
-      const participant = data.participants.find(
-        (p) => p.id === event.participantId
-      )
-      const clinic = data.clinics.find((c) => c.id === event.clinicId)
+      const participant = getParticipant(data, appointment.participantId)
+      const clinic = getClinic(data, appointment.clinicId)
       const unit = data.breastScreeningUnits.find(
         (u) => u.id === clinic.breastScreeningUnitId
       )
       const location = unit.locations.find((l) => l.id === clinic.locationId)
 
       // Get reading progress for this session
-      const progress = getSessionReadingProgress(data, sessionId, eventId)
+      const progress = getSessionReadingProgress(data, sessionId, appointmentId)
 
-      // Initialise or update imageReadingTemp for this event
+      // Initialise or update imageReadingTemp for this appointment
       // Only do this on GET requests - POST requests should preserve form data
       if (req.method === 'GET') {
         if (
           !data.imageReadingTemp ||
-          data.imageReadingTemp.eventId !== eventId
+          data.imageReadingTemp.appointmentId !== appointmentId
         ) {
-          const existingRead = event.imageReading?.reads?.[currentUserId]
+          // In arbitration the read being amended is the case's arbitration
+          // read, not the current user's own - a panel member may also have
+          // read this case as first or second reader
+          const readingCaseForTemp = getReadingCase(data, appointment)
+          const existingRead =
+            session.type === 'arbitration'
+              ? getArbitrationRead(readingCaseForTemp)
+              : getReadForUser(readingCaseForTemp, currentUserId)
+
           if (existingRead) {
-            // User has already read this event - populate temp from saved read
+            // User has already read this appointment - populate temp from saved read
             console.log(
-              `Loading existing read for event ${eventId} into imageReadingTemp`
+              `Loading existing read for appointment ${appointmentId} into imageReadingTemp`
             )
             data.imageReadingTemp = {
-              eventId: eventId,
+              appointmentId: appointmentId,
               ...existingRead
             }
           } else {
-            // No existing read - initialise empty temp with eventId
-            console.log(`Initialising imageReadingTemp for event ${eventId}`)
-            data.imageReadingTemp = { eventId: eventId }
+            // No existing read - initialise empty temp with appointmentId
+            console.log(
+              `Initialising imageReadingTemp for appointment ${appointmentId}`
+            )
+            data.imageReadingTemp = { appointmentId: appointmentId }
           }
           // Update res.locals.data to reflect the change (it was set before this middleware)
           res.locals.data.imageReadingTemp = data.imageReadingTemp
@@ -575,6 +1084,7 @@ module.exports = (router) => {
         // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
         if (
           (req.path.endsWith('/opinion') ||
+            req.path.endsWith('/outcome') ||
             req.path.endsWith('/existing-read')) &&
           data.readingOpinionBanner
         ) {
@@ -583,113 +1093,253 @@ module.exports = (router) => {
         }
       }
 
-      // Set up locals for templates
+      // Set up locals for templates. The case is resolved once here so the
+      // workflow templates can work in reading-case terms without each of them
+      // walking back to the episode
       res.locals.isReadingWorkflow = true
+      res.locals.isArbitration = session.type === 'arbitration'
+
+      // The step where the case is decided. Arbitration decides an outcome,
+      // reading gives an opinion, and each has its own page and URL
+      res.locals.decisionStep =
+        session.type === 'arbitration' ? 'outcome' : 'opinion'
+
+      // Reaching a case in an arbitration session is the act that releases it.
+      // Lazy sessions bring cases in one at a time, so this is where release
+      // happens rather than over the whole backlog at session creation.
+      if (session.type === 'arbitration') {
+        const caseToRelease = getReadingCase(data, appointment)
+        if (caseToRelease && !caseToRelease.arbitration?.releasedAt) {
+          updateReadingCase(
+            data,
+            appointment.episodeId,
+            withArbitrationRelease(caseToRelease, currentUserId)
+          )
+        }
+      }
+
+      res.locals.readingCase = getReadingCase(data, appointment)
       res.locals.session = session
-      res.locals.eventData = { clinic, event, participant, unit, location }
+      res.locals.appointmentData = {
+        clinic,
+        appointment,
+        participant,
+        unit,
+        location
+      }
       res.locals.clinic = clinic
-      res.locals.event = event
+      res.locals.appointment = appointment
       res.locals.participant = participant
       res.locals.unit = unit
       res.locals.location = location
       res.locals.sessionId = sessionId
-      res.locals.eventId = eventId
+      res.locals.appointmentId = appointmentId
       res.locals.progress = progress
 
       next()
     }
   )
 
-  // Route for event reading within a batch
+  // Route for appointment reading within a batch
   // Redirects to existing-read if user has already read, otherwise to opinion
-  router.get('/reading/session/:sessionId/events/:eventId', (req, res) => {
-    const data = req.session.data
-    const { sessionId, eventId } = req.params
-    const currentUserId = data.currentUser?.id
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
 
-    // Find the event
-    const event = data.events.find((e) => e.id === eventId)
-    if (!event) {
-      return res.redirect(`/reading/session/${sessionId}`)
+      // Find the appointment
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) {
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
+
+      // Returning to a case that has already been done shows what was recorded,
+      // rather than starting the flow again. In arbitration that means the
+      // arbitration read - a panel member's own earlier read as first or second
+      // reader isn't the thing this session is here to do.
+      const session = getReadingSession(data, sessionId)
+      const isArbitrationSession = session?.type === 'arbitration'
+      const alreadyDone = isArbitrationSession
+        ? appointmentHasBeenArbitrated(data, appointment)
+        : userHasReadAppointment(data, appointment, currentUserId)
+
+      if (alreadyDone) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+        )
+      }
+
+      // Check if appointment is awaiting priors (user or someone else requested)
+      if (awaitingPriors(appointment)) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+        )
+      }
+
+      // Check if appointment has been deferred from reading
+      if (isCaseDeferred(getReadingCase(data, appointment))) {
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+        )
+      }
+
+      // Delete temporary data from previous steps
+      delete data.imageReadingTemp
+
+      res.redirect(caseDecisionUrl(data, sessionId, appointmentId))
     }
+  )
 
-    // Check if user has already read this event
-    if (userHasReadEvent(event, currentUserId)) {
-      return res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/existing-read`
+  // Finalise this one case early, from the existing-read page. Redirects back
+  // to that page so the change is visible in place.
+  router.all(
+    '/reading/session/:sessionId/appointments/:appointmentId/finalise-read',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
+      const backHref = `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+
+      const appointment = data.appointments.find(
+        (candidate) => candidate.id === appointmentId
       )
-    }
+      if (!appointment) {
+        return res.redirect(`/reading/session/${sessionId}`)
+      }
 
-    // Check if event is awaiting priors (user or someone else requested)
-    const { awaitingPriors } = require('../lib/utils/prior-mammograms')
-    if (awaitingPriors(event)) {
-      return res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/existing-read`
+      const readingCase = getReadingCase(data, appointment)
+      const session = getReadingSession(data, sessionId)
+      const isArbitrationSession = session?.type === 'arbitration'
+
+      // The read this page is about - the case's arbitration read in an
+      // arbitration session, otherwise the user's own
+      const read = isArbitrationSession
+        ? getArbitrationRead(readingCase)
+        : getReadForUser(readingCase, currentUserId)
+
+      if (!read || isReadFinalised(read, data.settings)) {
+        return res.redirect(backHref)
+      }
+
+      finaliseReadOnCase(data, appointment, readingCase, currentUserId)
+
+      req.flash(
+        'success',
+        isArbitrationSession ? 'Outcome finalised' : 'Read finalised'
       )
+
+      res.redirect(backHref)
     }
+  )
 
-    // Check if event has been deferred from reading
-    const { isDeferred } = require('../lib/utils/reading')
-    if (isDeferred(event)) {
-      return res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/existing-read`
-      )
-    }
+  // Handle skipping an appointment in a batch
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId/skip',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
 
-    // Delete temporary data from previous steps
-    delete data.imageReadingTemp
+      // Mark as skipped
+      skipAppointmentInSession(data, sessionId, appointmentId)
 
-    res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
-  })
+      // Top up the batch with the next eligible appointment if under target size
+      topUpSession(data, sessionId, appointmentId)
 
-  // Handle skipping an event in a batch
-  router.get('/reading/session/:sessionId/events/:eventId/skip', (req, res) => {
-    const data = req.session.data
-    const { sessionId, eventId } = req.params
+      // Find next readable appointment after current position (no wrap)
+      const currentUserId = data.currentUser.id
+      const session = getReadingSession(data, sessionId)
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
+        .filter(Boolean)
 
-    // Mark as skipped
-    skipEventInSession(data, sessionId, eventId)
-
-    // Top up the batch with the next eligible event if under target size
-    topUpSession(data, sessionId)
-
-    // Find next readable event after current position (no wrap)
-    const currentUserId = data.currentUser.id
-    const session = getReadingSession(data, sessionId)
-    const sessionEvents = session.eventIds
-      .map((id) => data.events.find((e) => e.id === id))
-      .filter(Boolean)
-    const nextUnreadEvent = getNextUserReadableEvent(
-      sessionEvents,
-      eventId,
-      currentUserId,
-      { wrap: false }
-    )
-
-    if (nextUnreadEvent) {
-      res.redirect(`/reading/session/${sessionId}/events/${nextUnreadEvent.id}`)
-    } else if (session.skippedEvents.length > 0) {
-      res.redirect(`/reading/session/${sessionId}/skipped-review`)
-    } else {
-      // Check if there are any readable cases left in the session
-      const firstReadable = getFirstUserReadableEvent(
-        sessionEvents,
+      const nextUnreadAppointment = getNextCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
         currentUserId
       )
-      if (firstReadable) {
-        res.redirect(`/reading/session/${sessionId}`)
+
+      if (nextUnreadAppointment) {
+        res.redirect(
+          `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
+        )
+      } else if (session.skippedAppointments.length > 0) {
+        res.redirect(`/reading/session/${sessionId}/skipped-review`)
       } else {
-        res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+        // Check if there are any readable cases left in the session
+        const firstReadable = getFirstOutstandingCaseInSession(
+          data,
+          session,
+          sessionAppointments,
+          currentUserId
+        )
+        if (firstReadable) {
+          res.redirect(`/reading/session/${sessionId}`)
+        } else {
+          res.redirect(`/reading/session/${sessionId}/no-more-cases`)
+        }
       }
     }
-  })
+  )
+
+  // Move on from a case that is already settled - the "Next case" link on the
+  // workflow navigation. Asking the session where to go next (rather than
+  // linking straight at an appointment) is what lets a lazy session grow: the
+  // reader gets a new case rather than looping back through finished ones.
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId/next-case',
+    (req, res) => {
+      const data = req.session.data
+      const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
+
+      const onwardUrl = onwardFromCase(data, sessionId, appointmentId)
+
+      // With nothing left to do, the reader is looking back over the session,
+      // so step through its cases in order as the "Previous case" link does -
+      // rather than landing on the end-of-session page every time
+      const session = getReadingSession(data, sessionId)
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
+        .filter(Boolean)
+      const nothingLeftToDo =
+        isSessionEnded(session) ||
+        !getFirstOutstandingCaseInSession(
+          data,
+          session,
+          sessionAppointments,
+          currentUserId
+        )
+
+      if (!nothingLeftToDo) {
+        return res.redirect(onwardUrl)
+      }
+
+      const followingCase = getFollowingCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
+      )
+
+      res.redirect(
+        followingCase
+          ? `/reading/session/${sessionId}/appointments/${followingCase.id}`
+          : sessionOverviewUrl(session)
+      )
+    }
+  )
 
   // Handle requesting prior images during reading
   router.post(
-    '/reading/session/:sessionId/events/:eventId/request-priors-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/request-priors-answer',
     (req, res) => {
       const data = req.session.data
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
 
       // Get the IDs of mammograms to request
@@ -699,93 +1349,105 @@ module.exports = (router) => {
       }
 
       const reason = req.body.requestPriorReason || ''
+      // The kit's autoStoreData copies every posted field into the session, so
+      // the reason would otherwise resurface on the next case's form
+      delete data.requestPriorReason
 
-      // Find the event in the main events array
-      const event = data.events.find((e) => e.id === eventId)
-      if (event && event.previousMammograms) {
-        event.previousMammograms.forEach((mammogram) => {
-          if (requestPriorIds.includes(mammogram.id)) {
-            mammogram.requestStatus = 'pending'
-            mammogram.requestedDate = new Date().toISOString()
-            mammogram.requestedBy = currentUserId
-            if (reason) {
-              mammogram.requestReason = reason
-            }
-          }
-        })
+      // Find the appointment in the main appointments array
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (appointment && appointment.previousMammograms) {
+        // Build an updated list rather than mutating in place - appointment records
+        // are shared read-only data; writes go through the update helpers
+        const previousMammograms = appointment.previousMammograms.map(
+          (mammogram) =>
+            requestPriorIds.includes(mammogram.id)
+              ? {
+                  ...mammogram,
+                  requestStatus: 'pending',
+                  requestedDate: new Date().toISOString(),
+                  requestedBy: currentUserId,
+                  requestReason: reason
+                }
+              : mammogram
+        )
 
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.previousMammograms = event.previousMammograms
-        }
+        // Saves to the appointment and mirrors into data.appointment if it matches
+        updateAppointmentData(data, appointmentId, { previousMammograms })
       }
 
       // If submitted from an existing-read page (e.g. editing reason), return there
       const priorsReferrerChain = req.query.referrerChain
       if (priorsReferrerChain) {
         // In edit mode, also update reason on mammograms already pending/requested by this user
-        if (event && event.previousMammograms && reason) {
-          event.previousMammograms.forEach((mammogram) => {
-            if (
+        if (appointment && appointment.previousMammograms) {
+          const latestAppointment = data.appointments.find(
+            (e) => e.id === appointmentId
+          )
+          const previousMammograms = latestAppointment.previousMammograms.map(
+            (mammogram) =>
               (mammogram.requestStatus === 'pending' ||
                 mammogram.requestStatus === 'requested') &&
               mammogram.requestedBy === currentUserId
-            ) {
-              mammogram.requestReason = reason
-            }
-          })
-          if (data.event && data.event.id === eventId) {
-            data.event.previousMammograms = event.previousMammograms
-          }
+                ? { ...mammogram, requestReason: reason }
+                : mammogram
+          )
+          updateAppointmentData(data, appointmentId, { previousMammograms })
         }
         const returnUrl = getReturnUrl(
-          `/reading/session/${sessionId}/events/${eventId}/existing-read`,
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`,
           priorsReferrerChain
         )
         res.redirect(modalBreakout(returnUrl))
         return
       }
 
-      // Top up the batch with the next eligible event if under target size
-      topUpSession(data, sessionId)
+      // Requesting priors settles what happens to this case for now, so it is
+      // no longer waiting to be come back to
+      unskipAppointmentInSession(data, sessionId, appointmentId)
 
-      // Find next readable event in batch after the current position, wrapping
+      // Top up the batch with the next eligible appointment if under target size
+      topUpSession(data, sessionId, appointmentId)
+
+      // Find next readable appointment in batch after the current position, wrapping
       // to the start if needed. This mirrors the navigation in save-opinion.
       const session = getReadingSession(data, sessionId)
-      const sessionEvents = session.eventIds
-        .map((id) => data.events.find((e) => e.id === id))
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getNextUserReadableEvent(
-        sessionEvents,
-        eventId,
-        currentUserId,
-        { wrap: false }
+      const nextUnreadAppointment = getNextCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
       )
 
       // Only store the banner if there is a next case to show it on
-      if (nextUnreadEvent) {
+      if (nextUnreadAppointment) {
         const participant = data.participants.find(
-          (person) => person.id === event.participantId
+          (person) => person.id === appointment.participantId
         )
         const shortName = getShortName(participant)
         data.readingOpinionBanner = {
           text: `Prior images requested for ${shortName}`,
           participantName: `${shortName}`,
-          editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
+          editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         }
         res.redirect(
           modalBreakout(
-            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
           )
         )
-      } else if (session.skippedEvents.length > 0) {
+      } else if (session.skippedAppointments.length > 0) {
         res.redirect(
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableEvent(
-          sessionEvents,
+        const firstReadable = getFirstOutstandingCaseInSession(
+          data,
+          session,
+          sessionAppointments,
           currentUserId
         )
         if (firstReadable) {
@@ -803,34 +1465,37 @@ module.exports = (router) => {
   // back to not_requested, allowing the reader to read the case
   // Supports GET (summary list action link) and POST
   router.all(
-    '/reading/session/:sessionId/events/:eventId/undo-priors',
+    '/reading/session/:sessionId/appointments/:appointmentId/undo-priors',
     (req, res) => {
       const data = req.session.data
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
 
-      const event = data.events.find((e) => e.id === eventId)
-      if (event && event.previousMammograms) {
-        event.previousMammograms.forEach((mammogram) => {
-          if (
-            mammogram.requestStatus === 'pending' &&
-            mammogram.requestedBy === currentUserId
-          ) {
-            mammogram.requestStatus = 'not_requested'
-            delete mammogram.requestedDate
-            delete mammogram.requestedBy
-            delete mammogram.requestReason
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (appointment && appointment.previousMammograms) {
+        // Build an updated list rather than mutating in place - appointment records
+        // are shared read-only data; writes go through the update helpers
+        const previousMammograms = appointment.previousMammograms.map(
+          (mammogram) => {
+            if (
+              mammogram.requestStatus === 'pending' &&
+              mammogram.requestedBy === currentUserId
+            ) {
+              // Omit the request fields entirely on the replacement record
+              const { requestedDate, requestedBy, requestReason, ...rest } =
+                mammogram
+              return { ...rest, requestStatus: 'not_requested' }
+            }
+            return mammogram
           }
-        })
+        )
 
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.previousMammograms = event.previousMammograms
-        }
+        // Saves to the appointment and mirrors into data.appointment if it matches
+        updateAppointmentData(data, appointmentId, { previousMammograms })
       }
 
-      // Redirect to opinion page so the reader can now read the case
-      res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
+      // Redirect to the decision page so the reader can now read the case
+      res.redirect(caseDecisionUrl(data, sessionId, appointmentId))
     }
   )
 
@@ -840,88 +1505,94 @@ module.exports = (router) => {
 
   // Handle deferring a case from reading
   router.post(
-    '/reading/session/:sessionId/events/:eventId/defer-case-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/defer-case-answer',
     (req, res) => {
       const data = req.session.data
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
 
       const reason = req.body.deferralReason || ''
+      // The kit's autoStoreData copies every posted field into the session, so
+      // the reason would otherwise resurface on the next case's form
+      delete data.deferralReason
 
-      // Find the event and save deferral data
-      const event = data.events.find((e) => e.id === eventId)
-      if (event) {
-        if (!event.imageReading) {
-          event.imageReading = {}
+      // Find the appointment and save deferral data. Work on a clone rather than
+      // mutating in place - appointment records are shared read-only data; writes
+      // go through the update helpers
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      const readingCase = getReadingCase(data, appointment)
+      if (readingCase) {
+        // Deferring withdraws any opinion this user had already given - they're
+        // saying they can't judge this case after all
+        const updatedCase = {
+          ...withoutRead(readingCase, currentUserId),
+          deferral: {
+            deferredAt: new Date().toISOString(),
+            deferredBy: currentUserId,
+            reason: reason || null
+          }
         }
 
-        // Remove any existing read by this user — deferral replaces a prior opinion
-        if (event.imageReading.reads?.[currentUserId]) {
-          delete event.imageReading.reads[currentUserId]
-        }
-
-        event.imageReading.deferral = {
-          deferredAt: new Date().toISOString(),
-          deferredBy: currentUserId,
-          reason: reason || null
-        }
-
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.imageReading = event.imageReading
-        }
+        updateReadingCase(data, appointment.episodeId, updatedCase)
       }
 
       // If submitted from an existing-read page (e.g. editing reason), return there
       const referrerChain = req.query.referrerChain
       if (referrerChain) {
         const returnUrl = getReturnUrl(
-          `/reading/session/${sessionId}/events/${eventId}/existing-read`,
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`,
           referrerChain
         )
         res.redirect(modalBreakout(returnUrl))
         return
       }
 
-      // Top up the session with the next eligible event if under target size
-      topUpSession(data, sessionId)
+      // A deferred case is settled for now, so it is no longer waiting to be
+      // come back to
+      unskipAppointmentInSession(data, sessionId, appointmentId)
 
-      // Find next readable event after current position
+      // Top up the session with the next eligible appointment if under target size
+      topUpSession(data, sessionId, appointmentId)
+
+      // Find next readable appointment after current position
       const session = getReadingSession(data, sessionId)
-      const sessionEvents = session.eventIds
-        .map((id) => data.events.find((e) => e.id === id))
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getNextUserReadableEvent(
-        sessionEvents,
-        eventId,
-        currentUserId,
-        { wrap: false }
+      const nextUnreadAppointment = getNextCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
       )
 
       // Show a banner on the next case if there is one
-      if (nextUnreadEvent) {
+      if (nextUnreadAppointment) {
         const participant = data.participants.find(
-          (person) => person.id === event?.participantId
+          (person) => person.id === appointment?.participantId
         )
         const shortName = getShortName(participant)
         data.readingOpinionBanner = {
           text: `Case deferred for ${shortName}`,
           participantName: shortName,
-          editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
+          editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         }
         res.redirect(
           modalBreakout(
-            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
+            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
           )
         )
-      } else if (session.skippedEvents.length > 0) {
+      } else if (session.skippedAppointments.length > 0) {
         res.redirect(
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)
         )
       } else {
         // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableEvent(
-          sessionEvents,
+        const firstReadable = getFirstOutstandingCaseInSession(
+          data,
+          session,
+          sessionAppointments,
           currentUserId
         )
         if (firstReadable) {
@@ -937,22 +1608,19 @@ module.exports = (router) => {
 
   // Undo a case deferral — removes the deferral so the case returns to reading
   router.all(
-    '/reading/session/:sessionId/events/:eventId/undo-defer',
+    '/reading/session/:sessionId/appointments/:appointmentId/undo-defer',
     (req, res) => {
       const data = req.session.data
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
 
-      const event = data.events.find((e) => e.id === eventId)
-      if (event?.imageReading?.deferral) {
-        delete event.imageReading.deferral
-
-        // Also update the mirrored event in data.event
-        if (data.event && data.event.id === eventId) {
-          data.event.imageReading = event.imageReading
-        }
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      const readingCase = getReadingCase(data, appointment)
+      if (isCaseDeferred(readingCase)) {
+        const { deferral, ...withoutDeferral } = readingCase
+        updateReadingCase(data, appointment.episodeId, withoutDeferral)
       }
 
-      res.redirect(`/reading/session/${sessionId}/events/${eventId}/opinion`)
+      res.redirect(caseDecisionUrl(data, sessionId, appointmentId))
     }
   )
 
@@ -965,39 +1633,45 @@ module.exports = (router) => {
   // Keeps a record of the resolved deferral so the reason stays visible
   router.post('/reading/deferred/undo', (req, res) => {
     const data = req.session.data
-    const { eventId } = req.body
+    const { appointmentId } = req.body
 
-    const event = data.events.find((e) => e.id === eventId)
-    if (event?.imageReading?.deferral) {
-      if (!event.imageReading.deferralHistory) {
-        event.imageReading.deferralHistory = []
-      }
-      event.imageReading.deferralHistory.push({
-        ...event.imageReading.deferral,
-        resolvedAt: new Date().toISOString(),
-        resolvedBy: data.currentUser?.id
+    const appointment = data.appointments.find((e) => e.id === appointmentId)
+    const readingCase = getReadingCase(data, appointment)
+    if (isCaseDeferred(readingCase)) {
+      const { deferral, ...withoutDeferral } = readingCase
+
+      updateReadingCase(data, appointment.episodeId, {
+        ...withoutDeferral,
+        deferralHistory: [
+          ...(readingCase.deferralHistory || []),
+          {
+            ...deferral,
+            resolvedAt: new Date().toISOString(),
+            resolvedBy: data.currentUser?.id
+          }
+        ]
       })
-      delete event.imageReading.deferral
-
-      if (data.event && data.event.id === eventId) {
-        data.event.imageReading = event.imageReading
-      }
 
       const participant = data.participants.find(
-        (p) => p.id === event.participantId
+        (p) => p.id === appointment.participantId
       )
       const shortName = getShortName(participant)
       req.flash('success', `${shortName} returned to reading queue`)
     }
 
+    // returnTo lets the case page reuse this action and land back there
+    const returnTo = req.body.returnTo
+    if (returnTo && returnTo.startsWith('/')) {
+      return res.redirect(returnTo)
+    }
     res.redirect('/reading/deferred')
   })
 
   // Render appropriate template for reading views
   router.get(
-    '/reading/session/:sessionId/events/:eventId/:step',
+    '/reading/session/:sessionId/appointments/:appointmentId/:step',
     (req, res, next) => {
-      const { sessionId, eventId, step } = req.params
+      const { sessionId, appointmentId, step } = req.params
 
       // Workflow steps (in reading/workflow/ folder)
       const workflowSteps = [
@@ -1013,10 +1687,77 @@ module.exports = (router) => {
         'review',
         'existing-read',
         'compare',
+        'arbitration-reads',
         'request-priors',
         'defer-case',
         'medical-information'
       ]
+
+      // Steps that only make sense while a case is still being decided. Once it
+      // has been, they are stale: the confirmation pages would offer to save a
+      // decision already recorded, and the detail pages would collect details
+      // for it. The case URL already sends finished cases to existing-read -
+      // these are the same door, further in, reachable by back-navigation.
+      //
+      // Editing is the exception, and says so with a referrer chain: those
+      // journeys deliberately reopen a finished case, and must be let through.
+      const stepsRequiringUnfinishedCase = [
+        'opinion',
+        'outcome',
+        'normal-details',
+        'confirm-normal',
+        'technical-recall',
+        'recall-for-assessment-details',
+        'confirm-abnormal',
+        'recommended-assessment',
+        'review',
+        'compare',
+        'arbitration-reads'
+      ]
+
+      if (
+        stepsRequiringUnfinishedCase.includes(step) &&
+        !req.query.referrerChain
+      ) {
+        const data = req.session.data
+        const appointment = data.appointments.find(
+          (candidate) => candidate.id === appointmentId
+        )
+        const session = getReadingSession(data, sessionId)
+        const caseIsSettled = appointment
+          ? session?.type === 'arbitration'
+            ? appointmentHasBeenArbitrated(data, appointment)
+            : userHasReadAppointment(data, appointment, data.currentUser?.id)
+          : false
+
+        if (caseIsSettled) {
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+          )
+        }
+      }
+
+      // Arbitration decides an outcome rather than giving an opinion, on its
+      // own page (the original reads sit alongside the case) at its own URL.
+      // Each session type redirects to the step that is really its own, so a
+      // link to the other still lands somewhere sensible.
+      if (step === 'outcome' || step === 'opinion') {
+        const wantsOutcome = res.locals.isArbitration
+        const correctStep = wantsOutcome ? 'outcome' : 'opinion'
+
+        if (step !== correctStep) {
+          const query = req.originalUrl.includes('?')
+            ? req.originalUrl.slice(req.originalUrl.indexOf('?'))
+            : ''
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/${correctStep}${query}`
+          )
+        }
+
+        if (wantsOutcome) {
+          return res.render('reading/workflow/arbitration-outcome')
+        }
+      }
 
       if (workflowSteps.includes(step)) {
         return res.render(`reading/workflow/${step}`)
@@ -1030,7 +1771,7 @@ module.exports = (router) => {
 
   // Add annotation - clear temp data and redirect to form
   router.get(
-    '/reading/session/:sessionId/events/:eventId/annotation/add',
+    '/reading/session/:sessionId/appointments/:appointmentId/annotation/add',
     (req, res) => {
       const { side } = req.query
       const data = req.session.data
@@ -1038,7 +1779,10 @@ module.exports = (router) => {
       // Validate side parameter
       if (!side || !['left', 'right'].includes(side)) {
         return res.redirect(
-          `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/recall-for-assessment-details`
+          keepReferrerChain(
+            `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/recall-for-assessment-details`,
+            req
+          )
         )
       }
 
@@ -1066,16 +1810,19 @@ module.exports = (router) => {
       }
 
       res.redirect(
-        `/reading/session/${req.params.sessionId}/events/${req.params.eventId}/annotation`
+        keepReferrerChain(
+          `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/annotation`,
+          req
+        )
       )
     }
   )
 
   // Edit existing annotation
   router.get(
-    '/reading/session/:sessionId/events/:eventId/annotation/edit/:annotationId',
+    '/reading/session/:sessionId/appointments/:appointmentId/annotation/edit/:annotationId',
     (req, res) => {
-      const { sessionId, eventId, annotationId } = req.params
+      const { sessionId, appointmentId, annotationId } = req.params
       const data = req.session.data
 
       // Find the annotation to edit and its number
@@ -1105,15 +1852,20 @@ module.exports = (router) => {
       }
 
       // Always use the unified annotation page
-      res.redirect(`/reading/session/${sessionId}/events/${eventId}/annotation`)
+      res.redirect(
+        keepReferrerChain(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`,
+          req
+        )
+      )
     }
   )
 
   // Save annotation - handles both 'save' and 'save-and-add'
   router.post(
-    '/reading/session/:sessionId/events/:eventId/annotation/save',
+    '/reading/session/:sessionId/appointments/:appointmentId/annotation/save',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
       const action = req.body.action || 'save'
 
@@ -1138,7 +1890,10 @@ module.exports = (router) => {
 
       if (!annotationTemp) {
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+            req
+          )
         )
       }
 
@@ -1258,7 +2013,10 @@ module.exports = (router) => {
       if (errors.length > 0) {
         errors.forEach((error) => req.flash('error', error))
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/annotation`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`,
+            req
+          )
         )
       }
 
@@ -1270,7 +2028,10 @@ module.exports = (router) => {
 
         if (!side) {
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+            keepReferrerChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+              req
+            )
           )
         }
 
@@ -1341,12 +2102,18 @@ module.exports = (router) => {
         const side =
           req.body.side || data.imageReadingTemp?.annotationTemp?.side
         res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}`,
+            req
+          )
         )
       } else {
         res.redirect(
           modalBreakout(
-            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+            keepReferrerChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+              req
+            )
           )
         )
       }
@@ -1355,9 +2122,9 @@ module.exports = (router) => {
 
   // Delete annotation
   router.get(
-    '/reading/session/:sessionId/events/:eventId/annotation/delete/:annotationId',
+    '/reading/session/:sessionId/appointments/:appointmentId/annotation/delete/:annotationId',
     (req, res) => {
-      const { sessionId, eventId, annotationId } = req.params
+      const { sessionId, appointmentId, annotationId } = req.params
       const data = req.session.data
 
       // Remove annotation from both sides (we'll find it)
@@ -1375,7 +2142,10 @@ module.exports = (router) => {
 
       res.redirect(
         modalBreakout(
-          `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+            req
+          )
         )
       )
     }
@@ -1383,9 +2153,9 @@ module.exports = (router) => {
 
   // Save all annotations from the v2 3-column annotation tool
   router.post(
-    '/reading/session/:sessionId/events/:eventId/annotate-v2/save',
+    '/reading/session/:sessionId/appointments/:appointmentId/annotate-v2/save',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
 
       let allAnnotations = []
@@ -1404,7 +2174,7 @@ module.exports = (router) => {
       })
 
       res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+        `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
       )
     }
   )
@@ -1412,7 +2182,7 @@ module.exports = (router) => {
   // Save annotations via fetch (JSON body) — fire-and-forget auto-save from interactive JS.
   // Unlike the annotate-v2/save route, this returns a 200 status instead of redirecting.
   router.post(
-    '/reading/session/:sessionId/events/:eventId/save-annotations-json',
+    '/reading/session/:sessionId/appointments/:appointmentId/save-annotations-json',
     (req, res) => {
       const data = req.session.data
 
@@ -1445,7 +2215,7 @@ module.exports = (router) => {
   // Called via fire-and-forget fetch when a radio is selected — ensures the value survives
   // the page reload that follows a modal annotation save.
   router.get(
-    '/reading/session/:sessionId/events/:eventId/save-breast-assessment',
+    '/reading/session/:sessionId/appointments/:appointmentId/save-breast-assessment',
     (req, res) => {
       const { side, value } = req.query
       const data = req.session.data
@@ -1466,9 +2236,9 @@ module.exports = (router) => {
   // The prototype kit middleware automatically saves all form data to session on POST,
   // so radio selections are preserved regardless of which button triggered the submit.
   router.post(
-    '/reading/session/:sessionId/events/:eventId/recall-for-assessment-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/recall-for-assessment-answer',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const referrerChain = req.query.referrerChain
       const chainParam = referrerChain
         ? `?referrerChain=${encodeURIComponent(referrerChain)}`
@@ -1477,7 +2247,10 @@ module.exports = (router) => {
       const addAnnotationSide = req.body.addAnnotationSide
       if (addAnnotationSide && ['left', 'right'].includes(addAnnotationSide)) {
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${addAnnotationSide}`
+          keepReferrerChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${addAnnotationSide}`,
+            req
+          )
         )
       }
 
@@ -1496,13 +2269,16 @@ module.exports = (router) => {
             ? `&abnormalityType=${encodeURIComponent(abnormalityType)}`
             : ''
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/annotation/add?side=${side}${typeParam}`
+            keepReferrerChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}${typeParam}`,
+              req
+            )
           )
         }
       }
 
       res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete${chainParam}`
+        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete${chainParam}`
       )
     }
   )
@@ -1510,9 +2286,9 @@ module.exports = (router) => {
   // Handle technical recall form submission
   // Cleans up the data structure to only include selected views, then redirects to review
   router.post(
-    '/reading/session/:sessionId/events/:eventId/technical-recall-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/technical-recall-answer',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
 
       // Form binding creates:
@@ -1562,7 +2338,7 @@ module.exports = (router) => {
         }
         errors.forEach((err) => req.flash('error', err))
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/technical-recall`
+          `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
         )
       }
 
@@ -1593,7 +2369,7 @@ module.exports = (router) => {
         ? `?referrerChain=${encodeURIComponent(referrerChain)}`
         : ''
       res.redirect(
-        `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete${chainParam}`
+        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete${chainParam}`
       )
     }
   )
@@ -1603,9 +2379,9 @@ module.exports = (router) => {
   // All detail pages (normal-details, technical-recall, recall-for-assessment-details)
   // should route here on completion.
   router.all(
-    '/reading/session/:sessionId/events/:eventId/opinion-details-complete',
+    '/reading/session/:sessionId/appointments/:appointmentId/opinion-details-complete',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
       const currentUserId = data.currentUser?.id
       const formData = data.imageReadingTemp
@@ -1639,8 +2415,11 @@ module.exports = (router) => {
           rightAssessment === 'normal' &&
           leftAssessment === 'normal'
         ) {
-          const event = data.events.find((e) => e.id === eventId)
-          const hasSymptoms = event?.medicalInformation?.symptoms?.length > 0
+          const appointment = data.appointments.find(
+            (e) => e.id === appointmentId
+          )
+          const hasSymptoms =
+            appointment?.medicalInformation?.symptoms?.length > 0
           const errorText = hasSymptoms
             ? 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment'
             : 'At least one breast must be marked abnormal to recall for assessment'
@@ -1728,53 +2507,131 @@ module.exports = (router) => {
           }
           errors.forEach((err) => req.flash('error', err))
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
           )
         }
       }
 
-      const event = data.events.find((e) => e.id === eventId)
-      if (!event) return res.redirect(`/reading/session/${sessionId}`)
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      // Completing the detail pages is a deliberate act, so whatever follows is
+      // a real save. Detail edits reach save-opinion without passing through
+      // opinion-answer, so the temp may still carry the savedAt it was seeded
+      // with - clear it here too, or save-opinion's replay guard would block
+      // the edit. Done after validation so a bounced-back form keeps its state.
+      if (data.imageReadingTemp) {
+        delete data.imageReadingTemp.savedAt
+      }
+
+      // Editing a read the user has already saved. The existing-read page they
+      // came from is itself a summary of the read, so the confirmation step is
+      // redundant — save straight away regardless of the confirmation settings.
+      // In arbitration, "editing" means the arbitration read exists - not that
+      // the user was an original reader (panel members may have been).
+      const isArbitrationSession =
+        getReadingSession(data, sessionId)?.type === 'arbitration'
+      const isEditingExistingRead = isArbitrationSession
+        ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+        : userHasReadAppointment(data, appointment, currentUserId)
+
+      // Blind arbitration reveals the original reads on the review page, so
+      // the review step is required even when confirmDecision is off
+      const arbitrationNeedsReview =
+        isArbitrationSession &&
+        (data.settings?.reading?.arbitration?.confirmDecision !== 'false' ||
+          data.settings?.reading?.arbitration?.showReads === 'blind')
 
       // Check for late comparison if not already done
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
-      if (comparisonSetting === 'late' && !formData?.comparisonComplete) {
+      if (
+        comparisonSetting === 'late' &&
+        !isArbitrationSession &&
+        !formData?.comparisonComplete
+      ) {
         if (
-          shouldShowComparePage(event, formData, currentUserId, data.settings)
+          shouldShowComparePage(
+            getReadingCase(data, appointment),
+            formData,
+            currentUserId,
+            data.settings
+          )
         ) {
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/compare`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/compare`
           )
         }
       }
+
+      // Keep the referrer chain on the way to the next step, so an edit that
+      // began on the existing-read page returns there once saved. The technical
+      // recall and recall for assessment branches below do the same by hand.
+      const detailsReferrerChain = req.query.referrerChain
+      const withChain = (url) =>
+        detailsReferrerChain
+          ? `${url}${url.includes('?') ? '&' : '?'}referrerChain=${encodeURIComponent(detailsReferrerChain)}`
+          : url
 
       // Route based on opinion type
       switch (opinion) {
         case 'normal':
           // opinion-details-complete is only reached for normal when the user
-          // went through the normal-details page, so use confirmNormalWithDetails
-          if (data.settings?.reading?.confirmNormalWithDetails === 'true') {
+          // went through the normal-details page, so use confirmNormalWithDetails.
+          // Arbitration decisions confirm on the review page, unless the
+          // confirmDecision setting turns that off.
+          if (isArbitrationSession && !isEditingExistingRead) {
+            if (arbitrationNeedsReview) {
+              return res.redirect(
+                modalBreakout(
+                  withChain(
+                    `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                  )
+                )
+              )
+            }
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
+              307,
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+              )
+            )
+          }
+          if (
+            !isEditingExistingRead &&
+            data.settings?.reading?.confirmNormalWithDetails === 'true'
+          ) {
+            return res.redirect(
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
+              )
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
           )
         case 'technical_recall': {
           const trReferrer = req.query.referrerChain
           const trChainParam = trReferrer
             ? `?referrerChain=${encodeURIComponent(trReferrer)}`
             : ''
-          if (data.settings?.reading?.confirmTechnicalRecall !== 'false') {
+          if (
+            !isEditingExistingRead &&
+            (isArbitrationSession
+              ? arbitrationNeedsReview
+              : data.settings?.reading?.confirmTechnicalRecall !== 'false')
+          ) {
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/review${trChainParam}`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
+              )
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/events/${eventId}/save-opinion${trChainParam}`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion${trChainParam}`
           )
         }
         case 'recall_for_assessment': {
@@ -1782,19 +2639,26 @@ module.exports = (router) => {
           const rfaChainParam = rfaReferrer
             ? `?referrerChain=${encodeURIComponent(rfaReferrer)}`
             : ''
-          if (data.settings?.reading?.confirmRecallForAssessment !== 'false') {
+          if (
+            !isEditingExistingRead &&
+            (isArbitrationSession
+              ? arbitrationNeedsReview
+              : data.settings?.reading?.confirmRecallForAssessment !== 'false')
+          ) {
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/review${rfaChainParam}`
+              modalBreakout(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
+              )
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/events/${eventId}/save-opinion${rfaChainParam}`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion${rfaChainParam}`
           )
         }
         default:
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/review`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/review`
           )
       }
     }
@@ -1805,59 +2669,137 @@ module.exports = (router) => {
   // Uses router.all (not router.post) so it can be reached via GET when the
   // skip-confirmation path redirects without preserving a POST method.
   router.all(
-    '/reading/session/:sessionId/events/:eventId/save-opinion',
+    '/reading/session/:sessionId/appointments/:appointmentId/save-opinion',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
       const currentUserId = data.currentUser.id
       const formData = data.imageReadingTemp
 
-      if (!formData || !formData.opinion) {
-        console.log('No opinion in imageReadingTemp - cannot save')
-        return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
-      }
-
-      // Find the event
-      const event = data.events.find((e) => e.id === eventId)
-      if (!event) {
+      // Find the appointment
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) {
         return res.redirect(`/reading/session/${sessionId}`)
       }
+
+      // Where the reader goes once this case is settled: the next case, or
+      // whichever end-of-session page applies. Shared by a genuine save and by
+      // a replay of one, so a repeated save lands where the original did.
+      const onwardDestination = () =>
+        onwardFromCase(data, sessionId, appointmentId)
+
+      // Nothing to save. Either the decision was already recorded and this is a
+      // repeat submit - a double click, a held shortcut key - whose temp the
+      // first save cleared, or the reader never gave one. A repeat submit is
+      // still one decision, so it goes where the original went; anything else
+      // goes back to the step that asks for the decision.
+      //
+      // Not the case URL: that sends a settled case to its existing read, which
+      // would strand the reader on the case they just finished.
+      if (!formData || !formData.opinion) {
+        console.log('No opinion in imageReadingTemp - cannot save')
+        const sessionForEmptySave = getReadingSession(data, sessionId)
+        const caseIsSettled =
+          sessionForEmptySave?.type === 'arbitration'
+            ? appointmentHasBeenArbitrated(data, appointment)
+            : userHasReadAppointment(data, appointment, currentUserId)
+
+        return res.redirect(
+          modalBreakout(
+            caseIsSettled
+              ? onwardDestination()
+              : caseDecisionUrl(data, sessionId, appointmentId)
+          )
+        )
+      }
+
+      // A replay of a save that already happened, rather than a new one.
+      //
+      // This route is reachable by GET, and the workflow middleware refills
+      // imageReadingTemp from the saved read on any GET back into the case. So
+      // a back-navigation, a refresh on the redirect, or a double submit can
+      // arrive here with a temp that looks like a fresh opinion but is really
+      // the read that was just written. Writing again would duplicate the read,
+      // and - because the check below infers intent from whether a read exists -
+      // would send the reader to their existing read instead of the next case.
+      //
+      // savedAt is stamped on the read when it is written, so a temp carrying
+      // one came from an already-saved read. A replay goes where the original
+      // save went: confirming twice is still one decision, so the reader should
+      // end up on the next case rather than back on the one they just finished.
+      if (formData.savedAt) {
+        const replayReferrerChain = req.query.referrerChain
+        return res.redirect(
+          modalBreakout(
+            replayReferrerChain
+              ? getReturnUrl(
+                  `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`,
+                  replayReferrerChain
+                )
+              : onwardDestination()
+          )
+        )
+      }
+
+      // Whether this save is an edit of a read the user had already made.
+      // The case URL only routes already-read users via existing-read, so any
+      // journey reaching here with a read in place started from that page —
+      // and should return to it rather than moving on to the next case.
+      // Must be checked before the read is written.
+      //
+      // In arbitration this means the arbitration read already exists. A panel
+      // member's own earlier read as first or second reader isn't an edit -
+      // they still have the arbitration to do.
+      const sessionForSave = getReadingSession(data, sessionId)
+      const isEditingExistingRead =
+        sessionForSave?.type === 'arbitration'
+          ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+          : userHasReadAppointment(data, appointment, currentUserId)
 
       delete data.imageReadingTemp
       delete res.locals.data?.imageReadingTemp
 
-      // Create and save the reading
+      // Create and save the reading. Authorship is settled by buildRead, which
+      // knows whether this is an arbitration (many authors) or a read (one).
+      //
+      // savedAt marks the read as written. The workflow middleware seeds
+      // imageReadingTemp from the saved read, so this is what lets a replayed
+      // save be told apart from a genuine one (see the guard above).
       const readResult = {
-        readerId: currentUserId,
         readerType: data.currentUser.role,
         ...formData,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        savedAt: new Date().toISOString()
       }
 
-      // Write the reading (passing session context to handle skipped events)
-      writeReading(event, currentUserId, readResult, data, sessionId)
+      // Write the reading (passing session context to handle skipped appointments)
+      writeReading(data, appointment, currentUserId, readResult, sessionId)
 
-      // Top up the session with the next eligible event if under target size
-      topUpSession(data, sessionId)
+      // Top up the session with the next eligible appointment if under target size
+      topUpSession(data, sessionId, appointmentId)
 
-      // Find next unread event in session after the current position (no wrap)
+      // Find next unread appointment in session after the current position (no wrap)
       const session = getReadingSession(data, sessionId)
-      const sessionEvents = session.eventIds
-        .map((id) => data.events.find((e) => e.id === id))
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
         .filter(Boolean)
-      const nextUnreadEvent = getNextUserReadableEvent(
-        sessionEvents,
-        eventId,
-        currentUserId,
-        { wrap: false }
+      const isArbitrationSave = session?.type === 'arbitration'
+
+      const nextUnreadAppointment = getNextCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
       )
 
-      // Store banner message for the next case, but only if there is one
+      // Store banner message for the next case, but only if there is one.
+      // Edits stay on the current case, so there's nowhere to show it.
       // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
       // Todo: can we get this working with req.flash?
-      if (nextUnreadEvent) {
+      if (nextUnreadAppointment && !isEditingExistingRead) {
         const participant = data.participants.find(
-          (person) => person.id === event.participantId
+          (person) => person.id === appointment.participantId
         )
         const shortName = getShortName(participant)
         const resultLabels = {
@@ -1866,12 +2808,14 @@ module.exports = (router) => {
           recall_for_assessment: 'Recall for assessment'
         }
         const resultLabel = resultLabels[formData.opinion] || 'Opinion'
-        const message = `${resultLabel} opinion recorded for ${shortName}`
+        const message = isArbitrationSave
+          ? `${resultLabel} outcome recorded for ${shortName}`
+          : `${resultLabel} opinion recorded for ${shortName}`
 
         data.readingOpinionBanner = {
           text: message,
           participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
-          editHref: `/reading/session/${sessionId}/events/${eventId}/existing-read`
+          editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         }
       }
 
@@ -1879,46 +2823,28 @@ module.exports = (router) => {
       const saveReferrerChain = req.query.referrerChain
       if (saveReferrerChain) {
         const returnUrl = getReturnUrl(
-          `/reading/session/${sessionId}/events/${eventId}/existing-read`,
+          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`,
           saveReferrerChain
         )
         res.redirect(modalBreakout(returnUrl))
         return
       }
 
-      // Redirect to next unread event or end-of-session page
-      if (nextUnreadEvent) {
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/events/${nextUnreadEvent.id}`
-          )
-        )
-      } else if (session.skippedEvents.length > 0) {
-        res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
-        )
-      } else {
-        // Check if there are any readable cases left in the session
-        const firstReadable = getFirstUserReadableEvent(
-          sessionEvents,
-          currentUserId
-        )
-        if (firstReadable) {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
-        } else {
-          res.redirect(
-            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
-          )
-        }
-      }
+      // An edit returns to the read it was made from, and says so with the
+      // referrer chain handled above - the only door into a settled case's
+      // workflow is the existing-read page, which sets it. Without a chain
+      // this is a reader finishing a case, so they move on.
+      //
+      // Redirect to next unread appointment or end-of-session page
+      res.redirect(modalBreakout(onwardDestination()))
     }
   )
 
   // Handle opinion form submission - stores result and routes to appropriate next step
   router.post(
-    '/reading/session/:sessionId/events/:eventId/opinion-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/opinion-answer',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
 
       // Debug logging
@@ -1928,6 +2854,24 @@ module.exports = (router) => {
         JSON.stringify(data.imageReadingTemp, null, 2)
       )
 
+      // Carry the referrer chain on to whichever step comes next, so a journey
+      // that began on the existing-read page can find its way back there after
+      // saving. The chain only applies within this case's workflow - links that
+      // leave it (back to the session, say) are already the end of the journey.
+      const opinionReferrerChain = req.query.referrerChain
+      const redirect = (...redirectArgs) => {
+        const target = redirectArgs.pop()
+        const keepsChain =
+          opinionReferrerChain &&
+          typeof target === 'string' &&
+          target.includes(`/appointments/${appointmentId}/`) &&
+          !target.includes('referrerChain=')
+        const url = keepsChain
+          ? `${target}${target.includes('?') ? '&' : '?'}referrerChain=${encodeURIComponent(opinionReferrerChain)}`
+          : target
+        return res.redirect(...redirectArgs, url)
+      }
+
       // Opinion and previousOpinion are auto-saved to data.imageReadingTemp via form binding
       const opinion = data.imageReadingTemp?.opinion
       const previousOpinion = data.imageReadingTemp?.previousOpinion
@@ -1935,14 +2879,33 @@ module.exports = (router) => {
       console.log('opinion:', opinion)
       console.log('previousOpinion:', previousOpinion)
 
-      const event = data.events.find((e) => e.id === eventId)
-      if (!event) return res.redirect(`/reading/session/${sessionId}`)
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
 
-      // Ensure eventId is set for tracking
+      // Arbitration has its own compare step, so the second-reader comparison
+      // gates below don't apply
+      const isArbitrationSession =
+        getReadingSession(data, sessionId)?.type === 'arbitration'
+
+      // Editing a read the user has already saved — skip the confirmation step,
+      // the existing-read page they return to already summarises the read. In
+      // arbitration that means the arbitration read exists, not that the user
+      // was an original reader (panel members may have been)
+      const isEditingExistingRead = isArbitrationSession
+        ? Boolean(getArbitrationRead(getReadingCase(data, appointment)))
+        : userHasReadAppointment(data, appointment, data.currentUser?.id)
+
+      // Ensure appointmentId is set for tracking
       if (!data.imageReadingTemp) {
-        data.imageReadingTemp = { eventId: eventId }
+        data.imageReadingTemp = { appointmentId: appointmentId }
       }
-      data.imageReadingTemp.eventId = eventId
+      data.imageReadingTemp.appointmentId = appointmentId
+
+      // Submitting the opinion form is a deliberate act, so whatever follows is
+      // a real save rather than a replay. The temp may carry a savedAt from the
+      // read it was seeded with when editing - clear it so save-opinion's replay
+      // guard doesn't mistake this edit for a repeat of the original save.
+      delete data.imageReadingTemp.savedAt
 
       // Normalise normal_with_details to normal (it just goes to details page first)
       const normalisedOpinion =
@@ -1972,21 +2935,26 @@ module.exports = (router) => {
       // Clean up previousOpinion - only needed for change detection
       delete data.imageReadingTemp.previousOpinion
 
-      // Check for early comparison (second reader only, not normal+normal)
+      // Choosing an outcome here replaces any read adopted earlier, so the
+      // decision is no longer based on one of the original reads
+      delete data.imageReadingTemp.agreedWithReaderId
+
+      // Check for early comparison (second reader only, not normal+normal).
+      // Arbitration has its own compare step, so these gates don't apply
       const comparisonSetting = data.settings?.reading?.secondReaderComparison
-      if (comparisonSetting === 'early') {
+      if (comparisonSetting === 'early' && !isArbitrationSession) {
         const currentUserId = data.currentUser?.id
         if (
           shouldShowComparePage(
-            event,
+            getReadingCase(data, appointment),
             data.imageReadingTemp,
             currentUserId,
             data.settings
           )
         ) {
           // Second reader with opinions that need comparison
-          return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/compare`
+          return redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/compare`
           )
         }
       }
@@ -1994,72 +2962,159 @@ module.exports = (router) => {
       // Handle different opinion types
       switch (opinion) {
         case 'normal':
+          // Arbitration decisions confirm on the review page unless the
+          // confirmDecision setting turns that off; blind arbitration always
+          // reviews, as that's where the original reads are revealed
+          if (isArbitrationSession) {
+            if (
+              !isEditingExistingRead &&
+              (data.settings?.reading?.arbitration?.confirmDecision !==
+                'false' ||
+                data.settings?.reading?.arbitration?.showReads === 'blind')
+            ) {
+              return redirect(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+              )
+            }
+            return redirect(
+              307,
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
+          }
           // For late comparison, normal still needs to go through compare if discordant
           // (since there's no review page to intercept)
-          if (comparisonSetting === 'late') {
+          if (comparisonSetting === 'late' && !isArbitrationSession) {
             if (
               shouldShowComparePage(
-                event,
+                getReadingCase(data, appointment),
                 data.imageReadingTemp,
                 data.currentUser?.id,
                 data.settings
               )
             ) {
-              return res.redirect(
-                `/reading/session/${sessionId}/events/${eventId}/compare`
+              return redirect(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/compare`
               )
             }
           }
-          if (data.settings.reading.confirmNormal === 'true') {
-            return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
+          if (
+            !isEditingExistingRead &&
+            data.settings.reading.confirmNormal === 'true'
+          ) {
+            return redirect(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
             )
           } else {
-            return res.redirect(
+            return redirect(
               307,
-              `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
             )
           }
         case 'normal_with_details':
           // Result already set to 'normal' above - go to details page
-          return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/normal-details`
+          return redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/normal-details`
           )
         case 'technical_recall':
-          return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/technical-recall`
+          return redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
           )
         case 'recall_for_assessment':
           // Break out of modal immediately — recall for assessment is a complex
           // multi-step flow that should run as a full page journey
-          return res.redirect(
+          return redirect(
             modalBreakout(
-              `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
             )
           )
         default:
-          return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
+          return redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}`
+          )
       }
+    }
+  )
+
+  // Adopt one of the original reads as the arbitration outcome. Copies the
+  // read into imageReadingTemp and goes to the review page, where any of it
+  // can be changed before saving - so adoption always confirms, whatever the
+  // confirmDecision setting says.
+  router.post(
+    '/reading/session/:sessionId/appointments/:appointmentId/arbitration-adopt-read',
+    (req, res) => {
+      const { sessionId, appointmentId } = req.params
+      const data = req.session.data
+
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      const agreedReaderId = req.body.agreedReaderId
+      const reads = getReadsAsArray(getReadingCase(data, appointment))
+      const agreedRead = reads.find((read) => read.readerId === agreedReaderId)
+
+      if (!agreedRead) {
+        return res.redirect(caseDecisionUrl(data, sessionId, appointmentId))
+      }
+
+      // Adopt a copy of the read wholesale - outcome and details - never a
+      // reference to the original
+      data.imageReadingTemp = { appointmentId }
+      data.imageReadingTemp.opinion = agreedRead.opinion
+      data.imageReadingTemp.agreedWithReaderId = agreedReaderId
+
+      if (agreedRead.technicalRecall) {
+        data.imageReadingTemp.technicalRecall = {
+          ...agreedRead.technicalRecall
+        }
+      }
+      if (agreedRead.left) {
+        data.imageReadingTemp.left = JSON.parse(JSON.stringify(agreedRead.left))
+      }
+      if (agreedRead.right) {
+        data.imageReadingTemp.right = JSON.parse(
+          JSON.stringify(agreedRead.right)
+        )
+      }
+      if (agreedRead.normalDetails) {
+        data.imageReadingTemp.normalDetails = agreedRead.normalDetails
+      }
+
+      // Break out of the modal (reads-in-a-modal reveal style) so the review
+      // page renders full-page
+      return res.redirect(
+        modalBreakout(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+        )
+      )
     }
   )
 
   // Handle compare decision - keep opinion or adopt first reader's
   router.post(
-    '/reading/session/:sessionId/events/:eventId/compare-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/compare-answer',
     (req, res) => {
-      const { sessionId, eventId } = req.params
+      const { sessionId, appointmentId } = req.params
       const data = req.session.data
       const decision = req.body.compareDecision
       const currentUserId = data.currentUser?.id
 
-      const event = data.events.find((e) => e.id === eventId)
-      if (!event) return res.redirect(`/reading/session/${sessionId}`)
+      const appointment = data.appointments.find((e) => e.id === appointmentId)
+      if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      // Editing a read the user has already saved — skip the confirmation step,
+      // the existing-read page they return to already summarises the read
+      const isEditingExistingRead = userHasReadAppointment(
+        data,
+        appointment,
+        currentUserId
+      )
 
       const opinion = data.imageReadingTemp?.opinion
       const comparisonInfo = getComparisonInfo(
-        event,
+        getReadingCase(data, appointment),
         data.imageReadingTemp,
-        currentUserId
+        currentUserId,
+        data.settings
       )
       const firstOpinion = comparisonInfo?.firstOpinion
       const forceNormalDetailsForDiscordantNormal =
@@ -2067,6 +3122,11 @@ module.exports = (router) => {
 
       // Mark comparison as complete so save-opinion doesn't redirect back here
       data.imageReadingTemp.comparisonComplete = true
+
+      // Adopting the first reader's opinion can route straight to save-opinion,
+      // so clear any savedAt carried over from a seeded read - as with the other
+      // deliberate submits, this is a real save rather than a replay.
+      delete data.imageReadingTemp.savedAt
 
       if (decision === 'adopt') {
         // Copy first reader's data to our temp
@@ -2104,9 +3164,15 @@ module.exports = (router) => {
           console.log('Adopted first reader opinion:', firstRead.opinion)
         }
 
+        if (isEditingExistingRead) {
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+          )
+        }
+
         // Go straight to review since we have complete data
         return res.redirect(
-          `/reading/session/${sessionId}/events/${eventId}/review`
+          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
         )
       }
 
@@ -2127,7 +3193,7 @@ module.exports = (router) => {
         // This also fixes the bug where normal+normalDetails was sent to /review.
         return res.redirect(
           307,
-          `/reading/session/${sessionId}/events/${eventId}/opinion-details-complete`
+          `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete`
         )
       }
 
@@ -2136,28 +3202,33 @@ module.exports = (router) => {
           // Check if user originally wanted to add details
           if (wantsNormalDetails || forceNormalDetailsForDiscordantNormal) {
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/normal-details`
+              `/reading/session/${sessionId}/appointments/${appointmentId}/normal-details`
             )
-          } else if (data.settings.reading.confirmNormal === 'true') {
+          } else if (
+            !isEditingExistingRead &&
+            data.settings.reading.confirmNormal === 'true'
+          ) {
             return res.redirect(
-              `/reading/session/${sessionId}/events/${eventId}/confirm-normal`
+              `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
             )
           } else {
             return res.redirect(
               307,
-              `/reading/session/${sessionId}/events/${eventId}/save-opinion`
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
             )
           }
         case 'technical_recall':
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/technical-recall`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
           )
         case 'recall_for_assessment':
           return res.redirect(
-            `/reading/session/${sessionId}/events/${eventId}/recall-for-assessment-details`
+            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
           )
         default:
-          return res.redirect(`/reading/session/${sessionId}/events/${eventId}`)
+          return res.redirect(
+            `/reading/session/${sessionId}/appointments/${appointmentId}`
+          )
       }
     }
   )
@@ -2173,79 +3244,65 @@ module.exports = (router) => {
     const currentUserId = data.currentUser.id
     const view = req.params.view || 'all'
 
-    // Get all recent readings across all events - last 30 days
-    const thirtyDaysAgo = dayjs().subtract(30, 'days').toISOString()
-
-    // Collect all readings from events
+    // Collect all reads across the reading cases. There's no date bound: the
+    // seed data holds no historic sessions, so everything here is recent.
     const allReadings = []
 
-    data.events.forEach((event) => {
-      if (!event.imageReading?.reads) return
+    data.appointments.forEach((appointment) => {
+      const readingCase = getReadingCase(data, appointment)
+      const reads = getReadsAsArray(readingCase)
+      if (!reads.length) return
 
-      const eventReadings = Object.entries(event.imageReading.reads).map(
-        ([readerId, reading]) => {
-          // Determine if this is a first or second read
-          const readingsForEvent = Object.values(event.imageReading.reads)
-          const sortedReadings = [...readingsForEvent].sort(
-            (a, b) => new Date(a.timestamp) - new Date(b.timestamp)
-          )
+      const appointmentReadings = reads.map((reading) => {
+        // Each read records what kind it was when it was made, so history
+        // doesn't have to infer it from ordering
+        const readType = reading.readType
 
-          const readOrder = sortedReadings.findIndex(
-            (r) => r.readerId === readerId
-          )
+        // Get participant info
+        const participant = data.participants.find(
+          (p) => p.id === appointment.participantId
+        )
 
-          const readType =
-            readOrder === 0
-              ? 'first'
-              : readOrder === 1
-                ? 'second'
-                : 'arbitration'
-
-          // Get participant info
-          const participant = data.participants.find(
-            (p) => p.id === event.participantId
-          )
-
-          // Get batch ID if available
-          let sessionId = null
-          if (data.readingSessions) {
-            for (const [id, session] of Object.entries(data.readingSessions)) {
-              if (session.eventIds.includes(event.id)) {
-                sessionId = id
-                break
-              }
+        // Get batch ID if available
+        let sessionId = null
+        if (data.readingSessions) {
+          for (const [id, session] of Object.entries(data.readingSessions)) {
+            if (session.appointmentIds.includes(appointment.id)) {
+              sessionId = id
+              break
             }
           }
-
-          return {
-            eventId: event.id,
-            clinicId: event.clinicId,
-            sessionId,
-            readerId: reading.readerId,
-            readType,
-            opinion: reading.opinion,
-            timestamp: reading.timestamp,
-            participant
-          }
         }
-      )
 
-      allReadings.push(...eventReadings)
+        return {
+          appointmentId: appointment.id,
+          clinicId: appointment.clinicId,
+          sessionId,
+          readerId: reading.readerId,
+          arbitratorIds: reading.arbitratorIds,
+          readType,
+          opinion: reading.opinion,
+          timestamp: reading.timestamp,
+          finalisedAt: reading.finalisedAt,
+          participant
+        }
+      })
+
+      allReadings.push(...appointmentReadings)
     })
 
-    // Filter for recent readings
-    const recentReadings = allReadings
-      .filter((reading) => reading.timestamp > thirtyDaysAgo)
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    const sortedReadings = allReadings.sort(
+      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+    )
 
     // Determine which readings to display based on view
     let readings = []
     if (view === 'mine') {
-      readings = recentReadings.filter(
-        (reading) => reading.readerId === currentUserId
+      readings = sortedReadings.filter((reading) =>
+        getReadAuthorIds(reading).includes(currentUserId)
       )
     } else {
-      readings = recentReadings
+      readings = sortedReadings
     }
 
     // Build session list for the sessions tab
@@ -2258,28 +3315,48 @@ module.exports = (router) => {
           currentUserId
         )
 
-        // Count cases the user has "dealt with" — either given an opinion or requested priors
-        // This is separate from userReadCount so the utility stays semantically pure
-        const sessionEvents = session.eventIds
-          .map((id) => data.events.find((e) => e.id === id))
+        // Count cases the user has "dealt with". For arbitration that means the
+        // case has been settled by the panel, not read by this user - an
+        // arbitration session would otherwise never register any progress.
+        const sessionAppointments = session.appointmentIds
+          .map((id) => data.appointments.find((e) => e.id === id))
           .filter(Boolean)
-        const userCompletedCount = sessionEvents.filter(
-          (event) =>
-            userHasReadEvent(event, currentUserId) ||
-            userRequestedPriors(event, currentUserId)
+        const isArbitration = session.type === 'arbitration'
+        const userCompletedCount = sessionAppointments.filter((appointment) =>
+          isArbitration
+            ? appointmentHasBeenArbitrated(data, appointment) ||
+              awaitingPriors(appointment)
+            : userHasReadAppointment(data, appointment, currentUserId) ||
+              userRequestedPriors(appointment, currentUserId)
+        ).length
+
+        // A session that has been worked through can still hold opinions the
+        // user hasn't finalised, so completeness has two steps rather than one
+        const unfinalisedReadCount = getUnfinalisedUserReadsForSession(
+          data,
+          session.id,
+          currentUserId
         ).length
 
         return {
           ...session,
           progress,
-          userCompletedCount
+          userCompletedCount,
+          unfinalisedReadCount
         }
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
+    // Sessions this prototype has actually run are only ever today's, so the
+    // tab is padded out with finished ones behind them
+    const allSessions = [
+      ...sessions,
+      ...getHistoricReadingSessions(data)
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
     res.render('reading/history', {
       readings,
-      sessions,
+      sessions: allSessions,
       view
     })
   })

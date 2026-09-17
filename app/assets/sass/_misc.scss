@@ -53,6 +53,46 @@ body.js-enabled .app-no-js-only {
   width: 100%;
 }
 
+// Equal-width button group — CSS Grid places 3 buttons in row 1 (uniform height)
+// and the optional sub-action link in row 2 col 1. Used on the reading opinion page.
+.app-button-group--equal {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: nhsuk-spacing(3);
+
+  .nhsuk-button {
+    margin-bottom: 0;
+    width: 100%;
+  }
+}
+
+// Sub-action link (e.g. "Normal, but add details") — pinned to row 2 col 1 in the grid,
+// constrained to the same width as the Normal button above it.
+.app-button-group__sub-action {
+  grid-column: 1;
+  grid-row: 2;
+  margin-bottom: 0;
+}
+
+// Opinion button layout switching — stacked shown on mobile, horizontal shown on tablet+
+// Bottom margin keeps whatever follows (reads, info card) clear of the
+// sub-action link
+.app-opinion-buttons--horizontal {
+  margin-bottom: nhsuk-spacing(4);
+
+  @include nhsuk-media-query($until: tablet) {
+    display: none;
+  }
+}
+
+.app-opinion-buttons--stacked {
+  margin-bottom: nhsuk-spacing(4);
+
+  @include nhsuk-media-query($from: tablet) {
+    display: none;
+  }
+}
+
 // Reduce space taken by card
 .nhsuk-card {
   @include nhsuk-responsive-margin(4, "bottom");
@@ -79,11 +119,7 @@ body.js-enabled .app-no-js-only {
 //   @include nhsuk-responsive-margin(5, "top");
 // }
 
-.app-page-width--wide .nhsuk-width-container {
-  @include nhsuk-width-container(1200px);
-}
-
-.event-row:focus {
+.appointment-row:focus {
   outline: none;
   box-shadow:
     0 0 0 2px #f0f4f5,
@@ -113,9 +149,27 @@ body.js-enabled .app-no-js-only {
   }
 }
 
+// A breadcrumb and back link can show together (records trail plus workflow
+// container) - keep the back link on its own line below the trail
+.nhsuk-breadcrumb + .nhsuk-back-link {
+  display: block;
+  margin-top: nhsuk-spacing(2);
+}
+
 // Inline form with no extra spacing
 .app-inline-form {
   display: inline;
+}
+
+// Constrain prose in a full-width container to a comfortable line length
+.app-reading-width {
+  @include nhsuk-reading-width;
+}
+
+// Actions below a card's prose - body sized, so a plain link next to an
+// .app-link-button matches it rather than inheriting a smaller size
+.app-card-actions {
+  @include nhsuk-font(19);
 }
 
 // Annotation list item — number, summary text, and change link on one line

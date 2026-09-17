@@ -1,0 +1,48 @@
+{# app/views/appointments/review-medical-information.html #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set pageHeading = "Review medical information" %}
+{% set showNavigation = true %}
+{% set activeWorkflowStep = 'review-medical-information' %}
+{% set disableAutoFocus = true %}
+{% set hideBackLink = true %}
+
+{% set formAction = "./take-images" | getReturnUrl(referrerChain) %}
+
+{# Display format for medical information sections #}
+{% set displayFormat = "expander" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    {{ pageHeading }}
+  </h1>
+
+  {{ appHiddenInput({
+    name: "appointment[workflowStatus][review-medical-information]",
+    value: "completed"
+  }) }}
+
+  {{ appHiddenInput({
+    name: "appointment[workflowStatus][review-breast-features-after-imaging]",
+    value: appointment.workflowStatus['review-breast-features-after-imaging']
+  }) }}
+
+  {% set continueButtonText = "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section" %}
+  {% include "_includes/authorised-mammographer.njk" %}
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+  {% include "_includes/medical-information/index.njk" %}
+
+  <div class="nhsuk-form-group">
+    {% set continueButtonText = "Complete all and continue" %}
+    {% include "_includes/authorised-mammographer.njk" %}
+
+    <div class="nhsuk-u-margin-top-6">
+      {% include "screening-cannot-proceed-link.njk" %}
+    </div>
+  </div>
+
+{% endblock %}

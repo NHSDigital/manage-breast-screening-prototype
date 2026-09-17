@@ -30,11 +30,11 @@
 }) }}
 
 {# Check-in modal #}
-{% set eventId = "example" %}
+{% set appointmentId = "example" %}
 {% set participant = data | getParticipant('bc724e9f') %}
 
 {% set participantUrl = "/participants/bc724e9f" %}
-{% set appointmentUrl = "clinics/wtrl7jud/events/5gpn41oi" %}
+{% set appointmentUrl = "clinics/wtrl7jud/appointments/5gpn41oi" %}
 
 {% include "_includes/confirm-identity-modal.njk" %}
 
@@ -254,7 +254,7 @@
 
 <!-- Mock participant template for include example -->
 <script>
-// Add some event listeners for demo purposes
+// Add some appointment listeners for demo purposes
 document.addEventListener('modal:ajax:success', (e) => {
   console.log('AJAX success:', e.detail)
   alert('AJAX request completed successfully!')

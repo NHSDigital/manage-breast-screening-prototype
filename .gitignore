@@ -37,10 +37,6 @@ pids
 connect.lock
 typings
 
-# LLMs
-.github/copilot-instructions.md
-*.instructions.md
-
 # Logs
 logs
 *.log
@@ -75,8 +71,7 @@ coverage
 # ESlint cache
 .cache
 
-# LLM instructions
-.github
+# Personal LLM config (the shared instructions live in .github/ and docs/)
 CLAUDE.md
 
 # Reference assets (local only, not for committing)
@@ -84,3 +79,10 @@ reference/
 
 # Local setting overrides (personal dev preferences, not for committing)
 *.local.js
+# Local working notes (session notes, not for committing)
+notes/
+
+# Playwright output (traces and screenshots from failed runs)
+test-results/
+playwright-report/
+/playwright/.cache/

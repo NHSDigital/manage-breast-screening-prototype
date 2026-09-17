@@ -97,6 +97,7 @@ const join = (input, delimiter = '', attribute = null, options = {}) => {
  * @param {string} userId - ID of the user
  * @param {object} [options] - Display options
  * @param {boolean} [options.identifyCurrentUser] - Whether to add "(you)" for current user
+ * @param {boolean} [options.useYou] - Return just "you" for the current user
  * @param {string} [options.format] - Name format: 'full', 'short', or 'initial'
  * @returns {string} User's name in requested format
  */
@@ -109,7 +110,7 @@ const getUsername = function (userId, options = {}) {
   const user = users.find((u) => u.id === userId)
   if (!user) return userId
 
-  // Format options: full (default), short (initial + surname), initial (just initials)
+  // Format options: full (default), short (initial + surname), initial (just initials), reversed (SURNAME, First)
   const format = options.format || 'full'
 
   let formattedName
@@ -120,14 +121,22 @@ const getUsername = function (userId, options = {}) {
     case 'initial':
       formattedName = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
       break
+    case 'reversed':
+      formattedName = `${user.lastName.toUpperCase()}, ${user.firstName}`
+      break
     case 'full':
     default:
       formattedName = `${user.firstName} ${user.lastName}`
   }
 
   const currentUser = this.ctx.data.currentUser
-  if (options.identifyCurrentUser && user.id === currentUser.id) {
-    return `${formattedName} (you)`
+  if (currentUser && user.id === currentUser.id) {
+    if (options.useYou) {
+      return 'you'
+    }
+    if (options.identifyCurrentUser) {
+      return `${formattedName} (you)`
+    }
   }
 
   return formattedName

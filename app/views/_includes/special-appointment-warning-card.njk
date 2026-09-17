@@ -1,8 +1,8 @@
 {# app/views/_includes/special-appointment-warning-card.njk #}
 
-{% if event | isSpecialAppointment %}
-  {% set eventUrl = "/clinics/" + clinicId + "/events/" + eventId %}
-  {% set changeHref = (eventUrl + "/special-appointment/edit") | urlWithReferrer(currentUrl) %}
+{% if appointment | isSpecialAppointment %}
+  {% set appointmentUrl = "/clinics/" + clinicId + "/appointments/" + appointmentId %}
+  {% set changeHref = (appointmentUrl + "/special-appointment/edit") | urlWithReferrer(currentUrl) %}
 
   {% call warningCallout({
     heading: "Special appointment",

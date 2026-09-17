@@ -1,0 +1,151 @@
+{# app/views/_includes/forms/breast-density-factors.njk #}
+{#
+  Breast density factors - HRT, pregnancy and breastfeeding.
+
+  HRT is shown inline rather than on a sub-page, so when edits are allowed the
+  inputs render directly and save themselves as they're changed (see the
+  autosave in main.js). The save URL rides on the wrapper element. Without
+  JavaScript the surrounding form's submit saves the same fields.
+
+  Pregnancy and breastfeeding is a checkbox group, and the kit's
+  unchecked-checkbox script adds an "_unchecked" value for every checkbox in
+  whichever form is submitted. Since this section renders inside other forms,
+  editing it inline would let an unrelated submit wipe the answers - so it
+  gets its own page instead.
+#}
+
+{% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
+{% set pregnancyAndBreastfeeding = breastDensityFactors.pregnancyAndBreastfeeding %}
+
+{% set hrtQuestion = "Is " + participant.demographicInformation.firstName + " currently taking HRT?" %}
+
+{% set pregnancyAndBreastfeedingUrl = contextUrl + "/medical-information/pregnancy-and-breastfeeding" %}
+
+{% set hrtYearStartedHtml %}
+  {{ input({
+    id: "hrtYearStarted",
+    name: "appointment[medicalInformation][hrt][yearStarted]",
+    label: {
+      text: "Approximate year started"
+    },
+    classes: "nhsuk-input--width-4",
+    inputmode: "numeric",
+    value: breastDensityFactors.hrt.yearStarted
+  }) }}
+{% endset %}
+
+{% set hrtYearStoppedHtml %}
+  {{ input({
+    id: "hrtYearStopped",
+    name: "appointment[medicalInformation][hrt][yearStopped]",
+    label: {
+      text: "Approximate year stopped, if previously taken"
+    },
+    classes: "nhsuk-input--width-4",
+    inputmode: "numeric",
+    value: breastDensityFactors.hrt.yearStopped
+  }) }}
+{% endset %}
+
+{% set hrtInputHtml %}
+  {{ radios({
+    name: "appointment[medicalInformation][hrt][status]",
+    value: breastDensityFactors.hrt.status,
+    classes: "nhsuk-radios--small",
+    fieldset: {
+      legend: {
+        text: hrtQuestion + " (optional)",
+        classes: "nhsuk-fieldset__legend--s"
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes",
+        conditional: {
+          html: hrtYearStartedHtml
+        }
+      },
+      {
+        value: "no",
+        text: "No",
+        conditional: {
+          html: hrtYearStoppedHtml
+        }
+      }
+    ]
+  }) }}
+{% endset %}
+
+{% set hrtSummaryHtml %}
+  <p>{{ breastDensityFactors.hrtSummary or "Not answered" }}</p>
+{% endset %}
+
+{% set pregnancyAndBreastfeedingSummaryHtml %}
+  {% if pregnancyAndBreastfeeding.summaries | length > 1 %}
+    <ul class="nhsuk-list">
+      {% for summary in pregnancyAndBreastfeeding.summaries %}
+        <li>{{ summary }}</li>
+      {% endfor %}
+    </ul>
+  {% elseif pregnancyAndBreastfeeding.summaries | length %}
+    <p>{{ pregnancyAndBreastfeeding.summaries | first }}</p>
+  {% else %}
+    <p>No</p>
+  {% endif %}
+{% endset %}
+
+{% set changePregnancyAndBreastfeedingAction = {
+  items: [
+    {
+      href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
+      text: "Change",
+      visuallyHiddenText: "pregnancy and breastfeeding"
+    } | openInModal
+  ]
+} if allowEdits %}
+
+{% set breastDensityRows = [
+  {
+    key: {
+      text: "HRT (hormone replacement therapy)"
+    },
+    value: {
+      html: hrtInputHtml if allowEdits else hrtSummaryHtml
+    }
+  }
+] %}
+
+{% if pregnancyAndBreastfeeding.values | length %}
+  {% set breastDensityRows = breastDensityRows | push({
+    key: {
+      text: "Pregnancy and breastfeeding"
+    },
+    value: {
+      html: pregnancyAndBreastfeedingSummaryHtml
+    },
+    actions: changePregnancyAndBreastfeedingAction
+  }) %}
+{% endif %}
+
+{# The autosave finds the list by its save URL, and takes the factor count from
+   here so it can't disagree with what the server stored #}
+{{ summaryList({
+  rows: breastDensityRows,
+  lastRowBorder: false,
+  attributes: {
+    "data-breast-density-factors-save-url": contextUrl + "/medical-information/hrt-save",
+    "data-breast-density-factor-count": pregnancyAndBreastfeeding.values | length
+  }
+}) }}
+
+{% if allowEdits and not pregnancyAndBreastfeeding.values | length %}
+  <p class="nhsuk-u-margin-top-4">
+    {{ button({
+      text: "Add pregnancy and breastfeeding",
+      href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
+      variant: "secondary",
+      small: true
+    } | openInModal) }}
+  </p>
+{% endif %}
