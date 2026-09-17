@@ -1,0 +1,104 @@
+{#
+  Section navigation - vendored ahead of release from nhsuk-frontend PR #1886
+  https://github.com/nhsuk/nhsuk-frontend/pull/1886
+
+  Class names and params match the upstream component, so when the PR is
+  released this whole folder can be deleted and `appSectionNavigation(` swapped
+  for `sectionNavigation(` at the call sites.
+
+  Differences from upstream: no badge support (the badge component in the same
+  PR is not vendored), and no JavaScript - the JS only picks between horizontal
+  and vertical automatically, which the vertical variant never needs.
+#}
+
+{% from "nhsuk/macros/attributes.njk" import nhsukAttributes %}
+
+{#- Set variant for this component #}
+{%- set variant = params.variant -%}
+
+{#- Set classes for this component #}
+{%- set classNames = "nhsuk-section-navigation" -%}
+
+{%- if variant == "reverse" and (not params.classes or not "nhsuk-section-navigation--reverse" in params.classes) %}
+  {% set classNames = classNames ~ " nhsuk-section-navigation--" ~ variant %}
+{% endif %}
+
+{%- if params.small and (not params.classes or not "nhsuk-section-navigation--small" in params.classes) %}
+  {% set classNames = classNames ~ " nhsuk-section-navigation--small" %}
+{% endif %}
+
+{%- if params.direction and
+  params.direction in ["horizontal", "vertical"] and (
+    not params.classes or (
+      not "nhsuk-section-navigation--horizontal" in params.classes and
+      not "nhsuk-section-navigation--vertical" in params.classes
+    )
+  )
+%}
+  {% set classNames = classNames ~ " nhsuk-section-navigation--" ~ params.direction %}
+{% endif %}
+
+{%- if params.classes %}
+  {% set classNames = classNames ~ " " ~ params.classes %}
+{% endif %}
+
+{%- set items = params.items | select("mapping") | list if params.items else [] %}
+
+{%- set attributesHtml %}
+  {{- nhsukAttributes({
+    class: classNames,
+    id: {
+      value: params.id,
+      optional: true
+    },
+    "data-module": "nhsuk-section-navigation",
+    "aria-label": params.ariaLabel | default("Section information", true)
+  }) -}}
+
+  {{- nhsukAttributes(params.attributes) -}}
+{% endset %}
+
+<nav {{- attributesHtml | safe }}>
+  <ul class="nhsuk-section-navigation__list">
+  {% for item in items %}
+    {% set itemInnerAttributesHtml %}
+      {{- nhsukAttributes({
+        class: "nhsuk-section-navigation__link" if item.href
+          else "nhsuk-section-navigation__text",
+        href: {
+          value: item.href,
+          optional: true
+        },
+        "aria-current": {
+          value: ("page" if item.current else "true")
+            if item.active or item.current
+            else false,
+          optional: true
+        }
+      }) -}}
+    {% endset %}
+    {% set itemInnerContent %}
+      {#- Wrap active links in strong element so users who override colours
+          or styles still have some indicator of the current nav item. -#}
+      {%- if item.active or item.current -%}
+        <strong class="nhsuk-section-navigation__item-current-fallback">
+          {{- item.html | safe if item.html else item.text -}}
+        </strong>
+      {%- else -%}
+        {{- item.html | safe if item.html else item.text -}}
+      {%- endif -%}
+    {% endset %}
+    <li class="nhsuk-section-navigation__item {%- if item.active or item.current %} nhsuk-section-navigation__item--current{% endif %} {%- if item.classes %} {{ item.classes }}{% endif %}" {{- nhsukAttributes(item.attributes) }}>
+    {% if item.href %}
+      <a {{- itemInnerAttributesHtml | safe }}>
+        {{- itemInnerContent | safe -}}
+      </a>
+    {% else %}
+      <span {{- itemInnerAttributesHtml | safe }}>
+        {{- itemInnerContent | safe -}}
+      </span>
+    {% endif %}
+    </li>
+  {% endfor %}
+  </ul>
+</nav>
