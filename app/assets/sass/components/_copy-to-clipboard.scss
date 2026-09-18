@@ -43,29 +43,32 @@
 }
 
 // The value variant wraps the value itself, so it takes the size of the
-// surrounding text. It lays out as inline text rather than a flex box, so the
-// underline hugs the value and its icon rather than running the width of the
-// button. Dashed at rest hints that the value does something, as on an
-// abbreviation.
+// surrounding text and is dashed at rest, as on an abbreviation.
+//
+// A button cannot really be display: inline — it keeps a box of its own — so
+// the line height comes from the font metrics and the box sits on the
+// baseline. That makes the box the same as a link's, which is what both the
+// rule and the focus bar are measured against.
 .app-copy-to-clipboard--value {
   display: inline;
-  padding: 0 0 3px;
+  padding: 0;
   font-size: inherit;
-  line-height: inherit;
+  line-height: normal;
   white-space: nowrap;
+  vertical-align: baseline;
   text-decoration: none;
 
   // Drawn as a background rather than an underline so the rule runs under the
   // icon as well as the value: a text underline stops where the text does
   background-image: linear-gradient(to right, currentcolor 0 3px, transparent 3px 6px);
   background-repeat: repeat-x;
-  background-position: 0 100%;
+  background-position: 0 calc(100% - 2px);
   background-size: 6px 1px;
 }
 
+// Links drop their underline on hover, so the rule goes the same way
 .app-copy-to-clipboard--value:hover {
-  background-image: linear-gradient(currentcolor, currentcolor);
-  background-size: 100% 3px;
+  background-image: none;
 }
 
 // Sized to the icon itself rather than the standard square box, which would

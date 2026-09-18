@@ -1,11 +1,24 @@
 {# /app/views/_includes/summary-lists/rows/nhs-number.njk #}
 
+{% set nhsNumber = participant.medicalInformation.nhsNumber %}
+
+{% if nhsNumber %}
+  {% set nhsNumberValueHtml %}
+    {{ appCopyToClipboard({
+      text: nhsNumber,
+      type: "value",
+      html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (nhsNumber | formatNhsNumber) + '</span>',
+      label: "NHS number"
+    }) }}
+  {% endset %}
+{% endif %}
+
 {% set nhsNumberRow = {
     key: {
       text: "NHS number"
     },
     value: {
-      text: participant.medicalInformation.nhsNumber | formatNhsNumber
+      html: nhsNumberValueHtml
     },
     actions: {
       items: [
