@@ -1,0 +1,123 @@
+{# app/views/style-guide/copy-to-clipboard.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard %}
+{% from '_components/status-bar/macro.njk' import appStatusBar %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "copy-to-clipboard" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Copy to clipboard</h2>
+
+<p>A small button placed beside a value, such as an NHS number, that copies it to the clipboard. Whitespace is stripped from the copied text, so a formatted number is copied as digits only. Requires JavaScript; the button is not shown without it.</p>
+
+<p>Macro: <code>appCopyToClipboard(params)</code></p>
+
+<h3>Parameters</h3>
+
+<table class="nhsuk-table">
+  <thead class="nhsuk-table__head">
+    <tr>
+      <th class="nhsuk-table__header">Name</th>
+      <th class="nhsuk-table__header">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="nhsuk-table__row">
+      <td class="nhsuk-table__cell"><code>text</code></td>
+      <td class="nhsuk-table__cell">Required. The string to copy.</td>
+    </tr>
+    <tr class="nhsuk-table__row">
+      <td class="nhsuk-table__cell"><code>type</code></td>
+      <td class="nhsuk-table__cell"><code>"text"</code> (default) shows a “Copy” label. <code>"icon"</code> shows a copy icon only.</td>
+    </tr>
+    <tr class="nhsuk-table__row">
+      <td class="nhsuk-table__cell"><code>label</code></td>
+      <td class="nhsuk-table__cell">What is being copied, for the accessible name, for example <code>"NHS number"</code> gives “Copy NHS number”.</td>
+    </tr>
+    <tr class="nhsuk-table__row">
+      <td class="nhsuk-table__cell"><code>classes</code></td>
+      <td class="nhsuk-table__cell">Additional classes for the button.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Text</h3>
+
+<div class="sg-example">
+  <p>NHS number: <span class="nhsuk-u-font-code nhsuk-u-nowrap">485 777 3456</span> {{ appCopyToClipboard({ text: "4857773456", label: "NHS number" }) }}</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appCopyToClipboard({
+  text: "4857773456",
+  label: "NHS number"
+}) }}{% endraw %}</code></pre>
+
+<h3>Icon</h3>
+
+<div class="sg-example">
+  <p>NHS number: <span class="nhsuk-u-font-code nhsuk-u-nowrap">485 777 3456</span> {{ appCopyToClipboard({ text: "4857773456", type: "icon", label: "NHS number" }) }}</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appCopyToClipboard({
+  text: "4857773456",
+  type: "icon",
+  label: "NHS number"
+}) }}{% endraw %}</code></pre>
+
+<h3>Value</h3>
+
+<div class="sg-example">
+  <p>NHS number: {{ appCopyToClipboard({
+    text: "4857773456",
+    type: "value",
+    html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">485 777 3456</span>',
+    label: "NHS number"
+  }) }}</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appCopyToClipboard({
+  text: "4857773456",
+  type: "value",
+  html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">485 777 3456</span>',
+  label: "NHS number"
+}) }}{% endraw %}</code></pre>
+
+<h3>In the status bar</h3>
+
+<p>The button inherits the colour of its surroundings, so it works on dark backgrounds without extra styling.</p>
+
+{% set nhsNumberHtml %}
+  {{ appCopyToClipboard({
+    text: "4857773456",
+    type: "value",
+    html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">485 777 3456</span>',
+    label: "NHS number"
+  }) }}
+{% endset %}
+
+{% set accessionHtml %}
+  <span class="nhsuk-u-font-code nhsuk-u-nowrap">ECX 20260917 68669</span>{{ appCopyToClipboard({ text: "ECX2026091768669", label: "accession number" }) }}
+{% endset %}
+
+<div class="sg-example">
+  {{ appStatusBar({
+    classes: "",
+    rows: [
+      {
+        items: [
+          { key: "Participant:", value: "Janet Williams" },
+          { key: "NHS:", value: nhsNumberHtml },
+          { key: "Accn:", value: accessionHtml }
+        ]
+      }
+    ]
+  }) }}
+</div>
+
+{% endblock %}

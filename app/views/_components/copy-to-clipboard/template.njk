@@ -1,0 +1,62 @@
+{# app/views/_components/copy-to-clipboard/template.njk #}
+
+{#
+  Params:
+    text      (required) — the string to copy to the clipboard
+    type      (optional) — "text" (default) shows a "Copy" label
+                           "icon" shows a copy icon only
+                           "value" wraps the visible value itself (from `html`) with an icon,
+                           so clicking anywhere on the value copies it
+    html      (required for type "value") — the visible value, e.g. the formatted number
+    label     (optional) — describes what is being copied, e.g. "NHS number"
+                           used for the accessible name ("Copy NHS number") and the
+                           screen reader announcement ("NHS number copied to clipboard")
+    classes   (optional) — additional classes on the button
+#}
+
+{% from "_components/icon/macro.njk" import appIcon %}
+
+{% set type = params.type if params.type else "text" %}
+
+{% if params.label %}
+  {% set defaultAriaLabel = "Copy " + params.label %}
+  {% set copiedAnnouncement = (params.label | sentenceCase) + " copied to clipboard" %}
+{% else %}
+  {% set defaultAriaLabel = "Copy to clipboard" %}
+  {% set copiedAnnouncement = "Copied to clipboard" %}
+{% endif %}
+
+{# The value variant has visible text, so its accessible name comes from its
+   content rather than an aria-label, keeping the visible value in the name #}
+<button
+  class="app-copy-to-clipboard{% if type != "text" %} app-copy-to-clipboard--{{ type }}{% endif %}{% if params.classes %} {{ params.classes }}{% endif %}"
+  type="button"
+  data-module="app-copy-to-clipboard"
+  data-copy-text="{{ params.text }}"
+  data-copied-announcement="{{ copiedAnnouncement }}"
+  {% if type != "value" %}aria-label="{{ defaultAriaLabel }}"{% endif %}
+  hidden
+>
+  {% if type == "icon" or type == "value" %}
+
+    {# Whitespace is stripped around the icons so the gap before them comes only
+       from the styles, and the copy and tick icons sit in the same place #}
+    {% if type == "value" %}
+      <span class="nhsuk-u-visually-hidden">{{ defaultAriaLabel }} </span>
+      <span class="app-copy-to-clipboard__value">{{ params.html | safe }}</span>
+    {%- endif -%}
+
+    <span class="app-copy-to-clipboard__default app-copy-to-clipboard__icon" aria-hidden="true">
+      {{ appIcon("copy") }}
+    </span>{#
+    #}<span class="app-copy-to-clipboard__copied app-copy-to-clipboard__icon" aria-hidden="true">
+      {{ appIcon("tick") }}
+    </span>
+
+  {% else %}
+
+    <span class="app-copy-to-clipboard__default" aria-hidden="true">Copy</span>
+    <span class="app-copy-to-clipboard__copied" aria-hidden="true">Copied</span>
+
+  {% endif %}
+</button>

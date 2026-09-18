@@ -40,9 +40,17 @@
 
 {# Worklist accession number with inline worklist status #}
 {% set accessionNumberFormatted = appointment.accessionNumber | formatAccessionNumber %}
+{% set accessionNumberHtml %}
+  {{ appCopyToClipboard({
+    text: appointment.accessionNumber,
+    type: "value",
+    html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + accessionNumberFormatted + '</span>',
+    label: "accession number"
+  }) }}
+{% endset %}
 {% set appointmentRowItems = appointmentRowItems | push({
   key: '<abbr title="Accession number">Accn</abbr>:',
-  value: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + accessionNumberFormatted + '</span><span class="app-status-bar__worklist-status">' + worklistStatusHtml + '</span>'
+  value: accessionNumberHtml + '<span class="app-status-bar__worklist-status">' + worklistStatusHtml + '</span>'
 }) %}
 
 {# Appointment type #}
@@ -99,9 +107,17 @@
 }) %}
 
 {# NHS Number #}
+{% set nhsNumberHtml %}
+  {{ appCopyToClipboard({
+    text: participant.medicalInformation.nhsNumber,
+    type: "value",
+    html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>',
+    label: "NHS number"
+  }) }}
+{% endset %}
 {% set participantRowItems = participantRowItems | push({
   key: "NHS:",
-  value: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>'
+  value: nhsNumberHtml
 }) %}
 
 {{ appStatusBar({
