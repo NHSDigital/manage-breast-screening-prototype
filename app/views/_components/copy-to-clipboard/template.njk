@@ -3,43 +3,54 @@
 {#
   Params:
     text      (required) — the string to copy to the clipboard
-    type      (optional) — "text" (default) shows a "Copy" label; "icon" shows a clipboard icon
+    type      (optional) — "text" (default) shows a "Copy" label
+                           "icon" shows a copy icon only
+                           "value" wraps the visible value itself (from `html`) with an icon,
+                           so clicking anywhere on the value copies it
+    html      (required for type "value") — the visible value, e.g. the formatted number
     label     (optional) — describes what is being copied, e.g. "NHS number"
-                           used to build accessible labels: "Copy NHS number" / "Copied"
+                           used for the accessible name ("Copy NHS number") and the
+                           screen reader announcement ("NHS number copied to clipboard")
     classes   (optional) — additional classes on the button
 #}
+
+{% from "_components/icon/macro.njk" import appIcon %}
 
 {% set type = params.type if params.type else "text" %}
 
 {% if params.label %}
   {% set defaultAriaLabel = "Copy " + params.label %}
+  {% set copiedAnnouncement = (params.label | sentenceCase) + " copied to clipboard" %}
 {% else %}
   {% set defaultAriaLabel = "Copy to clipboard" %}
+  {% set copiedAnnouncement = "Copied to clipboard" %}
 {% endif %}
 
+{# The value variant has visible text, so its accessible name comes from its
+   content rather than an aria-label, keeping the visible value in the name #}
 <button
-  class="app-copy-to-clipboard{% if type == "icon" %} app-copy-to-clipboard--icon{% endif %}{% if params.classes %} {{ params.classes }}{% endif %}"
+  class="app-copy-to-clipboard{% if type != "text" %} app-copy-to-clipboard--{{ type }}{% endif %}{% if params.classes %} {{ params.classes }}{% endif %}"
   type="button"
   data-module="app-copy-to-clipboard"
   data-copy-text="{{ params.text }}"
-  aria-label="{{ defaultAriaLabel }}"
+  data-copied-announcement="{{ copiedAnnouncement }}"
+  {% if type != "value" %}aria-label="{{ defaultAriaLabel }}"{% endif %}
   hidden
 >
-  {% if type == "icon" %}
+  {% if type == "icon" or type == "value" %}
 
-    <span class="app-copy-to-clipboard__default" aria-hidden="true">
-      {# Two-pages copy icon (GitHub Octicons, MIT) #}
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true">
-        <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/>
-        <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/>
-      </svg>
-    </span>
+    {# Whitespace is stripped around the icons so the gap before them comes only
+       from the styles, and the copy and tick icons sit in the same place #}
+    {% if type == "value" %}
+      <span class="nhsuk-u-visually-hidden">{{ defaultAriaLabel }} </span>
+      <span class="app-copy-to-clipboard__value">{{ params.html | safe }}</span>
+    {%- endif -%}
 
-    <span class="app-copy-to-clipboard__copied" aria-hidden="true">
-      {# Checkmark icon (GitHub Octicons, MIT) #}
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" focusable="false" aria-hidden="true">
-        <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>
-      </svg>
+    <span class="app-copy-to-clipboard__default app-copy-to-clipboard__icon" aria-hidden="true">
+      {{ appIcon("copy") }}
+    </span>{#
+    #}<span class="app-copy-to-clipboard__copied app-copy-to-clipboard__icon" aria-hidden="true">
+      {{ appIcon("tick") }}
     </span>
 
   {% else %}

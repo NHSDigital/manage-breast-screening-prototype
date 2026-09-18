@@ -2,63 +2,136 @@
 
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
-// Base button — looks like a small inline text link
+// Inline button that sits beside a value and inherits its colour, so it works
+// on light backgrounds and on the dark status bar alike. The box is at least
+// 24px square to give a usable hit area even for the icon-only variant.
 .app-copy-to-clipboard {
+  @include nhsuk-font-size(14);
+
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: nhsuk-spacing(1);
+  min-width: nhsuk-px-to-rem($nhsuk-icon-size);
+  min-height: nhsuk-px-to-rem($nhsuk-icon-size);
   padding: 0 nhsuk-spacing(1);
+  border: 0;
   background: none;
-  border: none;
-  cursor: pointer;
-  font-size: $nhsuk-base-font-size * 0.875; // slightly smaller than body text
+  color: inherit;
   font-family: inherit;
   line-height: 1;
-  color: inherit;
+  vertical-align: middle;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 2px;
-  vertical-align: middle;
+  cursor: pointer;
 }
 
 .app-copy-to-clipboard:hover {
   text-decoration-thickness: 3px;
 }
 
+// Icon variant: no underline at rest. Hover draws a bar along the foot of the
+// button, so it runs under the icon, which a text underline cannot do.
+.app-copy-to-clipboard--icon {
+  padding: 0;
+  text-decoration: none;
+}
+
+.app-copy-to-clipboard--icon:hover {
+  box-shadow: inset 0 -3px currentcolor;
+}
+
+// The value variant wraps the value itself, so it takes the size of the
+// surrounding text. It lays out as inline text rather than a flex box, so the
+// underline hugs the value and its icon rather than running the width of the
+// button. Dashed at rest hints that the value does something, as on an
+// abbreviation.
+.app-copy-to-clipboard--value {
+  display: inline;
+  padding: 0 0 3px;
+  font-size: inherit;
+  line-height: inherit;
+  white-space: nowrap;
+  text-decoration: none;
+
+  // Drawn as a background rather than an underline so the rule runs under the
+  // icon as well as the value: a text underline stops where the text does
+  background-image: linear-gradient(to right, currentcolor 0 3px, transparent 3px 6px);
+  background-repeat: repeat-x;
+  background-position: 0 100%;
+  background-size: 6px 1px;
+}
+
+.app-copy-to-clipboard--value:hover {
+  background-image: linear-gradient(currentcolor, currentcolor);
+  background-size: 100% 3px;
+}
+
+// Sized to the icon itself rather than the standard square box, which would
+// pad the icon away from the value. Both states share the 1em box so the
+// button keeps its width when the tick shows.
+.app-copy-to-clipboard--value .app-copy-to-clipboard__icon {
+  position: relative;
+  top: -1px;
+  width: 1em;
+  height: 1em;
+  margin-left: nhsuk-spacing(1);
+  vertical-align: middle;
+}
+
+// Icons sit in a fixed square so the copy icon and the larger tick take the
+// same space, keeping the button (and its focus box) the same shape in both
+// states, with room either side of the icon
+.app-copy-to-clipboard__icon {
+  justify-content: center;
+  width: nhsuk-px-to-rem($nhsuk-icon-size);
+  height: nhsuk-px-to-rem($nhsuk-icon-size);
+}
+
+// Focus matches header links: yellow box, dark content, inset bottom bar.
+// Declared after hover so it wins when both apply.
 .app-copy-to-clipboard:focus {
   @include nhsuk-focused-text;
+
+  box-shadow: inset 0 (-$nhsuk-focus-width) $nhsuk-focus-text-colour;
 }
 
-// Hide the "copied" label/icon by default
+// The value variant is inline text, so it takes the standard focus bar drawn
+// below the box rather than an inset one
+.app-copy-to-clipboard--value:focus {
+  background-image: none;
+  box-shadow:
+    0 -2px $nhsuk-focus-colour,
+    0 $nhsuk-focus-width $nhsuk-focus-text-colour;
+}
+
+// Icons inherit the button colour, so the tick stays visible on dark
+// backgrounds and turns dark on the yellow focus box. Sized to match the
+// 14px text, which also keeps them clear of the focus bar at the foot of the box.
+.app-copy-to-clipboard .nhsuk-icon {
+  width: nhsuk-px-to-rem(14px);
+  height: nhsuk-px-to-rem(14px);
+}
+
+// The tick is sized to match the one on the worklist status in the status bar
+.app-copy-to-clipboard__copied .nhsuk-icon {
+  width: 1em;
+  height: 1em;
+}
+
+// Swap the default label for the copied one while feedback is showing
+.app-copy-to-clipboard__default,
 .app-copy-to-clipboard__copied {
-  display: none;
+  display: inline-flex;
+  align-items: center;
 }
 
-// When copied: swap which label is visible
+.app-copy-to-clipboard__copied,
 .app-copy-to-clipboard--copied .app-copy-to-clipboard__default {
   display: none;
 }
 
 .app-copy-to-clipboard--copied .app-copy-to-clipboard__copied {
   display: inline-flex;
-  align-items: center;
-}
-
-// Icon variant — no underline, just the icon
-.app-copy-to-clipboard--icon {
-  padding: 0 nhsuk-spacing(1);
-  text-decoration: none;
-}
-
-// Fill-based SVG icons — sized relative to surrounding text
-.app-copy-to-clipboard--icon svg {
-  display: block;
-  fill: currentColor;
-  width: 1em;
-  height: 1em;
-}
-
-// Tick should be dark regardless of parent context (e.g. white text on dark bar)
-.app-copy-to-clipboard__copied svg {
-  fill: $nhsuk-text-colour;
 }
