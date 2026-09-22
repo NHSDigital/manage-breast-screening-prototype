@@ -474,7 +474,7 @@ module.exports = (router) => {
     const updatedClinic = updateClinic(data, clinicId, { status: 'closed' })
     if (updatedClinic) {
       req.flash('success', {
-        html: `Clinic ${updatedClinic.clinicCode} closed. <a href="/reports/${clinicId}">View report</a>`
+        wrapWithHeading: `Clinic ${updatedClinic.clinicCode} closed. <a href="/reports/${clinicId}">View report</a>`
       })
     }
 
