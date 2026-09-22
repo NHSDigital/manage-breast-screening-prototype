@@ -12,6 +12,7 @@
 
 const DELAY = 5000
 const COUNTDOWN_REFRESH = 500
+const BODY_PREVIEW_LENGTH = 300
 const POPUP_NAME = 'pacs-viewer'
 const POPUP_FEATURES = 'popup,width=1200,height=900,left=100,top=100'
 
@@ -216,24 +217,47 @@ class PacsLinkTest {
     this.record('No popup open')
   }
 
+  // Tries a CORS request first so the response can be read when the viewer
+  // allows our origin, and falls back to no-cors, which still sends the
+  // request but returns an opaque response
   async fetch({ label, url }) {
-    this.record(`Fetching ${label}`)
+    this.record(`Fetching ${label} (mode cors)`)
     const started = performance.now()
 
     try
     {
-      // no-cors so a cross-origin viewer does not reject the request outright.
-      // The response is opaque, so only reachable or not is known.
+      const response = await window.fetch(url, {
+        mode: 'cors',
+        credentials: 'include',
+        cache: 'no-store'
+      })
+      const body = await response.text()
+      const contentType = response.headers.get('content-type') || 'no content-type'
+      this.record(`Fetch for ${label} returned ${response.status} ${response.statusText} (${contentType}) after ${this.elapsed(started)}`)
+      this.record(`Response body (first ${BODY_PREVIEW_LENGTH} chars): ${body.slice(0, BODY_PREVIEW_LENGTH)}`)
+    }
+    catch (error)
+    {
+      this.record(`CORS fetch for ${label} failed after ${this.elapsed(started)}: ${error.message}. Usually the viewer has not allowed this origin. Retrying with mode no-cors`)
+      await this.fetchOpaque({ label, url })
+    }
+  }
+
+  async fetchOpaque({ label, url }) {
+    const started = performance.now()
+
+    try
+    {
       const response = await window.fetch(url, {
         mode: 'no-cors',
         credentials: 'include',
         cache: 'no-store'
       })
-      this.record(`Fetch for ${label} completed after ${this.elapsed(started)} (response type ${response.type})`)
+      this.record(`no-cors fetch for ${label} completed after ${this.elapsed(started)} (response type ${response.type}, status and body unreadable)`)
     }
     catch (error)
     {
-      this.record(`Fetch for ${label} failed after ${this.elapsed(started)}: ${error.message}`)
+      this.record(`no-cors fetch for ${label} failed after ${this.elapsed(started)}: ${error.message}`)
     }
   }
 

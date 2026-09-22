@@ -286,7 +286,7 @@
         <li><strong>Same tab</strong>: a plain link, so this page is replaced. When delayed, location.assign instead.</li>
         <li><strong>New tab</strong>: a link with target=_blank. When delayed, window.open instead, which browsers usually block without a click.</li>
         <li><strong>Popup</strong>: window.open with a fixed size and a reused window name. May be blocked when delayed.</li>
-        <li><strong>Fetch</strong>: a background GET with mode no-cors. Nothing opens in the browser and the response is opaque, so only reachable or not is known.</li>
+        <li><strong>Fetch</strong>: a background GET. Tries mode cors first, which shows the status and body if the viewer allows this origin, then falls back to no-cors, which only shows whether a response came back. Nothing opens in the browser.</li>
         <li><strong>Hidden iframe</strong>: loads the URL in an invisible frame, so this page stays put. Its load event fires for error pages too.</li>
       </ul>
     {% endset %}
