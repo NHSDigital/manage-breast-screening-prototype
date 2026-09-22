@@ -91,10 +91,14 @@
     {% endif %}
 
     {% set outcomeRecordedHtml %}
+<<<<<<< HEAD
       <p>Some appointment statuses have been updated. <a href="" class="js-refresh-link" hidden>Refresh list</a></p>
+=======
+>>>>>>> aca103896d1de18160e95d10bdffe87878a90ac5
       {% if outcomeRecordedAppointments | length %}
         {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
       {% endif %}
+      <p>Some appointment statuses have been updated. <a href="" class="js-refresh-link" hidden>Refresh list</a></p>
     {% endset %}
 
     {{ card({
