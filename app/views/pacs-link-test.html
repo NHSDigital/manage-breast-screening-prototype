@@ -2,9 +2,9 @@
 
 {# Developer tool for trying PACS activation URLs against a real viewer.
    Not part of any journey. Inputs persist through session data (the form
-   GETs to itself) and the links render server-side, so the same-tab and
-   new-tab styles work without JavaScript. Everything else is enhanced by
-   pacs-link-test.js. #}
+   GETs to itself) and the links render server-side, so opening in the same
+   tab or a new tab works without JavaScript. Popup, fetch, iframe, timing
+   and the event log are added by pacs-link-test.js. #}
 
 {% extends 'layout-app.html' %}
 
@@ -17,15 +17,12 @@
 {% set test = data.pacsTest or {} %}
 {% set baseUrl = test.baseUrl or "http://pacs.example.nhs.uk/masterview/mv.jsp" %}
 {% set identifyBy = test.identifyBy or "Accession number" %}
-{% set linkStyle = test.linkStyle or "Same tab" %}
-{% set timing = test.timing or "Immediately" %}
-{% set popupTarget = "_blank" if linkStyle != "Same tab" else "" %}
 
 {# Rows are 0-based because the query parser turns numbered keys into an array.
-   Before anything has been submitted, row 1 carries the activation guide's example. #}
+   Before anything has been submitted, row 1 carries an example. #}
 {% set participants = test.participants or [
   {
-    label: "Example from the activation guide",
+    label: "Example participant",
     nhsNumber: "9990000001",
     accessionNumber: "1963943"
   },
@@ -37,7 +34,7 @@
 {% set extraQuery = (test.extraParams or "") | trim | replace("\r\n", "&") | replace("\n", "&") %}
 
 {# Builds the activation URL for one participant. When an shs token is
-   present it replaces the whole query, as the activation guide describes. #}
+   present it replaces the whole query. #}
 {% macro pacsUrl(participant) -%}
   {%- if test.shsToken -%}
     {{ baseUrl }}?shs={{ test.shsToken | trim | urlencode }}
@@ -63,7 +60,7 @@
   <span class="nhsuk-caption-l">Developer tool, not part of the service</span>
 </h1>
 
-<p class="nhsuk-body-l">Build Vue PACS activation URLs, fire them in different ways and see what the browser and the viewer do.</p>
+<p class="nhsuk-body-l">Build PACS activation URLs, open them in different ways and see what the browser and the viewer do.</p>
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-one-half">
@@ -79,60 +76,10 @@
           text: "Base URL"
         },
         hint: {
-          text: "Vue PACS activation endpoint, usually http://<server>/masterview/mv.jsp"
+          text: "The viewer's activation endpoint, without a query string"
         },
         value: baseUrl
       }) }}
-
-      <h2 class="nhsuk-heading-m">Participants</h2>
-
-      <p>Leave a row blank to skip it.</p>
-
-      {% for participant in participants %}
-        {% set index = loop.index0 %}
-        <fieldset class="nhsuk-fieldset nhsuk-u-margin-bottom-4">
-          <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">Participant {{ loop.index }}</legend>
-
-          {{ input({
-            id: "participant-" + index + "-label",
-            name: "pacsTest[participants][" + index + "][label]",
-            label: {
-              text: "Label"
-            },
-            classes: "nhsuk-input--width-20",
-            value: participant.label
-          }) }}
-
-          {{ input({
-            id: "participant-" + index + "-nhs-number",
-            name: "pacsTest[participants][" + index + "][nhsNumber]",
-            label: {
-              text: "NHS number"
-            },
-            hint: {
-              text: "Sent as patient_id"
-            },
-            classes: "nhsuk-input--width-10",
-            inputmode: "numeric",
-            value: participant.nhsNumber
-          }) }}
-
-          {{ input({
-            id: "participant-" + index + "-accession-number",
-            name: "pacsTest[participants][" + index + "][accessionNumber]",
-            label: {
-              text: "Accession number"
-            },
-            hint: {
-              text: "Sent as accession_number. Several can be joined with backslashes"
-            },
-            classes: "nhsuk-input--width-20",
-            value: participant.accessionNumber
-          }) }}
-        </fieldset>
-      {% endfor %}
-
-      <h2 class="nhsuk-heading-m">Link</h2>
 
       {{ radios({
         idPrefix: "identify-by",
@@ -170,7 +117,7 @@
         hint: {
           text: "One key=value per line, for example close_on_exit=true"
         },
-        rows: 4,
+        rows: 3,
         value: test.extraParams
       }) }}
 
@@ -186,86 +133,63 @@
         value: test.shsToken
       }) }}
 
-      {{ radios({
-        idPrefix: "link-style",
-        name: "pacsTest[linkStyle]",
-        fieldset: {
-          legend: {
-            text: "How to open it",
-            classes: "nhsuk-fieldset__legend--s"
-          }
-        },
-        value: linkStyle,
-        items: [
-          {
-            value: "Same tab",
-            text: "Same tab",
-            hint: {
-              text: "A plain link. This page is replaced"
-            }
-          },
-          {
-            value: "New tab",
-            text: "New tab",
-            hint: {
-              text: "A link with target=_blank"
-            }
-          },
-          {
-            value: "Popup",
-            text: "Popup window",
-            hint: {
-              text: "window.open with a fixed size. May be blocked when not started by a click"
-            }
-          },
-          {
-            value: "Fetch",
-            text: "Fetch",
-            hint: {
-              text: "A background GET with mode no-cors, nothing opens in the browser"
-            }
-          },
-          {
-            value: "Hidden iframe",
-            text: "Hidden iframe",
-            hint: {
-              text: "Loads the URL in an invisible frame, so this page stays put"
-            }
-          }
-        ]
-      }) }}
+      <h2 class="nhsuk-heading-m">Participants</h2>
 
-      {{ radios({
-        idPrefix: "timing",
-        name: "pacsTest[timing]",
-        fieldset: {
-          legend: {
-            text: "When to launch",
-            classes: "nhsuk-fieldset__legend--s"
-          }
-        },
-        value: timing,
-        items: [
-          {
-            value: "Immediately",
-            text: "Immediately"
-          },
-          {
-            value: "After 5 seconds",
-            text: "After 5 seconds",
+      {% for participant in participants %}
+        {% set index = loop.index0 %}
+
+        {% set participantFields %}
+          {{ input({
+            id: "participant-" + index + "-label",
+            name: "pacsTest[participants][" + index + "][label]",
+            label: {
+              text: "Label"
+            },
+            classes: "nhsuk-input--width-20",
+            value: participant.label
+          }) }}
+
+          {{ input({
+            id: "participant-" + index + "-nhs-number",
+            name: "pacsTest[participants][" + index + "][nhsNumber]",
+            label: {
+              text: "NHS number"
+            },
             hint: {
-              text: "Time to move focus elsewhere first"
-            }
-          },
-          {
-            value: "Cycle",
-            text: "Cycle through participants, 5 seconds apart",
+              text: "Sent as patient_id"
+            },
+            classes: "nhsuk-input--width-10",
+            inputmode: "numeric",
+            value: participant.nhsNumber
+          }) }}
+
+          {{ input({
+            id: "participant-" + index + "-accession-number",
+            name: "pacsTest[participants][" + index + "][accessionNumber]",
+            label: {
+              text: "Accession number"
+            },
             hint: {
-              text: "Shows whether a viewer that already has focus picks up the next study"
-            }
-          }
-        ]
-      }) }}
+              text: "Sent as accession_number. Several can be joined with backslashes"
+            },
+            classes: "nhsuk-input--width-20",
+            value: participant.accessionNumber
+          }) }}
+        {% endset %}
+
+        {% set summaryText = "Participant " + loop.index %}
+        {% if participant.label %}
+          {% set summaryText = summaryText + ": " + participant.label %}
+        {% elseif not (participant.nhsNumber or participant.accessionNumber) %}
+          {% set summaryText = summaryText + " (empty)" %}
+        {% endif %}
+
+        {{ details({
+          summaryText: summaryText,
+          html: participantFields,
+          open: loop.first
+        }) }}
+      {% endfor %}
 
       {{ button({
         text: "Update links",
@@ -295,34 +219,86 @@
       <p>Fill in at least one participant and update the links.</p>
     {% endif %}
 
-    <ol class="nhsuk-list" id="pacs-links" data-link-style="{{ linkStyle }}" data-timing="{{ timing }}">
+    {# Timing applies to whichever open button is clicked next. It is a
+       JavaScript concern, so it stays hidden without it. #}
+    <div hidden data-pacs-timing>
+      {{ radios({
+        idPrefix: "timing",
+        name: "timing",
+        classes: "nhsuk-radios--small",
+        fieldset: {
+          legend: {
+            text: "When you click an open button",
+            classes: "nhsuk-fieldset__legend--s"
+          }
+        },
+        value: "Immediately",
+        items: [
+          {
+            value: "Immediately",
+            text: "Open immediately"
+          },
+          {
+            value: "After 5 seconds",
+            text: "Open after 5 seconds",
+            hint: {
+              text: "Time to move focus elsewhere first"
+            }
+          },
+          {
+            value: "Cycle",
+            text: "Open every participant in turn, 5 seconds apart, the same way",
+            hint: {
+              text: "Shows whether a viewer that already has focus picks up the next study"
+            }
+          }
+        ]
+      }) }}
+    </div>
+
+    <ol class="nhsuk-list" id="pacs-links">
       {% for participant in filledParticipants %}
-        <li class="nhsuk-u-margin-bottom-5" data-participant-index="{{ participant.index }}" data-url="{{ participant.url }}" data-label="{{ participant.label }}">
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ participant.label }}</h3>
-          <p class="nhsuk-u-margin-bottom-2">
-            <a href="{{ participant.url }}" class="nhsuk-link" {% if popupTarget %}target="{{ popupTarget }}" rel="noopener"{% endif %} data-pacs-link>Open in PACS</a>
+        <li class="nhsuk-u-margin-bottom-6" data-participant-index="{{ participant.index }}" data-url="{{ participant.url }}" data-label="{{ participant.label }}">
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">
+            {{ participant.label }}
             {{ appCopyToClipboard({
               text: participant.url,
               type: "icon",
               label: "URL"
             }) }}
-          </p>
-          <p class="nhsuk-body-s nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0 app-break-all">
+          </h3>
+          <p class="nhsuk-body-s nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-3 app-break-all">
             <code>{{ participant.url }}</code>
           </p>
+          <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+            <a href="{{ participant.url }}" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Same tab">Same tab</a>
+            <a href="{{ participant.url }}" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" target="_blank" rel="noopener" data-pacs-open="New tab">New tab</a>
+            <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Popup" hidden>Popup</button>
+            <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Fetch" hidden>Fetch</button>
+            <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Hidden iframe" hidden>Hidden iframe</button>
+          </div>
         </li>
       {% endfor %}
     </ol>
 
+    {% set stylesHtml %}
+      <ul class="nhsuk-list nhsuk-list--bullet nhsuk-body-s">
+        <li><strong>Same tab</strong>: a plain link. This page is replaced.</li>
+        <li><strong>New tab</strong>: a link with target=_blank.</li>
+        <li><strong>Popup</strong>: window.open with a fixed size and a reused window name. May be blocked when not started by a click.</li>
+        <li><strong>Fetch</strong>: a background GET with mode no-cors. Nothing opens in the browser, only success or failure is known.</li>
+        <li><strong>Hidden iframe</strong>: loads the URL in an invisible frame, so this page stays put.</li>
+      </ul>
+    {% endset %}
+
+    {{ details({
+      summaryText: "What each button does",
+      html: stylesHtml
+    }) }}
+
     <div class="nhsuk-button-group" hidden data-pacs-controls>
       {{ button({
-        text: "Launch",
-        attributes: {
-          "data-pacs-launch": "true"
-        }
-      }) }}
-      {{ button({
-        text: "Cancel timer",
+        text: "Cancel timers",
         classes: "nhsuk-button--secondary",
         attributes: {
           "data-pacs-cancel": "true"
@@ -359,7 +335,7 @@
 </div>
 
 {% set parametersHtml %}
-  <p>From the Vue PACS Client 12.2.8 activation guide. All of these go on the query string of the base URL, or inside an encrypted <code>shs</code> token.</p>
+  <p>Parameters the viewer accepts on the query string of the base URL, or inside an encrypted <code>shs</code> token.</p>
   <dl class="nhsuk-summary-list">
     <div class="nhsuk-summary-list__row">
       <dt class="nhsuk-summary-list__key">accession_number</dt>
@@ -375,15 +351,15 @@
     </div>
     <div class="nhsuk-summary-list__row">
       <dt class="nhsuk-summary-list__key">user_name, password, password_ecrypted, cfg_user</dt>
-      <dd class="nhsuk-summary-list__value">PACS login. Without a password the viewer prompts</dd>
+      <dd class="nhsuk-summary-list__value">Viewer login. Without a password the viewer prompts</dd>
     </div>
     <div class="nhsuk-summary-list__row">
       <dt class="nhsuk-summary-list__key">server_name</dt>
-      <dd class="nhsuk-summary-list__value">Archive Explorer title of the archive to load from</dd>
+      <dd class="nhsuk-summary-list__value">Title of the archive to load from</dd>
     </div>
     <div class="nhsuk-summary-list__row">
       <dt class="nhsuk-summary-list__key">close_on_exit, close_window</dt>
-      <dd class="nhsuk-summary-list__value">true closes the browser window once the client has started. Worth trying with the new tab and popup styles</dd>
+      <dd class="nhsuk-summary-list__value">true closes the browser window once the viewer has started. Worth trying with the new tab and popup buttons</dd>
     </div>
     <div class="nhsuk-summary-list__row">
       <dt class="nhsuk-summary-list__key">start_monitor, num_of_monitors</dt>
@@ -395,14 +371,14 @@
     </div>
     <div class="nhsuk-summary-list__row">
       <dt class="nhsuk-summary-list__key">shs</dt>
-      <dd class="nhsuk-summary-list__value">AES-256 CBC encrypted form of the whole query, using a key shared with the PACS. Needs generating elsewhere and pasting in above</dd>
+      <dd class="nhsuk-summary-list__value">AES-256 CBC encrypted form of the whole query, using a key shared with the viewer. Needs generating elsewhere and pasting in above</dd>
     </div>
   </dl>
-  <p>The NativeBridge WebSocket plugin (default port 8283, commands JoinContext, ShowStudy, ShowStudyWithPID, CloseStudy, Heartbeat) is a separate route into the viewer and is not covered by this page yet.</p>
+  <p>The viewer also has a WebSocket route (default port 8283, commands JoinContext, ShowStudy, ShowStudyWithPID, CloseStudy, Heartbeat). This page does not cover it yet.</p>
 {% endset %}
 
 {{ details({
-  summaryText: "Vue PACS activation parameters",
+  summaryText: "Activation URL parameters",
   html: parametersHtml
 }) }}
 
