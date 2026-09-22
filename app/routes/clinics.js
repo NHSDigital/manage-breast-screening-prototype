@@ -65,7 +65,7 @@ function getClinicData(data, clinicId) {
 const CLOSE_STATUS_ACTIONS = {
   attended_not_screened: { from: 'checked_in', resolves: true },
   did_not_attend: { from: 'scheduled', resolves: true },
-  checked_in: { from: 'attended_not_screened', resolves: false },
+  checked_in: { from: 'attended_not_screened', resolves: false, clearsStoppedDetails: true },
   scheduled: { from: 'did_not_attend', resolves: false },
   checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in', resolves: false },
   scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled', resolves: false }
@@ -99,6 +99,17 @@ const trackCloseResolvedIds = (data, clinicId, appointmentIds, resolves) => {
  */
 const needsStoppedDetails = (appointment) => {
   return appointment.status === 'attended_not_screened' && !hasStoppedDetails(appointment)
+}
+
+/**
+ * Discard the attended-not-screened reason and reschedule answers, so undoing
+ * the status leaves no stale reason behind
+ */
+const clearStoppedDetails = (data, appointmentId) => {
+  updateAppointmentData(data, appointmentId, {
+    appointmentStopped: null,
+    reschedule: null
+  })
 }
 
 module.exports = (router) => {
@@ -264,6 +275,9 @@ module.exports = (router) => {
 
     const data = req.session.data
     updateAppointmentStatus(data, appointmentId, action.to || status)
+    if (action.clearsStoppedDetails) {
+      clearStoppedDetails(data, appointmentId)
+    }
     trackCloseResolvedIds(data, clinicId, [appointmentId], action.resolves)
 
     if (req.xhr) {
@@ -294,6 +308,9 @@ module.exports = (router) => {
     )
 
     appointments.forEach((a) => updateAppointmentStatus(data, a.id, status))
+    if (action.clearsStoppedDetails) {
+      appointments.forEach((a) => clearStoppedDetails(data, a.id))
+    }
     trackCloseResolvedIds(data, clinicId, appointments.map((a) => a.id), action.resolves)
 
     if (req.xhr) {
