@@ -1,57 +1,20 @@
-{# app/views/pacs-link-test.html #}
+{# app/views/pacs-link-test/index.html #}
 
 {# Developer tool for trying PACS activation URLs against a real viewer.
    Not part of any journey. Inputs persist through session data (the form
    GETs to itself) and the links render server-side, so opening in the same
    tab or a new tab works without JavaScript. Popup, fetch, iframe, timing
-   and the event log are added by pacs-link-test.js. #}
+   and the event log are added by pacs-link-test.js. The WebSocket route is
+   on the sibling page. #}
 
 {% extends 'layout-app.html' %}
 
 {% from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard %}
+{% import "_includes/pacs-link-test/shared.njk" as pacs with context %}
 
 {% set pageHeading = "PACS link test" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set hideBackLink = true %}
-
-{% set test = data.pacsTest or {} %}
-{% set baseUrl = test.baseUrl or "http://pacs.example.nhs.uk/masterview/mv.jsp" %}
-{% set identifyBy = test.identifyBy or "Accession number" %}
-
-{# Rows are 0-based because the query parser turns numbered keys into an array.
-   Before anything has been submitted, row 1 carries an example. #}
-{% set participants = test.participants or [
-  {
-    label: "Example participant",
-    nhsNumber: "9990000001",
-    accessionNumber: "1963943"
-  },
-  {},
-  {}
-] %}
-
-{# Free-text extra parameters, one key=value per line, become a query fragment #}
-{% set extraQuery = (test.extraParams or "") | trim | replace("\r\n", "&") | replace("\n", "&") %}
-
-{# Builds the activation URL for one participant. When an shs token is
-   present it replaces the whole query. #}
-{% macro pacsUrl(participant) -%}
-  {%- if test.shsToken -%}
-    {{ baseUrl }}?shs={{ test.shsToken | trim | urlencode }}
-  {%- else -%}
-    {%- set query = "" -%}
-    {%- if identifyBy != "NHS number" and participant.accessionNumber -%}
-      {%- set query = query + "&accession_number=" + (participant.accessionNumber | trim | urlencode) -%}
-    {%- endif -%}
-    {%- if identifyBy != "Accession number" and participant.nhsNumber -%}
-      {%- set query = query + "&patient_id=" + (participant.nhsNumber | trim | replace(" ", "") | urlencode) -%}
-    {%- endif -%}
-    {%- if extraQuery -%}
-      {%- set query = query + "&" + extraQuery -%}
-    {%- endif -%}
-    {{ baseUrl }}?{{ query | replace("&", "", 1) }}
-  {%- endif -%}
-{%- endmacro %}
 
 {% block pageContent %}
 
@@ -61,6 +24,8 @@
 </h1>
 
 <p class="nhsuk-body-l">Build PACS activation URLs, open them in different ways and see what the browser and the viewer do.</p>
+
+{{ pacs.pageNavigation("urls") }}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-one-half">
@@ -78,7 +43,7 @@
         hint: {
           text: "The viewer's activation endpoint, without a query string"
         },
-        value: baseUrl
+        value: pacs.baseUrl
       }) }}
 
       {{ radios({
@@ -91,7 +56,7 @@
             classes: "nhsuk-fieldset__legend--s"
           }
         },
-        value: identifyBy,
+        value: pacs.identifyBy,
         items: [
           {
             value: "Accession number",
@@ -118,7 +83,7 @@
           text: "One key=value per line, for example close_on_exit=true"
         },
         rows: 3,
-        value: test.extraParams
+        value: pacs.test.extraParams
       }) }}
 
       {{ input({
@@ -130,66 +95,10 @@
         hint: {
           text: "An encrypted token replaces the whole query string"
         },
-        value: test.shsToken
+        value: pacs.test.shsToken
       }) }}
 
-      <h2 class="nhsuk-heading-m">Participants</h2>
-
-      {% for participant in participants %}
-        {% set index = loop.index0 %}
-
-        {% set participantFields %}
-          {{ input({
-            id: "participant-" + index + "-label",
-            name: "pacsTest[participants][" + index + "][label]",
-            label: {
-              text: "Label"
-            },
-            classes: "nhsuk-input--width-20",
-            value: participant.label
-          }) }}
-
-          {{ input({
-            id: "participant-" + index + "-nhs-number",
-            name: "pacsTest[participants][" + index + "][nhsNumber]",
-            label: {
-              text: "NHS number"
-            },
-            hint: {
-              text: "Sent as patient_id"
-            },
-            classes: "nhsuk-input--width-10",
-            inputmode: "numeric",
-            value: participant.nhsNumber
-          }) }}
-
-          {{ input({
-            id: "participant-" + index + "-accession-number",
-            name: "pacsTest[participants][" + index + "][accessionNumber]",
-            label: {
-              text: "Accession number"
-            },
-            hint: {
-              text: "Sent as accession_number. Several can be joined with backslashes"
-            },
-            classes: "nhsuk-input--width-20",
-            value: participant.accessionNumber
-          }) }}
-        {% endset %}
-
-        {% set summaryText = "Participant " + loop.index %}
-        {% if participant.label %}
-          {% set summaryText = summaryText + ": " + participant.label %}
-        {% elseif not (participant.nhsNumber or participant.accessionNumber) %}
-          {% set summaryText = summaryText + " (empty)" %}
-        {% endif %}
-
-        {{ details({
-          summaryText: summaryText,
-          html: participantFields,
-          open: loop.first
-        }) }}
-      {% endfor %}
+      {{ pacs.participantFields() }}
 
       {{ button({
         text: "Update links",
@@ -204,18 +113,7 @@
 
     <h2 class="nhsuk-heading-m">Links</h2>
 
-    {% set filledParticipants = [] %}
-    {% for participant in participants %}
-      {% if participant.nhsNumber or participant.accessionNumber %}
-        {% set filledParticipants = (filledParticipants.push({
-          index: loop.index,
-          label: participant.label or ("Participant " + loop.index),
-          url: pacsUrl(participant)
-        }), filledParticipants) %}
-      {% endif %}
-    {% endfor %}
-
-    {% if filledParticipants | length == 0 %}
+    {% if pacs.filledParticipants | length == 0 %}
       <p>Fill in at least one participant and update the links.</p>
     {% endif %}
 
@@ -257,7 +155,7 @@
     </div>
 
     <ol class="nhsuk-list" id="pacs-links">
-      {% for participant in filledParticipants %}
+      {% for participant in pacs.filledParticipants %}
         <li class="nhsuk-u-margin-bottom-6" data-participant-index="{{ participant.index }}" data-url="{{ participant.url }}" data-label="{{ participant.label }}">
           <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">
             {{ participant.label }}
@@ -374,7 +272,6 @@
       <dd class="nhsuk-summary-list__value">AES-256 CBC encrypted form of the whole query, using a key shared with the viewer. Needs generating elsewhere and pasting in above</dd>
     </div>
   </dl>
-  <p>The viewer also has a WebSocket route (default port 8283, commands JoinContext, ShowStudy, ShowStudyWithPID, CloseStudy, Heartbeat). This page does not cover it yet.</p>
 {% endset %}
 
 {{ details({
