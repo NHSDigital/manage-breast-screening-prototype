@@ -24,6 +24,11 @@
   word-spacing: -0.5ch;
 }
 
+// Lets long unbroken strings such as URLs wrap inside a column
+.app-break-all {
+  word-break: break-all;
+}
+
 // Max-width caps matching each grid column's content width at full page
 // width. The grid row's negative margins widen it by one gutter, so a column's
 // content is the fraction of (page width + gutter) minus its own gutter padding.
