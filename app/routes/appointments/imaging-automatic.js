@@ -24,6 +24,11 @@ const {
   getReturnUrl,
   urlWithReferrer
 } = require('../../lib/utils/referrers')
+const { getImageSetForAppointment } = require('../../lib/utils/mammogram-images')
+const {
+  ensureSeedProfilesState,
+  getSeedDataProfileFromState
+} = require('../../lib/generators/seed-profiles')
 
 // Problems on the automatic images page that make the mammographer fall back
 // to manual image mode, each raising an issue so the images are reconciled
@@ -35,7 +40,7 @@ const IMAGE_TROUBLESHOOTING_ISSUES = {
       'Switched to manual image mode: a different participant’s images were displayed'
   },
   'wrong-image-count': {
-    type: 'missing_images',
+    type: 'other',
     description:
       'Switched to manual image mode: the wrong number of images were displayed'
   },
@@ -44,11 +49,6 @@ const IMAGE_TROUBLESHOOTING_ISSUES = {
     description: 'Switched to manual image mode: images had incorrect labels'
   }
 }
-const { getImageSetForAppointment } = require('../../lib/utils/mammogram-images')
-const {
-  ensureSeedProfilesState,
-  getSeedDataProfileFromState
-} = require('../../lib/generators/seed-profiles')
 
 module.exports = (router) => {
   // Imaging view - this is the main imaging page for the appointment
@@ -232,8 +232,17 @@ module.exports = (router) => {
       }
 
       const manualImagesUrlWithProblem = `${manualImagesUrl}?issue=${problem}`
-      const alreadyRaised = getOpenIssuesFor(data, data.appointment.episodeId)
-        .some((issue) => issue.type === troubleshootingIssue.type)
+      // An open issue of the same type is the same problem, except for
+      // "Something else", where only this problem's own description matches
+      const alreadyRaised = getOpenIssuesFor(
+        data,
+        data.appointment.episodeId
+      ).some(
+        (issue) =>
+          issue.type === troubleshootingIssue.type &&
+          (issue.type !== 'other' ||
+            issue.description === troubleshootingIssue.description)
+      )
 
       if (!alreadyRaised) {
         const issue = createIssue(data, {

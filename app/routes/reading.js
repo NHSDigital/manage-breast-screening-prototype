@@ -65,11 +65,7 @@ const {
 const {
   getHistoricReadingSessions
 } = require('../lib/utils/historic-reading-sessions')
-const {
-  modalBreakout,
-  getReturnUrl,
-  urlWithReferrer
-} = require('../lib/utils/referrers')
+const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
 const {
   createIssue,
   getIssue,
@@ -1650,20 +1646,23 @@ module.exports = (router) => {
         currentUserId
       )
 
-      // Show a banner on the next case if there is one, linking to the issue
-      // with a way back to that case
+      // Show a banner on the next case if there is one, linking back to this
+      // case's existing read, which shows the issue without leaving the session
       if (nextUnreadAppointment) {
-        const nextCaseUrl = `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
-        const shortName = getShortName(res.locals.participant)
+        // A plain string, as the SafeString getShortName returns does not
+        // survive being stored in the session
+        const shortName = String(getShortName(res.locals.participant))
         data.readingOpinionBanner = {
           text: `Issue raised for ${shortName}`,
-          participantName: `${shortName}`,
-          linkText: 'View issue',
-          editHref: issue
-            ? urlWithReferrer(`/review/issues/${issue.id}`, nextCaseUrl)
-            : `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+          participantName: shortName,
+          linkText: issue ? 'View issue' : 'View case',
+          editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         }
-        res.redirect(modalBreakout(nextCaseUrl))
+        res.redirect(
+          modalBreakout(
+            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
+          )
+        )
       } else if (session.skippedAppointments.length > 0) {
         res.redirect(
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)

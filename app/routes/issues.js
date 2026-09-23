@@ -139,7 +139,7 @@ module.exports = (router) => {
   router.post(`${RAISE_PATH}/existing-answer`, loadRaiseContext, (req, res) => {
     const data = req.session.data
     const referrerChain = req.query.referrerChain
-    const { openIssues, raiseUrl, returnFallbackUrl } = res.locals
+    const { raiseUrl, returnFallbackUrl } = res.locals
     const answer = data.raiseIssue?.aboutSomethingElse
 
     if (answer === 'yes') {
@@ -149,14 +149,11 @@ module.exports = (router) => {
     if (answer === 'no') {
       delete data.raiseIssue
 
-      // One open issue is the one they meant; with several, go back to the
-      // page that lists them
-      const returnUrl = getReturnUrl(returnFallbackUrl, referrerChain)
-      const destination =
-        openIssues.length === 1
-          ? urlWithReferrer(`/review/issues/${openIssues[0].id}`, returnUrl)
-          : returnUrl
-      return res.redirect(modalBreakout(destination))
+      // Nothing new to raise, so go back to what they were doing. The check
+      // page links to each open issue for anyone who wants to see it
+      return res.redirect(
+        modalBreakout(getReturnUrl(returnFallbackUrl, referrerChain))
+      )
     }
 
     const error = {
