@@ -37,16 +37,18 @@
   conditional: {
     html: textarea({
       name: stoppedFieldsNamePrefix + "[otherDetails]",
+      id: "otherDetails",
       label: { text: "Provide details" },
       rows: 5,
       value: stoppedFieldsValues.otherDetails,
       autocomplete: "off"
-    })
+    } | populateErrors)
   }
 }) %}
 
 {{ checkboxes({
   name: stoppedFieldsNamePrefix + "[stoppedReason]",
+  idPrefix: "stoppedReason",
   values: stoppedFieldsValues.stoppedReason,
   fieldset: {
     legend: {
@@ -63,6 +65,7 @@
 
 {{ radios({
   name: stoppedFieldsNamePrefix + "[needsReschedule]",
+  idPrefix: "needsReschedule",
   value: stoppedFieldsValues.needsReschedule,
   fieldset: {
     legend: {

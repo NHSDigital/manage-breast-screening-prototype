@@ -333,12 +333,14 @@ module.exports = (router) => {
 
     const formData = data.closeReasonForm || {}
     const { stoppedReason, needsReschedule, otherDetails } = formData
+    // Checkboxes post an empty array when none are ticked
+    const hasNoReason = !stoppedReason?.length
     const hasOtherReasonButNoDetails =
       stoppedReason?.includes('Other reason') && !otherDetails
 
     // Validation
-    if (!stoppedReason || !needsReschedule || hasOtherReasonButNoDetails) {
-      if (!stoppedReason) {
+    if (hasNoReason || !needsReschedule || hasOtherReasonButNoDetails) {
+      if (hasNoReason) {
         req.flash('error', {
           text: 'Select why this appointment has been stopped',
           name: 'closeReasonForm[stoppedReason]',
