@@ -74,7 +74,12 @@ const ISSUE_OUTCOMES = ['resolved', 'raised_in_error']
 
 // The kinds of record an issue can link to, most specific first. createIssue
 // orders an issue's links the same way.
-const ISSUE_LINK_TYPES = ['readingCase', 'appointment', 'episode', 'participant']
+const ISSUE_LINK_TYPES = [
+  'readingCase',
+  'appointment',
+  'episode',
+  'participant'
+]
 
 /**
  * Make a short human reference for an issue, for quoting to the service desk
@@ -195,8 +200,13 @@ const getBreastScreeningUnitIdForEpisode = (
  * })
  */
 const createIssue = (data, details) => {
-  const { readingCaseId, appointmentId, episodeId, participantId, ...issueDetails } =
-    details
+  const {
+    readingCaseId,
+    appointmentId,
+    episodeId,
+    participantId,
+    ...issueDetails
+  } = details
 
   let readingCase = null
   let appointment = null
@@ -259,7 +269,9 @@ const recordIssueChange = (data, issue) => {
   }
 
   if (Array.isArray(data.issues)) {
-    const index = data.issues.findIndex((candidate) => candidate.id === issue.id)
+    const index = data.issues.findIndex(
+      (candidate) => candidate.id === issue.id
+    )
     if (index === -1) {
       data.issues.push(issue)
     } else {
@@ -352,21 +364,43 @@ const getOpenIssuesFor = (data, record) =>
   getIssuesFor(data, record).filter(isIssueOpen)
 
 /**
- * When the earliest open issue on a record was raised, or null if it has none.
+ * The periods during which a record had an open issue, oldest first.
  *
- * Reading judges auto-finalisation against this rather than the real time, so
- * reads that had not finalised when an issue was raised stay unfinalised
- * until it is resolved.
+ * Each issue linked to the record contributes the time from when it was
+ * raised to when it was resolved; overlapping periods are merged, so two
+ * issues open at once count once. A period that is still open has a null
+ * end. Reading uses these to pause a read's finalisation window (see
+ * getAutoFinaliseTime in reading-cases.js).
  *
  * @param {object} data - Session data
  * @param {object | string} record - Participant, episode, appointment or reading case, or its id
- * @returns {string | null} ISO timestamp, or null
+ * @returns {Array<{start: string, end: string | null}>} Merged periods, ISO timestamps
  * @example
- * getReadingCaseStatus(readingCase, data.settings, getOpenIssueRaisedAt(data, episode))
+ * getOpenIssuePeriods(data, episode)
+ * // [{ start: '2026-09-23T10:00:00.000Z', end: '2026-09-23T11:30:00.000Z' }]
  */
-const getOpenIssueRaisedAt = (data, record) => {
-  const openIssues = getOpenIssuesFor(data, record)
-  return openIssues.length ? openIssues[openIssues.length - 1].raisedAt : null
+const getOpenIssuePeriods = (data, record) => {
+  const periods = getIssuesFor(data, record)
+    .filter((issue) => issue.raisedAt)
+    .map((issue) => ({
+      start: issue.raisedAt,
+      end: issue.resolved?.resolvedAt || null
+    }))
+    .sort((a, b) => new Date(a.start) - new Date(b.start))
+
+  const endTime = (period) =>
+    period.end === null ? Infinity : new Date(period.end).getTime()
+
+  return periods.reduce((merged, period) => {
+    const previous = merged[merged.length - 1]
+    if (previous && new Date(period.start).getTime() <= endTime(previous)) {
+      if (endTime(period) > endTime(previous)) {
+        previous.end = period.end
+      }
+      return merged
+    }
+    return [...merged, { ...period }]
+  }, [])
 }
 
 /**
@@ -467,7 +501,7 @@ module.exports = {
   isIssueOpen,
   hasOpenIssue,
   getOpenIssuesFor,
-  getOpenIssueRaisedAt,
+  getOpenIssuePeriods,
   updateIssue,
   resolveIssue,
   getIssueTypes,

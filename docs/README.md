@@ -20,6 +20,7 @@ Reference for people and coding assistants working on the prototype. The always-
 - [utils-filter-reference.md](utils-filter-reference.md) - generated list of every helper and Nunjucks filter. Check before writing data or display logic. Regenerate with `npm run docs`.
 - [data-generator-reference.md](data-generator-reference.md) - how seed data is generated and how to add or change a generator.
 - [medical-information-generator.md](medical-information-generator.md) - how medical history, symptoms, breast density factors and other medical information are generated and stored.
+- [issues.md](issues.md) - issues raised on a participant's record or images: the model, where they are raised and shown, what an open issue holds up, and the Review pages.
 
 ## Image reading
 

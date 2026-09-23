@@ -1,0 +1,89 @@
+{# app/views/style-guide/issues.html #}
+
+{% extends 'layout-app.html' %}
+
+{% from "_includes/issues/tag.njk" import issueTag with context %}
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+{% from "_includes/issues/resolved-issues.njk" import resolvedIssuesCard with context %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "issues" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+{# The callout and card read live issues, so the examples use the episodes of
+   the first open and first closed seeded issue #}
+{% set exampleOpenEpisodeId = null %}
+{% set exampleResolvedEpisodeId = null %}
+{% for issue in data.issues %}
+  {% for link in issue.links %}
+    {% if link.type == "episode" %}
+      {% if not issue.resolved and not exampleOpenEpisodeId %}
+        {% set exampleOpenEpisodeId = link.id %}
+      {% elseif issue.resolved and not exampleResolvedEpisodeId %}
+        {% set exampleResolvedEpisodeId = link.id %}
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endfor %}
+
+<h2>Issues</h2>
+
+<p>The shared ways to show that a record has an issue, and an issue’s own status. Pages pass the episode, so an issue raised anywhere in a round shows everywhere in it. See <code>docs/issues.md</code>.</p>
+
+<h3>Has issue tag</h3>
+
+<p>Macro: <code>issueTag(record, options)</code> from <code>_includes/issues/tag.njk</code>. Shows only when an open issue links to the record. Leave the record out when the caller already knows. Uses <code>has_issue</code> in the <code>misc</code> tag vocabulary.</p>
+
+<div class="sg-example">
+  {{ issueTag() }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% from "_includes/issues/tag.njk" import issueTag with context %}
+{{ issueTag(episode) }}
+{{ issueTag() }}{% endraw %}</code></pre>
+
+<h3>Issue status tags</h3>
+
+<p>An issue is open, or closed as resolved or raised in error. Uses the <code>issue</code> tag vocabulary.</p>
+
+<div class="sg-example">
+  {{ "open" | toTag({ vocabulary: "issue" }) }}
+  {{ "resolved" | toTag({ vocabulary: "issue" }) }}
+  {{ "raised_in_error" | toTag({ vocabulary: "issue" }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ issue | getIssueStatus | toTag({ vocabulary: "issue" }) }}{% endraw %}</code></pre>
+
+<h3>Open issues callout</h3>
+
+<p>Macro: <code>openIssuesCallout(record, options)</code> from <code>_includes/issues/open-issues.njk</code>. Lists each open issue, linked to its page. Shows nothing when there are none.</p>
+
+<div class="sg-example">
+  {% if exampleOpenEpisodeId %}
+    {{ openIssuesCallout(exampleOpenEpisodeId) }}
+  {% else %}
+    <p>No open issues in the current data.</p>
+  {% endif %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+{{ openIssuesCallout(episode) }}{% endraw %}</code></pre>
+
+<h3>Resolved issues card</h3>
+
+<p>Macro: <code>resolvedIssuesCard(record)</code> from <code>_includes/issues/resolved-issues.njk</code>. Closed issues as history on episode and participant pages. Shows nothing when there are none.</p>
+
+<div class="sg-example">
+  {% if exampleResolvedEpisodeId %}
+    {{ resolvedIssuesCard(exampleResolvedEpisodeId) }}
+  {% else %}
+    <p>No resolved issues in the current data.</p>
+  {% endif %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% from "_includes/issues/resolved-issues.njk" import resolvedIssuesCard with context %}
+{{ resolvedIssuesCard(episode) }}{% endraw %}</code></pre>
+
+{% endblock %}

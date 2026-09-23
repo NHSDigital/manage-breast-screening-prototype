@@ -23,7 +23,7 @@ const {
   getReadingCaseOutcome,
   getReadingUrgency
 } = require('./reading-cases')
-const { getOpenIssueRaisedAt } = require('./issues')
+const { hasOpenIssue, getOpenIssuePeriods } = require('./issues')
 const { getStatusText } = require('./status')
 const {
   awaitingPriors,
@@ -142,15 +142,10 @@ const buildRow = (data, episode, readingCase) => {
   const participant = getParticipant(data, episode.participantId)
   const clinic = appointment ? getClinic(data, appointment.clinicId) : null
 
-  // An open issue pauses auto-finalisation, so the case is judged as it stood
-  // when the issue was raised
-  const openIssueRaisedAt = getOpenIssueRaisedAt(data, episode)
-  const hasIssue = Boolean(openIssueRaisedAt)
-  const status = getReadingCaseStatus(
-    readingCase,
-    data.settings,
-    openIssueRaisedAt
-  )
+  // Time with an open issue doesn't count toward the reads' finalisation delay
+  const hasIssue = hasOpenIssue(data, episode)
+  const issuePeriods = getOpenIssuePeriods(data, episode)
+  const status = getReadingCaseStatus(readingCase, data.settings, issuePeriods)
 
   const isAwaitingPriors = appointment ? awaitingPriors(appointment) : false
   // The case-level status ('pending'/'requested') behind the awaiting-priors
@@ -164,7 +159,7 @@ const buildRow = (data, episode, readingCase) => {
   const outcome = getReadingCaseOutcome(
     readingCase,
     data.settings,
-    openIssueRaisedAt
+    issuePeriods
   )
   const finalisation = getFinalisationStage(outcome, status)
 

@@ -56,7 +56,7 @@ const skippedPaths = [
 
 // Pages served by the kit's auto-routes from a template alone, so absent from
 // the router. Only those worth guarding are listed.
-const pageTemplateUrls = ['/review']
+const pageTemplateUrls = ['/review', '/style-guide/issues']
 
 /**
  * Start the prototype as a plain Express process and wait for it to answer.

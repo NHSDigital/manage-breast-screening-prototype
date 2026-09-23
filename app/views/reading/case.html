@@ -271,14 +271,16 @@
             value: { html: readersHtml }
           }] %}
           {# Until finalisation, the finalised row says when the decision was
-             made and offers to conclude the case right away #}
+             made and offers to conclude the case right away - unless an open
+             issue is holding it, which finalising would get round #}
           {% if not caseOutcome %}
             {% set decidedAt = arbitrationRead.timestamp if arbitrationRead else (originalReads | last).timestamp %}
+            {% set isHeld = openIssues | length > 0 %}
             {% set extraRows = extraRows | push({
               key: { text: "Finalised" },
-              value: { html: ("Arbitration done " if arbitrationRead else "Reads done ") + (decidedAt | formatDateTime) + '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">Unfinalised</span>' },
+              value: { html: ("Arbitration done " if arbitrationRead else "Reads done ") + (decidedAt | formatDateTime) + '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">' + ("Paused while an issue is open" if isHeld else "Unfinalised") + '</span>' },
               actions: {
-                items: [
+                items: [] if isHeld else [
                   {
                     href: getReadingCaseUrl(readingCase) + "/finalise",
                     text: "Finalise outcome now"
@@ -388,7 +390,7 @@
                 {# On the case page the reads are the content, not context
                    beside an outcome column - so they keep their colour.
                    No <br> needed - the caption and byline spans are block-level #}
-                {{ readOpinionTag(slotRead, { context: 'own', showFinalisation: 'unfinalised' }) }}
+                {{ readOpinionTag(slotRead, { context: 'own', showFinalisation: 'unfinalised', issuePeriods: issuePeriods }) }}
                 {{ bylineHtml | safe }}
               {% else %}
                 {# The opinion is not the viewer's to see - mark the read done

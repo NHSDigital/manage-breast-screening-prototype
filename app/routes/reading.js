@@ -70,9 +70,9 @@ const {
   createIssue,
   getIssue,
   getIssueTypes,
+  getOpenIssuePeriods,
   resolveIssue
 } = require('../lib/utils/issues')
-const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
 // Carry the request's referrer chain on to a redirect within the same case, so
@@ -307,11 +307,15 @@ module.exports = (router) => {
     })
 
     // Saves to the appointment and mirrors into data.appointment if it matches
-    const updatedAppointment = updateAppointmentData(data, appointmentId, { previousMammograms })
+    const updatedAppointment = updateAppointmentData(data, appointmentId, {
+      previousMammograms
+    })
 
     // returnTo lets other surfaces (the case priors tab) reuse this action
     // and land back where the user was. Local paths only
-    const returnTo = req.body.returnTo?.startsWith('/') ? req.body.returnTo : null
+    const returnTo = req.body.returnTo?.startsWith('/')
+      ? req.body.returnTo
+      : null
 
     // Fetch requests get the fragment the surface asked for re-rendered, so
     // the page can update in place - a table row on the priors dashboard, a
@@ -325,7 +329,9 @@ module.exports = (router) => {
 
       return res.render(fragmentView, {
         thisAppointment: updatedAppointment,
-        mammogram: updatedAppointment.previousMammograms.find((m) => m.id === mammogramId),
+        mammogram: updatedAppointment.previousMammograms.find(
+          (m) => m.id === mammogramId
+        ),
         priorsReturnTo: returnTo
       })
     }
@@ -658,25 +664,15 @@ module.exports = (router) => {
       userId
     )
 
-    const finalisationDelayMinutes = parseInt(
-      data.settings?.reading?.finalisationDelay,
-      10
-    )
-    const unfinalisedTimestamps = unfinalisedReads
-      .map(({ read }) => read.timestamp)
-      .sort()
-
-    const autoFinaliseTime = (timestamp) =>
-      timestamp && !Number.isNaN(finalisationDelayMinutes)
-        ? dayjs(timestamp).add(finalisationDelayMinutes, 'minute').toISOString()
-        : null
-
     // Each read finalises on its own delay, so several outstanding reads
     // finalise across a span rather than at one moment
-    const autoFinaliseAt = autoFinaliseTime(unfinalisedTimestamps[0])
-    const lastAutoFinaliseAt = autoFinaliseTime(
-      unfinalisedTimestamps[unfinalisedTimestamps.length - 1]
-    )
+    const autoFinaliseTimes = unfinalisedReads
+      .map((entry) => entry.autoFinaliseAt)
+      .filter(Boolean)
+      .sort()
+    const autoFinaliseAt = autoFinaliseTimes[0] || null
+    const lastAutoFinaliseAt =
+      autoFinaliseTimes[autoFinaliseTimes.length - 1] || null
 
     return { unfinalisedReads, autoFinaliseAt, lastAutoFinaliseAt }
   }
@@ -793,7 +789,9 @@ module.exports = (router) => {
     // discarded rather than left as an empty overview and a blank history row
     const sessionAppointments = (session.appointmentIds || [])
       .map((appointmentId) =>
-        data.appointments.find((appointment) => appointment.id === appointmentId)
+        data.appointments.find(
+          (appointment) => appointment.id === appointmentId
+        )
       )
       .filter(Boolean)
 
@@ -863,12 +861,18 @@ module.exports = (router) => {
           (p) => p.id === appointment.participantId
         )
         const readingCase = getReadingCase(data, appointment)
+        const issuePeriods = getOpenIssuePeriods(data, appointment.episodeId)
 
         return {
           ...appointment,
           participant,
           readingCase,
-          readingMetadata: getReadingMetadata(readingCase, data.settings)
+          issuePeriods,
+          readingMetadata: getReadingMetadata(
+            readingCase,
+            data.settings,
+            issuePeriods
+          )
         }
       })
 
@@ -1123,6 +1127,11 @@ module.exports = (router) => {
       }
 
       res.locals.readingCase = getReadingCase(data, appointment)
+
+      // Time with an open issue doesn't count toward a read's finalisation
+      // delay, so the workflow's finalisation captions need these
+      res.locals.caseIsHeld = hasOpenIssueOnEpisode(data, appointment)
+      res.locals.issuePeriods = getOpenIssuePeriods(data, appointment.episodeId)
       res.locals.session = session
       res.locals.appointmentData = {
         clinic,
@@ -1223,7 +1232,16 @@ module.exports = (router) => {
         ? getArbitrationRead(readingCase)
         : getReadForUser(readingCase, currentUserId)
 
-      if (!read || isReadFinalised(read, data.settings)) {
+      // A case held by an open issue can't be finalised until it is resolved
+      if (
+        !read ||
+        hasOpenIssueOnEpisode(data, appointment) ||
+        isReadFinalised(
+          read,
+          data.settings,
+          getOpenIssuePeriods(data, appointment.episodeId)
+        )
+      ) {
         return res.redirect(backHref)
       }
 
@@ -1582,12 +1600,16 @@ module.exports = (router) => {
       }
 
       if (readingCase) {
-        // Raising an issue withdraws any opinion this user had already given -
-        // they're saying they can't judge this case after all
+        // Raising an issue withdraws any opinion this user had already given
+        // in this session - they're saying they can't judge this case after all
+        const isArbitrationSession =
+          getReadingSession(data, sessionId)?.type === 'arbitration'
         updateReadingCase(
           data,
           appointment.episodeId,
-          withoutRead(readingCase, currentUserId)
+          withoutRead(readingCase, currentUserId, {
+            arbitration: isArbitrationSession
+          })
         )
 
         createIssue(data, {
@@ -1748,7 +1770,13 @@ module.exports = (router) => {
             : userHasReadAppointment(data, appointment, data.currentUser?.id)
           : false
 
-        if (caseIsSettled) {
+        // A case held by an open issue can't be decided either - the case URL
+        // sends it to existing-read, which shows the issue
+        const caseIsHeld = appointment
+          ? hasOpenIssueOnEpisode(data, appointment)
+          : false
+
+        if (caseIsSettled || caseIsHeld) {
           return res.redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
           )
@@ -3367,10 +3395,9 @@ module.exports = (router) => {
 
     // Sessions this prototype has actually run are only ever today's, so the
     // tab is padded out with finished ones behind them
-    const allSessions = [
-      ...sessions,
-      ...getHistoricReadingSessions(data)
-    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    const allSessions = [...sessions, ...getHistoricReadingSessions(data)].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    )
 
     res.render('reading/history', {
       readings,

@@ -106,7 +106,10 @@ const EPISODE_STAGE_BY_READING_OUTCOME = {
  * @returns {boolean} True if this appointment produced images
  */
 const appointmentProducedImages = (appointment) => {
-  return EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment?.status]?.stage === 'reading'
+  return (
+    EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment?.status]?.stage ===
+    'reading'
+  )
 }
 
 /**
@@ -126,7 +129,10 @@ const buildMammogramEntry = (appointment, clinic) => {
   const views = appointment.mammogramData?.views || {}
 
   return {
-    takenDate: appointment.timing?.actualStartTime || appointment.timing?.startTime || null,
+    takenDate:
+      appointment.timing?.actualStartTime ||
+      appointment.timing?.startTime ||
+      null,
     appointmentId: appointment.id,
     breastScreeningUnitId: clinic?.breastScreeningUnitId || null,
     locationId: clinic?.locationId || null,
@@ -273,7 +279,9 @@ const getReadingCaseById = (data, caseId) => {
   const episode = episodeId
     ? getEpisode(data, episodeId)
     : Object.values(data._changes?.episodes || {}).find((candidate) =>
-        getReadingCases(candidate).some((readingCase) => readingCase.id === caseId)
+        getReadingCases(candidate).some(
+          (readingCase) => readingCase.id === caseId
+        )
       )
 
   if (!episode) return null
@@ -313,11 +321,19 @@ const getEpisodeReadingCase = (episode) => {
  *
  * @param {object} episode - Episode object
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the episode had an open issue (see
+ *   getOpenIssuePeriods in issues.js)
  * @returns {string | null} The outcome, or null while reading is under way
  */
-const getEpisodeReadingOutcome = (episode, settings = {}) => {
+const getEpisodeReadingOutcome = (
+  episode,
+  settings = {},
+  issuePeriods = []
+) => {
   const latestCase = getLatestReadingCase(episode)
-  return latestCase ? getReadingCaseOutcome(latestCase, settings) : null
+  return latestCase
+    ? getReadingCaseOutcome(latestCase, settings, issuePeriods)
+    : null
 }
 
 /**
@@ -656,7 +672,9 @@ const syncEpisodeMammogramsForAppointment = (data, appointment) => {
   if (!episode) return null
 
   const existing = episode.mammograms || []
-  const otherEntries = existing.filter((entry) => entry.appointmentId !== appointment.id)
+  const otherEntries = existing.filter(
+    (entry) => entry.appointmentId !== appointment.id
+  )
 
   if (!appointmentProducedImages(appointment)) {
     // No images from this appointment - drop its entry if it had one
@@ -694,7 +712,8 @@ const advanceEpisodeForAppointmentStatus = (data, appointment) => {
   const episode = getEpisode(data, appointment.episodeId)
   if (!episode) return null
 
-  const latestAppointmentId = episode.appointmentIds?.[episode.appointmentIds.length - 1]
+  const latestAppointmentId =
+    episode.appointmentIds?.[episode.appointmentIds.length - 1]
   if (latestAppointmentId && latestAppointmentId !== appointment.id) return null
 
   const destination = EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment.status]

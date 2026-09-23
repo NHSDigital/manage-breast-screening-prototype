@@ -157,13 +157,15 @@ const generateIssues = ({
     episode.readingCases?.[episode.readingCases.length - 1] || null
 
   // Two cases released into arbitration and not yet arbitrated, each raised
-  // by a reader who had not read it - the arbitrator who opened it
+  // by a reader who had not read it - the arbitrator who opened it. Cases
+  // awaiting priors are already held up, so they are left for other rows.
   const arbitrationCases = episodes
     .map((episode) => ({ episode, readingCase: latestCase(episode) }))
     .filter(
       ({ readingCase }) =>
         readingCase?.arbitration?.releasedAt &&
-        !readingCase.reads.some((read) => read.readType === 'arbitration')
+        !readingCase.reads.some((read) => read.readType === 'arbitration') &&
+        !awaitingPriors(appointmentsById.get(readingCase.appointmentId))
     )
     .sort(
       (a, b) =>
@@ -230,17 +232,17 @@ const generateIssues = ({
   )
 
   // One open issue raised by the mammographer during an appointment today,
-  // falling back to the most recent screened appointment
+  // falling back to the most recent screened appointment, on an episode with
+  // no issue yet
   const screenedAppointments = appointments
     .filter(
       (appointment) =>
         isCompleted(appointment) &&
         appointment.sessionDetails?.startedBy &&
+        !usedEpisodeIds.has(appointment.episodeId) &&
         dayjs(appointment.timing.startTime).isBefore(dayjs())
     )
-    .sort(
-      (a, b) => new Date(b.timing.startTime) - new Date(a.timing.startTime)
-    )
+    .sort((a, b) => new Date(b.timing.startTime) - new Date(a.timing.startTime))
   const appointmentToday =
     screenedAppointments.find((appointment) =>
       dayjs(appointment.timing.startTime).isSame(dayjs(), 'day')

@@ -166,23 +166,28 @@
     {# The read this page is about: in arbitration the case's one arbitration
        read, otherwise the current user's own #}
     {% set thisRead = (readingCase | getArbitrationRead) if isArbitration else (readingCase | getReadForUser(data.currentUser.id)) %}
-    {% set isFinalised = thisRead | isReadFinalised(data.settings) %}
+    {% set isFinalised = thisRead | isReadFinalised(data.settings, issuePeriods) %}
     {% set finalisationNoun = "outcome" if isArbitration else "read" %}
 
     {# Until it finalises, the result isn't yet real - nothing has been released
        to arbitration or moved the episode on. Say when that happens, and offer
-       to bring it forward. Once finalised it can no longer be changed, so the
-       summary below drops its change links. #}
+       to bring it forward - unless an open issue is holding the case, which
+       finalising would get round. Once finalised it can no longer be changed,
+       so the summary below drops its change links. #}
     {% if thisRead and not isFinalised %}
-      {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings) %}
+      {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings, issuePeriods) %}
       {% set finalisationInsetHtml %}
-        <p>
-          This {{ finalisationNoun }} {%- if autoFinaliseAt %} will be automatically finalised at {{ autoFinaliseAt | formatTimeString }}. You can add or amend information until then.{% else %} has not been finalised.
-          {% endif %}
-        </p>
-        <p class="nhsuk-u-margin-bottom-0">
-          <a href="./finalise-read">Finalise now</a>
-        </p>
+        {% if caseIsHeld %}
+          <p class="nhsuk-u-margin-bottom-0">This {{ finalisationNoun }} will not be finalised while an issue is open.</p>
+        {% else %}
+          <p>
+            This {{ finalisationNoun }} {%- if autoFinaliseAt %} will be automatically finalised at {{ autoFinaliseAt | formatTimeString }}. You can add or amend information until then.{% else %} has not been finalised.
+            {% endif %}
+          </p>
+          <p class="nhsuk-u-margin-bottom-0">
+            <a href="./finalise-read">Finalise now</a>
+          </p>
+        {% endif %}
       {% endset %}
 
       {{ insetText({

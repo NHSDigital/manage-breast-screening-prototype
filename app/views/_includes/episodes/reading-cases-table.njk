@@ -9,8 +9,9 @@
    which is where a reader goes to see who said what. #}
 
 {% set tableRows = [] %}
+{% set issuePeriods = data | getOpenIssuePeriods(episode) %}
 {% for readingCase in episode.readingCases %}
-  {% set outcomeDate = readingCase | getReadingCaseOutcomeDate(data.settings) %}
+  {% set outcomeDate = readingCase | getReadingCaseOutcomeDate(data.settings, issuePeriods) %}
   {% set tableRows = tableRows | push([
     { text: outcomeDate | formatDate if outcomeDate else "Not yet concluded" },
     { text: (readingCase | getReadsAsArray) | length },

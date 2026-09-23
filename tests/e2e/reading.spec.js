@@ -330,9 +330,7 @@ test.describe('Image reading', () => {
     const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
 
     const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
-    await raiseModal
-      .getByLabel('Images are missing or will not open')
-      .check()
+    await raiseModal.getByLabel('Images are missing or will not open').check()
     await raiseModal
       .getByLabel('Describe the issue (optional)')
       .fill(issueDescription)
@@ -366,6 +364,94 @@ test.describe('Image reading', () => {
       page.getByRole('heading', { name: 'Open issue' })
     ).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Read now' })).toBeVisible()
+  })
+
+  test('withdrawing an issue returns the case to reading', async ({ page }) => {
+    await pinSettings(page, readingSettings)
+
+    // Two cases, so the session is still open once the first is held
+    await page.goto('/reading/create-session?type=all_reads&limit=2&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
+
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal.getByLabel('Images are missing or will not open').check()
+    await raiseModal
+      .getByRole('button', { name: 'Raise issue' })
+      .first()
+      .click()
+    await expect(page).not.toHaveURL(new RegExp(caseUrl))
+
+    // Opening the opinion page directly doesn't offer a held case for reading
+    await page.goto(`${caseUrl}/opinion`)
+    await expect(page).toHaveURL(/\/existing-read/)
+
+    await page.getByRole('link', { name: 'Withdraw issue' }).click()
+    await expect(page).toHaveURL(/\/opinion$/)
+    await expect(
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
+    ).toBeVisible()
+  })
+
+  test('offers no finalise action on a case held by an issue', async ({
+    page
+  }) => {
+    // A concordant second read waiting out the finalisation delay would
+    // normally be offered for finalising. Finalising would conclude the case
+    // and close its episode, which an open issue must prevent.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][finalisationDelay]': '60',
+      'settings[reading][arbitration][policy]': 'discordant_only'
+    })
+
+    const { readingCase, appointment } = findCaseAwaitingSecondRead({
+      firstOpinion: 'normal'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=100&lazy=false'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const caseUrl = `/reading/session/${sessionId}/appointments/${appointment.id}`
+
+    await page.goto(caseUrl)
+    await recordNormal(page)
+    await expect(page).not.toHaveURL(new RegExp(appointment.id))
+
+    // Before the issue, the case page offers to finalise
+    await page.goto(`/reading/cases/${readingCase.id}`)
+    const finaliseAction = page.getByRole('link', {
+      name: 'Finalise outcome now'
+    })
+    await expect(finaliseAction).toBeVisible()
+
+    const raiseModal = await clickLinkToOpenModal(
+      page,
+      'Raise an issue with this case'
+    )
+    await raiseModal.getByLabel('Images are missing or will not open').check()
+    await raiseModal
+      .getByRole('button', { name: 'Raise issue' })
+      .first()
+      .click()
+    await expectModalClosed(raiseModal)
+
+    await page.goto(`/reading/cases/${readingCase.id}`)
+    await expect(page.getByText('Paused while an issue is open')).toBeVisible()
+    await expect(finaliseAction).toHaveCount(0)
+
+    // Nor does the reader's own read offer it
+    await page.goto(`${caseUrl}/existing-read`)
+    await expect(
+      page.getByText('will not be finalised while an issue is open')
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Finalise now' })).toHaveCount(
+      0
+    )
   })
 
   test('keeps a lazy session lazy across a resume', async ({ page }) => {

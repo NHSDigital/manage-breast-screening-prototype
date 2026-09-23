@@ -39,7 +39,7 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Fifteen journeys:
+JavaScript. Eighteen journeys:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
@@ -48,6 +48,8 @@ JavaScript. Fifteen journeys:
   an annotation
 - a technical recall, through its views-to-retake form and the review step
 - raising an issue on a case during reading, then resolving it on the issue page so the case is readable again
+- withdrawing an issue raised by mistake, which returns the case to reading
+- a case held by an open issue offering no way to finalise its reads
 - a second reader reaching the comparison page and keeping their opinion
 - a concordant second read taking a case to its concluded outcome, checked on
   the case view

@@ -340,7 +340,7 @@
 {% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
-                    {{ readOpinionTag(read, { context: 'own', showFinalisation: true }) }}
+                    {{ readOpinionTag(read, { context: 'own', showFinalisation: true, issuePeriods: appointment.issuePeriods }) }}
                   {% endif %}
                 {% elseif data | hasOpenIssueOnEpisode(appointment) %}
                   {{ issueTag() }}
@@ -403,8 +403,8 @@
       {% set allViewArbitrationAppointments = [] %}
 
       {% for appointment in appointments %}
-        {% set appointmentState = appointment.readingCase | getReadingCaseState(data.settings) %}
-        {% set appointmentOutcome = appointment.readingCase | getReadingCaseOutcome(data.settings) %}
+        {% set appointmentState = appointment.readingCase | getReadingCaseState(data.settings, appointment.issuePeriods) %}
+        {% set appointmentOutcome = appointment.readingCase | getReadingCaseOutcome(data.settings, appointment.issuePeriods) %}
         {% if appointmentState == 'awaiting_second_read' %}
           {% set awaitingSecondReadAppointments = awaitingSecondReadAppointments | push(appointment) %}
         {% elseif appointmentOutcome == 'normal' %}

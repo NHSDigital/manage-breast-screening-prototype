@@ -18,16 +18,16 @@
      the relationship instead of repeating the word #}
 
 {% macro caseOutcomeTag(readingCase, options = {}) %}
-  {# An open issue pauses auto-finalisation, so judge the case as it stood then #}
-  {% set pausedAt = data | getAutoFinalisationPausedAt(readingCase) %}
-  {% set status = readingCase | getReadingCaseStatus(data.settings, pausedAt) %}
+  {# Time with an open issue doesn't count toward the reads' finalisation delay #}
+  {% set issuePeriods = data | getReadingCaseIssuePeriods(readingCase) %}
+  {% set status = readingCase | getReadingCaseStatus(data.settings, issuePeriods) %}
 
   {% if status.state == 'concluded' %}
-    {{ (readingCase | getReadingCaseOutcome(data.settings, pausedAt)) | toTag({ classes: options.classes }) }}
+    {{ (readingCase | getReadingCaseOutcome(data.settings, issuePeriods)) | toTag({ classes: options.classes }) }}
     {% if options.showFinalisedTime %}
       {% set arbitrationRead = readingCase | getArbitrationRead %}
       {% if arbitrationRead %}
-        {% set finalisedAt = arbitrationRead.finalisedAt or (arbitrationRead | getAutoFinaliseTime(data.settings)) %}
+        {% set finalisedAt = arbitrationRead.finalisedAt or (arbitrationRead | getAutoFinaliseTime(data.settings, issuePeriods)) %}
         {% if finalisedAt %}
           <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Finalised {{ finalisedAt | formatTimeString }}</span>
         {% endif %}
