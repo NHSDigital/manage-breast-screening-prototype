@@ -1,0 +1,318 @@
+// app/lib/generators/issue-generator.js
+//
+// Seeds a small set of issues so the issues index, issue pages and the
+// history on episode and participant pages have content: a handful open,
+// mostly image problems on cases in reading plus one raised during an
+// appointment today, and a few already resolved.
+
+const dayjs = require('dayjs')
+const {
+  buildIssue,
+  getBreastScreeningUnitIdForEpisode,
+  ISSUE_LINK_TYPES
+} = require('../utils/issues')
+const { isCompleted } = require('../utils/status')
+
+// Open issues for the cases already held up in reading, applied in order
+const OPEN_READING_ISSUES = [
+  {
+    type: 'transposed_images',
+    description: 'LCC and RCC images look swapped. Needs correcting on PACS.'
+  },
+  {
+    type: 'wrong_participant_images',
+    description:
+      'Breast tissue and a clip on the LMLO do not match previous images. Possibly another participant’s images.'
+  },
+  {
+    type: 'missing_images',
+    description: 'RMLO will not open in the viewer. Tried reloading twice.'
+  },
+  {
+    type: 'record_does_not_match_images',
+    description:
+      'Medical history records breast implants but none are visible on the images.'
+  }
+]
+
+const OPEN_APPOINTMENT_ISSUE = {
+  type: 'missing_images',
+  description: 'Only 3 of 4 images arrived from the machine. LMLO missing.'
+}
+
+const RESOLVED_ISSUES = [
+  {
+    type: 'missing_images',
+    raisedFrom: 'reading',
+    description: 'LCC shows as a blank image.',
+    outcome: 'resolved',
+    note: 'Image re-sent from the mammography machine. All views now open.'
+  },
+  {
+    type: 'wrong_personal_details',
+    raisedFrom: 'episode',
+    description: 'Date of birth on the images does not match the record.',
+    outcome: 'resolved',
+    note: 'Date of birth corrected on the national record and images relabelled.'
+  },
+  {
+    type: 'transposed_images',
+    raisedFrom: 'reading',
+    description: 'RCC and LCC may be the wrong way round.',
+    outcome: 'raised_in_error',
+    note: 'Checked with the mammographer. Markers are correct.'
+  }
+]
+
+/**
+ * A time some hours after a start point, but never later than an hour ago
+ *
+ * @param {string} start - ISO timestamp
+ * @param {number} hours - Hours to add
+ * @returns {string} ISO timestamp
+ */
+const hoursAfter = (start, hours) => {
+  const latest = dayjs().subtract(1, 'hour')
+  const candidate = dayjs(start).add(hours, 'hour')
+  return (candidate.isAfter(latest) ? latest : candidate).toISOString()
+}
+
+/**
+ * Links for an issue, most specific first, matching what createIssue builds
+ *
+ * @param {object} records - `{ readingCase, appointment, episode }`, any may be missing
+ * @returns {Array} `{ type, id }` links
+ */
+const buildLinks = ({ readingCase, appointment, episode }) =>
+  [
+    readingCase && { type: 'readingCase', id: readingCase.id },
+    appointment && { type: 'appointment', id: appointment.id },
+    episode && { type: 'episode', id: episode.id },
+    episode && { type: 'participant', id: episode.participantId }
+  ].filter(Boolean)
+
+/**
+ * Generate the seed issues.
+ *
+ * Runs after reading data and episode stages are settled. The open reading
+ * issues go on the cases the reading generator deferred, so the blocked rows
+ * in the reading backlog and the cases with an issue are the same ones.
+ *
+ * @param {object} options - Generated data
+ * @param {Array} options.episodes - Current (non-historic) episodes
+ * @param {Array} options.appointments - All appointments
+ * @param {Array} options.clinics - All clinics
+ * @param {Array} options.participants - All participants
+ * @param {Array} options.users - Users
+ * @returns {Array} Issues
+ */
+const generateIssues = ({
+  episodes,
+  appointments,
+  clinics,
+  participants,
+  users
+}) => {
+  const appointmentsById = new Map(
+    appointments.map((appointment) => [appointment.id, appointment])
+  )
+  const clinicsById = new Map(clinics.map((clinic) => [clinic.id, clinic]))
+  const participantsById = new Map(
+    participants.map((participant) => [participant.id, participant])
+  )
+
+  // The same rule createIssue uses, over the records being generated
+  const getEpisodeUnitId = (episode) =>
+    getBreastScreeningUnitIdForEpisode(episode, {
+      findAppointment: (id) => appointmentsById.get(id) || null,
+      findClinic: (id) => clinicsById.get(id) || null,
+      participant: participantsById.get(episode.participantId) || null
+    })
+  const administrators = users.filter((user) =>
+    user.role?.includes('administrative')
+  )
+  const resolver = administrators[0] || users[0]
+
+  const issues = []
+  const usedEpisodeIds = new Set()
+
+  // Open issues on the cases held up in reading
+  const deferredCases = episodes
+    .flatMap((episode) =>
+      (episode.readingCases || [])
+        .filter((readingCase) => readingCase.deferral)
+        .map((readingCase) => ({ episode, readingCase }))
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.readingCase.deferral.deferredAt) -
+        new Date(b.readingCase.deferral.deferredAt)
+    )
+
+  deferredCases.forEach(({ episode, readingCase }, index) => {
+    const template = OPEN_READING_ISSUES[index % OPEN_READING_ISSUES.length]
+    issues.push(
+      buildIssue({
+        ...template,
+        raisedBy: readingCase.deferral.deferredBy,
+        raisedAt: readingCase.deferral.deferredAt,
+        raisedFrom: 'reading',
+        breastScreeningUnitId: getEpisodeUnitId(episode),
+        links: buildLinks({
+          readingCase,
+          appointment: appointmentsById.get(readingCase.appointmentId),
+          episode
+        })
+      })
+    )
+    usedEpisodeIds.add(episode.id)
+  })
+
+  // One open issue raised by the mammographer during an appointment today,
+  // falling back to the most recent screened appointment
+  const screenedAppointments = appointments
+    .filter(
+      (appointment) =>
+        isCompleted(appointment) &&
+        appointment.sessionDetails?.startedBy &&
+        dayjs(appointment.timing.startTime).isBefore(dayjs())
+    )
+    .sort(
+      (a, b) => new Date(b.timing.startTime) - new Date(a.timing.startTime)
+    )
+  const appointmentToday =
+    screenedAppointments.find((appointment) =>
+      dayjs(appointment.timing.startTime).isSame(dayjs(), 'day')
+    ) || screenedAppointments[0]
+  const appointmentEpisode = episodes.find(
+    (episode) => episode.id === appointmentToday?.episodeId
+  )
+
+  if (appointmentToday && appointmentEpisode) {
+    const imagesTakenAt =
+      appointmentToday.timing.actualEndTime || appointmentToday.timing.endTime
+
+    issues.push(
+      buildIssue({
+        ...OPEN_APPOINTMENT_ISSUE,
+        raisedBy: appointmentToday.sessionDetails.startedBy,
+        raisedAt: dayjs(imagesTakenAt).subtract(1, 'minute').toISOString(),
+        raisedFrom: 'appointment',
+        breastScreeningUnitId: getEpisodeUnitId(appointmentEpisode),
+        links: buildLinks({
+          appointment: appointmentToday,
+          episode: appointmentEpisode
+        })
+      })
+    )
+    usedEpisodeIds.add(appointmentEpisode.id)
+  }
+
+  // Resolved issues on cases that have since been read twice, so the history
+  // sits alongside a case that carried on
+  const readCases = episodes
+    .filter((episode) => !usedEpisodeIds.has(episode.id))
+    .map((episode) => ({
+      episode,
+      readingCase: episode.readingCases?.[episode.readingCases.length - 1]
+    }))
+    .filter(
+      ({ readingCase }) =>
+        readingCase && !readingCase.deferral && readingCase.reads?.length >= 2
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.readingCase.openedDate) - new Date(a.readingCase.openedDate)
+    )
+
+  RESOLVED_ISSUES.forEach((template, index) => {
+    // Spread across the backlog rather than taking neighbouring cases
+    const found =
+      readCases[Math.floor((index * readCases.length) / RESOLVED_ISSUES.length)]
+    if (!found) return
+
+    const { episode, readingCase } = found
+    const { outcome, note, ...issueDetails } = template
+    const raisedAt = hoursAfter(readingCase.openedDate, 3)
+    const raisedFromEpisode = template.raisedFrom === 'episode'
+
+    const issue = buildIssue({
+      ...issueDetails,
+      raisedBy: readingCase.reads[0].readerId,
+      raisedAt,
+      breastScreeningUnitId: getEpisodeUnitId(episode),
+      links: buildLinks({
+        readingCase: raisedFromEpisode ? null : readingCase,
+        appointment: raisedFromEpisode
+          ? null
+          : appointmentsById.get(readingCase.appointmentId),
+        episode
+      })
+    })
+
+    issues.push({
+      ...issue,
+      resolved: {
+        resolvedAt: hoursAfter(raisedAt, 20),
+        resolvedBy: resolver.id,
+        outcome,
+        note
+      }
+    })
+  })
+
+  return issues
+}
+
+/**
+ * Check every issue's links point at real records, and warn about any that
+ * don't. Warns rather than throws - never break a demo over seed data.
+ *
+ * @param {Array} issues - Generated issues
+ * @param {object} records - Generated records to check against
+ * @param {Array} records.episodes - All episodes
+ * @param {Array} records.appointments - All appointments
+ * @param {Array} records.participants - All participants
+ * @returns {Array} The problems found, one string each
+ */
+const checkIssues = (issues, { episodes, appointments, participants }) => {
+  const idsByLinkType = {
+    readingCase: new Set(
+      episodes.flatMap((episode) =>
+        (episode.readingCases || []).map((readingCase) => readingCase.id)
+      )
+    ),
+    appointment: new Set(appointments.map((appointment) => appointment.id)),
+    episode: new Set(episodes.map((episode) => episode.id)),
+    participant: new Set(participants.map((participant) => participant.id))
+  }
+
+  const problems = []
+
+  issues.forEach((issue) => {
+    const links = issue.links || []
+
+    if (!links.length) {
+      problems.push(`issue ${issue.reference} has no links`)
+    }
+
+    links.forEach((link) => {
+      if (!ISSUE_LINK_TYPES.includes(link.type)) {
+        problems.push(
+          `issue ${issue.reference} has a link of unknown type "${link.type}"`
+        )
+      } else if (!idsByLinkType[link.type].has(link.id)) {
+        problems.push(
+          `issue ${issue.reference} links to ${link.type} ${link.id}, which does not exist`
+        )
+      }
+    })
+  })
+
+  return problems
+}
+
+module.exports = {
+  generateIssues,
+  checkIssues
+}

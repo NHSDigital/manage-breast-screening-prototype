@@ -37,6 +37,13 @@
     {% set rootHref = exitAppointmentHref %}
   {% endif %}
 
+  {# Review counts what needs attention in the user's BSU - only open issues
+     so far #}
+  {% set reviewCount = data | getOpenIssueCount(currentUser.breastScreeningUnit) %}
+  {% set reviewNavHtml %}
+    Review{% if reviewCount > 0 %} {{ appCount(reviewCount) }}{% endif %}
+  {% endset %}
+
   {% set navItems = [
     {
       href: "/dashboard",
@@ -63,6 +70,11 @@
       text: "Participants",
       current: true if navActive == "participants"
     } if data.settings.appointment.showParticipantSection != 'false' else {},
+    {
+      href: "/review",
+      html: reviewNavHtml | trim,
+      current: true if navActive == "review"
+    },
     {
       href: "#",
       text: "Messages",

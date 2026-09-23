@@ -70,10 +70,12 @@ const state = {
   clinics: [],
   appointments: [],
   episodes: [],
+  issues: [],
   participantsById: new Map(),
   clinicsById: new Map(),
   appointmentsById: new Map(),
   episodesById: new Map(),
+  issuesById: new Map(),
   appointmentIdsByClinic: new Map(),
   appointmentIdsByParticipant: new Map(),
   episodeIdsByParticipant: new Map(),
@@ -101,16 +103,31 @@ const reload = () => {
   const clinics = readGeneratedFile('clinics.json', {}).clinics || []
   const appointments = readGeneratedFile('appointments.json', {}).appointments || []
   const episodes = readGeneratedFile('episodes.json', {}).episodes || []
+  const issuesFile = readGeneratedFile('issues.json', {})
   const generationInfo = readGeneratedFile('generation-info.json', {
     generatedAt: 'Never',
-    stats: { participants: 0, clinics: 0, appointments: 0, episodes: 0 }
+    stats: {
+      participants: 0,
+      clinics: 0,
+      appointments: 0,
+      episodes: 0,
+      issues: 0
+    }
   })
+
+  // Issues written by an older generation link to records that no longer
+  // exist, so they only load alongside the generation that wrote them
+  const issues =
+    issuesFile.generatedAt === generationInfo.generatedAt
+      ? issuesFile.issues || []
+      : []
 
   if (shouldFreeze) {
     deepFreeze(participants)
     deepFreeze(clinics)
     deepFreeze(appointments)
     deepFreeze(episodes)
+    deepFreeze(issues)
     deepFreeze(generationInfo)
   }
 
@@ -118,6 +135,7 @@ const reload = () => {
   state.clinics = clinics
   state.appointments = appointments
   state.episodes = episodes
+  state.issues = issues
   state.generationInfo = generationInfo
   state.generationId = generationInfo.generatedAt
 
@@ -125,6 +143,7 @@ const reload = () => {
   state.clinicsById = new Map(clinics.map((c) => [c.id, c]))
   state.appointmentsById = new Map(appointments.map((e) => [e.id, e]))
   state.episodesById = new Map(episodes.map((e) => [e.id, e]))
+  state.issuesById = new Map(issues.map((issue) => [issue.id, issue]))
 
   state.appointmentIdsByClinic = new Map()
   state.appointmentIdsByParticipant = new Map()
@@ -158,7 +177,7 @@ const reload = () => {
   console.log(
     `Data store: loaded ${participants.length} participants, ` +
       `${clinics.length} clinics, ${appointments.length} appointments, ` +
-      `${episodes.length} episodes ` +
+      `${episodes.length} episodes, ${issues.length} issues ` +
       `in ${Date.now() - started}ms${shouldFreeze ? ' (frozen)' : ''}`
   )
 }

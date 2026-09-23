@@ -1,0 +1,130 @@
+{# app/views/review/issues/index.html
+
+   The issues in the user's BSU. Open, resolved or all are tabs; type and
+   where the issue was raised are filters. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Issues" %}
+
+{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
+
+{% set back = {
+  href: "/review",
+  text: "Review"
+} %}
+
+{% block pageContent %}
+
+  <span class="nhsuk-caption-l">{{ currentBSU.name }}</span>
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  <p>Open issues keep a case out of image reading until they are resolved. <a href="/reading">Go to image reading</a></p>
+
+  {# The whole row is the live region: with JavaScript the panel counts, the
+     selected filters, the tabs and the table all update together #}
+  <div class="nhsuk-grid-row" id="filter-results">
+    <div class="nhsuk-grid-column-one-third">
+
+      {{ appFilterPanel({
+        action: "/review/issues",
+        groups: groups,
+        selected: selected,
+        counts: counts,
+        hiddenFields: hiddenFields,
+        live: "#filter-results"
+      }) }}
+
+    </div>
+    {# Custom top margin to line up with the start of the filter card #}
+    <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
+
+      {% if isFiltered %}
+        <div class="app-selected-filters">
+          <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Selected filters</h2>
+          <ul class="app-selected-filters__list">
+            {% for item in selectedFilters %}
+              <li class="app-selected-filters__item">
+                <a href="{{ item.href }}" class="app-selected-filters__tag">
+                  <span class="nhsuk-u-visually-hidden">Remove this filter:</span>
+                  {{ item.label }}
+                  <span aria-hidden="true">✕</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% set viewNavItems = [] %}
+      {% for candidate in views %}
+        {% set viewNavItems = viewNavItems | push({
+          text: (viewLabels[candidate] + " " + appCount(viewCounts[candidate])) | safe,
+          href: viewUrls[candidate],
+          current: true if candidate == view
+        }) %}
+      {% endfor %}
+
+      {{ appSecondaryNavigation({
+        visuallyHiddenTitle: "Which issues to show",
+        items: viewNavItems
+      }) }}
+
+      {% if rows | length == 0 %}
+        {% if isFiltered %}
+          <p>No issues match these filters.</p>
+        {% elseif view == "open" %}
+          <p>No open issues.</p>
+        {% else %}
+          <p>No issues.</p>
+        {% endif %}
+      {% else %}
+
+        <table class="nhsuk-table">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th scope="col">Issue</th>
+              <th scope="col">Participant</th>
+              <th scope="col">Raised</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for row in rows %}
+              <tr class="nhsuk-table__row">
+                <td class="nhsuk-table__cell">
+                  <a href="{{ ('/review/issues/' + row.issue.id) | urlWithReferrer(listUrl) }}" class="nhsuk-link--no-visited-state">{{ row.issue.reference }}</a><br>
+                  {{ row.issue.type | getIssueTypeLabel }}
+                  {% if row.place %}
+                    <br>{{ row.place.tagLabel | asHint }}
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {% if row.participant %}
+                    <a href="{{ getParticipantUrl(row.participant) }}" class="nhsuk-link--no-visited-state">
+                      {{ row.participant | getFullNameReversed }}
+                    </a><br>
+                    {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap | asHint }}
+                  {% else %}
+                    {{ "Not known" | asHint }}
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {{ row.issue.raisedAt | formatDate | noWrap }}<br>
+                  {{ ("by " + (row.issue.raisedBy | getUsername({ format: "short", identifyCurrentUser: true }))) | asHint }}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {{ row.status | toTag({ vocabulary: "issue" }) }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% endif %}
+
+    </div>
+  </div>
+
+{% endblock %}

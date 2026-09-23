@@ -81,7 +81,13 @@ router.use(async (req, res, next) => {
 
 // Collections served from the shared data store rather than from per-session
 // copies
-const STORE_COLLECTIONS = ['clinics', 'participants', 'appointments', 'episodes']
+const STORE_COLLECTIONS = [
+  'clinics',
+  'participants',
+  'appointments',
+  'episodes',
+  'issues'
+]
 
 // Attach shared collections to this request's session data.
 //
@@ -128,20 +134,25 @@ router.use((req, res, next) => {
     !data._changes ||
     data._changes.generationId !== dataStore.state.generationId
   ) {
-    data._changes = {
-      generationId: dataStore.state.generationId,
-      appointments: {},
-      participants: {},
-      clinics: {},
-      episodes: {}
-    }
+    data._changes = { generationId: dataStore.state.generationId }
   }
 
   for (const name of STORE_COLLECTIONS) {
+    // Backfills a bucket for a collection added since this session started
+    data._changes[name] = data._changes[name] || {}
     const changes = data._changes[name]
-    data[name] = dataStore.state[name].map(
-      (record) => changes[record.id] ?? record
+    const storeIndex = dataStore.state[`${name}ById`]
+
+    // Records created this session (new issues, for example) exist only in
+    // _changes, so are added after the overlaid shared records
+    const createdRecords = Object.values(changes).filter(
+      (record) => !storeIndex.has(record.id)
     )
+
+    data[name] = [
+      ...dataStore.state[name].map((record) => changes[record.id] ?? record),
+      ...createdRecords
+    ]
     res.locals.data[name] = data[name]
   }
 
@@ -317,6 +328,8 @@ require('./routes/reading')(router)
 require('./routes/reading-cases')(router)
 require('./routes/arbitration')(router)
 require('./routes/reports')(router)
+require('./routes/issues')(router)
+require('./routes/review')(router)
 
 router.get('/modal-examples', (req, res) => {
   res.render('_components/modal/examples')

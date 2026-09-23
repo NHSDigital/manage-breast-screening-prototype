@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-17 10:43 UTC
+- **Generated:** 2026-09-23 13:42 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -15,35 +15,36 @@
 
 | File | Purpose | Line |
 |---|---|---|
-| `dates.js` | Date formatting and calculation using dayjs | 54 |
-| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 91 |
-| `status.js` | Appointment status checks and display helpers | 126 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 152 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 172 |
-| `episodes.js` | Episode lookups and stage changes | 187 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 224 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 242 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 290 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 344 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 366 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 393 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 406 |
-| `objects.js` | Object utilities for extracting and flattening values. | 424 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 435 |
-| `random.js` | Seeded random functions for stable prototype data | 445 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 462 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 476 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 486 |
-| `roles-and-permissions.js` | User role checks | 499 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 524 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 540 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 552 |
+| `dates.js` | Date formatting and calculation using dayjs | 55 |
+| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 92 |
+| `status.js` | Appointment status checks and display helpers | 127 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 153 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 173 |
+| `episodes.js` | Episode lookups and stage changes | 188 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 225 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 243 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 291 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 346 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 368 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 389 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 416 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 429 |
+| `objects.js` | Object utilities for extracting and flattening values. | 447 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 458 |
+| `random.js` | Seeded random functions for stable prototype data | 468 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 485 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 500 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 510 |
+| `roles-and-permissions.js` | User role checks | 523 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 548 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 564 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 576 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 568 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 580 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 592 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 606 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 616 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 592 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 604 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 616 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 630 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 640 |
 
 ---
 
@@ -140,14 +141,14 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `isActive(input)` | Check if a status represents an active appointment | 129 |
 | `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 141 |
 | `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 173 |
-| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 328 |
-| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 342 |
-| `describeReadingCaseStatus(status)` | The display facts for a reading case's status, composed from the facts | 368 |
-| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 395 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 427 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 437 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 450 |
-| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 464 |
+| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 338 |
+| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 352 |
+| `describeReadingCaseStatus(status)` | The display facts for a reading case's status, composed from the facts | 378 |
+| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 405 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 437 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 447 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 460 |
+| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 474 |
 
 ### participants.js
 
@@ -325,21 +326,22 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 | `getNextCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The next case to work on in a session, after the current one. | 959 |
 | `canOpenCaseInSession(data, session, appointment, userId)` | Whether a case in a session can be opened by the reader. | 1012 |
 | `getPreviousCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case before the current one in a session, if there is one to go back to. | 1041 |
-| `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1075 |
-| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1102 |
-| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1197 |
-| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1224 |
-| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1289 |
-| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1377 |
-| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1474 |
-| `generateSessionId()` | Generate a unique ID for a session | 1511 |
-| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1520 |
-| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1557 |
-| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1590 |
-| `isSessionEnded(session)` | Whether a session has been ended. | 1613 |
-| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1627 |
-| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1651 |
-| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1741 |
+| `getFollowingCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case after the current one in a session, if there is one to open. | 1075 |
+| `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1109 |
+| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1136 |
+| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1231 |
+| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1258 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1323 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1411 |
+| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1508 |
+| `generateSessionId()` | Generate a unique ID for a session | 1545 |
+| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1554 |
+| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1591 |
+| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1624 |
+| `isSessionEnded(session)` | Whether a session has been ended. | 1647 |
+| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1661 |
+| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1685 |
+| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1775 |
 
 ### prior-mammograms.js
 
@@ -362,6 +364,27 @@ Prior mammogram request state (awaiting, unrequested, resolved) and one-line sum
 | `describePriorMammogramDate(mammogram)` | Describe when a prior mammogram was taken, using the participant's | 196 |
 | `summarisePriorMammogram(mammogram, [options], [options.unitName], [options.includeAdditionalInfo], [options.includeDate], [options.prefix])` | Summarise a single prior mammogram into a one-line string for display | 221 |
 | `summarisePriorMammograms(appointment, [options])` | Summarise all prior mammograms for an appointment into an array of one-line strings | 263 |
+
+### issues.js
+
+`app/lib/utils/issues.js`
+
+Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue. Issues are a top-level store collection.
+
+| Function | Description | Line |
+|---|---|---|
+| `buildIssue(details, details.type, [details.description], details.raisedBy, [details.raisedAt], details.raisedFrom, [details.breastScreeningUnitId], details.links)` | Build an issue record from its parts, without touching session data. | 86 |
+| `getBreastScreeningUnitIdForEpisode(episode, lookups, lookups.findAppointment, lookups.findClinic, [lookups.participant])` | Work out which BSU an episode belongs to: where its latest images were — e.g. `getBreastScreeningUnitIdForEpisode(episode, {` | 124 |
+| `createIssue(data, details, details.type, [details.description], details.raisedBy, [details.raisedAt], details.raisedFrom, [details.readingCaseId], [details.appointmentId], [details.episodeId], [details.participantId])` | Raise an issue and save it to the session. — e.g. `createIssue(data, {` | 167 |
+| `getIssue(data, issueId)` | Get an issue by ID | 271 |
+| `getIssuesFor(data, record, [linkType])` | Get every issue linked to a record, open or resolved, newest first. — e.g. `getIssuesFor(data, episode)` | 292 |
+| `isIssueOpen(issue)` | Whether an issue is still open - true until it has been resolved | 319 |
+| `hasOpenIssue(data, record)` | Whether any open issue links to a record. — e.g. `hasOpenIssue(data, episode)` | 327 |
+| `updateIssue(data, issueId, updates)` | Update an issue with the given fields and save it to the session | 342 |
+| `resolveIssue(data, issueId, resolution, resolution.outcome, resolution.resolvedBy, [resolution.note], [resolution.resolvedAt])` | Close an issue, recording who closed it, when, how and why. | 359 |
+| `getIssueTypes(raisedFrom)` | The issue types a journey offers, in the order the raise form lists them. — e.g. `getIssueTypes('episode') // wrong_personal_details first, then the image types, then other` | 384 |
+| `getIssueTypeLabel(type)` | The display label for an issue type | 407 |
+| `getIssueStatus(issue)` | An issue's status: open, or the outcome it was closed with. Renders as a tag — e.g. `{{ issue \| getIssueStatus \| toTag({ vocabulary: "issue" }) }}` | 416 |
 
 ### medical-information.js
 
@@ -472,6 +495,7 @@ Canonical URLs for the main pages (participant, episode, clinic, appointment, re
 | `getClinicUrl(clinicOrId)` | Get the URL for a clinic page — e.g. `getClinicUrl(clinic) // '/clinics/a9ovz0oj'` | 32 |
 | `getAppointmentUrl(appointment)` | Get the URL for an appointment page — e.g. `getAppointmentUrl(appointment) // '/clinics/a9ovz0oj/appointments/9vqig4uc'` | 45 |
 | `getReadingCaseUrl(readingCaseOrId)` | Get the URL for a reading case page — e.g. `getReadingCaseUrl(readingCase) // '/reading/cases/ruj64jdd'` | 57 |
+| `getRaiseIssueUrl(records, [records.readingCase], [records.appointment], [records.episode], raisedFrom)` | Get the URL for the raise an issue form, raised on the most specific record — e.g. `getRaiseIssueUrl({ readingCase, episode }, 'reading_case')` | 70 |
 
 ### breadcrumbs.js
 
@@ -492,9 +516,9 @@ Referrer chain navigation for multi-level back links. Use these instead of hardc
 | Function | Description | Line |
 |---|---|---|
 | `getReturnUrl(url, referrerChain, [scrollToId])` | Get destination from referrer chain, falling back to provided URL if no referrer — e.g. `<a href="{{ '/default-path' \| getReturnUrl(referrerChain) }}">Back</a>` | 27 |
-| `urlWithReferrer(url, referrerChain, [scrollToId])` | Add referrer to URL as query parameter with optional scroll anchor — e.g. `<a href="{{ '/next-page' \| urlWithReferrer(referrer) }}">Continue</a>` | 110 |
-| `appendReferrer(existingReferrerChain, newUrl)` | Append a URL to an existing referrer chain — e.g. `{% set updatedReferrer = referrerChain \| appendReferrer(currentUrl) %}` | 136 |
-| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 160 |
+| `urlWithReferrer(url, referrerChain, [scrollToId])` | Add referrer to URL as query parameter with optional scroll anchor — e.g. `<a href="{{ '/next-page' \| urlWithReferrer(referrer) }}">Continue</a>` | 112 |
+| `appendReferrer(existingReferrerChain, newUrl)` | Append a URL to an existing referrer chain — e.g. `{% set updatedReferrer = referrerChain \| appendReferrer(currentUrl) %}` | 139 |
+| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 163 |
 
 ### roles-and-permissions.js
 

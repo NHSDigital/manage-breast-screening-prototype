@@ -18,6 +18,7 @@
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/details/macro.njk' import appDetails %}
 {% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set pageHeading = participant | getFullNameReversed %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
@@ -472,6 +473,9 @@
         {% endif %}
 
       {% endcall %}
+
+      {# Last on the page, where it will sit on every page that has it #}
+      {{ raiseIssueLink("reading_case") }}
 
     </div>
   </div>

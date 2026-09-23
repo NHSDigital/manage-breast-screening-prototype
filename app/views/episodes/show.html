@@ -13,6 +13,8 @@
 
 {% extends 'layout-app.html' %}
 
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+
 {% set pageHeading = episode | getEpisodeLabel %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 {% set hideBackLink = true %}
@@ -215,6 +217,10 @@
       {{ appSummaryList({ rows: historyRows, lastRowBorder: false }) }}
     {% endcall %}
   {% endif %}
+
+  {# Last on the page before the step to other rounds, where it will sit on
+     every page that has it #}
+  {{ raiseIssueLink("episode") }}
 
   {# Step between this participant's rounds without going back to their record #}
   {% if previousEpisode or nextEpisode %}

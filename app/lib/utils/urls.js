@@ -67,10 +67,44 @@ const getReadingCaseUrl = (readingCaseOrId) => {
   return `/reading/cases/${id}`
 }
 
+/**
+ * Get the URL for the raise an issue form, raised on the most specific record
+ * given: a reading case, else an appointment, else an episode.
+ *
+ * The record goes in the path so the form always knows what it is about. The
+ * journey goes in the query string, where opening the form from a link starts
+ * it afresh.
+ *
+ * @param {object} records - Whatever the page has loaded
+ * @param {object} [records.readingCase] - Reading case
+ * @param {object} [records.appointment] - Appointment
+ * @param {object} [records.episode] - Episode
+ * @param {string} raisedFrom - Journey raised from, from ISSUE_RAISED_FROM in issues.js
+ * @returns {string | null} Raise form URL, or null if no record was given
+ * @example
+ * getRaiseIssueUrl({ readingCase, episode }, 'reading_case')
+ * // '/issues/raise/reading-case/ruj64jdd?raiseIssue[raisedFrom]=reading_case'
+ */
+const getRaiseIssueUrl = (
+  { readingCase, appointment, episode } = {},
+  raisedFrom
+) => {
+  const [recordType, record] = readingCase
+    ? ['reading-case', readingCase]
+    : appointment
+      ? ['appointment', appointment]
+      : ['episode', episode]
+
+  if (!record?.id) return null
+
+  return `/issues/raise/${recordType}/${record.id}?raiseIssue[raisedFrom]=${raisedFrom}`
+}
+
 module.exports = {
   getParticipantUrl,
   getEpisodeUrl,
   getClinicUrl,
   getAppointmentUrl,
-  getReadingCaseUrl
+  getReadingCaseUrl,
+  getRaiseIssueUrl
 }

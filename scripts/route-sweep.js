@@ -54,6 +54,10 @@ const skippedPaths = [
   { pattern: /^\/start$/, reason: 'logs out' }
 ]
 
+// Pages served by the kit's auto-routes from a template alone, so absent from
+// the router. Only those worth guarding are listed.
+const pageTemplateUrls = ['/review']
+
 /**
  * Start the prototype as a plain Express process and wait for it to answer.
  *
@@ -145,6 +149,7 @@ const collectParams = async (sessionFetch) => {
     path.join(generatedPath, 'appointments.json')
   ).appointments
   const episodes = require(path.join(generatedPath, 'episodes.json')).episodes
+  const issues = require(path.join(generatedPath, 'issues.json')).issues
 
   const today = dayjs().format('YYYY-MM-DD')
   const clinic = clinics.find((item) => item.date === today) ?? clinics[0]
@@ -171,6 +176,8 @@ const collectParams = async (sessionFetch) => {
     participantId: appointment.participantId,
     episodeId: appointment.episodeId,
     caseId: episodeWithReadingCase.readingCases[0].id,
+    // Open first, as the issue page shows the resolve form only while open
+    issueId: (issues.find((issue) => !issue.resolved) ?? issues[0])?.id,
     // Filters and views are named tabs; "all" exists on every set of them
     filter: 'all',
     view: 'all',
@@ -288,6 +295,11 @@ const getTemplateUrls = (params) => {
   const includedTemplates = getIncludedTemplates()
 
   return [
+    // Top-level pages the kit serves from a template with no route of their own
+    ...pageTemplateUrls,
+    // The raise form takes a record type the sweep has no seeded value for
+    `/issues/raise/reading-case/${params.caseId}?raiseIssue[raisedFrom]=reading_case`,
+    `/issues/raise/episode/${params.episodeId}?raiseIssue[raisedFrom]=episode`,
     ...getTemplateSubPaths('appointments', includedTemplates).map(
       (subPath) =>
         `/clinics/${params.clinicId}/appointments/${params.appointmentId}/${subPath}`

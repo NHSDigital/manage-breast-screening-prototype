@@ -1,0 +1,92 @@
+{# app/views/issues/raise.html
+
+   Raise an issue on a reading case, appointment or episode. Opens in a modal
+   where modal forms are on. raisedFrom decides the types offered, their order
+   and the wording; the route (routes/issues.js) sets it with issueTypes,
+   participant, answers, raiseUrl and returnFallbackUrl. #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% set pageHeading = "Raise an issue" %}
+{% set formAction = (raiseUrl + "/answer") | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: returnFallbackUrl | getReturnUrl(referrerChain),
+  text: "Back"
+} %}
+
+{# What the issue holds up, and a prompt for the details that help most #}
+{% set wordingByRaisedFrom = {
+  reading_case: {
+    effect: "The case will be held from reading until the issue is resolved.",
+    descriptionHint: "For example, which images or views are affected"
+  },
+  appointment: {
+    effect: "The images from this appointment will be held from reading until the issue is resolved.",
+    descriptionHint: "For example, which images or views are affected"
+  },
+  episode: {
+    effect: "This episode’s images will be held from reading until the issue is resolved.",
+    descriptionHint: "For example, which details are wrong and where you found them"
+  }
+} %}
+{% set wording = wordingByRaisedFrom[raisedFrom] or wordingByRaisedFrom.episode %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>{{ wording.effect }}</p>
+
+  {% set typeItems = [] %}
+  {% for issueType in issueTypes %}
+    {% set typeItems = typeItems | push({
+      value: issueType.value,
+      text: issueType.label
+    }) %}
+  {% endfor %}
+
+  {{ radios({
+    name: "raiseIssue[type]",
+    idPrefix: "raiseIssueType",
+    value: answers.type,
+    fieldset: {
+      legend: {
+        text: "What is the issue?",
+        size: "m"
+      }
+    },
+    items: typeItems
+  } | populateErrors) }}
+
+  {{ textarea({
+    name: "raiseIssue[description]",
+    id: "raiseIssueDescription",
+    label: {
+      text: "Describe the issue (optional)",
+      size: "s"
+    },
+    hint: {
+      text: wording.descriptionHint
+    },
+    rows: 4,
+    value: answers.description
+  }) }}
+
+  {{ appHiddenInput({
+    name: "raiseIssue[raisedFrom]",
+    value: raisedFrom
+  }) }}
+
+  {{ appHiddenInput({
+    name: "raiseIssue[recordId]",
+    value: recordId
+  }) }}
+
+  {{ button({
+    text: "Raise issue"
+  }) }}
+
+{% endblock %}

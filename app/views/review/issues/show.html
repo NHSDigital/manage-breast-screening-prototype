@@ -1,0 +1,212 @@
+{# app/views/review/issues/show.html
+
+   One issue: what was raised, the records it is about, and either the form
+   to resolve it or how it was resolved. The linked records come in as
+   `linked` so they are not taken for the page's own context. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = issue.type | getIssueTypeLabel %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
+
+{% set back = {
+  href: "/review/issues" | getReturnUrl(referrerChain),
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {% set issueStatus = issue | getIssueStatus %}
+
+  <div class="app-header-with-status">
+    <h1 class="nhsuk-heading-l">
+      <span class="nhsuk-caption-l">Issue {{ issue.reference }}</span>
+      {{ pageHeading }}
+    </h1>
+    <div class="app-header-with-status__status-tag">
+      {{ issueStatus | toTag({ vocabulary: "issue" }) }}
+    </div>
+  </div>
+
+  {# How it was closed leads once it has been, as that is what anyone opening
+     a closed issue came for #}
+  {% if issue.resolved %}
+    {% call card({
+      heading: "Resolution",
+      headingLevel: "2",
+      feature: true
+    }) %}
+      {{ appSummaryList({
+        rows: [
+          {
+            key: { text: "Outcome" },
+            value: { html: issueStatus | toTag({ vocabulary: "issue" }) }
+          },
+          {
+            key: { text: "Resolved by" },
+            value: { text: issue.resolved.resolvedBy | getUsername({ identifyCurrentUser: true }) }
+          },
+          {
+            key: { text: "Resolved" },
+            value: { text: issue.resolved.resolvedAt | formatDateTime }
+          },
+          {
+            key: { text: "Note" },
+            value: { text: issue.resolved.note or "No note given" }
+          }
+        ],
+        lastRowBorder: false
+      }) }}
+    {% endcall %}
+  {% endif %}
+
+  {% call card({
+    heading: "Details",
+    headingLevel: "2"
+  }) %}
+    {{ appSummaryList({
+      rows: [
+        {
+          key: { text: "Reference" },
+          value: { text: issue.reference }
+        },
+        {
+          key: { text: "Description" },
+          value: { text: issue.description or "No description given" }
+        },
+        {
+          key: { text: "Raised in" },
+          value: { text: issuePlace.label if issuePlace else "Not known" }
+        },
+        {
+          key: { text: "Raised by" },
+          value: { text: issue.raisedBy | getUsername({ identifyCurrentUser: true }) }
+        },
+        {
+          key: { text: "Raised" },
+          value: { text: issue.raisedAt | formatDateTime }
+        }
+      ],
+      lastRowBorder: false
+    }) }}
+  {% endcall %}
+
+  {# One row per record the issue links to, most specific last so the list
+     reads from the person downwards #}
+  {% set linkedRows = [] %}
+  {% set linkedReferrerChain = referrerChain | appendReferrer(currentUrl) %}
+
+  {% if linked.participant %}
+    {% set participantHtml %}
+      <a href="{{ getParticipantUrl(linked.participant) | urlWithReferrer(linkedReferrerChain) }}">{{ linked.participant | getFullNameReversed }}</a><br>
+      {{ ("NHS number " + (linked.participant.medicalInformation.nhsNumber | formatNhsNumber)) | asHint }}
+    {% endset %}
+    {% set linkedRows = linkedRows | push({
+      key: { text: "Participant" },
+      value: { html: participantHtml }
+    }) %}
+  {% endif %}
+
+  {% if linked.episode %}
+    {% set episodeHtml %}
+      <a href="{{ getEpisodeUrl(linked.episode) | urlWithReferrer(linkedReferrerChain) }}">{{ linked.episode | getEpisodeLabel }}</a>
+    {% endset %}
+    {% set linkedRows = linkedRows | push({
+      key: { text: "Episode" },
+      value: { html: episodeHtml }
+    }) %}
+  {% endif %}
+
+  {% if linked.appointment %}
+    {% set appointmentHtml %}
+      <a href="{{ getAppointmentUrl(linked.appointment) | urlWithReferrer(linkedReferrerChain) }}">{{ linked.appointment.timing.startTime | formatDate }}</a>
+      {% if linked.clinic %}
+        <br>{{ data | getClinicLocationName(linked.clinic) | asHint }}
+      {% endif %}
+    {% endset %}
+    {% set linkedRows = linkedRows | push({
+      key: { text: "Appointment" },
+      value: { html: appointmentHtml }
+    }) %}
+  {% endif %}
+
+  {% if linked.readingCase %}
+    {% set readingCaseHtml %}
+      <a href="{{ getReadingCaseUrl(linked.readingCase) | urlWithReferrer(linkedReferrerChain) }}">Opened {{ linked.readingCase.openedDate | formatDate }}</a>
+    {% endset %}
+    {% set linkedRows = linkedRows | push({
+      key: { text: "Reading case" },
+      value: { html: readingCaseHtml }
+    }) %}
+  {% endif %}
+
+  {% call card({
+    heading: "Linked records",
+    headingLevel: "2"
+  }) %}
+    {% if linkedRows | length %}
+      {{ appSummaryList({ rows: linkedRows, lastRowBorder: false }) }}
+    {% else %}
+      <p>No linked records found.</p>
+    {% endif %}
+  {% endcall %}
+
+  {% if not issue.resolved %}
+    <form method="post" action="{{ ('/review/issues/' + issue.id + '/resolve') | urlWithReferrer(referrerChain) }}" novalidate>
+
+      <h2 class="nhsuk-heading-m">Resolve this issue</h2>
+
+      {{ radios({
+        idPrefix: "issueResolutionOutcome",
+        name: "issueResolution[outcome]",
+        value: resolutionAnswers.outcome,
+        fieldset: {
+          legend: {
+            text: "Outcome",
+            size: "s"
+          }
+        },
+        items: [
+          {
+            value: "resolved",
+            text: "Resolved",
+            hint: {
+              text: "The problem has been fixed"
+            }
+          },
+          {
+            value: "raised_in_error",
+            text: "Raised in error",
+            hint: {
+              text: "There was nothing wrong"
+            }
+          }
+        ]
+      } | populateErrors) }}
+
+      {{ textarea({
+        id: "issueResolutionNote",
+        name: "issueResolution[note]",
+        value: resolutionAnswers.note,
+        label: {
+          text: "Note (optional)",
+          size: "s"
+        },
+        hint: {
+          text: "What was done, or why it was raised in error"
+        }
+      }) }}
+
+      {{ appHiddenInput({
+        name: "issueResolution[issueId]",
+        value: issue.id
+      }) }}
+
+      {{ button({
+        text: "Resolve issue"
+      }) }}
+
+    </form>
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,39 @@
+{# app/views/_includes/issues/raise-link.njk
+
+   The link to raise an issue from any page. It raises the issue on the most
+   specific record the page has loaded (readingCase, then appointment, then
+   episode) and returns the user here afterwards. Opens in a modal where modal
+   forms are on.
+
+   Import with context - it reads those records, currentUrl and referrerChain
+   from the page.
+
+   Arguments:
+   - raisedFrom - the journey, from ISSUE_RAISED_FROM in app/lib/utils/issues.js
+   - options.classes - extra classes for the paragraph #}
+
+{% from '_components/link/macro.njk' import appLink %}
+
+{% macro raiseIssueLink(raisedFrom, options = {}) %}
+  {% set raiseUrl = getRaiseIssueUrl({
+    readingCase: readingCase,
+    appointment: appointment,
+    episode: episode
+  }, raisedFrom) %}
+
+  {% set linkTextByRaisedFrom = {
+    reading_case: "Raise an issue with this case",
+    appointment: "Raise an issue with this appointment",
+    episode: "Raise an issue with this episode"
+  } %}
+
+  {% if raiseUrl %}
+    <p class="{{ options.classes }}">
+      {{ appLink({
+        text: linkTextByRaisedFrom[raisedFrom] or "Raise an issue",
+        href: raiseUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+        classes: "nhsuk-link--no-visited-state"
+      } | openInModal) }}
+    </p>
+  {% endif %}
+{% endmacro %}
