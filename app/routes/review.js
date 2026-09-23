@@ -36,6 +36,35 @@ const { getEpisode, getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
 const { urlWithReferrer, modalBreakout } = require('../lib/utils/referrers')
+const { summariseMammogramImages } = require('../lib/utils/mammogram-images')
+
+/**
+ * The images an issue is about: the linked appointment's, or with no linked
+ * appointment, the latest set taken in the linked episode. Null when there
+ * are none - an appointment before its images, a round not yet screened.
+ *
+ * @param {object} data - Session data
+ * @param {object | null} appointment - The appointment the issue links to
+ * @param {object | null} episode - The episode the issue links to
+ * @returns {object | null} { appointment, clinic, summary }
+ */
+const getIssueImages = (data, appointment, episode) => {
+  const latestAppointmentId = (episode?.mammograms || []).at(-1)?.appointmentId
+  const imagesAppointment =
+    appointment ||
+    (latestAppointmentId ? getAppointment(data, latestAppointmentId) : null)
+
+  const summary = summariseMammogramImages(imagesAppointment, {
+    viewOrder: data.settings?.mammogramViewOrder
+  })
+  if (!summary) return null
+
+  return {
+    appointment: imagesAppointment,
+    clinic: getClinic(data, imagesAppointment.clinicId),
+    summary
+  }
+}
 
 /**
  * The participants an issue is about, each with the records the issue links
@@ -45,7 +74,8 @@ const { urlWithReferrer, modalBreakout } = require('../lib/utils/referrers')
  * @param {object} data - Session data
  * @param {object} issue - Issue
  * @returns {Array<object>} One entry per participant: participant, episode,
- *   appointment, clinic, readingCase and otherOpenIssues
+ *   appointment, clinic, readingCase, images (see getIssueImages) and
+ *   otherOpenIssues
  */
 const getIssueParticipants = (data, issue) => {
   const links = issue.links || []
@@ -69,14 +99,16 @@ const getIssueParticipants = (data, issue) => {
       const appointment =
         appointments.find((record) => record.participantId === participant.id) ||
         null
+      const episode =
+        episodes.find((record) => record.participantId === participant.id) ||
+        null
 
       return {
         participant,
-        episode:
-          episodes.find((record) => record.participantId === participant.id) ||
-          null,
+        episode,
         appointment,
         clinic: appointment ? getClinic(data, appointment.clinicId) : null,
+        images: getIssueImages(data, appointment, episode),
         readingCase:
           readingCases.find(
             (found) => found.episode?.participantId === participant.id
@@ -112,7 +144,7 @@ module.exports = (router) => {
       ? req.query.sort
       : DEFAULT_ISSUE_SORT
 
-    const groups = getIssueFilterGroups(data.currentUser?.id)
+    const groups = getIssueFilterGroups(data)
     const selected = parseFilterQuery(req.query, groups)
 
     // Everything in the view matching the search, before the filter groups -
@@ -220,10 +252,14 @@ module.exports = (router) => {
     // Named issueParticipants rather than set as `participant`, `appointment`
     // and so on, which the layouts read as the page's own context (an
     // appointment in progress swaps the header nav for "Exit appointment")
+    const issueParticipants = getIssueParticipants(data, issue)
+
     res.render('review/issues/show', {
       resolutionAnswers,
       issuePlace: getIssuePlace(issue),
-      issueParticipants: getIssueParticipants(data, issue)
+      issueParticipants,
+      // The PACS viewer shows one study per page, so the first set of images
+      pacsEntry: issueParticipants.find((entry) => entry.images) || null
     })
   })
 

@@ -1,7 +1,8 @@
 {# app/views/review/issues/show.html
 
    One issue: what was raised, the participant it is about with the records it
-   links to, and either the form to resolve it or how it was resolved. The
+   links to and any images, and either the form to resolve it or how it was
+   resolved. The
    route (routes/review.js) only serves issues in the user's BSU. The
    participants come in as `issueParticipants` so they are not taken for the
    page's own context. #}
@@ -19,6 +20,18 @@
   href: listReturnUrl if listReturnUrl.startsWith("/review/issues") else "/review/issues",
   text: "All issues"
 } %}
+
+{# Tells the PACS viewer which study "Open study in PACS" should show #}
+{% block head %}
+  {{ super() }}
+
+  {% if pacsEntry %}
+    {% set viewerAppointment = pacsEntry.images.appointment %}
+    {% set viewerParticipant = pacsEntry.participant %}
+    {% set viewerAutoOpen = false %}
+    {% include "_includes/images/pacs-viewer-meta.njk" %}
+  {% endif %}
+{% endblock head %}
 
 {% block pageContent %}
 
@@ -144,6 +157,10 @@
               {
                 href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
                 text: "View participant"
+              },
+              {
+                href: "#",
+                text: "Open in PACS"
               }
             ]
           }
@@ -224,6 +241,87 @@
         }) }}
       {% endif %}
     {% endcall %}
+
+    {# Many issues are about images, and staff look studies up in PACS by
+       accession number #}
+    {% if entry.images %}
+      {% set imagesAppointment = entry.images.appointment %}
+      {% set imagesSummary = entry.images.summary %}
+
+      {% set takenHtml %}
+        {{ imagesSummary.takenAt | formatDateTime }}
+        {% set takenWhere = imagesAppointment.mammogramData.machineRoom or (data | getClinicLocationName(entry.images.clinic) if entry.images.clinic) %}
+        {% if takenWhere %}
+          <br>{{ takenWhere | asHint }}
+        {% endif %}
+      {% endset %}
+
+      {% set mammographerName = (imagesAppointment | getAuthorisedMammographerName({ identifyCurrentUser: true })) or (imagesAppointment.sessionDetails.endedBy | getUsername({ identifyCurrentUser: true }) if imagesAppointment.sessionDetails.endedBy) %}
+
+      {% set imageCountHtml %}
+        {{ imagesSummary.imageCount }} {{ "image" | pluralise(imagesSummary.imageCount) }}
+        <br>{{ imagesSummary.views | join(", ") | asHint }}
+      {% endset %}
+
+      {% set accessionNumberHtml %}
+        {{ appCopyToClipboard({
+          text: imagesAppointment.accessionNumber,
+          type: "value",
+          html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (imagesAppointment.accessionNumber | formatAccessionNumber) + '</span>',
+          label: "accession number"
+        }) }}
+      {% endset %}
+
+      {# The viewer opens in its own window, reused if it is already open, and
+         asks this page for the study #}
+      {% set accessionActions = none %}
+      {% if pacsEntry and pacsEntry.images.appointment.id == imagesAppointment.id %}
+        {% set accessionActions = {
+          items: [
+            {
+              href: "/reading/mammogram-viewer",
+              text: "Open study in PACS",
+              attributes: {
+                target: "mammogram-viewer"
+              }
+            }
+          ]
+        } %}
+      {% endif %}
+
+      {% call card({
+        heading: {
+          text: "Images",
+          level: 2
+        }
+      }) %}
+        {% call appSummaryList({
+          lastRowBorder: false
+        }) %}
+          {{ appSummaryListRow({
+            key: { text: "Taken" },
+            value: { html: takenHtml }
+          }) }}
+          {% if mammographerName %}
+            {{ appSummaryListRow({
+              key: { text: "Mammographer" },
+              value: { text: mammographerName }
+            }) }}
+          {% endif %}
+          {{ appSummaryListRow({
+            key: { text: "Images" },
+            value: { html: imageCountHtml }
+          }) }}
+          {% if imagesAppointment.accessionNumber %}
+            {{ appSummaryListRow({
+              key: { text: "Accession number" },
+              value: { html: accessionNumberHtml },
+              actions: accessionActions
+            }) }}
+          {% endif %}
+        {% endcall %}
+      {% endcall %}
+    {% endif %}
   {% endfor %}
 
   {% if not issue.resolved %}

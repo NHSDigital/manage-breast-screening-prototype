@@ -131,52 +131,107 @@ const rowInView = (row, view) => {
   return true
 }
 
+// Not offered on the index for now - see getIssueFilterGroups
+// eslint-disable-next-line no-unused-vars
+const ISSUE_TYPE_FILTER_GROUP = {
+  name: 'type',
+  legend: 'Issue type',
+  options: ISSUE_TYPES.map((issueType) => ({
+    value: issueType.value,
+    label: issueType.label
+  })),
+  matches: (row, values) => values.includes(row.issue.type)
+}
+
+const EPISODE_STAGE_FILTER_GROUP = {
+  name: 'stage',
+  legend: 'Episode stage',
+  options: EPISODE_STAGES.map((stage) => ({
+    value: stage,
+    label: getEpisodeStageText(stage),
+    tagLabel: `Episode stage: ${getEpisodeStageText(stage).toLowerCase()}`
+  })),
+  matches: (row, values) => values.includes(row.episodeStage)
+}
+
 /**
  * The filters offered on the issue index, in the order they appear in the
  * filter column. See filter-list.js for the shape.
  *
- * Chosen for triage: what kind of problem it is (who can fix it), where the
- * participant's round is now (whether the issue is holding anything up
- * today), and the issues the user raised themselves (to follow up their own).
+ * Chosen for triage: where the participant's round is now (whether the issue
+ * is holding anything up today), and who raised it (to follow up your own, or
+ * a colleague's). "Someone else" reveals a user picker, as the reader filter
+ * on the reading case list does.
  *
- * @param {string} [currentUserId] - The signed-in user, for the "Raised by" filter
+ * @param {object} data - Session data, for the signed-in user and the users to pick from
  * @returns {Array} Filter groups
  */
-const getIssueFilterGroups = (currentUserId) => {
+const getIssueFilterGroups = (data = {}) => {
   const groups = [
-    {
-      name: 'type',
-      legend: 'Issue type',
-      options: ISSUE_TYPES.map((issueType) => ({
-        value: issueType.value,
-        label: issueType.label
-      })),
-      matches: (row, values) => values.includes(row.issue.type)
-    },
-    {
-      name: 'stage',
-      legend: 'Episode stage',
-      options: EPISODE_STAGES.map((stage) => ({
-        value: stage,
-        label: getEpisodeStageText(stage),
-        tagLabel: `Episode stage: ${getEpisodeStageText(stage).toLowerCase()}`
-      })),
-      matches: (row, values) => values.includes(row.episodeStage)
-    }
+    // Issue type is hidden for now: add ISSUE_TYPE_FILTER_GROUP here to offer it
+    EPISODE_STAGE_FILTER_GROUP
   ]
+
+  const currentUserId = data.currentUser?.id
+
+  const otherUsers = (data.users || [])
+    .filter((user) => user.id !== currentUserId)
+    .sort((a, b) =>
+      `${a.lastName} ${a.firstName}`.localeCompare(
+        `${b.lastName} ${b.firstName}`
+      )
+    )
 
   if (currentUserId) {
     groups.push({
       name: 'raisedBy',
       legend: 'Raised by',
+      // One answer at a time - me or a chosen colleague
+      style: 'radios',
       options: [
         {
           value: 'me',
           label: 'Me',
           tagLabel: 'Raised by me'
-        }
+        },
+        ...(otherUsers.length
+          ? [
+              {
+                value: 'someone_else',
+                label: 'Someone else',
+                // A mode rather than a filter: the raiser group narrows
+                reveals: 'raiser',
+                hideCount: true
+              }
+            ]
+          : [])
       ],
-      matches: (row) => row.issue.raisedBy === currentUserId
+      matches: (row, values) =>
+        values.some((value) => {
+          if (value === 'me') return row.issue.raisedBy === currentUserId
+
+          // 'someone_else' leaves the narrowing to the raiser group
+          return true
+        })
+    })
+  }
+
+  if (otherUsers.length) {
+    groups.push({
+      name: 'raiser',
+      legend: 'Person',
+      style: 'select',
+      emptyLabel: 'Select a person',
+      options: otherUsers.map((user) => {
+        const name = `${user.firstName} ${user.lastName}`.trim()
+
+        return {
+          value: user.id,
+          label: name,
+          tagLabel: `Raised by ${name}`
+        }
+      }),
+      matches: (row, values) => values.includes(row.issue.raisedBy)
     })
   }
 
@@ -200,18 +255,19 @@ const compareRaised = (a, b) =>
 
 /**
  * The orders the list can be shown in, in the order they appear in the menu.
- * Newest first leads because new issues are the ones nobody has looked at yet.
+ * Oldest first leads: the longest-waiting issue is the one holding things up
+ * longest, so it is usually the next to deal with.
  */
 const ISSUE_SORTS = [
-  {
-    value: 'raised_desc',
-    label: 'Raised – newest first',
-    compare: (a, b) => compareRaised(b, a)
-  },
   {
     value: 'raised_asc',
     label: 'Raised – oldest first',
     compare: compareRaised
+  },
+  {
+    value: 'raised_desc',
+    label: 'Raised – newest first',
+    compare: (a, b) => compareRaised(b, a)
   },
   {
     value: 'surname',
@@ -220,12 +276,12 @@ const ISSUE_SORTS = [
   }
 ]
 
-const DEFAULT_ISSUE_SORT = 'raised_desc'
+const DEFAULT_ISSUE_SORT = 'raised_asc'
 
 // Issues sharing a sort value need a stable order - one participant can have
-// several issues - so every sort falls back to newest raised, then issue id
+// several issues - so every sort falls back to oldest raised, then issue id
 const compareTieBreak = (a, b) =>
-  compareRaised(b, a) || a.issue.id.localeCompare(b.issue.id)
+  compareRaised(a, b) || a.issue.id.localeCompare(b.issue.id)
 
 /**
  * The sort to apply, falling back to the default when the value is unknown.
@@ -249,7 +305,7 @@ const getIssueSort = (value) =>
  * @param {string} [filters.breastScreeningUnitId] - Only this BSU's issues; all when left out
  * @param {string} [filters.view] - One of ISSUE_VIEWS, default 'open'
  * @param {string} [filters.query] - Participant name or NHS number
- * @param {string} [filters.sort] - One of ISSUE_SORTS, default 'raised_desc'
+ * @param {string} [filters.sort] - One of ISSUE_SORTS, default 'raised_asc'
  * @returns {Array} Rows
  */
 const getIssueRows = (data, filters = {}) => {

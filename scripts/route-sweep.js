@@ -301,10 +301,10 @@ const getTemplateUrls = (params) => {
     `/issues/raise/reading-case/${params.caseId}?raiseIssue[raisedFrom]=reading_case`,
     `/issues/raise/episode/${params.episodeId}?raiseIssue[raisedFrom]=episode`,
     // The description edit as its Change link opens it, and the issue index
-    // with every filter group, a view and a sort chosen, which the bare routes
-    // do not exercise
+    // with filters (including the "Someone else" reveal), a view and a sort
+    // chosen, which the bare routes do not exercise
     `/review/issues/${params.issueId}/description?issueDescription[issueId]=${params.issueId}`,
-    '/review/issues?view=all&type=missing_images&type=other&stage=reading&raisedBy=me&q=a&sort=surname',
+    '/review/issues?view=all&stage=reading&raisedBy=someone_else&q=a&sort=surname',
     ...getTemplateSubPaths('appointments', includedTemplates).map(
       (subPath) =>
         `/clinics/${params.clinicId}/appointments/${params.appointmentId}/${subPath}`

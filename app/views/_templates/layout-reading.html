@@ -158,68 +158,10 @@
 
   {# Meta tags for PACS viewer - only in workflow mode with participant #}
   {% if isReadingWorkflow and participant %}
-    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
-    <meta name="mammogram-appointment-id" content="{{ appointmentId }}">
-    <meta name="mammogram-participant-name" content="{{ participant | getFullNameReversed }}">
-    <meta name="mammogram-nhs-number" content="{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}">
-    <meta name="mammogram-sx-number" content="{{ participant.sxNumber }}">
-    <meta name="mammogram-date-of-birth" content="{{ participant.demographicInformation.dateOfBirth | formatDate }} ({{ participant | getAge }} years)">
-    <meta name="mammogram-auto-open" content="{{ 'true' if data.settings.reading.autoOpenPacsViewer | falsify else 'false' }}">
-    {% if mammogramImages and mammogramImages.paths %}
-      {# Pass image paths - util filters to only include views present in mammogram data #}
-      <meta name="mammogram-image-rcc" content="{{ mammogramImages.paths.rcc or '' }}">
-      <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc or '' }}">
-      <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo or '' }}">
-      <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo or '' }}">
-      {# Pass all image paths for additional images view #}
-      <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
-      <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">
-      {# Pass set info for debugging #}
-      <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
-      <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">
-      <meta name="mammogram-set-tag" content="{{ mammogramImages.set.tag }}">
-      {# Pass context info for debugging #}
-      {% set appointmentContext = extractAppointmentContext(appointment) %}
-      <meta name="mammogram-context" content="{{ appointmentContext | dump | escape }}">
-    {% endif %}
-
-    {# Broadcast to PACS viewer immediately - don't wait for DOMContentLoaded #}
-    <script>
-      (function() {
-        if (typeof BroadcastChannel === 'undefined') return
-        var ch = new BroadcastChannel('mammogram-viewer')
-        var getMeta = function(name) {
-          var el = document.querySelector('meta[name="' + name + '"]')
-          return el ? el.getAttribute('content') : null
-        }
-        var appointmentId = getMeta('mammogram-appointment-id')
-        var participantName = getMeta('mammogram-participant-name')
-        if (!appointmentId || !participantName) return
-        var allPathsRaw = getMeta('mammogram-all-paths')
-        var contextRaw = getMeta('mammogram-context')
-        ch.postMessage({
-          type: 'show',
-          appointmentId: appointmentId,
-          participantName: participantName,
-          nhsNumber: getMeta('mammogram-nhs-number'),
-          sxNumber: getMeta('mammogram-sx-number'),
-          dateOfBirth: getMeta('mammogram-date-of-birth'),
-          images: {
-            rcc: getMeta('mammogram-image-rcc') || null,
-            lcc: getMeta('mammogram-image-lcc') || null,
-            rmlo: getMeta('mammogram-image-rmlo') || null,
-            lmlo: getMeta('mammogram-image-lmlo') || null
-          },
-          allPaths: allPathsRaw ? JSON.parse(allPathsRaw) : null,
-          hasAdditionalImages: getMeta('mammogram-has-additional') === 'true',
-          setId: getMeta('mammogram-set-id'),
-          setDescription: getMeta('mammogram-set-description'),
-          setTag: getMeta('mammogram-set-tag'),
-          context: contextRaw ? JSON.parse(contextRaw) : null,
-          timestamp: Date.now()
-        })
-      })()
-    </script>
+    {% set viewerAppointment = appointment %}
+    {% set viewerParticipant = participant %}
+    {% set viewerAutoOpen = data.settings.reading.autoOpenPacsViewer | falsify %}
+    {% include "_includes/images/pacs-viewer-meta.njk" %}
   {% endif %}
 {% endblock head %}
 
