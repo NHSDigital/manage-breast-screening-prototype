@@ -41,7 +41,6 @@ const {
   getReadingCaseOutcome,
   getReadingMetadata,
   getDecidingRead,
-  isCaseDeferred,
   isCaseInArbitration,
   isReadFinalised,
   canUserReadCase
@@ -49,6 +48,10 @@ const {
 const { finaliseReadOnCase } = require('../lib/utils/reading')
 const { describeReadingCaseStatus } = require('../lib/utils/status')
 const { awaitingPriors } = require('../lib/utils/prior-mammograms')
+const {
+  getOpenIssuesFor,
+  getOpenIssueRaisedAt
+} = require('../lib/utils/issues')
 
 /**
  * Pagination items for a list that isn't really paged.
@@ -200,11 +203,12 @@ module.exports = (router) => {
 
     const appointment = getAppointment(data, found.readingCase.appointmentId)
     const finalisedAt = new Date().toISOString()
+    const openIssueRaisedAt = getOpenIssueRaisedAt(data, found.episode)
 
     // finaliseReadOnCase stores an updated case each time, so re-fetch it for
     // each author rather than reusing the stale record
     for (const read of getReadsAsArray(found.readingCase)) {
-      if (isReadFinalised(read, data.settings)) continue
+      if (isReadFinalised(read, data.settings, openIssueRaisedAt)) continue
       const { readingCase } = getReadingCaseById(data, req.params.caseId)
       finaliseReadOnCase(
         data,
@@ -239,8 +243,19 @@ module.exports = (router) => {
       return res.redirect(`/reading/cases/${req.params.caseId}`)
     }
 
-    const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
-    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
+    // An open issue pauses auto-finalisation, so the case is judged as it
+    // stood when the issue was raised
+    const openIssueRaisedAt = getOpenIssueRaisedAt(data, episode)
+    const caseOutcome = getReadingCaseOutcome(
+      readingCase,
+      data.settings,
+      openIssueRaisedAt
+    )
+    const caseStatus = getReadingCaseStatus(
+      readingCase,
+      data.settings,
+      openIssueRaisedAt
+    )
 
     res.render('reading/case-priors', {
       readingCase,
@@ -250,7 +265,7 @@ module.exports = (router) => {
       caseState: caseStatus.state,
       caseStatus,
       caseOutcome,
-      isDeferred: isCaseDeferred(readingCase),
+      openIssues: getOpenIssuesFor(data, episode),
       caseAwaitingPriors: appointment ? awaitingPriors(appointment) : false
     })
   })
@@ -296,14 +311,30 @@ module.exports = (router) => {
 
     const caseAwaitingPriors = appointment ? awaitingPriors(appointment) : false
 
+    // Open issues hold the case out of reading and pause auto-finalisation, so
+    // the case is judged as it stood when the first was raised
+    const openIssues = getOpenIssuesFor(data, episode)
+    const openIssueRaisedAt = getOpenIssueRaisedAt(data, episode)
+
     // Whether the case is the viewer's to read right now - outstanding priors
     // hold reading up, so they block the offer too
     const canReadCase =
-      !caseAwaitingPriors && canUserReadCase(readingCase, data.currentUser?.id)
+      !caseAwaitingPriors &&
+      canUserReadCase(readingCase, data.currentUser?.id, {
+        episodeHasOpenIssue: openIssues.length > 0
+      })
 
     const allReads = getReadsAsArray(readingCase)
-    const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
-    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
+    const caseOutcome = getReadingCaseOutcome(
+      readingCase,
+      data.settings,
+      openIssueRaisedAt
+    )
+    const caseStatus = getReadingCaseStatus(
+      readingCase,
+      data.settings,
+      openIssueRaisedAt
+    )
 
     // Until a case has its second read, the first opinion is only its
     // author's to see - anyone else could be the second reader. The view
@@ -347,7 +378,7 @@ module.exports = (router) => {
       caseOutcome,
       decidingRead,
       readingMetadata: getReadingMetadata(readingCase, data.settings),
-      isDeferred: isCaseDeferred(readingCase),
+      openIssues,
       caseAwaitingPriors,
       casePosition,
       caseTotal: casesOnEpisode.length

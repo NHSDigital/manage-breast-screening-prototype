@@ -116,9 +116,8 @@
 
         {% endif %}
 
-        {# Defer case option #}
         <p class="nhsuk-u-margin-top-2">
-          {{ appLink({ text: "Defer this case", href: "./defer-case", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+          {{ appLink({ text: "Raise an issue", href: "./raise-issue?raiseIssue[raisedFrom]=reading", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
         </p>
       </div>
 

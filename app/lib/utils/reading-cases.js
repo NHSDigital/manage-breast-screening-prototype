@@ -53,8 +53,8 @@ const READING_CASE_STATES = [
 // episode outcome - a recall for assessment concludes the reading but leaves
 // the episode open, because the result comes from the assessment.
 //
-// Deferral and outstanding priors are deliberately not outcomes: both are
-// temporary states that hold a case up, and a case held up still owes an
+// An open issue and outstanding priors are deliberately not outcomes: both
+// are temporary states that hold a case up, and a case held up still owes an
 // outcome once it is released.
 const READING_CASE_OUTCOMES = [
   'normal',
@@ -66,7 +66,7 @@ const READING_CASE_OUTCOMES = [
  * How overdue a case's images are for reading.
  *
  * The thresholds live in `config.reading` so every surface that flags an
- * ageing case - the backlog list, the deferred and priors dashboards, the
+ * ageing case - the backlog list, the priors dashboard, the
  * case header - agrees on when "due soon" becomes "urgent".
  *
  * @param {string | Date} imagesTakenDate - When the images were taken
@@ -289,19 +289,6 @@ const withArbitrationRelease = (readingCase, userId) => {
       releasedBy: userId
     }
   }
-}
-
-/**
- * Whether a case has been deferred from reading.
- *
- * Deferral is recorded as an act (who deferred it and when), and the state is
- * read back from its presence - the same shape arbitration release takes.
- *
- * @param {object} readingCase - Reading case
- * @returns {boolean}
- */
-const isCaseDeferred = (readingCase) => {
-  return Boolean(readingCase?.deferral?.deferredAt)
 }
 
 /**
@@ -528,7 +515,7 @@ const areAllReadsFinalised = (readingCase, settings = {}, now = null) => {
 /**
  * Where a case has got to.
  *
- * Deferral and outstanding priors are not states here - both hold a case up
+ * An open issue and outstanding priors are not states here - both hold a case up
  * without changing how far through reading it is, so they belong alongside the
  * state as flags rather than replacing it.
  *
@@ -709,23 +696,31 @@ const caseNeedsArbitration = (readingCase, settings = {}) => {
 /**
  * Whether a user can read a case.
  *
- * Only covers what the case itself knows. Outstanding priors also block
- * reading, but those live on the appointment, so callers working from an
- * appointment combine the two (see canUserReadAppointment in reading.js).
+ * Only covers what the case itself knows, plus whether its episode has an
+ * open issue, which the caller passes in because issues live outside the
+ * case. Outstanding priors also block reading, but those live on the
+ * appointment, so callers working from an appointment combine the two (see
+ * canUserReadAppointment in reading.js).
  *
  * @param {object} readingCase - Reading case
  * @param {string} userId - User ID
  * @param {object} [options] - Options
  * @param {number} [options.maxReadsPerCase] - Reads needed before it's complete
+ * @param {boolean} [options.panelArbitration] - Whether a panel is arbitrating
+ * @param {boolean} [options.episodeHasOpenIssue] - Whether the case's episode has an open issue (see hasOpenIssue)
  * @returns {boolean}
  */
 const canUserReadCase = (readingCase, userId, options = {}) => {
-  const { maxReadsPerCase = 2, panelArbitration = false } = options
+  const {
+    maxReadsPerCase = 2,
+    panelArbitration = false,
+    episodeHasOpenIssue = false
+  } = options
 
   if (!userId) return false
 
-  // A deferred case is out of the queue until someone reviews it
-  if (isCaseDeferred(readingCase)) return false
+  // An open issue holds the case out of the queue until it is resolved
+  if (episodeHasOpenIssue) return false
 
   // A case released to arbitration takes one more read - the arbitration
   // read - from someone who hasn't read it already. Panel arbitrators may
@@ -951,8 +946,8 @@ const withReadFinalised = (readingCase, userId, options = {}) => {
 /**
  * Remove a user's read from a case, returning a new case record.
  *
- * Deferring after giving an opinion withdraws that opinion - the reader is
- * saying they can't judge this case after all.
+ * Raising an issue after giving an opinion withdraws that opinion - the
+ * reader is saying they can't judge this case after all.
  *
  * @param {object} readingCase - The case
  * @param {string} userId - Whose read to remove
@@ -986,7 +981,6 @@ module.exports = {
   userHasReadCase,
   caseHasReads,
   withArbitrationRelease,
-  isCaseDeferred,
   isCaseInArbitration,
   areReadsDiscordant,
   willGoToArbitration,

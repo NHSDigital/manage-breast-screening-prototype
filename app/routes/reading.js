@@ -34,7 +34,8 @@ const {
   getFirstOutstandingCaseInSession,
   filterAppointmentsByEligibleForReading,
   filterAppointmentsByNeedsAnyRead,
-  filterAppointmentsByUserCanRead
+  filterAppointmentsByUserCanRead,
+  hasOpenIssueOnEpisode
 } = require('../lib/utils/reading')
 const { getReadingCase, updateReadingCase } = require('../lib/utils/episodes')
 const {
@@ -47,7 +48,6 @@ const {
   getReadAuthorIds,
   caseHasBeenArbitrated,
   isReadFinalised,
-  isCaseDeferred,
   withoutRead,
   withArbitrationRelease
 } = require('../lib/utils/reading-cases')
@@ -66,6 +66,12 @@ const {
   getHistoricReadingSessions
 } = require('../lib/utils/historic-reading-sessions')
 const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
+const {
+  createIssue,
+  getIssue,
+  getIssueTypes,
+  resolveIssue
+} = require('../lib/utils/issues')
 const dayjs = require('dayjs')
 const generateId = require('../lib/utils/id-generator')
 
@@ -691,12 +697,10 @@ module.exports = (router) => {
   // arbitration counts the panel's, since a case is arbitrated once for
   // everyone.
   const wasWorkedInSession = (data, session, appointment, userId) => {
-    const readingCase = getReadingCase(data, appointment)
-
     if (session.type === 'arbitration') {
       return (
         appointmentHasBeenArbitrated(data, appointment) ||
-        isCaseDeferred(readingCase) ||
+        hasOpenIssueOnEpisode(data, appointment) ||
         awaitingPriors(appointment)
       )
     }
@@ -704,7 +708,7 @@ module.exports = (router) => {
     return (
       userHasReadAppointment(data, appointment, userId) ||
       userRequestedPriors(appointment, userId) ||
-      isCaseDeferred(readingCase)
+      hasOpenIssueOnEpisode(data, appointment)
     )
   }
 
@@ -883,7 +887,7 @@ module.exports = (router) => {
 
     // Whether the reader has begun this session - what tells "Start" from
     // "Resume". Any work on a case counts, not just a decision: skipping,
-    // deferring and asking for priors are all ways of having started.
+    // raising an issue and asking for priors are all ways of having started.
     const sessionStarted =
       (session.skippedAppointments || []).length > 0 ||
       enhancedAppointments.some((appointment) =>
@@ -941,7 +945,7 @@ module.exports = (router) => {
     // Overall backlog count — used to gate the 'Start a new session' button, so
     // it counts the work a new session of *this* type would draw on. For
     // reading that's cases the user can read (not already read by them, not
-    // fully read by others, not deferred or awaiting priors); for arbitration
+    // fully read by others, not held by an issue or awaiting priors); for arbitration
     // it's the cases they'd be eligible to arbitrate.
     const backlogTotal = isArbitration
       ? getEligibleCandidatesForSession(data, { type: 'arbitration' }).length
@@ -1178,8 +1182,8 @@ module.exports = (router) => {
         )
       }
 
-      // Check if appointment has been deferred from reading
-      if (isCaseDeferred(getReadingCase(data, appointment))) {
+      // Check if an open issue is holding the case out of reading
+      if (hasOpenIssueOnEpisode(data, appointment)) {
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         )
@@ -1500,55 +1504,107 @@ module.exports = (router) => {
   )
 
   /************************************************************************
-  // Case deferral
+  // Raising an issue
+  //
+  // Raising an issue is the reader's outcome for the case, as a read is: it
+  // withdraws any opinion they had given and the session moves on. Raising
+  // from anywhere outside the workflow goes through routes/issues.js instead.
   /***********************************************************************/
 
-  // Handle deferring a case from reading
+  // The raise form. Its answers live in data.raiseIssue, keyed to the case,
+  // until the issue is created - the same shape as the form in
+  // routes/issues.js, so the two share their fields.
+  router.get(
+    '/reading/session/:sessionId/appointments/:appointmentId/raise-issue',
+    (req, res) => {
+      const data = req.session.data
+      const { readingCase } = res.locals
+      if (!readingCase) {
+        return res.redirect(
+          caseDecisionUrl(data, req.params.sessionId, req.params.appointmentId)
+        )
+      }
+
+      // Arriving from the workflow's link starts a fresh form, as does
+      // arriving with answers given for a different case. Coming back after
+      // a validation error keeps what was entered.
+      const linkedRaisedFrom = req.query.raiseIssue?.raisedFrom
+      const answersAreForThisCase = data.raiseIssue?.recordId === readingCase.id
+      if (linkedRaisedFrom || !answersAreForThisCase) {
+        data.raiseIssue = { recordId: readingCase.id, raisedFrom: 'reading' }
+      }
+
+      // The template's `data` is a copy taken before this runs, so the
+      // answers are passed directly
+      res.render('reading/workflow/raise-issue', {
+        answers: data.raiseIssue,
+        issueTypes: getIssueTypes('reading')
+      })
+    }
+  )
+
+  // Create the issue and move the reader on, as settling the case would
   router.post(
-    '/reading/session/:sessionId/appointments/:appointmentId/defer-case-answer',
+    '/reading/session/:sessionId/appointments/:appointmentId/raise-issue-answer',
     (req, res) => {
       const data = req.session.data
       const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
+      const { appointment, readingCase } = res.locals
 
-      const reason = req.body.deferralReason || ''
-      // The kit's autoStoreData copies every posted field into the session, so
-      // the reason would otherwise resurface on the next case's form
-      delete data.deferralReason
+      const issueTypes = getIssueTypes('reading')
+      const answers = data.raiseIssue || {}
+      const type = answers.type
+      const description = (answers.description || '').trim()
 
-      // Find the appointment and save deferral data. Work on a clone rather than
-      // mutating in place - appointment records are shared read-only data; writes
-      // go through the update helpers
-      const appointment = data.appointments.find((e) => e.id === appointmentId)
-      const readingCase = getReadingCase(data, appointment)
-      if (readingCase) {
-        // Deferring withdraws any opinion this user had already given - they're
-        // saying they can't judge this case after all
-        const updatedCase = {
-          ...withoutRead(readingCase, currentUserId),
-          deferral: {
-            deferredAt: new Date().toISOString(),
-            deferredBy: currentUserId,
-            reason: reason || null
-          }
+      // Type is the one thing the issue cannot do without
+      if (!issueTypes.some((issueType) => issueType.value === type)) {
+        const error = {
+          text: 'Select what the issue is',
+          name: 'raiseIssue[type]',
+          href: '#raiseIssueType'
         }
 
-        updateReadingCase(data, appointment.episodeId, updatedCase)
-      }
+        // Inside a modal, show the error in place rather than redirecting,
+        // which the modal would treat as a further step
+        if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+          return res.status(422).render('reading/workflow/raise-issue', {
+            answers,
+            issueTypes,
+            flash: { error: [error] }
+          })
+        }
 
-      // If submitted from an existing-read page (e.g. editing reason), return there
-      const referrerChain = req.query.referrerChain
-      if (referrerChain) {
-        const returnUrl = getReturnUrl(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`,
-          referrerChain
+        req.flash('error', error)
+        return res.redirect(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/raise-issue`
         )
-        res.redirect(modalBreakout(returnUrl))
-        return
       }
 
-      // A deferred case is settled for now, so it is no longer waiting to be
-      // come back to
+      if (readingCase) {
+        // Raising an issue withdraws any opinion this user had already given -
+        // they're saying they can't judge this case after all
+        updateReadingCase(
+          data,
+          appointment.episodeId,
+          withoutRead(readingCase, currentUserId)
+        )
+
+        createIssue(data, {
+          type,
+          description,
+          raisedBy: currentUserId,
+          raisedFrom: 'reading',
+          readingCaseId: readingCase.id
+        })
+      }
+
+      // The kit's autoStoreData copies every posted field into the session, so
+      // the answers would otherwise prefill the next raise form
+      delete data.raiseIssue
+
+      // The case is settled for now, so it is no longer waiting to be come
+      // back to
       unskipAppointmentInSession(data, sessionId, appointmentId)
 
       // Top up the session with the next eligible appointment if under target size
@@ -1569,12 +1625,9 @@ module.exports = (router) => {
 
       // Show a banner on the next case if there is one
       if (nextUnreadAppointment) {
-        const participant = data.participants.find(
-          (person) => person.id === appointment?.participantId
-        )
-        const shortName = getShortName(participant)
+        const shortName = getShortName(res.locals.participant)
         data.readingOpinionBanner = {
-          text: `Case deferred for ${shortName}`,
+          text: `Issue raised for ${shortName}`,
           participantName: shortName,
           editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         }
@@ -1606,66 +1659,32 @@ module.exports = (router) => {
     }
   )
 
-  // Undo a case deferral — removes the deferral so the case returns to reading
+  // Withdraw an issue raised by mistake, from the existing-read page. Only
+  // the person who raised it can, and it is resolved as raised in error rather
+  // than deleted, so the case returns to reading with the record kept.
+  // Supports GET (summary list action link) and POST
   router.all(
-    '/reading/session/:sessionId/appointments/:appointmentId/undo-defer',
+    '/reading/session/:sessionId/appointments/:appointmentId/withdraw-issue/:issueId',
     (req, res) => {
       const data = req.session.data
-      const { sessionId, appointmentId } = req.params
+      const { sessionId, appointmentId, issueId } = req.params
+      const { appointment } = res.locals
 
-      const appointment = data.appointments.find((e) => e.id === appointmentId)
-      const readingCase = getReadingCase(data, appointment)
-      if (isCaseDeferred(readingCase)) {
-        const { deferral, ...withoutDeferral } = readingCase
-        updateReadingCase(data, appointment.episodeId, withoutDeferral)
+      const issue = getIssue(data, issueId)
+      const isOnThisEpisode = (issue?.links || []).some(
+        (link) => link.type === 'episode' && link.id === appointment.episodeId
+      )
+
+      if (isOnThisEpisode && issue.raisedBy === data.currentUser?.id) {
+        resolveIssue(data, issueId, {
+          outcome: 'raised_in_error',
+          resolvedBy: data.currentUser.id
+        })
       }
 
       res.redirect(caseDecisionUrl(data, sessionId, appointmentId))
     }
   )
-
-  // Deferred cases management page
-  router.get('/reading/deferred', (req, res) => {
-    res.render('reading/deferred')
-  })
-
-  // Unflag a deferral from the deferred cases management page
-  // Keeps a record of the resolved deferral so the reason stays visible
-  router.post('/reading/deferred/undo', (req, res) => {
-    const data = req.session.data
-    const { appointmentId } = req.body
-
-    const appointment = data.appointments.find((e) => e.id === appointmentId)
-    const readingCase = getReadingCase(data, appointment)
-    if (isCaseDeferred(readingCase)) {
-      const { deferral, ...withoutDeferral } = readingCase
-
-      updateReadingCase(data, appointment.episodeId, {
-        ...withoutDeferral,
-        deferralHistory: [
-          ...(readingCase.deferralHistory || []),
-          {
-            ...deferral,
-            resolvedAt: new Date().toISOString(),
-            resolvedBy: data.currentUser?.id
-          }
-        ]
-      })
-
-      const participant = data.participants.find(
-        (p) => p.id === appointment.participantId
-      )
-      const shortName = getShortName(participant)
-      req.flash('success', `${shortName} returned to reading queue`)
-    }
-
-    // returnTo lets the case page reuse this action and land back there
-    const returnTo = req.body.returnTo
-    if (returnTo && returnTo.startsWith('/')) {
-      return res.redirect(returnTo)
-    }
-    res.redirect('/reading/deferred')
-  })
 
   // Render appropriate template for reading views
   router.get(
@@ -1689,7 +1708,6 @@ module.exports = (router) => {
         'compare',
         'arbitration-reads',
         'request-priors',
-        'defer-case',
         'medical-information'
       ]
 

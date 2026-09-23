@@ -12,8 +12,10 @@ const {
   ISSUE_LINK_TYPES
 } = require('../utils/issues')
 const { isCompleted } = require('../utils/status')
+const { awaitingPriors } = require('../utils/prior-mammograms')
 
-// Open issues for the cases already held up in reading, applied in order
+// Open issues raised during reading: the first two on cases in arbitration,
+// the rest on cases waiting for their first read
 const OPEN_READING_ISSUES = [
   {
     type: 'transposed_images',
@@ -78,6 +80,19 @@ const hoursAfter = (start, hours) => {
 }
 
 /**
+ * A time some minutes after a start point, but never later than a minute ago
+ *
+ * @param {string} start - ISO timestamp
+ * @param {number} minutes - Minutes to add
+ * @returns {string} ISO timestamp
+ */
+const minutesAfter = (start, minutes) => {
+  const latest = dayjs().subtract(1, 'minute')
+  const candidate = dayjs(start).add(minutes, 'minute')
+  return (candidate.isAfter(latest) ? latest : candidate).toISOString()
+}
+
+/**
  * Links for an issue, most specific first, matching what createIssue builds
  *
  * @param {object} records - `{ readingCase, appointment, episode }`, any may be missing
@@ -95,8 +110,9 @@ const buildLinks = ({ readingCase, appointment, episode }) =>
  * Generate the seed issues.
  *
  * Runs after reading data and episode stages are settled. The open reading
- * issues go on the cases the reading generator deferred, so the blocked rows
- * in the reading backlog and the cases with an issue are the same ones.
+ * issues go on two cases already released into arbitration and two waiting
+ * for their first read, so the reading backlog has blocked rows at both
+ * stages.
  *
  * @param {object} options - Generated data
  * @param {Array} options.episodes - Current (non-historic) episodes
@@ -136,37 +152,82 @@ const generateIssues = ({
   const issues = []
   const usedEpisodeIds = new Set()
 
-  // Open issues on the cases held up in reading
-  const deferredCases = episodes
-    .flatMap((episode) =>
-      (episode.readingCases || [])
-        .filter((readingCase) => readingCase.deferral)
-        .map((readingCase) => ({ episode, readingCase }))
+  const readers = users.filter((user) => user.role?.includes('clinician'))
+  const latestCase = (episode) =>
+    episode.readingCases?.[episode.readingCases.length - 1] || null
+
+  // Two cases released into arbitration and not yet arbitrated, each raised
+  // by a reader who had not read it - the arbitrator who opened it
+  const arbitrationCases = episodes
+    .map((episode) => ({ episode, readingCase: latestCase(episode) }))
+    .filter(
+      ({ readingCase }) =>
+        readingCase?.arbitration?.releasedAt &&
+        !readingCase.reads.some((read) => read.readType === 'arbitration')
     )
     .sort(
       (a, b) =>
-        new Date(a.readingCase.deferral.deferredAt) -
-        new Date(b.readingCase.deferral.deferredAt)
+        new Date(a.readingCase.arbitration.releasedAt) -
+        new Date(b.readingCase.arbitration.releasedAt)
     )
+    .slice(0, 2)
+    .map((found, index) => {
+      const readerIds = found.readingCase.reads.map((read) => read.readerId)
+      const arbitrator =
+        readers.find((reader) => !readerIds.includes(reader.id)) || readers[0]
+      return {
+        ...found,
+        raisedBy: arbitrator?.id,
+        raisedAt: minutesAfter(
+          found.readingCase.arbitration.releasedAt,
+          15 + index * 5
+        )
+      }
+    })
 
-  deferredCases.forEach(({ episode, readingCase }, index) => {
-    const template = OPEN_READING_ISSUES[index % OPEN_READING_ISSUES.length]
-    issues.push(
-      buildIssue({
-        ...template,
-        raisedBy: readingCase.deferral.deferredBy,
-        raisedAt: readingCase.deferral.deferredAt,
-        raisedFrom: 'reading',
-        breastScreeningUnitId: getEpisodeUnitId(episode),
-        links: buildLinks({
-          readingCase,
-          appointment: appointmentsById.get(readingCase.appointmentId),
-          episode
-        })
-      })
+  // Two cases waiting for their first read, from the middle of the backlog so
+  // the oldest cases are still there to read
+  const unreadCases = episodes
+    .map((episode) => ({ episode, readingCase: latestCase(episode) }))
+    .filter(
+      ({ readingCase }) =>
+        readingCase &&
+        !readingCase.reads?.length &&
+        !awaitingPriors(appointmentsById.get(readingCase.appointmentId))
     )
-    usedEpisodeIds.add(episode.id)
-  })
+    .sort(
+      (a, b) =>
+        new Date(a.readingCase.openedDate) - new Date(b.readingCase.openedDate)
+    )
+  const middleIndex = Math.floor(unreadCases.length / 2)
+  const firstReadCases = unreadCases
+    .slice(middleIndex, middleIndex + 2)
+    .map((found, index) => ({
+      ...found,
+      raisedBy: (readers[1] || readers[0])?.id,
+      raisedAt: hoursAfter(found.readingCase.openedDate, 20 + index * 2)
+    }))
+
+  ;[...arbitrationCases, ...firstReadCases].forEach(
+    ({ episode, readingCase, raisedBy, raisedAt }, index) => {
+      const template = OPEN_READING_ISSUES[index % OPEN_READING_ISSUES.length]
+      issues.push(
+        buildIssue({
+          ...template,
+          raisedBy,
+          raisedAt,
+          raisedFrom: 'reading',
+          breastScreeningUnitId: getEpisodeUnitId(episode),
+          links: buildLinks({
+            readingCase,
+            appointment: appointmentsById.get(readingCase.appointmentId),
+            episode
+          })
+        })
+      )
+      usedEpisodeIds.add(episode.id)
+    }
+  )
 
   // One open issue raised by the mammographer during an appointment today,
   // falling back to the most recent screened appointment
@@ -212,14 +273,8 @@ const generateIssues = ({
   // sits alongside a case that carried on
   const readCases = episodes
     .filter((episode) => !usedEpisodeIds.has(episode.id))
-    .map((episode) => ({
-      episode,
-      readingCase: episode.readingCases?.[episode.readingCases.length - 1]
-    }))
-    .filter(
-      ({ readingCase }) =>
-        readingCase && !readingCase.deferral && readingCase.reads?.length >= 2
-    )
+    .map((episode) => ({ episode, readingCase: latestCase(episode) }))
+    .filter(({ readingCase }) => readingCase?.reads?.length >= 2)
     .sort(
       (a, b) =>
         new Date(b.readingCase.openedDate) - new Date(a.readingCase.openedDate)

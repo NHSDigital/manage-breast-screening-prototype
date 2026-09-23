@@ -18,10 +18,12 @@
      the relationship instead of repeating the word #}
 
 {% macro caseOutcomeTag(readingCase, options = {}) %}
-  {% set status = readingCase | getReadingCaseStatus(data.settings) %}
+  {# An open issue pauses auto-finalisation, so judge the case as it stood then #}
+  {% set pausedAt = data | getAutoFinalisationPausedAt(readingCase) %}
+  {% set status = readingCase | getReadingCaseStatus(data.settings, pausedAt) %}
 
   {% if status.state == 'concluded' %}
-    {{ (readingCase | getReadingCaseOutcome(data.settings)) | toTag({ classes: options.classes }) }}
+    {{ (readingCase | getReadingCaseOutcome(data.settings, pausedAt)) | toTag({ classes: options.classes }) }}
     {% if options.showFinalisedTime %}
       {% set arbitrationRead = readingCase | getArbitrationRead %}
       {% if arbitrationRead %}

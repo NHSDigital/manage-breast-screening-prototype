@@ -6,6 +6,7 @@
 {% extends 'layout-app.html' %}
 {% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 {% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
+{% from "_includes/issues/tag.njk" import issueTag with context %}
 
 {% set back = {
   href: "/reading",
@@ -143,14 +144,14 @@
     {% set pendingCount = 0 if sessionEnded else pendingCount %}
 
     {# Remaining counts the whole session, including slots not yet claimed.
-       Cases held up by priors or a deferral are neither arbitrated nor
+       Cases held up by priors or an open issue are neither arbitrated nor
        remaining, so they are counted in their own right - the same breakdown
        the status bar gives inside the workflow #}
     {% set remainingCount = sessionProgress.targetRemaining if sessionProgress else (appointments | length) - arbitratedCount %}
     {% set awaitingPriorsCount = sessionProgress.sessionAwaitingPriorsCount if sessionProgress else 0 %}
-    {% set sessionDeferredCount = sessionProgress.deferredCount if sessionProgress else 0 %}
-    {% if not sessionEnded and (remainingCount > 0 or awaitingPriorsCount > 0 or sessionDeferredCount > 0) %}
-      <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated{%- if awaitingPriorsCount > 0 -%}, {{ awaitingPriorsCount }} awaiting priors{%- endif -%}{%- if sessionDeferredCount > 0 -%}, {{ sessionDeferredCount }} deferred{%- endif -%}, {{ remainingCount }} remaining</p>
+    {% set sessionIssueCount = sessionProgress.openIssueCount if sessionProgress else 0 %}
+    {% if not sessionEnded and (remainingCount > 0 or awaitingPriorsCount > 0 or sessionIssueCount > 0) %}
+      <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated{%- if awaitingPriorsCount > 0 -%}, {{ awaitingPriorsCount }} awaiting priors{%- endif -%}{%- if sessionIssueCount > 0 -%}, {{ sessionIssueCount }} with an issue{%- endif -%}, {{ remainingCount }} remaining</p>
     {% endif %}
 
     <table class="nhsuk-table app-reading-session-table">
@@ -222,8 +223,8 @@
             <td>
               {% if arbitrationRead %}
                 {{ caseOutcomeTag(appointment.readingCase, { showFinalisedTime: true }) }}
-              {% elseif appointment.readingCase | isCaseDeferred %}
-                {{ "Deferred" | toTag }}
+              {% elseif data | hasOpenIssueOnEpisode(appointment) %}
+                {{ issueTag() }}
               {% elseif appointment | awaitingPriors %}
                 {# Priors hold the case up for the whole panel, not just
                    whoever asked for them #}
@@ -241,9 +242,9 @@
                 {# The link says what opening the case will do, with the name
                    hidden for screen readers so each row's link is distinct #}
                 {# What the panel did with this case in the session: its
-                   outcome, or the deferral or priors request standing in its
+                   outcome, or the issue or priors request standing in its
                    place #}
-                {% set panelWorkedCase = arbitrationRead or (appointment.readingCase | isCaseDeferred) or (appointment | awaitingPriors) %}
+                {% set panelWorkedCase = arbitrationRead or (data | hasOpenIssueOnEpisode(appointment)) or (appointment | awaitingPriors) %}
 
                 {% if panelWorkedCase %}
                   {% set caseActionText = "View outcome" %}

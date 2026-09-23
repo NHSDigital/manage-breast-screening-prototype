@@ -50,34 +50,23 @@
 
       {# What is holding the case up, before anything else - it is what anyone
          chasing the case needs to know #}
-      {% if isDeferred %}
-        {% set deferralDetailHtml %}
-          <p>
-            Deferred from reading
-            {%- if readingCase.deferral.deferredBy %} by {{ readingCase.deferral.deferredBy | getUsername }}{% endif %}
-            on {{ readingCase.deferral.deferredAt | formatDate }}.
-            It needs review before it returns to the reading queue.
-          </p>
-          {% if readingCase.deferral.reason %}
-            <p>Reason: {{ readingCase.deferral.reason }}</p>
-          {% endif %}
-          {# A p can't contain a form - browsers unnest it, which dropped the
-             link out of the paragraph and its font sizing #}
-          <div class="app-card-actions">
-            <form action="/reading/deferred/undo" method="POST" class="app-inline-form">
-              <input type="hidden" name="appointmentId" value="{{ appointment.id }}">
-              <input type="hidden" name="returnTo" value="{{ getReadingCaseUrl(readingCase) }}">
-              <button type="submit" class="nhsuk-link--no-visited-state app-link-button">
-                Unflag case<span class="nhsuk-u-visually-hidden"> for {{ participant | getFullName }}</span>
-              </button>
-            </form>
-            <a href="/reading/deferred" class="nhsuk-u-margin-left-3">View all deferred cases</a>
-          </div>
+      {% if openIssues | length %}
+        {% set openIssuesHtml %}
+          <p>The case is held from reading until {{ "the issue is" if openIssues | length == 1 else "these issues are" }} resolved.</p>
+          {% for issue in openIssues %}
+            <p{% if loop.last %} class="nhsuk-u-margin-bottom-0"{% endif %}>
+              <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}">{{ issue.reference }}</a>:
+              {{ issue.type | getIssueTypeLabel }}.
+              Raised
+              {%- if issue.raisedBy %} by {{ issue.raisedBy | getUsername }}{% endif %}
+              on {{ issue.raisedAt | formatDate }}.
+            </p>
+          {% endfor %}
         {% endset %}
         {{ warningCallout({
-          heading: "Deferred",
+          heading: "Open issue" if openIssues | length == 1 else "Open issues",
           classes: "app-reading-width",
-          html: deferralDetailHtml
+          html: openIssuesHtml
         }) }}
       {% endif %}
 

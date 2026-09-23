@@ -283,7 +283,6 @@ const STATUS_TAGS = {
     // so readers and admin staff see one status rather than two
     priors_required: { colour: 'yellow' },
     awaiting_priors: { colour: 'yellow' },
-    deferred: { colour: 'yellow' },
     // Any open issue (see issues.js), shown wherever the issue's episode or
     // participant is
     has_issue: { colour: 'yellow' }

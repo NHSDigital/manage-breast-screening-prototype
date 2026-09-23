@@ -6,6 +6,7 @@
 
 {% extends 'layout-app.html' %}
 {% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{% from "_includes/issues/tag.njk" import issueTag with context %}
 
 {% set pageHeading = "Reading cases" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
@@ -150,13 +151,13 @@
                   <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
                     NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
                   </p>
-                  {% if row.isDeferred or row.awaitingPriorsStatus %}
+                  {% if row.hasIssue or row.awaitingPriorsStatus %}
                     <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
-                      {% if row.isDeferred %}
-                        {{ "Deferred" | toTag }}
+                      {% if row.hasIssue %}
+                        {{ issueTag() }}
                       {% endif %}
                       {% if row.awaitingPriorsStatus %}
-                        {% if row.isDeferred %}<br>{% endif %}
+                        {% if row.hasIssue %}<br>{% endif %}
                         {{ row.awaitingPriorsStatus | toTag({ vocabulary: "priorsRequest" }) }}
                       {% endif %}
                     </p>

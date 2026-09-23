@@ -1,0 +1,54 @@
+{# app/views/_includes/issues/raise-fields.njk
+
+   The fields of the raise an issue form, shared by the form outside the
+   workflow (issues/raise.html) and the one inside reading
+   (reading/workflow/raise-issue.html). Their routes read the answers back
+   from data.raiseIssue.
+
+   Expects: issueTypes (from getIssueTypes), answers (data.raiseIssue),
+   raisedFrom, recordId and descriptionHint. #}
+
+{% set typeItems = [] %}
+{% for issueType in issueTypes %}
+  {% set typeItems = typeItems | push({
+    value: issueType.value,
+    text: issueType.label
+  }) %}
+{% endfor %}
+
+{{ radios({
+  name: "raiseIssue[type]",
+  idPrefix: "raiseIssueType",
+  value: answers.type,
+  fieldset: {
+    legend: {
+      text: "What is the issue?",
+      size: "m"
+    }
+  },
+  items: typeItems
+} | populateErrors) }}
+
+{{ textarea({
+  name: "raiseIssue[description]",
+  id: "raiseIssueDescription",
+  label: {
+    text: "Describe the issue (optional)",
+    size: "s"
+  },
+  hint: {
+    text: descriptionHint
+  },
+  rows: 4,
+  value: answers.description
+}) }}
+
+{{ appHiddenInput({
+  name: "raiseIssue[raisedFrom]",
+  value: raisedFrom
+}) }}
+
+{{ appHiddenInput({
+  name: "raiseIssue[recordId]",
+  value: recordId
+}) }}

@@ -3,6 +3,8 @@
 
 {% extends 'layout-reading.html' %}
 
+{% from "_includes/issues/tag.njk" import issueTag with context %}
+
 {% set pageHeading = "Arbitration outcome" if isArbitration else "Your opinion" %}
 {% set showWorkflowNav = true %}
 
@@ -13,54 +15,69 @@
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}
   {% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
-  {% set isDeferredCase = readingCase | isCaseDeferred %}
+  {% set openIssues = data | getOpenIssuesFor(appointment.episodeId) %}
 
   <span class="nhsuk-caption-l">
     {{ participant | getFullNameReversed }}
   </span>
 
-  {% if isDeferredCase and not hasUserRead %}
-    {# Appointment has been deferred - show deferral summary #}
+  {% if openIssues | length and not hasUserRead %}
+    {# An open issue holds the case - show it in place of an opinion #}
     <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
-    {% set deferral = readingCase.deferral %}
-    {% set canUndo = deferral.deferredBy == data.currentUser.id %}
+    {% set issue = openIssues | first %}
+    {% set canWithdraw = issue.raisedBy == data.currentUser.id %}
 
-    {% set deferralSummaryHtml %}
+    {% set issueSummaryHtml %}
       {% call appSummaryList() %}
         {{ appSummaryListRow({
           key: {
             text: "Opinion"
           },
           value: {
-            html: "Deferred" | toTag
+            html: issueTag()
           },
           actions: {
             items: [{
-              href: "./undo-defer",
-              text: "Undo deferral",
-              visuallyHiddenText: "case deferral"
+              href: "./withdraw-issue/" + issue.id,
+              text: "Withdraw issue",
+              visuallyHiddenText: issue.reference
             }]
-          } if canUndo
+          } if canWithdraw
         }) }}
 
-        {% if deferral.reason %}
+        {% set issueHtml %}
+          <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}">{{ issue.reference }}</a><br>
+          {{ issue.type | getIssueTypeLabel }}
+        {% endset %}
+        {{ appSummaryListRow({
+          key: {
+            text: "Issue"
+          },
+          value: {
+            html: issueHtml
+          }
+        }) }}
+
+        {% if issue.description %}
           {{ appSummaryListRow({
             key: {
-              text: "Reason"
+              text: "Description"
             },
             value: {
-              text: deferral.reason
-            },
-            actions: {
-              items: [{
-                href: "./defer-case" | urlWithReferrer(currentUrl),
-                text: "Change",
-                visuallyHiddenText: "deferral reason"
-              }]
-            } if canUndo
-          } | openInModal) }}
+              text: issue.description
+            }
+          }) }}
         {% endif %}
+
+        {{ appSummaryListRow({
+          key: {
+            text: "Raised by"
+          },
+          value: {
+            text: issue.raisedBy | getUsername({ identifyCurrentUser: true })
+          }
+        }) }}
 
       {% endcall %}
     {% endset %}
@@ -69,7 +86,7 @@
       heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
-      descriptionHtml: deferralSummaryHtml
+      descriptionHtml: issueSummaryHtml
     }) }}
 
   {% elseif isAwaitingPriors and not hasUserRead %}

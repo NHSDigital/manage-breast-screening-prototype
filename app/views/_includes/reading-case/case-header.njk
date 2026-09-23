@@ -1,10 +1,11 @@
 {% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
+{% from "_includes/issues/tag.njk" import issueTag with context %}
 {# app/views/_includes/reading-case/case-header.njk
 
    Shared header for the reading case pages (case view and priors tab):
    participant name with the case's state on the right, then NHS number.
    Expects the case context locals: pageHeading, readingCase, caseOutcome,
-   isDeferred, caseAwaitingPriors, participant. #}
+   openIssues, caseAwaitingPriors, participant. #}
 
 <div class="app-header-with-status">
   <h1 class="nhsuk-heading-l">
@@ -26,8 +27,8 @@
       {% endif %}
     {% endif %}
 
-    {% if isDeferred %}
-      <br>{{ "Deferred" | toTag }}
+    {% if openIssues | length %}
+      <br>{{ issueTag() }}
     {% endif %}
     {% if caseAwaitingPriors %}
       <br>{{ "Awaiting priors" | toTag }}

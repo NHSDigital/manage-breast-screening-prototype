@@ -48,7 +48,7 @@ const FILE_META = {
   'app/lib/utils/reading-cases.js': {
     label: 'reading-cases.js',
     description:
-      'A reading case is one set of mammograms being read, held on the episode as episode.readingCases[]. Pure case logic: reads, read types, case state and outcome, discordance and arbitration, deferral. Everything here takes a case — resolve one from an appointment with getReadingCase in episodes.js.'
+      'A reading case is one set of mammograms being read, held on the episode as episode.readingCases[]. Pure case logic: reads, read types, case state and outcome, discordance and arbitration. Everything here takes a case — resolve one from an appointment with getReadingCase in episodes.js.'
   },
   'app/lib/utils/reading.js': {
     label: 'reading.js',

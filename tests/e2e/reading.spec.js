@@ -2,7 +2,7 @@
 //
 // Journeys through image reading. Between them they cover the four ways a
 // reader can leave a case - normal, recall for assessment, technical recall,
-// and deferral - plus the second reader's comparison step, and a concordant
+// and raising an issue - plus the second reader's comparison step, and a concordant
 // second read taking a case to its concluded outcome.
 //
 // Sessions are created with an explicit limit so each test reads a known,
@@ -317,48 +317,55 @@ test.describe('Image reading', () => {
     ).toBeVisible()
   })
 
-  test('defers a case and returns it to the reading queue', async ({ page }) => {
+  test('raises an issue on a case and returns it to reading once resolved', async ({
+    page
+  }) => {
     await pinSettings(page, readingSettings)
 
-    // The reason is the thing that identifies this deferral on the deferred
-    // cases page, so make it distinctive
-    const deferralReason = 'Prior images needed before an opinion can be given'
+    // Identifies this issue on its own page, so make it distinctive
+    const issueDescription = 'RMLO will not open in the viewer after reloading'
 
     await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
 
-    const deferModal = await clickLinkToOpenModal(page, 'Defer this case')
-    await deferModal.locator('#modal-deferralReason').fill(deferralReason)
-    await deferModal
-      .getByRole('button', { name: 'Confirm deferral' })
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal
+      .getByLabel('Images are missing or will not open')
+      .check()
+    await raiseModal
+      .getByLabel('Describe the issue (optional)')
+      .fill(issueDescription)
+    await raiseModal
+      .getByRole('button', { name: 'Raise issue' })
       .first()
       .click()
 
-    // Deferral takes the only case out of the session, so there is nothing
-    // left to read
+    // The issue holds the only case in the session, so there is nothing left
+    // to read
     await expect(page).toHaveURL(/\/no-more-cases/)
 
-    // The case now sits on the deferred list, waiting for manual review.
-    // Scope everything to its card - the seed data carries deferred cases of
-    // its own, so the page is never otherwise empty
-    await page.goto('/reading/deferred')
+    // The issue stands in place of the reader's opinion, linking to its page
+    await page.goto(`${caseUrl}/existing-read`)
     await expect(
-      page.getByRole('heading', { name: 'Deferred cases' })
+      page.getByRole('link', { name: 'Withdraw issue' })
     ).toBeVisible()
-    const deferralCard = page
-      .locator('.nhsuk-summary-card')
-      .filter({ hasText: deferralReason })
-    await expect(deferralCard).toBeVisible()
+    await page.getByRole('link', { name: /^ISS-/ }).click()
 
-    // Unflagging returns it to the queue, keeping a record of why it was held
-    await deferralCard.getByRole('button', { name: 'Unflag case' }).click()
+    await expect(page.getByText(issueDescription)).toBeVisible()
+    await page.getByLabel('Resolved', { exact: true }).check()
+    await page
+      .getByLabel('Note (optional)')
+      .fill('Image re-sent from the mammography machine')
+    await page.getByRole('button', { name: 'Resolve issue' }).click()
 
+    // Resolved, the case is readable again from its own page
+    await expect(page.getByText('Image re-sent from the mammography machine')).toBeVisible()
+    await page.getByRole('link', { name: /^Opened / }).click()
     await expect(
-      page.getByRole('heading', { name: 'Recently resolved' })
-    ).toBeVisible()
-    await expect(
-      page.locator('.nhsuk-summary-card').filter({ hasText: deferralReason })
-    ).toContainText('Returned to queue')
+      page.getByRole('heading', { name: 'Open issue' })
+    ).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Read now' })).toBeVisible()
   })
 
   test('keeps a lazy session lazy across a resume', async ({ page }) => {

@@ -340,6 +340,36 @@ const hasOpenIssue = (data, record) =>
   getIssuesFor(data, record).some(isIssueOpen)
 
 /**
+ * Every open issue linked to a record, newest first
+ *
+ * @param {object} data - Session data
+ * @param {object | string} record - Participant, episode, appointment or reading case, or its id
+ * @returns {Array} Open issues linked to the record
+ * @example
+ * getOpenIssuesFor(data, appointment.episodeId)
+ */
+const getOpenIssuesFor = (data, record) =>
+  getIssuesFor(data, record).filter(isIssueOpen)
+
+/**
+ * When the earliest open issue on a record was raised, or null if it has none.
+ *
+ * Reading judges auto-finalisation against this rather than the real time, so
+ * reads that had not finalised when an issue was raised stay unfinalised
+ * until it is resolved.
+ *
+ * @param {object} data - Session data
+ * @param {object | string} record - Participant, episode, appointment or reading case, or its id
+ * @returns {string | null} ISO timestamp, or null
+ * @example
+ * getReadingCaseStatus(readingCase, data.settings, getOpenIssueRaisedAt(data, episode))
+ */
+const getOpenIssueRaisedAt = (data, record) => {
+  const openIssues = getOpenIssuesFor(data, record)
+  return openIssues.length ? openIssues[openIssues.length - 1].raisedAt : null
+}
+
+/**
  * Update an issue with the given fields and save it to the session
  *
  * @param {object} data - Session data
@@ -436,6 +466,8 @@ module.exports = {
   getIssuesFor,
   isIssueOpen,
   hasOpenIssue,
+  getOpenIssuesFor,
+  getOpenIssueRaisedAt,
   updateIssue,
   resolveIssue,
   getIssueTypes,
