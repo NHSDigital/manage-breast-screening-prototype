@@ -514,6 +514,38 @@ const isIssueHoldingReading = (data, issue) => {
   return READING_HELD_STAGES.includes(episode?.stage)
 }
 
+/**
+ * Errors for the answers to a raise an issue form. Both the type and a
+ * description are required.
+ *
+ * @param {object} answers - Answers from data.raiseIssue
+ * @param {Array} issueTypes - Types the form offered, from getIssueTypes
+ * @returns {Array} Error objects for the error summary and populateErrors, empty if valid
+ * @example
+ * const errors = getRaiseIssueErrors(data.raiseIssue, getIssueTypes('reading'))
+ */
+const getRaiseIssueErrors = (answers = {}, issueTypes = []) => {
+  const errors = []
+
+  if (!issueTypes.some((issueType) => issueType.value === answers.type)) {
+    errors.push({
+      text: 'Select what the issue is',
+      name: 'raiseIssue[type]',
+      href: '#raiseIssueType'
+    })
+  }
+
+  if (!(answers.description || '').trim()) {
+    errors.push({
+      text: 'Enter a description of the issue',
+      name: 'raiseIssue[description]',
+      href: '#raiseIssueDescription'
+    })
+  }
+
+  return errors
+}
+
 module.exports = {
   ISSUE_TYPES,
   ISSUE_RAISED_FROM,
@@ -533,5 +565,6 @@ module.exports = {
   getIssueTypes,
   getIssueTypeLabel,
   getIssueStatus,
-  isIssueHoldingReading
+  isIssueHoldingReading,
+  getRaiseIssueErrors
 }

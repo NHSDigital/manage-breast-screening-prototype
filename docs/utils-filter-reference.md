@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-23 15:13 UTC
+- **Generated:** 2026-09-23 16:04 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -26,25 +26,25 @@
 | `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 290 |
 | `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 345 |
 | `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 367 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 391 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 418 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 431 |
-| `objects.js` | Object utilities for extracting and flattening values. | 449 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 460 |
-| `random.js` | Seeded random functions for stable prototype data | 470 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 487 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 502 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 512 |
-| `roles-and-permissions.js` | User role checks | 525 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 550 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 566 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 578 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 392 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 419 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 432 |
+| `objects.js` | Object utilities for extracting and flattening values. | 450 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 461 |
+| `random.js` | Seeded random functions for stable prototype data | 471 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 488 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 503 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 513 |
+| `roles-and-permissions.js` | User role checks | 526 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 551 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 567 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 579 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 594 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 606 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 618 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 632 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 642 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 595 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 607 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 619 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 633 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 643 |
 
 ---
 
@@ -387,6 +387,7 @@ Issues raised against a participant, episode, appointment or reading case: types
 | `getIssueTypeLabel(type)` | The display label for an issue type | 471 |
 | `getIssueStatus(issue)` | An issue's status: open, or the outcome it was closed with. Renders as a tag — e.g. `{{ issue \| getIssueStatus \| toTag({ vocabulary: "issue" }) }}` | 480 |
 | `isIssueHoldingReading(data, issue)` | Whether an open issue is holding up image reading at its episode's stage. — e.g. `{% if data \| isIssueHoldingReading(issue) %}` | 495 |
+| `getRaiseIssueErrors(answers, issueTypes)` | Errors for the answers to a raise an issue form. Both the type and a — e.g. `const errors = getRaiseIssueErrors(data.raiseIssue, getIssueTypes('reading'))` | 517 |
 
 ### medical-information.js
 

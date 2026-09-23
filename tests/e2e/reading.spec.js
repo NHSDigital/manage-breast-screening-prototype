@@ -332,7 +332,7 @@ test.describe('Image reading', () => {
     const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
     await raiseModal.getByLabel('Images are missing or will not open').check()
     await raiseModal
-      .getByLabel('Describe the issue (optional)')
+      .getByLabel('Describe the issue')
       .fill(issueDescription)
     await raiseModal
       .getByRole('button', { name: 'Raise issue' })
@@ -376,6 +376,9 @@ test.describe('Image reading', () => {
 
     const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
     await raiseModal.getByLabel('Images are missing or will not open').check()
+    await raiseModal
+      .getByLabel('Describe the issue')
+      .fill('RMLO will not open in the viewer')
     await raiseModal
       .getByRole('button', { name: 'Raise issue' })
       .first()
@@ -434,6 +437,9 @@ test.describe('Image reading', () => {
       'Raise an issue with this case'
     )
     await raiseModal.getByLabel('Images are missing or will not open').check()
+    await raiseModal
+      .getByLabel('Describe the issue')
+      .fill('RMLO will not open in the viewer')
     await raiseModal
       .getByRole('button', { name: 'Raise issue' })
       .first()

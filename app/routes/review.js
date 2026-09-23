@@ -9,24 +9,33 @@ const {
   getOpenIssuesFor,
   isIssueOpen,
   resolveIssue,
+  updateIssue,
   ISSUE_OUTCOMES
 } = require('../lib/utils/issues')
 const {
   ISSUE_VIEWS,
   ISSUE_VIEW_LABELS,
   DEFAULT_ISSUE_VIEW,
+  ISSUE_SORTS,
+  DEFAULT_ISSUE_SORT,
   getIssuePlace,
+  isIssueInUnit,
+  getIssueFilterGroups,
   getIssueRows
 } = require('../lib/utils/issue-list')
+const {
+  parseFilterQuery,
+  applyFilterGroups,
+  getFilterCounts,
+  describeSelectedFilters,
+  buildFilterUrl,
+  hasSelectedFilters
+} = require('../lib/utils/filter-list')
 const { getParticipant } = require('../lib/utils/participants')
 const { getEpisode, getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
-const { urlWithReferrer } = require('../lib/utils/referrers')
-
-// The index URL for a view; the default view stays out of the URL
-const getIssueViewUrl = (view) =>
-  view === DEFAULT_ISSUE_VIEW ? '/review/issues' : `/review/issues?view=${view}`
+const { urlWithReferrer, modalBreakout } = require('../lib/utils/referrers')
 
 /**
  * The participants an issue is about, each with the records the issue links
@@ -86,7 +95,9 @@ module.exports = (router) => {
   })
 
   // The issue index. Open, resolved or all is a view - a tab - so open can be
-  // the default without a filter that can never be unticked.
+  // the default without a filter that can never be unticked. The search, the
+  // filter groups and the order ride along on every link, as on the reading
+  // case list.
   router.get('/review/issues', (req, res) => {
     const data = req.session.data
     const breastScreeningUnitId = data.currentUser?.breastScreeningUnit
@@ -94,38 +105,107 @@ module.exports = (router) => {
     const view = ISSUE_VIEWS.includes(req.query.view)
       ? req.query.view
       : DEFAULT_ISSUE_VIEW
+    const query = req.query.q?.trim() || ''
+    const sort = ISSUE_SORTS.some(
+      (candidate) => candidate.value === req.query.sort
+    )
+      ? req.query.sort
+      : DEFAULT_ISSUE_SORT
 
+    const groups = getIssueFilterGroups(data.currentUser?.id)
+    const selected = parseFilterQuery(req.query, groups)
+
+    // Everything in the view matching the search, before the filter groups -
+    // what the faceted counts are drawn from
+    const listOptions = { breastScreeningUnitId, query, sort }
+    const baseRows = getIssueRows(data, { ...listOptions, view })
+    const rows = applyFilterGroups(baseRows, groups, selected)
+
+    // The default view and order stay out of the URL, so a shared link only
+    // carries what someone actually chose
+    const carriedParams = {
+      view: view === DEFAULT_ISSUE_VIEW ? '' : view,
+      q: query,
+      sort: sort === DEFAULT_ISSUE_SORT ? '' : sort
+    }
+
+    // Each tab counts its issues under the current search and filters
     const viewCounts = Object.fromEntries(
       ISSUE_VIEWS.map((candidate) => [
         candidate,
-        getIssueRows(data, { breastScreeningUnitId, view: candidate }).length
+        candidate === view
+          ? rows.length
+          : applyFilterGroups(
+              getIssueRows(data, { ...listOptions, view: candidate }),
+              groups,
+              selected
+            ).length
       ])
     )
 
     const viewUrls = Object.fromEntries(
-      ISSUE_VIEWS.map((candidate) => [candidate, getIssueViewUrl(candidate)])
+      ISSUE_VIEWS.map((candidate) => [
+        candidate,
+        buildFilterUrl('/review/issues', selected, {
+          ...carriedParams,
+          view: candidate === DEFAULT_ISSUE_VIEW ? '' : candidate
+        })
+      ])
     )
 
     res.render('review/issues/index', {
-      rows: getIssueRows(data, { breastScreeningUnitId, view }),
+      rows,
       view,
       views: ISSUE_VIEWS,
       viewLabels: ISSUE_VIEW_LABELS,
       viewCounts,
       viewUrls,
+      query,
+      sort,
+      sorts: ISSUE_SORTS,
+      groups,
+      selected,
+      counts: getFilterCounts(baseRows, groups, selected),
+      selectedFilters: describeSelectedFilters(
+        groups,
+        selected,
+        '/review/issues',
+        carriedParams
+      ),
+      isFiltered: hasSelectedFilters(selected),
+      // The search is a field in the filter form, so only the view and the
+      // order ride along as hidden fields - and clearing keeps them
+      hiddenFields: { view: carriedParams.view, sort: carriedParams.sort },
+      // What the sort form has to carry to leave the rest of the list alone
+      sortHiddenFields: { view: carriedParams.view, q: query },
       // This list as it stands, so an issue opened from it can come back to it
       listUrl: viewUrls[view]
     })
   })
 
-  // One issue, with the participant it is about and their linked records
-  router.get('/review/issues/:issueId', (req, res) => {
+  // Load the issue for a route under /review/issues/:issueId. An issue from
+  // another BSU is not found, as the index does not list it either - skipping
+  // the route leaves the request to the kit's page not found.
+  const loadIssue = (req, res, next) => {
     const data = req.session.data
     const issue = getIssue(data, req.params.issueId)
 
-    if (!issue) {
-      return res.redirect('/review/issues')
+    if (!isIssueInUnit(issue, data.currentUser?.breastScreeningUnit)) {
+      return next('route')
     }
+
+    res.locals.issue = issue
+    res.locals.issueUrl = urlWithReferrer(
+      `/review/issues/${issue.id}`,
+      req.query.referrerChain
+    )
+    next()
+  }
+
+  // One issue, with the participant it is about and their linked records
+  router.get('/review/issues/:issueId', loadIssue, (req, res) => {
+    const data = req.session.data
+    const { issue } = res.locals
 
     // The resolve form's answers carry the issue they were given for, and
     // only prefill that issue's form. Passed to the template directly, as its
@@ -139,23 +219,96 @@ module.exports = (router) => {
     // and so on, which the layouts read as the page's own context (an
     // appointment in progress swaps the header nav for "Exit appointment")
     res.render('review/issues/show', {
-      issue,
       resolutionAnswers,
       issuePlace: getIssuePlace(issue),
       issueParticipants: getIssueParticipants(data, issue)
     })
   })
 
-  router.post('/review/issues/:issueId/resolve', (req, res) => {
+  // Change the description of an open issue. Opens in a modal where modal
+  // forms are on.
+  router.get('/review/issues/:issueId/description', loadIssue, (req, res) => {
     const data = req.session.data
-    const { issueId } = req.params
-    const issueUrl = urlWithReferrer(
-      `/review/issues/${issueId}`,
-      req.query.referrerChain
-    )
+    const { issue, issueUrl } = res.locals
+
+    // Opened from a tab from before the issue was closed
+    if (!isIssueOpen(issue)) {
+      req.flash('info', 'This issue has already been closed')
+      return res.redirect(modalBreakout(issueUrl))
+    }
+
+    // Answers carry the issue they were given for, so coming back after an
+    // error keeps what was entered; any other issue's answers start afresh
+    // from the description as it stands
+    if (data.issueDescription?.issueId !== issue.id) {
+      data.issueDescription = {
+        issueId: issue.id,
+        description: issue.description
+      }
+    }
+
+    res.render('review/issues/description', {
+      descriptionAnswers: data.issueDescription
+    })
+  })
+
+  router.post(
+    '/review/issues/:issueId/description-answer',
+    loadIssue,
+    (req, res) => {
+      const data = req.session.data
+      const { issue, issueUrl } = res.locals
+
+      if (!isIssueOpen(issue)) {
+        delete data.issueDescription
+        req.flash('info', 'This issue has already been closed')
+        return res.redirect(modalBreakout(issueUrl))
+      }
+
+      const description = (data.issueDescription?.description || '').trim()
+
+      if (!description) {
+        const error = {
+          text: 'Enter a description of the issue',
+          name: 'issueDescription[description]',
+          href: '#issueDescription'
+        }
+
+        // Inside a modal, show the error in place rather than redirecting,
+        // which the modal would treat as a further step
+        if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
+          return res.status(422).render('review/issues/description', {
+            flash: { error: [error] },
+            descriptionAnswers: data.issueDescription
+          })
+        }
+
+        req.flash('error', error)
+        return res.redirect(
+          urlWithReferrer(
+            `/review/issues/${issue.id}/description`,
+            req.query.referrerChain
+          )
+        )
+      }
+
+      updateIssue(data, issue.id, { description })
+
+      // The kit copies every posted field into the session, so the answer
+      // would otherwise linger for the next edit
+      delete data.issueDescription
+
+      req.flash('success', 'Description changed')
+      res.redirect(modalBreakout(issueUrl))
+    }
+  )
+
+  router.post('/review/issues/:issueId/resolve', loadIssue, (req, res) => {
+    const data = req.session.data
+    const { issue, issueUrl } = res.locals
 
     // Opened in a tab from before the issue was closed
-    if (!isIssueOpen(getIssue(data, issueId))) {
+    if (!isIssueOpen(issue)) {
       delete data.issueResolution
       req.flash('info', 'This issue has already been closed')
       return res.redirect(issueUrl)
@@ -174,7 +327,7 @@ module.exports = (router) => {
       return res.redirect(issueUrl)
     }
 
-    resolveIssue(data, issueId, {
+    resolveIssue(data, issue.id, {
       outcome,
       resolvedBy: data.currentUser?.id,
       note

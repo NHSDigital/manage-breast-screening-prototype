@@ -10,6 +10,7 @@ const {
   createIssue,
   getIssueTypes,
   getOpenIssuesFor,
+  getRaiseIssueErrors,
   ISSUE_RAISED_FROM
 } = require('../lib/utils/issues')
 const { getEpisode, getReadingCaseById } = require('../lib/utils/episodes')
@@ -184,26 +185,21 @@ module.exports = (router) => {
       recordIdField
     } = res.locals
 
-    const type = data.raiseIssue?.type
-    const description = (data.raiseIssue?.description || '').trim()
+    const answers = data.raiseIssue || {}
+    const type = answers.type
+    const description = (answers.description || '').trim()
 
-    // Type is the one thing the issue cannot do without
-    if (!issueTypes.some((issueType) => issueType.value === type)) {
-      const error = {
-        text: 'Select what the issue is',
-        name: 'raiseIssue[type]',
-        href: '#raiseIssueType'
-      }
-
-      // Inside a modal, show the error in place rather than redirecting,
+    const errors = getRaiseIssueErrors(answers, issueTypes)
+    if (errors.length) {
+      // Inside a modal, show the errors in place rather than redirecting,
       // which the modal would treat as a further step
       if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
         return res.status(422).render('issues/raise', {
-          flash: { error: [error] }
+          flash: { error: errors }
         })
       }
 
-      req.flash('error', error)
+      errors.forEach((error) => req.flash('error', error))
       return res.redirect(urlWithReferrer(raiseUrl, referrerChain))
     }
 

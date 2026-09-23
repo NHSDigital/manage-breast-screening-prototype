@@ -25,7 +25,10 @@
     {{ pageHeading | safe }}
   </h1>
 
-  {{ openIssuesCallout(participant) }}
+  {# Issues belong to a round, but here they are about the person #}
+  {{ openIssuesCallout(participant, {
+    recordName: "this participant"
+  }) }}
 
   {# For these summary cards we want to show the authoritative record, not the temp data.
   The temp data only gets saved once going through a confirmation page #}

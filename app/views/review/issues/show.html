@@ -2,6 +2,7 @@
 
    One issue: what was raised, the participant it is about with the records it
    links to, and either the form to resolve it or how it was resolved. The
+   route (routes/review.js) only serves issues in the user's BSU. The
    participants come in as `issueParticipants` so they are not taken for the
    page's own context. #}
 
@@ -34,24 +35,15 @@
     </div>
   </div>
 
-  {% if issue.description %}
-    <p>{{ issue.description }}</p>
-  {% else %}
-    <p class="nhsuk-u-secondary-text-colour">No description given</p>
-  {% endif %}
-
-  <p class="nhsuk-hint">
-    {{ issuePlace.description if issuePlace else "Raised" }} by {{ issue.raisedBy | getUsername({ identifyCurrentUser: true }) }}, {{ issue.raisedAt | formatDateTime }}<br>
-    Reference {{ issue.reference }}
-  </p>
-
   {# How it was closed leads once it has been, as that is what anyone opening
      a closed issue came for #}
   {% if issue.resolved %}
     {% call card({
-      heading: "Resolution",
-      headingLevel: "2",
-      feature: true
+      heading: {
+        text: "Resolution",
+        level: 2
+      },
+      variant: "feature"
     }) %}
       {{ appSummaryList({
         rows: [
@@ -77,14 +69,69 @@
     {% endcall %}
   {% endif %}
 
+  {# Only an open issue's description can change: a closed one is a record of
+     what was resolved #}
+  {% set descriptionActions = none %}
+  {% if not issue.resolved %}
+    {% set descriptionActions = {
+      items: [
+        {
+          href: ("/review/issues/" + issue.id + "/description") | urlWithReferrer(referrerChain),
+          text: "Change",
+          visuallyHiddenText: "description"
+        } | openInModal
+      ]
+    } %}
+  {% endif %}
+
+  {% set raisedHtml %}
+    {{ issue.raisedAt | formatDateTime }}
+    {% if issuePlace %}
+      <br>{{ issuePlace.description | asHint }}
+    {% endif %}
+  {% endset %}
+
+  {% call card({
+    heading: {
+      text: "Issue details",
+      level: 2
+    },
+    variant: "feature"
+  }) %}
+    {{ appSummaryList({
+      rows: [
+        {
+          key: { text: "Description" },
+          value: { text: issue.description or "No description given" },
+          actions: descriptionActions
+        },
+        {
+          key: { text: "Raised by" },
+          value: { text: issue.raisedBy | getUsername({ identifyCurrentUser: true }) }
+        },
+        {
+          key: { text: "Raised" },
+          value: { html: raisedHtml }
+        },
+        {
+          key: { text: "Reference" },
+          value: { text: issue.reference }
+        }
+      ],
+      lastRowBorder: false
+    }) }}
+  {% endcall %}
+
   {# A card per participant - almost always one, but an issue such as images
      filed against the wrong person can name two #}
   {% for entry in issueParticipants %}
     {% set participant = entry.participant %}
 
     {% call card({
-      heading: "Participant",
-      headingLevel: "2"
+      heading: {
+        text: "Participant",
+        level: 2
+      }
     }) %}
       {% call appSummaryList({
         lastRowBorder: false

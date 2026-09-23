@@ -1,101 +1,200 @@
 {# app/views/review/issues/index.html
 
-   The issues in the user's BSU, with open, resolved or all as tabs. #}
+   The issues in the user's BSU, with open, resolved or all as tabs. Filters
+   are query params so several can apply at once and the URL stays
+   shareable. #}
 
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = "Issues" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
+{% set bodyClasses = (bodyClasses or "") + " app-page-width--wide" %}
 
-{% set breadcrumbItems = [
-  {
-    href: "/dashboard",
-    text: "Home"
-  },
-  {
-    href: "/review",
-    text: "Review"
-  }
-] %}
-{% set hideBackLink = true %}
+{% set back = {
+  href: "/dashboard",
+  text: "Home"
+} %}
 
 {% block pageContent %}
 
   <span class="nhsuk-caption-l">{{ currentBSU.name }}</span>
   <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-  {% set viewNavItems = [] %}
-  {% for candidate in views %}
-    {% set viewNavItems = viewNavItems | push({
-      text: (viewLabels[candidate] + " " + appCount(viewCounts[candidate])) | safe,
-      href: viewUrls[candidate],
-      current: true if candidate == view
-    }) %}
-  {% endfor %}
+  {# The whole row is the live region: with JavaScript the panel counts, the
+     selected filters, the view tabs and the table all update together #}
+  <div class="nhsuk-grid-row" id="filter-results">
+    <div class="nhsuk-grid-column-one-third">
 
-  {{ appSecondaryNavigation({
-    visuallyHiddenTitle: "Which issues to show",
-    items: viewNavItems
-  }) }}
+      {{ appFilterPanel({
+        action: "/review/issues",
+        groups: groups,
+        selected: selected,
+        counts: counts,
+        search: {
+          id: "issue-search",
+          name: "q",
+          value: query,
+          label: { text: "Search by name or NHS number" }
+        },
+        hiddenFields: hiddenFields,
+        live: "#filter-results"
+      }) }}
 
-  {% if rows | length == 0 %}
-    {% if view == "open" %}
-      <p>No open issues.</p>
-    {% elseif view == "resolved" %}
-      <p>No resolved issues.</p>
-    {% else %}
-      <p>No issues.</p>
-    {% endif %}
-  {% else %}
+    </div>
+    {# Custom top margin to push column down to line up with start of search card (minus feature outdent) #}
+    <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
 
-    <table class="nhsuk-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col">Issue</th>
-          <th scope="col">Participant</th>
-          <th scope="col">Raised</th>
-          <th scope="col">Status</th>
-          <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for row in rows %}
-          {% set issueTypeLabel = row.issue.type | getIssueTypeLabel %}
-          <tr class="nhsuk-table__row">
-            <td class="nhsuk-table__cell">
-              <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">{{ issueTypeLabel }}</p>
-              {% if row.issue.description %}
-                <p class="nhsuk-u-margin-bottom-1">{{ row.issue.description | truncate(120) }}</p>
-              {% endif %}
-              <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">{{ row.issue.reference }}</p>
-            </td>
-            <td class="nhsuk-table__cell">
-              {% if row.participant %}
-                {{ row.participant | getFullNameReversed }}<br>
-                {{ ("NHS: " + (row.participant.medicalInformation.nhsNumber | formatNhsNumber)) | noWrap | asHint }}
-              {% else %}
-                {{ "Not known" | asHint }}
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ row.issue.raisedAt | formatDate | noWrap }}<br>
-              {{ ("by " + (row.issue.raisedBy | getUsername({ format: "short", identifyCurrentUser: true }))) | asHint }}
-              {% if row.place %}
-                <br>{{ row.place.description | asHint }}
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ row.status | toTag({ vocabulary: "issue" }) }}
-            </td>
-            <td class="nhsuk-table__cell">
-              <a href="{{ ('/review/issues/' + row.issue.id) | urlWithReferrer(listUrl) }}" class="app-nowrap">View {{- ((" issue: " + issueTypeLabel) | asVisuallyHiddenText) | safe }}</a>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      {% if isFiltered %}
+        <div class="app-selected-filters">
+          <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Selected filters</h2>
+          <ul class="app-selected-filters__list">
+            {% for item in selectedFilters %}
+              <li class="app-selected-filters__item">
+                <a href="{{ item.href }}" class="app-selected-filters__tag">
+                  <span class="nhsuk-u-visually-hidden">Remove this filter:</span>
+                  {{ item.label }}
+                  <span aria-hidden="true">✕</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
 
-  {% endif %}
+      {# The views split the population; their counts carry the current search
+         and filters #}
+      {% set viewNavItems = [] %}
+      {% for candidate in views %}
+        {% set viewNavItems = viewNavItems | push({
+          text: (viewLabels[candidate] + " " + appCount(viewCounts[candidate])) | safe,
+          href: viewUrls[candidate],
+          current: true if candidate == view
+        }) %}
+      {% endfor %}
+
+      {{ appSecondaryNavigation({
+        visuallyHiddenTitle: "Which issues to show",
+        items: viewNavItems
+      }) }}
+
+      {% if rows | length == 0 %}
+        {% if query and not isFiltered %}
+          <p>No issues match “{{ query }}”.</p>
+        {% elseif query %}
+          <p>No issues match “{{ query }}” and these filters.</p>
+        {% elseif isFiltered %}
+          <p>No issues match these filters.</p>
+        {% elseif view == "open" %}
+          <p>No open issues.</p>
+        {% elseif view == "resolved" %}
+          <p>No resolved issues.</p>
+        {% else %}
+          <p>No issues.</p>
+        {% endif %}
+      {% else %}
+
+        {# The count and the order sit on one line: the order is about these
+           results, not about the population the filter panel picks #}
+        <div class="app-results-bar">
+          <p class="app-results-bar__count nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">
+            Showing <b>{{ rows | length }}</b> {{ "issue" | pluralise(rows | length) }}
+          </p>
+
+          {# Its own form, so choosing an order leaves the search and filters
+             alone - they ride along as hidden fields. With JavaScript the
+             select updates the list in place; without it, the button submits #}
+          <form class="app-results-bar__sort" method="get" action="/review/issues" data-live-filters="#filter-results">
+            {% for name, value in sortHiddenFields %}
+              {% if value %}<input type="hidden" name="{{ name }}" value="{{ value }}">{% endif %}
+            {% endfor %}
+            {% for name, values in selected %}
+              {% for value in values %}
+                <input type="hidden" name="{{ name }}" value="{{ value }}">
+              {% endfor %}
+            {% endfor %}
+
+            {% set sortItems = [] %}
+            {% for option in sorts %}
+              {% set sortItems = sortItems | push({
+                value: option.value,
+                text: option.label,
+                selected: true if option.value == sort
+              }) %}
+            {% endfor %}
+
+            {{ select({
+              id: "issue-sort",
+              name: "sort",
+              label: { text: "Sort by", classes: "app-results-bar__sort-label" },
+              formGroup: { classes: "app-results-bar__sort-group" },
+              items: sortItems
+            }) }}
+
+            {# Redundant once live updating is running - hidden by CSS then #}
+            {{ button({
+              text: "Sort",
+              small: true,
+              classes: "app-results-bar__sort-button nhsuk-u-margin-bottom-0"
+            }) }}
+          </form>
+        </div>
+
+        <table class="nhsuk-table">
+          <thead class="nhsuk-table__head">
+            <tr>
+              <th scope="col">Participant</th>
+              <th scope="col">Issue</th>
+              <th scope="col">Raised</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span class="nhsuk-u-visually-hidden">Action</span></th>
+            </tr>
+          </thead>
+          <tbody class="nhsuk-table__body">
+            {% for row in rows %}
+              {% set issueTypeLabel = row.issue.type | getIssueTypeLabel %}
+              <tr class="nhsuk-table__row">
+                <td class="nhsuk-table__cell">
+                  {# The name isn't a link: the row's link to the issue sits in
+                     the action column, and the issue page links on to the
+                     participant #}
+                  {% if row.participant %}
+                    <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+                      {{ row.participant | getFullNameReversed }}
+                    </p>
+                    <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+                      NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+                    </p>
+                  {% else %}
+                    {{ "Not known" | asHint }}
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  <p class="nhsuk-u-margin-bottom-1">{{ issueTypeLabel }}</p>
+                  {% if row.issue.description %}
+                    <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">{{ row.issue.description | truncate(120) }}</p>
+                  {% endif %}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {{ row.issue.raisedAt | formatDate | noWrap }}<br>
+                  {{ ("by " + (row.issue.raisedBy | getUsername({ format: "short", identifyCurrentUser: true }))) | asHint }}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {{ row.status | toTag({ vocabulary: "issue" }) }}
+                </td>
+                <td class="nhsuk-table__cell">
+                  {# One participant can have several issues, so the type keeps each link distinct #}
+                  {% set linkContext = (" for " + (row.participant | getShortName) + ": " if row.participant else ": ") + issueTypeLabel %}
+                  <a href="{{ ('/review/issues/' + row.issue.id) | urlWithReferrer(listUrl) }}" class="app-nowrap">View issue {{- (linkContext | asVisuallyHiddenText) | safe }}</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% endif %}
+
+    </div>
+  </div>
 
 {% endblock %}

@@ -71,6 +71,7 @@ const {
   getIssue,
   getIssueTypes,
   getOpenIssuePeriods,
+  getRaiseIssueErrors,
   resolveIssue
 } = require('../lib/utils/issues')
 const generateId = require('../lib/utils/id-generator')
@@ -1575,25 +1576,19 @@ module.exports = (router) => {
       const type = answers.type
       const description = (answers.description || '').trim()
 
-      // Type is the one thing the issue cannot do without
-      if (!issueTypes.some((issueType) => issueType.value === type)) {
-        const error = {
-          text: 'Select what the issue is',
-          name: 'raiseIssue[type]',
-          href: '#raiseIssueType'
-        }
-
-        // Inside a modal, show the error in place rather than redirecting,
+      const errors = getRaiseIssueErrors(answers, issueTypes)
+      if (errors.length) {
+        // Inside a modal, show the errors in place rather than redirecting,
         // which the modal would treat as a further step
         if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
           return res.status(422).render('reading/workflow/raise-issue', {
             answers,
             issueTypes,
-            flash: { error: [error] }
+            flash: { error: errors }
           })
         }
 
-        req.flash('error', error)
+        errors.forEach((error) => req.flash('error', error))
         return res.redirect(
           `/reading/session/${sessionId}/appointments/${appointmentId}/raise-issue`
         )

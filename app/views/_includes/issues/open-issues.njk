@@ -10,7 +10,12 @@
 
    openIssuesCallout(record, options)
    - record - participant, episode, appointment or reading case
+   - options.recordName - names the record in the heading, such as
+     "this participant", where the page is not about a single episode
    - options.classes - extra classes for the callout
+
+   The callout is capped at three-quarters of the page, the width of the
+   content on record pages, so it lines up however wide its container is.
 
    openIssueSummary(issue, options) - one issue, for pages that show open
    issues outside the callout
@@ -46,22 +51,25 @@
 
   {% if openIssues | length %}
     {% set openIssuesHtml %}
-      <div class="app-u-max-width-three-quarters">
-        {% for issue in openIssues %}
-          {{ openIssueSummary(issue, {
-            classes: "nhsuk-u-margin-bottom-0" if loop.last else "nhsuk-u-margin-bottom-5"
-          }) }}
-        {% endfor %}
-      </div>
+      {% for issue in openIssues %}
+        {{ openIssueSummary(issue, {
+          classes: "nhsuk-u-margin-bottom-0" if loop.last else "nhsuk-u-margin-bottom-5"
+        }) }}
+      {% endfor %}
     {% endset %}
+
+    {% set headingText = "Open " + ("issue" | pluralise(openIssues | length)) %}
+    {% if options.recordName %}
+      {% set headingText = headingText + " for " + options.recordName %}
+    {% endif %}
 
     {{ warningCallout({
       heading: {
-        text: "Open issue" if openIssues | length == 1 else "Open issues",
+        text: headingText,
         level: 2
       },
       html: openIssuesHtml,
-      classes: options.classes
+      classes: ("app-u-max-width-three-quarters " + (options.classes or "")) | trim
     }) }}
   {% endif %}
 {% endmacro %}

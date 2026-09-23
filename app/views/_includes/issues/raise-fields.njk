@@ -33,7 +33,7 @@
   name: "raiseIssue[description]",
   id: "raiseIssueDescription",
   label: {
-    text: "Describe the issue (optional)",
+    text: "Describe the issue",
     size: "s"
   },
   hint: {
@@ -41,7 +41,7 @@
   },
   rows: 4,
   value: answers.description
-}) }}
+} | populateErrors) }}
 
 {{ appHiddenInput({
   name: "raiseIssue[raisedFrom]",
