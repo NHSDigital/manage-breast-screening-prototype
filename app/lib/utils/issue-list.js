@@ -4,11 +4,9 @@
 // the Review landing page and nav item.
 //
 // The list layer over issues.js, as participant-list.js is over participants.js:
-// it builds a row per issue carrying what the index and its filters need, then
-// hands it to the generic filter helpers in filter-list.js.
+// it builds a row per issue carrying what the index needs.
 
 const {
-  ISSUE_TYPES,
   ISSUE_LINK_TYPES,
   getIssueStatus,
   isIssueOpen
@@ -33,22 +31,16 @@ const DEFAULT_ISSUE_VIEW = 'open'
 // appointment's images links to the appointment but no case.
 const ISSUE_PLACES = [
   {
-    value: 'reading',
-    label: 'Image reading',
-    tagLabel: 'Raised in image reading',
-    linkType: 'readingCase'
+    linkType: 'readingCase',
+    description: 'Raised in image reading'
   },
   {
-    value: 'appointment',
-    label: 'Appointment',
-    tagLabel: 'Raised in an appointment',
-    linkType: 'appointment'
+    linkType: 'appointment',
+    description: 'Raised at an appointment'
   },
   {
-    value: 'episode',
-    label: 'Episode',
-    tagLabel: 'Raised on an episode',
-    linkType: 'episode'
+    linkType: 'episode',
+    description: 'Raised on an episode'
   }
 ]
 
@@ -58,7 +50,7 @@ const ISSUE_PLACES = [
  * @param {object} issue - Issue
  * @returns {object | null} An ISSUE_PLACES entry, or null if it links to none of them
  * @example
- * getIssuePlace(issue).label // 'Image reading'
+ * getIssuePlace(issue).description // 'Raised in image reading'
  */
 const getIssuePlace = (issue) => {
   const linkTypes = (issue?.links || []).map((link) => link.type)
@@ -70,8 +62,7 @@ const getIssuePlace = (issue) => {
 }
 
 /**
- * Build one row for an issue - everything the index, its views and its
- * filters need.
+ * Build one row for an issue - everything the index and its views need.
  *
  * @param {object} data - Session data
  * @param {object} issue - Issue
@@ -89,32 +80,6 @@ const buildRow = (data, issue) => {
     participant: getParticipant(data, participantLink?.id)
   }
 }
-
-/**
- * The filters offered on the issue index, in the order they appear in the
- * filter column. See filter-list.js for the shape.
- */
-const ISSUE_FILTER_GROUPS = [
-  {
-    name: 'type',
-    legend: 'Type',
-    options: ISSUE_TYPES.map((issueType) => ({
-      value: issueType.value,
-      label: issueType.label
-    })),
-    matches: (row, values) => values.includes(row.issue.type)
-  },
-  {
-    name: 'place',
-    legend: 'Raised in',
-    options: ISSUE_PLACES.map(({ value, label, tagLabel }) => ({
-      value,
-      label,
-      tagLabel
-    })),
-    matches: (row, values) => values.includes(row.place?.value)
-  }
-]
 
 /**
  * Whether an issue belongs to a BSU. With no BSU given, every issue does.
@@ -143,10 +108,6 @@ const rowInView = (row, view) => {
 
 /**
  * A row per issue in a BSU and view, newest raised first.
- *
- * This is the population the faceted counts are drawn from - it stops short of
- * the filter groups so that ticking one option doesn't shrink the counts on
- * the others.
  *
  * @param {object} data - Session data
  * @param {object} [filters] - Filters
@@ -184,7 +145,6 @@ module.exports = {
   ISSUE_VIEW_LABELS,
   DEFAULT_ISSUE_VIEW,
   ISSUE_PLACES,
-  ISSUE_FILTER_GROUPS,
   getIssuePlace,
   getIssueRows,
   getOpenIssueCount

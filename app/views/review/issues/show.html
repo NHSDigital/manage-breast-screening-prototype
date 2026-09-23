@@ -1,32 +1,49 @@
 {# app/views/review/issues/show.html
 
-   One issue: what was raised, the records it is about, and either the form
-   to resolve it or how it was resolved. The linked records come in as
-   `linked` so they are not taken for the page's own context. #}
+   One issue: what was raised, the participant it is about with the records it
+   links to, and either the form to resolve it or how it was resolved. The
+   participants come in as `issueParticipants` so they are not taken for the
+   page's own context. #}
 
 {% extends 'layout-app.html' %}
 
 {% set pageHeading = issue.type | getIssueTypeLabel %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
+{% set breadcrumbItems = getCaseBreadcrumb(issueParticipants[0].participant if issueParticipants | length) %}
+
+{# Returns to the tab and filters the list was on, but only when the user came from the list #}
+{% set listReturnUrl = "/review/issues" | getReturnUrl(referrerChain) %}
 {% set back = {
-  href: "/review/issues" | getReturnUrl(referrerChain),
-  text: "Back"
+  href: listReturnUrl if listReturnUrl.startsWith("/review/issues") else "/review/issues",
+  text: "All issues"
 } %}
 
 {% block pageContent %}
 
   {% set issueStatus = issue | getIssueStatus %}
+  {% set linkedReferrerChain = referrerChain | appendReferrer(currentUrl) %}
 
   <div class="app-header-with-status">
     <h1 class="nhsuk-heading-l">
-      <span class="nhsuk-caption-l">Issue {{ issue.reference }}</span>
+      <span class="nhsuk-caption-l">Issue</span>
       {{ pageHeading }}
     </h1>
     <div class="app-header-with-status__status-tag">
       {{ issueStatus | toTag({ vocabulary: "issue" }) }}
     </div>
   </div>
+
+  {% if issue.description %}
+    <p>{{ issue.description }}</p>
+  {% else %}
+    <p class="nhsuk-u-secondary-text-colour">No description given</p>
+  {% endif %}
+
+  <p class="nhsuk-hint">
+    {{ issuePlace.description if issuePlace else "Raised" }} by {{ issue.raisedBy | getUsername({ identifyCurrentUser: true }) }}, {{ issue.raisedAt | formatDateTime }}<br>
+    Reference {{ issue.reference }}
+  </p>
 
   {# How it was closed leads once it has been, as that is what anyone opening
      a closed issue came for #}
@@ -60,96 +77,107 @@
     {% endcall %}
   {% endif %}
 
-  {% call card({
-    heading: "Details",
-    headingLevel: "2"
-  }) %}
-    {{ appSummaryList({
-      rows: [
-        {
-          key: { text: "Reference" },
-          value: { text: issue.reference }
-        },
-        {
-          key: { text: "Description" },
-          value: { text: issue.description or "No description given" }
-        },
-        {
-          key: { text: "Raised in" },
-          value: { text: issuePlace.label if issuePlace else "Not known" }
-        },
-        {
-          key: { text: "Raised by" },
-          value: { text: issue.raisedBy | getUsername({ identifyCurrentUser: true }) }
-        },
-        {
-          key: { text: "Raised" },
-          value: { text: issue.raisedAt | formatDateTime }
-        }
-      ],
-      lastRowBorder: false
-    }) }}
-  {% endcall %}
+  {# A card per participant - almost always one, but an issue such as images
+     filed against the wrong person can name two #}
+  {% for entry in issueParticipants %}
+    {% set participant = entry.participant %}
 
-  {# One row per record the issue links to, most specific last so the list
-     reads from the person downwards #}
-  {% set linkedRows = [] %}
-  {% set linkedReferrerChain = referrerChain | appendReferrer(currentUrl) %}
-
-  {% if linked.participant %}
-    {% set participantHtml %}
-      <a href="{{ getParticipantUrl(linked.participant) | urlWithReferrer(linkedReferrerChain) }}">{{ linked.participant | getFullNameReversed }}</a><br>
-      {{ ("NHS number " + (linked.participant.medicalInformation.nhsNumber | formatNhsNumber)) | asHint }}
-    {% endset %}
-    {% set linkedRows = linkedRows | push({
-      key: { text: "Participant" },
-      value: { html: participantHtml }
+    {% call card({
+      heading: "Participant",
+      headingLevel: "2"
     }) %}
-  {% endif %}
+      {% call appSummaryList({
+        lastRowBorder: false
+      }) %}
+        {{ appSummaryListRow({
+          key: { text: "Name" },
+          value: { text: participant | getFullName },
+          actions: {
+            items: [
+              {
+                href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
+                text: "View participant"
+              }
+            ]
+          }
+        }) }}
+        {% include "_includes/summary-lists/rows/nhs-number.njk" %}
+        {% include "_includes/summary-lists/rows/sx-number.njk" %}
+        {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
 
-  {% if linked.episode %}
-    {% set episodeHtml %}
-      <a href="{{ getEpisodeUrl(linked.episode) | urlWithReferrer(linkedReferrerChain) }}">{{ linked.episode | getEpisodeLabel }}</a>
-    {% endset %}
-    {% set linkedRows = linkedRows | push({
-      key: { text: "Episode" },
-      value: { html: episodeHtml }
-    }) %}
-  {% endif %}
+        {% if entry.episode %}
+          {{ appSummaryListRow({
+            key: { text: "Episode" },
+            value: { text: entry.episode | getEpisodeLabel },
+            actions: {
+              items: [
+                {
+                  href: getEpisodeUrl(entry.episode) | urlWithReferrer(linkedReferrerChain),
+                  text: "View episode"
+                }
+              ]
+            }
+          }) }}
+        {% endif %}
 
-  {% if linked.appointment %}
-    {% set appointmentHtml %}
-      <a href="{{ getAppointmentUrl(linked.appointment) | urlWithReferrer(linkedReferrerChain) }}">{{ linked.appointment.timing.startTime | formatDate }}</a>
-      {% if linked.clinic %}
-        <br>{{ data | getClinicLocationName(linked.clinic) | asHint }}
+        {% if entry.appointment %}
+          {% set appointmentHtml %}
+            {{ entry.appointment.timing.startTime | formatDate }}
+            {% if entry.clinic %}
+              <br>{{ data | getClinicLocationName(entry.clinic) | asHint }}
+            {% endif %}
+          {% endset %}
+          {{ appSummaryListRow({
+            key: { text: "Appointment" },
+            value: { html: appointmentHtml },
+            actions: {
+              items: [
+                {
+                  href: getAppointmentUrl(entry.appointment) | urlWithReferrer(linkedReferrerChain),
+                  text: "View appointment"
+                }
+              ]
+            }
+          }) }}
+        {% endif %}
+
+        {% if entry.readingCase %}
+          {{ appSummaryListRow({
+            key: { text: "Reading case" },
+            value: { text: "Opened " + (entry.readingCase.openedDate | formatDate) },
+            actions: {
+              items: [
+                {
+                  href: getReadingCaseUrl(entry.readingCase) | urlWithReferrer(linkedReferrerChain),
+                  text: "View reading case"
+                }
+              ]
+            }
+          }) }}
+        {% endif %}
+      {% endcall %}
+
+      {# Worth knowing before resolving this one: the other issue may be the
+         same problem, or may keep the case held after this one closes #}
+      {% if not issue.resolved and entry.otherOpenIssues | length %}
+        {% set otherIssuesHtml %}
+          <p>{{ participant | getFullName }} has {{ "another open issue" if entry.otherOpenIssues | length == 1 else "other open issues" }}:</p>
+          <ul class="nhsuk-list nhsuk-u-margin-bottom-0">
+            {% for otherIssue in entry.otherOpenIssues %}
+              <li>
+                <a href="{{ ('/review/issues/' + otherIssue.id) | urlWithReferrer(referrerChain) }}">{{ otherIssue.type | getIssueTypeLabel }}</a>
+                {{ ("raised " + (otherIssue.raisedAt | formatDate)) | asHint }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endset %}
+        {{ insetText({
+          html: otherIssuesHtml,
+          classes: "nhsuk-u-margin-bottom-0"
+        }) }}
       {% endif %}
-    {% endset %}
-    {% set linkedRows = linkedRows | push({
-      key: { text: "Appointment" },
-      value: { html: appointmentHtml }
-    }) %}
-  {% endif %}
-
-  {% if linked.readingCase %}
-    {% set readingCaseHtml %}
-      <a href="{{ getReadingCaseUrl(linked.readingCase) | urlWithReferrer(linkedReferrerChain) }}">Opened {{ linked.readingCase.openedDate | formatDate }}</a>
-    {% endset %}
-    {% set linkedRows = linkedRows | push({
-      key: { text: "Reading case" },
-      value: { html: readingCaseHtml }
-    }) %}
-  {% endif %}
-
-  {% call card({
-    heading: "Linked records",
-    headingLevel: "2"
-  }) %}
-    {% if linkedRows | length %}
-      {{ appSummaryList({ rows: linkedRows, lastRowBorder: false }) }}
-    {% else %}
-      <p>No linked records found.</p>
-    {% endif %}
-  {% endcall %}
+    {% endcall %}
+  {% endfor %}
 
   {% if not issue.resolved %}
     <form method="post" action="{{ ('/review/issues/' + issue.id + '/resolve') | urlWithReferrer(referrerChain) }}" novalidate>

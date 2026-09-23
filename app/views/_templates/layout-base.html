@@ -38,10 +38,10 @@
   {% endif %}
 
   {# Review counts what needs attention in the user's BSU - only open issues
-     so far #}
+     so far. No space before the count: the link underline would run under it #}
   {% set reviewCount = data | getOpenIssueCount(currentUser.breastScreeningUnit) %}
   {% set reviewNavHtml %}
-    Review{% if reviewCount > 0 %} {{ appCount(reviewCount) }}{% endif %}
+    Review{% if reviewCount > 0 %}{{ appCount(reviewCount, { classes: "app-count--reverse" }) }}{% endif %}
   {% endset %}
 
   {% set navItems = [

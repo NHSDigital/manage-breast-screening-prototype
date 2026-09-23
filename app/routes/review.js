@@ -6,6 +6,7 @@
 
 const {
   getIssue,
+  getOpenIssuesFor,
   isIssueOpen,
   resolveIssue,
   ISSUE_OUTCOMES
@@ -14,23 +15,69 @@ const {
   ISSUE_VIEWS,
   ISSUE_VIEW_LABELS,
   DEFAULT_ISSUE_VIEW,
-  ISSUE_FILTER_GROUPS,
   getIssuePlace,
   getIssueRows
 } = require('../lib/utils/issue-list')
-const {
-  parseFilterQuery,
-  applyFilterGroups,
-  getFilterCounts,
-  describeSelectedFilters,
-  buildFilterUrl,
-  hasSelectedFilters
-} = require('../lib/utils/filter-list')
 const { getParticipant } = require('../lib/utils/participants')
 const { getEpisode, getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
 const { urlWithReferrer } = require('../lib/utils/referrers')
+
+// The index URL for a view; the default view stays out of the URL
+const getIssueViewUrl = (view) =>
+  view === DEFAULT_ISSUE_VIEW ? '/review/issues' : `/review/issues?view=${view}`
+
+/**
+ * The participants an issue is about, each with the records the issue links
+ * to that belong to them. Usually one participant; the model allows more, for
+ * example images filed against the wrong person.
+ *
+ * @param {object} data - Session data
+ * @param {object} issue - Issue
+ * @returns {Array<object>} One entry per participant: participant, episode,
+ *   appointment, clinic, readingCase and otherOpenIssues
+ */
+const getIssueParticipants = (data, issue) => {
+  const links = issue.links || []
+  const idsOfType = (type) =>
+    links.filter((link) => link.type === type).map((link) => link.id)
+
+  const episodes = idsOfType('episode')
+    .map((id) => getEpisode(data, id))
+    .filter(Boolean)
+  const appointments = idsOfType('appointment')
+    .map((id) => getAppointment(data, id))
+    .filter(Boolean)
+  const readingCases = idsOfType('readingCase')
+    .map((id) => getReadingCaseById(data, id))
+    .filter((found) => found?.readingCase)
+
+  return idsOfType('participant')
+    .map((id) => getParticipant(data, id))
+    .filter(Boolean)
+    .map((participant) => {
+      const appointment =
+        appointments.find((record) => record.participantId === participant.id) ||
+        null
+
+      return {
+        participant,
+        episode:
+          episodes.find((record) => record.participantId === participant.id) ||
+          null,
+        appointment,
+        clinic: appointment ? getClinic(data, appointment.clinicId) : null,
+        readingCase:
+          readingCases.find(
+            (found) => found.episode?.participantId === participant.id
+          )?.readingCase || null,
+        otherOpenIssues: getOpenIssuesFor(data, participant).filter(
+          (candidate) => candidate.id !== issue.id
+        )
+      }
+    })
+}
 
 module.exports = (router) => {
   router.use('/review', (req, res, next) => {
@@ -39,8 +86,7 @@ module.exports = (router) => {
   })
 
   // The issue index. Open, resolved or all is a view - a tab - so open can be
-  // the default without a filter that can never be unticked; type and where
-  // the issue was raised are filters.
+  // the default without a filter that can never be unticked.
   router.get('/review/issues', (req, res) => {
     const data = req.session.data
     const breastScreeningUnitId = data.currentUser?.breastScreeningUnit
@@ -49,61 +95,30 @@ module.exports = (router) => {
       ? req.query.view
       : DEFAULT_ISSUE_VIEW
 
-    const groups = ISSUE_FILTER_GROUPS
-    const selected = parseFilterQuery(req.query, groups)
-
-    // Everything in the view, before the filter groups - what the faceted
-    // counts are drawn from
-    const baseRows = getIssueRows(data, { breastScreeningUnitId, view })
-    const rows = applyFilterGroups(baseRows, groups, selected)
-
-    // The default view stays out of the URL
-    const carriedParams = { view: view === DEFAULT_ISSUE_VIEW ? '' : view }
-
     const viewCounts = Object.fromEntries(
       ISSUE_VIEWS.map((candidate) => [
         candidate,
-        applyFilterGroups(
-          getIssueRows(data, { breastScreeningUnitId, view: candidate }),
-          groups,
-          selected
-        ).length
+        getIssueRows(data, { breastScreeningUnitId, view: candidate }).length
       ])
     )
 
     const viewUrls = Object.fromEntries(
-      ISSUE_VIEWS.map((candidate) => [
-        candidate,
-        buildFilterUrl('/review/issues', selected, {
-          view: candidate === DEFAULT_ISSUE_VIEW ? '' : candidate
-        })
-      ])
+      ISSUE_VIEWS.map((candidate) => [candidate, getIssueViewUrl(candidate)])
     )
 
     res.render('review/issues/index', {
-      rows,
+      rows: getIssueRows(data, { breastScreeningUnitId, view }),
       view,
       views: ISSUE_VIEWS,
       viewLabels: ISSUE_VIEW_LABELS,
       viewCounts,
       viewUrls,
-      groups,
-      selected,
-      counts: getFilterCounts(baseRows, groups, selected),
-      selectedFilters: describeSelectedFilters(
-        groups,
-        selected,
-        '/review/issues',
-        carriedParams
-      ),
-      isFiltered: hasSelectedFilters(selected),
       // This list as it stands, so an issue opened from it can come back to it
-      listUrl: buildFilterUrl('/review/issues', selected, carriedParams),
-      hiddenFields: carriedParams
+      listUrl: viewUrls[view]
     })
   })
 
-  // One issue, with each record it links to
+  // One issue, with the participant it is about and their linked records
   router.get('/review/issues/:issueId', (req, res) => {
     const data = req.session.data
     const issue = getIssue(data, req.params.issueId)
@@ -120,29 +135,14 @@ module.exports = (router) => {
     }
     const resolutionAnswers = data.issueResolution || {}
 
-    const linkIds = Object.fromEntries(
-      (issue.links || []).map((link) => [link.type, link.id])
-    )
-
-    const readingCase = linkIds.readingCase
-      ? getReadingCaseById(data, linkIds.readingCase)?.readingCase || null
-      : null
-    const appointment = getAppointment(data, linkIds.appointment)
-
-    // Grouped under `linked` rather than set as `appointment`, `participant`
+    // Named issueParticipants rather than set as `participant`, `appointment`
     // and so on, which the layouts read as the page's own context (an
     // appointment in progress swaps the header nav for "Exit appointment")
     res.render('review/issues/show', {
       issue,
       resolutionAnswers,
       issuePlace: getIssuePlace(issue),
-      linked: {
-        participant: getParticipant(data, linkIds.participant),
-        episode: getEpisode(data, linkIds.episode),
-        appointment,
-        clinic: appointment ? getClinic(data, appointment.clinicId) : null,
-        readingCase
-      }
+      issueParticipants: getIssueParticipants(data, issue)
     })
   })
 
@@ -174,7 +174,7 @@ module.exports = (router) => {
       return res.redirect(issueUrl)
     }
 
-    const issue = resolveIssue(data, issueId, {
+    resolveIssue(data, issueId, {
       outcome,
       resolvedBy: data.currentUser?.id,
       note
@@ -187,8 +187,8 @@ module.exports = (router) => {
     req.flash(
       'success',
       outcome === 'raised_in_error'
-        ? `Issue ${issue.reference} closed as raised in error`
-        : `Issue ${issue.reference} resolved`
+        ? 'Issue closed as raised in error'
+        : 'Issue resolved'
     )
 
     res.redirect(issueUrl)

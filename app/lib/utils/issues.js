@@ -488,6 +488,32 @@ const getIssueTypeLabel = (type) =>
  */
 const getIssueStatus = (issue) => issue?.resolved?.outcome || 'open'
 
+// Episode stages where an open issue holds image reading up: images are being
+// taken and will go to reading, or are waiting to be read
+const READING_HELD_STAGES = ['mammograms', 'reading']
+
+/**
+ * Whether an open issue is holding up image reading at its episode's stage.
+ *
+ * Pages use it to mention the hold only where it matters. Every open issue
+ * blocks reading, but that is only news while the issue's episode is having
+ * images taken or waiting for reading. Before screening or once reading has
+ * concluded, there is nothing to hold.
+ *
+ * @param {object} data - Session data
+ * @param {object} issue - Issue
+ * @returns {boolean} True if the issue is open and its episode is at mammograms or reading
+ * @example
+ * {% if data | isIssueHoldingReading(issue) %}
+ */
+const isIssueHoldingReading = (data, issue) => {
+  if (!isIssueOpen(issue)) return false
+
+  const episodeLink = (issue.links || []).find((link) => link.type === 'episode')
+  const episode = getEpisode(data, episodeLink?.id)
+  return READING_HELD_STAGES.includes(episode?.stage)
+}
+
 module.exports = {
   ISSUE_TYPES,
   ISSUE_RAISED_FROM,
@@ -506,5 +532,6 @@ module.exports = {
   resolveIssue,
   getIssueTypes,
   getIssueTypeLabel,
-  getIssueStatus
+  getIssueStatus,
+  isIssueHoldingReading
 }

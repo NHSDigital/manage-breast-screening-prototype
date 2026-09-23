@@ -44,22 +44,23 @@
           actions: {
             items: [{
               href: "./withdraw-issue/" + issue.id,
-              text: "Withdraw issue",
-              visuallyHiddenText: issue.reference
+              text: "Withdraw issue"
             }]
           } if canWithdraw
         }) }}
 
-        {% set issueHtml %}
-          <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}">{{ issue.reference }}</a><br>
-          {{ issue.type | getIssueTypeLabel }}
-        {% endset %}
         {{ appSummaryListRow({
           key: {
             text: "Issue"
           },
           value: {
-            html: issueHtml
+            text: issue.type | getIssueTypeLabel
+          },
+          actions: {
+            items: [{
+              href: ("/review/issues/" + issue.id) | urlWithReferrer(currentUrl),
+              text: "View issue"
+            }]
           }
         }) }}
 

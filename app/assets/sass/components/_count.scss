@@ -10,3 +10,10 @@
   text-align: center;
   @include nhsuk-font(16);
 }
+
+// On a blue background, such as the header navigation
+.app-count--reverse {
+  background-color: nhsuk-colour("dark-blue");
+  color: nhsuk-colour("white");
+  margin-left: nhsuk-spacing(1);
+}

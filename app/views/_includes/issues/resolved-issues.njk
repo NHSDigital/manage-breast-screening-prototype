@@ -1,7 +1,7 @@
 {# app/views/_includes/issues/resolved-issues.njk
 
    A record's closed issues as history: a card with a row per issue, newest
-   first, linked to its issue page. Shows nothing when there are none. Open
+   first, each with a link to its issue page. Shows nothing when there are none. Open
    issues are shown by open-issues.njk instead.
 
    Import with context - it reads issues from data, and currentUrl for the
@@ -31,14 +31,17 @@
             <th scope="col">Issue</th>
             <th scope="col">Raised</th>
             <th scope="col">Closed</th>
+            <th scope="col"><span class="nhsuk-u-visually-hidden">Actions</span></th>
           </tr>
         </thead>
         <tbody class="nhsuk-table__body">
           {% for issue in resolvedIssues %}
             <tr class="nhsuk-table__row">
               <td class="nhsuk-table__cell">
-                <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}" class="nhsuk-link--no-visited-state">{{ issue.reference }}</a><br>
                 {{ issue.type | getIssueTypeLabel }}
+                {%- if issue.description %}<br>
+                  {{ issue.description | asHint }}
+                {%- endif %}
               </td>
               <td class="nhsuk-table__cell">
                 {{ issue.raisedAt | formatDate | noWrap }}
@@ -46,6 +49,9 @@
               <td class="nhsuk-table__cell">
                 {{ issue.resolved.resolvedAt | formatDate | noWrap }}<br>
                 {{ issue | getIssueStatus | toTag({ vocabulary: "issue", classes: "nhsuk-u-margin-top-1" }) }}
+              </td>
+              <td class="nhsuk-table__cell app-nowrap">
+                <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}" class="nhsuk-link--no-visited-state">View {{- ((" issue: " + (issue.type | getIssueTypeLabel)) | asVisuallyHiddenText) | safe }}</a>
               </td>
             </tr>
           {% endfor %}

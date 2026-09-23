@@ -214,6 +214,11 @@
     text: "Continue"
   }) }}
 
-  {{ raiseIssueLink("appointment", { text: "Report a problem with these images" }) }}
+  {# The workflow side navigation has its own raise link #}
+  {% if not isAppointmentWorkflow %}
+    {{ raiseIssueLink("appointment", {
+      text: "Report a problem with these images"
+    }) }}
+  {% endif %}
 
 {% endblock %}

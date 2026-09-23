@@ -651,7 +651,7 @@ An open issue on a case's episode holds the case out of reading and arbitration 
 ### While the issue is open
 
 - **Reading and arbitration**: `canUserReadAppointment`, session top-up and `filterAppointmentsByNeedsArbitration` skip the case. In a session it counts towards the target (`openIssueCount` in `getSessionReadingProgress`) and the overview row shows the `has_issue` tag
-- **Case list**: the case keeps its state and stage, and shows under the "Blocked" filter as "Has issue", alongside awaiting priors
+- **Case list**: the case keeps its state and stage, and shows under the "Issues and priors" filter as "Has an open issue", alongside awaiting priors
 - **Finalisation**: auto-finalisation is paused. The window resumes after resolution rather than jumping: time held by an open issue does not count, so a read with 55 minutes left when the issue was raised has 55 minutes once it is resolved. Manual finalisation is blocked and the finalise actions are hidden, because concluding the case would close the episode
 - **Pages**: the reading case page, its priors tab and every reading workflow page show the open-issues callout. The reading dashboard shows a count of held cases linking to `/review/issues`
 

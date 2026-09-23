@@ -73,21 +73,26 @@ const getReadingCaseUrl = (readingCaseOrId) => {
  *
  * The record goes in the path so the form always knows what it is about. The
  * journey goes in the query string, where opening the form from a link starts
- * it afresh.
+ * it afresh. A journey that already knows what is wrong, such as an image
+ * capture failure, can pass the type so the form opens with it chosen.
  *
  * @param {object} records - Whatever the page has loaded
  * @param {object} [records.readingCase] - Reading case
  * @param {object} [records.appointment] - Appointment
  * @param {object} [records.episode] - Episode
  * @param {string} raisedFrom - Journey raised from, from ISSUE_RAISED_FROM in issues.js
+ * @param {string} [type] - Issue type to preselect, from ISSUE_TYPES in issues.js
  * @returns {string | null} Raise form URL, or null if no record was given
  * @example
  * getRaiseIssueUrl({ readingCase, episode }, 'reading_case')
  * // '/issues/raise/reading-case/ruj64jdd?raiseIssue[raisedFrom]=reading_case'
+ * getRaiseIssueUrl({ appointment }, 'appointment', 'missing_images')
+ * // '/issues/raise/appointment/a1b2c3?raiseIssue[raisedFrom]=appointment&raiseIssue[type]=missing_images'
  */
 const getRaiseIssueUrl = (
   { readingCase, appointment, episode } = {},
-  raisedFrom
+  raisedFrom,
+  type
 ) => {
   const [recordType, record] = readingCase
     ? ['reading-case', readingCase]
@@ -97,7 +102,8 @@ const getRaiseIssueUrl = (
 
   if (!record?.id) return null
 
-  return `/issues/raise/${recordType}/${record.id}?raiseIssue[raisedFrom]=${raisedFrom}`
+  const typeParam = type ? `&raiseIssue[type]=${type}` : ''
+  return `/issues/raise/${recordType}/${record.id}?raiseIssue[raisedFrom]=${raisedFrom}${typeParam}`
 }
 
 module.exports = {

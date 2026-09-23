@@ -33,14 +33,14 @@ The code is in [app/lib/utils/issues.js](../app/lib/utils/issues.js) (the model 
 
 `ISSUE_TYPES` lists each type with a label, a group (images, record or other) and the journeys that offer it. `getIssueTypes(raisedFrom)` returns what the raise form shows, in order: image types first in reading, on a reading case and at an appointment; record types first on an episode; "Something else" always last.
 
-`raisedFrom` is the journey the issue was raised in. It chooses the types and wording of the form, and `reading` marks an issue raised inside a reading session. Where an issue sits on the index ("Raised in") comes from its most specific link instead (`getIssuePlace`).
+`raisedFrom` is the journey the issue was raised in. It chooses the types and wording of the form, and `reading` marks an issue raised inside a reading session. Where an issue was raised ("Raised in image reading" and so on, on the index rows and issue page) comes from its most specific link instead (`getIssuePlace`).
 
 ## What an open issue does
 
 Every open issue blocks, with no per-type choice yet. While the episode has an open issue:
 
 - its case is out of reading and arbitration sessions and queues (`canUserReadAppointment`, session top-up, `filterAppointmentsByNeedsArbitration`)
-- the case shows as blocked, alongside awaiting priors, in the case list's "Blocked" filter and the backlog counts
+- the case shows as blocked, alongside awaiting priors, in the case list's "Issues and priors" filter ("Has an open issue") and the backlog counts
 - auto-finalisation is paused. The finalisation window resumes after resolution rather than jumping: time held by an open issue does not count, so a read with 55 minutes left when the issue was raised still has 55 minutes once it is resolved
 - the case cannot be finalised by hand, and the finalise actions are hidden, because concluding the case would close the episode
 
@@ -48,8 +48,10 @@ The appointment still completes, the reading case still opens and the episode st
 
 ## Where issues are raised
 
-- **Reading workflow**: "Raise an issue" on the opinion and arbitration outcome pages opens `reading/workflow/raise-issue.html`. It is the reader's outcome for the case: see [image-reading.md](image-reading.md#issues-in-reading).
-- **Everywhere else**: the `raiseIssueLink(raisedFrom, options)` macro in `_includes/issues/raise-link.njk` links to `/issues/raise/:recordType/:recordId`, raised on the most specific record the page has loaded (reading case, then appointment, then episode). The form opens in a modal where modals are on, posts to `/answer` and returns the user to where they came from with a success banner linking to the issue. It is on the reading case page and its priors tab, the episode page, the appointment overview and, as "Report a problem with these images", the image capture pages and images tab.
+- **Reading workflow**: "Raise an issue" on the opinion and arbitration outcome pages opens `reading/workflow/raise-issue.html`. It is the reader's outcome for the case: see [image-reading.md](image-reading.md#issues-in-reading). The next case shows "Issue raised for" the participant, with a "View issue" link.
+- **Everywhere else**: the `raiseIssueLink(raisedFrom, options)` macro in `_includes/issues/raise-link.njk` links to `/issues/raise/:recordType/:recordId`, raised on the most specific record the page has loaded (reading case, then appointment, then episode). The form opens in a modal where modals are on, posts to `/answer` and returns the user to where they came from with a success banner, "Issue raised for" the participant, linking to the issue. It is on the reading case page and its priors tab, the episode page, the appointment overview and, as "Report a problem with these images", the image capture pages and images tab.
+- **Already an open issue**: if the episode already has an open issue, the generic form first shows `issues/raise-existing.html`, listing the open issues and asking whether this one is about something else. Yes goes on to the form; no goes to the existing issue, or back to where the user came from if there are several. The answer is `data.raiseIssue.aboutSomethingElse`, so a fresh link asks again. The reading workflow does not ask, since a held case cannot be read there.
+- **Preselected type**: a link that already knows what is wrong can choose the type, with `getRaiseIssueUrl(records, raisedFrom, type)` or `raiseIssueLink(raisedFrom, { type })`, which adds `raiseIssue[type]` to the query string.
 
 Both forms share their fields through `_includes/issues/raise-fields.njk`. Type is required; the description is optional.
 
@@ -58,18 +60,20 @@ Both forms share their fields through `_includes/issues/raise-fields.njk`. Type 
 | Include | Shows | Used on |
 |---|---|---|
 | `_includes/issues/tag.njk` (`issueTag(record)`) | The yellow `has_issue` tag, only when the record has an open issue. Call with no record when the caller already knows | Case lists, session overviews, case header, existing read, participant index |
-| `_includes/issues/open-issues.njk` (`openIssuesCallout(record)`) | A warning callout listing each open issue, linked to its page | Episode, participant, reading case and priors tab, appointment layout, reading workflow layout |
-| `_includes/issues/resolved-issues.njk` (`resolvedIssuesCard(record)`) | Closed issues as history | Episode and participant pages |
+| `_includes/issues/open-issues.njk` (`openIssuesCallout(record)`) | A warning callout with each open issue's type and description, who raised it and when, and a "View issue" link. "Image reading is on hold" shows only while the issue's episode is at mammograms or reading (`isIssueHoldingReading`). The same file's `openIssueSummary(issue)` shows one issue outside the callout | Episode, participant, reading case and priors tab, appointment layout, reading workflow layout; `openIssueSummary` on the raise form's open issue check |
+| `_includes/issues/resolved-issues.njk` (`resolvedIssuesCard(record)`) | Closed issues as history: type and description, dates, outcome and a "View" link | Episode and participant pages |
 
 An issue's own status renders through the `issue` tag vocabulary: `{{ issue | getIssueStatus | toTag({ vocabulary: "issue" }) }}`. The style guide’s issues page (`/style-guide/issues`) shows the tags, callout and card.
 
+The participants index has an "Issues" filter (`?issue=open`) and the reading case list an "Issues and priors" filter, so either can be narrowed to records with an open issue.
+
 ## Review pages
 
-"Review" in the header holds lists of things needing someone's attention, with a count of open issues in the current user's BSU (`getOpenIssueCount`). Issues are the only list so far.
+"Review" in the header holds lists of things needing someone's attention, with a count of open issues in the current user's BSU (`getOpenIssueCount`), shown as `appCount(count, { classes: "app-count--reverse" })` with no space before it. Issues are the only list so far.
 
 - `/review` - landing page with a card per list
-- `/review/issues` - the index, scoped to the current user's BSU. Open, Resolved and All are tabs, not a filter, so open can be the default. Type and "Raised in" use the generic [filter panel](filtering.md)
-- `/review/issues/:issueId` - the issue, a link to each record it names, and the resolve form (outcome required, note optional), which posts to `/review/issues/:issueId/resolve`
+- `/review/issues` - the index, scoped to the current user's BSU. Open, Resolved and All are tabs with counts, open by default. Each row leads with the type and description and ends in a "View" link
+- `/review/issues/:issueId` - the issue, a Participant card per linked participant (their details, "View …" links to the linked episode, appointment and case, and any other open issues they have), and the resolve form (outcome required, note optional), which posts to `/review/issues/:issueId/resolve`
 
 ## Form answers keyed to their record
 

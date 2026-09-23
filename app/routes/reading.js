@@ -65,7 +65,11 @@ const {
 const {
   getHistoricReadingSessions
 } = require('../lib/utils/historic-reading-sessions')
-const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
+const {
+  modalBreakout,
+  getReturnUrl,
+  urlWithReferrer
+} = require('../lib/utils/referrers')
 const {
   createIssue,
   getIssue,
@@ -1599,6 +1603,7 @@ module.exports = (router) => {
         )
       }
 
+      let issue = null
       if (readingCase) {
         // Raising an issue withdraws any opinion this user had already given
         // in this session - they're saying they can't judge this case after all
@@ -1612,7 +1617,7 @@ module.exports = (router) => {
           })
         )
 
-        createIssue(data, {
+        issue = createIssue(data, {
           type,
           description,
           raisedBy: currentUserId,
@@ -1645,19 +1650,20 @@ module.exports = (router) => {
         currentUserId
       )
 
-      // Show a banner on the next case if there is one
+      // Show a banner on the next case if there is one, linking to the issue
+      // with a way back to that case
       if (nextUnreadAppointment) {
+        const nextCaseUrl = `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
         const shortName = getShortName(res.locals.participant)
         data.readingOpinionBanner = {
           text: `Issue raised for ${shortName}`,
-          participantName: shortName,
-          editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+          participantName: `${shortName}`,
+          linkText: 'View issue',
+          editHref: issue
+            ? urlWithReferrer(`/review/issues/${issue.id}`, nextCaseUrl)
+            : `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         }
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
-          )
-        )
+        res.redirect(modalBreakout(nextCaseUrl))
       } else if (session.skippedAppointments.length > 0) {
         res.redirect(
           modalBreakout(`/reading/session/${sessionId}/skipped-review`)

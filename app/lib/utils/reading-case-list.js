@@ -236,6 +236,20 @@ const STANDING_FILTER_GROUPS = [
     matches: (row, values) => values.includes(row.state)
   },
   {
+    // The two things that hold a case out of reading. The param keeps the
+    // name 'blocked' so one link can ask for both (arbitration start page).
+    name: 'blocked',
+    legend: 'Issues and priors',
+    options: [
+      { value: 'has_issue', label: 'Has an open issue' },
+      { value: 'awaiting_priors', label: 'Awaiting priors' }
+    ],
+    matches: (row, values) =>
+      values.some((value) =>
+        value === 'has_issue' ? row.hasIssue : row.awaitingPriors
+      )
+  },
+  {
     name: 'outcome',
     legend: 'Outcome',
     options: READING_CASE_OUTCOMES.map((outcome) => ({
@@ -262,18 +276,6 @@ const STANDING_FILTER_GROUPS = [
       { value: 'due_soon', label: 'Due soon' }
     ],
     matches: (row, values) => values.includes(row.urgency)
-  },
-  {
-    name: 'blocked',
-    legend: 'Blocked',
-    options: [
-      { value: 'has_issue', label: 'Has issue' },
-      { value: 'awaiting_priors', label: 'Awaiting priors' }
-    ],
-    matches: (row, values) =>
-      values.some((value) =>
-        value === 'has_issue' ? row.hasIssue : row.awaitingPriors
-      )
   }
 ]
 

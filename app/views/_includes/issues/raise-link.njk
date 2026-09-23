@@ -12,6 +12,7 @@
    - raisedFrom - the journey, from ISSUE_RAISED_FROM in app/lib/utils/issues.js
    - options.text - link text, where the page needs something more specific
      than the default for the journey
+   - options.type - issue type to preselect, from ISSUE_TYPES
    - options.classes - extra classes for the paragraph #}
 
 {% from '_components/link/macro.njk' import appLink %}
@@ -21,7 +22,7 @@
     readingCase: readingCase,
     appointment: appointment,
     episode: episode
-  }, raisedFrom) %}
+  }, raisedFrom, options.type) %}
 
   {% set linkTextByRaisedFrom = {
     reading_case: "Raise an issue with this case",

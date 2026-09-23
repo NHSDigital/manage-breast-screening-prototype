@@ -1,13 +1,19 @@
 // app/routes/appointments/imaging-automatic.js
 //
 // Automatic imaging: simulated mammogram data, the imaging
-// answer, the worklist-connection retry flow, and the take-images gate that
-// routes between automatic and manual flows.
+// answer, the worklist-connection retry flow, the troubleshooting fallback to
+// manual mode, and the take-images gate that routes between automatic and
+// manual flows.
 
 const dayjs = require('dayjs')
 const {
-  getFullName
+  getFullName,
+  getShortName
 } = require('../../lib/utils/participants')
+const {
+  createIssue,
+  getOpenIssuesFor
+} = require('../../lib/utils/issues')
 const {
   generateMammogramImages
 } = require('../../lib/generators/mammogram-generator')
@@ -18,6 +24,26 @@ const {
   getReturnUrl,
   urlWithReferrer
 } = require('../../lib/utils/referrers')
+
+// Problems on the automatic images page that make the mammographer fall back
+// to manual image mode, each raising an issue so the images are reconciled
+// after the appointment. Keyed by the `issue` param images-manual expects.
+const IMAGE_TROUBLESHOOTING_ISSUES = {
+  'worklist-participant': {
+    type: 'wrong_participant_images',
+    description:
+      'Switched to manual image mode: a different participant’s images were displayed'
+  },
+  'wrong-image-count': {
+    type: 'missing_images',
+    description:
+      'Switched to manual image mode: the wrong number of images were displayed'
+  },
+  'incorrect-image-labels': {
+    type: 'transposed_images',
+    description: 'Switched to manual image mode: images had incorrect labels'
+  }
+}
 const { getImageSetForAppointment } = require('../../lib/utils/mammogram-images')
 const {
   ensureSeedProfilesState,
@@ -186,6 +212,51 @@ module.exports = (router) => {
         req.query.referrerChain
       )
       res.redirect(returnUrl)
+    }
+  )
+
+  // Troubleshooting fallback from the automatic images page: raise an issue
+  // for the problem, then continue in manual image mode. Arriving again for a
+  // problem that already has an open issue on the episode raises nothing new.
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/images-troubleshooting-answer',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const problem = req.query.issue
+      const manualImagesUrl = `/clinics/${clinicId}/appointments/${appointmentId}/images-manual`
+
+      const troubleshootingIssue = IMAGE_TROUBLESHOOTING_ISSUES[problem]
+      if (!troubleshootingIssue) {
+        return res.redirect(manualImagesUrl)
+      }
+
+      const manualImagesUrlWithProblem = `${manualImagesUrl}?issue=${problem}`
+      const alreadyRaised = getOpenIssuesFor(data, data.appointment.episodeId)
+        .some((issue) => issue.type === troubleshootingIssue.type)
+
+      if (!alreadyRaised) {
+        const issue = createIssue(data, {
+          type: troubleshootingIssue.type,
+          description: troubleshootingIssue.description,
+          raisedBy: data.currentUser?.id,
+          raisedFrom: 'appointment',
+          appointmentId
+        })
+
+        if (issue) {
+          const issueUrl = urlWithReferrer(
+            `/review/issues/${issue.id}`,
+            manualImagesUrlWithProblem
+          )
+          req.flash('success', {
+            html: `<p class="nhsuk-notification-banner__heading">Issue raised for ${getShortName(data.participant)}</p>
+<p class="nhsuk-body"><a class="nhsuk-notification-banner__link" href="${issueUrl}">View issue</a></p>`
+          })
+        }
+      }
+
+      res.redirect(manualImagesUrlWithProblem)
     }
   )
 

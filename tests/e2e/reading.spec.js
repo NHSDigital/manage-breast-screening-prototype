@@ -348,7 +348,7 @@ test.describe('Image reading', () => {
     await expect(
       page.getByRole('link', { name: 'Withdraw issue' })
     ).toBeVisible()
-    await page.getByRole('link', { name: /^ISS-/ }).click()
+    await page.getByRole('link', { name: 'View issue' }).click()
 
     await expect(page.getByText(issueDescription)).toBeVisible()
     await page.getByLabel('Resolved', { exact: true }).check()
@@ -359,7 +359,7 @@ test.describe('Image reading', () => {
 
     // Resolved, the case is readable again from its own page
     await expect(page.getByText('Image re-sent from the mammography machine')).toBeVisible()
-    await page.getByRole('link', { name: /^Opened / }).click()
+    await page.getByRole('link', { name: 'View reading case' }).click()
     await expect(
       page.getByRole('heading', { name: 'Open issue' })
     ).toHaveCount(0)

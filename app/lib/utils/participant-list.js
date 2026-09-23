@@ -18,6 +18,7 @@ const {
   getNextAppointment
 } = require('./episodes')
 const { isSpecialAppointment } = require('./status')
+const { hasOpenIssue } = require('./issues')
 const { participantMatchesQuery } = require('./search')
 const { applyFilterGroups } = require('./filter-list')
 
@@ -191,6 +192,9 @@ const buildRow = (data, participant) => {
     nextAppointment,
     nextAppointmentDate: nextAppointment?.timing?.startTime || null,
     hasSpecialAppointment,
+    // Any open issue linked to the participant or one of their records -
+    // issues always link to the participant
+    hasOpenIssue: hasOpenIssue(data, participant),
     age,
     ageBand: getAgeBand(age),
     riskLevel: riskLevelValue
@@ -247,6 +251,18 @@ const rowMatchesQuery = (row, query) => {
  * progress, and the stage within it isn't what this list is looked at for.
  */
 const PARTICIPANT_FILTER_GROUPS = [
+  {
+    name: 'issue',
+    legend: 'Issues',
+    options: [
+      {
+        value: 'open',
+        label: 'Has an open issue',
+        tagLabel: 'Has an open issue'
+      }
+    ],
+    matches: (row) => row.hasOpenIssue
+  },
   {
     name: 'appointment',
     legend: 'Next appointment',

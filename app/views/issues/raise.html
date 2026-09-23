@@ -2,8 +2,8 @@
 
    Raise an issue on a reading case, appointment or episode. Opens in a modal
    where modal forms are on. raisedFrom decides the types offered, their order
-   and the wording; the route (routes/issues.js) sets it with issueTypes,
-   participant, answers, raiseUrl and returnFallbackUrl. #}
+   and the description hint; the route (routes/issues.js) sets it with
+   issueTypes, participant, answers, raiseUrl and returnFallbackUrl. #}
 
 {% extends parentLayout or 'layout-app.html' %}
 
@@ -14,22 +14,12 @@
   text: "Back"
 } %}
 
-{# What the issue holds up, and a prompt for the details that help most #}
-{% set wordingByRaisedFrom = {
-  reading_case: {
-    effect: "The case will be held from reading until the issue is resolved.",
-    descriptionHint: "For example, which images or views are affected"
-  },
-  appointment: {
-    effect: "The images from this appointment will be held from reading until the issue is resolved.",
-    descriptionHint: "For example, which images or views are affected"
-  },
-  episode: {
-    effect: "This episode’s images will be held from reading until the issue is resolved.",
-    descriptionHint: "For example, which details are wrong and where you found them"
-  }
+{# A prompt for the details that help most #}
+{% set descriptionHintByRaisedFrom = {
+  reading_case: "For example, which images or views are affected",
+  appointment: "For example, which images or views are affected",
+  episode: "For example, which details are wrong and where you found them"
 } %}
-{% set wording = wordingByRaisedFrom[raisedFrom] or wordingByRaisedFrom.episode %}
 
 {% block pageContent %}
 
@@ -38,9 +28,7 @@
     {{ pageHeading }}
   </h1>
 
-  <p>{{ wording.effect }}</p>
-
-  {% set descriptionHint = wording.descriptionHint %}
+  {% set descriptionHint = descriptionHintByRaisedFrom[raisedFrom] or descriptionHintByRaisedFrom.episode %}
   {% include "_includes/issues/raise-fields.njk" %}
 
   {{ button({
