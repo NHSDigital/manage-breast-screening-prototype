@@ -1,0 +1,43 @@
+{# app/views/_includes/issues/open-issues.njk
+
+   The single way to show a record's open issues on a page: a warning callout
+   listing each one, linked to its issue page. Shows nothing when there are
+   none. Pages inside an episode pass the episode, so an issue raised anywhere
+   in the round shows everywhere in it.
+
+   Import with context - it reads issues from data, and currentUrl for the
+   links back.
+
+   Arguments:
+   - record - participant, episode, appointment or reading case
+   - options.classes - extra classes for the callout #}
+
+{% from "warning-callout/macro.njk" import warningCallout %}
+
+{% macro openIssuesCallout(record, options = {}) %}
+  {% set openIssues = data | getOpenIssuesFor(record) %}
+
+  {% if openIssues | length %}
+    {% set openIssuesHtml %}
+      <p>Image reading is held until {{ "the issue is" if openIssues | length == 1 else "these issues are" }} resolved.</p>
+      {% for issue in openIssues %}
+        <p{% if loop.last %} class="nhsuk-u-margin-bottom-0"{% endif %}>
+          <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}">{{ issue.reference }}</a>:
+          {{ issue.type | getIssueTypeLabel }}.
+          Raised
+          {%- if issue.raisedBy %} by {{ issue.raisedBy | getUsername }}{% endif %}
+          on {{ issue.raisedAt | formatDate }}.
+        </p>
+      {% endfor %}
+    {% endset %}
+
+    {{ warningCallout({
+      heading: {
+        text: "Open issue" if openIssues | length == 1 else "Open issues",
+        level: 2
+      },
+      html: openIssuesHtml,
+      classes: ("app-reading-width " + (options.classes or "")) | trim
+    }) }}
+  {% endif %}
+{% endmacro %}

@@ -2,6 +2,8 @@
 
 {% extends 'layout-appointment.html' %}
 
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+
 {% set pageHeading = "Screening appointment" %}
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
@@ -299,5 +301,8 @@
   }) %}
     {{ appointmentHtml | safe }}
   {% endcall %}
+
+  {# Last on the page, where it sits on every page that has it #}
+  {{ raiseIssueLink("appointment") }}
 
 {% endblock %}

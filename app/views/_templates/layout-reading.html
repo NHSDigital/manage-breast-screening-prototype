@@ -3,6 +3,8 @@
 
 {% extends "layout-app.html" %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+
 {% set gridColumn = gridColumn or "nhsuk-grid-column-full" %}
 
 {# Script to show loading state in PACS viewer when navigating away, and inspect panel (press I) #}
@@ -255,6 +257,10 @@
 {% endblock %}
 
 {% block pageNavigation %}
-  {# Override this block in pages that need custom navigation #}
+  {# Override this block in pages that need custom navigation. Workflow pages
+     show the case's open issues here, unless the page shows them itself. #}
+  {% if isReadingWorkflow and readingCase and not hideOpenIssues %}
+    {{ openIssuesCallout(appointment.episodeId) }}
+  {% endif %}
 {% endblock pageNavigation %}
 

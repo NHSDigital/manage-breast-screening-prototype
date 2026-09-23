@@ -11,11 +11,15 @@
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 
+{% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
+{% set openIssues = data | getOpenIssuesFor(appointment.episodeId) %}
+
+{# The page shows the issue in place of an opinion, so the layout need not #}
+{% set hideOpenIssues = openIssues | length and not hasUserRead %}
+
 {% block pageContent %}
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}
-  {% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
-  {% set openIssues = data | getOpenIssuesFor(appointment.episodeId) %}
 
   <span class="nhsuk-caption-l">
     {{ participant | getFullNameReversed }}

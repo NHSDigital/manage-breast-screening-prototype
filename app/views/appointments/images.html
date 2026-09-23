@@ -1,5 +1,8 @@
+{# app/views/appointments/images.html #}
 
 {% extends 'layout-appointment.html' %}
+
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -32,6 +35,8 @@
     feature: true,
     descriptionHtml: mammogramDetailsHtml
   }) }}
+
+  {{ raiseIssueLink("appointment", { text: "Report a problem with these images" }) }}
 
 {% endblock %}
 

@@ -1,4 +1,8 @@
+{# app/views/appointments/images-manual.html #}
+
 {% extends 'layout-appointment.html' %}
+
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set showNavigation = true %}
 {% set hideBackLink = true %}
@@ -209,5 +213,7 @@
   {{ button({
     text: "Continue"
   }) }}
+
+  {{ raiseIssueLink("appointment", { text: "Report a problem with these images" }) }}
 
 {% endblock %}

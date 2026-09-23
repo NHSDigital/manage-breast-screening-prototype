@@ -18,6 +18,7 @@
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/details/macro.njk' import appDetails %}
 {% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
 {% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set pageHeading = participant | getFullNameReversed %}
@@ -50,25 +51,7 @@
 
       {# What is holding the case up, before anything else - it is what anyone
          chasing the case needs to know #}
-      {% if openIssues | length %}
-        {% set openIssuesHtml %}
-          <p>The case is held from reading until {{ "the issue is" if openIssues | length == 1 else "these issues are" }} resolved.</p>
-          {% for issue in openIssues %}
-            <p{% if loop.last %} class="nhsuk-u-margin-bottom-0"{% endif %}>
-              <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}">{{ issue.reference }}</a>:
-              {{ issue.type | getIssueTypeLabel }}.
-              Raised
-              {%- if issue.raisedBy %} by {{ issue.raisedBy | getUsername }}{% endif %}
-              on {{ issue.raisedAt | formatDate }}.
-            </p>
-          {% endfor %}
-        {% endset %}
-        {{ warningCallout({
-          heading: "Open issue" if openIssues | length == 1 else "Open issues",
-          classes: "app-reading-width",
-          html: openIssuesHtml
-        }) }}
-      {% endif %}
+      {{ openIssuesCallout(episode) }}
 
       {% if caseAwaitingPriors %}
         {% set awaitingPriorsList = appointment | getAwaitingPriors %}

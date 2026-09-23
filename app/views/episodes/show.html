@@ -13,7 +13,9 @@
 
 {% extends 'layout-app.html' %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
 {% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+{% from "_includes/issues/resolved-issues.njk" import resolvedIssuesCard with context %}
 
 {% set pageHeading = episode | getEpisodeLabel %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
@@ -49,6 +51,8 @@
   <p class="nhsuk-u-secondary-text-colour">
     NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
   </p>
+
+  {{ openIssuesCallout(episode) }}
 
   {# A past round is a summary, not the live record - say so, and point at
      the round in progress where there is one #}
@@ -200,6 +204,8 @@
       {% endif %}
     {% endcall %}
   {% endif %}
+
+  {{ resolvedIssuesCard(episode) }}
 
   {# How the round moved through its stages - the live round's own record #}
   {% if episode.stageHistory | length %}

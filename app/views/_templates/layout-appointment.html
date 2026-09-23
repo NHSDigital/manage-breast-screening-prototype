@@ -2,6 +2,8 @@
 {# Layout for appointment/appointment pages with three modes: workflow, tab view, and form #}
 {% extends 'layout-base.html' %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+
 
 {# Pages set these variables to control behaviour #}
 {% set showNavigation = showNavigation if showNavigation != undefined else false %}
@@ -81,6 +83,12 @@
       <div class="app-u-max-width-three-quarters">
         {% include "_includes/flash-messages.njk" %}
       </div>
+    {% endif %}
+
+    {# The episode's open issues, on every workflow and record page of the
+       appointment. Single-question forms leave it out. #}
+    {% if showNavigation %}
+      {{ openIssuesCallout(episode) }}
     {% endif %}
 
     {% if gridColumn != "none" %}

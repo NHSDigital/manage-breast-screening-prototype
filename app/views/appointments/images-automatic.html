@@ -1,4 +1,8 @@
+{# app/views/appointments/images-automatic.html #}
+
 {% extends 'layout-appointment.html' %}
+
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set imageCount = appointment.mammogramData.metadata.totalImages %}
 
@@ -126,6 +130,8 @@
   </div>
 
   {% include "_includes/images/image-troubleshooting.njk" %}
+
+  {{ raiseIssueLink("appointment", { text: "Report a problem with these images" }) }}
 
 {% endblock %}
 
