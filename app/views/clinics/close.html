@@ -5,7 +5,7 @@
 {% from "_includes/close-clinic-appointment-row.njk" import closeClinicAppointmentRow with context %}
 
 {% set pageHeading = "Close clinic " ~ clinic.clinicCode %}
-{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set back = {
   href: "/clinics/" + clinicId,
@@ -48,15 +48,18 @@
     </p>
   {% endmacro %}
 
+  {% set introHtml %}
+    <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
+  {% endset %}
+
+  {{ insetText({
+    html: introHtml
+  }) }}
+
+  <div class="nhsuk-grid-row app-clinic-layout__row">
+    <div class="nhsuk-grid-column-two-thirds app-clinic-layout__main">
+
   <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
-
-    {% set introHtml %}
-      <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
-    {% endset %}
-
-    {{ insetText({
-      html: introHtml
-    }) }}
 
     {% if needsOutcomeCount %}
       {% set needsOutcomeHtml %}
@@ -107,11 +110,29 @@
 
   </div>
 
-  <form method="post" action="/clinics/{{ clinicId }}/close">
-    {{ button({
-      text: "Confirm and close clinic"
-    }) }}
-  </form>
+    </div>
+    <div class="nhsuk-grid-column-one-third app-clinic-layout__sidebar">
+      <div class="app-clinic-layout__sticky">
+        {% set actionsHtml %}
+          <form method="post" action="/clinics/{{ clinicId }}/close">
+            {{ button({
+              text: "Confirm and close clinic"
+            }) }}
+          </form>
+          <p class="nhsuk-u-margin-bottom-0">
+            <a href="/clinics/{{ clinicId }}">Cancel</a>
+          </p>
+        {% endset %}
+
+        {{ card({
+          heading: "Actions",
+          headingLevel: "2",
+          feature: true,
+          descriptionHtml: actionsHtml
+        }) }}
+      </div>
+    </div>
+  </div>
 
 {% endblock %}
 
