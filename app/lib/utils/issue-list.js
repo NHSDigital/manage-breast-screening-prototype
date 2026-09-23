@@ -5,7 +5,8 @@
 //
 // The list layer over issues.js, as participant-list.js is over participants.js:
 // it builds a row per issue carrying what the index, its filters and its sorts
-// need, then hands it to the generic filter helpers in filter-list.js.
+// need, and the filter groups the index route applies to those rows with the
+// generic helpers in filter-list.js.
 
 const {
   ISSUE_TYPES,
@@ -138,7 +139,7 @@ const rowInView = (row, view) => {
  * participant's round is now (whether the issue is holding anything up
  * today), and the issues the user raised themselves (to follow up their own).
  *
- * @param {string} [currentUserId] - The signed-in user, for "Raised by me"
+ * @param {string} [currentUserId] - The signed-in user, for the "Raised by" filter
  * @returns {Array} Filter groups
  */
 const getIssueFilterGroups = (currentUserId) => {
@@ -171,7 +172,7 @@ const getIssueFilterGroups = (currentUserId) => {
       options: [
         {
           value: 'me',
-          label: 'Raised by me',
+          label: 'Me',
           tagLabel: 'Raised by me'
         }
       ],

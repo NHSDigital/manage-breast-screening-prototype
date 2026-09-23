@@ -81,8 +81,9 @@
 
   {# Capture the page content with flash messages, grid and form wrapper applied #}
   {% set wrappedPageContent %}
-    {# Flash messages for all pages - except appointment with navigation #}
-    {% if (isAppointmentWorkflow or (not isAppointmentWorkflow and not showNavigation)) %}
+    {# Flash messages for pages without navigation. Pages with navigation show
+       them above the open issues callout instead. #}
+    {% if not showNavigation %}
       <div class="app-u-max-width-three-quarters">
         {% include "_includes/flash-messages.njk" %}
       </div>
@@ -111,8 +112,12 @@
   {% if showNavigation %}
     
     {% if isAppointmentWorkflow %}
-      {# Workflow mode: side navigation layout, after the episode's open
-         issues #}
+      {# Workflow mode: side navigation layout, after flash messages and the
+         episode's open issues #}
+      <div class="app-u-max-width-three-quarters">
+        {% include "_includes/flash-messages.njk" %}
+      </div>
+
       {{ openIssuesCallout(episode) }}
 
       <div class="app-workflow-container">

@@ -398,6 +398,67 @@ test.describe('Image reading', () => {
     ).toBeVisible()
   })
 
+  test('requires an issue description, and changes it on the issue page', async ({
+    page
+  }) => {
+    await pinSettings(page, readingSettings)
+
+    const issueDescription = 'LCC shows as blank in the viewer'
+    const changedDescription = 'LCC and RCC both show as blank in the viewer'
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
+
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal.getByLabel('Images are missing or will not open').check()
+    await raiseModal
+      .getByRole('button', { name: 'Raise issue' })
+      .first()
+      .click()
+    await expect(
+      raiseModal.getByRole('link', { name: 'Enter a description of the issue' })
+    ).toBeVisible()
+
+    await raiseModal.getByLabel('Describe the issue').fill(issueDescription)
+    await raiseModal
+      .getByRole('button', { name: 'Raise issue' })
+      .first()
+      .click()
+    await expect(page).toHaveURL(/\/no-more-cases/)
+
+    await page.goto(`${caseUrl}/existing-read`)
+    await page.getByRole('link', { name: 'View issue' }).click()
+    await expect(page.getByText(issueDescription)).toBeVisible()
+
+    // An edit abandoned after an error does not prefill the next one. The
+    // modal dialog is labelled by the same heading, hence the textbox role.
+    const changeModal = await clickLinkToOpenModal(page, 'Change description')
+    const descriptionField = changeModal.getByRole('textbox', {
+      name: 'Describe the issue'
+    })
+    const saveButton = changeModal.getByRole('button', {
+      name: 'Save description'
+    })
+
+    await descriptionField.fill('')
+    await saveButton.click()
+    await expect(
+      changeModal.getByRole('link', { name: 'Enter a description of the issue' })
+    ).toBeVisible()
+    await changeModal.getByRole('button', { name: 'Close' }).click()
+    await expectModalClosed(changeModal)
+
+    await clickLinkToOpenModal(page, 'Change description')
+    await expect(descriptionField).toHaveValue(issueDescription)
+
+    await descriptionField.fill(changedDescription)
+    await saveButton.click()
+    await expectModalClosed(changeModal)
+    await expect(page.getByText('Description changed')).toBeVisible()
+    await expect(page.getByText(changedDescription)).toBeVisible()
+  })
+
   test('offers no finalise action on a case held by an issue', async ({
     page
   }) => {

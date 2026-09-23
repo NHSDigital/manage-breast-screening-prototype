@@ -300,6 +300,11 @@ const getTemplateUrls = (params) => {
     // The raise form takes a record type the sweep has no seeded value for
     `/issues/raise/reading-case/${params.caseId}?raiseIssue[raisedFrom]=reading_case`,
     `/issues/raise/episode/${params.episodeId}?raiseIssue[raisedFrom]=episode`,
+    // The description edit as its Change link opens it, and the issue index
+    // with every filter group, a view and a sort chosen, which the bare routes
+    // do not exercise
+    `/review/issues/${params.issueId}/description?issueDescription[issueId]=${params.issueId}`,
+    '/review/issues?view=all&type=missing_images&type=other&stage=reading&raisedBy=me&q=a&sort=surname',
     ...getTemplateSubPaths('appointments', includedTemplates).map(
       (subPath) =>
         `/clinics/${params.clinicId}/appointments/${params.appointmentId}/${subPath}`

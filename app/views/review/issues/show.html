@@ -76,7 +76,7 @@
     {% set descriptionActions = {
       items: [
         {
-          href: ("/review/issues/" + issue.id + "/description") | urlWithReferrer(referrerChain),
+          href: ("/review/issues/" + issue.id + "/description?issueDescription[issueId]=" + issue.id) | urlWithReferrer(referrerChain),
           text: "Change",
           visuallyHiddenText: "description"
         } | openInModal

@@ -184,14 +184,16 @@ module.exports = (router) => {
   })
 
   // Load the issue for a route under /review/issues/:issueId. An issue from
-  // another BSU is not found, as the index does not list it either - skipping
-  // the route leaves the request to the kit's page not found.
+  // another BSU is not found, as the index does not list it either. The kit's
+  // page not found is rendered here rather than by skipping the route, which
+  // would let the kit's automatic routes render the issue templates without
+  // an issue.
   const loadIssue = (req, res, next) => {
     const data = req.session.data
     const issue = getIssue(data, req.params.issueId)
 
     if (!isIssueInUnit(issue, data.currentUser?.breastScreeningUnit)) {
-      return next('route')
+      return res.status(404).render('404', { path: req.path })
     }
 
     res.locals.issue = issue
@@ -237,10 +239,14 @@ module.exports = (router) => {
       return res.redirect(modalBreakout(issueUrl))
     }
 
-    // Answers carry the issue they were given for, so coming back after an
-    // error keeps what was entered; any other issue's answers start afresh
-    // from the description as it stands
-    if (data.issueDescription?.issueId !== issue.id) {
+    // The Change link names the issue in the query string, so arriving from
+    // it starts afresh from the description as it stands, as does arriving
+    // with another issue's answers. Coming back after an error keeps what
+    // was entered.
+    const arrivedFromChangeLink =
+      req.query.issueDescription?.issueId === issue.id
+    const answersAreForThisIssue = data.issueDescription?.issueId === issue.id
+    if (arrivedFromChangeLink || !answersAreForThisIssue) {
       data.issueDescription = {
         issueId: issue.id,
         description: issue.description
