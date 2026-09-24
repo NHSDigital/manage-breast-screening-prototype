@@ -1,4 +1,4 @@
-// app/filers/formatting.js
+// app/filters/formatting.js
 
 /**
  * Format a yes/no/not answered response with optional additional details

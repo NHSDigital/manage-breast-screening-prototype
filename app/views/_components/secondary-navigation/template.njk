@@ -1,3 +1,4 @@
+{#- app/views/_components/secondary-navigation/template.njk -#}
 {%- from "nhsuk/macros/attributes.njk" import nhsukAttributes -%}
 <nav class="app-secondary-navigation {%- if params.classes %} {{ params.classes }}{% endif -%}" {% if params.labelledBy %}aria-labelledby="{{ params.labelledBy }}"{% else %}aria-label="{{ params.visuallyHiddenTitle or "Secondary menu" }}"{% endif %} {{- nhsukAttributes(params.attributes) }}>
   <ul class="app-secondary-navigation__list">
