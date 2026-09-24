@@ -30,7 +30,7 @@ A subagent has not seen the reasoning behind the change, which is what makes it 
 - Do not decide **needs a decision** items yourself. Ask the designer: number each question, explain the choice in plain language, give your recommendation, and act on their answer. If they would rather leave it open, note it in the review notes.
 - If a fix would mean redesigning the feature, stop and explain the choice to the designer instead.
 - After renaming anything, search the whole repo for the old name.
-- Fix indentation and formatting in everything the change touched, as section 10 of the checklist describes: Prettier for new JavaScript and Sass files, by hand for edited lines and for templates.
+- Fix indentation and formatting in everything the change touched, as section 10 of the checklist describes: Prettier for every new or changed JavaScript and Sass file, by hand for templates.
 
 ## 4. Check again
 
