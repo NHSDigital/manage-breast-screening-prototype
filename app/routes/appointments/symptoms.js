@@ -191,8 +191,10 @@ module.exports = (router) => {
         // Non-JS path: flash errors and redirect back to the form
         validationErrors.forEach((err) => req.flash('error', err))
         return res.redirect(
-          `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/symptoms/details` +
-            (referrerChain ? `?referrerChain=${referrerChain}` : '')
+          urlWithReferrer(
+            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/symptoms/details`,
+            referrerChain
+          )
         )
       }
 
@@ -346,7 +348,10 @@ module.exports = (router) => {
         if (nextSymptomType) {
           // Redirect to add specific symptom type
           res.redirect(
-            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/symptoms/add?symptomType=${nextSymptomType}${referrerChain ? '&referrerChain=' + referrerChain : ''}`
+            urlWithReferrer(
+              `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/symptoms/add?symptomType=${nextSymptomType}`,
+              referrerChain
+            )
           )
         } else {
           // Fallback to general add page
