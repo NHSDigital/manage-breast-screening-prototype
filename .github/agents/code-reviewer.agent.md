@@ -32,7 +32,7 @@ Then, most serious first:
 
 - **Must fix** - for each: `file:line`, what is wrong, why it matters, the checklist section, and what to do instead (name the existing helper, filter, include or doc).
 - **Should fix** - same format.
-- **Needs a decision** - design or product choices a reviewer should not make alone. Say what the options are and what each means for users.
+- **Needs a decision** - design or product choices a reviewer should not make alone, numbered. Say what the options are and what each means for users.
 - **Checked and fine** - the checklist sections and files you examined and found no problems in, so it is clear what was covered.
 
 No praise and no summary of what the change does. If you are given a previous report, re-check each earlier finding against the current code and say which are resolved before listing anything new.

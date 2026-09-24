@@ -74,6 +74,7 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 
 - Implement only what is asked. Suggest improvements rather than making them
 - If a request is ambiguous or too broad, ask or propose a narrower reading before starting
+- Number questions and decisions you put to the user, so they can answer by number. Give your recommendation for each
 - Say what changed and what remains after each unit of work
 - Do not claim something works until it has been checked in the running app. When fixing a bug, verify the fix
 - One task per chat. Long chats lose track of earlier instructions and of these conventions. When a task is done, or the chat has become long, suggest starting a new chat

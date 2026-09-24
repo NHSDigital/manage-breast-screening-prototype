@@ -27,9 +27,10 @@ A subagent has not seen the reasoning behind the change, which is what makes it 
 - Fix every **must fix** finding and every **should fix** finding that is quick and safe.
 - Fix at the root. If a finding shows the same mistake in several places, fix every place, and search the repo for others.
 - Keep behaviour the same unless the finding is that the behaviour is wrong. Before a larger fix (merging routes, moving logic into a helper, renaming a data key), note what currently works so you can confirm it still does.
-- Do not decide **needs a decision** items yourself. Ask the designer: explain the choice in plain language, give your recommendation, and act on their answer. If they would rather leave it open, note it in the review notes.
+- Do not decide **needs a decision** items yourself. Ask the designer: number each question, explain the choice in plain language, give your recommendation, and act on their answer. If they would rather leave it open, note it in the review notes.
 - If a fix would mean redesigning the feature, stop and explain the choice to the designer instead.
 - After renaming anything, search the whole repo for the old name.
+- Fix indentation and formatting in everything the change touched, as section 10 of the checklist describes: Prettier for new JavaScript and Sass files, by hand for edited lines and for templates.
 
 ## 4. Check again
 
@@ -54,7 +55,7 @@ Then give them review notes to paste into the pull request description, as a fen
 - Fixed: [one line per fix]
 - Not fixed: [item and reason, or "nothing"]
 - Decisions: [choices made during the review and why, or "none"]
-- Open questions: [anything left for reviewers to weigh in on, or "none"]
+- Open questions: [numbered list of anything left for reviewers to weigh in on, or "none"]
 - Data changes: [keys, fields or statuses added or changed, and the other places that use them]
 ```
 

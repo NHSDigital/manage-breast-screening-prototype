@@ -150,8 +150,11 @@ From [copilot-instructions.md](../.github/copilot-instructions.md):
 - Nunjucks: `elseif` not `elif`, double quotes, object keys on separate lines, no trailing commas.
 - Comments explain purpose, not history.
 - Content: UK English, sentence case, smart quotes, lean copy that does not repeat the heading.
+- Indentation: 2 spaces, one level per nesting, in every file type. In templates that includes the contents of `{% if %}`, `{% for %}`, `{% call %}` and `{% set %}` blocks, HTML elements, and macro parameter objects. Misindented templates are hard to read and hide unclosed blocks.
 
-Spot it: `grep -nE '\{%-? *elif'` on added Nunjucks lines, `grep -nE ';$'` on added JavaScript lines (Sass uses semicolons), and check the first line of each new code file.
+Spot it: `grep -nE '\{%-? *elif'` on added Nunjucks lines, `grep -nE ';$'` on added JavaScript lines (Sass uses semicolons), and check the first line of each new code file. For JavaScript and Sass formatting, run `npx prettier --check` on the changed files; Prettier does not format templates (`*.html` is ignored), so check their indentation by eye.
+
+Fix it: run `npx prettier --write` on new JavaScript and Sass files. Many existing files are not yet Prettier-formatted, so in an edited file fix the indentation of the changed lines by hand rather than reformatting the whole file, which would bury the real change in unrelated edits.
 
 ## 11. Tests and docs
 
