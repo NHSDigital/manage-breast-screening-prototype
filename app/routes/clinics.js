@@ -59,15 +59,17 @@ function getClinicData(data, clinicId) {
 }
 
 // Status changes available from the close clinic page, keyed by the status
-// being applied. Some entries map to a different underlying status via `to`;
-// undoing attended not screened also clears the stored reason.
+// being applied. `from` is the status the appointment must currently be in for
+// the action to apply - guards against a stale link overwriting a status
+// changed elsewhere. Some entries map to a different underlying status via
+// `to`; undoing attended not screened also clears the stored reason.
 const CLOSE_STATUS_ACTIONS = {
-  attended_not_screened: {},
-  did_not_attend: {},
-  checked_in: { clearsStoppedDetails: true },
-  scheduled: {},
-  checked_in_from_scheduled: { to: 'checked_in' },
-  scheduled_from_checked_in: { to: 'scheduled' }
+  attended_not_screened: { from: 'checked_in' },
+  did_not_attend: { from: 'scheduled' },
+  checked_in: { from: 'attended_not_screened', clearsStoppedDetails: true },
+  scheduled: { from: 'did_not_attend' },
+  checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in' },
+  scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled' }
 }
 
 /**
@@ -247,6 +249,12 @@ module.exports = (router) => {
     const { clinicId, appointmentId, status } = req.params
     const action = CLOSE_STATUS_ACTIONS[status]
     if (!action) {
+      return res.redirect(`/clinics/${clinicId}/close`)
+    }
+
+    // Reject a stale link: only act when the appointment is still in the status
+    // the action started from, so a change made elsewhere is never overwritten
+    if (res.locals.appointment.status !== action.from) {
       return res.redirect(`/clinics/${clinicId}/close`)
     }
 

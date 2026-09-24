@@ -13,6 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const clinicId = container.dataset.clinicId
   let detailsToOpen = null
 
+  // Open a details form in the modal, or navigate to it when modal forms are
+  // disabled and the shell (#app-form-modal) isn't rendered - otherwise the
+  // form would never open
+  const openDetailsFormOrNavigate = (modalId, loadUrl, onSuccess) => {
+    const modal = document.getElementById(modalId)
+    if (modal && modal.appModal) {
+      window.openModal(modalId, { loadUrl, onSuccess })
+    } else {
+      window.location.href = loadUrl
+    }
+  }
+
   // Counts in the card headings and inset text aren't updated in place -
   // this link invites a refresh instead
   const showRefreshLink = () => {
@@ -28,14 +40,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const appointmentId = detailsToOpen
     detailsToOpen = null
-    window.openModal('app-form-modal', {
-      loadUrl: `/clinics/${clinicId}/close/reason/${appointmentId}`,
-      onSuccess: () => {
+    openDetailsFormOrNavigate(
+      'app-form-modal',
+      `/clinics/${clinicId}/close/reason/${appointmentId}`,
+      () => {
         const row = rowFor(appointmentId)
         if (!row) return window.location.reload()
         refreshRow(row).catch(() => window.location.reload())
       }
-    })
+    )
   })
 
   const rowFor = (appointmentId) =>
@@ -62,14 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
       event.preventDefault()
       event.stopPropagation()
       const appointmentId = modalLink.closest('tr')?.dataset.fragmentId
-      window.openModal(modalLink.dataset.modalId || 'app-form-modal', {
-        loadUrl: modalLink.dataset.loadModalUrl,
-        onSuccess: () => {
+      openDetailsFormOrNavigate(
+        modalLink.dataset.modalId || 'app-form-modal',
+        modalLink.dataset.loadModalUrl,
+        () => {
           const row = rowFor(appointmentId)
           if (!row) return window.location.reload()
           refreshRow(row).catch(() => window.location.reload())
         }
-      })
+      )
     }
   })
 })
