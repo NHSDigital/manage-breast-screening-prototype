@@ -33,40 +33,5 @@
   <meta name="mammogram-context" content="{{ appointmentContext | dump | escape }}">
 {% endif %}
 
-{# Broadcast to PACS viewer immediately - don't wait for DOMContentLoaded #}
-<script>
-  (function() {
-    if (typeof BroadcastChannel === 'undefined') return
-    var ch = new BroadcastChannel('mammogram-viewer')
-    var getMeta = function(name) {
-      var el = document.querySelector('meta[name="' + name + '"]')
-      return el ? el.getAttribute('content') : null
-    }
-    var appointmentId = getMeta('mammogram-appointment-id')
-    var participantName = getMeta('mammogram-participant-name')
-    if (!appointmentId || !participantName) return
-    var allPathsRaw = getMeta('mammogram-all-paths')
-    var contextRaw = getMeta('mammogram-context')
-    ch.postMessage({
-      type: 'show',
-      appointmentId: appointmentId,
-      participantName: participantName,
-      nhsNumber: getMeta('mammogram-nhs-number'),
-      sxNumber: getMeta('mammogram-sx-number'),
-      dateOfBirth: getMeta('mammogram-date-of-birth'),
-      images: {
-        rcc: getMeta('mammogram-image-rcc') || null,
-        lcc: getMeta('mammogram-image-lcc') || null,
-        rmlo: getMeta('mammogram-image-rmlo') || null,
-        lmlo: getMeta('mammogram-image-lmlo') || null
-      },
-      allPaths: allPathsRaw ? JSON.parse(allPathsRaw) : null,
-      hasAdditionalImages: getMeta('mammogram-has-additional') === 'true',
-      setId: getMeta('mammogram-set-id'),
-      setDescription: getMeta('mammogram-set-description'),
-      setTag: getMeta('mammogram-set-tag'),
-      context: contextRaw ? JSON.parse(contextRaw) : null,
-      timestamp: Date.now()
-    })
-  })()
-</script>
+{# Broadcast to an open PACS viewer straight away, before the page finishes loading #}
+<script src="/assets/javascript/pacs-viewer-broadcast.js"></script>
