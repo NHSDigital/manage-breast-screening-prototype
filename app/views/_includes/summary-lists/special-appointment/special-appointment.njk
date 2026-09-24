@@ -42,18 +42,17 @@
         {% endfor %}
       {% endif %}
 
-      {# Build the value content (details + temporary tag if applicable) #}
-      {% set valueContent = "" %}
-      {% if details %}
-        {% set valueContent = details %}
-      {% else %}
-        {% set valueContent = "<span class=\"nhsuk-u-secondary-text-colour\">No details provided</span>" %}
-      {% endif %}
-
-      {# Add temporary tag to the value content if needed #}
-      {% if isTemporary %}
-        {% set valueContent = valueContent + "<br><span class=\"nhsuk-tag nhsuk-tag--white nhsuk-u-margin-top-2\">Temporary</span>" %}
-      {% endif %}
+      {# The value: details (or a placeholder) and a tag if it's temporary #}
+      {% set valueContent %}
+        {% if details %}
+          {{ details }}
+        {% else %}
+          <span class="nhsuk-u-secondary-text-colour">No details provided</span>
+        {% endif %}
+        {% if isTemporary %}
+          <br><span class="nhsuk-tag nhsuk-tag--white nhsuk-u-margin-top-2">Temporary</span>
+        {% endif %}
+      {% endset %}
 
       {# Add row for this support type #}
       {% set specialAppointmentRows = specialAppointmentRows | push({
