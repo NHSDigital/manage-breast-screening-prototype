@@ -28,7 +28,7 @@ Read the changed files in full, not only the diff. Most of the serious problems 
 
 - **Must fix** - breaks a rule in this checklist or the docs, or will cause a bug. Examples: a route that only receives a form, a hand-built return URL, a new field the seed data never generates.
 - **Should fix** - works, but makes the code harder to live with. Examples: duplicated logic, a name that differs from the rest of the code.
-- **Ask Ed** - a design or product judgement a reviewer should not make alone. Say what the choice is and what each option means.
+- **Needs a decision** - a design or product judgement a reviewer should not make alone. Say what the choice is and what each option means.
 
 ## 1. Routes and form data
 
@@ -150,8 +150,11 @@ From [copilot-instructions.md](../.github/copilot-instructions.md):
 - Nunjucks: `elseif` not `elif`, double quotes, object keys on separate lines, no trailing commas.
 - Comments explain purpose, not history.
 - Content: UK English, sentence case, smart quotes, lean copy that does not repeat the heading.
+- Indentation: 2 spaces, one level per nesting, in every file type. In templates that includes the contents of `{% if %}`, `{% for %}`, `{% call %}` and `{% set %}` blocks, HTML elements, and macro parameter objects. Misindented templates are hard to read and hide unclosed blocks.
 
-Spot it: `grep -nE '\{%-? *elif'` on added Nunjucks lines, `grep -nE ';$'` on added JavaScript lines (Sass uses semicolons), and check the first line of each new code file.
+Spot it: `grep -nE '\{%-? *elif'` on added Nunjucks lines, `grep -nE ';$'` on added JavaScript lines (Sass uses semicolons), and check the first line of each new code file. For JavaScript and Sass formatting, run `npx prettier --check` on the changed files; Prettier does not format templates (`*.html` is ignored), so check their indentation by eye.
+
+Fix it: run `npx prettier --write` on new JavaScript and Sass files. Many existing files are not yet Prettier-formatted, so in an edited file fix the indentation of the changed lines by hand rather than reformatting the whole file, which would bury the real change in unrelated edits.
 
 ## 11. Tests and docs
 
