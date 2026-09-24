@@ -29,11 +29,11 @@
       {% if mammogram.requestStatus == "received" %}
         Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}<br>
         Received {{ mammogram.receivedDate | formatDate("D MMMM YYYY") }}
-      {% elif mammogram.requestStatus == "requested" %}
+      {% elseif mammogram.requestStatus == "requested" %}
         Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
-      {% elif mammogram.requestStatus == "pending" %}
+      {% elseif mammogram.requestStatus == "pending" %}
         Flagged for request {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
-      {% elif (mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed") and mammogram.statusChangedDate %}
+      {% elseif (mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed") and mammogram.statusChangedDate %}
         Updated {{ mammogram.statusChangedDate | formatDate("D MMMM YYYY") }}{% if mammogram.statusChangedBy %} by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
       {% endif %}
       {%- if mammogram.requestReason %}<br>Reason: {{ mammogram.requestReason }}{% endif %}

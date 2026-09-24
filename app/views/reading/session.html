@@ -573,7 +573,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif session.skippedAppointments | includes(appointment.id) %}
+                {% elseif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
@@ -593,7 +593,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif metadata.readCount == 1 %}
+                {% elseif metadata.readCount == 1 %}
                   {% if session.skippedAppointments | includes(appointment.id) %}
                     {{ "Skipped" | toTag }}
                   {% else %}

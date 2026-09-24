@@ -59,7 +59,7 @@
               <span class="app-workflow-side-nav__number">{{ loop.index }}</span>
               <span class="app-workflow-side-nav__label">{{ item.label }}</span>
             </span>
-          {% elif isCurrent %}
+          {% elseif isCurrent %}
             <span class="app-workflow-side-nav__link" aria-current="page">
               <span class="app-workflow-side-nav__number">
                 {% if isCompleted %}

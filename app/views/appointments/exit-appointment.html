@@ -21,7 +21,7 @@
   {% if hasCompletedImaging or confirmedImagesWereTaken %}
     {# Scenario 3: Images completed - can only pause #}
     {% include 'appointments/exit-appointment/images-completed.html' %}
-  {% elif hasStartedImaging and not confirmedNoImages %}
+  {% elseif hasStartedImaging and not confirmedNoImages %}
     {# Scenario 2: During images - ask if images were taken #}
     {% include 'appointments/exit-appointment/images-may-be-taken.html' %}
   {% else %}
