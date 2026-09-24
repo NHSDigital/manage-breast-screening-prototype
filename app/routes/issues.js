@@ -79,7 +79,7 @@ const RAISE_RECORD_TYPES = {
 
 module.exports = (router) => {
   // Load what the form is about, for both showing and answering it. The
-  // form's answers live in data.raiseIssue until the issue is created.
+  // form's answers live in data.issueTemp.raise until the issue is created.
   const loadRaiseContext = (req, res, next) => {
     const data = req.session.data
     const { recordType, recordId } = req.params
@@ -92,25 +92,30 @@ module.exports = (router) => {
     // form, as does arriving with answers given for a different record.
     // Coming back after a validation error keeps what was entered. A link
     // can also choose the type, for journeys that already know what is wrong.
-    const linkedRaisedFrom = req.query.raiseIssue?.raisedFrom
-    const answersAreForThisRecord = data.raiseIssue?.recordId === recordId
+    const linkedRaisedFrom = req.query.issueTemp?.raise?.raisedFrom
+    const answersAreForThisRecord = data.issueTemp?.raise?.recordId === recordId
     const startsFreshForm = linkedRaisedFrom || !answersAreForThisRecord
     if (req.method === 'GET' && startsFreshForm) {
-      data.raiseIssue = {
-        recordId,
-        raisedFrom: linkedRaisedFrom,
-        type: req.query.raiseIssue?.type
+      data.issueTemp = {
+        ...data.issueTemp,
+        raise: {
+          recordId,
+          raisedFrom: linkedRaisedFrom,
+          type: req.query.issueTemp?.raise?.type
+        }
       }
     }
 
-    const raisedFrom = ISSUE_RAISED_FROM.includes(data.raiseIssue?.raisedFrom)
-      ? data.raiseIssue.raisedFrom
+    const raisedFrom = ISSUE_RAISED_FROM.includes(
+      data.issueTemp?.raise?.raisedFrom
+    )
+      ? data.issueTemp.raise.raisedFrom
       : recordTypeConfig.defaultRaisedFrom
 
     // The template's `data` is a copy taken before this runs, so the answers
     // are passed directly
     Object.assign(res.locals, {
-      answers: data.raiseIssue || {},
+      answers: data.issueTemp?.raise || {},
       participant: getParticipant(data, record.participantId),
       openIssues: getOpenIssuesFor(data, record.episodeId),
       raisedFrom,
@@ -130,7 +135,10 @@ module.exports = (router) => {
     const data = req.session.data
     const { openIssues } = res.locals
 
-    if (openIssues.length && data.raiseIssue?.aboutSomethingElse !== 'yes') {
+    if (
+      openIssues.length &&
+      data.issueTemp?.raise?.aboutSomethingElse !== 'yes'
+    ) {
       return res.render('issues/raise-existing')
     }
 
@@ -141,14 +149,14 @@ module.exports = (router) => {
     const data = req.session.data
     const referrerChain = req.query.referrerChain
     const { raiseUrl, returnFallbackUrl } = res.locals
-    const answer = data.raiseIssue?.aboutSomethingElse
+    const answer = data.issueTemp?.raise?.aboutSomethingElse
 
     if (answer === 'yes') {
       return res.redirect(urlWithReferrer(raiseUrl, referrerChain))
     }
 
     if (answer === 'no') {
-      delete data.raiseIssue
+      delete data.issueTemp?.raise
 
       // Nothing new to raise, so go back to what they were doing. The check
       // page links to each open issue for anyone who wants to see it
@@ -159,7 +167,7 @@ module.exports = (router) => {
 
     const error = {
       text: 'Select yes if the issue is about something else',
-      name: 'raiseIssue[aboutSomethingElse]',
+      name: 'issueTemp[raise][aboutSomethingElse]',
       href: '#raiseIssueAboutSomethingElse'
     }
 
@@ -185,7 +193,7 @@ module.exports = (router) => {
       recordIdField
     } = res.locals
 
-    const answers = data.raiseIssue || {}
+    const answers = data.issueTemp?.raise || {}
     const type = answers.type
     const description = (answers.description || '').trim()
 
@@ -213,7 +221,7 @@ module.exports = (router) => {
 
     // The kit's autoStoreData copies every posted field into the session, so
     // the answers would otherwise prefill the next raise form
-    delete data.raiseIssue
+    delete data.issueTemp?.raise
 
     // The banner shows on the page the user returns to, so Back from the
     // issue leads there

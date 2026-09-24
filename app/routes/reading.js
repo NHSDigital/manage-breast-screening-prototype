@@ -1091,10 +1091,15 @@ module.exports = (router) => {
       res.locals.decisionStep =
         session.type === 'arbitration' ? 'outcome' : 'opinion'
 
+      // Time with an open issue doesn't count toward a read's finalisation
+      // delay, so the workflow's finalisation captions need this
+      const caseIsHeld = hasOpenIssueOnEpisode(data, appointment)
+
       // Reaching a case in an arbitration session is the act that releases it.
       // Lazy sessions bring cases in one at a time, so this is where release
-      // happens rather than over the whole backlog at session creation.
-      if (session.type === 'arbitration') {
+      // happens rather than over the whole backlog at session creation. A case
+      // held by an open issue isn't released: the issue stops it moving on
+      if (session.type === 'arbitration' && !caseIsHeld) {
         const caseToRelease = getReadingCase(data, appointment)
         if (caseToRelease && !caseToRelease.arbitration?.releasedAt) {
           updateReadingCase(
@@ -1106,10 +1111,7 @@ module.exports = (router) => {
       }
 
       res.locals.readingCase = getReadingCase(data, appointment)
-
-      // Time with an open issue doesn't count toward a read's finalisation
-      // delay, so the workflow's finalisation captions need these
-      res.locals.caseIsHeld = hasOpenIssueOnEpisode(data, appointment)
+      res.locals.caseIsHeld = caseIsHeld
       res.locals.issuePeriods = getOpenIssuePeriods(data, appointment.episodeId)
       res.locals.session = session
       res.locals.appointmentData = {
@@ -1508,7 +1510,7 @@ module.exports = (router) => {
   // from anywhere outside the workflow goes through routes/issues.js instead.
   /***********************************************************************/
 
-  // The raise form. Its answers live in data.raiseIssue, keyed to the case,
+  // The raise form. Its answers live in data.issueTemp.raise, keyed to the case,
   // until the issue is created - the same shape as the form in
   // routes/issues.js, so the two share their fields.
   router.get(
@@ -1525,16 +1527,20 @@ module.exports = (router) => {
       // Arriving from the workflow's link starts a fresh form, as does
       // arriving with answers given for a different case. Coming back after
       // a validation error keeps what was entered.
-      const linkedRaisedFrom = req.query.raiseIssue?.raisedFrom
-      const answersAreForThisCase = data.raiseIssue?.recordId === readingCase.id
+      const linkedRaisedFrom = req.query.issueTemp?.raise?.raisedFrom
+      const answersAreForThisCase =
+        data.issueTemp?.raise?.recordId === readingCase.id
       if (linkedRaisedFrom || !answersAreForThisCase) {
-        data.raiseIssue = { recordId: readingCase.id, raisedFrom: 'reading' }
+        data.issueTemp = {
+          ...data.issueTemp,
+          raise: { recordId: readingCase.id, raisedFrom: 'reading' }
+        }
       }
 
       // The template's `data` is a copy taken before this runs, so the
       // answers are passed directly
       res.render('reading/workflow/raise-issue', {
-        answers: data.raiseIssue,
+        answers: data.issueTemp?.raise,
         issueTypes: getIssueTypes('reading')
       })
     }
@@ -1550,7 +1556,7 @@ module.exports = (router) => {
       const { appointment, readingCase } = res.locals
 
       const issueTypes = getIssueTypes('reading')
-      const answers = data.raiseIssue || {}
+      const answers = data.issueTemp?.raise || {}
       const type = answers.type
       const description = (answers.description || '').trim()
 
@@ -1597,7 +1603,7 @@ module.exports = (router) => {
 
       // The kit's autoStoreData copies every posted field into the session, so
       // the answers would otherwise prefill the next raise form
-      delete data.raiseIssue
+      delete data.issueTemp?.raise
 
       // The case is settled for now, so it is no longer waiting to be come
       // back to
@@ -2775,6 +2781,16 @@ module.exports = (router) => {
 
       delete data.imageReadingTemp
       delete res.locals.data?.imageReadingTemp
+
+      // An issue raised while this opinion was being given holds the case, so
+      // a new read can't be saved. Editing a read already made still can be
+      if (!isEditingExistingRead && hasOpenIssueOnEpisode(data, appointment)) {
+        return res.redirect(
+          modalBreakout(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
+          )
+        )
+      }
 
       // Create and save the reading. Authorship is settled by buildRead, which
       // knows whether this is an arbitration (many authors) or a read (one).

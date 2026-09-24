@@ -245,10 +245,10 @@ module.exports = (router) => {
     // The resolve form's answers carry the issue they were given for, and
     // only prefill that issue's form. Passed to the template directly, as its
     // `data` is a copy taken before this route runs.
-    if (data.issueResolution?.issueId !== issue.id) {
-      delete data.issueResolution
+    if (data.issueTemp?.resolve?.issueId !== issue.id) {
+      delete data.issueTemp?.resolve
     }
-    const resolutionAnswers = data.issueResolution || {}
+    const resolutionAnswers = data.issueTemp?.resolve || {}
 
     // Named issueParticipants rather than set as `participant`, `appointment`
     // and so on, which the layouts read as the page's own context (an
@@ -281,17 +281,20 @@ module.exports = (router) => {
     // with another issue's answers. Coming back after an error keeps what
     // was entered.
     const arrivedFromChangeLink =
-      req.query.issueDescription?.issueId === issue.id
-    const answersAreForThisIssue = data.issueDescription?.issueId === issue.id
+      req.query.issueTemp?.edit?.issueId === issue.id
+    const answersAreForThisIssue = data.issueTemp?.edit?.issueId === issue.id
     if (arrivedFromChangeLink || !answersAreForThisIssue) {
-      data.issueDescription = {
-        issueId: issue.id,
-        description: issue.description
+      data.issueTemp = {
+        ...data.issueTemp,
+        edit: {
+          issueId: issue.id,
+          description: issue.description
+        }
       }
     }
 
     res.render('review/issues/description', {
-      descriptionAnswers: data.issueDescription
+      descriptionAnswers: data.issueTemp?.edit
     })
   })
 
@@ -303,17 +306,17 @@ module.exports = (router) => {
       const { issue, issueUrl } = res.locals
 
       if (!isIssueOpen(issue)) {
-        delete data.issueDescription
+        delete data.issueTemp?.edit
         req.flash('info', 'This issue has already been closed')
         return res.redirect(modalBreakout(issueUrl))
       }
 
-      const description = (data.issueDescription?.description || '').trim()
+      const description = (data.issueTemp?.edit?.description || '').trim()
 
       if (!description) {
         const error = {
           text: 'Enter a description of the issue',
-          name: 'issueDescription[description]',
+          name: 'issueTemp[edit][description]',
           href: '#issueDescription'
         }
 
@@ -322,7 +325,7 @@ module.exports = (router) => {
         if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
           return res.status(422).render('review/issues/description', {
             flash: { error: [error] },
-            descriptionAnswers: data.issueDescription
+            descriptionAnswers: data.issueTemp?.edit
           })
         }
 
@@ -339,7 +342,7 @@ module.exports = (router) => {
 
       // The kit copies every posted field into the session, so the answer
       // would otherwise linger for the next edit
-      delete data.issueDescription
+      delete data.issueTemp?.edit
 
       req.flash('success', 'Description changed')
       res.redirect(modalBreakout(issueUrl))
@@ -352,19 +355,19 @@ module.exports = (router) => {
 
     // Opened in a tab from before the issue was closed
     if (!isIssueOpen(issue)) {
-      delete data.issueResolution
+      delete data.issueTemp?.resolve
       req.flash('info', 'This issue has already been closed')
       return res.redirect(issueUrl)
     }
 
-    const outcome = data.issueResolution?.outcome
-    const note = (data.issueResolution?.note || '').trim()
+    const outcome = data.issueTemp?.resolve?.outcome
+    const note = (data.issueTemp?.resolve?.note || '').trim()
 
     // The outcome is what closing the issue records, so it cannot be skipped
     if (!ISSUE_OUTCOMES.includes(outcome)) {
       req.flash('error', {
         text: 'Select how the issue was resolved',
-        name: 'issueResolution[outcome]',
+        name: 'issueTemp[resolve][outcome]',
         href: '#issueResolutionOutcome'
       })
       return res.redirect(issueUrl)
@@ -378,7 +381,7 @@ module.exports = (router) => {
 
     // The kit copies every posted field into the session, so the answers would
     // otherwise prefill the next issue's form
-    delete data.issueResolution
+    delete data.issueTemp?.resolve
 
     req.flash(
       'success',

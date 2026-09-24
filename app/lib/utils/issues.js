@@ -520,11 +520,11 @@ const isIssueHoldingReading = (data, issue) => {
  * Errors for the answers to a raise an issue form. Both the type and a
  * description are required.
  *
- * @param {object} answers - Answers from data.raiseIssue
+ * @param {object} answers - Answers from data.issueTemp.raise
  * @param {Array} issueTypes - Types the form offered, from getIssueTypes
  * @returns {Array} Error objects for the error summary and populateErrors, empty if valid
  * @example
- * const errors = getRaiseIssueErrors(data.raiseIssue, getIssueTypes('reading'))
+ * const errors = getRaiseIssueErrors(data.issueTemp.raise, getIssueTypes('reading'))
  */
 const getRaiseIssueErrors = (answers = {}, issueTypes = []) => {
   const errors = []
@@ -532,7 +532,7 @@ const getRaiseIssueErrors = (answers = {}, issueTypes = []) => {
   if (!issueTypes.some((issueType) => issueType.value === answers.type)) {
     errors.push({
       text: 'Select what the issue is',
-      name: 'raiseIssue[type]',
+      name: 'issueTemp[raise][type]',
       href: '#raiseIssueType'
     })
   }
@@ -540,7 +540,7 @@ const getRaiseIssueErrors = (answers = {}, issueTypes = []) => {
   if (!(answers.description || '').trim()) {
     errors.push({
       text: 'Enter a description of the issue',
-      name: 'raiseIssue[description]',
+      name: 'issueTemp[raise][description]',
       href: '#raiseIssueDescription'
     })
   }

@@ -3,9 +3,9 @@
    The fields of the raise an issue form, shared by the form outside the
    workflow (issues/raise.html) and the one inside reading
    (reading/workflow/raise-issue.html). Their routes read the answers back
-   from data.raiseIssue.
+   from data.issueTemp.raise.
 
-   Expects: issueTypes (from getIssueTypes), answers (data.raiseIssue),
+   Expects: issueTypes (from getIssueTypes), answers (data.issueTemp.raise),
    raisedFrom, recordId and descriptionHint. #}
 
 {% set typeItems = [] %}
@@ -17,7 +17,7 @@
 {% endfor %}
 
 {{ radios({
-  name: "raiseIssue[type]",
+  name: "issueTemp[raise][type]",
   idPrefix: "raiseIssueType",
   value: answers.type,
   fieldset: {
@@ -30,7 +30,7 @@
 } | populateErrors) }}
 
 {{ textarea({
-  name: "raiseIssue[description]",
+  name: "issueTemp[raise][description]",
   id: "raiseIssueDescription",
   label: {
     text: "Describe the issue",
@@ -44,11 +44,11 @@
 } | populateErrors) }}
 
 {{ appHiddenInput({
-  name: "raiseIssue[raisedFrom]",
+  name: "issueTemp[raise][raisedFrom]",
   value: raisedFrom
 }) }}
 
 {{ appHiddenInput({
-  name: "raiseIssue[recordId]",
+  name: "issueTemp[raise][recordId]",
   value: recordId
 }) }}

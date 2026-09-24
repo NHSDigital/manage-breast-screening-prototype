@@ -89,7 +89,7 @@
     {% set descriptionActions = {
       items: [
         {
-          href: ("/review/issues/" + issue.id + "/description?issueDescription[issueId]=" + issue.id) | urlWithReferrer(referrerChain),
+          href: ("/review/issues/" + issue.id + "/description?issueTemp[edit][issueId]=" + issue.id) | urlWithReferrer(referrerChain),
           text: "Change",
           visuallyHiddenText: "description"
         } | openInModal
@@ -331,7 +331,7 @@
 
       {{ radios({
         idPrefix: "issueResolutionOutcome",
-        name: "issueResolution[outcome]",
+        name: "issueTemp[resolve][outcome]",
         value: resolutionAnswers.outcome,
         fieldset: {
           legend: {
@@ -359,7 +359,7 @@
 
       {{ textarea({
         id: "issueResolutionNote",
-        name: "issueResolution[note]",
+        name: "issueTemp[resolve][note]",
         value: resolutionAnswers.note,
         label: {
           text: "Note (optional)",
@@ -371,7 +371,7 @@
       }) }}
 
       {{ appHiddenInput({
-        name: "issueResolution[issueId]",
+        name: "issueTemp[resolve][issueId]",
         value: issue.id
       }) }}
 

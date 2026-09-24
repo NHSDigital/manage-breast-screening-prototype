@@ -281,7 +281,7 @@ data.readingSessions = {
 /reading/session/:sessionId/appointments/:appointmentId/save-opinion             # POST: Persist read, advance session
 /reading/session/:sessionId/appointments/:appointmentId/request-priors-answer    # POST: Record prior requests, advance session
 /reading/session/:sessionId/appointments/:appointmentId/undo-priors              # GET/POST: Undo user's pending prior requests
-/reading/session/:sessionId/appointments/:appointmentId/raise-issue              # GET: Raise an issue form (answers in data.raiseIssue)
+/reading/session/:sessionId/appointments/:appointmentId/raise-issue              # GET: Raise an issue form (answers in data.issueTemp.raise)
 /reading/session/:sessionId/appointments/:appointmentId/raise-issue-answer       # POST: Create the issue, withdraw the user's read, advance session
 /reading/session/:sessionId/appointments/:appointmentId/withdraw-issue/:issueId  # GET/POST: Withdraw an issue the user raised (resolves it as raised in error)
 /reading/session/:sessionId/appointments/:appointmentId/annotation/add           # Clear temp, redirect to annotation form

@@ -16,7 +16,7 @@
 {% block pageContent %}
 
   {{ textarea({
-    name: "issueDescription[description]",
+    name: "issueTemp[edit][description]",
     id: "issueDescription",
     label: {
       text: pageHeading,
@@ -28,7 +28,7 @@
   } | populateErrors) }}
 
   {{ appHiddenInput({
-    name: "issueDescription[issueId]",
+    name: "issueTemp[edit][issueId]",
     value: issue.id
   }) }}
 

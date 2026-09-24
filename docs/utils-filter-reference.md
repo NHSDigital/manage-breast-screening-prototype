@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-23 16:30 UTC
+- **Generated:** 2026-09-24 14:26 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -116,13 +116,13 @@ String manipulation: case conversion, formatting, NHS-specific formats (NHS numb
 | `stringLiteral(str)` | Support for template literals in Nunjucks | 260 |
 | `noWrap(input)` | Wrap string in a no-wrap span | 272 |
 | `asHint(input)` | Wrap string in a no-wrap span | 283 |
-| `asVisuallyHiddenText(input)` | Wrap string in a hidden text span | 294 |
-| `asAriaHiddenText(input)` | Wrap string in a span, hiding it from assistive technologies | 306 |
-| `formatPhoneNumber(phoneNumber)` | Format phone number for display with spaces | 318 |
-| `formatNhsNumber(input)` | Format NHS number with spaces (3-3-4 format) — e.g. `formatNhsNumber('9997773456') // '999 777 3456'` | 337 |
-| `formatAccessionNumber(input)` | Format an accession number for display with spaces (ABC YYYYMMDD ##### format) — e.g. `formatAccessionNumber('KOX2026052712345') // 'KOX 20260527 12345'` | 361 |
-| `pluralise(word, args)` | Make a word plural based on a count — e.g. `pluralise('cat') // returns 'cats'` | 384 |
-| `formatMammogramViewCode(code)` | Format mammogram view code for display | 407 |
+| `asVisuallyHiddenText(input)` | Wrap string in a hidden text span | 296 |
+| `asAriaHiddenText(input)` | Wrap string in a span, hiding it from assistive technologies | 308 |
+| `formatPhoneNumber(phoneNumber)` | Format phone number for display with spaces | 320 |
+| `formatNhsNumber(input)` | Format NHS number with spaces (3-3-4 format) — e.g. `formatNhsNumber('9997773456') // '999 777 3456'` | 339 |
+| `formatAccessionNumber(input)` | Format an accession number for display with spaces (ABC YYYYMMDD ##### format) — e.g. `formatAccessionNumber('KOX2026052712345') // 'KOX 20260527 12345'` | 363 |
+| `pluralise(word, args)` | Make a word plural based on a count — e.g. `pluralise('cat') // returns 'cats'` | 386 |
+| `formatMammogramViewCode(code)` | Format mammogram view code for display | 409 |
 
 ### status.js
 
@@ -162,13 +162,13 @@ Participant lookups and derived data: full/short names, age, clinic history, and
 | `getFullName(participant)` | Get full name (first, middle, last) of a participant as a Nunjucks-safe string | 28 |
 | `getFirstNames(participant)` | Get first names (first + middle) of a participant as a Nunjucks-safe string | 42 |
 | `getFullNameReversed(participant)` | Get full name in reversed 'Last, First Middle' format — e.g. `getFullNameReversed(participant) // 'SMITH, Jane Louise'` | 54 |
-| `getShortName(participant)` | Get short name (first + last only) of participant as a Nunjucks-safe string | 70 |
-| `findBySXNumber(participants, sxNumber)` | Find a participant by their SX number | 82 |
-| `getAge(participant, [referenceDate])` | Get participant's age | 93 |
-| `sortBySurname(participants)` | Sort participants by surname | 114 |
-| `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 128 |
-| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 161 |
-| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 185 |
+| `getShortName(participant)` | Get short name (first + last only) of participant as a Nunjucks-safe string | 72 |
+| `findBySXNumber(participants, sxNumber)` | Find a participant by their SX number | 84 |
+| `getAge(participant, [referenceDate])` | Get participant's age | 95 |
+| `sortBySurname(participants)` | Sort participants by surname | 116 |
+| `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 130 |
+| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 163 |
+| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 187 |
 
 ### appointment-data.js
 
@@ -179,11 +179,11 @@ Appointment lookups and mutations in session data. Includes the temp appointment
 | Function | Description | Line |
 |---|---|---|
 | `getAppointment(data, appointmentId)` | Get an appointment by ID | 23 |
-| `getAppointmentData(data, clinicId, appointmentId)` | Get appointment data bundle for a given clinic and appointment ID | 43 |
-| `updateAppointment(data, appointmentId, updatedAppointment)` | Find and update an appointment in session data | 67 |
-| `updateAppointmentData(data, appointmentId, updates)` | Update appointment with arbitrary data changes | 86 |
-| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 126 |
-| `getStoppedReasons()` | Reasons an appointment can be stopped (attended not screened), each with | 152 |
+| `getAppointmentData(data, clinicId, appointmentId)` | Get appointment data bundle for a given clinic and appointment ID | 45 |
+| `updateAppointment(data, appointmentId, updatedAppointment)` | Find and update an appointment in session data | 69 |
+| `updateAppointmentData(data, appointmentId, updates)` | Update appointment with arbitrary data changes | 90 |
+| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 132 |
+| `getStoppedReasons()` | Reasons an appointment can be stopped (attended not screened), each with | 162 |
 
 ### episodes.js
 
@@ -238,7 +238,7 @@ Clinic filtering by time period, slot formatting, and opening hours calculation.
 | `formatTimeSlot(dateTime)` | Format clinic time slot | 99 |
 | `getClinicHours(clinic)` | Get clinic opening hours | 125 |
 | `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 143 |
-| `updateClinic(data, clinicId, updates)` | Find and update a clinic in session data | 187 |
+| `updateClinic(data, clinicId, updates)` | Find and update a clinic in session data | 190 |
 
 ### reading-cases.js
 
@@ -387,7 +387,7 @@ Issues raised against a participant, episode, appointment or reading case: types
 | `getIssueTypeLabel(type)` | The display label for an issue type | 471 |
 | `getIssueStatus(issue)` | An issue's status: open, or the outcome it was closed with. Renders as a tag — e.g. `{{ issue \| getIssueStatus \| toTag({ vocabulary: "issue" }) }}` | 480 |
 | `isIssueHoldingReading(data, issue)` | Whether an open issue is holding up image reading at its episode's stage. — e.g. `{% if data \| isIssueHoldingReading(issue) %}` | 495 |
-| `getRaiseIssueErrors(answers, issueTypes)` | Errors for the answers to a raise an issue form. Both the type and a — e.g. `const errors = getRaiseIssueErrors(data.raiseIssue, getIssueTypes('reading'))` | 517 |
+| `getRaiseIssueErrors(answers, issueTypes)` | Errors for the answers to a raise an issue form. Both the type and a — e.g. `const errors = getRaiseIssueErrors(data.issueTemp.raise, getIssueTypes('reading'))` | 519 |
 
 ### medical-information.js
 
@@ -402,19 +402,19 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 32 |
 | `isMedicalHistoryItemRemoved(item)` | Check whether a medical history item records something that has since been removed | 43 |
 | `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 63 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 271 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 300 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 322 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 344 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 423 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 437 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 459 |
-| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 515 |
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 534 |
-| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 561 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 583 |
-| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 597 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 623 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 272 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 301 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 323 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 345 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 426 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 440 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 462 |
+| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 518 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 537 |
+| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 564 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 586 |
+| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 600 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 626 |
 
 ### annotation-summary.js
 
@@ -602,7 +602,7 @@ Display formatting for yes/no answers and ordinal names.
 |---|---|---|
 | `formatAnswer(value, [options], [options.yesValue], [options.noText], [options.notAnsweredText], [options.yesPrefix])` | Format a yes/no/not answered response with optional additional details — e.g. `formatAnswer("yes", { yesValue: "Details here" }) // Returns "Yes - Details here"` | 3 |
 | `getOrdinalName(integer)` | Convert a 1-based integer to its ordinal name — e.g. `getOrdinalName(1) // 'first'` | 41 |
-| `getOrdinalNameIndex0(integer)` | Convert a 0-based index to its ordinal name (0 → 'first', 1 → 'second', etc) — e.g. `getOrdinalNameIndex0(0) // 'first'` | 77 |
+| `getOrdinalNameIndex0(integer)` | Convert a 0-based index to its ordinal name (0 → 'first', 1 → 'second', etc) — e.g. `getOrdinalNameIndex0(0) // 'first'` | 79 |
 
 ### forms.js
 

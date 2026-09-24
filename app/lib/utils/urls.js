@@ -85,9 +85,9 @@ const getReadingCaseUrl = (readingCaseOrId) => {
  * @returns {string | null} Raise form URL, or null if no record was given
  * @example
  * getRaiseIssueUrl({ readingCase, episode }, 'reading_case')
- * // '/issues/raise/reading-case/ruj64jdd?raiseIssue[raisedFrom]=reading_case'
+ * // '/issues/raise/reading-case/ruj64jdd?issueTemp[raise][raisedFrom]=reading_case'
  * getRaiseIssueUrl({ appointment }, 'appointment', 'missing_images')
- * // '/issues/raise/appointment/a1b2c3?raiseIssue[raisedFrom]=appointment&raiseIssue[type]=missing_images'
+ * // '/issues/raise/appointment/a1b2c3?issueTemp[raise][raisedFrom]=appointment&issueTemp[raise][type]=missing_images'
  */
 const getRaiseIssueUrl = (
   { readingCase, appointment, episode } = {},
@@ -102,8 +102,8 @@ const getRaiseIssueUrl = (
 
   if (!record?.id) return null
 
-  const typeParam = type ? `&raiseIssue[type]=${type}` : ''
-  return `/issues/raise/${recordType}/${record.id}?raiseIssue[raisedFrom]=${raisedFrom}${typeParam}`
+  const typeParam = type ? `&issueTemp[raise][type]=${type}` : ''
+  return `/issues/raise/${recordType}/${record.id}?issueTemp[raise][raisedFrom]=${raisedFrom}${typeParam}`
 }
 
 module.exports = {
