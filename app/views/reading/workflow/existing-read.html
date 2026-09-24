@@ -29,8 +29,8 @@
     {# An open issue holds the case - show it in place of an opinion #}
     <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
-    {% set issue = openIssues | first %}
-    {% set canWithdraw = issue.raisedBy == data.currentUser.id %}
+    {# Only the issue the user raised can be withdrawn here #}
+    {% set ownIssue = openIssues | find("raisedBy", data.currentUser.id) %}
 
     {% set issueSummaryHtml %}
       {% call appSummaryList() %}
@@ -43,46 +43,48 @@
           },
           actions: {
             items: [{
-              href: "./withdraw-issue/" + issue.id,
+              href: "./withdraw-issue/" + ownIssue.id,
               text: "Withdraw issue"
             }]
-          } if canWithdraw
+          } if ownIssue
         }) }}
 
-        {{ appSummaryListRow({
-          key: {
-            text: "Issue"
-          },
-          value: {
-            text: issue.type | getIssueTypeLabel
-          },
-          actions: {
-            items: [{
-              href: ("/review/issues/" + issue.id) | urlWithReferrer(currentUrl),
-              text: "View issue"
-            }]
-          }
-        }) }}
-
-        {% if issue.description %}
+        {% for issue in openIssues %}
           {{ appSummaryListRow({
             key: {
-              text: "Description"
+              text: "Issue"
             },
             value: {
-              text: issue.description
+              text: issue.type | getIssueTypeLabel
+            },
+            actions: {
+              items: [{
+                href: ("/review/issues/" + issue.id) | urlWithReferrer(currentUrl),
+                text: "View issue"
+              }]
             }
           }) }}
-        {% endif %}
 
-        {{ appSummaryListRow({
-          key: {
-            text: "Raised by"
-          },
-          value: {
-            text: issue.raisedBy | getUsername({ identifyCurrentUser: true })
-          }
-        }) }}
+          {% if issue.description %}
+            {{ appSummaryListRow({
+              key: {
+                text: "Description"
+              },
+              value: {
+                text: issue.description
+              }
+            }) }}
+          {% endif %}
+
+          {{ appSummaryListRow({
+            key: {
+              text: "Raised by"
+            },
+            value: {
+              text: issue.raisedBy | getUsername({ identifyCurrentUser: true })
+            }
+          }) }}
+        {% endfor %}
 
       {% endcall %}
     {% endset %}
