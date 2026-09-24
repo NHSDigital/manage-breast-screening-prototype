@@ -164,13 +164,13 @@
     {# Until it finalises, the result isn't yet real - nothing has been released
        to arbitration or moved the episode on. Say when that happens, and offer
        to bring it forward - unless an open issue is holding the case, which
-       finalising would get round. Once finalised it can no longer be changed,
-       so the summary below drops its change links. #}
+       finalising or changing the read would get round. Once finalised, or
+       while held, the summary below drops its change links. #}
     {% if thisRead and not isFinalised %}
       {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings, issuePeriods) %}
       {% set finalisationInsetHtml %}
         {% if caseIsHeld %}
-          <p class="nhsuk-u-margin-bottom-0">This {{ finalisationNoun }} will not be finalised while an issue is open.</p>
+          <p class="nhsuk-u-margin-bottom-0">This {{ finalisationNoun }} cannot be changed or finalised while an issue is open.</p>
         {% else %}
           <p>
             This {{ finalisationNoun }} {%- if autoFinaliseAt %} will be automatically finalised at {{ autoFinaliseAt | formatTimeString }}. You can add or amend information until then.{% else %} has not been finalised.
@@ -189,7 +189,7 @@
 
     {% set readSummaryHtml %}
       {% set read = thisRead %}
-      {% set allowEdits = not isFinalised %}
+      {% set allowEdits = not isFinalised and not caseIsHeld %}
       {% set changeOpinionUrl = ("./" + decisionStep) | urlWithReferrer(currentUrl) %}
       {% set showAnnotationImages = withImages %}
       {% set annotationImagePaths = allPaths %}

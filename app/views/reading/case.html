@@ -39,6 +39,10 @@
 
   {% set arbitrationRead = readingCase | getArbitrationRead %}
 
+  {# An open issue holds the case: it can't be read, arbitrated or finalised
+     until the issue is resolved #}
+  {% set isHeld = openIssues | length > 0 %}
+
   {# Image paths drive the annotation markers, resolved once for every read #}
   {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages and appointment %}
@@ -77,7 +81,9 @@
       {# awaiting_finalisation means the outcome is known - agreeing reads or
          an arbitration read - and just needs to become final #}
       {% if caseState == 'awaiting_finalisation' %}
-        {% if arbitrationRead %}
+        {% if isHeld %}
+          {% set finalisationBannerText = "This case will conclude once the open issue is resolved and its " + ("arbitration outcome is" if arbitrationRead else "reads are") + " finalised." %}
+        {% elseif arbitrationRead %}
           {% set finalisationBannerText = "This case will conclude once its arbitration outcome is finalised." %}
         {% else %}
           {% set finalisationBannerText = "This case will conclude once its reads are finalised." %}
@@ -275,7 +281,6 @@
              issue is holding it, which finalising would get round #}
           {% if not caseOutcome %}
             {% set decidedAt = arbitrationRead.timestamp if arbitrationRead else (originalReads | last).timestamp %}
-            {% set isHeld = openIssues | length > 0 %}
             {% set extraRows = extraRows | push({
               key: { text: "Finalised" },
               value: { html: ("Arbitration done " if arbitrationRead else "Reads done ") + (decidedAt | formatDateTime) + '<br><span class="nhsuk-u-secondary-text-colour nhsuk-body-s">' + ("Paused while an issue is open" if isHeld else "Unfinalised") + '</span>' },
@@ -321,8 +326,13 @@
           {# No arbitrating until the reads have finalised - the disagreement
              isn't a result until then #}
           {% if caseState == 'awaiting_arbitration' and caseStatus.finalised %}
+            {% if isHeld %}
+              {{ insetText({
+                text: "This case cannot be arbitrated while an issue is open",
+                classes: "nhsuk-u-margin-bottom-0"
+              }) }}
             {# A reader of the case shouldn't normally be its arbitrator #}
-            {% if readingCase | userHasReadCase(data.currentUser.id) %}
+            {% elseif readingCase | userHasReadCase(data.currentUser.id) %}
               {{ insetText({
                 html: '<p class="nhsuk-u-margin-bottom-0">You read this case, so should avoid arbitrating it yourself. <a href="#">Arbitrate anyway</a></p>',
                 classes: "nhsuk-u-margin-bottom-0"

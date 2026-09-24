@@ -523,14 +523,15 @@ test.describe('Image reading', () => {
     await expect(page.getByText('Paused while an issue is open')).toBeVisible()
     await expect(finaliseAction).toHaveCount(0)
 
-    // Nor does the reader's own read offer it
+    // Nor does the reader's own read offer it, or any change to it
     await page.goto(`${caseUrl}/existing-read`)
     await expect(
-      page.getByText('will not be finalised while an issue is open')
+      page.getByText('cannot be changed or finalised while an issue is open')
     ).toBeVisible()
     await expect(page.getByRole('link', { name: 'Finalise now' })).toHaveCount(
       0
     )
+    await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
   })
 
   test('keeps a lazy session lazy across a resume', async ({ page }) => {

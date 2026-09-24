@@ -1719,8 +1719,9 @@ module.exports = (router) => {
       // for it. The case URL already sends finished cases to existing-read -
       // these are the same door, further in, reachable by back-navigation.
       //
-      // Editing is the exception, and says so with a referrer chain: those
-      // journeys deliberately reopen a finished case, and must be let through.
+      // Editing a finished case is the exception, and says so with a referrer
+      // chain: those journeys deliberately reopen it, and must be let through.
+      // A case held by an open issue is never let through.
       const stepsRequiringUnfinishedCase = [
         'opinion',
         'outcome',
@@ -1735,10 +1736,7 @@ module.exports = (router) => {
         'arbitration-reads'
       ]
 
-      if (
-        stepsRequiringUnfinishedCase.includes(step) &&
-        !req.query.referrerChain
-      ) {
+      if (stepsRequiringUnfinishedCase.includes(step)) {
         const data = req.session.data
         const appointment = data.appointments.find(
           (candidate) => candidate.id === appointmentId
@@ -1756,7 +1754,7 @@ module.exports = (router) => {
           ? hasOpenIssueOnEpisode(data, appointment)
           : false
 
-        if (caseIsSettled || caseIsHeld) {
+        if ((caseIsSettled && !req.query.referrerChain) || caseIsHeld) {
           return res.redirect(
             `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
           )
@@ -2779,8 +2777,8 @@ module.exports = (router) => {
       delete res.locals.data?.imageReadingTemp
 
       // An issue raised while this opinion was being given holds the case, so
-      // a new read can't be saved. Editing a read already made still can be
-      if (!isEditingExistingRead && hasOpenIssueOnEpisode(data, appointment)) {
+      // nothing can be saved to it: neither a new read nor an edit
+      if (hasOpenIssueOnEpisode(data, appointment)) {
         return res.redirect(
           modalBreakout(
             `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`

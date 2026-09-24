@@ -13,25 +13,25 @@
     {{ pageHeading }}
   </h1>
 
-  <div class="app-header-with-status__status-tag">
+  <div class="app-header-with-status__status-tag app-header-with-status__tags">
     {# Single status: outcome once concluded, otherwise the in-progress state #}
-    {{ caseOutcomeTag(readingCase, { classes: "nhsuk-u-margin-bottom-2" }) }}
+    {{ caseOutcomeTag(readingCase) }}
 
     {# Ageing matters only while the case still owes a final outcome #}
     {% if not caseOutcome %}
       {% set caseUrgency = readingCase.openedDate | getReadingUrgency(data.config.reading) %}
       {% if caseUrgency == 'urgent' %}
-        <br>{{ "Urgent" | toTag }}
+        {{ "Urgent" | toTag }}
       {% elseif caseUrgency == 'due_soon' %}
-        <br>{{ "Due soon" | toTag }}
+        {{ "Due soon" | toTag }}
       {% endif %}
     {% endif %}
 
     {% if openIssues | length %}
-      <br>{{ issueTag() }}
+      {{ issueTag() }}
     {% endif %}
     {% if caseAwaitingPriors %}
-      <br>{{ "Awaiting priors" | toTag }}
+      {{ "Awaiting priors" | toTag }}
     {% endif %}
   </div>
 </div>
