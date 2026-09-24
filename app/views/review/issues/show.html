@@ -271,11 +271,12 @@
         <br>{{ imagesSummary.views | join(", ") | asHint }}
       {% endset %}
 
+      {% set accessionNumberValueHtml %}<span class="nhsuk-u-font-code nhsuk-u-nowrap">{{ imagesAppointment.accessionNumber | formatAccessionNumber }}</span>{% endset %}
       {% set accessionNumberHtml %}
         {{ appCopyToClipboard({
           text: imagesAppointment.accessionNumber,
           type: "value",
-          html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (imagesAppointment.accessionNumber | formatAccessionNumber) + '</span>',
+          html: accessionNumberValueHtml,
           label: "accession number"
         }) }}
       {% endset %}
