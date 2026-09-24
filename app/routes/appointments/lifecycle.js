@@ -239,23 +239,21 @@ module.exports = (router) => {
       // Only allow exiting if the appointment is currently in progress
       if (appointment?.status === 'in_progress') {
         if (exitAction === 'discard') {
-          // Discard changes - reset workflow and revert to checked in
-          delete data.appointment.workflowStatus
+          // Discard changes. Drop the working copies first: the updates below
+          // build on data.appointment when it exists, which would save the
+          // edits being discarded
+          delete data.appointment
+          delete data.participant
 
-          // Revert status back to checked in
+          // Revert to checked in, reset the workflow and clear session details
           updateAppointmentStatus(data, appointmentId, 'checked_in')
-
-          // Clear session details
           updateAppointmentData(data, appointmentId, {
+            workflowStatus: undefined,
             sessionDetails: {
               startedAt: null,
               startedBy: null
             }
           })
-
-          // Clear temporary session data without saving
-          delete data.appointment
-          delete data.participant
 
           // Redirect to returnTo destination or appointment page
           const returnTo = data.returnTo
