@@ -151,7 +151,7 @@ From [copilot-instructions.md](../.github/copilot-instructions.md):
 - Comments explain purpose, not history.
 - Content: UK English, sentence case, smart quotes, lean copy that does not repeat the heading.
 
-Spot it: `grep -nE '\{%-? *elif|;$'` on added lines, and check the first line of each new file.
+Spot it: `grep -nE '\{%-? *elif'` on added Nunjucks lines, `grep -nE ';$'` on added JavaScript lines (Sass uses semicolons), and check the first line of each new code file.
 
 ## 11. Tests and docs
 
