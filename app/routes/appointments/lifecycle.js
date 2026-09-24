@@ -173,9 +173,9 @@ module.exports = (router) => {
       const data = req.session.data
       const appointment = getAppointment(data, appointmentId)
 
-      // The exit questions are temp answers on the working copy. Every exit
-      // except the images-taken question clears them, so they are never saved
-      // with the appointment
+      // The exit questions are temp answers on the working copy. Only the
+      // images-taken answer keeps them, for the follow-up question; every other
+      // exit clears them before anything is saved
       const exitAppointmentTemp = data.appointment?.exitAppointmentTemp || {}
       const { imagesTaken, pauseAction, exitAction } = exitAppointmentTemp
       if (imagesTaken !== 'No' && imagesTaken !== 'Yes') {
