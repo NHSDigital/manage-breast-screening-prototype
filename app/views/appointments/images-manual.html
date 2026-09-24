@@ -128,10 +128,14 @@
       }) }}
     {% endset %}
 
+    {% set accessionNumberKeyHtml %}
+      <span class="app-nowrap">Accession number</span>
+    {% endset %}
+
     {{ summaryList({
       rows: [
         {
-          key: { html: "<span class='app-nowrap'>Accession number</span>" },
+          key: { html: accessionNumberKeyHtml },
           value: { html: accessionNumberHtml }
         },
         {
