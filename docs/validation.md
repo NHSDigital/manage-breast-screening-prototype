@@ -160,9 +160,9 @@ This works because the `errorList` array uses the same `{ text, href }` shape th
 
 ## How flash gets to templates
 
-- `app/locals.js` sets `res.locals.flash = req.flash()` on every request
+- `app/locals.js` makes `res.locals.flash` a getter that reads the flash the first time something asks for it, usually when a page renders
 - Templates access it as `flash.error`, `flash.success` etc.
-- Flash messages are consumed on read — they only appear once after the redirect
+- Flash messages are consumed on read, so they appear once. A request that only redirects doesn't read them, so a message survives a chain of redirects to the page that renders
 
 ## Modal forms
 

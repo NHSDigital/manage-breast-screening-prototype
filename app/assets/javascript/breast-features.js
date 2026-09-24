@@ -1018,11 +1018,11 @@ function initializeBreastFeatures() {
     }
 
     if (allFeatures.length === 0) {
-      featuresListContainer.style.display = 'none'
+      featuresListContainer.hidden = true
       return
     }
 
-    featuresListContainer.style.display = 'block'
+    featuresListContainer.hidden = false
     featuresList.innerHTML = ''
 
     allFeatures.sort((a, b) => a.number - b.number)
