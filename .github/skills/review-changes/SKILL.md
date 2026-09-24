@@ -10,6 +10,7 @@ Check the work against this repo's conventions with fresh eyes, fix what is wron
 ## 1. Get ready
 
 - If the branch is well behind `main`, suggest merging `main` in first, so the review uses the current conventions and docs.
+- If the branch already has a pull request with open review comments, deal with those too, using the `pr-comments` skill.
 - Write two or three sentences on what the change is meant to do. The reviewer needs this to judge whether it does it.
 
 ## 2. Review in a subagent

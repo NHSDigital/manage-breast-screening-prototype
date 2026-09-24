@@ -36,7 +36,8 @@ If a review suggests a big change to how the feature works, Copilot should ask y
 - Commit after the review, with a message saying what changed.
 - To bring in changes from `main`, merge `main` into your branch. If there are conflicts, start a new chat and ask Copilot to resolve them.
 - Fill in the pull request template: what it changes, the review notes, and the checklist.
-- Copilot may also comment on the pull request on GitHub. To deal with its comments, start a new chat, paste the comment in, and ask Copilot to fix it or explain why it doesn't apply.
+- Copilot reviews each pull request on GitHub and may leave comments. To deal with them, start a new chat and type `/pr-comments`. Copilot fixes what's valid, replies to each comment, and resolves the fixed ones. Comments it disagrees with stay open with a reply for Ed.
+- For Copilot to reply and resolve on GitHub, it needs the GitHub CLI: install it from [cli.github.com](https://cli.github.com) and run `gh auth login` once. Without it, Copilot will tell you which comments are fixed, and you can press "Resolve conversation" on each.
 - Merge with **Squash and merge**.
 
 ## If something goes wrong
