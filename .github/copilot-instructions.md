@@ -80,7 +80,7 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 
 ## Before you finish
 
-When a piece of work is complete, and before suggesting a commit or a pull request, use the `review-changes` skill (`/review-changes`) without being asked. It reviews the change against [docs/review-checklist.md](../docs/review-checklist.md) in a subagent, fixes what it finds, runs `npm test` and writes review notes for the pull request. The person you are working with may not spot code problems, so this step is how they get caught.
+When a piece of work is complete, and before suggesting a commit or a pull request, use the `review-changes` skill (`/review-changes`) without being asked. It reviews the change against [docs/review-checklist.md](../docs/review-checklist.md) in a subagent, fixes what it finds, runs `npm test` and writes review notes for the pull request. The authors are designers whose background is not coding, so this step is how code problems get caught.
 
 ## NHS design system references
 

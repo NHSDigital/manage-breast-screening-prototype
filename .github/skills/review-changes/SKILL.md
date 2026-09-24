@@ -5,7 +5,7 @@ description: Review the current change against this prototype's conventions, fix
 
 # Review changes
 
-Check the work against this repo's conventions with fresh eyes, fix what is wrong, and leave a clear record for whoever reviews the pull request. The person you are working with is a designer. They may not spot code problems or know why they matter, so do not hand problems back to them: fix them, and explain in plain language what you did.
+Check the work against this repo's conventions with fresh eyes, fix what is wrong, and leave a clear record for whoever reviews the pull request. The authors are designers whose background is not coding, so do not hand code problems back to them: fix them, and explain in plain language what you did.
 
 ## 1. Get ready
 
