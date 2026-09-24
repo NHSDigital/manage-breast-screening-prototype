@@ -15,4 +15,3 @@
 - `readingOpinionBanner` is a hand-rolled flash message because `req.flash` "couldn't get it to work" (`reading.js` ~1087); find out why and use flash
 - `saveTempAppointmentToAppointment` saves `*Temp` keys (`symptomTemp`, `medicalHistoryTemp` etc) if a flow is abandoned and the appointment saved elsewhere; consider stripping them in the helper, after checking no flow relies on a temp surviving a mid-flow save
 - Exit appointment "Discard changes" calls `updateAppointmentStatus` and `updateAppointmentData` while `data.appointment` still exists, which may save the working copy's unsaved edits (`lifecycle.js` discard branch)
-- `summary-lists/special-appointment/special-appointment.njk` (~50) uses an inline style with `var(--nhsuk-secondary-text-color)`, probably a misspelt custom property
