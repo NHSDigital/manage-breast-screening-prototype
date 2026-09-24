@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!container) return
 
   const clinicId = container.dataset.clinicId
-  let detailsToOpen = null
 
   // Open a details form in the modal, or navigate to it when modal forms are
   // disabled and the shell (#app-form-modal) isn't rendered - otherwise the
@@ -33,22 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Any swapped row means the page counts may be stale
-  container.addEventListener('fragment:swapped', (event) => {
+  container.addEventListener('fragment:swapped', () => {
     showRefreshLink()
-
-    if (detailsToOpen !== event.detail.fragment.dataset.fragmentId) return
-
-    const appointmentId = detailsToOpen
-    detailsToOpen = null
-    openDetailsFormOrNavigate(
-      'app-form-modal',
-      `/clinics/${clinicId}/close/reason/${appointmentId}`,
-      () => {
-        const row = rowFor(appointmentId)
-        if (!row) return window.location.reload()
-        refreshRow(row).catch(() => window.location.reload())
-      }
-    )
   })
 
   const rowFor = (appointmentId) =>
@@ -62,11 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   container.addEventListener('click', (event) => {
-    const actionLink = event.target.closest('a[data-open-details-after-action]')
-    if (actionLink) {
-      detailsToOpen = actionLink.closest('[data-fragment-id]')?.dataset.fragmentId
-    }
-
     // Details links open in a modal (attributes added by the openInModal
     // filter). Take over from the global handler in modal.js so the row can
     // be refreshed in place when the modal form saves.

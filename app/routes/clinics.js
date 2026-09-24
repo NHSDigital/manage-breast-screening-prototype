@@ -10,8 +10,7 @@ const {
 const {
   filterAppointmentsByStatus,
   isInProgress,
-  isFinal,
-  hasStoppedDetails
+  isFinal
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
@@ -64,20 +63,11 @@ function getClinicData(data, clinicId) {
 // changed elsewhere. Some entries map to a different underlying status via
 // `to`; undoing attended not screened also clears the stored reason.
 const CLOSE_STATUS_ACTIONS = {
-  attended_not_screened: { from: 'checked_in' },
   did_not_attend: { from: 'scheduled' },
   checked_in: { from: 'attended_not_screened', clearsStoppedDetails: true },
   scheduled: { from: 'did_not_attend' },
   checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in' },
   scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled' }
-}
-
-/**
- * Attended not screened but no reasons recorded yet - still needs action
- * before the clinic can close
- */
-const needsStoppedDetails = (appointment) => {
-  return appointment.status === 'attended_not_screened' && !hasStoppedDetails(appointment)
 }
 
 /**
@@ -226,19 +216,14 @@ module.exports = (router) => {
   router.get('/clinics/:clinicId/close', (req, res) => {
     const { appointments, unit } = getClinicData(req.session.data, req.params.clinicId)
 
-    // Attended not screened only counts as an outcome once reasons are
-    // recorded - until then it stays in the 'needs an outcome' group
     res.render('clinics/close', {
       unit,
       appointmentCount: appointments.length,
-      needsOutcomeCount: appointments.filter((a) => !isFinal(a) || needsStoppedDetails(a)).length,
+      needsOutcomeCount: appointments.filter((a) => !isFinal(a)).length,
       inProgressAppointments: appointments.filter((a) => isInProgress(a)),
-      checkedInAppointments: [
-        ...appointments.filter((a) => a.status === 'checked_in'),
-        ...appointments.filter((a) => needsStoppedDetails(a))
-      ],
+      checkedInAppointments: appointments.filter((a) => a.status === 'checked_in'),
       scheduledAppointments: appointments.filter((a) => a.status === 'scheduled'),
-      outcomeRecordedAppointments: appointments.filter((a) => isFinal(a) && !needsStoppedDetails(a))
+      outcomeRecordedAppointments: appointments.filter((a) => isFinal(a))
     })
   })
 
@@ -346,6 +331,15 @@ module.exports = (router) => {
       return res.redirect(`/clinics/${clinicId}/close/reschedule/${appointmentId}`)
     }
 
+    // Details are recorded, so the appointment can now become attended not
+    // screened. Setting the status here - rather than before the modal opens -
+    // means a cancelled modal never leaves the appointment in a state with no
+    // reasons recorded. Skip when already in that status, so editing the
+    // details doesn't add a redundant status history entry.
+    if (res.locals.appointment.status !== 'attended_not_screened') {
+      updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+    }
+
     // In modal context reply with an empty success, so the modal closes and
     // the page updates the row in place rather than reloading
     if (res.locals.parentLayout) {
@@ -411,15 +405,6 @@ module.exports = (router) => {
     if (unresolved.length > 0) {
       req.flash('error', [{
         text: `An outcome still needs to be recorded for ${unresolved.length} ${pluralise('participant', unresolved.length)} before the clinic can be closed`
-      }])
-      return res.redirect(`/clinics/${clinicId}/close`)
-    }
-
-    // Attended-not-screened appointments also need their reasons recorded
-    const missingDetails = clinicAppointments.filter((a) => needsStoppedDetails(a))
-    if (missingDetails.length > 0) {
-      req.flash('error', [{
-        text: `Details still need to be added for ${missingDetails.length} ${pluralise('participant', missingDetails.length)} marked as attended not screened`
       }])
       return res.redirect(`/clinics/${clinicId}/close`)
     }

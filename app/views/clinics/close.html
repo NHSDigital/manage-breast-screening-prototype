@@ -3,6 +3,7 @@
 {% extends 'layout-app.html' %}
 
 {% from "_includes/close-clinic-appointment-row.njk" import closeClinicAppointmentRow with context %}
+{% from '_components/modal/macro.njk' import appModal %}
 
 {% set pageHeading = "Close clinic " ~ clinic.clinicCode %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
@@ -131,6 +132,14 @@
       </div>
     </div>
   </div>
+
+  {# The close flow always collects stop reasons in the shared modal so the
+     status only changes on save without a full page reload. The layout only
+     renders the shell when the modal forms spike is on, so render it here when
+     the spike is off. #}
+  {% if data.settings.modalForms != 'true' %}
+    {{ appModal({ id: "app-form-modal", showCloseButton: true }) }}
+  {% endif %}
 
 {% endblock %}
 

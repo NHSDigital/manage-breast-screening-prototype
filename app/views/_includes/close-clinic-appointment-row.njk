@@ -9,15 +9,25 @@
   clinicId - id of the clinic being closed
   showActions - whether to render the outcome action links
 
-  Import with context so openInModal can read the modal forms setting.
+  The stop-reason links carry the modal data attributes directly rather than
+  through openInModal, so the close flow always opens the reason form in the
+  shared modal - even when the modal forms spike is off - letting the status
+  change on save without a full page reload. close-clinic.js intercepts them;
+  without JS the href still navigates to the reason page.
 #}
 
 {%- from '_components/link/macro.njk' import appLink %}
 
 {% macro closeClinicAppointmentRow(appointment, participant, clinicId, showActions) %}
+  {% set reasonUrl = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
+  {% set modalAttributes = {
+    "data-load-modal-url": reasonUrl,
+    "data-modal-id": "app-form-modal"
+  } %}
   {% set detailsLink = {
-    text: "Change details" if appointment | hasStoppedDetails else "Add details",
-    href: "/clinics/" + clinicId + "/close/reason/" + appointment.id
+    text: "Change details",
+    href: reasonUrl,
+    attributes: modalAttributes
   } %}
   <tr data-fragment-id="{{ appointment.id }}">
     <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
@@ -55,19 +65,23 @@
         {% if appointment.status == "in_progress" or appointment.status == "paused" %}
           <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
         {% elseif appointment.status == "checked_in" %}
-          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/attended_not_screened" data-fragment-action data-open-details-after-action>Mark as attended not screened</a>
+          {{ appLink({
+            text: "Mark as attended not screened",
+            href: reasonUrl,
+            attributes: modalAttributes
+          }) }}
         {% elseif appointment.status == "scheduled" %}
           <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/did_not_attend" data-fragment-action>Mark as did not attend</a>
         {% elseif appointment.status == "attended_not_screened" %}
           <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in" data-fragment-action>Undo status</a>
-          <br>{{ appLink(detailsLink | openInModal) }}
+          <br>{{ appLink(detailsLink) }}
         {% elseif appointment.status == "did_not_attend" %}
           <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled" data-fragment-action>Undo status</a>
         {% elseif appointment.status == "rescheduled" and appointment | hasStoppedDetails %}
-          {{ appLink(detailsLink | openInModal) }}
+          {{ appLink(detailsLink) }}
         {% endif %}
       {% elseif appointment | hasStoppedDetails %}
-        {{ appLink(detailsLink | openInModal) }}
+        {{ appLink(detailsLink) }}
       {% endif %}
     </td>
   </tr>
