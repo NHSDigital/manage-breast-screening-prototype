@@ -100,15 +100,20 @@
     
     {# Add repeat reasons if present #}
     {% if view.repeatReasons and view.repeatReasons | length > 0 %}
-      {% set reasonsList = "<ul class='nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0'>" %}
-      {% for reason in view.repeatReasons %}
-        {% set reasonsList = reasonsList + "<li>" + reason + "</li>" %}
-      {% endfor %}
-      {% set reasonsList = reasonsList + "</ul>" %}
-      {% set viewDescription = viewDescription + "<br>Repeat " + ("reason" | pluralise(view.repeatReasons | length)) + ":" + reasonsList %}
+      {% set viewDescription %}
+        {{ viewDescription | safe }}<br>Repeat {{ "reason" | pluralise(view.repeatReasons | length) }}:
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0">
+          {% for reason in view.repeatReasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endset %}
     {% endif %}
     
-    {% set extraImagesHtml = extraImagesHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + view.viewShortWithSide + ":</strong> " + viewDescription + "</p>" %}
+    {% set extraImagesHtml %}
+      {{ extraImagesHtml | safe }}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ view.viewShortWithSide }}:</strong> {{ viewDescription | safe }}</p>
+    {% endset %}
   {% endif %}
 {% endfor %}
 
@@ -252,19 +257,27 @@
     
     {# Add repeat reasons if present #}
     {% if view.repeatReasons and view.repeatReasons | length > 0 %}
-      {% set reasonsList = "<ul class='nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0'>" %}
-      {% for reason in view.repeatReasons %}
-        {% set reasonsList = reasonsList + "<li>" + reason + "</li>" %}
-      {% endfor %}
-      {% set reasonsList = reasonsList + "</ul>" %}
-      {% set viewDescription = viewDescription + "<br>Repeat " + ("reason" | pluralise(view.repeatReasons | length)) + ":" + reasonsList %}
+      {% set viewDescription %}
+        {{ viewDescription | safe }}<br>Repeat {{ "reason" | pluralise(view.repeatReasons | length) }}:
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0">
+          {% for reason in view.repeatReasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endset %}
     {% endif %}
   {% endif %}
   
   {% if viewDescription %}
-    {% set combinedViewsHtml = combinedViewsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + viewLabel + ":</strong> " + viewDescription + "</p>" %}
+    {% set combinedViewsHtml %}
+      {{ combinedViewsHtml | safe }}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ viewLabel }}:</strong> {{ viewDescription | safe }}</p>
+    {% endset %}
   {% else %}
-    {% set combinedViewsHtml = combinedViewsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + viewLabel + "</strong></p>" %}
+    {% set combinedViewsHtml %}
+      {{ combinedViewsHtml | safe }}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ viewLabel }}</strong></p>
+    {% endset %}
   {% endif %}
 {% endfor %}
 

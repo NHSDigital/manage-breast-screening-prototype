@@ -3,6 +3,12 @@
    Expects in context: hasExistingOpinion, currentOpinion, existingRead,
    hasSymptoms, isArbitration, data #}
 
+{# Opinion labels with their keyboard shortcut #}
+{% set normalLabelHtml %}Normal <span class="app-shortcut-hint">(N)</span>{% endset %}
+{% set normalWithDetailsLabelHtml %}Normal, and add details <span class="app-shortcut-hint">(N)</span>{% endset %}
+{% set technicalRecallLabelHtml %}Technical recall <span class="app-shortcut-hint">(T)</span>{% endset %}
+{% set recallForAssessmentLabelHtml %}Recall for assessment <span class="app-shortcut-hint">(R)</span>{% endset %}
+
 {% set questionText = "What is the outcome for this case?" if isArbitration else "What is your opinion of these images?" %}
 
 {% if hasExistingOpinion %}
@@ -19,7 +25,7 @@
     items: [
       {
         value: "normal",
-        html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+        html: normalLabelHtml,
         checked: currentOpinion == 'normal' and not existingRead.normalDetails,
         attributes: { "data-shortcut-radio": "n" }
       },
@@ -30,12 +36,12 @@
       },
       {
         value: "technical_recall",
-        html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+        html: technicalRecallLabelHtml,
         attributes: { "data-shortcut-radio": "t" }
       },
       {
         value: "recall_for_assessment",
-        html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+        html: recallForAssessmentLabelHtml,
         attributes: { "data-shortcut-radio": "r" }
       }
     ],
@@ -52,7 +58,7 @@
   {% set opinionButtonsStackedHtml %}
     {% if hasSymptoms %}
       {{ button({
-        html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+        html: normalWithDetailsLabelHtml,
         value: "normal_with_details",
         name: "imageReadingTemp[opinion]",
         classes: "app-button-full-width nhsuk-u-margin-bottom-3",
@@ -60,7 +66,7 @@
       } | openInModal) }}
     {% else %}
       {{ button({
-        html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+        html: normalLabelHtml,
         value: "normal",
         name: "imageReadingTemp[opinion]",
         classes: "app-button-full-width nhsuk-u-margin-bottom-3",
@@ -76,7 +82,7 @@
       </p>
     {% endif %}
     {{ button({
-      html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+      html: technicalRecallLabelHtml,
       value: "technical_recall",
       name: "imageReadingTemp[opinion]",
       variant: "secondary",
@@ -84,7 +90,7 @@
       attributes: { "data-shortcut": "t" }
     } | openInModal) }}
     {{ button({
-      html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+      html: recallForAssessmentLabelHtml,
       value: "recall_for_assessment",
       name: "imageReadingTemp[opinion]",
       variant: "warning",
@@ -100,14 +106,14 @@
     <div class="app-button-group--equal">
       {% if hasSymptoms %}
         {{ button({
-          html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+          html: normalWithDetailsLabelHtml,
           value: "normal_with_details",
           name: "imageReadingTemp[opinion]",
           attributes: { "data-shortcut": "n" }
         } | openInModal) }}
       {% else %}
         {{ button({
-          html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+          html: normalLabelHtml,
           value: "normal",
           name: "imageReadingTemp[opinion]",
           attributes: { "data-shortcut": "n" }
@@ -124,14 +130,14 @@
         </p>
       {% endif %}
       {{ button({
-        html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+        html: technicalRecallLabelHtml,
         value: "technical_recall",
         name: "imageReadingTemp[opinion]",
         variant: "secondary",
         attributes: { "data-shortcut": "t" }
       } | openInModal) }}
       {{ button({
-        html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+        html: recallForAssessmentLabelHtml,
         value: "recall_for_assessment",
         name: "imageReadingTemp[opinion]",
         variant: "warning",

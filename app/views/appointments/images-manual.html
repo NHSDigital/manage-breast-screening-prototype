@@ -110,20 +110,22 @@
     <h2>Manually add participant details</h2>
     <p>Set up an unscheduled appointment using the following information so mammograms can be assigned correctly:</p>
 
+    {% set accessionNumberValueHtml %}<span class="nhsuk-u-font-code nhsuk-u-nowrap">{{ appointment.accessionNumber | formatAccessionNumber }}</span>{% endset %}
     {% set accessionNumberHtml %}
       {{ appCopyToClipboard({
         text: appointment.accessionNumber,
         type: "value",
-        html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (appointment.accessionNumber | formatAccessionNumber) + '</span>',
+        html: accessionNumberValueHtml,
         label: "accession number"
       }) }}
     {% endset %}
 
+    {% set nhsNumberValueHtml %}<span class="nhsuk-u-font-code nhsuk-u-nowrap">{{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</span>{% endset %}
     {% set nhsNumberHtml %}
       {{ appCopyToClipboard({
         text: participant.medicalInformation.nhsNumber,
         type: "value",
-        html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>',
+        html: nhsNumberValueHtml,
         label: "NHS number"
       }) }}
     {% endset %}
