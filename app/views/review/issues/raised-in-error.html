@@ -1,0 +1,48 @@
+{# app/views/review/issues/raised-in-error.html
+
+   Close an open issue as raised in error, saying why. The route
+   (routes/review.js) passes the answers keyed to this issue as closingAnswers,
+   and the participants as issueParticipants. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Close issue as raised in error" %}
+{% set formAction = ("/review/issues/" + issue.id + "/raised-in-error-answer") | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: ("/review/issues/" + issue.id) | urlWithReferrer(referrerChain),
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    {% if issueParticipants | length %}
+      <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+    {% endif %}
+    {{ pageHeading }}
+  </h1>
+
+  {{ textarea({
+    name: "issueTemp[raisedInError][note]",
+    id: "issueRaisedInErrorNote",
+    label: {
+      text: "Why was this issue raised in error?",
+      size: "m"
+    },
+    hint: {
+      text: "For example, what was checked and found to be correct"
+    },
+    rows: 5,
+    value: closingAnswers.note
+  } | populateErrors) }}
+
+  {{ appHiddenInput({
+    name: "issueTemp[raisedInError][issueId]",
+    value: issue.id
+  }) }}
+
+  {{ button({
+    text: "Confirm and continue"
+  }) }}
+
+{% endblock %}

@@ -283,7 +283,16 @@ const STATUS_TAGS = {
     // so readers and admin staff see one status rather than two
     priors_required: { colour: 'yellow' },
     awaiting_priors: { colour: 'yellow' },
-    deferred: { colour: 'yellow' }
+    // Any open issue (see issues.js), shown wherever the issue's episode or
+    // participant is
+    has_issue: { label: 'Issue raised', colour: 'yellow' }
+  },
+  // An issue's own status (getIssueStatus in issues.js). Open shares has_issue's
+  // yellow; closed issues are done, whichever way they were closed
+  issue: {
+    open: { label: 'Open', colour: 'yellow' },
+    resolved: { label: 'Resolved', colour: 'green' },
+    raised_in_error: { label: 'Raised in error', colour: 'grey' }
   }
 }
 

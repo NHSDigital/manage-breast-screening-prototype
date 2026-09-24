@@ -28,7 +28,7 @@ The image reading section allows radiologists to review mammogram images from sc
 - Clinic-based reading workflows
 - First/second read opinion tracking (double-reading requirement)
 - Annotation system for marking abnormalities (several UI modes via `annotationsMode`)
-- Skip and defer functionality, with progress tracking
+- Skipping cases and raising issues, with progress tracking
 - Keyboard shortcuts on the opinion page, usable from both the reading page and the PACS viewer window
 
 ---
@@ -53,7 +53,6 @@ app/
 │   │   ├── session.html             # Session view with appointment list
 │   │   ├── skipped-review.html      # End-of-session page when skipped cases remain
 │   │   ├── no-more-cases.html       # Shown when a session has no readable cases left
-│   │   ├── deferred.html            # Deferred cases list
 │   │   ├── history.html             # Reading history
 │   │   ├── reading-statistics.html  # Reading statistics dashboard
 │   │   ├── create-custom-session.html # Custom session creation (card commented out on the homepage)
@@ -70,7 +69,7 @@ app/
 │   │   │   ├── annotation.html      # Add/edit annotations
 │   │   │   ├── annotate-v2.html     # Newer annotation UI (image-based modes)
 │   │   │   ├── confirm-abnormal.html
-│   │   │   ├── defer-case.html      # Defer a case out of the reading queue
+│   │   │   ├── raise-issue.html     # Raise an issue on the case, holding it out of reading
 │   │   │   ├── medical-information.html  # Full medical information view
 │   │   │   ├── recommended-assessment.html  # Recommended assessment step
 │   │   │   ├── compare.html         # Second-reader comparison page
@@ -126,7 +125,7 @@ episode.readingCases = [
         right: { ... }
       }
     ],
-    deferral, deferralHistory
+    arbitration: { releasedAt, releasedBy }   // once released into arbitration
   }
 ]
 ```
@@ -264,8 +263,6 @@ data.readingSessions = {
 /reading/priors/:filter               # Filter: all | not-requested | pending | requested | resolved
 /reading/priors/update-status         # POST: Update mammogram request status (accepts returnTo)
 /reading/create-session               # Creates session from query params, redirects to first appointment
-/reading/deferred                     # Deferred cases list
-/reading/deferred/undo                # POST: Undo a deferral
 /reading/session/:sessionId           # Session overview (redirects to view)
 /reading/session/:sessionId/resume    # Resume at the next readable appointment
 /reading/session/:sessionId/skipped-review  # End-of-session page when skipped cases remain
@@ -284,8 +281,9 @@ data.readingSessions = {
 /reading/session/:sessionId/appointments/:appointmentId/save-opinion             # POST: Persist read, advance session
 /reading/session/:sessionId/appointments/:appointmentId/request-priors-answer    # POST: Record prior requests, advance session
 /reading/session/:sessionId/appointments/:appointmentId/undo-priors              # GET/POST: Undo user's pending prior requests
-/reading/session/:sessionId/appointments/:appointmentId/defer-case-answer        # POST: Defer case out of the queue
-/reading/session/:sessionId/appointments/:appointmentId/undo-defer               # POST: Undo a deferral
+/reading/session/:sessionId/appointments/:appointmentId/raise-issue              # GET: Raise an issue form (answers in data.issueTemp.raise)
+/reading/session/:sessionId/appointments/:appointmentId/raise-issue-answer       # POST: Create the issue, withdraw the user's read, advance session
+/reading/session/:sessionId/appointments/:appointmentId/withdraw-issue/:issueId  # GET/POST: Withdraw an issue the user raised (resolves it as raised in error)
 /reading/session/:sessionId/appointments/:appointmentId/annotation/add           # Clear temp, redirect to annotation form
 /reading/session/:sessionId/appointments/:appointmentId/annotation/edit/:annotationId  # Load annotation into temp, redirect to form
 /reading/session/:sessionId/appointments/:appointmentId/annotation/save          # POST: Save annotation with validation
@@ -322,6 +320,7 @@ The base appointment URL (`/appointments/:appointmentId`) auto-redirects:
 - **Not read yet, no priors pending**: Redirects to `/opinion` (clears `imageReadingTemp`)
 - **Already read**: Redirects to `/existing-read` (shows saved read with change option)
 - **Awaiting priors** (any mammogram has `requestStatus` = `'pending'` or `'requested'`): Redirects to `/existing-read` (shows priors status)
+- **Episode has an open issue**: Redirects to `/existing-read` (shows the issue)
 
 ### Normal opinion flow (first reader, or second reader with off/no comparison)
 
@@ -427,17 +426,17 @@ Templates receive via `res.locals`:
 
 All of these except `writeReading` (which is in `reading.js`) live in `app/lib/utils/reading-cases.js`.
 
-- `getReadingMetadata(readingCase, settings)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions, state, outcome }` (computed on demand). `getAppointmentReadingMetadata(data, appointment)` is the appointment-shaped wrapper.
+- `getReadingMetadata(readingCase, settings, issuePeriods)` - Returns `{ readCount, uniqueReaderCount, firstReadComplete, secondReadComplete, isDiscordant, opinions, state, outcome }` (computed on demand). `getAppointmentReadingMetadata(data, appointment)` is the appointment-shaped wrapper.
 - `getReadsAsArray(appointment)` - Returns reads sorted by readNumber (or timestamp fallback)
 - `getReadForUser(appointment, userId)` - Get this user's read object
 - `getOtherReads(appointment, userId)` - Get reads from other users (for comparison)
 - `writeReading(data, appointment, userId, reading, sessionId)` - Saves a read onto the appointment's case, settles readNumber and readType, removes from skipped list
 - `areReadsDiscordant(readA, readB)` - Compares opinions, TR views, and RFA breast assessments
 - `willGoToArbitration(readA, readB, settings)` - Policy-aware: always true if discordant; may be true for concordant non-normal depending on `settings.reading.arbitration.policy`
-- `getReadingCaseState(readingCase, settings, now)` - Where the case has got to: `awaiting_first_read` | `awaiting_second_read` | `awaiting_finalisation` | `awaiting_arbitration` | `in_arbitration` | `concluded`
-- `getReadingCaseOutcome(readingCase, settings, now)` - What it found: `normal` | `technical_recall` | `recall_for_assessment`, or `null` while reading is still under way. The arbitration read, where there is one, is the deciding read.
-- `isReadFinalised(read, settings, now)` - Whether a read is finalised: explicitly (`finalisedAt`) or automatically once `settings.reading.finalisationDelay` minutes have passed since the read (`'0'` immediate, `'never'` manual only)
-- `getReadingCaseStatus(readingCase, settings, now)` - The facts for status displays: `{ state, finalised, willArbitrate, provisionalOutcome }` - `willArbitrate` is `willGoToArbitration` asked as soon as two reads exist, so "awaiting finalisation, then arbitration" is one state with a destination
+- `getReadingCaseState(readingCase, settings, issuePeriods)` - Where the case has got to: `awaiting_first_read` | `awaiting_second_read` | `awaiting_finalisation` | `awaiting_arbitration` | `in_arbitration` | `concluded`
+- `getReadingCaseOutcome(readingCase, settings, issuePeriods)` - What it found: `normal` | `technical_recall` | `recall_for_assessment`, or `null` while reading is still under way. The arbitration read, where there is one, is the deciding read.
+- `isReadFinalised(read, settings, issuePeriods)` - Whether a read is finalised: explicitly (`finalisedAt`) or automatically once `settings.reading.finalisationDelay` minutes have passed since the read, not counting time the episode was held by an issue (`'0'` immediate, `'never'` manual only)
+- `getReadingCaseStatus(readingCase, settings, issuePeriods)` - The facts for status displays: `{ state, finalised, willArbitrate, provisionalOutcome }` - `willArbitrate` is `willGoToArbitration` asked as soon as two reads exist, so "awaiting finalisation, then arbitration" is one state with a destination
 - `getComparisonInfo(appointment, secondReadData, userId, settings)` - Returns comparison data for second reader, or `false` if not applicable
 - `shouldShowComparePage(appointment, secondReadData, userId, settings)` - Boolean: whether to show compare page given timing/filter settings
 
@@ -484,7 +483,9 @@ All of these except `writeReading` (which is in `reading.js`) live in `app/lib/u
 
 Appointment-shaped, so they take `data` to resolve the case:
 
-- `canUserReadAppointment(data, appointment, userId)` - User can read (not already read, not awaiting priors, not deferred, under max reads)
+- `canUserReadAppointment(data, appointment, userId)` - User can read (not already read, not awaiting priors, no open issue on the episode, under max reads)
+- `hasOpenIssueOnEpisode(data, appointment)` - The appointment's episode has an open issue, which holds its case out of reading and arbitration
+- `getReadingCaseIssuePeriods(data, readingCase)` - The periods the case's episode was held by an issue, which the finalisation checks take so held time does not count (see [Issues in reading](#issues-in-reading))
 - `userHasReadAppointment(data, appointment, userId)` - User has already read
 
 ### reading-cases.js — Boolean Checks
@@ -492,10 +493,9 @@ Appointment-shaped, so they take `data` to resolve the case:
 Case-shaped, and pure:
 
 - `caseHasReads(readingCase)` - Has any reads
-- `isCaseDeferred(readingCase)` - Case has an active deferral
-- `isCaseInArbitration(readingCase)` - Released into arbitration (nothing does this yet)
-- `caseNeedsFirstRead(readingCase)`, `caseNeedsSecondRead(readingCase)`, `caseNeedsArbitration(readingCase, settings)`
-- `canUserReadCase(readingCase, userId)`, `userHasReadCase(readingCase, userId)`
+- `isCaseInArbitration(readingCase)` - Released into arbitration
+- `caseNeedsFirstRead(readingCase)`, `caseNeedsSecondRead(readingCase)`, `caseNeedsArbitration(readingCase, settings, issuePeriods)`
+- `canUserReadCase(readingCase, userId, options)`, `userHasReadCase(readingCase, userId)` - `options.episodeHasOpenIssue` is passed in by the caller, as issues live outside the case
 
 ### prior-mammograms.js
 
@@ -529,7 +529,7 @@ Each appointment needs two independent reads:
 
 ### Reading Metadata
 
-`getReadingMetadata(readingCase, settings)` calculates (computed on demand, not stored):
+`getReadingMetadata(readingCase, settings, issuePeriods)` calculates (computed on demand, not stored):
 
 - `readCount` - Total reads
 - `uniqueReaderCount` - Different readers
@@ -631,21 +631,29 @@ Prior mammograms are generated at seed time in `appointment-generator.js` using 
 - Within a session, awaiting-priors cases show their status on `/existing-read`
 - `/reading/priors` is a management view (for co-ordinators) showing all pending requests filterable by status
 - Readers can undo their own `pending` requests via `/undo-priors`
+- The priors dashboard's rows link to the case's priors tab (`/reading/cases/:caseId/priors`); the row cells and their in-place update script are shared includes under `_includes/priors/`
 
 ---
 
-## Deferred cases
+## Issues in reading
 
-A reader can defer a case out of the reading queue (for example to raise it with a colleague) rather than skip or read it.
+An open issue on a case's episode holds the case out of reading and arbitration until someone resolves it. Issues are their own collection, not a field on the case: see [issues.md](issues.md) for the model and where else they are raised and shown. Reading asks `hasOpenIssue` of the episode, so an issue raised at the appointment or on the episode page holds the case too.
 
-- Deferral is stored on the reading case: `readingCase.deferral = { deferredAt, deferredBy, reason }`
-- Deferring removes any existing read by that user — a deferral withdraws a prior opinion
-- `isCaseDeferred(readingCase)` (in `lib/utils/reading-cases.js`) checks for an active deferral
-- `getDeferredCases(data)` / `getResolvedDeferrals(data)` (in `lib/utils/reading.js`) build the lists the deferred cases page shows
-- Deferred cases are excluded from reading; `/reading/deferred` lists them, and a deferral can be undone (via `/reading/deferred/undo` or the per-case `/undo-defer` route), returning the case to the queue
-- The workflow's `defer-case.html` step collects an optional reason (`deferralReason`)
-- The deferred list's cards link to the reading case page (`/reading/cases/:caseId`), which shows the deferral and offers the unflag action itself (`/reading/deferred/undo` accepts a `returnTo` path)
-- Similarly the priors dashboard's rows link to the case's priors tab (`/reading/cases/:caseId/priors`); the row cells and their in-place update script are shared includes under `_includes/priors/`
+### Raising an issue during reading
+
+"Raise an issue" on the opinion and arbitration outcome pages opens `workflow/raise-issue.html` (in a modal where modals are on). It works like giving an opinion:
+
+- It is the reader's outcome for the case. `raise-issue-answer` withdraws any read the user had already given (`withoutRead`), then creates the issue with `raisedFrom: 'reading'`, linked to the case and its appointment, episode and participant
+- The session counts the case as settled for that reader, takes it off the skipped list, tops up and moves on to the next readable case (or the skipped-case review, session overview or no-more-cases page), with an "Issue raised" banner on the next case
+- `/existing-read` shows the issue in place of an opinion. The person who raised it can "Withdraw issue", which resolves it as `raised_in_error` and returns the case to reading
+- If the second reader raises it, the first read stays on the case untouched
+
+### While the issue is open
+
+- **Reading and arbitration**: `canUserReadAppointment`, session top-up and `filterAppointmentsByNeedsArbitration` skip the case. In a session it counts towards the target (`openIssueCount` in `getSessionReadingProgress`) and the overview row shows the `has_issue` tag
+- **Case list**: the case keeps its state and stage, and shows under the "Issues and priors" filter as "Has an open issue", alongside awaiting priors
+- **Finalisation**: auto-finalisation is paused. The window resumes after resolution rather than jumping: time held by an open issue does not count, so a read with 55 minutes left when the issue was raised has 55 minutes once it is resolved. Manual finalisation is blocked and the finalise actions are hidden, because concluding the case would close the episode
+- **Pages**: the reading case page, its priors tab and every reading workflow page show the open-issues callout. The reading dashboard shows a count of held cases linking to `/review/issues`
 
 ---
 

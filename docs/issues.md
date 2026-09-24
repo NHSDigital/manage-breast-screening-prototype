@@ -1,0 +1,95 @@
+# Issues
+
+How raising an issue works in the prototype: the model, where issues are raised and shown, and the Review pages. For what an issue is in the service, see [domain.md](domain.md#issues). For how the collection behaves as data, see [data-conventions.md](data-conventions.md#issues).
+
+The code is in [app/lib/utils/issues.js](../app/lib/utils/issues.js) (the model and helpers), [app/lib/utils/issue-list.js](../app/lib/utils/issue-list.js) (the index and the open count), [app/routes/issues.js](../app/routes/issues.js) (raising outside reading) and [app/routes/review.js](../app/routes/review.js).
+
+## The model
+
+```js
+{
+  id,
+  reference,               // short reference for the service desk, e.g. ISS-4F2K9
+  type,                    // from ISSUE_TYPES, or null: the forms do not ask for now
+  description,             // free text from the person raising it, required on the forms
+  raisedAt, raisedBy,
+  raisedFrom,              // 'reading' | 'reading_case' | 'appointment' | 'episode' | 'participant'
+  breastScreeningUnitId,   // taken from the episode, for scoping lists
+  links: [                 // what the issue is about, most specific first
+    { type: 'readingCase', id },
+    { type: 'appointment', id },
+    { type: 'episode', id },
+    { type: 'participant', id }
+  ],
+  resolved: { resolvedAt, resolvedBy, outcome, note, verifiedBy }   // absent while open
+}
+```
+
+- **Open until resolved.** `isIssueOpen` is the absence of `resolved`. `outcome` is `resolved` or `raised_in_error`; nothing is deleted. `note` is the solution or why it was raised in error. `verifiedBy` is only on resolved issues: the user who checked the fix, which is the resolver themselves when they answered "Just me".
+- **Links fill in upwards.** `createIssue` takes the id of the record the issue is raised on and adds every record containing it. Raised on a reading case, it links to the case, its appointment, episode and participant; raised on an episode, to the episode and participant. Links are an array so one issue can later name two participants (swapped images).
+- **Asked of the episode.** `hasOpenIssue(data, record)` and `getOpenIssuesFor(data, record)` match any link, so pages and reading pass the episode: an issue raised anywhere in a round shows, and holds, everywhere in it. The links still record exactly where it was raised.
+
+### Types and `raisedFrom`
+
+The type is hidden for now: the raise forms do not ask for it and no page shows it, so everything leads with the description instead. The model keeps it so it can come back. Seeded issues have one, the automatic images fallback sets one, and a link can still preselect one (see below).
+
+`ISSUE_TYPES` lists each type with a label, a group (images, record or other) and the journeys that offer it. `getIssueTypes(raisedFrom)` returns the types a journey offers, in order: image types first in reading, on a reading case and at an appointment; record types first on an episode or participant; "Something else" always last.
+
+`raisedFrom` is the journey the issue was raised in, and `reading` marks an issue raised inside a reading session. Where an issue was raised ("In image reading" and so on, as a hint under "Raised" on the issue page) comes from its most specific link instead (`getIssuePlace`).
+
+## What an open issue does
+
+Every open issue blocks, with no per-type choice yet. While the episode has an open issue:
+
+- its case is out of reading and arbitration sessions and queues (`canUserReadAppointment`, session top-up, `filterAppointmentsByNeedsArbitration`)
+- the case shows as blocked, alongside awaiting priors, in the case list's "Issues and priors" filter ("Has an open issue") and the backlog counts
+- auto-finalisation is paused. The finalisation window resumes after resolution rather than jumping: time held by an open issue does not count, so a read with 55 minutes left when the issue was raised still has 55 minutes once it is resolved
+- the case cannot be finalised by hand, and the finalise actions are hidden, because concluding the case would close the episode
+- reads on it cannot be changed: the existing read drops its change links, the workflow steps send a held case back to the existing read even on an edit journey, and saving an opinion refuses
+- the case page says it cannot be arbitrated while an issue is open, in place of "Arbitrate now", and that it will conclude once the issue is resolved
+
+The appointment still completes, the reading case still opens and the episode stage does not move. [image-reading.md](image-reading.md#issues-in-reading) covers the reading side in more detail.
+
+## Where issues are raised
+
+- **Reading workflow**: "Raise an issue" on the opinion and arbitration outcome pages opens `reading/workflow/raise-issue.html`. It is the reader's outcome for the case: see [image-reading.md](image-reading.md#issues-in-reading). The next case shows "Issue raised for" the participant, with a "View issue" link to the case's existing read inside the session, so the reader keeps their place.
+- **Everywhere else**: the `raiseIssueLink(raisedFrom, options)` macro in `_includes/issues/raise-link.njk` links to `/issues/raise/:recordType/:recordId`, raised on the most specific record the page has loaded (reading case, then appointment, then episode, then participant). On the participant page the route raises it on their current episode, so it holds the round like any other, or on the participant alone if they have no open episode. The form opens in a modal where modals are on, posts to `/answer` and returns the user to where they came from with a success banner, "Issue raised for" the participant, linking to the issue. It is on the reading case page and its priors tab, the episode page, the participant page, the appointment overview, and as "Raise an issue" in the appointment workflow side navigation (`_includes/workflow/workflow-side-navigation.njk`). The image capture pages and images tab show it as "Report a problem with these images" only outside the workflow, where the side navigation is absent.
+- **Falling back to manual images**: the troubleshooting details on the automatic images page (`_includes/images/image-troubleshooting.njk`) link to `/clinics/:clinicId/appointments/:appointmentId/images-troubleshooting-issue?issue=<problem>`, in [app/routes/appointments/imaging-automatic.js](../app/routes/appointments/imaging-automatic.js). The page (`appointments/images-troubleshooting-issue.html`) is the raise form with the description prefilled from the problem. "Confirm and continue in manual mode" raises the issue on the appointment, flashes "Issue raised for" the participant with a "View issue" link, then continues to manual image mode. `IMAGE_TROUBLESHOOTING_ISSUES` maps each problem to a description and a type: `worklist-participant` to wrong participant’s images, `incorrect-image-labels` to transposed images, and `wrong-image-count` to something else, since it covers too many images as well as too few. A problem whose type already has an open issue on the episode goes straight to manual image mode, since the forms set no type and so a matching type means the same problem.
+- **Already an open issue**: if the episode already has an open issue, the generic form first shows `issues/raise-existing.html`, listing the open issues and asking whether this one is about something else. Yes goes on to the form; no goes back to where the user came from, since each listed issue has its own "View issue" link. The answer is `data.issueTemp.raise.aboutSomethingElse`, so a fresh link asks again. The reading workflow does not ask, since a held case cannot be read there.
+- **Preselected type**: a link that already knows what is wrong can choose the type, with `getRaiseIssueUrl(records, raisedFrom, type)` or `raiseIssueLink(raisedFrom, { type })`, which adds `issueTemp[raise][type]` to the query string. The routes keep it only if the journey offers it (`getOfferedIssueType`), and otherwise raise the issue with no type.
+
+The three raise forms share their body through `_includes/issues/raise-fields.njk`: one line on what happens next, then the description, which is required (`getRaiseIssueErrors`). All three submit with "Confirm and continue" (on the images fallback, "Confirm and continue in manual mode").
+
+## Where issues are shown
+
+| Include | Shows | Used on |
+|---|---|---|
+| `_includes/issues/tag.njk` (`issueTag(record)`) | The yellow `has_issue` tag, reading "Issue raised", only when the record has an open issue. Call with no record when the caller already knows | Case lists, session overviews, case header, existing read, participant index, clinic appointment list |
+| `_includes/issues/open-issues.njk` (`openIssuesCallout(record)`) | A warning callout with each open issue's description, who raised it and when, and a "View issue" link. "Image reading is on hold" shows only while the issue's episode is at mammograms or reading (`isIssueHoldingReading`). Capped at three-quarters of the page to line up with record content; `recordName` makes the heading person-level on the participant page ("Open issue for this participant"). On appointment pages it comes first, above the header and tabs or the workflow side navigation. The same file's `openIssueSummary(issue)` shows one issue outside the callout | Episode, participant, reading case and priors tab, appointment layout, reading workflow layout; `openIssueSummary` on the raise form's open issue check |
+| `_includes/issues/resolved-issues.njk` (`resolvedIssuesCard(record)`) | Closed issues as history: description, dates, outcome and a "View" link | Episode and participant pages |
+
+An issue's own status renders through the `issue` tag vocabulary: `{{ issue | getIssueStatus | toTag({ vocabulary: "issue" }) }}`. The style guide’s issues page (`/style-guide/issues`) shows the tags, callout and card.
+
+The participants index has an "Issues" filter (`?issue=open`) and the reading case list an "Issues and priors" filter, so either can be narrowed to records with an open issue.
+
+## Review pages
+
+"Review" in the header holds lists of things needing someone's attention, with a count of open issues in the current user's BSU (`getOpenIssueCount`), shown as `appCount(count, { classes: "app-count--reverse" })` with no space before it. Issues are the only list so far.
+
+- `/review` - landing page with a card per list and a Home back link
+- `/review/issues` - the index, scoped to the current user's BSU, with a Review back link. Open, Resolved and All are tabs with counts that follow the search and filters, open by default. The filter panel offers episode stage (where the round is now), raised by ("Me", or "Someone else" revealing a person select, the same mechanism as the reading case list's reader filter) and a name or NHS number search (`getIssueFilterGroups`). An issue type group (`ISSUE_TYPE_FILTER_GROUP`) is defined but hidden for now. Results sort oldest raised first by default, or newest first or by surname (`ISSUE_SORTS`), with oldest raised then id breaking ties. Each row leads with the participant's name in bold, then the description, and ends in a "View issue" link
+- `/review/issues/:issueId` - the issue, headed "Issue" with the participant's name as its caption: once closed a "Resolution" card first (outcome, solution or reason, who closed it, who verified it, when), an "Issue details" feature card (description, who raised it, when and where, reference) with a Change link to `/review/issues/:issueId/description` while open (modal-capable, description required), a Participant card per linked participant (their details, "View participant", "Open participant in PACS", which goes nowhere yet, "View …" links to the linked episode, appointment and case, and any other open issues they have), and an Images card after it when there are images, with "Re-sync study from PACS" (also going nowhere yet) as its action. While open, it ends in a "Resolve issue" button and a "Close as raised in error" link
+- `/review/issues/:issueId/resolve` - explain the solution, and who has verified it: another user, chosen with an autocomplete of every other user, or "Just me". Both required. Posts to `/resolve-answer`, which returns to the issue with "Issue resolved for" the participant
+- `/review/issues/:issueId/raised-in-error` - why it was raised in error, required. Posts to `/raised-in-error-answer`, which returns to the issue with "Issue for … closed as raised in error"
+
+The two closing forms share their routes through `CLOSING_FORMS` in `routes/review.js`. The issue page, the description edit and both closing forms render the kit's page not found for a missing issue or one outside the user's BSU (`isIssueInUnit`), and a closing form opened on an issue that has since closed goes back to the issue.
+
+### Images on the issue page
+
+Many issues are about images, and staff look studies up in PACS by accession number. `getIssueImages` in `routes/review.js` takes the linked appointment's images, or with no linked appointment the latest set in the linked episode's `mammograms`; an appointment or round with no images shows no card. The card shows when they were taken (with the machine room or clinic location as a hint), the authorised mammographer where known, the image count with the views (`summariseMammogramImages`), and the accession number with a copy link.
+
+"Open study in PACS" links to the viewer page (`/reading/mammogram-viewer`) in the named `mammogram-viewer` window, so it reuses an open viewer. The issue page carries the study in `_includes/images/pacs-viewer-meta.njk`, the same meta tags and broadcast the reading workflow uses, and the viewer asks the page for it when it opens (see [pacs-viewer.md](pacs-viewer.md)). An open viewer also follows the page as it loads, as it does in reading. The viewer holds one study, so only the first participant's images get the link.
+
+## Form answers keyed to their record
+
+The raise, closing and description forms keep their answers in session data with the id of the record they were given for: `data.issueTemp.raise.recordId`, `data.issueTemp.resolve.issueId`, `data.issueTemp.raisedInError.issueId` and `data.issueTemp.edit.issueId`. The images fallback also keys its answers to the problem (`data.issueTemp.raise.problem`). A route only reuses answers for the same record, so opening another issue or case starts a fresh form, and a validation error still keeps what was entered. The links into the raise form, the closing forms and the description edit also start a fresh form each time: the raise link carries `issueTemp[raise][raisedFrom]`, the Change link `issueTemp[edit][issueId]` and the closing links `issueTemp[resolve][issueId]` and `issueTemp[raisedInError][issueId]`, which the error redirects do not, so a form abandoned after an error does not prefill the next one. The routes pass the answers to the template as locals (`answers`, `closingAnswers`, `descriptionAnswers`), because the template's `data` is a copy taken before the route runs, and delete them once the issue is created or resolved, since the kit copies every posted field into the session.

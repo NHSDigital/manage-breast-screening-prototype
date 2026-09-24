@@ -14,8 +14,10 @@ const { getClinic } = require('./clinics')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
+const { hasOpenIssue, getOpenIssuePeriods } = require('./issues')
 const {
   getReadingCase,
+  getReadingCaseById,
   getEpisodeAppointments,
   updateReadingCase,
   advanceEpisodeForReadingOutcome
@@ -28,7 +30,7 @@ const {
   getReadingCaseState,
   getReadingCaseOutcome,
   isReadFinalised,
-  isCaseDeferred,
+  getAutoFinaliseTime,
   caseHasReads,
   caseHasBeenArbitrated,
   caseNeedsFirstRead,
@@ -60,7 +62,8 @@ const {
 const getAppointmentReadingMetadata = (data, appointment) => {
   return getReadingMetadata(
     resolveCase(data, appointment),
-    data?.settings || {}
+    data?.settings || {},
+    getOpenIssuePeriods(data, appointment?.episodeId)
   )
 }
 
@@ -109,7 +112,7 @@ const writeReading = (data, appointment, userId, reading, sessionId = null) => {
  * Take an appointment off a session's skipped list.
  *
  * Skipping says "not now" - so anything that settles the case, whether a read,
- * a deferral or a request for priors, takes it off the list. Otherwise the
+ * raising an issue or a request for priors, takes it off the list. Otherwise the
  * session keeps sending the user back to a case there is nothing left to do on.
  *
  * @param {object} data - Session data
@@ -133,7 +136,8 @@ const unskipAppointmentInSession = (data, sessionId, appointmentId) => {
  * action both work from this.
  *
  * "Not yet finalised" means not finalised either way: no explicit finalisedAt,
- * and the auto-finalisation delay hasn't passed.
+ * and the auto-finalisation delay hasn't passed. Cases held by an open issue
+ * are left out, because their reads can't be finalised until it is resolved.
  *
  * A read counts as the user's if they authored it, which for an arbitration
  * read means being one of its arbitrators - so arbitration sessions get the
@@ -142,7 +146,7 @@ const unskipAppointmentInSession = (data, sessionId, appointmentId) => {
  * @param {object} data - Session data
  * @param {string} sessionId - Reading session ID
  * @param {string} userId - User ID
- * @returns {Array<{appointment: object, readingCase: object, read: object}>}
+ * @returns {Array<{appointment: object, readingCase: object, read: object, autoFinaliseAt: string | null}>}
  */
 const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
   const session = data.readingSessions?.[sessionId]
@@ -155,6 +159,7 @@ const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
       (candidate) => candidate.id === appointmentId
     )
     if (!appointment) continue
+    if (hasOpenIssueOnEpisode(data, appointment)) continue
 
     const readingCase = getReadingCase(data, appointment)
 
@@ -168,9 +173,16 @@ const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
         ? userReads.find((candidate) => candidate.readType === 'arbitration')
         : userReads.find((candidate) => candidate.readType !== 'arbitration')
     if (!read) continue
-    if (isReadFinalised(read, data.settings)) continue
 
-    results.push({ appointment, readingCase, read })
+    const issuePeriods = getOpenIssuePeriods(data, appointment.episodeId)
+    if (isReadFinalised(read, data.settings, issuePeriods)) continue
+
+    results.push({
+      appointment,
+      readingCase,
+      read,
+      autoFinaliseAt: getAutoFinaliseTime(read, data.settings, issuePeriods)
+    })
   }
 
   return results
@@ -186,12 +198,16 @@ const getUnfinalisedUserReadsForSession = (data, sessionId, userId) => {
  * the episode. The state stays honest because it is derived; the acts are only
  * recorded where there is an act to record.
  *
+ * Does nothing while the case's episode has an open issue: concluding would
+ * close the episode, and releasing would put the case in front of arbitrators,
+ * and the issue holds it out of both.
+ *
  * @param {object} data - Session data
  * @param {object} appointment - The appointment the case belongs to
  * @param {object} readingCase - The case
  * @param {string} userId - Whose read to finalise
  * @param {string} [finalisedAt] - When; defaults to now
- * @returns {{released: boolean, concluded: boolean}}
+ * @returns {{finalised: boolean, released: boolean, concluded: boolean}}
  */
 const finaliseReadOnCase = (
   data,
@@ -200,12 +216,19 @@ const finaliseReadOnCase = (
   userId,
   finalisedAt = new Date().toISOString()
 ) => {
+  if (hasOpenIssueOnEpisode(data, appointment)) {
+    return { finalised: false, released: false, concluded: false }
+  }
+
   let updatedCase = withReadFinalised(readingCase, userId, {
     finalisedAt,
     finalisedBy: userId
   })
 
-  const state = getReadingCaseState(updatedCase, data.settings)
+  // Past issues still count: another read's window may have been paused by
+  // one and not yet run out
+  const issuePeriods = getOpenIssuePeriods(data, appointment.episodeId)
+  const state = getReadingCaseState(updatedCase, data.settings, issuePeriods)
 
   // Both reads finalised and the rules send it to arbitration: record the
   // release into the backlog (see isCaseInArbitration)
@@ -229,11 +252,11 @@ const finaliseReadOnCase = (
     advanceEpisodeForReadingOutcome(
       data,
       appointment,
-      getReadingCaseOutcome(updatedCase, data.settings)
+      getReadingCaseOutcome(updatedCase, data.settings, issuePeriods)
     )
   }
 
-  return { released, concluded }
+  return { finalised: true, released, concluded }
 }
 
 /**
@@ -248,22 +271,24 @@ const finaliseUserReadsForSession = (data, sessionId, userId) => {
   const unfinalised = getUnfinalisedUserReadsForSession(data, sessionId, userId)
   const finalisedAt = new Date().toISOString()
 
+  let finalisedCount = 0
   let releasedCount = 0
   let concludedCount = 0
 
   for (const { appointment, readingCase } of unfinalised) {
-    const { released, concluded } = finaliseReadOnCase(
+    const { finalised, released, concluded } = finaliseReadOnCase(
       data,
       appointment,
       readingCase,
       userId,
       finalisedAt
     )
+    if (finalised) finalisedCount++
     if (released) releasedCount++
     if (concluded) concludedCount++
   }
 
-  return { finalisedCount: unfinalised.length, releasedCount, concludedCount }
+  return { finalisedCount, releasedCount, concludedCount }
 }
 
 /**
@@ -291,62 +316,6 @@ const getEpisodeReadingStatus = (data, episode, userId = null) => {
 }
 
 /**
- * Every case currently deferred from reading, most recently deferred first.
- *
- * Deferral is a case-level fact, so this walks the reading backlog and pairs
- * each deferred case with the appointment and participant it belongs to - what
- * a list of deferred cases needs to show a row.
- *
- * @param {object} data - Session data
- * @returns {Array} `{ appointment, participant, readingCase, deferral }`, newest first
- */
-const getDeferredCases = (data) => {
-  return data.appointments
-    .map((appointment) => ({
-      appointment,
-      participant: data.participants.find(
-        (participant) => participant.id === appointment.participantId
-      ),
-      readingCase: getReadingCase(data, appointment)
-    }))
-    .filter((row) => isCaseDeferred(row.readingCase))
-    .map((row) => ({ ...row, deferral: row.readingCase.deferral }))
-    .sort(
-      (a, b) =>
-        new Date(b.deferral.deferredAt) - new Date(a.deferral.deferredAt)
-    )
-}
-
-/**
- * Every deferral that has since been resolved, most recently resolved first.
- *
- * A case can have been deferred and returned to the queue more than once, so
- * this is a list of deferrals rather than of cases.
- *
- * @param {object} data - Session data
- * @returns {Array} `{ appointment, participant, readingCase, deferral }`, newest first
- */
-const getResolvedDeferrals = (data) => {
-  return data.appointments
-    .flatMap((appointment) => {
-      const readingCase = getReadingCase(data, appointment)
-
-      return (readingCase?.deferralHistory || []).map((deferral) => ({
-        appointment,
-        participant: data.participants.find(
-          (participant) => participant.id === appointment.participantId
-        ),
-        readingCase,
-        deferral
-      }))
-    })
-    .sort(
-      (a, b) =>
-        new Date(b.deferral.resolvedAt) - new Date(a.deferral.resolvedAt)
-    )
-}
-
-/**
  * Get an appointment's reading case, preferring one already attached.
  *
  * List-building code enriches appointments with their case up front so a long
@@ -361,6 +330,37 @@ const resolveCase = (data, appointment) => {
   return appointment?.readingCase !== undefined
     ? appointment.readingCase
     : getReadingCase(data, appointment)
+}
+
+/**
+ * Whether an appointment's episode has an open issue - what holds its case out
+ * of reading and arbitration. Issues are asked of the episode, so one raised
+ * anywhere in the round holds the case.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment
+ * @returns {boolean}
+ */
+const hasOpenIssueOnEpisode = (data, appointment) => {
+  return hasOpenIssue(data, appointment?.episodeId)
+}
+
+/**
+ * The periods during which a case's episode had an open issue.
+ *
+ * Those periods don't count toward the case's reads' finalisation delay. For
+ * templates that have the case but not its episode.
+ *
+ * @param {object} data - Session data
+ * @param {object} readingCase - Reading case
+ * @returns {Array<{start: string, end: string | null}>} Merged periods, oldest first
+ * @example
+ * {% set issuePeriods = data | getReadingCaseIssuePeriods(readingCase) %}
+ * {{ readingCase | getReadingCaseStatus(data.settings, issuePeriods) }}
+ */
+const getReadingCaseIssuePeriods = (data, readingCase) => {
+  const found = getReadingCaseById(data, readingCase?.id)
+  return found ? getOpenIssuePeriods(data, found.episode) : []
 }
 
 /************************************************************************
@@ -393,7 +393,11 @@ const enhanceAppointmentsWithReadingData = (
   return appointments.map((appointment) => {
     const readingCase = getReadingCase(data, appointment)
     const enhanced = { ...appointment, readingCase }
-    const metadata = getReadingMetadata(readingCase, data?.settings || {})
+    const metadata = getReadingMetadata(
+      readingCase,
+      data?.settings || {},
+      getOpenIssuePeriods(data, appointment.episodeId)
+    )
 
     return {
       ...enhanced,
@@ -819,8 +823,11 @@ const filterAppointmentsByNeedsArbitration = (
   return appointments.filter((appointment) => {
     const readingCase = resolveCase(data, appointment)
 
-    if (!caseNeedsArbitration(readingCase, data.settings)) return false
-    if (isCaseDeferred(readingCase)) return false
+    if (hasOpenIssueOnEpisode(data, appointment)) return false
+    const issuePeriods = getOpenIssuePeriods(data, appointment.episodeId)
+    if (!caseNeedsArbitration(readingCase, data.settings, issuePeriods)) {
+      return false
+    }
 
     return !userId || !userHasReadCase(readingCase, userId)
   })
@@ -1013,7 +1020,7 @@ const getNextCaseInSession = (
  * Whether a case in a session can be opened by the reader.
  *
  * Not the same question as whether it is still to do: a case they have
- * settled, deferred, or sent for priors opens on a page that shows what was
+ * settled, raised an issue on, or sent for priors opens on a page that shows what was
  * recorded. In arbitration every case in the session opens - it is in the
  * session because it needed arbitrating, and once arbitrated it shows its
  * outcome. What can't be opened is a reading case someone else finished while
@@ -1028,10 +1035,8 @@ const getNextCaseInSession = (
 const canOpenCaseInSession = (data, session, appointment, userId) => {
   if (session?.type === 'arbitration') return true
 
-  const readingCase = getReadingCase(data, appointment)
-
   return (
-    isCaseDeferred(readingCase) ||
+    hasOpenIssueOnEpisode(data, appointment) ||
     awaitingPriors(appointment) ||
     userHasReadAppointment(data, appointment, userId) ||
     canUserReadAppointment(data, appointment, userId)
@@ -1179,11 +1184,11 @@ const getResumeAppointmentForUser = function (
     return (
       candidates.find((appointment) => {
         const readingCase = resolveCase(data, appointment)
-        // Outstanding priors hold a case up for the panel just as a deferral
-        // does - there is nothing to arbitrate until they arrive
+        // Outstanding priors hold a case up for the panel just as an open
+        // issue does - there is nothing to arbitrate until they arrive
         return (
           !caseHasBeenArbitrated(readingCase) &&
-          !isCaseDeferred(readingCase) &&
+          !hasOpenIssueOnEpisode(data, appointment) &&
           !awaitingPriors(appointment)
         )
       }) || null
@@ -1216,8 +1221,9 @@ const getResumeAppointmentForUser = function (
 // Booleans
 //
 // Only the predicates that need more than the case: reading is blocked by
-// outstanding priors, which live on the appointment. Everything else about a
-// read is in reading-cases.js and takes a case.
+// outstanding priors, which live on the appointment, and by open issues, which
+// live in their own collection. Everything else about a read is in
+// reading-cases.js and takes a case.
 //***********************************************************************/
 
 /**
@@ -1258,9 +1264,9 @@ const userHasReadAppointment = function (data, appointment, userId = null) {
 /**
  * Check if a user can read an appointment's images.
  *
- * Combines what the case knows (deferral, who has read it, how many reads it
- * has) with the one blocker that lives on the appointment: a prior mammogram
- * that has been requested but not yet arrived.
+ * Combines what the case knows (who has read it, how many reads it has) with
+ * the blockers that live outside it: an open issue on the episode, and a prior
+ * mammogram that has been requested but not yet arrived.
  *
  * @param {object} data - Session data
  * @param {object} appointment - The appointment to check
@@ -1286,7 +1292,10 @@ const canUserReadAppointment = function (
   // Can't read while a requested prior is still outstanding
   if (awaitingPriors(appointment)) return false
 
-  return canUserReadCase(resolveCase(data, appointment), currentUserId, options)
+  return canUserReadCase(resolveCase(data, appointment), currentUserId, {
+    ...options,
+    episodeHasOpenIssue: hasOpenIssueOnEpisode(data, appointment)
+  })
 }
 
 /************************************************************************
@@ -1648,7 +1657,7 @@ const skipAppointmentInSession = (data, sessionId, appointmentId) => {
  * Whether a session has been ended.
  *
  * Ending is recorded as an act - who ended it and when - and the state is read
- * back from its presence, the same shape deferral and arbitration release take.
+ * back from its presence, the same shape arbitration release takes.
  * It covers both endings: working the session through, and stopping early.
  *
  * @param {object} session - Reading session
@@ -1726,7 +1735,7 @@ const topUpSession = (data, sessionId, currentAppointmentId = null) => {
         return (
           userHasReadAppointment(data, appointment, currentUserId) ||
           canUserReadAppointment(data, appointment, currentUserId) ||
-          isCaseDeferred(getReadingCase(data, appointment)) ||
+          hasOpenIssueOnEpisode(data, appointment) ||
           awaitingPriors(appointment)
         )
       }).length
@@ -1847,7 +1856,7 @@ const getSessionReadingProgress = (
         return (
           !isDone &&
           !canUserReadAppointment(data, appointment, resolvedUserId) &&
-          !isCaseDeferred(getReadingCase(data, appointment)) &&
+          !hasOpenIssueOnEpisode(data, appointment) &&
           !awaitingPriors(appointment)
         )
       }).length
@@ -1856,18 +1865,6 @@ const getSessionReadingProgress = (
     sessionAppointments.length - deadCount + availableTopUpCount
   const effectiveTargetSize = Math.min(resolvedTargetSize, reachableSessionSize)
 
-  // Count deferred appointments so they count toward the session target
-  const deferredCount = sessionAppointments.filter((appointment) =>
-    isCaseDeferred(getReadingCase(data, appointment))
-  ).length
-
-  // Outstanding priors hold a case up for whoever is working it. In reading
-  // that is the reader who asked for them; in arbitration the case waits for
-  // everyone, since it is arbitrated once
-  const sessionAwaitingPriorsCount = isArbitration
-    ? progress.awaitingPriorsCount
-    : progress.userAwaitingPriorsCount
-
   // Arbitration progress is how many cases have been settled, not what this
   // user has read - an arbitrator may have read some of these cases before
   const doneCount = isArbitration
@@ -1875,6 +1872,22 @@ const getSessionReadingProgress = (
         appointmentHasBeenArbitrated(data, appointment)
       ).length
     : progress.userReadCount
+
+  // Cases held by an open issue count toward the session target, unless they
+  // are already counted as done - a case read before the issue was raised
+  const openIssueCount = sessionAppointments.filter((appointment) => {
+    const isDone = isArbitration
+      ? appointmentHasBeenArbitrated(data, appointment)
+      : userHasReadAppointment(data, appointment, resolvedUserId)
+    return !isDone && hasOpenIssueOnEpisode(data, appointment)
+  }).length
+
+  // Outstanding priors hold a case up for whoever is working it. In reading
+  // that is the reader who asked for them; in arbitration the case waits for
+  // everyone, since it is arbitrated once
+  const sessionAwaitingPriorsCount = isArbitration
+    ? progress.awaitingPriorsCount
+    : progress.userAwaitingPriorsCount
 
   return {
     ...progress,
@@ -1885,8 +1898,8 @@ const getSessionReadingProgress = (
     populatedCount: sessionAppointments.length,
     targetSize: resolvedTargetSize,
     effectiveTargetSize,
-    // Deferred appointments count as 'done' for session progress purposes
-    deferredCount,
+    // Cases held by an open issue count as 'done' for session progress purposes
+    openIssueCount,
     sessionAwaitingPriorsCount,
     // Remaining reads against the target (not just currently loaded appointments)
     targetRemaining: Math.max(
@@ -1894,7 +1907,7 @@ const getSessionReadingProgress = (
       effectiveTargetSize -
         doneCount -
         sessionAwaitingPriorsCount -
-        deferredCount
+        openIssueCount
     )
   }
 }
@@ -1907,8 +1920,6 @@ module.exports = {
   finaliseReadOnCase,
   finaliseUserReadsForSession,
   getEpisodeReadingStatus,
-  getDeferredCases,
-  getResolvedDeferrals,
 
   // Multiple appointments
   enhanceAppointmentsWithReadingData,
@@ -1945,6 +1956,8 @@ module.exports = {
   userHasReadAppointment,
   appointmentHasBeenArbitrated,
   canUserReadAppointment,
+  hasOpenIssueOnEpisode,
+  getReadingCaseIssuePeriods,
 
   // Sessions
   getEligibleCandidatesForSession,

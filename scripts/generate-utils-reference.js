@@ -56,7 +56,7 @@ const FILE_META = {
   'app/lib/utils/reading-cases.js': {
     label: 'reading-cases.js',
     description:
-      'A reading case is one set of mammograms being read, held on the episode as episode.readingCases[]. Pure case logic: reads, read types, case state and outcome, discordance and arbitration, deferral. Everything here takes a case — resolve one from an appointment with getReadingCase in episodes.js.'
+      'A reading case is one set of mammograms being read, held on the episode as episode.readingCases[]. Pure case logic: reads, read types, case state and outcome, discordance and arbitration. Everything here takes a case — resolve one from an appointment with getReadingCase in episodes.js.'
   },
   'app/lib/utils/reading.js': {
     label: 'reading.js',
@@ -67,6 +67,11 @@ const FILE_META = {
     label: 'prior-mammograms.js',
     description:
       'Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers.'
+  },
+  'app/lib/utils/issues.js': {
+    label: 'issues.js',
+    description:
+      'Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue. Issues are a top-level store collection.'
   },
   'app/lib/utils/medical-information.js': {
     label: 'medical-information.js',
@@ -170,6 +175,7 @@ const UTILS_FILES = [
   'app/lib/utils/reading-cases.js',
   'app/lib/utils/reading.js',
   'app/lib/utils/prior-mammograms.js',
+  'app/lib/utils/issues.js',
   'app/lib/utils/medical-information.js',
   'app/lib/utils/annotation-summary.js',
   'app/lib/utils/arrays.js',

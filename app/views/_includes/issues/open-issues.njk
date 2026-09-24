@@ -1,0 +1,70 @@
+{# app/views/_includes/issues/open-issues.njk
+
+   The single way to show a record's open issues on a page: a warning callout
+   with each one's description, and a link to its issue page. Shows
+   nothing when there are none. Pages inside an episode pass the episode, so an
+   issue raised anywhere in the round shows everywhere in it.
+
+   Import with context - it reads issues from data, and currentUrl for the
+   links back.
+
+   openIssuesCallout(record, options)
+   - record - participant, episode, appointment or reading case
+   - options.recordName - names the record in the heading, such as
+     "this participant", where the page is not about a single episode
+   - options.classes - extra classes for the callout
+
+   The callout is capped at three-quarters of the page, the width of the
+   content on record pages, so it lines up however wide its container is.
+
+   openIssueSummary(issue, options) - one issue, for pages that show open
+   issues outside the callout
+   - options.returnChain - referrer chain for the issue link (default currentUrl)
+   - options.classes - classes for the last paragraph, such as its margin #}
+
+{% from "warning-callout/macro.njk" import warningCallout %}
+
+{% macro openIssueSummary(issue, options = {}) %}
+  {% set raisedDate = issue.raisedAt | formatDate %}
+
+  <p class="nhsuk-u-margin-bottom-2">{{ issue.description or "No description given" }}</p>
+  {% if data | isIssueHoldingReading(issue) %}
+    <p class="nhsuk-hint nhsuk-u-margin-bottom-1">Image reading is on hold until this is resolved</p>
+  {% endif %}
+  <p class="nhsuk-hint nhsuk-u-margin-bottom-2">
+    Raised
+    {%- if issue.raisedBy %} by {{ issue.raisedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}
+    on {{ raisedDate }}
+  </p>
+  <p class="{{ options.classes }}">
+    <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(options.returnChain or currentUrl) }}" class="nhsuk-link--no-visited-state">View issue {{- ((" raised on " + raisedDate) | asVisuallyHiddenText) | safe }}</a>
+  </p>
+{% endmacro %}
+
+{% macro openIssuesCallout(record, options = {}) %}
+  {% set openIssues = data | getOpenIssuesFor(record) %}
+
+  {% if openIssues | length %}
+    {% set openIssuesHtml %}
+      {% for issue in openIssues %}
+        {{ openIssueSummary(issue, {
+          classes: "nhsuk-u-margin-bottom-0" if loop.last else "nhsuk-u-margin-bottom-5"
+        }) }}
+      {% endfor %}
+    {% endset %}
+
+    {% set headingText = "Open " + ("issue" | pluralise(openIssues | length)) %}
+    {% if options.recordName %}
+      {% set headingText = headingText + " for " + options.recordName %}
+    {% endif %}
+
+    {{ warningCallout({
+      heading: {
+        text: headingText,
+        level: 2
+      },
+      html: openIssuesHtml,
+      classes: ("app-u-max-width-three-quarters " + (options.classes or "")) | trim
+    }) }}
+  {% endif %}
+{% endmacro %}

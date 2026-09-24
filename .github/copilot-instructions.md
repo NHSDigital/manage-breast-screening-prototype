@@ -114,5 +114,6 @@ Read the doc before working in its area. [docs/README.md](../docs/README.md) has
 | [pacs-viewer.md](../docs/pacs-viewer.md) | The mammogram viewer window and image sets |
 | [data-generator-reference.md](../docs/data-generator-reference.md) | Changing how seed data is generated |
 | [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data |
+| [issues.md](../docs/issues.md) | Raising, showing or resolving issues, or the Review pages |
 | [review-checklist.md](../docs/review-checklist.md) | Reviewing a change before it is committed or merged |
 | [testing.md](../docs/testing.md) | Running or adding to the smoke suite |

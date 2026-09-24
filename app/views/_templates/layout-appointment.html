@@ -2,6 +2,8 @@
 {# Layout for appointment/appointment pages with three modes: workflow, tab view, and form #}
 {% extends 'layout-base.html' %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+
 
 {# Pages set these variables to control behaviour #}
 {% set showNavigation = showNavigation if showNavigation != undefined else false %}
@@ -63,12 +65,15 @@
 
   {% call pageNavigationWrapper() %}
     {% block pageNavigation %}
-      {# View mode: appointment header with tabs (outside main form) #}
+      {# View mode: appointment header with tabs (outside main form), after
+         the episode's open issues #}
       {% if showNavigation and not isAppointmentWorkflow %}
         <div class="app-u-max-width-three-quarters">
           {% include "_includes/flash-messages.njk" %}
         </div>
-        
+
+        {{ openIssuesCallout(episode) }}
+
         {% include "_includes/appointment/appointment-header.njk" %}
       {% endif %}
     {% endblock %}
@@ -76,8 +81,9 @@
 
   {# Capture the page content with flash messages, grid and form wrapper applied #}
   {% set wrappedPageContent %}
-    {# Flash messages for all pages - except appointment with navigation #}
-    {% if (isAppointmentWorkflow or (not isAppointmentWorkflow and not showNavigation)) %}
+    {# Flash messages for pages without navigation. Pages with navigation show
+       them above the open issues callout instead. #}
+    {% if not showNavigation %}
       <div class="app-u-max-width-three-quarters">
         {% include "_includes/flash-messages.njk" %}
       </div>
@@ -106,7 +112,14 @@
   {% if showNavigation %}
     
     {% if isAppointmentWorkflow %}
-      {# Workflow mode: side navigation layout #}
+      {# Workflow mode: side navigation layout, after flash messages and the
+         episode's open issues #}
+      <div class="app-u-max-width-three-quarters">
+        {% include "_includes/flash-messages.njk" %}
+      </div>
+
+      {{ openIssuesCallout(episode) }}
+
       <div class="app-workflow-container">
         <div class="nhsuk-grid-row app-workflow-container__row">
           <div class="nhsuk-grid-column-one-quarter app-workflow-container__sidebar">

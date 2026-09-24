@@ -1,0 +1,61 @@
+{# app/views/issues/raise-existing.html
+
+   Shown before the raise an issue form when the episode already has an open
+   issue, so the same problem is not raised twice. Yes goes on to the form, no
+   to the existing issue. The route (routes/issues.js) sets openIssues,
+   participant, answers, raiseUrl and returnFallbackUrl. #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% from "_includes/issues/open-issues.njk" import openIssueSummary with context %}
+
+{% set hasOneOpenIssue = openIssues | length == 1 %}
+{% set pageHeading = "There is already an open issue" if hasOneOpenIssue else "There are already open issues" %}
+{% set formAction = (raiseUrl + "/existing-answer") | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: returnFallbackUrl | getReturnUrl(referrerChain),
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  {% for issue in openIssues %}
+    {{ openIssueSummary(issue, {
+      returnChain: referrerChain | appendReferrer(raiseUrl),
+      classes: "nhsuk-u-margin-bottom-6"
+    }) }}
+  {% endfor %}
+
+  {{ radios({
+    name: "issueTemp[raise][aboutSomethingElse]",
+    idPrefix: "raiseIssueAboutSomethingElse",
+    value: answers.aboutSomethingElse,
+    classes: "nhsuk-radios--inline",
+    fieldset: {
+      legend: {
+        text: "Is the issue you want to raise about something else?",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "yes",
+        text: "Yes"
+      },
+      {
+        value: "no",
+        text: "No"
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ button({
+    text: "Continue"
+  }) }}
+
+{% endblock %}

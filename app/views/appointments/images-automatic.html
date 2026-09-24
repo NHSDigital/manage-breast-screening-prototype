@@ -1,6 +1,8 @@
 {# app/views/appointments/images-automatic.html #}
 {% extends 'layout-appointment.html' %}
 
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+
 {% set imageCount = appointment.mammogramData.metadata.totalImages %}
 
 {% set pageHeading = "Image transfer in progress" %}
@@ -127,6 +129,13 @@
   </div>
 
   {% include "_includes/images/image-troubleshooting.njk" %}
+
+  {# The workflow side navigation has its own raise link #}
+  {% if not isAppointmentWorkflow %}
+    {{ raiseIssueLink("appointment", {
+      text: "Report a problem with these images"
+    }) }}
+  {% endif %}
 
 {% endblock %}
 

@@ -289,6 +289,12 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     color: $app-dark-mode-text-colour;
   }
 
+  // The header stays blue in dark mode
+  .app-count--reverse {
+    background-color: nhsuk-colour("dark-blue");
+    color: nhsuk-colour("white");
+  }
+
   .nhsuk-tag--red {
     background-color: $app-tag--red-dark-background;
     border-color: $app-tag--red-dark-border;

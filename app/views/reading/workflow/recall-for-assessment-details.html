@@ -282,8 +282,8 @@
       var useModals = {{ "true" if data.settings.modalForms == 'true' else "false" }}
       var autoOpenAnnotationForm = {{ "true" if data.settings.reading.autoOpenAnnotationForm == 'true' else "false" }}
       var addAnnotationUrls = {
-        left: {{ ("./annotation/add?side=left" | urlWithReferrer(referrerChain | urlencode)) | dump | safe }},
-        right: {{ ("./annotation/add?side=right" | urlWithReferrer(referrerChain | urlencode)) | dump | safe }}
+        left: {{ ("./annotation/add?side=left" | urlWithReferrer(referrerChain)) | dump | safe }},
+        right: {{ ("./annotation/add?side=right" | urlWithReferrer(referrerChain)) | dump | safe }}
       }
 
       document.addEventListener('change', function (e) {

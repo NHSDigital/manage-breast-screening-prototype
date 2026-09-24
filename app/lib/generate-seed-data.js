@@ -19,6 +19,7 @@ const {
   finaliseEpisodeStage,
   checkEpisodes
 } = require('./generators/episode-generator')
+const { generateIssues, checkIssues } = require('./generators/issue-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
 const {
   generateReadingData,
@@ -695,6 +696,27 @@ const generateData = async (options = {}) => {
     }
   }
 
+  console.log('Generating issues...')
+  const issues = generateIssues({
+    episodes: allEpisodes,
+    appointments: sortedAppointments,
+    clinics: allClinics,
+    participants: finalParticipants,
+    users
+  })
+
+  const issueProblems = checkIssues(issues, {
+    episodes: episodesWithHistory,
+    appointments: sortedAppointments,
+    participants: finalParticipants
+  })
+  if (issueProblems.length) {
+    console.warn(
+      `\nWarning: ${issueProblems.length} issue links do not resolve:`
+    )
+    issueProblems.forEach((problem) => console.warn(`  - ${problem}`))
+  }
+
   const writeData = (filename, data) => {
     fs.writeFileSync(
       path.join(config.paths.generatedData, filename),
@@ -713,14 +735,19 @@ const generateData = async (options = {}) => {
   })
   writeData('appointments.json', { appointments: sortedAppointments })
   writeData('episodes.json', { episodes: episodesWithHistory })
+  // Issues carry the generation they belong to, so a store reading them
+  // alongside another generation's records can tell and ignore them
+  const generatedAt = new Date().toISOString()
+  writeData('issues.json', { generatedAt, issues })
   writeData('generation-info.json', {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     seedDataProfile: selectedSeedDataProfile.key,
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,
       appointments: sortedAppointments.length,
-      episodes: episodesWithHistory.length
+      episodes: episodesWithHistory.length,
+      issues: issues.length
     }
   })
 
@@ -732,6 +759,10 @@ const generateData = async (options = {}) => {
   console.log(
     `- ${episodesWithHistory.length} episodes ` +
       `(${allEpisodes.length} current, ${historicEpisodes.length} historic)`
+  )
+  console.log(
+    `- ${issues.length} issues ` +
+      `(${issues.filter((issue) => !issue.resolved).length} open)`
   )
 }
 

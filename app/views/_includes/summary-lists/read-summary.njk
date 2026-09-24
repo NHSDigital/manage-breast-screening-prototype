@@ -29,6 +29,9 @@
       whatever its own state, marking the opinion and hiding the finalised
       row - for case-level summaries where the case has not yet concluded
       even though this read may have (default: false)
+    - issuePeriods: array - when the case's episode had an open issue (from
+      getOpenIssuePeriods), which doesn't count toward finalisation. The
+      reading workflow and case page set it for every page (default: none)
 
   Callers set these with set before including; a caller reusing this include
   after another has set isOutcome, opinionLabel, hideFinalisedRow,
@@ -44,6 +47,7 @@
 {% set hideEmptyRows = hideEmptyRows if hideEmptyRows is defined else false %}
 {% set hideOpinionRow = hideOpinionRow if hideOpinionRow is defined else false %}
 {% set hideFinalisedRow = hideFinalisedRow if hideFinalisedRow is defined else false %}
+{% set issuePeriods = issuePeriods if issuePeriods is defined else [] %}
 {# Support legacy opinionOnly parameter #}
 {% if opinionOnly is defined and opinionOnly %}
   {% set hideEmptyRows = true %}
@@ -109,7 +113,8 @@
     {{ readOpinionTag(read, {
       context: 'own',
       showFinalisation: 'unfinalised' if read.timestamp or awaitingFinalisation,
-      forceUnfinalised: awaitingFinalisation
+      forceUnfinalised: awaitingFinalisation,
+      issuePeriods: issuePeriods
     }) }}
   {% endset %}
   {% set rows = rows | push({
@@ -341,8 +346,8 @@
 
 {# When it was finalised. Reads finalised by the delay passing have no
    finalisedAt stamp, so fall back to the moment the delay ran out. #}
-{% if not hideFinalisedRow and not awaitingFinalisation and read.timestamp and (read | isReadFinalised(data.settings)) %}
-  {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
+{% if not hideFinalisedRow and not awaitingFinalisation and read.timestamp and (read | isReadFinalised(data.settings, issuePeriods)) %}
+  {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings, issuePeriods)) %}
   {% if finalisedAt %}
     {% set rows = rows | push({
       key: {

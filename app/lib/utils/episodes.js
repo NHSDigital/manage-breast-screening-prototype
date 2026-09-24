@@ -321,11 +321,19 @@ const getEpisodeReadingCase = (episode) => {
  *
  * @param {object} episode - Episode object
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the episode had an open issue (see
+ *   getOpenIssuePeriods in issues.js)
  * @returns {string | null} The outcome, or null while reading is under way
  */
-const getEpisodeReadingOutcome = (episode, settings = {}) => {
+const getEpisodeReadingOutcome = (
+  episode,
+  settings = {},
+  issuePeriods = []
+) => {
   const latestCase = getLatestReadingCase(episode)
-  return latestCase ? getReadingCaseOutcome(latestCase, settings) : null
+  return latestCase
+    ? getReadingCaseOutcome(latestCase, settings, issuePeriods)
+    : null
 }
 
 /**

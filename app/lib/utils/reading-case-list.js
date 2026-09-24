@@ -21,9 +21,9 @@ const {
   getReadAuthorIds,
   getReadingCaseStatus,
   getReadingCaseOutcome,
-  getReadingUrgency,
-  isCaseDeferred
+  getReadingUrgency
 } = require('./reading-cases')
+const { hasOpenIssue, getOpenIssuePeriods } = require('./issues')
 const { getStatusText } = require('./status')
 const {
   awaitingPriors,
@@ -142,9 +142,11 @@ const buildRow = (data, episode, readingCase) => {
   const participant = getParticipant(data, episode.participantId)
   const clinic = appointment ? getClinic(data, appointment.clinicId) : null
 
-  const status = getReadingCaseStatus(readingCase, data.settings)
+  // Time with an open issue doesn't count toward the reads' finalisation delay
+  const hasIssue = hasOpenIssue(data, episode)
+  const issuePeriods = getOpenIssuePeriods(data, episode)
+  const status = getReadingCaseStatus(readingCase, data.settings, issuePeriods)
 
-  const isDeferred = isCaseDeferred(readingCase)
   const isAwaitingPriors = appointment ? awaitingPriors(appointment) : false
   // The case-level status ('pending'/'requested') behind the awaiting-priors
   // union, so the row tag can match the priors dashboard rather than always
@@ -154,7 +156,11 @@ const buildRow = (data, episode, readingCase) => {
     : null
 
   const imagesTakenDate = readingCase.openedDate
-  const outcome = getReadingCaseOutcome(readingCase, data.settings)
+  const outcome = getReadingCaseOutcome(
+    readingCase,
+    data.settings,
+    issuePeriods
+  )
   const finalisation = getFinalisationStage(outcome, status)
 
   return {
@@ -176,12 +182,13 @@ const buildRow = (data, episode, readingCase) => {
     // Everyone who has read or arbitrated this case - the involvement filters
     // ask whether a given person is in here
     readerIds: getCaseReaderIds(readingCase),
-    isDeferred,
+    hasIssue,
     awaitingPriors: isAwaitingPriors,
     awaitingPriorsStatus,
-    // Deferral and outstanding priors hold a case up without moving it out of
-    // the stage it's in - so a blocked case still counts towards its stage
-    isBlocked: isDeferred || isAwaitingPriors,
+    // An open issue and outstanding priors hold a case up without moving it
+    // out of the stage it's in - so a blocked case still counts towards its
+    // stage
+    isBlocked: hasIssue || isAwaitingPriors,
     // Ageing only matters while there is still reading to do - a case with a
     // final outcome is done, however old its images are
     urgency: outcome
@@ -229,6 +236,20 @@ const STANDING_FILTER_GROUPS = [
     matches: (row, values) => values.includes(row.state)
   },
   {
+    // The two things that hold a case out of reading. The param keeps the
+    // name 'blocked' so one link can ask for both (arbitration start page).
+    name: 'blocked',
+    legend: 'Issues and priors',
+    options: [
+      { value: 'has_issue', label: 'Has an open issue' },
+      { value: 'awaiting_priors', label: 'Awaiting priors' }
+    ],
+    matches: (row, values) =>
+      values.some((value) =>
+        value === 'has_issue' ? row.hasIssue : row.awaitingPriors
+      )
+  },
+  {
     name: 'outcome',
     legend: 'Outcome',
     options: READING_CASE_OUTCOMES.map((outcome) => ({
@@ -255,18 +276,6 @@ const STANDING_FILTER_GROUPS = [
       { value: 'due_soon', label: 'Due soon' }
     ],
     matches: (row, values) => values.includes(row.urgency)
-  },
-  {
-    name: 'blocked',
-    legend: 'Blocked',
-    options: [
-      { value: 'deferred', label: 'Deferred' },
-      { value: 'awaiting_priors', label: 'Awaiting priors' }
-    ],
-    matches: (row, values) =>
-      values.some((value) =>
-        value === 'deferred' ? row.isDeferred : row.awaitingPriors
-      )
   }
 ]
 
@@ -519,7 +528,7 @@ const getReadingCaseList = (data, filters = {}) => {
  *
  * @param {object} data - Session data
  * @param {object} [filters] - View and query, as getReadingCaseRows documents
- * @returns {object} `{ total, available, unfinalised, blocked, deferred, awaitingPriors }`
+ * @returns {object} `{ total, available, unfinalised, blocked, hasIssue, awaitingPriors }`
  */
 const getArbitrationBacklogCounts = (data, filters = {}) => {
   const rows = getReadingCaseRows(data, filters).filter(
@@ -539,7 +548,7 @@ const getArbitrationBacklogCounts = (data, filters = {}) => {
     available: rows.length - blockedRows.length - unfinalisedRows.length,
     unfinalised: unfinalisedRows.length,
     blocked: blockedRows.length,
-    deferred: blockedRows.filter((row) => row.isDeferred).length,
+    hasIssue: blockedRows.filter((row) => row.hasIssue).length,
     awaitingPriors: blockedRows.filter((row) => row.awaitingPriors).length
   }
 }

@@ -1,6 +1,9 @@
 {# app/views/participants/show.html #}
 {% extends 'layout-app.html' %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+{% from "_includes/issues/resolved-issues.njk" import resolvedIssuesCard with context %}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set pageHeading = participant | getFullNameReversed %}
 
@@ -20,6 +23,11 @@
     </span>
     {{ pageHeading | safe }}
   </h1>
+
+  {# Issues belong to a round, but here they are about the person #}
+  {{ openIssuesCallout(participant, {
+    recordName: "this participant"
+  }) }}
 
   {# For these summary cards we want to show the authoritative record, not the temp data.
   The temp data only gets saved once going through a confirmation page #}
@@ -91,10 +99,14 @@
     {% include "summary-lists/screening-episode-history.njk" %}
   {% endcall %}
 
+  {{ resolvedIssuesCard(participant) }}
+
   {% call card({
     heading: "Screening details"
   }) %}
     {% include "summary-lists/screening-details.njk" %}
   {% endcall %}
+
+  {{ raiseIssueLink("participant") }}
 
 {% endblock %}

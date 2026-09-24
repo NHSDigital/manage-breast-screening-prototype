@@ -1,11 +1,17 @@
 // app/routes/appointments/imaging-automatic.js
 //
 // Automatic imaging: simulated mammogram data, the imaging
-// answer, the worklist-connection retry flow, and the take-images gate that
+// answer, the worklist-connection retry flow, the troubleshooting fallback to
+// manual mode (raising an issue on the way), and the take-images gate that
 // routes between automatic and manual flows.
 
 const dayjs = require('dayjs')
-const { getFullName } = require('../../lib/utils/participants')
+const { getFullName, getShortName } = require('../../lib/utils/participants')
+const {
+  createIssue,
+  getOpenIssuesFor,
+  getRaiseIssueErrors
+} = require('../../lib/utils/issues')
 const {
   generateMammogramImages
 } = require('../../lib/generators/mammogram-generator')
@@ -18,6 +24,50 @@ const {
   ensureSeedProfilesState,
   getSeedDataProfileFromState
 } = require('../../lib/generators/seed-profiles')
+
+// Problems on the automatic images page that make the mammographer fall back
+// to manual image mode, each raising an issue so the images are reconciled
+// after the appointment. The description prefills the raise form. Keyed by
+// the `issue` param images-manual expects.
+const IMAGE_TROUBLESHOOTING_ISSUES = {
+  'worklist-participant': {
+    type: 'wrong_participant_images',
+    description:
+      'A different participant’s images were displayed. Switched to manual image mode.'
+  },
+  'wrong-image-count': {
+    type: 'other',
+    description:
+      'The wrong number of images were displayed. Switched to manual image mode.'
+  },
+  'incorrect-image-labels': {
+    type: 'transposed_images',
+    description: 'Images had incorrect labels. Switched to manual image mode.'
+  }
+}
+
+// The troubleshooting raise page; its answer adds `-answer`
+const TROUBLESHOOTING_ISSUE_PATH =
+  '/clinics/:clinicId/appointments/:appointmentId/images-troubleshooting-issue'
+
+/**
+ * Whether the episode already has an open issue for a troubleshooting
+ * problem. Each problem raises its own type, and the raise forms do not ask
+ * for a type, so an open issue of the same type is the same problem.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - Appointment in progress
+ * @param {object} troubleshootingIssue - Entry from IMAGE_TROUBLESHOOTING_ISSUES
+ * @returns {boolean} True if the problem has already been raised
+ */
+const isTroubleshootingIssueRaised = (
+  data,
+  appointment,
+  troubleshootingIssue
+) =>
+  getOpenIssuesFor(data, appointment.episodeId).some(
+    (issue) => issue.type === troubleshootingIssue.type
+  )
 
 module.exports = (router) => {
   // Imaging view - this is the main imaging page for the appointment
@@ -196,6 +246,108 @@ module.exports = (router) => {
       res.redirect(returnUrl)
     }
   )
+
+  // Troubleshooting fallback from the automatic images page: raise an issue
+  // for the problem, with its description prefilled, then continue in manual
+  // image mode. A problem that already has an open issue on the episode goes
+  // straight to manual image mode.
+  router.get(TROUBLESHOOTING_ISSUE_PATH, (req, res) => {
+    const { clinicId, appointmentId } = req.params
+    const data = req.session.data
+    const problem = req.query.issue
+    const manualImagesUrl = `/clinics/${clinicId}/appointments/${appointmentId}/images-manual`
+
+    const troubleshootingIssue = IMAGE_TROUBLESHOOTING_ISSUES[problem]
+    if (!troubleshootingIssue) {
+      return res.redirect(manualImagesUrl)
+    }
+
+    if (
+      isTroubleshootingIssueRaised(data, data.appointment, troubleshootingIssue)
+    ) {
+      return res.redirect(`${manualImagesUrl}?issue=${problem}`)
+    }
+
+    // Answers for this appointment and problem are kept, so an error or a
+    // return visit shows what was entered. Anything else starts afresh from
+    // the problem's description.
+    const answers = data.issueTemp?.raise
+    const answersAreForThisProblem =
+      answers?.recordId === appointmentId && answers?.problem === problem
+    if (!answersAreForThisProblem) {
+      data.issueTemp = {
+        ...data.issueTemp,
+        raise: {
+          recordId: appointmentId,
+          raisedFrom: 'appointment',
+          problem,
+          description: troubleshootingIssue.description
+        }
+      }
+    }
+
+    // The template's `data` is a copy taken before this runs, so the answers
+    // are passed directly
+    res.render('appointments/images-troubleshooting-issue', {
+      answers: data.issueTemp.raise,
+      problem
+    })
+  })
+
+  router.post(`${TROUBLESHOOTING_ISSUE_PATH}-answer`, (req, res) => {
+    const { clinicId, appointmentId } = req.params
+    const data = req.session.data
+    const problem = req.query.issue
+    const manualImagesUrl = `/clinics/${clinicId}/appointments/${appointmentId}/images-manual`
+    const manualImagesUrlWithProblem = `${manualImagesUrl}?issue=${problem}`
+
+    const troubleshootingIssue = IMAGE_TROUBLESHOOTING_ISSUES[problem]
+    if (!troubleshootingIssue) {
+      return res.redirect(manualImagesUrl)
+    }
+
+    // Raised from another tab since the page was opened
+    if (
+      isTroubleshootingIssueRaised(data, data.appointment, troubleshootingIssue)
+    ) {
+      delete data.issueTemp?.raise
+      return res.redirect(manualImagesUrlWithProblem)
+    }
+
+    const answers = data.issueTemp?.raise || {}
+    const errors = getRaiseIssueErrors(answers)
+    if (errors.length) {
+      errors.forEach((error) => req.flash('error', error))
+      return res.redirect(
+        `/clinics/${clinicId}/appointments/${appointmentId}/images-troubleshooting-issue?issue=${problem}`
+      )
+    }
+
+    const issue = createIssue(data, {
+      type: troubleshootingIssue.type,
+      description: answers.description.trim(),
+      raisedBy: data.currentUser?.id,
+      raisedFrom: 'appointment',
+      appointmentId
+    })
+
+    // The kit copies every posted field into the session, so the answers
+    // would otherwise prefill the next raise form
+    delete data.issueTemp?.raise
+
+    if (issue) {
+      const issueUrl = urlWithReferrer(
+        `/review/issues/${issue.id}`,
+        manualImagesUrlWithProblem
+      )
+      req.flash('success', {
+        html: `<p class="nhsuk-notification-banner__heading">Issue raised for ${getShortName(data.participant)}</p>
+<p class="nhsuk-body"><a class="nhsuk-notification-banner__link" href="${issueUrl}">View issue</a></p>`
+      })
+    }
+
+    res.redirect(manualImagesUrlWithProblem)
+  })
 
   // Manual imaging routes
 

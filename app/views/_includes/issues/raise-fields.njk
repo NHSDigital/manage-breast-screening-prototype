@@ -1,0 +1,38 @@
+{# app/views/_includes/issues/raise-fields.njk
+
+   The body of the raise an issue form below its heading, shared by the form
+   outside the workflow (issues/raise.html), the one inside reading
+   (reading/workflow/raise-issue.html) and the one for falling back to manual
+   images (appointments/images-troubleshooting-issue.html). Their routes read the
+   answers back from data.issueTemp.raise.
+
+   The type question is left out for now. A type chosen by the link still
+   rides along in data.issueTemp.raise.type.
+
+   Expects: answers (data.issueTemp.raise), raisedFrom and recordId. #}
+
+<p>This problem will need to be reviewed before this participant’s episode can continue.</p>
+
+{{ textarea({
+  name: "issueTemp[raise][description]",
+  id: "raiseIssueDescription",
+  label: {
+    text: "Describe the issue",
+    size: "m"
+  },
+  hint: {
+    text: "Include details of the problem and any other participants that may be affected"
+  },
+  rows: 5,
+  value: answers.description
+} | populateErrors) }}
+
+{{ appHiddenInput({
+  name: "issueTemp[raise][raisedFrom]",
+  value: raisedFrom
+}) }}
+
+{{ appHiddenInput({
+  name: "issueTemp[raise][recordId]",
+  value: recordId
+}) }}

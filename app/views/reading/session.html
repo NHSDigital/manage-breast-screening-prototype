@@ -3,6 +3,7 @@
 {% extends 'layout-app.html' %}
 {% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 {% from "_includes/reading/read-opinion-tag.njk" import readOpinionTag with context %}
+{% from "_includes/issues/tag.njk" import issueTag with context %}
 
 {% set isClinicContext = session.clinicId %}
 
@@ -132,7 +133,7 @@
       {% set userReadableAppointments = [] %}
       {% for appointment in appointments %}
         {% set isDone = data | userHasReadAppointment(appointment) %}
-        {% if (data | canUserReadAppointment(appointment)) or isDone or (appointment | userRequestedPriors(data.currentUser.id)) or (appointment.readingCase | isCaseDeferred) %}
+        {% if (data | canUserReadAppointment(appointment)) or isDone or (appointment | userRequestedPriors(data.currentUser.id)) or (data | hasOpenIssueOnEpisode(appointment)) %}
           {% set userReadableAppointments = userReadableAppointments | push(appointment) %}
         {% endif %}
       {% endfor %}
@@ -150,7 +151,7 @@
         {% set technicalRecallAppointments = [] %}
         {% set recallForAssessmentAppointments = [] %}
         {% set priorsRequestedAppointments = [] %}
-        {% set deferredAppointments = [] %}
+        {% set issueAppointments = [] %}
 
         {% for appointment in userReadableAppointments %}
           {% set isDone = data | userHasReadAppointment(appointment) %}
@@ -165,8 +166,8 @@
             {% endif %}
           {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
             {% set priorsRequestedAppointments = priorsRequestedAppointments | push(appointment) %}
-          {% elseif appointment.readingCase | isCaseDeferred %}
-            {% set deferredAppointments = deferredAppointments | push(appointment) %}
+          {% elseif data | hasOpenIssueOnEpisode(appointment) %}
+            {% set issueAppointments = issueAppointments | push(appointment) %}
           {% endif %}
         {% endfor %}
 
@@ -175,7 +176,7 @@
         {% set technicalRecallCount = technicalRecallAppointments | length %}
         {% set recallForAssessmentCount = recallForAssessmentAppointments | length %}
         {% set priorsRequestedCount = priorsRequestedAppointments | length %}
-        {% set deferredCount = deferredAppointments | length %}
+        {% set issueCount = issueAppointments | length %}
 
         {% set normalPercent = (normalCount / totalCount * 100) | round %}
         {% set technicalRecallPercent = (technicalRecallCount / totalCount * 100) | round %}
@@ -251,10 +252,10 @@
 
         <h2>Reading session cases</h2>
         {% set doneCount = readingStatus.userReadCount %}
-        {% set userSessionRemainingCount = sessionTotalCount - doneCount - readingStatus.userAwaitingPriorsCount - deferredCount %}
+        {% set userSessionRemainingCount = sessionTotalCount - doneCount - readingStatus.userAwaitingPriorsCount - issueCount %}
         {% set userSessionRemainingCount = 0 if userSessionRemainingCount < 0 else userSessionRemainingCount %}
-        {% if not sessionEnded and (userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 or deferredCount > 0) %}
-          <p class="nhsuk-body app-text-grey">Progress: {{ doneCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if deferredCount > 0 -%}, {{ deferredCount }} deferred{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
+        {% if not sessionEnded and (userSessionRemainingCount > 0 or readingStatus.userAwaitingPriorsCount > 0 or issueCount > 0) %}
+          <p class="nhsuk-body app-text-grey">Progress: {{ doneCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if issueCount > 0 -%}, {{ issueCount }} with an issue{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
         {% endif %}
 
         <table class="nhsuk-table app-reading-session-table">
@@ -276,8 +277,8 @@
               </td>
               <td>
                 {# What the user did with this case in the session: their read,
-                   or the deferral or priors request standing in its place #}
-                {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
+                   or the issue or priors request standing in its place #}
+                {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (data | hasOpenIssueOnEpisode(appointment)) or (appointment | userRequestedPriors(data.currentUser.id)) %}
 
                 {# An ended session takes no more work, so rows it holds nothing
                    for link out to the case. Worked rows stay in the session,
@@ -339,10 +340,10 @@
 {% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
                   {% if read.opinion %}
-                    {{ readOpinionTag(read, { context: 'own', showFinalisation: true }) }}
+                    {{ readOpinionTag(read, { context: 'own', showFinalisation: true, issuePeriods: appointment.issuePeriods }) }}
                   {% endif %}
-                {% elseif appointment.readingCase | isCaseDeferred %}
-                  {{ "Deferred" | toTag }}
+                {% elseif data | hasOpenIssueOnEpisode(appointment) %}
+                  {{ issueTag() }}
                 {% elseif appointment | userRequestedPriors(data.currentUser.id) %}
                   {{ "Priors required" | toTag }}
                 {% elseif session.skippedAppointments | includes(appointment.id) %}
@@ -402,8 +403,8 @@
       {% set allViewArbitrationAppointments = [] %}
 
       {% for appointment in appointments %}
-        {% set appointmentState = appointment.readingCase | getReadingCaseState(data.settings) %}
-        {% set appointmentOutcome = appointment.readingCase | getReadingCaseOutcome(data.settings) %}
+        {% set appointmentState = appointment.readingCase | getReadingCaseState(data.settings, appointment.issuePeriods) %}
+        {% set appointmentOutcome = appointment.readingCase | getReadingCaseOutcome(data.settings, appointment.issuePeriods) %}
         {% if appointmentState == 'awaiting_second_read' %}
           {% set awaitingSecondReadAppointments = awaitingSecondReadAppointments | push(appointment) %}
         {% elseif appointmentOutcome == 'normal' %}
@@ -500,8 +501,8 @@
               </td>
               <td>
                 {# What the user did with this case in the session: their read,
-                   or the deferral or priors request standing in its place #}
-                {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
+                   or the issue or priors request standing in its place #}
+                {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (data | hasOpenIssueOnEpisode(appointment)) or (appointment | userRequestedPriors(data.currentUser.id)) %}
 
                 {# An ended session takes no more work, so rows it holds nothing
                    for link out to the case. Worked rows stay in the session,

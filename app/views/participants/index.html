@@ -5,6 +5,8 @@
 
 {% extends 'layout-app.html' %}
 
+{% from "_includes/issues/tag.njk" import issueTag with context %}
+
 {% set pageHeading = "All participants" %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
@@ -164,6 +166,10 @@
                       colour: "yellow",
                       classes: "nhsuk-u-margin-top-1 app-nowrap"
                     }) }}
+                  {% endif %}
+                  {% if data | hasOpenIssue(row.participant) %}
+                    <br>
+                    {{ issueTag(null, { classes: "nhsuk-u-margin-top-1 app-nowrap" }) }}
                   {% endif %}
                 </td>
                 <td class="nhsuk-table__cell">

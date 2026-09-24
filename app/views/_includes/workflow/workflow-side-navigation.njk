@@ -1,4 +1,5 @@
 {# app/views/_includes/workflow/workflow-side-navigation.njk #}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {# Tracking of status #}
 {% set identityStageCompleted = true if appointment.workflowStatus['confirm-identity'] == 'completed' else false %}
@@ -89,7 +90,7 @@
 
   <div class="nhsuk-u-margin-top-7">
     <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-3">
-    <p class="nhsuk-u-margin-bottom-0 nhsuk-body-s">
+    <p class="nhsuk-u-margin-bottom-3 nhsuk-body-s">
       {% set appointmentNoteUrl = '/clinics/' + clinicId + '/appointments/' + appointment.id + '/appointment-note' %}
       {% set appointmentNoteLinkText = 'View or change appointment note' if appointment.appointmentNote else 'Add appointment note' %}
       {{ appLink({
@@ -97,5 +98,9 @@
         href: appointmentNoteUrl | urlWithReferrer(currentUrl)
       } | openInModal) }}
     </p>
+    {{ raiseIssueLink("appointment", {
+      text: "Raise an issue",
+      classes: "nhsuk-u-margin-bottom-0 nhsuk-body-s"
+    }) }}
   </div>
 </div>

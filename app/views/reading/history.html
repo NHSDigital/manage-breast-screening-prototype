@@ -210,9 +210,11 @@
               {% endif %}
             </td>
             <td>
+              {% set issuePeriods = data | getOpenIssuePeriods(appointment.episodeId) %}
               {{ readOpinionTag(reading, {
                 context: 'own' if (reading | getReadAuthorIds) | includes(data.currentUser.id) else 'context',
-                showFinalisation: 'unfinalised'
+                showFinalisation: 'unfinalised',
+                issuePeriods: issuePeriods
               }) }}
             </td>
             <td>
@@ -221,7 +223,7 @@
                  from it. The plain "Unfinalised" stays when the case is held
                  up by the other read, which the opinion cell can't show #}
               {{ caseOutcomeTag(readingCase, {
-                unfinalisedCaption: "After reads finalise" if not (reading | isReadFinalised(data.settings))
+                unfinalisedCaption: "After reads finalise" if not (reading | isReadFinalised(data.settings, issuePeriods))
               }) }}
             </td>
             <td>
