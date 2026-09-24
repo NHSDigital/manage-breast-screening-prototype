@@ -11,7 +11,6 @@
 - Sass tidy: split `_workflow.scss` into component files, move the utilities in `_misc.scss` to `_utils.scss`, and delete its unused classes (`app-no-js-only`, `app-image-two-up`, `app-image-flip-horizontal`, `app-annotation-item`)
 - Two more inline `display: none` styles to replace with `hidden`: `_includes/features-list.njk` (~19) and `reading/workflow/annotate-v2.html` (~122)
 - Inline HTML with single-quoted classes in Nunjucks strings; move into `set` blocks: `_includes/reading/opinion-controls.njk`, `summary-lists/medical-information/mammogram-image-data.njk`, `appointments/images-manual.html`
-- `symptoms.js` "save and add" with a next symptom type drops `scrollTo`, which the fallback add redirect keeps
 - `readingOpinionBanner` is a hand-rolled flash message because `req.flash` "couldn't get it to work" (`reading.js` ~1087); find out why and use flash
 - `saveTempAppointmentToAppointment` saves `*Temp` keys (`symptomTemp`, `medicalHistoryTemp` etc) if a flow is abandoned and the appointment saved elsewhere; consider stripping them in the helper, after checking no flow relies on a temp surviving a mid-flow save
 - Exit appointment "Discard changes" calls `updateAppointmentStatus` and `updateAppointmentData` while `data.appointment` still exists, which may save the working copy's unsaved edits (`lifecycle.js` discard branch)

@@ -350,7 +350,8 @@ module.exports = (router) => {
           res.redirect(
             urlWithReferrer(
               `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/symptoms/add?symptomType=${nextSymptomType}`,
-              referrerChain
+              referrerChain,
+              scrollTo
             )
           )
         } else {
