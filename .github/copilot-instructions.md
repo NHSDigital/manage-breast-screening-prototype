@@ -55,7 +55,7 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 - Modern JavaScript: `const`, arrow functions, template strings. No semicolons except in Sass. 2-space indentation. Allman style, with conditions on their own lines
 - Descriptive names in plain English: `index` not `i`, `button` not `btn`
 - Double quotes for strings in Nunjucks and HTML attributes; single quotes in JavaScript
-- First line of every file is a comment with its path, for example `// app/routes/clinics.js` or `{# app/views/clinics/index.html #}`
+- First line of every JavaScript, Nunjucks and Sass file is a comment with its path, for example `// app/routes/clinics.js` or `{# app/views/clinics/index.html #}`
 - Comments explain purpose and non-obvious constraints. They do not record history or past bugs
 - Nunjucks: `elseif` not `elif`, no trailing commas, object keys on separate lines, HTML in `set` or `call` blocks rather than inline
 - Prefer NHS.UK Frontend macros over hand-written HTML, and look up parameter names in the component reference rather than guessing

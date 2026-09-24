@@ -145,7 +145,7 @@ For every data key, field, status value, or data shape the change adds, renames,
 
 From [copilot-instructions.md](../.github/copilot-instructions.md):
 
-- First line of every new file is a comment with its path.
+- First line of every new JavaScript, Nunjucks or Sass file is a comment with its path. Not Markdown files, which start with front matter or a heading.
 - JavaScript: no semicolons, 2-space indent, `const` and arrow functions, conditions on their own lines, descriptive names.
 - Nunjucks: `elseif` not `elif`, double quotes, object keys on separate lines, no trailing commas.
 - Comments explain purpose, not history.

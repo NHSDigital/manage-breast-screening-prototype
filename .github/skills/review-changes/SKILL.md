@@ -49,7 +49,7 @@ Then give them review notes to paste into the pull request description, as a fen
 ```markdown
 ## Review notes
 
-- Reviewed with the review-changes skill. `npm test`: passing
+- Reviewed with the review-changes skill. `npm test`: [passing / failing, and what fails / not run, and why]
 - Fixed: [one line per fix]
 - Not fixed: [item and reason, or "nothing"]
 - For Ed: [questions or judgement calls, or "nothing"]
