@@ -125,7 +125,8 @@ module.exports = (router) => {
 
     const seedProfiles = ensureSeedProfilesState(req.session.data.settings)
     const customForm = seedProfiles.customForm || {}
-    const submitAction = customForm.action
+    // The pressed button's value, so read from this request, not the session
+    const submitAction = req.body?.settings?.seedProfiles?.customForm?.action
     const requestedBaseKey = customForm.baseKey || seedProfiles.customBaseKey
     const baseProfileKey = seedProfiles.profiles[requestedBaseKey]
       ? requestedBaseKey
