@@ -554,9 +554,8 @@ module.exports = (router) => {
   })
 
   // The URL that actually renders a session's overview. A reading session
-  // renders under /your-reads, so redirecting to the bare session URL costs an
-  // extra redirect - and any flash message with it, since res.locals consumes
-  // the flash on every request.
+  // renders under /your-reads, so this saves the extra redirect from the bare
+  // session URL.
   const sessionOverviewUrl = (session) => {
     return session.type === 'arbitration'
       ? `/reading/session/${session.id}`
@@ -932,9 +931,6 @@ module.exports = (router) => {
     const { unfinalisedReads: unconfirmedReads, autoFinaliseAt } =
       getSessionFinalisationInfo(data, sessionId, data.currentUser.id)
 
-    // Clear any lingering opinion banner from a previous session
-    delete data.readingOpinionBanner
-
     // Get clinic data if this is a clinic session
     let clinic = null
     if (session.clinicId) {
@@ -1080,19 +1076,6 @@ module.exports = (router) => {
           }
           // Update res.locals.data to reflect the change (it was set before this middleware)
           res.locals.data.imageReadingTemp = data.imageReadingTemp
-        }
-
-        // Pass along opinion banner and remove from session
-        // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
-        // Not great we're hardcoding these pages. Would be better to have a more general mechanism.
-        if (
-          (req.path.endsWith('/opinion') ||
-            req.path.endsWith('/outcome') ||
-            req.path.endsWith('/existing-read')) &&
-          data.readingOpinionBanner
-        ) {
-          res.locals.readingOpinionBanner = data.readingOpinionBanner
-          delete data.readingOpinionBanner
         }
       }
 
@@ -1431,11 +1414,11 @@ module.exports = (router) => {
           (person) => person.id === appointment.participantId
         )
         const shortName = getShortName(participant)
-        data.readingOpinionBanner = {
+        req.flash('readingOpinionBanner', {
           text: `Prior images requested for ${shortName}`,
           participantName: `${shortName}`,
           editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
-        }
+        })
         res.redirect(
           modalBreakout(
             `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
@@ -1576,11 +1559,11 @@ module.exports = (router) => {
           (person) => person.id === appointment?.participantId
         )
         const shortName = getShortName(participant)
-        data.readingOpinionBanner = {
+        req.flash('readingOpinionBanner', {
           text: `Case deferred for ${shortName}`,
           participantName: shortName,
           editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
-        }
+        })
         res.redirect(
           modalBreakout(
             `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
@@ -2791,8 +2774,6 @@ module.exports = (router) => {
 
       // Store banner message for the next case, but only if there is one.
       // Edits stay on the current case, so there's nowhere to show it.
-      // Bypassing req.flash as we couldn't get it to work - possibly due to redirect loops
-      // Todo: can we get this working with req.flash?
       if (nextUnreadAppointment && !isEditingExistingRead) {
         const participant = data.participants.find(
           (person) => person.id === appointment.participantId
@@ -2808,11 +2789,11 @@ module.exports = (router) => {
           ? `${resultLabel} outcome recorded for ${shortName}`
           : `${resultLabel} opinion recorded for ${shortName}`
 
-        data.readingOpinionBanner = {
+        req.flash('readingOpinionBanner', {
           text: message,
           participantName: `${shortName}`, // This didn't work when used directly - coerced to string instead.
           editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
-        }
+        })
       }
 
       // If submitted from an existing-read or review page (e.g. editing technical recall), return there

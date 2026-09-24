@@ -9,3 +9,4 @@
 - Reading history rows and the case-index pagination render `href="#"` stand-ins that research participants will click and get nothing
 - After #425 merges: move `closeClinicResolvedIds`, `closeReasonForm` and `closeRescheduleForm` under `data.closeClinicTemp[clinicId]`, and run Prettier on its files (clinics.js, close-clinic.js, _clinic-layout.scss, _app-styles.scss)
 - Sass tidy: split `_workflow.scss` into component files, move the utilities in `_misc.scss` to `_utils.scss`, and delete its unused classes (`app-no-js-only`, `app-image-two-up`, `app-image-flip-horizontal`, `app-annotation-item`)
+- Saving an appointment note or special appointment partway through a workflow commits the whole working copy: unsaved edits and `*Temp` stores. "Discard changes" can't undo those edits, and manual imaging's repeats step depends on `mammogramDataTemp` surviving the save. Decide whether these saves should write only their own field
