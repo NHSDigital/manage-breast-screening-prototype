@@ -122,7 +122,10 @@ const generateClinicsForDay = (
       appointmentDate: appointmentOptions.slot.dateTime
     })
 
-    const appointment = generateAppointment({ ...appointmentOptions, episodeId: episode.id })
+    const appointment = generateAppointment({
+      ...appointmentOptions,
+      episodeId: episode.id
+    })
     episode.appointmentIds.push(appointment.id)
 
     episodes.push(episode)
@@ -373,9 +376,13 @@ const seedTechnicalRecallRescreen = ({
   const participantsById = new Map(
     participants.map((participant) => [participant.id, participant])
   )
-  const appointmentsById = new Map(appointments.map((appointment) => [appointment.id, appointment]))
+  const appointmentsById = new Map(
+    appointments.map((appointment) => [appointment.id, appointment])
+  )
   const clinicsById = new Map(clinics.map((clinic) => [clinic.id, clinic]))
-  const usedSlotIds = new Set(appointments.map((appointment) => appointment.slotId))
+  const usedSlotIds = new Set(
+    appointments.map((appointment) => appointment.slotId)
+  )
   const today = dayjs().startOf('day')
 
   // Where the re-screen could be booked: a future screening clinic with a
@@ -672,7 +679,9 @@ const generateData = async (options = {}) => {
   )
 
   // The re-screen appointment was added after the appointments map was built
-  sortedAppointments.forEach((appointment) => appointmentsById.set(appointment.id, appointment))
+  sortedAppointments.forEach((appointment) =>
+    appointmentsById.set(appointment.id, appointment)
+  )
 
   const episodeProblems = checkEpisodes(episodesWithHistory, appointmentsById)
   if (episodeProblems.length) {

@@ -65,7 +65,11 @@ const {
 const {
   getHistoricReadingSessions
 } = require('../lib/utils/historic-reading-sessions')
-const { modalBreakout, getReturnUrl } = require('../lib/utils/referrers')
+const {
+  modalBreakout,
+  getReturnUrl,
+  urlWithReferrer
+} = require('../lib/utils/referrers')
 const {
   createIssue,
   getIssue,
@@ -75,15 +79,6 @@ const {
   resolveIssue
 } = require('../lib/utils/issues')
 const generateId = require('../lib/utils/id-generator')
-
-// Carry the request's referrer chain on to a redirect within the same case, so
-// an edit that began on the existing-read page can find its way back there
-const keepReferrerChain = (url, req) => {
-  const referrerChain = req.query.referrerChain
-  if (!referrerChain) return url
-  const separator = url.includes('?') ? '&' : '?'
-  return `${url}${separator}referrerChain=${encodeURIComponent(referrerChain)}`
-}
 
 module.exports = (router) => {
   // Set nav state
@@ -1825,9 +1820,9 @@ module.exports = (router) => {
       // Validate side parameter
       if (!side || !['left', 'right'].includes(side)) {
         return res.redirect(
-          keepReferrerChain(
+          urlWithReferrer(
             `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/recall-for-assessment-details`,
-            req
+            req.query.referrerChain
           )
         )
       }
@@ -1856,9 +1851,9 @@ module.exports = (router) => {
       }
 
       res.redirect(
-        keepReferrerChain(
+        urlWithReferrer(
           `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/annotation`,
-          req
+          req.query.referrerChain
         )
       )
     }
@@ -1899,9 +1894,9 @@ module.exports = (router) => {
 
       // Always use the unified annotation page
       res.redirect(
-        keepReferrerChain(
+        urlWithReferrer(
           `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`,
-          req
+          req.query.referrerChain
         )
       )
     }
@@ -1936,9 +1931,9 @@ module.exports = (router) => {
 
       if (!annotationTemp) {
         return res.redirect(
-          keepReferrerChain(
+          urlWithReferrer(
             `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
-            req
+            req.query.referrerChain
           )
         )
       }
@@ -2059,9 +2054,9 @@ module.exports = (router) => {
       if (errors.length > 0) {
         errors.forEach((error) => req.flash('error', error))
         return res.redirect(
-          keepReferrerChain(
+          urlWithReferrer(
             `/reading/session/${sessionId}/appointments/${appointmentId}/annotation`,
-            req
+            req.query.referrerChain
           )
         )
       }
@@ -2074,9 +2069,9 @@ module.exports = (router) => {
 
         if (!side) {
           return res.redirect(
-            keepReferrerChain(
+            urlWithReferrer(
               `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
-              req
+              req.query.referrerChain
             )
           )
         }
@@ -2148,17 +2143,17 @@ module.exports = (router) => {
         const side =
           req.body.side || data.imageReadingTemp?.annotationTemp?.side
         res.redirect(
-          keepReferrerChain(
+          urlWithReferrer(
             `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}`,
-            req
+            req.query.referrerChain
           )
         )
       } else {
         res.redirect(
           modalBreakout(
-            keepReferrerChain(
+            urlWithReferrer(
               `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
-              req
+              req.query.referrerChain
             )
           )
         )
@@ -2188,9 +2183,9 @@ module.exports = (router) => {
 
       res.redirect(
         modalBreakout(
-          keepReferrerChain(
+          urlWithReferrer(
             `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
-            req
+            req.query.referrerChain
           )
         )
       )
@@ -2285,17 +2280,13 @@ module.exports = (router) => {
     '/reading/session/:sessionId/appointments/:appointmentId/recall-for-assessment-answer',
     (req, res) => {
       const { sessionId, appointmentId } = req.params
-      const referrerChain = req.query.referrerChain
-      const chainParam = referrerChain
-        ? `?referrerChain=${encodeURIComponent(referrerChain)}`
-        : ''
 
       const addAnnotationSide = req.body.addAnnotationSide
       if (addAnnotationSide && ['left', 'right'].includes(addAnnotationSide)) {
         return res.redirect(
-          keepReferrerChain(
+          urlWithReferrer(
             `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${addAnnotationSide}`,
-            req
+            req.query.referrerChain
           )
         )
       }
@@ -2315,16 +2306,19 @@ module.exports = (router) => {
             ? `&abnormalityType=${encodeURIComponent(abnormalityType)}`
             : ''
           return res.redirect(
-            keepReferrerChain(
+            urlWithReferrer(
               `/reading/session/${sessionId}/appointments/${appointmentId}/annotation/add?side=${side}${typeParam}`,
-              req
+              req.query.referrerChain
             )
           )
         }
       }
 
       res.redirect(
-        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete${chainParam}`
+        urlWithReferrer(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete`,
+          req.query.referrerChain
+        )
       )
     }
   )
@@ -2410,12 +2404,11 @@ module.exports = (router) => {
       // save-opinion reads from session (imageReadingTemp), not the POST body, so
       // it works correctly when reached via GET through the skip-confirmation path.
       // Pass referrer chain through so save-opinion can return to the origin page
-      const referrerChain = req.query.referrerChain
-      const chainParam = referrerChain
-        ? `?referrerChain=${encodeURIComponent(referrerChain)}`
-        : ''
       res.redirect(
-        `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete${chainParam}`
+        urlWithReferrer(
+          `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete`,
+          req.query.referrerChain
+        )
       )
     }
   )
@@ -2610,13 +2603,8 @@ module.exports = (router) => {
       }
 
       // Keep the referrer chain on the way to the next step, so an edit that
-      // began on the existing-read page returns there once saved. The technical
-      // recall and recall for assessment branches below do the same by hand.
-      const detailsReferrerChain = req.query.referrerChain
-      const withChain = (url) =>
-        detailsReferrerChain
-          ? `${url}${url.includes('?') ? '&' : '?'}referrerChain=${encodeURIComponent(detailsReferrerChain)}`
-          : url
+      // began on the existing-read page returns there once saved
+      const withChain = (url) => urlWithReferrer(url, req.query.referrerChain)
 
       // Route based on opinion type
       switch (opinion) {
@@ -2659,10 +2647,6 @@ module.exports = (router) => {
             )
           )
         case 'technical_recall': {
-          const trReferrer = req.query.referrerChain
-          const trChainParam = trReferrer
-            ? `?referrerChain=${encodeURIComponent(trReferrer)}`
-            : ''
           if (
             !isEditingExistingRead &&
             (isArbitrationSession
@@ -2671,20 +2655,20 @@ module.exports = (router) => {
           ) {
             return res.redirect(
               modalBreakout(
-                `/reading/session/${sessionId}/appointments/${appointmentId}/review${trChainParam}`
+                withChain(
+                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                )
               )
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion${trChainParam}`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
           )
         }
         case 'recall_for_assessment': {
-          const rfaReferrer = req.query.referrerChain
-          const rfaChainParam = rfaReferrer
-            ? `?referrerChain=${encodeURIComponent(rfaReferrer)}`
-            : ''
           if (
             !isEditingExistingRead &&
             (isArbitrationSession
@@ -2693,13 +2677,17 @@ module.exports = (router) => {
           ) {
             return res.redirect(
               modalBreakout(
-                `/reading/session/${sessionId}/appointments/${appointmentId}/review${rfaChainParam}`
+                withChain(
+                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+                )
               )
             )
           }
           return res.redirect(
             307,
-            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion${rfaChainParam}`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
           )
         }
         default:
@@ -2913,7 +2901,7 @@ module.exports = (router) => {
           target.includes(`/appointments/${appointmentId}/`) &&
           !target.includes('referrerChain=')
         const url = keepsChain
-          ? `${target}${target.includes('?') ? '&' : '?'}referrerChain=${encodeURIComponent(opinionReferrerChain)}`
+          ? urlWithReferrer(target, opinionReferrerChain)
           : target
         return res.redirect(...redirectArgs, url)
       }

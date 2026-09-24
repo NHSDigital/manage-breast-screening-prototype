@@ -1,4 +1,4 @@
-{# /app/views/reading/session.html #}
+{# app/views/reading/session.html #}
 
 {% extends 'layout-app.html' %}
 {% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
@@ -574,7 +574,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif session.skippedAppointments | includes(appointment.id) %}
+                {% elseif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
@@ -594,7 +594,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif metadata.readCount == 1 %}
+                {% elseif metadata.readCount == 1 %}
                   {% if session.skippedAppointments | includes(appointment.id) %}
                     {{ "Skipped" | toTag }}
                   {% else %}

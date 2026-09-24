@@ -22,7 +22,10 @@ export const swapFragment = (target, html) => {
   const template = document.createElement('template')
   template.innerHTML = html.trim()
   const replacement = template.content.querySelector('[data-fragment-id]')
-  if (!replacement || replacement.dataset.fragmentId !== target.dataset.fragmentId) {
+  if (
+    !replacement ||
+    replacement.dataset.fragmentId !== target.dataset.fragmentId
+  ) {
     throw new Error('Response was not the expected fragment')
   }
   target.replaceWith(replacement)

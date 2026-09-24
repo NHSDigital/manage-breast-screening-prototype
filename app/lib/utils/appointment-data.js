@@ -35,7 +35,9 @@ const getAppointment = (data, appointmentId) => {
   return (
     data._changes?.appointments?.[appointmentId] ??
     dataStore.state.appointmentsById.get(appointmentId) ??
-    data.appointments?.find((appointment) => appointment.id === appointmentId) ??
+    data.appointments?.find(
+      (appointment) => appointment.id === appointmentId
+    ) ??
     null
   )
 }
@@ -73,7 +75,9 @@ const getAppointmentData = (data, clinicId, appointmentId) => {
  * @returns {object | null} Updated appointment or null if not found
  */
 const updateAppointment = (data, appointmentId, updatedAppointment) => {
-  const appointmentIndex = data.appointments.findIndex((appointment) => appointment.id === appointmentId)
+  const appointmentIndex = data.appointments.findIndex(
+    (appointment) => appointment.id === appointmentId
+  )
   if (appointmentIndex === -1) return null
 
   // Update in the attached array (same-request reads) and record the change
@@ -93,7 +97,9 @@ const updateAppointment = (data, appointmentId, updatedAppointment) => {
  * @returns {object | null} Updated appointment or null if not found
  */
 const updateAppointmentData = (data, appointmentId, updates) => {
-  const appointmentIndex = data.appointments.findIndex((appointment) => appointment.id === appointmentId)
+  const appointmentIndex = data.appointments.findIndex(
+    (appointment) => appointment.id === appointmentId
+  )
   if (appointmentIndex === -1) return null
 
   // Use temp appointment if it exists and matches, otherwise use the array appointment
@@ -141,7 +147,11 @@ const saveTempAppointmentToAppointment = (data) => {
   const appointmentId = data.appointment.id
 
   // Use updateAppointment to save the temp data
-  const updatedAppointment = updateAppointment(data, appointmentId, data.appointment)
+  const updatedAppointment = updateAppointment(
+    data,
+    appointmentId,
+    data.appointment
+  )
 
   // Clear temp data
   delete data.appointment
@@ -160,12 +170,18 @@ const saveTempAppointmentToAppointment = (data) => {
 const getStoppedReasons = () => [
   { value: 'Failed identity check', detailsField: 'failedIdentityDetails' },
   { value: 'Pain during screening', detailsField: 'painDetails' },
-  { value: 'Has a symptomatic appointment', detailsField: 'symptomaticDetails' },
+  {
+    value: 'Has a symptomatic appointment',
+    detailsField: 'symptomaticDetails'
+  },
   { value: 'Consent withdrawn', detailsField: 'consentDetails' },
   { value: 'Physical health issue', detailsField: 'physicalHealthDetails' },
   { value: 'Mental health issue', detailsField: 'mentalHealthDetails' },
   { value: 'Language difficulties', detailsField: 'languageDetails' },
-  { value: 'No qualified mammographer available', detailsField: 'mammographerDetails' },
+  {
+    value: 'No qualified mammographer available',
+    detailsField: 'mammographerDetails'
+  },
   { value: 'Technical issues at clinic', detailsField: 'technicalDetails' }
 ]
 

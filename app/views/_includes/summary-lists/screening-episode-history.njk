@@ -1,4 +1,4 @@
-{# /app/views/_includes/summary-lists/screening-episode-history.njk #}
+{# app/views/_includes/summary-lists/screening-episode-history.njk #}
 
 {# A participant's screening rounds, newest first. Past rounds are held as
    summary-only episodes, so this covers their whole history without needing
@@ -45,7 +45,7 @@
                 colour: episode.outcome | getEpisodeOutcomeTagColour
               }) }}
             {% else %}
-              <span class="nhsuk-u-secondary-text-color">Not yet</span>
+              <span class="nhsuk-u-secondary-text-colour">Not yet</span>
             {% endif %}
           </td>
           <td class="nhsuk-table__cell">

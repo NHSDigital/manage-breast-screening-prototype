@@ -38,7 +38,9 @@ const generateBreastDensityFactors = (options = {}) => {
 
     // Years are strings because that's what the form fields post back
     if (isTakingHrt) {
-      result.hrt.yearStarted = String(currentYear - Math.floor(Math.random() * 10))
+      result.hrt.yearStarted = String(
+        currentYear - Math.floor(Math.random() * 10)
+      )
     }
   }
 

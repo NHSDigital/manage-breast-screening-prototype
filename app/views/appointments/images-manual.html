@@ -1,5 +1,4 @@
 {# app/views/appointments/images-manual.html #}
-
 {% extends 'layout-appointment.html' %}
 
 {% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
@@ -131,10 +130,14 @@
       }) }}
     {% endset %}
 
+    {% set accessionNumberKeyHtml %}
+      <span class="app-nowrap">Accession number</span>
+    {% endset %}
+
     {{ summaryList({
       rows: [
         {
-          key: { html: "<span class='app-nowrap'>Accession number</span>" },
+          key: { html: accessionNumberKeyHtml },
           value: { html: accessionNumberHtml }
         },
         {

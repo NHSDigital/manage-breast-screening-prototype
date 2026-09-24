@@ -50,8 +50,7 @@ const handleSummaryListMissingInformation = (
       // added by the openInModal filter) so modal behaviour carries through.
       const actionItem = row.actions?.items?.[0]
       const keyText =
-        actionItem?.visuallyHiddenText ||
-        row.key.text.toLowerCase()
+        actionItem?.visuallyHiddenText || row.key.text.toLowerCase()
       const href = actionItem?.href || '#'
 
       const endText =

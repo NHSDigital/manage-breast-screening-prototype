@@ -32,19 +32,30 @@ This is an advanced prototype, so some things differ from a plain prototype kit 
 These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/routing-and-forms.md) has the detail.
 
 - **Form data saves itself.** Every POST or GET field is merged into `req.session.data` by its `name` before any route runs. A form can post straight to the next page. Never write a route whose only job is to receive a form.
-- **Read submitted values from `req.session.data`, never `req.body`.**
+- **Read submitted values from `req.session.data`, not `req.body`.** The two exceptions are in routing-and-forms.md.
 - **Pages under `/participants/:id/`, `/clinics/:id/appointments/:id/` and the reading workflow are served by dynamic routing.** Add a template, not a route. The middleware has already loaded `participant`, `appointment`, `clinic`, `episode` and URL locals such as `appointmentUrl`.
 - **Write a route only for branching, saving, validation or real processing**, in the area's file under `app/routes/`, posting to a separate URL and finishing with `res.redirect()`.
 - **Use the referrer filters for "return to where I came from"**: `urlWithReferrer` to go deeper, `getReturnUrl` to come back, `appendReferrer` to extend the chain. Never build `?returnTo=` or `?referrerChain=` by hand. See [docs/referrers.md](../docs/referrers.md).
 - **Check for an existing helper before writing logic.** [docs/utils-filter-reference.md](../docs/utils-filter-reference.md) lists every filter and helper, with a table of contents from line 14. Prefer generic composable filters over one-offs; new ones go in `app/lib/utils/` and need a JSDoc comment (the reference is generated from them with `npm run docs`).
 - **Validation is rare.** Only where missing data would break what follows. See [docs/validation.md](../docs/validation.md).
 
+## Data
+
+[docs/data-conventions.md](../docs/data-conventions.md) has the detail.
+
+- **No new top-level keys on `data`, and nothing on `req.session` outside `data`.** Name fields for where they belong (`appointment[...]`, `participant[...]`). Unsaved form state goes in one namespaced temp store, such as `appointment[somethingTemp][...]` or `data.imageReadingTemp`.
+- **Store ids, not display strings.** Save a user id and turn it into a name when displaying it.
+- **Use real data.** Read users, permissions and reference data from `data` and the helpers; never type names or options into a template.
+- **Every field a page reads needs seed data.** Update the generator when adding a field, and remove or update generators that no longer fit.
+- **Follow a data change everywhere it goes.** When adding, renaming or changing a key, field or status, search the whole repo for it and check every page, helper, generator and test that reads it.
+- **One name per concept** across variables, data keys, field names, routes, files and copy. Finish renames everywhere.
+
 ## Coding standards
 
 - Modern JavaScript: `const`, arrow functions, template strings. No semicolons except in Sass. 2-space indentation. Allman style, with conditions on their own lines
 - Descriptive names in plain English: `index` not `i`, `button` not `btn`
 - Double quotes for strings in Nunjucks and HTML attributes; single quotes in JavaScript
-- First line of every file is a comment with its path, for example `// app/routes/clinics.js` or `{# app/views/clinics/index.html #}`
+- First line of every JavaScript, Nunjucks and Sass file is a comment with its path, for example `// app/routes/clinics.js` or `{# app/views/clinics/index.html #}`
 - Comments explain purpose and non-obvious constraints. They do not record history or past bugs
 - Nunjucks: `elseif` not `elif`, no trailing commas, object keys on separate lines, HTML in `set` or `call` blocks rather than inline
 - Prefer NHS.UK Frontend macros over hand-written HTML, and look up parameter names in the component reference rather than guessing
@@ -63,8 +74,18 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 
 - Implement only what is asked. Suggest improvements rather than making them
 - If a request is ambiguous or too broad, ask or propose a narrower reading before starting
+- Number questions and decisions you put to the user, so they can answer by number. Give your recommendation for each
 - Say what changed and what remains after each unit of work
 - Do not claim something works until it has been checked in the running app. When fixing a bug, verify the fix
+- One task per chat. Long chats lose track of earlier instructions and of these conventions. When a task is done, or the chat has become long, suggest starting a new chat
+
+## Before you finish
+
+When a piece of work is complete, and before suggesting a commit or a pull request, use the `review-changes` skill (`/review-changes`) without being asked. It reviews the change against [docs/review-checklist.md](../docs/review-checklist.md) in a subagent, fixes what it finds, runs `npm test` and writes review notes for the pull request. The authors are designers whose background is not coding, so this step is how code problems get caught.
+
+## Pull request comments
+
+To deal with review comments on a pull request, from Copilot's code review or a person, use the `pr-comments` skill (`/pr-comments`). Reply, then resolve: reply to every thread with what changed and the commit, and resolve only the fixed ones. Leave a thread open, with a reply saying why, when a comment does not apply. Replies post under the user's GitHub account, so write them as short, plain notes from that person.
 
 ## NHS design system references
 
@@ -94,4 +115,5 @@ Read the doc before working in its area. [docs/README.md](../docs/README.md) has
 | [data-generator-reference.md](../docs/data-generator-reference.md) | Changing how seed data is generated |
 | [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data |
 | [issues.md](../docs/issues.md) | Raising, showing or resolving issues, or the Review pages |
+| [review-checklist.md](../docs/review-checklist.md) | Reviewing a change before it is committed or merged |
 | [testing.md](../docs/testing.md) | Running or adding to the smoke suite |

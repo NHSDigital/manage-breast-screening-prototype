@@ -22,7 +22,7 @@
         <span class="app-details__contents-summary">
           {{ params.contentsSummaryHtml | safe | trim | indent(4) }}
         </span>
-      {% elif params.contentsSummary %}
+      {% elseif params.contentsSummary %}
         <span class="app-details__contents-summary app-details__contents-summary--text">
           {{ params.contentsSummary | safe | trim | indent(4) }}
         </span>
@@ -32,7 +32,7 @@
     <div class="nhsuk-details__text">
       {% if caller or params.html -%}
         {{ caller() if caller else params.html | safe | trim | indent(4) }}
-      {% elif params.text -%}
+      {% elseif params.text -%}
         {{ params.text }}
       {% endif %}
     </div>

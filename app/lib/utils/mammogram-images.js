@@ -127,7 +127,8 @@ const extractAppointmentContext = (appointment) => {
   // Check for breast implants still in place - removed implants do not need
   // the implant image sets
   const implants =
-    appointment.medicalInformation?.medicalHistory?.breastImplantsAugmentation || []
+    appointment.medicalInformation?.medicalHistory
+      ?.breastImplantsAugmentation || []
   if (implants.length > 0) {
     context.hasImplants = implants.some(
       (implant) => !isMedicalHistoryItemRemoved(implant)
@@ -376,7 +377,11 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * @param {object} options.context - Context object directly (alternative to passing appointment)
  * @returns {object|null} - The selected set object or null if none available
  */
-const getImageSetForAppointment = (appointmentId, source = 'diagrams', options = {}) => {
+const getImageSetForAppointment = (
+  appointmentId,
+  source = 'diagrams',
+  options = {}
+) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
 
@@ -393,7 +398,8 @@ const getImageSetForAppointment = (appointmentId, source = 'diagrams', options =
 
   // Use provided context, or extract from appointment if provided
   const context =
-    options.context || (options.appointment ? extractAppointmentContext(options.appointment) : {})
+    options.context ||
+    (options.appointment ? extractAppointmentContext(options.appointment) : {})
 
   // Apply hard filters based on context (e.g., implants)
   if (Object.keys(context).length > 0) {
