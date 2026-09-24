@@ -67,20 +67,6 @@ const getAppointmentData = (data, clinicId, appointmentId) => {
 }
 
 /**
- * Copy of an appointment without its temp stores (symptomTemp,
- * mammogramDataTemp and so on). They hold unsaved form state on the working
- * copy, so they are never written to the saved record
- *
- * @private
- * @param {object} appointment - Appointment, usually the working copy
- * @returns {object} The appointment without keys ending in "Temp"
- */
-const withoutTempStores = (appointment) =>
-  Object.fromEntries(
-    Object.entries(appointment).filter(([key]) => !key.endsWith('Temp'))
-  )
-
-/**
  * Find and update an appointment in session data
  *
  * @param {object} data - Session data
@@ -96,10 +82,9 @@ const updateAppointment = (data, appointmentId, updatedAppointment) => {
 
   // Update in the attached array (same-request reads) and record the change
   // (persistence across requests)
-  const savedAppointment = withoutTempStores(updatedAppointment)
-  data.appointments[appointmentIndex] = savedAppointment
-  recordAppointmentChange(data, savedAppointment)
-  return savedAppointment
+  data.appointments[appointmentIndex] = updatedAppointment
+  recordAppointmentChange(data, updatedAppointment)
+  return updatedAppointment
 }
 
 /**
@@ -123,10 +108,10 @@ const updateAppointmentData = (data, appointmentId, updates) => {
       ? data.appointment
       : data.appointments[appointmentIndex]
 
-  const updatedAppointment = withoutTempStores({
+  const updatedAppointment = {
     ...baseAppointment,
     ...updates
-  })
+  }
 
   // Update main data
   data.appointments[appointmentIndex] = updatedAppointment
