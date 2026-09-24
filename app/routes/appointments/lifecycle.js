@@ -172,8 +172,15 @@ module.exports = (router) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
       const appointment = getAppointment(data, appointmentId)
-      const imagesTaken = data.imagesTaken
-      const pauseAction = data.pauseAction
+
+      // The exit questions are temp answers on the working copy. Every exit
+      // except the images-taken question clears them, so they are never saved
+      // with the appointment
+      const exitAppointmentTemp = data.appointment?.exitAppointmentTemp || {}
+      const { imagesTaken, pauseAction, exitAction } = exitAppointmentTemp
+      if (imagesTaken !== 'No' && imagesTaken !== 'Yes') {
+        delete data.appointment?.exitAppointmentTemp
+      }
 
       // Handle pause action from images-completed scenario
       if (pauseAction === 'yes') {
@@ -210,8 +217,6 @@ module.exports = (router) => {
         // Clear temporary session data
         delete data.appointment
         delete data.participant
-        delete data.pauseAction
-        delete data.confirmedImagesWereTaken
 
         // Redirect to appointment page with paused status
         return res.redirect(
@@ -224,9 +229,9 @@ module.exports = (router) => {
       // Handle the initial question about whether images were taken
       if (imagesTaken === 'No') {
         // No images taken - redirect back to exit page to offer choice
-        delete data.imagesTaken
+        delete exitAppointmentTemp.imagesTaken
         // Store that we've confirmed no images to skip the question next time
-        data.confirmedNoImages = true
+        exitAppointmentTemp.confirmedNoImages = true
         return res.redirect(
           urlWithReferrer(
             `/clinics/${clinicId}/appointments/${appointmentId}/exit-appointment`,
@@ -235,8 +240,8 @@ module.exports = (router) => {
         )
       } else if (imagesTaken === 'Yes') {
         // Images taken - redirect back to exit page which will show pause-only options
-        delete data.imagesTaken
-        data.confirmedImagesWereTaken = true
+        delete exitAppointmentTemp.imagesTaken
+        exitAppointmentTemp.confirmedImagesWereTaken = true
         return res.redirect(
           urlWithReferrer(
             `/clinics/${clinicId}/appointments/${appointmentId}/exit-appointment`,
@@ -244,9 +249,6 @@ module.exports = (router) => {
           )
         )
       }
-
-      // Handle the old exitAction flow for backwards compatibility
-      const exitAction = data.exitAction
 
       // Only allow exiting if the appointment is currently in progress
       if (appointment?.status === 'in_progress') {
@@ -269,11 +271,6 @@ module.exports = (router) => {
           delete data.appointment
           delete data.participant
 
-          // Clear the exit action and flags from session
-          delete data.exitAction
-          delete data.confirmedNoImages
-          delete data.confirmedImagesWereTaken
-
           // Redirect to returnTo destination or appointment page
           const returnTo = data.returnTo
           delete data.returnTo
@@ -283,9 +280,6 @@ module.exports = (router) => {
           return res.redirect(modalBreakout(destination))
         } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
-          delete data.exitAction
-          delete data.confirmedNoImages
-          delete data.confirmedImagesWereTaken
           return res.redirect(
             modalBreakout(
               `/clinics/${clinicId}/appointments/${appointmentId}/attended-not-screened-reason`
@@ -325,11 +319,6 @@ module.exports = (router) => {
           delete data.appointment
           delete data.participant
 
-          // Clear the exit action and flags from session
-          delete data.exitAction
-          delete data.confirmedNoImages
-          delete data.confirmedImagesWereTaken
-
           // Redirect to appointment page with paused status
           return res.redirect(
             modalBreakout(
@@ -338,11 +327,6 @@ module.exports = (router) => {
           )
         }
       }
-
-      // Clear the exit action and flags from session (in case status check failed)
-      delete data.exitAction
-      delete data.confirmedNoImages
-      delete data.confirmedImagesWereTaken
 
       // Fallback redirect
       res.redirect(
