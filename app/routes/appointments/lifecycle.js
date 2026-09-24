@@ -173,14 +173,13 @@ module.exports = (router) => {
       const data = req.session.data
       const appointment = getAppointment(data, appointmentId)
 
-      // The exit questions are temp answers on the working copy. Only the
-      // images-taken answer keeps them, for the follow-up question; every other
-      // exit clears them before anything is saved
-      const exitAppointmentTemp = data.appointment?.exitAppointmentTemp || {}
-      const { imagesTaken, pauseAction, exitAction } = exitAppointmentTemp
-      if (imagesTaken !== 'No' && imagesTaken !== 'Yes') {
-        delete data.appointment?.exitAppointmentTemp
-      }
+      // The exit answers are one-off actions, so their field names start with
+      // an underscore, which the kit doesn't store in the session, and they
+      // are read from this request. The header's discard link sends a query
+      const answers = { ...req.query, ...req.body }
+      const imagesTaken = answers._imagesTaken
+      const pauseAction = answers._pauseAction
+      const exitAction = answers._exitAction
 
       // Handle pause action from images-completed scenario
       if (pauseAction === 'yes') {
@@ -226,25 +225,12 @@ module.exports = (router) => {
         )
       }
 
-      // Handle the initial question about whether images were taken
-      if (imagesTaken === 'No') {
-        // No images taken - redirect back to exit page to offer choice
-        delete exitAppointmentTemp.imagesTaken
-        // Store that we've confirmed no images to skip the question next time
-        exitAppointmentTemp.confirmedNoImages = true
+      // Answering whether images were taken shows the exit page again with the
+      // options for that answer: pause only if they were, all options if not
+      if (imagesTaken === 'No' || imagesTaken === 'Yes') {
         return res.redirect(
           urlWithReferrer(
-            `/clinics/${clinicId}/appointments/${appointmentId}/exit-appointment`,
-            req.query.referrerChain
-          )
-        )
-      } else if (imagesTaken === 'Yes') {
-        // Images taken - redirect back to exit page which will show pause-only options
-        delete exitAppointmentTemp.imagesTaken
-        exitAppointmentTemp.confirmedImagesWereTaken = true
-        return res.redirect(
-          urlWithReferrer(
-            `/clinics/${clinicId}/appointments/${appointmentId}/exit-appointment`,
+            `/clinics/${clinicId}/appointments/${appointmentId}/exit-appointment?_imagesTaken=${imagesTaken}`,
             req.query.referrerChain
           )
         )

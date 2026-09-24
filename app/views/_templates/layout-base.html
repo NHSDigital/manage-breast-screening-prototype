@@ -32,7 +32,7 @@
   {% set appointmentWorkflow = appointment and appointment | isAppointmentWorkflow %}
   {% if appointmentWorkflow %}
     {# Exit appointment with discard action, returning to root #}
-    {% set exitAppointmentHref = appointmentUrl ~ "/exit-appointment-answer?appointment[exitAppointmentTemp][exitAction]=discard&returnTo=/" %}
+    {% set exitAppointmentHref = appointmentUrl ~ "/exit-appointment-answer?_exitAction=discard&returnTo=/" %}
     {# Override rootHref to exit appointment and return to root #}
     {% set rootHref = exitAppointmentHref %}
   {% endif %}

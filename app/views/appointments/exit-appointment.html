@@ -15,8 +15,8 @@
   {% set hasStartedImaging = (appointment.workflowStatus['confirm-identity'] == 'completed') and (appointment.workflowStatus['review-medical-information'] == 'completed') %}
   {# Also treat automatic mammogram data being present as images confirmed taken #}
   {% set hasCompletedImaging = (appointment.workflowStatus['take-images'] == 'completed') or (appointment.mammogramData and not appointment.mammogramData.isManualEntry) %}
-  {% set confirmedNoImages = appointment.exitAppointmentTemp.confirmedNoImages %}
-  {% set confirmedImagesWereTaken = appointment.exitAppointmentTemp.confirmedImagesWereTaken %}
+  {% set confirmedNoImages = query._imagesTaken == "No" %}
+  {% set confirmedImagesWereTaken = query._imagesTaken == "Yes" %}
 
   {% if hasCompletedImaging or confirmedImagesWereTaken %}
     {# Scenario 3: Images completed - can only pause #}
