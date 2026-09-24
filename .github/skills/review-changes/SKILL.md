@@ -27,7 +27,7 @@ A subagent has not seen the reasoning behind the change, which is what makes it 
 - Fix every **must fix** finding and every **should fix** finding that is quick and safe.
 - Fix at the root. If a finding shows the same mistake in several places, fix every place, and search the repo for others.
 - Keep behaviour the same unless the finding is that the behaviour is wrong. Before a larger fix (merging routes, moving logic into a helper, renaming a data key), note what currently works so you can confirm it still does.
-- Do not decide **ask Ed** items. Leave them for the review notes.
+- Do not decide **needs a decision** items yourself. Ask the designer: explain the choice in plain language, give your recommendation, and act on their answer. If they would rather leave it open, note it in the review notes.
 - If a fix would mean redesigning the feature, stop and explain the choice to the designer instead.
 - After renaming anything, search the whole repo for the old name.
 
@@ -43,7 +43,7 @@ Tell the designer, in plain language and briefly:
 
 - what the review found and what you fixed
 - anything left unfixed and why
-- questions for Ed
+- decisions they made, and any left open
 
 Then give them review notes to paste into the pull request description, as a fenced markdown block:
 
@@ -53,7 +53,8 @@ Then give them review notes to paste into the pull request description, as a fen
 - Reviewed with the review-changes skill. `npm test`: [passing / failing, and what fails / not run, and why]
 - Fixed: [one line per fix]
 - Not fixed: [item and reason, or "nothing"]
-- For Ed: [questions or judgement calls, or "nothing"]
+- Decisions: [choices made during the review and why, or "none"]
+- Open questions: [anything left for reviewers to weigh in on, or "none"]
 - Data changes: [keys, fields or statuses added or changed, and the other places that use them]
 ```
 

@@ -11,7 +11,7 @@ Work through the open review threads on a pull request: from Copilot's code revi
 
 - **Reply, then resolve.** Never resolve a thread without replying first: a resolved thread is collapsed, and the reply is the only record of what happened.
 - **Fixed:** reply with the commit and a one-line note of what changed, then resolve.
-- **Not applicable, or you disagree:** reply with the reason and leave the thread open for Ed.
+- **Not applicable, or you disagree:** reply with the reason and leave the thread open, so reviewers can see it. If the comment raises a design choice, ask the designer and act on their answer.
 - **Replies post under the user's GitHub account.** Write them as short, plain notes from that person: what changed and where. No greetings or sign-offs.
 - Fix at the root, as in the `review-changes` skill: if a comment points at a pattern, fix every instance, then run `npm test`.
 

@@ -28,7 +28,7 @@ Read the changed files in full, not only the diff. Most of the serious problems 
 
 - **Must fix** - breaks a rule in this checklist or the docs, or will cause a bug. Examples: a route that only receives a form, a hand-built return URL, a new field the seed data never generates.
 - **Should fix** - works, but makes the code harder to live with. Examples: duplicated logic, a name that differs from the rest of the code.
-- **Ask Ed** - a design or product judgement a reviewer should not make alone. Say what the choice is and what each option means.
+- **Needs a decision** - a design or product judgement a reviewer should not make alone. Say what the choice is and what each option means.
 
 ## 1. Routes and form data
 
