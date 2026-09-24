@@ -43,14 +43,14 @@ const convertPercentageOverrides = (overrides, fallbackProfile) => {
   }, {})
 }
 
-const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
+const getCustomOverridesFromForm = (form = {}, fallbackProfile = {}) => {
   const rawOverrides = {
-    reads: body.reads,
-    medicalInformation: body.medicalInformation,
-    specialAppointment: body.specialAppointment,
-    previousMammograms: body.previousMammograms,
-    mammogram: body.mammogram,
-    imageSetSelection: body.imageSetSelection
+    reads: form.reads,
+    medicalInformation: form.medicalInformation,
+    specialAppointment: form.specialAppointment,
+    previousMammograms: form.previousMammograms,
+    mammogram: form.mammogram,
+    imageSetSelection: form.imageSetSelection
   }
 
   const converted = convertPercentageOverrides(rawOverrides, {
@@ -63,8 +63,8 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
   })
 
   // reading.backlogLimit is a plain integer (not a probability), so handle separately
-  const readingBody = body.reading || {}
-  const rawLimit = readingBody.backlogLimit
+  const readingForm = form.reading || {}
+  const rawLimit = readingForm.backlogLimit
   const parsedLimit =
     rawLimit === '' || rawLimit === undefined || rawLimit === null
       ? null
@@ -73,7 +73,7 @@ const getCustomOverridesFromBody = (body = {}, fallbackProfile = {}) => {
   converted.reading = {
     backlogLimit: Number.isNaN(parsedLimit) ? null : parsedLimit,
     backlogPartialReadRatio: parsePercentageAsProbability(
-      readingBody.backlogPartialReadRatio,
+      readingForm.backlogPartialReadRatio,
       fallbackProfile?.reading?.backlogPartialReadRatio
     )
   }
@@ -119,14 +119,13 @@ module.exports = (router) => {
   })
 
   router.post('/settings/seed-profiles/custom', (req, res) => {
-    const submitAction = req.body?.settings?.seedProfiles?.customForm?.action
-
     if (!req.session.data.settings) {
       req.session.data.settings = {}
     }
 
     const seedProfiles = ensureSeedProfilesState(req.session.data.settings)
-    const customForm = req.body?.settings?.seedProfiles?.customForm || {}
+    const customForm = seedProfiles.customForm || {}
+    const submitAction = customForm.action
     const requestedBaseKey = customForm.baseKey || seedProfiles.customBaseKey
     const baseProfileKey = seedProfiles.profiles[requestedBaseKey]
       ? requestedBaseKey
@@ -135,7 +134,7 @@ module.exports = (router) => {
       seedProfiles,
       baseProfileKey
     )
-    const customOverrides = getCustomOverridesFromBody(customForm, baseProfile)
+    const customOverrides = getCustomOverridesFromForm(customForm, baseProfile)
     const customProfile = {
       ...mergeDeep(baseProfile, customOverrides),
       key: CUSTOM_SEED_DATA_PROFILE,
@@ -178,12 +177,8 @@ module.exports = (router) => {
         req.session.data.settings = {}
       }
 
+      // The chosen profile is already in seedProfiles.selectedKey, stored from the form
       const seedProfiles = ensureSeedProfilesState(req.session.data.settings)
-      const selectedProfile = req.body?.settings?.seedProfiles?.selectedKey
-
-      if (selectedProfile && seedProfiles.profiles[selectedProfile]) {
-        seedProfiles.selectedKey = selectedProfile
-      }
 
       await regenerateData(req, {
         seedDataProfile: seedProfiles.selectedKey
