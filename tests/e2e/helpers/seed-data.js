@@ -72,7 +72,9 @@ const findTodayAppointment = ({ status = 'scheduled', index = 0 } = {}) => {
     // Natural order for flash messages (getFullName format)
     fullName: [firstName, middleName, lastName].filter(Boolean).join(' '),
     // Reversed format for identity displays (getFullNameReversed format)
-    fullNameReversed: [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+    fullNameReversed: [`${lastName.toUpperCase()},`, firstName, middleName]
+      .filter(Boolean)
+      .join(' ')
   }
 }
 

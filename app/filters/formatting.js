@@ -47,28 +47,30 @@ const formatAnswer = (value, options = {}) => {
  * getOrdinalName(1) // 'first'
  * getOrdinalName(3) // 'third'
  */
-const getOrdinalName = (integer) =>
-{
+const getOrdinalName = (integer) => {
   const ordinals = [
-    "zeroth", // shouldn't be possible
-    "first",
-    "second",
-    "third",
-    "fourth",
-    "fifth",
-    "sixth",
-    "seventh",
-    "eighth",
-    "ninth",
-    "tenth"
+    'zeroth', // shouldn't be possible
+    'first',
+    'second',
+    'third',
+    'fourth',
+    'fifth',
+    'sixth',
+    'seventh',
+    'eighth',
+    'ninth',
+    'tenth'
   ]
 
   const parsedInteger = Number(integer)
 
-  if (!Number.isInteger(parsedInteger) || parsedInteger < 1 || parsedInteger > 10)
-  {
-    console.warn("Error in getOrdinalName: input out of bounds")
-    return ""
+  if (
+    !Number.isInteger(parsedInteger) ||
+    parsedInteger < 1 ||
+    parsedInteger > 10
+  ) {
+    console.warn('Error in getOrdinalName: input out of bounds')
+    return ''
   }
 
   return ordinals[parsedInteger]

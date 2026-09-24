@@ -144,11 +144,15 @@ module.exports = (router) => {
       }
 
       // Validate investigation details if the checkbox is checked
-      const hasBeenInvestigated = data.appointment?.symptomTemp?.hasBeenInvestigated
+      const hasBeenInvestigated =
+        data.appointment?.symptomTemp?.hasBeenInvestigated
       const isInvestigated = Array.isArray(hasBeenInvestigated)
         ? hasBeenInvestigated.includes('yes')
         : hasBeenInvestigated === 'yes'
-      if (isInvestigated && !data.appointment?.symptomTemp?.investigatedDescription) {
+      if (
+        isInvestigated &&
+        !data.appointment?.symptomTemp?.investigatedDescription
+      ) {
         validationErrors.push({
           name: 'appointment[symptomTemp][investigatedDescription]',
           text: 'Provide details of the investigation',
@@ -318,14 +322,16 @@ module.exports = (router) => {
             symptom.leftBreastDescription = symptomTemp.leftBreastDescription
           }
           if (locArray.includes('other')) {
-            symptom.otherLocationDescription = symptomTemp.otherLocationDescription
+            symptom.otherLocationDescription =
+              symptomTemp.otherLocationDescription
           }
         }
 
         // Update existing or add new
-        const existingIndex = data.appointment.medicalInformation.symptoms.findIndex(
-          (s) => s.id === symptom.id
-        )
+        const existingIndex =
+          data.appointment.medicalInformation.symptoms.findIndex(
+            (s) => s.id === symptom.id
+          )
         if (existingIndex !== -1) {
           data.appointment.medicalInformation.symptoms[existingIndex] = symptom
         } else {
@@ -461,7 +467,9 @@ module.exports = (router) => {
           // For modal (AJAX) requests, render the details page as a fragment.
           // parentLayout is already set in res.locals by the modal middleware.
           if (isModal) {
-            return res.render('appointments/medical-information/symptoms/details')
+            return res.render(
+              'appointments/medical-information/symptoms/details'
+            )
           }
 
           // Redirect to details page

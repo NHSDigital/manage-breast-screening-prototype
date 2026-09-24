@@ -5,20 +5,15 @@
 // routes between automatic and manual flows.
 
 const dayjs = require('dayjs')
-const {
-  getFullName
-} = require('../../lib/utils/participants')
+const { getFullName } = require('../../lib/utils/participants')
 const {
   generateMammogramImages
 } = require('../../lib/generators/mammogram-generator')
+const { getAppointmentData } = require('../../lib/utils/appointment-data')
+const { getReturnUrl, urlWithReferrer } = require('../../lib/utils/referrers')
 const {
-  getAppointmentData
-} = require('../../lib/utils/appointment-data')
-const {
-  getReturnUrl,
-  urlWithReferrer
-} = require('../../lib/utils/referrers')
-const { getImageSetForAppointment } = require('../../lib/utils/mammogram-images')
+  getImageSetForAppointment
+} = require('../../lib/utils/mammogram-images')
 const {
   ensureSeedProfilesState,
   getSeedDataProfileFromState
@@ -33,7 +28,11 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const appointmentData = getAppointmentData(req.session.data, clinicId, appointmentId)
+      const appointmentData = getAppointmentData(
+        req.session.data,
+        clinicId,
+        appointmentId
+      )
 
       // If no mammogram data exists, generate it
       if (!data?.appointment?.mammogramData) {
@@ -86,7 +85,10 @@ module.exports = (router) => {
       const data = req.session.data
 
       // Save current screening room if not already set
-      if (!data.appointment.mammogramData.machineRoom && data.currentScreeningRoom) {
+      if (
+        !data.appointment.mammogramData.machineRoom &&
+        data.currentScreeningRoom
+      ) {
         const screeningRooms = data.screeningRooms || []
         const currentRoom = screeningRooms.find(
           (room) => room.id === data.currentScreeningRoom
@@ -106,9 +108,13 @@ module.exports = (router) => {
 
       // Select and store image set based on appointment context now available (including isImperfect)
       if (!data.appointment.mammogramData.selectedSetId) {
-        const selectedSet = getImageSetForAppointment(appointmentId, 'diagrams', {
-          appointment: data.appointment
-        })
+        const selectedSet = getImageSetForAppointment(
+          appointmentId,
+          'diagrams',
+          {
+            appointment: data.appointment
+          }
+        )
         if (selectedSet) {
           data.appointment.mammogramData.selectedSetId = selectedSet.id
         }
@@ -126,7 +132,9 @@ module.exports = (router) => {
       }
       data.appointment.workflowStatus['take-images'] = 'completed'
 
-      res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/check-information`)
+      res.redirect(
+        `/clinics/${clinicId}/appointments/${appointmentId}/check-information`
+      )
     }
   )
 
@@ -194,58 +202,61 @@ module.exports = (router) => {
   // Handle take-images route - redirect to appropriate page based on state.
   // Use `all` so the gate applies to the POST from review-medical-information
   // as well as direct GET navigation.
-  router.all('/clinics/:clinicId/appointments/:appointmentId/take-images', (req, res) => {
-    const { clinicId, appointmentId } = req.params
-    const data = req.session.data
+  router.all(
+    '/clinics/:clinicId/appointments/:appointmentId/take-images',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
 
-    const isAddedToWorklist =
-      data.settings?.appointment?.addedToWorklist !== 'false' ||
-      data.appointment?.isOnWorklist === true
+      const isAddedToWorklist =
+        data.settings?.appointment?.addedToWorklist !== 'false' ||
+        data.appointment?.isOnWorklist === true
 
-    // Manual mode is true if the global setting says so, OR this specific
-    // appointment was switched to manual (e.g. via the retry-connection page).
-    const isManualImageCollection =
-      data.settings?.appointment?.manualImageCollection === 'true' ||
-      data.appointment?.isManualImageCollection === true
+      // Manual mode is true if the global setting says so, OR this specific
+      // appointment was switched to manual (e.g. via the retry-connection page).
+      const isManualImageCollection =
+        data.settings?.appointment?.manualImageCollection === 'true' ||
+        data.appointment?.isManualImageCollection === true
 
-    const imagesStageCompleted =
-      data.appointment?.workflowStatus?.['take-images'] === 'completed'
+      const imagesStageCompleted =
+        data.appointment?.workflowStatus?.['take-images'] === 'completed'
 
-    // Gate: if the appointment was not added to the worklist and the user
-    // hasn't yet switched to manual image mode, divert to the retry page
-    // before letting them into the image-taking step.
-    if (!isAddedToWorklist && !isManualImageCollection) {
-      return res.redirect(
-        urlWithReferrer(
-          `/clinics/${clinicId}/appointments/${appointmentId}/retry-worklist-connection`,
-          `/clinics/${clinicId}/appointments/${appointmentId}/take-images`
+      // Gate: if the appointment was not added to the worklist and the user
+      // hasn't yet switched to manual image mode, divert to the retry page
+      // before letting them into the image-taking step.
+      if (!isAddedToWorklist && !isManualImageCollection) {
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/appointments/${appointmentId}/retry-worklist-connection`,
+            `/clinics/${clinicId}/appointments/${appointmentId}/take-images`
+          )
         )
-      )
-    }
+      }
 
-    // If manual flow and images already completed, redirect to details page for editing
-    if (
-      isManualImageCollection &&
-      imagesStageCompleted &&
-      data.appointment?.mammogramData?.isManualEntry
-    ) {
-      return res.redirect(
-        `/clinics/${clinicId}/appointments/${appointmentId}/images-manual-details`
-      )
-    }
+      // If manual flow and images already completed, redirect to details page for editing
+      if (
+        isManualImageCollection &&
+        imagesStageCompleted &&
+        data.appointment?.mammogramData?.isManualEntry
+      ) {
+        return res.redirect(
+          `/clinics/${clinicId}/appointments/${appointmentId}/images-manual-details`
+        )
+      }
 
-    // If automatic flow and images completed, redirect to automatic page
-    if (
-      !isManualImageCollection &&
-      imagesStageCompleted &&
-      data.appointment?.mammogramData
-    ) {
-      return res.redirect(
-        `/clinics/${clinicId}/appointments/${appointmentId}/images-automatic`
-      )
-    }
+      // If automatic flow and images completed, redirect to automatic page
+      if (
+        !isManualImageCollection &&
+        imagesStageCompleted &&
+        data.appointment?.mammogramData
+      ) {
+        return res.redirect(
+          `/clinics/${clinicId}/appointments/${appointmentId}/images-automatic`
+        )
+      }
 
-    // Otherwise render the take-images template which will determine which flow to show
-    res.render('appointments/take-images')
-  })
+      // Otherwise render the take-images template which will determine which flow to show
+      res.render('appointments/take-images')
+    }
+  )
 }

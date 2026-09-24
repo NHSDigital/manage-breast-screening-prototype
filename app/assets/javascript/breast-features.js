@@ -8,7 +8,8 @@ function initializeBreastFeatures() {
   const config = window.breastFeaturesConfig || {}
   const readOnly = config.readOnly || false
   const hiddenFieldName =
-    config.hiddenFieldName || 'appointment[medicalInformation][breastFeaturesRaw]'
+    config.hiddenFieldName ||
+    'appointment[medicalInformation][breastFeaturesRaw]'
   const hiddenFieldId = config.hiddenFieldId || 'breastFeaturesRaw'
   const existingFeatures = config.existingFeatures || []
   const featureTypes = config.featureTypes || [

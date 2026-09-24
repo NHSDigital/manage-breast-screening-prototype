@@ -43,7 +43,8 @@ class CopyToClipboard {
   copied() {
     this.element.classList.add('app-copy-to-clipboard--copied')
     this.setLabel('Copied')
-    this.status.textContent = this.element.dataset.copiedAnnouncement || 'Copied to clipboard'
+    this.status.textContent =
+      this.element.dataset.copiedAnnouncement || 'Copied to clipboard'
 
     this.reset(RESET_DELAY)
   }

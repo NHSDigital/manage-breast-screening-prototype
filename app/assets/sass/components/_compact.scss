@@ -114,7 +114,6 @@
   }
 
   .app-clinic-appointments-table {
-
     .app-clinic-appointments-table__time-column .nhsuk-tag {
       display: inline-block;
       max-width: 100%;
@@ -263,4 +262,3 @@
     @include nhsuk-font($size: 22, $weight: bold);
   }
 }
-

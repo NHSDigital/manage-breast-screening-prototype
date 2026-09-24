@@ -58,7 +58,9 @@ const recordNormal = async (page) => {
 
   // Symptoms have to be acknowledged before a normal opinion can be saved
   await detailsModal
-    .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+    .locator(
+      'input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]'
+    )
     .check()
   await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
 
@@ -96,14 +98,19 @@ const recordArbitrationNormal = async (page) => {
     )
 
     await detailsModal
-      .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+      .locator(
+        'input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]'
+      )
       .check()
     await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
     await expectModalClosed(detailsModal)
   }
 
   await expect(page).toHaveURL(/\/review/)
-  await page.getByRole('button', { name: 'Confirm and continue' }).first().click()
+  await page
+    .getByRole('button', { name: 'Confirm and continue' })
+    .first()
+    .click()
 }
 
 /**
@@ -230,7 +237,9 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
-    const caseUrl = page.url().match(/\/reading\/session\/[^/]+\/appointments\/[^/?]+/)[0]
+    const caseUrl = page
+      .url()
+      .match(/\/reading\/session\/[^/]+\/appointments\/[^/?]+/)[0]
 
     await recordNormal(page)
     await expect(
@@ -290,7 +299,9 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
 
     await expect(
-      page.getByRole('heading', { name: 'What is your opinion of these images?' })
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
     ).toBeVisible()
 
     const recallModal = await clickToOpenModal(page, 'Technical recall (T)')
@@ -310,14 +321,18 @@ test.describe('Image reading', () => {
     await expect(reviewPage.getByText('Technical recall').first()).toBeVisible()
     await expect(reviewPage.getByText('RMLO').first()).toBeVisible()
     await expect(reviewPage.getByText('Image blurred')).toBeVisible()
-    await reviewPage.getByRole('button', { name: 'Confirm and continue' }).click()
+    await reviewPage
+      .getByRole('button', { name: 'Confirm and continue' })
+      .click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
     ).toBeVisible()
   })
 
-  test('defers a case and returns it to the reading queue', async ({ page }) => {
+  test('defers a case and returns it to the reading queue', async ({
+    page
+  }) => {
     await pinSettings(page, readingSettings)
 
     // The reason is the thing that identifies this deferral on the deferred
@@ -367,9 +382,7 @@ test.describe('Image reading', () => {
     // every remaining case at once, which made the whole backlog look claimed.
     await pinSettings(page, readingSettings)
 
-    await page.goto(
-      '/reading/create-session?type=all_reads&limit=10&lazy=true'
-    )
+    await page.goto('/reading/create-session?type=all_reads&limit=10&lazy=true')
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
 
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -415,7 +428,10 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/appointments\//)
 
     // Skip the second case, which loads the third and moves the reader to it
-    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    const skippedAppointmentId = page
+      .url()
+      .split('/appointments/')[1]
+      .split('/')[0]
     await page.goto(
       `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
     )
@@ -453,7 +469,10 @@ test.describe('Image reading', () => {
     )
 
     // Skip the first case, which loads the second and moves the reader to it
-    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    const skippedAppointmentId = page
+      .url()
+      .split('/appointments/')[1]
+      .split('/')[0]
     await page.goto(
       `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
     )
@@ -486,7 +505,10 @@ test.describe('Image reading', () => {
     // Arbitrating alone rather than as a panel
     await page.goto('/reading/arbitration/start')
     await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
-    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
 
     await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -498,7 +520,10 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/appointments\//)
 
     // Skip the second case, which loads the third and moves the reader to it
-    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    const skippedAppointmentId = page
+      .url()
+      .split('/appointments/')[1]
+      .split('/')[0]
     await page.goto(
       `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
     )
@@ -532,7 +557,10 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading/arbitration/start')
     await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
-    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
     await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
 
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -547,9 +575,7 @@ test.describe('Image reading', () => {
     const outstanding = page.url().split('/appointments/')[1].split('/')[0]
 
     // Back to the case just settled, which shows its recorded outcome
-    await page.goto(
-      `/reading/session/${sessionId}/appointments/${settled[2]}`
-    )
+    await page.goto(`/reading/session/${sessionId}/appointments/${settled[2]}`)
     await expect(page).toHaveURL(/\/existing-read/)
 
     await page.getByRole('link', { name: 'Next case' }).first().click()
@@ -571,7 +597,10 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading/arbitration/start')
     await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
-    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
     await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
 
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -614,7 +643,9 @@ test.describe('Image reading', () => {
 
     // Go straight to the chosen case rather than whichever the session leads
     // with - the appointment routes resolve any readable case by id
-    await page.goto(`/reading/session/${sessionId}/appointments/${appointment.id}`)
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${appointment.id}`
+    )
     await recordNormal(page)
 
     // Saving moves on to another case (or session complete) - wait for that
@@ -663,7 +694,9 @@ test.describe('Image reading', () => {
 
     await expect(page).toHaveURL(/\/no-more-cases/)
 
-    await page.goto(`/reading/session/${sessionId}/appointments/${readCases[0]}`)
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${readCases[0]}`
+    )
     await expect(page).toHaveURL(/\/existing-read/)
 
     for (const nextCaseId of readCases.slice(1)) {
@@ -753,12 +786,17 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
 
     await expect(
-      page.getByRole('heading', { name: 'What is your opinion of these images?' })
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
     ).toBeVisible()
 
     // Unlike the details pages, the comparison breaks out of the modal and
     // takes over the page, so this is a plain click rather than clickToOpenModal
-    await page.getByRole('button', { name: 'Technical recall (T)' }).first().click()
+    await page
+      .getByRole('button', { name: 'Technical recall (T)' })
+      .first()
+      .click()
 
     await expect(page).toHaveURL(/\/compare/)
     // Exact, because the page heading ("The first reader had a different
@@ -771,7 +809,10 @@ test.describe('Image reading', () => {
     ).toBeVisible()
 
     // Standing by the second opinion continues to its details page
-    await page.getByRole('button', { name: 'Keep your opinion' }).first().click()
+    await page
+      .getByRole('button', { name: 'Keep your opinion' })
+      .first()
+      .click()
 
     await expect(page).toHaveURL(/\/technical-recall/)
   })

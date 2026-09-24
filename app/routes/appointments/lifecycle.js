@@ -14,7 +14,9 @@ const {
   saveTempAppointmentToAppointment,
   updateAppointmentData
 } = require('../../lib/utils/appointment-data')
-const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
+const {
+  updateAppointmentStatus
+} = require('../../lib/utils/appointment-status')
 const {
   getReturnUrl,
   urlWithReferrer,
@@ -24,136 +26,143 @@ const { captureSessionEndTime } = require('./shared')
 
 module.exports = (router) => {
   // Main route for starting a new appointment
-  router.get('/clinics/:clinicId/appointments/:appointmentId/start', (req, res) => {
-    const data = req.session.data
-    const appointment = getAppointment(data, req.params.appointmentId)
-    const currentUser = data.currentUser
-    const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
-    delete data.returnTo // Clean up session - we're using query string explicitly here
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/start',
+    (req, res) => {
+      const data = req.session.data
+      const appointment = getAppointment(data, req.params.appointmentId)
+      const currentUser = data.currentUser
+      const returnTo = req.query.returnTo // Used by /index so we can 'start' an appointment but then go to a different page.
+      delete data.returnTo // Clean up session - we're using query string explicitly here
 
-    console.log(
-      `Starting appointment for appointment ${req.params.appointmentId} by user ${currentUser.id}`
-    )
+      console.log(
+        `Starting appointment for appointment ${req.params.appointmentId} by user ${currentUser.id}`
+      )
 
-    // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
-    if (
-      appointment?.status === 'scheduled' ||
-      appointment?.status === 'checked_in'
-    ) {
-      // Update status to in progress
-      updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
+      // Only allow starting appointments that haven't been started yet (scheduled or checked in, not paused or already in progress)
+      if (
+        appointment?.status === 'scheduled' ||
+        appointment?.status === 'checked_in'
+      ) {
+        // Update status to in progress
+        updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
-      // Store session details
-      updateAppointmentData(data, req.params.appointmentId, {
-        sessionDetails: {
-          startedAt: new Date().toISOString(),
-          startedBy: currentUser.id,
-          pausedAt: null,
-          pausedBy: null,
-          authors: []
-        }
-      })
+        // Store session details
+        updateAppointmentData(data, req.params.appointmentId, {
+          sessionDetails: {
+            startedAt: new Date().toISOString(),
+            startedBy: currentUser.id,
+            pausedAt: null,
+            pausedBy: null,
+            authors: []
+          }
+        })
+      }
+
+      // Parse and apply workflow status from query parameters
+      // This lets links in index.njk pre-complete certain sections
+      // Look for parameters like appointment[workflowStatus][section]=completed
+      if (req.query.appointment && req.query.appointment.workflowStatus) {
+        const workflowUpdates = req.query.appointment.workflowStatus
+        console.log('Applying workflow status updates:', workflowUpdates)
+
+        updateAppointmentData(data, req.params.appointmentId, {
+          workflowStatus: workflowUpdates
+        })
+      }
+
+      // Determine redirect destination
+      // This lets us deep link in to the flow whilst still going through this setup route
+      const defaultDestination = `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/confirm-identity`
+      const finalDestination = returnTo
+        ? `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/${returnTo}`
+        : defaultDestination
+
+      // Preserve all query string parameters except the ones consumed above.
+      // appointment[workflowStatus][...] arrives as a parsed object, so leaving it in
+      // would re-serialise as appointment=[object Object]
+      // Todo: could a library do this for us?
+      const queryParams = { ...req.query }
+      delete queryParams.returnTo
+      delete queryParams.appointment
+      const queryString = Object.keys(queryParams).length
+        ? '?' +
+          Object.entries(queryParams)
+            .map(([key, value]) =>
+              Array.isArray(value)
+                ? value
+                    .map(
+                      (v) =>
+                        `${encodeURIComponent(key)}=${encodeURIComponent(v)}`
+                    )
+                    .join('&')
+                : `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+            )
+            .join('&')
+        : ''
+
+      res.redirect(finalDestination + queryString)
     }
-
-    // Parse and apply workflow status from query parameters
-    // This lets links in index.njk pre-complete certain sections
-    // Look for parameters like appointment[workflowStatus][section]=completed
-    if (req.query.appointment && req.query.appointment.workflowStatus) {
-      const workflowUpdates = req.query.appointment.workflowStatus
-      console.log('Applying workflow status updates:', workflowUpdates)
-
-      updateAppointmentData(data, req.params.appointmentId, {
-        workflowStatus: workflowUpdates
-      })
-    }
-
-    // Determine redirect destination
-    // This lets us deep link in to the flow whilst still going through this setup route
-    const defaultDestination = `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/confirm-identity`
-    const finalDestination = returnTo
-      ? `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/${returnTo}`
-      : defaultDestination
-
-    // Preserve all query string parameters except the ones consumed above.
-    // appointment[workflowStatus][...] arrives as a parsed object, so leaving it in
-    // would re-serialise as appointment=[object Object]
-    // Todo: could a library do this for us?
-    const queryParams = { ...req.query }
-    delete queryParams.returnTo
-    delete queryParams.appointment
-    const queryString = Object.keys(queryParams).length
-      ? '?' +
-        Object.entries(queryParams)
-          .map(([key, value]) =>
-            Array.isArray(value)
-              ? value
-                  .map(
-                    (v) => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`
-                  )
-                  .join('&')
-              : `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-          )
-          .join('&')
-      : ''
-
-    res.redirect(finalDestination + queryString)
-  })
+  )
 
   // Resume a paused appointment
-  router.get('/clinics/:clinicId/appointments/:appointmentId/resume', (req, res) => {
-    const data = req.session.data
-    const appointment = getAppointment(data, req.params.appointmentId)
-    const currentUser = data.currentUser
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/resume',
+    (req, res) => {
+      const data = req.session.data
+      const appointment = getAppointment(data, req.params.appointmentId)
+      const currentUser = data.currentUser
 
-    console.log(
-      `Resuming appointment for appointment ${req.params.appointmentId} by user ${currentUser.id}`
-    )
+      console.log(
+        `Resuming appointment for appointment ${req.params.appointmentId} by user ${currentUser.id}`
+      )
 
-    if (appointment?.status === 'paused') {
-      // Get existing session details
-      const existingDetails = appointment.sessionDetails || {}
+      if (appointment?.status === 'paused') {
+        // Get existing session details
+        const existingDetails = appointment.sessionDetails || {}
 
-      // Add resume action to a new authors array - the existing one belongs
-      // to the shared read-only appointment record, so must not be pushed to
-      const authors = [
-        ...(existingDetails.authors || []),
-        {
-          userId: currentUser.id,
-          action: 'resumed',
-          timestamp: new Date().toISOString()
-        }
-      ]
+        // Add resume action to a new authors array - the existing one belongs
+        // to the shared read-only appointment record, so must not be pushed to
+        const authors = [
+          ...(existingDetails.authors || []),
+          {
+            userId: currentUser.id,
+            action: 'resumed',
+            timestamp: new Date().toISOString()
+          }
+        ]
 
-      // Update status to in progress
-      updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
+        // Update status to in progress
+        updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
-      // Update session details - preserve original starter
-      updateAppointmentData(data, req.params.appointmentId, {
-        sessionDetails: {
-          startedAt: existingDetails.startedAt,
-          startedBy: existingDetails.startedBy,
-          pausedAt: null,
-          pausedBy: null,
-          authors: authors
-        }
-      })
+        // Update session details - preserve original starter
+        updateAppointmentData(data, req.params.appointmentId, {
+          sessionDetails: {
+            startedAt: existingDetails.startedAt,
+            startedBy: existingDetails.startedBy,
+            pausedAt: null,
+            pausedBy: null,
+            authors: authors
+          }
+        })
+      }
+
+      // Determine redirect destination
+      const defaultDestination = `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/confirm-identity`
+      const finalDestination = req.query.returnTo
+        ? `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/${req.query.returnTo}`
+        : defaultDestination
+
+      // Preserve all query string parameters except returnTo (already used)
+      const queryParams = { ...req.query }
+      delete queryParams.returnTo
+      const queryString = Object.keys(queryParams).length
+        ? '?' + new URLSearchParams(queryParams).toString()
+        : ''
+
+      res.redirect(finalDestination + queryString)
     }
-
-    // Determine redirect destination
-    const defaultDestination = `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/confirm-identity`
-    const finalDestination = req.query.returnTo
-      ? `/clinics/${req.params.clinicId}/appointments/${req.params.appointmentId}/${req.query.returnTo}`
-      : defaultDestination
-
-    // Preserve all query string parameters except returnTo (already used)
-    const queryParams = { ...req.query }
-    delete queryParams.returnTo
-    const queryString = Object.keys(queryParams).length
-      ? '?' + new URLSearchParams(queryParams).toString()
-      : ''
-
-    res.redirect(finalDestination + queryString)
-  })
+  )
 
   // Exit appointment - handles discard, save, or cannot-proceed
   // Accepts both GET (with query param) and POST (with form data)
@@ -206,7 +215,9 @@ module.exports = (router) => {
 
         // Redirect to appointment page with paused status
         return res.redirect(
-          modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/appointment`)
+          modalBreakout(
+            `/clinics/${clinicId}/appointments/${appointmentId}/appointment`
+          )
         )
       }
 
@@ -267,7 +278,8 @@ module.exports = (router) => {
           const returnTo = data.returnTo
           delete data.returnTo
           const destination =
-            returnTo || `/clinics/${clinicId}/appointments/${appointmentId}/appointment`
+            returnTo ||
+            `/clinics/${clinicId}/appointments/${appointmentId}/appointment`
           return res.redirect(modalBreakout(destination))
         } else if (exitAction === 'cannot-proceed') {
           // Cannot proceed - redirect to attended-not-screened flow
@@ -320,7 +332,9 @@ module.exports = (router) => {
 
           // Redirect to appointment page with paused status
           return res.redirect(
-            modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/appointment`)
+            modalBreakout(
+              `/clinics/${clinicId}/appointments/${appointmentId}/appointment`
+            )
           )
         }
       }
@@ -332,7 +346,9 @@ module.exports = (router) => {
 
       // Fallback redirect
       res.redirect(
-        modalBreakout(`/clinics/${clinicId}/appointments/${appointmentId}/appointment`)
+        modalBreakout(
+          `/clinics/${clinicId}/appointments/${appointmentId}/appointment`
+        )
       )
     }
   )
@@ -439,7 +455,6 @@ module.exports = (router) => {
     )
   })
 
-
   // Handle screening completion
   // Todo - name this route better
   router.post(
@@ -470,7 +485,6 @@ module.exports = (router) => {
     }
   )
 
-
   // Handle screening completion
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/attended-not-screened-answer',
@@ -481,8 +495,10 @@ module.exports = (router) => {
       const participantName = getFullName(data.participant)
       const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
-      const notScreenedReason = data.appointment.appointmentStopped.stoppedReason
-      const needsReschedule = data.appointment.appointmentStopped.needsReschedule
+      const notScreenedReason =
+        data.appointment.appointmentStopped.stoppedReason
+      const needsReschedule =
+        data.appointment.appointmentStopped.needsReschedule
       const otherDetails = data.appointment.appointmentStopped.otherDetails
       // Checkboxes post an empty array when none are ticked
       const hasNoReason = !notScreenedReason?.length
@@ -557,79 +573,85 @@ module.exports = (router) => {
   )
 
   // Handle screening completion
-  router.post('/clinics/:clinicId/appointments/:appointmentId/complete', (req, res) => {
-    const { clinicId, appointmentId } = req.params
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/complete',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
 
-    const data = req.session.data
-    const currentUser = data.currentUser
-    const participantName = getFullName(data.participant)
-    const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
+      const data = req.session.data
+      const currentUser = data.currentUser
+      const participantName = getFullName(data.participant)
+      const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
-    // Store session end details
-    updateAppointmentData(data, appointmentId, {
-      sessionDetails: {
-        ...getAppointment(data, appointmentId).sessionDetails,
-        endedAt: new Date().toISOString(),
-        endedBy: currentUser.id
-      }
-    })
+      // Store session end details
+      updateAppointmentData(data, appointmentId, {
+        sessionDetails: {
+          ...getAppointment(data, appointmentId).sessionDetails,
+          endedAt: new Date().toISOString(),
+          endedBy: currentUser.id
+        }
+      })
 
-    // Determine status based on mammogram completeness (check before saving clears data.appointment)
-    const isIncompleteMammography =
-      data.appointment?.mammogramData?.isIncompleteMammography === 'yes'
+      // Determine status based on mammogram completeness (check before saving clears data.appointment)
+      const isIncompleteMammography =
+        data.appointment?.mammogramData?.isIncompleteMammography === 'yes'
 
-    saveTempAppointmentToAppointment(data)
-    saveTempParticipantToParticipant(data)
+      saveTempAppointmentToAppointment(data)
+      saveTempParticipantToParticipant(data)
 
-    updateAppointmentStatus(
-      data,
-      appointmentId,
-      isIncompleteMammography ? 'partially_screened' : 'complete'
-    )
+      updateAppointmentStatus(
+        data,
+        appointmentId,
+        isIncompleteMammography ? 'partially_screened' : 'complete'
+      )
 
-    const successMessage = `
+      const successMessage = `
     ${participantName} has been screened. <a href="${participantAppointmentUrl}" class="app-nowrap">View their appointment</a>`
 
-    req.flash('success', { wrapWithHeading: successMessage })
+      req.flash('success', { wrapWithHeading: successMessage })
 
-    res.redirect(`/clinics/${clinicId}`)
+      res.redirect(`/clinics/${clinicId}`)
 
-    // res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/appointment-complete`)
-  })
+      // res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/appointment-complete`)
+    }
+  )
 
   // Handle undo check in
-  router.get('/clinics/:clinicId/appointments/:appointmentId/undo-check-in', (req, res) => {
-    const { clinicId, appointmentId } = req.params
-    const data = req.session.data
-    const appointment = getAppointment(data, appointmentId)
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/undo-check-in',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const appointment = getAppointment(data, appointmentId)
 
-    if (appointment && appointment.status === 'checked_in') {
-      const participantName = getFullName(data.participant)
+      if (appointment && appointment.status === 'checked_in') {
+        const participantName = getFullName(data.participant)
 
-      // Save changes
-      saveTempAppointmentToAppointment(data)
+        // Save changes
+        saveTempAppointmentToAppointment(data)
 
-      // Revert to scheduled status
-      updateAppointmentStatus(data, appointmentId, 'scheduled')
+        // Revert to scheduled status
+        updateAppointmentStatus(data, appointmentId, 'scheduled')
 
-      req.flash(
-        'success',
-        `${participantName} is no longer checked in for their appointment`
-      )
+        req.flash(
+          'success',
+          `${participantName} is no longer checked in for their appointment`
+        )
 
-      // Use referrer system to return to originating page
+        // Use referrer system to return to originating page
+        const returnUrl = getReturnUrl(
+          `/clinics/${clinicId}`,
+          req.query.referrerChain
+        )
+        return res.redirect(returnUrl)
+      }
+
+      // Use referrer system for fallback too
       const returnUrl = getReturnUrl(
-        `/clinics/${clinicId}`,
+        `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
         req.query.referrerChain
       )
-      return res.redirect(returnUrl)
+      res.redirect(returnUrl)
     }
-
-    // Use referrer system for fallback too
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  })
+  )
 }
