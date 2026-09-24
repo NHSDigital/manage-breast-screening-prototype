@@ -35,7 +35,7 @@ Read the changed files in full, not only the diff. Most of the serious problems 
 Read [routing-and-forms.md](routing-and-forms.md).
 
 - A route whose only job is to receive a form and redirect. Form data saves itself; post straight to the next page.
-- `req.body` in a route. Read from `req.session.data`. The only exception is a JSON endpoint called from client-side JavaScript.
+- `req.body` in a route. Read from `req.session.data`. Exceptions: a JSON endpoint called from client-side JavaScript, and one-off action parameters such as a button's value, which would otherwise stay in the session (see [routing-and-forms.md](routing-and-forms.md)).
 - A `router.get` rendering a template under `/participants/:id/`, `/clinics/:id/appointments/:id/` or the reading workflow. Dynamic routing already serves it; add the template only.
 - A POST that renders instead of redirecting, or posts to its own URL.
 - Several near-identical routes differing by one word. Use one route with a parameter and a lookup object.
@@ -154,7 +154,7 @@ From [copilot-instructions.md](../.github/copilot-instructions.md):
 
 Spot it: `grep -nE '\{%-? *elif'` on added Nunjucks lines, `grep -nE ';$'` on added JavaScript lines (Sass uses semicolons), and check the first line of each new code file. For JavaScript and Sass formatting, run `npx prettier --check` on the changed files; Prettier does not format templates (`*.html` is ignored), so check their indentation by eye.
 
-Fix it: run `npx prettier --write` on new JavaScript and Sass files. Many existing files are not yet Prettier-formatted, so in an edited file fix the indentation of the changed lines by hand rather than reformatting the whole file, which would bury the real change in unrelated edits.
+Fix it: run `npx prettier --write` on every new or changed JavaScript and Sass file. Fix template indentation by hand.
 
 ## 11. Tests and docs
 

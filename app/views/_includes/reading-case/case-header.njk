@@ -1,10 +1,10 @@
-{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 {# app/views/_includes/reading-case/case-header.njk
 
    Shared header for the reading case pages (case view and priors tab):
    participant name with the case's state on the right, then NHS number.
    Expects the case context locals: pageHeading, readingCase, caseOutcome,
    isDeferred, caseAwaitingPriors, participant. #}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 
 <div class="app-header-with-status">
   <h1 class="nhsuk-heading-l">

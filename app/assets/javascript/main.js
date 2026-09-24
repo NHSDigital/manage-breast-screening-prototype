@@ -34,7 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
           window.closeModal(openModal.id)
         }
 
-        const row = document.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
+        const row = document.querySelector(
+          `tr[data-fragment-id="${appointmentId}"]`
+        )
         if (!row) throw new Error('Appointment row not found')
         const newRow = swapFragment(row, html)
 
@@ -61,9 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       opinionBanner.classList.add('app-reading-opinion-banner--fade-out')
       // Remove from DOM after the CSS transition (0.2s) completes
-      opinionBanner.addEventListener('transitionend', () => {
-        opinionBanner.remove()
-      }, { once: true })
+      opinionBanner.addEventListener(
+        'transitionend',
+        () => {
+          opinionBanner.remove()
+        },
+        { once: true }
+      )
     }, delay)
   }
 
@@ -147,7 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // The HRT answer is edited in place rather than on its own page, so there's no
 // submit button to save it - each change posts on its own.
 function setupBreastDensityFactorsAutosave() {
-  const container = document.querySelector('[data-breast-density-factors-save-url]')
+  const container = document.querySelector(
+    '[data-breast-density-factors-save-url]'
+  )
   if (!container) {
     return
   }
@@ -182,7 +190,9 @@ function setupBreastDensityFactorsAutosave() {
     }
 
     const factorCount = Number(container.dataset.breastDensityFactorCount) || 0
-    const hrtAnswered = !!container.querySelector(`input[name="${statusName}"]:checked`)
+    const hrtAnswered = !!container.querySelector(
+      `input[name="${statusName}"]:checked`
+    )
     const count = factorCount + (hrtAnswered ? 1 : 0)
 
     if (count === 0) {
@@ -201,7 +211,9 @@ function setupBreastDensityFactorsAutosave() {
   const saveHrt = () => {
     const formData = new URLSearchParams()
 
-    const selectedStatus = container.querySelector(`input[name="${statusName}"]:checked`)
+    const selectedStatus = container.querySelector(
+      `input[name="${statusName}"]:checked`
+    )
     if (selectedStatus) {
       formData.append(statusName, selectedStatus.value)
     }
@@ -247,7 +259,13 @@ function setupBreastDensityFactorsAutosave() {
 document.addEventListener('keydown', (e) => {
   // Ignore when typing in a form field
   const tag = e.target.tagName
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return
+  if (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    e.target.isContentEditable
+  )
+    return
 
   // Ignore if a modal is already open
   const existingModal = document.querySelector('.app-modal--open')

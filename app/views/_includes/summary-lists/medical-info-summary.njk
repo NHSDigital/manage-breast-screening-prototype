@@ -21,7 +21,7 @@
 {% set medicalHistoryHtml %}
   {% if medicalHistoryCount == 0 %}
     <p>No medical history added</p>
-  {% elif medicalHistoryCount == 1 %}
+  {% elseif medicalHistoryCount == 1 %}
     <p>{{ medicalHistorySummaries[0] }}</p>
   {% else %}
     <ul class="nhsuk-list">
@@ -46,7 +46,7 @@
 {% set symptomsHtml %}
   {% if symptomsCount == 0 %}
     <p>No symptoms added</p>
-  {% elif symptomsCount == 1 %}
+  {% elseif symptomsCount == 1 %}
     <p>{{ symptomSummaries[0] | sentenceCase }}</p>
   {% else %}
     <ul class="nhsuk-list">
@@ -92,7 +92,7 @@
 {% set previousMammogramsHtml %}
   {% if additionalMammogramsCount == 0 %}
     <p>No additional mammograms added</p>
-  {% elif additionalMammogramsCount == 1 %}
+  {% elseif additionalMammogramsCount == 1 %}
     {% set mammogram = appointment.previousMammograms[0] %}
     <p>
       {{ mammogram | summarisePriorMammogram }}

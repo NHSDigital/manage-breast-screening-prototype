@@ -1,4 +1,4 @@
-{# /app/views/_includes/summary-lists/rows/address.njk #}
+{# app/views/_includes/summary-lists/rows/address.njk #}
 {% from 'details/macro.njk' import details %}
 
 {% set addressLines = participant.demographicInformation.address | getObjectValues({removeEmpty: true }) %}

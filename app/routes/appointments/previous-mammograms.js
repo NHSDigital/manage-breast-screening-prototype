@@ -10,7 +10,9 @@ const {
 const {
   saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
-const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
+const {
+  updateAppointmentStatus
+} = require('../../lib/utils/appointment-status')
 const generateId = require('../../lib/utils/id-generator')
 const {
   getReturnUrl,
@@ -213,7 +215,8 @@ module.exports = (router) => {
 
       // If user acknowledged the warning page, handle their reschedule decision
       if (action === 'acknowledged-warning') {
-        const needsReschedule = data.appointment?.appointmentStopped?.needsReschedule
+        const needsReschedule =
+          data.appointment?.appointmentStopped?.needsReschedule
 
         // Validate that reschedule option was selected
         if (!needsReschedule) {
@@ -312,9 +315,10 @@ module.exports = (router) => {
 
       // Remove mammogram from array
       if (data.appointment?.previousMammograms) {
-        data.appointment.previousMammograms = data.appointment.previousMammograms.filter(
-          (m) => m.id !== mammogramId
-        )
+        data.appointment.previousMammograms =
+          data.appointment.previousMammograms.filter(
+            (m) => m.id !== mammogramId
+          )
       }
 
       req.flash('success', 'Previous mammogram deleted')

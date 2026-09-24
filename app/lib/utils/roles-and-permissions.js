@@ -146,7 +146,7 @@ const getImplantImagingReason = (appointment) => {
 const hasNominatedAuthorisedMammographer = (appointment) => {
   return Boolean(
     appointment?.authorisedMammographerId ||
-      appointment?.authorisedMammographerOtherName
+    appointment?.authorisedMammographerOtherName
   )
 }
 
@@ -252,7 +252,8 @@ const isCurrentUser = function (user) {
  */
 const startedByCurrentUser = function (appointment) {
   const data = this.ctx.data
-  if (!appointment?.sessionDetails?.startedBy || !data?.currentUser) return false
+  if (!appointment?.sessionDetails?.startedBy || !data?.currentUser)
+    return false
 
   const currentUserId =
     typeof data.currentUser === 'string'

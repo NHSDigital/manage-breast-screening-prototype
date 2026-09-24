@@ -157,7 +157,9 @@ const isViewerOpen = () => {
 
 // Auto-broadcast on page load if we have participant data in meta tags
 document.addEventListener('DOMContentLoaded', () => {
-  const appointmentIdMeta = document.querySelector('meta[name="mammogram-appointment-id"]')
+  const appointmentIdMeta = document.querySelector(
+    'meta[name="mammogram-appointment-id"]'
+  )
   const participantNameMeta = document.querySelector(
     'meta[name="mammogram-participant-name"]'
   )

@@ -62,7 +62,8 @@ test.describe('Screening appointment', () => {
   test('records medical history and a symptom, then completes', async ({
     page
   }) => {
-    const { clinic, appointment, fullName, fullNameReversed } = findTodayAppointment({ index: 0 })
+    const { clinic, appointment, fullName, fullNameReversed } =
+      findTodayAppointment({ index: 0 })
 
     await pinSettings(page, appointmentSettings)
     await page.goto(`/clinics/${clinic.id}`)

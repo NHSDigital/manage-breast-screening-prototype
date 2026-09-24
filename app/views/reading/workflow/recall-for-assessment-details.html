@@ -1,4 +1,4 @@
-{# /app/views/reading/workflow/recall-for-assessment-details.html #}
+{# app/views/reading/workflow/recall-for-assessment-details.html #}
 
 {% from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
@@ -281,7 +281,10 @@
       var annotationsMode = '{{ annotationsMode }}'
       var useModals = {{ "true" if data.settings.modalForms == 'true' else "false" }}
       var autoOpenAnnotationForm = {{ "true" if data.settings.reading.autoOpenAnnotationForm == 'true' else "false" }}
-      var referrerChainParam = {{ (("&referrerChain=" + (referrerChain | urlencode)) if referrerChain else "") | dump | safe }}
+      var addAnnotationUrls = {
+        left: {{ ("./annotation/add?side=left" | urlWithReferrer(referrerChain | urlencode)) | dump | safe }},
+        right: {{ ("./annotation/add?side=right" | urlWithReferrer(referrerChain | urlencode)) | dump | safe }}
+      }
 
       document.addEventListener('change', function (e) {
         if (!e.target.matches('input[type="radio"]')) return
@@ -321,7 +324,7 @@
           // so the server has the breast side info in the session when rendering the annotation page
           fetch('./save-breast-assessment?side=' + side + '&value=' + encodeURIComponent(value))
             .then(() => {
-              var url = './annotation/add?side=' + side + referrerChainParam
+              var url = addAnnotationUrls[side]
               if (useModals && typeof window.openModal === 'function') {
                 window.openModal('app-form-modal', { loadUrl: url })
               } else {
@@ -330,7 +333,7 @@
             })
             .catch(() => {
               // Graceful degradation: open even if save fails
-              var url = './annotation/add?side=' + side + referrerChainParam
+              var url = addAnnotationUrls[side]
               if (useModals && typeof window.openModal === 'function') {
                 window.openModal('app-form-modal', { loadUrl: url })
               } else {

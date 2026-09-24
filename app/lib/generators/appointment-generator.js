@@ -138,7 +138,11 @@ const generateAppointment = ({
   // We'll use forceStatus if provided, otherwise calculate based on timing
   let appointmentStatus =
     forceStatus ||
-    determineAppointmentStatus(slotDateTime, simulatedDateTime, attendanceWeights)
+    determineAppointmentStatus(
+      slotDateTime,
+      simulatedDateTime,
+      attendanceWeights
+    )
 
   // Override to in_progress if requested
   if (forceInProgress) {
@@ -296,7 +300,8 @@ const generateAppointment = ({
       // Sync appointment status with mammogram completeness
       // If mammogram is incomplete, status should be partially_screened
       // If mammogram is complete but status was partially_screened, change to complete
-      const isIncomplete = !appointment.mammogramData.metadata.standardViewsCompleted
+      const isIncomplete =
+        !appointment.mammogramData.metadata.standardViewsCompleted
       if (isIncomplete && appointment.status !== 'partially_screened') {
         appointment.status = 'partially_screened'
       } else if (!isIncomplete && appointment.status === 'partially_screened') {
@@ -316,7 +321,9 @@ const generateAppointment = ({
 
       // Generate previous mammograms (recorded mammograms from other facilities)
       const previousMammograms = generatePreviousMammograms({
-        appointmentDate: appointment.timing.actualEndTime || appointment.timing.actualStartTime,
+        appointmentDate:
+          appointment.timing.actualEndTime ||
+          appointment.timing.actualStartTime,
         addedByUserId: appointment.sessionDetails.startedBy,
         rate: seedDataProfile?.previousMammograms?.rate
       })
@@ -400,18 +407,26 @@ const generateAppointment = ({
       // seeded attended-not-screened appointments always have them
       appointment.appointmentStopped = {
         stoppedReason: [faker.helpers.arrayElement(getStoppedReasons()).value],
-        needsReschedule: faker.helpers.arrayElement(['no-invite', 'no-invite', 'yes'])
+        needsReschedule: faker.helpers.arrayElement([
+          'no-invite',
+          'no-invite',
+          'yes'
+        ])
       }
     }
 
     // Select image set for appointments with mammogram data
     // Done at the end so full appointment context (symptoms, implants, etc.) is available
     if (appointment.mammogramData) {
-      const selectedSet = getImageSetForAppointment(appointment.id, 'diagrams', {
-        appointment,
-        contextualWeights:
-          seedDataProfile?.imageSetSelection?.contextualTagWeights
-      })
+      const selectedSet = getImageSetForAppointment(
+        appointment.id,
+        'diagrams',
+        {
+          appointment,
+          contextualWeights:
+            seedDataProfile?.imageSetSelection?.contextualTagWeights
+        }
+      )
       if (selectedSet) {
         appointment.mammogramData.selectedSetId = selectedSet.id
       }
