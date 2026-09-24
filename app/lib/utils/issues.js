@@ -509,7 +509,9 @@ const READING_HELD_STAGES = ['mammograms', 'reading']
 const isIssueHoldingReading = (data, issue) => {
   if (!isIssueOpen(issue)) return false
 
-  const episodeLink = (issue.links || []).find((link) => link.type === 'episode')
+  const episodeLink = (issue.links || []).find(
+    (link) => link.type === 'episode'
+  )
   const episode = getEpisode(data, episodeLink?.id)
   return READING_HELD_STAGES.includes(episode?.stage)
 }

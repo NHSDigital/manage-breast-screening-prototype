@@ -862,7 +862,8 @@ const summariseMammogramImages = (appointment, options = {}) => {
   const counted = views
     .map((view) => ({
       view,
-      count: (mammogramData.isManualEntry ? view.count : view.images?.length) || 1
+      count:
+        (mammogramData.isManualEntry ? view.count : view.images?.length) || 1
     }))
     .sort((a, b) => rank(a.view) - rank(b.view))
 

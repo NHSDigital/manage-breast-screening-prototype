@@ -67,7 +67,9 @@ const getIssuePlace = (issue) => {
     linkTypes.includes(linkType)
   )
 
-  return ISSUE_PLACES.find((place) => place.linkType === mostSpecificType) || null
+  return (
+    ISSUE_PLACES.find((place) => place.linkType === mostSpecificType) || null
+  )
 }
 
 /**

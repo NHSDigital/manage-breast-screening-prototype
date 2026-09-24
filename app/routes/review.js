@@ -97,8 +97,9 @@ const getIssueParticipants = (data, issue) => {
     .filter(Boolean)
     .map((participant) => {
       const appointment =
-        appointments.find((record) => record.participantId === participant.id) ||
-        null
+        appointments.find(
+          (record) => record.participantId === participant.id
+        ) || null
       const episode =
         episodes.find((record) => record.participantId === participant.id) ||
         null

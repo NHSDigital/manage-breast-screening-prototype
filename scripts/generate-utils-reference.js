@@ -70,7 +70,8 @@ const FILE_META = {
   },
   'app/lib/utils/issues.js': {
     label: 'issues.js',
-    description: 'Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue. Issues are a top-level store collection.'
+    description:
+      'Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue. Issues are a top-level store collection.'
   },
   'app/lib/utils/medical-information.js': {
     label: 'medical-information.js',
