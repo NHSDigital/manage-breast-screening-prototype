@@ -9,7 +9,7 @@ You are reviewing a change to this prototype before it is merged. Your job is to
 
 ## Rules
 
-- **Read-only.** Never create, edit or delete files. Git: read commands only (`diff`, `log`, `show`, `status`, `merge-base`, `fetch`). Never commit, stage, stash, checkout, reset or push.
+- **Read-only.** Never create, edit or delete files. Git: read commands only (`diff`, `log`, `show`, `status`, `merge-base`). The one exception is `git fetch origin main` before you start, so the comparison uses an up-to-date `main`; it only updates remote-tracking refs, never the working tree or branches. Never commit, stage, stash, checkout, reset or push.
 - You may run `npm test` or one of its parts (`npm run lint`, `npm run test:routes`, `npm run test:journeys`) to confirm a suspected failure.
 - **Every finding must be checked before you report it.** Quote the code, give the file and line, and confirm the problem is real: the code does what you say, and the rule says what you say. Drop anything you cannot confirm.
 - Rigorous, not nitpicky. A "must fix" needs a concrete consequence: what breaks, what goes wrong for the next person, or which rule it breaks and where that rule is written.

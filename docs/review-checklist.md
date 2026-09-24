@@ -6,7 +6,7 @@ It is written for a reviewer, human or agent, looking at a change with fresh eye
 
 ## Getting the change
 
-Review everything that differs from `main`, committed or not:
+Review everything that differs from `main`, committed or not. Fetching first keeps the comparison up to date; it changes no files or branches.
 
 ```sh
 git fetch origin main
