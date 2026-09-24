@@ -1,0 +1,103 @@
+{# app/views/review/issues/resolve.html
+
+   Resolve an open issue: what was done, and who checked it. The route
+   (routes/review.js) passes the answers keyed to this issue as closingAnswers,
+   and the participants as issueParticipants. Closing an issue as raised in
+   error has its own page, raised-in-error.html. #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/autocomplete/macro.njk' import appAutocomplete %}
+
+{% set pageHeading = "Resolve issue" %}
+{% set formAction = ("/review/issues/" + issue.id + "/resolve-answer") | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: ("/review/issues/" + issue.id) | urlWithReferrer(referrerChain),
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    {% if issueParticipants | length %}
+      <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+    {% endif %}
+    {{ pageHeading }}
+  </h1>
+
+  {{ textarea({
+    name: "issueTemp[resolve][note]",
+    id: "issueResolutionNote",
+    label: {
+      text: "Explain the solution",
+      size: "m"
+    },
+    hint: {
+      text: "Describe what actions have been taken to resolve the issue"
+    },
+    rows: 5,
+    value: closingAnswers.note
+  } | populateErrors) }}
+
+  {# Anyone but the person resolving it, who answers "Just me" instead. The
+     component adds the blank first option #}
+  {% set verifierItems = [] %}
+  {% for user in data.users | sort(false, false, "lastName") %}
+    {% if user.id != data.currentUser.id %}
+      {% set verifierItems = verifierItems | push({
+        value: user.id,
+        text: user.id | getUsername({ format: "reversed" })
+      }) %}
+    {% endif %}
+  {% endfor %}
+
+  {% set verifiedByHtml %}
+    {{ appAutocomplete({
+      id: "issueResolutionVerifiedBy",
+      name: "issueTemp[resolve][verifiedBy]",
+      value: closingAnswers.verifiedBy,
+      label: {
+        text: "Select user"
+      },
+      items: verifierItems
+    } | populateErrors) }}
+  {% endset %}
+
+  {{ radios({
+    idPrefix: "issueResolutionVerifier",
+    name: "issueTemp[resolve][verifier]",
+    value: closingAnswers.verifier,
+    fieldset: {
+      legend: {
+        text: "Who has verified this resolution?",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "someone_else",
+        text: "Another user",
+        conditional: {
+          html: verifiedByHtml
+        }
+      },
+      {
+        divider: "or"
+      },
+      {
+        value: "me",
+        text: "Just me"
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ appHiddenInput({
+    name: "issueTemp[resolve][issueId]",
+    value: issue.id
+  }) }}
+
+  {{ button({
+    text: "Confirm and continue"
+  }) }}
+
+{% endblock %}

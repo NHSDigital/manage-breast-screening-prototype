@@ -2,7 +2,7 @@
 
    The link to raise an issue from any page. It raises the issue on the most
    specific record the page has loaded (readingCase, then appointment, then
-   episode) and returns the user here afterwards. Opens in a modal where modal
+   episode, then participant) and returns the user here afterwards. Opens in a modal where modal
    forms are on.
 
    Import with context - it reads those records, currentUrl and referrerChain
@@ -21,13 +21,15 @@
   {% set raiseUrl = getRaiseIssueUrl({
     readingCase: readingCase,
     appointment: appointment,
-    episode: episode
+    episode: episode,
+    participant: participant
   }, raisedFrom, options.type) %}
 
   {% set linkTextByRaisedFrom = {
     reading_case: "Raise an issue with this case",
     appointment: "Raise an issue with this appointment",
-    episode: "Raise an issue with this episode"
+    episode: "Raise an issue with this episode",
+    participant: "Raise an issue for this participant"
   } %}
 
   {% if raiseUrl %}

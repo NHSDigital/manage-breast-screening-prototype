@@ -1,9 +1,8 @@
 {# app/views/issues/raise.html
 
-   Raise an issue on a reading case, appointment or episode. Opens in a modal
-   where modal forms are on. raisedFrom decides the types offered, their order
-   and the description hint; the route (routes/issues.js) sets it with
-   issueTypes, participant, answers, raiseUrl and returnFallbackUrl. #}
+   Raise an issue on a reading case, appointment, episode or participant. Opens in a modal
+   where modal forms are on. The route (routes/issues.js) sets raisedFrom,
+   participant, answers, raiseUrl and returnFallbackUrl. #}
 
 {% extends parentLayout or 'layout-app.html' %}
 
@@ -14,13 +13,6 @@
   text: "Back"
 } %}
 
-{# A prompt for the details that help most #}
-{% set descriptionHintByRaisedFrom = {
-  reading_case: "For example, which images or views are affected",
-  appointment: "For example, which images or views are affected",
-  episode: "For example, which details are wrong and where you found them"
-} %}
-
 {% block pageContent %}
 
   <h1 class="nhsuk-heading-l">
@@ -28,11 +20,10 @@
     {{ pageHeading }}
   </h1>
 
-  {% set descriptionHint = descriptionHintByRaisedFrom[raisedFrom] or descriptionHintByRaisedFrom.episode %}
   {% include "_includes/issues/raise-fields.njk" %}
 
   {{ button({
-    text: "Raise issue"
+    text: "Confirm and continue"
   }) }}
 
 {% endblock %}

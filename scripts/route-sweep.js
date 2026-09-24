@@ -176,7 +176,7 @@ const collectParams = async (sessionFetch) => {
     participantId: appointment.participantId,
     episodeId: appointment.episodeId,
     caseId: episodeWithReadingCase.readingCases[0].id,
-    // Open first, as the issue page shows the resolve form only while open
+    // Open first, as the issue page offers the closing forms only while open
     issueId: (issues.find((issue) => !issue.resolved) ?? issues[0])?.id,
     // Filters and views are named tabs; "all" exists on every set of them
     filter: 'all',
@@ -298,12 +298,18 @@ const getTemplateUrls = (params) => {
     // Top-level pages the kit serves from a template with no route of their own
     ...pageTemplateUrls,
     // The raise form takes a record type the sweep has no seeded value for
-    `/issues/raise/reading-case/${params.caseId}?raiseIssue[raisedFrom]=reading_case`,
-    `/issues/raise/episode/${params.episodeId}?raiseIssue[raisedFrom]=episode`,
-    // The description edit as its Change link opens it, and the issue index
-    // with filters (including the "Someone else" reveal), a view and a sort
-    // chosen, which the bare routes do not exercise
-    `/review/issues/${params.issueId}/description?issueDescription[issueId]=${params.issueId}`,
+    `/issues/raise/reading-case/${params.caseId}?issueTemp[raise][raisedFrom]=reading_case`,
+    `/issues/raise/episode/${params.episodeId}?issueTemp[raise][raisedFrom]=episode`,
+    `/issues/raise/participant/${params.participantId}?issueTemp[raise][raisedFrom]=participant`,
+    // The description edit and the two ways to close an issue as their links
+    // open them, and the issue index with filters (including the "Someone
+    // else" reveal), a view and a sort chosen, which the bare routes do not
+    // exercise
+    `/review/issues/${params.issueId}/description?issueTemp[edit][issueId]=${params.issueId}`,
+    `/review/issues/${params.issueId}/resolve?issueTemp[resolve][issueId]=${params.issueId}`,
+    `/review/issues/${params.issueId}/raised-in-error?issueTemp[raisedInError][issueId]=${params.issueId}`,
+    // The fallback from automatic images, for a problem the sweep can name
+    `/clinics/${params.clinicId}/appointments/${params.appointmentId}/images-troubleshooting-issue?issue=wrong-image-count`,
     '/review/issues?view=all&stage=reading&raisedBy=someone_else&q=a&sort=surname',
     ...getTemplateSubPaths('appointments', includedTemplates).map(
       (subPath) =>

@@ -36,7 +36,7 @@
 
 <p>The shared ways to show that a record has an issue, and an issue’s own status. Pages pass the episode, so an issue raised anywhere in a round shows everywhere in it. See <code>docs/issues.md</code>.</p>
 
-<h3>Has issue tag</h3>
+<h3>Issue raised tag</h3>
 
 <p>Macro: <code>issueTag(record, options)</code> from <code>_includes/issues/tag.njk</code>. Shows only when an open issue links to the record. Leave the record out when the caller already knows. Uses <code>has_issue</code> in the <code>misc</code> tag vocabulary.</p>
 
@@ -60,7 +60,7 @@
 
 <h3>Open issues callout</h3>
 
-<p>Macro: <code>openIssuesCallout(record, options)</code> from <code>_includes/issues/open-issues.njk</code>. Each open issue’s type and description, who raised it and when, and a link to its page. Says image reading is on hold only while the issue’s episode is at mammograms or reading. Shows nothing when there are none. <code>openIssueSummary(issue, options)</code> from the same file shows one issue outside the callout.</p>
+<p>Macro: <code>openIssuesCallout(record, options)</code> from <code>_includes/issues/open-issues.njk</code>. Each open issue’s description, who raised it and when, and a link to its page. Says image reading is on hold only while the issue’s episode is at mammograms or reading. Shows nothing when there are none. <code>openIssueSummary(issue, options)</code> from the same file shows one issue outside the callout.</p>
 
 <div class="sg-example">
   {% if exampleOpenEpisodeId %}

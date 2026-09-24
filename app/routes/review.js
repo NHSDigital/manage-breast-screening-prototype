@@ -9,8 +9,7 @@ const {
   getOpenIssuesFor,
   isIssueOpen,
   resolveIssue,
-  updateIssue,
-  ISSUE_OUTCOMES
+  updateIssue
 } = require('../lib/utils/issues')
 const {
   ISSUE_VIEWS,
@@ -31,7 +30,7 @@ const {
   buildFilterUrl,
   hasSelectedFilters
 } = require('../lib/utils/filter-list')
-const { getParticipant } = require('../lib/utils/participants')
+const { getParticipant, getShortName } = require('../lib/utils/participants')
 const { getEpisode, getReadingCaseById } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
@@ -242,21 +241,12 @@ module.exports = (router) => {
     const data = req.session.data
     const { issue } = res.locals
 
-    // The resolve form's answers carry the issue they were given for, and
-    // only prefill that issue's form. Passed to the template directly, as its
-    // `data` is a copy taken before this route runs.
-    if (data.issueTemp?.resolve?.issueId !== issue.id) {
-      delete data.issueTemp?.resolve
-    }
-    const resolutionAnswers = data.issueTemp?.resolve || {}
-
     // Named issueParticipants rather than set as `participant`, `appointment`
     // and so on, which the layouts read as the page's own context (an
     // appointment in progress swaps the header nav for "Exit appointment")
     const issueParticipants = getIssueParticipants(data, issue)
 
     res.render('review/issues/show', {
-      resolutionAnswers,
       issuePlace: getIssuePlace(issue),
       issueParticipants,
       // The PACS viewer shows one study per page, so the first set of images
@@ -349,47 +339,157 @@ module.exports = (router) => {
     }
   )
 
-  router.post('/review/issues/:issueId/resolve', loadIssue, (req, res) => {
-    const data = req.session.data
-    const { issue, issueUrl } = res.locals
-
-    // Opened in a tab from before the issue was closed
-    if (!isIssueOpen(issue)) {
-      delete data.issueTemp?.resolve
-      req.flash('info', 'This issue has already been closed')
-      return res.redirect(issueUrl)
+  // The two ways to close an issue, each a page of its own: resolved, with
+  // who checked the fix, or raised in error, with why. Each form's answers
+  // are keyed to the issue, as the description edit's are.
+  const CLOSING_FORMS = {
+    resolve: {
+      path: 'resolve',
+      template: 'review/issues/resolve',
+      getErrors: (answers, data) => {
+        const errors = []
+        if (!(answers.note || '').trim()) {
+          errors.push({
+            text: 'Explain the solution',
+            name: 'issueTemp[resolve][note]',
+            href: '#issueResolutionNote'
+          })
+        }
+        if (!['someone_else', 'me'].includes(answers.verifier)) {
+          errors.push({
+            text: 'Select who has verified this resolution',
+            name: 'issueTemp[resolve][verifier]',
+            href: '#issueResolutionVerifier'
+          })
+        } else if (
+          answers.verifier === 'someone_else' &&
+          !(data.users || []).some(
+            (user) =>
+              user.id === answers.verifiedBy && user.id !== data.currentUser?.id
+          )
+        ) {
+          errors.push({
+            text: 'Select the user who has verified this resolution',
+            name: 'issueTemp[resolve][verifiedBy]',
+            href: '#issueResolutionVerifiedBy'
+          })
+        }
+        return errors
+      },
+      getResolution: (answers, data) => ({
+        outcome: 'resolved',
+        note: answers.note.trim(),
+        verifiedBy:
+          answers.verifier === 'me' ? data.currentUser?.id : answers.verifiedBy
+      }),
+      getSuccessHeading: (participantName) =>
+        `Issue resolved for ${participantName}`
+    },
+    raisedInError: {
+      path: 'raised-in-error',
+      template: 'review/issues/raised-in-error',
+      getErrors: (answers) =>
+        (answers.note || '').trim()
+          ? []
+          : [
+              {
+                text: 'Explain why the issue was raised in error',
+                name: 'issueTemp[raisedInError][note]',
+                href: '#issueRaisedInErrorNote'
+              }
+            ],
+      getResolution: (answers) => ({
+        outcome: 'raised_in_error',
+        note: answers.note.trim()
+      }),
+      getSuccessHeading: (participantName) =>
+        `Issue for ${participantName} closed as raised in error`
     }
+  }
 
-    const outcome = data.issueTemp?.resolve?.outcome
-    const note = (data.issueTemp?.resolve?.note || '').trim()
+  Object.entries(CLOSING_FORMS).forEach(([formKey, form]) => {
+    const formUrl = (issue, referrerChain) =>
+      urlWithReferrer(`/review/issues/${issue.id}/${form.path}`, referrerChain)
 
-    // The outcome is what closing the issue records, so it cannot be skipped
-    if (!ISSUE_OUTCOMES.includes(outcome)) {
-      req.flash('error', {
-        text: 'Select how the issue was resolved',
-        name: 'issueTemp[resolve][outcome]',
-        href: '#issueResolutionOutcome'
-      })
-      return res.redirect(issueUrl)
-    }
+    router.get(
+      `/review/issues/:issueId/${form.path}`,
+      loadIssue,
+      (req, res) => {
+        const data = req.session.data
+        const { issue, issueUrl } = res.locals
 
-    resolveIssue(data, issue.id, {
-      outcome,
-      resolvedBy: data.currentUser?.id,
-      note
-    })
+        // Opened from a tab from before the issue was closed
+        if (!isIssueOpen(issue)) {
+          req.flash('info', 'This issue has already been closed')
+          return res.redirect(issueUrl)
+        }
 
-    // The kit copies every posted field into the session, so the answers would
-    // otherwise prefill the next issue's form
-    delete data.issueTemp?.resolve
+        // The issue page's link names the issue in the query string, so
+        // arriving from it starts a fresh form, as does arriving with another
+        // issue's answers. Coming back after an error keeps what was entered.
+        const arrivedFromLink =
+          req.query.issueTemp?.[formKey]?.issueId === issue.id
+        const answersAreForThisIssue =
+          data.issueTemp?.[formKey]?.issueId === issue.id
+        if (arrivedFromLink || !answersAreForThisIssue) {
+          data.issueTemp = {
+            ...data.issueTemp,
+            [formKey]: { issueId: issue.id }
+          }
+        }
 
-    req.flash(
-      'success',
-      outcome === 'raised_in_error'
-        ? 'Issue closed as raised in error'
-        : 'Issue resolved'
+        // Passed directly, as the template's `data` is a copy taken before
+        // this route runs
+        res.render(form.template, {
+          closingAnswers: data.issueTemp[formKey],
+          issueParticipants: getIssueParticipants(data, issue)
+        })
+      }
     )
 
-    res.redirect(issueUrl)
+    router.post(
+      `/review/issues/:issueId/${form.path}-answer`,
+      loadIssue,
+      (req, res) => {
+        const data = req.session.data
+        const { issue, issueUrl } = res.locals
+
+        if (!isIssueOpen(issue)) {
+          delete data.issueTemp?.[formKey]
+          req.flash('info', 'This issue has already been closed')
+          return res.redirect(issueUrl)
+        }
+
+        const answers = data.issueTemp?.[formKey] || {}
+        const errors = form.getErrors(answers, data)
+        if (errors.length) {
+          errors.forEach((error) => req.flash('error', error))
+          return res.redirect(formUrl(issue, req.query.referrerChain))
+        }
+
+        resolveIssue(data, issue.id, {
+          ...form.getResolution(answers, data),
+          resolvedBy: data.currentUser?.id
+        })
+
+        // The kit copies every posted field into the session, so the answers
+        // would otherwise linger for the next form
+        delete data.issueTemp?.[formKey]
+
+        const participantLink = (issue.links || []).find(
+          (link) => link.type === 'participant'
+        )
+        const participant = getParticipant(data, participantLink?.id)
+        const participantName = participant
+          ? getShortName(participant)
+          : 'this participant'
+
+        req.flash('success', {
+          html: `<p class="nhsuk-notification-banner__heading">${form.getSuccessHeading(participantName)}</p>`
+        })
+
+        res.redirect(issueUrl)
+      }
+    )
   })
 }

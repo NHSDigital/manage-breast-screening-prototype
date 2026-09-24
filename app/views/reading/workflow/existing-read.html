@@ -55,7 +55,7 @@
               text: "Issue"
             },
             value: {
-              text: issue.type | getIssueTypeLabel
+              text: issue.description or "No description given"
             },
             actions: {
               items: [{
@@ -64,17 +64,6 @@
               }]
             }
           }) }}
-
-          {% if issue.description %}
-            {{ appSummaryListRow({
-              key: {
-                text: "Description"
-              },
-              value: {
-                text: issue.description
-              }
-            }) }}
-          {% endif %}
 
           {{ appSummaryListRow({
             key: {

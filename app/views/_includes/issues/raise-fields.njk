@@ -1,45 +1,29 @@
 {# app/views/_includes/issues/raise-fields.njk
 
-   The fields of the raise an issue form, shared by the form outside the
-   workflow (issues/raise.html) and the one inside reading
-   (reading/workflow/raise-issue.html). Their routes read the answers back
-   from data.issueTemp.raise.
+   The body of the raise an issue form below its heading, shared by the form
+   outside the workflow (issues/raise.html), the one inside reading
+   (reading/workflow/raise-issue.html) and the one for falling back to manual
+   images (appointments/images-troubleshooting-issue.html). Their routes read the
+   answers back from data.issueTemp.raise.
 
-   Expects: issueTypes (from getIssueTypes), answers (data.issueTemp.raise),
-   raisedFrom, recordId and descriptionHint. #}
+   The type question is left out for now. A type chosen by the link still
+   rides along in data.issueTemp.raise.type.
 
-{% set typeItems = [] %}
-{% for issueType in issueTypes %}
-  {% set typeItems = typeItems | push({
-    value: issueType.value,
-    text: issueType.label
-  }) %}
-{% endfor %}
+   Expects: answers (data.issueTemp.raise), raisedFrom and recordId. #}
 
-{{ radios({
-  name: "issueTemp[raise][type]",
-  idPrefix: "raiseIssueType",
-  value: answers.type,
-  fieldset: {
-    legend: {
-      text: "What is the issue?",
-      size: "m"
-    }
-  },
-  items: typeItems
-} | populateErrors) }}
+<p>This problem will need to be reviewed before this participant’s episode can continue.</p>
 
 {{ textarea({
   name: "issueTemp[raise][description]",
   id: "raiseIssueDescription",
   label: {
     text: "Describe the issue",
-    size: "s"
+    size: "m"
   },
   hint: {
-    text: descriptionHint
+    text: "Include details of the problem and any other participants that may be affected"
   },
-  rows: 4,
+  rows: 5,
   value: answers.description
 } | populateErrors) }}
 

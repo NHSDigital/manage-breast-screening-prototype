@@ -2,7 +2,7 @@
 
    Raise an issue on the case being read. It is the reader's outcome for the
    case: any opinion they gave is withdrawn and the session moves on. The
-   route (routes/reading.js) passes issueTypes and answers. #}
+   route (routes/reading.js) passes answers. #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -23,15 +23,12 @@
         {{ pageHeading }}
       </h1>
 
-      <p>The case will be held from reading until the issue is resolved.</p>
-
       {% set raisedFrom = "reading" %}
       {% set recordId = readingCase.id %}
-      {% set descriptionHint = "For example, which images or views are affected" %}
       {% include "_includes/issues/raise-fields.njk" %}
 
       {{ button({
-        text: "Raise issue"
+        text: "Confirm and continue"
       }) }}
 
     </div>

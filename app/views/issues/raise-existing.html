@@ -26,7 +26,6 @@
 
   {% for issue in openIssues %}
     {{ openIssueSummary(issue, {
-      headingLevel: 2,
       returnChain: referrerChain | appendReferrer(raiseUrl),
       classes: "nhsuk-u-margin-bottom-6"
     }) }}

@@ -38,10 +38,7 @@
           {% for issue in resolvedIssues %}
             <tr class="nhsuk-table__row">
               <td class="nhsuk-table__cell">
-                {{ issue.type | getIssueTypeLabel }}
-                {%- if issue.description %}<br>
-                  {{ issue.description | asHint }}
-                {%- endif %}
+                {{ issue.description or "No description given" }}
               </td>
               <td class="nhsuk-table__cell">
                 {{ issue.raisedAt | formatDate | noWrap }}
@@ -51,7 +48,7 @@
                 {{ issue | getIssueStatus | toTag({ vocabulary: "issue", classes: "nhsuk-u-margin-top-1" }) }}
               </td>
               <td class="nhsuk-table__cell app-nowrap">
-                <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}" class="nhsuk-link--no-visited-state">View {{- ((" issue: " + (issue.type | getIssueTypeLabel)) | asVisuallyHiddenText) | safe }}</a>
+                <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(currentUrl) }}" class="nhsuk-link--no-visited-state">View {{- ((" issue raised on " + (issue.raisedAt | formatDate)) | asVisuallyHiddenText) | safe }}</a>
               </td>
             </tr>
           {% endfor %}

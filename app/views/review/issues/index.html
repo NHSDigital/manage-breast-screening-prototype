@@ -152,7 +152,6 @@
           </thead>
           <tbody class="nhsuk-table__body">
             {% for row in rows %}
-              {% set issueTypeLabel = row.issue.type | getIssueTypeLabel %}
               <tr class="nhsuk-table__row">
                 <td class="nhsuk-table__cell">
                   {# The name isn't a link: the row's link to the issue sits in
@@ -170,10 +169,7 @@
                   {% endif %}
                 </td>
                 <td class="nhsuk-table__cell">
-                  <p class="nhsuk-u-margin-bottom-1">{{ issueTypeLabel }}</p>
-                  {% if row.issue.description %}
-                    <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">{{ row.issue.description | truncate(120) }}</p>
-                  {% endif %}
+                  {{ (row.issue.description or "No description given") | truncate(120) }}
                 </td>
                 <td class="nhsuk-table__cell">
                   {{ row.issue.raisedAt | formatDate | noWrap }}<br>
@@ -183,8 +179,8 @@
                   {{ row.status | toTag({ vocabulary: "issue" }) }}
                 </td>
                 <td class="nhsuk-table__cell">
-                  {# One participant can have several issues, so the type keeps each link distinct #}
-                  {% set linkContext = (" for " + (row.participant | getShortName) + ": " if row.participant else ": ") + issueTypeLabel %}
+                  {# One participant can have several issues, so the date keeps each link distinct #}
+                  {% set linkContext = (" for " + (row.participant | getShortName) if row.participant else "") + " raised on " + (row.issue.raisedAt | formatDate) %}
                   <a href="{{ ('/review/issues/' + row.issue.id) | urlWithReferrer(listUrl) }}" class="app-nowrap">View issue {{- (linkContext | asVisuallyHiddenText) | safe }}</a>
                 </td>
               </tr>

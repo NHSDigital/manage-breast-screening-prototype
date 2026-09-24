@@ -50,6 +50,10 @@ const ISSUE_PLACES = [
   {
     linkType: 'episode',
     description: 'On an episode'
+  },
+  {
+    linkType: 'participant',
+    description: 'On the participant record'
   }
 ]
 

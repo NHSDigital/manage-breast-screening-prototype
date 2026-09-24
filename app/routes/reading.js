@@ -73,8 +73,8 @@ const {
 const {
   createIssue,
   getIssue,
-  getIssueTypes,
   getOpenIssuePeriods,
+  getOfferedIssueType,
   getRaiseIssueErrors,
   resolveIssue
 } = require('../lib/utils/issues')
@@ -1540,8 +1540,7 @@ module.exports = (router) => {
       // The template's `data` is a copy taken before this runs, so the
       // answers are passed directly
       res.render('reading/workflow/raise-issue', {
-        answers: data.issueTemp?.raise,
-        issueTypes: getIssueTypes('reading')
+        answers: data.issueTemp?.raise
       })
     }
   )
@@ -1555,19 +1554,16 @@ module.exports = (router) => {
       const currentUserId = data.currentUser?.id
       const { appointment, readingCase } = res.locals
 
-      const issueTypes = getIssueTypes('reading')
       const answers = data.issueTemp?.raise || {}
-      const type = answers.type
       const description = (answers.description || '').trim()
 
-      const errors = getRaiseIssueErrors(answers, issueTypes)
+      const errors = getRaiseIssueErrors(answers)
       if (errors.length) {
         // Inside a modal, show the errors in place rather than redirecting,
         // which the modal would treat as a further step
         if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
           return res.status(422).render('reading/workflow/raise-issue', {
             answers,
-            issueTypes,
             flash: { error: errors }
           })
         }
@@ -1593,7 +1589,7 @@ module.exports = (router) => {
         )
 
         issue = createIssue(data, {
-          type,
+          type: getOfferedIssueType(answers.type, 'reading'),
           description,
           raisedBy: currentUserId,
           raisedFrom: 'reading',

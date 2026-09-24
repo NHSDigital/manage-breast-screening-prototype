@@ -1,15 +1,14 @@
 {# app/views/review/issues/show.html
 
    One issue: what was raised, the participant it is about with the records it
-   links to and any images, and either the form to resolve it or how it was
-   resolved. The
-   route (routes/review.js) only serves issues in the user's BSU. The
-   participants come in as `issueParticipants` so they are not taken for the
-   page's own context. #}
+   links to and any images, and either the ways to close it or how it was
+   closed. The route (routes/review.js) only serves issues in the user's BSU.
+   The participants come in as `issueParticipants` so they are not taken for
+   the page's own context. #}
 
 {% extends 'layout-app.html' %}
 
-{% set pageHeading = issue.type | getIssueTypeLabel %}
+{% set pageHeading = "Issue" %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 {% set breadcrumbItems = getCaseBreadcrumb(issueParticipants[0].participant if issueParticipants | length) %}
@@ -40,7 +39,9 @@
 
   <div class="app-header-with-status">
     <h1 class="nhsuk-heading-l">
-      <span class="nhsuk-caption-l">Issue</span>
+      {% if issueParticipants | length %}
+        <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+      {% endif %}
       {{ pageHeading }}
     </h1>
     <div class="app-header-with-status__status-tag">
@@ -51,6 +52,8 @@
   {# How it was closed leads once it has been, as that is what anyone opening
      a closed issue came for #}
   {% if issue.resolved %}
+    {% set isRaisedInError = issue.resolved.outcome == "raised_in_error" %}
+
     {% call card({
       heading: {
         text: "Resolution",
@@ -65,16 +68,20 @@
             value: { html: issueStatus | toTag({ vocabulary: "issue" }) }
           },
           {
-            key: { text: "Resolved by" },
+            key: { text: "Reason" if isRaisedInError else "Solution" },
+            value: { text: issue.resolved.note or "No note given" }
+          },
+          {
+            key: { text: "Closed by" if isRaisedInError else "Resolved by" },
             value: { text: issue.resolved.resolvedBy | getUsername({ identifyCurrentUser: true }) }
           },
           {
-            key: { text: "Resolved" },
-            value: { text: issue.resolved.resolvedAt | formatDateTime }
-          },
+            key: { text: "Verified by" },
+            value: { text: issue.resolved.verifiedBy | getUsername({ identifyCurrentUser: true }) }
+          } if issue.resolved.verifiedBy,
           {
-            key: { text: "Note" },
-            value: { text: issue.resolved.note or "No note given" }
+            key: { text: "Closed" if isRaisedInError else "Resolved" },
+            value: { text: issue.resolved.resolvedAt | formatDateTime }
           }
         ],
         lastRowBorder: false
@@ -149,28 +156,22 @@
       {% call appSummaryList({
         lastRowBorder: false
       }) %}
-        {% set participantActions = [
-          {
-            href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
-            text: "View participant"
-          }
-        ] %}
-        {# There's no way to open a participant in PACS yet, only a study, so
-           this shows for the participant whose study the page has loaded #}
-        {% if pacsEntry and pacsEntry.participant.id == participant.id %}
-          {% set participantActions = participantActions | push({
-            href: "/reading/mammogram-viewer",
-            text: "Open study in PACS",
-            attributes: {
-              target: "mammogram-viewer"
-            }
-          }) %}
-        {% endif %}
+        {# The viewer can't open a participant yet, only a study, so "Open
+           participant in PACS" goes nowhere for now #}
         {{ appSummaryListRow({
           key: { text: "Name" },
           value: { text: participant | getFullName },
           actions: {
-            items: participantActions
+            items: [
+              {
+                href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
+                text: "View participant"
+              },
+              {
+                href: "#",
+                text: "Open participant in PACS"
+              }
+            ]
           }
         }) }}
         {% include "_includes/summary-lists/rows/nhs-number.njk" %}
@@ -237,7 +238,7 @@
           <ul class="nhsuk-list nhsuk-u-margin-bottom-0">
             {% for otherIssue in entry.otherOpenIssues %}
               <li>
-                <a href="{{ ('/review/issues/' + otherIssue.id) | urlWithReferrer(referrerChain) }}">{{ otherIssue.type | getIssueTypeLabel }}</a>
+                <a href="{{ ('/review/issues/' + otherIssue.id) | urlWithReferrer(referrerChain) }}">{{ (otherIssue.description or "No description given") | truncate(80) }}</a>
                 {{ ("raised " + (otherIssue.raisedAt | formatDate)) | asHint }}
               </li>
             {% endfor %}
@@ -298,10 +299,19 @@
         } %}
       {% endif %}
 
+      {# Re-syncing from PACS isn't built yet, so the action goes nowhere #}
       {% call card({
         heading: {
           text: "Images",
           level: 2
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Re-sync study from PACS"
+            }
+          ]
         }
       }) %}
         {% call appSummaryList({
@@ -334,61 +344,17 @@
   {% endfor %}
 
   {% if not issue.resolved %}
-    <form method="post" action="{{ ('/review/issues/' + issue.id + '/resolve') | urlWithReferrer(referrerChain) }}" novalidate>
-
-      <h2 class="nhsuk-heading-m">Resolve this issue</h2>
-
-      {{ radios({
-        idPrefix: "issueResolutionOutcome",
-        name: "issueTemp[resolve][outcome]",
-        value: resolutionAnswers.outcome,
-        fieldset: {
-          legend: {
-            text: "Outcome",
-            size: "s"
-          }
-        },
-        items: [
-          {
-            value: "resolved",
-            text: "Resolved",
-            hint: {
-              text: "The problem has been fixed"
-            }
-          },
-          {
-            value: "raised_in_error",
-            text: "Raised in error",
-            hint: {
-              text: "There was nothing wrong"
-            }
-          }
-        ]
-      } | populateErrors) }}
-
-      {{ textarea({
-        id: "issueResolutionNote",
-        name: "issueTemp[resolve][note]",
-        value: resolutionAnswers.note,
-        label: {
-          text: "Note (optional)",
-          size: "s"
-        },
-        hint: {
-          text: "What was done, or why it was raised in error"
-        }
-      }) }}
-
-      {{ appHiddenInput({
-        name: "issueTemp[resolve][issueId]",
-        value: issue.id
-      }) }}
-
+    <div class="nhsuk-button-group">
       {{ button({
-        text: "Resolve issue"
+        text: "Resolve issue",
+        href: ("/review/issues/" + issue.id + "/resolve?issueTemp[resolve][issueId]=" + issue.id) | urlWithReferrer(referrerChain)
       }) }}
-
-    </form>
+      {{ appLink({
+        text: "Close as raised in error",
+        href: ("/review/issues/" + issue.id + "/raised-in-error?issueTemp[raisedInError][issueId]=" + issue.id) | urlWithReferrer(referrerChain),
+        classes: "nhsuk-link--no-visited-state nhsuk-button-group__item"
+      }) | trim | safe }}
+    </div>
   {% endif %}
 
 {% endblock %}

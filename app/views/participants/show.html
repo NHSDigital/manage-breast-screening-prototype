@@ -3,6 +3,7 @@
 
 {% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
 {% from "_includes/issues/resolved-issues.njk" import resolvedIssuesCard with context %}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set pageHeading = participant | getFullNameReversed %}
 
@@ -105,5 +106,7 @@
   }) %}
     {% include "summary-lists/screening-details.njk" %}
   {% endcall %}
+
+  {{ raiseIssueLink("participant") }}
 
 {% endblock %}

@@ -285,7 +285,7 @@ const STATUS_TAGS = {
     awaiting_priors: { colour: 'yellow' },
     // Any open issue (see issues.js), shown wherever the issue's episode or
     // participant is
-    has_issue: { colour: 'yellow' }
+    has_issue: { label: 'Issue raised', colour: 'yellow' }
   },
   // An issue's own status (getIssueStatus in issues.js). Open shares has_issue's
   // yellow; closed issues are done, whichever way they were closed

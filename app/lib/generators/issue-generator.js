@@ -55,7 +55,9 @@ const RESOLVED_ISSUES = [
     raisedFrom: 'episode',
     description: 'Date of birth on the images does not match the record.',
     outcome: 'resolved',
-    note: 'Date of birth corrected on the national record and images relabelled.'
+    note: 'Date of birth corrected on the national record and images relabelled.',
+    // Verified by the person resolving it rather than a second person
+    verifiedByResolver: true
   },
   {
     type: 'transposed_images',
@@ -144,10 +146,12 @@ const generateIssues = ({
       findClinic: (id) => clinicsById.get(id) || null,
       participant: participantsById.get(episode.participantId) || null
     })
+  // Issues are raised, resolved and verified by a spread of people, so the
+  // lists and filters show more than one name
   const administrators = users.filter((user) =>
     user.role?.includes('administrative')
   )
-  const resolver = administrators[0] || users[0]
+  const resolvers = administrators.length ? administrators : users
 
   const issues = []
   const usedEpisodeIds = new Set()
@@ -157,8 +161,9 @@ const generateIssues = ({
     episode.readingCases?.[episode.readingCases.length - 1] || null
 
   // Two cases released into arbitration and not yet arbitrated, each raised
-  // by a reader who had not read it - the arbitrator who opened it. Cases
-  // awaiting priors are already held up, so they are left for other rows.
+  // by a reader who had not read it - the arbitrator who opened it, a
+  // different one for each. Cases awaiting priors are already held up, so
+  // they are left for other rows.
   const arbitrationCases = episodes
     .map((episode) => ({ episode, readingCase: latestCase(episode) }))
     .filter(
@@ -175,8 +180,10 @@ const generateIssues = ({
     .slice(0, 2)
     .map((found, index) => {
       const readerIds = found.readingCase.reads.map((read) => read.readerId)
-      const arbitrator =
-        readers.find((reader) => !readerIds.includes(reader.id)) || readers[0]
+      const arbitrators = readers.filter(
+        (reader) => !readerIds.includes(reader.id)
+      )
+      const arbitrator = arbitrators[index % arbitrators.length] || readers[0]
       return {
         ...found,
         raisedBy: arbitrator?.id,
@@ -206,7 +213,7 @@ const generateIssues = ({
     .slice(middleIndex, middleIndex + 2)
     .map((found, index) => ({
       ...found,
-      raisedBy: (readers[1] || readers[0])?.id,
+      raisedBy: readers[(index + 2) % readers.length]?.id,
       raisedAt: hoursAfter(found.readingCase.openedDate, 20 + index * 2)
     }))
 
@@ -272,7 +279,8 @@ const generateIssues = ({
   }
 
   // Resolved issues on cases that have since been read twice, so the history
-  // sits alongside a case that carried on
+  // sits alongside a case that carried on. Record issues are raised by admin
+  // staff, image issues by the first reader.
   const readCases = episodes
     .filter((episode) => !usedEpisodeIds.has(episode.id))
     .map((episode) => ({ episode, readingCase: latestCase(episode) }))
@@ -289,13 +297,21 @@ const generateIssues = ({
     if (!found) return
 
     const { episode, readingCase } = found
-    const { outcome, note, ...issueDetails } = template
+    const { outcome, note, verifiedByResolver, ...issueDetails } = template
     const raisedAt = hoursAfter(readingCase.openedDate, 3)
     const raisedFromEpisode = template.raisedFrom === 'episode'
+    const resolver = resolvers[index % resolvers.length]
+    const otherUsers = users.filter((user) => user.id !== resolver.id)
+    const verifier = verifiedByResolver
+      ? resolver
+      : otherUsers[index % otherUsers.length]
 
     const issue = buildIssue({
       ...issueDetails,
-      raisedBy: readingCase.reads[0].readerId,
+      raisedBy: raisedFromEpisode
+        ? administrators[(index + 1) % administrators.length]?.id ||
+          readingCase.reads[0].readerId
+        : readingCase.reads[0].readerId,
       raisedAt,
       breastScreeningUnitId: getEpisodeUnitId(episode),
       links: buildLinks({
@@ -313,7 +329,8 @@ const generateIssues = ({
         resolvedAt: hoursAfter(raisedAt, 20),
         resolvedBy: resolver.id,
         outcome,
-        note
+        note,
+        ...(outcome === 'resolved' ? { verifiedBy: verifier?.id } : {})
       }
     })
   })

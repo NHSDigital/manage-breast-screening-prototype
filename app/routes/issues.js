@@ -8,12 +8,16 @@
 
 const {
   createIssue,
-  getIssueTypes,
   getOpenIssuesFor,
+  getOfferedIssueType,
   getRaiseIssueErrors,
   ISSUE_RAISED_FROM
 } = require('../lib/utils/issues')
-const { getEpisode, getReadingCaseById } = require('../lib/utils/episodes')
+const {
+  getCurrentEpisode,
+  getEpisode,
+  getReadingCaseById
+} = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
 const {
@@ -24,17 +28,18 @@ const {
 const {
   getAppointmentUrl,
   getEpisodeUrl,
+  getParticipantUrl,
   getReadingCaseUrl
 } = require('../lib/utils/urls')
 
 const RAISE_PATH = '/issues/raise/:recordType/:recordId'
 
-// The records an issue can be raised on from this form. Each says which
-// createIssue field its id goes in, the journey to assume if none was given,
-// and where to go back to if there is no referrer chain.
+// The records an issue can be raised on from this form. Each says the journey
+// to assume if none was given, and finds the record: its episode and
+// participant, the createIssue fields that raise the issue on it, and where to
+// go back to if there is no referrer chain.
 const RAISE_RECORD_TYPES = {
   'reading-case': {
-    idField: 'readingCaseId',
     defaultRaisedFrom: 'reading_case',
     find: (data, id) => {
       const found = getReadingCaseById(data, id)
@@ -42,13 +47,13 @@ const RAISE_RECORD_TYPES = {
         found && {
           episodeId: found.episode.id,
           participantId: found.episode.participantId,
+          issueRecordIds: { readingCaseId: id },
           returnUrl: getReadingCaseUrl(found.readingCase)
         }
       )
     }
   },
   'appointment': {
-    idField: 'appointmentId',
     defaultRaisedFrom: 'appointment',
     find: (data, id) => {
       const appointment = getAppointment(data, id)
@@ -56,13 +61,13 @@ const RAISE_RECORD_TYPES = {
         appointment && {
           episodeId: appointment.episodeId,
           participantId: appointment.participantId,
+          issueRecordIds: { appointmentId: id },
           returnUrl: getAppointmentUrl(appointment)
         }
       )
     }
   },
   'episode': {
-    idField: 'episodeId',
     defaultRaisedFrom: 'episode',
     find: (data, id) => {
       const episode = getEpisode(data, id)
@@ -70,9 +75,29 @@ const RAISE_RECORD_TYPES = {
         episode && {
           episodeId: episode.id,
           participantId: episode.participantId,
+          issueRecordIds: { episodeId: id },
           returnUrl: getEpisodeUrl(episode)
         }
       )
+    }
+  },
+  // Raised on their current episode, so it holds the round like any other
+  // issue, or on the participant alone when they have no open round
+  'participant': {
+    defaultRaisedFrom: 'participant',
+    find: (data, id) => {
+      const participant = getParticipant(data, id)
+      if (!participant) return null
+
+      const currentEpisode = getCurrentEpisode(data, id)
+      return {
+        episodeId: currentEpisode?.id || null,
+        participantId: id,
+        issueRecordIds: currentEpisode
+          ? { episodeId: currentEpisode.id }
+          : { participantId: id },
+        returnUrl: getParticipantUrl(participant)
+      }
     }
   }
 }
@@ -117,13 +142,15 @@ module.exports = (router) => {
     Object.assign(res.locals, {
       answers: data.issueTemp?.raise || {},
       participant: getParticipant(data, record.participantId),
-      openIssues: getOpenIssuesFor(data, record.episodeId),
+      openIssues: getOpenIssuesFor(
+        data,
+        record.episodeId || record.participantId
+      ),
       raisedFrom,
-      issueTypes: getIssueTypes(raisedFrom),
       recordId,
       raiseUrl: `/issues/raise/${recordType}/${recordId}`,
       returnFallbackUrl: record.returnUrl,
-      recordIdField: recordTypeConfig.idField
+      issueRecordIds: record.issueRecordIds
     })
 
     next()
@@ -183,21 +210,14 @@ module.exports = (router) => {
 
   router.post(`${RAISE_PATH}/answer`, loadRaiseContext, (req, res) => {
     const data = req.session.data
-    const { recordId } = req.params
     const referrerChain = req.query.referrerChain
-    const {
-      raisedFrom,
-      issueTypes,
-      raiseUrl,
-      returnFallbackUrl,
-      recordIdField
-    } = res.locals
+    const { raisedFrom, raiseUrl, returnFallbackUrl, issueRecordIds } =
+      res.locals
 
     const answers = data.issueTemp?.raise || {}
-    const type = answers.type
     const description = (answers.description || '').trim()
 
-    const errors = getRaiseIssueErrors(answers, issueTypes)
+    const errors = getRaiseIssueErrors(answers)
     if (errors.length) {
       // Inside a modal, show the errors in place rather than redirecting,
       // which the modal would treat as a further step
@@ -212,11 +232,11 @@ module.exports = (router) => {
     }
 
     const issue = createIssue(data, {
-      type,
+      type: getOfferedIssueType(answers.type, raisedFrom),
       description,
       raisedBy: data.currentUser?.id,
       raisedFrom,
-      [recordIdField]: recordId
+      ...issueRecordIds
     })
 
     // The kit's autoStoreData copies every posted field into the session, so

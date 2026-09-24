@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-24 14:26 UTC
+- **Generated:** 2026-09-24 15:51 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -26,25 +26,25 @@
 | `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 290 |
 | `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 345 |
 | `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 367 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 392 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 419 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 432 |
-| `objects.js` | Object utilities for extracting and flattening values. | 450 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 461 |
-| `random.js` | Seeded random functions for stable prototype data | 471 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 488 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 503 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 513 |
-| `roles-and-permissions.js` | User role checks | 526 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 551 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 567 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 579 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 393 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 420 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 433 |
+| `objects.js` | Object utilities for extracting and flattening values. | 451 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 462 |
+| `random.js` | Seeded random functions for stable prototype data | 472 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 489 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 504 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 514 |
+| `roles-and-permissions.js` | User role checks | 527 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 552 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 568 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 580 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 595 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 607 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 619 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 633 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 643 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 596 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 608 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 620 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 634 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 644 |
 
 ---
 
@@ -372,22 +372,23 @@ Issues raised against a participant, episode, appointment or reading case: types
 
 | Function | Description | Line |
 |---|---|---|
-| `buildIssue(details, details.type, [details.description], details.raisedBy, [details.raisedAt], details.raisedFrom, [details.breastScreeningUnitId], details.links)` | Build an issue record from its parts, without touching session data. | 91 |
-| `getBreastScreeningUnitIdForEpisode(episode, lookups, lookups.findAppointment, lookups.findClinic, [lookups.participant])` | Work out which BSU an episode belongs to: where its latest images were — e.g. `getBreastScreeningUnitIdForEpisode(episode, {` | 129 |
-| `createIssue(data, details, details.type, [details.description], details.raisedBy, [details.raisedAt], details.raisedFrom, [details.readingCaseId], [details.appointmentId], [details.episodeId], [details.participantId])` | Raise an issue and save it to the session. — e.g. `createIssue(data, {` | 172 |
-| `getIssue(data, issueId)` | Get an issue by ID | 283 |
-| `getIssuesFor(data, record, [linkType])` | Get every issue linked to a record, open or resolved, newest first. — e.g. `getIssuesFor(data, episode)` | 304 |
-| `isIssueOpen(issue)` | Whether an issue is still open - true until it has been resolved | 331 |
-| `hasOpenIssue(data, record)` | Whether any open issue links to a record. — e.g. `hasOpenIssue(data, episode)` | 339 |
-| `getOpenIssuesFor(data, record)` | Every open issue linked to a record, newest first — e.g. `getOpenIssuesFor(data, appointment.episodeId)` | 354 |
-| `getOpenIssuePeriods(data, record)` | The periods during which a record had an open issue, oldest first. — e.g. `getOpenIssuePeriods(data, episode)` | 366 |
-| `updateIssue(data, issueId, updates)` | Update an issue with the given fields and save it to the session | 406 |
-| `resolveIssue(data, issueId, resolution, resolution.outcome, resolution.resolvedBy, [resolution.note], [resolution.resolvedAt])` | Close an issue, recording who closed it, when, how and why. | 423 |
-| `getIssueTypes(raisedFrom)` | The issue types a journey offers, in the order the raise form lists them. — e.g. `getIssueTypes('episode') // wrong_personal_details first, then the image types, then other` | 448 |
-| `getIssueTypeLabel(type)` | The display label for an issue type | 471 |
-| `getIssueStatus(issue)` | An issue's status: open, or the outcome it was closed with. Renders as a tag — e.g. `{{ issue \| getIssueStatus \| toTag({ vocabulary: "issue" }) }}` | 480 |
-| `isIssueHoldingReading(data, issue)` | Whether an open issue is holding up image reading at its episode's stage. — e.g. `{% if data \| isIssueHoldingReading(issue) %}` | 495 |
-| `getRaiseIssueErrors(answers, issueTypes)` | Errors for the answers to a raise an issue form. Both the type and a — e.g. `const errors = getRaiseIssueErrors(data.issueTemp.raise, getIssueTypes('reading'))` | 519 |
+| `buildIssue(details, [details.type], [details.description], details.raisedBy, [details.raisedAt], details.raisedFrom, [details.breastScreeningUnitId], details.links)` | Build an issue record from its parts, without touching session data. | 97 |
+| `getBreastScreeningUnitIdForEpisode(episode, lookups, lookups.findAppointment, lookups.findClinic, [lookups.participant])` | Work out which BSU an episode belongs to: where its latest images were — e.g. `getBreastScreeningUnitIdForEpisode(episode, {` | 135 |
+| `createIssue(data, details, [details.type], [details.description], details.raisedBy, [details.raisedAt], details.raisedFrom, [details.readingCaseId], [details.appointmentId], [details.episodeId], [details.participantId])` | Raise an issue and save it to the session. — e.g. `createIssue(data, {` | 178 |
+| `getIssue(data, issueId)` | Get an issue by ID | 289 |
+| `getIssuesFor(data, record, [linkType])` | Get every issue linked to a record, open or resolved, newest first. — e.g. `getIssuesFor(data, episode)` | 310 |
+| `isIssueOpen(issue)` | Whether an issue is still open - true until it has been resolved | 337 |
+| `hasOpenIssue(data, record)` | Whether any open issue links to a record. — e.g. `hasOpenIssue(data, episode)` | 345 |
+| `getOpenIssuesFor(data, record)` | Every open issue linked to a record, newest first — e.g. `getOpenIssuesFor(data, appointment.episodeId)` | 360 |
+| `getOpenIssuePeriods(data, record)` | The periods during which a record had an open issue, oldest first. — e.g. `getOpenIssuePeriods(data, episode)` | 372 |
+| `updateIssue(data, issueId, updates)` | Update an issue with the given fields and save it to the session | 412 |
+| `resolveIssue(data, issueId, resolution, resolution.outcome, resolution.resolvedBy, [resolution.verifiedBy], [resolution.note], [resolution.resolvedAt])` | Close an issue, recording who closed it, when, how and why. | 429 |
+| `getIssueTypes(raisedFrom)` | The issue types a journey offers, in the order the raise form lists them. — e.g. `getIssueTypes('episode') // wrong_personal_details first, then the image types, then other` | 468 |
+| `getIssueTypeLabel(type)` | The display label for an issue type | 491 |
+| `getIssueStatus(issue)` | An issue's status: open, or the outcome it was closed with. Renders as a tag — e.g. `{{ issue \| getIssueStatus \| toTag({ vocabulary: "issue" }) }}` | 500 |
+| `isIssueHoldingReading(data, issue)` | Whether an open issue is holding up image reading at its episode's stage. — e.g. `{% if data \| isIssueHoldingReading(issue) %}` | 515 |
+| `getOfferedIssueType([type], raisedFrom)` | The type to give a new issue: the one a link preselected, if the journey — e.g. `getOfferedIssueType(data.issueTemp.raise.type, 'reading') // 'missing_images' or null` | 539 |
+| `getRaiseIssueErrors(answers)` | Errors for the answers to a raise an issue form. A description is required. — e.g. `const errors = getRaiseIssueErrors(data.issueTemp.raise)` | 554 |
 
 ### medical-information.js
 
@@ -498,7 +499,7 @@ Canonical URLs for the main pages (participant, episode, clinic, appointment, re
 | `getClinicUrl(clinicOrId)` | Get the URL for a clinic page — e.g. `getClinicUrl(clinic) // '/clinics/a9ovz0oj'` | 32 |
 | `getAppointmentUrl(appointment)` | Get the URL for an appointment page — e.g. `getAppointmentUrl(appointment) // '/clinics/a9ovz0oj/appointments/9vqig4uc'` | 45 |
 | `getReadingCaseUrl(readingCaseOrId)` | Get the URL for a reading case page — e.g. `getReadingCaseUrl(readingCase) // '/reading/cases/ruj64jdd'` | 57 |
-| `getRaiseIssueUrl(records, [records.readingCase], [records.appointment], [records.episode], raisedFrom, [type])` | Get the URL for the raise an issue form, raised on the most specific record — e.g. `getRaiseIssueUrl({ readingCase, episode }, 'reading_case')` | 70 |
+| `getRaiseIssueUrl(records, [records.readingCase], [records.appointment], [records.episode], [records.participant], raisedFrom, [type])` | Get the URL for the raise an issue form, raised on the most specific record — e.g. `getRaiseIssueUrl({ readingCase, episode }, 'reading_case')` | 70 |
 
 ### breadcrumbs.js
 

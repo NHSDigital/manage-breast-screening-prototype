@@ -64,10 +64,16 @@ const ISSUE_TYPES = [
 
 // Journeys about the participant's record rather than their images, where the
 // raise form lists record types before image types
-const RECORD_LED_JOURNEYS = ['episode']
+const RECORD_LED_JOURNEYS = ['episode', 'participant']
 
 // Where an issue was raised from
-const ISSUE_RAISED_FROM = ['reading', 'appointment', 'episode', 'reading_case']
+const ISSUE_RAISED_FROM = [
+  'reading',
+  'appointment',
+  'episode',
+  'reading_case',
+  'participant'
+]
 
 // How an issue can be closed
 const ISSUE_OUTCOMES = ['resolved', 'raised_in_error']
@@ -95,7 +101,7 @@ const generateIssueReference = () => `ISS-${generateId(5).toUpperCase()}`
  * records to hand. Callers supply links most specific first.
  *
  * @param {object} details - Issue details
- * @param {string} details.type - Issue type, from ISSUE_TYPES
+ * @param {string | null} [details.type] - Issue type, from ISSUE_TYPES. Not asked for on the forms for now
  * @param {string} [details.description] - Free text from the person raising it
  * @param {string} details.raisedBy - User ID of the person raising it
  * @param {string} [details.raisedAt] - ISO timestamp, defaults to now
@@ -105,7 +111,7 @@ const generateIssueReference = () => `ISS-${generateId(5).toUpperCase()}`
  * @returns {object} A new, open issue
  */
 const buildIssue = ({
-  type,
+  type = null,
   description = '',
   raisedBy,
   raisedAt = new Date().toISOString(),
@@ -180,7 +186,7 @@ const getBreastScreeningUnitIdForEpisode = (
  *
  * @param {object} data - Session data
  * @param {object} details - Issue details
- * @param {string} details.type - Issue type, from ISSUE_TYPES
+ * @param {string | null} [details.type] - Issue type, from ISSUE_TYPES
  * @param {string} [details.description] - Free text from the person raising it
  * @param {string} details.raisedBy - User ID of the person raising it
  * @param {string} [details.raisedAt] - ISO timestamp, defaults to now
@@ -428,6 +434,8 @@ const updateIssue = (data, issueId, updates) => {
  * @param {object} resolution - How it was closed
  * @param {string} resolution.outcome - 'resolved' or 'raised_in_error'
  * @param {string} resolution.resolvedBy - User ID of the person closing it
+ * @param {string} [resolution.verifiedBy] - User ID of the person who checked
+ *   the fix: someone else, or the resolver themselves. Only for 'resolved'
  * @param {string} [resolution.note] - What was done, or why it was raised in error
  * @param {string} [resolution.resolvedAt] - ISO timestamp, defaults to now
  * @returns {object | null} Updated issue, or null if not found, already closed or the outcome is unknown
@@ -435,13 +443,25 @@ const updateIssue = (data, issueId, updates) => {
 const resolveIssue = (
   data,
   issueId,
-  { outcome, resolvedBy, note = '', resolvedAt = new Date().toISOString() }
+  {
+    outcome,
+    resolvedBy,
+    verifiedBy = null,
+    note = '',
+    resolvedAt = new Date().toISOString()
+  }
 ) => {
   const issue = getIssue(data, issueId)
   if (!isIssueOpen(issue) || !ISSUE_OUTCOMES.includes(outcome)) return null
 
   return updateIssue(data, issueId, {
-    resolved: { resolvedAt, resolvedBy, outcome, note }
+    resolved: {
+      resolvedAt,
+      resolvedBy,
+      outcome,
+      note,
+      ...(outcome === 'resolved' ? { verifiedBy } : {})
+    }
   })
 }
 
@@ -517,25 +537,30 @@ const isIssueHoldingReading = (data, issue) => {
 }
 
 /**
- * Errors for the answers to a raise an issue form. Both the type and a
- * description are required.
+ * The type to give a new issue: the one a link preselected, if the journey
+ * offers it, else none. The forms do not ask for a type for now.
+ *
+ * @param {string} [type] - Preselected type, from data.issueTemp.raise.type
+ * @param {string} raisedFrom - Journey, from ISSUE_RAISED_FROM
+ * @returns {string | null} Issue type, or null
+ * @example
+ * getOfferedIssueType(data.issueTemp.raise.type, 'reading') // 'missing_images' or null
+ */
+const getOfferedIssueType = (type, raisedFrom) =>
+  getIssueTypes(raisedFrom).some((issueType) => issueType.value === type)
+    ? type
+    : null
+
+/**
+ * Errors for the answers to a raise an issue form. A description is required.
  *
  * @param {object} answers - Answers from data.issueTemp.raise
- * @param {Array} issueTypes - Types the form offered, from getIssueTypes
  * @returns {Array} Error objects for the error summary and populateErrors, empty if valid
  * @example
- * const errors = getRaiseIssueErrors(data.issueTemp.raise, getIssueTypes('reading'))
+ * const errors = getRaiseIssueErrors(data.issueTemp.raise)
  */
-const getRaiseIssueErrors = (answers = {}, issueTypes = []) => {
+const getRaiseIssueErrors = (answers = {}) => {
   const errors = []
-
-  if (!issueTypes.some((issueType) => issueType.value === answers.type)) {
-    errors.push({
-      text: 'Select what the issue is',
-      name: 'issueTemp[raise][type]',
-      href: '#raiseIssueType'
-    })
-  }
 
   if (!(answers.description || '').trim()) {
     errors.push({
@@ -568,5 +593,6 @@ module.exports = {
   getIssueTypeLabel,
   getIssueStatus,
   isIssueHoldingReading,
+  getOfferedIssueType,
   getRaiseIssueErrors
 }

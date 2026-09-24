@@ -343,10 +343,9 @@ test.describe('Image reading', () => {
     const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
 
     const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
-    await raiseModal.getByLabel('Images are missing or will not open').check()
     await raiseModal.getByLabel('Describe the issue').fill(issueDescription)
     await raiseModal
-      .getByRole('button', { name: 'Raise issue' })
+      .getByRole('button', { name: 'Confirm and continue' })
       .first()
       .click()
 
@@ -362,11 +361,12 @@ test.describe('Image reading', () => {
     await page.getByRole('link', { name: 'View issue' }).click()
 
     await expect(page.getByText(issueDescription)).toBeVisible()
-    await page.getByLabel('Resolved', { exact: true }).check()
-    await page
-      .getByLabel('Note (optional)')
-      .fill('Image re-sent from the mammography machine')
     await page.getByRole('button', { name: 'Resolve issue' }).click()
+    await page
+      .getByLabel('Explain the solution')
+      .fill('Image re-sent from the mammography machine')
+    await page.getByLabel('Just me').check()
+    await page.getByRole('button', { name: 'Confirm and continue' }).click()
 
     // Resolved, the case is readable again from its own page
     await expect(
@@ -388,12 +388,11 @@ test.describe('Image reading', () => {
     const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
 
     const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
-    await raiseModal.getByLabel('Images are missing or will not open').check()
     await raiseModal
       .getByLabel('Describe the issue')
       .fill('RMLO will not open in the viewer')
     await raiseModal
-      .getByRole('button', { name: 'Raise issue' })
+      .getByRole('button', { name: 'Confirm and continue' })
       .first()
       .click()
     await expect(page).not.toHaveURL(new RegExp(caseUrl))
@@ -424,9 +423,8 @@ test.describe('Image reading', () => {
     const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
 
     const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
-    await raiseModal.getByLabel('Images are missing or will not open').check()
     await raiseModal
-      .getByRole('button', { name: 'Raise issue' })
+      .getByRole('button', { name: 'Confirm and continue' })
       .first()
       .click()
     await expect(
@@ -435,7 +433,7 @@ test.describe('Image reading', () => {
 
     await raiseModal.getByLabel('Describe the issue').fill(issueDescription)
     await raiseModal
-      .getByRole('button', { name: 'Raise issue' })
+      .getByRole('button', { name: 'Confirm and continue' })
       .first()
       .click()
     await expect(page).toHaveURL(/\/no-more-cases/)
@@ -512,12 +510,11 @@ test.describe('Image reading', () => {
       page,
       'Raise an issue with this case'
     )
-    await raiseModal.getByLabel('Images are missing or will not open').check()
     await raiseModal
       .getByLabel('Describe the issue')
       .fill('RMLO will not open in the viewer')
     await raiseModal
-      .getByRole('button', { name: 'Raise issue' })
+      .getByRole('button', { name: 'Confirm and continue' })
       .first()
       .click()
     await expectModalClosed(raiseModal)
