@@ -149,20 +149,28 @@
       {% call appSummaryList({
         lastRowBorder: false
       }) %}
+        {% set participantActions = [
+          {
+            href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
+            text: "View participant"
+          }
+        ] %}
+        {# There's no way to open a participant in PACS yet, only a study, so
+           this shows for the participant whose study the page has loaded #}
+        {% if pacsEntry and pacsEntry.participant.id == participant.id %}
+          {% set participantActions = participantActions | push({
+            href: "/reading/mammogram-viewer",
+            text: "Open study in PACS",
+            attributes: {
+              target: "mammogram-viewer"
+            }
+          }) %}
+        {% endif %}
         {{ appSummaryListRow({
           key: { text: "Name" },
           value: { text: participant | getFullName },
           actions: {
-            items: [
-              {
-                href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
-                text: "View participant"
-              },
-              {
-                href: "#",
-                text: "Open in PACS"
-              }
-            ]
+            items: participantActions
           }
         }) }}
         {% include "_includes/summary-lists/rows/nhs-number.njk" %}
