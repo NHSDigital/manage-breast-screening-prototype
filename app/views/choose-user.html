@@ -34,7 +34,7 @@
           {% endfor %}
           {% if user.permissions | length %}
             <br>
-            <span class="nhsuk-u-secondary-text-color">Permissions:
+            <span class="nhsuk-u-secondary-text-colour">Permissions:
             {% for permission in user.permissions %}
               {{ permission | kebabCase | formatWords("-") | sentenceCase -}}
               {% if not loop.last %}, {% endif %}
