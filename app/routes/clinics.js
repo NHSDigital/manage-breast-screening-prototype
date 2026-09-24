@@ -59,38 +59,15 @@ function getClinicData(data, clinicId) {
 }
 
 // Status changes available from the close clinic page, keyed by the status
-// being applied. Marking a final status records the appointment as resolved
-// by this close flow, so that undoing 'all' only reverts appointments changed
-// here - not ones that were already resolved before the flow started.
+// being applied. Some entries map to a different underlying status via `to`;
+// undoing attended not screened also clears the stored reason.
 const CLOSE_STATUS_ACTIONS = {
-  attended_not_screened: { from: 'checked_in', resolves: true },
-  did_not_attend: { from: 'scheduled', resolves: true },
-  checked_in: { from: 'attended_not_screened', resolves: false, clearsStoppedDetails: true },
-  scheduled: { from: 'did_not_attend', resolves: false },
-  checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in', resolves: false },
-  scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled', resolves: false }
-}
-
-/**
- * Appointments resolved during this session's close flow, per clinic
- */
-const getCloseResolvedIds = (data, clinicId) => {
-  return data.closeClinicResolvedIds?.[clinicId] || []
-}
-
-/**
- * Record (or forget) appointments as resolved by the close flow
- */
-const trackCloseResolvedIds = (data, clinicId, appointmentIds, resolves) => {
-  const existing = getCloseResolvedIds(data, clinicId)
-  const updated = resolves
-    ? [...new Set([...existing, ...appointmentIds])]
-    : existing.filter((id) => !appointmentIds.includes(id))
-
-  data.closeClinicResolvedIds = {
-    ...data.closeClinicResolvedIds,
-    [clinicId]: updated
-  }
+  attended_not_screened: {},
+  did_not_attend: {},
+  checked_in: { clearsStoppedDetails: true },
+  scheduled: {},
+  checked_in_from_scheduled: { to: 'checked_in' },
+  scheduled_from_checked_in: { to: 'scheduled' }
 }
 
 /**
@@ -278,45 +255,11 @@ module.exports = (router) => {
     if (action.clearsStoppedDetails) {
       clearStoppedDetails(data, appointmentId)
     }
-    trackCloseResolvedIds(data, clinicId, [appointmentId], action.resolves)
 
     if (req.xhr) {
       return res.render('clinics/close-appointment-row', {
         appointment: getAppointment(data, appointmentId),
         showActions: true
-      })
-    }
-    res.redirect(`/clinics/${clinicId}/close`)
-  })
-
-  // Bulk version - applies the change to every appointment in the source
-  // status. Undoing (back to a non-final status) only touches appointments
-  // resolved by this flow.
-  router.get('/clinics/:clinicId/close/set-status-all/:status', (req, res) => {
-    const { clinicId, status } = req.params
-    const action = CLOSE_STATUS_ACTIONS[status]
-    if (!action) {
-      return res.redirect(`/clinics/${clinicId}/close`)
-    }
-
-    const data = req.session.data
-    const resolvedIds = getCloseResolvedIds(data, clinicId)
-    const appointments = data.appointments.filter((a) =>
-      a.clinicId === clinicId &&
-      a.status === action.from &&
-      (action.resolves || resolvedIds.includes(a.id))
-    )
-
-    appointments.forEach((a) => updateAppointmentStatus(data, a.id, status))
-    if (action.clearsStoppedDetails) {
-      appointments.forEach((a) => clearStoppedDetails(data, a.id))
-    }
-    trackCloseResolvedIds(data, clinicId, appointments.map((a) => a.id), action.resolves)
-
-    if (req.xhr) {
-      return res.json({
-        count: appointments.length,
-        appointmentIds: appointments.map((a) => a.id)
       })
     }
     res.redirect(`/clinics/${clinicId}/close`)
@@ -479,9 +422,6 @@ module.exports = (router) => {
         wrapWithHeading: `Clinic ${updatedClinic.clinicCode} closed. <a href="/reports/${clinicId}">View report</a>`
       })
     }
-
-    // This clinic's close flow is finished - drop its resolved tracking
-    delete data.closeClinicResolvedIds?.[clinicId]
 
     res.redirect('/clinics/completed')
   })

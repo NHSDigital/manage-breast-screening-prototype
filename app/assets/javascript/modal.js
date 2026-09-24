@@ -720,7 +720,7 @@ class AppModal {
             // Flow complete — close and refresh. Capture the callback before
             // close(), which resets it.
             const onSuccess = this._onSuccessCallback
-            this.close({ notifyClose: false })
+            this.close()
             if (onSuccess) {
               onSuccess()
             } else {

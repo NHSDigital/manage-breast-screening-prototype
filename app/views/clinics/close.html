@@ -40,75 +40,73 @@
     </table>
   {% endmacro %}
 
-  {# Bulk action button - close-clinic.js swaps it for the undo message once used #}
-  {% macro bulkActionControl(clinicId, markStatus, undoStatus, buttonText, markedLabel) %}
-    <p class="js-bulk-action-container">
-      <a href="/clinics/{{ clinicId }}/close/set-status-all/{{ markStatus }}" class="nhsuk-button nhsuk-button--secondary nhsuk-button--small nhsuk-u-margin-bottom-0 js-bulk-action" role="button">{{ buttonText }}</a>
-      <span hidden class="js-bulk-undo-message"><span class="js-bulk-count"></span> marked as {{ markedLabel }} (<a href="/clinics/{{ clinicId }}/close/set-status-all/{{ undoStatus }}" class="js-bulk-action">Undo</a>)</span>
-    </p>
-  {% endmacro %}
+  {% if needsOutcomeCount %}
+    {% set introHtml %}
+      {% if needsOutcomeCount == 1 %}
+        <p>1 appointment needs a completed status before this clinic can be closed.</p>
+      {% else %}
+        <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
+      {% endif %}
+    {% endset %}
 
-  {% set introHtml %}
-    <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
-  {% endset %}
-
-  {{ insetText({
-    html: introHtml
-  }) }}
+    {{ insetText({
+      html: introHtml
+    }) }}
+  {% endif %}
 
   <div class="nhsuk-grid-row app-clinic-layout__row">
     <div class="nhsuk-grid-column-two-thirds app-clinic-layout__main">
 
-  <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
+      <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
 
-    {% if needsOutcomeCount %}
-      {% set needsOutcomeHtml %}
-        {% if inProgressAppointments | length %}
-          <h3 class="nhsuk-heading-s">In progress</h3>
-          {% if inProgressAppointments | length == 1 %}
-            <p>This appointment needs to be completed or ended by the mammographer it is assigned to.</p>
-          {% else %}
-            <p>These appointments need to be completed or ended by the mammographers they are assigned to.</p>
+        {% if needsOutcomeCount %}
+          {% set needsOutcomeHtml %}
+            {% if inProgressAppointments | length %}
+              <h3 class="nhsuk-heading-s">In progress</h3>
+              {% if inProgressAppointments | length == 1 %}
+                <p>This appointment needs to be completed or ended by the mammographer it is assigned to.</p>
+              {% else %}
+                <p>These appointments need to be completed or ended by the mammographers they are assigned to.</p>
+              {% endif %}
+              {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
+            {% endif %}
+
+            {# Checked in, not started - includes attended not screened appointments still needing details #}
+            {% if checkedInAppointments | length %}
+              <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not started</h3>
+              {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
+            {% endif %}
+
+            {% if scheduledAppointments | length %}
+              <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Not checked in</h3>
+              {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
+            {% endif %}
+          {% endset %}
+
+          {{ card({
+            heading: "To be completed (" + needsOutcomeCount + ")",
+            headingLevel: "2",
+            feature: true,
+            descriptionHtml: needsOutcomeHtml
+          }) }}
+        {% endif %}
+
+        {% set outcomeRecordedHtml %}
+          <p>Some appointment statuses have been updated. <a href="" class="js-refresh-link" hidden>Refresh list</a></p>
+          {% if outcomeRecordedAppointments | length %}
+            {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
           {% endif %}
-          {{ statusGroupTable(inProgressAppointments, clinicId, true) }}
-        {% endif %}
+        {% endset %}
 
-        {# Checked in, not started - includes attended not screened appointments still needing details #}
-        {% if checkedInAppointments | length %}
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Checked in, not started</h3>
-          {{ statusGroupTable(checkedInAppointments, clinicId, true) }}
-        {% endif %}
+        {{ card({
+          heading: "Completed appointments (" + outcomeRecordedAppointments | length + ")",
+          headingLevel: "2",
+          feature: true,
+          classes: "app-card--feature-green",
+          descriptionHtml: outcomeRecordedHtml
+        }) }}
 
-        {% if scheduledAppointments | length %}
-          <h3 class="nhsuk-heading-s nhsuk-u-margin-top-4">Not checked in</h3>
-          {{ statusGroupTable(scheduledAppointments, clinicId, true) }}
-        {% endif %}
-      {% endset %}
-
-      {{ card({
-        heading: "To be completed (" + needsOutcomeCount + ")",
-        headingLevel: "2",
-        feature: true,
-        descriptionHtml: needsOutcomeHtml
-      }) }}
-    {% endif %}
-
-    {% set outcomeRecordedHtml %}
-      <p>Some appointment statuses have been updated. <a href="" class="js-refresh-link" hidden>Refresh list</a></p>
-      {% if outcomeRecordedAppointments | length %}
-        {{ statusGroupTable(outcomeRecordedAppointments, clinicId, false) }}
-      {% endif %}
-    {% endset %}
-
-    {{ card({
-      heading: "Completed appointments (" + outcomeRecordedAppointments | length + ")",
-      headingLevel: "2",
-      feature: true,
-      classes: "app-card--feature-green",
-      descriptionHtml: outcomeRecordedHtml
-    }) }}
-
-  </div>
+      </div>
 
     </div>
     <div class="nhsuk-grid-column-one-third app-clinic-layout__sidebar">

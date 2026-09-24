@@ -1,8 +1,8 @@
 // Close clinic page - page-specific enhancements on top of
 // fragment-actions.js, which already handles the single outcome links
 // (marked data-fragment-action in the row macro). This file adds the parts
-// with wider effects: bulk actions, revealing the refresh hint when counts
-// go stale, and refreshing a row after its details modal saves.
+// with wider effects: revealing the refresh hint when counts go stale, and
+// refreshing a row after its details modal saves.
 
 import { refreshFragment } from './fragment-actions.js'
 
@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!container) return
 
   const clinicId = container.dataset.clinicId
-  const fetchOptions = { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
   let detailsToOpen = null
 
   // Counts in the card headings and inset text aren't updated in place -
@@ -49,47 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return refreshFragment(row, url)
   }
 
-  // Bulk outcome change - refresh each affected row, then swap the button
-  // and its undo message over
-  const handleBulkClick = (link) => {
-    const bulkContainer = link.closest('.js-bulk-action-container')
-    const isUndo = Boolean(link.closest('.js-bulk-undo-message'))
-
-    fetch(link.href, fetchOptions)
-      .then((response) => {
-        if (!response.ok) throw new Error('Request failed')
-        return response.json()
-      })
-      .then((result) => {
-        const rows = result.appointmentIds.map(rowFor).filter(Boolean)
-        return Promise.all(rows.map(refreshRow)).then(() => result)
-      })
-      .then((result) => {
-        bulkContainer.querySelector('.nhsuk-button').hidden = !isUndo
-        const undoMessage = bulkContainer.querySelector('.js-bulk-undo-message')
-        undoMessage.hidden = isUndo
-        if (!isUndo) {
-          undoMessage.querySelector('.js-bulk-count').textContent =
-            result.count === 1 ? '1 participant' : `${result.count} participants`
-        }
-        showRefreshLink()
-      })
-      .catch(() => {
-        window.location.href = link.href
-      })
-  }
-
   container.addEventListener('click', (event) => {
     const actionLink = event.target.closest('a[data-open-details-after-action]')
     if (actionLink) {
       detailsToOpen = actionLink.closest('[data-fragment-id]')?.dataset.fragmentId
-    }
-
-    const bulkLink = event.target.closest('.js-bulk-action')
-    if (bulkLink) {
-      event.preventDefault()
-      handleBulkClick(bulkLink)
-      return
     }
 
     // Details links open in a modal (attributes added by the openInModal
