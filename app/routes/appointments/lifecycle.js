@@ -484,15 +484,13 @@ module.exports = (router) => {
       const notScreenedReason = data.appointment.appointmentStopped.stoppedReason
       const needsReschedule = data.appointment.appointmentStopped.needsReschedule
       const otherDetails = data.appointment.appointmentStopped.otherDetails
+      // Checkboxes post an empty array when none are ticked
+      const hasNoReason = !notScreenedReason?.length
       const hasOtherReasonButNoDetails =
         notScreenedReason?.includes('Other reason') && !otherDetails
 
-      if (
-        !notScreenedReason ||
-        !needsReschedule ||
-        hasOtherReasonButNoDetails
-      ) {
-        if (!notScreenedReason) {
+      if (hasNoReason || !needsReschedule || hasOtherReasonButNoDetails) {
+        if (hasNoReason) {
           req.flash('error', {
             text: 'Select why this appointment has been stopped',
             name: 'appointment[appointmentStopped][stoppedReason]',

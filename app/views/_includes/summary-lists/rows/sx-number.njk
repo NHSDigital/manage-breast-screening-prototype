@@ -1,9 +1,22 @@
+{# /app/views/_includes/summary-lists/rows/sx-number.njk #}
+
+{% if participant.sxNumber %}
+  {% set sxNumberValueHtml %}
+    {{ appCopyToClipboard({
+      text: participant.sxNumber,
+      type: "value",
+      html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + participant.sxNumber + '</span>',
+      label: "SX number"
+    }) }}
+  {% endset %}
+{% endif %}
+
 {% set sxNumberRow = {
   key: {
     text: "SX number"
   },
   value: {
-    text: participant.sxNumber
+    html: sxNumberValueHtml
   },
   actions: {
     items: [

@@ -30,6 +30,7 @@ const {
   getAppointmentReadingMetadata,
   appointmentHasBeenArbitrated,
   getNextCaseInSession,
+  getFollowingCaseInSession,
   getFirstOutstandingCaseInSession,
   filterAppointmentsByEligibleForReading,
   filterAppointmentsByNeedsAnyRead,
@@ -1293,8 +1294,43 @@ module.exports = (router) => {
     (req, res) => {
       const data = req.session.data
       const { sessionId, appointmentId } = req.params
+      const currentUserId = data.currentUser?.id
 
-      res.redirect(onwardFromCase(data, sessionId, appointmentId))
+      const onwardUrl = onwardFromCase(data, sessionId, appointmentId)
+
+      // With nothing left to do, the reader is looking back over the session,
+      // so step through its cases in order as the "Previous case" link does -
+      // rather than landing on the end-of-session page every time
+      const session = getReadingSession(data, sessionId)
+      const sessionAppointments = session.appointmentIds
+        .map((id) => data.appointments.find((e) => e.id === id))
+        .filter(Boolean)
+      const nothingLeftToDo =
+        isSessionEnded(session) ||
+        !getFirstOutstandingCaseInSession(
+          data,
+          session,
+          sessionAppointments,
+          currentUserId
+        )
+
+      if (!nothingLeftToDo) {
+        return res.redirect(onwardUrl)
+      }
+
+      const followingCase = getFollowingCaseInSession(
+        data,
+        session,
+        sessionAppointments,
+        appointmentId,
+        currentUserId
+      )
+
+      res.redirect(
+        followingCase
+          ? `/reading/session/${sessionId}/appointments/${followingCase.id}`
+          : sessionOverviewUrl(session)
+      )
     }
   )
 

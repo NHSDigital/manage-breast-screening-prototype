@@ -43,6 +43,7 @@
 {%- from '_components/collapsible-input/macro.njk' import appCollapsibleInput %}
 {%- from '_components/summary-list/macro.njk' import appSummaryList %}
 {%- from '_components/summary-list/macro.njk' import appSummaryListRow %}
+{%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard %}
 
 {% set _errorList = errors if (errors and errors | length) else flash.error %}
 {% if _errorList and _errorList | length %}

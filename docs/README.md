@@ -33,6 +33,8 @@ Reference for people and coding assistants working on the prototype. The always-
 
 The conventions for using them are in `.github/instructions/nhs-frontend-guide.instructions.md` and `.github/instructions/nhs-prototype-kit-guide.instructions.md`.
 
-## Testing
+## Testing and review
 
 - [testing.md](testing.md) - the smoke suite (lint, route sweep, Playwright journeys), what it covers and how to add to it.
+- [review-checklist.md](review-checklist.md) - what to check before a change is merged, how to spot each problem in a diff, and past examples. Copilot's `review-changes` skill runs it.
+- [working-with-copilot.md](working-with-copilot.md) - how to use Copilot on this repo: one task per chat, reviewing before a pull request, and opening one.

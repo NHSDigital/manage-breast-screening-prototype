@@ -49,3 +49,10 @@ h3 {
     text-decoration: none;
   }
 }
+
+// The monospace stack sits a couple of pixels high against the body text, so
+// nudge it back onto the same optical baseline without affecting layout
+.nhsuk-u-font-code {
+  position: relative;
+  top: 1px;
+}

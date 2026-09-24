@@ -639,6 +639,45 @@ test.describe('Image reading', () => {
     )
   })
 
+  test('steps through a completed session with "Next case"', async ({
+    page
+  }) => {
+    // Once every case is read there is nothing to move on to, so "Next case"
+    // walks the session in order rather than returning to the
+    // session-complete page each time
+    await pinSettings(page, readingSettings)
+
+    await page.goto(
+      `/reading/create-session?type=all_reads&limit=${sessionSize}&lazy=false`
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const readCases = []
+
+    for (let caseNumber = 0; caseNumber < sessionSize; caseNumber++) {
+      await expect(page).toHaveURL(/\/appointments\//)
+      readCases.push(page.url().split('/appointments/')[1].split('/')[0])
+      await recordNormal(page)
+    }
+
+    await expect(page).toHaveURL(/\/no-more-cases/)
+
+    await page.goto(`/reading/session/${sessionId}/appointments/${readCases[0]}`)
+    await expect(page).toHaveURL(/\/existing-read/)
+
+    for (const nextCaseId of readCases.slice(1)) {
+      await page.getByRole('link', { name: 'Next case' }).first().click()
+      await expect(page).toHaveURL(
+        new RegExp(`/appointments/${nextCaseId}/existing-read`)
+      )
+    }
+
+    // Past the last case, back to the session overview
+    await page.getByRole('link', { name: 'Next case' }).first().click()
+    await expect(page).toHaveURL(new RegExp(`/session/${sessionId}/your-reads`))
+  })
+
   test('finalises reads from the session overview', async ({ page }) => {
     // With a finalisation delay, a fresh read sits unfinalised. Finalisation
     // deliberately lives on the session overview - behind a chance to review
