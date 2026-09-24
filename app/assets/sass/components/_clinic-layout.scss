@@ -1,0 +1,25 @@
+// app/assets/sass/components/_clinic-layout.scss
+// Two-column layout for the clinic view page, with a sticky right-hand sidebar
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Use flexbox so the sidebar column stretches to the row height for sticky positioning
+.app-clinic-layout__row {
+  @include nhsuk-media-query($from: tablet) {
+    display: flex;
+  }
+}
+
+.app-clinic-layout__main,
+.app-clinic-layout__sidebar {
+  @include nhsuk-media-query($from: tablet) {
+    float: none;
+  }
+}
+
+// The flex row stretches the sidebar column tall; keep this element its natural
+// height so it has room to travel and stick within the column
+.app-clinic-layout__sticky {
+  position: sticky;
+  top: nhsuk-spacing(4);
+}
