@@ -38,6 +38,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "mobilityIssues",
         name: "questionnaire[mobilityIssues]",
         fieldset: {
@@ -66,6 +67,7 @@
       }) }}
 
       {{ radios({
+        small: true,
         idPrefix: "pregnantOrBreastFeeding",
         name: "questionnaire[pregnantOrBreastFeeding]",
         fieldset: {
@@ -90,6 +92,7 @@
       {# Medical devices question #}
       {% set medicalDevicesYesHtml %}
         {{ checkboxes({
+          small: true,
           name: "questionnaire[medicalDeviceTypes]",
           items: [
             {
@@ -109,6 +112,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "medicalDevices",
         name: "questionnaire[medicalDevices]",
         fieldset: {
@@ -145,6 +149,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "takingHRT",
         name: "questionnaire[takingHRT]",
         fieldset: {

@@ -102,6 +102,7 @@ Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents 
 - HTML assembled by string concatenation in routes, utils or client-side JavaScript. Use a Nunjucks macro or include; in templates, build HTML in a `set` or `call` block, never inline.
 - Client-side JavaScript that recreates markup the server already renders (tags, action links, rows). It will drift from the server version. Fetch the server-rendered fragment instead (see section 5).
 - Hand-written HTML where an NHS.UK Frontend macro exists. Look up the parameters in [nhs-frontend-component-reference.md](nhs-frontend-component-reference.md) rather than guessing.
+- A `radios` or `checkboxes` macro without `small: true`.
 - Inline `<script>` blocks in views. Client-side code is a module in `app/assets/javascript/`, and the page must still work without it.
 
 > **Past example.** A 129-line inline script rebuilt status tags and action links as strings (`renderTag`, `renderActionCell`). It was replaced by a server-rendered row include and a small module that swaps the fragment in, later reused on two other pages.

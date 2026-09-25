@@ -1,8 +1,5 @@
 // app/assets/sass/components/_compact.scss
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
-// Loaded so the compact overrides below can @extend their --small variants
-@use "nhsuk-frontend/dist/nhsuk/components/checkboxes";
-@use "nhsuk-frontend/dist/nhsuk/components/radios";
 
 // Compact mode styles are only active when compact mode is enabled.
 
@@ -14,20 +11,6 @@
 
   .nhsuk-form-group {
     @include nhsuk-responsive-margin(3, "bottom");
-  }
-
-  // Apply the equivalent of .nhsuk-checkboxes--small and .nhsuk-radios--small to all
-  // checkboxes and radios in compact mode, so tighter inputs are applied globally without
-  // needing to add small: true to every macro call.
-  //
-  // Extending the nhsuk-frontend variants rather than copying their values means the
-  // geometry stays correct when nhsuk-frontend changes how the components are laid out.
-  .nhsuk-checkboxes {
-    @extend .nhsuk-checkboxes--small;
-  }
-
-  .nhsuk-radios {
-    @extend .nhsuk-radios--small;
   }
 
   .nhsuk-table {
@@ -53,25 +36,6 @@
   .nhsuk-back-link,
   .nhsuk-forward-link {
     @include nhsuk-responsive-margin(3, "top");
-  }
-
-  // Reduce spacing after buttons
-  .nhsuk-button {
-    @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
-
-    &.nhsuk-button--small {
-      @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
-    }
-  }
-
-  // Make a medium sized button
-  .nhsuk-button:not(.nhsuk-button--small) {
-    padding: nhsuk-px-to-rem(8px) nhsuk-px-to-rem(14px);
-
-    @include nhsuk-media-query($from: tablet) {
-      min-height: nhsuk-px-to-rem(46px);
-      padding: nhsuk-px-to-rem(10px) nhsuk-px-to-rem(14px);
-    }
   }
 
   // .nhsuk-tag {

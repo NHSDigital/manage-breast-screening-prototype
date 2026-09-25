@@ -17,6 +17,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ checkboxes({
+        small: true,
         name: "appointment[medicalHistoryTemp][proceduresRightBreast]",
         values: appointment.medicalHistoryTemp.proceduresRightBreast,
         idPrefix: "proceduresRightBreast",
@@ -54,6 +55,7 @@
 
     <div class="nhsuk-grid-column-one-half">
       {{ checkboxes({
+        small: true,
         name: "appointment[medicalHistoryTemp][proceduresLeftBreast]",
         values: appointment.medicalHistoryTemp.proceduresLeftBreast,
         idPrefix: "proceduresLeftBreast",
@@ -116,6 +118,7 @@
   {% endset %}
 
   {{ checkboxes({
+    small: true,
     name: "appointment[medicalHistoryTemp][implantsRemoved]",
     values: appointment.medicalHistoryTemp.implantsRemoved,
     classes: "nhsuk-u-margin-bottom-6",

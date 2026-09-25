@@ -361,16 +361,6 @@
       border-radius: 4px;
       font-size: 13px;
     }
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .checkbox-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-    }
     .per-breast-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -934,13 +924,15 @@
                 <option value="technical" ${data.tag === 'technical' ? 'selected' : ''}>technical</option>
               </select>
             </div>
-            <div class="checkbox-row">
-              <input type="checkbox" id="hasImplants" ${data.hasImplants ? 'checked' : ''}>
-              <label for="hasImplants">Has implants</label>
-            </div>
-            <div class="checkbox-row">
-              <input type="checkbox" id="disabled" ${data.disabled ? 'checked' : ''}>
-              <label for="disabled">Disabled (excluded from selection)</label>
+            <div class="nhsuk-checkboxes nhsuk-checkboxes--small">
+              <div class="nhsuk-checkboxes__item">
+                <input class="nhsuk-checkboxes__input" type="checkbox" id="hasImplants" ${data.hasImplants ? 'checked' : ''}>
+                <label class="nhsuk-label nhsuk-checkboxes__label" for="hasImplants">Has implants</label>
+              </div>
+              <div class="nhsuk-checkboxes__item">
+                <input class="nhsuk-checkboxes__input" type="checkbox" id="disabled" ${data.disabled ? 'checked' : ''}>
+                <label class="nhsuk-label nhsuk-checkboxes__label" for="disabled">Disabled (excluded from selection)</label>
+              </div>
             </div>
           </div>
 
