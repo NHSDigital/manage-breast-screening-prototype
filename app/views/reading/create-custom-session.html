@@ -16,6 +16,7 @@
   <h1>{{ pageHeading }}</h1>
 
   {{ radios({
+    small: true,
     idPrefix: "type",
     name: "type",
     fieldset: {
@@ -45,6 +46,7 @@
   }) }}
 
   {{ radios({
+    small: true,
     idPrefix: "limit",
     name: "limit",
     fieldset: {
@@ -79,6 +81,7 @@
 
   {% if data.settings.debugMode | falsify %}
     {{ checkboxes({
+      small: true,
       idPrefix: "filters",
       name: "filters",
       fieldset: {
@@ -99,6 +102,7 @@
     }) }}
 
     {{ radios({
+      small: true,
       idPrefix: "lazy",
       name: "lazy",
       fieldset: {

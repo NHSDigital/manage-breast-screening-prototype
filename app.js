@@ -19,7 +19,6 @@ const viewsPath = [
 
 const entryPoints = [
   'app/assets/sass/main.scss',
-  'app/assets/sass/main-compact.scss',
   'app/assets/javascript/*.js',
 
   // Not a real build target: the kit adds every entry point to nodemon's

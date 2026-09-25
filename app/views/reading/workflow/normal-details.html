@@ -47,6 +47,7 @@
 
       {% if hasSymptoms %}
         {{ checkboxes({
+          small: true,
           idPrefix: "symptomsAcknowledged",
           name: "imageReadingTemp[symptomsAcknowledged]",
           items: [

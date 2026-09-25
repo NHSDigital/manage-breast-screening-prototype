@@ -24,6 +24,7 @@ A form can post to any URL. Its fields are already in the session before any rou
 
 {% block pageContent %}
   {{ radios({
+    small: true,
     name: "participant[healthStatus]",
     value: participant.healthStatus,
     ...

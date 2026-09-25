@@ -34,12 +34,7 @@
 {%- from '_components/option-picker/macro.njk' import appOptionPicker %}
 
 {% block head %}
-  {# Load compact or default stylesheet based on compact mode setting #}
-  {% if data.settings.compactMode == 'true' %}
-  <link href="/assets/sass/main-compact.css" rel="stylesheet">
-  {% else %}
   <link href="/assets/sass/main.css" rel="stylesheet">
-  {% endif %}
 {% endblock %}
 
 <!-- Edit the header -->

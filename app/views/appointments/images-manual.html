@@ -70,6 +70,7 @@
   }) }}
 
   {# {{ radios({
+    small: true,
     name: "appointment[mammogramDataTemp][machineRoom]",
     value: mammogramSource.machineRoom,
     idPrefix: "machineRoom",
@@ -178,6 +179,7 @@
   {% endif %}
 
   {{ radios({
+    small: true,
     idPrefix: "imagingComplete",
     name: "appointment[mammogramDataTemp][isStandardSet]",
     fieldset: {

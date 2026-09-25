@@ -22,6 +22,7 @@
   <p>They can choose to receive invites to future appointments, or opt out of the breast screening programme.</p>
 
   {{ radios({
+    small: true,
     name: "appointment[cannotProceed][futureScreeningPlan]",
     value: appointment.cannotProceed.futureScreeningPlan,
     fieldset: {

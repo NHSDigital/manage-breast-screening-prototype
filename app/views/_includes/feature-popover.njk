@@ -65,6 +65,7 @@
   {% endfor %}
 
   {{ radios({
+    small: true,
     idPrefix: fieldPrefix,
     name: fieldName,
     fieldset: {
@@ -74,7 +75,6 @@
         isPageHeading: false
       }
     },
-    classes: "nhsuk-radios--small",
     items: radioItems
   }) }}
 

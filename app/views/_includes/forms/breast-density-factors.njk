@@ -49,9 +49,9 @@
 
 {% set hrtInputHtml %}
   {{ radios({
+    small: true,
     name: "appointment[medicalInformation][hrt][status]",
     value: breastDensityFactors.hrt.status,
-    classes: "nhsuk-radios--small",
     fieldset: {
       legend: {
         text: hrtQuestion + " (optional)",

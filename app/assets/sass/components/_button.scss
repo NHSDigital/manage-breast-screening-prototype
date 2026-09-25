@@ -1,0 +1,18 @@
+// app/assets/sass/components/_button.scss
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Loaded before other app styles so their button spacing rules still win
+
+.nhsuk-button {
+  @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
+}
+
+// Default buttons are a medium size, between the NHS default and nhsuk-button--small
+.nhsuk-button:not(.nhsuk-button--small) {
+  padding: nhsuk-px-to-rem(8px) nhsuk-px-to-rem(14px);
+
+  @include nhsuk-media-query($from: tablet) {
+    min-height: nhsuk-px-to-rem(46px);
+    padding: nhsuk-px-to-rem(10px) nhsuk-px-to-rem(14px);
+  }
+}

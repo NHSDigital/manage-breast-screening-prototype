@@ -31,6 +31,7 @@
   {# Checkbox shown conditionally when 'Just me' is selected #}
   {% set excludeOwnReadsHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "exclude-own-reads",
       name: "arbitrationTemp[excludeOwnReads]",
       items: [
@@ -47,6 +48,7 @@
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "arbitration-mode",
     name: "arbitrationTemp[mode]",
     fieldset: {
