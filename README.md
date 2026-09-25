@@ -1,4 +1,4 @@
-# NHS Manage breast screening service (prototype)
+# NHS Run breast screening in England (Rubie) service (prototype)
 
 A prototype for managing breast screening, built using the [NHS.UK prototype kit](https://prototype-kit.service-manual.nhs.uk).
 
