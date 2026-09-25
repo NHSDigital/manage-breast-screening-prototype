@@ -1,6 +1,6 @@
 # Working on this prototype
 
-A prototype of Manage breast screening, an NHS service for running screening clinics and reading mammograms. Built on the NHS prototype kit: Node, Express, Nunjucks and NHS.UK Frontend. It is heavily data driven: realistic seed data is generated daily and populates almost every page.
+A prototype of Run breast screening in England (Rubie), an NHS service for running screening clinics and reading mammograms. Built on the NHS prototype kit: Node, Express, Nunjucks and NHS.UK Frontend. It is heavily data driven: realistic seed data is generated daily and populates almost every page.
 
 Read [docs/domain.md](../docs/domain.md) before working on views or content. The docs index at the end of this file says what else to read and when.
 
@@ -100,19 +100,19 @@ Copilot applies the guides in `.github/instructions/` automatically when editing
 
 Read the doc before working in its area. [docs/README.md](../docs/README.md) has the same list with more detail.
 
-| Doc | Read when |
-|---|---|
-| [domain.md](../docs/domain.md) | Any view or content work; anything touching screening concepts |
-| [routing-and-forms.md](../docs/routing-and-forms.md) | Adding a page, form or route |
-| [referrers.md](../docs/referrers.md) | Any link or form that returns the user somewhere |
-| [data-conventions.md](../docs/data-conventions.md) | Reading or changing participants, clinics, appointments, episodes |
-| [utils-filter-reference.md](../docs/utils-filter-reference.md) | Before writing any data or display logic |
-| [validation.md](../docs/validation.md) | Adding form validation or error messages |
-| [modal-system.md](../docs/modal-system.md) | Forms that open in a modal |
-| [filtering.md](../docs/filtering.md) | Index pages with filter panels |
-| [image-reading.md](../docs/image-reading.md) | Anything in the reading workflow or reading data |
-| [pacs-viewer.md](../docs/pacs-viewer.md) | The mammogram viewer window and image sets |
-| [data-generator-reference.md](../docs/data-generator-reference.md) | Changing how seed data is generated |
-| [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data |
-| [review-checklist.md](../docs/review-checklist.md) | Reviewing a change before it is committed or merged |
-| [testing.md](../docs/testing.md) | Running or adding to the smoke suite |
+| Doc                                                                          | Read when                                                         |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [domain.md](../docs/domain.md)                                               | Any view or content work; anything touching screening concepts    |
+| [routing-and-forms.md](../docs/routing-and-forms.md)                         | Adding a page, form or route                                      |
+| [referrers.md](../docs/referrers.md)                                         | Any link or form that returns the user somewhere                  |
+| [data-conventions.md](../docs/data-conventions.md)                           | Reading or changing participants, clinics, appointments, episodes |
+| [utils-filter-reference.md](../docs/utils-filter-reference.md)               | Before writing any data or display logic                          |
+| [validation.md](../docs/validation.md)                                       | Adding form validation or error messages                          |
+| [modal-system.md](../docs/modal-system.md)                                   | Forms that open in a modal                                        |
+| [filtering.md](../docs/filtering.md)                                         | Index pages with filter panels                                    |
+| [image-reading.md](../docs/image-reading.md)                                 | Anything in the reading workflow or reading data                  |
+| [pacs-viewer.md](../docs/pacs-viewer.md)                                     | The mammogram viewer window and image sets                        |
+| [data-generator-reference.md](../docs/data-generator-reference.md)           | Changing how seed data is generated                               |
+| [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data      |
+| [review-checklist.md](../docs/review-checklist.md)                           | Reviewing a change before it is committed or merged               |
+| [testing.md](../docs/testing.md)                                             | Running or adding to the smoke suite                              |

@@ -6,7 +6,7 @@ For how the prototype is built, see [.github/copilot-instructions.md](../.github
 
 ## Service purpose
 
-Manage breast screening is a new NHS service for clinical and clerical staff (receptionists, mammographers, radiographers) to manage and triage women coming in for breast screening, from when they arrive at a hospital or screening van, through having a mammogram, to getting results. The service covers the journey up to diagnosis, not clinical treatment. Where mammograms may show an abnormality, the service will manage further tests. It is not medical software: it supports the clerical data collection side.
+Run breast screening in England (Rubie) is a new NHS service for clinical and clerical staff (receptionists, mammographers, radiographers) to manage and triage women coming in for breast screening, from when they arrive at a hospital or screening van, through having a mammogram, to getting results. The service covers the journey up to diagnosis, not clinical treatment. Where mammograms may show an abnormality, the service will manage further tests. It is not medical software: it supports the clerical data collection side.
 
 ## Domain model
 
