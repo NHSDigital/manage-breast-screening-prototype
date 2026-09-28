@@ -967,6 +967,23 @@ const withoutRead = (readingCase, userId) => {
   }
 }
 
+/**
+ * Remove a case's arbitration read, returning a new case record.
+ *
+ * The arbitration counterpart to withoutRead: deferring or asking for priors
+ * during arbitration withdraws the outcome, and leaves the original reads -
+ * which may include the arbitrator's own - alone.
+ *
+ * @param {object} readingCase - The case
+ * @returns {object} A new case record without its arbitration read
+ */
+const withoutArbitrationRead = (readingCase) => {
+  return {
+    ...readingCase,
+    reads: getOriginalReads(readingCase)
+  }
+}
+
 module.exports = {
   READ_TYPES,
   READING_CASE_STATES,
@@ -1009,5 +1026,6 @@ module.exports = {
   buildRead,
   withRead,
   withReadFinalised,
-  withoutRead
+  withoutRead,
+  withoutArbitrationRead
 }

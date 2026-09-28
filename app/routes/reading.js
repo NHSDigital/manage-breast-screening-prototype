@@ -49,6 +49,7 @@ const {
   isReadFinalised,
   isCaseDeferred,
   withoutRead,
+  withoutArbitrationRead,
   withArbitrationRelease
 } = require('../lib/utils/reading-cases')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
@@ -68,6 +69,7 @@ const {
 const {
   modalBreakout,
   getReturnUrl,
+  isLastReferrer,
   urlWithReferrer
 } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
@@ -521,12 +523,8 @@ module.exports = (router) => {
       return res.redirect('/reading')
     }
 
-    // Reaching this page is the session being worked through - the end of it,
-    // and where that gets recorded. Ending says nothing about finalisation:
-    // the reads made in it finalise on their own schedule, or by hand.
-    // Judged on the target rather than on what's loaded, so a lazy session
-    // that could still top up isn't ended just because another reader
-    // currently holds the cases it would have loaded next.
+    // Reaching this page is the session being worked through, which ends it
+    // once its reads are finalised (see endSessionIfComplete)
     const sessionProgress = getSessionReadingProgress(
       data,
       sessionId,
@@ -534,13 +532,7 @@ module.exports = (router) => {
       data.currentUser?.id
     )
 
-    if (
-      isSessionEndable(session) &&
-      !isSessionEnded(session) &&
-      sessionProgress?.targetRemaining === 0
-    ) {
-      endSession(data, sessionId, data.currentUser?.id)
-    }
+    endSessionIfComplete(data, session, sessionProgress, data.currentUser?.id)
 
     res.render('reading/no-more-cases', {
       sessionId,
@@ -572,17 +564,33 @@ module.exports = (router) => {
     return `/reading/session/${sessionId}/appointments/${appointmentId}/${step}`
   }
 
+  // A case without the decision its session records - the arbitration outcome
+  // in arbitration, otherwise the user's own read. Deferring or asking for
+  // priors replaces that decision rather than sitting alongside it.
+  const withoutSessionDecision = (data, sessionId, readingCase, userId) => {
+    return getReadingSession(data, sessionId)?.type === 'arbitration'
+      ? withoutArbitrationRead(readingCase)
+      : withoutRead(readingCase, userId)
+  }
+
   // Where the reader goes once they are finished with a case: the next case
-  // still to do, or whichever end-of-session page applies. Shared by saving a
-  // decision and by the "Next case" link, so both answer the question the same
-  // way - and both top the session up first, since a lazy session only grows
-  // when navigation would otherwise run out of cases.
+  // still to do, or whichever end-of-session page applies. Shared by every way
+  // of leaving a case, so they all answer the question the same way - and all
+  // top the session up first, since a lazy session only grows when navigation
+  // would otherwise run out of cases. Returns the next case too, if there is
+  // one, for the banner shown on it.
   const onwardFromCase = (data, sessionId, appointmentId) => {
     const currentUserId = data.currentUser?.id
 
     topUpSession(data, sessionId, appointmentId)
 
     const session = getReadingSession(data, sessionId)
+
+    // An ended session takes no new work, so there is no next case to offer
+    if (isSessionEnded(session)) {
+      return { url: sessionOverviewUrl(session), nextCase: null }
+    }
+
     const sessionAppointments = session.appointmentIds
       .map((id) => data.appointments.find((e) => e.id === id))
       .filter(Boolean)
@@ -596,12 +604,18 @@ module.exports = (router) => {
     )
 
     if (nextCase) {
-      return `/reading/session/${sessionId}/appointments/${nextCase.id}`
+      return {
+        url: `/reading/session/${sessionId}/appointments/${nextCase.id}`,
+        nextCase
+      }
     }
     if (session.skippedAppointments.length > 0) {
-      return `/reading/session/${sessionId}/skipped-review`
+      return {
+        url: `/reading/session/${sessionId}/skipped-review`,
+        nextCase: null
+      }
     }
-    return getFirstOutstandingCaseInSession(
+    const url = getFirstOutstandingCaseInSession(
       data,
       session,
       sessionAppointments,
@@ -609,6 +623,7 @@ module.exports = (router) => {
     )
       ? `/reading/session/${sessionId}`
       : `/reading/session/${sessionId}/no-more-cases`
+    return { url, nextCase: null }
   }
 
   // Finalise the user's reads from this session - linked from the session
@@ -689,8 +704,11 @@ module.exports = (router) => {
   // Whether a case carries any of the work a session is judged by - what an
   // ended session has to show for itself. Reading counts the user's own acts;
   // arbitration counts the panel's, since a case is arbitrated once for
-  // everyone.
+  // everyone. A case worked when the session ended stays part of it, so
+  // undoing a deferral or priors request afterwards doesn't drop it.
   const wasWorkedInSession = (data, session, appointment, userId) => {
+    if (session.workedAppointmentIds?.includes(appointment.id)) return true
+
     const readingCase = getReadingCase(data, appointment)
 
     if (session.type === 'arbitration') {
@@ -706,6 +724,36 @@ module.exports = (router) => {
       userRequestedPriors(appointment, userId) ||
       isCaseDeferred(readingCase)
     )
+  }
+
+  // End a session, recording the cases worked in it - once ended, those are
+  // the cases it lists and still lets the reader into
+  const endSessionWithWork = (data, session, userId) => {
+    session.workedAppointmentIds = session.appointmentIds.filter(
+      (appointmentId) => {
+        const appointment = getAppointment(data, appointmentId)
+        return (
+          appointment && wasWorkedInSession(data, session, appointment, userId)
+        )
+      }
+    )
+    endSession(data, session.id, userId)
+  }
+
+  // A worked-through session ends by itself once nothing in it can change:
+  // every case done and every read finalised. Until then it stays open, so
+  // undoing a deferral or priors request puts it back in progress. Judged on
+  // the target rather than on what's loaded, so a lazy session that could
+  // still top up isn't ended prematurely.
+  const endSessionIfComplete = (data, session, sessionProgress, userId) => {
+    if (
+      isSessionEndable(session) &&
+      !isSessionEnded(session) &&
+      sessionProgress?.targetRemaining === 0 &&
+      getUnfinalisedUserReadsForSession(data, session.id, userId).length === 0
+    ) {
+      endSessionWithWork(data, session, userId)
+    }
   }
 
   // Ending a session early - the interstitial. Says what ending does, and where
@@ -805,7 +853,7 @@ module.exports = (router) => {
       return res.redirect(modalBreakout('/reading'))
     }
 
-    endSession(data, sessionId, currentUserId)
+    endSessionWithWork(data, session, currentUserId)
 
     // No flash: the session overview leads with a "Session ended" panel that
     // says what was recorded and whether it finalised
@@ -866,7 +914,13 @@ module.exports = (router) => {
           ...appointment,
           participant,
           readingCase,
-          readingMetadata: getReadingMetadata(readingCase, data.settings)
+          readingMetadata: getReadingMetadata(readingCase, data.settings),
+          workedInSession: wasWorkedInSession(
+            data,
+            session,
+            appointment,
+            data.currentUser.id
+          )
         }
       })
 
@@ -888,9 +942,7 @@ module.exports = (router) => {
     // deferring and asking for priors are all ways of having started.
     const sessionStarted =
       (session.skippedAppointments || []).length > 0 ||
-      enhancedAppointments.some((appointment) =>
-        wasWorkedInSession(data, session, appointment, data.currentUser.id)
-      )
+      enhancedAppointments.some((appointment) => appointment.workedInSession)
 
     const sessionProgress = getSessionReadingProgress(
       data,
@@ -899,17 +951,8 @@ module.exports = (router) => {
       data.currentUser.id
     )
 
-    // A session that has run out of work is over, and this is where that gets
-    // recorded for a session the reader never walked to the end of. Judged on
-    // the target rather than on what's loaded, so a lazy session that could
-    // still top up isn't ended prematurely.
-    if (
-      isSessionEndable(session) &&
-      !isSessionEnded(session) &&
-      sessionProgress?.targetRemaining === 0
-    ) {
-      endSession(data, sessionId, data.currentUser.id)
-    }
+    // A session the reader never walked to the end of can still be complete
+    endSessionIfComplete(data, session, sessionProgress, data.currentUser.id)
 
     const sessionEnded = isSessionEnded(session)
 
@@ -954,8 +997,8 @@ module.exports = (router) => {
     // but nobody got to were never part of that work - they went back to the
     // queue, and the panel counts them there.
     const listedAppointments = sessionEnded
-      ? enhancedAppointments.filter((appointment) =>
-          wasWorkedInSession(data, session, appointment, data.currentUser.id)
+      ? enhancedAppointments.filter(
+          (appointment) => appointment.workedInSession
         )
       : enhancedAppointments
 
@@ -1230,44 +1273,7 @@ module.exports = (router) => {
       // Mark as skipped
       skipAppointmentInSession(data, sessionId, appointmentId)
 
-      // Top up the batch with the next eligible appointment if under target size
-      topUpSession(data, sessionId, appointmentId)
-
-      // Find next readable appointment after current position (no wrap)
-      const currentUserId = data.currentUser.id
-      const session = getReadingSession(data, sessionId)
-      const sessionAppointments = session.appointmentIds
-        .map((id) => data.appointments.find((e) => e.id === id))
-        .filter(Boolean)
-
-      const nextUnreadAppointment = getNextCaseInSession(
-        data,
-        session,
-        sessionAppointments,
-        appointmentId,
-        currentUserId
-      )
-
-      if (nextUnreadAppointment) {
-        res.redirect(
-          `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
-        )
-      } else if (session.skippedAppointments.length > 0) {
-        res.redirect(`/reading/session/${sessionId}/skipped-review`)
-      } else {
-        // Check if there are any readable cases left in the session
-        const firstReadable = getFirstOutstandingCaseInSession(
-          data,
-          session,
-          sessionAppointments,
-          currentUserId
-        )
-        if (firstReadable) {
-          res.redirect(`/reading/session/${sessionId}`)
-        } else {
-          res.redirect(`/reading/session/${sessionId}/no-more-cases`)
-        }
-      }
+      res.redirect(onwardFromCase(data, sessionId, appointmentId).url)
     }
   )
 
@@ -1282,7 +1288,7 @@ module.exports = (router) => {
       const { sessionId, appointmentId } = req.params
       const currentUserId = data.currentUser?.id
 
-      const onwardUrl = onwardFromCase(data, sessionId, appointmentId)
+      const onwardUrl = onwardFromCase(data, sessionId, appointmentId).url
 
       // With nothing left to do, the reader is looking back over the session,
       // so step through its cases in order as the "Previous case" link does -
@@ -1359,6 +1365,15 @@ module.exports = (router) => {
 
         // Saves to the appointment and mirrors into data.appointment if it matches
         updateAppointmentData(data, appointmentId, { previousMammograms })
+
+        const readingCase = getReadingCase(data, appointment)
+        if (readingCase && requestPriorIds.length > 0) {
+          updateReadingCase(
+            data,
+            appointment.episodeId,
+            withoutSessionDecision(data, sessionId, readingCase, currentUserId)
+          )
+        }
       }
 
       // If submitted from an existing-read page (e.g. editing reason), return there
@@ -1391,25 +1406,10 @@ module.exports = (router) => {
       // no longer waiting to be come back to
       unskipAppointmentInSession(data, sessionId, appointmentId)
 
-      // Top up the batch with the next eligible appointment if under target size
-      topUpSession(data, sessionId, appointmentId)
-
-      // Find next readable appointment in batch after the current position, wrapping
-      // to the start if needed. This mirrors the navigation in save-opinion.
-      const session = getReadingSession(data, sessionId)
-      const sessionAppointments = session.appointmentIds
-        .map((id) => data.appointments.find((e) => e.id === id))
-        .filter(Boolean)
-      const nextUnreadAppointment = getNextCaseInSession(
-        data,
-        session,
-        sessionAppointments,
-        appointmentId,
-        currentUserId
-      )
+      const onward = onwardFromCase(data, sessionId, appointmentId)
 
       // Only store the banner if there is a next case to show it on
-      if (nextUnreadAppointment) {
+      if (onward.nextCase) {
         const participant = data.participants.find(
           (person) => person.id === appointment.participantId
         )
@@ -1419,31 +1419,9 @@ module.exports = (router) => {
           participantName: `${shortName}`,
           editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         })
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
-          )
-        )
-      } else if (session.skippedAppointments.length > 0) {
-        res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
-        )
-      } else {
-        // Check if there are any readable cases left in the session
-        const firstReadable = getFirstOutstandingCaseInSession(
-          data,
-          session,
-          sessionAppointments,
-          currentUserId
-        )
-        if (firstReadable) {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
-        } else {
-          res.redirect(
-            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
-          )
-        }
       }
+
+      res.redirect(modalBreakout(onward.url))
     }
   )
 
@@ -1508,10 +1486,15 @@ module.exports = (router) => {
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       const readingCase = getReadingCase(data, appointment)
       if (readingCase) {
-        // Deferring withdraws any opinion this user had already given - they're
+        // Deferring withdraws any decision already given - the reader is
         // saying they can't judge this case after all
         const updatedCase = {
-          ...withoutRead(readingCase, currentUserId),
+          ...withoutSessionDecision(
+            data,
+            sessionId,
+            readingCase,
+            currentUserId
+          ),
           deferral: {
             deferredAt: new Date().toISOString(),
             deferredBy: currentUserId,
@@ -1537,24 +1520,10 @@ module.exports = (router) => {
       // come back to
       unskipAppointmentInSession(data, sessionId, appointmentId)
 
-      // Top up the session with the next eligible appointment if under target size
-      topUpSession(data, sessionId, appointmentId)
-
-      // Find next readable appointment after current position
-      const session = getReadingSession(data, sessionId)
-      const sessionAppointments = session.appointmentIds
-        .map((id) => data.appointments.find((e) => e.id === id))
-        .filter(Boolean)
-      const nextUnreadAppointment = getNextCaseInSession(
-        data,
-        session,
-        sessionAppointments,
-        appointmentId,
-        currentUserId
-      )
+      const onward = onwardFromCase(data, sessionId, appointmentId)
 
       // Show a banner on the next case if there is one
-      if (nextUnreadAppointment) {
+      if (onward.nextCase) {
         const participant = data.participants.find(
           (person) => person.id === appointment?.participantId
         )
@@ -1564,31 +1533,9 @@ module.exports = (router) => {
           participantName: shortName,
           editHref: `/reading/session/${sessionId}/appointments/${appointmentId}/existing-read`
         })
-        res.redirect(
-          modalBreakout(
-            `/reading/session/${sessionId}/appointments/${nextUnreadAppointment.id}`
-          )
-        )
-      } else if (session.skippedAppointments.length > 0) {
-        res.redirect(
-          modalBreakout(`/reading/session/${sessionId}/skipped-review`)
-        )
-      } else {
-        // Check if there are any readable cases left in the session
-        const firstReadable = getFirstOutstandingCaseInSession(
-          data,
-          session,
-          sessionAppointments,
-          currentUserId
-        )
-        if (firstReadable) {
-          res.redirect(modalBreakout(`/reading/session/${sessionId}`))
-        } else {
-          res.redirect(
-            modalBreakout(`/reading/session/${sessionId}/no-more-cases`)
-          )
-        }
       }
+
+      res.redirect(modalBreakout(onward.url))
     }
   )
 
@@ -2551,6 +2498,15 @@ module.exports = (router) => {
       // began on the existing-read page returns there once saved
       const withChain = (url) => urlWithReferrer(url, req.query.referrerChain)
 
+      // The review page's change links arrive with the review page at the end
+      // of the chain. Going back there pops it, rather than carrying review in
+      // its own chain on to the save - which would treat the save as an edit.
+      const reviewUrl = `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+      const toReview = () =>
+        isLastReferrer(req.query.referrerChain, reviewUrl)
+          ? getReturnUrl(reviewUrl, req.query.referrerChain)
+          : withChain(reviewUrl)
+
       // Route based on opinion type
       switch (opinion) {
         case 'normal':
@@ -2560,13 +2516,7 @@ module.exports = (router) => {
           // confirmDecision setting turns that off.
           if (isArbitrationSession && !isEditingExistingRead) {
             if (arbitrationNeedsReview) {
-              return res.redirect(
-                modalBreakout(
-                  withChain(
-                    `/reading/session/${sessionId}/appointments/${appointmentId}/review`
-                  )
-                )
-              )
+              return res.redirect(modalBreakout(toReview()))
             }
             return res.redirect(
               307,
@@ -2598,13 +2548,7 @@ module.exports = (router) => {
               ? arbitrationNeedsReview
               : data.settings?.reading?.confirmTechnicalRecall !== 'false')
           ) {
-            return res.redirect(
-              modalBreakout(
-                withChain(
-                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
-                )
-              )
-            )
+            return res.redirect(modalBreakout(toReview()))
           }
           return res.redirect(
             307,
@@ -2620,13 +2564,7 @@ module.exports = (router) => {
               ? arbitrationNeedsReview
               : data.settings?.reading?.confirmRecallForAssessment !== 'false')
           ) {
-            return res.redirect(
-              modalBreakout(
-                withChain(
-                  `/reading/session/${sessionId}/appointments/${appointmentId}/review`
-                )
-              )
-            )
+            return res.redirect(modalBreakout(toReview()))
           }
           return res.redirect(
             307,
@@ -2665,7 +2603,7 @@ module.exports = (router) => {
       // whichever end-of-session page applies. Shared by a genuine save and by
       // a replay of one, so a repeated save lands where the original did.
       const onwardDestination = () =>
-        onwardFromCase(data, sessionId, appointmentId)
+        onwardFromCase(data, sessionId, appointmentId).url
 
       // Nothing to save. Either the decision was already recorded and this is a
       // repeat submit - a double click, a held shortcut key - whose temp the
@@ -2754,27 +2692,12 @@ module.exports = (router) => {
       // Write the reading (passing session context to handle skipped appointments)
       writeReading(data, appointment, currentUserId, readResult, sessionId)
 
-      // Top up the session with the next eligible appointment if under target size
-      topUpSession(data, sessionId, appointmentId)
-
-      // Find next unread appointment in session after the current position (no wrap)
-      const session = getReadingSession(data, sessionId)
-      const sessionAppointments = session.appointmentIds
-        .map((id) => data.appointments.find((e) => e.id === id))
-        .filter(Boolean)
-      const isArbitrationSave = session?.type === 'arbitration'
-
-      const nextUnreadAppointment = getNextCaseInSession(
-        data,
-        session,
-        sessionAppointments,
-        appointmentId,
-        currentUserId
-      )
+      const onward = onwardFromCase(data, sessionId, appointmentId)
+      const isArbitrationSave = sessionForSave?.type === 'arbitration'
 
       // Store banner message for the next case, but only if there is one.
       // Edits stay on the current case, so there's nowhere to show it.
-      if (nextUnreadAppointment && !isEditingExistingRead) {
+      if (onward.nextCase && !isEditingExistingRead) {
         const participant = data.participants.find(
           (person) => person.id === appointment.participantId
         )
@@ -2813,7 +2736,7 @@ module.exports = (router) => {
       // this is a reader finishing a case, so they move on.
       //
       // Redirect to next unread appointment or end-of-session page
-      res.redirect(modalBreakout(onwardDestination()))
+      res.redirect(modalBreakout(onward.url))
     }
   )
 

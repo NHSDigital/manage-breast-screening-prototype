@@ -233,13 +233,14 @@ data.readingSessions = {
     createdAt: '2025-01-15T10:00:00.000Z',
     endedAt: null,                         // set when the session is ended; absent while it is live
     endedBy: null,
+    workedAppointmentIds: [...],           // set on ending: the cases worked in the session
     skippedAppointments: ['appointment3'],
     filters: { hasSymptoms, includeAwaitingPriors, complexOnly }
   }
 }
 ```
 
-**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
+**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first. A worked-through session only ends once every read in it is finalised; until then it shows as complete but stays open, so undoing a deferral or priors request puts it back in progress. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending records those cases as `workedAppointmentIds`, so undoing a deferral or priors request afterwards still keeps the case open in the session. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
 
 **Lazy sessions**: When `data.settings.reading.lazySessions === 'true'` (default), non-clinic sessions start with only the first appointment. `topUpSession()` is called after each read or skip to add the next eligible appointment, growing the session one case at a time up to `targetSize`. Clinic sessions are always fully populated at creation.
 
@@ -374,6 +375,8 @@ On `/compare`, the second reader can:
 /existing-read → /undo-priors → rolls back 'pending' requests, redirects to /opinion
 ```
 
+Requesting priors replaces any decision already given on the case, as deferring does: the user's read, or the arbitration outcome in an arbitration session.
+
 ### Returning to Existing Read
 
 ```
@@ -485,6 +488,7 @@ All of these except `writeReading` (which is in `reading.js`) live in `app/lib/u
 Appointment-shaped, so they take `data` to resolve the case:
 
 - `canUserReadAppointment(data, appointment, userId)` - User can read (not already read, not awaiting priors, not deferred, under max reads)
+- `canArbitrateAppointment(data, appointment)` - Case can be arbitrated now (not already arbitrated, not deferred, not awaiting priors)
 - `userHasReadAppointment(data, appointment, userId)` - User has already read
 
 ### reading-cases.js — Boolean Checks
@@ -639,7 +643,7 @@ Prior mammograms are generated at seed time in `appointment-generator.js` using 
 A reader can defer a case out of the reading queue (for example to raise it with a colleague) rather than skip or read it.
 
 - Deferral is stored on the reading case: `readingCase.deferral = { deferredAt, deferredBy, reason }`
-- Deferring removes any existing read by that user — a deferral withdraws a prior opinion
+- Deferring removes any existing read by that user — a deferral withdraws a prior opinion. In an arbitration session it removes the arbitration outcome instead (`withoutArbitrationRead`), leaving the original reads alone
 - `isCaseDeferred(readingCase)` (in `lib/utils/reading-cases.js`) checks for an active deferral
 - `getDeferredCases(data)` / `getResolvedDeferrals(data)` (in `lib/utils/reading.js`) build the lists the deferred cases page shows
 - Deferred cases are excluded from reading; `/reading/deferred` lists them, and a deferral can be undone (via `/reading/deferred/undo` or the per-case `/undo-defer` route), returning the case to the queue

@@ -222,6 +222,61 @@ test.describe('Image reading', () => {
     ).toBeVisible()
   })
 
+  test('moves on after changing a read from its confirmation page', async ({
+    page
+  }) => {
+    // The confirmation page's change links send the reader back through the
+    // detail pages with that page in the referrer chain. Returning to it must
+    // use the chain up - otherwise confirming follows it back to a case that
+    // is now settled, and lands on the existing read instead of moving on.
+    await pinSettings(page, readingSettings)
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
+    ).toBeVisible()
+    await page
+      .getByRole('button', { name: 'Recall for assessment (R)' })
+      .first()
+      .click()
+
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await page
+      .locator(
+        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
+      )
+      .check()
+    await page
+      .locator(
+        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
+      )
+      .check()
+    await addTextAnnotation(page, 'Ill-defined mass')
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+
+    const confirmHeading = page.getByRole('heading', {
+      name: 'Confirm your opinion'
+    })
+    await expect(confirmHeading).toBeVisible()
+
+    // Change the annotations, adding a second one
+    await page.getByRole('link', { name: 'Change annotations' }).click()
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await addTextAnnotation(page, 'Ill-defined mass')
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+
+    await expect(confirmHeading).toBeVisible()
+    await page.getByRole('button', { name: 'Confirm and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+  })
+
   test('changes a normal read to recall, adding and deleting annotations', async ({
     page
   }) => {
