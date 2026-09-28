@@ -22,7 +22,10 @@ export const swapFragment = (target, html) => {
   const template = document.createElement('template')
   template.innerHTML = html.trim()
   const replacement = template.content.querySelector('[data-fragment-id]')
-  if (!replacement || replacement.dataset.fragmentId !== target.dataset.fragmentId) {
+  if (
+    !replacement ||
+    replacement.dataset.fragmentId !== target.dataset.fragmentId
+  ) {
     throw new Error('Response was not the expected fragment')
   }
   target.replaceWith(replacement)
@@ -44,42 +47,51 @@ export const refreshFragment = (target, url) =>
     })
     .then((html) => swapFragment(target, html))
 
-// GET actions: <a data-fragment-action href="...">
-document.addEventListener('click', (event) => {
-  const link = event.target.closest('a[data-fragment-action]')
-  if (!link) return
-  const target = link.closest('[data-fragment-id]')
-  if (!target) return
+// This module also exports swapFragment and refreshFragment, so it gets
+// bundled into every entry point that imports them (main.js, close-clinic.js).
+// Each bundle would otherwise re-run the listener registration below, so one
+// click would fire several fetches. Guard against that: register the global
+// handlers once per page, whichever bundle loads first.
+if (!window.appFragmentActionsRegistered) {
+  window.appFragmentActionsRegistered = true
 
-  event.preventDefault()
-  fetch(link.href, fetchOptions)
-    .then((response) => {
-      if (!response.ok) throw new Error('Request failed')
-      return response.text()
-    })
-    .then((html) => swapFragment(target, html))
-    .catch(() => {
-      window.location.href = link.href
-    })
-})
+  // GET actions: <a data-fragment-action href="...">
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[data-fragment-action]')
+    if (!link) return
+    const target = link.closest('[data-fragment-id]')
+    if (!target) return
 
-// POST actions: <form data-fragment-action>
-document.addEventListener('submit', (event) => {
-  const form = event.target.closest('form[data-fragment-action]')
-  if (!form) return
-  const target = form.closest('[data-fragment-id]')
-  if (!target) return
-
-  event.preventDefault()
-  fetch(form.action, {
-    method: (form.method || 'POST').toUpperCase(),
-    body: new URLSearchParams(new FormData(form)),
-    headers: fetchOptions.headers
+    event.preventDefault()
+    fetch(link.href, fetchOptions)
+      .then((response) => {
+        if (!response.ok) throw new Error('Request failed')
+        return response.text()
+      })
+      .then((html) => swapFragment(target, html))
+      .catch(() => {
+        window.location.href = link.href
+      })
   })
-    .then((response) => {
-      if (!response.ok) throw new Error('Request failed')
-      return response.text()
+
+  // POST actions: <form data-fragment-action>
+  document.addEventListener('submit', (event) => {
+    const form = event.target.closest('form[data-fragment-action]')
+    if (!form) return
+    const target = form.closest('[data-fragment-id]')
+    if (!target) return
+
+    event.preventDefault()
+    fetch(form.action, {
+      method: (form.method || 'POST').toUpperCase(),
+      body: new URLSearchParams(new FormData(form)),
+      headers: fetchOptions.headers
     })
-    .then((html) => swapFragment(target, html))
-    .catch(() => form.submit())
-})
+      .then((response) => {
+        if (!response.ok) throw new Error('Request failed')
+        return response.text()
+      })
+      .then((html) => swapFragment(target, html))
+      .catch(() => form.submit())
+  })
+}
