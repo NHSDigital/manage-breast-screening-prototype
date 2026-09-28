@@ -232,13 +232,14 @@ data.readingSessions = {
     createdAt: '2025-01-15T10:00:00.000Z',
     endedAt: null,                         // set when the session is ended; absent while it is live
     endedBy: null,
+    workedAppointmentIds: [...],           // set on ending: the cases worked in the session
     skippedAppointments: ['appointment3'],
     filters: { hasSymptoms, includeAwaitingPriors, complexOnly }
   }
 }
 ```
 
-**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
+**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first. A worked-through session only ends once every read in it is finalised; until then it shows as complete but stays open, so resolving an issue or undoing a priors request puts it back in progress. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending records those cases as `workedAppointmentIds`, so resolving an issue or undoing a priors request afterwards still keeps the case open in the session. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
 
 **Lazy sessions**: When `data.settings.reading.lazySessions === 'true'` (default), non-clinic sessions start with only the first appointment. `topUpSession()` is called after each read or skip to add the next eligible appointment, growing the session one case at a time up to `targetSize`. Clinic sessions are always fully populated at creation.
 
@@ -373,12 +374,16 @@ On `/compare`, the second reader can:
 /existing-read → /undo-priors → rolls back 'pending' requests, redirects to /opinion
 ```
 
+Requesting priors replaces any decision already given on the case, as raising an issue does: the user's read, or the arbitration outcome in an arbitration session.
+
 ### Returning to Existing Read
 
 ```
 /existing-read - View saved read; also shown for awaiting-priors cases
     [Change link] → /opinion (pre-populated from saved read) → normal flow
 ```
+
+The existing-read page's change links are the only thing that starts a referrer chain in the decision flow. Every step after them - forms, redirects, validation errors, compare, adopt and the review page's own change links - carries that chain along unchanged, and `save-opinion` returns to the existing read only when it is present. Without it, saving moves on to the next case.
 
 ---
 
@@ -484,6 +489,7 @@ All of these except `writeReading` (which is in `reading.js`) live in `app/lib/u
 Appointment-shaped, so they take `data` to resolve the case:
 
 - `canUserReadAppointment(data, appointment, userId)` - User can read (not already read, not awaiting priors, no open issue on the episode, under max reads)
+- `canArbitrateAppointment(data, appointment)` - Case can be arbitrated now (not already arbitrated, no open issue on the episode, not awaiting priors)
 - `hasOpenIssueOnEpisode(data, appointment)` - The appointment's episode has an open issue, which holds its case out of reading and arbitration
 - `getReadingCaseIssuePeriods(data, readingCase)` - The periods the case's episode was held by an issue, which the finalisation checks take so held time does not count (see [Issues in reading](#issues-in-reading))
 - `userHasReadAppointment(data, appointment, userId)` - User has already read
@@ -643,7 +649,7 @@ An open issue on a case's episode holds the case out of reading and arbitration 
 
 "Raise an issue" on the opinion and arbitration outcome pages opens `workflow/raise-issue.html` (in a modal where modals are on). It works like giving an opinion:
 
-- It is the reader's outcome for the case. `raise-issue-answer` withdraws any read the user had already given (`withoutRead`), then creates the issue with `raisedFrom: 'reading'`, linked to the case and its appointment, episode and participant
+- It is the reader's outcome for the case. `raise-issue-answer` withdraws any decision already given in the session (`withoutRead`: the user's read, or the arbitration outcome in an arbitration session), then creates the issue with `raisedFrom: 'reading'`, linked to the case and its appointment, episode and participant
 - The session counts the case as settled for that reader, takes it off the skipped list, tops up and moves on to the next readable case (or the skipped-case review, session overview or no-more-cases page), with an "Issue raised" banner on the next case
 - `/existing-read` shows the issue in place of an opinion. The person who raised it can "Withdraw issue", which resolves it as `raised_in_error` and returns the case to reading
 - If the second reader raises it, the first read stays on the case untouched

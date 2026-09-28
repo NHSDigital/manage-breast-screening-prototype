@@ -58,7 +58,10 @@
     {% set isOutcome = isArbitration %}
     {% set hideFinalisedRow = false %}
     {% set allowEdits = true %}
-    {% set changeOpinionUrl = "./" + decisionStep %}
+    {# Part of the decision flow, so the change links carry on whatever chain
+       brought the reader here - the flow returns here by itself #}
+    {% set changeOpinionUrl = ("./" + decisionStep) | urlWithReferrer(referrerChain) %}
+    {% set changeLinkReferrerChain = referrerChain or "" %}
     {% set showAnnotationImages = withImages %}
     {% set annotationImagePaths = allPaths %}
     {% include "_includes/summary-lists/read-summary.njk" %}

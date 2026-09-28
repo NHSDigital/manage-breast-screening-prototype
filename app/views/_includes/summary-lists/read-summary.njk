@@ -7,6 +7,9 @@
     - read: object - the read data (defaults to data.imageReadingTemp)
     - allowEdits: boolean - whether to show change links (default: false)
     - changeOpinionUrl: string - URL for change opinion link
+    - changeLinkReferrerChain: string - referrer chain the detail change links
+      carry (default: currentUrl, starting a chain that returns to this page).
+      Pages inside the decision flow pass their own chain, or "" for none
     - hideEmptyRows: boolean - if true, only show rows that have data (default: false)
     - showAnnotationImages: boolean - if true, show thumbnail images with markers (default: false)
     - annotationImagePaths: object - image paths for thumbnails (required if showAnnotationImages)
@@ -44,6 +47,7 @@
 
 {% set read = read if read is defined else data.imageReadingTemp %}
 {% set allowEdits = allowEdits if allowEdits is defined else false %}
+{% set changeLinkReferrerChain = changeLinkReferrerChain if changeLinkReferrerChain is defined else currentUrl %}
 {% set hideEmptyRows = hideEmptyRows if hideEmptyRows is defined else false %}
 {% set hideOpinionRow = hideOpinionRow if hideOpinionRow is defined else false %}
 {% set hideFinalisedRow = hideFinalisedRow if hideFinalisedRow is defined else false %}
@@ -154,7 +158,7 @@
     actions: {
       items: [
         {
-          href: "./normal-details" | urlWithReferrer(currentUrl),
+          href: "./normal-details" | urlWithReferrer(changeLinkReferrerChain),
           text: "Change",
           visuallyHiddenText: "details"
         } | openInModal
@@ -193,7 +197,7 @@
       actions: {
         items: [
           {
-            href: "./technical-recall" | urlWithReferrer(currentUrl),
+            href: "./technical-recall" | urlWithReferrer(changeLinkReferrerChain),
             text: "Change",
             visuallyHiddenText: "views"
           } | openInModal
@@ -248,7 +252,7 @@
       actions: {
         items: [
           {
-            href: "./recall-for-assessment-details" | urlWithReferrer(currentUrl),
+            href: "./recall-for-assessment-details" | urlWithReferrer(changeLinkReferrerChain),
             text: "Change",
             visuallyHiddenText: breastAssessmentLabel | lower
           }
@@ -269,7 +273,7 @@
       actions: {
         items: [
           {
-            href: "./recall-for-assessment-details" | urlWithReferrer(currentUrl),
+            href: "./recall-for-assessment-details" | urlWithReferrer(changeLinkReferrerChain),
             text: "Change",
             visuallyHiddenText: "annotations"
           }

@@ -36,7 +36,6 @@ const {
   caseNeedsFirstRead,
   caseNeedsSecondRead,
   caseNeedsArbitration,
-  getArbitrationRead,
   canUserReadCase,
   userHasReadCase,
   buildRead,
@@ -967,7 +966,7 @@ const getNextUserReadableAppointment = function (
  * The next case to work on in a session, after the current one.
  *
  * What "still to do" means depends on the session: reading asks whether this
- * user can read the case, arbitration whether the case has been arbitrated -
+ * user can read the case, arbitration whether the case can be arbitrated -
  * the reading question rejects cases a panel member originally read, which
  * would strand an arbitration session with nothing left to do.
  *
@@ -1006,7 +1005,7 @@ const getNextCaseInSession = (
   const stillToArbitrate = (appointment) =>
     appointment.id !== currentAppointmentId &&
     !skipped.has(appointment.id) &&
-    !getArbitrationRead(getReadingCase(data, appointment))
+    canArbitrateAppointment(data, appointment)
 
   const currentIndex = sessionAppointments.findIndex(
     (appointment) => appointment.id === currentAppointmentId
@@ -1133,8 +1132,8 @@ const getFirstOutstandingCaseInSession = (
     return getFirstUserReadableAppointment(data, sessionAppointments, userId)
   }
 
-  return sessionAppointments.find(
-    (appointment) => !getArbitrationRead(getReadingCase(data, appointment))
+  return sessionAppointments.find((appointment) =>
+    canArbitrateAppointment(data, appointment)
   )
 }
 
@@ -1182,16 +1181,9 @@ const getResumeAppointmentForUser = function (
       return getFirstUserReadableAppointment(data, candidates, currentUserId)
     }
     return (
-      candidates.find((appointment) => {
-        const readingCase = resolveCase(data, appointment)
-        // Outstanding priors hold a case up for the panel just as an open
-        // issue does - there is nothing to arbitrate until they arrive
-        return (
-          !caseHasBeenArbitrated(readingCase) &&
-          !hasOpenIssueOnEpisode(data, appointment) &&
-          !awaitingPriors(appointment)
-        )
-      }) || null
+      candidates.find((appointment) =>
+        canArbitrateAppointment(data, appointment)
+      ) || null
     )
   }
 
@@ -1246,6 +1238,27 @@ const getResumeAppointmentForUser = function (
  */
 const appointmentHasBeenArbitrated = (data, appointment) => {
   return caseHasBeenArbitrated(resolveCase(data, appointment))
+}
+
+/**
+ * Whether an appointment's case can be arbitrated now.
+ *
+ * The arbitration counterpart to canUserReadAppointment: a case already
+ * arbitrated, held by an open issue, or waiting for prior images has nothing
+ * to arbitrate until that changes.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment
+ * @returns {boolean}
+ */
+const canArbitrateAppointment = (data, appointment) => {
+  const readingCase = resolveCase(data, appointment)
+
+  return (
+    !caseHasBeenArbitrated(readingCase) &&
+    !hasOpenIssueOnEpisode(data, appointment) &&
+    !awaitingPriors(appointment)
+  )
 }
 
 const userHasReadAppointment = function (data, appointment, userId = null) {
@@ -1955,6 +1968,7 @@ module.exports = {
   // Booleans
   userHasReadAppointment,
   appointmentHasBeenArbitrated,
+  canArbitrateAppointment,
   canUserReadAppointment,
   hasOpenIssueOnEpisode,
   getReadingCaseIssuePeriods,
