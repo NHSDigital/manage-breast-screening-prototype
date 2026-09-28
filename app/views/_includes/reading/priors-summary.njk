@@ -57,7 +57,7 @@
       {% set priorActions = {
         items: [
           {
-            href: "./request-priors",
+            href: "./request-priors" | urlWithReferrer(referrerChain),
             text: "Request priors",
             visuallyHiddenText: "for this mammogram"
           } | openInModal
